@@ -1,7 +1,9 @@
 import 'dart:convert';
+import '../games/steam_stream_preferences.dart';
 import '../media/ids.dart';
 import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
+import '../media/media_source_info.dart' show PlaybackExtras;
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -15,11 +17,13 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/player_setting_scope.dart';
 import '../models/external_player_models.dart';
+import '../models/media_bookmark.dart';
 import '../utils/language_codes.dart';
 import 'base_shared_preferences_service.dart';
 import 'sensitive_prefs.dart';
 import 'device_performance.dart';
 import 'shortcut_action.dart';
+
 export 'base_shared_preferences_service.dart'
     show
         Pref,
@@ -44,6 +48,21 @@ import 'trackers/tracker_constants.dart';
 import '../profiles/profile.dart';
 import '../theme/mono_theme.dart' show MonoPalette;
 import '../watch_together/services/watch_party_relays.dart';
+
+Map<String, List<MediaBookmark>> _decodeMediaBookmarks(dynamic raw) {
+  if (raw is! Map) return const {};
+  final decoded = <String, List<MediaBookmark>>{};
+  for (final entry in raw.entries) {
+    if (entry.key is! String || (entry.key as String).isEmpty || entry.value is! List) continue;
+    final bookmarks = <MediaBookmark>[];
+    for (final value in entry.value as List) {
+      final bookmark = MediaBookmark.tryFromJson(value);
+      if (bookmark != null) bookmarks.add(bookmark);
+    }
+    if (bookmarks.isNotEmpty) decoded[entry.key as String] = bookmarks;
+  }
+  return decoded;
+}
 
 /// The app theme. Value names are the persisted ids. [system] follows the
 /// platform between [light] and [dark]; every other value is one fixed palette,
@@ -696,8 +715,8 @@ class _PreferenceGroupListenable extends ChangeNotifier {
 }
 
 class SettingsService extends BaseSharedPreferencesService {
-  static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
-  static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
+  static const String defaultIntroPattern = PlaybackExtras.defaultIntroPattern;
+  static const String defaultCreditsPattern = PlaybackExtras.defaultCreditsPattern;
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
@@ -745,8 +764,38 @@ class SettingsService extends BaseSharedPreferencesService {
       BoolPref(profileScopedPrefsKey(profileId, 'show_games_tab'), defaultValue: false);
   static BoolPref gameTouchControlsForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_touch_controls'), defaultValue: true);
+  static BoolPref shareSteamInventoryForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'share_steam_inventory'), defaultValue: false);
+  static BoolPref allowSteamActionsForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'allow_steam_actions'), defaultValue: false);
+  static BoolPref allowGameSessionControlForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'allow_game_session_control'), defaultValue: false);
+  static BoolPref allowSteamInstallForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'allow_steam_install'), defaultValue: false);
+  static StringPref steamInstallRootForProfile(String profileId) =>
+      StringPref(profileScopedPrefsKey(profileId, 'steam_install_root'));
   static BoolPref gamePyrowaveForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_pyrowave'), defaultValue: false);
+  static EnumPref<SteamStreamQuality> steamQualityForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_quality'),
+    values: SteamStreamQuality.values,
+    defaultValue: SteamStreamQuality.balanced,
+  );
+  static EnumPref<SteamStreamCodec> steamCodecForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_codec'),
+    values: SteamStreamCodec.values,
+    defaultValue: SteamStreamCodec.automatic,
+  );
+  static EnumPref<SteamStreamAudio> steamAudioForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_audio'),
+    values: SteamStreamAudio.values,
+    defaultValue: SteamStreamAudio.stereo,
+  );
+  static IntPref steamControllerCountForProfile(String profileId) => IntPref(
+    profileScopedPrefsKey(profileId, 'steam_controller_count'),
+    defaultValue: 1,
+    transform: (value) => value >= 1 && value <= 4 ? value : 1,
+  );
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>
@@ -1126,18 +1175,37 @@ class SettingsService extends BaseSharedPreferencesService {
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
+  static final audioStereoWidth = DoublePref(
+    'audio_stereo_width',
+    transform: (value) => value.isFinite ? value.clamp(0.0, 1.0).toDouble() : 0.0,
+  );
+  static const audioSpatializer = BoolPref('audio_spatializer');
+  static final audioPitchShiftSemitones = DoublePref(
+    'audio_pitch_shift_semitones',
+    transform: (value) => value.isFinite ? value.clamp(-12.0, 12.0).toDouble() : 0.0,
+  );
   static const backgroundVideoAudio = BoolPref('background_video_audio');
   static final audioEqualizer60 = _audioEqualizerPref('audio_equalizer_60');
+  static final audioEqualizer125 = _audioEqualizerPref('audio_equalizer_125');
   static final audioEqualizer250 = _audioEqualizerPref('audio_equalizer_250');
+  static final audioEqualizer500 = _audioEqualizerPref('audio_equalizer_500');
   static final audioEqualizer1000 = _audioEqualizerPref('audio_equalizer_1000');
+  static final audioEqualizer2000 = _audioEqualizerPref('audio_equalizer_2000');
   static final audioEqualizer4000 = _audioEqualizerPref('audio_equalizer_4000');
+  static final audioEqualizer8000 = _audioEqualizerPref('audio_equalizer_8000');
   static final audioEqualizer12000 = _audioEqualizerPref('audio_equalizer_12000');
+  static final audioEqualizer16000 = _audioEqualizerPref('audio_equalizer_16000');
   static List<DoublePref> get audioEqualizerBandPrefs => [
     audioEqualizer60,
+    audioEqualizer125,
     audioEqualizer250,
+    audioEqualizer500,
     audioEqualizer1000,
+    audioEqualizer2000,
     audioEqualizer4000,
+    audioEqualizer8000,
     audioEqualizer12000,
+    audioEqualizer16000,
   ];
 
   static DoublePref _audioEqualizerPref(String key) =>
@@ -1411,6 +1479,16 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: const {},
     encode: json.encode,
     decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
+  );
+
+  /// User-created local data; intentionally excluded from settings reset/export.
+  static final mediaBookmarks = JsonPref<Map<String, List<MediaBookmark>>>(
+    'video_bookmarks',
+    defaultValue: const {},
+    encode: (values) => json.encode(
+      values.map((key, bookmarks) => MapEntry(key, bookmarks.map((bookmark) => bookmark.toJson()).toList())),
+    ),
+    decode: _decodeMediaBookmarks,
   );
   static final customShaderPresets = JsonPref<List<Map<String, dynamic>>>(
     'custom_shader_presets',
@@ -1922,6 +2000,9 @@ class SettingsService extends BaseSharedPreferencesService {
     ambientLighting,
     audioPassthrough,
     audioNormalization,
+    audioStereoWidth,
+    audioSpatializer,
+    audioPitchShiftSemitones,
     backgroundVideoAudio,
     ...audioEqualizerBandPrefs,
     audioChannelLimit,
@@ -2108,13 +2189,7 @@ class SettingsService extends BaseSharedPreferencesService {
         throw const FormatException('Expected a six-digit hex color');
       }
     }
-    if (pref == startupSection &&
-        ![
-          NavigationTabId.discover,
-          NavigationTabId.libraries,
-          NavigationTabId.liveTv,
-          NavigationTabId.search,
-        ].contains(value)) {
+    if (pref == startupSection && !startupSectionTabs.contains(value)) {
       throw const FormatException('Unsupported startup section');
     }
     if (pref is StringListPref) {

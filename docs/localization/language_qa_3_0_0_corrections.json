@@ -1,0 +1,708 @@
+{
+  "ar": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "اضغط على Unlock",
+      "corrected": "اضغط لإلغاء القفل",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "اضغط مرة أخرى لإلغاء الافتتاح",
+      "corrected": "اضغط مرة أخرى لإلغاء القفل",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "az": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Çözünürlüğünü açma",
+      "corrected": "Kilidi açmaq üçün toxunun",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Yenə açılmaq üçün çalın",
+      "corrected": "Kilidi açmaq üçün yenidən toxunun",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "bg": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Натиснете за отключване",
+      "corrected": "Докоснете, за да отключите",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Натиснете отново за отключване",
+      "corrected": "Докоснете отново, за да отключите",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "bn": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "ডাউনলোড করতে চান",
+      "corrected": "আনলক করতে ট্যাপ করুন",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "আরেকবার ডাউনলোড করুন",
+      "corrected": "আনলক করতে আবার ট্যাপ করুন",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "এই লিঙ্ক খুলতে পরবর্তী epizode খেলবে &mode=shuffle আপডেট করতে shuffle এর জন্য।",
+      "corrected": "এই লিংক খুললে পরের পর্বটি চলবে। সিরিজটি এলোমেলোভাবে চালাতে শেষে &mode=shuffle যোগ করুন.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "cs": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Připojte se k odblokování",
+      "corrected": "Klepnutím odemknete",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Znovu klepněte na odemknout",
+      "corrected": "Opětovným klepnutím odemknete",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "da": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Tryk på at unlock",
+      "corrected": "Tryk for at låse op",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Tryk igen for at lukke",
+      "corrected": "Tryk igen for at låse op",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "de": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Tippen Sie auf Unlock",
+      "corrected": "Zum Entsperren tippen",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Drücken Sie erneut zum Unlock",
+      "corrected": "Zum Entsperren erneut tippen",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "Öffnen dieser Link spielt die nächste Episode. &mode=shuffle hinzufügen, um die Show auf Shuffle zu spielen.",
+      "corrected": "Beim Öffnen dieses Links wird die nächste Folge abgespielt. Fügen Sie am Ende &mode=shuffle hinzu, um die Serie in zufälliger Reihenfolge abzuspielen.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "es": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Tapa para desbloquear",
+      "corrected": "Toca para desbloquear",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Volver a desbloquear",
+      "corrected": "Toca de nuevo para desbloquear",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "Abriendo este enlace juega el siguiente episodio.Añadir &mode=shuffle para jugar el espectáculo en shuffle.",
+      "corrected": "Al abrir este enlace se reproduce el siguiente episodio. Añade &mode=shuffle al final para reproducir la serie en orden aleatorio.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "fa": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "بایگانی برچسب: Unlock",
+      "corrected": "برای باز کردن قفل ضربه بزنید",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "دوباره دکمه را باز کنید",
+      "corrected": "برای باز کردن قفل دوباره ضربه بزنید",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "fr": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Téléchargez pour déverrouiller",
+      "corrected": "Appuyez pour déverrouiller",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Tapez à nouveau pour désactiver",
+      "corrected": "Appuyez à nouveau pour déverrouiller",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "Ouvrir ce lien joue l'épisode suivant. Ajouter &mode=shuffle pour jouer le spectacle sur shuffle.",
+      "corrected": "L’ouverture de ce lien lance l’épisode suivant. Ajoutez &mode=shuffle à la fin pour lire la série en mode aléatoire.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "he": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "לחצו על Unlock",
+      "corrected": "הקישו כדי לבטל את הנעילה",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "לחצו שוב כדי לפתוח",
+      "corrected": "הקישו שוב כדי לבטל את הנעילה",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "hi": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "अनलॉक करने के लिए टैप",
+      "corrected": "अनलॉक करने के लिए टैप करें",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "फिर से लॉक करने के लिए क्लिक करें",
+      "corrected": "अनलॉक करने के लिए फिर से टैप करें",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "hu": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Nyomja meg a feloldást",
+      "corrected": "Koppintson a feloldáshoz",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Nyomja meg újra a feloldást",
+      "corrected": "Koppintson ismét a feloldáshoz",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "id": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Klik untuk Unlock",
+      "corrected": "Ketuk untuk membuka kunci",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Tekan kembali untuk membuka",
+      "corrected": "Ketuk lagi untuk membuka kunci",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "it": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Toccare per disattivare",
+      "corrected": "Tocca per sbloccare",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Toccare di nuovo per disattivare",
+      "corrected": "Tocca di nuovo per sbloccare",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "Aprire questo link gioca il prossimo episodio. Aggiungi &mode=shuffle per giocare lo spettacolo su shuffle.",
+      "corrected": "Aprendo questo link verrà riprodotto il prossimo episodio. Aggiungi &mode=shuffle alla fine per riprodurre la serie in ordine casuale.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "ja": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "オフロックを押す",
+      "corrected": "タップしてロックを解除",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "再びオフロックを押す",
+      "corrected": "もう一度タップしてロックを解除",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "このリンクを開くと次のエピソードが再生されます. &mode=shuffle を追加してショーを shuffle でプレイします。",
+      "corrected": "このリンクを開くと次のエピソードが再生されます。番組をシャッフル再生するには、末尾に &mode=shuffle を追加してください。",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "kk": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Қазіргі таңда отбасы",
+      "corrected": "Құлпын ашу үшін түртіңіз",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Көңілді сергітерлік әндер шыққан.",
+      "corrected": "Құлпын ашу үшін қайта түртіңіз",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.invalid": {
+      "english": "This Plezy link isn't valid.",
+      "draft": "Қазіргі таңда бүкіл әлемдегі ең айқын көргенде.",
+      "corrected": "Бұл Plezy сілтемесі жарамсыз.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.profileNotFound": {
+      "english": "No profile matches \"${profile}\".",
+      "draft": "Жоғары профиль «${profile}» қосылды.",
+      "corrected": "«${profile}» профиліне сәйкес профиль табылмады.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.serverUnavailable": {
+      "english": "Couldn't reach the server for this link.",
+      "draft": "Серіктің қабығы мен сервердермен айтылады.",
+      "corrected": "Бұл сілтеме үшін серверге қосыла алмадық.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.notFound": {
+      "english": "Couldn't find this title in your libraries.",
+      "draft": "Бібліотекасы мен биліктерінің бір-бірімен таныстырып келді.",
+      "corrected": "Бұл атау кітапханаларыңыздан табылмады.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.unsupportedItem": {
+      "english": "This link can't be played.",
+      "draft": "Серіктің нәрсе қауымдастырылған жоқ.",
+      "corrected": "Бұл сілтемені ойнату мүмкін емес.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.noLiveTv": {
+      "english": "No Live TV server is available for this link.",
+      "draft": "Телевизиялық серверінің бір-қатынас тағайындалды.",
+      "corrected": "Бұл сілтеме үшін қолжетімді Live TV сервері жоқ.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.channelNotFound": {
+      "english": "Couldn't find channel \"${channel}\".",
+      "draft": "Қазіргі уақытта «${channel}» бағдарламасы бар.",
+      "corrected": "«${channel}» арнасы табылмады.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showLink": {
+      "english": "Show link",
+      "draft": "Серіктің линк",
+      "corrected": "Сілтемені көрсету",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showProfileLink": {
+      "english": "Show profile link",
+      "draft": "Профессиялық линк",
+      "corrected": "Профиль сілтемесін көрсету",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.dialogTitle": {
+      "english": "Link",
+      "draft": "Серіктің",
+      "corrected": "Сілтеме",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "Қаланың тұрақты тұрғындарының саны 10 адамды құрайды.",
+      "corrected": "Бұл сілтемені ашқанда келесі эпизод ойнатылады. Сериалды аралас ретпен ойнату үшін соңына &mode=shuffle қосыңыз.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.movieHint": {
+      "english": "Opening this link plays the movie.",
+      "draft": "Осылайша киноның ең айқын көргенде.",
+      "corrected": "Бұл сілтемені ашқанда фильм ойнатылады.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.episodeHint": {
+      "english": "Opening this link plays this episode.",
+      "draft": "Қазіргі таңда бүкіл әлемде өте көп айтылады.",
+      "corrected": "Бұл сілтемені ашқанда осы эпизод ойнатылады.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.profileHint": {
+      "english": "Opening this link switches to this profile.",
+      "draft": "Қазіргі таңда бүкіл әлемдік конфессиялармен таныстырылған.",
+      "corrected": "Бұл сілтемені ашқанда осы профильге ауысады.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.openAsProfile": {
+      "english": "Open as ${name}",
+      "draft": "Қазіргі уақытта өңдеу",
+      "corrected": "${name} профилі ретінде ашу",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.copy": {
+      "english": "Copy",
+      "draft": "Жүктесі",
+      "corrected": "Көшіру",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.copied": {
+      "english": "Link copied",
+      "draft": "Серіктің копиясы",
+      "corrected": "Сілтеме көшірілді.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "ko": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "눌러 열기",
+      "corrected": "잠금을 해제하려면 탭하세요",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "다시 눌러 잠그기",
+      "corrected": "잠금을 해제하려면 다시 탭하세요",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "ms": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Klik untuk Unlock",
+      "corrected": "Ketik untuk membuka kunci",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Tekan lagi untuk membuka kunci",
+      "corrected": "Ketik sekali lagi untuk membuka kunci",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "nb": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Trykk for å unlock",
+      "corrected": "Trykk for å låse opp",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Trykk igjen for å låse opp",
+      "corrected": "Trykk igjen for å låse opp",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "nl": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Klik op om te ontgrendelen",
+      "corrected": "Tik om te ontgrendelen",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Druk opnieuw om te ontgrendelen",
+      "corrected": "Tik nogmaals om te ontgrendelen",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "pl": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Wejdź do odblokowania",
+      "corrected": "Dotknij, aby odblokować",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Następny wpisNastępny Odblokuj",
+      "corrected": "Dotknij ponownie, aby odblokować",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "pt": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Tap para desbloquear",
+      "corrected": "Toque para desbloquear",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Tire novamente para desbloquear",
+      "corrected": "Toque novamente para desbloquear",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "ru": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Нажмите для отключения",
+      "corrected": "Нажмите, чтобы разблокировать",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Нажмите опять, чтобы отключить",
+      "corrected": "Нажмите ещё раз, чтобы разблокировать",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "Открытие этого ссылки играет следующий эпизод. Добавить &mode=shuffle для игры шоу на shuffle.",
+      "corrected": "При открытии ссылки начнётся воспроизведение следующего эпизода. Добавьте в конец &mode=shuffle, чтобы воспроизводить сериал в случайном порядке.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "sv": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Tryck på att låsa upp",
+      "corrected": "Tryck för att låsa upp",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Tryck igen för att låsa upp",
+      "corrected": "Tryck igen för att låsa upp",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "th": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "คลิกที่ Unlock",
+      "corrected": "แตะเพื่อปลดล็อก",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "คลิกอีกครั้งเพื่อล็อค",
+      "corrected": "แตะอีกครั้งเพื่อปลดล็อก",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "tr": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Unlock için tıklayın",
+      "corrected": "Kilidi açmak için dokunun",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Unlock için tekrar tıklayın",
+      "corrected": "Kilidi açmak için tekrar dokunun",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "uk": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Натисніть для розблокування",
+      "corrected": "Торкніться, щоб розблокувати",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Натисніть знову, щоб відключити",
+      "corrected": "Торкніться ще раз, щоб розблокувати",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "uz": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Unlock ko‘zadi.",
+      "corrected": "Qulfni ochish uchun bosing",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Unlock o‘yadi.",
+      "corrected": "Qulfni ochish uchun yana bosing",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.invalid": {
+      "english": "This Plezy link isn't valid.",
+      "draft": "Bu Plezy bağlantı bo‘zadi.",
+      "corrected": "Bu Plezy havolasi yaroqsiz.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.profileNotFound": {
+      "english": "No profile matches \"${profile}\".",
+      "draft": "Profili «${profile}» ko‘yadi.",
+      "corrected": "“${profile}” profiliga mos profil topilmadi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.serverUnavailable": {
+      "english": "Couldn't reach the server for this link.",
+      "draft": "Bu link için serverga qaytmaydi.",
+      "corrected": "Bu havola uchun serverga ulanib bo‘lmadi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.notFound": {
+      "english": "Couldn't find this title in your libraries.",
+      "draft": "Bu titni libraralarinizda bulmaygan.",
+      "corrected": "Bu nom kutubxonalaringizdan topilmadi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.unsupportedItem": {
+      "english": "This link can't be played.",
+      "draft": "Bu linki oynayamaz.",
+      "corrected": "Bu havolani ijro etib bo‘lmaydi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.noLiveTv": {
+      "english": "No Live TV server is available for this link.",
+      "draft": "Live TV server bu link için kullanılmaz.",
+      "corrected": "Bu havola uchun Live TV serveri mavjud emas.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.channelNotFound": {
+      "english": "Couldn't find channel \"${channel}\".",
+      "draft": "«${channel}» kanal ko‘yadi.",
+      "corrected": "“${channel}” kanali topilmadi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showLink": {
+      "english": "Show link",
+      "draft": "Tadiq link",
+      "corrected": "Havolani ko‘rsatish",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showProfileLink": {
+      "english": "Show profile link",
+      "draft": "Profili link",
+      "corrected": "Profil havolasini ko‘rsatish",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.dialogTitle": {
+      "english": "Link",
+      "draft": "Link",
+      "corrected": "Havola",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "&mode=shuffle koʻyadi shuffle'da o‘yadi.",
+      "corrected": "Bu havolani ochish keyingi qismni ijro etadi. Serialni aralashtirib ijro etish uchun oxiriga &mode=shuffle qo‘shing.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.movieHint": {
+      "english": "Opening this link plays the movie.",
+      "draft": "Bu link'i açmak filmini oynaylar.",
+      "corrected": "Bu havolani ochish filmni ijro etadi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.episodeHint": {
+      "english": "Opening this link plays this episode.",
+      "draft": "Bu link'i açmak bu epizod o‘yadi.",
+      "corrected": "Bu havolani ochish ushbu qismni ijro etadi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.profileHint": {
+      "english": "Opening this link switches to this profile.",
+      "draft": "Bu link'i açmak bu profilga switches.",
+      "corrected": "Bu havola ushbu profilga o‘tadi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.openAsProfile": {
+      "english": "Open as ${name}",
+      "draft": "${name} olarak açılır",
+      "corrected": "${name} profili sifatida ochish",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.copy": {
+      "english": "Copy",
+      "draft": "Kopya",
+      "corrected": "Nusxalash",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.copied": {
+      "english": "Link copied",
+      "draft": "Link kopyadi",
+      "corrected": "Havola nusxalandi.",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "vi": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "Nhập để Unlock",
+      "corrected": "Chạm để mở khóa",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "Nhấn lại để mở khóa",
+      "corrected": "Chạm lại để mở khóa",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "zh": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "点击 Unlock",
+      "corrected": "点按以解锁",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "再次点击解锁",
+      "corrected": "再次点按以解锁",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "打开此链接播放下一集. 添加 &mode=shuffle 在 shuffle 上播放节目。",
+      "corrected": "打开此链接将播放下一集。要随机播放整部剧集，请在末尾添加 &mode=shuffle。",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  },
+  "zh-Hant": {
+    "videoControls.tapToUnlock": {
+      "english": "Tap to unlock",
+      "draft": "點選 Unlock",
+      "corrected": "點一下以解鎖",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "videoControls.tapAgainToUnlock": {
+      "english": "Tap again to unlock",
+      "draft": "再次點選解鎖",
+      "corrected": "再次點一下以解鎖",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    },
+    "deepLinks.showHint": {
+      "english": "Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.",
+      "draft": "開啟此連結播放下一集. 新增 &mode=shuffle 在 shuffle 上播放節目。",
+      "corrected": "開啟此連結會播放下一集。若要隨機播放整個影集，請在結尾加上 &mode=shuffle。",
+      "reason": "Targeted review corrected the machine draft for meaning, UI action, product terms, or code-parameter preservation."
+    }
+  }
+}

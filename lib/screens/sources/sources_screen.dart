@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -11,10 +13,13 @@ import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
+import '../../sources/podcast_opml.dart';
+import '../../sources/offline_readiness.dart';
 import '../../sources/publication_library.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../services/file_picker_service.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -25,6 +30,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import 'add_source_screen.dart';
 import 'source_detail_screen.dart';
 import 'source_widgets.dart';
+import 'open_media_screen.dart';
 import '../../sources/publication_shelf.dart';
 import 'source_navigation.dart';
 import 'source_sync_screen.dart';
@@ -45,7 +51,9 @@ String sourceTransportLabel(FileSource source) {
     FileSourceKind.dlna ||
     FileSourceKind.s3 ||
     FileSourceKind.audiobookshelf ||
-    FileSourceKind.komga =>
+    FileSourceKind.komga ||
+    FileSourceKind.openSubsonic ||
+    FileSourceKind.podcastRss =>
       scheme == 'https'
           ? 'HTTPS'
           : scheme == 'http'
@@ -150,6 +158,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
             widget.source!.id,
             parent: widget.folder?.id,
             cursor: more ? _next : null,
+            query: _query.isEmpty ? null : _query,
           );
           items = more ? [..._entries, ...page.entries] : page.entries;
           _next = page.next;
@@ -176,11 +185,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
       final uniqueItems = {for (final entry in items) entry.key: entry}.values.toList(growable: false);
       final progress = await controller.repository.progressForEntries(profile, uniqueItems.map((entry) => entry.key));
       final downloads = await controller.repository.downloads(profile);
+      final verified = await controller.downloads.verifiedFiles(profile, uniqueItems, records: downloads);
       controller.requireSession(epoch);
       if (!mounted || request != _request) return;
       _offline
         ..clear()
-        ..addAll(downloads.where((d) => d['complete'] == 1).map((d) => d['key'] as String));
+        ..addAll(verified);
       _downloadJobs = downloads
           .where((d) => d['complete'] != 1 && d['state'] != 'completed' && d['state'] != 'legacy')
           .toList(growable: false);
@@ -202,6 +212,43 @@ class _SourcesScreenState extends State<SourcesScreen> {
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _importPodcastOpml() async {
+    final sourceController = context.read<SourceController>();
+    final picked = await FilePickerService.instance.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['opml', 'xml'],
+      withData: true,
+    );
+    final bytes = picked?.files.firstOrNull?.bytes;
+    if (bytes == null || bytes.isEmpty) return;
+    if (bytes.length > PodcastOpml.maxBytes) throw const SourceException(SourceFailure.invalidData);
+    final feeds = PodcastOpml.parse(utf8.decode(bytes));
+    final count = await sourceController.importPodcastSubscriptions(feeds);
+    if (!mounted) return;
+    showSnackBar(context, count == 0 ? 'No new podcast subscriptions.' : 'Imported $count podcast subscriptions.');
+    await _load();
+  }
+
+  Future<void> _exportPodcastOpml() async {
+    final controller = context.read<SourceController>();
+    final subscriptions = await controller.podcastSubscriptions();
+    if (subscriptions.isEmpty || !mounted) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Export podcast subscriptions',
+      message: 'This OPML file includes feed URLs. Private subscription URLs may grant access to their feeds.',
+      confirmText: 'Export OPML',
+    );
+    if (confirmed != true || !mounted) return;
+    final bytes = Uint8List.fromList(utf8.encode(PodcastOpml.write(subscriptions)));
+    await FilePickerService.instance.saveFile(
+      fileName: 'plezyng-podcasts.opml',
+      type: FileType.custom,
+      allowedExtensions: const ['opml'],
+      bytes: bytes,
+    );
   }
 
   @override
@@ -395,11 +442,18 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (mounted) await _load();
   }
 
-  bool downloaded(SourceEntry e) => e.files.any((f) => _offline.contains(sourceKey(e.sourceId, f.id)));
+  bool downloaded(SourceEntry e) => PublicationOfflineReadiness.evaluate(e, _offline).isReady;
+  String? _offlineLabel(SourceEntry entry) {
+    final ready = PublicationOfflineReadiness.evaluate(entry, _offline);
+    if (ready.isReady) return t.fileSources.offline;
+    if (ready.isPartial) return '${t.seerr.statusPartiallyAvailable} (${ready.availableFiles}/${ready.totalFiles})';
+    return null;
+  }
+
   Widget itemTile(SourceEntry e, int index, int count, {PublicationProgress? progress}) => SourceTile(
     key: ValueKey('${e.key}:${progress?.mode.name ?? ''}'),
     title: e.displayTitle,
-    subtitle: [e.author, e.series, if (downloaded(e)) t.fileSources.offline].where((s) => s.isNotEmpty).join(' · '),
+    subtitle: [e.author, e.series, ?_offlineLabel(e)].where((s) => s.isNotEmpty).join(' · '),
     icon: sourceItemIcon(e.kind),
     onTap: () => _open(e),
     index: index,
@@ -427,6 +481,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
       status: _status,
       mode: switch (widget.shelf) {
         PublicationShelf.audiobooks => PublicationMode.listening,
+        PublicationShelf.music => PublicationMode.listening,
         PublicationShelf.videos => PublicationMode.watching,
         PublicationShelf.ebooks || PublicationShelf.comics => PublicationMode.reading,
         null => null,
@@ -487,6 +542,20 @@ class _SourcesScreenState extends State<SourcesScreen> {
               ),
               AppMenuItem(value: 'offline-quota', label: t.fileSources.offlineQuota, icon: Symbols.storage_rounded),
             ],
+            if (root) ...[
+              const AppMenuDivider(),
+              AppMenuItem(
+                value: 'import-podcast-opml',
+                label: 'Import podcast subscriptions (OPML)',
+                icon: Symbols.rss_feed_rounded,
+              ),
+              AppMenuItem(
+                value: 'export-podcast-opml',
+                label: 'Export podcast subscriptions (OPML)',
+                icon: Symbols.ios_share_rounded,
+                enabled: sources.sources.any((source) => source.kind == FileSourceKind.podcastRss),
+              ),
+            ],
             const AppMenuDivider(),
             AppMenuItem(
               value: 'refresh',
@@ -509,6 +578,10 @@ class _SourcesScreenState extends State<SourcesScreen> {
               if (mounted) await _load();
             } else if (action == 'offline-quota') {
               await _editOfflineQuota(sources);
+            } else if (action == 'import-podcast-opml') {
+              await sourceAction(context, _importPodcastOpml);
+            } else if (action == 'export-podcast-opml') {
+              await sourceAction(context, _exportPodcastOpml);
             } else if (action == 'refresh') {
               await _load();
             }
@@ -567,6 +640,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
                 if (root) ...[
                   Text(t.fileSources.subtitle, style: Theme.of(context).textTheme.bodyLarge),
                   const SizedBox(height: 24),
+                  SourceTile(
+                    title: t.universalMedia.title,
+                    subtitle: t.universalMedia.shortcutHelp,
+                    icon: Symbols.play_circle_rounded,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OpenMediaScreen())),
+                  ),
                   SourceTile(
                     title: t.lending.title,
                     icon: Symbols.local_library_rounded,

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../navigation/profile_navigation_scope.dart';
 import '../services/device_performance.dart';
+import '../services/external_access_directory.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/playback_coordinator.dart';
@@ -13,6 +14,7 @@ import '../services/theme_song_controller.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
+import 'external_access_screen.dart';
 import 'package:plezy/widgets/background_download_warning_banner.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -4257,6 +4259,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       parts.add(value);
     }
 
+    String accessibleMetadataText(String value) =>
+        value.replaceAllMapped(RegExp(r'\bS(\d+)E(\d+)\b'), (match) => 'S${match[1]} E${match[2]}');
+
     add(metadata.displayTitle);
     if (!identical(lineMetadata, metadata)) {
       add(lineMetadata.displayTitle);
@@ -4265,7 +4270,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     for (final part in _tvDetailMetadataParts(metadata)) {
       add(switch (part) {
-        MetadataLineText(:final text) || MetadataLineIconText(:final text) => text,
+        MetadataLineText(:final text) || MetadataLineIconText(:final text) => accessibleMetadataText(text),
         MetadataLineRatings(:final ratings) => ratingsSemanticLabel(ratings),
       });
     }

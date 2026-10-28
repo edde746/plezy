@@ -10,12 +10,14 @@ class DiscoveryDecision {
     required this.previousSaved,
     required this.wasSeen,
     required this.savedChanged,
+    this.createdAtMs,
   });
   final DiscoveryDecisionAction action;
   final DiscoveryChoice choice;
   final DiscoveryChoice? previousSaved;
   final bool wasSeen;
   final bool savedChanged;
+  final int? createdAtMs;
 
   Map<String, dynamic> toJson() => {
     'action': action.name,
@@ -23,6 +25,7 @@ class DiscoveryDecision {
     'previousSaved': previousSaved?.toSnapshot(),
     'wasSeen': wasSeen,
     'savedChanged': savedChanged,
+    'createdAtMs': createdAtMs,
   };
 
   factory DiscoveryDecision.fromJson(Map<String, dynamic> json) => DiscoveryDecision(
@@ -33,7 +36,14 @@ class DiscoveryDecision {
         : null,
     wasSeen: json['wasSeen'] == true,
     savedChanged: json['savedChanged'] == true,
+    createdAtMs: _validTimestamp(json['createdAtMs']),
   );
+
+  static int? _validTimestamp(Object? value) {
+    if (value is! num || !value.isFinite) return null;
+    final timestamp = value.toInt();
+    return timestamp > 0 && timestamp <= 253402300799999 ? timestamp : null;
+  }
 }
 
 class DiscoveryState {
@@ -81,13 +91,13 @@ class DiscoveryState {
 /// store. Each read/modify/write runs in one database transaction.
 class DiscoveryStore {
   const DiscoveryStore(this._sources);
-  static const _preferenceKey = 'discovery.find-next.v1';
+  static const preferenceKey = 'discovery.find-next.v1';
   static const _maxHistory = 500;
   static const maxSaved = 250;
   final SourceRepository _sources;
 
   Future<DiscoveryState> load(String profileId) async {
-    final data = await _sources.preference(profileId, _preferenceKey);
+    final data = await _sources.preference(profileId, preferenceKey);
     try {
       return DiscoveryState.fromJson(data);
     } on FormatException {
@@ -120,6 +130,7 @@ class DiscoveryStore {
         previousSaved: savedChanged ? previous : null,
         wasSeen: wasSeen,
         savedChanged: savedChanged,
+        createdAtMs: DateTime.now().toUtc().millisecondsSinceEpoch,
       );
       final seen = {...current.seen, choice.id};
       final history = [...current.history, decision];
@@ -158,8 +169,15 @@ class DiscoveryStore {
   Future<DiscoveryState> startFreshSession(String profileId) =>
       _update(profileId, (current) => DiscoveryState(saved: current.saved, history: current.history));
 
+  /// Makes one reviewed item eligible for the deck again without changing its
+  /// saved membership or rewriting the decision history.
+  Future<DiscoveryState> restoreToDeck(String profileId, String choiceId) => _update(profileId, (current) {
+    final seen = {...current.seen}..remove(choiceId);
+    return DiscoveryState(saved: current.saved, seen: seen, history: current.history);
+  });
+
   Future<DiscoveryState> _update(String profileId, DiscoveryState Function(DiscoveryState) update) async {
-    final value = await _sources.updatePreferenceAtomically(profileId, _preferenceKey, (raw) {
+    final value = await _sources.updatePreferenceAtomically(profileId, preferenceKey, (raw) {
       return update(DiscoveryState.fromJson(raw)).toJson();
     });
     return DiscoveryState.fromJson(value);

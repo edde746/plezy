@@ -70,8 +70,10 @@ void main() {
     Future<void> videoOwner() async => videoStops++;
     coordinator.registerMusicSession(stopAndDispose: musicOwner);
     coordinator.registerVideoSession(shutdown: videoOwner);
+    coordinator.setWorkspaceRetainsMusic(true);
     coordinator.setWorkspaceVideoSessionCount(1);
     addTearDown(() {
+      coordinator.setWorkspaceRetainsMusic(false);
       coordinator.setWorkspaceVideoSessionCount(0);
       coordinator.unregisterMusicSession(musicOwner);
       coordinator.unregisterVideoSession(videoOwner);

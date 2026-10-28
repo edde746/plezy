@@ -41,15 +41,11 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
-	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
-	late final Translations$automation$en automation = Translations$automation$en.internal(_root);
-	late final Translations$notifications$en notifications = Translations$notifications$en.internal(_root);
 	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
-	late final Translations$appAccess$en appAccess = Translations$appAccess$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
 	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
@@ -75,7 +71,6 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
 	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
 	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
-	late final Translations$detail$en detail = Translations$detail$en.internal(_root);
 	late final Translations$startup$en startup = Translations$startup$en.internal(_root);
 	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
 	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
@@ -98,15 +93,24 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
+	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
+	late final Translations$automation$en automation = Translations$automation$en.internal(_root);
+	late final Translations$notifications$en notifications = Translations$notifications$en.internal(_root);
+	late final Translations$appAccess$en appAccess = Translations$appAccess$en.internal(_root);
+	late final Translations$detail$en detail = Translations$detail$en.internal(_root);
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
 	late final Translations$platform$en platform = Translations$platform$en.internal(_root);
+	late final Translations$universalMedia$en universalMedia = Translations$universalMedia$en.internal(_root);
 	late final Translations$fileSources$en fileSources = Translations$fileSources$en.internal(_root);
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 	late final Translations$audiobook$en audiobook = Translations$audiobook$en.internal(_root);
 	late final Translations$sourceSetup$en sourceSetup = Translations$sourceSetup$en.internal(_root);
 	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
 	late final Translations$games$en games = Translations$games$en.internal(_root);
+	late final Translations$deepLinks$en deepLinks = Translations$deepLinks$en.internal(_root);
+	late final Translations$householdSetup$en householdSetup = Translations$householdSetup$en.internal(_root);
+	late final Translations$issueReport$en issueReport = Translations$issueReport$en.internal(_root);
 }
 
 // Path: app
@@ -119,78 +123,6 @@ class Translations$app$en {
 
 	/// en: 'PlezyNG'
 	String get title => 'PlezyNG';
-}
-
-// Path: cast
-class Translations$cast$en {
-	Translations$cast$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Cast to a device'
-	String get chooseDevice => 'Cast to a device';
-
-	/// en: 'Searching for Cast devices…'
-	String get searching => 'Searching for Cast devices…';
-
-	/// en: 'Connected to ${device}'
-	String connectedTo({required Object device}) => 'Connected to ${device}';
-
-	/// en: 'Cast device'
-	String get device => 'Cast device';
-
-	/// en: 'Ready to cast'
-	String get readyToCast => 'Ready to cast';
-
-	/// en: 'Subtitles'
-	String get subtitle => 'Subtitles';
-
-	/// en: 'The media server is not available.'
-	String get serverNotAvailable => 'The media server is not available.';
-
-	/// en: 'Stop casting'
-	String get stopCasting => 'Stop casting';
-
-	/// en: 'Cast to device'
-	String get castToDevice => 'Cast to device';
-
-	/// en: 'There is no episode available to cast.'
-	String get noEpisodeAvailable => 'There is no episode available to cast.';
-
-	/// en: 'Could not start casting. Check the server and try again.'
-	String get startFailed => 'Could not start casting. Check the server and try again.';
-}
-
-// Path: automation
-class Translations$automation$en {
-	Translations$automation$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'There is no active video session to control.'
-	String get noActivePlayback => 'There is no active video session to control.';
-
-	/// en: 'That Plezy profile could not be found.'
-	String get profileNotFound => 'That Plezy profile could not be found.';
-}
-
-// Path: notifications
-class Translations$notifications$en {
-	Translations$notifications$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'New episode'
-	String get newEpisodeTitle => 'New episode';
-
-	/// en: '${show} · ${episode}'
-	String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -431,6 +363,9 @@ class Translations$common$en {
 	/// en: 'Shuffle'
 	String get shuffle => 'Shuffle';
 
+	/// en: 'Compare'
+	String get compare => 'Compare';
+
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
 
@@ -457,6 +392,9 @@ class Translations$common$en {
 
 	/// en: 'Search'
 	String get search => 'Search';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
 
 	/// en: 'Home'
 	String get home => 'Home';
@@ -584,81 +522,6 @@ class Translations$update$en {
 
 	/// en: 'Failed to check for updates'
 	String get checkFailed => 'Failed to check for updates';
-}
-
-// Path: appAccess
-class Translations$appAccess$en {
-	Translations$appAccess$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Try every feature free for 7 days'
-	String get title => 'Try every feature free for 7 days';
-
-	/// en: 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store's price unlocks PlezyNG for life.'
-	String get description => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.';
-
-	/// en: 'Unlock every feature in PlezyNG for life with one purchase at your store's price. There is no subscription.'
-	String get trialEndedDescription => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.';
-
-	/// en: 'Start my 7-day free trial'
-	String get startTrial => 'Start my 7-day free trial';
-
-	/// en: 'Your 7-day full-feature trial is active.'
-	String get trialActive => 'Your 7-day full-feature trial is active.';
-
-	/// en: 'Your 7-day trial has ended'
-	String get trialEnded => 'Your 7-day trial has ended';
-
-	/// en: 'Couldn't save the trial on this device. Please try again.'
-	String get trialStartFailed => 'Couldn\'t save the trial on this device. Please try again.';
-
-	/// en: 'PlezyNG unlocked for life'
-	String get lifetimeTitle => 'PlezyNG unlocked for life';
-
-	/// en: 'Thanks! You have lifetime access to every PlezyNG feature.'
-	String get lifetimeBody => 'Thanks! You have lifetime access to every PlezyNG feature.';
-
-	/// en: 'PlezyNG lifetime access'
-	String get manageTitle => 'PlezyNG lifetime access';
-
-	/// en: 'Try every feature free for 7 days, then unlock everything for life with one payment at your store's price.'
-	String get manageDescription => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.';
-
-	/// en: 'Unlock every feature for ${price}'
-	String buy({required Object price}) => 'Unlock every feature for ${price}';
-
-	/// en: 'Loading store price...'
-	String get loadingPrice => 'Loading store price...';
-
-	/// en: 'Retry price lookup'
-	String get retryPrice => 'Retry price lookup';
-
-	/// en: 'Restore lifetime purchase'
-	String get restore => 'Restore lifetime purchase';
-
-	/// en: 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.'
-	String get pending => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.';
-
-	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
-	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
-
-	/// en: 'The PlezyNG lifetime unlock isn't available in this store yet.'
-	String get productNotFound => 'The PlezyNG lifetime unlock isn\'t available in this store yet.';
-
-	/// en: 'Couldn't load the store price. Check your connection and try again.'
-	String get productQueryFailed => 'Couldn\'t load the store price. Check your connection and try again.';
-
-	/// en: 'The purchase didn't go through. Try again.'
-	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
-
-	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
-	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
-
-	/// en: 'No PlezyNG lifetime purchase was found for this store account.'
-	String get nothingToRestore => 'No PlezyNG lifetime purchase was found for this store account.';
 }
 
 // Path: settings
@@ -3074,12 +2937,6 @@ class Translations$videoControls$en {
 
 	// Translations
 
-	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames}'
-	String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames',
-	);
-
 	/// en: 'Audio'
 	String get audioLabel => 'Audio';
 
@@ -3188,14 +3045,80 @@ class Translations$videoControls$en {
 	/// en: 'Audio & Subtitles'
 	String get tracksButton => 'Audio & Subtitles';
 
-	/// en: 'Choose tracks before playback'
-	String get trackSelectionTitle => 'Choose tracks before playback';
-
-	/// en: 'Automatic selection'
-	String get trackSelectionAuto => 'Automatic selection';
-
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
+
+	/// en: 'Loop a section during this playback. Set A, then set B later in the timeline.'
+	String get segmentLoopHelp => 'Loop a section during this playback. Set A, then set B later in the timeline.';
+
+	/// en: 'Set loop start (A)'
+	String get setLoopStart => 'Set loop start (A)';
+
+	/// en: 'Set loop end (B)'
+	String get setLoopEnd => 'Set loop end (B)';
+
+	/// en: 'Clear segment loop'
+	String get clearSegmentLoop => 'Clear segment loop';
+
+	/// en: 'Set loop start (A) before the end (B).'
+	String get setLoopStartFirst => 'Set loop start (A) before the end (B).';
+
+	/// en: 'The loop end must be later than the start.'
+	String get loopEndAfterStart => 'The loop end must be later than the start.';
+
+	/// en: 'Segment looping isn't available for this playback.'
+	String get segmentLoopUnavailable => 'Segment looping isn\'t available for this playback.';
+
+	/// en: 'Not set'
+	String get loopPointNotSet => 'Not set';
+
+	/// en: 'Bookmarks are saved on this device. Select one to go to that time.'
+	String get bookmarksHelp => 'Bookmarks are saved on this device. Select one to go to that time.';
+
+	/// en: 'Bookmarks'
+	String get bookmarksButton => 'Bookmarks';
+
+	/// en: 'Chapters and bookmarks'
+	String get chaptersAndBookmarks => 'Chapters and bookmarks';
+
+	/// en: 'Segment loop'
+	String get segmentLoop => 'Segment loop';
+
+	/// en: 'Add bookmark'
+	String get addBookmark => 'Add bookmark';
+
+	/// en: 'Bookmark name'
+	String get bookmarkName => 'Bookmark name';
+
+	/// en: 'For example, Opening scene'
+	String get bookmarkNameHint => 'For example, Opening scene';
+
+	/// en: 'Bookmark ${n}'
+	String bookmarkDefaultName({required Object n}) => 'Bookmark ${n}';
+
+	/// en: 'Enter a name for this bookmark.'
+	String get bookmarkNameRequired => 'Enter a name for this bookmark.';
+
+	/// en: 'Delete bookmark'
+	String get deleteBookmark => 'Delete bookmark';
+
+	/// en: 'This item already has 100 bookmarks.'
+	String get bookmarkLimitReached => 'This item already has 100 bookmarks.';
+
+	/// en: 'Couldn't save or remove this bookmark.'
+	String get bookmarkUnavailable => 'Couldn\'t save or remove this bookmark.';
+
+	/// en: 'Bookmark saved.'
+	String get bookmarkSaved => 'Bookmark saved.';
+
+	/// en: 'Bookmark deleted.'
+	String get bookmarkDeleted => 'Bookmark deleted.';
+
+	/// en: 'Loop point ${point} set at ${time}.'
+	String loopPointSet({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.';
+
+	/// en: 'No chapters or bookmarks available.'
+	String get noChaptersOrBookmarks => 'No chapters or bookmarks available.';
 
 	/// en: 'Version & Quality'
 	String get versionQualityButton => 'Version & Quality';
@@ -3221,12 +3144,6 @@ class Translations$videoControls$en {
 	/// en: 'Picture-in-Picture mode'
 	String get pipButton => 'Picture-in-Picture mode';
 
-	/// en: 'Open mini player'
-	String get openMiniPlayer => 'Open mini player';
-
-	/// en: 'Return to full player'
-	String get returnToFullPlayer => 'Return to full player';
-
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
 
@@ -3250,9 +3167,6 @@ class Translations$videoControls$en {
 
 	/// en: 'Screen lock'
 	String get screenLockButton => 'Screen lock';
-
-	/// en: 'Long press to unlock'
-	String get longPressToUnlock => 'Long press to unlock';
 
 	/// en: 'Video timeline'
 	String get timelineSlider => 'Video timeline';
@@ -3301,12 +3215,6 @@ class Translations$videoControls$en {
 	/// en: 'Search Subtitles'
 	String get searchSubtitles => 'Search Subtitles';
 
-	/// en: 'Load subtitle file…'
-	String get loadSubtitleFile => 'Load subtitle file…';
-
-	/// en: 'Failed to load subtitle file'
-	String get subtitleLoadFailed => 'Failed to load subtitle file';
-
 	/// en: 'Language'
 	String get language => 'Language';
 
@@ -3331,9 +3239,6 @@ class Translations$videoControls$en {
 	/// en: 'Skip Credits'
 	String get skipCredits => 'Skip Credits';
 
-	/// en: 'Skip Ads'
-	String get skipAds => 'Skip Ads';
-
 	/// en: 'Next Episode'
 	String get nextEpisode => 'Next Episode';
 
@@ -3354,6 +3259,39 @@ class Translations$videoControls$en {
 
 	/// en: 'Audio: ${track}'
 	String osdAudio({required Object track}) => 'Audio: ${track}';
+
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames}'
+	String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames',
+	);
+
+	/// en: 'Choose tracks before playback'
+	String get trackSelectionTitle => 'Choose tracks before playback';
+
+	/// en: 'Automatic selection'
+	String get trackSelectionAuto => 'Automatic selection';
+
+	/// en: 'Open mini player'
+	String get openMiniPlayer => 'Open mini player';
+
+	/// en: 'Return to full player'
+	String get returnToFullPlayer => 'Return to full player';
+
+	/// en: 'Load subtitle file…'
+	String get loadSubtitleFile => 'Load subtitle file…';
+
+	/// en: 'Failed to load subtitle file'
+	String get subtitleLoadFailed => 'Failed to load subtitle file';
+
+	/// en: 'Skip Ads'
+	String get skipAds => 'Skip Ads';
+
+	/// en: 'Tap to unlock'
+	String get tapToUnlock => 'Tap to unlock';
+
+	/// en: 'Tap again to unlock'
+	String get tapAgainToUnlock => 'Tap again to unlock';
 }
 
 // Path: messages
@@ -4562,18 +4500,6 @@ class Translations$logs$en {
 	String get saveLogsFailed => 'Could not save the log file.';
 }
 
-// Path: detail
-class Translations$detail$en {
-	Translations$detail$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Ends at ${time}'
-	String endsAt({required Object time}) => 'Ends at ${time}';
-}
-
 // Path: startup
 class Translations$startup$en {
 	Translations$startup$en.internal(this._root);
@@ -5317,6 +5243,9 @@ class Translations$music$en {
 
 	/// en: 'Plex loudness'
 	String get visualizerPlexLoudness => 'Plex loudness';
+
+	/// en: 'Live audio analysis'
+	String get visualizerLiveAudio => 'Live audio analysis';
 
 	/// en: 'Previous visual style'
 	String get visualizerPreviousPreset => 'Previous visual style';
@@ -6236,6 +6165,24 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Output'
 	String get audioOutput => 'Audio Output';
 
+	/// en: 'Video Track'
+	String get videoTrack => 'Video Track';
+
+	/// en: 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.'
+	String get videoTrackDescription => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.';
+
+	/// en: 'Default'
+	String get videoTrackDefault => 'Default';
+
+	/// en: 'No alternate video tracks are available.'
+	String get videoTrackUnavailable => 'No alternate video tracks are available.';
+
+	/// en: 'Could not change the video track.'
+	String get videoTrackFailed => 'Could not change the video track.';
+
+	/// en: 'Track ${id}'
+	String videoTrackNumber({required Object id}) => 'Track ${id}';
+
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
 
@@ -6257,8 +6204,8 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Equalizer'
 	String get audioEqualizer => 'Audio Equalizer';
 
-	/// en: 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.'
-	String get audioEqualizerDescription => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.';
+	/// en: '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.'
+	String get audioEqualizerDescription => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.';
 
 	/// en: 'Flat'
 	String get audioEqualizerFlat => 'Flat';
@@ -6268,6 +6215,27 @@ class Translations$videoSettings$en {
 
 	/// en: 'Couldn't save audio equalizer settings.'
 	String get audioEqualizerSaveFailed => 'Couldn\'t save audio equalizer settings.';
+
+	/// en: 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.'
+	String get audioEffectsDescription => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.';
+
+	/// en: 'Stereo widening'
+	String get audioStereoWidth => 'Stereo widening';
+
+	/// en: 'Room ambience'
+	String get audioSpatializer => 'Room ambience';
+
+	/// en: 'Add quiet room reflections.'
+	String get audioSpatializerDescription => 'Add quiet room reflections.';
+
+	/// en: 'Pitch shift'
+	String get audioPitch => 'Pitch shift';
+
+	/// en: 'Change pitch without changing speed. The MPV build must include Rubber Band.'
+	String get audioPitchDescription => 'Change pitch without changing speed. The MPV build must include Rubber Band.';
+
+	/// en: 'This effect isn't available for this track or MPV build.'
+	String get audioEffectUnavailable => 'This effect isn\'t available for this track or MPV build.';
 
 	/// en: 'Background Video Audio'
 	String get backgroundVideoAudio => 'Background Video Audio';
@@ -6984,6 +6952,18 @@ class Translations$matchScreen$en {
 
 	/// en: 'No matches found'
 	String get noMatchesFound => 'No matches found';
+
+	/// en: 'Plex Discover'
+	String get plexDiscover => 'Plex Discover';
+
+	/// en: 'Plex library'
+	String get plexLibrary => 'Plex library';
+
+	/// en: 'Jellyfin library'
+	String get jellyfinLibrary => 'Jellyfin library';
+
+	/// en: 'Emby library'
+	String get embyLibrary => 'Emby library';
 }
 
 // Path: serverTasks
@@ -7038,6 +7018,48 @@ class Translations$trakt$en {
 
 	/// en: 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.'
 	String get watchedSyncDescription => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.';
+
+	/// en: 'Export to Letterboxd'
+	String get historyExport => 'Export to Letterboxd';
+
+	/// en: 'Create a local CSV from Trakt movie history. Nothing is uploaded.'
+	String get historyExportDescription => 'Create a local CSV from Trakt movie history. Nothing is uploaded.';
+
+	/// en: 'Loading Trakt movie history…'
+	String get historyExportLoading => 'Loading Trakt movie history…';
+
+	/// en: 'Export movie history'
+	String get historyExportReviewTitle => 'Export movie history';
+
+	/// en: 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device's local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd's 1 MB import limit.'
+	String historyExportReview({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.';
+
+	/// en: '${count} incomplete entries could not be included.'
+	String historyExportSkipped({required Object count}) => '${count} incomplete entries could not be included.';
+
+	/// en: 'No exportable movie history was found in Trakt.'
+	String get historyExportNoHistory => 'No exportable movie history was found in Trakt.';
+
+	/// en: 'Couldn't load Trakt movie history. Try again.'
+	String get historyExportFailed => 'Couldn\'t load Trakt movie history. Try again.';
+
+	/// en: 'Save CSV'
+	String get historyExportSave => 'Save CSV';
+
+	/// en: 'Save Letterboxd file ${part} of ${total}'
+	String historyExportPart({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}';
+
+	/// en: 'Saved ${count} Letterboxd CSV file(s).'
+	String historyExportSaved({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).';
+
+	/// en: 'Export stopped after saving ${saved} of ${total} files.'
+	String historyExportPartial({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.';
+
+	/// en: 'Couldn't save the CSV file. Try again.'
+	String get historyExportSaveFailed => 'Couldn\'t save the CSV file. Try again.';
+
+	/// en: 'This history is too large to package here. Use Trakt's own data export to split very large histories.'
+	String get historyExportTooLarge => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.';
 }
 
 // Path: seerr
@@ -7215,6 +7237,24 @@ class Translations$services$en {
 
 	/// en: 'Integrations'
 	String get integrations => 'Integrations';
+
+	/// en: 'Hardcover'
+	String get hardcover => 'Hardcover';
+
+	/// en: 'Linked catalog titles'
+	String get linkedCatalogTitles => 'Linked catalog titles';
+
+	/// en: 'Optional plan note. This label is only for you; PlezyNG does not verify account access.'
+	String get planNote => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.';
+
+	/// en: 'Plan label'
+	String get planLabel => 'Plan label';
+
+	/// en: 'Set plan label'
+	String get setPlanLabel => 'Set plan label';
+
+	/// en: 'PlezyNG may earn a commission from some links.'
+	String get commissionDisclosure => 'PlezyNG may earn a commission from some links.';
 
 	/// en: 'Not connected'
 	String get notConnected => 'Not connected';
@@ -7437,6 +7477,162 @@ class Translations$addServer$en {
 
 	/// en: 'Use HTTPS or explicitly allow an unencrypted connection.'
 	String get httpsRequired => 'Use HTTPS or explicitly allow an unencrypted connection.';
+}
+
+// Path: cast
+class Translations$cast$en {
+	Translations$cast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Cast to a device'
+	String get chooseDevice => 'Cast to a device';
+
+	/// en: 'Searching for Cast devices…'
+	String get searching => 'Searching for Cast devices…';
+
+	/// en: 'Connected to ${device}'
+	String connectedTo({required Object device}) => 'Connected to ${device}';
+
+	/// en: 'Cast device'
+	String get device => 'Cast device';
+
+	/// en: 'Ready to cast'
+	String get readyToCast => 'Ready to cast';
+
+	/// en: 'Subtitles'
+	String get subtitle => 'Subtitles';
+
+	/// en: 'The media server is not available.'
+	String get serverNotAvailable => 'The media server is not available.';
+
+	/// en: 'Stop casting'
+	String get stopCasting => 'Stop casting';
+
+	/// en: 'Cast to device'
+	String get castToDevice => 'Cast to device';
+
+	/// en: 'There is no episode available to cast.'
+	String get noEpisodeAvailable => 'There is no episode available to cast.';
+
+	/// en: 'Could not start casting. Check the server and try again.'
+	String get startFailed => 'Could not start casting. Check the server and try again.';
+}
+
+// Path: automation
+class Translations$automation$en {
+	Translations$automation$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'There is no active video session to control.'
+	String get noActivePlayback => 'There is no active video session to control.';
+}
+
+// Path: notifications
+class Translations$notifications$en {
+	Translations$notifications$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'New episode'
+	String get newEpisodeTitle => 'New episode';
+
+	/// en: '${show} · ${episode}'
+	String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class Translations$appAccess$en {
+	Translations$appAccess$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Try every feature free for 7 days'
+	String get title => 'Try every feature free for 7 days';
+
+	/// en: 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store's price unlocks PlezyNG for life.'
+	String get description => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.';
+
+	/// en: 'Unlock every feature in PlezyNG for life with one purchase at your store's price. There is no subscription.'
+	String get trialEndedDescription => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.';
+
+	/// en: 'Start my 7-day free trial'
+	String get startTrial => 'Start my 7-day free trial';
+
+	/// en: 'Your 7-day full-feature trial is active.'
+	String get trialActive => 'Your 7-day full-feature trial is active.';
+
+	/// en: 'Your 7-day trial has ended'
+	String get trialEnded => 'Your 7-day trial has ended';
+
+	/// en: 'Couldn't save the trial on this device. Please try again.'
+	String get trialStartFailed => 'Couldn\'t save the trial on this device. Please try again.';
+
+	/// en: 'PlezyNG unlocked for life'
+	String get lifetimeTitle => 'PlezyNG unlocked for life';
+
+	/// en: 'Thanks! You have lifetime access to every PlezyNG feature.'
+	String get lifetimeBody => 'Thanks! You have lifetime access to every PlezyNG feature.';
+
+	/// en: 'PlezyNG lifetime access'
+	String get manageTitle => 'PlezyNG lifetime access';
+
+	/// en: 'Try every feature free for 7 days, then unlock everything for life with one payment at your store's price.'
+	String get manageDescription => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.';
+
+	/// en: 'Unlock every feature for ${price}'
+	String buy({required Object price}) => 'Unlock every feature for ${price}';
+
+	/// en: 'Loading store price...'
+	String get loadingPrice => 'Loading store price...';
+
+	/// en: 'Retry price lookup'
+	String get retryPrice => 'Retry price lookup';
+
+	/// en: 'Restore lifetime purchase'
+	String get restore => 'Restore lifetime purchase';
+
+	/// en: 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.'
+	String get pending => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.';
+
+	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
+	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
+
+	/// en: 'The PlezyNG lifetime unlock isn't available in this store yet.'
+	String get productNotFound => 'The PlezyNG lifetime unlock isn\'t available in this store yet.';
+
+	/// en: 'Couldn't load the store price. Check your connection and try again.'
+	String get productQueryFailed => 'Couldn\'t load the store price. Check your connection and try again.';
+
+	/// en: 'The purchase didn't go through. Try again.'
+	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
+
+	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
+	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
+
+	/// en: 'No PlezyNG lifetime purchase was found for this store account.'
+	String get nothingToRestore => 'No PlezyNG lifetime purchase was found for this store account.';
+}
+
+// Path: detail
+class Translations$detail$en {
+	Translations$detail$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Ends at ${time}'
+	String endsAt({required Object time}) => 'Ends at ${time}';
 }
 
 // Path: watchLink
@@ -7806,6 +8002,609 @@ class Translations$platform$en {
 
 	/// en: 'Scan QR codes to pair a Companion Remote.'
 	String get cameraPermission => 'Scan QR codes to pair a Companion Remote.';
+}
+
+// Path: universalMedia
+class Translations$universalMedia$en {
+	Translations$universalMedia$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Open media'
+	String get title => 'Open media';
+
+	/// en: 'Play a link, playlist, or file for this session.'
+	String get shortcutHelp => 'Play a link, playlist, or file for this session.';
+
+	/// en: 'Open a link, playlist, or file. Playback uses PlezyNG’s standard player and does not add history to your library.'
+	String get intro => 'Open a link, playlist, or file. Playback uses PlezyNG’s standard player and does not add history to your library.';
+
+	/// en: 'What would you like to open?'
+	String get openWhat => 'What would you like to open?';
+
+	/// en: 'Stream address'
+	String get stream => 'Stream address';
+
+	/// en: 'Playlist'
+	String get playlist => 'Playlist';
+
+	/// en: 'Device files'
+	String get files => 'Device files';
+
+	/// en: 'Saved stream favorites'
+	String get favorites => 'Saved stream favorites';
+
+	/// en: 'Media address'
+	String get address => 'Media address';
+
+	/// en: 'HTTPS is preferred. URLs with recognized credential or signature parameters are used only for this session and cannot be saved as favorites.'
+	String get addressHelp => 'HTTPS is preferred. URLs with recognized credential or signature parameters are used only for this session and cannot be saved as favorites.';
+
+	/// en: 'Display name (optional)'
+	String get displayName => 'Display name (optional)';
+
+	/// en: 'Choose a short name for the player and system media controls.'
+	String get displayNameHelp => 'Choose a short name for the player and system media controls.';
+
+	/// en: 'Allow an unencrypted HTTP connection'
+	String get allowHttp => 'Allow an unencrypted HTTP connection';
+
+	/// en: 'HTTP does not encrypt the connection. Allow it only on a trusted network. Use HTTPS when possible.'
+	String get allowHttpHelp => 'HTTP does not encrypt the connection. Allow it only on a trusted network. Use HTTPS when possible.';
+
+	/// en: 'MPV only: enter an RTSP, RTMP/RTMPS, UDP, or RTP address. These addresses cannot be saved as favorites.'
+	String get advancedProtocols => 'MPV only: enter an RTSP, RTMP/RTMPS, UDP, or RTP address. These addresses cannot be saved as favorites.';
+
+	/// en: 'Treat as live'
+	String get liveStream => 'Treat as live';
+
+	/// en: 'Use this for live video or radio. The app hides the time bar, skip buttons, and go-to-time option. Turn it off for a recording.'
+	String get liveStreamHelp => 'Use this for live video or radio. The app hides the time bar, skip buttons, and go-to-time option. Turn it off for a recording.';
+
+	/// en: 'Only this playback uses the address. Save an eligible stream favorite to keep it in this profile.'
+	String get privateSession => 'Only this playback uses the address. Save an eligible stream favorite to keep it in this profile.';
+
+	/// en: 'Save favorite'
+	String get saveFavorite => 'Save favorite';
+
+	/// en: 'Play now'
+	String get playNow => 'Play now';
+
+	/// en: 'Stream favorite saved to this profile'
+	String get favoriteSaved => 'Stream favorite saved to this profile';
+
+	/// en: '(one) {Skipped ${count} unsupported or unsafe playlist entry.} (other) {Skipped ${count} unsupported or unsafe playlist entries.}'
+	String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'Skipped ${count} unsupported or unsafe playlist entry.',
+		other: 'Skipped ${count} unsupported or unsafe playlist entries.',
+	);
+
+	/// en: 'Playlist address'
+	String get playlistAddress => 'Playlist address';
+
+	/// en: 'Open an M3U, M3U8, or PLS playlist from a web address. Direct stream links do not save the playlist.'
+	String get playlistAddressHelp => 'Open an M3U, M3U8, or PLS playlist from a web address. Direct stream links do not save the playlist.';
+
+	/// en: 'Choose playlist file'
+	String get choosePlaylist => 'Choose playlist file';
+
+	/// en: 'Open playlist'
+	String get openPlaylist => 'Open playlist';
+
+	/// en: 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.'
+	String get playlistFormatsHelp => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.';
+
+	/// en: 'Save queue as playlist'
+	String get saveQueuePlaylist => 'Save queue as playlist';
+
+	/// en: 'Playlist saved beside the media files.'
+	String get queuePlaylistSaved => 'Playlist saved beside the media files.';
+
+	/// en: 'This queue can’t be saved as a reusable local playlist.'
+	String get queuePlaylistUnavailable => 'This queue can’t be saved as a reusable local playlist.';
+
+	/// en: 'Choose a save location in the same folder as the queued files.'
+	String get queuePlaylistFolderRequired => 'Choose a save location in the same folder as the queued files.';
+
+	/// en: 'No saved stream favorites yet. Favorites stay in this profile.'
+	String get noFavorites => 'No saved stream favorites yet. Favorites stay in this profile.';
+
+	/// en: 'Remove stream favorite'
+	String get removeFavorite => 'Remove stream favorite';
+
+	/// en: 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.'
+	String get filesHelp => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.';
+
+	/// en: 'Choose files'
+	String get chooseFiles => 'Choose files';
+
+	/// en: '(one) {1 selected file} (other) {${count} selected files}'
+	String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '1 selected file',
+		other: '${count} selected files',
+	);
+
+	/// en: 'Send files over Wi-Fi'
+	String get wifiTransfer => 'Send files over Wi-Fi';
+
+	/// en: 'Transfer supported files from a browser on the same trusted network.'
+	String get wifiTransferHelp => 'Transfer supported files from a browser on the same trusted network.';
+
+	/// en: 'Open this address in a browser on another device. Choose files to add them to this device’s Files and books library.'
+	String get wifiTransferIntro => 'Open this address in a browser on another device. Choose files to add them to this device’s Files and books library.';
+
+	/// en: 'This device receives files over your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 files, 4 GiB per file, 10 GiB total.'
+	String get wifiTransferPrivacy => 'This device receives files over your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 files, 4 GiB per file, 10 GiB total.';
+
+	/// en: 'Preparing a private, time-limited transfer…'
+	String get wifiTransferStarting => 'Preparing a private, time-limited transfer…';
+
+	/// en: 'Could not start the transfer. Check local-network access and try again.'
+	String get wifiTransferUnavailable => 'Could not start the transfer. Check local-network access and try again.';
+
+	/// en: 'Open one of these addresses on the sending device'
+	String get openThisAddress => 'Open one of these addresses on the sending device';
+
+	/// en: 'Copy transfer address'
+	String get copyAddress => 'Copy transfer address';
+
+	/// en: 'Transfer address copied'
+	String get addressCopied => 'Transfer address copied';
+
+	/// en: 'This address expires in ${time}.'
+	String transferExpires({required Object time}) => 'This address expires in ${time}.';
+
+	/// en: '(one) {${count} file received} (other) {${count} files received}'
+	String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${count} file received',
+		other: '${count} files received',
+	);
+
+	/// en: 'Received ${size}'
+	String uploadedData({required Object size}) => 'Received ${size}';
+
+	/// en: 'Stop transfer and invalidate address'
+	String get stopTransfer => 'Stop transfer and invalidate address';
+
+	/// en: 'Start transfer'
+	String get startTransfer => 'Start transfer';
+
+	/// en: 'Wi-Fi transfer'
+	String get wifiImportedFiles => 'Wi-Fi transfer';
+
+	/// en: 'Send files to PlezyNG'
+	String get wifiBrowserTitle => 'Send files to PlezyNG';
+
+	/// en: 'Choose audio, video, ebook, or comic files to send. The files are saved in this device’s Files and books library. Maximum: 100 files, 4 GiB per file, 10 GiB total.'
+	String get wifiBrowserIntro => 'Choose audio, video, ebook, or comic files to send. The files are saved in this device’s Files and books library. Maximum: 100 files, 4 GiB per file, 10 GiB total.';
+
+	/// en: 'Files to send'
+	String get uploadFilesLabel => 'Files to send';
+
+	/// en: 'Upload selected files'
+	String get uploadSelected => 'Upload selected files';
+
+	/// en: 'Choose one or more files first.'
+	String get uploadSelectFirst => 'Choose one or more files first.';
+
+	/// en: 'Sending'
+	String get uploading => 'Sending';
+
+	/// en: 'File added to PlezyNG.'
+	String get uploadComplete => 'File added to PlezyNG.';
+
+	/// en: 'The file could not be added. Keep this page open and try again.'
+	String get uploadFailed => 'The file could not be added. Keep this page open and try again.';
+
+	/// en: 'LIVE'
+	String get liveCue => 'LIVE';
+
+	/// en: 'Live stream'
+	String get liveSession => 'Live stream';
+
+	/// en: 'For live video or radio, the app hides the time bar and skip buttons. It does not save the address or watch history.'
+	String get liveCueHelp => 'For live video or radio, the app hides the time bar and skip buttons. It does not save the address or watch history.';
+
+	/// en: 'This playback is session-only'
+	String get sessionOnly => 'This playback is session-only';
+
+	/// en: 'Playback never saves progress or history. Save the stream as a favorite to keep it in this profile if it is eligible.'
+	String get sessionOnlyHelp => 'Playback never saves progress or history. Save the stream as a favorite to keep it in this profile if it is eligible.';
+
+	/// en: 'Picture adjustments'
+	String get pictureAdjustments => 'Picture adjustments';
+
+	/// en: 'These picture changes affect only this playback. They reset when playback ends.'
+	String get pictureHelp => 'These picture changes affect only this playback. They reset when playback ends.';
+
+	/// en: 'Reset picture'
+	String get resetPicture => 'Reset picture';
+
+	/// en: 'Brightness'
+	String get brightness => 'Brightness';
+
+	/// en: 'Contrast'
+	String get contrast => 'Contrast';
+
+	/// en: 'Gamma'
+	String get gamma => 'Gamma';
+
+	/// en: 'Hue'
+	String get hue => 'Hue';
+
+	/// en: 'Saturation'
+	String get saturation => 'Saturation';
+
+	/// en: 'Flat view for 360° video'
+	String get view360 => 'Flat view for 360° video';
+
+	/// en: 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.'
+	String get view360Help => 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.';
+
+	/// en: 'This mpv build could not apply the 360° filter.'
+	String get view360Unavailable => 'This mpv build could not apply the 360° filter.';
+
+	/// en: 'Horizontal view'
+	String get view360Yaw => 'Horizontal view';
+
+	/// en: 'Vertical view'
+	String get view360Pitch => 'Vertical view';
+
+	/// en: 'Field of view'
+	String get view360FieldOfView => 'Field of view';
+
+	/// en: 'Record live stream'
+	String get recordStream => 'Record live stream';
+
+	/// en: 'Stop and save recording'
+	String get stopRecording => 'Stop and save recording';
+
+	/// en: 'Recording is active. Leaving playback stops and saves the recording.'
+	String get recordingStarted => 'Recording is active. Leaving playback stops and saves the recording.';
+
+	/// en: 'Recording finalized and saved.'
+	String get recordingSaved => 'Recording finalized and saved.';
+
+	/// en: 'Recording to this device. Leaving playback stops and saves it.'
+	String get recordingActive => 'Recording to this device. Leaving playback stops and saves it.';
+
+	/// en: 'For video, choose MKV or MPEG-TS. For audio, choose MKA or MKV.'
+	String get recordingFormatHelp => 'For video, choose MKV or MPEG-TS. For audio, choose MKA or MKV.';
+
+	/// en: 'Replace this recording?'
+	String get replaceRecordingTitle => 'Replace this recording?';
+
+	/// en: 'PlezyNG backs up the existing file while recording. If it cannot save the new recording, PlezyNG restores the backup.'
+	String get replaceRecordingHelp => 'PlezyNG backs up the existing file while recording. If it cannot save the new recording, PlezyNG restores the backup.';
+
+	/// en: 'Replace file'
+	String get replaceRecording => 'Replace file';
+
+	/// en: 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.'
+	String get discHelp => 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.';
+
+	/// en: 'Optical disc'
+	String get discs => 'Optical disc';
+
+	/// en: 'Edition or disc title'
+	String get editionOrTitle => 'Edition or disc title';
+
+	/// en: 'DVD'
+	String get dvd => 'DVD';
+
+	/// en: 'Blu-ray'
+	String get bluray => 'Blu-ray';
+
+	/// en: 'Audio CD'
+	String get audioCd => 'Audio CD';
+
+	/// en: 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.'
+	String get discAvailability => 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.';
+
+	/// en: 'Convert a local media file'
+	String get converterTitle => 'Convert a local media file';
+
+	/// en: 'Convert a local file or remux it with FFmpeg.'
+	String get converterHelp => 'Convert a local file or remux it with FFmpeg.';
+
+	/// en: 'Convert a local audio or video file to a format that works on more devices.'
+	String get converterIntro => 'Convert a local audio or video file to a format that works on more devices.';
+
+	/// en: 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.'
+	String get converterPrivacy => 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.';
+
+	/// en: 'Choose a local media file'
+	String get converterChooseInput => 'Choose a local media file';
+
+	/// en: 'Output format'
+	String get converterFormat => 'Output format';
+
+	/// en: 'MP4 · H.264 and AAC'
+	String get converterMp4 => 'MP4 · H.264 and AAC';
+
+	/// en: 'M4A · AAC audio'
+	String get converterM4a => 'M4A · AAC audio';
+
+	/// en: 'MP3 · audio'
+	String get converterMp3 => 'MP3 · audio';
+
+	/// en: 'Allow FTP'
+	String get allowFtp => 'Allow FTP';
+
+	/// en: 'FTP sends media without encryption. Use only on trusted networks.'
+	String get allowFtpHelp => 'FTP sends media without encryption. Use only on trusted networks.';
+
+	/// en: 'Save converted media as'
+	String get converterSaveAs => 'Save converted media as';
+
+	/// en: 'Choose a filename with the selected output extension.'
+	String get converterExtensionMismatch => 'Choose a filename with the selected output extension.';
+
+	/// en: 'Choose an audio or video file.'
+	String get converterUnsupportedInput => 'Choose an audio or video file.';
+
+	/// en: 'The selected file is not available as a local device path.'
+	String get converterLocalOnly => 'The selected file is not available as a local device path.';
+
+	/// en: 'Replace this file?'
+	String get converterReplaceTitle => 'Replace this file?';
+
+	/// en: 'PlezyNG backs up the existing file until the converted copy is saved.'
+	String get converterReplaceHelp => 'PlezyNG backs up the existing file until the converted copy is saved.';
+
+	/// en: 'Starting FFmpeg…'
+	String get converterStarting => 'Starting FFmpeg…';
+
+	/// en: 'Converting on this computer…'
+	String get converterProgress => 'Converting on this computer…';
+
+	/// en: 'Conversion complete. The new file is ready.'
+	String get converterComplete => 'Conversion complete. The new file is ready.';
+
+	/// en: 'FFmpeg is missing or does not support this format.'
+	String get converterFfmpegMissing => 'FFmpeg is missing or does not support this format.';
+
+	/// en: 'Conversion failed. Check that the source file can be read and the destination has enough free space.'
+	String get converterFailed => 'Conversion failed. Check that the source file can be read and the destination has enough free space.';
+
+	/// en: 'Conversion cancelled. The incomplete output was removed.'
+	String get converterCancelled => 'Conversion cancelled. The incomplete output was removed.';
+
+	/// en: 'Local conversion is available on desktop computers with FFmpeg installed.'
+	String get converterDesktopOnly => 'Local conversion is available on desktop computers with FFmpeg installed.';
+
+	/// en: 'Convert file'
+	String get converterStart => 'Convert file';
+
+	/// en: 'Media tools'
+	String get mediaToolsTitle => 'Media tools';
+
+	/// en: 'Capture or share media, add search extensions, or use the command line.'
+	String get mediaToolsShortcut => 'Capture or share media, add search extensions, or use the command line.';
+
+	/// en: 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.'
+	String get mediaToolsIntro => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.';
+
+	/// en: 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.'
+	String get mediaToolsAccessibility => 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.';
+
+	/// en: 'Media tool'
+	String get mediaTool => 'Media tool';
+
+	/// en: 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.'
+	String get captureIntro => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.';
+
+	/// en: 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.'
+	String get captureNoDevices => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.';
+
+	/// en: 'Screen or camera'
+	String get captureSource => 'Screen or camera';
+
+	/// en: 'Screen'
+	String get captureScreen => 'Screen';
+
+	/// en: 'Audio input (optional)'
+	String get captureAudioSource => 'Audio input (optional)';
+
+	/// en: 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.'
+	String get captureAudioHelp => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.';
+
+	/// en: 'No audio'
+	String get captureAudioNone => 'No audio';
+
+	/// en: 'Default audio input'
+	String get captureDefaultAudio => 'Default audio input';
+
+	/// en: 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.'
+	String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
+
+	/// en: 'Capture frame rate'
+	String get captureFrameRate => 'Capture frame rate';
+
+	/// en: 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.'
+	String get capturePrivacy => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.';
+
+	/// en: 'Save screen recording as'
+	String get captureSaveAs => 'Save screen recording as';
+
+	/// en: 'Choose a filename ending in .mp4.'
+	String get captureExtensionMismatch => 'Choose a filename ending in .mp4.';
+
+	/// en: 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.'
+	String get captureFfmpegMissing => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.';
+
+	/// en: 'The recording could not be saved. Check device permission, available storage, and FFmpeg support.'
+	String get captureFailed => 'The recording could not be saved. Check device permission, available storage, and FFmpeg support.';
+
+	/// en: 'Screen recording saved.'
+	String get captureSaved => 'Screen recording saved.';
+
+	/// en: 'Recording time'
+	String get captureElapsedLabel => 'Recording time';
+
+	/// en: 'Start recording'
+	String get captureStart => 'Start recording';
+
+	/// en: 'Preview in player'
+	String get capturePreview => 'Preview in player';
+
+	/// en: 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.'
+	String get capturePreviewHelp => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.';
+
+	/// en: 'Live preview · not recording'
+	String get capturePreviewActive => 'Live preview · not recording';
+
+	/// en: 'Stop and save'
+	String get captureStop => 'Stop and save';
+
+	/// en: 'Capture'
+	String get captureMode => 'Capture';
+
+	/// en: 'Share'
+	String get shareMode => 'Share';
+
+	/// en: 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.'
+	String get shareIntro => 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.';
+
+	/// en: 'Anyone on your local network who receives the private link can watch while it is active. The link expires after 60 minutes. Stop sharing to close the server and invalidate the link.'
+	String get sharePrivacy => 'Anyone on your local network who receives the private link can watch while it is active. The link expires after 60 minutes. Stop sharing to close the server and invalidate the link.';
+
+	/// en: 'Choose media file'
+	String get shareChooseFile => 'Choose media file';
+
+	/// en: 'Select a local audio or video file. The file stays on this computer.'
+	String get shareChooseHelp => 'Select a local audio or video file. The file stays on this computer.';
+
+	/// en: 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.'
+	String get shareFfmpegMissing => 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.';
+
+	/// en: 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.'
+	String get shareFailed => 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.';
+
+	/// en: 'The stream is ready on your private network.'
+	String get shareActive => 'The stream is ready on your private network.';
+
+	/// en: 'The media reached the end and is no longer being shared.'
+	String get shareEnded => 'The media reached the end and is no longer being shared.';
+
+	/// en: 'Sharing stopped. The temporary link is no longer valid.'
+	String get shareStopped => 'Sharing stopped. The temporary link is no longer valid.';
+
+	/// en: 'Stream address copied.'
+	String get shareUrlCopied => 'Stream address copied.';
+
+	/// en: 'Open this address in a player on the other device'
+	String get shareOpenUrl => 'Open this address in a player on the other device';
+
+	/// en: 'QR code for the temporary stream address'
+	String get shareQrLabel => 'QR code for the temporary stream address';
+
+	/// en: 'Scan with a compatible player connected to the same private network.'
+	String get shareQrHelp => 'Scan with a compatible player connected to the same private network.';
+
+	/// en: 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.'
+	String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
+
+	/// en: 'Copy stream address'
+	String get shareCopyUrl => 'Copy stream address';
+
+	/// en: 'Link expires at'
+	String get shareExpiresLabel => 'Link expires at';
+
+	/// en: 'Preparing the stream…'
+	String get shareStarting => 'Preparing the stream…';
+
+	/// en: 'Start sharing'
+	String get shareStart => 'Start sharing';
+
+	/// en: 'Stop sharing'
+	String get shareStop => 'Stop sharing';
+
+	/// en: 'Extensions and CLI'
+	String get extensionsMode => 'Extensions and CLI';
+
+	/// en: 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.'
+	String get extensionsIntro => 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.';
+
+	/// en: 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.'
+	String get extensionsPrivacy => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.';
+
+	/// en: 'Add extension manifest'
+	String get extensionImport => 'Add extension manifest';
+
+	/// en: 'No search services yet. Choose a trusted manifest JSON file to add one.'
+	String get extensionEmpty => 'No search services yet. Choose a trusted manifest JSON file to add one.';
+
+	/// en: 'Search service'
+	String get extensionChoose => 'Search service';
+
+	/// en: 'Each search sends your words to this HTTPS service. Results open only after you select one.'
+	String get extensionSearchConsent => 'Each search sends your words to this HTTPS service. Results open only after you select one.';
+
+	/// en: 'Search media'
+	String get extensionSearchLabel => 'Search media';
+
+	/// en: 'Search'
+	String get extensionSearch => 'Search';
+
+	/// en: 'Searching…'
+	String get extensionSearching => 'Searching…';
+
+	/// en: 'No safe media results were returned. Try another search.'
+	String get extensionNoResults => 'No safe media results were returned. Try another search.';
+
+	/// en: 'Add this search service?'
+	String get extensionInstallTitle => 'Add this search service?';
+
+	/// en: 'Update this search service?'
+	String get extensionReplaceTitle => 'Update this search service?';
+
+	/// en: 'Service'
+	String get extensionService => 'Service';
+
+	/// en: 'HTTPS endpoint'
+	String get extensionEndpoint => 'HTTPS endpoint';
+
+	/// en: 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.'
+	String get extensionConsent => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.';
+
+	/// en: 'Add service'
+	String get extensionInstall => 'Add service';
+
+	/// en: 'Update service'
+	String get extensionReplace => 'Update service';
+
+	/// en: 'Remove this search service?'
+	String get extensionRemoveTitle => 'Remove this search service?';
+
+	/// en: 'This removes the service from this profile. PlezyNG does not contact its endpoint.'
+	String get extensionRemoveHelp => 'This removes the service from this profile. PlezyNG does not contact its endpoint.';
+
+	/// en: 'Remove service'
+	String get extensionRemove => 'Remove service';
+
+	/// en: 'This file is not a supported extension manifest. See the Open media guide for the format.'
+	String get extensionInvalidManifest => 'This file is not a supported extension manifest. See the Open media guide for the format.';
+
+	/// en: 'The extension could not be saved to the active profile.'
+	String get extensionSaveFailed => 'The extension could not be saved to the active profile.';
+
+	/// en: 'The search service did not return a valid response. Check the endpoint and try again.'
+	String get extensionSearchFailed => 'The search service did not return a valid response. Check the endpoint and try again.';
+
+	/// en: 'Command line'
+	String get cliTitle => 'Command line';
+
+	/// en: 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.'
+	String get cliHelp => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.';
+
+	/// en: 'Copy command example'
+	String get cliCopyExample => 'Copy command example';
+
+	/// en: 'Command example copied.'
+	String get cliCopied => 'Command example copied.';
 }
 
 // Path: fileSources
@@ -8554,8 +9353,8 @@ class Translations$audiobook$en {
 	/// en: 'Sync folder or prefix'
 	String get syncFolder => 'Sync folder or prefix';
 
-	/// en: 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.'
-	String get syncFolderHelp => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.';
+	/// en: 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.'
+	String get syncFolderHelp => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.';
 
 	/// en: 'Private sync code'
 	String get syncCode => 'Private sync code';
@@ -8584,8 +9383,8 @@ class Translations$audiobook$en {
 	/// en: 'Last synced at $time'
 	String lastSynced({required Object time}) => 'Last synced at ${time}';
 
-	/// en: 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.'
-	String get syncPrivacy => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.';
+	/// en: 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.'
+	String get syncPrivacy => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.';
 
 	/// en: 'Choose where to resume'
 	String get syncConflicts => 'Choose where to resume';
@@ -8721,6 +9520,9 @@ class Translations$sourceSetup$en {
 
 	/// en: 'Saved server certificate'
 	String get savedCertificate => 'Saved server certificate';
+
+	/// en: 'Project Gutenberg'
+	String get projectGutenberg => 'Project Gutenberg';
 
 	/// en: 'Enter an NFS URL such as nfs://nas:2049/export.'
 	String get nfsEndpointInvalid => 'Enter an NFS URL such as nfs://nas:2049/export.';
@@ -9112,8 +9914,8 @@ class Translations$games$en {
 	/// en: 'Show Games for this profile'
 	String get enable => 'Show Games for this profile';
 
-	/// en: 'Discover your gaming computers and play with an embedded streaming engine.'
-	String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
+	/// en: 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.'
+	String get enableDescription => 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.';
 
 	/// en: 'Your games, from your computers.'
 	String get subtitle => 'Your games, from your computers.';
@@ -9187,8 +9989,8 @@ class Translations$games$en {
 	/// en: 'Play'
 	String get play => 'Play';
 
-	/// en: 'Recently opened'
-	String get recent => 'Recently opened';
+	/// en: 'Recently played'
+	String get recent => 'Recently played';
 
 	/// en: 'Favorites'
 	String get favorites => 'Favorites';
@@ -9283,11 +10085,11 @@ class Translations$games$en {
 	/// en: 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.'
 	String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
 
-	/// en: 'Steam beta · Pyrowave'
-	String get steamBetaTitle => 'Steam beta · Pyrowave';
+	/// en: 'Pyrowave · experimental'
+	String get steamBetaTitle => 'Pyrowave · experimental';
 
-	/// en: 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.'
-	String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
+	/// en: 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.'
+	String get steamBetaDescription => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.';
 
 	/// en: 'Steam library'
 	String get steamLibrary => 'Steam library';
@@ -9310,9 +10112,6 @@ class Translations$games$en {
 	/// en: 'Steam account linked. Its library is private or unavailable, so no games were imported.'
 	String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
 
-	/// en: 'Steam App ID'
-	String get steamAppId => 'Steam App ID';
-
 	/// en: 'Steam could not refresh the library. Showing the last available catalog.'
 	String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 
@@ -9331,8 +10130,464 @@ class Translations$games$en {
 	/// en: 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.'
 	String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 
-	/// en: 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.'
-	String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+	/// en: 'Game details'
+	String get gameDetails => 'Game details';
+
+	/// en: 'Choose computer'
+	String get chooseComputer => 'Choose computer';
+
+	/// en: 'Connect a computer'
+	String get connectComputer => 'Connect a computer';
+
+	/// en: 'Connect a gaming computer to play this game inside PlezyNG.'
+	String get connectToPlay => 'Connect a gaming computer to play this game inside PlezyNG.';
+
+	/// en: 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.'
+	String get availabilityHint => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.';
+
+	/// en: 'From Steam'
+	String get steamSource => 'From Steam';
+
+	/// en: 'Disconnected'
+	String get disconnected => 'Disconnected';
+
+	/// en: 'Installed'
+	String get installed => 'Installed';
+
+	/// en: 'Installation incomplete'
+	String get installationIncomplete => 'Installation incomplete';
+
+	/// en: 'Not in the last inventory'
+	String get notInstalled => 'Not in the last inventory';
+
+	/// en: 'Installation not checked'
+	String get installationUnknown => 'Installation not checked';
+
+	/// en: 'All computers'
+	String get allComputers => 'All computers';
+
+	/// en: 'Import installed games'
+	String get importInstalledGames => 'Import installed games';
+
+	/// en: 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.'
+	String get inventoryConnectHelp => 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.';
+
+	/// en: 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.'
+	String inventoryConfirm({required Object peer, required Object computer}) => 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.';
+
+	/// en: 'Installed games updated.'
+	String get inventoryImported => 'Installed games updated.';
+
+	/// en: 'Last checked ${date}'
+	String inventoryChecked({required Object date}) => 'Last checked ${date}';
+
+	/// en: 'Share installed Steam games'
+	String get shareLibrary => 'Share installed Steam games';
+
+	/// en: 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.'
+	String get shareLibraryHelp => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.';
+
+	/// en: 'Steam installation folder'
+	String get steamInstallFolder => 'Steam installation folder';
+
+	/// en: 'Find automatically'
+	String get automaticFolder => 'Find automatically';
+
+	/// en: 'Steam stream quality'
+	String get streamQuality => 'Steam stream quality';
+
+	/// en: 'Steam controllers'
+	String get controllerSeats => 'Steam controllers';
+
+	/// en: 'Allow companion game session controls'
+	String get allowSessionControl => 'Allow companion game session controls';
+
+	/// en: 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.'
+	String get allowSessionControlHelp => 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.';
+
+	/// en: 'Game sessions'
+	String get remoteSessions => 'Game sessions';
+
+	/// en: 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.'
+	String get remoteSessionsHelp => 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.';
+
+	/// en: 'Enable companion game session controls in Games settings on the connected device.'
+	String get remoteSessionsDenied => 'Enable companion game session controls in Games settings on the connected device.';
+
+	/// en: 'Game session controls are unavailable. Reconnect or refresh to try again.'
+	String get remoteSessionsUnavailable => 'Game session controls are unavailable. Reconnect or refresh to try again.';
+
+	/// en: 'The request was accepted. Refresh to check the current sessions.'
+	String get remoteSessionSubmitted => 'The request was accepted. Refresh to check the current sessions.';
+
+	/// en: 'No active game streams are available on this device.'
+	String get noRemoteSessions => 'No active game streams are available on this device.';
+
+	/// en: 'Game audio is selected'
+	String get remoteSessionAudible => 'Game audio is selected';
+
+	/// en: 'Game audio is not selected'
+	String get remoteSessionMuted => 'Game audio is not selected';
+
+	/// en: 'Game session actions'
+	String get remoteSessionActions => 'Game session actions';
+
+	/// en: 'Listen to this game'
+	String get remoteSessionListen => 'Listen to this game';
+
+	/// en: 'Mute this game'
+	String get remoteSessionMute => 'Mute this game';
+
+	/// en: 'Refresh sessions'
+	String get remoteSessionsRefresh => 'Refresh sessions';
+
+	/// en: 'Steam connection details'
+	String get streamDetails => 'Steam connection details';
+
+	/// en: 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.'
+	String get streamFeedbackHelp => 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.';
+
+	/// en: 'Receiver measurements'
+	String get streamMeasurements => 'Receiver measurements';
+
+	/// en: 'Not available yet'
+	String get streamMeasurementsUnavailable => 'Not available yet';
+
+	/// en: 'Video format'
+	String get streamVideo => 'Video format';
+
+	/// en: 'Decoder'
+	String get streamDecoder => 'Decoder';
+
+	/// en: 'Hardware'
+	String get streamHardwareDecoder => 'Hardware';
+
+	/// en: 'Software'
+	String get streamSoftwareDecoder => 'Software';
+
+	/// en: 'Vulkan with CPU readback'
+	String get streamReadbackDecoder => 'Vulkan with CPU readback';
+
+	/// en: 'Host frame rate target'
+	String get streamHostFps => 'Host frame rate target';
+
+	/// en: 'Host bitrate target'
+	String get streamHostBitrate => 'Host bitrate target';
+
+	/// en: 'Host-reported frame rate limits'
+	String get streamLimits => 'Host-reported frame rate limits';
+
+	/// en: 'Host capture or encoder'
+	String get streamLimitHost => 'Host capture or encoder';
+
+	/// en: 'Network'
+	String get streamLimitNetwork => 'Network';
+
+	/// en: 'Receiver decoder'
+	String get streamLimitDecoder => 'Receiver decoder';
+
+	/// en: 'Burst throttling'
+	String get streamLimitBurst => 'Burst throttling';
+
+	/// en: 'Frames submitted to the display'
+	String get streamPresentedFps => 'Frames submitted to the display';
+
+	/// en: 'Received video payload'
+	String get streamReceivedBitrate => 'Received video payload';
+
+	/// en: 'Average receiver frame completion'
+	String get streamCompletionTime => 'Average receiver frame completion';
+
+	/// en: 'Receiver-dropped frames this session'
+	String get streamDroppedFrames => 'Receiver-dropped frames this session';
+
+	/// en: 'Video queue'
+	String get streamVideoQueue => 'Video queue';
+
+	/// en: 'Audio queue'
+	String get streamAudioQueue => 'Audio queue';
+
+	/// en: 'Audio channels'
+	String get streamAudioChannels => 'Audio channels';
+
+	/// en: 'Input packets queued + awaiting confirmation'
+	String get streamInputBacklog => 'Input packets queued + awaiting confirmation';
+
+	/// en: 'Reliable packet retries this session'
+	String get streamReliableRetries => 'Reliable packet retries this session';
+
+	/// en: 'Reliable packets abandoned this session'
+	String get streamReliableGiveUps => 'Reliable packets abandoned this session';
+
+	/// en: 'Longest reliable packet acknowledgement'
+	String get streamMaxAck => 'Longest reliable packet acknowledgement';
+
+	/// en: 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.'
+	String get streamMeasurementsHelp => 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.';
+
+	/// en: 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.'
+	String get controllerSeatsHelp => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.';
+
+	/// en: 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.'
+	String get streamQualityHelp => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.';
+
+	/// en: 'Steam video codec'
+	String get streamCodec => 'Steam video codec';
+
+	/// en: 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.'
+	String get streamCodecHelp => 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.';
+
+	/// en: 'Automatic · H.264 / HEVC'
+	String get codecAutomatic => 'Automatic · H.264 / HEVC';
+
+	/// en: 'Balanced'
+	String get qualityBalanced => 'Balanced';
+
+	/// en: 'Lower bandwidth'
+	String get qualityReducedBandwidth => 'Lower bandwidth';
+
+	/// en: 'Sharper picture'
+	String get qualitySharperPicture => 'Sharper picture';
+
+	/// en: 'Lower frame rate'
+	String get qualityReducedFrameRate => 'Lower frame rate';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
+
+	/// en: 'Reconnecting…'
+	String get reconnecting => 'Reconnecting…';
+
+	/// en: 'Disconnecting leaves the game running on the computer.'
+	String get disconnectHelp => 'Disconnecting leaves the game running on the computer.';
+
+	/// en: 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.'
+	String get streamFailed => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.';
+
+	/// en: 'Steam activity'
+	String get steamActivity => 'Steam activity';
+
+	/// en: 'Load news and achievements for your linked account. Activity is kept only while these details are open.'
+	String get steamActivityHelp => 'Load news and achievements for your linked account. Activity is kept only while these details are open.';
+
+	/// en: 'Include friends playing'
+	String get includeFriends => 'Include friends playing';
+
+	/// en: 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.'
+	String get includeFriendsHelp => 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.';
+
+	/// en: 'Load Steam activity'
+	String get loadSteamActivity => 'Load Steam activity';
+
+	/// en: 'Loading Steam activity…'
+	String get activityLoading => 'Loading Steam activity…';
+
+	/// en: 'Steam activity is unavailable. Try again shortly.'
+	String get activityUnavailable => 'Steam activity is unavailable. Try again shortly.';
+
+	/// en: 'Private or unavailable from Steam.'
+	String get activityPrivate => 'Private or unavailable from Steam.';
+
+	/// en: 'Achievements'
+	String get achievements => 'Achievements';
+
+	/// en: '$unlocked of $total unlocked'
+	String achievementProgress({required Object unlocked, required Object total}) => '${unlocked} of ${total} unlocked';
+
+	/// en: 'Hidden achievement'
+	String get hiddenAchievement => 'Hidden achievement';
+
+	/// en: 'Details appear after you unlock it.'
+	String get hiddenAchievementHelp => 'Details appear after you unlock it.';
+
+	/// en: 'Unlocked'
+	String get achievementUnlocked => 'Unlocked';
+
+	/// en: 'Locked'
+	String get achievementLocked => 'Locked';
+
+	/// en: 'Show more achievements'
+	String get moreAchievements => 'Show more achievements';
+
+	/// en: 'Game news'
+	String get gameNews => 'Game news';
+
+	/// en: 'No recent news available.'
+	String get noGameNews => 'No recent news available.';
+
+	/// en: 'Friends playing this game'
+	String get friendsPlaying => 'Friends playing this game';
+
+	/// en: 'No friends are reported playing in this snapshot.'
+	String get noFriendsPlaying => 'No friends are reported playing in this snapshot.';
+
+	/// en: 'This snapshot is limited; some achievements or friends may not be included.'
+	String get activityTruncated => 'This snapshot is limited; some achievements or friends may not be included.';
+
+	/// en: 'Steam store'
+	String get steamStore => 'Steam store';
+
+	/// en: 'Community'
+	String get steamCommunity => 'Community';
+
+	/// en: 'Workshop'
+	String get steamWorkshop => 'Workshop';
+
+	/// en: 'Open Steam page'
+	String get openSteamPage => 'Open Steam page';
+
+	/// en: 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.'
+	String get openSteamPageHelp => 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.';
+
+	/// en: 'Computer actions'
+	String get hostActions => 'Computer actions';
+
+	/// en: 'Launch on computer'
+	String get launchOnComputer => 'Launch on computer';
+
+	/// en: 'Install on computer'
+	String get installOnComputer => 'Install on computer';
+
+	/// en: 'Open Steam on computer'
+	String get hostLibrary => 'Open Steam on computer';
+
+	/// en: 'Open downloads on computer'
+	String get hostDownloads => 'Open downloads on computer';
+
+	/// en: 'Send this action to $computer? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.'
+	String hostActionConfirm({required Object computer}) => 'Send this action to ${computer}? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.';
+
+	/// en: 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.'
+	String get hostActionPairingHelp => 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.';
+
+	/// en: 'Request handed to Steam on the computer. Check Steam for the result or any prompts.'
+	String get hostActionSubmitted => 'Request handed to Steam on the computer. Check Steam for the result or any prompts.';
+
+	/// en: 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.'
+	String get hostActionDenied => 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.';
+
+	/// en: 'Allow paired remotes to control Steam'
+	String get allowHostActions => 'Allow paired remotes to control Steam';
+
+	/// en: 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.'
+	String get allowHostActionsHelp => 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.';
+
+	/// en: 'Allow Steam install requests'
+	String get allowHostInstall => 'Allow Steam install requests';
+
+	/// en: 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.'
+	String get allowHostInstallHelp => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.';
+
+	/// en: 'Steam audio'
+	String get streamAudio => 'Steam audio';
+
+	/// en: 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.'
+	String get streamAudioHelp => 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.';
+
+	/// en: 'Stereo'
+	String get audioStereo => 'Stereo';
+
+	/// en: 'Quad (4 speakers)'
+	String get audioQuad => 'Quad (4 speakers)';
+
+	/// en: 'Surround (5.1)'
+	String get audioSurround51 => 'Surround (5.1)';
+}
+
+// Path: deepLinks
+class Translations$deepLinks$en {
+	Translations$deepLinks$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'This Plezy link isn't valid.'
+	String get invalid => 'This Plezy link isn\'t valid.';
+
+	/// en: 'No profile matches "${profile}".'
+	String profileNotFound({required Object profile}) => 'No profile matches "${profile}".';
+
+	/// en: 'Couldn't reach the server for this link.'
+	String get serverUnavailable => 'Couldn\'t reach the server for this link.';
+
+	/// en: 'Couldn't find this title in your libraries.'
+	String get notFound => 'Couldn\'t find this title in your libraries.';
+
+	/// en: 'This link can't be played.'
+	String get unsupportedItem => 'This link can\'t be played.';
+
+	/// en: 'No Live TV server is available for this link.'
+	String get noLiveTv => 'No Live TV server is available for this link.';
+
+	/// en: 'Couldn't find channel "${channel}".'
+	String channelNotFound({required Object channel}) => 'Couldn\'t find channel "${channel}".';
+
+	/// en: 'Show link'
+	String get showLink => 'Show link';
+
+	/// en: 'Show profile link'
+	String get showProfileLink => 'Show profile link';
+
+	/// en: 'Link'
+	String get dialogTitle => 'Link';
+
+	/// en: 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.'
+	String get showHint => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.';
+
+	/// en: 'Opening this link plays the movie.'
+	String get movieHint => 'Opening this link plays the movie.';
+
+	/// en: 'Opening this link plays this episode.'
+	String get episodeHint => 'Opening this link plays this episode.';
+
+	/// en: 'Opening this link switches to this profile.'
+	String get profileHint => 'Opening this link switches to this profile.';
+
+	/// en: 'Open as ${name}'
+	String openAsProfile({required Object name}) => 'Open as ${name}';
+
+	/// en: 'Copy'
+	String get copy => 'Copy';
+
+	/// en: 'Link copied'
+	String get copied => 'Link copied';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$en {
+	Translations$householdSetup$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Household setup'
+	String get title => 'Household setup';
+}
+
+// Path: issueReport
+class Translations$issueReport$en {
+	Translations$issueReport$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Report a problem'
+	String get title => 'Report a problem';
+
+	/// en: 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.'
+	String get instructions => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.';
+
+	/// en: 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.'
+	String get privacy => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.';
+
+	/// en: 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.'
+	String get logPrivacy => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.';
+
+	/// en: 'Open GitHub draft'
+	String get openDraft => 'Open GitHub draft';
 }
 
 // Path: appIcon.names
@@ -9976,6 +11231,171 @@ class Translations$discover$findNext$en {
 	/// en: 'Choose the moment'
 	String get filters => 'Choose the moment';
 
+	/// en: 'Mood'
+	String get mood => 'Mood';
+
+	/// en: 'Mood filters use mood tags supplied by your media server; some picks do not have them.'
+	String get moodMetadataHint => 'Mood filters use mood tags supplied by your media server; some picks do not have them.';
+
+	/// en: 'Familiarity'
+	String get familiarity => 'Familiarity';
+
+	/// en: 'Any familiarity'
+	String get familiarityAny => 'Any familiarity';
+
+	/// en: 'New to me'
+	String get newToMe => 'New to me';
+
+	/// en: 'Already started'
+	String get inProgress => 'Already started';
+
+	/// en: 'Revisit'
+	String get revisit => 'Revisit';
+
+	/// en: 'Taste controls'
+	String get tasteControls => 'Taste controls';
+
+	/// en: 'Choose styles to bring forward or gently push back. Not now never changes these preferences.'
+	String get tasteControlsHelp => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.';
+
+	/// en: 'Bring forward'
+	String get preferMore => 'Bring forward';
+
+	/// en: 'Show less'
+	String get showLess => 'Show less';
+
+	/// en: 'Hide this pick'
+	String get hideFromDiscovery => 'Hide this pick';
+
+	/// en: 'Hidden picks'
+	String get hiddenPicks => 'Hidden picks';
+
+	/// en: 'No hidden picks'
+	String get noHiddenPicks => 'No hidden picks';
+
+	/// en: 'Reset taste and hidden picks'
+	String get resetTaste => 'Reset taste and hidden picks';
+
+	/// en: 'Clear genre preferences and restore every hidden pick?'
+	String get resetTasteConfirm => 'Clear genre preferences and restore every hidden pick?';
+
+	/// en: 'Choose together'
+	String get chooseTogether => 'Choose together';
+
+	/// en: 'Make a shortlist decision together'
+	String get voteSetup => 'Make a shortlist decision together';
+
+	/// en: 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.'
+	String get votePrivacy => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.';
+
+	/// en: 'How many guests?'
+	String get guestCount => 'How many guests?';
+
+	/// en: 'Start private voting'
+	String get beginVoting => 'Start private voting';
+
+	/// en: 'Guest ${guest} of ${count}'
+	String guestProgress({required Object guest, required Object count}) => 'Guest ${guest} of ${count}';
+
+	/// en: 'Maybe'
+	String get maybe => 'Maybe';
+
+	/// en: 'Not tonight'
+	String get notTonight => 'Not tonight';
+
+	/// en: 'Pass the device'
+	String get passDevice => 'Pass the device';
+
+	/// en: 'The previous guest’s choices are covered. Hand the device to the next guest when ready.'
+	String get passDeviceHint => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.';
+
+	/// en: 'Ready for next guest'
+	String get readyNextGuest => 'Ready for next guest';
+
+	/// en: 'No shared pick yet'
+	String get noSharedPick => 'No shared pick yet';
+
+	/// en: 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.'
+	String get noSharedPickHint => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.';
+
+	/// en: 'You found a shared pick'
+	String get sharedPick => 'You found a shared pick';
+
+	/// en: '${title} received the strongest shared approval.'
+	String sharedPickHint({required Object title}) => '${title} received the strongest shared approval.';
+
+	/// en: 'Put this pick on the deck'
+	String get useSharedPick => 'Put this pick on the deck';
+
+	/// en: 'Widen the shortlist'
+	String get widenShortlist => 'Widen the shortlist';
+
+	/// en: 'Choose picks to vote on'
+	String get selectToVote => 'Choose picks to vote on';
+
+	/// en: 'Start voting'
+	String get startVote => 'Start voting';
+
+	/// en: 'Choose between 2 and 12 picks.'
+	String get voteLimit => 'Choose between 2 and 12 picks.';
+
+	/// en: 'Availability'
+	String get availability => 'Availability';
+
+	/// en: 'Check again when opened'
+	String get availabilityNotChecked => 'Check again when opened';
+
+	/// en: 'Find a library catalog pick'
+	String get libraryCatalog => 'Find a library catalog pick';
+
+	/// en: 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.'
+	String get libraryCatalogHint => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.';
+
+	/// en: 'Open Library'
+	String get openLibraryName => 'Open Library';
+
+	/// en: 'Catalog record · availability not checked'
+	String get catalogOnly => 'Catalog record · availability not checked';
+
+	/// en: 'Optional AI ranking'
+	String get aiRanking => 'Optional AI ranking';
+
+	/// en: 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.'
+	String get aiRankingHelp => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.';
+
+	/// en: 'Service URL'
+	String get aiEndpoint => 'Service URL';
+
+	/// en: 'Model name'
+	String get aiModel => 'Model name';
+
+	/// en: 'API key (optional for local services)'
+	String get aiApiKey => 'API key (optional for local services)';
+
+	/// en: 'Enable AI ranking'
+	String get aiEnabled => 'Enable AI ranking';
+
+	/// en: 'Review AI ranking data'
+	String get aiConsentTitle => 'Review AI ranking data';
+
+	/// en: 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.'
+	String get aiConsentBody => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.';
+
+	/// en: 'AI ranking settings saved'
+	String get aiSaved => 'AI ranking settings saved';
+
+	/// en: 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.'
+	String get aiInvalidConfig => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.';
+
+	/// en: 'A key is saved securely'
+	String get aiSavedKey => 'A key is saved securely';
+
+	/// en: 'Remove saved API key'
+	String get aiClearKey => 'Remove saved API key';
+
+	/// en: 'AI ranking was unavailable. Your usual discovery order is still active.'
+	String get aiError => 'AI ranking was unavailable. Your usual discovery order is still active.';
+
 	/// en: 'Watch'
 	String get watch => 'Watch';
 
@@ -10008,6 +11428,30 @@ class Translations$discover$findNext$en {
 
 	/// en: 'Saved picks'
 	String get saved => 'Saved picks';
+
+	/// en: 'Select picks to compare'
+	String get selectToCompare => 'Select picks to compare';
+
+	/// en: 'Compare up to three picks at a time.'
+	String get compareLimit => 'Compare up to three picks at a time.';
+
+	/// en: 'Choose at least two saved picks to compare.'
+	String get compareNeedsTwo => 'Choose at least two saved picks to compare.';
+
+	/// en: 'On this device'
+	String get localOnly => 'On this device';
+
+	/// en: 'Sync Saved picks across devices'
+	String get syncSavedPicks => 'Sync Saved picks across devices';
+
+	/// en: 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.'
+	String get syncSavedPicksHelp => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.';
+
+	/// en: 'These devices changed this saved pick independently. Choose which saved state to keep.'
+	String get savedPickConflict => 'These devices changed this saved pick independently. Choose which saved state to keep.';
+
+	/// en: 'Use this version'
+	String get useThisVersion => 'Use this version';
 
 	/// en: 'Saved picks · ${count}'
 	String savedCount({required Object count}) => 'Saved picks · ${count}';
@@ -11693,21 +13137,6 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Cast to a device',
-			'cast.searching' => 'Searching for Cast devices…',
-			'cast.connectedTo' => ({required Object device}) => 'Connected to ${device}',
-			'cast.device' => 'Cast device',
-			'cast.readyToCast' => 'Ready to cast',
-			'cast.subtitle' => 'Subtitles',
-			'cast.serverNotAvailable' => 'The media server is not available.',
-			'cast.stopCasting' => 'Stop casting',
-			'cast.castToDevice' => 'Cast to device',
-			'cast.noEpisodeAvailable' => 'There is no episode available to cast.',
-			'cast.startFailed' => 'Could not start casting. Check the server and try again.',
-			'automation.noActivePlayback' => 'There is no active video session to control.',
-			'automation.profileNotFound' => 'That Plezy profile could not be found.',
-			'notifications.newEpisodeTitle' => 'New episode',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'App icon',
 			'appIcon.defaultIcon' => 'Default',
 			'appIcon.current' => 'Current icon',
@@ -11801,6 +13230,7 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.edit' => 'Edit',
 			'common.shuffle' => 'Shuffle',
+			'common.compare' => 'Compare',
 			'common.addTo' => 'Add to...',
 			'common.createNew' => 'Create new',
 			'common.connect' => 'Connect',
@@ -11810,6 +13240,7 @@ extension on Translations {
 			'common.resume' => 'Resume',
 			'common.error' => 'Error',
 			'common.search' => 'Search',
+			'common.preview' => 'Preview',
 			'common.home' => 'Home',
 			'common.back' => 'Back',
 			'common.settings' => 'Settings',
@@ -11870,28 +13301,6 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
-			'appAccess.title' => 'Try every feature free for 7 days',
-			'appAccess.description' => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.',
-			'appAccess.trialEndedDescription' => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.',
-			'appAccess.startTrial' => 'Start my 7-day free trial',
-			'appAccess.trialActive' => 'Your 7-day full-feature trial is active.',
-			'appAccess.trialEnded' => 'Your 7-day trial has ended',
-			'appAccess.trialStartFailed' => 'Couldn\'t save the trial on this device. Please try again.',
-			'appAccess.lifetimeTitle' => 'PlezyNG unlocked for life',
-			'appAccess.lifetimeBody' => 'Thanks! You have lifetime access to every PlezyNG feature.',
-			'appAccess.manageTitle' => 'PlezyNG lifetime access',
-			'appAccess.manageDescription' => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.',
-			'appAccess.buy' => ({required Object price}) => 'Unlock every feature for ${price}',
-			'appAccess.loadingPrice' => 'Loading store price...',
-			'appAccess.retryPrice' => 'Retry price lookup',
-			'appAccess.restore' => 'Restore lifetime purchase',
-			'appAccess.pending' => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.',
-			'appAccess.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
-			'appAccess.productNotFound' => 'The PlezyNG lifetime unlock isn\'t available in this store yet.',
-			'appAccess.productQueryFailed' => 'Couldn\'t load the store price. Check your connection and try again.',
-			'appAccess.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
-			'appAccess.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
-			'appAccess.nothingToRestore' => 'No PlezyNG lifetime purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support PlezyNG',
 			'settings.supportDeveloperDescription' => 'Donate to support development',
@@ -12204,8 +13613,6 @@ extension on Translations {
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionApple' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Off while loudness normalization is on',
 			'settings.audioChannelLimit' => 'Audio Channels',
@@ -12241,6 +13648,8 @@ extension on Translations {
 			'settings.dvExperimentDiagnosticsDescription' => 'Enable detailed player logs on the next playback.',
 			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
@@ -12704,7 +14113,6 @@ extension on Translations {
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
 			'audioTracks.track' => ({required Object n}) => 'Audio Track ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames', ), 
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtitles',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -12718,8 +14126,6 @@ extension on Translations {
 			'videoControls.sleepTimerEndOfVideo' => 'End of current video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stop at',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback will pause at the end of this video',
 			'videoControls.stillWatching' => 'Still watching?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
@@ -12743,9 +14149,33 @@ extension on Translations {
 			'videoControls.unmuteButton' => 'Unmute',
 			'videoControls.settingsButton' => 'Playback Settings',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
-			'videoControls.trackSelectionTitle' => 'Choose tracks before playback',
-			'videoControls.trackSelectionAuto' => 'Automatic selection',
 			'videoControls.chaptersButton' => 'Chapters',
+			'videoControls.segmentLoopHelp' => 'Loop a section during this playback. Set A, then set B later in the timeline.',
+			'videoControls.setLoopStart' => 'Set loop start (A)',
+			'videoControls.setLoopEnd' => 'Set loop end (B)',
+			'videoControls.clearSegmentLoop' => 'Clear segment loop',
+			'videoControls.setLoopStartFirst' => 'Set loop start (A) before the end (B).',
+			'videoControls.loopEndAfterStart' => 'The loop end must be later than the start.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping isn\'t available for this playback.',
+			'videoControls.loopPointNotSet' => 'Not set',
+			'videoControls.bookmarksHelp' => 'Bookmarks are saved on this device. Select one to go to that time.',
+			'videoControls.bookmarksButton' => 'Bookmarks',
+			'videoControls.chaptersAndBookmarks' => 'Chapters and bookmarks',
+			'videoControls.segmentLoop' => 'Segment loop',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.addBookmark' => 'Add bookmark',
+			'videoControls.bookmarkName' => 'Bookmark name',
+			'videoControls.bookmarkNameHint' => 'For example, Opening scene',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark ${n}',
+			'videoControls.bookmarkNameRequired' => 'Enter a name for this bookmark.',
+			'videoControls.deleteBookmark' => 'Delete bookmark',
+			'videoControls.bookmarkLimitReached' => 'This item already has 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Couldn\'t save or remove this bookmark.',
+			'videoControls.bookmarkSaved' => 'Bookmark saved.',
+			'videoControls.bookmarkDeleted' => 'Bookmark deleted.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'No chapters or bookmarks available.',
 			'videoControls.versionQualityButton' => 'Version & Quality',
 			'videoControls.versionColumnHeader' => 'Version',
 			'videoControls.qualityColumnHeader' => 'Quality',
@@ -12754,8 +14184,6 @@ extension on Translations {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
-			'videoControls.openMiniPlayer' => 'Open mini player',
-			'videoControls.returnToFullPlayer' => 'Return to full player',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
 			'videoControls.ambientLighting' => 'Ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
@@ -12764,7 +14192,6 @@ extension on Translations {
 			'videoControls.rotationLockButton' => 'Rotation lock',
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
-			'videoControls.longPressToUnlock' => 'Long press to unlock',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
@@ -12788,8 +14215,6 @@ extension on Translations {
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
-			'videoControls.loadSubtitleFile' => 'Load subtitle file…',
-			'videoControls.subtitleLoadFailed' => 'Failed to load subtitle file',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
@@ -12798,7 +14223,6 @@ extension on Translations {
 			'videoControls.searchLanguages' => 'Search languages...',
 			'videoControls.skipIntro' => 'Skip Intro',
 			'videoControls.skipCredits' => 'Skip Credits',
-			'videoControls.skipAds' => 'Skip Ads',
 			'videoControls.nextEpisode' => 'Next Episode',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Track ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Subtitle ${name}',
@@ -12806,6 +14230,16 @@ extension on Translations {
 			'videoControls.osdSubtitlesOff' => 'Subtitles: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Subtitles: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames', ), 
+			'videoControls.trackSelectionTitle' => 'Choose tracks before playback',
+			'videoControls.trackSelectionAuto' => 'Automatic selection',
+			'videoControls.openMiniPlayer' => 'Open mini player',
+			'videoControls.returnToFullPlayer' => 'Return to full player',
+			'videoControls.loadSubtitleFile' => 'Load subtitle file…',
+			'videoControls.subtitleLoadFailed' => 'Failed to load subtitle file',
+			'videoControls.skipAds' => 'Skip Ads',
+			'videoControls.tapToUnlock' => 'Tap to unlock',
+			'videoControls.tapAgainToUnlock' => 'Tap again to unlock',
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
@@ -13124,6 +14558,61 @@ extension on Translations {
 			'discover.findNext.anyTime' => 'Any time',
 			'discover.findNext.timeAvailable' => 'How much time do you have?',
 			'discover.findNext.filters' => 'Choose the moment',
+			'discover.findNext.mood' => 'Mood',
+			'discover.findNext.moodMetadataHint' => 'Mood filters use mood tags supplied by your media server; some picks do not have them.',
+			'discover.findNext.familiarity' => 'Familiarity',
+			'discover.findNext.familiarityAny' => 'Any familiarity',
+			'discover.findNext.newToMe' => 'New to me',
+			'discover.findNext.inProgress' => 'Already started',
+			'discover.findNext.revisit' => 'Revisit',
+			'discover.findNext.tasteControls' => 'Taste controls',
+			'discover.findNext.tasteControlsHelp' => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.',
+			'discover.findNext.preferMore' => 'Bring forward',
+			'discover.findNext.showLess' => 'Show less',
+			'discover.findNext.hideFromDiscovery' => 'Hide this pick',
+			'discover.findNext.hiddenPicks' => 'Hidden picks',
+			'discover.findNext.noHiddenPicks' => 'No hidden picks',
+			'discover.findNext.resetTaste' => 'Reset taste and hidden picks',
+			'discover.findNext.resetTasteConfirm' => 'Clear genre preferences and restore every hidden pick?',
+			'discover.findNext.chooseTogether' => 'Choose together',
+			'discover.findNext.voteSetup' => 'Make a shortlist decision together',
+			'discover.findNext.votePrivacy' => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.',
+			'discover.findNext.guestCount' => 'How many guests?',
+			'discover.findNext.beginVoting' => 'Start private voting',
+			'discover.findNext.guestProgress' => ({required Object guest, required Object count}) => 'Guest ${guest} of ${count}',
+			'discover.findNext.maybe' => 'Maybe',
+			'discover.findNext.notTonight' => 'Not tonight',
+			'discover.findNext.passDevice' => 'Pass the device',
+			'discover.findNext.passDeviceHint' => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.',
+			'discover.findNext.readyNextGuest' => 'Ready for next guest',
+			'discover.findNext.noSharedPick' => 'No shared pick yet',
+			'discover.findNext.noSharedPickHint' => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.',
+			'discover.findNext.sharedPick' => 'You found a shared pick',
+			'discover.findNext.sharedPickHint' => ({required Object title}) => '${title} received the strongest shared approval.',
+			'discover.findNext.useSharedPick' => 'Put this pick on the deck',
+			'discover.findNext.widenShortlist' => 'Widen the shortlist',
+			'discover.findNext.selectToVote' => 'Choose picks to vote on',
+			'discover.findNext.startVote' => 'Start voting',
+			'discover.findNext.voteLimit' => 'Choose between 2 and 12 picks.',
+			'discover.findNext.availability' => 'Availability',
+			'discover.findNext.availabilityNotChecked' => 'Check again when opened',
+			'discover.findNext.libraryCatalog' => 'Find a library catalog pick',
+			'discover.findNext.libraryCatalogHint' => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.',
+			'discover.findNext.openLibraryName' => 'Open Library',
+			'discover.findNext.catalogOnly' => 'Catalog record · availability not checked',
+			'discover.findNext.aiRanking' => 'Optional AI ranking',
+			'discover.findNext.aiRankingHelp' => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.',
+			'discover.findNext.aiEndpoint' => 'Service URL',
+			'discover.findNext.aiModel' => 'Model name',
+			'discover.findNext.aiApiKey' => 'API key (optional for local services)',
+			'discover.findNext.aiEnabled' => 'Enable AI ranking',
+			'discover.findNext.aiConsentTitle' => 'Review AI ranking data',
+			'discover.findNext.aiConsentBody' => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.',
+			'discover.findNext.aiSaved' => 'AI ranking settings saved',
+			'discover.findNext.aiInvalidConfig' => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.',
+			'discover.findNext.aiSavedKey' => 'A key is saved securely',
+			'discover.findNext.aiClearKey' => 'Remove saved API key',
+			'discover.findNext.aiError' => 'AI ranking was unavailable. Your usual discovery order is still active.',
 			'discover.findNext.watch' => 'Watch',
 			'discover.findNext.listen' => 'Listen',
 			'discover.findNext.read' => 'Read',
@@ -13135,6 +14624,14 @@ extension on Translations {
 			'discover.findNext.notNow' => 'Not now',
 			'discover.findNext.swipeHint' => 'Swipe the cover toward an arrow, or use the buttons below.',
 			'discover.findNext.saved' => 'Saved picks',
+			'discover.findNext.selectToCompare' => 'Select picks to compare',
+			'discover.findNext.compareLimit' => 'Compare up to three picks at a time.',
+			'discover.findNext.compareNeedsTwo' => 'Choose at least two saved picks to compare.',
+			'discover.findNext.localOnly' => 'On this device',
+			'discover.findNext.syncSavedPicks' => 'Sync Saved picks across devices',
+			'discover.findNext.syncSavedPicksHelp' => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.',
+			'discover.findNext.savedPickConflict' => 'These devices changed this saved pick independently. Choose which saved state to keep.',
+			'discover.findNext.useThisVersion' => 'Use this version',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
 			'discover.findNext.details' => 'Details',
@@ -13179,6 +14676,8 @@ extension on Translations {
 			'discover.director' => 'Director',
 			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
+			_ => null,
+		} ?? switch (path) {
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
@@ -13232,8 +14731,6 @@ extension on Translations {
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
@@ -13351,7 +14848,6 @@ extension on Translations {
 			'logs.saveLogs' => 'Save Logs to File',
 			'logs.logsSaved' => ({required Object path}) => 'Logs saved to ${path}',
 			'logs.saveLogsFailed' => 'Could not save the log file.',
-			'detail.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'startup.failedTitle' => 'PlezyNG could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
 			'startup.failedBodyRepairable' => 'PlezyNG\'s saved settings file is damaged and has to be rebuilt before PlezyNG can start. Retrying will not help — choose Repair storage.',
@@ -13694,6 +15190,8 @@ extension on Translations {
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
 			'playlists.errorAdding' => 'Failed to add to playlist',
+			_ => null,
+		} ?? switch (path) {
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'music.goToAlbum' => 'Go to album',
@@ -13712,6 +15210,7 @@ extension on Translations {
 			'music.visualizerProfileLoading' => 'Reading track analysis…',
 			'music.visualizerAmbientMotion' => 'Ambient motion',
 			'music.visualizerPlexLoudness' => 'Plex loudness',
+			'music.visualizerLiveAudio' => 'Live audio analysis',
 			'music.visualizerPreviousPreset' => 'Previous visual style',
 			'music.visualizerNextPreset' => 'Next visual style',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -13746,8 +15245,6 @@ extension on Translations {
 			'watchTogether.connecting' => 'Connecting...',
 			'watchTogether.relayPublic' => 'Rooms use the public Open Watch Party relays.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Rooms use your relay at ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.roomActions' => 'Room actions',
 			'watchTogether.renameRoom' => 'Rename Room',
@@ -14138,6 +15635,12 @@ extension on Translations {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
 			'videoSettings.audioOutput' => 'Audio Output',
+			'videoSettings.videoTrack' => 'Video Track',
+			'videoSettings.videoTrackDescription' => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.',
+			'videoSettings.videoTrackDefault' => 'Default',
+			'videoSettings.videoTrackUnavailable' => 'No alternate video tracks are available.',
+			'videoSettings.videoTrackFailed' => 'Could not change the video track.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Track ${id}',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -14145,10 +15648,17 @@ extension on Translations {
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Equalizer',
-			'videoSettings.audioEqualizerDescription' => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Flat',
 			'videoSettings.audioEqualizerActive' => 'Custom',
 			'videoSettings.audioEqualizerSaveFailed' => 'Couldn\'t save audio equalizer settings.',
+			'videoSettings.audioEffectsDescription' => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.',
+			'videoSettings.audioStereoWidth' => 'Stereo widening',
+			'videoSettings.audioSpatializer' => 'Room ambience',
+			'videoSettings.audioSpatializerDescription' => 'Add quiet room reflections.',
+			'videoSettings.audioPitch' => 'Pitch shift',
+			'videoSettings.audioPitchDescription' => 'Change pitch without changing speed. The MPV build must include Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'This effect isn\'t available for this track or MPV build.',
 			'videoSettings.backgroundVideoAudio' => 'Background Video Audio',
 			'videoSettings.backgroundVideoAudioDescription' => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
@@ -14194,6 +15704,8 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
@@ -14260,8 +15772,6 @@ extension on Translations {
 			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork updated',
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
@@ -14320,6 +15830,10 @@ extension on Translations {
 			'matchScreen.yearHint' => 'Year',
 			'matchScreen.search' => 'Search',
 			'matchScreen.noMatchesFound' => 'No matches found',
+			'matchScreen.plexDiscover' => 'Plex Discover',
+			'matchScreen.plexLibrary' => 'Plex library',
+			'matchScreen.jellyfinLibrary' => 'Jellyfin library',
+			'matchScreen.embyLibrary' => 'Emby library',
 			'serverTasks.title' => 'Server Tasks',
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',
@@ -14332,6 +15846,20 @@ extension on Translations {
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.',
+			'trakt.historyExport' => 'Export to Letterboxd',
+			'trakt.historyExportDescription' => 'Create a local CSV from Trakt movie history. Nothing is uploaded.',
+			'trakt.historyExportLoading' => 'Loading Trakt movie history…',
+			'trakt.historyExportReviewTitle' => 'Export movie history',
+			'trakt.historyExportReview' => ({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.',
+			'trakt.historyExportSkipped' => ({required Object count}) => '${count} incomplete entries could not be included.',
+			'trakt.historyExportNoHistory' => 'No exportable movie history was found in Trakt.',
+			'trakt.historyExportFailed' => 'Couldn\'t load Trakt movie history. Try again.',
+			'trakt.historyExportSave' => 'Save CSV',
+			'trakt.historyExportPart' => ({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}',
+			'trakt.historyExportSaved' => ({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).',
+			'trakt.historyExportPartial' => ({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.',
+			'trakt.historyExportSaveFailed' => 'Couldn\'t save the CSV file. Try again.',
+			'trakt.historyExportTooLarge' => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',
@@ -14385,6 +15913,12 @@ extension on Translations {
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
+			'services.hardcover' => 'Hardcover',
+			'services.linkedCatalogTitles' => 'Linked catalog titles',
+			'services.planNote' => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.',
+			'services.planLabel' => 'Plan label',
+			'services.setPlanLabel' => 'Set plan label',
+			'services.commissionDisclosure' => 'PlezyNG may earn a commission from some links.',
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',
@@ -14489,6 +16023,43 @@ extension on Translations {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.',
 			'addServer.allowHttp' => 'Allow HTTP',
 			'addServer.httpsRequired' => 'Use HTTPS or explicitly allow an unencrypted connection.',
+			'cast.chooseDevice' => 'Cast to a device',
+			'cast.searching' => 'Searching for Cast devices…',
+			'cast.connectedTo' => ({required Object device}) => 'Connected to ${device}',
+			'cast.device' => 'Cast device',
+			'cast.readyToCast' => 'Ready to cast',
+			'cast.subtitle' => 'Subtitles',
+			'cast.serverNotAvailable' => 'The media server is not available.',
+			'cast.stopCasting' => 'Stop casting',
+			'cast.castToDevice' => 'Cast to device',
+			'cast.noEpisodeAvailable' => 'There is no episode available to cast.',
+			'cast.startFailed' => 'Could not start casting. Check the server and try again.',
+			'automation.noActivePlayback' => 'There is no active video session to control.',
+			'notifications.newEpisodeTitle' => 'New episode',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Try every feature free for 7 days',
+			'appAccess.description' => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.',
+			'appAccess.trialEndedDescription' => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.',
+			'appAccess.startTrial' => 'Start my 7-day free trial',
+			'appAccess.trialActive' => 'Your 7-day full-feature trial is active.',
+			'appAccess.trialEnded' => 'Your 7-day trial has ended',
+			'appAccess.trialStartFailed' => 'Couldn\'t save the trial on this device. Please try again.',
+			'appAccess.lifetimeTitle' => 'PlezyNG unlocked for life',
+			'appAccess.lifetimeBody' => 'Thanks! You have lifetime access to every PlezyNG feature.',
+			'appAccess.manageTitle' => 'PlezyNG lifetime access',
+			'appAccess.manageDescription' => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.',
+			'appAccess.buy' => ({required Object price}) => 'Unlock every feature for ${price}',
+			'appAccess.loadingPrice' => 'Loading store price...',
+			'appAccess.retryPrice' => 'Retry price lookup',
+			'appAccess.restore' => 'Restore lifetime purchase',
+			'appAccess.pending' => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.',
+			'appAccess.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
+			'appAccess.productNotFound' => 'The PlezyNG lifetime unlock isn\'t available in this store yet.',
+			'appAccess.productQueryFailed' => 'Couldn\'t load the store price. Check your connection and try again.',
+			'appAccess.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
+			'appAccess.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
+			'appAccess.nothingToRestore' => 'No PlezyNG lifetime purchase was found for this store account.',
+			'detail.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'watchLink.serverUnavailable' => 'Couldn\'t reach a Plex server for this link.',
 			'watchLink.notFound' => 'Couldn\'t find this show or movie on your Plex servers.',
 			'watchLink.ambiguous' => 'This link matches items on more than one server. Add a server to the link.',
@@ -14603,6 +16174,203 @@ extension on Translations {
 			'platform.locationPermission' => 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.',
 			'platform.photoLibraryPermission' => 'Choose images from your photo library to use as media artwork.',
 			'platform.cameraPermission' => 'Scan QR codes to pair a Companion Remote.',
+			'universalMedia.title' => 'Open media',
+			'universalMedia.shortcutHelp' => 'Play a link, playlist, or file for this session.',
+			'universalMedia.intro' => 'Open a link, playlist, or file. Playback uses PlezyNG’s standard player and does not add history to your library.',
+			'universalMedia.openWhat' => 'What would you like to open?',
+			'universalMedia.stream' => 'Stream address',
+			'universalMedia.playlist' => 'Playlist',
+			'universalMedia.files' => 'Device files',
+			'universalMedia.favorites' => 'Saved stream favorites',
+			'universalMedia.address' => 'Media address',
+			'universalMedia.addressHelp' => 'HTTPS is preferred. URLs with recognized credential or signature parameters are used only for this session and cannot be saved as favorites.',
+			'universalMedia.displayName' => 'Display name (optional)',
+			'universalMedia.displayNameHelp' => 'Choose a short name for the player and system media controls.',
+			'universalMedia.allowHttp' => 'Allow an unencrypted HTTP connection',
+			'universalMedia.allowHttpHelp' => 'HTTP does not encrypt the connection. Allow it only on a trusted network. Use HTTPS when possible.',
+			'universalMedia.advancedProtocols' => 'MPV only: enter an RTSP, RTMP/RTMPS, UDP, or RTP address. These addresses cannot be saved as favorites.',
+			'universalMedia.liveStream' => 'Treat as live',
+			'universalMedia.liveStreamHelp' => 'Use this for live video or radio. The app hides the time bar, skip buttons, and go-to-time option. Turn it off for a recording.',
+			'universalMedia.privateSession' => 'Only this playback uses the address. Save an eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Save favorite',
+			'universalMedia.playNow' => 'Play now',
+			'universalMedia.favoriteSaved' => 'Stream favorite saved to this profile',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ), 
+			'universalMedia.playlistAddress' => 'Playlist address',
+			'universalMedia.playlistAddressHelp' => 'Open an M3U, M3U8, or PLS playlist from a web address. Direct stream links do not save the playlist.',
+			'universalMedia.choosePlaylist' => 'Choose playlist file',
+			'universalMedia.openPlaylist' => 'Open playlist',
+			'universalMedia.playlistFormatsHelp' => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.',
+			'universalMedia.saveQueuePlaylist' => 'Save queue as playlist',
+			'universalMedia.queuePlaylistSaved' => 'Playlist saved beside the media files.',
+			'universalMedia.queuePlaylistUnavailable' => 'This queue can’t be saved as a reusable local playlist.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Choose a save location in the same folder as the queued files.',
+			'universalMedia.noFavorites' => 'No saved stream favorites yet. Favorites stay in this profile.',
+			'universalMedia.removeFavorite' => 'Remove stream favorite',
+			'universalMedia.filesHelp' => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.',
+			'universalMedia.chooseFiles' => 'Choose files',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '1 selected file', other: '${count} selected files', ), 
+			'universalMedia.wifiTransfer' => 'Send files over Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Transfer supported files from a browser on the same trusted network.',
+			'universalMedia.wifiTransferIntro' => 'Open this address in a browser on another device. Choose files to add them to this device’s Files and books library.',
+			'universalMedia.wifiTransferPrivacy' => 'This device receives files over your local network. Anyone who knows this address can send files until you stop the transfer or the address expires after 15 minutes. Maximum: 100 files, 4 GiB per file, 10 GiB total.',
+			'universalMedia.wifiTransferStarting' => 'Preparing a private, time-limited transfer…',
+			'universalMedia.wifiTransferUnavailable' => 'Could not start the transfer. Check local-network access and try again.',
+			'universalMedia.openThisAddress' => 'Open one of these addresses on the sending device',
+			'universalMedia.copyAddress' => 'Copy transfer address',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.addressCopied' => 'Transfer address copied',
+			'universalMedia.transferExpires' => ({required Object time}) => 'This address expires in ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ), 
+			'universalMedia.uploadedData' => ({required Object size}) => 'Received ${size}',
+			'universalMedia.stopTransfer' => 'Stop transfer and invalidate address',
+			'universalMedia.startTransfer' => 'Start transfer',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi transfer',
+			'universalMedia.wifiBrowserTitle' => 'Send files to PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Choose audio, video, ebook, or comic files to send. The files are saved in this device’s Files and books library. Maximum: 100 files, 4 GiB per file, 10 GiB total.',
+			'universalMedia.uploadFilesLabel' => 'Files to send',
+			'universalMedia.uploadSelected' => 'Upload selected files',
+			'universalMedia.uploadSelectFirst' => 'Choose one or more files first.',
+			'universalMedia.uploading' => 'Sending',
+			'universalMedia.uploadComplete' => 'File added to PlezyNG.',
+			'universalMedia.uploadFailed' => 'The file could not be added. Keep this page open and try again.',
+			'universalMedia.liveCue' => 'LIVE',
+			'universalMedia.liveSession' => 'Live stream',
+			'universalMedia.liveCueHelp' => 'For live video or radio, the app hides the time bar and skip buttons. It does not save the address or watch history.',
+			'universalMedia.sessionOnly' => 'This playback is session-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback never saves progress or history. Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Picture adjustments',
+			'universalMedia.pictureHelp' => 'These picture changes affect only this playback. They reset when playback ends.',
+			'universalMedia.resetPicture' => 'Reset picture',
+			'universalMedia.brightness' => 'Brightness',
+			'universalMedia.contrast' => 'Contrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturation',
+			'universalMedia.view360' => 'Flat view for 360° video',
+			'universalMedia.view360Help' => 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.',
+			'universalMedia.view360Unavailable' => 'This mpv build could not apply the 360° filter.',
+			'universalMedia.view360Yaw' => 'Horizontal view',
+			'universalMedia.view360Pitch' => 'Vertical view',
+			'universalMedia.view360FieldOfView' => 'Field of view',
+			'universalMedia.recordStream' => 'Record live stream',
+			'universalMedia.stopRecording' => 'Stop and save recording',
+			'universalMedia.recordingStarted' => 'Recording is active. Leaving playback stops and saves the recording.',
+			'universalMedia.recordingSaved' => 'Recording finalized and saved.',
+			'universalMedia.recordingActive' => 'Recording to this device. Leaving playback stops and saves it.',
+			'universalMedia.recordingFormatHelp' => 'For video, choose MKV or MPEG-TS. For audio, choose MKA or MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Replace this recording?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG backs up the existing file while recording. If it cannot save the new recording, PlezyNG restores the backup.',
+			'universalMedia.replaceRecording' => 'Replace file',
+			'universalMedia.discHelp' => 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.',
+			'universalMedia.discs' => 'Optical disc',
+			'universalMedia.editionOrTitle' => 'Edition or disc title',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.',
+			'universalMedia.converterTitle' => 'Convert a local media file',
+			'universalMedia.converterHelp' => 'Convert a local file or remux it with FFmpeg.',
+			'universalMedia.converterIntro' => 'Convert a local audio or video file to a format that works on more devices.',
+			'universalMedia.converterPrivacy' => 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.',
+			'universalMedia.converterChooseInput' => 'Choose a local media file',
+			'universalMedia.converterFormat' => 'Output format',
+			'universalMedia.converterMp4' => 'MP4 · H.264 and AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 · audio',
+			'universalMedia.allowFtp' => 'Allow FTP',
+			'universalMedia.allowFtpHelp' => 'FTP sends media without encryption. Use only on trusted networks.',
+			'universalMedia.converterSaveAs' => 'Save converted media as',
+			'universalMedia.converterExtensionMismatch' => 'Choose a filename with the selected output extension.',
+			'universalMedia.converterUnsupportedInput' => 'Choose an audio or video file.',
+			'universalMedia.converterLocalOnly' => 'The selected file is not available as a local device path.',
+			'universalMedia.converterReplaceTitle' => 'Replace this file?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG backs up the existing file until the converted copy is saved.',
+			'universalMedia.converterStarting' => 'Starting FFmpeg…',
+			'universalMedia.converterProgress' => 'Converting on this computer…',
+			'universalMedia.converterComplete' => 'Conversion complete. The new file is ready.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg is missing or does not support this format.',
+			'universalMedia.converterFailed' => 'Conversion failed. Check that the source file can be read and the destination has enough free space.',
+			'universalMedia.converterCancelled' => 'Conversion cancelled. The incomplete output was removed.',
+			'universalMedia.converterDesktopOnly' => 'Local conversion is available on desktop computers with FFmpeg installed.',
+			'universalMedia.converterStart' => 'Convert file',
+			'universalMedia.mediaToolsTitle' => 'Media tools',
+			'universalMedia.mediaToolsShortcut' => 'Capture or share media, add search extensions, or use the command line.',
+			'universalMedia.mediaToolsIntro' => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.',
+			'universalMedia.mediaToolsAccessibility' => 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.',
+			'universalMedia.mediaTool' => 'Media tool',
+			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.',
+			'universalMedia.captureNoDevices' => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.',
+			'universalMedia.captureSource' => 'Screen or camera',
+			'universalMedia.captureScreen' => 'Screen',
+			'universalMedia.captureAudioSource' => 'Audio input (optional)',
+			'universalMedia.captureAudioHelp' => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.',
+			'universalMedia.captureAudioNone' => 'No audio',
+			'universalMedia.captureDefaultAudio' => 'Default audio input',
+			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			'universalMedia.captureFrameRate' => 'Capture frame rate',
+			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
+			'universalMedia.captureSaveAs' => 'Save screen recording as',
+			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.',
+			'universalMedia.captureFailed' => 'The recording could not be saved. Check device permission, available storage, and FFmpeg support.',
+			'universalMedia.captureSaved' => 'Screen recording saved.',
+			'universalMedia.captureElapsedLabel' => 'Recording time',
+			'universalMedia.captureStart' => 'Start recording',
+			'universalMedia.capturePreview' => 'Preview in player',
+			'universalMedia.capturePreviewHelp' => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.',
+			'universalMedia.capturePreviewActive' => 'Live preview · not recording',
+			'universalMedia.captureStop' => 'Stop and save',
+			'universalMedia.captureMode' => 'Capture',
+			'universalMedia.shareMode' => 'Share',
+			'universalMedia.shareIntro' => 'Send a local media file to another device on your private network. PlezyNG creates a temporary HLS stream.',
+			'universalMedia.sharePrivacy' => 'Anyone on your local network who receives the private link can watch while it is active. The link expires after 60 minutes. Stop sharing to close the server and invalidate the link.',
+			'universalMedia.shareChooseFile' => 'Choose media file',
+			'universalMedia.shareChooseHelp' => 'Select a local audio or video file. The file stays on this computer.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.',
+			'universalMedia.shareFailed' => 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.',
+			'universalMedia.shareActive' => 'The stream is ready on your private network.',
+			'universalMedia.shareEnded' => 'The media reached the end and is no longer being shared.',
+			'universalMedia.shareStopped' => 'Sharing stopped. The temporary link is no longer valid.',
+			'universalMedia.shareUrlCopied' => 'Stream address copied.',
+			'universalMedia.shareOpenUrl' => 'Open this address in a player on the other device',
+			'universalMedia.shareQrLabel' => 'QR code for the temporary stream address',
+			'universalMedia.shareQrHelp' => 'Scan with a compatible player connected to the same private network.',
+			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
+			'universalMedia.shareCopyUrl' => 'Copy stream address',
+			'universalMedia.shareExpiresLabel' => 'Link expires at',
+			'universalMedia.shareStarting' => 'Preparing the stream…',
+			'universalMedia.shareStart' => 'Start sharing',
+			'universalMedia.shareStop' => 'Stop sharing',
+			'universalMedia.extensionsMode' => 'Extensions and CLI',
+			'universalMedia.extensionsIntro' => 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.',
+			'universalMedia.extensionsPrivacy' => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.',
+			'universalMedia.extensionImport' => 'Add extension manifest',
+			'universalMedia.extensionEmpty' => 'No search services yet. Choose a trusted manifest JSON file to add one.',
+			'universalMedia.extensionChoose' => 'Search service',
+			'universalMedia.extensionSearchConsent' => 'Each search sends your words to this HTTPS service. Results open only after you select one.',
+			'universalMedia.extensionSearchLabel' => 'Search media',
+			'universalMedia.extensionSearch' => 'Search',
+			'universalMedia.extensionSearching' => 'Searching…',
+			'universalMedia.extensionNoResults' => 'No safe media results were returned. Try another search.',
+			'universalMedia.extensionInstallTitle' => 'Add this search service?',
+			'universalMedia.extensionReplaceTitle' => 'Update this search service?',
+			'universalMedia.extensionService' => 'Service',
+			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
+			'universalMedia.extensionConsent' => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.',
+			'universalMedia.extensionInstall' => 'Add service',
+			'universalMedia.extensionReplace' => 'Update service',
+			'universalMedia.extensionRemoveTitle' => 'Remove this search service?',
+			'universalMedia.extensionRemoveHelp' => 'This removes the service from this profile. PlezyNG does not contact its endpoint.',
+			'universalMedia.extensionRemove' => 'Remove service',
+			'universalMedia.extensionInvalidManifest' => 'This file is not a supported extension manifest. See the Open media guide for the format.',
+			'universalMedia.extensionSaveFailed' => 'The extension could not be saved to the active profile.',
+			'universalMedia.extensionSearchFailed' => 'The search service did not return a valid response. Check the endpoint and try again.',
+			'universalMedia.cliTitle' => 'Command line',
+			'universalMedia.cliHelp' => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.',
+			'universalMedia.cliCopyExample' => 'Copy command example',
+			'universalMedia.cliCopied' => 'Command example copied.',
 			'fileSources.title' => 'Files and books',
 			'fileSources.subtitle' => 'Read, listen, and watch from your own files.',
 			'fileSources.add' => 'Add source',
@@ -14774,8 +16542,6 @@ extension on Translations {
 			'fileSources.offlineQuotaHelp' => 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.',
 			'fileSources.offlineStorageUsage' => 'Offline storage',
 			'fileSources.reservedStorage' => 'reserved',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Download queue',
 			'fileSources.downloadRunning' => 'Downloading',
 			'fileSources.downloadQueued' => 'Waiting',
@@ -14844,7 +16610,7 @@ extension on Translations {
 			'audiobook.addSyncSource' => 'Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.',
 			'audiobook.syncDestination' => 'Sync storage account',
 			'audiobook.syncFolder' => 'Sync folder or prefix',
-			'audiobook.syncFolderHelp' => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.',
+			'audiobook.syncFolderHelp' => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.',
 			'audiobook.syncCode' => 'Private sync code',
 			'audiobook.syncCodeHelp' => 'Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.',
 			'audiobook.showCode' => 'Show or hide sync code',
@@ -14854,7 +16620,7 @@ extension on Translations {
 			'audiobook.syncSourceDisconnect' => 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.',
 			'audiobook.syncReconnect' => 'Reconnect storage account',
 			'audiobook.lastSynced' => ({required Object time}) => 'Last synced at ${time}',
-			'audiobook.syncPrivacy' => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.',
+			'audiobook.syncPrivacy' => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.',
 			'audiobook.syncConflicts' => 'Choose where to resume',
 			'audiobook.conflictHelp' => 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Device ${device}',
@@ -14897,6 +16663,7 @@ extension on Translations {
 			'audiobook.recoveryExported' => 'Encrypted recovery file saved.',
 			'audiobook.recoveryImported' => 'Recovery data merged.',
 			'sourceSetup.savedCertificate' => 'Saved server certificate',
+			'sourceSetup.projectGutenberg' => 'Project Gutenberg',
 			'sourceSetup.nfsEndpointInvalid' => 'Enter an NFS URL such as nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'No DLNA servers found. Enter the device description URL manually.',
 			'sourceSetup.dlnaServers' => 'DLNA media servers',
@@ -14965,6 +16732,8 @@ extension on Translations {
 			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API key required',
 			'sourceSetup.subtitleKeyHelp' => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
 			'sourceSetup.subtitleSearchFailed' => 'Subtitle search failed. Check the API key, connection, and service access.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.subtitleApplyFailed' => 'Could not download or apply this subtitle. Check your connection and try another result.',
 			'sourceSetup.subtitleSearch' => 'Search OpenSubtitles',
 			'sourceSetup.subtitleSearchPrivacy' => 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.',
@@ -15021,7 +16790,7 @@ extension on Translations {
 			'comics.collections' => 'Collections',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
+			'games.enableDescription' => 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -15046,7 +16815,7 @@ extension on Translations {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
+			'games.recent' => 'Recently played',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -15078,8 +16847,8 @@ extension on Translations {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
+			'games.steamBetaTitle' => 'Pyrowave · experimental',
+			'games.steamBetaDescription' => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -15087,14 +16856,156 @@ extension on Translations {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'games.gameDetails' => 'Game details',
+			'games.chooseComputer' => 'Choose computer',
+			'games.connectComputer' => 'Connect a computer',
+			'games.connectToPlay' => 'Connect a gaming computer to play this game inside PlezyNG.',
+			'games.availabilityHint' => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.',
+			'games.steamSource' => 'From Steam',
+			'games.disconnected' => 'Disconnected',
+			'games.installed' => 'Installed',
+			'games.installationIncomplete' => 'Installation incomplete',
+			'games.notInstalled' => 'Not in the last inventory',
+			'games.installationUnknown' => 'Installation not checked',
+			'games.allComputers' => 'All computers',
+			'games.importInstalledGames' => 'Import installed games',
+			'games.inventoryConnectHelp' => 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.',
+			'games.inventoryConfirm' => ({required Object peer, required Object computer}) => 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.',
+			'games.inventoryImported' => 'Installed games updated.',
+			'games.inventoryChecked' => ({required Object date}) => 'Last checked ${date}',
+			'games.shareLibrary' => 'Share installed Steam games',
+			'games.shareLibraryHelp' => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.',
+			'games.steamInstallFolder' => 'Steam installation folder',
+			'games.automaticFolder' => 'Find automatically',
+			'games.streamQuality' => 'Steam stream quality',
+			'games.controllerSeats' => 'Steam controllers',
+			'games.allowSessionControl' => 'Allow companion game session controls',
+			'games.allowSessionControlHelp' => 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.',
+			'games.remoteSessions' => 'Game sessions',
+			'games.remoteSessionsHelp' => 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.',
+			'games.remoteSessionsDenied' => 'Enable companion game session controls in Games settings on the connected device.',
+			'games.remoteSessionsUnavailable' => 'Game session controls are unavailable. Reconnect or refresh to try again.',
+			'games.remoteSessionSubmitted' => 'The request was accepted. Refresh to check the current sessions.',
+			'games.noRemoteSessions' => 'No active game streams are available on this device.',
+			'games.remoteSessionAudible' => 'Game audio is selected',
+			'games.remoteSessionMuted' => 'Game audio is not selected',
+			'games.remoteSessionActions' => 'Game session actions',
+			'games.remoteSessionListen' => 'Listen to this game',
+			'games.remoteSessionMute' => 'Mute this game',
+			'games.remoteSessionsRefresh' => 'Refresh sessions',
+			'games.streamDetails' => 'Steam connection details',
+			'games.streamFeedbackHelp' => 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.',
+			'games.streamMeasurements' => 'Receiver measurements',
+			'games.streamMeasurementsUnavailable' => 'Not available yet',
+			'games.streamVideo' => 'Video format',
+			'games.streamDecoder' => 'Decoder',
+			'games.streamHardwareDecoder' => 'Hardware',
+			'games.streamSoftwareDecoder' => 'Software',
+			'games.streamReadbackDecoder' => 'Vulkan with CPU readback',
+			'games.streamHostFps' => 'Host frame rate target',
+			'games.streamHostBitrate' => 'Host bitrate target',
+			'games.streamLimits' => 'Host-reported frame rate limits',
+			'games.streamLimitHost' => 'Host capture or encoder',
+			'games.streamLimitNetwork' => 'Network',
+			'games.streamLimitDecoder' => 'Receiver decoder',
+			'games.streamLimitBurst' => 'Burst throttling',
+			'games.streamPresentedFps' => 'Frames submitted to the display',
+			'games.streamReceivedBitrate' => 'Received video payload',
+			'games.streamCompletionTime' => 'Average receiver frame completion',
+			'games.streamDroppedFrames' => 'Receiver-dropped frames this session',
+			'games.streamVideoQueue' => 'Video queue',
+			'games.streamAudioQueue' => 'Audio queue',
+			'games.streamAudioChannels' => 'Audio channels',
+			'games.streamInputBacklog' => 'Input packets queued + awaiting confirmation',
+			'games.streamReliableRetries' => 'Reliable packet retries this session',
+			'games.streamReliableGiveUps' => 'Reliable packets abandoned this session',
+			'games.streamMaxAck' => 'Longest reliable packet acknowledgement',
+			'games.streamMeasurementsHelp' => 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.',
+			'games.controllerSeatsHelp' => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.',
+			'games.streamQualityHelp' => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.',
+			'games.streamCodec' => 'Steam video codec',
+			'games.streamCodecHelp' => 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.',
+			'games.codecAutomatic' => 'Automatic · H.264 / HEVC',
+			'games.qualityBalanced' => 'Balanced',
+			'games.qualityReducedBandwidth' => 'Lower bandwidth',
+			'games.qualitySharperPicture' => 'Sharper picture',
+			'games.qualityReducedFrameRate' => 'Lower frame rate',
+			'games.reconnect' => 'Reconnect',
+			'games.reconnecting' => 'Reconnecting…',
+			'games.disconnectHelp' => 'Disconnecting leaves the game running on the computer.',
+			'games.streamFailed' => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.',
+			'games.steamActivity' => 'Steam activity',
+			'games.steamActivityHelp' => 'Load news and achievements for your linked account. Activity is kept only while these details are open.',
+			'games.includeFriends' => 'Include friends playing',
+			'games.includeFriendsHelp' => 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.',
+			'games.loadSteamActivity' => 'Load Steam activity',
+			'games.activityLoading' => 'Loading Steam activity…',
+			'games.activityUnavailable' => 'Steam activity is unavailable. Try again shortly.',
+			'games.activityPrivate' => 'Private or unavailable from Steam.',
+			'games.achievements' => 'Achievements',
+			'games.achievementProgress' => ({required Object unlocked, required Object total}) => '${unlocked} of ${total} unlocked',
+			'games.hiddenAchievement' => 'Hidden achievement',
+			'games.hiddenAchievementHelp' => 'Details appear after you unlock it.',
+			'games.achievementUnlocked' => 'Unlocked',
+			'games.achievementLocked' => 'Locked',
+			'games.moreAchievements' => 'Show more achievements',
+			'games.gameNews' => 'Game news',
+			'games.noGameNews' => 'No recent news available.',
+			'games.friendsPlaying' => 'Friends playing this game',
+			'games.noFriendsPlaying' => 'No friends are reported playing in this snapshot.',
+			'games.activityTruncated' => 'This snapshot is limited; some achievements or friends may not be included.',
+			'games.steamStore' => 'Steam store',
+			'games.steamCommunity' => 'Community',
+			'games.steamWorkshop' => 'Workshop',
+			'games.openSteamPage' => 'Open Steam page',
+			'games.openSteamPageHelp' => 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.',
+			'games.hostActions' => 'Computer actions',
+			'games.launchOnComputer' => 'Launch on computer',
+			'games.installOnComputer' => 'Install on computer',
+			'games.hostLibrary' => 'Open Steam on computer',
+			'games.hostDownloads' => 'Open downloads on computer',
+			'games.hostActionConfirm' => ({required Object computer}) => 'Send this action to ${computer}? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.',
+			'games.hostActionPairingHelp' => 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.',
+			'games.hostActionSubmitted' => 'Request handed to Steam on the computer. Check Steam for the result or any prompts.',
+			'games.hostActionDenied' => 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.',
+			'games.allowHostActions' => 'Allow paired remotes to control Steam',
+			'games.allowHostActionsHelp' => 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.',
+			'games.allowHostInstall' => 'Allow Steam install requests',
+			'games.allowHostInstallHelp' => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.',
+			'games.streamAudio' => 'Steam audio',
+			'games.streamAudioHelp' => 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.',
+			'games.audioStereo' => 'Stereo',
+			'games.audioQuad' => 'Quad (4 speakers)',
+			'games.audioSurround51' => 'Surround (5.1)',
+			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
+			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',
+			'deepLinks.notFound' => 'Couldn\'t find this title in your libraries.',
+			'deepLinks.unsupportedItem' => 'This link can\'t be played.',
+			'deepLinks.noLiveTv' => 'No Live TV server is available for this link.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Couldn\'t find channel "${channel}".',
+			'deepLinks.showLink' => 'Show link',
+			'deepLinks.showProfileLink' => 'Show profile link',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.',
+			'deepLinks.movieHint' => 'Opening this link plays the movie.',
+			'deepLinks.episodeHint' => 'Opening this link plays this episode.',
+			'deepLinks.profileHint' => 'Opening this link switches to this profile.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Open as ${name}',
+			'deepLinks.copy' => 'Copy',
+			'deepLinks.copied' => 'Link copied',
+			'householdSetup.title' => 'Household setup',
+			'issueReport.title' => 'Report a problem',
+			'issueReport.instructions' => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.',
+			'issueReport.privacy' => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.',
+			'issueReport.logPrivacy' => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.',
+			'issueReport.openDraft' => 'Open GitHub draft',
 			_ => null,
 		};
 	}

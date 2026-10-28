@@ -53,7 +53,9 @@ class LocalePreferences {
       if (settings != null) await PlatformLocaleSync.synchronize(settings);
       final locale =
           settings?.read(SettingsService.appLocale) ?? resolvePreferredAppLocale(AppLocaleEnvironment.deviceLocales);
-      await LocaleSettings.setLocale(locale);
+      if (locale.languageTag != LocaleSettings.currentLocale.languageTag) {
+        await LocaleSettings.setLocale(locale);
+      }
       await initializeDateFormatting();
       Intl.defaultLocale = formattingLocaleName;
     });

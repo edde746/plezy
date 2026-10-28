@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/card_focus_scope.dart';
+import '../focus/covered_route_focus_boundary.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
@@ -527,11 +528,23 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   /// first item so entering a not-yet-fetched hub still lands on item 1.
   String? _pendingLeadingAutoAdvanceHubKey;
 
+  /// Media item the selection was on when it left the active hub with no
+  /// replacement yet; the next refresh still follows it (see [followFocus]).
+  /// Cleared once the user moves or acts on the selection.
+  MediaItem? _displacedFocusItem;
+
   MediaHub? get _activeHub => widget.hubs.isEmpty ? null : widget.hubs[_hubIndex.clamp(0, widget.hubs.length - 1)];
 
   void requestFocus() {
     _notifyFocusedItem();
     _focusNode.requestFocus();
+  }
+
+  /// [requestFocus] as the screen's first focus: held, not dropped, while a
+  /// root route covers the session ([CoveredRouteFocusBoundary.requestInitialFocus]).
+  void requestInitialFocus() {
+    _notifyFocusedItem();
+    CoveredRouteFocusBoundary.requestInitialFocus(context, _focusNode);
   }
 
   @override
@@ -612,14 +625,18 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     final hub = _activeHub;
     if (hub == null) return;
     var followedFocusedItem = false;
-    if (_hasUserInteracted && oldFocusedItem != null && _hubKey(hub) == oldActiveHubKey) {
+    if (_hubKey(hub) != oldActiveHubKey) {
+      _displacedFocusItem = null;
+    } else if (_hasUserInteracted) {
       // Keep the selection on the media it was on when the active hub's items
       // reorder underneath it — a Continue Watching refresh after playback
       // moves the just-played item to the front (#1987). When the exact item
       // left the list, follow its series' replacement entry (finished episode
-      // → next episode); otherwise fall through to the positional clamp.
-      final followedIndex = followItemIndex(hub.items, oldFocusedItem);
-      final followedSlot = followedIndex == -1 ? -1 : followedIndex + _leadingCountFor(hub);
+      // → next episode), even when that entry lands a refresh later (#2814);
+      // otherwise fall through to the positional clamp.
+      final followed = followFocus(hub.items, focused: oldFocusedItem, displaced: _displacedFocusItem);
+      _displacedFocusItem = followed.displaced;
+      final followedSlot = followed.index == -1 ? -1 : followed.index + _leadingCountFor(hub);
       if (followedSlot != -1 && followedSlot != _itemIndex) {
         _itemIndex = followedSlot;
         followedFocusedItem = true;
@@ -917,6 +934,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _itemIndex = next;
     _hasUserChangedItem = true;
     _pendingLeadingAutoAdvanceHubKey = null;
+    _displacedFocusItem = null;
     _focusModel.set(_hubIndex, _itemIndex);
     _rememberFocus(hub);
     _notifyFocusedItem();
@@ -943,6 +961,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     // extents don't depend on the active hub, so no relayout is needed.
     _hubIndex = next;
     _itemIndex = remembered.clamp(0, _totalItemCount(nextHub) == 0 ? 0 : _totalItemCount(nextHub) - 1);
+    _displacedFocusItem = null;
     // Landing on the leading slot only because the hub has no items yet is a
     // clamp artifact, not a choice: advance to the first item once they load.
     _pendingLeadingAutoAdvanceHubKey = nextHub.items.isEmpty && _isLeadingSlot(nextHub, _itemIndex)
@@ -1055,6 +1074,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _itemIndex = index;
     _hasUserChangedItem = true;
     _pendingLeadingAutoAdvanceHubKey = null;
+    _displacedFocusItem = null;
     _focusModel.set(_hubIndex, _itemIndex);
     _rememberFocus(hub);
     _notifyFocusedItem();
@@ -1075,6 +1095,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _hasUserChangedHub = true;
     _hasUserChangedItem = true;
     _pendingLeadingAutoAdvanceHubKey = null;
+    _displacedFocusItem = null;
     _focusModel.set(_hubIndex, _itemIndex);
     _rememberFocus(hub);
     _notifyFocusedItem();
@@ -1202,6 +1223,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   void _showContextMenuForCurrentItem() {
     final hub = _activeHub;
     if (hub == null) return;
+    _displacedFocusItem = null;
     if (_isLeadingSlot(hub, _itemIndex)) {
       _showLeadingContextMenu(hub);
       return;
@@ -1218,6 +1240,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   Future<void> _activateCurrentItem() async {
     final hub = _activeHub;
     if (hub == null) return;
+    _displacedFocusItem = null;
     if (_isLeadingSlot(hub, _itemIndex)) {
       _showLeadingContextMenu(hub);
       return;

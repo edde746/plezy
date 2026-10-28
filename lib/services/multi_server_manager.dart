@@ -868,6 +868,9 @@ class MultiServerManager {
   Future<bool> addDirectPlexConnection(PlexDirectConnection connection, {String? profileId}) async {
     final serverId = connection.serverMachineId;
     final profileScopeId = buildPlexProfileScopeId(serverId: ServerId(serverId), profileId: profileId ?? serverId);
+    final consentedHttpEndpoint = Uri.tryParse(connection.baseUrl)?.scheme.toLowerCase() == 'http'
+        ? connection.baseUrl
+        : null;
 
     final server = PlexServer(
       name: connection.serverName,
@@ -886,6 +889,7 @@ class MultiServerManager {
           ),
       ],
       owned: true,
+      consentedHttpEndpoint: consentedHttpEndpoint,
     );
 
     final existing = _clients[serverId];
@@ -1006,11 +1010,16 @@ class MultiServerManager {
           endpointSelectionValidated = true;
         } catch (e, st) {
           appLogger.w(
-            '${connection.dialect.productName} endpoint race failed; using only the stored active endpoint',
+            '${connection.dialect.productName} endpoint race failed; preserving stored candidates for identity-checked failover',
             error: e.runtimeType,
             stackTrace: st,
           );
-          resolvedConnection = connection.copyWith(baseUrl: connection.baseUrl, baseUrls: [connection.baseUrl]);
+          // Keep historic HTTPS candidates when the initial race is partial
+          // or cannot establish a matching identity. Failover still probes
+          // each candidate and requires the stored machine id before sending
+          // authenticated requests. Dropping these URLs here made transient
+          // probe failures destructive.
+          resolvedConnection = connection.copyWith(baseUrl: connection.baseUrl, baseUrls: connection.baseUrls);
         }
       }
 

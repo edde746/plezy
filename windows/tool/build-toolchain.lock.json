@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "nuget": {
+    "version": "7.9.0",
+    "filename": "nuget-7.9.0.exe",
+    "url": "https://dist.nuget.org/win-x86-commandline/v7.9.0/nuget.exe",
+    "sha256": "992d70cac5b06c38efec91806caba64cdcc07e6d963a0959dbbbaf264d33b800",
+    "authenticodePublisher": "Microsoft Corporation",
+    "provenance": "https://dist.nuget.org/index.json",
+    "verification": "The official distribution index identifies 7.9.0 as the recommended release. SHA-256 was calculated from the complete versioned download on 2026-10-28. Windows provisioning also requires a valid Microsoft Authenticode signature."
+  },
+  "innoSetup": {
+    "version": "6.7.3",
+    "filename": "innosetup-6.7.3.exe",
+    "url": "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe",
+    "sha256": "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732",
+    "authenticodePublisher": "Pyrsys B.V.",
+    "provenance": "https://jrsoftware.org/isdl.php",
+    "signatureDocumentation": "https://jrsoftware.org/isdl-verify.php",
+    "verification": "The vendor download page links this latest Inno Setup 6 release and identifies Pyrsys B.V. as publisher. The complete download SHA-256 agrees with the GitHub release asset digest and vendor .issig file. Windows provisioning additionally requires valid Authenticode."
+  }
+}

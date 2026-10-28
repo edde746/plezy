@@ -1,6 +1,6 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish Snap Store packages
-run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}:channel:{3}', inputs.action, inputs.runner_pool, inputs.release_tag, inputs.channel) }}
 
 on:
   workflow_dispatch:
@@ -29,6 +29,10 @@ on:
           - beta
           - candidate
           - stable
+
+# Several publication gates run before checkout in fresh private guests.
+env:
+  GH_REPO: ${{ github.repository }}
 
 permissions:
   contents: read
@@ -102,6 +106,11 @@ jobs:
       matrix:
         arch: [x64, arm64]
     steps:
+      - name: Check out protected publication tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
       - name: Check Snap Store credentials
         id: credentials
         env:
@@ -133,9 +142,11 @@ jobs:
 
       - name: Publish to Snap Store
         if: steps.credentials.outputs.available == 'true'
-        uses: snapcore/action-publish@214b86e5ca036ead1668c79afb81e550e6c54d40 # v1
+        shell: bash
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        with:
-          snap: ${{ runner.temp }}/plezyng-snap/plezyng-linux-${{ matrix.arch }}.snap
-          release: ${{ needs.resolve-release.outputs.channel }}
+          ARCH: ${{ matrix.arch }}
+          RELEASE_CHANNEL: ${{ needs.resolve-release.outputs.channel }}
+        run: |
+          bash scripts/publish_private_snap.sh \
+            "$RUNNER_TEMP/plezyng-snap/plezyng-linux-${ARCH}.snap" "$RELEASE_CHANNEL"

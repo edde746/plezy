@@ -25,6 +25,8 @@ void main() {
                   'title': 'Arrival',
                   'year': 2016,
                   'overview': 'A linguist deciphers an unfamiliar language.',
+                  'rating': 8.8,
+                  'genres': ['science-fiction'],
                   'ids': {'trakt': 123, 'imdb': 'tt2543164'},
                 },
               },
@@ -47,6 +49,8 @@ void main() {
       expect(result?.title, 'Arrival');
       expect(result?.year, 2016);
       expect(result?.identifiers['trakt'], '123');
+      expect(result?.rating, 8.8);
+      expect(result?.genres, ['science-fiction']);
       expect(paths, [byId ? '/search/imdb/tt2543164' : '/search/movie,show', '/movies/123/people']);
     });
   }

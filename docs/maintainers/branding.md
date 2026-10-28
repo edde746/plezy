@@ -1,22 +1,34 @@
-# PlezyNG branding
+# PlezyNG ribbon identity
 
-The approved logo is the two nested coral play triangles with a solid navy
-centre and the NG badge at the lower right. The master is
-[`assets/branding/plezyng-approved.png`](../../assets/branding/plezyng-approved.png).
-It is the exact user-selected upload, retained byte-for-byte at 1254 × 1254.
-Its SHA-256 is recorded in `assets/branding/brand.json`.
+The approved identity is the coral folded-ribbon play symbol and italic
+**PlezyNG** wordmark. The full emblem retains **NG** in its lower-right opening;
+the compact symbol omits fine lettering and the hairline return fold.
 
-Use `assets/plezy.png` for the app, README, Linux packages, and website handoff.
-It is a transparent 1024 × 1024 export of the approved image. The NG badge is
-already part of the artwork; never add a second badge or substitute the old
-wave mark. The SVG compatibility files embed the approved raster and are not
-editable vector reconstructions.
+`assets/branding/brand.json` records the immutable master checksums and every
+export's role, size and appearance. `plezyng-approved.png` is the dark-surface
+emblem. `source/` contains the light emblem, compact symbol, two wordmarks and
+two artwork masters. The generated PNGs have real alpha, including the ribbon's
+openings. These are raster assets; the lettering is artwork, not an installable
+font. Compatibility SVGs embed or reference the PNGs and are not vector masters.
 
-The webOS TV package icon at `webos/meta/icon.png` is generated from the same
-approved master, so it stays in sync with the desktop and mobile app icons.
+## Use the right asset
 
-`assets/plezyng-app-icon.png` is the full-resolution 1254 × 1254 compatibility
-export for store-listing workflows and uses the same approved master.
+- `AppBrandMark` and `AppBrandWordmark` select light/dark artwork from the actual
+  Flutter surface, including custom themes. Use them for startup, sign-in and
+  About. Marks at 64 logical pixels or below use the compact silhouette.
+- `plezyng-mark-light.png` and `plezyng-wordmark-light.png` have navy lettering
+  for pale backgrounds. The `-dark` variants have ivory lettering.
+- `plezyng-artwork-light.webp` and `plezyng-artwork-dark.webp` are matching 16:9
+  brand artwork. README uses a theme-aware picture. Existing device and content
+  illustrations remain product demonstrations rather than brand masters.
+- `plezyng-compact.png` and `plezyng-monochrome.png` cover tiny and system-tinted
+  uses. Windows ICO selects the compact mark separately for its small frames.
+- `assets/branding/web/` contains theme-specific favicon sizes, multi-size ICO,
+  opaque Apple/web app icons, and 1200 × 630 social artwork.
+
+Keep aspect ratios and clear space. Do not add a second NG badge, stretch the
+wordmark, or use pale lettering on a pale surface. Larger OS launcher icons use
+the detailed mark; small target-size exports and monochrome masks omit NG.
 
 ## Regenerate and verify
 
@@ -26,46 +38,37 @@ python3 scripts/codegen/generate_brand_assets.py
 python3 scripts/codegen/generate_brand_assets.py --check
 python3 scripts/checks/check_brand_assets.py
 python3 -m unittest discover -s scripts/codegen/tests -p 'test_brand_assets.py'
+flutter test test/widgets/app_brand_test.dart
 ```
 
-The existing `generate_app_icons.py` and `generate_android_icons.sh` commands
-delegate to the same exporter, so no older generator can restore the wave
-logo. Export dimensions and roles are explicit in `brand.json`; content hashes
-are in `asset-manifest.json`. CI checks the source, configuration, generator,
-and every exported file without needing a graphics SDK.
-
-The original PNG remains untouched. Exports remove only almost-transparent
-matte residue (alpha 4/255 or less), then resize and place the image. The colour
-art is never traced, repainted, recoloured, or passed through image generation.
-Android monochrome and notification masks keep the rings, NG letters, and
-badge border; navy interiors become transparent for system tinting.
+All masters stay unchanged. The exporter suppresses only alpha at 4/255 or
+below, then resizes and composes outputs. Colours and lettering come from the
+approved masters. `asset-manifest.json` verifies every exported file and all
+sources. Pillow is pinned for repeatable encoders. Compatibility generator
+entrypoints delegate to this same exporter.
 
 ## Platform coverage
 
-- Flutter startup, authentication, about, README and Linux packaging use the
-  shared PNG exports. The icon picker uses the padded foreground.
-- Android legacy, adaptive, monochrome, notification, TV, and all 23 alternate
-  slots are exported. Adaptive foregrounds fit the entire mark and NG badge
-  inside a circle smaller than the Android safe area.
-- iOS and macOS Icon Composer assets use the approved PNG. iOS alternate icons
-  remain opaque. Glass, specular, and shadow effects are disabled on the mark.
-- tvOS front/back/middle stacks, alternate stacks, both shelf formats and the
-  wide shelf's 2× image are exported.
-- Windows ICO includes 16, 24, 32, 48, 64, 128 and 256 px frames. Every MSIX tile,
-  target-size variant, store logo and splash image is exported.
-- The webOS TV package icon uses the same approved 1024 × 1024 mark.
-- Google Play and Amazon icons, the Play feature graphic, and the Android and
-  iPhone server-selection screenshots use the selected mark. The graphic and
-  screenshots retain their previous non-logo content from clean bases in
-  `assets/branding`. These are logo replacements in existing screenshots, not
-  new device captures. Other screenshots do not contain the replaced mark.
+The exporter covers Android legacy/adaptive/monochrome/notification/TV assets,
+iOS and macOS Icon Composer, iOS alternates, tvOS stacks and both shelf formats,
+Windows ICO and MSIX tiles, webOS, Linux packaging's shared PNG, and store
+listing artwork. Tizen packaging copies the shared `assets/plezy.png`.
 
-The 23 alternate names and launcher identifiers are permanent compatibility
-identifiers. Their old motifs have been replaced with this logo; only the
-backplate colours differ. Keep every alias, catalog entry, and image stack so
-an existing selection survives upgrades. Source SVG wrappers reference the
-shared PNG instead of maintaining independent artwork.
+All 23 alternate launcher identifiers remain stable. Their backplates retain
+the existing palette, with navy or ivory NG lettering chosen for its contrast.
+Android foregrounds fit the full mark within the safe circle. Apple composed
+icons use the light emblem on their existing light fill. The app's appearance
+setting changes in-app branding; platform launcher selection remains governed
+by the existing platform icon settings.
 
-Branding verification covers source identity, export integrity, native asset
-references, safe-area placement, opacity and icon sizes. A Flutter build and
-Apple/Android device inspection still qualify the packaged appearance.
+To hand off exactly the same outputs to the website:
+
+```sh
+cd ../plezyng.app
+python3 scripts/sync_branding.py --source ../PlezyNG
+npm run build
+npm run check
+```
+
+The website import verifies hashes and copies bytes unchanged. Native builds
+and device inspection remain the final packaging checks for their platforms.

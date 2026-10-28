@@ -51,6 +51,10 @@ void main() {
       ),
       'Localized network failure',
     );
+    expect(
+      companionRemotePairingErrorMessage(const PeerError(type: PeerErrorType.networkError, message: '')),
+      t.companionRemote.pairing.failedToConnect(error: t.errors.reasonUnreachable),
+    );
   });
 
   testWidgets('a failed connect restarts discovery and re-lists the broadcasting host', (tester) async {

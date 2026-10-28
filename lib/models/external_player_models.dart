@@ -11,7 +11,7 @@ typedef PlayerOptionsLauncher = Future<bool> Function(String url, ExternalPlayer
 
 /// Extras for players whose URL scheme can carry more than the stream URL.
 class ExternalPlayerLaunchOptions {
-  const ExternalPlayerLaunchOptions({this.startPosition, this.callbackSession, this.filename});
+  const ExternalPlayerLaunchOptions({this.startPosition, this.callbackSession, this.returnLinks, this.filename});
 
   final Duration? startPosition;
 
@@ -19,9 +19,33 @@ class ExternalPlayerLaunchOptions {
   /// identify media by name; stream URLs usually end in `file.mkv`.
   final String? filename;
 
-  /// Identifies this launch in the x-callback-url return links; null asks for
-  /// no return links.
+  /// Where the player hands control back to Plezy; null asks for no return
+  /// links.
+  final ExternalPlayerReturnLinks? returnLinks;
+
+  /// Legacy callback session for source compatibility with older callers.
   final String? callbackSession;
+}
+
+/// The x-callback-url links a player opens to hand control back to Plezy,
+/// one per way playback can end.
+class ExternalPlayerReturnLinks {
+  const ExternalPlayerReturnLinks({required this.success, required this.cancel, required this.error});
+
+  final Uri success;
+  final Uri cancel;
+  final Uri error;
+}
+
+/// Compatibility URLs used by the former session-string callback API.
+abstract final class ExternalPlayerCallbackUrls {
+  static const scheme = 'plezy';
+  static const host = 'external-player';
+  static const success = 'success';
+  static const cancel = 'cancel';
+  static const error = 'error';
+
+  static String build(String result, String session) => '$scheme://$host/$result/${Uri.encodeComponent(session)}';
 }
 
 /// A player launched through `<scheme>://x-callback-url/<action>`, and which
@@ -58,18 +82,28 @@ class XCallbackPlayer {
   /// spaces as `+`.
   Uri playUri(String url, ExternalPlayerLaunchOptions options) {
     final startSeconds = supportsStartPosition ? options.startPosition?.inSeconds ?? 0 : 0;
-    final session = options.callbackSession;
+    final returnLinks = options.returnLinks;
+    final callbackSession = options.callbackSession;
     final filename = supportsFilename ? options.filename : null;
+    String returnLink(Uri link) {
+      final value = link.toString();
+      return decodesCallbackUrls ? Uri.encodeComponent(value) : value;
+    }
+
     String callback(String result) {
-      final link = ExternalPlayerCallbackUrls.build(result, session!);
-      return decodesCallbackUrls ? Uri.encodeComponent(link) : link;
+      final value = ExternalPlayerCallbackUrls.build(result, callbackSession!);
+      return decodesCallbackUrls ? Uri.encodeComponent(value) : value;
     }
 
     final query = <String>[
       'url=${Uri.encodeComponent(url)}',
       if (filename != null) 'filename=${Uri.encodeComponent(filename)}',
       if (startSeconds > 0) 'position=$startSeconds',
-      if (session != null) ...[
+      if (returnLinks != null) ...[
+        'x-success=${returnLink(returnLinks.success)}',
+        if (supportsCancel) 'x-cancel=${returnLink(returnLinks.cancel)}',
+        'x-error=${returnLink(returnLinks.error)}',
+      ] else if (callbackSession != null) ...[
         'x-success=${callback(ExternalPlayerCallbackUrls.success)}',
         if (supportsCancel) 'x-cancel=${callback(ExternalPlayerCallbackUrls.cancel)}',
         'x-error=${callback(ExternalPlayerCallbackUrls.error)}',
@@ -77,19 +111,6 @@ class XCallbackPlayer {
     ].join('&');
     return Uri.parse('$scheme://x-callback-url/$action?$query');
   }
-}
-
-/// Return links handed to x-callback-url players:
-/// `plezy://external-player/<result>/<session>`. The session lives in the path
-/// because players append their own query parameters to these links.
-abstract final class ExternalPlayerCallbackUrls {
-  static const scheme = 'plezy';
-  static const host = 'external-player';
-  static const success = 'success';
-  static const cancel = 'cancel';
-  static const error = 'error';
-
-  static String build(String result, String session) => '$scheme://$host/$result/${Uri.encodeComponent(session)}';
 }
 
 enum CustomPlayerType { command, urlScheme }

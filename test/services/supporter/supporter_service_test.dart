@@ -512,6 +512,7 @@ void main() {
       await service.purchase();
 
       final purchase = appStorePurchase();
+      appStore.transactions = [appStoreTransaction()];
       platform.deliver([purchase]);
       await pumpEventQueue();
 

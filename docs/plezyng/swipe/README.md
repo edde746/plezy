@@ -1,6 +1,6 @@
 # Find your next — cross-media swipe discovery
 
-Status: the first runtime delivery is implemented on this branch. It provides the bounded mixed-media deck, profile-local Saved picks/Undo, time and medium filters, swipe plus labelled actions, gated Explore catalog details, live-TV revalidation, source details, offline checks and entry points from Discover, Libraries, Explore and Downloads. Catalog rows are included only when opened through Explore after its visibility/PIN gate. It is not the full enhancement set described below: sample isolation, verified adaptation matching, shortlist voting, discovery cloud sync, AI reranking, public-library/lending candidates and physical-device evidence remain future work. Photos remain excluded because Plezy has no canonical photo viewer. Initial plan audit: `1b12fd8bb2182a67a58aa8eb949c01006d8fbc31`; source/design reconciliation: `bea4d3f0fe8cd869e0727bbe372cae0da534b253`. See [delivery status](DELIVERY.md) for exact scope and validation.
+Status: the runtime delivers a bounded mixed-media deck, profile-local Saved picks with search, Undo, safe Shuffle, timestamped review history with per-item Retry, exact medium/time/source/genre filters, metadata-backed mood and familiarity filters, explicit genre preferences, per-pick hide/restore/reset, and opt-in encrypted Saved-pick sync with conflict resolution. It includes exact-public-ID adaptation matching, two/three-pick comparison, private co-present shortlist voting, optional validated AI reranking, capped disposable OPDS sample previews, explicit Open Library catalog-only candidates, and local borrower-catalog candidates when the existing OverDrive gate is enabled. Borrower picks keep local library/book identities on-device and revalidate the exact book before opening; availability and borrowing remain explicit actions in the existing lending flow. Open Library results do not verify local holdings or availability. OverDrive remains disabled by default. The filter sheet retains the existing quick chips and searchable pickers. Catalog rows still enter only through Explore after its visibility/PIN gate. Feature acceptance and physical-device qualification have not run on this branch. Photos remain excluded because Plezy has no canonical photo viewer. Initial plan audit: `1b12fd8bb2182a67a58aa8eb949c01006d8fbc31`; source/design reconciliation: `bea4d3f0fe8cd869e0727bbe372cae0da534b253`. See [delivery status](DELIVERY.md) for exact scope and validation.
 
 ## The product decision
 
@@ -15,11 +15,12 @@ Confidence: **high** in the observed integration points and capability boundarie
 ## What the user experiences
 
 1. Open **Find your next** from Discover, a library, Explore or Downloads. The deck reads bounded pages from visible media libraries, enabled file sources, live TV and completed downloads; Explore catalog rows enter only through the gated Explore route. No onboarding form or AI key is required.
-2. A compact context control opens the adaptive sheet for Watch / Listen / Read and available time. The current implementation does not yet expose mood, custom source, familiarity or access filters.
+2. A compact context control opens the adaptive sheet for Watch / Listen / Read, available time, source, genre, supplied mood metadata and available viewing-history evidence. Taste preferences only reorder gently; explicit skips do not train them.
 3. The page shows the cover/backdrop, title, media kind, useful duration, one factual reason, availability and a concise description. It uses the existing detail/spotlight hierarchy.
-4. **Not now** advances without a permanent dislike. **Save** adds the exact choice to **Saved picks** and advances. Play/listen/read/watch-live actions use existing Plezy routes; catalog-only choices open details and never imply ownership or direct play. Samples are not exposed until their progress safety is implemented.
+4. **Not now** advances without a permanent dislike. **Save** adds the exact choice to **Saved picks** and advances. Play/listen/read/watch-live actions use existing Plezy routes; catalog-only choices open details and never imply ownership or direct play. OPDS provider-declared samples open through a bounded temporary preview that does not write progress, notes, or completion state.
 5. **Undo** is always reachable after a reversible decision. It restores the complete previous card and its place. The user can stop at any time; saved picks remain available.
-6. After eight decisions or three saves, show a quiet invitation to review the shortlist. It does not cover the next card or force a modal. From Saved picks, compare a few choices, select one, or explicitly ask the app to choose from those picks.
+6. From Saved picks, compare two or three choices, select one, explicitly ask the app to choose, or select a shortlist for private pass-the-device voting. Guest ballots are hidden between turns and discarded when voting ends. No account identities, profile histories, or network matchmaking are involved.
+7. An optional service setting can send a bounded set of eligible titles and public metadata tags to a configured OpenAI-compatible model. The current card stays visible, only opaque temporary IDs can return, and any failure leaves the baseline order intact.
 
 The initial eight/three thresholds are tuning defaults, not research findings. They are centralized, testable and revisable after observation.
 
@@ -32,8 +33,8 @@ The initial eight/three thresholds are tuning defaults, not research findings. T
 | Try without losing your place | Hear a narrator, preview music or inspect a book before committing | Explicit samples use isolated preview state; no progress, completion, scrobble or queue pollution |
 | Same story, another way | Find an ebook, narration or adaptation that suits the current device | Verified relations only; editions and adaptations never share a cursor |
 | A useful shortlist | Turn a few promising choices into a decision | Local profile-owned Saved picks, persistent undo/history, optional qualified sync |
-| Understandable recommendations | Learn why something appeared and correct the app | Factual reason templates; explicit taste controls; neutral skips; bounded diversity |
-| Choose together | Make a household decision without exposing everyone's history | Opt-in, co-present guest voting over the current authorized shortlist; no account impersonation |
+| Understandable recommendations | Learn why something appeared and correct the app | Factual reason templates; manually controlled genre preferences; per-pick hide/restore; neutral skips; bounded diversity |
+| Choose together | Make a household decision without exposing everyone's history | Opt-in, co-present guest voting over selected Saved picks; private handoffs; veto-aware consensus; no account impersonation |
 
 ## Boundaries that prevent a clunky result
 
@@ -49,7 +50,7 @@ The initial eight/three thresholds are tuning defaults, not research findings. T
 
 Main contains video, music, catalog Explore, live TV, downloads, profile isolation, Mono UI and keyboard/TV focus infrastructure. The ebooks, comics, audiobooks, cloud/file sources, lending and shared accessibility foundation also landed while this plan was being prepared: the final main snapshot `bea4d3f0fe8cd869e0727bbe372cae0da534b253` includes it. The source models and documentation match the inspected foundation branch. Integrate those actual owners; do not rebuild them inside discovery.
 
-The cloud reading/listening sync branch at `189feda40be1a6df69cbd77388957aebf5473ec3` contains a recovery plan, not the finished sync implementation. Do not depend on a `PublicationSync` class that has not landed. The localization branch is separate as well. Land/reconcile dependencies through their own work, preserving newer security, branding and localization changes. This plan does not authorize replacing main with any older snapshot.
+The reading/listening sync foundation is integrated in `PublicationSync`. Optional Saved-pick sync uses its encrypted store with a separate namespace and local-only item resolution. Keep discovery state separate from playback/progress records and preserve newer security, branding and localization changes. This plan does not authorize replacing main with any older snapshot.
 
 All enabled and functional kinds must receive a deliberate outcome: browse/save/launch when supported, or a clear discover/save/handoff experience where the device cannot consume that kind. An enum value is not proof of a viewer. Photos are represented in `MediaKind`, but a functional photo viewer was not established in this audit. WebOS has no current application target. See the exhaustive [coverage matrix](COVERAGE.md).
 

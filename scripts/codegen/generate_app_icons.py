@@ -2,7 +2,7 @@
 """Compatibility entry point: regenerate selected branding for all icon slots.
 
 The 23 permanent alternate ids remain in AndroidManifest.xml, tvOS Info.plist
-and the Dart catalog. Every slot now uses the approved nested-play logo; only
+and the Dart catalog. Every slot now uses the approved folded-ribbon logo; only
 the theme backplate differs. See docs/maintainers/branding.md.
 """
 

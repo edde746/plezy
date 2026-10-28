@@ -2,7 +2,10 @@
 
 #include <wincred.h>
 
+#include <algorithm>
+#include <cctype>
 #include <optional>
+#include <string>
 
 #include "flutter/generated_plugin_registrant.h"
 #include "mpv/display_mode_manager.h"
@@ -13,6 +16,17 @@ static constexpr wchar_t kWindowPlacementValue[] = L"WindowPlacement";
 
 static UINT_PTR g_saveTimerId = 0;
 static HWND g_mainHwnd = nullptr;
+
+static bool IsOpenMediaLink(const std::string& value) {
+  const auto starts_with = [&value](const std::string& prefix) {
+    return value.size() >= prefix.size() &&
+           std::equal(prefix.begin(), prefix.end(), value.begin(), [](char expected, char actual) {
+             return expected == static_cast<char>(std::tolower(static_cast<unsigned char>(actual)));
+           });
+  };
+  return starts_with("plezy://open-media?") || starts_with("plezyng://open-media?") ||
+         starts_with("plezxyng://open-media?");
+}
 // When true, WM_WINDOWPOSCHANGED should not persist placement. Used while a
 // native fullscreen toggle is in flux so we don't record the fullscreen rect
 // as the user's last "normal" placement.
@@ -169,6 +183,7 @@ bool FlutterWindow::OnCreate() {
       flutter_controller_->engine()->GetRegistrarForPlugin("MpvAudioPlayerPlugin"));
 
   RegisterWindowChannel();
+  RegisterDeepLinkChannel();
   RegisterCredentialKeyStore();
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
@@ -203,6 +218,7 @@ void FlutterWindow::OnDestroy() {
   }
 
   window_channel_ = nullptr;
+  deep_link_channel_ = nullptr;
   credential_channel_ = nullptr;
 
   if (flutter_controller_) {
@@ -220,6 +236,30 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
     if (result) {
       return *result;
     }
+  }
+
+  if (message == WM_COPYDATA && deep_link_channel_) {
+    constexpr ULONG_PTR kPlezyLinkTag = 0x504C5A59;
+    const auto* data = reinterpret_cast<const COPYDATASTRUCT*>(lparam);
+    if (!data || data->dwData != kPlezyLinkTag || !data->lpData || data->cbData < sizeof(wchar_t) ||
+        data->cbData > 16 * 1024 || data->cbData % sizeof(wchar_t) != 0) {
+      return FALSE;
+    }
+    const auto* wide = static_cast<const wchar_t*>(data->lpData);
+    const size_t character_count = data->cbData / sizeof(wchar_t);
+    if (wide[character_count - 1] != L'\0') return FALSE;
+    const int byte_count = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, -1, nullptr, 0, nullptr, nullptr);
+    if (byte_count <= 1 || byte_count > 16 * 1024) return FALSE;
+    std::string url(static_cast<size_t>(byte_count), '\0');
+    if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wide, -1, url.data(), byte_count, nullptr, nullptr) == 0) {
+      return FALSE;
+    }
+    url.pop_back();
+    if (!IsOpenMediaLink(url)) return FALSE;
+    flutter::EncodableMap arguments;
+    arguments.emplace(flutter::EncodableValue("url"), flutter::EncodableValue(url));
+    deep_link_channel_->InvokeMethod("onLink", std::make_unique<flutter::EncodableValue>(std::move(arguments)));
+    return TRUE;
   }
 
   switch (message) {
@@ -242,6 +282,18 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);
+}
+
+void FlutterWindow::RegisterDeepLinkChannel() {
+  deep_link_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "com.plezy/deep_link", &flutter::StandardMethodCodec::GetInstance());
+  deep_link_channel_->SetMethodCallHandler([](const auto& call, auto result) {
+    if (call.method_name() == "getInitialLink") {
+      result->Success();
+    } else {
+      result->NotImplemented();
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------

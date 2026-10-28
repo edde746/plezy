@@ -1,7 +1,7 @@
 name: plezy
 description: "A cross-platform PlezyNG client for Plex, Jellyfin, and Emby"
 publish_to: "none"
-version: 2.25.0+158
+version: 3.0.0+159
 
 environment:
   # Dart floor stays 3.12: freezed 3.x emits `final` constructor parameters,
@@ -235,6 +235,7 @@ flutter:
     # flutter_inappwebview_macos 1.2.0-beta.3 fails SwiftPM builds on Xcode 26.
     enable-swift-package-manager: false
   assets:
+    - assets/wifi_transfer/upload_page.html
     - assets/reader/
     - assets/provider_marks/
     - assets/reader/foliate/
@@ -251,8 +252,14 @@ flutter:
     - assets/licenses/Unicode.txt
     - assets/licenses/JellyfinWebTranslations.txt
     - assets/plezy.png
+    - assets/branding/plezyng-compact.png
+    - assets/branding/plezyng-mark-light.png
+    - assets/branding/plezyng-mark-dark.png
+    - assets/branding/plezyng-wordmark-light.png
+    - assets/branding/plezyng-wordmark-dark.png
     - assets/branding/plezyng-product-illustration.webp
     - assets/branding/plezyng-product-illustration-4k.png
+    - assets/branding/plezyng-adaptive-light.png
     - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg
@@ -265,6 +272,8 @@ flutter:
     - assets/mdblist_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/go-noto-kurrent-hangul.ttf
+    # Intro/credits chapter classifier; scripts/codegen/train_chapter_marker_model.py writes it.
+    - assets/chapter_marker_model.bin
     - assets/shaders/nvscaler/
     - assets/shaders/artcnn/
     - assets/shaders/anime4k/

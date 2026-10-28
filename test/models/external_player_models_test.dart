@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/external_player_models.dart';
+import 'package:plezy/services/external_player_service.dart';
 
 /// The POSIX one-liner `_posixCommandExists` hands to `sh`.
 const _commandProbe = r'command -v "$1" >/dev/null 2>&1';
@@ -168,9 +169,9 @@ void main() {
       final uri = KnownPlayers.callbackPlayUri(
         'outplayer',
         stream,
-        const ExternalPlayerLaunchOptions(
-          startPosition: Duration(seconds: 90, milliseconds: 700),
-          callbackSession: 's1',
+        ExternalPlayerLaunchOptions(
+          startPosition: const Duration(seconds: 90, milliseconds: 700),
+          returnLinks: ExternalPlayerService.returnLinks('s1'),
         ),
       )!;
 
@@ -183,7 +184,7 @@ void main() {
       expect(uri.queryParameters['x-error'], 'plezy://external-player/error/s1');
     });
 
-    test('play link without a session or position is just the stream', () {
+    test('play link without return links or a position is just the stream', () {
       final uri = KnownPlayers.callbackPlayUri('outplayer', stream, const ExternalPlayerLaunchOptions())!;
 
       expect(uri.queryParameters.keys, ['url']);
@@ -194,9 +195,9 @@ void main() {
     final uri = KnownPlayers.callbackPlayUri(
       'infuse',
       'http://srv/v.mkv',
-      const ExternalPlayerLaunchOptions(
-        startPosition: Duration(seconds: 42),
-        callbackSession: 's2',
+      ExternalPlayerLaunchOptions(
+        startPosition: const Duration(seconds: 42),
+        returnLinks: ExternalPlayerService.returnLinks('s2'),
         filename: 'The Office - S02E01 - The Dundies.mkv',
       ),
     )!;
@@ -225,9 +226,9 @@ void main() {
     final uri = KnownPlayers.callbackPlayUri(
       'vlc',
       stream,
-      const ExternalPlayerLaunchOptions(
-        startPosition: Duration(seconds: 90),
-        callbackSession: 's3',
+      ExternalPlayerLaunchOptions(
+        startPosition: const Duration(seconds: 90),
+        returnLinks: ExternalPlayerService.returnLinks('s3'),
         filename: 'Inception (2010).mkv',
       ),
     )!;
@@ -247,7 +248,7 @@ void main() {
     final uri = KnownPlayers.callbackPlayUri(
       'vlc',
       'https://srv.plex.direct:32400/library/parts/1/2/file.mkv?X-Plex-Token=abc&download=1',
-      const ExternalPlayerLaunchOptions(callbackSession: 's3'),
+      ExternalPlayerLaunchOptions(returnLinks: ExternalPlayerService.returnLinks('s3')),
     )!;
 
     // URLHandler.parseURL at tag 3.7.3: split on `&`, then on `=`, keep

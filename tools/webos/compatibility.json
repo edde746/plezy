@@ -45,9 +45,14 @@
     "hostArgsSha256": "02d3a26607957ebafb88b734e9f58a934d224a6bba394a2ad52b465afe7bd682",
     "armArgsSha256": "575a45bd5fbb7da788f412d9b8a0a534b339e45e0ce43096209e9bbc6c0b51cc",
     "ninjaVersion": "1.13.2",
-    "ninjaSha256": "386e7381e7664302b9add6890de5f09a37513bb8c1d034210ac757332898f5ab",
+    "ninjaArchiveSha256": "5749cbc4e668273514150a80e387a957f933c6ed3f5f11e03fb30955e2bbead6",
+    "ninjaSha256": "607e668f90dd6cd82e1a42ae572647ad1b1fd43063964295b9547836d8c15d99",
     "pythonVersion": "3.14.8",
-    "pythonSha256": "375532f83be620283ab780c14ca6bcc5907dc379d2b621de0c5d0a112cf5458b",
+    "pythonSha256ByUbuntu": {
+      "22.04": "a78db971a3be451abda2de4dbb033cebf31e4f6aab4af23d157423b966f8e97e",
+      "24.04": "a5230d8adbd26c2185d77fb003597c4ee9c44c2369fc179122ff7c3a3a58ae59",
+      "26.04": "aa622fe759f1e6ee3ab369a2833c2977999b8dfa8a4a634c9d2757f0605b1345"
+    },
     "ndkMetadataRevision": "01423828248b75e1f5afe2e5959ccd971df875cd",
     "ndkVersionFileSha256": "5d65e4341fdc97d9afe51deb49386d9b82ec7b2545ea8219ca689d69d3e02eaa",
     "ndkEnvironmentSetupScript": "environment-setup-ca9v1-webosmllib32-linux-gnueabi",

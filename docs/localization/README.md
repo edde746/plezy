@@ -56,12 +56,29 @@ It separates semantic sample review from automated scans, records before/after
 corrections, and documents the review limits. Its coverage applies to the
 catalog snapshot named in the report; it is not approval of every message.
 
+The 3.0.0 deep-link and playback screen-lock strings are recorded separately in
+[LANGUAGE_QA_3_0_0.md](LANGUAGE_QA_3_0_0.md), with per-message origins and a
+correction ledger. Structural coverage and targeted AI corrections do not
+replace native-speaker review.
+
+The [universal media QA addendum](LANGUAGE_QA_UNIVERSAL_MEDIA.md) records the 112 new feature messages, M2M100 draft provenance, two explicit plural fallbacks, and the lack of native-speaker review.
+
 The [integration QA addendum](LANGUAGE_QA_INTEGRATION.md) records the discovery
 and source-setup additions, SMB guidance, and further Italian corrections. Its exact reviewed messages
 and catalog hashes are separate from the original review, so later feature
 additions cannot silently inherit language approval. The [merge QA overlay](LANGUAGE_QA_MERGE.md)
 records the subsequently reviewed swipe hints and retains newer messages without
 extending semantic approval to them.
+
+The [VLC feature parity addendum](LANGUAGE_QA_VLC_PARITY.md) records the 36
+playback and converter messages, the explicit English fallbacks, and the review
+limits for those drafts.
+
+The five Steam audio setting labels and the new cross-media discovery messages
+currently use the documented English fallback for non-English catalogs until
+reviewed translations are available. They are listed in
+`lib/i18n/english_fallbacks.json`; this fallback is not a claim of translation
+or native-speaker review.
 
 `sources.json` records source blob identifiers, model provenance and licenses.
 `translation-provenance.json` records message origins and review status;

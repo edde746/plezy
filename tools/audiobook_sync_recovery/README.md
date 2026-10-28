@@ -1,9 +1,7 @@
-# Historical audiobook/cloud sync recovery checkpoint
+# Audiobook/cloud sync recovery artifacts
 
-The implementation represented by this checkpoint has since been integrated into PlezyNG. Current behavior and design notes are in [the audiobook sync plan](../../docs/AUDIOBOOK_SYNC_PLAN.md); application code is under `lib/sources/sync/` and `lib/screens/sources/source_sync_screen.dart`.
+The base encrypted progress-sync implementation is present in PlezyNG under `lib/sources/sync/` and `lib/screens/sources/source_sync_screen.dart`; see [the current implementation plan](../../AUDIOBOOK_SYNC_PLAN.md).
 
-This bundle remains as an audit and recovery artifact. It targets a pre-integration source snapshot and should not be applied to the current repository.
+The [2026-10-26 recovery checkpoint](../../plezyng/audiobooks/CLOUD_SYNC_RECOVERY_CHECKPOINT_2026-10-26.md) preserves a later set of reconstructed audiobook/player refinements. Those edits were not reconciled against current `main` and do not represent delivered app behavior. The bundle may overlap committed files and needs line-by-line review before any use.
 
-The bundle contains reconstructed source transformations and the English localization additions that were used during recovery. It is not a byte-for-byte backup of the original working tree.
-
-The replay script refuses to apply its patch set when it detects the integrated sync implementation. Do not use `--apply` in this checkout. A separate older checkout would still require code review, regenerated Slang output, formatting, analysis and tests after replay.
+`changes.json` is preserved for audit/recovery. `apply.py` preflights text and intentionally refuses `--apply` when it detects the existing sync implementation. Do not remove that guard or apply this bundle to the current checkout. No application edits were made from this bundle during branch consolidation.

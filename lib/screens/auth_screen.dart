@@ -1,3 +1,4 @@
+import 'package:plezy/widgets/app_brand.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
@@ -243,7 +244,9 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       setState(() {
         _isAuthenticating = false;
-        _errorMessage = t.serverSelection.failedToLoadServers(error: localizedErrorReason(e));
+        _errorMessage = e is ServerParsingException
+            ? e.display
+            : t.serverSelection.failedToLoadServers(error: localizedErrorReason(e));
       });
     }
   }
@@ -317,8 +320,6 @@ class _AuthScreenState extends State<AuthScreen> {
     final isWide = size.width >= 1000;
     final wideQrMaxSize = _wideAuthColumnWidth(size, scale);
     final logoSize = isWide ? 120 * scale : 104.0;
-    final headline = Theme.of(context).textTheme.headlineMedium;
-    final titleStyle = headline?.copyWith(fontWeight: FontWeight.bold, fontSize: (headline.fontSize ?? 28) * scale);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -344,9 +345,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Image.asset('assets/plezy.png', width: logoSize, height: logoSize),
+                              AppBrandMark(size: logoSize, decorative: true),
                               SizedBox(height: 24 * scale),
-                              Text(t.app.title, style: titleStyle, textAlign: TextAlign.center),
+                              AppBrandWordmark(width: 250 * scale, height: 62.5 * scale),
                             ],
                           ),
                         ),
@@ -369,9 +370,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Image.asset('assets/plezy.png', width: logoSize, height: logoSize),
+                          AppBrandMark(size: logoSize, decorative: true),
                           SizedBox(height: 20 * scale),
-                          Text(t.app.title, style: titleStyle, textAlign: TextAlign.center),
+                          AppBrandWordmark(width: 250 * scale, height: 62.5 * scale),
                           SizedBox(height: 36 * scale),
                           _buildAuthBody(qrMaxSize: 420),
                         ],
@@ -389,8 +390,6 @@ class _AuthScreenState extends State<AuthScreen> {
     final size = MediaQuery.sizeOf(context);
     final scale = _authUiScale(size);
     final qrMaxSize = _tvAuthQrMaxSize(size, scale);
-    final headline = theme.textTheme.displaySmall;
-    final titleStyle = headline?.copyWith(fontWeight: FontWeight.bold, fontSize: (headline.fontSize ?? 36) * scale);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -410,9 +409,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset('assets/plezy.png', width: 176 * scale, height: 176 * scale),
+                            AppBrandMark(size: 176 * scale, decorative: true),
                             SizedBox(height: 28 * scale),
-                            Text(t.app.title, style: titleStyle, textAlign: TextAlign.center),
+                            AppBrandWordmark(width: 250 * scale, height: 62.5 * scale),
                           ],
                         ),
                       ),

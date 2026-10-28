@@ -41,15 +41,11 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$tr app = _Translations$app$tr._(_root);
-	@override late final _Translations$cast$tr cast = _Translations$cast$tr._(_root);
-	@override late final _Translations$automation$tr automation = _Translations$automation$tr._(_root);
-	@override late final _Translations$notifications$tr notifications = _Translations$notifications$tr._(_root);
 	@override late final _Translations$appIcon$tr appIcon = _Translations$appIcon$tr._(_root);
 	@override late final _Translations$auth$tr auth = _Translations$auth$tr._(_root);
 	@override late final _Translations$common$tr common = _Translations$common$tr._(_root);
 	@override late final _Translations$screens$tr screens = _Translations$screens$tr._(_root);
 	@override late final _Translations$update$tr update = _Translations$update$tr._(_root);
-	@override late final _Translations$appAccess$tr appAccess = _Translations$appAccess$tr._(_root);
 	@override late final _Translations$settings$tr settings = _Translations$settings$tr._(_root);
 	@override late final _Translations$themeEditor$tr themeEditor = _Translations$themeEditor$tr._(_root);
 	@override late final _Translations$search$tr search = _Translations$search$tr._(_root);
@@ -75,7 +71,6 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$tr serverSelection = _Translations$serverSelection$tr._(_root);
 	@override late final _Translations$hubDetail$tr hubDetail = _Translations$hubDetail$tr._(_root);
 	@override late final _Translations$logs$tr logs = _Translations$logs$tr._(_root);
-	@override late final _Translations$detail$tr detail = _Translations$detail$tr._(_root);
 	@override late final _Translations$startup$tr startup = _Translations$startup$tr._(_root);
 	@override late final _Translations$licenses$tr licenses = _Translations$licenses$tr._(_root);
 	@override late final _Translations$navigation$tr navigation = _Translations$navigation$tr._(_root);
@@ -98,15 +93,24 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$tr seerr = _Translations$seerr$tr._(_root);
 	@override late final _Translations$services$tr services = _Translations$services$tr._(_root);
 	@override late final _Translations$addServer$tr addServer = _Translations$addServer$tr._(_root);
+	@override late final _Translations$cast$tr cast = _Translations$cast$tr._(_root);
+	@override late final _Translations$automation$tr automation = _Translations$automation$tr._(_root);
+	@override late final _Translations$notifications$tr notifications = _Translations$notifications$tr._(_root);
+	@override late final _Translations$appAccess$tr appAccess = _Translations$appAccess$tr._(_root);
+	@override late final _Translations$detail$tr detail = _Translations$detail$tr._(_root);
 	@override late final _Translations$watchLink$tr watchLink = _Translations$watchLink$tr._(_root);
 	@override late final _Translations$homeLayout$tr homeLayout = _Translations$homeLayout$tr._(_root);
 	@override late final _Translations$platform$tr platform = _Translations$platform$tr._(_root);
+	@override late final _Translations$universalMedia$tr universalMedia = _Translations$universalMedia$tr._(_root);
 	@override late final _Translations$fileSources$tr fileSources = _Translations$fileSources$tr._(_root);
 	@override late final _Translations$lending$tr lending = _Translations$lending$tr._(_root);
 	@override late final _Translations$audiobook$tr audiobook = _Translations$audiobook$tr._(_root);
 	@override late final _Translations$sourceSetup$tr sourceSetup = _Translations$sourceSetup$tr._(_root);
 	@override late final _Translations$comics$tr comics = _Translations$comics$tr._(_root);
 	@override late final _Translations$games$tr games = _Translations$games$tr._(_root);
+	@override late final _Translations$deepLinks$tr deepLinks = _Translations$deepLinks$tr._(_root);
+	@override late final _Translations$householdSetup$tr householdSetup = _Translations$householdSetup$tr._(_root);
+	@override late final _Translations$issueReport$tr issueReport = _Translations$issueReport$tr._(_root);
 }
 
 // Path: app
@@ -117,48 +121,6 @@ class _Translations$app$tr extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$tr extends Translations$cast$en {
-	_Translations$cast$tr._(TranslationsTr root) : this._root = root, super.internal(root);
-
-	final TranslationsTr _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Bir cihazı vurmak';
-	@override String get searching => 'Arama cihazları için...';
-	@override String connectedTo({required Object device}) => '${device} ile bağlantılı';
-	@override String get device => 'Cast cihazı';
-	@override String get readyToCast => 'Hazırlık atmak';
-	@override String get subtitle => 'Altyazılar';
-	@override String get serverNotAvailable => 'Medya sunucusu mevcut değildir.';
-	@override String get stopCasting => 'Casting durdurma';
-	@override String get castToDevice => 'cihazı atmak';
-	@override String get noEpisodeAvailable => 'Çekilecek bir bölüm yok.';
-	@override String get startFailed => 'Sunucu kontrol edemezsiniz.Sunucu kontrol edin ve tekrar deneyin.';
-}
-
-// Path: automation
-class _Translations$automation$tr extends Translations$automation$en {
-	_Translations$automation$tr._(TranslationsTr root) : this._root = root, super.internal(root);
-
-	final TranslationsTr _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Kontrol edilecek aktif video oturumu yoktur.';
-	@override String get profileNotFound => 'Bu Plezy profili bulunamadı.';
-}
-
-// Path: notifications
-class _Translations$notifications$tr extends Translations$notifications$en {
-	_Translations$notifications$tr._(TranslationsTr root) : this._root = root, super.internal(root);
-
-	final TranslationsTr _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Yeni bölüm';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -321,37 +283,6 @@ class _Translations$update$tr extends Translations$update$en {
 	@override String get viewRelease => 'Sürümü Görüntüle';
 	@override String get latestVersion => 'En son sürümü kullanıyorsunuz';
 	@override String get checkFailed => 'Güncellemeler kontrol edilemedi';
-}
-
-// Path: appAccess
-class _Translations$appAccess$tr extends Translations$appAccess$en {
-	_Translations$appAccess$tr._(TranslationsTr root) : this._root = root, super.internal(root);
-
-	final TranslationsTr _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '7 gün boyunca her özellik ücretsiz olarak deneyin';
-	@override String get description => '7 günlük bir denemeyi her PlezyNG özelliğine tam erişimle başlatın. deneme sırasında hiçbir ücret ve abonelik yoktur. deneme sonrasında, mağazanızın fiyatında bir ömür boyu satın alın, ömür bozucu olarak PlezyNG\'yi kilitler.';
-	@override String get trialEndedDescription => 'Dükkanınızın fiyatına tek bir satın alma ile ömür boyu PlezyNG\'deki her özellik kilitlenir.';
-	@override String get startTrial => '7 günlük ücretsiz sınavı başlatın';
-	@override String get trialActive => '7 günlük tam performans denemesi aktif.';
-	@override String get trialEnded => '7 günlük yargılanma sona erdi';
-	@override String get trialStartFailed => 'Bu cihazda denemeyi kaydetemem. lütfen tekrar deneyin.';
-	@override String get lifetimeTitle => 'PlezyNG ömür boyu kilitlenmiş';
-	@override String get lifetimeBody => 'Teşekkürler! her PlezyNG özelliğine ömür boyu erişebilirsiniz.';
-	@override String get manageTitle => 'PlezyNG Ömür Boyu erişim';
-	@override String get manageDescription => 'Her özellik 7 gün boyunca ücretsiz deneyin, sonra mağazanızın fiyatına tek bir ödeme ile ömür boyu her şeyi kilitleyin.';
-	@override String buy({required Object price}) => '${price} için her özellik kilitlenir';
-	@override String get loadingPrice => 'Satış fiyatı...';
-	@override String get retryPrice => 'Retry fiyatı bakış açısı';
-	@override String get restore => 'Ömür Boyu Satın Alımı';
-	@override String get pending => 'Satın alma işleminiz ödeme veya onay bekliyor. ömür boyu erişim mağazası tamamlandığında kilitlenir.';
-	@override String get storeUnavailable => 'Alışverişler mevcut değildir. mağazaya kaydolduğunuzu ve bu cihazda satın alma izin verildiğini kontrol edin.';
-	@override String get productNotFound => 'PlezyNG ömür boyu kilitlenmesi bu mağazada henüz mevcut değildir.';
-	@override String get productQueryFailed => 'Mağaza fiyatını yüklemeyeceğim. bağlantınızı kontrol edin ve tekrar deneyin.';
-	@override String get purchaseFailed => 'Satın almak için bir şey yapmadım. tekrar deneyin.';
-	@override String get restoreFailed => 'Alışverişinizi geri getirmek için mağazaya ulaşamazdım. tekrar deneyin.';
-	@override String get nothingToRestore => 'Bu mağaza hesabı için PlezyNG ömür boyu satın alma numarası bulundu.';
 }
 
 // Path: settings
@@ -1234,10 +1165,6 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	final TranslationsTr _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Çerçeve',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} çerçeve',
-	);
 	@override String get audioLabel => 'Ses';
 	@override String get subtitlesLabel => 'Altyazı';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1274,9 +1201,31 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Sesi Aç';
 	@override String get settingsButton => 'Oynatma Ayarları';
 	@override String get tracksButton => 'Ses ve Altyazı';
-	@override String get trackSelectionTitle => 'Playback Öncesi Sürücü Seçimi';
-	@override String get trackSelectionAuto => 'Otomatik Seçim';
 	@override String get chaptersButton => 'Kısımlar';
+	@override String get segmentLoopHelp => 'Bu oynatma sırasında bir bölüm atın. A\'yı ayarlayın, daha sonra B\'yi zaman çizgisinde ayarlarsınız.';
+	@override String get setLoopStart => 'Yürüyüş başlangıç (A)';
+	@override String get setLoopEnd => 'Sıfır Sonu (B)';
+	@override String get clearSegmentLoop => 'Temiz segment yuvarlak';
+	@override String get setLoopStartFirst => 'Başlangıç (A) bitmeden önce bir yuva ayarlayın (B).';
+	@override String get loopEndAfterStart => 'Başlangıçtan daha geç olması gerekir.';
+	@override String get segmentLoopUnavailable => 'Segment looping bu playback için mevcut değildir.';
+	@override String get loopPointNotSet => 'ayarlanmıyor';
+	@override String get bookmarksHelp => 'Bookmarks bu cihazda kaydedilir. o zamana gitmek için birini seçin.';
+	@override String get bookmarksButton => 'Bookmarkası';
+	@override String get chaptersAndBookmarks => 'Bölümler ve Bookmarks';
+	@override String get segmentLoop => 'Segment Yürüyüşü';
+	@override String get addBookmark => 'Bookmark ekleyin';
+	@override String get bookmarkName => 'Bookmark Adı';
+	@override String get bookmarkNameHint => 'Örneğin, açılan sahne';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark Hakkında ${n}';
+	@override String get bookmarkNameRequired => 'Bu kitaplık için bir isim girin.';
+	@override String get deleteBookmark => 'Bookmark Kaldır';
+	@override String get bookmarkLimitReached => 'Bu bölümde zaten 100 kitaplık var.';
+	@override String get bookmarkUnavailable => 'Bu yazıyı kaydetmek ya da kaldırmak mümkün değil.';
+	@override String get bookmarkSaved => 'Bookmark kurtarıldı';
+	@override String get bookmarkDeleted => 'Bookmark kaldırıldı';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop Noktası ${point} ayarlayın ${time}.';
+	@override String get noChaptersOrBookmarks => 'Hiçbir bölüm veya kitaplık mevcut değildir.';
 	@override String get versionQualityButton => 'Sürüm ve Kalite';
 	@override String get versionColumnHeader => 'Sürüm';
 	@override String get qualityColumnHeader => 'Kalite';
@@ -1285,8 +1234,6 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Kod dönüştürme kullanılamıyor — orijinal kalitede oynatılıyor';
 	@override String get subtitleUnavailableFallback => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor';
 	@override String get pipButton => 'Pencere İçinde Pencere modu';
-	@override String get openMiniPlayer => 'Açık Mini Oyuncu';
-	@override String get returnToFullPlayer => 'Tam oyuncuya geri dönmek';
 	@override String get aspectRatioButton => 'En boy oranı';
 	@override String get ambientLighting => 'Ortam aydınlatması';
 	@override String get fullscreenButton => 'Tam ekrana geç';
@@ -1295,7 +1242,6 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Döndürme kilidi';
 	@override String get lockScreen => 'Ekranı kilitle';
 	@override String get screenLockButton => 'Ekran kilidi';
-	@override String get longPressToUnlock => 'Kilidi açmak için uzun basın';
 	@override String get timelineSlider => 'Video zaman çubuğu';
 	@override String get volumeSlider => 'Ses seviyesi';
 	@override String endsAt({required Object time}) => 'Bitiş saati: ${time}';
@@ -1312,8 +1258,6 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Kuyrukta öge yok';
 	@override String get noAudioDevicesAvailable => 'Kullanılabilir ses cihazı yok';
 	@override String get searchSubtitles => 'Altyazı Ara';
-	@override String get loadSubtitleFile => 'Subtitle dosyası ile...';
-	@override String get subtitleLoadFailed => 'Subtitle dosyasını yüklemeyi başaramadım';
 	@override String get language => 'Dil';
 	@override String get noSubtitlesFound => 'Altyazı bulunamadı';
 	@override String get subtitleDownloaded => 'Altyazı indirildi';
@@ -1322,7 +1266,6 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Dillerde ara...';
 	@override String get skipIntro => 'İntroyu atla';
 	@override String get skipCredits => 'Jeneriği atla';
-	@override String get skipAds => 'Reklamları atla';
 	@override String get nextEpisode => 'Sonraki bölüm';
 	@override String subtitleTrack({required Object n}) => 'Parça ${n}';
 	@override String subtitleFile({required Object name}) => 'Altyazı ${name}';
@@ -1330,6 +1273,19 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Altyazı: Kapalı';
 	@override String osdSubtitles({required Object track}) => 'Altyazı: ${track}';
 	@override String osdAudio({required Object track}) => 'Ses: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Çerçeve',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} çerçeve',
+	);
+	@override String get trackSelectionTitle => 'Playback Öncesi Sürücü Seçimi';
+	@override String get trackSelectionAuto => 'Otomatik Seçim';
+	@override String get openMiniPlayer => 'Açık Mini Oyuncu';
+	@override String get returnToFullPlayer => 'Tam oyuncuya geri dönmek';
+	@override String get loadSubtitleFile => 'Subtitle dosyası ile...';
+	@override String get subtitleLoadFailed => 'Subtitle dosyasını yüklemeyi başaramadım';
+	@override String get skipAds => 'Reklamları atla';
+	@override String get tapToUnlock => 'Kilidi açmak için dokunun';
+	@override String get tapAgainToUnlock => 'Kilidi açmak için tekrar dokunun';
 }
 
 // Path: messages
@@ -1829,16 +1785,6 @@ class _Translations$logs$tr extends Translations$logs$en {
 	@override String get saveLogsFailed => 'Dosyayı kaydetmek mümkün değil.';
 }
 
-// Path: detail
-class _Translations$detail$tr extends Translations$detail$en {
-	_Translations$detail$tr._(TranslationsTr root) : this._root = root, super.internal(root);
-
-	final TranslationsTr _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Bitiş saati: ${time}';
-}
-
 // Path: startup
 class _Translations$startup$tr extends Translations$startup$en {
 	_Translations$startup$tr._(TranslationsTr root) : this._root = root, super.internal(root);
@@ -2150,6 +2096,7 @@ class _Translations$music$tr extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Track Analysis ile ilgili...';
 	@override String get visualizerAmbientMotion => 'Ambient hareketleri';
 	@override String get visualizerPlexLoudness => 'Plex sesli';
+	@override String get visualizerLiveAudio => 'Canlı ses analizi';
 	@override String get visualizerPreviousPreset => 'Önceki Görsel Stil';
 	@override String get visualizerNextPreset => 'Next Görsel Stil';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2503,6 +2450,12 @@ class _Translations$videoSettings$tr extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Oynatıcıda ekranın en yüksek parlaklığına göre eşleyin, ardından sonucu birleştiriciye bildirin.';
 	@override String get hdrToneMappingFailed => 'HDR ton eşleme değiştirilemedi — önceki mod hâlâ etkin.';
 	@override String get audioOutput => 'Ses Çıkışı';
+	@override String get videoTrack => 'Video parçası';
+	@override String get videoTrackDescription => 'Görüntülenecek video akışını seçin. Dosyada alternatif video parçaları varsa MPV oynatımında kullanılabilir.';
+	@override String get videoTrackDefault => 'Varsayılan';
+	@override String get videoTrackUnavailable => 'Kullanılabilir alternatif video parçası yok.';
+	@override String get videoTrackFailed => 'Video parçası değiştirilemedi.';
+	@override String videoTrackNumber({required Object id}) => 'Parça ${id}';
 	@override String get performanceOverlay => 'Performans Katmanı';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2510,10 +2463,17 @@ class _Translations$videoSettings$tr extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Uzamsal Ses';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio Eşitleme';
-	@override String get audioEqualizerDescription => 'Bu cihaz için beş frekans bantını ayarlayın. mpv\'de mevcut; aktif bir EQ sesini dekore eder ve uyumlu durdurur.';
+	@override String get audioEqualizerDescription => '10 Band Equalizer için MPVSes filtreleri dekodlu ses kullanır ve passthrough devre dışı bırakır.';
 	@override String get audioEqualizerFlat => 'Yumuşak';
 	@override String get audioEqualizerActive => 'Özel';
 	@override String get audioEqualizerSaveFailed => 'Ses ekvator ayarlarını kaydetemez.';
+	@override String get audioEffectsDescription => 'Effects decoded audio kullanır, bu yüzden passthrough devre dışı bırakılır. oda ortamı ve stereo genişlemesi MPV İnşaat ve Track.';
+	@override String get audioStereoWidth => 'Stereo Genişletme';
+	@override String get audioSpatializer => 'Oda Atmosfer';
+	@override String get audioSpatializerDescription => 'Sessiz oda yansıtıcıları ekleyin.';
+	@override String get audioPitch => 'Pitch Değişimi';
+	@override String get audioPitchDescription => 'Hız değişikliği olmadan topu değiştirin. MPV İnşaat dahil edilmelidir Rubber Band.';
+	@override String get audioEffectUnavailable => 'Bu etki bu yol için mevcut değildir veya MPV İnşaat için.';
 	@override String get backgroundVideoAudio => 'Video Audio Altyazıları';
 	@override String get backgroundVideoAudioDescription => 'Oynayı bıraktığınızda video sesini oynatmaya devam edin; resim geri dönene kadar gizlenir. Android bir medya oynatma bildirimi kullanır.';
 	@override String get audioNormalization => 'Ses Yüksekliğini Normalleştir';
@@ -2906,6 +2866,88 @@ class _Translations$addServer$tr extends Translations$addServer$en {
 	@override String get httpsRequired => 'HTTPS veya açıkça şifrelenmemiş bir bağlantı sağlar.';
 }
 
+// Path: cast
+class _Translations$cast$tr extends Translations$cast$en {
+	_Translations$cast$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Bir cihazı vurmak';
+	@override String get searching => 'Arama cihazları için...';
+	@override String connectedTo({required Object device}) => '${device} ile bağlantılı';
+	@override String get device => 'Cast cihazı';
+	@override String get readyToCast => 'Hazırlık atmak';
+	@override String get subtitle => 'Altyazılar';
+	@override String get serverNotAvailable => 'Medya sunucusu mevcut değildir.';
+	@override String get stopCasting => 'Casting durdurma';
+	@override String get castToDevice => 'cihazı atmak';
+	@override String get noEpisodeAvailable => 'Çekilecek bir bölüm yok.';
+	@override String get startFailed => 'Sunucu kontrol edemezsiniz.Sunucu kontrol edin ve tekrar deneyin.';
+}
+
+// Path: automation
+class _Translations$automation$tr extends Translations$automation$en {
+	_Translations$automation$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Kontrol edilecek aktif video oturumu yoktur.';
+}
+
+// Path: notifications
+class _Translations$notifications$tr extends Translations$notifications$en {
+	_Translations$notifications$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Yeni bölüm';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$tr extends Translations$appAccess$en {
+	_Translations$appAccess$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '7 gün boyunca her özellik ücretsiz olarak deneyin';
+	@override String get description => '7 günlük bir denemeyi her PlezyNG özelliğine tam erişimle başlatın. deneme sırasında hiçbir ücret ve abonelik yoktur. deneme sonrasında, mağazanızın fiyatında bir ömür boyu satın alın, ömür bozucu olarak PlezyNG\'yi kilitler.';
+	@override String get trialEndedDescription => 'Dükkanınızın fiyatına tek bir satın alma ile ömür boyu PlezyNG\'deki her özellik kilitlenir.';
+	@override String get startTrial => '7 günlük ücretsiz sınavı başlatın';
+	@override String get trialActive => '7 günlük tam performans denemesi aktif.';
+	@override String get trialEnded => '7 günlük yargılanma sona erdi';
+	@override String get trialStartFailed => 'Bu cihazda denemeyi kaydetemem. lütfen tekrar deneyin.';
+	@override String get lifetimeTitle => 'PlezyNG ömür boyu kilitlenmiş';
+	@override String get lifetimeBody => 'Teşekkürler! her PlezyNG özelliğine ömür boyu erişebilirsiniz.';
+	@override String get manageTitle => 'PlezyNG Ömür Boyu erişim';
+	@override String get manageDescription => 'Her özellik 7 gün boyunca ücretsiz deneyin, sonra mağazanızın fiyatına tek bir ödeme ile ömür boyu her şeyi kilitleyin.';
+	@override String buy({required Object price}) => '${price} için her özellik kilitlenir';
+	@override String get loadingPrice => 'Satış fiyatı...';
+	@override String get retryPrice => 'Retry fiyatı bakış açısı';
+	@override String get restore => 'Ömür Boyu Satın Alımı';
+	@override String get pending => 'Satın alma işleminiz ödeme veya onay bekliyor. ömür boyu erişim mağazası tamamlandığında kilitlenir.';
+	@override String get storeUnavailable => 'Alışverişler mevcut değildir. mağazaya kaydolduğunuzu ve bu cihazda satın alma izin verildiğini kontrol edin.';
+	@override String get productNotFound => 'PlezyNG ömür boyu kilitlenmesi bu mağazada henüz mevcut değildir.';
+	@override String get productQueryFailed => 'Mağaza fiyatını yüklemeyeceğim. bağlantınızı kontrol edin ve tekrar deneyin.';
+	@override String get purchaseFailed => 'Satın almak için bir şey yapmadım. tekrar deneyin.';
+	@override String get restoreFailed => 'Alışverişinizi geri getirmek için mağazaya ulaşamazdım. tekrar deneyin.';
+	@override String get nothingToRestore => 'Bu mağaza hesabı için PlezyNG ömür boyu satın alma numarası bulundu.';
+}
+
+// Path: detail
+class _Translations$detail$tr extends Translations$detail$en {
+	_Translations$detail$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Bitiş saati: ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$tr extends Translations$watchLink$en {
 	_Translations$watchLink$tr._(TranslationsTr root) : this._root = root, super.internal(root);
@@ -3045,6 +3087,219 @@ class _Translations$platform$tr extends Translations$platform$en {
 	@override String get locationPermission => 'PlezyNG, iOS yerel ağınızı algılamak ve medya sunucularınıza bağlanmak için gerektirdiğinde konum erişimini kullanır.';
 	@override String get photoLibraryPermission => 'Medya kapakları ve görselleri olarak kullanmak için fotoğraf arşivinizden resimler seçin.';
 	@override String get cameraPermission => 'QR kodları bir Companion Remote ile eşleştirmek için tarama.';
+}
+
+// Path: universalMedia
+class _Translations$universalMedia$tr extends Translations$universalMedia$en {
+	_Translations$universalMedia$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Açık Medya';
+	@override String get shortcutHelp => 'Bu oturum için bir bağlantı, playlist veya dosya oynatın.';
+	@override String get intro => 'Bir bağlantı, oynatma listesi veya dosyayı açın. Playback PlezyNG\'nin standart oyuncusu kullanır ve kütüphanenize tarih eklemez.';
+	@override String get openWhat => 'Neyi açmak ister misiniz?';
+	@override String get stream => 'Stream Adresi';
+	@override String get playlist => 'Oyun Listesi';
+	@override String get files => 'cihaz dosyaları';
+	@override String get favorites => 'Saved Stream Favori';
+	@override String get address => 'Medya Adresi';
+	@override String get addressHelp => 'HTTPS tercih edilir. tanınmış kimlik veya imza parametreleri olan URL\'ler yalnızca bu oturum için kullanılır ve favori olarak kaydedilemez.';
+	@override String get displayName => 'Gösterim Adı (Seçmeli)';
+	@override String get displayNameHelp => 'Oyuncu ve sistem medya kontrolü için kısa bir isim seçin.';
+	@override String get allowHttp => 'Şifrelenmemiş bir HTTP bağlantısı sağlar';
+	@override String get allowHttpHelp => 'HTTP bağlantıyı şifrelemez. yalnızca güvenilir bir ağda izin verin. mümkün olduğunca HTTPS kullanın.';
+	@override String get advancedProtocols => 'Sadece MPV: bir RTSP, RTMP/RTMPS, UDP veya RTP adresi girin.';
+	@override String get liveStream => 'Yaşam gibi davranın';
+	@override String get liveStreamHelp => 'Bunu canlı video veya radyo için kullanın. uygulama zaman çubuğunu, kaydırma düğmeleri ve go-to-time seçeneğini gizler. bir kayıt için kapatın.';
+	@override String get privateSession => 'Sadece bu oynatma adresi kullanır. bu profilde tutmak için uygun bir akış favori kaydedin.';
+	@override String get saveFavorite => 'Favori kurtarma';
+	@override String get playNow => 'Şimdi oynayın';
+	@override String get favoriteSaved => 'Stream Favori bu profil için kaydedildi';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
+		one: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişini kaydırdı.',
+		other: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişleri kayboldu.',
+	);
+	@override String get playlistAddress => 'Playlist adresi';
+	@override String get playlistAddressHelp => 'Bir web adresinden bir M3U, M3u8 veya PLS oynatma listesi açın.';
+	@override String get choosePlaylist => 'Playlist dosyasını seçin';
+	@override String get openPlaylist => 'Açık Playlist';
+	@override String get playlistFormatsHelp => 'Bir oynatma listesi en fazla 1000 öğe ve 2 MB içerebilir. HLS akışlar olarak açıktır, böylece oyuncu bir kaliteyi seçebilir.';
+	@override String get saveQueuePlaylist => 'Sırayı çalma listesi olarak kaydet';
+	@override String get queuePlaylistSaved => 'Çalma listesi medya dosyalarının yanına kaydedildi.';
+	@override String get queuePlaylistUnavailable => 'Bu sıra yeniden kullanılabilir bir yerel çalma listesi olarak kaydedilemiyor.';
+	@override String get queuePlaylistFolderRequired => 'Sıradaki dosyalarla aynı klasörde bir kayıt konumu seçin.';
+	@override String get noFavorites => 'Hiç kaydedilmemiş akış favori henüz. Favoriler bu profilde kalır.';
+	@override String get removeFavorite => 'En sevdiğiniz akışları kaldırın';
+	@override String get filesHelp => 'Ses, video veya ISO dosyalarını geçici bir çerçeve için seçin. Dosyalar ve URL\'ler kütüphane geçmişine eklenmez.';
+	@override String get chooseFiles => 'Dosyaları seçin';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
+		one: '1 seçilmiş dosya',
+		other: '${count} seçilmiş dosyalar',
+	);
+	@override String get wifiTransfer => 'Wi-Fi üzerinden dosyaları gönderin';
+	@override String get wifiTransferHelp => 'Desteklenen dosyaları aynı güvenilir ağda bir tarayıcıdan aktarın.';
+	@override String get wifiTransferIntro => 'Bu adresi başka bir cihazda bir tarayıcıda açın. dosyaları bu cihazın Dosya ve kitap kütüphanesine eklemek için seçin.';
+	@override String get wifiTransferPrivacy => 'Bu cihaz yerel ağınız üzerinden dosyaları alır. bu adresi bilen herkes transferin durdurulana kadar dosyayı gönderebilir veya adres 15 dakika sonra sona erer. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.';
+	@override String get wifiTransferStarting => 'Özel, zaman sınırlı bir transfer için hazırlanmak ...';
+	@override String get wifiTransferUnavailable => 'Transfer başlatılamaz. yerel ağ erişimi kontrol edin ve tekrar deneyin.';
+	@override String get openThisAddress => 'Gönderen cihazda bu adreslerden birini açın';
+	@override String get copyAddress => 'Transfer adresi kopyalamak';
+	@override String get addressCopied => 'Transfer adresi kopyalanmış';
+	@override String transferExpires({required Object time}) => 'Bu adres ${time}\'de sona erer.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n,
+		one: '${count} dosyası alındı',
+		other: '${count} dosyaları aldı',
+	);
+	@override String uploadedData({required Object size}) => '${size} tarafından alınan';
+	@override String get stopTransfer => 'Gönderimi durdurmak ve adresi iptal etmek';
+	@override String get startTransfer => 'transfer başlangıç';
+	@override String get wifiImportedFiles => 'Wi-Fi transferleri';
+	@override String get wifiBrowserTitle => 'Dosyaları PlezyNG\'ye gönderin';
+	@override String get wifiBrowserIntro => 'Göndermek için ses, video, e-kitap veya komik dosyaları seçin. Dosyalar bu cihazın Dosya ve kitap kütüphanesinde kaydedilir. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.';
+	@override String get uploadFilesLabel => 'Göndermek için dosyalar';
+	@override String get uploadSelected => 'Seçilen dosyaları yükleme';
+	@override String get uploadSelectFirst => 'Önce bir veya daha fazla dosyayı seçin.';
+	@override String get uploading => 'Gönderme';
+	@override String get uploadComplete => 'Dosya PlezyNG\'ye eklendi.';
+	@override String get uploadFailed => 'Dosya eklenemez. bu sayfayı açık tutun ve tekrar deneyin.';
+	@override String get liveCue => 'canlı';
+	@override String get liveSession => 'canlı akış';
+	@override String get liveCueHelp => 'Canlı video veya radyo için, uygulama zaman çubuğunu gizler ve atlama düğmeleri. adresi kaydetmez veya tarihini izlemez.';
+	@override String get sessionOnly => 'Bu playback yalnızca oturum';
+	@override String get sessionOnlyHelp => 'Playback hiçbir zaman ilerleme veya geçmişi kaydetmez. akışınızı bu profilde tutmak için favori olarak kaydedin eğer uygunsa.';
+	@override String get pictureAdjustments => 'resim ayarları';
+	@override String get pictureHelp => 'Bu görüntü değişiklikleri sadece bu playback\'i etkiler. playback bittiğinde yeniden ayarlanırlar.';
+	@override String get resetPicture => 'Reset resim';
+	@override String get brightness => 'parlaklık';
+	@override String get contrast => 'kontrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Satürbasyon';
+	@override String get view360 => '360 derecelik video için düz görünüm';
+	@override String get view360Help => 'MPV\'nin bu görünüm için FFmpeg\'in v360 filtresine ihtiyacı var.';
+	@override String get view360Unavailable => 'Bu mpv yapı 360 derecelik filtreyi uygulayamazdı.';
+	@override String get view360Yaw => 'Horizontal Görüş';
+	@override String get view360Pitch => 'Vertikal Görüş';
+	@override String get view360FieldOfView => 'Görüş alanı';
+	@override String get recordStream => 'Live Stream kayıtları';
+	@override String get stopRecording => 'Kayıtları durdurun ve kaydetin';
+	@override String get recordingStarted => 'Kayıt aktiftir. playback bırakmak durur ve kayıtları kaydeder.';
+	@override String get recordingSaved => 'Kayıt tamamlandı ve kurtarıldı.';
+	@override String get recordingActive => 'Bu cihazı kaydetmek. playback bırakmak durur ve kurtarır.';
+	@override String get recordingFormatHelp => 'Video için MKV veya MPEG-TS\'yi seçin. ses için MKA veya MKV\'yi tercih edin.';
+	@override String get replaceRecordingTitle => 'Bu kayıtları değiştirebilir misiniz?';
+	@override String get replaceRecordingHelp => 'PlezyNG kayıt sırasında mevcut dosyayı yedekleme yapar. yeni kayıtları kaydetemezse, plezyNG yedek kopyasını geri getirir.';
+	@override String get replaceRecording => 'Dosya değiştirme';
+	@override String get discHelp => 'Bu bilgisayarın optik sürücüsünde bir disk açın.Ayrıca cihaz dosyalarından bir ISO görüntüsü de açabilirsiniz.';
+	@override String get discs => 'optik disk';
+	@override String get editionOrTitle => 'Sürüm veya disk başlığı';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray için';
+	@override String get audioCd => 'Sesli CD';
+	@override String get discAvailability => 'Disk oynatma, uyumlu bir MPV yapılandırması, desteklenen sürücü ve işletim sistemi izni gerektirir. ticari disk koruması aşamaz.';
+	@override String get converterTitle => 'Yerel bir medya dosyasını dönüştürmek';
+	@override String get converterHelp => 'Yerel bir dosyayı dönüştürün veya yeniden yapıştırın FFmpeg.';
+	@override String get converterIntro => 'Yerel bir ses veya video dosyasını daha fazla cihazda çalışan bir biçime dönüştürün.';
+	@override String get converterPrivacy => 'FFmpeg bu bilgisayara yüklenmelidir. dönüşüm yalnızca yerel dosyaları okuyor. akışları indirmez veya DRM kaldırmaz.';
+	@override String get converterChooseInput => 'Yerel bir medya dosyasını seçin';
+	@override String get converterFormat => 'çıkış formatı';
+	@override String get converterMp4 => 'MP4 H.264 ve AAC';
+	@override String get converterM4a => 'M4A · AAC ses';
+	@override String get converterMp3 => 'MP3 · Sesli';
+	@override String get allowFtp => 'FTP izin verin';
+	@override String get allowFtpHelp => 'FTP şifreleme olmadan medyayı gönderir. yalnızca güvenilir ağlarda kullanın.';
+	@override String get converterSaveAs => 'Dönüştürülmüş medyayı kaydetmek';
+	@override String get converterExtensionMismatch => 'Seçilen çıkış uzantısı ile bir fil adı seçin.';
+	@override String get converterUnsupportedInput => 'Bir ses veya video dosyasını seçin.';
+	@override String get converterLocalOnly => 'Seçilen dosya yerel bir cihaz yolu olarak kullanılamaz.';
+	@override String get converterReplaceTitle => 'Bu dosyayı değiştirebilir misiniz?';
+	@override String get converterReplaceHelp => 'PlezyNG, dönüştürülmüş kopyasının kaydedilene kadar mevcut dosyayı geri yükler.';
+	@override String get converterStarting => 'Başlangıç FFmpeg...';
+	@override String get converterProgress => 'Bu bilgisayara dönüştürmek...';
+	@override String get converterComplete => 'Dönüşüm tamamlandı. yeni dosya hazır.';
+	@override String get converterFfmpegMissing => 'FFmpeg eksik veya bu formatı desteklemiyor.';
+	@override String get converterFailed => 'Dönüşüm başarısız oldu. kaynak dosyasının okunabileceğini ve varış noktası yeterli ücretsiz alanı olduğunu kontrol edin.';
+	@override String get converterCancelled => 'Dönüşüm iptal edildi. eksik çıkış kaldırıldı.';
+	@override String get converterDesktopOnly => 'Yerel dönüşüm FFmpeg yüklü masaüstü bilgisayarlarda mevcuttur.';
+	@override String get converterStart => 'Dosya Dönüştürme';
+	@override String get mediaToolsTitle => 'Medya Araçları';
+	@override String get mediaToolsShortcut => 'Medyayı yakalayın veya paylaşın, arama uzantılarını ekleyin veya komut satırını kullanın.';
+	@override String get mediaToolsIntro => 'Bu masaüstü üzerinde yüklü FFmpeg kullanın. uzantılar ve CLI komutları sınırlı HTTPS istekleri ve mevcut Open media akışı kullanın.';
+	@override String get mediaToolsAccessibility => 'Araç seçenekleri ve kontrolleri dokunmatik, işaretçi, klavye ve D-pad odak ile çalışır. kayıt, paylaşım ve arama durumu değişiklikleri duyurulur.';
+	@override String get mediaTool => 'Medya Araçları';
+	@override String get captureIntro => 'Ekranınızı veya bir kamera bu bilgisayarda bir MP4 dosyasına kaydedin. FFmpeg yüklü olmalıdır ve H.264 kodlayıcısı içerir.';
+	@override String get captureNoDevices => 'Hiçbir ekran veya kamera bulunamadı. FFmpeg çekim desteği ve işletim sistemi gizlilik izni kontrol edin.';
+	@override String get captureSource => 'Ekran veya kamera';
+	@override String get captureScreen => 'Ekran';
+	@override String get captureAudioSource => 'Sesli giriş (opsiyonel)';
+	@override String get captureAudioHelp => 'Bir mikrofon veya mevcut girişten ses ekleyin. cihaz seçenekleri FFmpeg ve sistem izinlerine bağlıdır.';
+	@override String get captureAudioNone => 'Audio yok';
+	@override String get captureDefaultAudio => 'Default Audio Giriş';
+	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
+	@override String get captureFrameRate => 'Çerçeve Rate';
+	@override String get capturePrivacy => 'Kayıt yalnızca seçtiğiniz dosyaya kaydedilir. mikrofon çekimi seçmeli. PlezyNG kayıt yüklemiyor.';
+	@override String get captureSaveAs => 'Ekran kaydını kaydetmek gibi';
+	@override String get captureExtensionMismatch => '.mp4 içinde sona eren bir fil adı seçin.';
+	@override String get captureFfmpegMissing => 'FFmpeg veya H.264 video kodlayıcısı mevcut değildir. desteklenen FFmpeg yapı yükleme, sonra tekrar deneyin.';
+	@override String get captureFailed => 'Ekipman izni, mevcut depolama ve FFmpeg desteği kontrol edin.';
+	@override String get captureSaved => 'Ekran kaydı kurtarıldı.';
+	@override String get captureElapsedLabel => 'Kayıt Zamanı';
+	@override String get captureStart => 'Başlangıç kaydı';
+	@override String get capturePreview => 'Oynatıcıda önizle';
+	@override String get capturePreviewHelp => 'Seçilen kaynağı standart oynatıcıda önizleyin. Bu yalnızca geçerli oturum için kullanılır ve kayıt oluşturmaz. Cihaz desteği ve izinler MPV ile işletim sistemine bağlıdır. Önizleme yalnızca video kullanır; kaydedilen kayıtlara isteğe bağlı ses eklenebilir.';
+	@override String get capturePreviewActive => 'Canlı önizleme · kayıt yapılmıyor';
+	@override String get captureStop => 'durup kurtar';
+	@override String get captureMode => 'tutuklama';
+	@override String get shareMode => 'Paylaşım';
+	@override String get shareIntro => 'Özel ağınızda başka bir cihazda yerel bir medya dosyasını gönderin. PlezyNG geçici bir HLS akışı oluşturur.';
+	@override String get sharePrivacy => 'Yerel ağınızdaki herkes, özel bağlantıyı alırken izleyebilir. bağlantı 60 dakika sonra sona erer. paylaşımı durdurun ve sunucu kapatın ve bağlantıyı iptal edin.';
+	@override String get shareChooseFile => 'Medya dosyası seçin';
+	@override String get shareChooseHelp => 'Yerel bir ses veya video dosyasını seçin. dosya bu bilgisayarda kalır.';
+	@override String get shareFfmpegMissing => 'FFmpeg veya H.264/AAC kodlayıcıları mevcut değildir. FFmpeg\'i H.264 ve AAC kodlayıcı desteği ile yükleme.';
+	@override String get shareFailed => 'Akış beklenmedik bir şekilde başlatılamaz veya durdurulamaz. FFmpeg ve ağ erişimi kontrol edin.';
+	@override String get shareActive => 'Akım özel ağınızda hazır.';
+	@override String get shareEnded => 'Medya sonuna ulaştı ve artık paylaşılmıyor.';
+	@override String get shareStopped => 'Paylaşım durduruldu. geçici bağlantı artık geçerli değil.';
+	@override String get shareUrlCopied => 'Stream adresi kopyalanmıştır.';
+	@override String get shareOpenUrl => 'Bu adresi diğer cihazda bir oyuncuda açın';
+	@override String get shareQrLabel => 'Geçici akış adresi için QR kodu';
+	@override String get shareQrHelp => 'Aynı özel ağına bağlanan uyumlu bir oyuncu ile tarama.';
+	@override String get shareHttpHint => 'Bu akım şifrelenmemiş HTTP kullanır. PlezyNG\'de, açılmadan önce HTTP\'e izin verin.';
+	@override String get shareCopyUrl => 'Stream adresi kopyalamak';
+	@override String get shareExpiresLabel => 'Link bitti';
+	@override String get shareStarting => 'Akım için hazırlık...';
+	@override String get shareStart => 'Paylaşmaya Başlayın';
+	@override String get shareStop => 'Paylaşmayı durdurun';
+	@override String get extensionsMode => 'Uzantılar ve CLI';
+	@override String get extensionsIntro => 'Medya bulmak için yalnızca bir veri arama uzantısı ekleyin. bir sonuç seçin ve tanıdık Open media formuna yüklemek için.';
+	@override String get extensionsPrivacy => 'Bir manifesto bir HTTPS arama son noktası ve harita yanıt alanları tanımlayabilir. kodu çalıştıramaz, talep başlıkları ekleyemez, dosyaları okuyar veya başlatma şelalesi komutları.';
+	@override String get extensionImport => 'Genişletme Manifesto';
+	@override String get extensionEmpty => 'Arama hizmetleri henüz yok. bir eklemek için güvenilir bir manifesto JSON dosyası seçin.';
+	@override String get extensionChoose => 'Arama Hizmetleri';
+	@override String get extensionSearchConsent => 'Her arama bu HTTPS hizmetine kelimelerinizi gönderir. sonuçlar yalnızca birini seçtikten sonra açılıyor.';
+	@override String get extensionSearchLabel => 'arama medyası';
+	@override String get extensionSearch => 'arama';
+	@override String get extensionSearching => 'Arama...';
+	@override String get extensionNoResults => 'Güvenli medya sonuçları iade edilmedi. başka bir arama deneyin.';
+	@override String get extensionInstallTitle => 'Bu arama hizmeti eklemek için?';
+	@override String get extensionReplaceTitle => 'Bu arama hizmetini güncelleyebilir misiniz?';
+	@override String get extensionService => 'Hizmet';
+	@override String get extensionEndpoint => 'HTTPS son nokta';
+	@override String get extensionConsent => 'Arama metniniz bu hizmet için gönderilir.Manifest\'te yürütülebilir kod yoktur.Sadece bu son noktaya güveniyorsanız devam edin.';
+	@override String get extensionInstall => 'Hizmet Ekle';
+	@override String get extensionReplace => 'Güncelleştirme Hizmetleri';
+	@override String get extensionRemoveTitle => 'Bu arama hizmetini kaldırır mısınız?';
+	@override String get extensionRemoveHelp => 'Bu, hizmetin bu profilden kaldırılmasıdır. PlezyNG son noktası ile iletişime geçmez.';
+	@override String get extensionRemove => 'Hizmet kaldırma';
+	@override String get extensionInvalidManifest => 'Bu dosya desteklenen bir uzantı manifesto değildir. format için Open media kılavuzunu görün.';
+	@override String get extensionSaveFailed => 'Bu uzantı aktif profillere kaydedilemez.';
+	@override String get extensionSearchFailed => 'Arama hizmeti geçerli bir cevap iade etmedi. son noktayı kontrol edin ve tekrar deneyin.';
+	@override String get cliTitle => 'komut hattı';
+	@override String get cliHelp => 'plezyctl kılavuzunu kullanarak bir manifesto doğrulamak veya aynı uzantıyı aramak. her arama öncesi HTTPS hizmetini incelemek. sonuçlar mevcut medya formunda açılıyor; başlatmak için geri dönüş düğmesini seçin.';
+	@override String get cliCopyExample => 'Komut örneği kopyası';
+	@override String get cliCopied => 'Örnek kopyalanmıştır.';
 }
 
 // Path: fileSources
@@ -3314,7 +3569,6 @@ class _Translations$audiobook$tr extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Öncelikle Google Drive, OneDrive, Dropbox, WebDAV veya S3\'ü Dosyalar ve kitaplar\'a ekleyin.';
 	@override String get syncDestination => 'Sync Depolama Hesabı';
 	@override String get syncFolder => 'Sink dosyası veya prefix';
-	@override String get syncFolderHelp => 'WebDAV kaynağınızın içinde ayrı bir mevcut klasör veya özel bir S3 önizlemesi kullanın. kitap dosyaları asla değişmez.';
 	@override String get syncCode => 'Özel Sync Kodu';
 	@override String get syncCodeHelp => 'İlk cihazınızda bir kod oluşturun, sonra diğer cihazlarınızda o kodu girin. özel bir kopya tutun: şifreli durumunuzun anahtarıdır. her kişi için farklı bir kod kullanın.';
 	@override String get showCode => 'Görüntüleme veya gizleme Sink kodu';
@@ -3324,7 +3578,6 @@ class _Translations$audiobook$tr extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Bu kaynağı kaldırmak burada okuma ve dinleme senkronizasyonu devre dışı bırakacaktır. şifreli senkronizasyon dosyaları sağlayıcının içinde kalacaktır.';
 	@override String get syncReconnect => 'Depolama Hesabını Yeniden Bağlayın';
 	@override String lastSynced({required Object time}) => '${time} tarafından son olarak senkronize edildi';
-	@override String get syncPrivacy => 'Sadece şifreli ilerleme ve notlar kaydedilir. Ses ve e-kitap dosyaları, hesap tokenleri ve şifreleri yüklenmez. Google Drive ve OneDrive uygulama depolama kullanır; Dropbox PlezyNG Sync kullanır. Sync etkinleştirmek ek yazma erişimi isteyebilir. etkinleştirildiğinde, bu varış noktası ilerleme senkronize sahiptir; sunucunun ilerlemesi ayrı kalır.';
 	@override String get syncConflicts => 'Nereye geri dönmek istediğinizi seçin';
 	@override String get conflictHelp => 'Bu değişiklikler bağımsız olarak yapıldı. tutmak için pozisyon veya not versiyonunu seçin. daha sonraki bir zaman çizgisi veya daha yüksek bir yüzde otomatik olarak kazanmaz.';
 	@override String syncDevice({required Object device}) => 'Sürücü ${device}';
@@ -3518,7 +3771,6 @@ class _Translations$games$tr extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3543,7 +3795,6 @@ class _Translations$games$tr extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3575,8 +3826,6 @@ class _Translations$games$tr extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3584,14 +3833,62 @@ class _Translations$games$tr extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$tr extends Translations$deepLinks$en {
+	_Translations$deepLinks$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Bu Plezy bağlantısı geçerli değildir.';
+	@override String profileNotFound({required Object profile}) => 'Hiçbir profil "${profile}" ile eşleşmiyor.';
+	@override String get serverUnavailable => 'Bu bağlantı için sunucuya ulaşamadım.';
+	@override String get notFound => 'Kütüphanelerinizde bu başlık bulamazsınız.';
+	@override String get unsupportedItem => 'Bu bağlantı oynanamaz.';
+	@override String get noLiveTv => 'Hiçbir canlı TV sunucusu bu bağlantı için mevcut değildir.';
+	@override String channelNotFound({required Object channel}) => '“${channel}” kanalı bulamadım.';
+	@override String get showLink => 'Göster link';
+	@override String get showProfileLink => 'Profil Link Göster';
+	@override String get dialogTitle => 'Link';
+	@override String get showHint => 'Bu bağlantıyı açtığınızda, bir sonraki bölüm oynanır. Shuffle\'da gösteriyi oynatmak için &mode=shuffle ekleyin.';
+	@override String get movieHint => 'Bu bağlantıyı açtığınızda film oynanır.';
+	@override String get episodeHint => 'Bu bağlantıyı açtığınızda bu bölüm oynanır.';
+	@override String get profileHint => 'Bu bağlantıyı açmak bu profille geçiş yapar.';
+	@override String openAsProfile({required Object name}) => '${name} olarak açılır';
+	@override String get copy => 'kopyası';
+	@override String get copied => 'Link kopyalanmış';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$tr extends Translations$householdSetup$en {
+	_Translations$householdSetup$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Ev kurulumu';
+}
+
+// Path: issueReport
+class _Translations$issueReport$tr extends Translations$issueReport$en {
+	_Translations$issueReport$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Sorun bildir';
+	@override String get instructions => 'Önceden doldurulmuş bir GitHub taslağını açmak için QR kodunu tarayın. İnceleyin ve hazır olduğunuzda gönderin.';
+	@override String get privacy => 'Taslakta uygulama sürümü, platform ve bağlantı sayısı bulunur. Sunucu adresleri, hesap ve profil adları, medya başlıkları ve dosya yolları eklenmez.';
+	@override String get logPrivacy => 'Günlükler isteğe bağlıdır. Yüklemeden önce inceleyin. Günlük kimliği herkese açık olabilecek taslağa eklenir.';
+	@override String get openDraft => 'GitHub taslağını aç';
 }
 
 // Path: appIcon.names
@@ -4708,21 +5005,6 @@ extension on TranslationsTr {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Bir cihazı vurmak',
-			'cast.searching' => 'Arama cihazları için...',
-			'cast.connectedTo' => ({required Object device}) => '${device} ile bağlantılı',
-			'cast.device' => 'Cast cihazı',
-			'cast.readyToCast' => 'Hazırlık atmak',
-			'cast.subtitle' => 'Altyazılar',
-			'cast.serverNotAvailable' => 'Medya sunucusu mevcut değildir.',
-			'cast.stopCasting' => 'Casting durdurma',
-			'cast.castToDevice' => 'cihazı atmak',
-			'cast.noEpisodeAvailable' => 'Çekilecek bir bölüm yok.',
-			'cast.startFailed' => 'Sunucu kontrol edemezsiniz.Sunucu kontrol edin ve tekrar deneyin.',
-			'automation.noActivePlayback' => 'Kontrol edilecek aktif video oturumu yoktur.',
-			'automation.profileNotFound' => 'Bu Plezy profili bulunamadı.',
-			'notifications.newEpisodeTitle' => 'Yeni bölüm',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Uygulama simgesi',
 			'appIcon.defaultIcon' => 'Varsayılan',
 			'appIcon.current' => 'Mevcut simge',
@@ -4885,28 +5167,6 @@ extension on TranslationsTr {
 			'update.viewRelease' => 'Sürümü Görüntüle',
 			'update.latestVersion' => 'En son sürümü kullanıyorsunuz',
 			'update.checkFailed' => 'Güncellemeler kontrol edilemedi',
-			'appAccess.title' => '7 gün boyunca her özellik ücretsiz olarak deneyin',
-			'appAccess.description' => '7 günlük bir denemeyi her PlezyNG özelliğine tam erişimle başlatın. deneme sırasında hiçbir ücret ve abonelik yoktur. deneme sonrasında, mağazanızın fiyatında bir ömür boyu satın alın, ömür bozucu olarak PlezyNG\'yi kilitler.',
-			'appAccess.trialEndedDescription' => 'Dükkanınızın fiyatına tek bir satın alma ile ömür boyu PlezyNG\'deki her özellik kilitlenir.',
-			'appAccess.startTrial' => '7 günlük ücretsiz sınavı başlatın',
-			'appAccess.trialActive' => '7 günlük tam performans denemesi aktif.',
-			'appAccess.trialEnded' => '7 günlük yargılanma sona erdi',
-			'appAccess.trialStartFailed' => 'Bu cihazda denemeyi kaydetemem. lütfen tekrar deneyin.',
-			'appAccess.lifetimeTitle' => 'PlezyNG ömür boyu kilitlenmiş',
-			'appAccess.lifetimeBody' => 'Teşekkürler! her PlezyNG özelliğine ömür boyu erişebilirsiniz.',
-			'appAccess.manageTitle' => 'PlezyNG Ömür Boyu erişim',
-			'appAccess.manageDescription' => 'Her özellik 7 gün boyunca ücretsiz deneyin, sonra mağazanızın fiyatına tek bir ödeme ile ömür boyu her şeyi kilitleyin.',
-			'appAccess.buy' => ({required Object price}) => '${price} için her özellik kilitlenir',
-			'appAccess.loadingPrice' => 'Satış fiyatı...',
-			'appAccess.retryPrice' => 'Retry fiyatı bakış açısı',
-			'appAccess.restore' => 'Ömür Boyu Satın Alımı',
-			'appAccess.pending' => 'Satın alma işleminiz ödeme veya onay bekliyor. ömür boyu erişim mağazası tamamlandığında kilitlenir.',
-			'appAccess.storeUnavailable' => 'Alışverişler mevcut değildir. mağazaya kaydolduğunuzu ve bu cihazda satın alma izin verildiğini kontrol edin.',
-			'appAccess.productNotFound' => 'PlezyNG ömür boyu kilitlenmesi bu mağazada henüz mevcut değildir.',
-			'appAccess.productQueryFailed' => 'Mağaza fiyatını yüklemeyeceğim. bağlantınızı kontrol edin ve tekrar deneyin.',
-			'appAccess.purchaseFailed' => 'Satın almak için bir şey yapmadım. tekrar deneyin.',
-			'appAccess.restoreFailed' => 'Alışverişinizi geri getirmek için mağazaya ulaşamazdım. tekrar deneyin.',
-			'appAccess.nothingToRestore' => 'Bu mağaza hesabı için PlezyNG ömür boyu satın alma numarası bulundu.',
 			'settings.title' => 'Ayarlar',
 			'settings.supportDeveloper' => 'PlezyNG\'yi Destekleyin',
 			'settings.supportDeveloperDescription' => 'Geliştirmeyi desteklemek için bağış yapın',
@@ -5219,8 +5479,6 @@ extension on TranslationsTr {
 			'settings.audioPassthrough' => 'Ses Doğrudan Geçişi (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.',
 			'settings.audioPassthroughDescriptionApple' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. iOS, iPadOS ve tvOS 26 veya sonrasında TrueHD Atmos ve DTS:X uzamsal ses olarak oynatılır. Diğer DTS ve TrueHD parçaları çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ses normalleştirme açıkken kapalıdır',
 			'settings.audioChannelLimit' => 'Ses Kanalları',
@@ -5258,6 +5516,8 @@ extension on TranslationsTr {
 			'settings.disableDolbyVisionDescription' => 'Dosyada varsa Dolby Vision yerine HDR10 veya HLG katmanını oynat',
 			'settings.hdrSdrConversion' => 'HDR\'den SDR\'ye Dönüştürme',
 			'settings.hdrSdrConversionDescription' => 'Ekran HDR gösteremediğinde HDR videoyu neyin dönüştüreceğini seçin.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Otomatik',
 			'settings.hdrSdrConversionAutoDescription' => 'Android 9 ve sonrasında cihaz, eski sürümlerde oynatıcı',
 			'settings.hdrSdrConversionDevice' => 'Cihaz',
@@ -5719,7 +5979,6 @@ extension on TranslationsTr {
 			'tooltips.markAsWatched' => 'İzlendi olarak işaretle',
 			'tooltips.markAsUnwatched' => 'İzlenmedi olarak işaretle',
 			'audioTracks.track' => ({required Object n}) => 'Ses Parçası ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Çerçeve', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} çerçeve', ), 
 			'videoControls.audioLabel' => 'Ses',
 			'videoControls.subtitlesLabel' => 'Altyazı',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5733,8 +5992,6 @@ extension on TranslationsTr {
 			'videoControls.sleepTimerEndOfVideo' => 'Mevcut videonun sonu',
 			'videoControls.sleepTimerStopAtHeader' => 'Durma zamanı',
 			'videoControls.sleepTimerDurationHeader' => 'Zamanlayıcı',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Oynatma bu videonun sonunda duraklatılacak',
 			'videoControls.stillWatching' => 'Hâlâ izliyor musunuz?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}sn içinde duraklatılıyor',
@@ -5758,9 +6015,33 @@ extension on TranslationsTr {
 			'videoControls.unmuteButton' => 'Sesi Aç',
 			'videoControls.settingsButton' => 'Oynatma Ayarları',
 			'videoControls.tracksButton' => 'Ses ve Altyazı',
-			'videoControls.trackSelectionTitle' => 'Playback Öncesi Sürücü Seçimi',
-			'videoControls.trackSelectionAuto' => 'Otomatik Seçim',
 			'videoControls.chaptersButton' => 'Kısımlar',
+			'videoControls.segmentLoopHelp' => 'Bu oynatma sırasında bir bölüm atın. A\'yı ayarlayın, daha sonra B\'yi zaman çizgisinde ayarlarsınız.',
+			'videoControls.setLoopStart' => 'Yürüyüş başlangıç (A)',
+			'videoControls.setLoopEnd' => 'Sıfır Sonu (B)',
+			'videoControls.clearSegmentLoop' => 'Temiz segment yuvarlak',
+			'videoControls.setLoopStartFirst' => 'Başlangıç (A) bitmeden önce bir yuva ayarlayın (B).',
+			'videoControls.loopEndAfterStart' => 'Başlangıçtan daha geç olması gerekir.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping bu playback için mevcut değildir.',
+			'videoControls.loopPointNotSet' => 'ayarlanmıyor',
+			'videoControls.bookmarksHelp' => 'Bookmarks bu cihazda kaydedilir. o zamana gitmek için birini seçin.',
+			'videoControls.bookmarksButton' => 'Bookmarkası',
+			'videoControls.chaptersAndBookmarks' => 'Bölümler ve Bookmarks',
+			'videoControls.segmentLoop' => 'Segment Yürüyüşü',
+			'videoControls.addBookmark' => 'Bookmark ekleyin',
+			'videoControls.bookmarkName' => 'Bookmark Adı',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Örneğin, açılan sahne',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark Hakkında ${n}',
+			'videoControls.bookmarkNameRequired' => 'Bu kitaplık için bir isim girin.',
+			'videoControls.deleteBookmark' => 'Bookmark Kaldır',
+			'videoControls.bookmarkLimitReached' => 'Bu bölümde zaten 100 kitaplık var.',
+			'videoControls.bookmarkUnavailable' => 'Bu yazıyı kaydetmek ya da kaldırmak mümkün değil.',
+			'videoControls.bookmarkSaved' => 'Bookmark kurtarıldı',
+			'videoControls.bookmarkDeleted' => 'Bookmark kaldırıldı',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop Noktası ${point} ayarlayın ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Hiçbir bölüm veya kitaplık mevcut değildir.',
 			'videoControls.versionQualityButton' => 'Sürüm ve Kalite',
 			'videoControls.versionColumnHeader' => 'Sürüm',
 			'videoControls.qualityColumnHeader' => 'Kalite',
@@ -5769,8 +6050,6 @@ extension on TranslationsTr {
 			'videoControls.transcodeUnavailableFallback' => 'Kod dönüştürme kullanılamıyor — orijinal kalitede oynatılıyor',
 			'videoControls.subtitleUnavailableFallback' => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor',
 			'videoControls.pipButton' => 'Pencere İçinde Pencere modu',
-			'videoControls.openMiniPlayer' => 'Açık Mini Oyuncu',
-			'videoControls.returnToFullPlayer' => 'Tam oyuncuya geri dönmek',
 			'videoControls.aspectRatioButton' => 'En boy oranı',
 			'videoControls.ambientLighting' => 'Ortam aydınlatması',
 			'videoControls.fullscreenButton' => 'Tam ekrana geç',
@@ -5779,7 +6058,6 @@ extension on TranslationsTr {
 			'videoControls.rotationLockButton' => 'Döndürme kilidi',
 			'videoControls.lockScreen' => 'Ekranı kilitle',
 			'videoControls.screenLockButton' => 'Ekran kilidi',
-			'videoControls.longPressToUnlock' => 'Kilidi açmak için uzun basın',
 			'videoControls.timelineSlider' => 'Video zaman çubuğu',
 			'videoControls.volumeSlider' => 'Ses seviyesi',
 			'videoControls.endsAt' => ({required Object time}) => 'Bitiş saati: ${time}',
@@ -5803,8 +6081,6 @@ extension on TranslationsTr {
 			'videoControls.noQueueItems' => 'Kuyrukta öge yok',
 			'videoControls.noAudioDevicesAvailable' => 'Kullanılabilir ses cihazı yok',
 			'videoControls.searchSubtitles' => 'Altyazı Ara',
-			'videoControls.loadSubtitleFile' => 'Subtitle dosyası ile...',
-			'videoControls.subtitleLoadFailed' => 'Subtitle dosyasını yüklemeyi başaramadım',
 			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı bulunamadı',
 			'videoControls.subtitleDownloaded' => 'Altyazı indirildi',
@@ -5813,7 +6089,6 @@ extension on TranslationsTr {
 			'videoControls.searchLanguages' => 'Dillerde ara...',
 			'videoControls.skipIntro' => 'İntroyu atla',
 			'videoControls.skipCredits' => 'Jeneriği atla',
-			'videoControls.skipAds' => 'Reklamları atla',
 			'videoControls.nextEpisode' => 'Sonraki bölüm',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Parça ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Altyazı ${name}',
@@ -5821,6 +6096,16 @@ extension on TranslationsTr {
 			'videoControls.osdSubtitlesOff' => 'Altyazı: Kapalı',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Altyazı: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Ses: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Çerçeve', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} çerçeve', ), 
+			'videoControls.trackSelectionTitle' => 'Playback Öncesi Sürücü Seçimi',
+			'videoControls.trackSelectionAuto' => 'Otomatik Seçim',
+			'videoControls.openMiniPlayer' => 'Açık Mini Oyuncu',
+			'videoControls.returnToFullPlayer' => 'Tam oyuncuya geri dönmek',
+			'videoControls.loadSubtitleFile' => 'Subtitle dosyası ile...',
+			'videoControls.subtitleLoadFailed' => 'Subtitle dosyasını yüklemeyi başaramadım',
+			'videoControls.skipAds' => 'Reklamları atla',
+			'videoControls.tapToUnlock' => 'Kilidi açmak için dokunun',
+			'videoControls.tapAgainToUnlock' => 'Kilidi açmak için tekrar dokunun',
 			'messages.markedAsWatched' => 'İzlendi olarak işaretlendi',
 			'messages.markedAsUnwatched' => 'İzlenmedi olarak işaretlendi',
 			'messages.markedAsWatchedOffline' => 'İzlendi olarak işaretlendi (çevrimiçi olunca senkronize edilecek)',
@@ -6247,8 +6532,6 @@ extension on TranslationsTr {
 			'libraries.all' => 'Tümü',
 			'libraries.clearAll' => 'Tümünü Temizle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" kitaplığını taramak istediğinizden emin misiniz?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kitaplığını analiz etmek istediğinizden emin misiniz?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" kitaplığı için meta verileri yenilemek istediğinizden emin misiniz?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" için çöpü boşaltmak istediğinizden emin misiniz?',
@@ -6261,6 +6544,8 @@ extension on TranslationsTr {
 			'libraries.hideLibrary' => 'Kitaplığı gizle',
 			'libraries.libraryOptions' => 'Kitaplık seçenekleri',
 			'libraries.content' => 'kitaplık içeriği',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Kitaplık seç',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtreler (${count})',
 			'libraries.noRecommendations' => 'Öneri bulunmuyor',
@@ -6366,7 +6651,6 @@ extension on TranslationsTr {
 			'logs.saveLogs' => 'Dosyaya kaydedin',
 			'logs.logsSaved' => ({required Object path}) => 'Kayıtlar ${path}\'e kaydedildi',
 			'logs.saveLogsFailed' => 'Dosyayı kaydetmek mümkün değil.',
-			'detail.endsAt' => ({required Object time}) => 'Bitiş saati: ${time}',
 			'startup.failedTitle' => 'PlezyNG başlatılamadı',
 			'startup.failedBody' => 'Başlatma sırasında bir şeyler ters gitti. Aşağıdaki ayrıntılar neyin başarısız olduğunu gösteriyor.',
 			'startup.failedBodyRepairable' => 'PlezyNG\'nin kayıtlı ayar dosyası hasarlı ve PlezyNG başlamadan önce yeniden oluşturulması gerekiyor. Tekrar denemek işe yaramaz — Depolama Alanını Onar\'ı seçin.',
@@ -6727,6 +7011,7 @@ extension on TranslationsTr {
 			'music.visualizerProfileLoading' => 'Track Analysis ile ilgili...',
 			'music.visualizerAmbientMotion' => 'Ambient hareketleri',
 			'music.visualizerPlexLoudness' => 'Plex sesli',
+			'music.visualizerLiveAudio' => 'Canlı ses analizi',
 			'music.visualizerPreviousPreset' => 'Önceki Görsel Stil',
 			'music.visualizerNextPreset' => 'Next Görsel Stil',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6761,8 +7046,6 @@ extension on TranslationsTr {
 			'watchTogether.connecting' => 'Bağlanılıyor...',
 			'watchTogether.relayPublic' => 'Odalar herkese açık Open Watch Party aktarıcılarını kullanır.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Odalar ${url} adresindeki aktarıcınızı kullanır.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Son Odalar',
 			'watchTogether.roomActions' => 'Oda eylemleri',
 			'watchTogether.renameRoom' => 'Odayı Yeniden Adlandır',
@@ -6775,6 +7058,8 @@ extension on TranslationsTr {
 			'watchTogether.codeCopied' => 'Oda kodu kopyalandı',
 			'watchTogether.shareInvite' => 'Daveti Paylaş',
 			'watchTogether.inviteCopied' => 'Davet kopyalandı. Bir mesaja yapıştırın.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG\'de Birlikte İzle odama katıl: Birlikte İzle\'yi aç, Odaya Katıl seçeneğini seç ve ${code} kodunu gir.',
 			'watchTogether.openSessionControls' => 'Birlikte İzle oturum kontrollerini aç',
 			'watchTogether.reconnecting' => 'Yeniden bağlanılıyor...',
@@ -7153,6 +7438,12 @@ extension on TranslationsTr {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Oynatıcıda ekranın en yüksek parlaklığına göre eşleyin, ardından sonucu birleştiriciye bildirin.',
 			'videoSettings.hdrToneMappingFailed' => 'HDR ton eşleme değiştirilemedi — önceki mod hâlâ etkin.',
 			'videoSettings.audioOutput' => 'Ses Çıkışı',
+			'videoSettings.videoTrack' => 'Video parçası',
+			'videoSettings.videoTrackDescription' => 'Görüntülenecek video akışını seçin. Dosyada alternatif video parçaları varsa MPV oynatımında kullanılabilir.',
+			'videoSettings.videoTrackDefault' => 'Varsayılan',
+			'videoSettings.videoTrackUnavailable' => 'Kullanılabilir alternatif video parçası yok.',
+			'videoSettings.videoTrackFailed' => 'Video parçası değiştirilemedi.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Parça ${id}',
 			'videoSettings.performanceOverlay' => 'Performans Katmanı',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7160,10 +7451,17 @@ extension on TranslationsTr {
 			'videoSettings.audioOutputSpatial' => 'Uzamsal Ses',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Eşitleme',
-			'videoSettings.audioEqualizerDescription' => 'Bu cihaz için beş frekans bantını ayarlayın. mpv\'de mevcut; aktif bir EQ sesini dekore eder ve uyumlu durdurur.',
+			'videoSettings.audioEqualizerDescription' => '10 Band Equalizer için MPVSes filtreleri dekodlu ses kullanır ve passthrough devre dışı bırakır.',
 			'videoSettings.audioEqualizerFlat' => 'Yumuşak',
 			'videoSettings.audioEqualizerActive' => 'Özel',
 			'videoSettings.audioEqualizerSaveFailed' => 'Ses ekvator ayarlarını kaydetemez.',
+			'videoSettings.audioEffectsDescription' => 'Effects decoded audio kullanır, bu yüzden passthrough devre dışı bırakılır. oda ortamı ve stereo genişlemesi MPV İnşaat ve Track.',
+			'videoSettings.audioStereoWidth' => 'Stereo Genişletme',
+			'videoSettings.audioSpatializer' => 'Oda Atmosfer',
+			'videoSettings.audioSpatializerDescription' => 'Sessiz oda yansıtıcıları ekleyin.',
+			'videoSettings.audioPitch' => 'Pitch Değişimi',
+			'videoSettings.audioPitchDescription' => 'Hız değişikliği olmadan topu değiştirin. MPV İnşaat dahil edilmelidir Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Bu etki bu yol için mevcut değildir veya MPV İnşaat için.',
 			'videoSettings.backgroundVideoAudio' => 'Video Audio Altyazıları',
 			'videoSettings.backgroundVideoAudioDescription' => 'Oynayı bıraktığınızda video sesini oynatmaya devam edin; resim geri dönene kadar gizlenir. Android bir medya oynatma bildirimi kullanır.',
 			'videoSettings.audioNormalization' => 'Ses Yüksekliğini Normalleştir',
@@ -7274,9 +7572,9 @@ extension on TranslationsTr {
 			'metadataEdit.metadataUpdated' => 'Meta veriler güncellendi',
 			'metadataEdit.metadataUpdateFailed' => 'Meta veriler güncellenemedi',
 			'metadataEdit.artworkUpdated' => 'Görseller güncellendi',
-			'metadataEdit.artworkUpdateFailed' => 'Görseller güncellenemedi',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Görseller güncellenemedi',
 			'metadataEdit.noArtworkAvailable' => 'Görsel bulunmuyor',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Görsel seçeneği ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Görsel seçeneği ${index}, seçildi',
@@ -7504,6 +7802,43 @@ extension on TranslationsTr {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP kullanıyor. Ağdaki kişiler parolanızı, belirteçlerinizi ve medya içeriklerinizi okuyabilir veya değiştirebilir. Mümkün olduğunda HTTPS kullanın. Yalnızca bu ağa güveniyorsanız ve riski kabul ediyorsanız devam edin.',
 			'addServer.allowHttp' => 'HTTP\'ye izin ver',
 			'addServer.httpsRequired' => 'HTTPS veya açıkça şifrelenmemiş bir bağlantı sağlar.',
+			'cast.chooseDevice' => 'Bir cihazı vurmak',
+			'cast.searching' => 'Arama cihazları için...',
+			'cast.connectedTo' => ({required Object device}) => '${device} ile bağlantılı',
+			'cast.device' => 'Cast cihazı',
+			'cast.readyToCast' => 'Hazırlık atmak',
+			'cast.subtitle' => 'Altyazılar',
+			'cast.serverNotAvailable' => 'Medya sunucusu mevcut değildir.',
+			'cast.stopCasting' => 'Casting durdurma',
+			'cast.castToDevice' => 'cihazı atmak',
+			'cast.noEpisodeAvailable' => 'Çekilecek bir bölüm yok.',
+			'cast.startFailed' => 'Sunucu kontrol edemezsiniz.Sunucu kontrol edin ve tekrar deneyin.',
+			'automation.noActivePlayback' => 'Kontrol edilecek aktif video oturumu yoktur.',
+			'notifications.newEpisodeTitle' => 'Yeni bölüm',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => '7 gün boyunca her özellik ücretsiz olarak deneyin',
+			'appAccess.description' => '7 günlük bir denemeyi her PlezyNG özelliğine tam erişimle başlatın. deneme sırasında hiçbir ücret ve abonelik yoktur. deneme sonrasında, mağazanızın fiyatında bir ömür boyu satın alın, ömür bozucu olarak PlezyNG\'yi kilitler.',
+			'appAccess.trialEndedDescription' => 'Dükkanınızın fiyatına tek bir satın alma ile ömür boyu PlezyNG\'deki her özellik kilitlenir.',
+			'appAccess.startTrial' => '7 günlük ücretsiz sınavı başlatın',
+			'appAccess.trialActive' => '7 günlük tam performans denemesi aktif.',
+			'appAccess.trialEnded' => '7 günlük yargılanma sona erdi',
+			'appAccess.trialStartFailed' => 'Bu cihazda denemeyi kaydetemem. lütfen tekrar deneyin.',
+			'appAccess.lifetimeTitle' => 'PlezyNG ömür boyu kilitlenmiş',
+			'appAccess.lifetimeBody' => 'Teşekkürler! her PlezyNG özelliğine ömür boyu erişebilirsiniz.',
+			'appAccess.manageTitle' => 'PlezyNG Ömür Boyu erişim',
+			'appAccess.manageDescription' => 'Her özellik 7 gün boyunca ücretsiz deneyin, sonra mağazanızın fiyatına tek bir ödeme ile ömür boyu her şeyi kilitleyin.',
+			'appAccess.buy' => ({required Object price}) => '${price} için her özellik kilitlenir',
+			'appAccess.loadingPrice' => 'Satış fiyatı...',
+			'appAccess.retryPrice' => 'Retry fiyatı bakış açısı',
+			'appAccess.restore' => 'Ömür Boyu Satın Alımı',
+			'appAccess.pending' => 'Satın alma işleminiz ödeme veya onay bekliyor. ömür boyu erişim mağazası tamamlandığında kilitlenir.',
+			'appAccess.storeUnavailable' => 'Alışverişler mevcut değildir. mağazaya kaydolduğunuzu ve bu cihazda satın alma izin verildiğini kontrol edin.',
+			'appAccess.productNotFound' => 'PlezyNG ömür boyu kilitlenmesi bu mağazada henüz mevcut değildir.',
+			'appAccess.productQueryFailed' => 'Mağaza fiyatını yüklemeyeceğim. bağlantınızı kontrol edin ve tekrar deneyin.',
+			'appAccess.purchaseFailed' => 'Satın almak için bir şey yapmadım. tekrar deneyin.',
+			'appAccess.restoreFailed' => 'Alışverişinizi geri getirmek için mağazaya ulaşamazdım. tekrar deneyin.',
+			'appAccess.nothingToRestore' => 'Bu mağaza hesabı için PlezyNG ömür boyu satın alma numarası bulundu.',
+			'detail.endsAt' => ({required Object time}) => 'Bitiş saati: ${time}',
 			'watchLink.serverUnavailable' => 'Bu bağlantı için Plex sunucusuna ulaşamıyorum.',
 			'watchLink.notFound' => 'Bu gösteriyi veya filmi Plex sunucularınızda bulamazdım.',
 			'watchLink.ambiguous' => 'Bu bağlantı birden fazla sunucuda öğeleri eşleşir. bağlantıya bir sunucuyu ekleyin.',
@@ -7618,6 +7953,203 @@ extension on TranslationsTr {
 			'platform.locationPermission' => 'PlezyNG, iOS yerel ağınızı algılamak ve medya sunucularınıza bağlanmak için gerektirdiğinde konum erişimini kullanır.',
 			'platform.photoLibraryPermission' => 'Medya kapakları ve görselleri olarak kullanmak için fotoğraf arşivinizden resimler seçin.',
 			'platform.cameraPermission' => 'QR kodları bir Companion Remote ile eşleştirmek için tarama.',
+			'universalMedia.title' => 'Açık Medya',
+			'universalMedia.shortcutHelp' => 'Bu oturum için bir bağlantı, playlist veya dosya oynatın.',
+			'universalMedia.intro' => 'Bir bağlantı, oynatma listesi veya dosyayı açın. Playback PlezyNG\'nin standart oyuncusu kullanır ve kütüphanenize tarih eklemez.',
+			'universalMedia.openWhat' => 'Neyi açmak ister misiniz?',
+			'universalMedia.stream' => 'Stream Adresi',
+			'universalMedia.playlist' => 'Oyun Listesi',
+			'universalMedia.files' => 'cihaz dosyaları',
+			'universalMedia.favorites' => 'Saved Stream Favori',
+			'universalMedia.address' => 'Medya Adresi',
+			'universalMedia.addressHelp' => 'HTTPS tercih edilir. tanınmış kimlik veya imza parametreleri olan URL\'ler yalnızca bu oturum için kullanılır ve favori olarak kaydedilemez.',
+			'universalMedia.displayName' => 'Gösterim Adı (Seçmeli)',
+			'universalMedia.displayNameHelp' => 'Oyuncu ve sistem medya kontrolü için kısa bir isim seçin.',
+			'universalMedia.allowHttp' => 'Şifrelenmemiş bir HTTP bağlantısı sağlar',
+			'universalMedia.allowHttpHelp' => 'HTTP bağlantıyı şifrelemez. yalnızca güvenilir bir ağda izin verin. mümkün olduğunca HTTPS kullanın.',
+			'universalMedia.advancedProtocols' => 'Sadece MPV: bir RTSP, RTMP/RTMPS, UDP veya RTP adresi girin.',
+			'universalMedia.liveStream' => 'Yaşam gibi davranın',
+			'universalMedia.liveStreamHelp' => 'Bunu canlı video veya radyo için kullanın. uygulama zaman çubuğunu, kaydırma düğmeleri ve go-to-time seçeneğini gizler. bir kayıt için kapatın.',
+			'universalMedia.privateSession' => 'Sadece bu oynatma adresi kullanır. bu profilde tutmak için uygun bir akış favori kaydedin.',
+			'universalMedia.saveFavorite' => 'Favori kurtarma',
+			'universalMedia.playNow' => 'Şimdi oynayın',
+			'universalMedia.favoriteSaved' => 'Stream Favori bu profil için kaydedildi',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişini kaydırdı.', other: '${count} desteklenmemiş veya güvenli olmayan oynatma listesi girişleri kayboldu.', ), 
+			'universalMedia.playlistAddress' => 'Playlist adresi',
+			'universalMedia.playlistAddressHelp' => 'Bir web adresinden bir M3U, M3u8 veya PLS oynatma listesi açın.',
+			'universalMedia.choosePlaylist' => 'Playlist dosyasını seçin',
+			'universalMedia.openPlaylist' => 'Açık Playlist',
+			'universalMedia.playlistFormatsHelp' => 'Bir oynatma listesi en fazla 1000 öğe ve 2 MB içerebilir. HLS akışlar olarak açıktır, böylece oyuncu bir kaliteyi seçebilir.',
+			'universalMedia.saveQueuePlaylist' => 'Sırayı çalma listesi olarak kaydet',
+			'universalMedia.queuePlaylistSaved' => 'Çalma listesi medya dosyalarının yanına kaydedildi.',
+			'universalMedia.queuePlaylistUnavailable' => 'Bu sıra yeniden kullanılabilir bir yerel çalma listesi olarak kaydedilemiyor.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Sıradaki dosyalarla aynı klasörde bir kayıt konumu seçin.',
+			'universalMedia.noFavorites' => 'Hiç kaydedilmemiş akış favori henüz. Favoriler bu profilde kalır.',
+			'universalMedia.removeFavorite' => 'En sevdiğiniz akışları kaldırın',
+			'universalMedia.filesHelp' => 'Ses, video veya ISO dosyalarını geçici bir çerçeve için seçin. Dosyalar ve URL\'ler kütüphane geçmişine eklenmez.',
+			'universalMedia.chooseFiles' => 'Dosyaları seçin',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '1 seçilmiş dosya', other: '${count} seçilmiş dosyalar', ), 
+			'universalMedia.wifiTransfer' => 'Wi-Fi üzerinden dosyaları gönderin',
+			'universalMedia.wifiTransferHelp' => 'Desteklenen dosyaları aynı güvenilir ağda bir tarayıcıdan aktarın.',
+			'universalMedia.wifiTransferIntro' => 'Bu adresi başka bir cihazda bir tarayıcıda açın. dosyaları bu cihazın Dosya ve kitap kütüphanesine eklemek için seçin.',
+			'universalMedia.wifiTransferPrivacy' => 'Bu cihaz yerel ağınız üzerinden dosyaları alır. bu adresi bilen herkes transferin durdurulana kadar dosyayı gönderebilir veya adres 15 dakika sonra sona erer. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.',
+			'universalMedia.wifiTransferStarting' => 'Özel, zaman sınırlı bir transfer için hazırlanmak ...',
+			'universalMedia.wifiTransferUnavailable' => 'Transfer başlatılamaz. yerel ağ erişimi kontrol edin ve tekrar deneyin.',
+			'universalMedia.openThisAddress' => 'Gönderen cihazda bu adreslerden birini açın',
+			'universalMedia.copyAddress' => 'Transfer adresi kopyalamak',
+			'universalMedia.addressCopied' => 'Transfer adresi kopyalanmış',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Bu adres ${time}\'de sona erer.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${count} dosyası alındı', other: '${count} dosyaları aldı', ), 
+			'universalMedia.uploadedData' => ({required Object size}) => '${size} tarafından alınan',
+			'universalMedia.stopTransfer' => 'Gönderimi durdurmak ve adresi iptal etmek',
+			'universalMedia.startTransfer' => 'transfer başlangıç',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi transferleri',
+			'universalMedia.wifiBrowserTitle' => 'Dosyaları PlezyNG\'ye gönderin',
+			'universalMedia.wifiBrowserIntro' => 'Göndermek için ses, video, e-kitap veya komik dosyaları seçin. Dosyalar bu cihazın Dosya ve kitap kütüphanesinde kaydedilir. Maksimum: 100 dosya, dosya başına 4 GiB, toplam 10 GiB.',
+			'universalMedia.uploadFilesLabel' => 'Göndermek için dosyalar',
+			'universalMedia.uploadSelected' => 'Seçilen dosyaları yükleme',
+			'universalMedia.uploadSelectFirst' => 'Önce bir veya daha fazla dosyayı seçin.',
+			'universalMedia.uploading' => 'Gönderme',
+			'universalMedia.uploadComplete' => 'Dosya PlezyNG\'ye eklendi.',
+			'universalMedia.uploadFailed' => 'Dosya eklenemez. bu sayfayı açık tutun ve tekrar deneyin.',
+			'universalMedia.liveCue' => 'canlı',
+			'universalMedia.liveSession' => 'canlı akış',
+			'universalMedia.liveCueHelp' => 'Canlı video veya radyo için, uygulama zaman çubuğunu gizler ve atlama düğmeleri. adresi kaydetmez veya tarihini izlemez.',
+			'universalMedia.sessionOnly' => 'Bu playback yalnızca oturum',
+			'universalMedia.sessionOnlyHelp' => 'Playback hiçbir zaman ilerleme veya geçmişi kaydetmez. akışınızı bu profilde tutmak için favori olarak kaydedin eğer uygunsa.',
+			'universalMedia.pictureAdjustments' => 'resim ayarları',
+			'universalMedia.pictureHelp' => 'Bu görüntü değişiklikleri sadece bu playback\'i etkiler. playback bittiğinde yeniden ayarlanırlar.',
+			'universalMedia.resetPicture' => 'Reset resim',
+			'universalMedia.brightness' => 'parlaklık',
+			'universalMedia.contrast' => 'kontrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Satürbasyon',
+			'universalMedia.view360' => '360 derecelik video için düz görünüm',
+			'universalMedia.view360Help' => 'MPV\'nin bu görünüm için FFmpeg\'in v360 filtresine ihtiyacı var.',
+			'universalMedia.view360Unavailable' => 'Bu mpv yapı 360 derecelik filtreyi uygulayamazdı.',
+			'universalMedia.view360Yaw' => 'Horizontal Görüş',
+			'universalMedia.view360Pitch' => 'Vertikal Görüş',
+			'universalMedia.view360FieldOfView' => 'Görüş alanı',
+			'universalMedia.recordStream' => 'Live Stream kayıtları',
+			'universalMedia.stopRecording' => 'Kayıtları durdurun ve kaydetin',
+			'universalMedia.recordingStarted' => 'Kayıt aktiftir. playback bırakmak durur ve kayıtları kaydeder.',
+			'universalMedia.recordingSaved' => 'Kayıt tamamlandı ve kurtarıldı.',
+			'universalMedia.recordingActive' => 'Bu cihazı kaydetmek. playback bırakmak durur ve kurtarır.',
+			'universalMedia.recordingFormatHelp' => 'Video için MKV veya MPEG-TS\'yi seçin. ses için MKA veya MKV\'yi tercih edin.',
+			'universalMedia.replaceRecordingTitle' => 'Bu kayıtları değiştirebilir misiniz?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG kayıt sırasında mevcut dosyayı yedekleme yapar. yeni kayıtları kaydetemezse, plezyNG yedek kopyasını geri getirir.',
+			'universalMedia.replaceRecording' => 'Dosya değiştirme',
+			'universalMedia.discHelp' => 'Bu bilgisayarın optik sürücüsünde bir disk açın.Ayrıca cihaz dosyalarından bir ISO görüntüsü de açabilirsiniz.',
+			'universalMedia.discs' => 'optik disk',
+			'universalMedia.editionOrTitle' => 'Sürüm veya disk başlığı',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray için',
+			'universalMedia.audioCd' => 'Sesli CD',
+			'universalMedia.discAvailability' => 'Disk oynatma, uyumlu bir MPV yapılandırması, desteklenen sürücü ve işletim sistemi izni gerektirir. ticari disk koruması aşamaz.',
+			'universalMedia.converterTitle' => 'Yerel bir medya dosyasını dönüştürmek',
+			'universalMedia.converterHelp' => 'Yerel bir dosyayı dönüştürün veya yeniden yapıştırın FFmpeg.',
+			'universalMedia.converterIntro' => 'Yerel bir ses veya video dosyasını daha fazla cihazda çalışan bir biçime dönüştürün.',
+			'universalMedia.converterPrivacy' => 'FFmpeg bu bilgisayara yüklenmelidir. dönüşüm yalnızca yerel dosyaları okuyor. akışları indirmez veya DRM kaldırmaz.',
+			'universalMedia.converterChooseInput' => 'Yerel bir medya dosyasını seçin',
+			'universalMedia.converterFormat' => 'çıkış formatı',
+			'universalMedia.converterMp4' => 'MP4 H.264 ve AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC ses',
+			'universalMedia.converterMp3' => 'MP3 · Sesli',
+			'universalMedia.allowFtp' => 'FTP izin verin',
+			'universalMedia.allowFtpHelp' => 'FTP şifreleme olmadan medyayı gönderir. yalnızca güvenilir ağlarda kullanın.',
+			'universalMedia.converterSaveAs' => 'Dönüştürülmüş medyayı kaydetmek',
+			'universalMedia.converterExtensionMismatch' => 'Seçilen çıkış uzantısı ile bir fil adı seçin.',
+			'universalMedia.converterUnsupportedInput' => 'Bir ses veya video dosyasını seçin.',
+			'universalMedia.converterLocalOnly' => 'Seçilen dosya yerel bir cihaz yolu olarak kullanılamaz.',
+			'universalMedia.converterReplaceTitle' => 'Bu dosyayı değiştirebilir misiniz?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG, dönüştürülmüş kopyasının kaydedilene kadar mevcut dosyayı geri yükler.',
+			'universalMedia.converterStarting' => 'Başlangıç FFmpeg...',
+			'universalMedia.converterProgress' => 'Bu bilgisayara dönüştürmek...',
+			'universalMedia.converterComplete' => 'Dönüşüm tamamlandı. yeni dosya hazır.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg eksik veya bu formatı desteklemiyor.',
+			'universalMedia.converterFailed' => 'Dönüşüm başarısız oldu. kaynak dosyasının okunabileceğini ve varış noktası yeterli ücretsiz alanı olduğunu kontrol edin.',
+			'universalMedia.converterCancelled' => 'Dönüşüm iptal edildi. eksik çıkış kaldırıldı.',
+			'universalMedia.converterDesktopOnly' => 'Yerel dönüşüm FFmpeg yüklü masaüstü bilgisayarlarda mevcuttur.',
+			'universalMedia.converterStart' => 'Dosya Dönüştürme',
+			'universalMedia.mediaToolsTitle' => 'Medya Araçları',
+			'universalMedia.mediaToolsShortcut' => 'Medyayı yakalayın veya paylaşın, arama uzantılarını ekleyin veya komut satırını kullanın.',
+			'universalMedia.mediaToolsIntro' => 'Bu masaüstü üzerinde yüklü FFmpeg kullanın. uzantılar ve CLI komutları sınırlı HTTPS istekleri ve mevcut Open media akışı kullanın.',
+			'universalMedia.mediaToolsAccessibility' => 'Araç seçenekleri ve kontrolleri dokunmatik, işaretçi, klavye ve D-pad odak ile çalışır. kayıt, paylaşım ve arama durumu değişiklikleri duyurulur.',
+			'universalMedia.mediaTool' => 'Medya Araçları',
+			'universalMedia.captureIntro' => 'Ekranınızı veya bir kamera bu bilgisayarda bir MP4 dosyasına kaydedin. FFmpeg yüklü olmalıdır ve H.264 kodlayıcısı içerir.',
+			'universalMedia.captureNoDevices' => 'Hiçbir ekran veya kamera bulunamadı. FFmpeg çekim desteği ve işletim sistemi gizlilik izni kontrol edin.',
+			'universalMedia.captureSource' => 'Ekran veya kamera',
+			'universalMedia.captureScreen' => 'Ekran',
+			'universalMedia.captureAudioSource' => 'Sesli giriş (opsiyonel)',
+			'universalMedia.captureAudioHelp' => 'Bir mikrofon veya mevcut girişten ses ekleyin. cihaz seçenekleri FFmpeg ve sistem izinlerine bağlıdır.',
+			'universalMedia.captureAudioNone' => 'Audio yok',
+			'universalMedia.captureDefaultAudio' => 'Default Audio Giriş',
+			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Çerçeve Rate',
+			'universalMedia.capturePrivacy' => 'Kayıt yalnızca seçtiğiniz dosyaya kaydedilir. mikrofon çekimi seçmeli. PlezyNG kayıt yüklemiyor.',
+			'universalMedia.captureSaveAs' => 'Ekran kaydını kaydetmek gibi',
+			'universalMedia.captureExtensionMismatch' => '.mp4 içinde sona eren bir fil adı seçin.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg veya H.264 video kodlayıcısı mevcut değildir. desteklenen FFmpeg yapı yükleme, sonra tekrar deneyin.',
+			'universalMedia.captureFailed' => 'Ekipman izni, mevcut depolama ve FFmpeg desteği kontrol edin.',
+			'universalMedia.captureSaved' => 'Ekran kaydı kurtarıldı.',
+			'universalMedia.captureElapsedLabel' => 'Kayıt Zamanı',
+			'universalMedia.captureStart' => 'Başlangıç kaydı',
+			'universalMedia.capturePreview' => 'Oynatıcıda önizle',
+			'universalMedia.capturePreviewHelp' => 'Seçilen kaynağı standart oynatıcıda önizleyin. Bu yalnızca geçerli oturum için kullanılır ve kayıt oluşturmaz. Cihaz desteği ve izinler MPV ile işletim sistemine bağlıdır. Önizleme yalnızca video kullanır; kaydedilen kayıtlara isteğe bağlı ses eklenebilir.',
+			'universalMedia.capturePreviewActive' => 'Canlı önizleme · kayıt yapılmıyor',
+			'universalMedia.captureStop' => 'durup kurtar',
+			'universalMedia.captureMode' => 'tutuklama',
+			'universalMedia.shareMode' => 'Paylaşım',
+			'universalMedia.shareIntro' => 'Özel ağınızda başka bir cihazda yerel bir medya dosyasını gönderin. PlezyNG geçici bir HLS akışı oluşturur.',
+			'universalMedia.sharePrivacy' => 'Yerel ağınızdaki herkes, özel bağlantıyı alırken izleyebilir. bağlantı 60 dakika sonra sona erer. paylaşımı durdurun ve sunucu kapatın ve bağlantıyı iptal edin.',
+			'universalMedia.shareChooseFile' => 'Medya dosyası seçin',
+			'universalMedia.shareChooseHelp' => 'Yerel bir ses veya video dosyasını seçin. dosya bu bilgisayarda kalır.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg veya H.264/AAC kodlayıcıları mevcut değildir. FFmpeg\'i H.264 ve AAC kodlayıcı desteği ile yükleme.',
+			'universalMedia.shareFailed' => 'Akış beklenmedik bir şekilde başlatılamaz veya durdurulamaz. FFmpeg ve ağ erişimi kontrol edin.',
+			'universalMedia.shareActive' => 'Akım özel ağınızda hazır.',
+			'universalMedia.shareEnded' => 'Medya sonuna ulaştı ve artık paylaşılmıyor.',
+			'universalMedia.shareStopped' => 'Paylaşım durduruldu. geçici bağlantı artık geçerli değil.',
+			'universalMedia.shareUrlCopied' => 'Stream adresi kopyalanmıştır.',
+			'universalMedia.shareOpenUrl' => 'Bu adresi diğer cihazda bir oyuncuda açın',
+			'universalMedia.shareQrLabel' => 'Geçici akış adresi için QR kodu',
+			'universalMedia.shareQrHelp' => 'Aynı özel ağına bağlanan uyumlu bir oyuncu ile tarama.',
+			'universalMedia.shareHttpHint' => 'Bu akım şifrelenmemiş HTTP kullanır. PlezyNG\'de, açılmadan önce HTTP\'e izin verin.',
+			'universalMedia.shareCopyUrl' => 'Stream adresi kopyalamak',
+			'universalMedia.shareExpiresLabel' => 'Link bitti',
+			'universalMedia.shareStarting' => 'Akım için hazırlık...',
+			'universalMedia.shareStart' => 'Paylaşmaya Başlayın',
+			'universalMedia.shareStop' => 'Paylaşmayı durdurun',
+			'universalMedia.extensionsMode' => 'Uzantılar ve CLI',
+			'universalMedia.extensionsIntro' => 'Medya bulmak için yalnızca bir veri arama uzantısı ekleyin. bir sonuç seçin ve tanıdık Open media formuna yüklemek için.',
+			'universalMedia.extensionsPrivacy' => 'Bir manifesto bir HTTPS arama son noktası ve harita yanıt alanları tanımlayabilir. kodu çalıştıramaz, talep başlıkları ekleyemez, dosyaları okuyar veya başlatma şelalesi komutları.',
+			'universalMedia.extensionImport' => 'Genişletme Manifesto',
+			'universalMedia.extensionEmpty' => 'Arama hizmetleri henüz yok. bir eklemek için güvenilir bir manifesto JSON dosyası seçin.',
+			'universalMedia.extensionChoose' => 'Arama Hizmetleri',
+			'universalMedia.extensionSearchConsent' => 'Her arama bu HTTPS hizmetine kelimelerinizi gönderir. sonuçlar yalnızca birini seçtikten sonra açılıyor.',
+			'universalMedia.extensionSearchLabel' => 'arama medyası',
+			'universalMedia.extensionSearch' => 'arama',
+			'universalMedia.extensionSearching' => 'Arama...',
+			'universalMedia.extensionNoResults' => 'Güvenli medya sonuçları iade edilmedi. başka bir arama deneyin.',
+			'universalMedia.extensionInstallTitle' => 'Bu arama hizmeti eklemek için?',
+			'universalMedia.extensionReplaceTitle' => 'Bu arama hizmetini güncelleyebilir misiniz?',
+			'universalMedia.extensionService' => 'Hizmet',
+			'universalMedia.extensionEndpoint' => 'HTTPS son nokta',
+			'universalMedia.extensionConsent' => 'Arama metniniz bu hizmet için gönderilir.Manifest\'te yürütülebilir kod yoktur.Sadece bu son noktaya güveniyorsanız devam edin.',
+			'universalMedia.extensionInstall' => 'Hizmet Ekle',
+			'universalMedia.extensionReplace' => 'Güncelleştirme Hizmetleri',
+			'universalMedia.extensionRemoveTitle' => 'Bu arama hizmetini kaldırır mısınız?',
+			'universalMedia.extensionRemoveHelp' => 'Bu, hizmetin bu profilden kaldırılmasıdır. PlezyNG son noktası ile iletişime geçmez.',
+			'universalMedia.extensionRemove' => 'Hizmet kaldırma',
+			'universalMedia.extensionInvalidManifest' => 'Bu dosya desteklenen bir uzantı manifesto değildir. format için Open media kılavuzunu görün.',
+			'universalMedia.extensionSaveFailed' => 'Bu uzantı aktif profillere kaydedilemez.',
+			'universalMedia.extensionSearchFailed' => 'Arama hizmeti geçerli bir cevap iade etmedi. son noktayı kontrol edin ve tekrar deneyin.',
+			'universalMedia.cliTitle' => 'komut hattı',
+			'universalMedia.cliHelp' => 'plezyctl kılavuzunu kullanarak bir manifesto doğrulamak veya aynı uzantıyı aramak. her arama öncesi HTTPS hizmetini incelemek. sonuçlar mevcut medya formunda açılıyor; başlatmak için geri dönüş düğmesini seçin.',
+			'universalMedia.cliCopyExample' => 'Komut örneği kopyası',
+			'universalMedia.cliCopied' => 'Örnek kopyalanmıştır.',
 			'fileSources.title' => 'Dosyalar ve kitaplar',
 			'fileSources.subtitle' => 'Okumak, dinlemek ve kendi dosyalarınızdan izlemek.',
 			'fileSources.add' => 'Kaynak ekleme',
@@ -7789,8 +8321,6 @@ extension on TranslationsTr {
 			'fileSources.offlineQuotaHelp' => 'Çevrimdışı kopyalar, ithal edilen dosyalar ve indirilmiş indirimler için kullanılan maksimum alanı ayarlayın. sınırı düşürmek mevcut kopyaları kaldırmaz.',
 			'fileSources.offlineStorageUsage' => 'Offline depolama',
 			'fileSources.reservedStorage' => 'Rezervasyon',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'İndir Queue',
 			'fileSources.downloadRunning' => 'İndirme',
 			'fileSources.downloadQueued' => 'bekleyen',
@@ -7859,7 +8389,6 @@ extension on TranslationsTr {
 			'audiobook.addSyncSource' => 'Öncelikle Google Drive, OneDrive, Dropbox, WebDAV veya S3\'ü Dosyalar ve kitaplar\'a ekleyin.',
 			'audiobook.syncDestination' => 'Sync Depolama Hesabı',
 			'audiobook.syncFolder' => 'Sink dosyası veya prefix',
-			'audiobook.syncFolderHelp' => 'WebDAV kaynağınızın içinde ayrı bir mevcut klasör veya özel bir S3 önizlemesi kullanın. kitap dosyaları asla değişmez.',
 			'audiobook.syncCode' => 'Özel Sync Kodu',
 			'audiobook.syncCodeHelp' => 'İlk cihazınızda bir kod oluşturun, sonra diğer cihazlarınızda o kodu girin. özel bir kopya tutun: şifreli durumunuzun anahtarıdır. her kişi için farklı bir kod kullanın.',
 			'audiobook.showCode' => 'Görüntüleme veya gizleme Sink kodu',
@@ -7869,7 +8398,6 @@ extension on TranslationsTr {
 			'audiobook.syncSourceDisconnect' => 'Bu kaynağı kaldırmak burada okuma ve dinleme senkronizasyonu devre dışı bırakacaktır. şifreli senkronizasyon dosyaları sağlayıcının içinde kalacaktır.',
 			'audiobook.syncReconnect' => 'Depolama Hesabını Yeniden Bağlayın',
 			'audiobook.lastSynced' => ({required Object time}) => '${time} tarafından son olarak senkronize edildi',
-			'audiobook.syncPrivacy' => 'Sadece şifreli ilerleme ve notlar kaydedilir. Ses ve e-kitap dosyaları, hesap tokenleri ve şifreleri yüklenmez. Google Drive ve OneDrive uygulama depolama kullanır; Dropbox PlezyNG Sync kullanır. Sync etkinleştirmek ek yazma erişimi isteyebilir. etkinleştirildiğinde, bu varış noktası ilerleme senkronize sahiptir; sunucunun ilerlemesi ayrı kalır.',
 			'audiobook.syncConflicts' => 'Nereye geri dönmek istediğinizi seçin',
 			'audiobook.conflictHelp' => 'Bu değişiklikler bağımsız olarak yapıldı. tutmak için pozisyon veya not versiyonunu seçin. daha sonraki bir zaman çizgisi veya daha yüksek bir yüzde otomatik olarak kazanmaz.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Sürücü ${device}',
@@ -8036,7 +8564,6 @@ extension on TranslationsTr {
 			'comics.collections' => 'Koleksiyonlar',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8061,7 +8588,6 @@ extension on TranslationsTr {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8074,6 +8600,8 @@ extension on TranslationsTr {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8093,8 +8621,6 @@ extension on TranslationsTr {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8102,14 +8628,35 @@ extension on TranslationsTr {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Bu Plezy bağlantısı geçerli değildir.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Hiçbir profil "${profile}" ile eşleşmiyor.',
+			'deepLinks.serverUnavailable' => 'Bu bağlantı için sunucuya ulaşamadım.',
+			'deepLinks.notFound' => 'Kütüphanelerinizde bu başlık bulamazsınız.',
+			'deepLinks.unsupportedItem' => 'Bu bağlantı oynanamaz.',
+			'deepLinks.noLiveTv' => 'Hiçbir canlı TV sunucusu bu bağlantı için mevcut değildir.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => '“${channel}” kanalı bulamadım.',
+			'deepLinks.showLink' => 'Göster link',
+			'deepLinks.showProfileLink' => 'Profil Link Göster',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Bu bağlantıyı açtığınızda, bir sonraki bölüm oynanır. Shuffle\'da gösteriyi oynatmak için &mode=shuffle ekleyin.',
+			'deepLinks.movieHint' => 'Bu bağlantıyı açtığınızda film oynanır.',
+			'deepLinks.episodeHint' => 'Bu bağlantıyı açtığınızda bu bölüm oynanır.',
+			'deepLinks.profileHint' => 'Bu bağlantıyı açmak bu profille geçiş yapar.',
+			'deepLinks.openAsProfile' => ({required Object name}) => '${name} olarak açılır',
+			'deepLinks.copy' => 'kopyası',
+			'deepLinks.copied' => 'Link kopyalanmış',
+			'householdSetup.title' => 'Ev kurulumu',
+			'issueReport.title' => 'Sorun bildir',
+			'issueReport.instructions' => 'Önceden doldurulmuş bir GitHub taslağını açmak için QR kodunu tarayın. İnceleyin ve hazır olduğunuzda gönderin.',
+			'issueReport.privacy' => 'Taslakta uygulama sürümü, platform ve bağlantı sayısı bulunur. Sunucu adresleri, hesap ve profil adları, medya başlıkları ve dosya yolları eklenmez.',
+			'issueReport.logPrivacy' => 'Günlükler isteğe bağlıdır. Yüklemeden önce inceleyin. Günlük kimliği herkese açık olabilecek taslağa eklenir.',
+			'issueReport.openDraft' => 'GitHub taslağını aç',
 			_ => null,
 		};
 	}

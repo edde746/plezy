@@ -20,6 +20,10 @@ on:
         required: true
         type: string
 
+# Several publication gates run before checkout in fresh private guests.
+env:
+  GH_REPO: ${{ github.repository }}
+
 permissions:
   contents: read
   packages: write
@@ -73,8 +77,33 @@ jobs:
           ref: ${{ steps.release.outputs.tag }}
           persist-credentials: false
 
+      - name: Resolve the private container download proxy
+        id: proxy
+        shell: bash
+        run: |
+          python3 - <<'PYPROXY'
+          import os
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          raw = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy', '')
+          proxy = urlsplit(raw)
+          if (not raw or any(c.isspace() for c in raw)
+                  or proxy.scheme != 'http' or not proxy.hostname or not proxy.port
+                  or proxy.username or proxy.password or proxy.query or proxy.fragment
+                  or proxy.path not in ('', '/')):
+              raise SystemExit('An unauthenticated private HTTP proxy is required')
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              output.write('url=' + raw.rstrip('/') + '\n')
+          PYPROXY
+
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver-opts: |
+            env.HTTP_PROXY=${{ steps.proxy.outputs.url }}
+            env.HTTPS_PROXY=${{ steps.proxy.outputs.url }}
+            env.http_proxy=${{ steps.proxy.outputs.url }}
+            env.https_proxy=${{ steps.proxy.outputs.url }}
 
       - name: Set OCI build date
         id: build-metadata
@@ -95,6 +124,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
+            HTTP_PROXY=${{ steps.proxy.outputs.url }}
+            HTTPS_PROXY=${{ steps.proxy.outputs.url }}
+            http_proxy=${{ steps.proxy.outputs.url }}
+            https_proxy=${{ steps.proxy.outputs.url }}
             VERSION=${{ steps.release.outputs.version }}
             REVISION=${{ steps.release.outputs.commit }}
             BUILD_DATE=${{ steps.build-metadata.outputs.build_date }}
@@ -148,6 +181,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
+            HTTP_PROXY=${{ steps.proxy.outputs.url }}
+            HTTPS_PROXY=${{ steps.proxy.outputs.url }}
+            http_proxy=${{ steps.proxy.outputs.url }}
+            https_proxy=${{ steps.proxy.outputs.url }}
             VERSION=${{ steps.release.outputs.version }}
             REVISION=${{ steps.release.outputs.commit }}
             BUILD_DATE=${{ steps.build-metadata.outputs.build_date }}

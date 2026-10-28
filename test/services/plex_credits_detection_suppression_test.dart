@@ -21,6 +21,8 @@ import '../test_helpers/http_fixtures.dart';
 /// show/movie drops credits markers; absent (non-Plex-Pass servers) and `-1`
 /// ("Library default") keep them.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   const episodeKey = 'ep-1';
   const showKey = 'show-1';
   const episodeEndpoint = '/library/metadata/$episodeKey';

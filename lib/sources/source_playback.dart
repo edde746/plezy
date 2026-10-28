@@ -1,4 +1,3 @@
-import '../utils/app_logger.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -14,14 +13,18 @@ import '../services/media_control_router.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_coordinator.dart';
 import '../services/music/music_hardware_transport.dart';
+import '../services/music/music_playback_service.dart';
 import '../services/driver_distraction.dart';
 import '../services/car_ux_restrictions_service.dart';
+import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/notification_permission.dart';
 import '../screens/video_player/wakelock_controller.dart';
 import 'content_access.dart';
 import 'source_controller.dart';
 import 'source_models.dart';
+
+typedef LocalPlaylistExportItem = ({String title, Uri uri});
 
 /// The book session owns source-time progress independently of the music queue.
 /// Commands serialize, and each native generation ignores stale event delivery.
@@ -31,7 +34,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     this._playerFactory,
     MediaControlsManager Function()? controlsFactory,
     WakelockPlatformToggle? wakelockToggle,
-  }) : _wakelock = WakelockController(platformToggle: wakelockToggle),
+    math.Random? shuffleRandom,
+  }) : _shuffleRandom = shuffleRandom ?? math.Random(),
+       _wakelock = WakelockController(platformToggle: wakelockToggle),
        _controlsFactory = controlsFactory ?? MediaControlsManager.new {
     sources.stopPlayback = stop;
     PlaybackCoordinator.instance.registerFileSession(stop, isActive: () => active || opening);
@@ -51,6 +56,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   final SourceController sources;
+  final math.Random _shuffleRandom;
   final WakelockController _wakelock;
   final Player Function(bool)? _playerFactory;
   VideoPlayerSlot? videoPlayerSlot;
@@ -66,6 +72,16 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool opening = false;
   bool fullPlayerVisible = false;
   Map<String, Uri> _localOverrides = const {};
+  Map<String, String> _directPlayerAddresses = const {};
+  Map<String, String> _localPlayerOptions = const {};
+  bool _persistProgress = true;
+  bool _liveInput = false;
+  List<File> _temporaryMediaFiles = const [];
+  SourcePreviewSession? _previewSession;
+  File? _streamRecordingTarget;
+  File? _streamRecordingPartial;
+  File? _streamRecordingBackup;
+  bool _pictureAdjustmentTouched = false;
   bool _disposed = false;
   bool _workspaceAudioEnabled = true;
   bool _resumeAfterInterruption = false;
@@ -76,6 +92,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   int _profileGeneration = 0;
   int _generation = 0;
   int _fileIndex = 0;
+  List<int> _queueOrder = const [];
+  bool _queueShuffled = false;
+  MusicRepeatMode _queueRepeatMode = MusicRepeatMode.off;
+  int _lastKnownFilePositionMs = 0;
+  int? _failedFilePositionMs;
   final Map<int, int> _durations = {};
   final Map<int, List<BookChapter>> _fileChapters = {};
   final List<StreamSubscription<dynamic>> _subscriptions = [];
@@ -88,8 +109,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   Timer? _saveTimer;
   Timer? _sleepTimer;
   int? _sleepAtMs;
-  int? _sleepUntilFile;
+  int? _sleepUntilQueuePosition;
   int? _sleepBoundaryFile;
+  int? _sleepChapterFile;
+  int? _sleepChapterFilePosition;
   ({int file, int position})? _undoSeek;
   bool chapterTimeline = false;
   DateTime? sleepDeadline;
@@ -98,7 +121,13 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   int backwardSeconds = 15;
   int forwardSeconds = 30;
   bool get canUndoSeek => _undoSeek != null;
-  int get currentFilePositionMs => player?.currentPosition.inMilliseconds ?? 0;
+  int get currentFilePositionMs => _failedFilePositionMs ?? _lastKnownFilePositionMs;
+  bool get canRetry =>
+      _valid &&
+      player != null &&
+      files.isNotEmpty &&
+      !opening &&
+      (failure == SourceFailure.unavailable || failure == SourceFailure.authentication);
   int get currentFileDurationMs => _durations[_fileIndex] ?? player?.state.duration.inMilliseconds ?? 0;
   int get timelineStartMs => chapterTimeline && currentChapter != null
       ? currentChapter!.startMs
@@ -117,7 +146,167 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       : null;
   bool get active => entry != null;
   bool get video => mode == PublicationMode.watching;
+  bool get isTransientInput => !_persistProgress;
+  bool get isSamplePreview => files.isNotEmpty && files.every((file) => file.sampleOnly);
+  bool get isLiveInput => _liveInput;
+  bool get isCapturePreview =>
+      _fileIndex >= 0 && _fileIndex < files.length && _directPlayerAddresses.containsKey(files[_fileIndex].id);
+  bool get isRecordingStream => _streamRecordingPartial != null;
   bool get playing => player?.state.isActive ?? false;
+  bool get canUseDirectQueueControls =>
+      isTransientInput &&
+      !isLiveInput &&
+      files.length > 1 &&
+      (entry?.kind == SourceItemKind.music || entry?.kind == SourceItemKind.video);
+  bool get queueShuffled => _queueShuffled;
+  MusicRepeatMode get queueRepeatMode => _queueRepeatMode;
+  int get currentQueuePosition => _queuePosition;
+  List<int> get queueFileIndices => List.unmodifiable(_queueOrder);
+
+  /// Whether the current queue can be offered for a same-folder M3U export.
+  /// Temporary copies, network addresses, and picker paths without stable
+  /// desktop-file semantics are deliberately excluded.
+  bool get canExportLocalPlaylist {
+    if (!PlatformDetector.isDesktopOS() || _temporaryMediaFiles.isNotEmpty || files.length < 2) return false;
+    String normalizedParent(String value) {
+      final normalized = p.normalize(value);
+      return Platform.isWindows ? normalized.toLowerCase() : normalized;
+    }
+
+    String? parent;
+    for (final index in _queueOrder) {
+      final item = files[index];
+      final uri = _localOverrides[item.id];
+      if (uri == null || uri.scheme != 'file') return false;
+      final path = p.normalize(uri.toFilePath());
+      final currentParent = normalizedParent(p.dirname(path));
+      if (parent != null && parent != currentParent) return false;
+      parent = currentParent;
+    }
+    return true;
+  }
+
+  /// Returns validated durable local files only when they share a real folder.
+  /// The caller writes only sibling names into the exported playlist.
+  Future<List<LocalPlaylistExportItem>?> localPlaylistExportItems() async {
+    if (!canExportLocalPlaylist) return null;
+    final result = <LocalPlaylistExportItem>[];
+    String? parent;
+    for (final index in _queueOrder) {
+      final item = files[index];
+      try {
+        final uri = _localOverrides[item.id]!;
+        final path = await File.fromUri(uri).resolveSymbolicLinks();
+        final file = File(path);
+        if ((await file.stat()).type != FileSystemEntityType.file) return null;
+        final kind = classifySourceFile(p.basename(path));
+        if (kind != SourceItemKind.video && kind != SourceItemKind.music && kind != SourceItemKind.audiobook) {
+          return null;
+        }
+        final currentParentRaw = p.dirname(path);
+        final currentParent = Platform.isWindows ? currentParentRaw.toLowerCase() : currentParentRaw;
+        if (parent != null && parent != currentParent) return null;
+        parent = currentParent;
+        result.add((title: item.name, uri: file.uri));
+      } on FileSystemException {
+        return null;
+      }
+    }
+    return result.length == files.length ? List.unmodifiable(result) : null;
+  }
+
+  void markPictureAdjustmentChanged() {
+    _pictureAdjustmentTouched = true;
+  }
+
+  Future<void> startStreamRecording(File destination, {required bool replaceExisting}) async {
+    if (!_valid || !_liveInput || player?.playerType != 'mpv') {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    if (isRecordingStream) throw const SourceException(SourceFailure.conflict);
+    final native = player!;
+    final generation = _generation;
+
+    final target = File(destination.absolute.path);
+    final extension = p.extension(target.path).toLowerCase();
+    final supportedExtensions = video ? const {'.mkv', '.ts'} : const {'.mka', '.mkv'};
+    if (!supportedExtensions.contains(extension)) throw const SourceException(SourceFailure.unsupported);
+
+    final parent = target.parent;
+    if (!await parent.exists()) throw const SourceException(SourceFailure.storageUnavailable);
+    File? backup;
+    if (await target.exists()) {
+      if (!replaceExisting) throw const SourceException(SourceFailure.conflict);
+      backup = File('${target.path}.plezy-backup-${const Uuid().v4()}');
+      await target.rename(backup.path);
+    }
+
+    if (!_valid || player != native || _generation != generation) {
+      if (backup != null && await backup.exists() && !await target.exists()) {
+        await backup.rename(target.path);
+      }
+      throw const SourceException(SourceFailure.cancelled);
+    }
+
+    final partial = File(
+      p.join(parent.path, '.${p.basenameWithoutExtension(target.path)}.plezy-recording-${const Uuid().v4()}$extension'),
+    );
+    try {
+      await native.setProperty('file-local-options/stream-record', partial.path);
+      _streamRecordingTarget = target;
+      _streamRecordingPartial = partial;
+      _streamRecordingBackup = backup;
+      _notify();
+    } catch (_) {
+      if (backup != null && await backup.exists() && !await target.exists()) {
+        await backup.rename(target.path);
+      }
+      rethrow;
+    }
+  }
+
+  Future<File?> stopStreamRecording() async {
+    final target = _streamRecordingTarget;
+    final partial = _streamRecordingPartial;
+    final backup = _streamRecordingBackup;
+    if (target == null || partial == null) return null;
+
+    _streamRecordingTarget = null;
+    _streamRecordingPartial = null;
+    _streamRecordingBackup = null;
+    try {
+      final native = player;
+      if (native != null && !native.disposed) {
+        await native.setProperty('file-local-options/stream-record', '');
+      }
+      if (!await partial.exists() || await partial.length() == 0) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      if (await target.exists()) throw const SourceException(SourceFailure.conflict);
+      await partial.rename(target.path);
+      if (backup != null && await backup.exists()) await backup.delete();
+      return target;
+    } catch (_) {
+      // Playback teardown still proceeds if finalizing the stream failed.
+      if (await partial.exists()) {
+        try {
+          await partial.delete();
+        } catch (_) {
+          // A stale recording partial is safer than disrupting playback teardown.
+        }
+      }
+      if (backup != null && await backup.exists() && !await target.exists()) {
+        try {
+          await backup.rename(target.path);
+        } catch (_) {
+          // Keep the backup in place if the destination cannot be restored.
+        }
+      }
+      rethrow;
+    } finally {
+      _notify();
+    }
+  }
 
   Future<void> setWorkspaceAudioEnabled(bool enabled) async {
     if (_disposed || _workspaceAudioEnabled == enabled) return;
@@ -148,10 +337,93 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   double get speed => progress?.speed ?? 1;
   int get fileIndex => _fileIndex;
-  int get _offset => List.generate(_fileIndex, (i) => _durations[i] ?? 0).fold(0, (a, b) => a + b);
+  int get _queuePosition {
+    final position = _queueOrder.indexOf(_fileIndex);
+    return position < 0 ? 0 : position;
+  }
+
+  int get _offset => _offsetBefore(_fileIndex);
+  int _offsetBefore(int fileIndex) {
+    var offset = 0;
+    for (final index in _queueOrder) {
+      if (index == fileIndex) return offset;
+      offset += _durations[index] ?? 0;
+    }
+    return offset;
+  }
+
   bool get hasCompleteTimeline => List.generate(files.length, (i) => _durations[i] ?? 0).every((d) => d > 0);
   int get durationMs => List.generate(files.length, (i) => _durations[i] ?? 0).fold(0, (a, b) => a + b);
-  int get positionMs => _offset + (player?.currentPosition.inMilliseconds ?? 0);
+  int get positionMs => _offset + currentFilePositionMs;
+
+  Future<void> toggleQueueShuffle() => _serialize(() async {
+    if (!canUseDirectQueueControls || _queueOrder.length < 2) return;
+    final currentPosition = _queuePosition;
+    final playedPrefix = _queueOrder.take(currentPosition + 1).toList();
+    final remaining = _queueOrder.skip(currentPosition + 1).toList();
+    if (_queueShuffled) {
+      remaining.sort();
+    } else {
+      remaining.shuffle(_shuffleRandom);
+    }
+    _queueOrder = [...playedPrefix, ...remaining];
+    _queueShuffled = !_queueShuffled;
+    _rebuildChapters();
+    if (_sleepChapterFile != null && _sleepChapterFilePosition != null) {
+      _sleepAtMs = _offsetBefore(_sleepChapterFile!) + _sleepChapterFilePosition!;
+    }
+    _notify();
+  });
+
+  Future<void> setQueueRepeatMode(MusicRepeatMode mode) => _serialize(() async {
+    if (!canUseDirectQueueControls || _queueRepeatMode == mode) return;
+    _queueRepeatMode = mode;
+    _notify();
+  });
+
+  Future<void> selectQueueFile(int fileIndex) => _serialize(() async {
+    if (!canUseDirectQueueControls || !_queueOrder.contains(fileIndex) || player == null) return;
+    if (fileIndex == _fileIndex) return;
+    await _persist();
+    await _openFile(fileIndex, 0);
+  });
+
+  int? _nextPlaybackFileIndex() {
+    if (canUseDirectQueueControls) {
+      final nextPosition = _queuePosition + 1;
+      if (nextPosition < _queueOrder.length) return _queueOrder[nextPosition];
+      if (_queueRepeatMode == MusicRepeatMode.all) return _queueOrder.first;
+      return null;
+    }
+    return _fileIndex + 1 < files.length ? _fileIndex + 1 : null;
+  }
+
+  int? _previousPlaybackFileIndex() {
+    if (canUseDirectQueueControls) {
+      final previousPosition = _queuePosition - 1;
+      if (previousPosition >= 0) return _queueOrder[previousPosition];
+      if (_queueRepeatMode == MusicRepeatMode.all) return _queueOrder.last;
+      return null;
+    }
+    return _fileIndex > 0 ? _fileIndex - 1 : null;
+  }
+
+  /// Stable, non-reversible local key for a temporary direct-media item.
+  /// The URL or filesystem path itself is never stored in bookmark settings.
+  String? get localMediaBookmarkKey {
+    if (!isTransientInput ||
+        isLiveInput ||
+        player?.state.seekable != true ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length ||
+        currentFileDurationMs <= 0) {
+      return null;
+    }
+    final uri = _localOverrides[files[_fileIndex].id];
+    if (uri == null) return null;
+    return 'open-media:${sourceDigest(uri.toString())}';
+  }
+
   BookChapter? get currentChapter =>
       chapters.where((c) => positionMs >= c.startMs && (c.endMs <= c.startMs || positionMs < c.endMs)).lastOrNull;
   bool get _valid =>
@@ -175,14 +447,61 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     List<PublicationFile> selected, {
     PublicationMode? playbackMode,
     Map<String, Uri> localOverrides = const {},
+    bool persistProgress = true,
+    bool liveInput = false,
+    List<File> temporaryMediaFiles = const [],
+    SourcePreviewSession? samplePreview,
+    Map<String, String> directPlayerAddresses = const {},
+    Map<String, String> localPlayerOptions = const {},
   }) => _serialize(() async {
     await _stop();
     try {
       sources.requireSession();
       if (selected.isEmpty) throw const SourceException(SourceFailure.unsupported);
+      final containsSample = selected.any((file) => file.sampleOnly);
+      if (containsSample &&
+          (!selected.every((file) => file.sampleOnly) ||
+              selected.length != 1 ||
+              persistProgress ||
+              samplePreview == null ||
+              samplePreview.file.fingerprint != selected.single.fingerprint)) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      if (containsSample && (directPlayerAddresses.isNotEmpty || localPlayerOptions.isNotEmpty)) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      if (containsSample) _previewSession = samplePreview;
+      final effectiveOverrides = Map<String, Uri>.from(localOverrides);
+      if (containsSample) {
+        final previewFile = await samplePreview!.open();
+        effectiveOverrides[selected.single.id] = previewFile.uri;
+      }
       if (PlatformDetector.isAutomotive()) await CarUxRestrictionsService.instance.ensureResolved();
       final requestedMode =
           playbackMode ?? (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
+      if (directPlayerAddresses.isNotEmpty || localPlayerOptions.isNotEmpty) {
+        const captureFormats = {'gdigrab', 'dshow', 'avfoundation', 'x11grab', 'v4l2'};
+        const allowedOptions = {'demuxer-lavf-format', 'demuxer-lavf-o'};
+        if (!PlatformDetector.isDesktopOS() ||
+            persistProgress ||
+            !liveInput ||
+            requestedMode != PublicationMode.watching ||
+            selected.length != 1 ||
+            directPlayerAddresses.length != 1 ||
+            directPlayerAddresses.keys.single != selected.single.id ||
+            localPlayerOptions.keys.toSet().difference(allowedOptions).isNotEmpty) {
+          throw const SourceException(SourceFailure.unsupported);
+        }
+        final format = localPlayerOptions['demuxer-lavf-format'];
+        final options = localPlayerOptions['demuxer-lavf-o'];
+        if (format == null ||
+            !captureFormats.contains(format) ||
+            options == null ||
+            !RegExp(r'^framerate=(15|30|60)(,draw_mouse=1)?$').hasMatch(options) ||
+            !directPlayerAddresses.values.single.startsWith('av://$format:')) {
+          throw const SourceException(SourceFailure.unsupported);
+        }
+      }
       final coordinator = PlaybackCoordinator.instance;
       if (requestedMode == PublicationMode.watching) {
         // This SourcePlayback is itself the registered file owner. Asking the
@@ -208,7 +527,15 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _profileGeneration = sources.generation;
       entry = item;
       files = List.unmodifiable(selected);
-      _localOverrides = Map.unmodifiable(localOverrides);
+      _localOverrides = Map.unmodifiable(effectiveOverrides);
+      _queueOrder = List<int>.generate(files.length, (index) => index);
+      _queueShuffled = false;
+      _queueRepeatMode = MusicRepeatMode.off;
+      _directPlayerAddresses = Map.unmodifiable(directPlayerAddresses);
+      _localPlayerOptions = Map.unmodifiable(localPlayerOptions);
+      _persistProgress = persistProgress;
+      _liveInput = liveInput;
+      _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
       mode = requestedMode;
       _useEntryChapters =
           selected.length == item.audio.length &&
@@ -225,14 +552,18 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       }
       final edition = sourceDigest(jsonEncode(files.map((f) => f.fingerprint).toList()));
       final initial = PublicationProgress(entryKey: item.key, edition: edition, mode: mode, session: const Uuid().v4());
-      progress = await sources.openProgress(item, initial);
-      if (sources.cloudConflict(initial.key) ||
-          await sources.repository.remoteConflict(_profile!, initial.key) != null) {
-        throw const SourceException(SourceFailure.conflict);
+      if (persistProgress) {
+        progress = await sources.openProgress(item, initial);
+        if (sources.cloudConflict(initial.key) ||
+            await sources.repository.remoteConflict(_profile!, initial.key) != null) {
+          throw const SourceException(SourceFailure.conflict);
+        }
+        sources.holdProgress(initial.key);
+      } else {
+        progress = initial;
       }
-      sources.holdProgress(initial.key);
       _undoSeek = null;
-      if (progress!.finished) {
+      if (persistProgress && progress!.finished) {
         progress = await sources.repository.saveProgress(
           _profile!,
           progress!.copyWith(positionMs: 0, filePositionMs: 0, fileIndex: 0, fraction: 0, finished: false),
@@ -299,11 +630,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       )..register();
       await _controls!.setControlsEnabled(
         canPlayPause: true,
-        canSeek: true,
+        canSeek: !_liveInput,
         canGoNext: true,
         canGoPrevious: true,
         canStop: true,
-        canSkip: true,
+        canSkip: !_liveInput,
         canSetSpeed: true,
         preferSkipOverTrackButtons: true,
         skipInterval: Duration(seconds: backwardSeconds),
@@ -312,7 +643,13 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       bool current() => _valid && generation == _generation && player == native;
       _subscriptions.add(
         native.streams.position.listen((_) {
-          if (!current()) return;
+          if (!current() || opening || _failedFilePositionMs != null) return;
+          final position = native.currentPosition.inMilliseconds;
+          // Native backends can reset to zero immediately before reporting a
+          // stream failure. Explicit seeks/open operations set zero themselves.
+          if (position > 0 || _lastKnownFilePositionMs == 0) {
+            _lastKnownFilePositionMs = math.max(0, position);
+          }
           if (_sleepAtMs != null && positionMs >= _sleepAtMs!) {
             _sleepBoundaryFile = _fileIndex;
             clearSleep();
@@ -337,6 +674,16 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         }),
       );
       _subscriptions.add(
+        native.streams.seekable.listen((_) {
+          if (current()) _notify();
+        }),
+      );
+      _subscriptions.add(
+        native.streams.tracks.listen((_) {
+          if (current()) _notify();
+        }),
+      );
+      _subscriptions.add(
         native.streams.duration.listen((duration) {
           if (!current() || opening || duration.inMilliseconds <= 0) return;
           _durations[_fileIndex] = duration.inMilliseconds;
@@ -352,15 +699,18 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _subscriptions.add(
         native.streams.error.listen((_) {
           if (current()) {
+            _failedFilePositionMs ??= _lastKnownFilePositionMs;
             failure = SourceFailure.unavailable;
             opening = false;
+            // Save the last reliable sample, never a decoder's reset position.
+            unawaited(_persist());
             _notify();
           }
         }),
       );
       _subscriptions.add(
         native.streams.completed.listen((completed) {
-          if (!completed || !current() || opening || _completedEpoch == _fileEpoch) return;
+          if (!completed || !current() || opening || failure != null || _completedEpoch == _fileEpoch) return;
           final epoch = _fileEpoch;
           _completedEpoch = epoch;
           unawaited(
@@ -368,7 +718,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
               if (!current() || _fileEpoch != epoch) return;
               if (_sleepBoundaryFile == _fileIndex ||
                   (_sleepAtMs != null && _offset + (_durations[_fileIndex] ?? 0) >= _sleepAtMs!) ||
-                  (_sleepUntilFile != null && _fileIndex >= _sleepUntilFile!)) {
+                  (_sleepUntilQueuePosition != null && _queuePosition >= _sleepUntilQueuePosition!)) {
                 _sleepBoundaryFile = _fileIndex;
                 clearSleep();
                 await native.pause();
@@ -377,9 +727,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
                 _notify();
                 return;
               }
-              if (_fileIndex + 1 < files.length) {
+              if (canUseDirectQueueControls && _queueRepeatMode == MusicRepeatMode.one) {
                 await _persist();
-                await _openFile(_fileIndex + 1, 0);
+                await _openFile(_fileIndex, 0);
+              } else if (_nextPlaybackFileIndex() case final nextIndex?) {
+                await _persist();
+                await _openFile(nextIndex, 0);
               } else {
                 await _persist(finished: true);
                 await native.pause();
@@ -391,7 +744,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       );
       await _openFile(_fileIndex, localPosition);
       _saveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-        if (_valid && active) unawaited(_persist());
+        if (_valid && active && failure == null && !opening) unawaited(_persist());
       });
     } catch (_) {
       await _stop();
@@ -430,40 +783,74 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   int _indexAt(int absolute) {
     var total = 0;
-    for (var i = 0; i < files.length; i++) {
-      total += _durations[i] ?? 0;
-      if (absolute < total) return i;
+    for (final index in _queueOrder) {
+      total += _durations[index] ?? 0;
+      if (absolute < total) return index;
     }
-    return files.length - 1;
+    return _queueOrder.isEmpty ? 0 : _queueOrder.last;
   }
 
   Future<void> _openFile(int index, int localPosition, {bool play = true}) async {
     if (!_valid || player == null) return;
+    if (_streamRecordingPartial != null && index != _fileIndex) {
+      try {
+        await stopStreamRecording();
+      } on SourceException catch (error) {
+        if (error.reason != SourceFailure.invalidData) rethrow;
+      }
+    }
     opening = true;
     _fileEpoch++;
     _notify();
     _fileIndex = index;
+    _lastKnownFilePositionMs = math.max(0, localPosition);
+    _failedFilePositionMs = null;
     final file = files[index], item = entry!, native = player!;
-    final cached = await sources.downloads.local(_profile!, item.sourceId, file);
-    final Uri uri;
-    if (_localOverrides[file.id] != null) {
-      uri = _localOverrides[file.id]!;
-    } else if (cached != null) {
-      uri = cached.uri;
-    } else {
-      final adapter = sources.adapter(item.sourceId);
-      if (adapter.source.kind == FileSourceKind.local) {
-        uri = (await adapter.resolve(file)).uri;
-      } else {
-        uri = await _gateway!.register(adapter, file);
+    final directAddress = _directPlayerAddresses[file.id];
+    final Uri? uri;
+    final String mediaAddress;
+    if (directAddress != null) {
+      if (native.playerType != 'mpv' || !directAddress.startsWith('av://')) {
+        throw const SourceException(SourceFailure.unsupported);
       }
+      uri = null;
+      mediaAddress = directAddress;
+    } else {
+      final cached = await sources.downloads.local(_profile!, item.sourceId, file);
+      late final Uri resolvedUri;
+      if (_localOverrides[file.id] != null) {
+        final override = _localOverrides[file.id]!;
+        resolvedUri = const {'http', 'https'}.contains(override.scheme)
+            ? await _gateway!.registerUri(override)
+            : override;
+      } else if (cached != null) {
+        resolvedUri = cached.uri;
+      } else {
+        final adapter = sources.adapter(item.sourceId);
+        if (adapter.source.kind == FileSourceKind.local) {
+          resolvedUri = (await adapter.resolve(file)).uri;
+        } else {
+          resolvedUri = await _gateway!.register(adapter, file);
+        }
+      }
+      uri = resolvedUri;
+      mediaAddress = resolvedUri.toString();
     }
     if (!_valid || player != native) return;
+    if (uri != null &&
+        const {'rtsp', 'rtmp', 'rtmps', 'udp', 'rtp', 'dvd', 'bd', 'cdda'}.contains(uri.scheme) &&
+        native.playerType != 'mpv') {
+      throw const SourceException(SourceFailure.unsupported);
+    }
     if (!PlatformDetector.isAutomotive()) unawaited(NotificationPermission.ensure());
     await native.requestAudioFocus();
+    for (final option in _localPlayerOptions.entries) {
+      await native.setProperty('file-local-options/${option.key}', option.value);
+    }
     await native.open(
-      Media(uri.toString(), start: Duration(milliseconds: math.max(0, localPosition))),
+      Media(mediaAddress, start: Duration(milliseconds: math.max(0, localPosition))),
       play: play && automotivePlaybackAllowedNow(),
+      isLive: _liveInput,
     );
     await native.setRate(speed);
     if (!_valid || player != native) return;
@@ -503,24 +890,25 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (_useEntryChapters && entry?.chapters.isNotEmpty == true) return;
     final result = <BookChapter>[];
     var offset = 0;
-    for (var i = 0; i < files.length; i++) {
-      final embedded = _fileChapters[i];
+    for (final index in _queueOrder) {
+      final embedded = _fileChapters[index];
       if (embedded?.isNotEmpty == true) {
         for (final c in embedded!) {
           result.add(BookChapter(title: c.title, startMs: offset + c.startMs, endMs: offset + c.endMs));
         }
       } else {
-        result.add(BookChapter(title: files[i].name, startMs: offset, endMs: offset + (_durations[i] ?? 0)));
+        result.add(BookChapter(title: files[index].name, startMs: offset, endMs: offset + (_durations[index] ?? 0)));
       }
-      offset += _durations[i] ?? 0;
+      offset += _durations[index] ?? 0;
     }
     chapters = result;
   }
 
   Future<void> _persist({bool? finished}) {
+    if (!_persistProgress || opening) return Future.value();
     final item = entry, profile = _profile, current = progress, native = player;
     if (item == null || profile == null || current == null || native == null) return Future.value();
-    final index = _fileIndex, position = positionMs, filePosition = native.currentPosition.inMilliseconds;
+    final index = _fileIndex, position = positionMs, filePosition = currentFilePositionMs;
     final fraction = hasCompleteTimeline && durationMs > 0
         ? (positionMs / durationMs).clamp(0.0, 1.0)
         : current.fraction;
@@ -546,53 +934,86 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     return _writes;
   }
 
-  Future<void> play() => _serialize(() async {
-    if (!_valid || player == null || !automotivePlaybackAllowedNow()) return;
-    if (!playing && progress != null && entry != null) {
-      final old = progress!;
-      sources.releaseProgress(old.key);
-      try {
-        final latest = await sources.openProgress(entry!, old);
-        if (!_valid) return;
-        if (sources.cloudConflict(old.key) || await sources.repository.remoteConflict(_profile!, old.key) != null) {
-          throw const SourceException(SourceFailure.conflict);
-        }
-        if (latest.revision != old.revision) {
-          progress = latest;
-          final index = latest.fileIndex.clamp(0, files.length - 1);
-          if (index != _fileIndex) {
-            await _openFile(index, latest.filePositionMs, play: false);
-          } else {
-            await player!.seek(Duration(milliseconds: latest.filePositionMs));
-          }
-          await player!.setRate(latest.speed);
-        }
-      } finally {
-        if (_valid) sources.holdProgress(old.key);
+  /// A deliberate retry reacquires this exact file's content lease (or its
+  /// verified download). It never chooses another title, edition or file index.
+  Future<void> retry() => _serialize(() async {
+    if (!canRetry || !automotivePlaybackAllowedNow()) return;
+    final position = currentFilePositionMs;
+    final epoch = _profileGeneration;
+    final currentProgress = progress;
+    if (_persistProgress &&
+        currentProgress != null &&
+        (sources.cloudConflict(currentProgress.key) ||
+            await sources.repository.remoteConflict(_profile!, currentProgress.key) != null)) {
+      throw const SourceException(SourceFailure.conflict);
+    }
+    sources.requireSession(epoch);
+    failure = null;
+    try {
+      await _openFile(_fileIndex, position);
+      if (failure == null) {
+        _failedFilePositionMs = null;
+        await _persist();
       }
+    } catch (_) {
+      _failedFilePositionMs ??= position;
+      rethrow;
     }
-    if (_sleepBoundaryFile == _fileIndex && _completedEpoch == _fileEpoch && _fileIndex + 1 < files.length) {
-      await _openFile(_fileIndex + 1, 0, play: false);
-    }
-    _sleepBoundaryFile = null;
-    if (smartRewind && _pausedAt != null) {
-      final away = DateTime.now().difference(_pausedAt!).inSeconds;
-      final rewind = away > 300
-          ? 15
-          : away > 30
-          ? 5
-          : 0;
-      if (rewind > 0) await _seek(math.max(0, positionMs - rewind * 1000));
-    }
-    _pausedAt = null;
-    await player!.play();
     _notify();
   });
+
+  Future<void> play() => canRetry
+      ? retry()
+      : _serialize(() async {
+          if (!_valid || player == null || !automotivePlaybackAllowedNow()) return;
+          if (_persistProgress && !playing && progress != null && entry != null) {
+            final old = progress!;
+            sources.releaseProgress(old.key);
+            try {
+              final latest = await sources.openProgress(entry!, old);
+              if (!_valid) return;
+              if (sources.cloudConflict(old.key) ||
+                  await sources.repository.remoteConflict(_profile!, old.key) != null) {
+                throw const SourceException(SourceFailure.conflict);
+              }
+              if (latest.revision != old.revision) {
+                progress = latest;
+                final index = latest.fileIndex.clamp(0, files.length - 1);
+                if (index != _fileIndex) {
+                  await _openFile(index, latest.filePositionMs, play: false);
+                } else {
+                  _lastKnownFilePositionMs = math.max(0, latest.filePositionMs);
+                  await player!.seek(Duration(milliseconds: latest.filePositionMs));
+                }
+                await player!.setRate(latest.speed);
+              }
+            } finally {
+              if (_valid) sources.holdProgress(old.key);
+            }
+          }
+          if (_sleepBoundaryFile == _fileIndex && _completedEpoch == _fileEpoch) {
+            final nextIndex = _nextPlaybackFileIndex();
+            if (nextIndex != null) await _openFile(nextIndex, 0, play: false);
+          }
+          _sleepBoundaryFile = null;
+          if (smartRewind && _pausedAt != null) {
+            final away = DateTime.now().difference(_pausedAt!).inSeconds;
+            final rewind = away > 300
+                ? 15
+                : away > 30
+                ? 5
+                : 0;
+            if (rewind > 0) await _seek(math.max(0, positionMs - rewind * 1000));
+          }
+          _pausedAt = null;
+          await player!.play();
+          _notify();
+        });
   Future<void> pause() => _serialize(() async {
     await player?.pause();
     _pausedAt = DateTime.now();
     await _persist();
-    sources.scheduleSync();
+    if (_persistProgress) sources.scheduleSync();
     _notify();
   });
   Future<void> toggle() => playing ? pause() : play();
@@ -626,13 +1047,14 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (previous.file != _fileIndex) {
       await _openFile(previous.file, previous.position, play: shouldPlay);
     } else {
+      _lastKnownFilePositionMs = math.max(0, previous.position);
       await player!.seek(Duration(milliseconds: previous.position));
     }
     await _persist();
     _notify();
   });
   Future<void> _seek(int milliseconds) async {
-    if (!_valid || player == null) return;
+    if (!_valid || player == null || _liveInput) return;
     final maximum = hasCompleteTimeline
         ? durationMs
         : (_durations[_fileIndex] ?? player!.state.duration.inMilliseconds) + _offset;
@@ -641,13 +1063,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final shouldPlay = playing;
     if (index != _fileIndex) {
       await _persist();
-      var offset = 0;
-      for (var i = 0; i < index; i++) {
-        offset += _durations[i] ?? 0;
-      }
+      final offset = _offsetBefore(index);
       await _openFile(index, target - offset, play: shouldPlay);
     } else {
-      await player!.seek(Duration(milliseconds: math.max(0, target - _offset)));
+      _lastKnownFilePositionMs = math.max(0, target - _offset);
+      await player!.seek(Duration(milliseconds: _lastKnownFilePositionMs));
     }
     await _persist();
     _notify();
@@ -660,38 +1080,58 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         _undoSeek = (file: _fileIndex, position: currentFilePositionMs);
         final shouldPlay = playing;
         await _persist();
-        await _openFile(index, 0, play: shouldPlay);
+        await _openFile(_queueOrder[index], 0, play: shouldPlay);
       });
     } else {
       await seek(chapters[index].startMs);
     }
   }
 
-  Future<void> skip(int seconds) => seek(positionMs + seconds * 1000);
+  Future<void> skip(int seconds) => _liveInput ? Future.value() : seek(positionMs + seconds * 1000);
   Future<void> nextChapter() async {
     if (!hasCompleteTimeline && chapters.length == files.length) {
-      if (_fileIndex + 1 < files.length) await seekChapter(_fileIndex + 1);
+      final nextPosition = _queuePosition + 1;
+      if (nextPosition < _queueOrder.length) {
+        await seekChapter(nextPosition);
+      } else if (canUseDirectQueueControls && _queueRepeatMode == MusicRepeatMode.all) {
+        await seekChapter(0);
+      }
       return;
     }
     final next = chapters.where((c) => c.startMs > positionMs + 500).firstOrNull;
     if (next != null) {
       await seek(next.startMs);
-    } else if (_fileIndex + 1 < files.length) {
+    } else if (_nextPlaybackFileIndex() case final nextIndex?) {
       await _serialize(() async {
         await _persist();
-        await _openFile(_fileIndex + 1, 0);
+        await _openFile(nextIndex, 0);
       });
     }
   }
 
   Future<void> previousChapter() async {
     if (!hasCompleteTimeline && chapters.length == files.length) {
-      await seekChapter(currentFilePositionMs > 3000 ? _fileIndex : math.max(0, _fileIndex - 1));
+      final targetPosition = currentFilePositionMs > 3000 ? _queuePosition : math.max(0, _queuePosition - 1);
+      final wrappedPosition =
+          _queuePosition == 0 &&
+              currentFilePositionMs <= 3000 &&
+              canUseDirectQueueControls &&
+              _queueRepeatMode == MusicRepeatMode.all
+          ? _queueOrder.length - 1
+          : targetPosition;
+      await seekChapter(wrappedPosition);
       return;
     }
     final previous = chapters.where((c) => c.startMs < positionMs - 3000).lastOrNull;
     if (previous != null) {
       await seek(previous.startMs);
+    } else if (canUseDirectQueueControls) {
+      final previousIndex = _previousPlaybackFileIndex();
+      if (previousIndex != null) {
+        await selectQueueFile(previousIndex);
+      } else {
+        await seek(0);
+      }
     } else {
       await seek(0);
     }
@@ -705,7 +1145,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _notify();
   });
   Future<void> savePreferences({bool asDefault = false}) async {
-    if (_profile == null || progress == null) return;
+    if (!_persistProgress || _profile == null || progress == null) return;
     final settings = <String, dynamic>{
       'chapterTimeline': chapterTimeline,
       'smartRewind': smartRewind,
@@ -716,11 +1156,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (asDefault) await sources.repository.savePreference(_profile!, 'playback-defaults', settings);
     await _controls?.setControlsEnabled(
       canPlayPause: true,
-      canSeek: true,
+      canSeek: !_liveInput,
       canGoNext: true,
       canGoPrevious: true,
       canStop: true,
-      canSkip: true,
+      canSkip: !_liveInput,
       canSetSpeed: true,
       preferSkipOverTrackButtons: true,
       skipInterval: Duration(seconds: backwardSeconds),
@@ -752,25 +1192,36 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (hasCompleteTimeline && chapters.isNotEmpty) {
       final current = chapters.indexOf(currentChapter ?? chapters.first);
       final index = (current + count - 1).clamp(0, chapters.length - 1);
-      _sleepAtMs = chapters[index].endMs > 0 ? chapters[index].endMs : durationMs;
+      final endMs = chapters[index].endMs > 0 ? chapters[index].endMs : durationMs;
+      _sleepAtMs = endMs;
+      if (canUseDirectQueueControls) {
+        _sleepChapterFile = _indexAt(math.max(0, endMs - 1));
+        _sleepChapterFilePosition = (endMs - _offsetBefore(_sleepChapterFile!)).clamp(
+          0,
+          _durations[_sleepChapterFile!] ?? 0,
+        );
+      }
     } else {
-      _sleepUntilFile = (_fileIndex + count - 1).clamp(0, files.length - 1);
+      if (_queueOrder.isEmpty) return;
+      _sleepUntilQueuePosition = (_queuePosition + count - 1).clamp(0, _queueOrder.length - 1);
     }
     _notify();
   }
 
-  bool get sleepEnabled => _sleepTimer != null || _sleepAtMs != null || _sleepUntilFile != null;
+  bool get sleepEnabled => _sleepTimer != null || _sleepAtMs != null || _sleepUntilQueuePosition != null;
   void clearSleep() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
     _sleepAtMs = null;
-    _sleepUntilFile = null;
+    _sleepUntilQueuePosition = null;
+    _sleepChapterFile = null;
+    _sleepChapterFilePosition = null;
     sleepDeadline = null;
     _notify();
   }
 
   Future<void> bookmark({String note = ''}) async {
-    if (entry == null || progress == null || _profile == null) return;
+    if (!_persistProgress || entry == null || progress == null || _profile == null) return;
     await sources.repository.saveAnnotation(
       _profile!,
       BookAnnotation(
@@ -796,12 +1247,18 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       onPlay: () => unawaited(play()),
       onPause: () => unawaited(pause()),
       onTogglePlayPause: () => unawaited(toggle()),
-      onSeek: (p) => unawaited(seek(p.inMilliseconds)),
+      onSeek: (p) {
+        if (!_liveInput) unawaited(seek(p.inMilliseconds));
+      },
       onNext: () => unawaited(nextChapter()),
       onPrevious: () => unawaited(previousChapter()),
       onStop: () => unawaited(stop()),
-      onSkipForward: (d) => unawaited(skip(d?.inSeconds ?? forwardSeconds)),
-      onSkipBackward: (d) => unawaited(skip(-(d?.inSeconds ?? backwardSeconds))),
+      onSkipForward: (d) {
+        if (!_liveInput) unawaited(skip(d?.inSeconds ?? forwardSeconds));
+      },
+      onSkipBackward: (d) {
+        if (!_liveInput) unawaited(skip(-(d?.inSeconds ?? backwardSeconds)));
+      },
       onSetSpeed: (s) => unawaited(setSpeed(s)),
     );
     if (router.route(event)) return;
@@ -845,11 +1302,14 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     clearSleep();
     await _persist();
     await _writes;
-    if (progress != null) sources.releaseProgress(progress!.key);
+    await release(() async {
+      await stopStreamRecording();
+    });
+    if (_persistProgress && progress != null) sources.releaseProgress(progress!.key);
     _pausedAt = null;
     _sleepBoundaryFile = null;
     _undoSeek = null;
-    sources.scheduleSync();
+    if (_persistProgress) sources.scheduleSync();
     _generation++;
     for (final sub in _subscriptions) {
       await release(sub.cancel);
@@ -862,6 +1322,17 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final videoLease = _videoPlayerLease;
     _videoPlayerLease = null;
     videoPlayerSlot = null;
+    if (_pictureAdjustmentTouched && native?.playerType == 'mpv') {
+      for (final property in const ['brightness', 'contrast', 'gamma', 'hue', 'saturation']) {
+        await release(() async => native!.setProperty(property, '0'));
+      }
+      try {
+        await native!.command(['vf', 'del', '@plezy360']);
+      } on Object {
+        // The filter may already have left the playback chain.
+      }
+    }
+    _pictureAdjustmentTouched = false;
     await release(() async => native?.stop());
     await release(() async => native?.dispose());
     videoLease?.release();
@@ -871,15 +1342,35 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       });
     }
     _temporarySubtitles.clear();
+    for (final file in _temporaryMediaFiles) {
+      await release(() async {
+        if (await file.exists()) await file.delete();
+      });
+    }
+    _temporaryMediaFiles = const [];
     await release(() async => _controls?.clear());
     await release(() => _controls?.dispose());
     _controls = null;
     await release(() async => _gateway?.close());
     _gateway = null;
+    final preview = _previewSession;
+    _previewSession = null;
+    if (preview != null) await release(preview.dispose);
     entry = null;
     files = const [];
+    chapters = const [];
+    _queueOrder = const [];
+    _queueShuffled = false;
+    _queueRepeatMode = MusicRepeatMode.off;
     _localOverrides = const {};
+    _directPlayerAddresses = const {};
+    _localPlayerOptions = const {};
+    _persistProgress = true;
+    _liveInput = false;
     progress = null;
+    _lastKnownFilePositionMs = 0;
+    _failedFilePositionMs = null;
+    failure = null;
     opening = false;
     _notify();
     if (error != null) Error.throwWithStackTrace(error!, stack!);

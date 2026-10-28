@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import platform
 import shutil
 import subprocess
 import sys
@@ -100,13 +101,17 @@ def verify(
     if python_arg.is_symlink():
         raise ToolchainError("pinned Python interpreter must not be a symbolic link")
     python_bin = python_arg.resolve(strict=True)
-    if _sha256(python_bin) != build["pythonSha256"]:
+    ubuntu_version = platform.freedesktop_os_release().get("VERSION_ID")
+    expected_python_sha256 = build["pythonSha256ByUbuntu"].get(ubuntu_version)
+    if expected_python_sha256 is None:
+        raise ToolchainError(f"no pinned Python hash for Ubuntu {ubuntu_version}")
+    if _sha256(python_bin) != expected_python_sha256:
         raise ToolchainError("pinned Python interpreter hash changed")
     python_version = _version(python_bin, ["--version"]).removeprefix("Python ")
     if python_version != build["pythonVersion"]:
         raise ToolchainError("pinned Python version changed")
     path_python = shutil.which("python3")
-    if path_python is None or _sha256(Path(path_python)) != build["pythonSha256"]:
+    if path_python is None or _sha256(Path(path_python)) != expected_python_sha256:
         raise ToolchainError("python3 on PATH does not resolve to the pinned interpreter")
 
     ninja = ninja_arg.resolve(strict=True)

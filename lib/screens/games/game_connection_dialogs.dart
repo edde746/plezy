@@ -30,6 +30,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
       _address = TextEditingController(),
       _port = TextEditingController(text: '47989'),
       _mac = TextEditingController();
+  final _protocolFocus = FocusNode(debugLabel: 'Game host protocol');
   final _nameFocus = FocusNode(debugLabel: 'Game host name');
   final _addressFocus = FocusNode(debugLabel: 'Game host address');
   final _portFocus = FocusNode(debugLabel: 'Game host port');
@@ -43,7 +44,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
     for (final c in [_name, _address, _port, _mac]) {
       c.dispose();
     }
-    for (final node in [_nameFocus, _addressFocus, _portFocus, _macFocus, _saveFocus, _cancelFocus]) {
+    for (final node in [_protocolFocus, _nameFocus, _addressFocus, _portFocus, _macFocus, _saveFocus, _cancelFocus]) {
       node.dispose();
     }
     super.dispose();
@@ -80,6 +81,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
           const SizedBox(height: 16),
           DropdownButtonFormField<GameProtocol>(
             initialValue: _protocol,
+            focusNode: _protocolFocus,
             isExpanded: true,
             autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
             decoration: InputDecoration(labelText: t.games.protocol),
@@ -101,6 +103,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
             focusNode: _nameFocus,
             decoration: InputDecoration(labelText: t.games.name),
             maxLength: 256,
+            onNavigateUp: _protocolFocus.requestFocus,
             textInputAction: TextInputAction.next,
             onNavigateDown: _addressFocus.requestFocus,
           ),

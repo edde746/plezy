@@ -70,13 +70,26 @@
 			<string>org.snapetech.plezyng</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>plezy</string>
 				<string>plezyng-source</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.edde746.plezy</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>plezy</string>
+				<string>plezyng</string>
+				<string>plezxyng</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- plezy://, plezyng:// and legacy plezxyng:// links reach Dart through DeepLinkPlugin (com.plezy/deep_link);
+	     Flutter's router must not also push them as named routes. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- canOpenURL returns false for undeclared schemes, which both blocks the

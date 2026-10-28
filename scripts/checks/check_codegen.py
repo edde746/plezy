@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -29,6 +30,14 @@ def _is_generated(relative: str) -> bool:
     )
 
 
+def _normalize_generated(relative: str, content: bytes) -> bytes:
+    # Freezed emits spaces on blank lines. Ignore only that cosmetic difference
+    # so checked-in generated files can stay clean under `git diff --check`.
+    if relative.endswith(".freezed.dart"):
+        return re.sub(rb"[ \t]+(?=\r?$)", b"", content, flags=re.MULTILINE)
+    return content
+
+
 def _generated_state(root: Path) -> dict[str, bytes]:
     state = {}
     lib = root / "lib"
@@ -36,11 +45,11 @@ def _generated_state(root: Path) -> dict[str, bytes]:
         for path in lib.rglob("*.dart"):
             relative = path.relative_to(root).as_posix()
             if _is_generated(relative) and path.is_file():
-                state[relative] = path.read_bytes()
+                state[relative] = _normalize_generated(relative, path.read_bytes())
     for relative in EXPLICIT_GENERATED:
         path = root / relative
         if path.is_file():
-            state[relative] = path.read_bytes()
+            state[relative] = _normalize_generated(relative, path.read_bytes())
     return state
 
 

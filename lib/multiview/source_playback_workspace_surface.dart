@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/focusable_button.dart';
 import '../focus/focusable_slider.dart';
 import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
@@ -117,6 +118,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
         }
         final tk = tokens(context);
         final core = playback.player;
+        final displayTitle = entry.displayTitle.trim().isEmpty ? t.common.unknown : entry.displayTitle;
         if (playback.video && core != null) {
           return Material(
             color: tk.bg,
@@ -147,7 +149,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isolateDisplayText(entry.displayTitle),
+                        isolateDisplayText(displayTitle),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(
@@ -210,41 +212,64 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            textDirection: TextDirection.ltr,
             children: [
-              IconButton(
-                tooltip: t.fileSources.skipBack,
-                visualDensity: VisualDensity.compact,
+              FocusableButton(
+                autoScroll: false,
                 onPressed: () => unawaited(playback.skip(-playback.backwardSeconds)),
-                icon: const AppIcon(Symbols.replay_rounded),
+                child: IconButton(
+                  tooltip: t.fileSources.skipBack,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => unawaited(playback.skip(-playback.backwardSeconds)),
+                  icon: const AppIcon(Symbols.replay_rounded),
+                ),
               ),
-              IconButton(
-                tooltip: t.videoControls.previousChapterButton,
-                visualDensity: VisualDensity.compact,
+              FocusableButton(
+                autoScroll: false,
                 onPressed: () => unawaited(playback.previousChapter()),
-                icon: const AppIcon(Symbols.skip_previous_rounded),
+                child: IconButton(
+                  tooltip: t.videoControls.previousChapterButton,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => unawaited(playback.previousChapter()),
+                  icon: const AppIcon(Symbols.skip_previous_rounded),
+                ),
               ),
-              IconButton.filledTonal(
-                tooltip: playback.playing ? t.common.pause : t.common.play,
-                visualDensity: VisualDensity.compact,
+              FocusableButton(
+                autoScroll: false,
+                useBackgroundFocus: true,
                 onPressed: () => unawaited(playback.toggle()),
-                icon: AppIcon(playback.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded),
+                child: IconButton.filledTonal(
+                  tooltip: playback.playing ? t.common.pause : t.common.play,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => unawaited(playback.toggle()),
+                  icon: AppIcon(playback.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded),
+                ),
               ),
-              IconButton(
-                tooltip: t.videoControls.nextChapterButton,
-                visualDensity: VisualDensity.compact,
+              FocusableButton(
+                autoScroll: false,
                 onPressed: () => unawaited(playback.nextChapter()),
-                icon: const AppIcon(Symbols.skip_next_rounded),
+                child: IconButton(
+                  tooltip: t.videoControls.nextChapterButton,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => unawaited(playback.nextChapter()),
+                  icon: const AppIcon(Symbols.skip_next_rounded),
+                ),
               ),
-              IconButton(
-                tooltip: t.fileSources.skipForward,
-                visualDensity: VisualDensity.compact,
+              FocusableButton(
+                autoScroll: false,
                 onPressed: () => unawaited(playback.skip(playback.forwardSeconds)),
-                icon: const AppIcon(Symbols.forward_media_rounded),
+                child: IconButton(
+                  tooltip: t.fileSources.skipForward,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => unawaited(playback.skip(playback.forwardSeconds)),
+                  icon: const AppIcon(Symbols.forward_media_rounded),
+                ),
               ),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            textDirection: TextDirection.ltr,
             children: [
               Text(
                 formatDurationTimestamp(Duration(milliseconds: playback.positionMs)),

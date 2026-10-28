@@ -22,11 +22,29 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/active_client_scope.dart';
+import 'package:plezy/utils/certificate_trust.dart';
 import 'package:plezy/utils/device_identity.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
+import '../test_helpers/local_tls.dart';
 import '../test_helpers/prefs.dart';
+
+class _LocalTlsHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) => localTlsClient();
+}
+
+void testWithLocalTls(String description, Future<void> Function() body) {
+  test(description, () async {
+    CertificateTrust.debugSetUserAuthoritiesForTesting(localTlsAuthorityContext());
+    try {
+      await HttpOverrides.runWithHttpOverrides(body, _LocalTlsHttpOverrides());
+    } finally {
+      CertificateTrust.debugReset();
+    }
+  });
+}
 
 JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
   machineId: 'jf-machine',
@@ -56,13 +74,16 @@ class _LoopbackJellyfinServer {
     void Function(String event)? onRequest,
     bool isAdministrator = false,
     bool publicInfoAvailable = true,
+    bool secure = false,
   }) async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final server = secure
+        ? await HttpServer.bindSecure(InternetAddress.loopbackIPv4, 0, localTlsServer())
+        : await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final requests = <({String path, bool authenticated})>[];
     final result = _LoopbackJellyfinServer._(
       server,
       machineId,
-      'http://127.0.0.1:${server.port}',
+      '${secure ? 'https' : 'http'}://127.0.0.1:${server.port}',
       requests,
       publicInfoAvailable,
     );
@@ -1727,18 +1748,17 @@ void main() {
   });
 
   group('addJellyfinConnection endpoint trust admission', () {
-    test('historic wrong-machine alternate is removed before authenticated health', () async {
-      final previousHttpOverrides = HttpOverrides.current;
-      HttpOverrides.global = null;
-      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
+    testWithLocalTls('historic wrong-machine alternate is removed before authenticated health', () async {
       final events = <String>[];
       final active = await _LoopbackJellyfinServer.start(
         machineId: 'jf-machine',
         onRequest: (path) => events.add('active:$path'),
+        secure: true,
       );
       final wrong = await _LoopbackJellyfinServer.start(
         machineId: 'different-machine',
         onRequest: (path) => events.add('wrong:$path'),
+        secure: true,
       );
       addTearDown(active.close);
       addTearDown(wrong.close);
@@ -1770,13 +1790,14 @@ void main() {
       expect(wrong.requests, everyElement((path: '/System/Info/Public', authenticated: false)));
     });
 
-    test('partial success retains an unavailable historic alternate and re-admits it on failover', () async {
-      final previousHttpOverrides = HttpOverrides.current;
-      HttpOverrides.global = null;
-      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
-      final active = await _LoopbackJellyfinServer.start(machineId: 'jf-machine');
-      final fallback = await _LoopbackJellyfinServer.start(machineId: 'jf-machine', publicInfoAvailable: false);
-      final wrong = await _LoopbackJellyfinServer.start(machineId: 'different-machine');
+    testWithLocalTls('partial race retains unavailable history for validated failover', () async {
+      final active = await _LoopbackJellyfinServer.start(machineId: 'jf-machine', secure: true);
+      final fallback = await _LoopbackJellyfinServer.start(
+        machineId: 'jf-machine',
+        publicInfoAvailable: false,
+        secure: true,
+      );
+      final wrong = await _LoopbackJellyfinServer.start(machineId: 'different-machine', secure: true);
       addTearDown(active.close);
       addTearDown(fallback.close);
       addTearDown(wrong.close);
@@ -1817,12 +1838,13 @@ void main() {
       expect(stored.baseUrls, [fallback.baseUrl, active.baseUrl]);
     });
 
-    test('unvalidated endpoint race preserves full persisted fallback set during admin refresh', () async {
-      final previousHttpOverrides = HttpOverrides.current;
-      HttpOverrides.global = null;
-      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
-      final active = await _LoopbackJellyfinServer.start(machineId: 'different-machine', isAdministrator: true);
-      final fallback = await _LoopbackJellyfinServer.start(machineId: 'different-machine');
+    testWithLocalTls('unvalidated endpoint race preserves full persisted fallback set during admin refresh', () async {
+      final active = await _LoopbackJellyfinServer.start(
+        machineId: 'different-machine',
+        isAdministrator: true,
+        secure: true,
+      );
+      final fallback = await _LoopbackJellyfinServer.start(machineId: 'different-machine', secure: true);
       addTearDown(active.close);
       addTearDown(fallback.close);
 
@@ -1836,21 +1858,19 @@ void main() {
       expect(await manager.addJellyfinConnection(historic), isTrue);
 
       final live = manager.getJellyfinClientByCompoundId(historic.id)!;
-      expect(live.connection.baseUrls, [active.baseUrl]);
+      expect(live.connection.baseUrls, [active.baseUrl, fallback.baseUrl]);
       expect(live.connection.isAdministrator, isTrue);
       expect(updates, hasLength(1));
       expect(updates.single.isAdministrator, isTrue);
       expect(updates.single.baseUrls, [active.baseUrl, fallback.baseUrl]);
     });
 
-    test('same-machine pair remains eligible for validated authenticated failover', () async {
-      final previousHttpOverrides = HttpOverrides.current;
-      HttpOverrides.global = null;
-      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
-      final active = await _LoopbackJellyfinServer.start(machineId: 'jf-machine');
+    testWithLocalTls('same-machine pair remains eligible for validated authenticated failover', () async {
+      final active = await _LoopbackJellyfinServer.start(machineId: 'jf-machine', secure: true);
       final fallback = await _LoopbackJellyfinServer.start(
         machineId: 'jf-machine',
         responseDelay: const Duration(milliseconds: 20),
+        secure: true,
       );
       addTearDown(active.close);
       addTearDown(fallback.close);
@@ -1886,12 +1906,9 @@ void main() {
       expect(stored.baseUrls, [fallback.baseUrl, active.baseUrl]);
     });
 
-    test('persistence failure never restores rejected alternates in memory', () async {
-      final previousHttpOverrides = HttpOverrides.current;
-      HttpOverrides.global = null;
-      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
-      final active = await _LoopbackJellyfinServer.start(machineId: 'jf-machine');
-      final wrong = await _LoopbackJellyfinServer.start(machineId: 'different-machine');
+    testWithLocalTls('persistence failure never restores rejected alternates in memory', () async {
+      final active = await _LoopbackJellyfinServer.start(machineId: 'jf-machine', secure: true);
+      final wrong = await _LoopbackJellyfinServer.start(machineId: 'different-machine', secure: true);
       addTearDown(active.close);
       addTearDown(wrong.close);
 

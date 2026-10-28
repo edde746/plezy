@@ -1,3 +1,5 @@
+import '../utils/display_text_finder.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -1158,7 +1160,7 @@ void main() {
     // each.
     expect(find.byType(HubSection), findsOneWidget);
     expect(find.text(t.discover.moreLikeThis), findsOneWidget);
-    expect(find.text('A Similar Movie'), findsOneWidget);
+    expect(findDisplayText('A Similar Movie'), findsOneWidget);
 
     expect(find.text(t.explore.detail.relatedTitles), findsOneWidget);
     expect(find.text(t.explore.relation.sequel), findsOneWidget);
@@ -1522,9 +1524,9 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
   });
 
-  testWidgets('up from the first library copy reaches the overview when the item has no action bar', (tester) async {
-    // No watchlist support, trailer, or Seerr: nothing above the copies is a
-    // button, but the overview is still a stop rather than a dead end.
+  testWidgets('up from the first library copy reaches the overview despite the service action', (tester) async {
+    // The official service handoff remains above the copies when watchlist,
+    // trailer, and Seerr actions are unavailable. Up still reaches overview.
     final source = _FakeCatalogSource(supportsWatchlist: false);
     await _pumpDetail(
       tester,
@@ -1538,7 +1540,7 @@ void main() {
         ),
       ],
     );
-    expect(find.byType(FocusableActionBar), findsNothing);
+    expect(find.byType(FocusableActionBar), findsOneWidget);
 
     final tile = tester.widget<FocusableListTile>(
       find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),

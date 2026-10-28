@@ -41,15 +41,11 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$sv app = _Translations$app$sv._(_root);
-	@override late final _Translations$cast$sv cast = _Translations$cast$sv._(_root);
-	@override late final _Translations$automation$sv automation = _Translations$automation$sv._(_root);
-	@override late final _Translations$notifications$sv notifications = _Translations$notifications$sv._(_root);
 	@override late final _Translations$appIcon$sv appIcon = _Translations$appIcon$sv._(_root);
 	@override late final _Translations$auth$sv auth = _Translations$auth$sv._(_root);
 	@override late final _Translations$common$sv common = _Translations$common$sv._(_root);
 	@override late final _Translations$screens$sv screens = _Translations$screens$sv._(_root);
 	@override late final _Translations$update$sv update = _Translations$update$sv._(_root);
-	@override late final _Translations$appAccess$sv appAccess = _Translations$appAccess$sv._(_root);
 	@override late final _Translations$settings$sv settings = _Translations$settings$sv._(_root);
 	@override late final _Translations$themeEditor$sv themeEditor = _Translations$themeEditor$sv._(_root);
 	@override late final _Translations$search$sv search = _Translations$search$sv._(_root);
@@ -75,7 +71,6 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$sv serverSelection = _Translations$serverSelection$sv._(_root);
 	@override late final _Translations$hubDetail$sv hubDetail = _Translations$hubDetail$sv._(_root);
 	@override late final _Translations$logs$sv logs = _Translations$logs$sv._(_root);
-	@override late final _Translations$detail$sv detail = _Translations$detail$sv._(_root);
 	@override late final _Translations$startup$sv startup = _Translations$startup$sv._(_root);
 	@override late final _Translations$licenses$sv licenses = _Translations$licenses$sv._(_root);
 	@override late final _Translations$navigation$sv navigation = _Translations$navigation$sv._(_root);
@@ -98,15 +93,24 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$sv seerr = _Translations$seerr$sv._(_root);
 	@override late final _Translations$services$sv services = _Translations$services$sv._(_root);
 	@override late final _Translations$addServer$sv addServer = _Translations$addServer$sv._(_root);
+	@override late final _Translations$cast$sv cast = _Translations$cast$sv._(_root);
+	@override late final _Translations$automation$sv automation = _Translations$automation$sv._(_root);
+	@override late final _Translations$notifications$sv notifications = _Translations$notifications$sv._(_root);
+	@override late final _Translations$appAccess$sv appAccess = _Translations$appAccess$sv._(_root);
+	@override late final _Translations$detail$sv detail = _Translations$detail$sv._(_root);
 	@override late final _Translations$watchLink$sv watchLink = _Translations$watchLink$sv._(_root);
 	@override late final _Translations$homeLayout$sv homeLayout = _Translations$homeLayout$sv._(_root);
 	@override late final _Translations$platform$sv platform = _Translations$platform$sv._(_root);
+	@override late final _Translations$universalMedia$sv universalMedia = _Translations$universalMedia$sv._(_root);
 	@override late final _Translations$fileSources$sv fileSources = _Translations$fileSources$sv._(_root);
 	@override late final _Translations$lending$sv lending = _Translations$lending$sv._(_root);
 	@override late final _Translations$audiobook$sv audiobook = _Translations$audiobook$sv._(_root);
 	@override late final _Translations$sourceSetup$sv sourceSetup = _Translations$sourceSetup$sv._(_root);
 	@override late final _Translations$comics$sv comics = _Translations$comics$sv._(_root);
 	@override late final _Translations$games$sv games = _Translations$games$sv._(_root);
+	@override late final _Translations$deepLinks$sv deepLinks = _Translations$deepLinks$sv._(_root);
+	@override late final _Translations$householdSetup$sv householdSetup = _Translations$householdSetup$sv._(_root);
+	@override late final _Translations$issueReport$sv issueReport = _Translations$issueReport$sv._(_root);
 }
 
 // Path: app
@@ -117,48 +121,6 @@ class _Translations$app$sv extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$sv extends Translations$cast$en {
-	_Translations$cast$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Hämta en enhet';
-	@override String get searching => 'Sök efter enheter för att ...';
-	@override String connectedTo({required Object device}) => 'Anslut till ${device}';
-	@override String get device => 'Castanläggning';
-	@override String get readyToCast => 'Redo att kasta';
-	@override String get subtitle => 'Undertexter';
-	@override String get serverNotAvailable => 'Media server är inte tillgänglig.';
-	@override String get stopCasting => 'Sluta casting';
-	@override String get castToDevice => 'Häng till enheten';
-	@override String get noEpisodeAvailable => 'Det finns ingen avsnitt tillgänglig för att släppa.';
-	@override String get startFailed => 'Kan inte börja kastar. kontrollera serveren och försök igen.';
-}
-
-// Path: automation
-class _Translations$automation$sv extends Translations$automation$en {
-	_Translations$automation$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Det finns ingen aktiv video session att kontrollera.';
-	@override String get profileNotFound => 'Den Plezy profil kunde inte hittas.';
-}
-
-// Path: notifications
-class _Translations$notifications$sv extends Translations$notifications$en {
-	_Translations$notifications$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Ny episod';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -321,37 +283,6 @@ class _Translations$update$sv extends Translations$update$en {
 	@override String get viewRelease => 'Visa versionsinformation';
 	@override String get latestVersion => 'Du har den senaste versionen';
 	@override String get checkFailed => 'Det gick inte att söka efter uppdateringar';
-}
-
-// Path: appAccess
-class _Translations$appAccess$sv extends Translations$appAccess$en {
-	_Translations$appAccess$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Prova varje funktion gratis i 7 dagar';
-	@override String get description => 'Börja en sju dagars provning med full tillgång till varje PlezyNG funktion. Det finns ingen avgift under provningen och ingen abonnemang. Efter provningen, en livslängd köp på din butik pris låser upp PlezyNG för livet.';
-	@override String get trialEndedDescription => 'Lås upp varje funktion i PlezyNG för liv med ett köp till din butik.';
-	@override String get startTrial => 'Börja min 7 dagars gratis prövning';
-	@override String get trialActive => 'Din 7-dagars full-faktura provning är aktiv.';
-	@override String get trialEnded => 'Din sjudagars rättegång är över';
-	@override String get trialStartFailed => 'Jag kunde inte spara provningen på den här enheten. försök igen.';
-	@override String get lifetimeTitle => 'PlezyNG avstängd för liv';
-	@override String get lifetimeBody => 'Tack! du har livslångt tillgång till varje PlezyNG funktion.';
-	@override String get manageTitle => 'PlezyNG Livslängd åtkomst';
-	@override String get manageDescription => 'Försök varje funktion gratis i 7 dagar, sedan låsa upp allt för livet med en betalning till din butik.';
-	@override String buy({required Object price}) => 'Låsa upp varje funktion för ${price}';
-	@override String get loadingPrice => 'Laddningsbutikens pris...';
-	@override String get retryPrice => 'Retry priset lookup';
-	@override String get restore => 'Återställ livslängd köp';
-	@override String get pending => 'Din inköp väntar på betalning eller godkännande. Livslängdstillgången stänger av så snart butiken fyller i den.';
-	@override String get storeUnavailable => 'Kontrollera att du är inloggad i butiken och köp är tillåtet på denna enhet.';
-	@override String get productNotFound => 'Den PlezyNG livslängdslockningen finns inte i denna butik än.';
-	@override String get productQueryFailed => 'Kan inte ladda butikspriset. kontrollera din anslutning och försök igen.';
-	@override String get purchaseFailed => 'Köpet gick inte igenom. försök igen.';
-	@override String get restoreFailed => 'Jag kunde inte nå butiken för att återställa din inköp. försök igen.';
-	@override String get nothingToRestore => 'Nr PlezyNG livslängd köp hittades för detta butikskonto.';
 }
 
 // Path: settings
@@ -1234,10 +1165,6 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Frame',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ramar',
-	);
 	@override String get audioLabel => 'Ljud';
 	@override String get subtitlesLabel => 'Undertexter';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1274,9 +1201,31 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Slå på ljudet';
 	@override String get settingsButton => 'Uppspelningsinställningar';
 	@override String get tracksButton => 'Ljud och undertexter';
-	@override String get trackSelectionTitle => 'Välj spår före playback';
-	@override String get trackSelectionAuto => 'Automatisk urval';
 	@override String get chaptersButton => 'Kapitel';
+	@override String get segmentLoopHelp => 'Spela en sektion under denna återställning. Ställ in A, sedan ställ in B senare i tidslinjen.';
+	@override String get setLoopStart => 'Ange startpunkt för slinga (A)';
+	@override String get setLoopEnd => 'Set loop slut (B)';
+	@override String get clearSegmentLoop => 'tydlig segment loop';
+	@override String get setLoopStartFirst => 'Ställ in loppet start (A) före slutet (B).';
+	@override String get loopEndAfterStart => 'Slutet måste vara senare än början.';
+	@override String get segmentLoopUnavailable => 'Segment looping är inte tillgänglig för denna playback.';
+	@override String get loopPointNotSet => 'inte ställer';
+	@override String get bookmarksHelp => 'Bokmärken sparas på denna enhet. Välj ett för att gå till den tiden.';
+	@override String get bookmarksButton => 'Bokmärken';
+	@override String get chaptersAndBookmarks => 'Kapitel och bokmärken';
+	@override String get segmentLoop => 'Segment Lås';
+	@override String get addBookmark => 'Lägg till bookmark';
+	@override String get bookmarkName => 'Bookmark namn';
+	@override String get bookmarkNameHint => 'Till exempel öppna scenen';
+	@override String bookmarkDefaultName({required Object n}) => 'Bokmärke ${n}';
+	@override String get bookmarkNameRequired => 'Skriv in ett namn för denna bokmärke.';
+	@override String get deleteBookmark => 'Ta bort bokmärke';
+	@override String get bookmarkLimitReached => 'Den här artikeln har redan 100 bokmärken.';
+	@override String get bookmarkUnavailable => 'Jag kunde inte spara eller ta bort denna bokmärke.';
+	@override String get bookmarkSaved => 'Bokmärket räddades.';
+	@override String get bookmarkDeleted => 'Bokmärket är raderat.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop poäng ${point} Ställ in på ${time}.';
+	@override String get noChaptersOrBookmarks => 'Inga kapitel eller bokmärken finns tillgängliga.';
 	@override String get versionQualityButton => 'Version och kvalitet';
 	@override String get versionColumnHeader => 'Version';
 	@override String get qualityColumnHeader => 'Kvalitet';
@@ -1285,8 +1234,6 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transkodning otillgänglig — spelar upp i originalkvalitet';
 	@override String get subtitleUnavailableFallback => 'De valda undertexterna kunde inte läsas in — uppspelningen fortsätter utan undertexter';
 	@override String get pipButton => 'Bild-i-bild-läge';
-	@override String get openMiniPlayer => 'Öppna mini spelare';
-	@override String get returnToFullPlayer => 'Tillbaka till fullspelare';
 	@override String get aspectRatioButton => 'Bildförhållande';
 	@override String get ambientLighting => 'Ambientbelysning';
 	@override String get fullscreenButton => 'Aktivera helskärm';
@@ -1295,7 +1242,6 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Rotationslås';
 	@override String get lockScreen => 'Lås skärm';
 	@override String get screenLockButton => 'Skärmlås';
-	@override String get longPressToUnlock => 'Tryck länge för att låsa upp';
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
 	@override String endsAt({required Object time}) => 'Slutar kl. ${time}';
@@ -1312,8 +1258,6 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Inga objekt i kön';
 	@override String get noAudioDevicesAvailable => 'Inga ljudenheter tillgängliga';
 	@override String get searchSubtitles => 'Sök undertexter';
-	@override String get loadSubtitleFile => 'Ladda upp subtitle filen...';
-	@override String get subtitleLoadFailed => 'misslyckas med att ladda upp subtitle-filen';
 	@override String get language => 'Språk';
 	@override String get noSubtitlesFound => 'Inga undertexter hittades';
 	@override String get subtitleDownloaded => 'Undertexten har laddats ned';
@@ -1322,7 +1266,6 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Sök språk...';
 	@override String get skipIntro => 'Hoppa över intro';
 	@override String get skipCredits => 'Hoppa över eftertexter';
-	@override String get skipAds => 'Skiva annonser';
 	@override String get nextEpisode => 'Nästa avsnitt';
 	@override String subtitleTrack({required Object n}) => 'Spår ${n}';
 	@override String subtitleFile({required Object name}) => 'Undertext ${name}';
@@ -1330,6 +1273,19 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Undertexter: Av';
 	@override String osdSubtitles({required Object track}) => 'Undertexter: ${track}';
 	@override String osdAudio({required Object track}) => 'Ljud: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Frame',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ramar',
+	);
+	@override String get trackSelectionTitle => 'Välj spår före playback';
+	@override String get trackSelectionAuto => 'Automatisk urval';
+	@override String get openMiniPlayer => 'Öppna mini spelare';
+	@override String get returnToFullPlayer => 'Tillbaka till fullspelare';
+	@override String get loadSubtitleFile => 'Ladda upp subtitle filen...';
+	@override String get subtitleLoadFailed => 'misslyckas med att ladda upp subtitle-filen';
+	@override String get skipAds => 'Skiva annonser';
+	@override String get tapToUnlock => 'Tryck för att låsa upp';
+	@override String get tapAgainToUnlock => 'Tryck igen för att låsa upp';
 }
 
 // Path: messages
@@ -1829,16 +1785,6 @@ class _Translations$logs$sv extends Translations$logs$en {
 	@override String get saveLogsFailed => 'Kan inte spara loggfilen.';
 }
 
-// Path: detail
-class _Translations$detail$sv extends Translations$detail$en {
-	_Translations$detail$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Slutar kl. ${time}';
-}
-
 // Path: startup
 class _Translations$startup$sv extends Translations$startup$en {
 	_Translations$startup$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -2150,6 +2096,7 @@ class _Translations$music$sv extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Läs track analys...';
 	@override String get visualizerAmbientMotion => 'Miljö rörelse';
 	@override String get visualizerPlexLoudness => 'Plex höghet';
+	@override String get visualizerLiveAudio => 'Live-ljudanalys';
 	@override String get visualizerPreviousPreset => 'Föregående Visua stil';
 	@override String get visualizerNextPreset => 'Nästa visuell stil';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2503,6 +2450,12 @@ class _Translations$videoSettings$sv extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Tonmappa till skärmens maximala ljusstyrka i spelaren och informera sedan kompositionshanteraren om resultatet.';
 	@override String get hdrToneMappingFailed => 'Det gick inte att ändra HDR-tonmappningen – det föregående läget är fortfarande aktivt.';
 	@override String get audioOutput => 'Ljudutgång';
+	@override String get videoTrack => 'Videospår';
+	@override String get videoTrackDescription => 'Välj vilken videoström som ska visas. Tillgängligt vid MPV-uppspelning när en fil innehåller alternativa videospår.';
+	@override String get videoTrackDefault => 'Standard';
+	@override String get videoTrackUnavailable => 'Inga alternativa videospår är tillgängliga.';
+	@override String get videoTrackFailed => 'Det gick inte att byta videospår.';
+	@override String videoTrackNumber({required Object id}) => 'Spår ${id}';
 	@override String get performanceOverlay => 'Prestandaöverlägg';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2510,10 +2463,17 @@ class _Translations$videoSettings$sv extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Rumsligt ljud';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio Equalizer för';
-	@override String get audioEqualizerDescription => 'Anpassa fem frekvensband för denna enhet. Finns på mpv; en aktiv EQ dekoder ljud och stänger av matchhrough.';
+	@override String get audioEqualizerDescription => '10-band equalizer för MPVAudiofilter använder decoderad ljud och stänger av passthrough.';
 	@override String get audioEqualizerFlat => 'Neutral';
 	@override String get audioEqualizerActive => 'Anpassat';
 	@override String get audioEqualizerSaveFailed => 'Kan inte spara ljud equalizer inställningar.';
+	@override String get audioEffectsDescription => 'Effekter använder decoderad ljud, så passthrough vänds av. Rummiljö och stereo utvidgning beror på MPV Bygg och track.';
+	@override String get audioStereoWidth => 'Stereo utvidgning';
+	@override String get audioSpatializer => 'Rummiljö';
+	@override String get audioSpatializerDescription => 'Lägg till tyst rum reflektioner.';
+	@override String get audioPitch => 'Pitch byte';
+	@override String get audioPitchDescription => 'ändra pitch utan att förändra hastighet. MPV Byggnaden måste inkludera Rubber Band.';
+	@override String get audioEffectUnavailable => 'Denna effekt är inte tillgänglig för denna spår eller MPV att bygga.';
 	@override String get backgroundVideoAudio => 'Bakgrundsvideo ljud';
 	@override String get backgroundVideoAudioDescription => 'Håll video-ljudspel när du lämnar spelaren; bilden är dolt tills du återvänder. Android använder en media-spelning meddelande.';
 	@override String get audioNormalization => 'Normalisera ljudstyrka';
@@ -2906,6 +2866,88 @@ class _Translations$addServer$sv extends Translations$addServer$en {
 	@override String get httpsRequired => 'Använd HTTPS eller uttryckligen tillåter en icke krypterad anslutning.';
 }
 
+// Path: cast
+class _Translations$cast$sv extends Translations$cast$en {
+	_Translations$cast$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Hämta en enhet';
+	@override String get searching => 'Sök efter enheter för att ...';
+	@override String connectedTo({required Object device}) => 'Anslut till ${device}';
+	@override String get device => 'Castanläggning';
+	@override String get readyToCast => 'Redo att kasta';
+	@override String get subtitle => 'Undertexter';
+	@override String get serverNotAvailable => 'Media server är inte tillgänglig.';
+	@override String get stopCasting => 'Sluta casting';
+	@override String get castToDevice => 'Häng till enheten';
+	@override String get noEpisodeAvailable => 'Det finns ingen avsnitt tillgänglig för att släppa.';
+	@override String get startFailed => 'Kan inte börja kastar. kontrollera serveren och försök igen.';
+}
+
+// Path: automation
+class _Translations$automation$sv extends Translations$automation$en {
+	_Translations$automation$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Det finns ingen aktiv video session att kontrollera.';
+}
+
+// Path: notifications
+class _Translations$notifications$sv extends Translations$notifications$en {
+	_Translations$notifications$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Ny episod';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$sv extends Translations$appAccess$en {
+	_Translations$appAccess$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Prova varje funktion gratis i 7 dagar';
+	@override String get description => 'Börja en sju dagars provning med full tillgång till varje PlezyNG funktion. Det finns ingen avgift under provningen och ingen abonnemang. Efter provningen, en livslängd köp på din butik pris låser upp PlezyNG för livet.';
+	@override String get trialEndedDescription => 'Lås upp varje funktion i PlezyNG för liv med ett köp till din butik.';
+	@override String get startTrial => 'Börja min 7 dagars gratis prövning';
+	@override String get trialActive => 'Din 7-dagars full-faktura provning är aktiv.';
+	@override String get trialEnded => 'Din sjudagars rättegång är över';
+	@override String get trialStartFailed => 'Jag kunde inte spara provningen på den här enheten. försök igen.';
+	@override String get lifetimeTitle => 'PlezyNG avstängd för liv';
+	@override String get lifetimeBody => 'Tack! du har livslångt tillgång till varje PlezyNG funktion.';
+	@override String get manageTitle => 'PlezyNG Livslängd åtkomst';
+	@override String get manageDescription => 'Försök varje funktion gratis i 7 dagar, sedan låsa upp allt för livet med en betalning till din butik.';
+	@override String buy({required Object price}) => 'Låsa upp varje funktion för ${price}';
+	@override String get loadingPrice => 'Laddningsbutikens pris...';
+	@override String get retryPrice => 'Retry priset lookup';
+	@override String get restore => 'Återställ livslängd köp';
+	@override String get pending => 'Din inköp väntar på betalning eller godkännande. Livslängdstillgången stänger av så snart butiken fyller i den.';
+	@override String get storeUnavailable => 'Kontrollera att du är inloggad i butiken och köp är tillåtet på denna enhet.';
+	@override String get productNotFound => 'Den PlezyNG livslängdslockningen finns inte i denna butik än.';
+	@override String get productQueryFailed => 'Kan inte ladda butikspriset. kontrollera din anslutning och försök igen.';
+	@override String get purchaseFailed => 'Köpet gick inte igenom. försök igen.';
+	@override String get restoreFailed => 'Jag kunde inte nå butiken för att återställa din inköp. försök igen.';
+	@override String get nothingToRestore => 'Nr PlezyNG livslängd köp hittades för detta butikskonto.';
+}
+
+// Path: detail
+class _Translations$detail$sv extends Translations$detail$en {
+	_Translations$detail$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Slutar kl. ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$sv extends Translations$watchLink$en {
 	_Translations$watchLink$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -3045,6 +3087,219 @@ class _Translations$platform$sv extends Translations$platform$en {
 	@override String get locationPermission => 'PlezyNG använder platsåtkomst när iOS kräver det för att upptäcka ditt lokala nätverk och ansluta till dina media servrar.';
 	@override String get photoLibraryPermission => 'Välj bilder från ditt bildbibliotek som omslag och illustrationer till medieinnehåll.';
 	@override String get cameraPermission => 'Skann QR-koder för att koppla en Companion Remote.';
+}
+
+// Path: universalMedia
+class _Translations$universalMedia$sv extends Translations$universalMedia$en {
+	_Translations$universalMedia$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Öppna medier';
+	@override String get shortcutHelp => 'Spela en länk, playlist eller fil för den här sessionen.';
+	@override String get intro => 'Öppna en länk, spellista eller fil. Playback använder PlezyNG:s standardspelare och lägger inte till historia i biblioteket.';
+	@override String get openWhat => 'Vad skulle du vilja öppna?';
+	@override String get stream => 'Stream adress';
+	@override String get playlist => 'Spellista';
+	@override String get files => 'Device filer';
+	@override String get favorites => 'Spara ström favoriter';
+	@override String get address => 'Media adresser';
+	@override String get addressHelp => 'URL-adresser med erkända verifierings- eller signaturparametrar används endast för den här sessionen och kan inte sparas som favorit.';
+	@override String get displayName => 'Visningsnamn (alternativt)';
+	@override String get displayNameHelp => 'Välj ett kortnamn för spelaren och systemmediakontroller.';
+	@override String get allowHttp => 'Tillåta en icke krypterad HTTP-anslutning';
+	@override String get allowHttpHelp => 'HTTP krypterar inte anslutningen. tillåta det endast på ett pålitligt nätverk. Använd HTTPS när det är möjligt.';
+	@override String get advancedProtocols => 'MPV endast: Skriv in en RTSP, RTMP/RTMPS, UDP eller RTP-adress. Dessa adresser kan inte sparas som favorit.';
+	@override String get liveStream => 'Behandla som levande';
+	@override String get liveStreamHelp => 'Använd detta för live video eller radio. appen döljer tidsbär, hoppa knappar och go-to-time alternativet. Stäng av det för en inspelning.';
+	@override String get privateSession => 'Endast denna playback använder adressen. spara en kvalificerad ström favorit för att hålla den i denna profil.';
+	@override String get saveFavorite => 'Spara favorit';
+	@override String get playNow => 'Spela nu';
+	@override String get favoriteSaved => 'Stream favorit sparas till denna profil';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
+		one: 'Skipped ${count} understödda eller osäkra spellistan ingång.',
+		other: 'Skipped ${count} ounderstödda eller osäkra spellistor entréer.',
+	);
+	@override String get playlistAddress => 'Playlist adresser';
+	@override String get playlistAddressHelp => 'Öppna en M3U, M3u8 eller PLS-spellista från en webbadress. Direct stream länkar sparar inte spellistan.';
+	@override String get choosePlaylist => 'Välj Playlist fil';
+	@override String get openPlaylist => 'Öppna Playlist';
+	@override String get playlistFormatsHelp => 'En spellista kan innehålla upp till 1000 objekt och 2 MB. HLS manifesterar sig öppen som strömmar så att spelaren kan välja en kvalitet.';
+	@override String get saveQueuePlaylist => 'Spara kön som spellista';
+	@override String get queuePlaylistSaved => 'Spellistan sparades bredvid mediefilerna.';
+	@override String get queuePlaylistUnavailable => 'Den här kön kan inte sparas som en återanvändbar lokal spellista.';
+	@override String get queuePlaylistFolderRequired => 'Välj en plats i samma mapp som filerna i kön.';
+	@override String get noFavorites => 'Inga spara ström favorit än. Favoriter stannar i denna profil.';
+	@override String get removeFavorite => 'Ta bort stream favorit';
+	@override String get filesHelp => 'Välj ljud, video eller ISO-filer för en tillfällig spårning. filer och URL-adresser läggs inte till i bibliotekshistorik.';
+	@override String get chooseFiles => 'Välj filer';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
+		one: '1 Utvalda filer',
+		other: '${count} valda filer',
+	);
+	@override String get wifiTransfer => 'Skicka filer via Wi-Fi';
+	@override String get wifiTransferHelp => 'Överföra stödda filer från en webbläsare på samma betrodda nätverk.';
+	@override String get wifiTransferIntro => 'Öppna denna adress i en webbläsare på en annan enhet. Välj filer för att lägga till dem i den här enhetens Filer och böcker bibliotek.';
+	@override String get wifiTransferPrivacy => 'Den här enheten får filer via ditt lokala nätverk.Vem som känner till denna adress kan skicka filer tills du stoppar överföringen eller adressen löper ut efter 15 minuter.Maksimum: 100 filer, 4 GiB per fil, 10 GiB totalt.';
+	@override String get wifiTransferStarting => 'Förbereda en privat, tidsbegränsad överföring ...';
+	@override String get wifiTransferUnavailable => 'Kan inte starta överföringen. kontrollera lokalt nätverksåtkomst och försök igen.';
+	@override String get openThisAddress => 'Öppna en av dessa adresser på avsändarenheten';
+	@override String get copyAddress => 'Kopiera överföringsadressen';
+	@override String get addressCopied => 'Överföringsadress kopierad';
+	@override String transferExpires({required Object time}) => 'Den här adressen löper ut i ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
+		one: '${count} filer mottagna',
+		other: '${count} filer mottagna',
+	);
+	@override String uploadedData({required Object size}) => 'Hämta ${size}';
+	@override String get stopTransfer => 'Stoppa överföring och invalidera adress';
+	@override String get startTransfer => 'Börja överföring';
+	@override String get wifiImportedFiles => 'Wi-Fi överföring';
+	@override String get wifiBrowserTitle => 'Skicka filer till PlezyNG';
+	@override String get wifiBrowserIntro => 'Välj ljud, video, ebook eller komik filer att skicka. Filerna sparas i den här enhetens Arkiv och böcker bibliotek. Maximum: 100 filer, 4 GiB per fil, 10 GiB totalt.';
+	@override String get uploadFilesLabel => 'Filer att skicka';
+	@override String get uploadSelected => 'Ladda upp valda filer';
+	@override String get uploadSelectFirst => 'Välj en eller flera filer först.';
+	@override String get uploading => 'Sändning';
+	@override String get uploadComplete => 'Filen läggs till i PlezyNG.';
+	@override String get uploadFailed => 'Filen kan inte läggas till. Håll den här sidan öppen och försök igen.';
+	@override String get liveCue => 'Livet';
+	@override String get liveSession => 'Live ström';
+	@override String get liveCueHelp => 'För live video eller radio döljer appen tidsgränsen och hoppar knappar. Det sparar inte adressen eller tittar på historian.';
+	@override String get sessionOnly => 'Denna playback är session-only';
+	@override String get sessionOnlyHelp => 'Playback sparar aldrig framsteg eller historia. Spara strömmen som en favorit för att hålla den i denna profil om den är kvalificerad.';
+	@override String get pictureAdjustments => 'Bildjusteringar';
+	@override String get pictureHelp => 'Dessa bildändringar påverkar endast denna playback. De återställs när playback slutar.';
+	@override String get resetPicture => 'Reset bild';
+	@override String get brightness => 'ljusstyrka';
+	@override String get contrast => 'kontrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Huvud';
+	@override String get saturation => 'Saturation';
+	@override String get view360 => 'Flat visning för 360° video';
+	@override String get view360Help => 'Använd den här för 360°-video. MPV behöver FFmpegs v360-filter för denna bild.';
+	@override String get view360Unavailable => 'Denna mpv-byggnad kunde inte tillämpa 360°-filtern.';
+	@override String get view360Yaw => 'Horisontell syn';
+	@override String get view360Pitch => 'Vertikal syn';
+	@override String get view360FieldOfView => 'Fält av syn';
+	@override String get recordStream => 'Rekord live stream';
+	@override String get stopRecording => 'Stoppa och spara inspelning';
+	@override String get recordingStarted => 'Lämna uppspelning stoppar och sparar inspelningen.';
+	@override String get recordingSaved => 'Inspelningen är slutförd och räddad.';
+	@override String get recordingActive => 'Lämna playback stoppar och sparar det.';
+	@override String get recordingFormatHelp => 'För video, välj MKV eller MPEG-TS. För ljud väljer du MKA eller MKV.';
+	@override String get replaceRecordingTitle => 'Ersätter du den här inspelningen?';
+	@override String get replaceRecordingHelp => 'PlezyNG återställer den befintliga filen under inspelning. Om det inte kan spara den nya inspelningen återställs plezyNG backupen.';
+	@override String get replaceRecording => 'Ersätt filer';
+	@override String get discHelp => 'Öppna en skiva i datorns optiska disk. Du kan också öppna ett ISO-bild från Device-filer.';
+	@override String get discs => 'Optik disk';
+	@override String get editionOrTitle => 'Utgåva eller skivtitel';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray och';
+	@override String get audioCd => 'ljud CD';
+	@override String get discAvailability => 'Diskspelning kräver en kompatibel MPV-byggnad, stödd disk och operativsystem tillstånd. Det kan inte gå under kommersiell skivskydd.';
+	@override String get converterTitle => 'Konvertera en lokal mediafil';
+	@override String get converterHelp => 'Konvertera en lokal fil eller ändra den med FFmpeg.';
+	@override String get converterIntro => 'Konvertera en lokal ljud- eller videofil till ett format som fungerar på flera enheter.';
+	@override String get converterPrivacy => 'FFmpeg måste installeras på den här datorn. Conversion läser endast lokala filer. Det laddar inte ner strömmar eller tar bort DRM.';
+	@override String get converterChooseInput => 'Välj en lokal mediafil';
+	@override String get converterFormat => 'Utgångsformat';
+	@override String get converterMp4 => 'MP4 · H.264 och AAC';
+	@override String get converterM4a => 'M4A · AAC ljud';
+	@override String get converterMp3 => 'MP3 - ljud';
+	@override String get allowFtp => 'Tillåta FTP';
+	@override String get allowFtpHelp => 'FTP skickar media utan kryptering. Använd endast på tillförlitliga nätverk.';
+	@override String get converterSaveAs => 'Spara konverterade medier som';
+	@override String get converterExtensionMismatch => 'Välj ett filnamn med den valda utgångsförlängningen.';
+	@override String get converterUnsupportedInput => 'Välj en ljud- eller videofil.';
+	@override String get converterLocalOnly => 'Den valda filen är inte tillgänglig som en lokal enhetsväg.';
+	@override String get converterReplaceTitle => 'Ersätter du den här filen?';
+	@override String get converterReplaceHelp => 'PlezyNG återställer den befintliga filen tills den konverterade kopian sparas.';
+	@override String get converterStarting => 'Börja med FFmpeg...';
+	@override String get converterProgress => 'Omvandlas till den här datorn...';
+	@override String get converterComplete => 'Konvertering är klar. den nya filen är redo.';
+	@override String get converterFfmpegMissing => 'FFmpeg saknas eller stöder inte detta format.';
+	@override String get converterFailed => 'Kontrollera att källfilen kan läsas och destinationen har tillräckligt med gratis utrymme.';
+	@override String get converterCancelled => 'Konvertering avbokad. den ofullständiga utgången har tagits bort.';
+	@override String get converterDesktopOnly => 'Lokal konvertering är tillgänglig på skrivbordsdatorer med FFmpeg installerat.';
+	@override String get converterStart => 'Konvertera filer';
+	@override String get mediaToolsTitle => 'Medieverktyg';
+	@override String get mediaToolsShortcut => 'Fånga eller dela medel, lägga till sökutvidgningar eller använda kommandolinjen.';
+	@override String get mediaToolsIntro => 'Välj ett fokuserat verktyg. Fånga och ström-out använda FFmpeg installerat på denna skrivbord. Extensions och CLI kommandon använder begränsade HTTPS begäranden och den befintliga Open media flöde.';
+	@override String get mediaToolsAccessibility => 'Verktygsval och kontroller fungerar med touch, pekare, tangentbord och D-pad fokus. inspelning, delning och sökstatusändringar meddelas.';
+	@override String get mediaTool => 'Media verktyg';
+	@override String get captureIntro => 'Spara din skärm eller kamera till en MP4-fil på den här datorn. FFmpeg måste installeras och inkludera kodaren H.264.';
+	@override String get captureNoDevices => 'Inga skärmar eller kameror hittades. kontrollera FFmpeg-faktursupport och operativsystemets integritetstillstånd.';
+	@override String get captureSource => 'Skärm eller kamera';
+	@override String get captureScreen => 'Skärm';
+	@override String get captureAudioSource => 'Audio input (alternativt)';
+	@override String get captureAudioHelp => 'Lägg till ljud från en mikrofon eller tillgänglig inmatning. Enhetsval beror på FFmpeg och systemtillstånd.';
+	@override String get captureAudioNone => 'Inga ljud';
+	@override String get captureDefaultAudio => 'Standard ljudinträde';
+	@override String get captureWaylandHelp => 'Wayland begränsar denna XWayland fångst till X display. Windows utanför XWayland kan inte visas.';
+	@override String get captureFrameRate => 'Rekordram Rate';
+	@override String get capturePrivacy => 'Inspelningen sparas endast till den fil du väljer. Mikrofonfång är valfri. PlezyNG laddar inte upp inspelningen.';
+	@override String get captureSaveAs => 'Spara skärminspelning som';
+	@override String get captureExtensionMismatch => 'Välj ett filnamn som slutar i .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg eller H.264 video kodaren är inte tillgänglig. Installera en stödd FFmpeg byggnad, försök sedan igen.';
+	@override String get captureFailed => 'Kontrollera enhetstillstånd, tillgänglig lagring och FFmpeg support.';
+	@override String get captureSaved => 'Skärminspelning sparas.';
+	@override String get captureElapsedLabel => 'inspelningstid';
+	@override String get captureStart => 'Börja inspelning';
+	@override String get capturePreview => 'Förhandsvisa i spelaren';
+	@override String get capturePreviewHelp => 'Förhandsvisa den valda källan i standardspelaren. Förhandsvisningen gäller endast den här sessionen och sparar ingen inspelning. Enhetsstöd och behörigheter beror på MPV och operativsystemet. Förhandsvisningen använder endast video; sparade inspelningar kan även innehålla valfritt ljud.';
+	@override String get capturePreviewActive => 'Liveförhandsvisning · spelar inte in';
+	@override String get captureStop => 'Stoppa och spara';
+	@override String get captureMode => 'fångar';
+	@override String get shareMode => 'Delade';
+	@override String get shareIntro => 'Skicka en lokal mediafil till en annan enhet på ditt privata nätverk. PlezyNG skapar en tillfällig HLS ström.';
+	@override String get sharePrivacy => 'Alla på ditt lokala nätverk som får den privata länken kan titta medan den är aktiv. länken upphör efter 60 minuter. Stoppa delning för att stänga servern och inaktivera länken.';
+	@override String get shareChooseFile => 'Välj media filer';
+	@override String get shareChooseHelp => 'Välj en lokal ljud- eller videofil. filen stannar på den här datorn.';
+	@override String get shareFfmpegMissing => 'FFmpeg eller H.264/AAC kodare är inte tillgängliga. Installera FFmpeg med H.264 och AAC kodning stöd.';
+	@override String get shareFailed => 'Stream kunde inte starta eller stanna oväntat. kontrollera FFmpeg och nätverksåtkomst.';
+	@override String get shareActive => 'Strömmen är klar på ditt privata nätverk.';
+	@override String get shareEnded => 'Medierna har nått slutet och delas inte längre.';
+	@override String get shareStopped => 'Delning upphört. den tillfälliga länken är inte längre giltig.';
+	@override String get shareUrlCopied => 'Stream adress kopierad.';
+	@override String get shareOpenUrl => 'Öppna denna adress i en spelare på den andra enheten';
+	@override String get shareQrLabel => 'QR-kod för den tillfälliga strömadressen';
+	@override String get shareQrHelp => 'Skanna med en kompatibel spelare ansluten till samma privata nätverk.';
+	@override String get shareHttpHint => 'Denna ström använder okrypterad HTTP. i PlezyNG, tillåta HTTP innan du öppnar den.';
+	@override String get shareCopyUrl => 'Kopiera strömadress';
+	@override String get shareExpiresLabel => 'Länken löper ut på';
+	@override String get shareStarting => 'Förbereda strömmen...';
+	@override String get shareStart => 'Börja dela';
+	@override String get shareStop => 'Sluta dela';
+	@override String get extensionsMode => 'Förlängningar och CLI';
+	@override String get extensionsIntro => 'Lägg till en data-end-sök förlängning för att hitta media. Välj ett resultat för att ladda den i det kända formuläret Open media.';
+	@override String get extensionsPrivacy => 'En manifest kan definiera en HTTPS sökändpunkt och kartans responsfält. Det kan inte köra kod, lägga till begäran headers, läsa filer, eller lansera shell kommandon.';
+	@override String get extensionImport => 'Lägg till förlängning manifest';
+	@override String get extensionEmpty => 'Inga söktjänster än. Välj en pålitlig manifest JSON fil för att lägga till en.';
+	@override String get extensionChoose => 'Söktjänst';
+	@override String get extensionSearchConsent => 'Varje sökning skickar dina ord till denna HTTPS tjänst. Resultaten öppnas endast efter att du har valt en.';
+	@override String get extensionSearchLabel => 'Sök media';
+	@override String get extensionSearch => 'Sökning';
+	@override String get extensionSearching => 'Sökande...';
+	@override String get extensionNoResults => 'Inga säkra medieresultat returnerades. försök en annan sökning.';
+	@override String get extensionInstallTitle => 'Lägg till denna sökningstjänst?';
+	@override String get extensionReplaceTitle => 'Uppdatera denna söktjänst?';
+	@override String get extensionService => 'tjänst';
+	@override String get extensionEndpoint => 'HTTPS slutpunkt';
+	@override String get extensionConsent => 'Din söktekst skickas till denna tjänst. manifestet innehåller ingen exekuterbar kod. Fortsätt bara om du litar på denna slutpunkt.';
+	@override String get extensionInstall => 'Lägg till service';
+	@override String get extensionReplace => 'Uppdateringstjänst';
+	@override String get extensionRemoveTitle => 'Ta bort denna sökningstjänst?';
+	@override String get extensionRemoveHelp => 'Detta tar bort tjänsten från denna profil. PlezyNG kontaktar inte dess slutpunkt.';
+	@override String get extensionRemove => 'Ta bort tjänsten';
+	@override String get extensionInvalidManifest => 'Den här filen är inte en stödd förlängning manifest. se Open media guide för formatet.';
+	@override String get extensionSaveFailed => 'Förlängningen kunde inte sparas till den aktiva profilen.';
+	@override String get extensionSearchFailed => 'Söktjänsten returnerade inte ett giltigt svar. Kontrollera slutpunkten och försök igen.';
+	@override String get cliTitle => 'kommandolinje';
+	@override String get cliHelp => 'Använd guiden plezyctl för att validera en manifest eller söka efter samma förlängning. Läs om dess HTTPS-tjänst före varje sökning. Resultat öppnas i det befintliga medieformuläret; välj knappen för återställning för att starta.';
+	@override String get cliCopyExample => 'Kopiera kommandot exempel';
+	@override String get cliCopied => 'Kommando exempel kopieras.';
 }
 
 // Path: fileSources
@@ -3314,7 +3569,6 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Lägg till Google Drive, OneDrive, Dropbox, WebDAV eller S3 i Filer och böcker först.';
 	@override String get syncDestination => 'Sync lagringskonto';
 	@override String get syncFolder => 'Synkronisera mappen eller prefixet';
-	@override String get syncFolderHelp => 'Använd en separat befintlig mapp inom din WebDAV-källa, eller en dedikerad S3-prefix. bokfiler ändras aldrig.';
 	@override String get syncCode => 'Privat synkroniseringskod';
 	@override String get syncCodeHelp => 'Skapa en kod på din första enhet, skriv sedan den koden på dina andra enheter. Håll en privat kopia: det är nyckeln till din krypterade status. Använd en annan kod för varje person.';
 	@override String get showCode => 'Visa eller dölja synkroniseringskoden';
@@ -3324,7 +3578,6 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Ta bort denna källa kommer att avaktivera läsning och lyssnande synkroniseras här. krypterade synkroniserade filer kommer att förbli i leverantören.';
 	@override String get syncReconnect => 'Återkoppling av lagringskonto';
 	@override String lastSynced({required Object time}) => 'Senast synkroniserad på ${time}';
-	@override String get syncPrivacy => 'Endast krypterade framsteg och anteckningar lagras. ljud- och e-bokfiler, konto tokens och lösenord laddas inte. Google Drive och OneDrive använder app lagring; Dropbox använder PlezyNG Sync. Tillåter synkronisering kan begära ytterligare skriftlig åtkomst. Medan aktiverad, denna destination äger framsteg synkronisering; server framsteg förblir separat. Turn synkronisering av håller lokal historia och fjärrstatus.';
 	@override String get syncConflicts => 'Välj var du ska återställa';
 	@override String get conflictHelp => 'Dessa ändringar gjordes oberoende. Välj positionen eller bokmärkesversionen att hålla. En senare timestamp eller en högre procentsats vinner inte automatiskt.';
 	@override String syncDevice({required Object device}) => 'Anläggning ${device}';
@@ -3518,7 +3771,6 @@ class _Translations$games$sv extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3543,7 +3795,6 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3575,8 +3826,6 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3584,14 +3833,62 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$sv extends Translations$deepLinks$en {
+	_Translations$deepLinks$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Denna Plezy länk är inte giltig.';
+	@override String profileNotFound({required Object profile}) => 'Ingen profil matchar "${profile}".';
+	@override String get serverUnavailable => 'Jag kunde inte nå serveren för den här länken.';
+	@override String get notFound => 'Jag kunde inte hitta den här rubriken i dina bibliotek.';
+	@override String get unsupportedItem => 'Denna länk kan inte spelas.';
+	@override String get noLiveTv => 'Ingen Live TV-server är tillgänglig för den här länken.';
+	@override String channelNotFound({required Object channel}) => 'Kan inte hitta kanal "${channel}".';
+	@override String get showLink => 'Visa länken';
+	@override String get showProfileLink => 'Visa profil länk';
+	@override String get dialogTitle => 'Länkar';
+	@override String get showHint => 'Öppna den här länken spelar nästa avsnitt. Lägg till &mode=shuffle för att spela showen på shuffle.';
+	@override String get movieHint => 'Öppna den här länken spelar filmen.';
+	@override String get episodeHint => 'Att öppna denna länk spelar den här episoden.';
+	@override String get profileHint => 'Öppna den här länken växlar till denna profil.';
+	@override String openAsProfile({required Object name}) => 'Öppna som ${name}';
+	@override String get copy => 'Kopiera';
+	@override String get copied => 'Link kopierad';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$sv extends Translations$householdSetup$en {
+	_Translations$householdSetup$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Hushållsinställningar';
+}
+
+// Path: issueReport
+class _Translations$issueReport$sv extends Translations$issueReport$en {
+	_Translations$issueReport$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Rapportera ett problem';
+	@override String get instructions => 'Skanna QR-koden för att öppna ett förifyllt GitHub-utkast. Granska det och skicka först när du är redo.';
+	@override String get privacy => 'Utkastet innehåller appversion, plattform och antal anslutningar. Serveradresser, konto- och profilnamn, medietitlar och filsökvägar utelämnas.';
+	@override String get logPrivacy => 'Loggar är valfria. Granska dem före uppladdning. Deras ID läggs till i utkastet, som kan vara offentligt.';
+	@override String get openDraft => 'Öppna GitHub-utkast';
 }
 
 // Path: appIcon.names
@@ -4708,21 +5005,6 @@ extension on TranslationsSv {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Hämta en enhet',
-			'cast.searching' => 'Sök efter enheter för att ...',
-			'cast.connectedTo' => ({required Object device}) => 'Anslut till ${device}',
-			'cast.device' => 'Castanläggning',
-			'cast.readyToCast' => 'Redo att kasta',
-			'cast.subtitle' => 'Undertexter',
-			'cast.serverNotAvailable' => 'Media server är inte tillgänglig.',
-			'cast.stopCasting' => 'Sluta casting',
-			'cast.castToDevice' => 'Häng till enheten',
-			'cast.noEpisodeAvailable' => 'Det finns ingen avsnitt tillgänglig för att släppa.',
-			'cast.startFailed' => 'Kan inte börja kastar. kontrollera serveren och försök igen.',
-			'automation.noActivePlayback' => 'Det finns ingen aktiv video session att kontrollera.',
-			'automation.profileNotFound' => 'Den Plezy profil kunde inte hittas.',
-			'notifications.newEpisodeTitle' => 'Ny episod',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Appikon',
 			'appIcon.defaultIcon' => 'Standard',
 			'appIcon.current' => 'Aktuell ikon',
@@ -4885,28 +5167,6 @@ extension on TranslationsSv {
 			'update.viewRelease' => 'Visa versionsinformation',
 			'update.latestVersion' => 'Du har den senaste versionen',
 			'update.checkFailed' => 'Det gick inte att söka efter uppdateringar',
-			'appAccess.title' => 'Prova varje funktion gratis i 7 dagar',
-			'appAccess.description' => 'Börja en sju dagars provning med full tillgång till varje PlezyNG funktion. Det finns ingen avgift under provningen och ingen abonnemang. Efter provningen, en livslängd köp på din butik pris låser upp PlezyNG för livet.',
-			'appAccess.trialEndedDescription' => 'Lås upp varje funktion i PlezyNG för liv med ett köp till din butik.',
-			'appAccess.startTrial' => 'Börja min 7 dagars gratis prövning',
-			'appAccess.trialActive' => 'Din 7-dagars full-faktura provning är aktiv.',
-			'appAccess.trialEnded' => 'Din sjudagars rättegång är över',
-			'appAccess.trialStartFailed' => 'Jag kunde inte spara provningen på den här enheten. försök igen.',
-			'appAccess.lifetimeTitle' => 'PlezyNG avstängd för liv',
-			'appAccess.lifetimeBody' => 'Tack! du har livslångt tillgång till varje PlezyNG funktion.',
-			'appAccess.manageTitle' => 'PlezyNG Livslängd åtkomst',
-			'appAccess.manageDescription' => 'Försök varje funktion gratis i 7 dagar, sedan låsa upp allt för livet med en betalning till din butik.',
-			'appAccess.buy' => ({required Object price}) => 'Låsa upp varje funktion för ${price}',
-			'appAccess.loadingPrice' => 'Laddningsbutikens pris...',
-			'appAccess.retryPrice' => 'Retry priset lookup',
-			'appAccess.restore' => 'Återställ livslängd köp',
-			'appAccess.pending' => 'Din inköp väntar på betalning eller godkännande. Livslängdstillgången stänger av så snart butiken fyller i den.',
-			'appAccess.storeUnavailable' => 'Kontrollera att du är inloggad i butiken och köp är tillåtet på denna enhet.',
-			'appAccess.productNotFound' => 'Den PlezyNG livslängdslockningen finns inte i denna butik än.',
-			'appAccess.productQueryFailed' => 'Kan inte ladda butikspriset. kontrollera din anslutning och försök igen.',
-			'appAccess.purchaseFailed' => 'Köpet gick inte igenom. försök igen.',
-			'appAccess.restoreFailed' => 'Jag kunde inte nå butiken för att återställa din inköp. försök igen.',
-			'appAccess.nothingToRestore' => 'Nr PlezyNG livslängd köp hittades för detta butikskonto.',
 			'settings.title' => 'Inställningar',
 			'settings.supportDeveloper' => 'Stöd PlezyNG',
 			'settings.supportDeveloperDescription' => 'Donera för att stödja utvecklingen',
@@ -5219,8 +5479,6 @@ extension on TranslationsSv {
 			'settings.audioPassthrough' => 'Ljudgenomströmning',
 			'settings.audioPassthroughDescription' => 'Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.',
 			'settings.audioPassthroughDescriptionApple' => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. På iOS, iPadOS och tvOS 26 eller senare spelas TrueHD Atmos och DTS:X upp som rumsligt ljud. Övriga DTS- och TrueHD-spår spelas upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Av medan ljudstyrkenormalisering är på',
 			'settings.audioChannelLimit' => 'Ljudkanaler',
@@ -5258,6 +5516,8 @@ extension on TranslationsSv {
 			'settings.disableDolbyVisionDescription' => 'Spela upp filens HDR10- eller HLG-lager i stället för Dolby Vision när det finns',
 			'settings.hdrSdrConversion' => 'HDR till SDR-konvertering',
 			'settings.hdrSdrConversionDescription' => 'Välj vad som konverterar HDR-video när skärmen inte kan visa HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Auto',
 			'settings.hdrSdrConversionAutoDescription' => 'Enhet på Android 9 och senare, spelare på äldre versioner',
 			'settings.hdrSdrConversionDevice' => 'Enhet',
@@ -5719,7 +5979,6 @@ extension on TranslationsSv {
 			'tooltips.markAsWatched' => 'Markera som sedd',
 			'tooltips.markAsUnwatched' => 'Markera som osedd',
 			'audioTracks.track' => ({required Object n}) => 'Ljudspår ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ramar', ), 
 			'videoControls.audioLabel' => 'Ljud',
 			'videoControls.subtitlesLabel' => 'Undertexter',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5733,8 +5992,6 @@ extension on TranslationsSv {
 			'videoControls.sleepTimerEndOfVideo' => 'Slutet av aktuell video',
 			'videoControls.sleepTimerStopAtHeader' => 'Stoppa vid',
 			'videoControls.sleepTimerDurationHeader' => 'Timer',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Uppspelningen pausas i slutet av denna video',
 			'videoControls.stillWatching' => 'Tittar du fortfarande?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausar om ${seconds}s',
@@ -5758,9 +6015,33 @@ extension on TranslationsSv {
 			'videoControls.unmuteButton' => 'Slå på ljudet',
 			'videoControls.settingsButton' => 'Uppspelningsinställningar',
 			'videoControls.tracksButton' => 'Ljud och undertexter',
-			'videoControls.trackSelectionTitle' => 'Välj spår före playback',
-			'videoControls.trackSelectionAuto' => 'Automatisk urval',
 			'videoControls.chaptersButton' => 'Kapitel',
+			'videoControls.segmentLoopHelp' => 'Spela en sektion under denna återställning. Ställ in A, sedan ställ in B senare i tidslinjen.',
+			'videoControls.setLoopStart' => 'Ange startpunkt för slinga (A)',
+			'videoControls.setLoopEnd' => 'Set loop slut (B)',
+			'videoControls.clearSegmentLoop' => 'tydlig segment loop',
+			'videoControls.setLoopStartFirst' => 'Ställ in loppet start (A) före slutet (B).',
+			'videoControls.loopEndAfterStart' => 'Slutet måste vara senare än början.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping är inte tillgänglig för denna playback.',
+			'videoControls.loopPointNotSet' => 'inte ställer',
+			'videoControls.bookmarksHelp' => 'Bokmärken sparas på denna enhet. Välj ett för att gå till den tiden.',
+			'videoControls.bookmarksButton' => 'Bokmärken',
+			'videoControls.chaptersAndBookmarks' => 'Kapitel och bokmärken',
+			'videoControls.segmentLoop' => 'Segment Lås',
+			'videoControls.addBookmark' => 'Lägg till bookmark',
+			'videoControls.bookmarkName' => 'Bookmark namn',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Till exempel öppna scenen',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bokmärke ${n}',
+			'videoControls.bookmarkNameRequired' => 'Skriv in ett namn för denna bokmärke.',
+			'videoControls.deleteBookmark' => 'Ta bort bokmärke',
+			'videoControls.bookmarkLimitReached' => 'Den här artikeln har redan 100 bokmärken.',
+			'videoControls.bookmarkUnavailable' => 'Jag kunde inte spara eller ta bort denna bokmärke.',
+			'videoControls.bookmarkSaved' => 'Bokmärket räddades.',
+			'videoControls.bookmarkDeleted' => 'Bokmärket är raderat.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop poäng ${point} Ställ in på ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Inga kapitel eller bokmärken finns tillgängliga.',
 			'videoControls.versionQualityButton' => 'Version och kvalitet',
 			'videoControls.versionColumnHeader' => 'Version',
 			'videoControls.qualityColumnHeader' => 'Kvalitet',
@@ -5769,8 +6050,6 @@ extension on TranslationsSv {
 			'videoControls.transcodeUnavailableFallback' => 'Transkodning otillgänglig — spelar upp i originalkvalitet',
 			'videoControls.subtitleUnavailableFallback' => 'De valda undertexterna kunde inte läsas in — uppspelningen fortsätter utan undertexter',
 			'videoControls.pipButton' => 'Bild-i-bild-läge',
-			'videoControls.openMiniPlayer' => 'Öppna mini spelare',
-			'videoControls.returnToFullPlayer' => 'Tillbaka till fullspelare',
 			'videoControls.aspectRatioButton' => 'Bildförhållande',
 			'videoControls.ambientLighting' => 'Ambientbelysning',
 			'videoControls.fullscreenButton' => 'Aktivera helskärm',
@@ -5779,7 +6058,6 @@ extension on TranslationsSv {
 			'videoControls.rotationLockButton' => 'Rotationslås',
 			'videoControls.lockScreen' => 'Lås skärm',
 			'videoControls.screenLockButton' => 'Skärmlås',
-			'videoControls.longPressToUnlock' => 'Tryck länge för att låsa upp',
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
 			'videoControls.endsAt' => ({required Object time}) => 'Slutar kl. ${time}',
@@ -5803,8 +6081,6 @@ extension on TranslationsSv {
 			'videoControls.noQueueItems' => 'Inga objekt i kön',
 			'videoControls.noAudioDevicesAvailable' => 'Inga ljudenheter tillgängliga',
 			'videoControls.searchSubtitles' => 'Sök undertexter',
-			'videoControls.loadSubtitleFile' => 'Ladda upp subtitle filen...',
-			'videoControls.subtitleLoadFailed' => 'misslyckas med att ladda upp subtitle-filen',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
 			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
@@ -5813,7 +6089,6 @@ extension on TranslationsSv {
 			'videoControls.searchLanguages' => 'Sök språk...',
 			'videoControls.skipIntro' => 'Hoppa över intro',
 			'videoControls.skipCredits' => 'Hoppa över eftertexter',
-			'videoControls.skipAds' => 'Skiva annonser',
 			'videoControls.nextEpisode' => 'Nästa avsnitt',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Spår ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Undertext ${name}',
@@ -5821,6 +6096,16 @@ extension on TranslationsSv {
 			'videoControls.osdSubtitlesOff' => 'Undertexter: Av',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Undertexter: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Ljud: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} Frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} ramar', ), 
+			'videoControls.trackSelectionTitle' => 'Välj spår före playback',
+			'videoControls.trackSelectionAuto' => 'Automatisk urval',
+			'videoControls.openMiniPlayer' => 'Öppna mini spelare',
+			'videoControls.returnToFullPlayer' => 'Tillbaka till fullspelare',
+			'videoControls.loadSubtitleFile' => 'Ladda upp subtitle filen...',
+			'videoControls.subtitleLoadFailed' => 'misslyckas med att ladda upp subtitle-filen',
+			'videoControls.skipAds' => 'Skiva annonser',
+			'videoControls.tapToUnlock' => 'Tryck för att låsa upp',
+			'videoControls.tapAgainToUnlock' => 'Tryck igen för att låsa upp',
 			'messages.markedAsWatched' => 'Markerad som sedd',
 			'messages.markedAsUnwatched' => 'Markerad som osedd',
 			'messages.markedAsWatchedOffline' => 'Markerad som sedd (synkroniseras när online)',
@@ -6247,8 +6532,6 @@ extension on TranslationsSv {
 			'libraries.all' => 'Alla',
 			'libraries.clearAll' => 'Rensa alla',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill skanna "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill analysera "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Är du säker på att du vill uppdatera metadata för "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Är du säker på att du vill tömma papperskorgen för "${title}"?',
@@ -6261,6 +6544,8 @@ extension on TranslationsSv {
 			'libraries.hideLibrary' => 'Dölj bibliotek',
 			'libraries.libraryOptions' => 'Biblioteksalternativ',
 			'libraries.content' => 'bibliotekets innehåll',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Välj bibliotek',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filter (${count})',
 			'libraries.noRecommendations' => 'Inga rekommendationer tillgängliga',
@@ -6366,7 +6651,6 @@ extension on TranslationsSv {
 			'logs.saveLogs' => 'Spara loggar till filer',
 			'logs.logsSaved' => ({required Object path}) => 'Lågor som sparas till ${path}',
 			'logs.saveLogsFailed' => 'Kan inte spara loggfilen.',
-			'detail.endsAt' => ({required Object time}) => 'Slutar kl. ${time}',
 			'startup.failedTitle' => 'PlezyNG kunde inte starta',
 			'startup.failedBody' => 'Något gick fel under starten. Detaljerna nedan visar vad som misslyckades.',
 			'startup.failedBodyRepairable' => 'Plezys sparade inställningsfil är skadad och måste byggas om innan PlezyNG kan starta. Att försöka igen hjälper inte — välj Reparera lagring.',
@@ -6727,6 +7011,7 @@ extension on TranslationsSv {
 			'music.visualizerProfileLoading' => 'Läs track analys...',
 			'music.visualizerAmbientMotion' => 'Miljö rörelse',
 			'music.visualizerPlexLoudness' => 'Plex höghet',
+			'music.visualizerLiveAudio' => 'Live-ljudanalys',
 			'music.visualizerPreviousPreset' => 'Föregående Visua stil',
 			'music.visualizerNextPreset' => 'Nästa visuell stil',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6761,8 +7046,6 @@ extension on TranslationsSv {
 			'watchTogether.connecting' => 'Ansluter...',
 			'watchTogether.relayPublic' => 'Rummen använder de offentliga Open Watch Party-reläservrarna.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Rummen använder din reläserver på ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Senaste rummen',
 			'watchTogether.roomActions' => 'Rumsåtgärder',
 			'watchTogether.renameRoom' => 'Byt namn på rummet',
@@ -6775,6 +7058,8 @@ extension on TranslationsSv {
 			'watchTogether.codeCopied' => 'Rumskod kopierad',
 			'watchTogether.shareInvite' => 'Dela inbjudan',
 			'watchTogether.inviteCopied' => 'Inbjudan kopierad. Klistra in den i ett meddelande.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Gå med i mitt Titta tillsammans-rum i PlezyNG: öppna Titta tillsammans, välj Gå med i rum och ange ${code}.',
 			'watchTogether.openSessionControls' => 'Öppna sessionskontroller för Titta tillsammans',
 			'watchTogether.reconnecting' => 'Återansluter...',
@@ -7153,6 +7438,12 @@ extension on TranslationsSv {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Tonmappa till skärmens maximala ljusstyrka i spelaren och informera sedan kompositionshanteraren om resultatet.',
 			'videoSettings.hdrToneMappingFailed' => 'Det gick inte att ändra HDR-tonmappningen – det föregående läget är fortfarande aktivt.',
 			'videoSettings.audioOutput' => 'Ljudutgång',
+			'videoSettings.videoTrack' => 'Videospår',
+			'videoSettings.videoTrackDescription' => 'Välj vilken videoström som ska visas. Tillgängligt vid MPV-uppspelning när en fil innehåller alternativa videospår.',
+			'videoSettings.videoTrackDefault' => 'Standard',
+			'videoSettings.videoTrackUnavailable' => 'Inga alternativa videospår är tillgängliga.',
+			'videoSettings.videoTrackFailed' => 'Det gick inte att byta videospår.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Spår ${id}',
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7160,10 +7451,17 @@ extension on TranslationsSv {
 			'videoSettings.audioOutputSpatial' => 'Rumsligt ljud',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Equalizer för',
-			'videoSettings.audioEqualizerDescription' => 'Anpassa fem frekvensband för denna enhet. Finns på mpv; en aktiv EQ dekoder ljud och stänger av matchhrough.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer för MPVAudiofilter använder decoderad ljud och stänger av passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Neutral',
 			'videoSettings.audioEqualizerActive' => 'Anpassat',
 			'videoSettings.audioEqualizerSaveFailed' => 'Kan inte spara ljud equalizer inställningar.',
+			'videoSettings.audioEffectsDescription' => 'Effekter använder decoderad ljud, så passthrough vänds av. Rummiljö och stereo utvidgning beror på MPV Bygg och track.',
+			'videoSettings.audioStereoWidth' => 'Stereo utvidgning',
+			'videoSettings.audioSpatializer' => 'Rummiljö',
+			'videoSettings.audioSpatializerDescription' => 'Lägg till tyst rum reflektioner.',
+			'videoSettings.audioPitch' => 'Pitch byte',
+			'videoSettings.audioPitchDescription' => 'ändra pitch utan att förändra hastighet. MPV Byggnaden måste inkludera Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Denna effekt är inte tillgänglig för denna spår eller MPV att bygga.',
 			'videoSettings.backgroundVideoAudio' => 'Bakgrundsvideo ljud',
 			'videoSettings.backgroundVideoAudioDescription' => 'Håll video-ljudspel när du lämnar spelaren; bilden är dolt tills du återvänder. Android använder en media-spelning meddelande.',
 			'videoSettings.audioNormalization' => 'Normalisera ljudstyrka',
@@ -7274,9 +7572,9 @@ extension on TranslationsSv {
 			'metadataEdit.metadataUpdated' => 'Metadata har uppdaterats',
 			'metadataEdit.metadataUpdateFailed' => 'Det gick inte att uppdatera metadata',
 			'metadataEdit.artworkUpdated' => 'Bildmaterialet har uppdaterats',
-			'metadataEdit.artworkUpdateFailed' => 'Det gick inte att uppdatera bildmaterialet',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Det gick inte att uppdatera bildmaterialet',
 			'metadataEdit.noArtworkAvailable' => 'Inget bildmaterial är tillgängligt',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Bildalternativ ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Bildalternativ ${index}, valt',
@@ -7504,6 +7802,43 @@ extension on TranslationsSv {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} använder HTTP. Andra på nätverket kan läsa eller ändra ditt lösenord, dina token och dina medier. Använd HTTPS när det är tillgängligt. Fortsätt bara om du litar på nätverket och accepterar risken.',
 			'addServer.allowHttp' => 'Tillåt HTTP',
 			'addServer.httpsRequired' => 'Använd HTTPS eller uttryckligen tillåter en icke krypterad anslutning.',
+			'cast.chooseDevice' => 'Hämta en enhet',
+			'cast.searching' => 'Sök efter enheter för att ...',
+			'cast.connectedTo' => ({required Object device}) => 'Anslut till ${device}',
+			'cast.device' => 'Castanläggning',
+			'cast.readyToCast' => 'Redo att kasta',
+			'cast.subtitle' => 'Undertexter',
+			'cast.serverNotAvailable' => 'Media server är inte tillgänglig.',
+			'cast.stopCasting' => 'Sluta casting',
+			'cast.castToDevice' => 'Häng till enheten',
+			'cast.noEpisodeAvailable' => 'Det finns ingen avsnitt tillgänglig för att släppa.',
+			'cast.startFailed' => 'Kan inte börja kastar. kontrollera serveren och försök igen.',
+			'automation.noActivePlayback' => 'Det finns ingen aktiv video session att kontrollera.',
+			'notifications.newEpisodeTitle' => 'Ny episod',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Prova varje funktion gratis i 7 dagar',
+			'appAccess.description' => 'Börja en sju dagars provning med full tillgång till varje PlezyNG funktion. Det finns ingen avgift under provningen och ingen abonnemang. Efter provningen, en livslängd köp på din butik pris låser upp PlezyNG för livet.',
+			'appAccess.trialEndedDescription' => 'Lås upp varje funktion i PlezyNG för liv med ett köp till din butik.',
+			'appAccess.startTrial' => 'Börja min 7 dagars gratis prövning',
+			'appAccess.trialActive' => 'Din 7-dagars full-faktura provning är aktiv.',
+			'appAccess.trialEnded' => 'Din sjudagars rättegång är över',
+			'appAccess.trialStartFailed' => 'Jag kunde inte spara provningen på den här enheten. försök igen.',
+			'appAccess.lifetimeTitle' => 'PlezyNG avstängd för liv',
+			'appAccess.lifetimeBody' => 'Tack! du har livslångt tillgång till varje PlezyNG funktion.',
+			'appAccess.manageTitle' => 'PlezyNG Livslängd åtkomst',
+			'appAccess.manageDescription' => 'Försök varje funktion gratis i 7 dagar, sedan låsa upp allt för livet med en betalning till din butik.',
+			'appAccess.buy' => ({required Object price}) => 'Låsa upp varje funktion för ${price}',
+			'appAccess.loadingPrice' => 'Laddningsbutikens pris...',
+			'appAccess.retryPrice' => 'Retry priset lookup',
+			'appAccess.restore' => 'Återställ livslängd köp',
+			'appAccess.pending' => 'Din inköp väntar på betalning eller godkännande. Livslängdstillgången stänger av så snart butiken fyller i den.',
+			'appAccess.storeUnavailable' => 'Kontrollera att du är inloggad i butiken och köp är tillåtet på denna enhet.',
+			'appAccess.productNotFound' => 'Den PlezyNG livslängdslockningen finns inte i denna butik än.',
+			'appAccess.productQueryFailed' => 'Kan inte ladda butikspriset. kontrollera din anslutning och försök igen.',
+			'appAccess.purchaseFailed' => 'Köpet gick inte igenom. försök igen.',
+			'appAccess.restoreFailed' => 'Jag kunde inte nå butiken för att återställa din inköp. försök igen.',
+			'appAccess.nothingToRestore' => 'Nr PlezyNG livslängd köp hittades för detta butikskonto.',
+			'detail.endsAt' => ({required Object time}) => 'Slutar kl. ${time}',
 			'watchLink.serverUnavailable' => 'Jag kunde inte nå en server Plex för den här länken.',
 			'watchLink.notFound' => 'Jag kunde inte hitta den här showen eller filmen på dina Plex servrar.',
 			'watchLink.ambiguous' => 'Denna länk matchar objekt på mer än en server. Lägg till en server till länken.',
@@ -7618,6 +7953,203 @@ extension on TranslationsSv {
 			'platform.locationPermission' => 'PlezyNG använder platsåtkomst när iOS kräver det för att upptäcka ditt lokala nätverk och ansluta till dina media servrar.',
 			'platform.photoLibraryPermission' => 'Välj bilder från ditt bildbibliotek som omslag och illustrationer till medieinnehåll.',
 			'platform.cameraPermission' => 'Skann QR-koder för att koppla en Companion Remote.',
+			'universalMedia.title' => 'Öppna medier',
+			'universalMedia.shortcutHelp' => 'Spela en länk, playlist eller fil för den här sessionen.',
+			'universalMedia.intro' => 'Öppna en länk, spellista eller fil. Playback använder PlezyNG:s standardspelare och lägger inte till historia i biblioteket.',
+			'universalMedia.openWhat' => 'Vad skulle du vilja öppna?',
+			'universalMedia.stream' => 'Stream adress',
+			'universalMedia.playlist' => 'Spellista',
+			'universalMedia.files' => 'Device filer',
+			'universalMedia.favorites' => 'Spara ström favoriter',
+			'universalMedia.address' => 'Media adresser',
+			'universalMedia.addressHelp' => 'URL-adresser med erkända verifierings- eller signaturparametrar används endast för den här sessionen och kan inte sparas som favorit.',
+			'universalMedia.displayName' => 'Visningsnamn (alternativt)',
+			'universalMedia.displayNameHelp' => 'Välj ett kortnamn för spelaren och systemmediakontroller.',
+			'universalMedia.allowHttp' => 'Tillåta en icke krypterad HTTP-anslutning',
+			'universalMedia.allowHttpHelp' => 'HTTP krypterar inte anslutningen. tillåta det endast på ett pålitligt nätverk. Använd HTTPS när det är möjligt.',
+			'universalMedia.advancedProtocols' => 'MPV endast: Skriv in en RTSP, RTMP/RTMPS, UDP eller RTP-adress. Dessa adresser kan inte sparas som favorit.',
+			'universalMedia.liveStream' => 'Behandla som levande',
+			'universalMedia.liveStreamHelp' => 'Använd detta för live video eller radio. appen döljer tidsbär, hoppa knappar och go-to-time alternativet. Stäng av det för en inspelning.',
+			'universalMedia.privateSession' => 'Endast denna playback använder adressen. spara en kvalificerad ström favorit för att hålla den i denna profil.',
+			'universalMedia.saveFavorite' => 'Spara favorit',
+			'universalMedia.playNow' => 'Spela nu',
+			'universalMedia.favoriteSaved' => 'Stream favorit sparas till denna profil',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: 'Skipped ${count} understödda eller osäkra spellistan ingång.', other: 'Skipped ${count} ounderstödda eller osäkra spellistor entréer.', ), 
+			'universalMedia.playlistAddress' => 'Playlist adresser',
+			'universalMedia.playlistAddressHelp' => 'Öppna en M3U, M3u8 eller PLS-spellista från en webbadress. Direct stream länkar sparar inte spellistan.',
+			'universalMedia.choosePlaylist' => 'Välj Playlist fil',
+			'universalMedia.openPlaylist' => 'Öppna Playlist',
+			'universalMedia.playlistFormatsHelp' => 'En spellista kan innehålla upp till 1000 objekt och 2 MB. HLS manifesterar sig öppen som strömmar så att spelaren kan välja en kvalitet.',
+			'universalMedia.saveQueuePlaylist' => 'Spara kön som spellista',
+			'universalMedia.queuePlaylistSaved' => 'Spellistan sparades bredvid mediefilerna.',
+			'universalMedia.queuePlaylistUnavailable' => 'Den här kön kan inte sparas som en återanvändbar lokal spellista.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Välj en plats i samma mapp som filerna i kön.',
+			'universalMedia.noFavorites' => 'Inga spara ström favorit än. Favoriter stannar i denna profil.',
+			'universalMedia.removeFavorite' => 'Ta bort stream favorit',
+			'universalMedia.filesHelp' => 'Välj ljud, video eller ISO-filer för en tillfällig spårning. filer och URL-adresser läggs inte till i bibliotekshistorik.',
+			'universalMedia.chooseFiles' => 'Välj filer',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '1 Utvalda filer', other: '${count} valda filer', ), 
+			'universalMedia.wifiTransfer' => 'Skicka filer via Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Överföra stödda filer från en webbläsare på samma betrodda nätverk.',
+			'universalMedia.wifiTransferIntro' => 'Öppna denna adress i en webbläsare på en annan enhet. Välj filer för att lägga till dem i den här enhetens Filer och böcker bibliotek.',
+			'universalMedia.wifiTransferPrivacy' => 'Den här enheten får filer via ditt lokala nätverk.Vem som känner till denna adress kan skicka filer tills du stoppar överföringen eller adressen löper ut efter 15 minuter.Maksimum: 100 filer, 4 GiB per fil, 10 GiB totalt.',
+			'universalMedia.wifiTransferStarting' => 'Förbereda en privat, tidsbegränsad överföring ...',
+			'universalMedia.wifiTransferUnavailable' => 'Kan inte starta överföringen. kontrollera lokalt nätverksåtkomst och försök igen.',
+			'universalMedia.openThisAddress' => 'Öppna en av dessa adresser på avsändarenheten',
+			'universalMedia.copyAddress' => 'Kopiera överföringsadressen',
+			'universalMedia.addressCopied' => 'Överföringsadress kopierad',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Den här adressen löper ut i ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${count} filer mottagna', other: '${count} filer mottagna', ), 
+			'universalMedia.uploadedData' => ({required Object size}) => 'Hämta ${size}',
+			'universalMedia.stopTransfer' => 'Stoppa överföring och invalidera adress',
+			'universalMedia.startTransfer' => 'Börja överföring',
+			'universalMedia.wifiImportedFiles' => 'Wi-Fi överföring',
+			'universalMedia.wifiBrowserTitle' => 'Skicka filer till PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Välj ljud, video, ebook eller komik filer att skicka. Filerna sparas i den här enhetens Arkiv och böcker bibliotek. Maximum: 100 filer, 4 GiB per fil, 10 GiB totalt.',
+			'universalMedia.uploadFilesLabel' => 'Filer att skicka',
+			'universalMedia.uploadSelected' => 'Ladda upp valda filer',
+			'universalMedia.uploadSelectFirst' => 'Välj en eller flera filer först.',
+			'universalMedia.uploading' => 'Sändning',
+			'universalMedia.uploadComplete' => 'Filen läggs till i PlezyNG.',
+			'universalMedia.uploadFailed' => 'Filen kan inte läggas till. Håll den här sidan öppen och försök igen.',
+			'universalMedia.liveCue' => 'Livet',
+			'universalMedia.liveSession' => 'Live ström',
+			'universalMedia.liveCueHelp' => 'För live video eller radio döljer appen tidsgränsen och hoppar knappar. Det sparar inte adressen eller tittar på historian.',
+			'universalMedia.sessionOnly' => 'Denna playback är session-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback sparar aldrig framsteg eller historia. Spara strömmen som en favorit för att hålla den i denna profil om den är kvalificerad.',
+			'universalMedia.pictureAdjustments' => 'Bildjusteringar',
+			'universalMedia.pictureHelp' => 'Dessa bildändringar påverkar endast denna playback. De återställs när playback slutar.',
+			'universalMedia.resetPicture' => 'Reset bild',
+			'universalMedia.brightness' => 'ljusstyrka',
+			'universalMedia.contrast' => 'kontrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Huvud',
+			'universalMedia.saturation' => 'Saturation',
+			'universalMedia.view360' => 'Flat visning för 360° video',
+			'universalMedia.view360Help' => 'Använd den här för 360°-video. MPV behöver FFmpegs v360-filter för denna bild.',
+			'universalMedia.view360Unavailable' => 'Denna mpv-byggnad kunde inte tillämpa 360°-filtern.',
+			'universalMedia.view360Yaw' => 'Horisontell syn',
+			'universalMedia.view360Pitch' => 'Vertikal syn',
+			'universalMedia.view360FieldOfView' => 'Fält av syn',
+			'universalMedia.recordStream' => 'Rekord live stream',
+			'universalMedia.stopRecording' => 'Stoppa och spara inspelning',
+			'universalMedia.recordingStarted' => 'Lämna uppspelning stoppar och sparar inspelningen.',
+			'universalMedia.recordingSaved' => 'Inspelningen är slutförd och räddad.',
+			'universalMedia.recordingActive' => 'Lämna playback stoppar och sparar det.',
+			'universalMedia.recordingFormatHelp' => 'För video, välj MKV eller MPEG-TS. För ljud väljer du MKA eller MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Ersätter du den här inspelningen?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG återställer den befintliga filen under inspelning. Om det inte kan spara den nya inspelningen återställs plezyNG backupen.',
+			'universalMedia.replaceRecording' => 'Ersätt filer',
+			'universalMedia.discHelp' => 'Öppna en skiva i datorns optiska disk. Du kan också öppna ett ISO-bild från Device-filer.',
+			'universalMedia.discs' => 'Optik disk',
+			'universalMedia.editionOrTitle' => 'Utgåva eller skivtitel',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray och',
+			'universalMedia.audioCd' => 'ljud CD',
+			'universalMedia.discAvailability' => 'Diskspelning kräver en kompatibel MPV-byggnad, stödd disk och operativsystem tillstånd. Det kan inte gå under kommersiell skivskydd.',
+			'universalMedia.converterTitle' => 'Konvertera en lokal mediafil',
+			'universalMedia.converterHelp' => 'Konvertera en lokal fil eller ändra den med FFmpeg.',
+			'universalMedia.converterIntro' => 'Konvertera en lokal ljud- eller videofil till ett format som fungerar på flera enheter.',
+			'universalMedia.converterPrivacy' => 'FFmpeg måste installeras på den här datorn. Conversion läser endast lokala filer. Det laddar inte ner strömmar eller tar bort DRM.',
+			'universalMedia.converterChooseInput' => 'Välj en lokal mediafil',
+			'universalMedia.converterFormat' => 'Utgångsformat',
+			'universalMedia.converterMp4' => 'MP4 · H.264 och AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC ljud',
+			'universalMedia.converterMp3' => 'MP3 - ljud',
+			'universalMedia.allowFtp' => 'Tillåta FTP',
+			'universalMedia.allowFtpHelp' => 'FTP skickar media utan kryptering. Använd endast på tillförlitliga nätverk.',
+			'universalMedia.converterSaveAs' => 'Spara konverterade medier som',
+			'universalMedia.converterExtensionMismatch' => 'Välj ett filnamn med den valda utgångsförlängningen.',
+			'universalMedia.converterUnsupportedInput' => 'Välj en ljud- eller videofil.',
+			'universalMedia.converterLocalOnly' => 'Den valda filen är inte tillgänglig som en lokal enhetsväg.',
+			'universalMedia.converterReplaceTitle' => 'Ersätter du den här filen?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG återställer den befintliga filen tills den konverterade kopian sparas.',
+			'universalMedia.converterStarting' => 'Börja med FFmpeg...',
+			'universalMedia.converterProgress' => 'Omvandlas till den här datorn...',
+			'universalMedia.converterComplete' => 'Konvertering är klar. den nya filen är redo.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg saknas eller stöder inte detta format.',
+			'universalMedia.converterFailed' => 'Kontrollera att källfilen kan läsas och destinationen har tillräckligt med gratis utrymme.',
+			'universalMedia.converterCancelled' => 'Konvertering avbokad. den ofullständiga utgången har tagits bort.',
+			'universalMedia.converterDesktopOnly' => 'Lokal konvertering är tillgänglig på skrivbordsdatorer med FFmpeg installerat.',
+			'universalMedia.converterStart' => 'Konvertera filer',
+			'universalMedia.mediaToolsTitle' => 'Medieverktyg',
+			'universalMedia.mediaToolsShortcut' => 'Fånga eller dela medel, lägga till sökutvidgningar eller använda kommandolinjen.',
+			'universalMedia.mediaToolsIntro' => 'Välj ett fokuserat verktyg. Fånga och ström-out använda FFmpeg installerat på denna skrivbord. Extensions och CLI kommandon använder begränsade HTTPS begäranden och den befintliga Open media flöde.',
+			'universalMedia.mediaToolsAccessibility' => 'Verktygsval och kontroller fungerar med touch, pekare, tangentbord och D-pad fokus. inspelning, delning och sökstatusändringar meddelas.',
+			'universalMedia.mediaTool' => 'Media verktyg',
+			'universalMedia.captureIntro' => 'Spara din skärm eller kamera till en MP4-fil på den här datorn. FFmpeg måste installeras och inkludera kodaren H.264.',
+			'universalMedia.captureNoDevices' => 'Inga skärmar eller kameror hittades. kontrollera FFmpeg-faktursupport och operativsystemets integritetstillstånd.',
+			'universalMedia.captureSource' => 'Skärm eller kamera',
+			'universalMedia.captureScreen' => 'Skärm',
+			'universalMedia.captureAudioSource' => 'Audio input (alternativt)',
+			'universalMedia.captureAudioHelp' => 'Lägg till ljud från en mikrofon eller tillgänglig inmatning. Enhetsval beror på FFmpeg och systemtillstånd.',
+			'universalMedia.captureAudioNone' => 'Inga ljud',
+			'universalMedia.captureDefaultAudio' => 'Standard ljudinträde',
+			'universalMedia.captureWaylandHelp' => 'Wayland begränsar denna XWayland fångst till X display. Windows utanför XWayland kan inte visas.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Rekordram Rate',
+			'universalMedia.capturePrivacy' => 'Inspelningen sparas endast till den fil du väljer. Mikrofonfång är valfri. PlezyNG laddar inte upp inspelningen.',
+			'universalMedia.captureSaveAs' => 'Spara skärminspelning som',
+			'universalMedia.captureExtensionMismatch' => 'Välj ett filnamn som slutar i .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg eller H.264 video kodaren är inte tillgänglig. Installera en stödd FFmpeg byggnad, försök sedan igen.',
+			'universalMedia.captureFailed' => 'Kontrollera enhetstillstånd, tillgänglig lagring och FFmpeg support.',
+			'universalMedia.captureSaved' => 'Skärminspelning sparas.',
+			'universalMedia.captureElapsedLabel' => 'inspelningstid',
+			'universalMedia.captureStart' => 'Börja inspelning',
+			'universalMedia.capturePreview' => 'Förhandsvisa i spelaren',
+			'universalMedia.capturePreviewHelp' => 'Förhandsvisa den valda källan i standardspelaren. Förhandsvisningen gäller endast den här sessionen och sparar ingen inspelning. Enhetsstöd och behörigheter beror på MPV och operativsystemet. Förhandsvisningen använder endast video; sparade inspelningar kan även innehålla valfritt ljud.',
+			'universalMedia.capturePreviewActive' => 'Liveförhandsvisning · spelar inte in',
+			'universalMedia.captureStop' => 'Stoppa och spara',
+			'universalMedia.captureMode' => 'fångar',
+			'universalMedia.shareMode' => 'Delade',
+			'universalMedia.shareIntro' => 'Skicka en lokal mediafil till en annan enhet på ditt privata nätverk. PlezyNG skapar en tillfällig HLS ström.',
+			'universalMedia.sharePrivacy' => 'Alla på ditt lokala nätverk som får den privata länken kan titta medan den är aktiv. länken upphör efter 60 minuter. Stoppa delning för att stänga servern och inaktivera länken.',
+			'universalMedia.shareChooseFile' => 'Välj media filer',
+			'universalMedia.shareChooseHelp' => 'Välj en lokal ljud- eller videofil. filen stannar på den här datorn.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg eller H.264/AAC kodare är inte tillgängliga. Installera FFmpeg med H.264 och AAC kodning stöd.',
+			'universalMedia.shareFailed' => 'Stream kunde inte starta eller stanna oväntat. kontrollera FFmpeg och nätverksåtkomst.',
+			'universalMedia.shareActive' => 'Strömmen är klar på ditt privata nätverk.',
+			'universalMedia.shareEnded' => 'Medierna har nått slutet och delas inte längre.',
+			'universalMedia.shareStopped' => 'Delning upphört. den tillfälliga länken är inte längre giltig.',
+			'universalMedia.shareUrlCopied' => 'Stream adress kopierad.',
+			'universalMedia.shareOpenUrl' => 'Öppna denna adress i en spelare på den andra enheten',
+			'universalMedia.shareQrLabel' => 'QR-kod för den tillfälliga strömadressen',
+			'universalMedia.shareQrHelp' => 'Skanna med en kompatibel spelare ansluten till samma privata nätverk.',
+			'universalMedia.shareHttpHint' => 'Denna ström använder okrypterad HTTP. i PlezyNG, tillåta HTTP innan du öppnar den.',
+			'universalMedia.shareCopyUrl' => 'Kopiera strömadress',
+			'universalMedia.shareExpiresLabel' => 'Länken löper ut på',
+			'universalMedia.shareStarting' => 'Förbereda strömmen...',
+			'universalMedia.shareStart' => 'Börja dela',
+			'universalMedia.shareStop' => 'Sluta dela',
+			'universalMedia.extensionsMode' => 'Förlängningar och CLI',
+			'universalMedia.extensionsIntro' => 'Lägg till en data-end-sök förlängning för att hitta media. Välj ett resultat för att ladda den i det kända formuläret Open media.',
+			'universalMedia.extensionsPrivacy' => 'En manifest kan definiera en HTTPS sökändpunkt och kartans responsfält. Det kan inte köra kod, lägga till begäran headers, läsa filer, eller lansera shell kommandon.',
+			'universalMedia.extensionImport' => 'Lägg till förlängning manifest',
+			'universalMedia.extensionEmpty' => 'Inga söktjänster än. Välj en pålitlig manifest JSON fil för att lägga till en.',
+			'universalMedia.extensionChoose' => 'Söktjänst',
+			'universalMedia.extensionSearchConsent' => 'Varje sökning skickar dina ord till denna HTTPS tjänst. Resultaten öppnas endast efter att du har valt en.',
+			'universalMedia.extensionSearchLabel' => 'Sök media',
+			'universalMedia.extensionSearch' => 'Sökning',
+			'universalMedia.extensionSearching' => 'Sökande...',
+			'universalMedia.extensionNoResults' => 'Inga säkra medieresultat returnerades. försök en annan sökning.',
+			'universalMedia.extensionInstallTitle' => 'Lägg till denna sökningstjänst?',
+			'universalMedia.extensionReplaceTitle' => 'Uppdatera denna söktjänst?',
+			'universalMedia.extensionService' => 'tjänst',
+			'universalMedia.extensionEndpoint' => 'HTTPS slutpunkt',
+			'universalMedia.extensionConsent' => 'Din söktekst skickas till denna tjänst. manifestet innehåller ingen exekuterbar kod. Fortsätt bara om du litar på denna slutpunkt.',
+			'universalMedia.extensionInstall' => 'Lägg till service',
+			'universalMedia.extensionReplace' => 'Uppdateringstjänst',
+			'universalMedia.extensionRemoveTitle' => 'Ta bort denna sökningstjänst?',
+			'universalMedia.extensionRemoveHelp' => 'Detta tar bort tjänsten från denna profil. PlezyNG kontaktar inte dess slutpunkt.',
+			'universalMedia.extensionRemove' => 'Ta bort tjänsten',
+			'universalMedia.extensionInvalidManifest' => 'Den här filen är inte en stödd förlängning manifest. se Open media guide för formatet.',
+			'universalMedia.extensionSaveFailed' => 'Förlängningen kunde inte sparas till den aktiva profilen.',
+			'universalMedia.extensionSearchFailed' => 'Söktjänsten returnerade inte ett giltigt svar. Kontrollera slutpunkten och försök igen.',
+			'universalMedia.cliTitle' => 'kommandolinje',
+			'universalMedia.cliHelp' => 'Använd guiden plezyctl för att validera en manifest eller söka efter samma förlängning. Läs om dess HTTPS-tjänst före varje sökning. Resultat öppnas i det befintliga medieformuläret; välj knappen för återställning för att starta.',
+			'universalMedia.cliCopyExample' => 'Kopiera kommandot exempel',
+			'universalMedia.cliCopied' => 'Kommando exempel kopieras.',
 			'fileSources.title' => 'Filer och böcker',
 			'fileSources.subtitle' => 'Läs, lyssna och titta på dina egna filer.',
 			'fileSources.add' => 'Lägg till källor',
@@ -7789,8 +8321,6 @@ extension on TranslationsSv {
 			'fileSources.offlineQuotaHelp' => 'Ställ in det maximala utrymmet som används av offline kopior, importerade filer och nedladdningar. Att sänka gränsen tar inte bort befintliga kopior.',
 			'fileSources.offlineStorageUsage' => 'Offline lagring',
 			'fileSources.reservedStorage' => 'Reserverad',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Ladda ner Queue',
 			'fileSources.downloadRunning' => 'nedladdning',
 			'fileSources.downloadQueued' => 'Väntar',
@@ -7859,7 +8389,6 @@ extension on TranslationsSv {
 			'audiobook.addSyncSource' => 'Lägg till Google Drive, OneDrive, Dropbox, WebDAV eller S3 i Filer och böcker först.',
 			'audiobook.syncDestination' => 'Sync lagringskonto',
 			'audiobook.syncFolder' => 'Synkronisera mappen eller prefixet',
-			'audiobook.syncFolderHelp' => 'Använd en separat befintlig mapp inom din WebDAV-källa, eller en dedikerad S3-prefix. bokfiler ändras aldrig.',
 			'audiobook.syncCode' => 'Privat synkroniseringskod',
 			'audiobook.syncCodeHelp' => 'Skapa en kod på din första enhet, skriv sedan den koden på dina andra enheter. Håll en privat kopia: det är nyckeln till din krypterade status. Använd en annan kod för varje person.',
 			'audiobook.showCode' => 'Visa eller dölja synkroniseringskoden',
@@ -7869,7 +8398,6 @@ extension on TranslationsSv {
 			'audiobook.syncSourceDisconnect' => 'Ta bort denna källa kommer att avaktivera läsning och lyssnande synkroniseras här. krypterade synkroniserade filer kommer att förbli i leverantören.',
 			'audiobook.syncReconnect' => 'Återkoppling av lagringskonto',
 			'audiobook.lastSynced' => ({required Object time}) => 'Senast synkroniserad på ${time}',
-			'audiobook.syncPrivacy' => 'Endast krypterade framsteg och anteckningar lagras. ljud- och e-bokfiler, konto tokens och lösenord laddas inte. Google Drive och OneDrive använder app lagring; Dropbox använder PlezyNG Sync. Tillåter synkronisering kan begära ytterligare skriftlig åtkomst. Medan aktiverad, denna destination äger framsteg synkronisering; server framsteg förblir separat. Turn synkronisering av håller lokal historia och fjärrstatus.',
 			'audiobook.syncConflicts' => 'Välj var du ska återställa',
 			'audiobook.conflictHelp' => 'Dessa ändringar gjordes oberoende. Välj positionen eller bokmärkesversionen att hålla. En senare timestamp eller en högre procentsats vinner inte automatiskt.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Anläggning ${device}',
@@ -8036,7 +8564,6 @@ extension on TranslationsSv {
 			'comics.collections' => 'Samlingar',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8061,7 +8588,6 @@ extension on TranslationsSv {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8074,6 +8600,8 @@ extension on TranslationsSv {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8093,8 +8621,6 @@ extension on TranslationsSv {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8102,14 +8628,35 @@ extension on TranslationsSv {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Denna Plezy länk är inte giltig.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Ingen profil matchar "${profile}".',
+			'deepLinks.serverUnavailable' => 'Jag kunde inte nå serveren för den här länken.',
+			'deepLinks.notFound' => 'Jag kunde inte hitta den här rubriken i dina bibliotek.',
+			'deepLinks.unsupportedItem' => 'Denna länk kan inte spelas.',
+			'deepLinks.noLiveTv' => 'Ingen Live TV-server är tillgänglig för den här länken.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Kan inte hitta kanal "${channel}".',
+			'deepLinks.showLink' => 'Visa länken',
+			'deepLinks.showProfileLink' => 'Visa profil länk',
+			'deepLinks.dialogTitle' => 'Länkar',
+			'deepLinks.showHint' => 'Öppna den här länken spelar nästa avsnitt. Lägg till &mode=shuffle för att spela showen på shuffle.',
+			'deepLinks.movieHint' => 'Öppna den här länken spelar filmen.',
+			'deepLinks.episodeHint' => 'Att öppna denna länk spelar den här episoden.',
+			'deepLinks.profileHint' => 'Öppna den här länken växlar till denna profil.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Öppna som ${name}',
+			'deepLinks.copy' => 'Kopiera',
+			'deepLinks.copied' => 'Link kopierad',
+			'householdSetup.title' => 'Hushållsinställningar',
+			'issueReport.title' => 'Rapportera ett problem',
+			'issueReport.instructions' => 'Skanna QR-koden för att öppna ett förifyllt GitHub-utkast. Granska det och skicka först när du är redo.',
+			'issueReport.privacy' => 'Utkastet innehåller appversion, plattform och antal anslutningar. Serveradresser, konto- och profilnamn, medietitlar och filsökvägar utelämnas.',
+			'issueReport.logPrivacy' => 'Loggar är valfria. Granska dem före uppladdning. Deras ID läggs till i utkastet, som kan vara offentligt.',
+			'issueReport.openDraft' => 'Öppna GitHub-utkast',
 			_ => null,
 		};
 	}

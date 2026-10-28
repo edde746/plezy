@@ -4,6 +4,7 @@ import 'package:xml/xml.dart';
 
 import '../source_models.dart';
 import '../source_transport.dart';
+import '../sync/sync_path.dart';
 
 typedef SourceCredentials = Future<Map<String, String>> Function();
 
@@ -11,12 +12,16 @@ class WebDavSourceAdapter extends SourceAdapter {
   WebDavSourceAdapter(super.source, super.transport, this.credentials);
   final SourceCredentials credentials;
   @override
-  SourceCapabilities get capabilities => SourceCapabilities(
-    writableState: source.options['syncRoot']?.isNotEmpty == true,
-    readingProgress: source.options['syncRoot']?.isNotEmpty == true,
-    audioProgress: source.options['syncRoot']?.isNotEmpty == true,
-    annotations: source.options['syncRoot']?.isNotEmpty == true,
-  );
+  SourceCapabilities get capabilities {
+    final hasStateFolder = normalizeSyncFolder(source.options['syncRoot']) != null;
+    return SourceCapabilities(
+      writableState: hasStateFolder,
+      readingProgress: hasStateFolder,
+      audioProgress: hasStateFolder,
+      annotations: hasStateFolder,
+    );
+  }
+
   final Map<String, ({Map<String, dynamic> data, String? etag, bool exists})> _state = {};
   Uri get root {
     final base = Uri.parse(source.endpoint.endsWith('/') ? source.endpoint : '${source.endpoint}/');
@@ -109,8 +114,9 @@ class WebDavSourceAdapter extends SourceAdapter {
   );
 
   Uri _stateUri(SourceEntry entry, PublicationProgress progress) {
-    if (!capabilities.writableState) throw const SourceException(SourceFailure.unsupported);
-    final folder = contained('${source.options['syncRoot']!.replaceAll(RegExp(r'/+$'), '')}/');
+    final syncFolder = normalizeSyncFolder(source.options['syncRoot']);
+    if (syncFolder == null) throw const SourceException(SourceFailure.unsupported);
+    final folder = contained('${encodeSyncFolderPath(syncFolder)}/');
     return folder.resolve(
       '${sourceDigest(jsonEncode([entry.syncIdentity ?? entry.id, progress.edition, progress.mode.name]))}.json',
     );

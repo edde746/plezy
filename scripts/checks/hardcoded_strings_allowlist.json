@@ -4,6 +4,7 @@
     "Jellyfin": "Brand name",
     "Emby": "Brand name",
     "Plezy": "Brand name",
+    "PlezyNG": "Product brand name used as an image accessibility label",
     "Simkl": "Brand name",
     "BL": "Technical token",
     "EL": "Technical token",
@@ -35,6 +36,10 @@
     "com.example.player": "Intentional Android package example",
     "mpv": "Intentional executable example",
     "/usr/bin/player": "Intentional executable path example"
+  },
+  "lib/screens/sources/open_media_screen.dart": {
+    "https://radio.example/stream": "Intentional direct-stream URL example",
+    "https://example.org/stations.m3u": "Intentional playlist URL example"
   },
   "lib/screens/settings/general_settings_screen.dart": {
     "English": "Language endonym",
@@ -81,5 +86,8 @@
     "Repair offered: ${repairable ? 'yes' : 'no'}": "English bug-report diagnostic",
     "Message: $message": "English bug-report diagnostic",
     "Stack trace:": "English bug-report diagnostic"
+  },
+  "lib/screens/sources/capture_share_screen.dart": {
+    "python3 tools/plezyctl search --manifest path/to/extension.json \"ambient\" --open": "Executable CLI syntax; keep the command example unchanged across locales."
   }
 }

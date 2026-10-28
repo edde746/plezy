@@ -41,15 +41,11 @@ class TranslationsId extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$id app = _Translations$app$id._(_root);
-	@override late final _Translations$cast$id cast = _Translations$cast$id._(_root);
-	@override late final _Translations$automation$id automation = _Translations$automation$id._(_root);
-	@override late final _Translations$notifications$id notifications = _Translations$notifications$id._(_root);
 	@override late final _Translations$appIcon$id appIcon = _Translations$appIcon$id._(_root);
 	@override late final _Translations$auth$id auth = _Translations$auth$id._(_root);
 	@override late final _Translations$common$id common = _Translations$common$id._(_root);
 	@override late final _Translations$screens$id screens = _Translations$screens$id._(_root);
 	@override late final _Translations$update$id update = _Translations$update$id._(_root);
-	@override late final _Translations$appAccess$id appAccess = _Translations$appAccess$id._(_root);
 	@override late final _Translations$settings$id settings = _Translations$settings$id._(_root);
 	@override late final _Translations$themeEditor$id themeEditor = _Translations$themeEditor$id._(_root);
 	@override late final _Translations$search$id search = _Translations$search$id._(_root);
@@ -75,7 +71,6 @@ class TranslationsId extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$id serverSelection = _Translations$serverSelection$id._(_root);
 	@override late final _Translations$hubDetail$id hubDetail = _Translations$hubDetail$id._(_root);
 	@override late final _Translations$logs$id logs = _Translations$logs$id._(_root);
-	@override late final _Translations$detail$id detail = _Translations$detail$id._(_root);
 	@override late final _Translations$startup$id startup = _Translations$startup$id._(_root);
 	@override late final _Translations$licenses$id licenses = _Translations$licenses$id._(_root);
 	@override late final _Translations$navigation$id navigation = _Translations$navigation$id._(_root);
@@ -98,15 +93,24 @@ class TranslationsId extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$id seerr = _Translations$seerr$id._(_root);
 	@override late final _Translations$services$id services = _Translations$services$id._(_root);
 	@override late final _Translations$addServer$id addServer = _Translations$addServer$id._(_root);
+	@override late final _Translations$cast$id cast = _Translations$cast$id._(_root);
+	@override late final _Translations$automation$id automation = _Translations$automation$id._(_root);
+	@override late final _Translations$notifications$id notifications = _Translations$notifications$id._(_root);
+	@override late final _Translations$appAccess$id appAccess = _Translations$appAccess$id._(_root);
+	@override late final _Translations$detail$id detail = _Translations$detail$id._(_root);
 	@override late final _Translations$watchLink$id watchLink = _Translations$watchLink$id._(_root);
 	@override late final _Translations$homeLayout$id homeLayout = _Translations$homeLayout$id._(_root);
 	@override late final _Translations$platform$id platform = _Translations$platform$id._(_root);
+	@override late final _Translations$universalMedia$id universalMedia = _Translations$universalMedia$id._(_root);
 	@override late final _Translations$fileSources$id fileSources = _Translations$fileSources$id._(_root);
 	@override late final _Translations$lending$id lending = _Translations$lending$id._(_root);
 	@override late final _Translations$audiobook$id audiobook = _Translations$audiobook$id._(_root);
 	@override late final _Translations$sourceSetup$id sourceSetup = _Translations$sourceSetup$id._(_root);
 	@override late final _Translations$comics$id comics = _Translations$comics$id._(_root);
 	@override late final _Translations$games$id games = _Translations$games$id._(_root);
+	@override late final _Translations$deepLinks$id deepLinks = _Translations$deepLinks$id._(_root);
+	@override late final _Translations$householdSetup$id householdSetup = _Translations$householdSetup$id._(_root);
+	@override late final _Translations$issueReport$id issueReport = _Translations$issueReport$id._(_root);
 }
 
 // Path: app
@@ -117,48 +121,6 @@ class _Translations$app$id extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$id extends Translations$cast$en {
-	_Translations$cast$id._(TranslationsId root) : this._root = root, super.internal(root);
-
-	final TranslationsId _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Transmisikan ke perangkat';
-	@override String get searching => 'Mencari alat-alat yang terbuat dari ...';
-	@override String connectedTo({required Object device}) => 'Menghubungkan ke ${device}';
-	@override String get device => 'Perangkat transmisi';
-	@override String get readyToCast => 'Siap mentransmisikan';
-	@override String get subtitle => 'Subtitel';
-	@override String get serverNotAvailable => 'Media server tidak tersedia.';
-	@override String get stopCasting => 'Hentikan transmisi';
-	@override String get castToDevice => 'Transmisikan ke perangkat';
-	@override String get noEpisodeAvailable => 'Tidak ada episode yang tersedia untuk ditayangkan.';
-	@override String get startFailed => 'Tidak bisa memulai casting. periksa server dan coba lagi.';
-}
-
-// Path: automation
-class _Translations$automation$id extends Translations$automation$en {
-	_Translations$automation$id._(TranslationsId root) : this._root = root, super.internal(root);
-
-	final TranslationsId _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Tidak ada sesi video aktif untuk dikendalikan.';
-	@override String get profileNotFound => 'Yang Plezy profil tidak dapat ditemukan.';
-}
-
-// Path: notifications
-class _Translations$notifications$id extends Translations$notifications$en {
-	_Translations$notifications$id._(TranslationsId root) : this._root = root, super.internal(root);
-
-	final TranslationsId _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'episode baru';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -321,37 +283,6 @@ class _Translations$update$id extends Translations$update$en {
 	@override String get viewRelease => 'Lihat Release';
 	@override String get latestVersion => 'Anda berada di versi terbaru';
 	@override String get checkFailed => 'gagal memeriksa update';
-}
-
-// Path: appAccess
-class _Translations$appAccess$id extends Translations$appAccess$en {
-	_Translations$appAccess$id._(TranslationsId root) : this._root = root, super.internal(root);
-
-	final TranslationsId _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Cobalah setiap fitur gratis selama 7 hari';
-	@override String get description => 'Memulai percobaan tujuh hari dengan akses penuh ke setiap fitur PlezyNG. tidak ada biaya selama percobaan dan tidak ada langganan. setelah percobaan, satu pembelian seumur hidup pada harga toko Anda membuka PlezyNG seumur hidup.';
-	@override String get trialEndedDescription => 'Unlock setiap fitur di PlezyNG untuk hidup dengan satu pembelian pada harga toko Anda.';
-	@override String get startTrial => 'Mulai ujian gratis 7 hari saya';
-	@override String get trialActive => '7 hari ujian full-feature Anda aktif.';
-	@override String get trialEnded => 'Pengadilan 7 hari telah berakhir';
-	@override String get trialStartFailed => 'Saya tidak bisa menyimpan percobaan pada perangkat ini. silakan coba lagi.';
-	@override String get lifetimeTitle => 'PlezyNG dibebaskan untuk hidup';
-	@override String get lifetimeBody => 'Terima kasih! Anda memiliki akses seumur hidup ke setiap fitur PlezyNG.';
-	@override String get manageTitle => 'PlezyNG akses seumur hidup';
-	@override String get manageDescription => 'Cobalah setiap fitur gratis selama 7 hari, kemudian membuka semua untuk hidup dengan satu pembayaran pada harga toko Anda.';
-	@override String buy({required Object price}) => 'Menghapus setiap fitur untuk ${price}';
-	@override String get loadingPrice => 'Harga toko yang terjangkau...';
-	@override String get retryPrice => 'Harga Retry Lookup';
-	@override String get restore => 'Restorasi pembelian seumur hidup';
-	@override String get pending => 'Pembelian Anda sedang menunggu pembayaran atau kelulusan. akses seumur hidup dibuka sebaik saja toko menyelesaikannya.';
-	@override String get storeUnavailable => 'Pastikan bahwa Anda terdaftar di toko dan pembelian diizinkan pada perangkat ini.';
-	@override String get productNotFound => 'Pembukaan PlezyNG seumur hidup belum tersedia di toko ini.';
-	@override String get productQueryFailed => 'Tidak bisa menagih harga toko. periksa koneksi Anda dan coba lagi.';
-	@override String get purchaseFailed => 'Pembelian tidak berjalan. coba lagi.';
-	@override String get restoreFailed => 'Tidak bisa sampai ke toko untuk memulihkan pembelian Anda. coba lagi.';
-	@override String get nothingToRestore => 'Nombor PlezyNG pembelian seumur hidup ditemukan untuk akun toko ini.';
 }
 
 // Path: settings
@@ -1229,9 +1160,6 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	final TranslationsId _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} pengaturan',
-	);
 	@override String get audioLabel => 'Audio yang';
 	@override String get subtitlesLabel => 'Subtitel';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1268,9 +1196,31 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Membunyikan';
 	@override String get settingsButton => 'Pengaturan Playback';
 	@override String get tracksButton => 'Audio dan Subtitle';
-	@override String get trackSelectionTitle => 'Pilih jalur sebelum playback';
-	@override String get trackSelectionAuto => 'Seleksi otomatis';
 	@override String get chaptersButton => 'bab yang';
+	@override String get segmentLoopHelp => 'Set A, kemudian set B nanti dalam timeline.';
+	@override String get setLoopStart => 'Atur awal pengulangan (A)';
+	@override String get setLoopEnd => 'Set loop akhir (B)';
+	@override String get clearSegmentLoop => 'Selengkapnya Segment Loop';
+	@override String get setLoopStartFirst => 'Set loop start (A) sebelum akhir (B).';
+	@override String get loopEndAfterStart => 'Akhir lingkaran harus lebih lambat dari awal.';
+	@override String get segmentLoopUnavailable => 'Segment looping tidak tersedia untuk playback ini.';
+	@override String get loopPointNotSet => 'Tidak menetapkan';
+	@override String get bookmarksHelp => 'Tanda-tanda buku disimpan pada perangkat ini. pilih satu untuk pergi ke waktu itu.';
+	@override String get bookmarksButton => 'Bookmark yang';
+	@override String get chaptersAndBookmarks => 'Bab dan Bookmark';
+	@override String get segmentLoop => 'Segmen Lingkungan';
+	@override String get addBookmark => 'Tambahkan Bookmark';
+	@override String get bookmarkName => 'Nama Bookmark';
+	@override String get bookmarkNameHint => 'Misalnya, adegan pembukaan';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark yang ${n}';
+	@override String get bookmarkNameRequired => 'Masukkan nama untuk buku ini.';
+	@override String get deleteBookmark => 'Menghapus Bookmark';
+	@override String get bookmarkLimitReached => 'Item ini sudah memiliki 100 buku.';
+	@override String get bookmarkUnavailable => 'Saya tidak bisa menyimpan atau menghapus buku ini.';
+	@override String get bookmarkSaved => 'Buku yang diselamatkan.';
+	@override String get bookmarkDeleted => 'Bookmark sudah dihapus.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Laporan titik ${point} Tetapkan pada ${time}.';
+	@override String get noChaptersOrBookmarks => 'Tidak ada bab atau buku yang tersedia.';
 	@override String get versionQualityButton => 'Versi & Kualitas';
 	@override String get versionColumnHeader => 'Versi';
 	@override String get qualityColumnHeader => 'Kualitas';
@@ -1279,8 +1229,6 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcoding tidak tersedia – bermain kualitas asli';
 	@override String get subtitleUnavailableFallback => 'Subtitle yang dipilih tidak dapat dimuat — terus tanpa subtitle';
 	@override String get pipButton => 'Gambar dalam mode';
-	@override String get openMiniPlayer => 'Pemain mini terbuka';
-	@override String get returnToFullPlayer => 'Kembali ke Full Player';
 	@override String get aspectRatioButton => 'Rasio perbandingan';
 	@override String get ambientLighting => 'Lampu Lingkungan';
 	@override String get fullscreenButton => 'Masuk ke layar penuh';
@@ -1289,7 +1237,6 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Lock rotasi';
 	@override String get lockScreen => 'Lock layar';
 	@override String get screenLockButton => 'layar lock';
-	@override String get longPressToUnlock => 'Tekan panjang untuk membuka kunci';
 	@override String get timelineSlider => 'Video Timeline';
 	@override String get volumeSlider => 'Tingkat Volume';
 	@override String endsAt({required Object time}) => 'Berakhir di ${time}';
@@ -1306,8 +1253,6 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Tidak ada item dalam kue';
 	@override String get noAudioDevicesAvailable => 'Tidak ada audio yang tersedia';
 	@override String get searchSubtitles => 'Temuan Subtitle';
-	@override String get loadSubtitleFile => 'Download file subtitle.';
-	@override String get subtitleLoadFailed => 'gagal mengisi file subtitle';
 	@override String get language => 'Bahasa';
 	@override String get noSubtitlesFound => 'Tidak ditemukan subtitle';
 	@override String get subtitleDownloaded => 'Subtitle diunduh';
@@ -1316,7 +1261,6 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Bahasa pencarian...';
 	@override String get skipIntro => 'Pergi ke Into';
 	@override String get skipCredits => 'Skripsi Kredit';
-	@override String get skipAds => 'Pemberitahuan Skip';
 	@override String get nextEpisode => 'Episode Selanjutnya';
 	@override String subtitleTrack({required Object n}) => 'Jalan Raya ${n}';
 	@override String subtitleFile({required Object name}) => 'Subtitel ${name}';
@@ -1324,6 +1268,18 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Judul : Off';
 	@override String osdSubtitles({required Object track}) => 'Nama Panggilan : ${track}';
 	@override String osdAudio({required Object track}) => 'Audio : ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} pengaturan',
+	);
+	@override String get trackSelectionTitle => 'Pilih jalur sebelum playback';
+	@override String get trackSelectionAuto => 'Seleksi otomatis';
+	@override String get openMiniPlayer => 'Pemain mini terbuka';
+	@override String get returnToFullPlayer => 'Kembali ke Full Player';
+	@override String get loadSubtitleFile => 'Download file subtitle.';
+	@override String get subtitleLoadFailed => 'gagal mengisi file subtitle';
+	@override String get skipAds => 'Pemberitahuan Skip';
+	@override String get tapToUnlock => 'Ketuk untuk membuka kunci';
+	@override String get tapAgainToUnlock => 'Ketuk lagi untuk membuka kunci';
 }
 
 // Path: messages
@@ -1821,16 +1777,6 @@ class _Translations$logs$id extends Translations$logs$en {
 	@override String get saveLogsFailed => 'Tidak bisa menyimpan file log.';
 }
 
-// Path: detail
-class _Translations$detail$id extends Translations$detail$en {
-	_Translations$detail$id._(TranslationsId root) : this._root = root, super.internal(root);
-
-	final TranslationsId _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Berakhir di ${time}';
-}
-
 // Path: startup
 class _Translations$startup$id extends Translations$startup$en {
 	_Translations$startup$id._(TranslationsId root) : this._root = root, super.internal(root);
@@ -2137,6 +2083,7 @@ class _Translations$music$id extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Membaca Track Analysis';
 	@override String get visualizerAmbientMotion => 'Pergerakan Lingkungan';
 	@override String get visualizerPlexLoudness => 'Plex suara';
+	@override String get visualizerLiveAudio => 'Analisis audio langsung';
 	@override String get visualizerPreviousPreset => 'Gaya visual sebelumnya';
 	@override String get visualizerNextPreset => 'Seterusnya Visual Style';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2484,6 +2431,12 @@ class _Translations$videoSettings$id extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Peta ke puncak kecerahan layar di pemain, kemudian memberitahu komposer hasilnya.';
 	@override String get hdrToneMappingFailed => 'Tidak bisa mengubah pemetaan nada HDR - mode sebelumnya masih aktif.';
 	@override String get audioOutput => 'Audio output';
+	@override String get videoTrack => 'Trek video';
+	@override String get videoTrackDescription => 'Pilih aliran video yang akan ditampilkan. Tersedia pada pemutaran MPV jika file memiliki trek video alternatif.';
+	@override String get videoTrackDefault => 'Bawaan';
+	@override String get videoTrackUnavailable => 'Tidak ada trek video alternatif.';
+	@override String get videoTrackFailed => 'Trek video tidak dapat diubah.';
+	@override String videoTrackNumber({required Object id}) => 'Trek ${id}';
 	@override String get performanceOverlay => 'Perkembangan Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2491,10 +2444,17 @@ class _Translations$videoSettings$id extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Ruang Audio';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Ekualiser audio';
-	@override String get audioEqualizerDescription => 'Tersedia pada mpv; EQ aktif mendekodkan audio dan menghentikan matchhrough.';
+	@override String get audioEqualizerDescription => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.';
 	@override String get audioEqualizerFlat => 'Lantai';
 	@override String get audioEqualizerActive => 'Kustom';
 	@override String get audioEqualizerSaveFailed => 'Tidak bisa menyimpan seting audio equalizer.';
+	@override String get audioEffectsDescription => 'Efek menggunakan audio yang dikodkan, sehingga passthrough berbalik. ruang dan pembesaran stereo tergantung pada MPV Bangun dan track.';
+	@override String get audioStereoWidth => 'Pengembangan Stereo';
+	@override String get audioSpatializer => 'Lingkungan ruangan';
+	@override String get audioSpatializerDescription => 'Tambahkan refleksi ruang yang tenang.';
+	@override String get audioPitch => 'Pertukaran Pitch';
+	@override String get audioPitchDescription => 'Perubahan jalur tanpa perubahan kecepatan. MPV konstruksi harus termasuk Rubber Band.';
+	@override String get audioEffectUnavailable => 'Efek ini tidak tersedia untuk jalur ini atau MPV dan membangun.';
 	@override String get backgroundVideoAudio => 'Video audio latar belakang';
 	@override String get backgroundVideoAudioDescription => 'Tetap bermain audio video ketika Anda meninggalkan pemain; gambar itu tersembunyi sampai Anda kembali. Android menggunakan pemberitahuan pemutaran media.';
 	@override String get audioNormalization => 'Normalisasi bunyi';
@@ -2887,6 +2847,88 @@ class _Translations$addServer$id extends Translations$addServer$en {
 	@override String get httpsRequired => 'Menggunakan HTTPS atau secara eksplisit memungkinkan koneksi yang tidak terenkripsi.';
 }
 
+// Path: cast
+class _Translations$cast$id extends Translations$cast$en {
+	_Translations$cast$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Transmisikan ke perangkat';
+	@override String get searching => 'Mencari alat-alat yang terbuat dari ...';
+	@override String connectedTo({required Object device}) => 'Menghubungkan ke ${device}';
+	@override String get device => 'Perangkat transmisi';
+	@override String get readyToCast => 'Siap mentransmisikan';
+	@override String get subtitle => 'Subtitel';
+	@override String get serverNotAvailable => 'Media server tidak tersedia.';
+	@override String get stopCasting => 'Hentikan transmisi';
+	@override String get castToDevice => 'Transmisikan ke perangkat';
+	@override String get noEpisodeAvailable => 'Tidak ada episode yang tersedia untuk ditayangkan.';
+	@override String get startFailed => 'Tidak bisa memulai casting. periksa server dan coba lagi.';
+}
+
+// Path: automation
+class _Translations$automation$id extends Translations$automation$en {
+	_Translations$automation$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Tidak ada sesi video aktif untuk dikendalikan.';
+}
+
+// Path: notifications
+class _Translations$notifications$id extends Translations$notifications$en {
+	_Translations$notifications$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'episode baru';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$id extends Translations$appAccess$en {
+	_Translations$appAccess$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Cobalah setiap fitur gratis selama 7 hari';
+	@override String get description => 'Memulai percobaan tujuh hari dengan akses penuh ke setiap fitur PlezyNG. tidak ada biaya selama percobaan dan tidak ada langganan. setelah percobaan, satu pembelian seumur hidup pada harga toko Anda membuka PlezyNG seumur hidup.';
+	@override String get trialEndedDescription => 'Unlock setiap fitur di PlezyNG untuk hidup dengan satu pembelian pada harga toko Anda.';
+	@override String get startTrial => 'Mulai ujian gratis 7 hari saya';
+	@override String get trialActive => '7 hari ujian full-feature Anda aktif.';
+	@override String get trialEnded => 'Pengadilan 7 hari telah berakhir';
+	@override String get trialStartFailed => 'Saya tidak bisa menyimpan percobaan pada perangkat ini. silakan coba lagi.';
+	@override String get lifetimeTitle => 'PlezyNG dibebaskan untuk hidup';
+	@override String get lifetimeBody => 'Terima kasih! Anda memiliki akses seumur hidup ke setiap fitur PlezyNG.';
+	@override String get manageTitle => 'PlezyNG akses seumur hidup';
+	@override String get manageDescription => 'Cobalah setiap fitur gratis selama 7 hari, kemudian membuka semua untuk hidup dengan satu pembayaran pada harga toko Anda.';
+	@override String buy({required Object price}) => 'Menghapus setiap fitur untuk ${price}';
+	@override String get loadingPrice => 'Harga toko yang terjangkau...';
+	@override String get retryPrice => 'Harga Retry Lookup';
+	@override String get restore => 'Restorasi pembelian seumur hidup';
+	@override String get pending => 'Pembelian Anda sedang menunggu pembayaran atau kelulusan. akses seumur hidup dibuka sebaik saja toko menyelesaikannya.';
+	@override String get storeUnavailable => 'Pastikan bahwa Anda terdaftar di toko dan pembelian diizinkan pada perangkat ini.';
+	@override String get productNotFound => 'Pembukaan PlezyNG seumur hidup belum tersedia di toko ini.';
+	@override String get productQueryFailed => 'Tidak bisa menagih harga toko. periksa koneksi Anda dan coba lagi.';
+	@override String get purchaseFailed => 'Pembelian tidak berjalan. coba lagi.';
+	@override String get restoreFailed => 'Tidak bisa sampai ke toko untuk memulihkan pembelian Anda. coba lagi.';
+	@override String get nothingToRestore => 'Nombor PlezyNG pembelian seumur hidup ditemukan untuk akun toko ini.';
+}
+
+// Path: detail
+class _Translations$detail$id extends Translations$detail$en {
+	_Translations$detail$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Berakhir di ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$id extends Translations$watchLink$en {
 	_Translations$watchLink$id._(TranslationsId root) : this._root = root, super.internal(root);
@@ -3026,6 +3068,216 @@ class _Translations$platform$id extends Translations$platform$en {
 	@override String get locationPermission => 'PlezyNG menggunakan akses lokasi ketika iOS membutuhkan untuk mengidentifikasi jaringan lokal Anda dan menghubungkannya ke server media Anda.';
 	@override String get photoLibraryPermission => 'Pilih gambar dari perpustakaan foto Anda untuk digunakan sebagai karya seni media.';
 	@override String get cameraPermission => 'Mengimbas kode QR untuk berpasangan dengan Companion Remote.';
+}
+
+// Path: universalMedia
+class _Translations$universalMedia$id extends Translations$universalMedia$en {
+	_Translations$universalMedia$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Media Terbuka';
+	@override String get shortcutHelp => 'Mainkan link, playlist, atau file untuk sesi ini.';
+	@override String get intro => 'Buka link, playlist, atau file. Playback menggunakan pemutar standar PlezyNG dan tidak menambahkan sejarah ke perpustakaan Anda.';
+	@override String get openWhat => 'Apa yang ingin Anda buka?';
+	@override String get stream => 'Alamat Stream';
+	@override String get playlist => 'Daftar Playlist';
+	@override String get files => 'perangkat file';
+	@override String get favorites => 'Penyimpanan Stream Favorit';
+	@override String get address => 'Alamat Media';
+	@override String get addressHelp => 'URL dengan parameter pengesahan atau tandatangan yang diakui hanya digunakan untuk sesi ini dan tidak dapat disimpan sebagai favorit.';
+	@override String get displayName => 'Nama Pameran (Optional)';
+	@override String get displayNameHelp => 'Pilih nama singkat untuk pemain dan kontrol media sistem.';
+	@override String get allowHttp => 'Memungkinkan koneksi HTTP yang tidak terenkripsi';
+	@override String get allowHttpHelp => 'HTTP tidak menyulitkan koneksi. hanya membiarkannya di jaringan yang dipercaya. gunakan HTTPS kapan saja mungkin.';
+	@override String get advancedProtocols => 'Hanya MPV: masukkan alamat RTSP, RTMP/RTMPS, UDP, atau RTP. Alamat ini tidak dapat disimpan sebagai favorit.';
+	@override String get liveStream => 'Perlakukan sebagai hidup';
+	@override String get liveStreamHelp => 'Gunakan ini untuk live video atau radio. aplikasi menyembunyikan bar waktu, skip tombol, dan go-to-time opsi.';
+	@override String get privateSession => 'Hanya playback ini menggunakan alamat.Save a eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Selamatkan Favorit';
+	@override String get playNow => 'Bermain sekarang';
+	@override String get favoriteSaved => 'Stream favorit disimpan ke profil ini';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
+		other: '${count} masuk daftar main yang tidak didukung atau tidak aman.',
+	);
+	@override String get playlistAddress => 'Alamat Playlist';
+	@override String get playlistAddressHelp => 'Buka daftar main M3U, M3u8, atau PLS dari alamat web. link streaming langsung tidak menyimpan daftar main.';
+	@override String get choosePlaylist => 'Pilih file playlist';
+	@override String get openPlaylist => 'Pembukaan playlist';
+	@override String get playlistFormatsHelp => 'Daftar main dapat berisi lebih dari 1.000 item dan 2 MB. HLS terbuka sebagai arus sehingga pemain dapat memilih kualitas.';
+	@override String get saveQueuePlaylist => 'Simpan antrean sebagai daftar putar';
+	@override String get queuePlaylistSaved => 'Daftar putar disimpan di samping file media.';
+	@override String get queuePlaylistUnavailable => 'Antrean ini tidak dapat disimpan sebagai daftar putar lokal yang dapat digunakan kembali.';
+	@override String get queuePlaylistFolderRequired => 'Pilih lokasi penyimpanan di folder yang sama dengan file dalam antrean.';
+	@override String get noFavorites => 'Belum disimpan streaming favorit sampai sekarang. favorit tetap di profil ini.';
+	@override String get removeFavorite => 'Menghapus Stream Favorit';
+	@override String get filesHelp => 'Pilih file audio, video, atau ISO untuk catatan sementara.File dan URL tidak ditambahkan ke sejarah perpustakaan.';
+	@override String get chooseFiles => 'Pilih file';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
+		other: '${count} file terpilih',
+	);
+	@override String get wifiTransfer => 'Mengirim file melalui Wi-Fi';
+	@override String get wifiTransferHelp => 'Memindahkan file yang didukung dari browser pada jaringan yang sama.';
+	@override String get wifiTransferIntro => 'Buka alamat ini dalam browser pada perangkat lain. pilih file untuk menambahkan mereka ke perpustakaan File dan buku perangkat ini.';
+	@override String get wifiTransferPrivacy => 'Setiap orang yang tahu alamat ini dapat mengirim file sampai Anda menghentikan transfer atau alamat berakhir setelah 15 menit. maksimum: 100 file, 4 GiB per file, 10 GiB total.';
+	@override String get wifiTransferStarting => 'Menyiapkan transfer pribadi dan terbatas waktu.';
+	@override String get wifiTransferUnavailable => 'Tidak bisa memulai transfer. periksa akses jaringan lokal dan coba lagi.';
+	@override String get openThisAddress => 'Buka salah satu alamat ini pada perangkat pengiriman';
+	@override String get copyAddress => 'Kopi alamat transfer';
+	@override String get addressCopied => 'Alamat transfer yang disalin';
+	@override String transferExpires({required Object time}) => 'Alamat ini berakhir di ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
+		other: '${count} file yang diterima',
+	);
+	@override String uploadedData({required Object size}) => 'Diterima oleh ${size}';
+	@override String get stopTransfer => 'Hentikan transfer dan membatalkan alamat';
+	@override String get startTransfer => 'Mulai transfer';
+	@override String get wifiImportedFiles => 'Pengiriman Wi-Fi';
+	@override String get wifiBrowserTitle => 'Mengirim file ke PlezyNG';
+	@override String get wifiBrowserIntro => 'Pilih file audio, video, ebook, atau komik untuk dikirimkan. file disimpan di perpustakaan File dan buku perangkat ini. maksimum: 100 file, 4 GiB per file, 10 GiB total.';
+	@override String get uploadFilesLabel => 'File untuk dikirimkan';
+	@override String get uploadSelected => 'Mengunggah file terpilih';
+	@override String get uploadSelectFirst => 'Pilih satu atau lebih file terlebih dahulu.';
+	@override String get uploading => 'mengirimkan';
+	@override String get uploadComplete => 'File yang ditambahkan ke PlezyNG.';
+	@override String get uploadFailed => 'File tidak dapat ditambahkan.Jadilah halaman ini terbuka dan coba lagi.';
+	@override String get liveCue => 'hidup';
+	@override String get liveSession => 'Live Stream';
+	@override String get liveCueHelp => 'Untuk video atau radio langsung, aplikasi menyembunyikan bar waktu dan melompat tombol. tidak menyimpan alamat atau menonton sejarah.';
+	@override String get sessionOnly => 'Playback ini hanya sesi saja.';
+	@override String get sessionOnlyHelp => 'Playback tidak pernah menyimpan kemajuan atau sejarah.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'Gambar penyesuaian';
+	@override String get pictureHelp => 'Perubahan gambar ini hanya mempengaruhi playback ini. mereka menetapkan kembali ketika playback berakhir.';
+	@override String get resetPicture => 'Reset gambar';
+	@override String get brightness => 'Cahaya';
+	@override String get contrast => 'kontras';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturasi';
+	@override String get view360 => 'Pemandangan rata untuk video 360 derajat';
+	@override String get view360Help => 'Gunakan ini untuk video 360° equirectangular. MPV membutuhkan filter v360 FFmpeg untuk pandangan ini.';
+	@override String get view360Unavailable => 'Pembuatan MPV ini tidak dapat menerapkan filter 360 derajat.';
+	@override String get view360Yaw => 'pandangan horizontal';
+	@override String get view360Pitch => 'Pandangan Vertikal';
+	@override String get view360FieldOfView => 'Bidang Penglihatan';
+	@override String get recordStream => 'Rekor Live Stream';
+	@override String get stopRecording => 'Hentikan dan Simpan Rekaman';
+	@override String get recordingStarted => 'Rekaman aktif. meninggalkan playback berhenti dan menyimpan rekaman.';
+	@override String get recordingSaved => 'Rekaman selesai dan diselamatkan.';
+	@override String get recordingActive => 'Mengingat perangkat ini. meninggalkan playback berhenti dan menyimpannya.';
+	@override String get recordingFormatHelp => 'Untuk video, pilih MKV atau MPEG-TS. untuk audio, pilih MKA atau MKV.';
+	@override String get replaceRecordingTitle => 'Mengganti rekaman ini?';
+	@override String get replaceRecordingHelp => 'PlezyNG mengembalikan file yang ada saat merekam.Jika tidak dapat menyimpan rekaman baru, plezyNG memulihkan sandaran.';
+	@override String get replaceRecording => 'Mengganti file';
+	@override String get discHelp => 'Buka cakera di drive optik komputer ini.Anda juga dapat membuka gambar ISO dari file perangkat.';
+	@override String get discs => 'Disk optik';
+	@override String get editionOrTitle => 'Edisi atau judul cakram';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'dan Blu-ray';
+	@override String get audioCd => 'Audio CD';
+	@override String get discAvailability => 'Disk playback membutuhkan konfigurasi MPV yang kompatibel, drive yang didukung, dan izin sistem operasi.';
+	@override String get converterTitle => 'Konversi file media lokal';
+	@override String get converterHelp => 'Konversi file lokal atau remux dengan FFmpeg.';
+	@override String get converterIntro => 'Konversi file audio atau video lokal ke format yang bekerja pada lebih banyak perangkat.';
+	@override String get converterPrivacy => 'FFmpeg harus dipasang pada komputer ini.Conversion hanya membaca file lokal.Ia tidak mengunduh aliran atau menghapus DRM.';
+	@override String get converterChooseInput => 'Pilih file media lokal';
+	@override String get converterFormat => 'Format output';
+	@override String get converterMp4 => 'MP4 H.264 dan AAC';
+	@override String get converterM4a => 'M4A · AAC audio';
+	@override String get converterMp3 => 'MP3 dan Audio';
+	@override String get allowFtp => 'Memberi izin FTP';
+	@override String get allowFtpHelp => 'FTP mengirim media tanpa enkripsi. gunakan hanya pada jaringan yang dipercaya.';
+	@override String get converterSaveAs => 'Menyimpan media yang terkonversi sebagai';
+	@override String get converterExtensionMismatch => 'Pilih nama file dengan ekstensi output yang dipilih.';
+	@override String get converterUnsupportedInput => 'Pilih file audio atau video.';
+	@override String get converterLocalOnly => 'File yang dipilih tidak tersedia sebagai jalur perangkat lokal.';
+	@override String get converterReplaceTitle => 'Mengganti file ini?';
+	@override String get converterReplaceHelp => 'PlezyNG mengembalikan file yang ada sampai salinan terkonversi disimpan.';
+	@override String get converterStarting => 'Mulai dari FFmpeg...';
+	@override String get converterProgress => 'Beralih ke komputer ini...';
+	@override String get converterComplete => 'Konversi selesai. file baru sudah siap.';
+	@override String get converterFfmpegMissing => 'FFmpeg yang hilang atau tidak mendukung format ini.';
+	@override String get converterFailed => 'Periksa bahwa file sumber dapat dibaca dan tujuan memiliki cukup ruang gratis.';
+	@override String get converterCancelled => 'Konversi dibatalkan. hasil yang tidak lengkap dihapus.';
+	@override String get converterDesktopOnly => 'Konversi lokal tersedia pada komputer desktop dengan FFmpeg terinstal.';
+	@override String get converterStart => 'Konversi file';
+	@override String get mediaToolsTitle => 'Alat Media';
+	@override String get mediaToolsShortcut => 'Menangkap atau berbagi media, tambahkan ekstensi pencarian, atau gunakan baris perintah.';
+	@override String get mediaToolsIntro => 'Pilih alat fokus. capture dan stream-out menggunakan FFmpeg yang dipasang pada desktop ini. Extensions dan perintah CLI menggunakan permintaan HTTPS terbatas dan aliran Open media yang ada.';
+	@override String get mediaToolsAccessibility => 'Pilihan alat dan kontrol bekerja dengan sentuhan, penunjuk, keyboard, dan fokus D-pad. Rekaman, perkongsian, dan perubahan status pencarian diumumkan.';
+	@override String get mediaTool => 'Alat Media';
+	@override String get captureIntro => 'Mencatat layar atau kamera ke file MP4 pada komputer ini. FFmpeg harus dipasang dan termasuk koder H.264.';
+	@override String get captureNoDevices => 'Tidak ditemukan layar atau kamera. periksa dukungan penangkapan FFmpeg dan izin privasi sistem operasi.';
+	@override String get captureSource => 'layar atau kamera';
+	@override String get captureScreen => 'layar';
+	@override String get captureAudioSource => 'Audio input (optional)';
+	@override String get captureAudioHelp => 'Tambah audio dari mikrofon atau input yang tersedia. pilihan perangkat tergantung pada FFmpeg dan izin sistem.';
+	@override String get captureAudioNone => 'Tidak ada audio';
+	@override String get captureDefaultAudio => 'Pengenalan Audio';
+	@override String get captureWaylandHelp => 'Wayland membatasi penangkapan XWayland ini ke X display. Windows di luar XWayland mungkin tidak muncul.';
+	@override String get captureFrameRate => 'Rata-rata Rekaman Frame';
+	@override String get capturePrivacy => 'Rekaman disimpan hanya untuk file yang Anda pilih. penangkapan mikrofon adalah pilihan. PlezyNG tidak mengunggah rekaman.';
+	@override String get captureSaveAs => 'Menyimpan rekaman layar sebagai';
+	@override String get captureExtensionMismatch => 'Pilih nama file yang berakhir di .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg atau kod video H.264 tidak tersedia.Memasang build yang didukung FFmpeg, kemudian coba lagi.';
+	@override String get captureFailed => 'Rekaman tidak dapat disimpan. memeriksa izin perangkat, penyimpanan yang tersedia, dan dukungan FFmpeg.';
+	@override String get captureSaved => 'Rekaman layar disimpan.';
+	@override String get captureElapsedLabel => 'Waktu Rekaman';
+	@override String get captureStart => 'Mulai Rekaman';
+	@override String get capturePreview => 'Pratinjau di pemutar';
+	@override String get capturePreviewHelp => 'Pratinjau sumber yang dipilih di pemutar standar. Pratinjau hanya berlaku untuk sesi ini dan tidak menyimpan rekaman. Dukungan perangkat dan izin bergantung pada MPV dan sistem operasi. Pratinjau hanya menggunakan video; rekaman yang disimpan dapat menyertakan audio opsional.';
+	@override String get capturePreviewActive => 'Pratinjau langsung · tidak merekam';
+	@override String get captureStop => 'berhenti dan menyelamatkan';
+	@override String get captureMode => 'penangkapan';
+	@override String get shareMode => 'Berkongsi';
+	@override String get shareIntro => 'Mengirim file media lokal ke perangkat lain di jaringan pribadi Anda. PlezyNG menciptakan aliran sementara HLS.';
+	@override String get sharePrivacy => 'Siapa pun di jaringan lokal Anda yang menerima link pribadi dapat menonton saat itu aktif. link berakhir setelah 60 menit. berhenti berbagi untuk menutup server dan membatalkan link.';
+	@override String get shareChooseFile => 'Pilih file media';
+	@override String get shareChooseHelp => 'Pilih file audio atau video lokal. file ini tetap pada komputer ini.';
+	@override String get shareFfmpegMissing => 'FFmpeg atau kode H.264/AAC tidak tersedia.Memasang FFmpeg dengan dukungan kode H.264 dan AAC.';
+	@override String get shareFailed => 'Aliran tidak dapat dimulai atau berhenti secara tidak dijangka. periksa FFmpeg dan akses jaringan.';
+	@override String get shareActive => 'Stream siap di jaringan pribadi Anda.';
+	@override String get shareEnded => 'Media telah mencapai akhir dan tidak lagi dibagikan.';
+	@override String get shareStopped => 'Pembagian dihentikan. link sementara tidak lagi berlaku.';
+	@override String get shareUrlCopied => 'alamat yang disalin.';
+	@override String get shareOpenUrl => 'Buka alamat ini dalam satu pemain pada perangkat lain';
+	@override String get shareQrLabel => 'QR Code untuk alamat aliran sementara';
+	@override String get shareQrHelp => 'Scan dengan pemutar yang kompatibel yang terhubung ke jaringan pribadi yang sama.';
+	@override String get shareHttpHint => 'Stream ini menggunakan HTTP yang tidak terenkripsi. dalam PlezyNG, izinkan HTTP sebelum membukanya.';
+	@override String get shareCopyUrl => 'Salin alamat stream';
+	@override String get shareExpiresLabel => 'Link akan berakhir di';
+	@override String get shareStarting => 'Untuk mempersiapkan aliran...';
+	@override String get shareStart => 'Mulai berbagi';
+	@override String get shareStop => 'Hentikan berbagi';
+	@override String get extensionsMode => 'Perpanjangan dan CLI';
+	@override String get extensionsIntro => 'Tambah data-hanya ekstensi pencarian untuk menemukan media. Pilih hasil untuk memuatkannya ke formulir yang familiar Open media.';
+	@override String get extensionsPrivacy => 'Manifesto dapat menentukan satu titik akhir pencarian HTTPS dan medan respon peta. tidak dapat menjalankan kode, menambahkan judul permintaan, membaca file, atau memulai perintah shell.';
+	@override String get extensionImport => 'Tambahkan Manifest Extension';
+	@override String get extensionEmpty => 'Tidak ada layanan pencarian saat ini. pilih file yang dapat dipercaya manifest JSON untuk menambahkan satu.';
+	@override String get extensionChoose => 'Layanan pencarian';
+	@override String get extensionSearchConsent => 'Setiap pencarian mengirimkan kata-kata Anda ke layanan HTTPS ini. hasilnya hanya terbuka setelah Anda memilih satu.';
+	@override String get extensionSearchLabel => 'pencarian media';
+	@override String get extensionSearch => 'pencarian';
+	@override String get extensionSearching => 'Mencari...';
+	@override String get extensionNoResults => 'Tidak ada hasil media yang aman yang dikembalikan.Coba pencarian lain.';
+	@override String get extensionInstallTitle => 'Menambahkan layanan pencarian ini?';
+	@override String get extensionReplaceTitle => 'Update layanan pencarian ini?';
+	@override String get extensionService => 'Layanan';
+	@override String get extensionEndpoint => 'HTTPS titik akhir';
+	@override String get extensionConsent => 'Teks pencarian Anda dikirim ke layanan ini. manifesto tidak mengandung kode yang dapat diimplementasikan. teruskan hanya jika Anda mempercayai titik akhir ini.';
+	@override String get extensionInstall => 'Tambahkan Layanan';
+	@override String get extensionReplace => 'Update Layanan';
+	@override String get extensionRemoveTitle => 'Menghapus layanan pencarian ini?';
+	@override String get extensionRemoveHelp => 'Ini menghapus layanan dari profil ini. PlezyNG tidak menghubungi titik akhir.';
+	@override String get extensionRemove => 'menghapus layanan';
+	@override String get extensionInvalidManifest => 'Fail ini bukan manifest pengembangan yang didukung. lihat panduan Open media untuk format.';
+	@override String get extensionSaveFailed => 'Perpanjangan tidak dapat disimpan ke profil aktif.';
+	@override String get extensionSearchFailed => 'Layanan pencarian tidak mengembalikan jawaban yang valid. periksa titik akhir dan coba lagi.';
+	@override String get cliTitle => 'Komando garis';
+	@override String get cliHelp => 'Gunakan panduan plezyctl untuk mengevaluasi manifest atau mencari ekstensi yang sama. ulangi layanan HTTPS sebelum setiap pencarian. hasilnya terbuka dalam formulir media yang ada; pilih tombol playback untuk memulai.';
+	@override String get cliCopyExample => 'Contoh perintah copy';
+	@override String get cliCopied => 'Contoh yang disalin.';
 }
 
 // Path: fileSources
@@ -3294,7 +3546,6 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 ke File & Buku terlebih dahulu.';
 	@override String get syncDestination => 'Sinkronisasi akun penyimpanan';
 	@override String get syncFolder => 'Sinkron folder atau prefix';
-	@override String get syncFolderHelp => 'Gunakan folder terpisah yang ada di dalam sumber WebDAV Anda, atau prefix S3 khusus. file buku tidak pernah diubah.';
 	@override String get syncCode => 'Kode Sinkronisasi';
 	@override String get syncCodeHelp => 'Buat kode pada perangkat pertama Anda, kemudian masukkan kode itu pada perangkat lain Anda. simpan salinan pribadi: itu adalah kunci untuk status enkripsi Anda. Gunakan kode yang berbeda untuk setiap orang.';
 	@override String get showCode => 'Menampilkan atau menyembunyikan kode sink';
@@ -3304,7 +3555,6 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Menghapus sumber ini akan mematikan membaca dan mendengarkan sync di sini. file sync tersulit akan tetap di penyedia.';
 	@override String get syncReconnect => 'Menghubungkan kembali akun penyimpanan';
 	@override String lastSynced({required Object time}) => 'Terakhir disinkronkan di ${time}';
-	@override String get syncPrivacy => 'Hanya kemajuan dan catatan yang disulitkan disimpan. file audio dan ebook, token akun dan kata sandi tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan dapat meminta akses penulisan tambahan. Sementara diaktifkan, tujuan ini memiliki penyegerakan kemajuan; kemajuan server tetap terpisah. Mengalihkan penyegerakan mengekalkan sejarah lokal dan keadaan remote.';
 	@override String get syncConflicts => 'Pilih tempat untuk kembali';
 	@override String get conflictHelp => 'Perubahan-perubahan ini dilakukan secara independen. pilih posisi atau bookmark versi untuk tetap. timestamp kemudian atau peratusan yang lebih tinggi tidak secara otomatis menang.';
 	@override String syncDevice({required Object device}) => 'Perangkat ${device}';
@@ -3498,7 +3748,6 @@ class _Translations$games$id extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3523,7 +3772,6 @@ class _Translations$games$id extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3555,8 +3803,6 @@ class _Translations$games$id extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3564,14 +3810,62 @@ class _Translations$games$id extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$id extends Translations$deepLinks$en {
+	_Translations$deepLinks$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Link Plezy ini tidak sah.';
+	@override String profileNotFound({required Object profile}) => 'Tidak ada profil yang sepadan dengan "${profile}".';
+	@override String get serverUnavailable => 'Saya tidak bisa mencapai server untuk link ini.';
+	@override String get notFound => 'Saya tidak bisa menemukan judul ini di perpustakaan Anda.';
+	@override String get unsupportedItem => 'Link ini tidak bisa dimainkan.';
+	@override String get noLiveTv => 'Tidak ada Live TV server yang tersedia untuk link ini.';
+	@override String channelNotFound({required Object channel}) => 'Tidak dapat menemukan saluran "${channel}".';
+	@override String get showLink => 'menunjukkan link';
+	@override String get showProfileLink => 'Menampilkan profil link';
+	@override String get dialogTitle => 'Link';
+	@override String get showHint => 'Membuka link ini memainkan episode berikutnya.Tambahkan &mode=shuffle untuk bermain acara di shuffle.';
+	@override String get movieHint => 'Membuka link ini memainkan film.';
+	@override String get episodeHint => 'Membuka link ini memainkan episode ini.';
+	@override String get profileHint => 'Membuka link ini beralih ke profil ini.';
+	@override String openAsProfile({required Object name}) => 'Buka sebagai ${name}';
+	@override String get copy => 'Kopi';
+	@override String get copied => 'Link yang disalin';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$id extends Translations$householdSetup$en {
+	_Translations$householdSetup$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Penyiapan rumah tangga';
+}
+
+// Path: issueReport
+class _Translations$issueReport$id extends Translations$issueReport$en {
+	_Translations$issueReport$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Laporkan masalah';
+	@override String get instructions => 'Pindai kode QR untuk membuka draf GitHub yang sudah terisi. Tinjau dan kirim hanya jika Anda siap.';
+	@override String get privacy => 'Draf memuat versi aplikasi, platform, dan jumlah koneksi. Alamat server, nama akun dan profil, judul media, serta lokasi berkas tidak disertakan.';
+	@override String get logPrivacy => 'Log bersifat opsional. Tinjau sebelum mengunggah. ID log ditambahkan ke draf, yang mungkin bersifat publik.';
+	@override String get openDraft => 'Buka draf GitHub';
 }
 
 // Path: appIcon.names
@@ -4686,21 +4980,6 @@ extension on TranslationsId {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Transmisikan ke perangkat',
-			'cast.searching' => 'Mencari alat-alat yang terbuat dari ...',
-			'cast.connectedTo' => ({required Object device}) => 'Menghubungkan ke ${device}',
-			'cast.device' => 'Perangkat transmisi',
-			'cast.readyToCast' => 'Siap mentransmisikan',
-			'cast.subtitle' => 'Subtitel',
-			'cast.serverNotAvailable' => 'Media server tidak tersedia.',
-			'cast.stopCasting' => 'Hentikan transmisi',
-			'cast.castToDevice' => 'Transmisikan ke perangkat',
-			'cast.noEpisodeAvailable' => 'Tidak ada episode yang tersedia untuk ditayangkan.',
-			'cast.startFailed' => 'Tidak bisa memulai casting. periksa server dan coba lagi.',
-			'automation.noActivePlayback' => 'Tidak ada sesi video aktif untuk dikendalikan.',
-			'automation.profileNotFound' => 'Yang Plezy profil tidak dapat ditemukan.',
-			'notifications.newEpisodeTitle' => 'episode baru',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Aplikasi Ikon',
 			'appIcon.defaultIcon' => 'Bawaan',
 			'appIcon.current' => 'Ikon saat ini',
@@ -4863,28 +5142,6 @@ extension on TranslationsId {
 			'update.viewRelease' => 'Lihat Release',
 			'update.latestVersion' => 'Anda berada di versi terbaru',
 			'update.checkFailed' => 'gagal memeriksa update',
-			'appAccess.title' => 'Cobalah setiap fitur gratis selama 7 hari',
-			'appAccess.description' => 'Memulai percobaan tujuh hari dengan akses penuh ke setiap fitur PlezyNG. tidak ada biaya selama percobaan dan tidak ada langganan. setelah percobaan, satu pembelian seumur hidup pada harga toko Anda membuka PlezyNG seumur hidup.',
-			'appAccess.trialEndedDescription' => 'Unlock setiap fitur di PlezyNG untuk hidup dengan satu pembelian pada harga toko Anda.',
-			'appAccess.startTrial' => 'Mulai ujian gratis 7 hari saya',
-			'appAccess.trialActive' => '7 hari ujian full-feature Anda aktif.',
-			'appAccess.trialEnded' => 'Pengadilan 7 hari telah berakhir',
-			'appAccess.trialStartFailed' => 'Saya tidak bisa menyimpan percobaan pada perangkat ini. silakan coba lagi.',
-			'appAccess.lifetimeTitle' => 'PlezyNG dibebaskan untuk hidup',
-			'appAccess.lifetimeBody' => 'Terima kasih! Anda memiliki akses seumur hidup ke setiap fitur PlezyNG.',
-			'appAccess.manageTitle' => 'PlezyNG akses seumur hidup',
-			'appAccess.manageDescription' => 'Cobalah setiap fitur gratis selama 7 hari, kemudian membuka semua untuk hidup dengan satu pembayaran pada harga toko Anda.',
-			'appAccess.buy' => ({required Object price}) => 'Menghapus setiap fitur untuk ${price}',
-			'appAccess.loadingPrice' => 'Harga toko yang terjangkau...',
-			'appAccess.retryPrice' => 'Harga Retry Lookup',
-			'appAccess.restore' => 'Restorasi pembelian seumur hidup',
-			'appAccess.pending' => 'Pembelian Anda sedang menunggu pembayaran atau kelulusan. akses seumur hidup dibuka sebaik saja toko menyelesaikannya.',
-			'appAccess.storeUnavailable' => 'Pastikan bahwa Anda terdaftar di toko dan pembelian diizinkan pada perangkat ini.',
-			'appAccess.productNotFound' => 'Pembukaan PlezyNG seumur hidup belum tersedia di toko ini.',
-			'appAccess.productQueryFailed' => 'Tidak bisa menagih harga toko. periksa koneksi Anda dan coba lagi.',
-			'appAccess.purchaseFailed' => 'Pembelian tidak berjalan. coba lagi.',
-			'appAccess.restoreFailed' => 'Tidak bisa sampai ke toko untuk memulihkan pembelian Anda. coba lagi.',
-			'appAccess.nothingToRestore' => 'Nombor PlezyNG pembelian seumur hidup ditemukan untuk akun toko ini.',
 			'settings.title' => 'Pengaturan',
 			'settings.supportDeveloper' => 'Dukungan PlezyNG',
 			'settings.supportDeveloperDescription' => 'Memberi dukungan untuk pengembangan',
@@ -5197,8 +5454,6 @@ extension on TranslationsId {
 			'settings.audioPassthrough' => 'Audio yang berkelanjutan',
 			'settings.audioPassthroughDescription' => 'Kirim audio Dolby/DTS ke penerima atau TV Anda tanpa kode ulang, menyimpan suara sekitar.',
 			'settings.audioPassthroughDescriptionApple' => 'Gunakan decoder Dolby asli Apple untuk Dolby Digital Plus, termasuk Atmos. DTS dan TrueHD masih memainkan sebagai PCM multi-saluran.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Gunakan decoder Dolby asli Apple untuk Dolby Digital Plus, termasuk Atmos. Pada iOS, iPadOS dan tvOS 26 atau lebih, TrueHD Atmos dan DTS:X memainkan sebagai audio ruang.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Sementara suara normalisasi sedang',
 			'settings.audioChannelLimit' => 'Saluran audio',
@@ -5236,6 +5491,8 @@ extension on TranslationsId {
 			'settings.disableDolbyVisionDescription' => 'Bermain file HDR10 atau lapisan HLG bukannya Dolby Vision, ketika itu memiliki satu',
 			'settings.hdrSdrConversion' => 'Konversi HDR ke SDR',
 			'settings.hdrSdrConversionDescription' => 'Pilih apa yang mengubah video HDR ketika layar tidak dapat menampilkan HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'mobil',
 			'settings.hdrSdrConversionAutoDescription' => 'Perangkat pada Android 9 dan lebih baru, pemain pada versi yang lebih tua',
 			'settings.hdrSdrConversionDevice' => 'Perangkat',
@@ -5697,7 +5954,6 @@ extension on TranslationsId {
 			'tooltips.markAsWatched' => 'Mark yang ditonton',
 			'tooltips.markAsUnwatched' => 'Mark yang tidak diperhatikan',
 			'audioTracks.track' => ({required Object n}) => 'Trek audio ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} pengaturan', ), 
 			'videoControls.audioLabel' => 'Audio yang',
 			'videoControls.subtitlesLabel' => 'Subtitel',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5711,8 +5967,6 @@ extension on TranslationsId {
 			'videoControls.sleepTimerEndOfVideo' => 'Akhir dari video saat ini',
 			'videoControls.sleepTimerStopAtHeader' => 'Berhenti di',
 			'videoControls.sleepTimerDurationHeader' => 'Waktu',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback Akan Berhenti di Akhir Video Ini',
 			'videoControls.stillWatching' => 'Masih menonton?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Berhenti di ${seconds}s',
@@ -5736,9 +5990,33 @@ extension on TranslationsId {
 			'videoControls.unmuteButton' => 'Membunyikan',
 			'videoControls.settingsButton' => 'Pengaturan Playback',
 			'videoControls.tracksButton' => 'Audio dan Subtitle',
-			'videoControls.trackSelectionTitle' => 'Pilih jalur sebelum playback',
-			'videoControls.trackSelectionAuto' => 'Seleksi otomatis',
 			'videoControls.chaptersButton' => 'bab yang',
+			'videoControls.segmentLoopHelp' => 'Set A, kemudian set B nanti dalam timeline.',
+			'videoControls.setLoopStart' => 'Atur awal pengulangan (A)',
+			'videoControls.setLoopEnd' => 'Set loop akhir (B)',
+			'videoControls.clearSegmentLoop' => 'Selengkapnya Segment Loop',
+			'videoControls.setLoopStartFirst' => 'Set loop start (A) sebelum akhir (B).',
+			'videoControls.loopEndAfterStart' => 'Akhir lingkaran harus lebih lambat dari awal.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping tidak tersedia untuk playback ini.',
+			'videoControls.loopPointNotSet' => 'Tidak menetapkan',
+			'videoControls.bookmarksHelp' => 'Tanda-tanda buku disimpan pada perangkat ini. pilih satu untuk pergi ke waktu itu.',
+			'videoControls.bookmarksButton' => 'Bookmark yang',
+			'videoControls.chaptersAndBookmarks' => 'Bab dan Bookmark',
+			'videoControls.segmentLoop' => 'Segmen Lingkungan',
+			'videoControls.addBookmark' => 'Tambahkan Bookmark',
+			'videoControls.bookmarkName' => 'Nama Bookmark',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Misalnya, adegan pembukaan',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark yang ${n}',
+			'videoControls.bookmarkNameRequired' => 'Masukkan nama untuk buku ini.',
+			'videoControls.deleteBookmark' => 'Menghapus Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Item ini sudah memiliki 100 buku.',
+			'videoControls.bookmarkUnavailable' => 'Saya tidak bisa menyimpan atau menghapus buku ini.',
+			'videoControls.bookmarkSaved' => 'Buku yang diselamatkan.',
+			'videoControls.bookmarkDeleted' => 'Bookmark sudah dihapus.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Laporan titik ${point} Tetapkan pada ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Tidak ada bab atau buku yang tersedia.',
 			'videoControls.versionQualityButton' => 'Versi & Kualitas',
 			'videoControls.versionColumnHeader' => 'Versi',
 			'videoControls.qualityColumnHeader' => 'Kualitas',
@@ -5747,8 +6025,6 @@ extension on TranslationsId {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding tidak tersedia – bermain kualitas asli',
 			'videoControls.subtitleUnavailableFallback' => 'Subtitle yang dipilih tidak dapat dimuat — terus tanpa subtitle',
 			'videoControls.pipButton' => 'Gambar dalam mode',
-			'videoControls.openMiniPlayer' => 'Pemain mini terbuka',
-			'videoControls.returnToFullPlayer' => 'Kembali ke Full Player',
 			'videoControls.aspectRatioButton' => 'Rasio perbandingan',
 			'videoControls.ambientLighting' => 'Lampu Lingkungan',
 			'videoControls.fullscreenButton' => 'Masuk ke layar penuh',
@@ -5757,7 +6033,6 @@ extension on TranslationsId {
 			'videoControls.rotationLockButton' => 'Lock rotasi',
 			'videoControls.lockScreen' => 'Lock layar',
 			'videoControls.screenLockButton' => 'layar lock',
-			'videoControls.longPressToUnlock' => 'Tekan panjang untuk membuka kunci',
 			'videoControls.timelineSlider' => 'Video Timeline',
 			'videoControls.volumeSlider' => 'Tingkat Volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Berakhir di ${time}',
@@ -5781,8 +6056,6 @@ extension on TranslationsId {
 			'videoControls.noQueueItems' => 'Tidak ada item dalam kue',
 			'videoControls.noAudioDevicesAvailable' => 'Tidak ada audio yang tersedia',
 			'videoControls.searchSubtitles' => 'Temuan Subtitle',
-			'videoControls.loadSubtitleFile' => 'Download file subtitle.',
-			'videoControls.subtitleLoadFailed' => 'gagal mengisi file subtitle',
 			'videoControls.language' => 'Bahasa',
 			'videoControls.noSubtitlesFound' => 'Tidak ditemukan subtitle',
 			'videoControls.subtitleDownloaded' => 'Subtitle diunduh',
@@ -5791,7 +6064,6 @@ extension on TranslationsId {
 			'videoControls.searchLanguages' => 'Bahasa pencarian...',
 			'videoControls.skipIntro' => 'Pergi ke Into',
 			'videoControls.skipCredits' => 'Skripsi Kredit',
-			'videoControls.skipAds' => 'Pemberitahuan Skip',
 			'videoControls.nextEpisode' => 'Episode Selanjutnya',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Jalan Raya ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Subtitel ${name}',
@@ -5799,6 +6071,16 @@ extension on TranslationsId {
 			'videoControls.osdSubtitlesOff' => 'Judul : Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Nama Panggilan : ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio : ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} pengaturan', ), 
+			'videoControls.trackSelectionTitle' => 'Pilih jalur sebelum playback',
+			'videoControls.trackSelectionAuto' => 'Seleksi otomatis',
+			'videoControls.openMiniPlayer' => 'Pemain mini terbuka',
+			'videoControls.returnToFullPlayer' => 'Kembali ke Full Player',
+			'videoControls.loadSubtitleFile' => 'Download file subtitle.',
+			'videoControls.subtitleLoadFailed' => 'gagal mengisi file subtitle',
+			'videoControls.skipAds' => 'Pemberitahuan Skip',
+			'videoControls.tapToUnlock' => 'Ketuk untuk membuka kunci',
+			'videoControls.tapAgainToUnlock' => 'Ketuk lagi untuk membuka kunci',
 			'messages.markedAsWatched' => 'Ditandai seperti yang dilihat',
 			'messages.markedAsUnwatched' => 'Ditandai sebagai tidak diperhatikan',
 			'messages.markedAsWatchedOffline' => 'Ditandai seperti yang dilihat (sinkronisasi saat online)',
@@ -6225,8 +6507,6 @@ extension on TranslationsId {
 			'libraries.all' => 'Semua',
 			'libraries.clearAll' => 'jelas semua',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Apakah Anda yakin Anda ingin memindai "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Apakah Anda yakin Anda ingin menganalisis "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Apakah Anda yakin ingin memperbarui metadata untuk "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Apakah Anda yakin Anda ingin mengosongkan sampah untuk "${title}"?',
@@ -6239,6 +6519,8 @@ extension on TranslationsId {
 			'libraries.hideLibrary' => 'Perpustakaan tersembunyi',
 			'libraries.libraryOptions' => 'Pilihan perpustakaan',
 			'libraries.content' => 'Perpustakaan konten',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Pilih perpustakaan',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filter (${count})',
 			'libraries.noRecommendations' => 'Tidak ada rekomendasi tersedia',
@@ -6344,7 +6626,6 @@ extension on TranslationsId {
 			'logs.saveLogs' => 'Simpan log ke file',
 			'logs.logsSaved' => ({required Object path}) => 'Daftar yang disimpan di ${path}',
 			'logs.saveLogsFailed' => 'Tidak bisa menyimpan file log.',
-			'detail.endsAt' => ({required Object time}) => 'Berakhir di ${time}',
 			'startup.failedTitle' => 'PlezyNG tidak bisa memulai',
 			'startup.failedBody' => 'Ada sesuatu yang salah selama startup. detail di bawah ini mengidentifikasi apa yang gagal.',
 			'startup.failedBodyRepairable' => 'Berkas pengaturan PlezyNG yang tersimpan rusak dan harus dibuat ulang sebelum aplikasi dapat dimulai. Mencoba lagi tidak akan membantu — pilih Perbaiki penyimpanan.',
@@ -6705,6 +6986,7 @@ extension on TranslationsId {
 			'music.visualizerProfileLoading' => 'Membaca Track Analysis',
 			'music.visualizerAmbientMotion' => 'Pergerakan Lingkungan',
 			'music.visualizerPlexLoudness' => 'Plex suara',
+			'music.visualizerLiveAudio' => 'Analisis audio langsung',
 			'music.visualizerPreviousPreset' => 'Gaya visual sebelumnya',
 			'music.visualizerNextPreset' => 'Seterusnya Visual Style',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6739,8 +7021,6 @@ extension on TranslationsId {
 			'watchTogether.connecting' => 'Menghubungkan...',
 			'watchTogether.relayPublic' => 'Ruang-ruang yang digunakan oleh publik Open Watch Party.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Kamar menggunakan relay Anda di ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Ruang Baru',
 			'watchTogether.roomActions' => 'Ruang Aksi',
 			'watchTogether.renameRoom' => 'Ruang Rename',
@@ -6753,6 +7033,8 @@ extension on TranslationsId {
 			'watchTogether.codeCopied' => 'Kode kamar disalin',
 			'watchTogether.shareInvite' => 'Membagi Jemputan',
 			'watchTogether.inviteCopied' => 'Tuliskan pesan, masukkan ke dalam pesan.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Bergabunglah dengan Watch bersama saya di PlezyNG: buka Watch bersama, pilih Join Room dan masukkan ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Bersama-sama kontrol sesi',
 			'watchTogether.reconnecting' => 'Menghubungkan kembali...',
@@ -7131,6 +7413,12 @@ extension on TranslationsId {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Peta ke puncak kecerahan layar di pemain, kemudian memberitahu komposer hasilnya.',
 			'videoSettings.hdrToneMappingFailed' => 'Tidak bisa mengubah pemetaan nada HDR - mode sebelumnya masih aktif.',
 			'videoSettings.audioOutput' => 'Audio output',
+			'videoSettings.videoTrack' => 'Trek video',
+			'videoSettings.videoTrackDescription' => 'Pilih aliran video yang akan ditampilkan. Tersedia pada pemutaran MPV jika file memiliki trek video alternatif.',
+			'videoSettings.videoTrackDefault' => 'Bawaan',
+			'videoSettings.videoTrackUnavailable' => 'Tidak ada trek video alternatif.',
+			'videoSettings.videoTrackFailed' => 'Trek video tidak dapat diubah.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Trek ${id}',
 			'videoSettings.performanceOverlay' => 'Perkembangan Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7138,10 +7426,17 @@ extension on TranslationsId {
 			'videoSettings.audioOutputSpatial' => 'Ruang Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Ekualiser audio',
-			'videoSettings.audioEqualizerDescription' => 'Tersedia pada mpv; EQ aktif mendekodkan audio dan menghentikan matchhrough.',
+			'videoSettings.audioEqualizerDescription' => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Lantai',
 			'videoSettings.audioEqualizerActive' => 'Kustom',
 			'videoSettings.audioEqualizerSaveFailed' => 'Tidak bisa menyimpan seting audio equalizer.',
+			'videoSettings.audioEffectsDescription' => 'Efek menggunakan audio yang dikodkan, sehingga passthrough berbalik. ruang dan pembesaran stereo tergantung pada MPV Bangun dan track.',
+			'videoSettings.audioStereoWidth' => 'Pengembangan Stereo',
+			'videoSettings.audioSpatializer' => 'Lingkungan ruangan',
+			'videoSettings.audioSpatializerDescription' => 'Tambahkan refleksi ruang yang tenang.',
+			'videoSettings.audioPitch' => 'Pertukaran Pitch',
+			'videoSettings.audioPitchDescription' => 'Perubahan jalur tanpa perubahan kecepatan. MPV konstruksi harus termasuk Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Efek ini tidak tersedia untuk jalur ini atau MPV dan membangun.',
 			'videoSettings.backgroundVideoAudio' => 'Video audio latar belakang',
 			'videoSettings.backgroundVideoAudioDescription' => 'Tetap bermain audio video ketika Anda meninggalkan pemain; gambar itu tersembunyi sampai Anda kembali. Android menggunakan pemberitahuan pemutaran media.',
 			'videoSettings.audioNormalization' => 'Normalisasi bunyi',
@@ -7252,9 +7547,9 @@ extension on TranslationsId {
 			'metadataEdit.metadataUpdated' => 'Metadata yang diperbarui',
 			'metadataEdit.metadataUpdateFailed' => 'Tidak dapat mengemas kini metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork dikemas kini',
-			'metadataEdit.artworkUpdateFailed' => 'gagal memperbarui karya seni',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'gagal memperbarui karya seni',
 			'metadataEdit.noArtworkAvailable' => 'Tidak ada seni yang tersedia',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Opsi seni ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Opsi seni ${index}, dipilih',
@@ -7482,6 +7777,43 @@ extension on TranslationsId {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} menggunakan HTTP. Orang lain di jaringan dapat membaca atau mengubah kata sandi, token, dan media Anda. Gunakan HTTPS jika tersedia. Lanjutkan hanya jika Anda memercayai jaringan ini dan menerima risikonya.',
 			'addServer.allowHttp' => 'Izinkan HTTP',
 			'addServer.httpsRequired' => 'Menggunakan HTTPS atau secara eksplisit memungkinkan koneksi yang tidak terenkripsi.',
+			'cast.chooseDevice' => 'Transmisikan ke perangkat',
+			'cast.searching' => 'Mencari alat-alat yang terbuat dari ...',
+			'cast.connectedTo' => ({required Object device}) => 'Menghubungkan ke ${device}',
+			'cast.device' => 'Perangkat transmisi',
+			'cast.readyToCast' => 'Siap mentransmisikan',
+			'cast.subtitle' => 'Subtitel',
+			'cast.serverNotAvailable' => 'Media server tidak tersedia.',
+			'cast.stopCasting' => 'Hentikan transmisi',
+			'cast.castToDevice' => 'Transmisikan ke perangkat',
+			'cast.noEpisodeAvailable' => 'Tidak ada episode yang tersedia untuk ditayangkan.',
+			'cast.startFailed' => 'Tidak bisa memulai casting. periksa server dan coba lagi.',
+			'automation.noActivePlayback' => 'Tidak ada sesi video aktif untuk dikendalikan.',
+			'notifications.newEpisodeTitle' => 'episode baru',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Cobalah setiap fitur gratis selama 7 hari',
+			'appAccess.description' => 'Memulai percobaan tujuh hari dengan akses penuh ke setiap fitur PlezyNG. tidak ada biaya selama percobaan dan tidak ada langganan. setelah percobaan, satu pembelian seumur hidup pada harga toko Anda membuka PlezyNG seumur hidup.',
+			'appAccess.trialEndedDescription' => 'Unlock setiap fitur di PlezyNG untuk hidup dengan satu pembelian pada harga toko Anda.',
+			'appAccess.startTrial' => 'Mulai ujian gratis 7 hari saya',
+			'appAccess.trialActive' => '7 hari ujian full-feature Anda aktif.',
+			'appAccess.trialEnded' => 'Pengadilan 7 hari telah berakhir',
+			'appAccess.trialStartFailed' => 'Saya tidak bisa menyimpan percobaan pada perangkat ini. silakan coba lagi.',
+			'appAccess.lifetimeTitle' => 'PlezyNG dibebaskan untuk hidup',
+			'appAccess.lifetimeBody' => 'Terima kasih! Anda memiliki akses seumur hidup ke setiap fitur PlezyNG.',
+			'appAccess.manageTitle' => 'PlezyNG akses seumur hidup',
+			'appAccess.manageDescription' => 'Cobalah setiap fitur gratis selama 7 hari, kemudian membuka semua untuk hidup dengan satu pembayaran pada harga toko Anda.',
+			'appAccess.buy' => ({required Object price}) => 'Menghapus setiap fitur untuk ${price}',
+			'appAccess.loadingPrice' => 'Harga toko yang terjangkau...',
+			'appAccess.retryPrice' => 'Harga Retry Lookup',
+			'appAccess.restore' => 'Restorasi pembelian seumur hidup',
+			'appAccess.pending' => 'Pembelian Anda sedang menunggu pembayaran atau kelulusan. akses seumur hidup dibuka sebaik saja toko menyelesaikannya.',
+			'appAccess.storeUnavailable' => 'Pastikan bahwa Anda terdaftar di toko dan pembelian diizinkan pada perangkat ini.',
+			'appAccess.productNotFound' => 'Pembukaan PlezyNG seumur hidup belum tersedia di toko ini.',
+			'appAccess.productQueryFailed' => 'Tidak bisa menagih harga toko. periksa koneksi Anda dan coba lagi.',
+			'appAccess.purchaseFailed' => 'Pembelian tidak berjalan. coba lagi.',
+			'appAccess.restoreFailed' => 'Tidak bisa sampai ke toko untuk memulihkan pembelian Anda. coba lagi.',
+			'appAccess.nothingToRestore' => 'Nombor PlezyNG pembelian seumur hidup ditemukan untuk akun toko ini.',
+			'detail.endsAt' => ({required Object time}) => 'Berakhir di ${time}',
 			'watchLink.serverUnavailable' => 'Saya tidak bisa mengakses server Plex untuk link ini.',
 			'watchLink.notFound' => 'Saya tidak dapat menemukan acara atau film ini di server Plex Anda.',
 			'watchLink.ambiguous' => 'Link ini cocok dengan item di lebih dari satu server.Tambahkan server ke link.',
@@ -7596,6 +7928,203 @@ extension on TranslationsId {
 			'platform.locationPermission' => 'PlezyNG menggunakan akses lokasi ketika iOS membutuhkan untuk mengidentifikasi jaringan lokal Anda dan menghubungkannya ke server media Anda.',
 			'platform.photoLibraryPermission' => 'Pilih gambar dari perpustakaan foto Anda untuk digunakan sebagai karya seni media.',
 			'platform.cameraPermission' => 'Mengimbas kode QR untuk berpasangan dengan Companion Remote.',
+			'universalMedia.title' => 'Media Terbuka',
+			'universalMedia.shortcutHelp' => 'Mainkan link, playlist, atau file untuk sesi ini.',
+			'universalMedia.intro' => 'Buka link, playlist, atau file. Playback menggunakan pemutar standar PlezyNG dan tidak menambahkan sejarah ke perpustakaan Anda.',
+			'universalMedia.openWhat' => 'Apa yang ingin Anda buka?',
+			'universalMedia.stream' => 'Alamat Stream',
+			'universalMedia.playlist' => 'Daftar Playlist',
+			'universalMedia.files' => 'perangkat file',
+			'universalMedia.favorites' => 'Penyimpanan Stream Favorit',
+			'universalMedia.address' => 'Alamat Media',
+			'universalMedia.addressHelp' => 'URL dengan parameter pengesahan atau tandatangan yang diakui hanya digunakan untuk sesi ini dan tidak dapat disimpan sebagai favorit.',
+			'universalMedia.displayName' => 'Nama Pameran (Optional)',
+			'universalMedia.displayNameHelp' => 'Pilih nama singkat untuk pemain dan kontrol media sistem.',
+			'universalMedia.allowHttp' => 'Memungkinkan koneksi HTTP yang tidak terenkripsi',
+			'universalMedia.allowHttpHelp' => 'HTTP tidak menyulitkan koneksi. hanya membiarkannya di jaringan yang dipercaya. gunakan HTTPS kapan saja mungkin.',
+			'universalMedia.advancedProtocols' => 'Hanya MPV: masukkan alamat RTSP, RTMP/RTMPS, UDP, atau RTP. Alamat ini tidak dapat disimpan sebagai favorit.',
+			'universalMedia.liveStream' => 'Perlakukan sebagai hidup',
+			'universalMedia.liveStreamHelp' => 'Gunakan ini untuk live video atau radio. aplikasi menyembunyikan bar waktu, skip tombol, dan go-to-time opsi.',
+			'universalMedia.privateSession' => 'Hanya playback ini menggunakan alamat.Save a eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Selamatkan Favorit',
+			'universalMedia.playNow' => 'Bermain sekarang',
+			'universalMedia.favoriteSaved' => 'Stream favorit disimpan ke profil ini',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${count} masuk daftar main yang tidak didukung atau tidak aman.', ), 
+			'universalMedia.playlistAddress' => 'Alamat Playlist',
+			'universalMedia.playlistAddressHelp' => 'Buka daftar main M3U, M3u8, atau PLS dari alamat web. link streaming langsung tidak menyimpan daftar main.',
+			'universalMedia.choosePlaylist' => 'Pilih file playlist',
+			'universalMedia.openPlaylist' => 'Pembukaan playlist',
+			'universalMedia.playlistFormatsHelp' => 'Daftar main dapat berisi lebih dari 1.000 item dan 2 MB. HLS terbuka sebagai arus sehingga pemain dapat memilih kualitas.',
+			'universalMedia.saveQueuePlaylist' => 'Simpan antrean sebagai daftar putar',
+			'universalMedia.queuePlaylistSaved' => 'Daftar putar disimpan di samping file media.',
+			'universalMedia.queuePlaylistUnavailable' => 'Antrean ini tidak dapat disimpan sebagai daftar putar lokal yang dapat digunakan kembali.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Pilih lokasi penyimpanan di folder yang sama dengan file dalam antrean.',
+			'universalMedia.noFavorites' => 'Belum disimpan streaming favorit sampai sekarang. favorit tetap di profil ini.',
+			'universalMedia.removeFavorite' => 'Menghapus Stream Favorit',
+			'universalMedia.filesHelp' => 'Pilih file audio, video, atau ISO untuk catatan sementara.File dan URL tidak ditambahkan ke sejarah perpustakaan.',
+			'universalMedia.chooseFiles' => 'Pilih file',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${count} file terpilih', ), 
+			'universalMedia.wifiTransfer' => 'Mengirim file melalui Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Memindahkan file yang didukung dari browser pada jaringan yang sama.',
+			'universalMedia.wifiTransferIntro' => 'Buka alamat ini dalam browser pada perangkat lain. pilih file untuk menambahkan mereka ke perpustakaan File dan buku perangkat ini.',
+			'universalMedia.wifiTransferPrivacy' => 'Setiap orang yang tahu alamat ini dapat mengirim file sampai Anda menghentikan transfer atau alamat berakhir setelah 15 menit. maksimum: 100 file, 4 GiB per file, 10 GiB total.',
+			'universalMedia.wifiTransferStarting' => 'Menyiapkan transfer pribadi dan terbatas waktu.',
+			'universalMedia.wifiTransferUnavailable' => 'Tidak bisa memulai transfer. periksa akses jaringan lokal dan coba lagi.',
+			'universalMedia.openThisAddress' => 'Buka salah satu alamat ini pada perangkat pengiriman',
+			'universalMedia.copyAddress' => 'Kopi alamat transfer',
+			'universalMedia.addressCopied' => 'Alamat transfer yang disalin',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Alamat ini berakhir di ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${count} file yang diterima', ), 
+			'universalMedia.uploadedData' => ({required Object size}) => 'Diterima oleh ${size}',
+			'universalMedia.stopTransfer' => 'Hentikan transfer dan membatalkan alamat',
+			'universalMedia.startTransfer' => 'Mulai transfer',
+			'universalMedia.wifiImportedFiles' => 'Pengiriman Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Mengirim file ke PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Pilih file audio, video, ebook, atau komik untuk dikirimkan. file disimpan di perpustakaan File dan buku perangkat ini. maksimum: 100 file, 4 GiB per file, 10 GiB total.',
+			'universalMedia.uploadFilesLabel' => 'File untuk dikirimkan',
+			'universalMedia.uploadSelected' => 'Mengunggah file terpilih',
+			'universalMedia.uploadSelectFirst' => 'Pilih satu atau lebih file terlebih dahulu.',
+			'universalMedia.uploading' => 'mengirimkan',
+			'universalMedia.uploadComplete' => 'File yang ditambahkan ke PlezyNG.',
+			'universalMedia.uploadFailed' => 'File tidak dapat ditambahkan.Jadilah halaman ini terbuka dan coba lagi.',
+			'universalMedia.liveCue' => 'hidup',
+			'universalMedia.liveSession' => 'Live Stream',
+			'universalMedia.liveCueHelp' => 'Untuk video atau radio langsung, aplikasi menyembunyikan bar waktu dan melompat tombol. tidak menyimpan alamat atau menonton sejarah.',
+			'universalMedia.sessionOnly' => 'Playback ini hanya sesi saja.',
+			'universalMedia.sessionOnlyHelp' => 'Playback tidak pernah menyimpan kemajuan atau sejarah.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Gambar penyesuaian',
+			'universalMedia.pictureHelp' => 'Perubahan gambar ini hanya mempengaruhi playback ini. mereka menetapkan kembali ketika playback berakhir.',
+			'universalMedia.resetPicture' => 'Reset gambar',
+			'universalMedia.brightness' => 'Cahaya',
+			'universalMedia.contrast' => 'kontras',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturasi',
+			'universalMedia.view360' => 'Pemandangan rata untuk video 360 derajat',
+			'universalMedia.view360Help' => 'Gunakan ini untuk video 360° equirectangular. MPV membutuhkan filter v360 FFmpeg untuk pandangan ini.',
+			'universalMedia.view360Unavailable' => 'Pembuatan MPV ini tidak dapat menerapkan filter 360 derajat.',
+			'universalMedia.view360Yaw' => 'pandangan horizontal',
+			'universalMedia.view360Pitch' => 'Pandangan Vertikal',
+			'universalMedia.view360FieldOfView' => 'Bidang Penglihatan',
+			'universalMedia.recordStream' => 'Rekor Live Stream',
+			'universalMedia.stopRecording' => 'Hentikan dan Simpan Rekaman',
+			'universalMedia.recordingStarted' => 'Rekaman aktif. meninggalkan playback berhenti dan menyimpan rekaman.',
+			'universalMedia.recordingSaved' => 'Rekaman selesai dan diselamatkan.',
+			'universalMedia.recordingActive' => 'Mengingat perangkat ini. meninggalkan playback berhenti dan menyimpannya.',
+			'universalMedia.recordingFormatHelp' => 'Untuk video, pilih MKV atau MPEG-TS. untuk audio, pilih MKA atau MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Mengganti rekaman ini?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG mengembalikan file yang ada saat merekam.Jika tidak dapat menyimpan rekaman baru, plezyNG memulihkan sandaran.',
+			'universalMedia.replaceRecording' => 'Mengganti file',
+			'universalMedia.discHelp' => 'Buka cakera di drive optik komputer ini.Anda juga dapat membuka gambar ISO dari file perangkat.',
+			'universalMedia.discs' => 'Disk optik',
+			'universalMedia.editionOrTitle' => 'Edisi atau judul cakram',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'dan Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disk playback membutuhkan konfigurasi MPV yang kompatibel, drive yang didukung, dan izin sistem operasi.',
+			'universalMedia.converterTitle' => 'Konversi file media lokal',
+			'universalMedia.converterHelp' => 'Konversi file lokal atau remux dengan FFmpeg.',
+			'universalMedia.converterIntro' => 'Konversi file audio atau video lokal ke format yang bekerja pada lebih banyak perangkat.',
+			'universalMedia.converterPrivacy' => 'FFmpeg harus dipasang pada komputer ini.Conversion hanya membaca file lokal.Ia tidak mengunduh aliran atau menghapus DRM.',
+			'universalMedia.converterChooseInput' => 'Pilih file media lokal',
+			'universalMedia.converterFormat' => 'Format output',
+			'universalMedia.converterMp4' => 'MP4 H.264 dan AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 dan Audio',
+			'universalMedia.allowFtp' => 'Memberi izin FTP',
+			'universalMedia.allowFtpHelp' => 'FTP mengirim media tanpa enkripsi. gunakan hanya pada jaringan yang dipercaya.',
+			'universalMedia.converterSaveAs' => 'Menyimpan media yang terkonversi sebagai',
+			'universalMedia.converterExtensionMismatch' => 'Pilih nama file dengan ekstensi output yang dipilih.',
+			'universalMedia.converterUnsupportedInput' => 'Pilih file audio atau video.',
+			'universalMedia.converterLocalOnly' => 'File yang dipilih tidak tersedia sebagai jalur perangkat lokal.',
+			'universalMedia.converterReplaceTitle' => 'Mengganti file ini?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG mengembalikan file yang ada sampai salinan terkonversi disimpan.',
+			'universalMedia.converterStarting' => 'Mulai dari FFmpeg...',
+			'universalMedia.converterProgress' => 'Beralih ke komputer ini...',
+			'universalMedia.converterComplete' => 'Konversi selesai. file baru sudah siap.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg yang hilang atau tidak mendukung format ini.',
+			'universalMedia.converterFailed' => 'Periksa bahwa file sumber dapat dibaca dan tujuan memiliki cukup ruang gratis.',
+			'universalMedia.converterCancelled' => 'Konversi dibatalkan. hasil yang tidak lengkap dihapus.',
+			'universalMedia.converterDesktopOnly' => 'Konversi lokal tersedia pada komputer desktop dengan FFmpeg terinstal.',
+			'universalMedia.converterStart' => 'Konversi file',
+			'universalMedia.mediaToolsTitle' => 'Alat Media',
+			'universalMedia.mediaToolsShortcut' => 'Menangkap atau berbagi media, tambahkan ekstensi pencarian, atau gunakan baris perintah.',
+			'universalMedia.mediaToolsIntro' => 'Pilih alat fokus. capture dan stream-out menggunakan FFmpeg yang dipasang pada desktop ini. Extensions dan perintah CLI menggunakan permintaan HTTPS terbatas dan aliran Open media yang ada.',
+			'universalMedia.mediaToolsAccessibility' => 'Pilihan alat dan kontrol bekerja dengan sentuhan, penunjuk, keyboard, dan fokus D-pad. Rekaman, perkongsian, dan perubahan status pencarian diumumkan.',
+			'universalMedia.mediaTool' => 'Alat Media',
+			'universalMedia.captureIntro' => 'Mencatat layar atau kamera ke file MP4 pada komputer ini. FFmpeg harus dipasang dan termasuk koder H.264.',
+			'universalMedia.captureNoDevices' => 'Tidak ditemukan layar atau kamera. periksa dukungan penangkapan FFmpeg dan izin privasi sistem operasi.',
+			'universalMedia.captureSource' => 'layar atau kamera',
+			'universalMedia.captureScreen' => 'layar',
+			'universalMedia.captureAudioSource' => 'Audio input (optional)',
+			'universalMedia.captureAudioHelp' => 'Tambah audio dari mikrofon atau input yang tersedia. pilihan perangkat tergantung pada FFmpeg dan izin sistem.',
+			'universalMedia.captureAudioNone' => 'Tidak ada audio',
+			'universalMedia.captureDefaultAudio' => 'Pengenalan Audio',
+			'universalMedia.captureWaylandHelp' => 'Wayland membatasi penangkapan XWayland ini ke X display. Windows di luar XWayland mungkin tidak muncul.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Rata-rata Rekaman Frame',
+			'universalMedia.capturePrivacy' => 'Rekaman disimpan hanya untuk file yang Anda pilih. penangkapan mikrofon adalah pilihan. PlezyNG tidak mengunggah rekaman.',
+			'universalMedia.captureSaveAs' => 'Menyimpan rekaman layar sebagai',
+			'universalMedia.captureExtensionMismatch' => 'Pilih nama file yang berakhir di .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg atau kod video H.264 tidak tersedia.Memasang build yang didukung FFmpeg, kemudian coba lagi.',
+			'universalMedia.captureFailed' => 'Rekaman tidak dapat disimpan. memeriksa izin perangkat, penyimpanan yang tersedia, dan dukungan FFmpeg.',
+			'universalMedia.captureSaved' => 'Rekaman layar disimpan.',
+			'universalMedia.captureElapsedLabel' => 'Waktu Rekaman',
+			'universalMedia.captureStart' => 'Mulai Rekaman',
+			'universalMedia.capturePreview' => 'Pratinjau di pemutar',
+			'universalMedia.capturePreviewHelp' => 'Pratinjau sumber yang dipilih di pemutar standar. Pratinjau hanya berlaku untuk sesi ini dan tidak menyimpan rekaman. Dukungan perangkat dan izin bergantung pada MPV dan sistem operasi. Pratinjau hanya menggunakan video; rekaman yang disimpan dapat menyertakan audio opsional.',
+			'universalMedia.capturePreviewActive' => 'Pratinjau langsung · tidak merekam',
+			'universalMedia.captureStop' => 'berhenti dan menyelamatkan',
+			'universalMedia.captureMode' => 'penangkapan',
+			'universalMedia.shareMode' => 'Berkongsi',
+			'universalMedia.shareIntro' => 'Mengirim file media lokal ke perangkat lain di jaringan pribadi Anda. PlezyNG menciptakan aliran sementara HLS.',
+			'universalMedia.sharePrivacy' => 'Siapa pun di jaringan lokal Anda yang menerima link pribadi dapat menonton saat itu aktif. link berakhir setelah 60 menit. berhenti berbagi untuk menutup server dan membatalkan link.',
+			'universalMedia.shareChooseFile' => 'Pilih file media',
+			'universalMedia.shareChooseHelp' => 'Pilih file audio atau video lokal. file ini tetap pada komputer ini.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg atau kode H.264/AAC tidak tersedia.Memasang FFmpeg dengan dukungan kode H.264 dan AAC.',
+			'universalMedia.shareFailed' => 'Aliran tidak dapat dimulai atau berhenti secara tidak dijangka. periksa FFmpeg dan akses jaringan.',
+			'universalMedia.shareActive' => 'Stream siap di jaringan pribadi Anda.',
+			'universalMedia.shareEnded' => 'Media telah mencapai akhir dan tidak lagi dibagikan.',
+			'universalMedia.shareStopped' => 'Pembagian dihentikan. link sementara tidak lagi berlaku.',
+			'universalMedia.shareUrlCopied' => 'alamat yang disalin.',
+			'universalMedia.shareOpenUrl' => 'Buka alamat ini dalam satu pemain pada perangkat lain',
+			'universalMedia.shareQrLabel' => 'QR Code untuk alamat aliran sementara',
+			'universalMedia.shareQrHelp' => 'Scan dengan pemutar yang kompatibel yang terhubung ke jaringan pribadi yang sama.',
+			'universalMedia.shareHttpHint' => 'Stream ini menggunakan HTTP yang tidak terenkripsi. dalam PlezyNG, izinkan HTTP sebelum membukanya.',
+			'universalMedia.shareCopyUrl' => 'Salin alamat stream',
+			'universalMedia.shareExpiresLabel' => 'Link akan berakhir di',
+			'universalMedia.shareStarting' => 'Untuk mempersiapkan aliran...',
+			'universalMedia.shareStart' => 'Mulai berbagi',
+			'universalMedia.shareStop' => 'Hentikan berbagi',
+			'universalMedia.extensionsMode' => 'Perpanjangan dan CLI',
+			'universalMedia.extensionsIntro' => 'Tambah data-hanya ekstensi pencarian untuk menemukan media. Pilih hasil untuk memuatkannya ke formulir yang familiar Open media.',
+			'universalMedia.extensionsPrivacy' => 'Manifesto dapat menentukan satu titik akhir pencarian HTTPS dan medan respon peta. tidak dapat menjalankan kode, menambahkan judul permintaan, membaca file, atau memulai perintah shell.',
+			'universalMedia.extensionImport' => 'Tambahkan Manifest Extension',
+			'universalMedia.extensionEmpty' => 'Tidak ada layanan pencarian saat ini. pilih file yang dapat dipercaya manifest JSON untuk menambahkan satu.',
+			'universalMedia.extensionChoose' => 'Layanan pencarian',
+			'universalMedia.extensionSearchConsent' => 'Setiap pencarian mengirimkan kata-kata Anda ke layanan HTTPS ini. hasilnya hanya terbuka setelah Anda memilih satu.',
+			'universalMedia.extensionSearchLabel' => 'pencarian media',
+			'universalMedia.extensionSearch' => 'pencarian',
+			'universalMedia.extensionSearching' => 'Mencari...',
+			'universalMedia.extensionNoResults' => 'Tidak ada hasil media yang aman yang dikembalikan.Coba pencarian lain.',
+			'universalMedia.extensionInstallTitle' => 'Menambahkan layanan pencarian ini?',
+			'universalMedia.extensionReplaceTitle' => 'Update layanan pencarian ini?',
+			'universalMedia.extensionService' => 'Layanan',
+			'universalMedia.extensionEndpoint' => 'HTTPS titik akhir',
+			'universalMedia.extensionConsent' => 'Teks pencarian Anda dikirim ke layanan ini. manifesto tidak mengandung kode yang dapat diimplementasikan. teruskan hanya jika Anda mempercayai titik akhir ini.',
+			'universalMedia.extensionInstall' => 'Tambahkan Layanan',
+			'universalMedia.extensionReplace' => 'Update Layanan',
+			'universalMedia.extensionRemoveTitle' => 'Menghapus layanan pencarian ini?',
+			'universalMedia.extensionRemoveHelp' => 'Ini menghapus layanan dari profil ini. PlezyNG tidak menghubungi titik akhir.',
+			'universalMedia.extensionRemove' => 'menghapus layanan',
+			'universalMedia.extensionInvalidManifest' => 'Fail ini bukan manifest pengembangan yang didukung. lihat panduan Open media untuk format.',
+			'universalMedia.extensionSaveFailed' => 'Perpanjangan tidak dapat disimpan ke profil aktif.',
+			'universalMedia.extensionSearchFailed' => 'Layanan pencarian tidak mengembalikan jawaban yang valid. periksa titik akhir dan coba lagi.',
+			'universalMedia.cliTitle' => 'Komando garis',
+			'universalMedia.cliHelp' => 'Gunakan panduan plezyctl untuk mengevaluasi manifest atau mencari ekstensi yang sama. ulangi layanan HTTPS sebelum setiap pencarian. hasilnya terbuka dalam formulir media yang ada; pilih tombol playback untuk memulai.',
+			'universalMedia.cliCopyExample' => 'Contoh perintah copy',
+			'universalMedia.cliCopied' => 'Contoh yang disalin.',
 			'fileSources.title' => 'File dan buku',
 			'fileSources.subtitle' => 'Baca, dengar, dan menonton dari file Anda sendiri.',
 			'fileSources.add' => 'Tambahkan sumber',
@@ -7767,8 +8296,6 @@ extension on TranslationsId {
 			'fileSources.offlineQuotaHelp' => 'Tetapkan ruang maksimum yang digunakan oleh salinan offline, file terimpor, dan muat turun. Mengurangi batas tidak menghapus salinan sedia ada.',
 			'fileSources.offlineStorageUsage' => 'Penyimpanan Offline',
 			'fileSources.reservedStorage' => 'disimpan',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Mengunduh Queue',
 			'fileSources.downloadRunning' => 'Download',
 			'fileSources.downloadQueued' => 'Menunggu',
@@ -7837,7 +8364,6 @@ extension on TranslationsId {
 			'audiobook.addSyncSource' => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 ke File & Buku terlebih dahulu.',
 			'audiobook.syncDestination' => 'Sinkronisasi akun penyimpanan',
 			'audiobook.syncFolder' => 'Sinkron folder atau prefix',
-			'audiobook.syncFolderHelp' => 'Gunakan folder terpisah yang ada di dalam sumber WebDAV Anda, atau prefix S3 khusus. file buku tidak pernah diubah.',
 			'audiobook.syncCode' => 'Kode Sinkronisasi',
 			'audiobook.syncCodeHelp' => 'Buat kode pada perangkat pertama Anda, kemudian masukkan kode itu pada perangkat lain Anda. simpan salinan pribadi: itu adalah kunci untuk status enkripsi Anda. Gunakan kode yang berbeda untuk setiap orang.',
 			'audiobook.showCode' => 'Menampilkan atau menyembunyikan kode sink',
@@ -7847,7 +8373,6 @@ extension on TranslationsId {
 			'audiobook.syncSourceDisconnect' => 'Menghapus sumber ini akan mematikan membaca dan mendengarkan sync di sini. file sync tersulit akan tetap di penyedia.',
 			'audiobook.syncReconnect' => 'Menghubungkan kembali akun penyimpanan',
 			'audiobook.lastSynced' => ({required Object time}) => 'Terakhir disinkronkan di ${time}',
-			'audiobook.syncPrivacy' => 'Hanya kemajuan dan catatan yang disulitkan disimpan. file audio dan ebook, token akun dan kata sandi tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan dapat meminta akses penulisan tambahan. Sementara diaktifkan, tujuan ini memiliki penyegerakan kemajuan; kemajuan server tetap terpisah. Mengalihkan penyegerakan mengekalkan sejarah lokal dan keadaan remote.',
 			'audiobook.syncConflicts' => 'Pilih tempat untuk kembali',
 			'audiobook.conflictHelp' => 'Perubahan-perubahan ini dilakukan secara independen. pilih posisi atau bookmark versi untuk tetap. timestamp kemudian atau peratusan yang lebih tinggi tidak secara otomatis menang.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Perangkat ${device}',
@@ -8014,7 +8539,6 @@ extension on TranslationsId {
 			'comics.collections' => 'Koleksi',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8039,7 +8563,6 @@ extension on TranslationsId {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8052,6 +8575,8 @@ extension on TranslationsId {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8071,8 +8596,6 @@ extension on TranslationsId {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8080,14 +8603,35 @@ extension on TranslationsId {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Link Plezy ini tidak sah.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Tidak ada profil yang sepadan dengan "${profile}".',
+			'deepLinks.serverUnavailable' => 'Saya tidak bisa mencapai server untuk link ini.',
+			'deepLinks.notFound' => 'Saya tidak bisa menemukan judul ini di perpustakaan Anda.',
+			'deepLinks.unsupportedItem' => 'Link ini tidak bisa dimainkan.',
+			'deepLinks.noLiveTv' => 'Tidak ada Live TV server yang tersedia untuk link ini.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Tidak dapat menemukan saluran "${channel}".',
+			'deepLinks.showLink' => 'menunjukkan link',
+			'deepLinks.showProfileLink' => 'Menampilkan profil link',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Membuka link ini memainkan episode berikutnya.Tambahkan &mode=shuffle untuk bermain acara di shuffle.',
+			'deepLinks.movieHint' => 'Membuka link ini memainkan film.',
+			'deepLinks.episodeHint' => 'Membuka link ini memainkan episode ini.',
+			'deepLinks.profileHint' => 'Membuka link ini beralih ke profil ini.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Buka sebagai ${name}',
+			'deepLinks.copy' => 'Kopi',
+			'deepLinks.copied' => 'Link yang disalin',
+			'householdSetup.title' => 'Penyiapan rumah tangga',
+			'issueReport.title' => 'Laporkan masalah',
+			'issueReport.instructions' => 'Pindai kode QR untuk membuka draf GitHub yang sudah terisi. Tinjau dan kirim hanya jika Anda siap.',
+			'issueReport.privacy' => 'Draf memuat versi aplikasi, platform, dan jumlah koneksi. Alamat server, nama akun dan profil, judul media, serta lokasi berkas tidak disertakan.',
+			'issueReport.logPrivacy' => 'Log bersifat opsional. Tinjau sebelum mengunggah. ID log ditambahkan ke draf, yang mungkin bersifat publik.',
+			'issueReport.openDraft' => 'Buka draf GitHub',
 			_ => null,
 		};
 	}

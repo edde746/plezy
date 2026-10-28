@@ -1,0 +1,302 @@
+#!/usr/bin/env python3
+"""A small, data-only CLI for PlezyNG search extensions.
+
+The command accepts the same manifest format as Open media → Media tools.
+It only performs bounded HTTPS GET requests and can hand a credential-free
+result to PlezyNG's existing Open media form. It never evaluates extension code.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import ssl
+import subprocess
+import sys
+import time
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.request import HTTPSHandler, HTTPRedirectHandler, Request, build_opener
+
+MAX_MANIFEST_BYTES = 64 * 1024
+MAX_RESPONSE_BYTES = 1024 * 1024
+MAX_RESULTS = 20
+SENSITIVE_PARAMETER = re.compile(
+    r"(token|password|signature|credential|authorization|secret|api[_-]?key|^auth$|^key$|^code$|x-amz-|x-goog-|^(expires|expiry|expiration|policy|key-pair-id|sig|se|sp|sv|sr|st|skoid|sktid|skt|ske|sks|skv|rscc|rscd|rsct)$)",
+    re.IGNORECASE,
+)
+FIELD = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,63}$")
+EXTENSION_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,47}$")
+
+
+class CliError(Exception):
+    pass
+
+
+def clean_text(value: object, label: str, limit: int, *, optional: bool = False) -> str:
+    if optional and (value is None or value == ""):
+        return ""
+    if not isinstance(value, str) or len(value) > limit or not value.strip():
+        raise CliError(f"Invalid extension {label}.")
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise CliError(f"Invalid extension {label}.")
+    return value.strip()
+
+
+def load_manifest(path: Path) -> dict[str, object]:
+    try:
+        data = path.read_bytes()
+    except OSError as error:
+        raise CliError("Could not read the extension manifest.") from error
+    if not data or len(data) > MAX_MANIFEST_BYTES:
+        raise CliError("The extension manifest must be between 1 byte and 64 KiB.")
+    try:
+        manifest = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CliError("The extension manifest is not valid UTF-8 JSON.") from error
+    if not isinstance(manifest, dict) or type(manifest.get("schema_version")) is not int or manifest["schema_version"] != 1:
+        raise CliError("Unsupported extension manifest version.")
+    allowed = {
+        "schema_version", "id", "name", "description", "endpoint", "query_parameter",
+        "results_path", "title_field", "url_field", "subtitle_field",
+    }
+    if set(manifest) - allowed:
+        raise CliError("This manifest contains unsupported fields. Extensions cannot include code or custom headers.")
+    extension_id = clean_text(manifest.get("id"), "id", 48)
+    if not EXTENSION_ID.fullmatch(extension_id):
+        raise CliError("Extension id must use lowercase letters, digits, and hyphens.")
+    clean_text(manifest.get("name"), "name", 80)
+    clean_text(manifest.get("description"), "description", 240, optional=True)
+    endpoint = clean_text(manifest.get("endpoint"), "endpoint", 2048)
+    query_parameter = clean_text(manifest.get("query_parameter"), "query parameter", 64)
+    title_field = clean_text(manifest.get("title_field"), "title field", 64)
+    url_field = clean_text(manifest.get("url_field"), "URL field", 64)
+    subtitle_field = clean_text(manifest.get("subtitle_field"), "subtitle field", 64, optional=True)
+    for label, field in (("query parameter", query_parameter), ("title field", title_field), ("URL field", url_field)):
+        if not FIELD.fullmatch(field):
+            raise CliError(f"Invalid extension {label}.")
+    if subtitle_field and not FIELD.fullmatch(subtitle_field):
+        raise CliError("Invalid extension subtitle field.")
+
+    parsed = urlsplit(endpoint)
+    if parsed.scheme.lower() != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
+        raise CliError("Extension endpoints must be credential-free HTTPS URLs without fragments.")
+    if any(SENSITIVE_PARAMETER.search(key) for key, _ in parse_qsl(parsed.query, keep_blank_values=True)):
+        raise CliError("Do not store credentials or signed values in an extension endpoint.")
+    if query_parameter in dict(parse_qsl(parsed.query, keep_blank_values=True)):
+        raise CliError("The search parameter is already present in the endpoint URL.")
+    try:
+        if parsed.port is not None and not 1 <= parsed.port <= 65535:
+            raise CliError("Invalid extension endpoint port.")
+    except ValueError as error:
+        raise CliError("Invalid extension endpoint port.") from error
+
+    path = manifest.get("results_path")
+    if not isinstance(path, list) or not 1 <= len(path) <= 4:
+        raise CliError("Extension results_path must contain one to four field names.")
+    if any(not isinstance(part, str) or not FIELD.fullmatch(part) for part in path):
+        raise CliError("Invalid extension results_path.")
+
+    return {
+        "schema_version": 1,
+        "id": extension_id,
+        "name": clean_text(manifest.get("name"), "name", 80),
+        "description": clean_text(manifest.get("description"), "description", 240, optional=True),
+        "endpoint": endpoint,
+        "query_parameter": query_parameter,
+        "results_path": path,
+        "title_field": title_field,
+        "url_field": url_field,
+        "subtitle_field": subtitle_field,
+    }
+
+
+def request_url(manifest: dict[str, object], query: str) -> str:
+    endpoint = urlsplit(str(manifest["endpoint"]))
+    pairs = parse_qsl(endpoint.query, keep_blank_values=True)
+    pairs.append((str(manifest["query_parameter"]), query))
+    return urlunsplit((endpoint.scheme, endpoint.netloc, endpoint.path, urlencode(pairs), ""))
+
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, request, file_pointer, code, message, headers, new_url):
+        return None
+
+
+def clean_result_url(value: object) -> str | None:
+    if (
+        not isinstance(value, str)
+        or len(value) > 4096
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+    ):
+        return None
+    parsed = urlsplit(value.strip())
+    if parsed.scheme.lower() != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
+        return None
+    return value.strip()
+
+
+def search(manifest: dict[str, object], query: str) -> list[dict[str, str]]:
+    normalized = query.strip()
+    if not normalized or len(normalized) > 200:
+        raise CliError("Search text must be between 1 and 200 characters.")
+    endpoint_host = urlsplit(str(manifest["endpoint"])).hostname
+    print(f"Search text will be sent over HTTPS to {endpoint_host}.", file=sys.stderr)
+    if not args_yes():
+        if not sys.stdin.isatty():
+            raise CliError("Use --yes to confirm the extension endpoint when running without a terminal.")
+        if input("Continue? [y/N] ").strip().lower() not in {"y", "yes"}:
+            raise CliError("Search cancelled.")
+
+    request = Request(
+        request_url(manifest, normalized),
+        headers={"Accept": "application/json", "User-Agent": "PlezyNG-CLI/1"},
+        method="GET",
+    )
+    opener = build_opener(NoRedirect(), HTTPSHandler(context=ssl.create_default_context()))
+    try:
+        with opener.open(request, timeout=12) as response:
+            if response.status < 200 or response.status >= 300:
+                raise CliError("The extension service returned an error.")
+            deadline = time.monotonic() + 30
+            body = bytearray()
+            while True:
+                if time.monotonic() >= deadline:
+                    raise CliError("The extension response took too long.")
+                chunk = response.read1(min(64 * 1024, MAX_RESPONSE_BYTES + 1 - len(body)))
+                if not chunk:
+                    break
+                body.extend(chunk)
+                if len(body) > MAX_RESPONSE_BYTES:
+                    raise CliError("The extension response is larger than 1 MiB.")
+    except (HTTPError, URLError, TimeoutError, OSError) as error:
+        raise CliError("Could not reach the extension service. Redirects are not followed.") from error
+    try:
+        payload = json.loads(bytes(body).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CliError("The extension response was not valid JSON.") from error
+
+    for segment in manifest["results_path"]:
+        if not isinstance(payload, dict):
+            return []
+        payload = payload.get(segment)
+    if not isinstance(payload, list):
+        return []
+
+    results: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for row in payload:
+        if len(results) >= MAX_RESULTS:
+            break
+        if not isinstance(row, dict):
+            continue
+        title = row.get(str(manifest["title_field"]))
+        url = clean_result_url(row.get(str(manifest["url_field"])))
+        if not isinstance(title, str) or not title.strip() or not url or url in seen:
+            continue
+        seen.add(url)
+        subtitle = row.get(str(manifest["subtitle_field"])) if manifest["subtitle_field"] else None
+        results.append({
+            "title": " ".join(title.split())[:180],
+            "url": url,
+            "subtitle": " ".join(subtitle.split())[:180] if isinstance(subtitle, str) else "",
+        })
+    return results
+
+
+def args_yes() -> bool:
+    return bool(getattr(args, "yes", False))
+
+
+def safe_open_link(url: str, profile: str | None = None) -> str:
+    if len(url) > 4096 or any(ord(character) < 32 or ord(character) == 127 for character in url):
+        raise CliError("This result address is too long or contains control characters.")
+    parsed = urlsplit(url)
+    if parsed.scheme.lower() != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
+        raise CliError("Only credential-free HTTPS results can be opened from the CLI.")
+    if any(SENSITIVE_PARAMETER.search(key) for key, _ in parse_qsl(parsed.query, keep_blank_values=True)):
+        raise CliError("This result has signed query parameters. Copy it into Open media directly instead.")
+    from urllib.parse import quote
+
+    pairs = [("url", url)]
+    if profile:
+        if len(profile) > 128 or any(ord(character) < 32 for character in profile):
+            raise CliError("Invalid profile name.")
+        pairs.append(("profile", profile))
+    return "plezy://open-media?" + urlencode(pairs, quote_via=quote)
+
+
+def open_link(link: str) -> None:
+    try:
+        if sys.platform == "darwin":
+            result = subprocess.run(["open", link], check=False)
+        elif os.name == "nt":
+            os.startfile(link)  # type: ignore[attr-defined]
+            result = None
+        else:
+            result = subprocess.run(["xdg-open", link], check=False)
+    except (OSError, AttributeError) as error:
+        raise CliError("Could not open the PlezyNG app link. Check that the plezy: URL handler is registered.") from error
+    if result is not None and result.returncode != 0:
+        raise CliError("Could not open the PlezyNG app link. Check that the plezy: URL handler is registered.")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Search safe, data-only PlezyNG media extensions.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    validate_parser = subparsers.add_parser("validate", help="validate a search extension manifest")
+    validate_parser.add_argument("--manifest", type=Path, required=True)
+    search_parser = subparsers.add_parser("search", help="search an HTTPS extension endpoint")
+    search_parser.add_argument("--manifest", type=Path, required=True)
+    search_parser.add_argument("query")
+    search_parser.add_argument("--yes", action="store_true", help="confirm that the endpoint receives the search text")
+    search_parser.add_argument("--open", action="store_true", help="open a selected result in PlezyNG Open media")
+    search_parser.add_argument("--result", type=int, help="1-based result number to open with --open")
+    search_parser.add_argument("--profile", help="optional PlezyNG profile name to target")
+    return parser
+
+
+def main() -> int:
+    global args
+    parser = build_parser()
+    args = parser.parse_args()
+    try:
+        manifest = load_manifest(args.manifest)
+        if args.command == "validate":
+            print(f"Valid extension: {manifest['name']} ({urlsplit(str(manifest['endpoint'])).hostname})")
+            return 0
+
+        results = search(manifest, args.query)
+        if not results:
+            print("No safe media results found.")
+            return 0
+        for index, result in enumerate(results, start=1):
+            subtitle = f" — {result['subtitle']}" if result["subtitle"] else ""
+            print(f"{index}. {result['title']}{subtitle}\n   {result['url']}")
+        if not args.open:
+            return 0
+        if args.result is None:
+            if not sys.stdin.isatty():
+                raise CliError("Choose a result with --result N when running without a terminal.")
+            try:
+                selected = int(input("Result number to open: ").strip())
+            except ValueError as error:
+                raise CliError("Enter a result number.") from error
+        else:
+            selected = args.result
+        if selected < 1 or selected > len(results):
+            raise CliError("The selected result number is outside the result list.")
+        link = safe_open_link(results[selected - 1]["url"], args.profile)
+        open_link(link)
+        print("Opened the result in PlezyNG. Choose Play now to start playback.")
+        return 0
+    except CliError as error:
+        print(f"plezyctl: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

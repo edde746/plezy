@@ -1,5 +1,5 @@
 
-PRODUCT_NAME = Plezy
+PRODUCT_NAME = PlezyNG
 
 PRODUCT_BUNDLE_IDENTIFIER = org.snapetech.plezyng
 

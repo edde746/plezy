@@ -30,6 +30,7 @@ class FocusableAction {
 
   final String? tooltip;
   final VoidCallback? onPressed;
+  final bool? isSelected;
   final Widget? child;
   final FocusableActionBuilder? builder;
 
@@ -49,6 +50,7 @@ class FocusableAction {
     this.autofocus = false,
     this.tooltip,
     this.onPressed,
+    this.isSelected,
     this.child,
     this.builder,
     this.spacingBefore,
@@ -353,6 +355,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
                     IconButton(
                       icon: AppIcon(action.icon, size: action.iconSize, fill: action.iconFill, color: action.iconColor),
                       tooltip: action.tooltip,
+                      isSelected: action.isSelected,
                       onPressed: action.onPressed,
                     ),
               ),

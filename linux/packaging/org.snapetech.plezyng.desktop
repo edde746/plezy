@@ -2,7 +2,8 @@
 Type=Application
 Name=PlezyNG
 Comment=Plex client with Jellyfin and Emby support, offline downloads, and HDR
-Exec=plezy
+Exec=plezy %u
+MimeType=x-scheme-handler/plezy;x-scheme-handler/plezyng;x-scheme-handler/plezxyng;
 Icon=plezy
 Terminal=false
 Categories=AudioVideo;Video;Player;

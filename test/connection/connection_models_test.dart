@@ -116,6 +116,15 @@ void main() {
       expect(restored.baseUrls, ['https://jellyfin.example.com']);
     });
 
+    test('approved HTTP active endpoint does not authorize other HTTP fallbacks', () {
+      final approved = base.copyWith(
+        baseUrl: 'http://jellyfin.lan:8096',
+        baseUrls: const ['http://jellyfin.lan:8096', 'http://old-jellyfin.lan:8096', 'https://jellyfin.example.com'],
+      );
+
+      expect(approved.baseUrls, ['http://jellyfin.lan:8096', 'https://jellyfin.example.com']);
+    });
+
     test('copyWith moves the active baseUrl to the front of baseUrls', () {
       final updated = base.copyWith(baseUrl: 'https://jellyfin.lan:8096');
       expect(updated.baseUrl, 'https://jellyfin.lan:8096');
@@ -286,6 +295,14 @@ void main() {
       final json = withToken.toConfigJson();
       final restored = PlexDirectConnection.fromConfigJson(id: withToken.id, json: json);
       expect(restored.accessToken, 'my-token');
+    });
+
+    test('approved HTTP active endpoint does not authorize other HTTP fallbacks', () {
+      final approved = base.copyWith(
+        baseUrls: const ['http://192.168.1.100:32400', 'http://192.168.1.101:32400', 'https://plex.example.com'],
+      );
+
+      expect(approved.baseUrls, ['http://192.168.1.100:32400', 'https://plex.example.com']);
     });
 
     test('kind and backend match Plex', () {

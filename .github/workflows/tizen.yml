@@ -78,6 +78,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Install Tizen host test prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          packages=(clang cmake build-essential python3 pkg-config)
+          for attempt in 1 2 3; do
+            if sudo apt-get update -o Acquire::Retries=3 \
+              && sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 "${packages[@]}"; then
+              break
+            fi
+            if (( attempt == 3 )); then exit 1; fi
+            sudo apt-get clean
+            sudo rm -rf /var/lib/apt/lists/*
+            sleep $((attempt * 15))
+          done
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: '3.47.1'
@@ -108,6 +123,28 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Install Tizen host build prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          packages=(build-essential ca-certificates clang cmake curl git-lfs pkg-config python3 unzip zip)
+          for attempt in 1 2 3; do
+            if sudo apt-get update -o Acquire::Retries=3 \
+              && sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 "${packages[@]}"; then
+              break
+            fi
+            if (( attempt == 3 )); then exit 1; fi
+            sudo apt-get clean
+            sudo rm -rf /var/lib/apt/lists/*
+            sleep $((attempt * 15))
+          done
+          clang --version
+          cmake --version
+          git lfs version
+          if [[ -z "${HTTPS_PROXY:-${https_proxy:-}}" ]]; then
+            echo "The private JIT HTTPS proxy is required to fetch the pinned Samsung SDK packages." >&2
+            exit 1
+          fi
       - name: Check out the pinned Flutter-Tizen tool
         if: env.PLEZY_FLUTTER_TIZEN_ROOT == ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

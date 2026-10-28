@@ -1,11 +1,25 @@
-<h1>
-  <img src="assets/plezy.png" alt="PlezyNG Logo" height="24" style="vertical-align: middle;" />
-  PlezyNG
-</h1>
+<a href="https://plezyng.app/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/branding/plezyng-artwork-dark.webp">
+    <img src="assets/branding/plezyng-artwork-light.webp" alt="PlezyNG — coral folded-ribbon identity" width="840">
+  </picture>
+</a>
+
+<p>
+  <a href="https://plezyng.app/"><strong>plezyng.app</strong></a>
+</p>
 
 A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
+PlezyNG is a downstream fork for feature requests that Plezy upstream has declined, left open, or not yet shipped. The table below maps those upstream gaps to the corresponding downstream implementation.
+
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
+
+The [capability and qualification ledger](docs/maintainers/capability-manifest.json) tracks implementation evidence, release status, platform limits and remaining gates. Code being present does not imply device qualification or a published download.
+
+The [debrid, Stremio and remote-streaming implementation plan](docs/plezyng/remote-streams/README.md) documents the proposed provider integrations, native PlezyNG flows, architecture, and Luna delivery/validation handoff.
+
+The [Discord client and PiP feasibility plan](docs/plezyng/discord/README.md) preserves an optional future design, its research, architecture, and validation gates. It is deferred; no client implementation or delivery commitment is implied.
 
 ## Dolby Vision experiments
 
@@ -40,11 +54,12 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 | Downloads | Playlist downloads and watched-item cleanup (#1721, #2600, #1413, #2181); orphan cleanup | Playlist downloads and watched-item cleanup are implemented. The Downloads screen can review and remove orphaned tagged files in the default app-managed folders; custom/SAF roots, legacy files, shared artwork, and iOS Documents are left untouched. |
 | Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Local profile PIN gates Settings, download deletion, and entry to Explore; Explore can also be hidden per profile. Plex Home PINs remain server-owned. |
 | Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory, optional pre-play selection, device-local preferred-language selection and opt-in provider downloads, and scoped sync offsets are implemented across Plex, Jellyfin, and Emby; explicit server-selected tracks, account Off, and local picks remain authoritative |
-| Files and books | Standalone file sources, metadata, subtitles, ebooks and audiobooks | SMB2/3, optional encrypted NFSv3 RPC-with-TLS, FTP-family, SFTP, DLNA, Komga, WebDAV, S3, OPDS, cloud drives and Audiobookshelf; local Kodi/Jellyfin NFO/posters, confidence-gated Trakt metadata/cast/artwork/trailers, and OpenSubtitles search (including SMB); EPUB/PDF/CBZ, multipart audiobook playback and progress sync. Availability varies by platform; see the [setup guide](docs/FILES_AND_BOOKS.md) for limits and security. |
+| Files and books | Standalone file sources, metadata, subtitles, ebooks and audiobooks | SMB2/3, optional encrypted NFSv3 RPC-with-TLS, FTP-family, SFTP, DLNA, Komga, WebDAV, S3, OPDS, cloud drives and Audiobookshelf; local Kodi/Jellyfin NFO/posters, confidence-gated Trakt metadata/cast/artwork/trailers, and OpenSubtitles search (including SMB); EPUB/PDF/CBZ, multipart audiobook playback and progress sync through app-owned state files. Cloud sync never uploads or edits playback media. Availability varies by platform; see the [setup guide](docs/FILES_AND_BOOKS.md) for limits and security. |
+| Universal media tools | Direct media URLs, radio playlists, local files, capture, sharing, extensions, Wi-Fi transfer, conversion, recording and picture controls | **Open media** handles session-only HTTP(S)/MPV streams, M3U/PLS/HLS playlists, temporary file and desktop folder queues, and supported ISO/disc inputs; the active source player offers queue browsing, upcoming-file shuffle, repeat, and item selection in one adaptive sheet. Eligible desktop queues can be saved as sibling-relative M3U files in current playback order. MPV exposes direct-input File Info and edition/disc-title choices when available. Safe stream favorites are profile-local. Desktop tools add screen/camera recording and live preview, temporary private-LAN HLS sharing, declarative HTTPS search extensions, `plezyctl` (Python 3.10+), FFmpeg conversion and MPV live-stream recording. See the [Open media guide](docs/UNIVERSAL_MEDIA.md) and [VLC feature comparison](docs/VLC_FEATURE_PARITY.md) for privacy and platform limits. |
 | Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
 | Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in PlezyNG |
 | Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Configured cinema intros work on Plex, Jellyfin, and Emby; local pre-rolls, detail-page theme songs, and home spotlight music are implemented |
-| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A five-band device-local equalizer is available in mpv, and opt-in intro fallback is implemented. |
+| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A ten-band device-local equalizer plus MPV stereo widening, room ambience, and pitch shift are available where the build and track support them; opt-in intro fallback is implemented. |
 | Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in PlezyNG |
 | Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search, random movie selection, and shuffled playback of movie and TV libraries are implemented across connected servers; detail-page finish time is shown on media details |
 | Home screen | Configurable rows, merged library and collection rows, organizer controls, and Plex account layout sync (#1652/#2203) | Implemented; Plex account sync applies to Plex profiles. Custom rows can combine selected libraries across connected servers |
@@ -53,11 +68,12 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 | Live TV | Timeshift timeline (#2300) | Plex implementation is in the fork; Jellyfin/Emby DVR-window support remains under investigation because their public playback APIs do not expose the tuner's seekable capture window |
 | Integrations | Google Cast (#126); new-episode notifications (#1146); content screensaver (#401) | Google Cast handoff is implemented on Android and iOS through the default media receiver, subject to receiver codec/container support and server reachability. Profile-scoped episode alerts poll connected Plex, Jellyfin, and Emby libraries while the app is foregrounded on Android/iOS; the screensaver rotates artwork from selected connected libraries after an idle timeout. |
 | Automation | Home Assistant control and Android automation intents (#823, #1996) | Android `ACTION_VIEW` links can open cross-server `plezy://watch` media, select an existing profile with `plezy://profile?id=…`, and control the active video session with `plezy://control?command=play|pause|toggle|stop`. Home Assistant can invoke these through an Android intent bridge; this does not expose Plezy as a native Plex Companion player in Home Assistant. See the [Android automation guide](docs/plezyng/android-automation.md). |
-| Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Log export is implemented; cloud settings backup uploads and restores the portable settings export through an HTTPS WebDAV file endpoint |
+| Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Log export is implemented; cloud settings backup uploads and restores only the portable settings JSON through an HTTPS WebDAV file endpoint. Server credentials, playback history and media files stay on their existing paths. |
 
-This table is a snapshot of what PlezyNG has delivered and the limits that still apply. The upstream links give context for related work. As Plezy evolves, equivalent features can be reviewed and adopted where they fit.
+This table is a snapshot of downstream work and its current limits. The linked upstream requests provide context for the gap PlezyNG addresses; equivalent upstream implementations can replace the corresponding downstream code when their behavior and server coverage match.
 
 <p>
+  <a href="https://plezyng.app/">Website</a> ·
   <a href="https://github.com/edde746/plezy">Upstream Plezy</a> ·
   <a href="https://github.com/snapetech-org/PlezyNG/issues">PlezyNG issues</a> ·
   <a href="#download">Download</a> ·
@@ -84,9 +100,12 @@ Published PlezyNG downloads appear on the [GitHub Releases page](https://github.
 
 ### macOS — Homebrew
 
+The `snapetech-plezyng` Cask is being prepared. It will be installable after a signed and notarized macOS release is published and the generated Cask is added to this repository.
+
 ```bash
+# After the Cask is published in this tap
 brew tap snapetech-org/PlezyNG https://github.com/snapetech-org/PlezyNG
-brew install --cask plezy
+brew install --cask snapetech-plezyng
 ```
 
 ### Linux — Flatpak
@@ -97,7 +116,7 @@ Install Flatpak with your distribution's package manager, download the bundle fo
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install --user flathub org.freedesktop.Platform//25.08
 flatpak install --user ./plezy-linux-x64.flatpak
-flatpak run com.edde746.plezy
+flatpak run org.snapetech.plezyng
 ```
 
 On arm64, install `plezy-linux-arm64.flatpak`.
@@ -112,7 +131,9 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 
 </details>
 
-### Arch Linux — Pacman
+The following distribution packages are for upstream **Plezy**, not this PlezyNG fork. Use the PlezyNG release bundles above for the features documented here.
+
+### Arch Linux — Pacman (upstream Plezy)
 
 [Distribution package](https://archlinux.org/packages/extra/x86_64/plezy/).
 
@@ -172,6 +193,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Optional TheIntroDB intro timings when Plex, Jellyfin, or Emby has no intro marker; disabled by default
 - Online subtitle search & download[^plex]
 - Audio and subtitle track selection with server-provided defaults
+- MPV alternate video-track selection when a source exposes multiple video streams
 - Progress sync and resume
 - Auto-play next episode with skip intro / skip credits
 - Optional audio-only continuation when the app backgrounds on Android and iOS
@@ -179,19 +201,28 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Playback speed from 0.25x to 8x, audio sync offset, sleep timer (fixed durations or end of video)
 - Video zoom 50-200% with pinch, presets, and hotkeys
 - Audio passthrough[^pass], output channel limit (5.1 or stereo, with center-channel boost), and loudness normalization
-- Five-band device-local audio equalizer for mpv playback
+- Ten-band device-local equalizer plus MPV stereo widening, room ambience and pitch shift; active filters decode audio and turn passthrough off
+- Named device-local playback bookmarks for server media and Open media audio/video, plus temporary MPV A/B segment looping in existing playback controls
 - File Info sheet — every version, file, and stream the server reports
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]
 - Refresh-rate matching[^rrm]
 - Motion & clarity — motion presets, temporal blending, motion-compensated frame generation, OLED and sports profiles, generated-rate and search controls, desktop player-bar toggle with hold-to-open presets, mobile Video settings access, live A/B comparison, and scoped preferences[^mpv]. See the [Motion & clarity guide](docs/plezyng/motion-clarity/guide.md).
 - External player launch (VLC, MX Player, etc.) with progress sync back[^android]
+- **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists (including safe same-folder local entries), profile-local safe favorites, temporary local file and desktop folder queues, desktop same-folder M3U export, direct MPV File Info, and edition/disc-title choices when exposed by the input
+- Advanced RTSP/RTMP/RTMPS/UDP/RTP inputs, opt-in unencrypted FTP streams, optical-disc/ISO playback, and Wi-Fi file transfer on supported builds
+- MPV picture adjustments and optional 360° flat view; desktop MPV live-stream recording
+- Desktop screen/camera recording with optional audio or live preview in the MPV player, plus temporary HLS sharing over a private IPv4 network
+- Data-only HTTPS search extensions and the `tools/plezyctl` CLI, with results handed to the existing Open media form
+- Desktop local conversion/remux to MP4/MKV, M4A, MP3, FLAC, WAV, Ogg Opus, or WebM when the user-installed FFmpeg has the required encoders and output containers
+- Direct HTTP(S) playback uses a session-owned loopback gateway; recognized credential/signature parameters cannot be saved. Platform boundaries and transfer limits are in the [Open media guide](docs/UNIVERSAL_MEDIA.md).
 
 ### <img src="assets/readme_icons/music.svg" height="20" alt="" align="center" /> Music
 - Music libraries — artist, album, and track browsing with square artwork
 - Album and artist screens with play, shuffle, and Instant Mix
 - Gapless playback with a full play queue — reorder, remove, play next, add to queue
 - Now Playing with synced lyrics[^lyrics], persistent mini-player, and sleep timer
+- Accessible visualizer that follows Plex analysis or optional live audio stats on compatible MPV builds
 - Background playback with lock-screen, media-key, and notification controls[^bgaudio]
 - Offline playback of downloaded albums and tracks
 - Streaming quality presets — Original, 320, 192, or 128 kbps
@@ -224,8 +255,10 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Trakt, MyAnimeList, AniList, and Simkl — ratings, watched sync, and real-time scrobbling[^rt]
 - Scores from connected trackers on detail pages — Trakt, Simkl, MyAnimeList, and AniList, plus Rotten Tomatoes, Metacritic, Letterboxd, IMDb, and TMDB through MDBList
 - Plezy Remote — control desktop and TV from mobile
+- Official storefront and rental handoffs, Google Books public catalog search, OpenSubsonic music servers, and podcast RSS/Atom subscriptions
 - Watch Next row and tvOS Top Shelf[^shelf]
 - Android automation links for media launch, active-video controls, and profile selection
+- [`plezy://` links](#plezy-links) to open a profile, play a title, or tune a channel from Home Assistant, launchers, or an NFC tag; any movie, show, or episode menu shows its link[^links]
 
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
@@ -254,6 +287,29 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 [^desktop]: Desktop only.
 [^rt]: Real-time scrobbling on Trakt and Simkl; MyAnimeList and AniList update on completion.
 [^shelf]: Android TV / Fire TV and tvOS.
+[^links]: Android, iOS, macOS, and tvOS.
+
+## plezy:// links
+
+PlezyNG accepts both `plezy://` and `plezxyng://` schemes; links shown by the app continue using `plezy://` for compatibility. Use either scheme with the hosts and parameters below. Links start Plezy from outside the app. Any link may add `profile=<profile>`: a profile id, a Plex Home user UUID, or a display name (ignoring case; it must match one profile). Plezy switches to that profile first, and a protected profile still asks for its PIN. A link replaces whatever is playing.
+
+| Link | Does |
+|---|---|
+| `plezy://open` | Opens Plezy |
+| `plezy://play?server=<server>&id=<item>` | Plays one item on one server, any backend |
+| `plezy://play?type=movie\|show&tmdb=<n>` | Plays a title from whichever server has it. Use `tmdb`, `tvdb`, `imdb=tt<n>`, or `plex=<hash>` (the Plex GUID without `plex://movie/`) |
+| `plezy://live?channel=<channel>` | Tunes a Live TV channel by key, number, or call sign. Optional `server=<server>` and `start=beginning\|live` |
+
+For a show, `mode=next` (the default) plays the next episode to watch, and `mode=shuffle` plays the show shuffled. The menu of any movie, show, or episode has **Show link**, and each profile's menu in **Switch Profile** has **Show profile link**. Both show the link as text and a QR code.
+
+```sh
+# Android / Android TV, over adb (Home Assistant: remote.turn_on with activity: plezy://...)
+adb shell am start -a android.intent.action.VIEW -d "plezy://play?type=show\&tvdb=81189\&profile=Kids"
+# macOS
+open "plezy://play?type=movie&tmdb=603"
+```
+
+On iOS, use the Open URLs action in Shortcuts.
 
 ## Building from Source
 
@@ -315,7 +371,7 @@ Check the installed package against the runtime (not just the SDK), then launch 
 python3 linux/packaging/check-flatpak.py
 ```
 
-The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
+The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe org.snapetech.plezyng` for software-rendered verification; this is not a hardware-decoding or HDR test.
 
 </details>
 

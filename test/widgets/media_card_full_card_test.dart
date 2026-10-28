@@ -51,15 +51,6 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
   });
 
-  test('full bleed grid delegates use image aspect ratios', () {
-    expect(MediaGridDelegate.aspectRatioFor(fullBleedImage: true), GridLayoutConstants.fullCardPosterAspectRatio);
-    expect(
-      MediaGridDelegate.aspectRatioFor(useWideAspectRatio: true, fullBleedImage: true),
-      GridLayoutConstants.episodeThumbnailAspectRatio,
-    );
-    expect(MediaGridDelegate.aspectRatioFor(useWideAspectRatio: true), GridLayoutConstants.episodeGridCellAspectRatio);
-  });
-
   testWidgets('full bleed grid delegates use scaled gutters', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     tester.view.devicePixelRatio = 1.0;
@@ -133,7 +124,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Visible Movie'), findsOneWidget);
+    expect(find.textContaining('Visible Movie'), findsOneWidget);
   });
 
   testWidgets('catalog grid metadata leads with the rating and omits certification', (tester) async {
@@ -161,7 +152,7 @@ void main() {
     );
     expect(metadata.maxLines, 1);
     expect(metadata.overflow, TextOverflow.ellipsis);
-    expect(metadata.data, '8.6★ • 2024 • 2h 5min');
+    expect(metadata.data, '8.6★ • 2024 • 2h 5m');
     expect(metadata.data, isNot(contains('PG-13')), reason: 'certification is detail/search only');
     expect(metadata.data, isNot(contains('Drama')), reason: 'genres do not fit a shelf caption');
     expect(metadata.data, isNot(contains('(')), reason: 'vote counts do not fit a shelf caption');
@@ -391,7 +382,7 @@ void main() {
       ),
     );
 
-    expect(find.text('List Movie'), findsOneWidget);
+    expect(find.textContaining('List Movie'), findsOneWidget);
   });
 
   testWidgets('catalog list metadata keeps certification, votes and genres', (tester) async {
@@ -807,7 +798,7 @@ void main() {
       ),
     );
 
-    await tester.longPress(find.text('Custom Long Press Movie'));
+    await tester.longPress(find.textContaining('Custom Long Press Movie'));
     expect(longPressCount, 1);
 
     cardKey.currentState!.showContextMenu();

@@ -1,7 +1,7 @@
 # ng-runner-policy: private-jit-only-v1
 # packer-windows-jit-v1
 name: Submit WinGet Manifest
-run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}:submit:{3}', inputs.action, inputs.runner_pool, inputs.release_tag, inputs.submit) }}
 
 on:
   workflow_dispatch:
@@ -25,6 +25,10 @@ on:
         default: false
         required: true
         type: boolean
+
+# Several publication gates run before checkout in fresh private guests.
+env:
+  GH_REPO: ${{ github.repository }}
 
 permissions:
   contents: read

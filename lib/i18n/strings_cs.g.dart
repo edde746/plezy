@@ -41,15 +41,11 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$cs app = _Translations$app$cs._(_root);
-	@override late final _Translations$cast$cs cast = _Translations$cast$cs._(_root);
-	@override late final _Translations$automation$cs automation = _Translations$automation$cs._(_root);
-	@override late final _Translations$notifications$cs notifications = _Translations$notifications$cs._(_root);
 	@override late final _Translations$appIcon$cs appIcon = _Translations$appIcon$cs._(_root);
 	@override late final _Translations$auth$cs auth = _Translations$auth$cs._(_root);
 	@override late final _Translations$common$cs common = _Translations$common$cs._(_root);
 	@override late final _Translations$screens$cs screens = _Translations$screens$cs._(_root);
 	@override late final _Translations$update$cs update = _Translations$update$cs._(_root);
-	@override late final _Translations$appAccess$cs appAccess = _Translations$appAccess$cs._(_root);
 	@override late final _Translations$settings$cs settings = _Translations$settings$cs._(_root);
 	@override late final _Translations$themeEditor$cs themeEditor = _Translations$themeEditor$cs._(_root);
 	@override late final _Translations$search$cs search = _Translations$search$cs._(_root);
@@ -75,7 +71,6 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$cs serverSelection = _Translations$serverSelection$cs._(_root);
 	@override late final _Translations$hubDetail$cs hubDetail = _Translations$hubDetail$cs._(_root);
 	@override late final _Translations$logs$cs logs = _Translations$logs$cs._(_root);
-	@override late final _Translations$detail$cs detail = _Translations$detail$cs._(_root);
 	@override late final _Translations$startup$cs startup = _Translations$startup$cs._(_root);
 	@override late final _Translations$licenses$cs licenses = _Translations$licenses$cs._(_root);
 	@override late final _Translations$navigation$cs navigation = _Translations$navigation$cs._(_root);
@@ -98,15 +93,24 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$cs seerr = _Translations$seerr$cs._(_root);
 	@override late final _Translations$services$cs services = _Translations$services$cs._(_root);
 	@override late final _Translations$addServer$cs addServer = _Translations$addServer$cs._(_root);
+	@override late final _Translations$cast$cs cast = _Translations$cast$cs._(_root);
+	@override late final _Translations$automation$cs automation = _Translations$automation$cs._(_root);
+	@override late final _Translations$notifications$cs notifications = _Translations$notifications$cs._(_root);
+	@override late final _Translations$appAccess$cs appAccess = _Translations$appAccess$cs._(_root);
+	@override late final _Translations$detail$cs detail = _Translations$detail$cs._(_root);
 	@override late final _Translations$watchLink$cs watchLink = _Translations$watchLink$cs._(_root);
 	@override late final _Translations$homeLayout$cs homeLayout = _Translations$homeLayout$cs._(_root);
 	@override late final _Translations$platform$cs platform = _Translations$platform$cs._(_root);
+	@override late final _Translations$universalMedia$cs universalMedia = _Translations$universalMedia$cs._(_root);
 	@override late final _Translations$fileSources$cs fileSources = _Translations$fileSources$cs._(_root);
 	@override late final _Translations$lending$cs lending = _Translations$lending$cs._(_root);
 	@override late final _Translations$audiobook$cs audiobook = _Translations$audiobook$cs._(_root);
 	@override late final _Translations$sourceSetup$cs sourceSetup = _Translations$sourceSetup$cs._(_root);
 	@override late final _Translations$comics$cs comics = _Translations$comics$cs._(_root);
 	@override late final _Translations$games$cs games = _Translations$games$cs._(_root);
+	@override late final _Translations$deepLinks$cs deepLinks = _Translations$deepLinks$cs._(_root);
+	@override late final _Translations$householdSetup$cs householdSetup = _Translations$householdSetup$cs._(_root);
+	@override late final _Translations$issueReport$cs issueReport = _Translations$issueReport$cs._(_root);
 }
 
 // Path: app
@@ -117,48 +121,6 @@ class _Translations$app$cs extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$cs extends Translations$cast$en {
-	_Translations$cast$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Odeslat do zařízení';
-	@override String get searching => 'Hledání zařízení pro výkresy...';
-	@override String connectedTo({required Object device}) => 'Připojení k číslu ${device}';
-	@override String get device => 'Zařízení pro odesílání';
-	@override String get readyToCast => 'Připraveno k odesílání';
-	@override String get subtitle => 'Titulky';
-	@override String get serverNotAvailable => 'Media server není k dispozici.';
-	@override String get stopCasting => 'Ukončit odesílání';
-	@override String get castToDevice => 'Odeslat do zařízení';
-	@override String get noEpisodeAvailable => 'Neexistuje žádná epizoda k dispozici.';
-	@override String get startFailed => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.';
-}
-
-// Path: automation
-class _Translations$automation$cs extends Translations$automation$en {
-	_Translations$automation$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Neexistuje žádná aktivní videozáznamy k ovládání.';
-	@override String get profileNotFound => 'Tento profil Plezy nebyl nalezen.';
-}
-
-// Path: notifications
-class _Translations$notifications$cs extends Translations$notifications$en {
-	_Translations$notifications$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Nová epizoda';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -321,37 +283,6 @@ class _Translations$update$cs extends Translations$update$en {
 	@override String get viewRelease => 'Zobrazit Release';
 	@override String get latestVersion => 'Jste na nejnovější verzi';
 	@override String get checkFailed => 'Nedokázal se dohlížet na aktualizace';
-}
-
-// Path: appAccess
-class _Translations$appAccess$cs extends Translations$appAccess$en {
-	_Translations$appAccess$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Zkuste každou funkci zdarma po dobu 7 dní';
-	@override String get description => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.';
-	@override String get trialEndedDescription => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.';
-	@override String get startTrial => 'Začínám 7denní bezplatný test';
-	@override String get trialActive => 'Váš 7denní plnohodnotný test je aktivní.';
-	@override String get trialEnded => 'Sedmdenní proces skončil.';
-	@override String get trialStartFailed => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.';
-	@override String get lifetimeTitle => 'PlezyNG odemknutá po celý život';
-	@override String get lifetimeBody => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.';
-	@override String get manageTitle => 'PlezyNG Životní přístup';
-	@override String get manageDescription => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.';
-	@override String buy({required Object price}) => 'Odemknout všechny funkce pro ${price}';
-	@override String get loadingPrice => 'Nákladní obchodní cena...';
-	@override String get retryPrice => 'Zpět na cenu Lookup';
-	@override String get restore => 'Obnovte životní nákup';
-	@override String get pending => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.';
-	@override String get storeUnavailable => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.';
-	@override String get productNotFound => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.';
-	@override String get productQueryFailed => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.';
-	@override String get purchaseFailed => 'Nákup neprošel, zkuste to znovu.';
-	@override String get restoreFailed => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.';
-	@override String get nothingToRestore => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.';
 }
 
 // Path: settings
@@ -1244,12 +1175,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	final TranslationsCs _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek',
-		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky',
-		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků',
-	);
 	@override String get audioLabel => 'Zvuk';
 	@override String get subtitlesLabel => 'Titulky';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1286,9 +1211,31 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Povolit zvuk';
 	@override String get settingsButton => 'Playback nastavení';
 	@override String get tracksButton => 'Audio a subtituly';
-	@override String get trackSelectionTitle => 'Zvolte stopy před playbackem';
-	@override String get trackSelectionAuto => 'Automatické výběr';
 	@override String get chaptersButton => 'Kapitoly';
+	@override String get segmentLoopHelp => 'Nastavení A, pak nastavení B později v časovém řádku.';
+	@override String get setLoopStart => 'Nastavit začátek smyčky (A)';
+	@override String get setLoopEnd => 'Set loop konec (B)';
+	@override String get clearSegmentLoop => 'Čistý segment';
+	@override String get setLoopStartFirst => 'Nastavte začátek (A) před koncem (B).';
+	@override String get loopEndAfterStart => 'Závěrečný konec musí být později než začátek.';
+	@override String get segmentLoopUnavailable => 'Segment looping není k dispozici pro tento playback.';
+	@override String get loopPointNotSet => 'Není nastaven';
+	@override String get bookmarksHelp => 'Čísla jsou uložena na tomto zařízení. Vyberte jednu pro jít do té doby.';
+	@override String get bookmarksButton => 'Bookmarky';
+	@override String get chaptersAndBookmarks => 'Kapitoly a bookmarks';
+	@override String get segmentLoop => 'Segmentový loop';
+	@override String get addBookmark => 'Přidat bookmark';
+	@override String get bookmarkName => 'Bookmark jméno';
+	@override String get bookmarkNameHint => 'Například otevírací scény';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmarková ${n}';
+	@override String get bookmarkNameRequired => 'Zadejte jméno pro tuto knižní značku.';
+	@override String get deleteBookmark => 'Odstranit bookmark';
+	@override String get bookmarkLimitReached => 'Tato položka má již 100 bookmarků.';
+	@override String get bookmarkUnavailable => 'Nemohla jsem tuto knižní značku uložit nebo odstranit.';
+	@override String get bookmarkSaved => 'Bookmark je zachráněn.';
+	@override String get bookmarkDeleted => 'Bookmark byl vymazán.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop bod ${point} Set na ${time}A to';
+	@override String get noChaptersOrBookmarks => 'Není k dispozici žádná kapitola ani knihovna.';
 	@override String get versionQualityButton => 'Verze a kvalita';
 	@override String get versionColumnHeader => 'Verze';
 	@override String get qualityColumnHeader => 'Kvalita';
@@ -1297,8 +1244,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Překódování není k dispozici – hraje originální kvalitu';
 	@override String get subtitleUnavailableFallback => 'Výběr vybraných titulů nelze nahrát – pokračovat bez titulů';
 	@override String get pipButton => 'Obrazový režim - Picture in-Picture';
-	@override String get openMiniPlayer => 'Otevřený mini hráč';
-	@override String get returnToFullPlayer => 'Zpět na plný hráč';
 	@override String get aspectRatioButton => 'Poměr stran';
 	@override String get ambientLighting => 'Atmosférické osvětlení';
 	@override String get fullscreenButton => 'Vstup na plný obrazovek';
@@ -1307,7 +1252,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'rotační zámek';
 	@override String get lockScreen => 'Závěsný obrazovek';
 	@override String get screenLockButton => 'Zámek obrazovky';
-	@override String get longPressToUnlock => 'Dlouhý tlak na odemknutí';
 	@override String get timelineSlider => 'Video časové linie';
 	@override String get volumeSlider => 'Úroveň objemu';
 	@override String endsAt({required Object time}) => 'Končí na ${time}';
@@ -1324,8 +1268,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Žádné položky v kousku';
 	@override String get noAudioDevicesAvailable => 'Žádné audio zařízení k dispozici';
 	@override String get searchSubtitles => 'Podtitul hledání';
-	@override String get loadSubtitleFile => 'Přihláška souboru Subtitle...';
-	@override String get subtitleLoadFailed => 'Nedokázal přenést soubor subtitle';
 	@override String get language => 'Jazyk';
 	@override String get noSubtitlesFound => 'Žádné podtitulky nalezeny';
 	@override String get subtitleDownloaded => 'Subtítky stažené';
@@ -1334,7 +1276,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Vyhledávací jazyky...';
 	@override String get skipIntro => 'Skříň vstupuje';
 	@override String get skipCredits => 'Skok úvěrů';
-	@override String get skipAds => 'Skřípání Ads';
 	@override String get nextEpisode => 'Další díl';
 	@override String subtitleTrack({required Object n}) => 'Původní číslo ${n}';
 	@override String subtitleFile({required Object name}) => 'Článek ${name}';
@@ -1342,6 +1283,21 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Název titulu: Off';
 	@override String osdSubtitles({required Object track}) => 'Články v kategorii: ${track}';
 	@override String osdAudio({required Object track}) => 'Audio číslo: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek',
+		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky',
+		many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků',
+	);
+	@override String get trackSelectionTitle => 'Zvolte stopy před playbackem';
+	@override String get trackSelectionAuto => 'Automatické výběr';
+	@override String get openMiniPlayer => 'Otevřený mini hráč';
+	@override String get returnToFullPlayer => 'Zpět na plný hráč';
+	@override String get loadSubtitleFile => 'Přihláška souboru Subtitle...';
+	@override String get subtitleLoadFailed => 'Nedokázal přenést soubor subtitle';
+	@override String get skipAds => 'Skřípání Ads';
+	@override String get tapToUnlock => 'Klepnutím odemknete';
+	@override String get tapAgainToUnlock => 'Opětovným klepnutím odemknete';
 }
 
 // Path: messages
@@ -1843,16 +1799,6 @@ class _Translations$logs$cs extends Translations$logs$en {
 	@override String get saveLogsFailed => 'Nemohla jsem uložit soubor.';
 }
 
-// Path: detail
-class _Translations$detail$cs extends Translations$detail$en {
-	_Translations$detail$cs._(TranslationsCs root) : this._root = root, super.internal(root);
-
-	final TranslationsCs _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Končí na ${time}';
-}
-
 // Path: startup
 class _Translations$startup$cs extends Translations$startup$en {
 	_Translations$startup$cs._(TranslationsCs root) : this._root = root, super.internal(root);
@@ -2172,6 +2118,7 @@ class _Translations$music$cs extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Přečtěte si analýzu track...';
 	@override String get visualizerAmbientMotion => 'Atmosféra pohybu';
 	@override String get visualizerPlexLoudness => 'Plex hlasitost';
+	@override String get visualizerLiveAudio => 'Živá analýza zvuku';
 	@override String get visualizerPreviousPreset => 'Předchozí vizuální styl';
 	@override String get visualizerNextPreset => 'Další vizuální styl';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2537,6 +2484,12 @@ class _Translations$videoSettings$cs extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Mapa na špičkové jasnosti displeje v hráči, pak řekněte skladatelovi výsledek.';
 	@override String get hdrToneMappingFailed => 'Nemohlo by se změnit mapování HDR tónu - předchozí režim je stále aktivní.';
 	@override String get audioOutput => 'Audio výstup';
+	@override String get videoTrack => 'Video stopa';
+	@override String get videoTrackDescription => 'Vyberte video stream, který se má zobrazit. Funkce je dostupná při přehrávání v MPV, pokud soubor obsahuje alternativní video stopy.';
+	@override String get videoTrackDefault => 'Výchozí';
+	@override String get videoTrackUnavailable => 'Nejsou dostupné žádné alternativní video stopy.';
+	@override String get videoTrackFailed => 'Video stopu se nepodařilo změnit.';
+	@override String videoTrackNumber({required Object id}) => 'Stopa ${id}';
 	@override String get performanceOverlay => 'Výsledky Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2544,10 +2497,17 @@ class _Translations$videoSettings$cs extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Vesmírný audio';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio ekvalizátor';
-	@override String get audioEqualizerDescription => 'Přizpůsobte pro toto zařízení pět frekvenčních pásem. k dispozici na čísle mpv; aktivní EQ dekóduje zvuk a deaktivuje přizpůsobení.';
+	@override String get audioEqualizerDescription => '10-bandový ekvalizátor pro MPVAudio filtry používají dekódované audio a vypněte passthrough.';
 	@override String get audioEqualizerFlat => 'ploché';
 	@override String get audioEqualizerActive => 'Vlastní';
 	@override String get audioEqualizerSaveFailed => 'Nemohl jsem zachránit nastavení audio ekvalizátoru.';
+	@override String get audioEffectsDescription => 'Efekty používají dekódovaný zvuk, takže passthrough otáčí. místnost atmosféra a stereo rozšíření závisí na MPV Stavět a sledovat.';
+	@override String get audioStereoWidth => 'Stereo rozšíření';
+	@override String get audioSpatializer => 'pokojová atmosféra';
+	@override String get audioSpatializerDescription => 'Přidejte klidné místnosti refleksy.';
+	@override String get audioPitch => 'Pichová změna';
+	@override String get audioPitchDescription => 'Změna místa bez změny rychlosti. MPV Stavba musí zahrnovat Rubber BandA to';
+	@override String get audioEffectUnavailable => 'Tento efekt není k dispozici pro tuto trať nebo MPV a stavět .';
 	@override String get backgroundVideoAudio => 'Video audio pozadí';
 	@override String get backgroundVideoAudioDescription => 'Udržujte video audio přehrávač, když opustíte přehrávač; obrázek je skryt, dokud se nevrátíte. Android používá oznámení pro přehrávač médií.';
 	@override String get audioNormalization => 'Normalizace hluku';
@@ -2940,6 +2900,88 @@ class _Translations$addServer$cs extends Translations$addServer$en {
 	@override String get httpsRequired => 'Použití HTTPS nebo výslovně umožnit nekryptované připojení.';
 }
 
+// Path: cast
+class _Translations$cast$cs extends Translations$cast$en {
+	_Translations$cast$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Odeslat do zařízení';
+	@override String get searching => 'Hledání zařízení pro výkresy...';
+	@override String connectedTo({required Object device}) => 'Připojení k číslu ${device}';
+	@override String get device => 'Zařízení pro odesílání';
+	@override String get readyToCast => 'Připraveno k odesílání';
+	@override String get subtitle => 'Titulky';
+	@override String get serverNotAvailable => 'Media server není k dispozici.';
+	@override String get stopCasting => 'Ukončit odesílání';
+	@override String get castToDevice => 'Odeslat do zařízení';
+	@override String get noEpisodeAvailable => 'Neexistuje žádná epizoda k dispozici.';
+	@override String get startFailed => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.';
+}
+
+// Path: automation
+class _Translations$automation$cs extends Translations$automation$en {
+	_Translations$automation$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Neexistuje žádná aktivní videozáznamy k ovládání.';
+}
+
+// Path: notifications
+class _Translations$notifications$cs extends Translations$notifications$en {
+	_Translations$notifications$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Nová epizoda';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$cs extends Translations$appAccess$en {
+	_Translations$appAccess$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Zkuste každou funkci zdarma po dobu 7 dní';
+	@override String get description => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.';
+	@override String get trialEndedDescription => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.';
+	@override String get startTrial => 'Začínám 7denní bezplatný test';
+	@override String get trialActive => 'Váš 7denní plnohodnotný test je aktivní.';
+	@override String get trialEnded => 'Sedmdenní proces skončil.';
+	@override String get trialStartFailed => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.';
+	@override String get lifetimeTitle => 'PlezyNG odemknutá po celý život';
+	@override String get lifetimeBody => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.';
+	@override String get manageTitle => 'PlezyNG Životní přístup';
+	@override String get manageDescription => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.';
+	@override String buy({required Object price}) => 'Odemknout všechny funkce pro ${price}';
+	@override String get loadingPrice => 'Nákladní obchodní cena...';
+	@override String get retryPrice => 'Zpět na cenu Lookup';
+	@override String get restore => 'Obnovte životní nákup';
+	@override String get pending => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.';
+	@override String get storeUnavailable => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.';
+	@override String get productNotFound => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.';
+	@override String get productQueryFailed => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.';
+	@override String get purchaseFailed => 'Nákup neprošel, zkuste to znovu.';
+	@override String get restoreFailed => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.';
+	@override String get nothingToRestore => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.';
+}
+
+// Path: detail
+class _Translations$detail$cs extends Translations$detail$en {
+	_Translations$detail$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Končí na ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$cs extends Translations$watchLink$en {
 	_Translations$watchLink$cs._(TranslationsCs root) : this._root = root, super.internal(root);
@@ -3079,6 +3121,225 @@ class _Translations$platform$cs extends Translations$platform$en {
 	@override String get locationPermission => 'PlezyNG používá přístup k místu, když iOS vyžaduje, aby detekovala vaši místní síť a připojila se k vašim mediálním serverům.';
 	@override String get photoLibraryPermission => 'Vyberte si obrázky z vaší knihovny fotografií pro použití jako umělecké dílo.';
 	@override String get cameraPermission => 'Skenování QR kódů pro párování s Companion Remote.';
+}
+
+// Path: universalMedia
+class _Translations$universalMedia$cs extends Translations$universalMedia$en {
+	_Translations$universalMedia$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Otevřené média';
+	@override String get shortcutHelp => 'Zahrajte si odkaz, playlist nebo soubor pro tuto sezení.';
+	@override String get intro => 'Otevřete odkaz, playlist nebo soubor. Playback používá standardní přehrávač PlezyNG a do vaší knihovny nepřidá historii.';
+	@override String get openWhat => 'Co byste chtěli otevřít?';
+	@override String get stream => 'Streamová adresa';
+	@override String get playlist => 'Playlisty';
+	@override String get files => 'Přístrojové soubory';
+	@override String get favorites => 'Úsporný stream oblíbené';
+	@override String get address => 'Mediální adresa';
+	@override String get addressHelp => 'URL s uznanými parametry ověřování nebo podpisů se používají pouze pro tuto schůzku a nelze je uložit jako oblíbené.';
+	@override String get displayName => 'Název zobrazení (volitelné)';
+	@override String get displayNameHelp => 'Vyberte krátký název pro hráče a systémové médií ovládacích prvků.';
+	@override String get allowHttp => 'Umožňuje nekryptované připojení HTTP';
+	@override String get allowHttpHelp => 'HTTP nešifruje připojení. dovolte ho pouze na důvěryhodné síti. použijte HTTPS kdykoli je to možné.';
+	@override String get advancedProtocols => 'MPV pouze: zadejte adresu RTSP, RTMP/RTMPS, UDP nebo RTP. Tyto adresy nelze uložit jako oblíbené.';
+	@override String get liveStream => 'Léčba jako živá';
+	@override String get liveStreamHelp => 'Použijte to pro živé video nebo rádio. aplikace skrývá časovou řádku, skok tlačítka a možnost go-to-time. vypněte ji pro záznam.';
+	@override String get privateSession => 'Pouze tento přehrávač používá adresu.Save an eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Zachraňte oblíbené';
+	@override String get playNow => 'Hrajte nyní';
+	@override String get favoriteSaved => 'Stream oblíbené uložené do tohoto profilu';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.',
+		few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.',
+		many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.',
+		other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.',
+	);
+	@override String get playlistAddress => 'Playlistová adresa';
+	@override String get playlistAddressHelp => 'Otevřete playlist M3U, M3u8 nebo PLS z webové adresy. Přímé streamovací odkazy nezachovávají playlist.';
+	@override String get choosePlaylist => 'Vyberte soubor playlist';
+	@override String get openPlaylist => 'Otevřená playlist';
+	@override String get playlistFormatsHelp => 'Přehrávač může obsahovat až 1000 položek a 2 MB. HLS se otevírají jako toky, takže hráč si může vybrat kvalitu.';
+	@override String get saveQueuePlaylist => 'Uložit frontu jako seznam skladeb';
+	@override String get queuePlaylistSaved => 'Seznam skladeb byl uložen vedle souborů médií.';
+	@override String get queuePlaylistUnavailable => 'Tuto frontu nelze uložit jako znovu použitelný místní seznam skladeb.';
+	@override String get queuePlaylistFolderRequired => 'Vyberte umístění ve stejné složce, ve které jsou soubory ve frontě.';
+	@override String get noFavorites => 'Není zachráněno stream oblíbené zatím. Oblíbené zůstanou v tomto profilu.';
+	@override String get removeFavorite => 'Odstranit stream oblíbené';
+	@override String get filesHelp => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.';
+	@override String get chooseFiles => 'Vyberte soubory';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: '1 vybrané soubory',
+		few: '${count} vybrané soubory',
+		many: '${count} vybrané soubory',
+		other: '${count} vybrané soubory',
+	);
+	@override String get wifiTransfer => 'Odesílání souborů přes Wi-Fi';
+	@override String get wifiTransferHelp => 'Přenos podporovaných souborů z prohlížeče na stejnou důvěryhodnou síť.';
+	@override String get wifiTransferIntro => 'Otevřete tuto adresu v prohlížeči na jiném zařízení. Vyberte soubory, abyste je přidali do knihovny souborů a knih tohoto zařízení.';
+	@override String get wifiTransferPrivacy => 'Toto zařízení přijímá soubory přes vaši místní síť.Každý, kdo zná tuto adresu může poslat soubory až do zastavení přenosu nebo adresa vyprší po 15 minutách. Maximální: 100 souborů, 4 GiB na soubor, 10 GiB celkem.';
+	@override String get wifiTransferStarting => 'Příprava soukromého, časově omezeného převodu...';
+	@override String get wifiTransferUnavailable => 'Nemohla jsem začít přenosu. zkontrolujte přístup k místní síti a zkuste znovu.';
+	@override String get openThisAddress => 'Otevřete jednu z těchto adres na odesílací zařízení';
+	@override String get copyAddress => 'Kopírování transferové adresy';
+	@override String get addressCopied => 'Přenosová adresa kopírovaná';
+	@override String transferExpires({required Object time}) => 'Tato adresa vyprší v ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
+		one: '${count} soubor přijatý',
+		few: '${count} soubory obdržené',
+		many: '${count} soubory obdržené',
+		other: '${count} soubory obdržené',
+	);
+	@override String uploadedData({required Object size}) => 'Obdržel ${size}';
+	@override String get stopTransfer => 'Zastavení přenosu a zrušení adresy';
+	@override String get startTransfer => 'Začátek transferu';
+	@override String get wifiImportedFiles => 'Přenos Wi-Fi';
+	@override String get wifiBrowserTitle => 'Odeslat soubory do PlezyNG';
+	@override String get wifiBrowserIntro => 'Vyberte audio, video, ebook nebo komiksové soubory k odeslání. Soubory jsou uloženy v knihovně souborů a knih tohoto zařízení. Maximální: 100 souboru, 4 GiB na soubor, 10 GiB celkem.';
+	@override String get uploadFilesLabel => 'Soubory k odesílání';
+	@override String get uploadSelected => 'Stáhnout vybrané soubory';
+	@override String get uploadSelectFirst => 'Nejprve vyberte jeden nebo více souborů.';
+	@override String get uploading => 'Odesílání';
+	@override String get uploadComplete => 'Soubor přidán do PlezyNG.';
+	@override String get uploadFailed => 'Soubor nelze přidat. Držte tuto stránku otevřenou a zkuste znovu.';
+	@override String get liveCue => 'Životní';
+	@override String get liveSession => 'Živý stream';
+	@override String get liveCueHelp => 'V případě živého videa nebo rozhlasu aplikace ukrývá časovou řádku a skáče tlačítka. nezachovává adresu ani sleduje historii.';
+	@override String get sessionOnly => 'Tento playback je pouze session-';
+	@override String get sessionOnlyHelp => 'Playback nikdy nezachrání pokrok nebo historii. Zachraňte tok jako oblíbený, abyste ho udrželi v tomto profilu, pokud je způsobilý.';
+	@override String get pictureAdjustments => 'Fotografické úpravy';
+	@override String get pictureHelp => 'Tyto změny obrazu ovlivňují pouze tento playback. Oni reset, když playback skončí.';
+	@override String get resetPicture => 'Reset obrázek';
+	@override String get brightness => 'Světlo';
+	@override String get contrast => 'kontrast';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturace';
+	@override String get view360 => 'Flat View pro 360° video';
+	@override String get view360Help => 'Použijte toto pro rovnoměrné 360° video. MPV potřebuje filtr v360 FFmpeg pro tento pohled.';
+	@override String get view360Unavailable => 'Tento mpv stav by nemohl použít 360° filtr.';
+	@override String get view360Yaw => 'Horizontální pohled';
+	@override String get view360Pitch => 'Vertikální pohled';
+	@override String get view360FieldOfView => 'Oblast pohledu';
+	@override String get recordStream => 'Rekordní živý stream';
+	@override String get stopRecording => 'Zastavte a ušetřete záznam';
+	@override String get recordingStarted => 'Záznam je aktivní.Leaving playback zastaví a ukládá záznam.';
+	@override String get recordingSaved => 'Záznam byl dokončen a zachráněn.';
+	@override String get recordingActive => 'Zanechání playback se zastaví a ukládá.';
+	@override String get recordingFormatHelp => 'Pro video, vyberte MKV nebo MPEG-TS. pro audio, zvolte MKA nebo MKV.';
+	@override String get replaceRecordingTitle => 'Změníte tuto nahrávku?';
+	@override String get replaceRecordingHelp => 'PlezyNG obnovuje stávající soubor při zaznamenávání. Pokud nemůže uložit novou záznam, Plezy NG obnovuje zálohu.';
+	@override String get replaceRecording => 'nahrazení souborů';
+	@override String get discHelp => 'Otevřete disk v optickém disku tohoto počítače.Můžete také otevřít obraz ISO z souborů zařízení.';
+	@override String get discs => 'Optický disk';
+	@override String get editionOrTitle => 'Edice nebo název disku';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray';
+	@override String get audioCd => 'Audio CD';
+	@override String get discAvailability => 'Disk playback vyžaduje kompatibilní MPV stavbu, podporovaný disk a oprávnění operačního systému.';
+	@override String get converterTitle => 'Konvertovat soubor místních médií';
+	@override String get converterHelp => 'Převod lokálního souboru nebo ho remux s FFmpegA to';
+	@override String get converterIntro => 'Konvertovat místní audio nebo video soubor do formátu, který funguje na více zařízeních.';
+	@override String get converterPrivacy => 'FFmpeg musí být nainstalován na tomto počítači. konverze čte pouze místní soubory. nedodává toky nebo odstraňuje DRM.';
+	@override String get converterChooseInput => 'Vyberte si místní mediální soubor';
+	@override String get converterFormat => 'Výstupní formát';
+	@override String get converterMp4 => 'MP4 · H.264 a AAC';
+	@override String get converterM4a => 'M4A - AAC audio';
+	@override String get converterMp3 => 'MP3 a audio';
+	@override String get allowFtp => 'Umožňuje FTP';
+	@override String get allowFtpHelp => 'FTP odesílá média bez šifrování. Používejte pouze na důvěryhodných sítích.';
+	@override String get converterSaveAs => 'Shromažďování převedených médií jako';
+	@override String get converterExtensionMismatch => 'Vyberte název s vybraným rozšířením výstupu.';
+	@override String get converterUnsupportedInput => 'Vyberte si audio nebo video soubor.';
+	@override String get converterLocalOnly => 'Vybraný soubor není k dispozici jako místní zařízení.';
+	@override String get converterReplaceTitle => 'Změnit tento soubor?';
+	@override String get converterReplaceHelp => 'PlezyNG obnovuje stávající soubor, dokud se neukládá převedená kopie.';
+	@override String get converterStarting => 'Začínáme s FFmpeg...';
+	@override String get converterProgress => 'Přeměna na tento počítač...';
+	@override String get converterComplete => 'Konverze je hotová, nový soubor je připraven.';
+	@override String get converterFfmpegMissing => 'FFmpeg chybí nebo nepodporuje tento formát.';
+	@override String get converterFailed => 'Přesvědčte se, že zdrojový soubor lze přečíst a destinace má dostatek volného prostoru.';
+	@override String get converterCancelled => 'Konverze byla zrušena. neúplný výsledek byl odstraněn.';
+	@override String get converterDesktopOnly => 'Lokální konverze je k dispozici na desktopových počítačích s FFmpeg instalován.';
+	@override String get converterStart => 'Převod souborů';
+	@override String get mediaToolsTitle => 'Média nástroje';
+	@override String get mediaToolsShortcut => 'Zachyťte nebo sdílejte média, přidejte vyhledávací rozšíření nebo použijte příkazovou řadu.';
+	@override String get mediaToolsIntro => 'Vyberte si zaměřený nástroj. zachytit a stream-out používat FFmpeg nainstalované na tomto desku. rozšíření a CLI příkazy používají omezené požadavky HTTPS a stávající Open media tok.';
+	@override String get mediaToolsAccessibility => 'Výběry nástrojů a kontroly pracují s dotykem, ukazatelem, klávesnicí a zaměřením D-pad. Změny v stavu nahrávání, sdílení a vyhledávání jsou oznámeny.';
+	@override String get mediaTool => 'Média nástroj';
+	@override String get captureIntro => 'Na tomto počítači zaznamenáváte obrazovku nebo fotoaparát do souboru MP4. FFmpeg musí být nainstalován a obsahuje kódovač H.264.';
+	@override String get captureNoDevices => 'Nebyly nalezeny žádné obrazovky nebo fotoaparáty. zkontrolujte FFmpeg zachycenou podporu a oprávnění k soukromí operačního systému.';
+	@override String get captureSource => 'obrazovka nebo fotoaparát';
+	@override String get captureScreen => 'obrazovka';
+	@override String get captureAudioSource => 'Audio vstup (volitelné)';
+	@override String get captureAudioHelp => 'Přidejte zvuk z mikrofonu nebo dostupného vstupu. volby zařízení závisí na FFmpeg a systémových povoleních.';
+	@override String get captureAudioNone => 'Žádný audio';
+	@override String get captureDefaultAudio => 'Předvolený audio vstup';
+	@override String get captureWaylandHelp => 'Wayland omezuje toto XWayland zachycení na X display. Windows mimo XWayland se nemusí zobrazit.';
+	@override String get captureFrameRate => 'Rekordní rámová sazba';
+	@override String get capturePrivacy => 'Záznam se ukládá pouze na vybranou souboru. mikrofonový záznam je volitelný. PlezyNG záznam nezakládá.';
+	@override String get captureSaveAs => 'Shromažďujte záznam obrazovky jako';
+	@override String get captureExtensionMismatch => 'Vyberte název, který končí v .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg nebo kódování videa H.264 není k dispozici. nainstalovat podporované FFmpeg stavbu, pak zkuste znovu.';
+	@override String get captureFailed => 'Zkontrolujte oprávnění zařízení, dostupné ukládání a podporu FFmpeg.';
+	@override String get captureSaved => 'Scénární záznam byl zachráněn.';
+	@override String get captureElapsedLabel => 'Záznamový čas';
+	@override String get captureStart => 'Začíná nahrávání';
+	@override String get capturePreview => 'Náhled v přehrávači';
+	@override String get capturePreviewHelp => 'Prohlédněte vybraný zdroj ve standardním přehrávači. Náhled je pouze pro tuto relaci a neukládá záznam. Podpora zařízení a oprávnění závisí na MPV a operačním systému. Náhled používá pouze video; do uložených záznamů lze přidat volitelný zvuk.';
+	@override String get capturePreviewActive => 'Živý náhled · nenahrává se';
+	@override String get captureStop => 'Zastavte se a zachraňte';
+	@override String get captureMode => 'únos';
+	@override String get shareMode => 'Sdílejte';
+	@override String get shareIntro => 'Odeslat soubor místních médií do jiného zařízení na vaší soukromé síti. PlezyNG vytváří dočasný tok HLS.';
+	@override String get sharePrivacy => 'Kdokoliv na vaší místní síti, kdo dostává soukromý odkaz může sledovat, zatímco je aktivní. odkaz vyprší po 60 minutách. zastavit sdílení, aby se server uzavřel a zrušit odkaz.';
+	@override String get shareChooseFile => 'Vyberte mediální soubor';
+	@override String get shareChooseHelp => 'Vyberte místní audio nebo video soubor. soubor zůstává na tomto počítači.';
+	@override String get shareFfmpegMissing => 'FFmpeg nebo kódování H.264/AAC nejsou k dispozici. Instalace FFmpeg s podporou kódování H.264 a AAC.';
+	@override String get shareFailed => 'Stream se nemohl začít ani nečekaně zastavit. zkontrolujte FFmpeg a přístup k síti.';
+	@override String get shareActive => 'Stream je připraven na vaší soukromé síti.';
+	@override String get shareEnded => 'Média dosáhla konce a už se nedělá.';
+	@override String get shareStopped => 'Sdílení přerušeno. dočasný odkaz již neplatí.';
+	@override String get shareUrlCopied => 'Přenosová adresa je kopírována.';
+	@override String get shareOpenUrl => 'Otevřete tuto adresu v jednom hráči na jiném zařízení';
+	@override String get shareQrLabel => 'QR kód pro dočasnou adresu toku';
+	@override String get shareQrHelp => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.';
+	@override String get shareHttpHint => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.';
+	@override String get shareCopyUrl => 'Kopírování streamové adresy';
+	@override String get shareExpiresLabel => 'Link vyprší na';
+	@override String get shareStarting => 'Připravování toku...';
+	@override String get shareStart => 'Začněte sdílet';
+	@override String get shareStop => 'Přestaňte sdílet';
+	@override String get extensionsMode => 'Rozšíření a CLI';
+	@override String get extensionsIntro => 'Přidejte data-pouze vyhledávací rozšíření najít média. Vyberte výsledek, aby ji přenést do známého formuláře Open media.';
+	@override String get extensionsPrivacy => 'Manifest může definovat jedno HTTPS vyhledávací koncové body a mapové odpovídající pole. Nemůže spustit kód, přidat název žádosti, číst soubory, nebo spustit příkazy shell.';
+	@override String get extensionImport => 'Přidat rozšíření manifest';
+	@override String get extensionEmpty => 'Zvolte důvěryhodný manifest JSON soubor pro přidání.';
+	@override String get extensionChoose => 'Vyhledávací služba';
+	@override String get extensionSearchConsent => 'Každé vyhledávání odesílá vaše slova k této službě HTTPS. Výsledky se otevřou pouze po vybrání jednoho.';
+	@override String get extensionSearchLabel => 'Vyhledávání médií';
+	@override String get extensionSearch => 'Vyhledávání';
+	@override String get extensionSearching => 'Hledání...';
+	@override String get extensionNoResults => 'Bezpečné výsledky médií nebyly vráceny. zkuste další vyhledávání.';
+	@override String get extensionInstallTitle => 'Přidejte tuto vyhledávací službu?';
+	@override String get extensionReplaceTitle => 'Aktualizovat tuto službu vyhledávání?';
+	@override String get extensionService => 'Služba';
+	@override String get extensionEndpoint => 'HTTPS konečný bod';
+	@override String get extensionConsent => 'Váš vyhledávací text je zaslán do této služby. manifest neobsahuje prováděcí kód. Pokračujte pouze v případě, že důvěřujete tomuto bodu.';
+	@override String get extensionInstall => 'Přidat službu';
+	@override String get extensionReplace => 'Aktualizace služby';
+	@override String get extensionRemoveTitle => 'Odstranit tuto vyhledávací službu?';
+	@override String get extensionRemoveHelp => 'To odstraní službu z tohoto profilu. PlezyNG se s jeho koncovým bodem nesetká.';
+	@override String get extensionRemove => 'Odstranění služby';
+	@override String get extensionInvalidManifest => 'Tento soubor není podporovaným rozšířením manifest. viz průvodce Open media pro formát.';
+	@override String get extensionSaveFailed => 'Rozšíření nelze uložit do aktivního profilu.';
+	@override String get extensionSearchFailed => 'Vyhledávací služba nevrátila platnou odpověď. zkontrolujte koncový bod a zkuste znovu.';
+	@override String get cliTitle => 'Příkazová linka';
+	@override String get cliHelp => 'Použijte průvodce plezyctl k ověření manifestu nebo vyhledávání stejného rozšíření. Před každým vyhledáváním zkontrolujte službu HTTPS. Výsledky se otevřou ve stávající mediální formě; vyberte tlačítko zpětné vazby.';
+	@override String get cliCopyExample => 'Kopírování příkladu';
+	@override String get cliCopied => 'Příklad příkazů kopírován.';
 }
 
 // Path: fileSources
@@ -3350,7 +3611,6 @@ class _Translations$audiobook$cs extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Nejprve přidejte Google Drive, OneDrive, Dropbox, WebDAV nebo S3 do souborů a knih.';
 	@override String get syncDestination => 'Synchronizace účtu';
 	@override String get syncFolder => 'Synchronizace mapy nebo prefiksů';
-	@override String get syncFolderHelp => 'Použijte samostatnou stávající složku ve vašem WebDAV zdroji nebo předpisu S3.';
 	@override String get syncCode => 'Soukromý synchronizační kód';
 	@override String get syncCodeHelp => 'Vytvořte kód na prvním zařízení, pak zadejte tento kód na jiných zařízeních. Udržujte soukromou kopii: je to klíč k vašemu šifrovanému stavu. Použijte pro každou osobu jiný kód.';
 	@override String get showCode => 'Zobrazit nebo skrýt synchronizační kód';
@@ -3360,7 +3620,6 @@ class _Translations$audiobook$cs extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Odstranění tohoto zdroje vypne čtení a poslouchání synchronizace zde. šifrované synchronizace soubory zůstane v poskytovateli.';
 	@override String get syncReconnect => 'Připojení úložného účtu';
 	@override String lastSynced({required Object time}) => 'Poslední synchronizace na ${time}';
-	@override String get syncPrivacy => 'Pouze šifrovaný pokrok a poznámky jsou uloženy. Audio a ebook soubory, účet tokeny a hesla nejsou nahrány. Google Drive a OneDrive používá aplikační úložiště; Dropbox používá PlezyNG Sync. Povolit synchronizaci může požadovat další psaní přístup. Zatímco je povolen, tato destinace vlastní progres synchronizaci; serverový pokrok zůstává oddělený.';
 	@override String get syncConflicts => 'Vyberte si, kde se vrátit';
 	@override String get conflictHelp => 'Tyto změny byly provedeny nezávisle.Vyberte pozici nebo verzi štítku, kterou chcete udržet.Poslední časový rámec nebo vyšší procento automaticky nevyhraje.';
 	@override String syncDevice({required Object device}) => 'Přístroj ${device}';
@@ -3554,7 +3813,6 @@ class _Translations$games$cs extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3579,7 +3837,6 @@ class _Translations$games$cs extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3611,8 +3868,6 @@ class _Translations$games$cs extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3620,14 +3875,62 @@ class _Translations$games$cs extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$cs extends Translations$deepLinks$en {
+	_Translations$deepLinks$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Tento odkaz Plezy není platný.';
+	@override String profileNotFound({required Object profile}) => 'Žádný profil se neshoduje s "${profile}".';
+	@override String get serverUnavailable => 'Nemohla jsem se dostat na server pro tento odkaz.';
+	@override String get notFound => 'Tento název v knihovně nenajdete.';
+	@override String get unsupportedItem => 'Tento odkaz nelze hrát.';
+	@override String get noLiveTv => 'Žádný Live TV server není k dispozici pro tento odkaz.';
+	@override String channelNotFound({required Object channel}) => 'Nemohla jsem najít kanál "${channel}".';
+	@override String get showLink => 'Zobrazit link';
+	@override String get showProfileLink => 'Zobrazit profilový link';
+	@override String get dialogTitle => 'Link';
+	@override String get showHint => 'Otevření tohoto odkazu hraje další epizodu. Přidejte &mode=shuffle k hraní show na shuffle.';
+	@override String get movieHint => 'Otevření tohoto odkazu hraje film.';
+	@override String get episodeHint => 'Otvírání tohoto odkazu hraje tento epizod.';
+	@override String get profileHint => 'Otevření tohoto odkazu přepíná na tento profil.';
+	@override String openAsProfile({required Object name}) => 'Otevřete jako ${name}';
+	@override String get copy => 'Kopírování';
+	@override String get copied => 'Link kopírovaný';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$cs extends Translations$householdSetup$en {
+	_Translations$householdSetup$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Nastavení domácnosti';
+}
+
+// Path: issueReport
+class _Translations$issueReport$cs extends Translations$issueReport$en {
+	_Translations$issueReport$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Nahlásit problém';
+	@override String get instructions => 'Naskenujte QR kód a otevřete předvyplněný návrh na GitHubu. Před odesláním ho zkontrolujte.';
+	@override String get privacy => 'Návrh obsahuje verzi aplikace, platformu a počty připojení. Neobsahuje adresy serverů, názvy účtů a profilů, názvy médií ani cesty k souborům.';
+	@override String get logPrivacy => 'Protokoly jsou volitelné. Před nahráním je zkontrolujte. Jejich ID se přidá do návrhu, který může být veřejný.';
+	@override String get openDraft => 'Otevřít návrh na GitHubu';
 }
 
 // Path: appIcon.names
@@ -4746,21 +5049,6 @@ extension on TranslationsCs {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Odeslat do zařízení',
-			'cast.searching' => 'Hledání zařízení pro výkresy...',
-			'cast.connectedTo' => ({required Object device}) => 'Připojení k číslu ${device}',
-			'cast.device' => 'Zařízení pro odesílání',
-			'cast.readyToCast' => 'Připraveno k odesílání',
-			'cast.subtitle' => 'Titulky',
-			'cast.serverNotAvailable' => 'Media server není k dispozici.',
-			'cast.stopCasting' => 'Ukončit odesílání',
-			'cast.castToDevice' => 'Odeslat do zařízení',
-			'cast.noEpisodeAvailable' => 'Neexistuje žádná epizoda k dispozici.',
-			'cast.startFailed' => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.',
-			'automation.noActivePlayback' => 'Neexistuje žádná aktivní videozáznamy k ovládání.',
-			'automation.profileNotFound' => 'Tento profil Plezy nebyl nalezen.',
-			'notifications.newEpisodeTitle' => 'Nová epizoda',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'aplikace ikona',
 			'appIcon.defaultIcon' => 'Výchozí',
 			'appIcon.current' => 'Aktuální ikona',
@@ -4923,28 +5211,6 @@ extension on TranslationsCs {
 			'update.viewRelease' => 'Zobrazit Release',
 			'update.latestVersion' => 'Jste na nejnovější verzi',
 			'update.checkFailed' => 'Nedokázal se dohlížet na aktualizace',
-			'appAccess.title' => 'Zkuste každou funkci zdarma po dobu 7 dní',
-			'appAccess.description' => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.',
-			'appAccess.trialEndedDescription' => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.',
-			'appAccess.startTrial' => 'Začínám 7denní bezplatný test',
-			'appAccess.trialActive' => 'Váš 7denní plnohodnotný test je aktivní.',
-			'appAccess.trialEnded' => 'Sedmdenní proces skončil.',
-			'appAccess.trialStartFailed' => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.',
-			'appAccess.lifetimeTitle' => 'PlezyNG odemknutá po celý život',
-			'appAccess.lifetimeBody' => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.',
-			'appAccess.manageTitle' => 'PlezyNG Životní přístup',
-			'appAccess.manageDescription' => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.',
-			'appAccess.buy' => ({required Object price}) => 'Odemknout všechny funkce pro ${price}',
-			'appAccess.loadingPrice' => 'Nákladní obchodní cena...',
-			'appAccess.retryPrice' => 'Zpět na cenu Lookup',
-			'appAccess.restore' => 'Obnovte životní nákup',
-			'appAccess.pending' => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.',
-			'appAccess.storeUnavailable' => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.',
-			'appAccess.productNotFound' => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.',
-			'appAccess.productQueryFailed' => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.',
-			'appAccess.purchaseFailed' => 'Nákup neprošel, zkuste to znovu.',
-			'appAccess.restoreFailed' => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.',
-			'appAccess.nothingToRestore' => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.',
 			'settings.title' => 'Nastavení',
 			'settings.supportDeveloper' => 'Podpora PlezyNG',
 			'settings.supportDeveloperDescription' => 'Dotace na podporu rozvoje',
@@ -5257,8 +5523,6 @@ extension on TranslationsCs {
 			'settings.audioPassthrough' => 'zvuková pasáž',
 			'settings.audioPassthroughDescription' => 'Odeslat Dolby/DTS audio do přijímače nebo televize bez re-kódování, zachování okolního zvuku.',
 			'settings.audioPassthroughDescriptionApple' => 'Použijte nativní dekodér Dolby Apple pro Dolby Digital Plus, včetně Atmos. DTS a TrueHD stále hrají jako multichannel PCM.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Použijte původní dekodér Dolby Apple pro Dolby Digital Plus, včetně Atmos. Na iOS, iPadOS a tvOS 26 nebo později, TrueHD Atmos a DTS:X přehrávat jako prostorový audio. Ostatní DTS a TrueHD stopy přehrávat jako multichannel PCM.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Zastavte, zatímco normalizace hluku je na',
 			'settings.audioChannelLimit' => 'Počet kanálů zvuku',
@@ -5296,6 +5560,8 @@ extension on TranslationsCs {
 			'settings.disableDolbyVisionDescription' => 'Přehrávejte soubor HDR10 nebo vrstvu HLG namísto Dolby Vision, když má jeden',
 			'settings.hdrSdrConversion' => 'HDR na SDR konverze',
 			'settings.hdrSdrConversionDescription' => 'Vyberte, co konvertuje HDR video, když displej nedokáže zobrazit HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Automaticky',
 			'settings.hdrSdrConversionAutoDescription' => 'Přístroj na Android 9 a novější, hráč na starších verzích',
 			'settings.hdrSdrConversionDevice' => 'Zařízení',
@@ -5757,7 +6023,6 @@ extension on TranslationsCs {
 			'tooltips.markAsWatched' => 'Mark jako sledovaný',
 			'tooltips.markAsUnwatched' => 'Mark jako nepozorovaný',
 			'audioTracks.track' => ({required Object n}) => 'Zvukový pás ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků', ), 
 			'videoControls.audioLabel' => 'Zvuk',
 			'videoControls.subtitlesLabel' => 'Titulky',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5771,8 +6036,6 @@ extension on TranslationsCs {
 			'videoControls.sleepTimerEndOfVideo' => 'Konec aktuálního videa',
 			'videoControls.sleepTimerStopAtHeader' => 'Zastavte se',
 			'videoControls.sleepTimerDurationHeader' => 'Časový',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback se zastaví na konci tohoto videa',
 			'videoControls.stillWatching' => 'Stále se díváte?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Odpočinek v ${seconds}s',
@@ -5796,9 +6059,33 @@ extension on TranslationsCs {
 			'videoControls.unmuteButton' => 'Povolit zvuk',
 			'videoControls.settingsButton' => 'Playback nastavení',
 			'videoControls.tracksButton' => 'Audio a subtituly',
-			'videoControls.trackSelectionTitle' => 'Zvolte stopy před playbackem',
-			'videoControls.trackSelectionAuto' => 'Automatické výběr',
 			'videoControls.chaptersButton' => 'Kapitoly',
+			'videoControls.segmentLoopHelp' => 'Nastavení A, pak nastavení B později v časovém řádku.',
+			'videoControls.setLoopStart' => 'Nastavit začátek smyčky (A)',
+			'videoControls.setLoopEnd' => 'Set loop konec (B)',
+			'videoControls.clearSegmentLoop' => 'Čistý segment',
+			'videoControls.setLoopStartFirst' => 'Nastavte začátek (A) před koncem (B).',
+			'videoControls.loopEndAfterStart' => 'Závěrečný konec musí být později než začátek.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping není k dispozici pro tento playback.',
+			'videoControls.loopPointNotSet' => 'Není nastaven',
+			'videoControls.bookmarksHelp' => 'Čísla jsou uložena na tomto zařízení. Vyberte jednu pro jít do té doby.',
+			'videoControls.bookmarksButton' => 'Bookmarky',
+			'videoControls.chaptersAndBookmarks' => 'Kapitoly a bookmarks',
+			'videoControls.segmentLoop' => 'Segmentový loop',
+			'videoControls.addBookmark' => 'Přidat bookmark',
+			'videoControls.bookmarkName' => 'Bookmark jméno',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Například otevírací scény',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmarková ${n}',
+			'videoControls.bookmarkNameRequired' => 'Zadejte jméno pro tuto knižní značku.',
+			'videoControls.deleteBookmark' => 'Odstranit bookmark',
+			'videoControls.bookmarkLimitReached' => 'Tato položka má již 100 bookmarků.',
+			'videoControls.bookmarkUnavailable' => 'Nemohla jsem tuto knižní značku uložit nebo odstranit.',
+			'videoControls.bookmarkSaved' => 'Bookmark je zachráněn.',
+			'videoControls.bookmarkDeleted' => 'Bookmark byl vymazán.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop bod ${point} Set na ${time}A to',
+			'videoControls.noChaptersOrBookmarks' => 'Není k dispozici žádná kapitola ani knihovna.',
 			'videoControls.versionQualityButton' => 'Verze a kvalita',
 			'videoControls.versionColumnHeader' => 'Verze',
 			'videoControls.qualityColumnHeader' => 'Kvalita',
@@ -5807,8 +6094,6 @@ extension on TranslationsCs {
 			'videoControls.transcodeUnavailableFallback' => 'Překódování není k dispozici – hraje originální kvalitu',
 			'videoControls.subtitleUnavailableFallback' => 'Výběr vybraných titulů nelze nahrát – pokračovat bez titulů',
 			'videoControls.pipButton' => 'Obrazový režim - Picture in-Picture',
-			'videoControls.openMiniPlayer' => 'Otevřený mini hráč',
-			'videoControls.returnToFullPlayer' => 'Zpět na plný hráč',
 			'videoControls.aspectRatioButton' => 'Poměr stran',
 			'videoControls.ambientLighting' => 'Atmosférické osvětlení',
 			'videoControls.fullscreenButton' => 'Vstup na plný obrazovek',
@@ -5817,7 +6102,6 @@ extension on TranslationsCs {
 			'videoControls.rotationLockButton' => 'rotační zámek',
 			'videoControls.lockScreen' => 'Závěsný obrazovek',
 			'videoControls.screenLockButton' => 'Zámek obrazovky',
-			'videoControls.longPressToUnlock' => 'Dlouhý tlak na odemknutí',
 			'videoControls.timelineSlider' => 'Video časové linie',
 			'videoControls.volumeSlider' => 'Úroveň objemu',
 			'videoControls.endsAt' => ({required Object time}) => 'Končí na ${time}',
@@ -5841,8 +6125,6 @@ extension on TranslationsCs {
 			'videoControls.noQueueItems' => 'Žádné položky v kousku',
 			'videoControls.noAudioDevicesAvailable' => 'Žádné audio zařízení k dispozici',
 			'videoControls.searchSubtitles' => 'Podtitul hledání',
-			'videoControls.loadSubtitleFile' => 'Přihláška souboru Subtitle...',
-			'videoControls.subtitleLoadFailed' => 'Nedokázal přenést soubor subtitle',
 			'videoControls.language' => 'Jazyk',
 			'videoControls.noSubtitlesFound' => 'Žádné podtitulky nalezeny',
 			'videoControls.subtitleDownloaded' => 'Subtítky stažené',
@@ -5851,7 +6133,6 @@ extension on TranslationsCs {
 			'videoControls.searchLanguages' => 'Vyhledávací jazyky...',
 			'videoControls.skipIntro' => 'Skříň vstupuje',
 			'videoControls.skipCredits' => 'Skok úvěrů',
-			'videoControls.skipAds' => 'Skřípání Ads',
 			'videoControls.nextEpisode' => 'Další díl',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Původní číslo ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Článek ${name}',
@@ -5859,6 +6140,16 @@ extension on TranslationsCs {
 			'videoControls.osdSubtitlesOff' => 'Název titulu: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Články v kategorii: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio číslo: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků', ), 
+			'videoControls.trackSelectionTitle' => 'Zvolte stopy před playbackem',
+			'videoControls.trackSelectionAuto' => 'Automatické výběr',
+			'videoControls.openMiniPlayer' => 'Otevřený mini hráč',
+			'videoControls.returnToFullPlayer' => 'Zpět na plný hráč',
+			'videoControls.loadSubtitleFile' => 'Přihláška souboru Subtitle...',
+			'videoControls.subtitleLoadFailed' => 'Nedokázal přenést soubor subtitle',
+			'videoControls.skipAds' => 'Skřípání Ads',
+			'videoControls.tapToUnlock' => 'Klepnutím odemknete',
+			'videoControls.tapAgainToUnlock' => 'Opětovným klepnutím odemknete',
 			'messages.markedAsWatched' => 'označené jako sledované',
 			'messages.markedAsUnwatched' => 'označené jako nepozorované',
 			'messages.markedAsWatchedOffline' => 'Zaznamenáno jako sledované (synchronizuje se, když je online)',
@@ -6285,8 +6576,6 @@ extension on TranslationsCs {
 			'libraries.all' => 'Vše',
 			'libraries.clearAll' => 'Jasné vše',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Jste si jisti, že chcete skenovat "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Jste si jisti, že chcete analyzovat "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Jste si jisti, že chcete aktualizovat metadata pro "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Jste si jisti, že chcete prázdný odpad pro "${title}"?',
@@ -6299,6 +6588,8 @@ extension on TranslationsCs {
 			'libraries.hideLibrary' => 'Skryté knihovny',
 			'libraries.libraryOptions' => 'Možnosti knihovny',
 			'libraries.content' => 'Obsah knihovny',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Vyberte knihovnu',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtry (${count})',
 			'libraries.noRecommendations' => 'Žádné doporučení k dispozici',
@@ -6404,7 +6695,6 @@ extension on TranslationsCs {
 			'logs.saveLogs' => 'Shromažďujte záznamy do souboru',
 			'logs.logsSaved' => ({required Object path}) => 'Přihlášky uložené na ${path}',
 			'logs.saveLogsFailed' => 'Nemohla jsem uložit soubor.',
-			'detail.endsAt' => ({required Object time}) => 'Končí na ${time}',
 			'startup.failedTitle' => 'PlezyNG nemohl začít',
 			'startup.failedBody' => 'Něco se během start-upu zhroutilo. podrobnosti níže identifikují to, co selžilo.',
 			'startup.failedBodyRepairable' => 'Uložený soubor nastavení PlezyNG je poškozený a před spuštěním aplikace je nutné jej znovu vytvořit. Další pokus nepomůže — zvolte opravu úložiště.',
@@ -6765,6 +7055,7 @@ extension on TranslationsCs {
 			'music.visualizerProfileLoading' => 'Přečtěte si analýzu track...',
 			'music.visualizerAmbientMotion' => 'Atmosféra pohybu',
 			'music.visualizerPlexLoudness' => 'Plex hlasitost',
+			'music.visualizerLiveAudio' => 'Živá analýza zvuku',
 			'music.visualizerPreviousPreset' => 'Předchozí vizuální styl',
 			'music.visualizerNextPreset' => 'Další vizuální styl',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6799,8 +7090,6 @@ extension on TranslationsCs {
 			'watchTogether.connecting' => 'Připojení...',
 			'watchTogether.relayPublic' => 'Pokoje využívají veřejné Open Watch Party relace.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Pokoje používají váš relay na ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Poslední pokoje',
 			'watchTogether.roomActions' => 'Akce v místnosti',
 			'watchTogether.renameRoom' => 'Rekonstrukce pokoje',
@@ -6813,6 +7102,8 @@ extension on TranslationsCs {
 			'watchTogether.codeCopied' => 'Kód pokoje kopírovaný',
 			'watchTogether.shareInvite' => 'Sdílejte pozvání',
 			'watchTogether.inviteCopied' => 'Zkuste kopírovat. vložte ji do zprávy.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Připojte se k mým hodinám společně v místnosti PlezyNG: otevřete hodinám společně, vyberte Připojte se k místnosti a zadejte ${code}.',
 			'watchTogether.openSessionControls' => 'Otevřete sledování Session Controls',
 			'watchTogether.reconnecting' => 'Připojení...',
@@ -7191,6 +7482,12 @@ extension on TranslationsCs {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Mapa na špičkové jasnosti displeje v hráči, pak řekněte skladatelovi výsledek.',
 			'videoSettings.hdrToneMappingFailed' => 'Nemohlo by se změnit mapování HDR tónu - předchozí režim je stále aktivní.',
 			'videoSettings.audioOutput' => 'Audio výstup',
+			'videoSettings.videoTrack' => 'Video stopa',
+			'videoSettings.videoTrackDescription' => 'Vyberte video stream, který se má zobrazit. Funkce je dostupná při přehrávání v MPV, pokud soubor obsahuje alternativní video stopy.',
+			'videoSettings.videoTrackDefault' => 'Výchozí',
+			'videoSettings.videoTrackUnavailable' => 'Nejsou dostupné žádné alternativní video stopy.',
+			'videoSettings.videoTrackFailed' => 'Video stopu se nepodařilo změnit.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Stopa ${id}',
 			'videoSettings.performanceOverlay' => 'Výsledky Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7198,10 +7495,17 @@ extension on TranslationsCs {
 			'videoSettings.audioOutputSpatial' => 'Vesmírný audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio ekvalizátor',
-			'videoSettings.audioEqualizerDescription' => 'Přizpůsobte pro toto zařízení pět frekvenčních pásem. k dispozici na čísle mpv; aktivní EQ dekóduje zvuk a deaktivuje přizpůsobení.',
+			'videoSettings.audioEqualizerDescription' => '10-bandový ekvalizátor pro MPVAudio filtry používají dekódované audio a vypněte passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'ploché',
 			'videoSettings.audioEqualizerActive' => 'Vlastní',
 			'videoSettings.audioEqualizerSaveFailed' => 'Nemohl jsem zachránit nastavení audio ekvalizátoru.',
+			'videoSettings.audioEffectsDescription' => 'Efekty používají dekódovaný zvuk, takže passthrough otáčí. místnost atmosféra a stereo rozšíření závisí na MPV Stavět a sledovat.',
+			'videoSettings.audioStereoWidth' => 'Stereo rozšíření',
+			'videoSettings.audioSpatializer' => 'pokojová atmosféra',
+			'videoSettings.audioSpatializerDescription' => 'Přidejte klidné místnosti refleksy.',
+			'videoSettings.audioPitch' => 'Pichová změna',
+			'videoSettings.audioPitchDescription' => 'Změna místa bez změny rychlosti. MPV Stavba musí zahrnovat Rubber BandA to',
+			'videoSettings.audioEffectUnavailable' => 'Tento efekt není k dispozici pro tuto trať nebo MPV a stavět .',
 			'videoSettings.backgroundVideoAudio' => 'Video audio pozadí',
 			'videoSettings.backgroundVideoAudioDescription' => 'Udržujte video audio přehrávač, když opustíte přehrávač; obrázek je skryt, dokud se nevrátíte. Android používá oznámení pro přehrávač médií.',
 			'videoSettings.audioNormalization' => 'Normalizace hluku',
@@ -7312,9 +7616,9 @@ extension on TranslationsCs {
 			'metadataEdit.metadataUpdated' => 'Aktualizované metadata',
 			'metadataEdit.metadataUpdateFailed' => 'Nedokázal aktualizovat metadata',
 			'metadataEdit.artworkUpdated' => 'Umělecká aktualizace',
-			'metadataEdit.artworkUpdateFailed' => 'Nedokázal aktualizovat umělecké dílo',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Nedokázal aktualizovat umělecké dílo',
 			'metadataEdit.noArtworkAvailable' => 'K dispozici žádné umělecké dílo',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Umělecká volba ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Možnost umělecké práce ${index}, vybraná',
@@ -7542,6 +7846,43 @@ extension on TranslationsCs {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} používá HTTP. Lidé v síti mohou číst nebo měnit vaše heslo, tokeny a média. Je-li to možné, použijte HTTPS. Pokračujte pouze v případě, že této síti důvěřujete a přijímáte toto riziko.',
 			'addServer.allowHttp' => 'Přijmout HTTP',
 			'addServer.httpsRequired' => 'Použití HTTPS nebo výslovně umožnit nekryptované připojení.',
+			'cast.chooseDevice' => 'Odeslat do zařízení',
+			'cast.searching' => 'Hledání zařízení pro výkresy...',
+			'cast.connectedTo' => ({required Object device}) => 'Připojení k číslu ${device}',
+			'cast.device' => 'Zařízení pro odesílání',
+			'cast.readyToCast' => 'Připraveno k odesílání',
+			'cast.subtitle' => 'Titulky',
+			'cast.serverNotAvailable' => 'Media server není k dispozici.',
+			'cast.stopCasting' => 'Ukončit odesílání',
+			'cast.castToDevice' => 'Odeslat do zařízení',
+			'cast.noEpisodeAvailable' => 'Neexistuje žádná epizoda k dispozici.',
+			'cast.startFailed' => 'Nemůžete začít casting. zkontrolujte server a zkuste znovu.',
+			'automation.noActivePlayback' => 'Neexistuje žádná aktivní videozáznamy k ovládání.',
+			'notifications.newEpisodeTitle' => 'Nová epizoda',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Zkuste každou funkci zdarma po dobu 7 dní',
+			'appAccess.description' => 'Začněte sedmdenní zkoušku s plným přístupem k každému PlezyNG funkci. v průběhu zkoušky neexistuje žádná poplatek a žádná předplatná. Po zkoušce jeden životní nákup v ceně vašeho obchodu odblokuje PlezyNG po celý život.',
+			'appAccess.trialEndedDescription' => 'Jediným nákupem za cenu uvedenou ve vašem obchodě odemknete všechny funkce PlezyNG natrvalo. Bez předplatného.',
+			'appAccess.startTrial' => 'Začínám 7denní bezplatný test',
+			'appAccess.trialActive' => 'Váš 7denní plnohodnotný test je aktivní.',
+			'appAccess.trialEnded' => 'Sedmdenní proces skončil.',
+			'appAccess.trialStartFailed' => 'Nemohla jsem na tomto zařízení ušetřit zkoušku. prosím zkuste znovu.',
+			'appAccess.lifetimeTitle' => 'PlezyNG odemknutá po celý život',
+			'appAccess.lifetimeBody' => 'Díky! máte celoživotní přístup k každému PlezyNG funkci.',
+			'appAccess.manageTitle' => 'PlezyNG Životní přístup',
+			'appAccess.manageDescription' => 'Zkuste každou funkci zdarma po dobu 7 dnů, pak odemkněte vše po celý život s jednou platbou za cenu vašeho obchodu.',
+			'appAccess.buy' => ({required Object price}) => 'Odemknout všechny funkce pro ${price}',
+			'appAccess.loadingPrice' => 'Nákladní obchodní cena...',
+			'appAccess.retryPrice' => 'Zpět na cenu Lookup',
+			'appAccess.restore' => 'Obnovte životní nákup',
+			'appAccess.pending' => 'Váš nákup čeká na platbu nebo schválení. celoživotní přístup odemkne, jakmile ho obchod dokončí.',
+			'appAccess.storeUnavailable' => 'Nákupy nejsou k dispozici. zkontrolujte, že jste se zaregistrovali do obchodu a nákupy jsou povoleny na tomto zařízení.',
+			'appAccess.productNotFound' => 'Životní odemknutí PlezyNG není v tomto obchodě zatím k dispozici.',
+			'appAccess.productQueryFailed' => 'Nemohla jsem si stáhnout cenu obchodu. zkontrolujte připojení a zkuste znovu.',
+			'appAccess.purchaseFailed' => 'Nákup neprošel, zkuste to znovu.',
+			'appAccess.restoreFailed' => 'Nemohla jsem se dostat do obchodu, abyste obnovili nákup. zkuste znovu.',
+			'appAccess.nothingToRestore' => 'Číslo PlezyNG pro životní nákup byl nalezen pro tento obchodní účet.',
+			'detail.endsAt' => ({required Object time}) => 'Končí na ${time}',
 			'watchLink.serverUnavailable' => 'Nemohl jsem se dostat k serveru Plex pro tento odkaz.',
 			'watchLink.notFound' => 'Nemohl jsem najít tento show nebo film na vašich serverech Plex.',
 			'watchLink.ambiguous' => 'Tento odkaz se shoduje s položkami na více než jednom serveru. Přidejte server na odkaz.',
@@ -7656,6 +7997,203 @@ extension on TranslationsCs {
 			'platform.locationPermission' => 'PlezyNG používá přístup k místu, když iOS vyžaduje, aby detekovala vaši místní síť a připojila se k vašim mediálním serverům.',
 			'platform.photoLibraryPermission' => 'Vyberte si obrázky z vaší knihovny fotografií pro použití jako umělecké dílo.',
 			'platform.cameraPermission' => 'Skenování QR kódů pro párování s Companion Remote.',
+			'universalMedia.title' => 'Otevřené média',
+			'universalMedia.shortcutHelp' => 'Zahrajte si odkaz, playlist nebo soubor pro tuto sezení.',
+			'universalMedia.intro' => 'Otevřete odkaz, playlist nebo soubor. Playback používá standardní přehrávač PlezyNG a do vaší knihovny nepřidá historii.',
+			'universalMedia.openWhat' => 'Co byste chtěli otevřít?',
+			'universalMedia.stream' => 'Streamová adresa',
+			'universalMedia.playlist' => 'Playlisty',
+			'universalMedia.files' => 'Přístrojové soubory',
+			'universalMedia.favorites' => 'Úsporný stream oblíbené',
+			'universalMedia.address' => 'Mediální adresa',
+			'universalMedia.addressHelp' => 'URL s uznanými parametry ověřování nebo podpisů se používají pouze pro tuto schůzku a nelze je uložit jako oblíbené.',
+			'universalMedia.displayName' => 'Název zobrazení (volitelné)',
+			'universalMedia.displayNameHelp' => 'Vyberte krátký název pro hráče a systémové médií ovládacích prvků.',
+			'universalMedia.allowHttp' => 'Umožňuje nekryptované připojení HTTP',
+			'universalMedia.allowHttpHelp' => 'HTTP nešifruje připojení. dovolte ho pouze na důvěryhodné síti. použijte HTTPS kdykoli je to možné.',
+			'universalMedia.advancedProtocols' => 'MPV pouze: zadejte adresu RTSP, RTMP/RTMPS, UDP nebo RTP. Tyto adresy nelze uložit jako oblíbené.',
+			'universalMedia.liveStream' => 'Léčba jako živá',
+			'universalMedia.liveStreamHelp' => 'Použijte to pro živé video nebo rádio. aplikace skrývá časovou řádku, skok tlačítka a možnost go-to-time. vypněte ji pro záznam.',
+			'universalMedia.privateSession' => 'Pouze tento přehrávač používá adresu.Save an eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Zachraňte oblíbené',
+			'universalMedia.playNow' => 'Hrajte nyní',
+			'universalMedia.favoriteSaved' => 'Stream oblíbené uložené do tohoto profilu',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: 'Přepadl ${count} nepodporovaný nebo nebezpečný playlist vstup.', few: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', many: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', other: 'Zkracené ${count} nepodporované nebo nebezpečné playlist vstupy.', ), 
+			'universalMedia.playlistAddress' => 'Playlistová adresa',
+			'universalMedia.playlistAddressHelp' => 'Otevřete playlist M3U, M3u8 nebo PLS z webové adresy. Přímé streamovací odkazy nezachovávají playlist.',
+			'universalMedia.choosePlaylist' => 'Vyberte soubor playlist',
+			'universalMedia.openPlaylist' => 'Otevřená playlist',
+			'universalMedia.playlistFormatsHelp' => 'Přehrávač může obsahovat až 1000 položek a 2 MB. HLS se otevírají jako toky, takže hráč si může vybrat kvalitu.',
+			'universalMedia.saveQueuePlaylist' => 'Uložit frontu jako seznam skladeb',
+			'universalMedia.queuePlaylistSaved' => 'Seznam skladeb byl uložen vedle souborů médií.',
+			'universalMedia.queuePlaylistUnavailable' => 'Tuto frontu nelze uložit jako znovu použitelný místní seznam skladeb.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Vyberte umístění ve stejné složce, ve které jsou soubory ve frontě.',
+			'universalMedia.noFavorites' => 'Není zachráněno stream oblíbené zatím. Oblíbené zůstanou v tomto profilu.',
+			'universalMedia.removeFavorite' => 'Odstranit stream oblíbené',
+			'universalMedia.filesHelp' => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.',
+			'universalMedia.chooseFiles' => 'Vyberte soubory',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '1 vybrané soubory', few: '${count} vybrané soubory', many: '${count} vybrané soubory', other: '${count} vybrané soubory', ), 
+			'universalMedia.wifiTransfer' => 'Odesílání souborů přes Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Přenos podporovaných souborů z prohlížeče na stejnou důvěryhodnou síť.',
+			'universalMedia.wifiTransferIntro' => 'Otevřete tuto adresu v prohlížeči na jiném zařízení. Vyberte soubory, abyste je přidali do knihovny souborů a knih tohoto zařízení.',
+			'universalMedia.wifiTransferPrivacy' => 'Toto zařízení přijímá soubory přes vaši místní síť.Každý, kdo zná tuto adresu může poslat soubory až do zastavení přenosu nebo adresa vyprší po 15 minutách. Maximální: 100 souborů, 4 GiB na soubor, 10 GiB celkem.',
+			'universalMedia.wifiTransferStarting' => 'Příprava soukromého, časově omezeného převodu...',
+			'universalMedia.wifiTransferUnavailable' => 'Nemohla jsem začít přenosu. zkontrolujte přístup k místní síti a zkuste znovu.',
+			'universalMedia.openThisAddress' => 'Otevřete jednu z těchto adres na odesílací zařízení',
+			'universalMedia.copyAddress' => 'Kopírování transferové adresy',
+			'universalMedia.addressCopied' => 'Přenosová adresa kopírovaná',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Tato adresa vyprší v ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${count} soubor přijatý', few: '${count} soubory obdržené', many: '${count} soubory obdržené', other: '${count} soubory obdržené', ), 
+			'universalMedia.uploadedData' => ({required Object size}) => 'Obdržel ${size}',
+			'universalMedia.stopTransfer' => 'Zastavení přenosu a zrušení adresy',
+			'universalMedia.startTransfer' => 'Začátek transferu',
+			'universalMedia.wifiImportedFiles' => 'Přenos Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Odeslat soubory do PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Vyberte audio, video, ebook nebo komiksové soubory k odeslání. Soubory jsou uloženy v knihovně souborů a knih tohoto zařízení. Maximální: 100 souboru, 4 GiB na soubor, 10 GiB celkem.',
+			'universalMedia.uploadFilesLabel' => 'Soubory k odesílání',
+			'universalMedia.uploadSelected' => 'Stáhnout vybrané soubory',
+			'universalMedia.uploadSelectFirst' => 'Nejprve vyberte jeden nebo více souborů.',
+			'universalMedia.uploading' => 'Odesílání',
+			'universalMedia.uploadComplete' => 'Soubor přidán do PlezyNG.',
+			'universalMedia.uploadFailed' => 'Soubor nelze přidat. Držte tuto stránku otevřenou a zkuste znovu.',
+			'universalMedia.liveCue' => 'Životní',
+			'universalMedia.liveSession' => 'Živý stream',
+			'universalMedia.liveCueHelp' => 'V případě živého videa nebo rozhlasu aplikace ukrývá časovou řádku a skáče tlačítka. nezachovává adresu ani sleduje historii.',
+			'universalMedia.sessionOnly' => 'Tento playback je pouze session-',
+			'universalMedia.sessionOnlyHelp' => 'Playback nikdy nezachrání pokrok nebo historii. Zachraňte tok jako oblíbený, abyste ho udrželi v tomto profilu, pokud je způsobilý.',
+			'universalMedia.pictureAdjustments' => 'Fotografické úpravy',
+			'universalMedia.pictureHelp' => 'Tyto změny obrazu ovlivňují pouze tento playback. Oni reset, když playback skončí.',
+			'universalMedia.resetPicture' => 'Reset obrázek',
+			'universalMedia.brightness' => 'Světlo',
+			'universalMedia.contrast' => 'kontrast',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturace',
+			'universalMedia.view360' => 'Flat View pro 360° video',
+			'universalMedia.view360Help' => 'Použijte toto pro rovnoměrné 360° video. MPV potřebuje filtr v360 FFmpeg pro tento pohled.',
+			'universalMedia.view360Unavailable' => 'Tento mpv stav by nemohl použít 360° filtr.',
+			'universalMedia.view360Yaw' => 'Horizontální pohled',
+			'universalMedia.view360Pitch' => 'Vertikální pohled',
+			'universalMedia.view360FieldOfView' => 'Oblast pohledu',
+			'universalMedia.recordStream' => 'Rekordní živý stream',
+			'universalMedia.stopRecording' => 'Zastavte a ušetřete záznam',
+			'universalMedia.recordingStarted' => 'Záznam je aktivní.Leaving playback zastaví a ukládá záznam.',
+			'universalMedia.recordingSaved' => 'Záznam byl dokončen a zachráněn.',
+			'universalMedia.recordingActive' => 'Zanechání playback se zastaví a ukládá.',
+			'universalMedia.recordingFormatHelp' => 'Pro video, vyberte MKV nebo MPEG-TS. pro audio, zvolte MKA nebo MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Změníte tuto nahrávku?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG obnovuje stávající soubor při zaznamenávání. Pokud nemůže uložit novou záznam, Plezy NG obnovuje zálohu.',
+			'universalMedia.replaceRecording' => 'nahrazení souborů',
+			'universalMedia.discHelp' => 'Otevřete disk v optickém disku tohoto počítače.Můžete také otevřít obraz ISO z souborů zařízení.',
+			'universalMedia.discs' => 'Optický disk',
+			'universalMedia.editionOrTitle' => 'Edice nebo název disku',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'Audio CD',
+			'universalMedia.discAvailability' => 'Disk playback vyžaduje kompatibilní MPV stavbu, podporovaný disk a oprávnění operačního systému.',
+			'universalMedia.converterTitle' => 'Konvertovat soubor místních médií',
+			'universalMedia.converterHelp' => 'Převod lokálního souboru nebo ho remux s FFmpegA to',
+			'universalMedia.converterIntro' => 'Konvertovat místní audio nebo video soubor do formátu, který funguje na více zařízeních.',
+			'universalMedia.converterPrivacy' => 'FFmpeg musí být nainstalován na tomto počítači. konverze čte pouze místní soubory. nedodává toky nebo odstraňuje DRM.',
+			'universalMedia.converterChooseInput' => 'Vyberte si místní mediální soubor',
+			'universalMedia.converterFormat' => 'Výstupní formát',
+			'universalMedia.converterMp4' => 'MP4 · H.264 a AAC',
+			'universalMedia.converterM4a' => 'M4A - AAC audio',
+			'universalMedia.converterMp3' => 'MP3 a audio',
+			'universalMedia.allowFtp' => 'Umožňuje FTP',
+			'universalMedia.allowFtpHelp' => 'FTP odesílá média bez šifrování. Používejte pouze na důvěryhodných sítích.',
+			'universalMedia.converterSaveAs' => 'Shromažďování převedených médií jako',
+			'universalMedia.converterExtensionMismatch' => 'Vyberte název s vybraným rozšířením výstupu.',
+			'universalMedia.converterUnsupportedInput' => 'Vyberte si audio nebo video soubor.',
+			'universalMedia.converterLocalOnly' => 'Vybraný soubor není k dispozici jako místní zařízení.',
+			'universalMedia.converterReplaceTitle' => 'Změnit tento soubor?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG obnovuje stávající soubor, dokud se neukládá převedená kopie.',
+			'universalMedia.converterStarting' => 'Začínáme s FFmpeg...',
+			'universalMedia.converterProgress' => 'Přeměna na tento počítač...',
+			'universalMedia.converterComplete' => 'Konverze je hotová, nový soubor je připraven.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg chybí nebo nepodporuje tento formát.',
+			'universalMedia.converterFailed' => 'Přesvědčte se, že zdrojový soubor lze přečíst a destinace má dostatek volného prostoru.',
+			'universalMedia.converterCancelled' => 'Konverze byla zrušena. neúplný výsledek byl odstraněn.',
+			'universalMedia.converterDesktopOnly' => 'Lokální konverze je k dispozici na desktopových počítačích s FFmpeg instalován.',
+			'universalMedia.converterStart' => 'Převod souborů',
+			'universalMedia.mediaToolsTitle' => 'Média nástroje',
+			'universalMedia.mediaToolsShortcut' => 'Zachyťte nebo sdílejte média, přidejte vyhledávací rozšíření nebo použijte příkazovou řadu.',
+			'universalMedia.mediaToolsIntro' => 'Vyberte si zaměřený nástroj. zachytit a stream-out používat FFmpeg nainstalované na tomto desku. rozšíření a CLI příkazy používají omezené požadavky HTTPS a stávající Open media tok.',
+			'universalMedia.mediaToolsAccessibility' => 'Výběry nástrojů a kontroly pracují s dotykem, ukazatelem, klávesnicí a zaměřením D-pad. Změny v stavu nahrávání, sdílení a vyhledávání jsou oznámeny.',
+			'universalMedia.mediaTool' => 'Média nástroj',
+			'universalMedia.captureIntro' => 'Na tomto počítači zaznamenáváte obrazovku nebo fotoaparát do souboru MP4. FFmpeg musí být nainstalován a obsahuje kódovač H.264.',
+			'universalMedia.captureNoDevices' => 'Nebyly nalezeny žádné obrazovky nebo fotoaparáty. zkontrolujte FFmpeg zachycenou podporu a oprávnění k soukromí operačního systému.',
+			'universalMedia.captureSource' => 'obrazovka nebo fotoaparát',
+			'universalMedia.captureScreen' => 'obrazovka',
+			'universalMedia.captureAudioSource' => 'Audio vstup (volitelné)',
+			'universalMedia.captureAudioHelp' => 'Přidejte zvuk z mikrofonu nebo dostupného vstupu. volby zařízení závisí na FFmpeg a systémových povoleních.',
+			'universalMedia.captureAudioNone' => 'Žádný audio',
+			'universalMedia.captureDefaultAudio' => 'Předvolený audio vstup',
+			'universalMedia.captureWaylandHelp' => 'Wayland omezuje toto XWayland zachycení na X display. Windows mimo XWayland se nemusí zobrazit.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Rekordní rámová sazba',
+			'universalMedia.capturePrivacy' => 'Záznam se ukládá pouze na vybranou souboru. mikrofonový záznam je volitelný. PlezyNG záznam nezakládá.',
+			'universalMedia.captureSaveAs' => 'Shromažďujte záznam obrazovky jako',
+			'universalMedia.captureExtensionMismatch' => 'Vyberte název, který končí v .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg nebo kódování videa H.264 není k dispozici. nainstalovat podporované FFmpeg stavbu, pak zkuste znovu.',
+			'universalMedia.captureFailed' => 'Zkontrolujte oprávnění zařízení, dostupné ukládání a podporu FFmpeg.',
+			'universalMedia.captureSaved' => 'Scénární záznam byl zachráněn.',
+			'universalMedia.captureElapsedLabel' => 'Záznamový čas',
+			'universalMedia.captureStart' => 'Začíná nahrávání',
+			'universalMedia.capturePreview' => 'Náhled v přehrávači',
+			'universalMedia.capturePreviewHelp' => 'Prohlédněte vybraný zdroj ve standardním přehrávači. Náhled je pouze pro tuto relaci a neukládá záznam. Podpora zařízení a oprávnění závisí na MPV a operačním systému. Náhled používá pouze video; do uložených záznamů lze přidat volitelný zvuk.',
+			'universalMedia.capturePreviewActive' => 'Živý náhled · nenahrává se',
+			'universalMedia.captureStop' => 'Zastavte se a zachraňte',
+			'universalMedia.captureMode' => 'únos',
+			'universalMedia.shareMode' => 'Sdílejte',
+			'universalMedia.shareIntro' => 'Odeslat soubor místních médií do jiného zařízení na vaší soukromé síti. PlezyNG vytváří dočasný tok HLS.',
+			'universalMedia.sharePrivacy' => 'Kdokoliv na vaší místní síti, kdo dostává soukromý odkaz může sledovat, zatímco je aktivní. odkaz vyprší po 60 minutách. zastavit sdílení, aby se server uzavřel a zrušit odkaz.',
+			'universalMedia.shareChooseFile' => 'Vyberte mediální soubor',
+			'universalMedia.shareChooseHelp' => 'Vyberte místní audio nebo video soubor. soubor zůstává na tomto počítači.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg nebo kódování H.264/AAC nejsou k dispozici. Instalace FFmpeg s podporou kódování H.264 a AAC.',
+			'universalMedia.shareFailed' => 'Stream se nemohl začít ani nečekaně zastavit. zkontrolujte FFmpeg a přístup k síti.',
+			'universalMedia.shareActive' => 'Stream je připraven na vaší soukromé síti.',
+			'universalMedia.shareEnded' => 'Média dosáhla konce a už se nedělá.',
+			'universalMedia.shareStopped' => 'Sdílení přerušeno. dočasný odkaz již neplatí.',
+			'universalMedia.shareUrlCopied' => 'Přenosová adresa je kopírována.',
+			'universalMedia.shareOpenUrl' => 'Otevřete tuto adresu v jednom hráči na jiném zařízení',
+			'universalMedia.shareQrLabel' => 'QR kód pro dočasnou adresu toku',
+			'universalMedia.shareQrHelp' => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.',
+			'universalMedia.shareHttpHint' => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.',
+			'universalMedia.shareCopyUrl' => 'Kopírování streamové adresy',
+			'universalMedia.shareExpiresLabel' => 'Link vyprší na',
+			'universalMedia.shareStarting' => 'Připravování toku...',
+			'universalMedia.shareStart' => 'Začněte sdílet',
+			'universalMedia.shareStop' => 'Přestaňte sdílet',
+			'universalMedia.extensionsMode' => 'Rozšíření a CLI',
+			'universalMedia.extensionsIntro' => 'Přidejte data-pouze vyhledávací rozšíření najít média. Vyberte výsledek, aby ji přenést do známého formuláře Open media.',
+			'universalMedia.extensionsPrivacy' => 'Manifest může definovat jedno HTTPS vyhledávací koncové body a mapové odpovídající pole. Nemůže spustit kód, přidat název žádosti, číst soubory, nebo spustit příkazy shell.',
+			'universalMedia.extensionImport' => 'Přidat rozšíření manifest',
+			'universalMedia.extensionEmpty' => 'Zvolte důvěryhodný manifest JSON soubor pro přidání.',
+			'universalMedia.extensionChoose' => 'Vyhledávací služba',
+			'universalMedia.extensionSearchConsent' => 'Každé vyhledávání odesílá vaše slova k této službě HTTPS. Výsledky se otevřou pouze po vybrání jednoho.',
+			'universalMedia.extensionSearchLabel' => 'Vyhledávání médií',
+			'universalMedia.extensionSearch' => 'Vyhledávání',
+			'universalMedia.extensionSearching' => 'Hledání...',
+			'universalMedia.extensionNoResults' => 'Bezpečné výsledky médií nebyly vráceny. zkuste další vyhledávání.',
+			'universalMedia.extensionInstallTitle' => 'Přidejte tuto vyhledávací službu?',
+			'universalMedia.extensionReplaceTitle' => 'Aktualizovat tuto službu vyhledávání?',
+			'universalMedia.extensionService' => 'Služba',
+			'universalMedia.extensionEndpoint' => 'HTTPS konečný bod',
+			'universalMedia.extensionConsent' => 'Váš vyhledávací text je zaslán do této služby. manifest neobsahuje prováděcí kód. Pokračujte pouze v případě, že důvěřujete tomuto bodu.',
+			'universalMedia.extensionInstall' => 'Přidat službu',
+			'universalMedia.extensionReplace' => 'Aktualizace služby',
+			'universalMedia.extensionRemoveTitle' => 'Odstranit tuto vyhledávací službu?',
+			'universalMedia.extensionRemoveHelp' => 'To odstraní službu z tohoto profilu. PlezyNG se s jeho koncovým bodem nesetká.',
+			'universalMedia.extensionRemove' => 'Odstranění služby',
+			'universalMedia.extensionInvalidManifest' => 'Tento soubor není podporovaným rozšířením manifest. viz průvodce Open media pro formát.',
+			'universalMedia.extensionSaveFailed' => 'Rozšíření nelze uložit do aktivního profilu.',
+			'universalMedia.extensionSearchFailed' => 'Vyhledávací služba nevrátila platnou odpověď. zkontrolujte koncový bod a zkuste znovu.',
+			'universalMedia.cliTitle' => 'Příkazová linka',
+			'universalMedia.cliHelp' => 'Použijte průvodce plezyctl k ověření manifestu nebo vyhledávání stejného rozšíření. Před každým vyhledáváním zkontrolujte službu HTTPS. Výsledky se otevřou ve stávající mediální formě; vyberte tlačítko zpětné vazby.',
+			'universalMedia.cliCopyExample' => 'Kopírování příkladu',
+			'universalMedia.cliCopied' => 'Příklad příkazů kopírován.',
 			'fileSources.title' => 'Soubory a knihy',
 			'fileSources.subtitle' => 'Číst, poslouchat a sledovat z vlastních souborů.',
 			'fileSources.add' => 'Přidat zdroj',
@@ -7827,8 +8365,6 @@ extension on TranslationsCs {
 			'fileSources.offlineQuotaHelp' => 'Nastavení maximálního místa použitého offline kopie, dovezené soubory a stažené stahování. Snížení limitu neodstraňuje stávající kopie.',
 			'fileSources.offlineStorageUsage' => 'Offline skladování',
 			'fileSources.reservedStorage' => 'Rezervované',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Stáhnout Queue',
 			'fileSources.downloadRunning' => 'Stáhnout',
 			'fileSources.downloadQueued' => 'Čekání',
@@ -7897,7 +8433,6 @@ extension on TranslationsCs {
 			'audiobook.addSyncSource' => 'Nejprve přidejte Google Drive, OneDrive, Dropbox, WebDAV nebo S3 do souborů a knih.',
 			'audiobook.syncDestination' => 'Synchronizace účtu',
 			'audiobook.syncFolder' => 'Synchronizace mapy nebo prefiksů',
-			'audiobook.syncFolderHelp' => 'Použijte samostatnou stávající složku ve vašem WebDAV zdroji nebo předpisu S3.',
 			'audiobook.syncCode' => 'Soukromý synchronizační kód',
 			'audiobook.syncCodeHelp' => 'Vytvořte kód na prvním zařízení, pak zadejte tento kód na jiných zařízeních. Udržujte soukromou kopii: je to klíč k vašemu šifrovanému stavu. Použijte pro každou osobu jiný kód.',
 			'audiobook.showCode' => 'Zobrazit nebo skrýt synchronizační kód',
@@ -7907,7 +8442,6 @@ extension on TranslationsCs {
 			'audiobook.syncSourceDisconnect' => 'Odstranění tohoto zdroje vypne čtení a poslouchání synchronizace zde. šifrované synchronizace soubory zůstane v poskytovateli.',
 			'audiobook.syncReconnect' => 'Připojení úložného účtu',
 			'audiobook.lastSynced' => ({required Object time}) => 'Poslední synchronizace na ${time}',
-			'audiobook.syncPrivacy' => 'Pouze šifrovaný pokrok a poznámky jsou uloženy. Audio a ebook soubory, účet tokeny a hesla nejsou nahrány. Google Drive a OneDrive používá aplikační úložiště; Dropbox používá PlezyNG Sync. Povolit synchronizaci může požadovat další psaní přístup. Zatímco je povolen, tato destinace vlastní progres synchronizaci; serverový pokrok zůstává oddělený.',
 			'audiobook.syncConflicts' => 'Vyberte si, kde se vrátit',
 			'audiobook.conflictHelp' => 'Tyto změny byly provedeny nezávisle.Vyberte pozici nebo verzi štítku, kterou chcete udržet.Poslední časový rámec nebo vyšší procento automaticky nevyhraje.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Přístroj ${device}',
@@ -8074,7 +8608,6 @@ extension on TranslationsCs {
 			'comics.collections' => 'Kolekce',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8099,7 +8632,6 @@ extension on TranslationsCs {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8112,6 +8644,8 @@ extension on TranslationsCs {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8131,8 +8665,6 @@ extension on TranslationsCs {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8140,14 +8672,35 @@ extension on TranslationsCs {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Tento odkaz Plezy není platný.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Žádný profil se neshoduje s "${profile}".',
+			'deepLinks.serverUnavailable' => 'Nemohla jsem se dostat na server pro tento odkaz.',
+			'deepLinks.notFound' => 'Tento název v knihovně nenajdete.',
+			'deepLinks.unsupportedItem' => 'Tento odkaz nelze hrát.',
+			'deepLinks.noLiveTv' => 'Žádný Live TV server není k dispozici pro tento odkaz.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Nemohla jsem najít kanál "${channel}".',
+			'deepLinks.showLink' => 'Zobrazit link',
+			'deepLinks.showProfileLink' => 'Zobrazit profilový link',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Otevření tohoto odkazu hraje další epizodu. Přidejte &mode=shuffle k hraní show na shuffle.',
+			'deepLinks.movieHint' => 'Otevření tohoto odkazu hraje film.',
+			'deepLinks.episodeHint' => 'Otvírání tohoto odkazu hraje tento epizod.',
+			'deepLinks.profileHint' => 'Otevření tohoto odkazu přepíná na tento profil.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Otevřete jako ${name}',
+			'deepLinks.copy' => 'Kopírování',
+			'deepLinks.copied' => 'Link kopírovaný',
+			'householdSetup.title' => 'Nastavení domácnosti',
+			'issueReport.title' => 'Nahlásit problém',
+			'issueReport.instructions' => 'Naskenujte QR kód a otevřete předvyplněný návrh na GitHubu. Před odesláním ho zkontrolujte.',
+			'issueReport.privacy' => 'Návrh obsahuje verzi aplikace, platformu a počty připojení. Neobsahuje adresy serverů, názvy účtů a profilů, názvy médií ani cesty k souborům.',
+			'issueReport.logPrivacy' => 'Protokoly jsou volitelné. Před nahráním je zkontrolujte. Jejich ID se přidá do návrhu, který může být veřejný.',
+			'issueReport.openDraft' => 'Otevřít návrh na GitHubu',
 			_ => null,
 		};
 	}

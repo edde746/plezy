@@ -53,7 +53,13 @@ Future<http.StreamedResponse> sendWithSafeRedirects(
         const {301, 302, 303, 307, 308}.contains(status) &&
         (current.method == 'GET' || current.method == 'HEAD' || (current.method == 'POST' && status == 303));
     final location = response.headers['location'];
-    if (!follow || !canRedirect || location == null) return _ResponseWithUrl(response, current.url);
+    if (!follow || !canRedirect || location == null) {
+      final effectiveUrl = switch (response) {
+        http.BaseResponseWithUrl(:final url) => url,
+        _ => current.url,
+      };
+      return _ResponseWithUrl(response, effectiveUrl);
+    }
 
     // Cancel instead of draining an untrusted, potentially infinite 3xx body.
     // This also releases ManagedHttpClient's request tracking before a new hop.

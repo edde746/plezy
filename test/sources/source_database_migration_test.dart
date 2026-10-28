@@ -33,7 +33,49 @@ class _Version8Database extends SourceDatabase {
   );
 }
 
+class _Version9Database extends SourceDatabase {
+  _Version9Database(super.executor);
+
+  @override
+  int get schemaVersion => 9;
+}
+
 void main() {
+  test('schema 9 upgrade indexes identified titles without changing entries or progress', () async {
+    final directory = await Directory.systemTemp.createTemp('plezy-schema9-');
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File('${directory.path}/publications.sqlite');
+    final old = _Version9Database(NativeDatabase(file));
+    final oldRepository = SourceRepository(old);
+    const movie = SourceEntry(
+      sourceId: 'nas',
+      id: 'film',
+      title: 'film-123.mkv',
+      onlineTitle: 'A Better Title',
+      kind: SourceItemKind.video,
+    );
+    await oldRepository.cacheEntries('alice', [movie]);
+    await old.customStatement("UPDATE entries SET search='film-123.mkv'");
+    final progress = await oldRepository.saveProgress(
+      'alice',
+      PublicationProgress(
+        entryKey: movie.key,
+        edition: 'edition',
+        mode: PublicationMode.watching,
+        session: 'device',
+        positionMs: 42000,
+      ),
+    );
+    await old.close();
+    final database = SourceDatabase(NativeDatabase(file));
+    addTearDown(database.close);
+    final repository = SourceRepository(database);
+    expect((await repository.entriesPage('alice', query: 'better title')).items.single.id, 'film');
+    expect((await repository.entriesPage('bob', query: 'better title')).items, isEmpty);
+    expect((await repository.progress('alice', progress.key))!.positionMs, 42000);
+    expect((await repository.entryById('alice', 'nas', 'film'))!.title, 'film-123.mkv');
+  });
+
   test('schema 8 migration preserves entries and repairs FTS update and delete', () async {
     final directory = await Directory.systemTemp.createTemp('plezy-schema8-');
     addTearDown(() => directory.delete(recursive: true));
@@ -49,7 +91,7 @@ void main() {
     final repository = SourceRepository(database);
     expect((await repository.entries('alice')).single.title, 'Original title');
     final version = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 9);
+    expect(version.read<int>('user_version'), 10);
     expect(
       await database.customSelect("SELECT rowid FROM entries_search_fts WHERE search MATCH 'Original'").get(),
       hasLength(1),

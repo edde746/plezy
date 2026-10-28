@@ -1,17 +1,45 @@
 import 'dart:io';
+import 'dart:math' as math;
+
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/playback_coordinator.dart';
+import 'package:plezy/mpv/player/player_state.dart';
+import 'package:plezy/sources/adapters/opds_source.dart';
+import 'package:plezy/sources/source_controller.dart' show SourcePreviewSession;
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_playback.dart';
+import 'package:plezy/sources/source_transport.dart';
+import 'package:plezy/services/music/music_playback_service.dart';
+
 import '../services/music/music_playback_service_test.dart' show FakePlayer, FakeMediaControlsManager;
 import 'fixtures/memory_sources.dart';
 
 class _Controls extends FakeMediaControlsManager {
+  bool? canSeek;
+  bool? canSkip;
+
   @override
   Future<void> setBackgroundMode(bool enabled) async {}
+
+  @override
+  Future<void> setControlsEnabled({
+    bool canPlayPause = false,
+    bool canGoNext = false,
+    bool canGoPrevious = false,
+    bool canSeek = false,
+    bool canStop = false,
+    bool canSkip = false,
+    bool canSetSpeed = false,
+    bool preferSkipOverTrackButtons = false,
+    Duration? skipInterval,
+  }) async {
+    this.canSeek = canSeek;
+    this.canSkip = canSkip;
+  }
+
   @override
   Future<void> updateFileMetadata({
     required String title,
@@ -27,6 +55,26 @@ class _Controls extends FakeMediaControlsManager {
 class _FailingStopPlayer extends FakePlayer {
   @override
   Future<void> stop() async => throw StateError('native stop failure');
+}
+
+class _RecordingMpvPlayer extends FakePlayer {
+  final properties = <String, String>{};
+  final propertyWrites = <(String, String)>[];
+
+  @override
+  String get playerType => 'mpv';
+
+  @override
+  PlayerState get state => super.state.copyWith(seekable: true);
+
+  @override
+  Future<void> setProperty(String name, String value) async {
+    propertyWrites.add((name, value));
+    properties[name] = value;
+  }
+
+  @override
+  Future<String?> getProperty(String name) async => properties[name];
 }
 
 void main() {
@@ -46,6 +94,19 @@ void main() {
     kind: SourceItemKind.audiobook,
     files: [first, second],
   );
+  const queueFiles = [
+    PublicationFile(id: 'queue-0', name: '01.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(id: 'queue-1', name: '02.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(id: 'queue-2', name: '03.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(id: 'queue-3', name: '04.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+  ];
+  const directQueueEntry = SourceEntry(
+    sourceId: 'open:session',
+    id: 'local-queue',
+    title: 'Local queue',
+    kind: SourceItemKind.music,
+    files: queueFiles,
+  );
   setUp(() async {
     PlaybackCoordinator.instance
       ..setWorkspaceVideoSessionCount(0)
@@ -60,6 +121,7 @@ void main() {
       playerFactory: (_) => native,
       controlsFactory: () => controls,
       wakelockToggle: (_) async {},
+      shuffleRandom: math.Random(2),
     );
   });
   tearDown(() async {
@@ -79,6 +141,158 @@ void main() {
     item.audio,
     localOverrides: {'one': Uri.file('${directory.path}/one'), 'two': Uri.file('${directory.path}/two')},
   );
+  Future<void> startDirectQueue() => playback.start(
+    directQueueEntry,
+    queueFiles,
+    playbackMode: PublicationMode.listening,
+    persistProgress: false,
+    localOverrides: {for (final file in queueFiles) file.id: Uri.file('${directory.path}/${file.name}')},
+  );
+  Future<_RecordingMpvPlayer> startLiveVideo() async {
+    final player = _RecordingMpvPlayer();
+    native = player;
+    const liveFile = PublicationFile(id: 'live-recording', name: 'Live.ts', mimeType: 'video/mp2t', streamOnly: true);
+    const liveEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'live-session',
+      title: 'Live channel',
+      kind: SourceItemKind.video,
+      files: [liveFile],
+    );
+    await playback.start(
+      liveEntry,
+      const [liveFile],
+      playbackMode: PublicationMode.watching,
+      localOverrides: {'live-recording': Uri.parse('https://radio.example/live.ts')},
+      persistProgress: false,
+      liveInput: true,
+    );
+    return player;
+  }
+
+  test('retry preserves the last reliable position after decoder reset and EOF', () async {
+    await start();
+    native.setPosition(const Duration(seconds: 47));
+    native.setPosition(Duration.zero);
+    native.emitError('stream failed');
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.canRetry, isTrue);
+    expect(playback.currentFilePositionMs, 47000);
+    expect(playback.progress!.filePositionMs, 47000);
+    expect(playback.progress!.finished, isFalse);
+    expect(native.openedUris, hasLength(1));
+    await playback.retry();
+    expect(native.openedUris, hasLength(2));
+    expect(native.openedUris.last, native.openedUris.first);
+    expect(native.openStarts.last, const Duration(seconds: 47));
+    expect(playback.failure, isNull);
+    expect(playback.currentFilePositionMs, 47000);
+  });
+
+  test('an intentional seek to zero remains zero after failure', () async {
+    await start();
+    native.setPosition(const Duration(seconds: 47));
+    await playback.seek(0);
+    native.emitError('stream failed');
+    await playback.retry();
+    expect(native.openStarts.last, Duration.zero);
+  });
+
+  test('retry is inert after the source profile changes', () async {
+    await start();
+    native.setPosition(const Duration(seconds: 47));
+    native.emitError('stream failed');
+    sources.generation++;
+    await playback.retry();
+    expect(native.openedUris, hasLength(1));
+    expect(playback.canRetry, isFalse);
+  });
+
+  test('transient live media disables seeking and never persists progress', () async {
+    const liveFile = PublicationFile(
+      id: 'live',
+      name: 'public-stream.m3u8',
+      mimeType: 'application/vnd.apple.mpegurl',
+      streamOnly: true,
+    );
+    const liveEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'session',
+      title: 'Live radio',
+      kind: SourceItemKind.video,
+      files: [liveFile],
+    );
+
+    await playback.start(
+      liveEntry,
+      const [liveFile],
+      playbackMode: PublicationMode.watching,
+      localOverrides: {'live': Uri.parse('https://radio.example/live.m3u8')},
+      persistProgress: false,
+      liveInput: true,
+    );
+
+    expect(playback.isTransientInput, isTrue);
+    expect(playback.isLiveInput, isTrue);
+    expect(playback.progress, isNotNull);
+    expect(controls.canSeek, isFalse);
+    expect(controls.canSkip, isFalse);
+
+    await playback.seek(30000);
+    await playback.skip(30);
+    expect(native.seeks, isEmpty);
+
+    native.setPosition(const Duration(seconds: 20));
+    await playback.pause();
+    expect(await sources.repository.allProgress('alice'), isEmpty);
+  });
+  test('live MPV recording writes privately, then publishes the finished file on stop', () async {
+    final player = await startLiveVideo();
+    final target = File('${directory.path}/recording.mkv');
+
+    await playback.startStreamRecording(target, replaceExisting: false);
+
+    expect(playback.isRecordingStream, isTrue);
+    final partialPath = player.properties['file-local-options/stream-record']!;
+    final partial = File(partialPath);
+    expect(partial.parent.path, directory.path);
+    expect(partial.uri.pathSegments.last, startsWith('.recording.plezy-recording-'));
+    await partial.writeAsBytes([1, 2, 3]);
+
+    expect((await playback.stopStreamRecording())?.path, target.path);
+    expect(await target.readAsBytes(), [1, 2, 3]);
+    expect(playback.isRecordingStream, isFalse);
+    expect(partial.existsSync(), isFalse);
+    expect(player.propertyWrites, [
+      ('file-local-options/stream-record', partial.path),
+      ('file-local-options/stream-record', ''),
+    ]);
+  });
+  test('live recording preserves an existing file without consent and restores it after empty output', () async {
+    final player = await startLiveVideo();
+    final target = File('${directory.path}/recording.ts')..writeAsBytesSync([9, 8, 7]);
+
+    await expectLater(
+      playback.startStreamRecording(target, replaceExisting: false),
+      throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.conflict)),
+    );
+    expect(await target.readAsBytes(), [9, 8, 7]);
+
+    await playback.startStreamRecording(target, replaceExisting: true);
+    final partial = File(player.properties['file-local-options/stream-record']!);
+    expect(target.existsSync(), isFalse);
+    await partial.writeAsBytes(const []);
+
+    await expectLater(
+      playback.stopStreamRecording(),
+      throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.invalidData)),
+    );
+    expect(await target.readAsBytes(), [9, 8, 7]);
+    expect(partial.existsSync(), isFalse);
+    expect(playback.isRecordingStream, isFalse);
+    expect(playback.active, isTrue);
+  });
   test('duplicate completion advances one part and persists source-relative resume', () async {
     await start();
     expect(controls.metadataTitles, contains('A book'));
@@ -192,4 +406,323 @@ void main() {
     expect(playback.progress!.positionMs, 0);
     expect(native.openStarts.single, Duration.zero);
   });
+  test('direct media queues shuffle only upcoming files and keep timeline and navigation in queue order', () async {
+    await startDirectQueue();
+    expect(playback.canUseDirectQueueControls, isTrue);
+    expect(playback.queueFileIndices, [0, 1, 2, 3]);
+
+    await playback.toggleQueueShuffle();
+    final shuffled = playback.queueFileIndices;
+    expect(playback.queueShuffled, isTrue);
+    expect(shuffled.first, 0, reason: 'shuffle keeps the current file in place');
+    expect([...shuffled]..sort(), [0, 1, 2, 3]);
+    expect(shuffled, isNot([0, 1, 2, 3]));
+
+    await playback.selectQueueFile(shuffled[1]);
+    expect(playback.currentQueuePosition, 1);
+    expect(native.openedUris.last, Uri.file('${directory.path}/${queueFiles[shuffled[1]].name}').toString());
+    await playback.seek(185000);
+    expect(playback.fileIndex, shuffled[1]);
+    expect(playback.currentFilePositionMs, 5000);
+
+    await playback.toggleQueueShuffle();
+    expect(playback.queueShuffled, isFalse);
+    expect(playback.queueFileIndices.take(2), shuffled.take(2), reason: 'unshuffle preserves the played prefix');
+    final restoredRemaining = shuffled.skip(2).toList()..sort();
+    expect(playback.queueFileIndices.skip(2), restoredRemaining);
+
+    await playback.nextChapter();
+    expect(playback.fileIndex, playback.queueFileIndices[2]);
+    await playback.previousChapter();
+    expect(playback.fileIndex, playback.queueFileIndices[1]);
+
+    native = FakePlayer();
+    controls = _Controls();
+    await start();
+    expect(playback.canUseDirectQueueControls, isFalse, reason: 'book chapter order is never shuffled');
+    await playback.toggleQueueShuffle();
+    expect(playback.queueFileIndices, [0, 1]);
+  });
+
+  test('direct queue repeat all wraps, repeat one restarts the current file, and off stops at the end', () async {
+    await startDirectQueue();
+    await playback.setQueueRepeatMode(MusicRepeatMode.all);
+    expect(playback.queueRepeatMode, MusicRepeatMode.all);
+    await playback.selectQueueFile(3);
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, 0);
+    expect(native.openedUris.last, Uri.file('${directory.path}/01.mp3').toString());
+
+    await playback.setQueueRepeatMode(MusicRepeatMode.one);
+    await playback.selectQueueFile(2);
+    final oneOpenCount = native.openedUris.length;
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, 2);
+    expect(native.openedUris.length, oneOpenCount + 1);
+    expect(native.openedUris.last, Uri.file('${directory.path}/03.mp3').toString());
+
+    await playback.setQueueRepeatMode(MusicRepeatMode.off);
+    await playback.selectQueueFile(3);
+    final finalOpenCount = native.openedUris.length;
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, 3);
+    expect(native.openedUris.length, finalOpenCount);
+  });
+
+  test('direct queue sleep-after-chapter follows the shuffled playback order', () async {
+    await startDirectQueue();
+    await playback.toggleQueueShuffle();
+    final nextFile = playback.queueFileIndices[1];
+    playback.sleepAfterChapter(count: 2);
+
+    native.setPosition(const Duration(minutes: 3));
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, nextFile);
+    expect(playback.sleepEnabled, isTrue);
+
+    native.setPosition(const Duration(minutes: 3));
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, nextFile);
+    expect(playback.sleepEnabled, isFalse);
+    expect(playback.playing, isFalse);
+  });
+
+  test('capture preview opens only the validated device address as a live transient item', () async {
+    final capturePlayer = _RecordingMpvPlayer();
+    native = capturePlayer;
+    const captureFile = PublicationFile(
+      id: 'desktop',
+      name: 'Desktop screen',
+      mimeType: 'video/avdevice',
+      streamOnly: true,
+    );
+    const captureEntry = SourceEntry(
+      sourceId: 'open:capture:test',
+      id: 'capture-test',
+      title: 'Desktop screen',
+      kind: SourceItemKind.video,
+      files: [captureFile],
+    );
+
+    await playback.start(
+      captureEntry,
+      const [captureFile],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      liveInput: true,
+      directPlayerAddresses: const {'desktop': 'av://x11grab::0.0+0,0'},
+      localPlayerOptions: const {'demuxer-lavf-format': 'x11grab', 'demuxer-lavf-o': 'framerate=30,draw_mouse=1'},
+    );
+
+    expect(playback.isCapturePreview, isTrue);
+    expect(playback.isTransientInput, isTrue);
+    expect(playback.isLiveInput, isTrue);
+    expect(capturePlayer.propertyWrites, [
+      ('file-local-options/demuxer-lavf-format', 'x11grab'),
+      ('file-local-options/demuxer-lavf-o', 'framerate=30,draw_mouse=1'),
+    ]);
+    expect(native.openedUris, ['av://x11grab::0.0+0,0']);
+    expect(controls.canSeek, isFalse);
+    expect(await sources.repository.allProgress('alice'), isEmpty);
+  }, skip: !(Platform.isWindows || Platform.isLinux || Platform.isMacOS));
+
+  test('sample previews reject direct capture player configuration', () async {
+    final previewPlayer = _RecordingMpvPlayer();
+    native = previewPlayer;
+    const sampleFile = PublicationFile(
+      id: 'sample',
+      name: 'sample.epub',
+      mimeType: 'application/epub+zip',
+      sampleOnly: true,
+    );
+    const sampleEntry = SourceEntry(
+      sourceId: 'sample-source',
+      id: 'sampled-publication',
+      title: 'Sampled publication',
+      kind: SourceItemKind.ebook,
+      files: [sampleFile],
+    );
+    const sampleSource = FileSource(
+      id: 'sample-source',
+      profileId: 'alice',
+      kind: FileSourceKind.opds,
+      name: 'Samples',
+      endpoint: 'https://catalog.example/feed',
+    );
+    final adapter = OpdsSourceAdapter(sampleSource, SourceTransport(), () async => {});
+    final preview = SourcePreviewSession(adapter, sampleFile, check: sources.requireSession);
+    try {
+      await expectLater(
+        playback.start(
+          sampleEntry,
+          const [sampleFile],
+          persistProgress: false,
+          samplePreview: preview,
+          directPlayerAddresses: const {'sample': 'av://x11grab::0.0+0,0'},
+          localPlayerOptions: const {'demuxer-lavf-format': 'x11grab', 'demuxer-lavf-o': 'framerate=30'},
+        ),
+        throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.permission)),
+      );
+      expect(previewPlayer.openedUris, isEmpty);
+      expect(await sources.repository.allProgress('alice'), isEmpty);
+    } finally {
+      await preview.dispose();
+      adapter.close();
+    }
+  });
+
+  test('capture preview rejects arbitrary MPV input options before opening a device', () async {
+    final capturePlayer = _RecordingMpvPlayer();
+    native = capturePlayer;
+    const captureFile = PublicationFile(id: 'desktop', name: 'Desktop screen', mimeType: 'video/avdevice');
+    const captureEntry = SourceEntry(
+      sourceId: 'open:capture:test',
+      id: 'capture-test',
+      title: 'Desktop screen',
+      kind: SourceItemKind.video,
+      files: [captureFile],
+    );
+
+    await expectLater(
+      playback.start(
+        captureEntry,
+        const [captureFile],
+        playbackMode: PublicationMode.watching,
+        persistProgress: false,
+        liveInput: true,
+        directPlayerAddresses: const {'desktop': 'av://x11grab::0.0+0,0'},
+        localPlayerOptions: const {'demuxer-lavf-format': 'x11grab', 'demuxer-lavf-o': 'framerate=30,format=anything'},
+      ),
+      throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.unsupported)),
+    );
+    expect(capturePlayer.propertyWrites, isEmpty);
+    expect(capturePlayer.openedUris, isEmpty);
+  }, skip: !(Platform.isWindows || Platform.isLinux || Platform.isMacOS));
+
+  test('local video bookmark identity hashes the file URI and is available only while seekable', () async {
+    native = _RecordingMpvPlayer();
+    const videoFile = PublicationFile(
+      id: 'local-movie',
+      name: 'A movie.mkv',
+      mimeType: 'video/x-matroska',
+      durationMs: 180000,
+    );
+    const videoEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'local-movie',
+      title: 'A movie',
+      kind: SourceItemKind.video,
+      files: [videoFile],
+    );
+    final uri = Uri.file('${directory.path}/private-movie.mkv');
+
+    await playback.start(
+      videoEntry,
+      const [videoFile],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      localOverrides: {'local-movie': uri},
+    );
+
+    final key = playback.localMediaBookmarkKey;
+    expect(key, startsWith('open-media:'));
+    expect(key, isNot(contains(directory.path)));
+    expect(key, isNot(contains('private-movie')));
+    expect(playback.isLiveInput, isFalse);
+  });
+
+  test('seekable transient audio uses an opaque bookmark key and live audio does not', () async {
+    native = _RecordingMpvPlayer();
+    const audioFile = PublicationFile(
+      id: 'local-track',
+      name: 'A track.m4a',
+      mimeType: 'audio/mp4',
+      durationMs: 180000,
+    );
+    const audioEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'local-track',
+      title: 'A track',
+      kind: SourceItemKind.music,
+      files: [audioFile],
+    );
+    final uri = Uri.file('${directory.path}/private-track.m4a');
+
+    await playback.start(
+      audioEntry,
+      const [audioFile],
+      playbackMode: PublicationMode.listening,
+      persistProgress: false,
+      localOverrides: {'local-track': uri},
+    );
+
+    final key = playback.localMediaBookmarkKey;
+    expect(key, startsWith('open-media:'));
+    expect(key, isNot(contains(directory.path)));
+    expect(key, isNot(contains('private-track')));
+
+    await playback.stop();
+    native = _RecordingMpvPlayer();
+    await playback.start(
+      audioEntry,
+      const [audioFile],
+      playbackMode: PublicationMode.listening,
+      persistProgress: false,
+      liveInput: true,
+      localOverrides: {'local-track': Uri.parse('https://radio.example/live.m4a')},
+    );
+    expect(playback.localMediaBookmarkKey, isNull);
+  });
+
+  test('local queue export returns safe sibling entries and refuses a mixed folder', () async {
+    const firstVideo = PublicationFile(id: 'one', name: 'First.mkv', mimeType: 'video/x-matroska');
+    const secondVideo = PublicationFile(id: 'two', name: 'Second.mkv', mimeType: 'video/x-matroska');
+    const thirdVideo = PublicationFile(id: 'three', name: 'Third.mkv', mimeType: 'video/x-matroska');
+    const fourthVideo = PublicationFile(id: 'four', name: 'Fourth.mkv', mimeType: 'video/x-matroska');
+    const videoEntry = SourceEntry(
+      sourceId: 'local',
+      id: 'local-set',
+      title: 'A local set',
+      kind: SourceItemKind.video,
+      files: [firstVideo, secondVideo, thirdVideo, fourthVideo],
+    );
+    final firstFile = File('${directory.path}/First.mkv')..writeAsBytesSync([1]);
+    final secondFile = File('${directory.path}/Second.mkv')..writeAsBytesSync([2]);
+    final thirdFile = File('${directory.path}/Third.mkv')..writeAsBytesSync([3]);
+    final fourthFile = File('${directory.path}/Fourth.mkv')..writeAsBytesSync([4]);
+
+    await playback.start(
+      videoEntry,
+      const [firstVideo, secondVideo, thirdVideo, fourthVideo],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      localOverrides: {'one': firstFile.uri, 'two': secondFile.uri, 'three': thirdFile.uri, 'four': fourthFile.uri},
+    );
+
+    expect(playback.canExportLocalPlaylist, isTrue);
+    await playback.toggleQueueShuffle();
+    expect(playback.queueFileIndices, isNot([0, 1, 2, 3]));
+    final entries = await playback.localPlaylistExportItems();
+    expect(
+      entries?.map((item) => item.uri),
+      playback.queueFileIndices.map((index) => [firstFile.uri, secondFile.uri, thirdFile.uri, fourthFile.uri][index]),
+    );
+
+    final otherDirectory = Directory('${directory.path}/other')..createSync();
+    final other = File('${otherDirectory.path}/Fourth.mkv')..writeAsBytesSync([4]);
+    await playback.start(
+      videoEntry,
+      const [firstVideo, secondVideo, thirdVideo, fourthVideo],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      localOverrides: {'one': firstFile.uri, 'two': secondFile.uri, 'three': thirdFile.uri, 'four': other.uri},
+    );
+    expect(playback.canExportLocalPlaylist, isFalse);
+    expect(await playback.localPlaylistExportItems(), isNull);
+  }, skip: !(Platform.isWindows || Platform.isLinux || Platform.isMacOS));
 }

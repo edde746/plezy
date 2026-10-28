@@ -227,6 +227,7 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
       }
 
       superview.removeConstraints(positionConstraints(for: button, in: superview))
+      superview.removeConstraints(originalButtonConstraints[buttonType] ?? [])
 
       button.translatesAutoresizingMaskIntoConstraints = false
 

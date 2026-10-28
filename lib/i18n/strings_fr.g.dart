@@ -41,15 +41,11 @@ class TranslationsFr extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final Translations$app$fr app = Translations$app$fr.internal(_root);
-	@override late final Translations$cast$fr cast = Translations$cast$fr.internal(_root);
-	@override late final Translations$automation$fr automation = Translations$automation$fr.internal(_root);
-	@override late final Translations$notifications$fr notifications = Translations$notifications$fr.internal(_root);
 	@override late final Translations$appIcon$fr appIcon = Translations$appIcon$fr.internal(_root);
 	@override late final Translations$auth$fr auth = Translations$auth$fr.internal(_root);
 	@override late final Translations$common$fr common = Translations$common$fr.internal(_root);
 	@override late final Translations$screens$fr screens = Translations$screens$fr.internal(_root);
 	@override late final Translations$update$fr update = Translations$update$fr.internal(_root);
-	@override late final Translations$appAccess$fr appAccess = Translations$appAccess$fr.internal(_root);
 	@override late final Translations$settings$fr settings = Translations$settings$fr.internal(_root);
 	@override late final Translations$themeEditor$fr themeEditor = Translations$themeEditor$fr.internal(_root);
 	@override late final Translations$search$fr search = Translations$search$fr.internal(_root);
@@ -75,7 +71,6 @@ class TranslationsFr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$serverSelection$fr serverSelection = Translations$serverSelection$fr.internal(_root);
 	@override late final Translations$hubDetail$fr hubDetail = Translations$hubDetail$fr.internal(_root);
 	@override late final Translations$logs$fr logs = Translations$logs$fr.internal(_root);
-	@override late final Translations$detail$fr detail = Translations$detail$fr.internal(_root);
 	@override late final Translations$startup$fr startup = Translations$startup$fr.internal(_root);
 	@override late final Translations$licenses$fr licenses = Translations$licenses$fr.internal(_root);
 	@override late final Translations$navigation$fr navigation = Translations$navigation$fr.internal(_root);
@@ -98,15 +93,24 @@ class TranslationsFr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$seerr$fr seerr = Translations$seerr$fr.internal(_root);
 	@override late final Translations$services$fr services = Translations$services$fr.internal(_root);
 	@override late final Translations$addServer$fr addServer = Translations$addServer$fr.internal(_root);
+	@override late final Translations$cast$fr cast = Translations$cast$fr.internal(_root);
+	@override late final Translations$automation$fr automation = Translations$automation$fr.internal(_root);
+	@override late final Translations$notifications$fr notifications = Translations$notifications$fr.internal(_root);
+	@override late final Translations$appAccess$fr appAccess = Translations$appAccess$fr.internal(_root);
+	@override late final Translations$detail$fr detail = Translations$detail$fr.internal(_root);
 	@override late final Translations$watchLink$fr watchLink = Translations$watchLink$fr.internal(_root);
 	@override late final Translations$homeLayout$fr homeLayout = Translations$homeLayout$fr.internal(_root);
 	@override late final Translations$platform$fr platform = Translations$platform$fr.internal(_root);
+	@override late final Translations$universalMedia$fr universalMedia = Translations$universalMedia$fr.internal(_root);
 	@override late final Translations$fileSources$fr fileSources = Translations$fileSources$fr.internal(_root);
 	@override late final Translations$lending$fr lending = Translations$lending$fr.internal(_root);
 	@override late final Translations$audiobook$fr audiobook = Translations$audiobook$fr.internal(_root);
 	@override late final Translations$sourceSetup$fr sourceSetup = Translations$sourceSetup$fr.internal(_root);
 	@override late final Translations$comics$fr comics = Translations$comics$fr.internal(_root);
 	@override late final Translations$games$fr games = Translations$games$fr.internal(_root);
+	@override late final Translations$deepLinks$fr deepLinks = Translations$deepLinks$fr.internal(_root);
+	@override late final Translations$householdSetup$fr householdSetup = Translations$householdSetup$fr.internal(_root);
+	@override late final Translations$issueReport$fr issueReport = Translations$issueReport$fr.internal(_root);
 }
 
 // Path: app
@@ -117,48 +121,6 @@ class Translations$app$fr extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class Translations$cast$fr extends Translations$cast$en {
-	Translations$cast$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
-
-	final TranslationsFr _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Coup sur un appareil';
-	@override String get searching => 'En recherche de dispositifs de châtiment...';
-	@override String connectedTo({required Object device}) => 'Connectez-vous à ${device}';
-	@override String get device => 'Dispositif de casting';
-	@override String get readyToCast => 'Prêt à lancer';
-	@override String get subtitle => 'Sous-titres';
-	@override String get serverNotAvailable => 'Le serveur de médias n’est pas disponible.';
-	@override String get stopCasting => 'Arrêter de casting';
-	@override String get castToDevice => 'Changer à l\'appareil';
-	@override String get noEpisodeAvailable => 'Il n\'y a pas d\'épisode disponible pour le lancer.';
-	@override String get startFailed => 'Je ne peux pas commencer à lancer. vérifier le serveur et essayer à nouveau.';
-}
-
-// Path: automation
-class Translations$automation$fr extends Translations$automation$en {
-	Translations$automation$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
-
-	final TranslationsFr _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Il n\'y a pas de session vidéo active à contrôler.';
-	@override String get profileNotFound => 'Ce profil Plezy n\'a pas été trouvé.';
-}
-
-// Path: notifications
-class Translations$notifications$fr extends Translations$notifications$en {
-	Translations$notifications$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
-
-	final TranslationsFr _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'Nouveau épisode';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -321,37 +283,6 @@ class Translations$update$fr extends Translations$update$en {
 	@override String get viewRelease => 'Voir les notes de version';
 	@override String get latestVersion => 'Vous utilisez la dernière version';
 	@override String get checkFailed => 'Échec de la vérification des mises à jour';
-}
-
-// Path: appAccess
-class Translations$appAccess$fr extends Translations$appAccess$en {
-	Translations$appAccess$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
-
-	final TranslationsFr _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours';
-	@override String get description => 'Démarrez un essai de sept jours avec un accès complet à chaque fonctionnalité PlezyNG. il n\'y a pas de frais pendant le essai et pas d\'abonnement. Après le essai, une achat de vie au prix de votre magasin déclenche PlezyNG pour la vie.';
-	@override String get trialEndedDescription => 'Déblocage de chaque fonctionnalité dans PlezyNG pour la vie avec une achat au prix de votre magasin.';
-	@override String get startTrial => 'Démarrer mon essai gratuit de 7 jours';
-	@override String get trialActive => 'Votre essai de 7 jours en plein fonctionnement est actif.';
-	@override String get trialEnded => 'Votre procès de 7 jours est terminé';
-	@override String get trialStartFailed => 'Je ne pouvais pas sauver le test sur ce appareil. veuillez essayer à nouveau.';
-	@override String get lifetimeTitle => 'PlezyNG déconnecté pour la vie';
-	@override String get lifetimeBody => 'Merci ! vous avez accès à toute la vie à chaque fonctionnalité PlezyNG.';
-	@override String get manageTitle => 'PlezyNG accès à vie';
-	@override String get manageDescription => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours, puis déverrouillez tout pour la vie avec un seul paiement au prix de votre magasin.';
-	@override String buy({required Object price}) => 'Déconnecter chaque fonctionnalité pour ${price}';
-	@override String get loadingPrice => 'Le prix de la boutique...';
-	@override String get retryPrice => 'Retour sur le prix';
-	@override String get restore => 'Restaurer l’achat de vie';
-	@override String get pending => 'Votre achat attend le paiement ou l\'approbation.Lifetime accès s\'ouvrira dès que le magasin le remplit.';
-	@override String get storeUnavailable => 'Vérifiez que vous êtes inscrit dans le magasin et que les achats sont autorisés sur ce dispositif.';
-	@override String get productNotFound => 'Le déclin de vie PlezyNG n\'est pas encore disponible dans ce magasin.';
-	@override String get productQueryFailed => 'Je ne pourrais pas charger le prix du magasin. vérifier votre connexion et essayer à nouveau.';
-	@override String get purchaseFailed => 'L’achat n’a pas été effectué, essayez-le encore.';
-	@override String get restoreFailed => 'Je ne pouvais pas aller au magasin pour restaurer votre achat.';
-	@override String get nothingToRestore => 'Le numéro PlezyNG achat à vie a été trouvé pour ce compte de magasin.';
 }
 
 // Path: settings
@@ -1236,10 +1167,6 @@ class Translations$videoControls$fr extends Translations$videoControls$en {
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} en ligne',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} écrans',
-	);
 	@override String get audioLabel => 'Audio';
 	@override String get subtitlesLabel => 'Sous-titres';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1276,9 +1203,31 @@ class Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Rétablir le son';
 	@override String get settingsButton => 'Paramètres de lecture';
 	@override String get tracksButton => 'Audio et sous-titres';
-	@override String get trackSelectionTitle => 'Choisir les traces avant le playback';
-	@override String get trackSelectionAuto => 'Sélection automatique';
 	@override String get chaptersButton => 'Chapitres';
+	@override String get segmentLoopHelp => 'Mettez A, puis définissez B plus tard dans la ligne de temps.';
+	@override String get setLoopStart => 'Démarrer le circuit (A)';
+	@override String get setLoopEnd => 'Mise à jour de la fin (B)';
+	@override String get clearSegmentLoop => 'Un segment clair';
+	@override String get setLoopStartFirst => 'Sélectionnez le début (A) avant la fin (B).';
+	@override String get loopEndAfterStart => 'La fin doit être plus tard que le début.';
+	@override String get segmentLoopUnavailable => 'Le segment looping n\'est pas disponible pour ce playback.';
+	@override String get loopPointNotSet => 'Pas fixé';
+	@override String get bookmarksHelp => 'Les notes sont enregistrées sur ce appareil. Sélectionnez une pour aller à cette heure.';
+	@override String get bookmarksButton => 'Les Bookmarks';
+	@override String get chaptersAndBookmarks => 'Chapitres et bookmarks';
+	@override String get segmentLoop => 'Le Segment Loop';
+	@override String get addBookmark => 'Ajoutez le bookmark';
+	@override String get bookmarkName => 'Nom de Bookmark';
+	@override String get bookmarkNameHint => 'Par exemple, la scène d’ouverture';
+	@override String bookmarkDefaultName({required Object n}) => 'Le Bookmark ${n}';
+	@override String get bookmarkNameRequired => 'Entrez un nom pour ce livre.';
+	@override String get deleteBookmark => 'Supprimer le bookmark';
+	@override String get bookmarkLimitReached => 'Cet article a déjà 100 bookmarks.';
+	@override String get bookmarkUnavailable => 'Je ne pouvais pas sauver ou supprimer cette note.';
+	@override String get bookmarkSaved => 'Le Bookmark est sauvé.';
+	@override String get bookmarkDeleted => 'Le Bookmark est supprimé.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Le point Loop ${point} Sélectionnez à ${time}.';
+	@override String get noChaptersOrBookmarks => 'Aucun chapitre ou livre n\'est disponible.';
 	@override String get versionQualityButton => 'Version et qualité';
 	@override String get versionColumnHeader => 'Version';
 	@override String get qualityColumnHeader => 'Qualité';
@@ -1287,8 +1236,6 @@ class Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcodage indisponible — lecture en qualité originale';
 	@override String get subtitleUnavailableFallback => 'Impossible de charger les sous-titres sélectionnés — poursuite de la lecture sans sous-titres';
 	@override String get pipButton => 'Mode image dans l’image';
-	@override String get openMiniPlayer => 'Jeux mini ouverts';
-	@override String get returnToFullPlayer => 'Retour au joueur complet';
 	@override String get aspectRatioButton => 'Format d\'image';
 	@override String get ambientLighting => 'Éclairage ambiant';
 	@override String get fullscreenButton => 'Passer en mode plein écran';
@@ -1297,7 +1244,6 @@ class Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Verrouillage de rotation';
 	@override String get lockScreen => 'Verrouiller l\'écran';
 	@override String get screenLockButton => 'Verrouillage de l\'écran';
-	@override String get longPressToUnlock => 'Appui long pour déverrouiller';
 	@override String get timelineSlider => 'Barre de progression vidéo';
 	@override String get volumeSlider => 'Niveau du volume';
 	@override String endsAt({required Object time}) => 'Se termine à ${time}';
@@ -1314,8 +1260,6 @@ class Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Aucun élément dans la file d\'attente';
 	@override String get noAudioDevicesAvailable => 'Aucun appareil audio disponible';
 	@override String get searchSubtitles => 'Rechercher des sous-titres';
-	@override String get loadSubtitleFile => 'Réserver le sous-titre de fichier...';
-	@override String get subtitleLoadFailed => 'Faillite de télécharger le sous-titre';
 	@override String get language => 'Langue';
 	@override String get noSubtitlesFound => 'Aucun sous-titre trouvé';
 	@override String get subtitleDownloaded => 'Sous-titre téléchargé';
@@ -1324,7 +1268,6 @@ class Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Rechercher des langues...';
 	@override String get skipIntro => 'Passer l’intro';
 	@override String get skipCredits => 'Passer le générique';
-	@override String get skipAds => '- les ads';
 	@override String get nextEpisode => 'Épisode suivant';
 	@override String subtitleTrack({required Object n}) => 'Piste ${n}';
 	@override String subtitleFile({required Object name}) => 'Sous-titre ${name}';
@@ -1332,6 +1275,19 @@ class Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Sous-titres : désactivés';
 	@override String osdSubtitles({required Object track}) => 'Sous-titres : ${track}';
 	@override String osdAudio({required Object track}) => 'Audio : ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} en ligne',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} écrans',
+	);
+	@override String get trackSelectionTitle => 'Choisir les traces avant le playback';
+	@override String get trackSelectionAuto => 'Sélection automatique';
+	@override String get openMiniPlayer => 'Jeux mini ouverts';
+	@override String get returnToFullPlayer => 'Retour au joueur complet';
+	@override String get loadSubtitleFile => 'Réserver le sous-titre de fichier...';
+	@override String get subtitleLoadFailed => 'Faillite de télécharger le sous-titre';
+	@override String get skipAds => '- les ads';
+	@override String get tapToUnlock => 'Appuyez pour déverrouiller';
+	@override String get tapAgainToUnlock => 'Appuyez à nouveau pour déverrouiller';
 }
 
 // Path: messages
@@ -1831,16 +1787,6 @@ class Translations$logs$fr extends Translations$logs$en {
 	@override String get saveLogsFailed => 'Je ne pouvais pas sauver le fichier de log.';
 }
 
-// Path: detail
-class Translations$detail$fr extends Translations$detail$en {
-	Translations$detail$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
-
-	final TranslationsFr _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Se termine à ${time}';
-}
-
 // Path: startup
 class Translations$startup$fr extends Translations$startup$en {
 	Translations$startup$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
@@ -2152,6 +2098,7 @@ class Translations$music$fr extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Lire la suite de Track Analysis...';
 	@override String get visualizerAmbientMotion => 'Mouvement environnemental';
 	@override String get visualizerPlexLoudness => 'Plex bruit';
+	@override String get visualizerLiveAudio => 'Analyse audio en direct';
 	@override String get visualizerPreviousPreset => 'Précédent Style visuel';
 	@override String get visualizerNextPreset => 'Suivant Style visuel';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2506,6 +2453,12 @@ class Translations$videoSettings$fr extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Effectuer dans le lecteur le mappage selon la luminosité maximale de l’écran, puis indiquer le résultat au compositeur.';
 	@override String get hdrToneMappingFailed => 'Impossible de modifier le mappage tonal HDR : le mode précédent reste actif.';
 	@override String get audioOutput => 'Sortie audio';
+	@override String get videoTrack => 'Piste vidéo';
+	@override String get videoTrackDescription => 'Choisissez le flux vidéo à afficher. Disponible avec MPV lorsqu’un fichier contient plusieurs pistes vidéo.';
+	@override String get videoTrackDefault => 'Par défaut';
+	@override String get videoTrackUnavailable => 'Aucune autre piste vidéo n’est disponible.';
+	@override String get videoTrackFailed => 'Impossible de changer la piste vidéo.';
+	@override String videoTrackNumber({required Object id}) => 'Piste ${id}';
 	@override String get performanceOverlay => 'Données de performance';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2513,10 +2466,17 @@ class Translations$videoSettings$fr extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Audio spatial';
 	@override String get audioOutputStereo => 'Stéréo';
 	@override String get audioEqualizer => 'Équaliste audio';
-	@override String get audioEqualizerDescription => 'Ajustez les cinq bandes de fréquence pour ce appareil. Disponible sur mpv; un EQ actif décode l\'audio et désactive la correspondance.';
+	@override String get audioEqualizerDescription => 'Un équateur de 10 bandes pour MPVLes filtres audio utilisent l\'audio décodé et désactivent passthrough.';
 	@override String get audioEqualizerFlat => 'Plateur';
 	@override String get audioEqualizerActive => 'Personnalisé';
 	@override String get audioEqualizerSaveFailed => 'Il ne pouvait pas économiser les paramètres d\'équalisateur audio.';
+	@override String get audioEffectsDescription => 'Les effets utilisent l\'audio décodé, de sorte que le match se tourne. l\'ambiance de la pièce et l\'extension stéréo dépendent du MPV Construire et suivre.';
+	@override String get audioStereoWidth => 'Extension Stereo';
+	@override String get audioSpatializer => 'L’ambiance de la chambre';
+	@override String get audioSpatializerDescription => 'Ajoutez des réflexions de la salle calme.';
+	@override String get audioPitch => 'Le changement de Pitch';
+	@override String get audioPitchDescription => 'Changer la piste sans changer de vitesse. MPV La construction doit inclure Rubber Band.';
+	@override String get audioEffectUnavailable => 'Cet effet n\'est pas disponible pour cette piste ou MPV à construire.';
 	@override String get backgroundVideoAudio => '- Audio vidéo de fond';
 	@override String get backgroundVideoAudioDescription => 'Gardez la lecture audio vidéo lorsque vous quittez le lecteur; l\'image est cachée jusqu\'à ce que vous reveniez. Android utilise une notification de récupération médiatique.';
 	@override String get audioNormalization => 'Normaliser le volume';
@@ -2909,6 +2869,88 @@ class Translations$addServer$fr extends Translations$addServer$en {
 	@override String get httpsRequired => 'Utilisez HTTPS ou autorisez explicitement une connexion non cryptée.';
 }
 
+// Path: cast
+class Translations$cast$fr extends Translations$cast$en {
+	Translations$cast$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Coup sur un appareil';
+	@override String get searching => 'En recherche de dispositifs de châtiment...';
+	@override String connectedTo({required Object device}) => 'Connectez-vous à ${device}';
+	@override String get device => 'Dispositif de casting';
+	@override String get readyToCast => 'Prêt à lancer';
+	@override String get subtitle => 'Sous-titres';
+	@override String get serverNotAvailable => 'Le serveur de médias n’est pas disponible.';
+	@override String get stopCasting => 'Arrêter de casting';
+	@override String get castToDevice => 'Changer à l\'appareil';
+	@override String get noEpisodeAvailable => 'Il n\'y a pas d\'épisode disponible pour le lancer.';
+	@override String get startFailed => 'Je ne peux pas commencer à lancer. vérifier le serveur et essayer à nouveau.';
+}
+
+// Path: automation
+class Translations$automation$fr extends Translations$automation$en {
+	Translations$automation$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Il n\'y a pas de session vidéo active à contrôler.';
+}
+
+// Path: notifications
+class Translations$notifications$fr extends Translations$notifications$en {
+	Translations$notifications$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'Nouveau épisode';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class Translations$appAccess$fr extends Translations$appAccess$en {
+	Translations$appAccess$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours';
+	@override String get description => 'Démarrez un essai de sept jours avec un accès complet à chaque fonctionnalité PlezyNG. il n\'y a pas de frais pendant le essai et pas d\'abonnement. Après le essai, une achat de vie au prix de votre magasin déclenche PlezyNG pour la vie.';
+	@override String get trialEndedDescription => 'Déblocage de chaque fonctionnalité dans PlezyNG pour la vie avec une achat au prix de votre magasin.';
+	@override String get startTrial => 'Démarrer mon essai gratuit de 7 jours';
+	@override String get trialActive => 'Votre essai de 7 jours en plein fonctionnement est actif.';
+	@override String get trialEnded => 'Votre procès de 7 jours est terminé';
+	@override String get trialStartFailed => 'Je ne pouvais pas sauver le test sur ce appareil. veuillez essayer à nouveau.';
+	@override String get lifetimeTitle => 'PlezyNG déconnecté pour la vie';
+	@override String get lifetimeBody => 'Merci ! vous avez accès à toute la vie à chaque fonctionnalité PlezyNG.';
+	@override String get manageTitle => 'PlezyNG accès à vie';
+	@override String get manageDescription => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours, puis déverrouillez tout pour la vie avec un seul paiement au prix de votre magasin.';
+	@override String buy({required Object price}) => 'Déconnecter chaque fonctionnalité pour ${price}';
+	@override String get loadingPrice => 'Le prix de la boutique...';
+	@override String get retryPrice => 'Retour sur le prix';
+	@override String get restore => 'Restaurer l’achat de vie';
+	@override String get pending => 'Votre achat attend le paiement ou l\'approbation.Lifetime accès s\'ouvrira dès que le magasin le remplit.';
+	@override String get storeUnavailable => 'Vérifiez que vous êtes inscrit dans le magasin et que les achats sont autorisés sur ce dispositif.';
+	@override String get productNotFound => 'Le déclin de vie PlezyNG n\'est pas encore disponible dans ce magasin.';
+	@override String get productQueryFailed => 'Je ne pourrais pas charger le prix du magasin. vérifier votre connexion et essayer à nouveau.';
+	@override String get purchaseFailed => 'L’achat n’a pas été effectué, essayez-le encore.';
+	@override String get restoreFailed => 'Je ne pouvais pas aller au magasin pour restaurer votre achat.';
+	@override String get nothingToRestore => 'Le numéro PlezyNG achat à vie a été trouvé pour ce compte de magasin.';
+}
+
+// Path: detail
+class Translations$detail$fr extends Translations$detail$en {
+	Translations$detail$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Se termine à ${time}';
+}
+
 // Path: watchLink
 class Translations$watchLink$fr extends Translations$watchLink$en {
 	Translations$watchLink$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
@@ -3048,6 +3090,222 @@ class Translations$platform$fr extends Translations$platform$en {
 	@override String get locationPermission => 'PlezyNG utilise l\'accès à la localisation lorsque iOS l\'exige pour détecter votre réseau local et se connecter à vos serveurs de médias.';
 	@override String get photoLibraryPermission => 'Choisissez des images de votre photothèque pour illustrer vos médias.';
 	@override String get cameraPermission => 'Scannez des codes QR pour associer une Companion Remote.';
+}
+
+// Path: universalMedia
+class Translations$universalMedia$fr extends Translations$universalMedia$en {
+	Translations$universalMedia$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Médias ouverts';
+	@override String get shortcutHelp => 'Jouez à un lien, une playlist ou un fichier pour cette session.';
+	@override String get intro => 'Ouvrez un lien, une liste de lecture ou un fichier. Playback utilise le lecteur standard de PlezyNG et n’ajoute pas d’historique à votre bibliothèque.';
+	@override String get openWhat => 'Que voudriez-vous ouvrir ?';
+	@override String get stream => 'Adresse de courant';
+	@override String get playlist => 'Joueurs';
+	@override String get files => 'Les fichiers de dispositif';
+	@override String get favorites => 'Réservation de flux favoris';
+	@override String get address => 'Adresse médiatique';
+	@override String get addressHelp => 'Les URL avec des paramètres d\'accréditation ou de signature reconnus ne sont utilisés que pour cette session et ne peuvent pas être sauvegardés comme favoris.';
+	@override String get displayName => 'Nom d’affichage (optionnel)';
+	@override String get displayNameHelp => 'Choisissez un nom court pour le lecteur et les contrôles de médias du système.';
+	@override String get allowHttp => 'Permettre une connexion HTTP non cryptée';
+	@override String get allowHttpHelp => 'HTTP n\'encrypte pas la connexion. permet seulement sur un réseau fiable. Utilisez HTTPS quand c\'est possible.';
+	@override String get advancedProtocols => 'MPV seulement: entrez une adresse RTSP, RTMP/RTMPS, UDP ou RTP. Ces adresses ne peuvent pas être sauvegardées comme préférées.';
+	@override String get liveStream => 'Traiter comme vivant';
+	@override String get liveStreamHelp => 'Utilisez ceci pour la vidéo ou la radio en direct. l\'application cache la barre du temps, les boutons de ski et l\'option go-to-time.';
+	@override String get privateSession => 'Seul ce recueil utilise l’adresse.Save an eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Sauvegarder les favoris';
+	@override String get playNow => 'Jouer maintenant';
+	@override String get favoriteSaved => 'Stream favorite a été sauvé à ce profil';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n,
+		one: 'Skipped ${count} unsupported or unsafe playlist entry.',
+		many: 'Skipped ${count} unsupported or unsafe playlist entries.',
+		other: 'Skipped ${count} unsupported or unsafe playlist entries.',
+	);
+	@override String get playlistAddress => 'L’adresse de la playlist';
+	@override String get playlistAddressHelp => 'Ouvrez une liste de lecture M3U, M3u8 ou PLS à partir d\'une adresse Web. Les liens en streaming directs ne sauvent pas la liste de jeu.';
+	@override String get choosePlaylist => 'Choisissez le fichier playlist';
+	@override String get openPlaylist => 'Ouverture playlist';
+	@override String get playlistFormatsHelp => 'Une liste de lecture peut contenir jusqu\'à 1000 articles et 2 MB. HLS se manifeste comme des courants afin que le joueur puisse choisir une qualité.';
+	@override String get saveQueuePlaylist => 'Enregistrer la file d’attente comme liste de lecture';
+	@override String get queuePlaylistSaved => 'La liste de lecture a été enregistrée à côté des fichiers multimédias.';
+	@override String get queuePlaylistUnavailable => 'Cette file d’attente ne peut pas être enregistrée comme liste de lecture locale réutilisable.';
+	@override String get queuePlaylistFolderRequired => 'Choisissez un emplacement dans le même dossier que les fichiers de la file d’attente.';
+	@override String get noFavorites => 'Il n\'y a pas encore de préférés en streaming. les favoris restent dans ce profil.';
+	@override String get removeFavorite => 'Supprimer les flux préférés';
+	@override String get filesHelp => 'Choisissez des fichiers audio, vidéo ou ISO pour une couverture temporaire.Fichiers et URL ne sont pas ajoutés à l\'histoire de la bibliothèque.';
+	@override String get chooseFiles => 'Choisir des fichiers';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n,
+		one: '1 fichier sélectionné',
+		many: '${count} fichiers sélectionnés',
+		other: '${count} fichiers sélectionnés',
+	);
+	@override String get wifiTransfer => 'Envoyer des fichiers via Wi-Fi';
+	@override String get wifiTransferHelp => 'Transfert des fichiers soutenus d\'un navigateur sur le même réseau fiable.';
+	@override String get wifiTransferIntro => 'Ouvrez cette adresse dans un navigateur sur un autre appareil. Sélectionnez les fichiers pour les ajouter à la bibliothèque des Fichiers et livres de cet appareil .';
+	@override String get wifiTransferPrivacy => 'Ce dispositif reçoit des fichiers sur votre réseau local.Celui qui connaît cette adresse peut envoyer des ficher jusqu\'à ce que vous arrêtez le transfert ou l\'adresse expire après 15 minutes.Maximum: 100 fichières, 4 GiB par fichier, 10 GiB total.';
+	@override String get wifiTransferStarting => 'Pour un transfert privé et à temps limité...';
+	@override String get wifiTransferUnavailable => 'Vous ne pouvez pas commencer le transfert. vérifier l\'accès au réseau local et essayer à nouveau.';
+	@override String get openThisAddress => 'Ouvrez l\'une de ces adresses sur le dispositif d\'envoi';
+	@override String get copyAddress => 'Copie de l\'adresse de transfert';
+	@override String get addressCopied => 'Adresse de transfert copiée';
+	@override String transferExpires({required Object time}) => 'Cette adresse expire dans ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n,
+		one: 'fichier ${count} reçu',
+		many: 'Les fichiers ${count} reçus',
+		other: 'Les fichiers ${count} reçus',
+	);
+	@override String uploadedData({required Object size}) => 'Recevoir ${size}';
+	@override String get stopTransfer => 'Arrêter le transfert et invalider l’adresse';
+	@override String get startTransfer => 'Démarrer le transfert';
+	@override String get wifiImportedFiles => 'Transfert Wi-Fi';
+	@override String get wifiBrowserTitle => 'Envoyer des fichiers à PlezyNG';
+	@override String get wifiBrowserIntro => 'Choisissez les fichiers audio, vidéo, ebook ou comique pour envoyer. Les fichières sont sauvegardées dans la bibliothèque des Fichiers et livres de cet appareil. Maximum: 100 fichires, 4 GiB par fichier, 10 GiB total.';
+	@override String get uploadFilesLabel => 'Les fichiers à envoyer';
+	@override String get uploadSelected => 'Télécharger les fichiers sélectionnés';
+	@override String get uploadSelectFirst => 'Choisissez d’abord un ou plusieurs fichiers.';
+	@override String get uploading => 'Envoyer';
+	@override String get uploadComplete => 'Fichiers ajoutés à PlezyNG.';
+	@override String get uploadFailed => 'Le fichier ne pouvait pas être ajouté. Gardez cette page ouverte et essayez à nouveau.';
+	@override String get liveCue => 'Vivre';
+	@override String get liveSession => 'Stream en direct';
+	@override String get liveCueHelp => 'Pour la vidéo ou la radio en direct, l\'application cache la barre de temps et les boutons échappent.';
+	@override String get sessionOnly => 'Ce playback n’est qu’une session';
+	@override String get sessionOnlyHelp => 'Playback ne sauve jamais le progrès ou l\'histoire.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'Ajustement de l\'image';
+	@override String get pictureHelp => 'Ces changements d\'image n\'affectent que ce playback. Ils sont réinitialisés lorsque le playback se termine.';
+	@override String get resetPicture => 'Récupérer l\'image';
+	@override String get brightness => 'Brilleur';
+	@override String get contrast => 'Contraste';
+	@override String get gamma => 'La gamme';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturation';
+	@override String get view360 => 'Voir la vidéo à 360°';
+	@override String get view360Help => 'Utilisez ceci pour la vidéo 360° équirectangulaire. MPV a besoin du filtre v360 de FFmpeg pour cette vue.';
+	@override String get view360Unavailable => 'Cette configuration mpv ne pouvait pas appliquer le filtre 360°.';
+	@override String get view360Yaw => 'Vue horizontale';
+	@override String get view360Pitch => 'Vue verticale';
+	@override String get view360FieldOfView => 'Le champ de vue';
+	@override String get recordStream => 'Résumé Live Stream';
+	@override String get stopRecording => 'Arrêter et sauvegarder l’enregistrement';
+	@override String get recordingStarted => 'L\'enregistrement est actif. Laisser le playback s\'arrête et sauve l\'enregistration.';
+	@override String get recordingSaved => 'L’enregistrement est terminé et sauvé.';
+	@override String get recordingActive => 'Enregistrer sur ce dispositif. Laisser le playback s\'arrête et la sauve.';
+	@override String get recordingFormatHelp => 'Pour la vidéo, choisissez MKV ou MPEG-TS. Pour l\'audio, sélectionnez MKA ou MKV.';
+	@override String get replaceRecordingTitle => 'Remplacer cette enregistrement ?';
+	@override String get replaceRecordingHelp => 'PlezyNG récupère le fichier existant pendant l’enregistrement.Si il ne peut pas sauvegarder la nouvelle enregistrement, Plezy NG rétablit la sauvegardation.';
+	@override String get replaceRecording => 'Remplacer le fichier';
+	@override String get discHelp => 'Ouvrez un disque dans le disque optique de cet ordinateur. Vous pouvez également ouvrir une image ISO des fichiers Device.';
+	@override String get discs => 'Le disque optique';
+	@override String get editionOrTitle => 'Édition ou titre du disque';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Blu-ray';
+	@override String get audioCd => 'CD audio';
+	@override String get discAvailability => 'La lecture du disque nécessite une configuration MPV compatible, un disque supporté et la permission système d\'exploitation.';
+	@override String get converterTitle => 'Convertir un fichier médiatique local';
+	@override String get converterHelp => 'Convertir un fichier local ou le remuer avec FFmpeg.';
+	@override String get converterIntro => 'Convertez un fichier audio ou vidéo local dans un format qui fonctionne sur plusieurs appareils.';
+	@override String get converterPrivacy => 'FFmpeg doit être installé sur ce ordinateur. Conversion ne lit que les fichiers locaux. Il ne télécharge pas les courants ou supprime DRM.';
+	@override String get converterChooseInput => 'Choisissez un fichier médiatique local';
+	@override String get converterFormat => 'Format de sortie';
+	@override String get converterMp4 => 'MP4 · H.264 et AAC';
+	@override String get converterM4a => 'M4A · AAC audio';
+	@override String get converterMp3 => 'MP3 et audio';
+	@override String get allowFtp => 'Permettre FTP';
+	@override String get allowFtpHelp => 'FTP envoie les médias sans cryptage.Utilisez uniquement sur des réseaux fiables.';
+	@override String get converterSaveAs => 'Enregistrer les médias convertis comme';
+	@override String get converterExtensionMismatch => 'Choisissez un nom de fichier avec l\'extension de sortie sélectionnée.';
+	@override String get converterUnsupportedInput => 'Choisissez un fichier audio ou vidéo.';
+	@override String get converterLocalOnly => 'Le fichier sélectionné n\'est pas disponible en tant que voie d\'appareil locale.';
+	@override String get converterReplaceTitle => 'Remplacer ce fichier ?';
+	@override String get converterReplaceHelp => 'PlezyNG récupère le fichier existant jusqu\'à ce que la copie convertie soit sauvée.';
+	@override String get converterStarting => 'Commencez par FFmpeg...';
+	@override String get converterProgress => 'Convertir sur cet ordinateur...';
+	@override String get converterComplete => 'Conversion complète. le nouveau fichier est prêt.';
+	@override String get converterFfmpegMissing => 'FFmpeg Il manque ou ne soutient pas ce format.';
+	@override String get converterFailed => 'Vérifiez que le fichier source peut être lu et que la destination a suffisamment d\'espace gratuit.';
+	@override String get converterCancelled => 'La conversion a été annulée. la sortie incomplète a été supprimée.';
+	@override String get converterDesktopOnly => 'La conversion locale est disponible sur les ordinateurs de bureau avec FFmpeg installé.';
+	@override String get converterStart => 'Conversion des fichiers';
+	@override String get mediaToolsTitle => 'Les outils médiatiques';
+	@override String get mediaToolsShortcut => 'Capture ou partage des médias, ajouter des extensions de recherche, ou utiliser la ligne de commande.';
+	@override String get mediaToolsIntro => 'Choisissez un outil focalisé. capture et stream-out utilisez FFmpeg installé sur ce bureau. Extensions et les commandes CLI utilisent les requêtes HTTPS liées et le flux Open media existant.';
+	@override String get mediaToolsAccessibility => 'Les choix d\'outils et les contrôles fonctionnent avec le toucher, le pointteur, le clavier et le focus D-pad. Les modifications de l\'état de l\'enregistrement, du partage et de la recherche sont annoncées.';
+	@override String get mediaTool => 'Outils de médias';
+	@override String get captureIntro => 'Enregistrez votre écran ou une caméra dans un fichier MP4 sur ce ordinateur. FFmpeg doit être installé et inclure le codage H.264.';
+	@override String get captureNoDevices => 'Aucun écran ou une caméra n\'a été trouvée. Vérifier FFmpeg support de capture et les autorisations de confidentialité du système d\'exploitation.';
+	@override String get captureSource => 'Écran ou caméra';
+	@override String get captureScreen => 'écran';
+	@override String get captureAudioSource => 'Entrée audio (optionnelle)';
+	@override String get captureAudioHelp => 'Ajouter de l\'audio à partir d\'un microphone ou d\'une entrée disponible. Les choix du dispositif dépendent de FFmpeg et des autorisations du système.';
+	@override String get captureAudioNone => 'Pas d’audio';
+	@override String get captureDefaultAudio => 'Introduction audio par défaut';
+	@override String get captureWaylandHelp => 'Wayland limite cette capture XWayland au X display. Windows hors XWayland ne peut pas apparaître.';
+	@override String get captureFrameRate => 'Résultats de l’enregistrement';
+	@override String get capturePrivacy => 'L\'enregistrement est enregistré uniquement au fichier que vous choisissez. capture de microphone est facultative. PlezyNG ne télécharge pas l\'enregistrement.';
+	@override String get captureSaveAs => 'Enregistrer l’écran comme';
+	@override String get captureExtensionMismatch => 'Choisissez un nom de fil qui se termine dans .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg ou l\'encoder vidéo H.264 n\'est pas disponible. installez une construction FFmpeg soutenue, puis essayez de nouveau.';
+	@override String get captureFailed => 'Vérifiez la permission du dispositif, le stockage disponible et le support FFmpeg.';
+	@override String get captureSaved => 'L’enregistrement d’écran a été sauvé.';
+	@override String get captureElapsedLabel => 'Temps d\'enregistrement';
+	@override String get captureStart => 'Commencer l’enregistrement';
+	@override String get capturePreview => 'Prévisualiser dans le lecteur';
+	@override String get capturePreviewHelp => 'Prévisualisez la source sélectionnée dans le lecteur standard. L’aperçu est limité à cette session et n’enregistre aucun fichier. La prise en charge des appareils et les autorisations dépendent de MPV et du système d’exploitation. L’aperçu utilise uniquement la vidéo ; les enregistrements peuvent inclure de l’audio en option.';
+	@override String get capturePreviewActive => 'Aperçu en direct · aucun enregistrement';
+	@override String get captureStop => 'Arrêter et sauver';
+	@override String get captureMode => 'capture';
+	@override String get shareMode => 'partage';
+	@override String get shareIntro => 'Envoyez un fichier de médias local à un autre appareil sur votre réseau privé. PlezyNG crée un flux temporaire HLS.';
+	@override String get sharePrivacy => 'Tout le monde sur votre réseau local qui reçoit le lien privé peut regarder pendant qu\'il est actif. Le lien expire après 60 minutes. Arrêter de partager pour fermer le serveur et invalider le lien.';
+	@override String get shareChooseFile => 'Choisissez le fichier médiatique';
+	@override String get shareChooseHelp => 'Sélectionnez un fichier audio ou vidéo local. Le fichier reste sur ce ordinateur.';
+	@override String get shareFfmpegMissing => 'FFmpeg ou les codes H.264/AAC ne sont pas disponibles. Installez FFmpeg avec le support de codage H.264 et AAC.';
+	@override String get shareFailed => 'Le courant ne pouvait pas commencer ou s\'arrêter inattendu. vérifier FFmpeg et l\'accès au réseau.';
+	@override String get shareActive => 'Le courant est prêt sur votre réseau privé.';
+	@override String get shareEnded => 'Les médias ont atteint la fin et ne sont plus partagés.';
+	@override String get shareStopped => 'Le lien temporaire n\'est plus valide.';
+	@override String get shareUrlCopied => 'L’adresse est copiée.';
+	@override String get shareOpenUrl => 'Ouvrez cette adresse dans un joueur sur l\'autre appareil';
+	@override String get shareQrLabel => 'Code QR pour l\'adresse de courant temporaire';
+	@override String get shareQrHelp => 'Scanner avec un lecteur compatible connecté au même réseau privé.';
+	@override String get shareHttpHint => 'Ce flux utilise HTTP non crypté. Dans PlezyNG, permettez HTTP avant de l\'ouvrir.';
+	@override String get shareCopyUrl => 'Copie de l’adresse Stream';
+	@override String get shareExpiresLabel => 'Le lien expire à';
+	@override String get shareStarting => 'Préparer le flux...';
+	@override String get shareStart => 'Commencer partage';
+	@override String get shareStop => 'Arrêter de partager';
+	@override String get extensionsMode => 'Extensions et CLI';
+	@override String get extensionsIntro => 'Ajoutez une extension de recherche uniquement pour trouver les médias. Choisissez un résultat pour le charger dans le formulaire familial Open media.';
+	@override String get extensionsPrivacy => 'Un manifeste peut définir un endpoint de recherche et des champs de réponse de la carte de HTTPS. Il ne peut pas exécuter le code, ajouter des titres de requête, lire les fichiers, ou lancer les commandes shell.';
+	@override String get extensionImport => 'Ajouter l’extension manifeste';
+	@override String get extensionEmpty => 'Aucun service de recherche encore. Choisissez un fichier manifeste fiable JSON pour ajouter un.';
+	@override String get extensionChoose => 'Service de recherche';
+	@override String get extensionSearchConsent => 'Chaque recherche envoie vos mots à ce service HTTPS. Les résultats ne s\'ouvrent qu\'après que vous choisissez un.';
+	@override String get extensionSearchLabel => 'Médias de recherche';
+	@override String get extensionSearch => 'Recherche';
+	@override String get extensionSearching => 'Rechercher...';
+	@override String get extensionNoResults => 'Aucun résultat de médias sécurisés n\'a été retourné. essayez une autre recherche.';
+	@override String get extensionInstallTitle => 'Ajouter ce service de recherche ?';
+	@override String get extensionReplaceTitle => 'Mettre à jour ce service de recherche ?';
+	@override String get extensionService => 'Service';
+	@override String get extensionEndpoint => 'HTTPS point de fin';
+	@override String get extensionConsent => 'Votre texte de recherche est envoyé à ce service. le manifeste ne contient pas de code exécutable. Continuez seulement si vous avez confiance à ce point de fin.';
+	@override String get extensionInstall => 'Ajouter service';
+	@override String get extensionReplace => 'Service de mise à jour';
+	@override String get extensionRemoveTitle => 'Supprimer ce service de recherche ?';
+	@override String get extensionRemoveHelp => 'Ceci supprime le service de ce profil. PlezyNG n\'a pas contact avec son endpoint.';
+	@override String get extensionRemove => 'Supprimer le service';
+	@override String get extensionInvalidManifest => 'Ce fichier n\'est pas un manifeste d\'extension soutenu. voir le guide Open media pour le format.';
+	@override String get extensionSaveFailed => 'L’extension ne pouvait pas être sauvée au profil actif.';
+	@override String get extensionSearchFailed => 'Le service de recherche n\'a pas retourné une réponse valide. vérifier le point de fin et essayer à nouveau.';
+	@override String get cliTitle => 'Ligne de commande';
+	@override String get cliHelp => 'Utilisez le guide plezyctl pour valider un manifeste ou rechercher la même extension. Revue son service HTTPS avant chaque recherche. Résultats ouverts dans le formulaire médiatique existant; sélectionnez le bouton de reprise pour démarrer.';
+	@override String get cliCopyExample => 'Copie de l’exemple';
+	@override String get cliCopied => 'Commande exemplaire copié.';
 }
 
 // Path: fileSources
@@ -3318,7 +3576,6 @@ class Translations$audiobook$fr extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Ajouter Google Drive, OneDrive, Dropbox, WebDAV ou S3 dans les fichiers et les livres d’abord.';
 	@override String get syncDestination => 'Sync compte de stockage';
 	@override String get syncFolder => 'Synchronisation des fichiers ou préfix';
-	@override String get syncFolderHelp => 'Utilisez un dossier existant séparé dans votre source WebDAV, ou un préfix S3 dédié.';
 	@override String get syncCode => 'Code de sync privé';
 	@override String get syncCodeHelp => 'Créez un code sur votre premier appareil, puis entrez ce code sur vos autres appareils. Gardez une copie privée: c\'est la clé de votre état chiffré. Utilisez un code différent pour chaque personne.';
 	@override String get showCode => 'Afficher ou cacher le code sync';
@@ -3328,7 +3585,6 @@ class Translations$audiobook$fr extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'En supprimant cette source, la lecture et l\'écoute de synchronisation sont désactivées ici. les fichiers de synchronisation cryptés restent dans le fournisseur.';
 	@override String get syncReconnect => 'Récupérer le compte de stockage';
 	@override String lastSynced({required Object time}) => 'Dernière synchronisation à ${time}';
-	@override String get syncPrivacy => 'Seuls les progrès et les notes cryptés sont enregistrés. Les fichiers audio et ebook, les tokens de compte et les mots de passe ne sont pas téléchargés. Google Drive et OneDrive utilisent le stockage d\'applications; Dropbox utilise PlezyNG Sync. Autoriser la synchronisation peut demander un accès écrite supplémentaire. Pendant que la synchronisation est activée, cette destination possède la synchronisation du progrès; le progrès du serveur reste séparé.';
 	@override String get syncConflicts => 'Choisissez où revenir';
 	@override String get conflictHelp => 'Ces modifications ont été effectuées indépendamment. Choisissez la position ou la version de la note pour garder. Un timestamp ultérieur ou un pourcentage plus élevé ne gagne pas automatiquement.';
 	@override String syncDevice({required Object device}) => 'Équipement ${device}';
@@ -3522,7 +3778,6 @@ class Translations$games$fr extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3547,7 +3802,6 @@ class Translations$games$fr extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3579,8 +3833,6 @@ class Translations$games$fr extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3588,14 +3840,62 @@ class Translations$games$fr extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class Translations$deepLinks$fr extends Translations$deepLinks$en {
+	Translations$deepLinks$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Ce lien Plezy n’est pas valide.';
+	@override String profileNotFound({required Object profile}) => 'Aucun profil ne correspond à "${profile}".';
+	@override String get serverUnavailable => 'Je n\'arrive pas au serveur pour ce lien.';
+	@override String get notFound => 'Je ne pourrais pas trouver ce titre dans vos bibliothèques.';
+	@override String get unsupportedItem => 'Ce lien ne peut pas être joué.';
+	@override String get noLiveTv => 'Aucun serveur TV en direct n\'est disponible pour ce lien.';
+	@override String channelNotFound({required Object channel}) => 'Je ne pouvais pas trouver le canal "${channel}".';
+	@override String get showLink => 'Afficher le lien';
+	@override String get showProfileLink => 'Afficher le profil';
+	@override String get dialogTitle => 'Le lien';
+	@override String get showHint => 'L’ouverture de ce lien lance l’épisode suivant. Ajoutez &mode=shuffle à la fin pour lire la série en mode aléatoire.';
+	@override String get movieHint => 'Ouvrir ce lien joue le film.';
+	@override String get episodeHint => 'Ouvrir ce lien joue cet épisode.';
+	@override String get profileHint => 'L’ouverture de ce lien change vers ce profil.';
+	@override String openAsProfile({required Object name}) => 'Ouverture en ${name}';
+	@override String get copy => 'Copie';
+	@override String get copied => 'Le lien copié';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$fr extends Translations$householdSetup$en {
+	Translations$householdSetup$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuration du foyer';
+}
+
+// Path: issueReport
+class Translations$issueReport$fr extends Translations$issueReport$en {
+	Translations$issueReport$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Signaler un problème';
+	@override String get instructions => 'Scannez le code QR pour ouvrir un brouillon GitHub prérempli. Relisez-le et envoyez-le quand vous le souhaitez.';
+	@override String get privacy => 'Le brouillon contient la version de l’application, la plateforme et le nombre de connexions. Il exclut les adresses des serveurs, les noms de comptes et de profils, les titres et les chemins de fichiers.';
+	@override String get logPrivacy => 'Les journaux sont facultatifs. Relisez-les avant de les envoyer. Leur identifiant est ajouté au brouillon, qui peut être public.';
+	@override String get openDraft => 'Ouvrir le brouillon GitHub';
 }
 
 // Path: appIcon.names
@@ -4712,21 +5012,6 @@ extension on TranslationsFr {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Coup sur un appareil',
-			'cast.searching' => 'En recherche de dispositifs de châtiment...',
-			'cast.connectedTo' => ({required Object device}) => 'Connectez-vous à ${device}',
-			'cast.device' => 'Dispositif de casting',
-			'cast.readyToCast' => 'Prêt à lancer',
-			'cast.subtitle' => 'Sous-titres',
-			'cast.serverNotAvailable' => 'Le serveur de médias n’est pas disponible.',
-			'cast.stopCasting' => 'Arrêter de casting',
-			'cast.castToDevice' => 'Changer à l\'appareil',
-			'cast.noEpisodeAvailable' => 'Il n\'y a pas d\'épisode disponible pour le lancer.',
-			'cast.startFailed' => 'Je ne peux pas commencer à lancer. vérifier le serveur et essayer à nouveau.',
-			'automation.noActivePlayback' => 'Il n\'y a pas de session vidéo active à contrôler.',
-			'automation.profileNotFound' => 'Ce profil Plezy n\'a pas été trouvé.',
-			'notifications.newEpisodeTitle' => 'Nouveau épisode',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'Icône de l’application',
 			'appIcon.defaultIcon' => 'Par défaut',
 			'appIcon.current' => 'Icône actuelle',
@@ -4889,28 +5174,6 @@ extension on TranslationsFr {
 			'update.viewRelease' => 'Voir les notes de version',
 			'update.latestVersion' => 'Vous utilisez la dernière version',
 			'update.checkFailed' => 'Échec de la vérification des mises à jour',
-			'appAccess.title' => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours',
-			'appAccess.description' => 'Démarrez un essai de sept jours avec un accès complet à chaque fonctionnalité PlezyNG. il n\'y a pas de frais pendant le essai et pas d\'abonnement. Après le essai, une achat de vie au prix de votre magasin déclenche PlezyNG pour la vie.',
-			'appAccess.trialEndedDescription' => 'Déblocage de chaque fonctionnalité dans PlezyNG pour la vie avec une achat au prix de votre magasin.',
-			'appAccess.startTrial' => 'Démarrer mon essai gratuit de 7 jours',
-			'appAccess.trialActive' => 'Votre essai de 7 jours en plein fonctionnement est actif.',
-			'appAccess.trialEnded' => 'Votre procès de 7 jours est terminé',
-			'appAccess.trialStartFailed' => 'Je ne pouvais pas sauver le test sur ce appareil. veuillez essayer à nouveau.',
-			'appAccess.lifetimeTitle' => 'PlezyNG déconnecté pour la vie',
-			'appAccess.lifetimeBody' => 'Merci ! vous avez accès à toute la vie à chaque fonctionnalité PlezyNG.',
-			'appAccess.manageTitle' => 'PlezyNG accès à vie',
-			'appAccess.manageDescription' => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours, puis déverrouillez tout pour la vie avec un seul paiement au prix de votre magasin.',
-			'appAccess.buy' => ({required Object price}) => 'Déconnecter chaque fonctionnalité pour ${price}',
-			'appAccess.loadingPrice' => 'Le prix de la boutique...',
-			'appAccess.retryPrice' => 'Retour sur le prix',
-			'appAccess.restore' => 'Restaurer l’achat de vie',
-			'appAccess.pending' => 'Votre achat attend le paiement ou l\'approbation.Lifetime accès s\'ouvrira dès que le magasin le remplit.',
-			'appAccess.storeUnavailable' => 'Vérifiez que vous êtes inscrit dans le magasin et que les achats sont autorisés sur ce dispositif.',
-			'appAccess.productNotFound' => 'Le déclin de vie PlezyNG n\'est pas encore disponible dans ce magasin.',
-			'appAccess.productQueryFailed' => 'Je ne pourrais pas charger le prix du magasin. vérifier votre connexion et essayer à nouveau.',
-			'appAccess.purchaseFailed' => 'L’achat n’a pas été effectué, essayez-le encore.',
-			'appAccess.restoreFailed' => 'Je ne pouvais pas aller au magasin pour restaurer votre achat.',
-			'appAccess.nothingToRestore' => 'Le numéro PlezyNG achat à vie a été trouvé pour ce compte de magasin.',
 			'settings.title' => 'Paramètres',
 			'settings.supportDeveloper' => 'Soutenir PlezyNG',
 			'settings.supportDeveloperDescription' => 'Faites un don pour soutenir le développement',
@@ -5223,8 +5486,6 @@ extension on TranslationsFr {
 			'settings.audioPassthrough' => 'Transmission audio directe',
 			'settings.audioPassthroughDescription' => 'Envoyer l’audio Dolby/DTS à votre ampli ou téléviseur sans le réencoder afin de préserver le son surround. Désactivez cette option en l’absence de son.',
 			'settings.audioPassthroughDescriptionApple' => 'Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Sous iOS, iPadOS et tvOS 26 ou version ultérieure, le TrueHD Atmos et le DTS:X sont lus en audio spatial. Les autres pistes DTS et TrueHD sont lues en PCM multicanal. Désactivez cette option en l’absence de son.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Désactivée tant que la normalisation du volume est active',
 			'settings.audioChannelLimit' => 'Canaux audio',
@@ -5262,6 +5523,8 @@ extension on TranslationsFr {
 			'settings.disableDolbyVisionDescription' => 'Lire la couche HDR10 ou HLG du fichier au lieu de Dolby Vision, si elle existe',
 			'settings.hdrSdrConversion' => 'Conversion HDR vers SDR',
 			'settings.hdrSdrConversionDescription' => 'Choisir ce qui convertit les vidéos HDR lorsque l’écran ne peut pas afficher le HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Auto',
 			'settings.hdrSdrConversionAutoDescription' => 'Appareil à partir d’Android 9, lecteur sur les versions antérieures',
 			'settings.hdrSdrConversionDevice' => 'Appareil',
@@ -5723,7 +5986,6 @@ extension on TranslationsFr {
 			'tooltips.markAsWatched' => 'Marquer comme vu',
 			'tooltips.markAsUnwatched' => 'Marquer comme non vu',
 			'audioTracks.track' => ({required Object n}) => 'Piste audio ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} en ligne', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} écrans', ), 
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Sous-titres',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5737,8 +5999,6 @@ extension on TranslationsFr {
 			'videoControls.sleepTimerEndOfVideo' => 'Fin de la vidéo actuelle',
 			'videoControls.sleepTimerStopAtHeader' => 'Arrêter à',
 			'videoControls.sleepTimerDurationHeader' => 'Minuterie',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'La lecture sera mise en pause à la fin de cette vidéo',
 			'videoControls.stillWatching' => 'Toujours en train de regarder ?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pause dans ${seconds}s',
@@ -5762,9 +6022,33 @@ extension on TranslationsFr {
 			'videoControls.unmuteButton' => 'Rétablir le son',
 			'videoControls.settingsButton' => 'Paramètres de lecture',
 			'videoControls.tracksButton' => 'Audio et sous-titres',
-			'videoControls.trackSelectionTitle' => 'Choisir les traces avant le playback',
-			'videoControls.trackSelectionAuto' => 'Sélection automatique',
 			'videoControls.chaptersButton' => 'Chapitres',
+			'videoControls.segmentLoopHelp' => 'Mettez A, puis définissez B plus tard dans la ligne de temps.',
+			'videoControls.setLoopStart' => 'Démarrer le circuit (A)',
+			'videoControls.setLoopEnd' => 'Mise à jour de la fin (B)',
+			'videoControls.clearSegmentLoop' => 'Un segment clair',
+			'videoControls.setLoopStartFirst' => 'Sélectionnez le début (A) avant la fin (B).',
+			'videoControls.loopEndAfterStart' => 'La fin doit être plus tard que le début.',
+			'videoControls.segmentLoopUnavailable' => 'Le segment looping n\'est pas disponible pour ce playback.',
+			'videoControls.loopPointNotSet' => 'Pas fixé',
+			'videoControls.bookmarksHelp' => 'Les notes sont enregistrées sur ce appareil. Sélectionnez une pour aller à cette heure.',
+			'videoControls.bookmarksButton' => 'Les Bookmarks',
+			'videoControls.chaptersAndBookmarks' => 'Chapitres et bookmarks',
+			'videoControls.segmentLoop' => 'Le Segment Loop',
+			'videoControls.addBookmark' => 'Ajoutez le bookmark',
+			'videoControls.bookmarkName' => 'Nom de Bookmark',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Par exemple, la scène d’ouverture',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Le Bookmark ${n}',
+			'videoControls.bookmarkNameRequired' => 'Entrez un nom pour ce livre.',
+			'videoControls.deleteBookmark' => 'Supprimer le bookmark',
+			'videoControls.bookmarkLimitReached' => 'Cet article a déjà 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Je ne pouvais pas sauver ou supprimer cette note.',
+			'videoControls.bookmarkSaved' => 'Le Bookmark est sauvé.',
+			'videoControls.bookmarkDeleted' => 'Le Bookmark est supprimé.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Le point Loop ${point} Sélectionnez à ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Aucun chapitre ou livre n\'est disponible.',
 			'videoControls.versionQualityButton' => 'Version et qualité',
 			'videoControls.versionColumnHeader' => 'Version',
 			'videoControls.qualityColumnHeader' => 'Qualité',
@@ -5773,8 +6057,6 @@ extension on TranslationsFr {
 			'videoControls.transcodeUnavailableFallback' => 'Transcodage indisponible — lecture en qualité originale',
 			'videoControls.subtitleUnavailableFallback' => 'Impossible de charger les sous-titres sélectionnés — poursuite de la lecture sans sous-titres',
 			'videoControls.pipButton' => 'Mode image dans l’image',
-			'videoControls.openMiniPlayer' => 'Jeux mini ouverts',
-			'videoControls.returnToFullPlayer' => 'Retour au joueur complet',
 			'videoControls.aspectRatioButton' => 'Format d\'image',
 			'videoControls.ambientLighting' => 'Éclairage ambiant',
 			'videoControls.fullscreenButton' => 'Passer en mode plein écran',
@@ -5783,7 +6065,6 @@ extension on TranslationsFr {
 			'videoControls.rotationLockButton' => 'Verrouillage de rotation',
 			'videoControls.lockScreen' => 'Verrouiller l\'écran',
 			'videoControls.screenLockButton' => 'Verrouillage de l\'écran',
-			'videoControls.longPressToUnlock' => 'Appui long pour déverrouiller',
 			'videoControls.timelineSlider' => 'Barre de progression vidéo',
 			'videoControls.volumeSlider' => 'Niveau du volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Se termine à ${time}',
@@ -5807,8 +6088,6 @@ extension on TranslationsFr {
 			'videoControls.noQueueItems' => 'Aucun élément dans la file d\'attente',
 			'videoControls.noAudioDevicesAvailable' => 'Aucun appareil audio disponible',
 			'videoControls.searchSubtitles' => 'Rechercher des sous-titres',
-			'videoControls.loadSubtitleFile' => 'Réserver le sous-titre de fichier...',
-			'videoControls.subtitleLoadFailed' => 'Faillite de télécharger le sous-titre',
 			'videoControls.language' => 'Langue',
 			'videoControls.noSubtitlesFound' => 'Aucun sous-titre trouvé',
 			'videoControls.subtitleDownloaded' => 'Sous-titre téléchargé',
@@ -5817,7 +6096,6 @@ extension on TranslationsFr {
 			'videoControls.searchLanguages' => 'Rechercher des langues...',
 			'videoControls.skipIntro' => 'Passer l’intro',
 			'videoControls.skipCredits' => 'Passer le générique',
-			'videoControls.skipAds' => '- les ads',
 			'videoControls.nextEpisode' => 'Épisode suivant',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Piste ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Sous-titre ${name}',
@@ -5825,6 +6103,16 @@ extension on TranslationsFr {
 			'videoControls.osdSubtitlesOff' => 'Sous-titres : désactivés',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Sous-titres : ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio : ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} en ligne', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} écrans', ), 
+			'videoControls.trackSelectionTitle' => 'Choisir les traces avant le playback',
+			'videoControls.trackSelectionAuto' => 'Sélection automatique',
+			'videoControls.openMiniPlayer' => 'Jeux mini ouverts',
+			'videoControls.returnToFullPlayer' => 'Retour au joueur complet',
+			'videoControls.loadSubtitleFile' => 'Réserver le sous-titre de fichier...',
+			'videoControls.subtitleLoadFailed' => 'Faillite de télécharger le sous-titre',
+			'videoControls.skipAds' => '- les ads',
+			'videoControls.tapToUnlock' => 'Appuyez pour déverrouiller',
+			'videoControls.tapAgainToUnlock' => 'Appuyez à nouveau pour déverrouiller',
 			'messages.markedAsWatched' => 'Marqué comme vu',
 			'messages.markedAsUnwatched' => 'Marqué comme non vu',
 			'messages.markedAsWatchedOffline' => 'Marqué comme vu (se synchronisera lorsque vous serez en ligne)',
@@ -6251,8 +6539,6 @@ extension on TranslationsFr {
 			'libraries.all' => 'Tout',
 			'libraries.clearAll' => 'Tout effacer',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Voulez-vous vraiment scanner « ${title} » ?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Voulez-vous vraiment analyser « ${title} » ?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Voulez-vous vraiment actualiser les métadonnées de « ${title} » ?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Voulez-vous vraiment vider la corbeille de « ${title} » ?',
@@ -6265,6 +6551,8 @@ extension on TranslationsFr {
 			'libraries.hideLibrary' => 'Masquer la bibliothèque',
 			'libraries.libraryOptions' => 'Options de bibliothèque',
 			'libraries.content' => 'contenu de la bibliothèque',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Sélectionner la bibliothèque',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtres (${count})',
 			'libraries.noRecommendations' => 'Aucune recommandation disponible',
@@ -6370,7 +6658,6 @@ extension on TranslationsFr {
 			'logs.saveLogs' => 'Écrivez les logs à fichier',
 			'logs.logsSaved' => ({required Object path}) => 'Les logs sauvés à ${path}',
 			'logs.saveLogsFailed' => 'Je ne pouvais pas sauver le fichier de log.',
-			'detail.endsAt' => ({required Object time}) => 'Se termine à ${time}',
 			'startup.failedTitle' => 'PlezyNG n\'a pas pu démarrer',
 			'startup.failedBody' => 'Une erreur s\'est produite au démarrage. Les détails ci-dessous identifient la cause.',
 			'startup.failedBodyRepairable' => 'Le fichier de paramètres enregistré de PlezyNG est endommagé et doit être reconstruit avant que PlezyNG ne puisse démarrer. Réessayer ne servira à rien — choisissez Réparer le stockage.',
@@ -6731,6 +7018,7 @@ extension on TranslationsFr {
 			'music.visualizerProfileLoading' => 'Lire la suite de Track Analysis...',
 			'music.visualizerAmbientMotion' => 'Mouvement environnemental',
 			'music.visualizerPlexLoudness' => 'Plex bruit',
+			'music.visualizerLiveAudio' => 'Analyse audio en direct',
 			'music.visualizerPreviousPreset' => 'Précédent Style visuel',
 			'music.visualizerNextPreset' => 'Suivant Style visuel',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6765,8 +7053,6 @@ extension on TranslationsFr {
 			'watchTogether.connecting' => 'Connexion...',
 			'watchTogether.relayPublic' => 'Les salons utilisent les relais publics Open Watch Party.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Les salons utilisent votre relais à l’adresse ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Salons récents',
 			'watchTogether.roomActions' => 'Actions du salon',
 			'watchTogether.renameRoom' => 'Renommer le salon',
@@ -6779,6 +7065,8 @@ extension on TranslationsFr {
 			'watchTogether.codeCopied' => 'Code du salon copié',
 			'watchTogether.shareInvite' => 'Partager l’invitation',
 			'watchTogether.inviteCopied' => 'Invitation copiée. Collez-la dans un message.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Rejoignez mon salon Regarder ensemble dans PlezyNG : ouvrez « Regarder ensemble », choisissez « Rejoindre un salon » et saisissez ${code}.',
 			'watchTogether.openSessionControls' => 'Ouvrir les commandes de la session Regarder ensemble',
 			'watchTogether.reconnecting' => 'Reconnexion...',
@@ -7157,6 +7445,12 @@ extension on TranslationsFr {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Effectuer dans le lecteur le mappage selon la luminosité maximale de l’écran, puis indiquer le résultat au compositeur.',
 			'videoSettings.hdrToneMappingFailed' => 'Impossible de modifier le mappage tonal HDR : le mode précédent reste actif.',
 			'videoSettings.audioOutput' => 'Sortie audio',
+			'videoSettings.videoTrack' => 'Piste vidéo',
+			'videoSettings.videoTrackDescription' => 'Choisissez le flux vidéo à afficher. Disponible avec MPV lorsqu’un fichier contient plusieurs pistes vidéo.',
+			'videoSettings.videoTrackDefault' => 'Par défaut',
+			'videoSettings.videoTrackUnavailable' => 'Aucune autre piste vidéo n’est disponible.',
+			'videoSettings.videoTrackFailed' => 'Impossible de changer la piste vidéo.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Piste ${id}',
 			'videoSettings.performanceOverlay' => 'Données de performance',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7164,10 +7458,17 @@ extension on TranslationsFr {
 			'videoSettings.audioOutputSpatial' => 'Audio spatial',
 			'videoSettings.audioOutputStereo' => 'Stéréo',
 			'videoSettings.audioEqualizer' => 'Équaliste audio',
-			'videoSettings.audioEqualizerDescription' => 'Ajustez les cinq bandes de fréquence pour ce appareil. Disponible sur mpv; un EQ actif décode l\'audio et désactive la correspondance.',
+			'videoSettings.audioEqualizerDescription' => 'Un équateur de 10 bandes pour MPVLes filtres audio utilisent l\'audio décodé et désactivent passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Plateur',
 			'videoSettings.audioEqualizerActive' => 'Personnalisé',
 			'videoSettings.audioEqualizerSaveFailed' => 'Il ne pouvait pas économiser les paramètres d\'équalisateur audio.',
+			'videoSettings.audioEffectsDescription' => 'Les effets utilisent l\'audio décodé, de sorte que le match se tourne. l\'ambiance de la pièce et l\'extension stéréo dépendent du MPV Construire et suivre.',
+			'videoSettings.audioStereoWidth' => 'Extension Stereo',
+			'videoSettings.audioSpatializer' => 'L’ambiance de la chambre',
+			'videoSettings.audioSpatializerDescription' => 'Ajoutez des réflexions de la salle calme.',
+			'videoSettings.audioPitch' => 'Le changement de Pitch',
+			'videoSettings.audioPitchDescription' => 'Changer la piste sans changer de vitesse. MPV La construction doit inclure Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Cet effet n\'est pas disponible pour cette piste ou MPV à construire.',
 			'videoSettings.backgroundVideoAudio' => '- Audio vidéo de fond',
 			'videoSettings.backgroundVideoAudioDescription' => 'Gardez la lecture audio vidéo lorsque vous quittez le lecteur; l\'image est cachée jusqu\'à ce que vous reveniez. Android utilise une notification de récupération médiatique.',
 			'videoSettings.audioNormalization' => 'Normaliser le volume',
@@ -7278,9 +7579,9 @@ extension on TranslationsFr {
 			'metadataEdit.metadataUpdated' => 'Métadonnées mises à jour',
 			'metadataEdit.metadataUpdateFailed' => 'Échec de la mise à jour des métadonnées',
 			'metadataEdit.artworkUpdated' => 'Illustrations mises à jour',
-			'metadataEdit.artworkUpdateFailed' => 'Échec de la mise à jour des illustrations',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Échec de la mise à jour des illustrations',
 			'metadataEdit.noArtworkAvailable' => 'Aucune illustration disponible',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Option d\'illustration ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Option d\'illustration ${index}, sélectionnée',
@@ -7508,6 +7809,43 @@ extension on TranslationsFr {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} utilise HTTP. Des personnes sur le réseau peuvent lire ou modifier votre mot de passe, vos jetons et vos médias. Utilisez HTTPS si possible. Ne continuez que si vous faites confiance à ce réseau et acceptez le risque.',
 			'addServer.allowHttp' => 'Autoriser HTTP',
 			'addServer.httpsRequired' => 'Utilisez HTTPS ou autorisez explicitement une connexion non cryptée.',
+			'cast.chooseDevice' => 'Coup sur un appareil',
+			'cast.searching' => 'En recherche de dispositifs de châtiment...',
+			'cast.connectedTo' => ({required Object device}) => 'Connectez-vous à ${device}',
+			'cast.device' => 'Dispositif de casting',
+			'cast.readyToCast' => 'Prêt à lancer',
+			'cast.subtitle' => 'Sous-titres',
+			'cast.serverNotAvailable' => 'Le serveur de médias n’est pas disponible.',
+			'cast.stopCasting' => 'Arrêter de casting',
+			'cast.castToDevice' => 'Changer à l\'appareil',
+			'cast.noEpisodeAvailable' => 'Il n\'y a pas d\'épisode disponible pour le lancer.',
+			'cast.startFailed' => 'Je ne peux pas commencer à lancer. vérifier le serveur et essayer à nouveau.',
+			'automation.noActivePlayback' => 'Il n\'y a pas de session vidéo active à contrôler.',
+			'notifications.newEpisodeTitle' => 'Nouveau épisode',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours',
+			'appAccess.description' => 'Démarrez un essai de sept jours avec un accès complet à chaque fonctionnalité PlezyNG. il n\'y a pas de frais pendant le essai et pas d\'abonnement. Après le essai, une achat de vie au prix de votre magasin déclenche PlezyNG pour la vie.',
+			'appAccess.trialEndedDescription' => 'Déblocage de chaque fonctionnalité dans PlezyNG pour la vie avec une achat au prix de votre magasin.',
+			'appAccess.startTrial' => 'Démarrer mon essai gratuit de 7 jours',
+			'appAccess.trialActive' => 'Votre essai de 7 jours en plein fonctionnement est actif.',
+			'appAccess.trialEnded' => 'Votre procès de 7 jours est terminé',
+			'appAccess.trialStartFailed' => 'Je ne pouvais pas sauver le test sur ce appareil. veuillez essayer à nouveau.',
+			'appAccess.lifetimeTitle' => 'PlezyNG déconnecté pour la vie',
+			'appAccess.lifetimeBody' => 'Merci ! vous avez accès à toute la vie à chaque fonctionnalité PlezyNG.',
+			'appAccess.manageTitle' => 'PlezyNG accès à vie',
+			'appAccess.manageDescription' => 'Essayez chaque fonctionnalité gratuitement pendant 7 jours, puis déverrouillez tout pour la vie avec un seul paiement au prix de votre magasin.',
+			'appAccess.buy' => ({required Object price}) => 'Déconnecter chaque fonctionnalité pour ${price}',
+			'appAccess.loadingPrice' => 'Le prix de la boutique...',
+			'appAccess.retryPrice' => 'Retour sur le prix',
+			'appAccess.restore' => 'Restaurer l’achat de vie',
+			'appAccess.pending' => 'Votre achat attend le paiement ou l\'approbation.Lifetime accès s\'ouvrira dès que le magasin le remplit.',
+			'appAccess.storeUnavailable' => 'Vérifiez que vous êtes inscrit dans le magasin et que les achats sont autorisés sur ce dispositif.',
+			'appAccess.productNotFound' => 'Le déclin de vie PlezyNG n\'est pas encore disponible dans ce magasin.',
+			'appAccess.productQueryFailed' => 'Je ne pourrais pas charger le prix du magasin. vérifier votre connexion et essayer à nouveau.',
+			'appAccess.purchaseFailed' => 'L’achat n’a pas été effectué, essayez-le encore.',
+			'appAccess.restoreFailed' => 'Je ne pouvais pas aller au magasin pour restaurer votre achat.',
+			'appAccess.nothingToRestore' => 'Le numéro PlezyNG achat à vie a été trouvé pour ce compte de magasin.',
+			'detail.endsAt' => ({required Object time}) => 'Se termine à ${time}',
 			'watchLink.serverUnavailable' => 'Je ne pouvais pas accéder à un serveur Plex pour ce lien.',
 			'watchLink.notFound' => 'Je ne pouvais pas trouver ce spectacle ou le film sur vos serveurs Plex.',
 			'watchLink.ambiguous' => 'Ce lien correspond aux éléments sur plus d\'un serveur.Ajout d\'un server au lien.',
@@ -7622,6 +7960,203 @@ extension on TranslationsFr {
 			'platform.locationPermission' => 'PlezyNG utilise l\'accès à la localisation lorsque iOS l\'exige pour détecter votre réseau local et se connecter à vos serveurs de médias.',
 			'platform.photoLibraryPermission' => 'Choisissez des images de votre photothèque pour illustrer vos médias.',
 			'platform.cameraPermission' => 'Scannez des codes QR pour associer une Companion Remote.',
+			'universalMedia.title' => 'Médias ouverts',
+			'universalMedia.shortcutHelp' => 'Jouez à un lien, une playlist ou un fichier pour cette session.',
+			'universalMedia.intro' => 'Ouvrez un lien, une liste de lecture ou un fichier. Playback utilise le lecteur standard de PlezyNG et n’ajoute pas d’historique à votre bibliothèque.',
+			'universalMedia.openWhat' => 'Que voudriez-vous ouvrir ?',
+			'universalMedia.stream' => 'Adresse de courant',
+			'universalMedia.playlist' => 'Joueurs',
+			'universalMedia.files' => 'Les fichiers de dispositif',
+			'universalMedia.favorites' => 'Réservation de flux favoris',
+			'universalMedia.address' => 'Adresse médiatique',
+			'universalMedia.addressHelp' => 'Les URL avec des paramètres d\'accréditation ou de signature reconnus ne sont utilisés que pour cette session et ne peuvent pas être sauvegardés comme favoris.',
+			'universalMedia.displayName' => 'Nom d’affichage (optionnel)',
+			'universalMedia.displayNameHelp' => 'Choisissez un nom court pour le lecteur et les contrôles de médias du système.',
+			'universalMedia.allowHttp' => 'Permettre une connexion HTTP non cryptée',
+			'universalMedia.allowHttpHelp' => 'HTTP n\'encrypte pas la connexion. permet seulement sur un réseau fiable. Utilisez HTTPS quand c\'est possible.',
+			'universalMedia.advancedProtocols' => 'MPV seulement: entrez une adresse RTSP, RTMP/RTMPS, UDP ou RTP. Ces adresses ne peuvent pas être sauvegardées comme préférées.',
+			'universalMedia.liveStream' => 'Traiter comme vivant',
+			'universalMedia.liveStreamHelp' => 'Utilisez ceci pour la vidéo ou la radio en direct. l\'application cache la barre du temps, les boutons de ski et l\'option go-to-time.',
+			'universalMedia.privateSession' => 'Seul ce recueil utilise l’adresse.Save an eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Sauvegarder les favoris',
+			'universalMedia.playNow' => 'Jouer maintenant',
+			'universalMedia.favoriteSaved' => 'Stream favorite a été sauvé à ce profil',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: 'Skipped ${count} unsupported or unsafe playlist entry.', many: 'Skipped ${count} unsupported or unsafe playlist entries.', other: 'Skipped ${count} unsupported or unsafe playlist entries.', ), 
+			'universalMedia.playlistAddress' => 'L’adresse de la playlist',
+			'universalMedia.playlistAddressHelp' => 'Ouvrez une liste de lecture M3U, M3u8 ou PLS à partir d\'une adresse Web. Les liens en streaming directs ne sauvent pas la liste de jeu.',
+			'universalMedia.choosePlaylist' => 'Choisissez le fichier playlist',
+			'universalMedia.openPlaylist' => 'Ouverture playlist',
+			'universalMedia.playlistFormatsHelp' => 'Une liste de lecture peut contenir jusqu\'à 1000 articles et 2 MB. HLS se manifeste comme des courants afin que le joueur puisse choisir une qualité.',
+			'universalMedia.saveQueuePlaylist' => 'Enregistrer la file d’attente comme liste de lecture',
+			'universalMedia.queuePlaylistSaved' => 'La liste de lecture a été enregistrée à côté des fichiers multimédias.',
+			'universalMedia.queuePlaylistUnavailable' => 'Cette file d’attente ne peut pas être enregistrée comme liste de lecture locale réutilisable.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Choisissez un emplacement dans le même dossier que les fichiers de la file d’attente.',
+			'universalMedia.noFavorites' => 'Il n\'y a pas encore de préférés en streaming. les favoris restent dans ce profil.',
+			'universalMedia.removeFavorite' => 'Supprimer les flux préférés',
+			'universalMedia.filesHelp' => 'Choisissez des fichiers audio, vidéo ou ISO pour une couverture temporaire.Fichiers et URL ne sont pas ajoutés à l\'histoire de la bibliothèque.',
+			'universalMedia.chooseFiles' => 'Choisir des fichiers',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: '1 fichier sélectionné', many: '${count} fichiers sélectionnés', other: '${count} fichiers sélectionnés', ), 
+			'universalMedia.wifiTransfer' => 'Envoyer des fichiers via Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Transfert des fichiers soutenus d\'un navigateur sur le même réseau fiable.',
+			'universalMedia.wifiTransferIntro' => 'Ouvrez cette adresse dans un navigateur sur un autre appareil. Sélectionnez les fichiers pour les ajouter à la bibliothèque des Fichiers et livres de cet appareil .',
+			'universalMedia.wifiTransferPrivacy' => 'Ce dispositif reçoit des fichiers sur votre réseau local.Celui qui connaît cette adresse peut envoyer des ficher jusqu\'à ce que vous arrêtez le transfert ou l\'adresse expire après 15 minutes.Maximum: 100 fichières, 4 GiB par fichier, 10 GiB total.',
+			'universalMedia.wifiTransferStarting' => 'Pour un transfert privé et à temps limité...',
+			'universalMedia.wifiTransferUnavailable' => 'Vous ne pouvez pas commencer le transfert. vérifier l\'accès au réseau local et essayer à nouveau.',
+			'universalMedia.openThisAddress' => 'Ouvrez l\'une de ces adresses sur le dispositif d\'envoi',
+			'universalMedia.copyAddress' => 'Copie de l\'adresse de transfert',
+			'universalMedia.addressCopied' => 'Adresse de transfert copiée',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Cette adresse expire dans ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: 'fichier ${count} reçu', many: 'Les fichiers ${count} reçus', other: 'Les fichiers ${count} reçus', ), 
+			'universalMedia.uploadedData' => ({required Object size}) => 'Recevoir ${size}',
+			'universalMedia.stopTransfer' => 'Arrêter le transfert et invalider l’adresse',
+			'universalMedia.startTransfer' => 'Démarrer le transfert',
+			'universalMedia.wifiImportedFiles' => 'Transfert Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Envoyer des fichiers à PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Choisissez les fichiers audio, vidéo, ebook ou comique pour envoyer. Les fichières sont sauvegardées dans la bibliothèque des Fichiers et livres de cet appareil. Maximum: 100 fichires, 4 GiB par fichier, 10 GiB total.',
+			'universalMedia.uploadFilesLabel' => 'Les fichiers à envoyer',
+			'universalMedia.uploadSelected' => 'Télécharger les fichiers sélectionnés',
+			'universalMedia.uploadSelectFirst' => 'Choisissez d’abord un ou plusieurs fichiers.',
+			'universalMedia.uploading' => 'Envoyer',
+			'universalMedia.uploadComplete' => 'Fichiers ajoutés à PlezyNG.',
+			'universalMedia.uploadFailed' => 'Le fichier ne pouvait pas être ajouté. Gardez cette page ouverte et essayez à nouveau.',
+			'universalMedia.liveCue' => 'Vivre',
+			'universalMedia.liveSession' => 'Stream en direct',
+			'universalMedia.liveCueHelp' => 'Pour la vidéo ou la radio en direct, l\'application cache la barre de temps et les boutons échappent.',
+			'universalMedia.sessionOnly' => 'Ce playback n’est qu’une session',
+			'universalMedia.sessionOnlyHelp' => 'Playback ne sauve jamais le progrès ou l\'histoire.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'Ajustement de l\'image',
+			'universalMedia.pictureHelp' => 'Ces changements d\'image n\'affectent que ce playback. Ils sont réinitialisés lorsque le playback se termine.',
+			'universalMedia.resetPicture' => 'Récupérer l\'image',
+			'universalMedia.brightness' => 'Brilleur',
+			'universalMedia.contrast' => 'Contraste',
+			'universalMedia.gamma' => 'La gamme',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturation',
+			'universalMedia.view360' => 'Voir la vidéo à 360°',
+			'universalMedia.view360Help' => 'Utilisez ceci pour la vidéo 360° équirectangulaire. MPV a besoin du filtre v360 de FFmpeg pour cette vue.',
+			'universalMedia.view360Unavailable' => 'Cette configuration mpv ne pouvait pas appliquer le filtre 360°.',
+			'universalMedia.view360Yaw' => 'Vue horizontale',
+			'universalMedia.view360Pitch' => 'Vue verticale',
+			'universalMedia.view360FieldOfView' => 'Le champ de vue',
+			'universalMedia.recordStream' => 'Résumé Live Stream',
+			'universalMedia.stopRecording' => 'Arrêter et sauvegarder l’enregistrement',
+			'universalMedia.recordingStarted' => 'L\'enregistrement est actif. Laisser le playback s\'arrête et sauve l\'enregistration.',
+			'universalMedia.recordingSaved' => 'L’enregistrement est terminé et sauvé.',
+			'universalMedia.recordingActive' => 'Enregistrer sur ce dispositif. Laisser le playback s\'arrête et la sauve.',
+			'universalMedia.recordingFormatHelp' => 'Pour la vidéo, choisissez MKV ou MPEG-TS. Pour l\'audio, sélectionnez MKA ou MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Remplacer cette enregistrement ?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG récupère le fichier existant pendant l’enregistrement.Si il ne peut pas sauvegarder la nouvelle enregistrement, Plezy NG rétablit la sauvegardation.',
+			'universalMedia.replaceRecording' => 'Remplacer le fichier',
+			'universalMedia.discHelp' => 'Ouvrez un disque dans le disque optique de cet ordinateur. Vous pouvez également ouvrir une image ISO des fichiers Device.',
+			'universalMedia.discs' => 'Le disque optique',
+			'universalMedia.editionOrTitle' => 'Édition ou titre du disque',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Blu-ray',
+			'universalMedia.audioCd' => 'CD audio',
+			'universalMedia.discAvailability' => 'La lecture du disque nécessite une configuration MPV compatible, un disque supporté et la permission système d\'exploitation.',
+			'universalMedia.converterTitle' => 'Convertir un fichier médiatique local',
+			'universalMedia.converterHelp' => 'Convertir un fichier local ou le remuer avec FFmpeg.',
+			'universalMedia.converterIntro' => 'Convertez un fichier audio ou vidéo local dans un format qui fonctionne sur plusieurs appareils.',
+			'universalMedia.converterPrivacy' => 'FFmpeg doit être installé sur ce ordinateur. Conversion ne lit que les fichiers locaux. Il ne télécharge pas les courants ou supprime DRM.',
+			'universalMedia.converterChooseInput' => 'Choisissez un fichier médiatique local',
+			'universalMedia.converterFormat' => 'Format de sortie',
+			'universalMedia.converterMp4' => 'MP4 · H.264 et AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC audio',
+			'universalMedia.converterMp3' => 'MP3 et audio',
+			'universalMedia.allowFtp' => 'Permettre FTP',
+			'universalMedia.allowFtpHelp' => 'FTP envoie les médias sans cryptage.Utilisez uniquement sur des réseaux fiables.',
+			'universalMedia.converterSaveAs' => 'Enregistrer les médias convertis comme',
+			'universalMedia.converterExtensionMismatch' => 'Choisissez un nom de fichier avec l\'extension de sortie sélectionnée.',
+			'universalMedia.converterUnsupportedInput' => 'Choisissez un fichier audio ou vidéo.',
+			'universalMedia.converterLocalOnly' => 'Le fichier sélectionné n\'est pas disponible en tant que voie d\'appareil locale.',
+			'universalMedia.converterReplaceTitle' => 'Remplacer ce fichier ?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG récupère le fichier existant jusqu\'à ce que la copie convertie soit sauvée.',
+			'universalMedia.converterStarting' => 'Commencez par FFmpeg...',
+			'universalMedia.converterProgress' => 'Convertir sur cet ordinateur...',
+			'universalMedia.converterComplete' => 'Conversion complète. le nouveau fichier est prêt.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg Il manque ou ne soutient pas ce format.',
+			'universalMedia.converterFailed' => 'Vérifiez que le fichier source peut être lu et que la destination a suffisamment d\'espace gratuit.',
+			'universalMedia.converterCancelled' => 'La conversion a été annulée. la sortie incomplète a été supprimée.',
+			'universalMedia.converterDesktopOnly' => 'La conversion locale est disponible sur les ordinateurs de bureau avec FFmpeg installé.',
+			'universalMedia.converterStart' => 'Conversion des fichiers',
+			'universalMedia.mediaToolsTitle' => 'Les outils médiatiques',
+			'universalMedia.mediaToolsShortcut' => 'Capture ou partage des médias, ajouter des extensions de recherche, ou utiliser la ligne de commande.',
+			'universalMedia.mediaToolsIntro' => 'Choisissez un outil focalisé. capture et stream-out utilisez FFmpeg installé sur ce bureau. Extensions et les commandes CLI utilisent les requêtes HTTPS liées et le flux Open media existant.',
+			'universalMedia.mediaToolsAccessibility' => 'Les choix d\'outils et les contrôles fonctionnent avec le toucher, le pointteur, le clavier et le focus D-pad. Les modifications de l\'état de l\'enregistrement, du partage et de la recherche sont annoncées.',
+			'universalMedia.mediaTool' => 'Outils de médias',
+			'universalMedia.captureIntro' => 'Enregistrez votre écran ou une caméra dans un fichier MP4 sur ce ordinateur. FFmpeg doit être installé et inclure le codage H.264.',
+			'universalMedia.captureNoDevices' => 'Aucun écran ou une caméra n\'a été trouvée. Vérifier FFmpeg support de capture et les autorisations de confidentialité du système d\'exploitation.',
+			'universalMedia.captureSource' => 'Écran ou caméra',
+			'universalMedia.captureScreen' => 'écran',
+			'universalMedia.captureAudioSource' => 'Entrée audio (optionnelle)',
+			'universalMedia.captureAudioHelp' => 'Ajouter de l\'audio à partir d\'un microphone ou d\'une entrée disponible. Les choix du dispositif dépendent de FFmpeg et des autorisations du système.',
+			'universalMedia.captureAudioNone' => 'Pas d’audio',
+			'universalMedia.captureDefaultAudio' => 'Introduction audio par défaut',
+			'universalMedia.captureWaylandHelp' => 'Wayland limite cette capture XWayland au X display. Windows hors XWayland ne peut pas apparaître.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Résultats de l’enregistrement',
+			'universalMedia.capturePrivacy' => 'L\'enregistrement est enregistré uniquement au fichier que vous choisissez. capture de microphone est facultative. PlezyNG ne télécharge pas l\'enregistrement.',
+			'universalMedia.captureSaveAs' => 'Enregistrer l’écran comme',
+			'universalMedia.captureExtensionMismatch' => 'Choisissez un nom de fil qui se termine dans .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg ou l\'encoder vidéo H.264 n\'est pas disponible. installez une construction FFmpeg soutenue, puis essayez de nouveau.',
+			'universalMedia.captureFailed' => 'Vérifiez la permission du dispositif, le stockage disponible et le support FFmpeg.',
+			'universalMedia.captureSaved' => 'L’enregistrement d’écran a été sauvé.',
+			'universalMedia.captureElapsedLabel' => 'Temps d\'enregistrement',
+			'universalMedia.captureStart' => 'Commencer l’enregistrement',
+			'universalMedia.capturePreview' => 'Prévisualiser dans le lecteur',
+			'universalMedia.capturePreviewHelp' => 'Prévisualisez la source sélectionnée dans le lecteur standard. L’aperçu est limité à cette session et n’enregistre aucun fichier. La prise en charge des appareils et les autorisations dépendent de MPV et du système d’exploitation. L’aperçu utilise uniquement la vidéo ; les enregistrements peuvent inclure de l’audio en option.',
+			'universalMedia.capturePreviewActive' => 'Aperçu en direct · aucun enregistrement',
+			'universalMedia.captureStop' => 'Arrêter et sauver',
+			'universalMedia.captureMode' => 'capture',
+			'universalMedia.shareMode' => 'partage',
+			'universalMedia.shareIntro' => 'Envoyez un fichier de médias local à un autre appareil sur votre réseau privé. PlezyNG crée un flux temporaire HLS.',
+			'universalMedia.sharePrivacy' => 'Tout le monde sur votre réseau local qui reçoit le lien privé peut regarder pendant qu\'il est actif. Le lien expire après 60 minutes. Arrêter de partager pour fermer le serveur et invalider le lien.',
+			'universalMedia.shareChooseFile' => 'Choisissez le fichier médiatique',
+			'universalMedia.shareChooseHelp' => 'Sélectionnez un fichier audio ou vidéo local. Le fichier reste sur ce ordinateur.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg ou les codes H.264/AAC ne sont pas disponibles. Installez FFmpeg avec le support de codage H.264 et AAC.',
+			'universalMedia.shareFailed' => 'Le courant ne pouvait pas commencer ou s\'arrêter inattendu. vérifier FFmpeg et l\'accès au réseau.',
+			'universalMedia.shareActive' => 'Le courant est prêt sur votre réseau privé.',
+			'universalMedia.shareEnded' => 'Les médias ont atteint la fin et ne sont plus partagés.',
+			'universalMedia.shareStopped' => 'Le lien temporaire n\'est plus valide.',
+			'universalMedia.shareUrlCopied' => 'L’adresse est copiée.',
+			'universalMedia.shareOpenUrl' => 'Ouvrez cette adresse dans un joueur sur l\'autre appareil',
+			'universalMedia.shareQrLabel' => 'Code QR pour l\'adresse de courant temporaire',
+			'universalMedia.shareQrHelp' => 'Scanner avec un lecteur compatible connecté au même réseau privé.',
+			'universalMedia.shareHttpHint' => 'Ce flux utilise HTTP non crypté. Dans PlezyNG, permettez HTTP avant de l\'ouvrir.',
+			'universalMedia.shareCopyUrl' => 'Copie de l’adresse Stream',
+			'universalMedia.shareExpiresLabel' => 'Le lien expire à',
+			'universalMedia.shareStarting' => 'Préparer le flux...',
+			'universalMedia.shareStart' => 'Commencer partage',
+			'universalMedia.shareStop' => 'Arrêter de partager',
+			'universalMedia.extensionsMode' => 'Extensions et CLI',
+			'universalMedia.extensionsIntro' => 'Ajoutez une extension de recherche uniquement pour trouver les médias. Choisissez un résultat pour le charger dans le formulaire familial Open media.',
+			'universalMedia.extensionsPrivacy' => 'Un manifeste peut définir un endpoint de recherche et des champs de réponse de la carte de HTTPS. Il ne peut pas exécuter le code, ajouter des titres de requête, lire les fichiers, ou lancer les commandes shell.',
+			'universalMedia.extensionImport' => 'Ajouter l’extension manifeste',
+			'universalMedia.extensionEmpty' => 'Aucun service de recherche encore. Choisissez un fichier manifeste fiable JSON pour ajouter un.',
+			'universalMedia.extensionChoose' => 'Service de recherche',
+			'universalMedia.extensionSearchConsent' => 'Chaque recherche envoie vos mots à ce service HTTPS. Les résultats ne s\'ouvrent qu\'après que vous choisissez un.',
+			'universalMedia.extensionSearchLabel' => 'Médias de recherche',
+			'universalMedia.extensionSearch' => 'Recherche',
+			'universalMedia.extensionSearching' => 'Rechercher...',
+			'universalMedia.extensionNoResults' => 'Aucun résultat de médias sécurisés n\'a été retourné. essayez une autre recherche.',
+			'universalMedia.extensionInstallTitle' => 'Ajouter ce service de recherche ?',
+			'universalMedia.extensionReplaceTitle' => 'Mettre à jour ce service de recherche ?',
+			'universalMedia.extensionService' => 'Service',
+			'universalMedia.extensionEndpoint' => 'HTTPS point de fin',
+			'universalMedia.extensionConsent' => 'Votre texte de recherche est envoyé à ce service. le manifeste ne contient pas de code exécutable. Continuez seulement si vous avez confiance à ce point de fin.',
+			'universalMedia.extensionInstall' => 'Ajouter service',
+			'universalMedia.extensionReplace' => 'Service de mise à jour',
+			'universalMedia.extensionRemoveTitle' => 'Supprimer ce service de recherche ?',
+			'universalMedia.extensionRemoveHelp' => 'Ceci supprime le service de ce profil. PlezyNG n\'a pas contact avec son endpoint.',
+			'universalMedia.extensionRemove' => 'Supprimer le service',
+			'universalMedia.extensionInvalidManifest' => 'Ce fichier n\'est pas un manifeste d\'extension soutenu. voir le guide Open media pour le format.',
+			'universalMedia.extensionSaveFailed' => 'L’extension ne pouvait pas être sauvée au profil actif.',
+			'universalMedia.extensionSearchFailed' => 'Le service de recherche n\'a pas retourné une réponse valide. vérifier le point de fin et essayer à nouveau.',
+			'universalMedia.cliTitle' => 'Ligne de commande',
+			'universalMedia.cliHelp' => 'Utilisez le guide plezyctl pour valider un manifeste ou rechercher la même extension. Revue son service HTTPS avant chaque recherche. Résultats ouverts dans le formulaire médiatique existant; sélectionnez le bouton de reprise pour démarrer.',
+			'universalMedia.cliCopyExample' => 'Copie de l’exemple',
+			'universalMedia.cliCopied' => 'Commande exemplaire copié.',
 			'fileSources.title' => 'Fichiers et livres',
 			'fileSources.subtitle' => 'Lire, écouter et regarder de vos propres fichiers.',
 			'fileSources.add' => 'Ajouter source',
@@ -7793,8 +8328,6 @@ extension on TranslationsFr {
 			'fileSources.offlineQuotaHelp' => 'Définissez l\'espace maximum utilisé par les copies hors ligne, les fichiers importés et les téléchargements courts. La réduction de la limite ne supprime pas les exemplaires existants.',
 			'fileSources.offlineStorageUsage' => 'stockage hors ligne',
 			'fileSources.reservedStorage' => 'Réservez',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Télécharger Queue',
 			'fileSources.downloadRunning' => 'Téléchargement',
 			'fileSources.downloadQueued' => 'Attendre',
@@ -7863,7 +8396,6 @@ extension on TranslationsFr {
 			'audiobook.addSyncSource' => 'Ajouter Google Drive, OneDrive, Dropbox, WebDAV ou S3 dans les fichiers et les livres d’abord.',
 			'audiobook.syncDestination' => 'Sync compte de stockage',
 			'audiobook.syncFolder' => 'Synchronisation des fichiers ou préfix',
-			'audiobook.syncFolderHelp' => 'Utilisez un dossier existant séparé dans votre source WebDAV, ou un préfix S3 dédié.',
 			'audiobook.syncCode' => 'Code de sync privé',
 			'audiobook.syncCodeHelp' => 'Créez un code sur votre premier appareil, puis entrez ce code sur vos autres appareils. Gardez une copie privée: c\'est la clé de votre état chiffré. Utilisez un code différent pour chaque personne.',
 			'audiobook.showCode' => 'Afficher ou cacher le code sync',
@@ -7873,7 +8405,6 @@ extension on TranslationsFr {
 			'audiobook.syncSourceDisconnect' => 'En supprimant cette source, la lecture et l\'écoute de synchronisation sont désactivées ici. les fichiers de synchronisation cryptés restent dans le fournisseur.',
 			'audiobook.syncReconnect' => 'Récupérer le compte de stockage',
 			'audiobook.lastSynced' => ({required Object time}) => 'Dernière synchronisation à ${time}',
-			'audiobook.syncPrivacy' => 'Seuls les progrès et les notes cryptés sont enregistrés. Les fichiers audio et ebook, les tokens de compte et les mots de passe ne sont pas téléchargés. Google Drive et OneDrive utilisent le stockage d\'applications; Dropbox utilise PlezyNG Sync. Autoriser la synchronisation peut demander un accès écrite supplémentaire. Pendant que la synchronisation est activée, cette destination possède la synchronisation du progrès; le progrès du serveur reste séparé.',
 			'audiobook.syncConflicts' => 'Choisissez où revenir',
 			'audiobook.conflictHelp' => 'Ces modifications ont été effectuées indépendamment. Choisissez la position ou la version de la note pour garder. Un timestamp ultérieur ou un pourcentage plus élevé ne gagne pas automatiquement.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Équipement ${device}',
@@ -8040,7 +8571,6 @@ extension on TranslationsFr {
 			'comics.collections' => 'Collections',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8065,7 +8595,6 @@ extension on TranslationsFr {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8078,6 +8607,8 @@ extension on TranslationsFr {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8097,8 +8628,6 @@ extension on TranslationsFr {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8106,14 +8635,35 @@ extension on TranslationsFr {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Ce lien Plezy n’est pas valide.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Aucun profil ne correspond à "${profile}".',
+			'deepLinks.serverUnavailable' => 'Je n\'arrive pas au serveur pour ce lien.',
+			'deepLinks.notFound' => 'Je ne pourrais pas trouver ce titre dans vos bibliothèques.',
+			'deepLinks.unsupportedItem' => 'Ce lien ne peut pas être joué.',
+			'deepLinks.noLiveTv' => 'Aucun serveur TV en direct n\'est disponible pour ce lien.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Je ne pouvais pas trouver le canal "${channel}".',
+			'deepLinks.showLink' => 'Afficher le lien',
+			'deepLinks.showProfileLink' => 'Afficher le profil',
+			'deepLinks.dialogTitle' => 'Le lien',
+			'deepLinks.showHint' => 'L’ouverture de ce lien lance l’épisode suivant. Ajoutez &mode=shuffle à la fin pour lire la série en mode aléatoire.',
+			'deepLinks.movieHint' => 'Ouvrir ce lien joue le film.',
+			'deepLinks.episodeHint' => 'Ouvrir ce lien joue cet épisode.',
+			'deepLinks.profileHint' => 'L’ouverture de ce lien change vers ce profil.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Ouverture en ${name}',
+			'deepLinks.copy' => 'Copie',
+			'deepLinks.copied' => 'Le lien copié',
+			'householdSetup.title' => 'Configuration du foyer',
+			'issueReport.title' => 'Signaler un problème',
+			'issueReport.instructions' => 'Scannez le code QR pour ouvrir un brouillon GitHub prérempli. Relisez-le et envoyez-le quand vous le souhaitez.',
+			'issueReport.privacy' => 'Le brouillon contient la version de l’application, la plateforme et le nombre de connexions. Il exclut les adresses des serveurs, les noms de comptes et de profils, les titres et les chemins de fichiers.',
+			'issueReport.logPrivacy' => 'Les journaux sont facultatifs. Relisez-les avant de les envoyer. Leur identifiant est ajouté au brouillon, qui peut être public.',
+			'issueReport.openDraft' => 'Ouvrir le brouillon GitHub',
 			_ => null,
 		};
 	}

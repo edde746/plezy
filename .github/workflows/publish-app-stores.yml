@@ -1,6 +1,6 @@
 # ng-runner-policy: private-jit-only-v1
 name: Publish PlezyNG store builds
-run-name: ${{ format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, inputs.release_tag) }}
+run-name: ${{ format('action:{0}:pool:{1}:tag:{2}:channel:{3}', inputs.action, inputs.runner_pool, inputs.release_tag, inputs.channel) }}
 
 on:
   workflow_dispatch:
@@ -47,6 +47,10 @@ on:
           - draft
           - completed
           - inProgress
+
+# Several publication gates run before checkout in fresh private guests.
+env:
+  GH_REPO: ${{ github.repository }}
 
 permissions:
   contents: read
@@ -151,6 +155,14 @@ jobs:
           cd "$RUNNER_TEMP/store-assets"
           sha256sum --check --ignore-missing SHA256SUMS.txt
 
+      - name: Verify provisioned native Ruby extension tools
+        shell: bash
+        run: |
+          command -v cc
+          command -v make
+          command -v pkg-config
+          pkg-config --exists openssl yaml-0.1 libffi zlib
+
       - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
           ruby-version: "3.3"
@@ -192,6 +204,14 @@ jobs:
           cd "$RUNNER_TEMP/store-assets"
           sha256sum --check --ignore-missing SHA256SUMS.txt
 
+      - name: Verify provisioned native Ruby extension tools
+        shell: bash
+        run: |
+          command -v cc
+          command -v make
+          command -v pkg-config
+          pkg-config --exists openssl yaml-0.1 libffi zlib
+
       - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
           ruby-version: "3.3"
@@ -213,7 +233,7 @@ jobs:
     name: Upload to Apple App Store Connect
     needs: validate-release
     if: ${{ inputs.channel == 'app-store-ios' || inputs.channel == 'app-store-tvos' }}
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-publish-apple-app-store"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-publish-apple-app-store"]}}', github.run_id)) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

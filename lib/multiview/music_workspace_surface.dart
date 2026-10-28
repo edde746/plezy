@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/focusable_button.dart';
 import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
@@ -26,6 +27,8 @@ class MusicWorkspaceSurface extends StatefulWidget {
 }
 
 class _MusicWorkspaceSurfaceState extends State<MusicWorkspaceSurface> {
+  MusicVisualizerPreset _visualizerPreset = MusicVisualizerPreset.bloom;
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +67,11 @@ class _MusicWorkspaceSurfaceState extends State<MusicWorkspaceSurface> {
     widget.controller.updateDescriptor(descriptor);
   }
 
+  void _setVisualizerPreset(MusicVisualizerPreset preset) {
+    if (_visualizerPreset == preset) return;
+    setState(() => _visualizerPreset = preset);
+  }
+
   @override
   Widget build(BuildContext context) {
     final service = widget.service;
@@ -79,22 +87,36 @@ class _MusicWorkspaceSurfaceState extends State<MusicWorkspaceSurface> {
             ),
           );
         }
-        return _MusicWorkspaceTrack(service: service, track: track);
+        return _MusicWorkspaceTrack(
+          service: service,
+          track: track,
+          preset: _visualizerPreset,
+          onPresetChanged: _setVisualizerPreset,
+        );
       },
     );
   }
 }
 
 class _MusicWorkspaceTrack extends StatelessWidget {
-  const _MusicWorkspaceTrack({required this.service, required this.track});
+  const _MusicWorkspaceTrack({
+    required this.service,
+    required this.track,
+    required this.preset,
+    required this.onPresetChanged,
+  });
 
   final MusicPlaybackService service;
   final MediaItem track;
+  final MusicVisualizerPreset preset;
+  final ValueChanged<MusicVisualizerPreset> onPresetChanged;
 
   @override
   Widget build(BuildContext context) {
     final tk = tokens(context);
     final artist = track.trackArtistTitle;
+    final title = track.title?.trim();
+    final displayTitle = title == null || title.isEmpty ? t.common.unknown : title;
     final duration = service.duration ?? Duration.zero;
 
     return Material(
@@ -107,8 +129,8 @@ class _MusicWorkspaceTrack extends StatelessWidget {
               service: service,
               trackKey: track.globalKey,
               duration: duration,
-              preset: MusicVisualizerPreset.bloom,
-              onPresetChanged: (_) {},
+              preset: preset,
+              onPresetChanged: onPresetChanged,
             ),
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -126,7 +148,7 @@ class _MusicWorkspaceTrack extends StatelessWidget {
                 children: [
                   const Spacer(),
                   Text(
-                    isolateDisplayText(track.title ?? t.common.unknown),
+                    isolateDisplayText(displayTitle),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(
@@ -147,24 +169,38 @@ class _MusicWorkspaceTrack extends StatelessWidget {
                   SizedBox(height: tk.space * 0.45),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    textDirection: TextDirection.ltr,
                     children: [
-                      IconButton(
-                        tooltip: t.music.previousTrack,
+                      FocusableButton(
+                        autoScroll: false,
                         onPressed: () => unawaited(service.previous()),
-                        icon: const AppIcon(Symbols.skip_previous_rounded, color: Colors.white),
-                      ),
-                      IconButton.filledTonal(
-                        tooltip: service.isPlaying ? t.common.pause : t.common.play,
-                        onPressed: () => unawaited(service.togglePlayPause()),
-                        icon: AppIcon(
-                          service.isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
-                          color: Colors.white,
+                        child: IconButton(
+                          tooltip: t.music.previousTrack,
+                          onPressed: () => unawaited(service.previous()),
+                          icon: const AppIcon(Symbols.skip_previous_rounded, color: Colors.white),
                         ),
                       ),
-                      IconButton(
-                        tooltip: t.music.nextTrack,
+                      FocusableButton(
+                        autoScroll: false,
+                        useBackgroundFocus: true,
+                        onPressed: () => unawaited(service.togglePlayPause()),
+                        child: IconButton.filledTonal(
+                          tooltip: service.isPlaying ? t.common.pause : t.common.play,
+                          onPressed: () => unawaited(service.togglePlayPause()),
+                          icon: AppIcon(
+                            service.isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      FocusableButton(
+                        autoScroll: false,
                         onPressed: () => unawaited(service.next()),
-                        icon: const AppIcon(Symbols.skip_next_rounded, color: Colors.white),
+                        child: IconButton(
+                          tooltip: t.music.nextTrack,
+                          onPressed: () => unawaited(service.next()),
+                          icon: const AppIcon(Symbols.skip_next_rounded, color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
@@ -206,6 +242,7 @@ class _MusicProgress extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              textDirection: TextDirection.ltr,
               children: [
                 Text(
                   formatDurationTimestamp(position),

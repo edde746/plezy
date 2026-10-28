@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../database/app_database.dart';
 import '../media/media_item.dart';
@@ -19,13 +20,13 @@ import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import '../i18n/strings.g.dart';
+import 'deep_links/deep_link.dart';
 import 'settings_service.dart';
 import 'offline_watch_sync_service.dart';
 import 'playback_initialization_service.dart';
 import 'trackers/tracker_coordinator.dart';
 
 const _externalPlayerChannel = MethodChannel('com.plezy/external_player');
-const _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
 
 class _ExternalPlayerLaunchResult {
   const _ExternalPlayerLaunchResult({
@@ -61,20 +62,6 @@ class _ExternalPlayerLaunchResult {
   }
 }
 
-class _CallbackLinkObserver with WidgetsBindingObserver {
-  @override
-  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
-    final uri = routeInformation.uri;
-    if (uri.scheme != ExternalPlayerCallbackUrls.scheme || uri.host != ExternalPlayerCallbackUrls.host) return false;
-    try {
-      await ExternalPlayerService.handleCallbackUrl(uri.toString());
-    } catch (e, stackTrace) {
-      appLogger.e('[ExternalPlayerCallback] handling failed', error: e, stackTrace: stackTrace);
-    }
-    return true;
-  }
-}
-
 /// The item an x-callback-url player was launched for, kept until the player
 /// opens one of its return links.
 class _CallbackSession {
@@ -97,6 +84,14 @@ class _CallbackSession {
   final MediaPartTimeline? partTimeline;
 }
 
+/// How playback in an x-callback-url player ended: the `<result>` of its
+/// return link, `plezy://external-player/<result>/<session>`.
+abstract final class _ReturnResult {
+  static const success = 'success';
+  static const cancel = 'cancel';
+  static const error = 'error';
+}
+
 /// Traces the x-callback-url round trip with iOS external players.
 void _callbackLog(String message) => appLogger.d('[ExternalPlayerCallback] $message');
 
@@ -109,20 +104,6 @@ String _redactTokens(String text) =>
 class ExternalPlayerService {
   /// Only the latest launch can call back; a new launch replaces it.
   static _CallbackSession? _callbackSession;
-
-  /// Routes return links from x-callback-url players (iOS) to
-  /// [handleCallbackUrl]. iOS delivers `plezy://` links through Flutter's
-  /// deep-link channel; registering before the app widget makes this observer
-  /// claim them before the navigator tries to push one as a named route.
-  /// Call once at startup, after the binding is initialized.
-  static void listenForCallbacks() {
-    if (!Platform.isIOS || _tvosBuild) return;
-    WidgetsBinding.instance.addObserver(_CallbackLinkObserver());
-    _callbackLog('listening for deep links');
-  }
-
-  @visibleForTesting
-  static WidgetsBindingObserver callbackLinkObserverForTesting() => _CallbackLinkObserver();
 
   /// Launch an external player with either a pre-resolved [videoUrl] (the
   /// local file of a downloaded copy) or by asking [client] to resolve the
@@ -221,7 +202,7 @@ class ExternalPlayerService {
         );
         if (launchResult.launched && current()) onLaunched?.call();
         if (launchResult.launched && metadata != null && current()) {
-          await _reportAndroidExternalProgress(
+          await _reportExternalProgress(
             launchResult,
             metadata: metadata,
             client: client,
@@ -249,15 +230,13 @@ class ExternalPlayerService {
         );
         final options = ExternalPlayerLaunchOptions(
           startPosition: startPosition,
-          callbackSession: session.id,
+          returnLinks: returnLinks(session.id),
           filename: playerFilename(metadata, resolvedUrl),
         );
         _callbackLog(
-          'launching ${player.id} for ${metadata.id} (session ${session.id}, '
+          'launching ${player.id} for ${metadata.id} (callback enabled, '
           'startPosition $startPosition, durationMs ${metadata.durationMs}): ${_redactTokens(resolvedUrl)}',
         );
-        final playerUri = KnownPlayers.callbackPlayUri(player.id, resolvedUrl, options);
-        if (playerUri != null) _callbackLog('player url: ${_redactTokens(playerUri.toString())}');
         launched = await launchWithOptions(resolvedUrl, options);
         _callbackLog('launch returned $launched');
         if (!launched && identical(_callbackSession, session)) _callbackSession = null;
@@ -287,7 +266,7 @@ class ExternalPlayerService {
     MediaPartTimeline? partTimeline,
   }) {
     return _callbackSession = _CallbackSession(
-      id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
+      id: Uuid().v4(),
       playerId: playerId,
       metadata: metadata,
       client: client,
@@ -336,6 +315,19 @@ class ExternalPlayerService {
     return cleaned == null || cleaned.isEmpty ? null : cleaned;
   }
 
+  /// The return links for [session]. The session sits in the path because
+  /// players append their own query parameters to these links.
+  @visibleForTesting
+  static ExternalPlayerReturnLinks returnLinks(String session) {
+    Uri link(String result) =>
+        Uri(scheme: DeepLink.scheme, host: ExternalPlayerReturnLink.host, pathSegments: [result, session]);
+    return ExternalPlayerReturnLinks(
+      success: link(_ReturnResult.success),
+      cancel: link(_ReturnResult.cancel),
+      error: link(_ReturnResult.error),
+    );
+  }
+
   @visibleForTesting
   static String beginCallbackSessionForTesting({
     required MediaItem metadata,
@@ -352,28 +344,25 @@ class ExternalPlayerService {
   }
 
   /// Handles `plezy://external-player/<result>/<session>?position=&duration=`,
-  /// the return link an x-callback-url player opens when playback ends.
-  /// Returns whether the link belonged to the pending launch.
-  static Future<bool> handleCallbackUrl(String url) async {
-    _callbackLog('received: ${_redactTokens(url)}');
-    final uri = Uri.tryParse(url);
+  /// the return link an x-callback-url player opens when playback ends, and
+  /// syncs the position it reports. `DeepLinkService` hands every
+  /// [ExternalPlayerReturnLink] here. Returns whether the link belonged to
+  /// the pending launch.
+  static Future<bool> handleCallbackUrl(Object input) async {
+    final uri = input is Uri ? input : Uri.tryParse(input.toString());
     if (uri == null) {
       _callbackLog('not a parseable URI; ignoring');
       return false;
     }
-    _callbackLog(
-      'parsed scheme=${uri.scheme} host=${uri.host} path=${uri.pathSegments} '
-      'query=${_redactTokens(uri.queryParameters.toString())}',
-    );
-    if (uri.scheme != ExternalPlayerCallbackUrls.scheme ||
-        uri.host != ExternalPlayerCallbackUrls.host ||
-        uri.pathSegments.length < 2) {
+    _callbackLog('received an external-player return link');
+    final segments = uri.pathSegments;
+    if (uri.scheme != DeepLink.scheme || uri.host != ExternalPlayerReturnLink.host || segments.length < 2) {
       _callbackLog('not an external-player return link; ignoring');
       return false;
     }
     final session = _callbackSession;
-    if (session == null || session.id != uri.pathSegments[1]) {
-      _callbackLog('session ${uri.pathSegments[1]} does not match pending ${session?.id}; ignoring');
+    if (session == null || session.id != segments[1]) {
+      _callbackLog('session does not match the pending external-player launch; ignoring');
       return false;
     }
     _callbackSession = null;
@@ -388,14 +377,14 @@ class ExternalPlayerService {
     // finished only for players that call it on completion (not VLC, which
     // calls it on every stop).
     final successMeansFinished = KnownPlayers.xCallbackPlayer(session.playerId)?.successMeansFinished ?? true;
-    final result = switch (uri.pathSegments.first) {
-      ExternalPlayerCallbackUrls.success => _ExternalPlayerLaunchResult(
+    final result = switch (segments.first) {
+      _ReturnResult.success => _ExternalPlayerLaunchResult(
         launched: true,
         positionMs: positionMs,
         durationMs: durationMs,
         playbackCompleted: positionMs == null && successMeansFinished,
       ),
-      ExternalPlayerCallbackUrls.cancel => _ExternalPlayerLaunchResult(
+      _ReturnResult.cancel => _ExternalPlayerLaunchResult(
         launched: true,
         positionMs: positionMs,
         durationMs: durationMs,
@@ -403,22 +392,32 @@ class ExternalPlayerService {
       _ => const _ExternalPlayerLaunchResult(launched: true, playbackError: true),
     };
     _callbackLog(
-      'result ${uri.pathSegments.first} from ${session.playerId}: position=${params['position']} duration=${params['duration']} '
+      'result ${segments.first} from ${session.playerId}: position=${params['position']} duration=${params['duration']} '
       '-> msPerUnit $msPerUnit, positionMs $positionMs, durationMs $durationMs '
       '(item durationMs ${session.metadata.durationMs}, client ${session.client == null ? 'none' : 'set'})',
     );
     if (positionMs == null && !result.playbackCompleted && !result.playbackError) {
       _callbackLog('stopped at an unknown position; nothing will be reported');
     }
-    await _reportAndroidExternalProgress(
-      result,
-      metadata: session.metadata,
-      client: session.client,
-      offlineWatchService: session.offlineWatchService,
-      mediaSourceId: session.mediaSourceId,
-      partTimeline: session.partTimeline,
-    );
-    _callbackLog('progress report finished for ${session.metadata.id}');
+    // The link is used up either way: a failed sync must not leave it for
+    // the deep-link layer to deliver again.
+    try {
+      await _reportExternalProgress(
+        result,
+        metadata: session.metadata,
+        client: session.client,
+        offlineWatchService: session.offlineWatchService,
+        mediaSourceId: session.mediaSourceId,
+        partTimeline: session.partTimeline,
+      );
+      _callbackLog('progress report finished for ${session.metadata.id}');
+    } catch (e, stackTrace) {
+      appLogger.e(
+        '[ExternalPlayerCallback] progress report failed for ${session.metadata.id}',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
     return true;
   }
 
@@ -504,12 +503,15 @@ class ExternalPlayerService {
     };
   }
 
+  /// Syncs where playback in an external player stopped, as reported by the
+  /// Android intent result or an x-callback-url return link (iOS).
+  ///
   /// [partTimeline] places the handed-over file on its item when the item is
   /// stacked across several files: the external player's position is on that
   /// file's clock and its duration is that file's, so both are mapped onto
   /// the item, and playing out a file with another after it leaves the item
   /// at the next file instead of finished.
-  static Future<void> _reportAndroidExternalProgress(
+  static Future<void> _reportExternalProgress(
     _ExternalPlayerLaunchResult result, {
     required MediaItem metadata,
     required MediaServerClient? client,
@@ -611,7 +613,7 @@ class ExternalPlayerService {
   }
 
   @visibleForTesting
-  static Future<void> reportAndroidExternalProgressForTesting({
+  static Future<void> reportExternalProgressForTesting({
     required int? positionMs,
     required int? durationMs,
     bool playbackCompleted = false,
@@ -622,7 +624,7 @@ class ExternalPlayerService {
     String? mediaSourceId,
     MediaPartTimeline? partTimeline,
   }) {
-    return _reportAndroidExternalProgress(
+    return _reportExternalProgress(
       _ExternalPlayerLaunchResult(
         launched: true,
         positionMs: positionMs,

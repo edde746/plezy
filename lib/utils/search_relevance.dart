@@ -7,6 +7,7 @@ import 'package:unorm_dart/unorm_dart.dart';
 import '../media/media_item.dart';
 import '../media/media_person.dart';
 import '../media/search_hit.dart';
+import '../sources/source_models.dart';
 
 const int defaultMediaSearchLimit = 100;
 
@@ -73,7 +74,17 @@ List<T> _rankBySearchRelevance<T>(
 double _hitScore(SearchHit hit, _NormalizedSearchQuery query) => switch (hit) {
   MediaSearchHit(:final item) => _mediaScore(item, query),
   PersonSearchHit(:final person) => _personScore(person, query),
+  SourceSearchHit(:final entry) => _sourceScore(entry, query),
 };
+
+double _sourceScore(SourceEntry entry, _NormalizedSearchQuery query) {
+  var best = query.score(entry.title, 1.0);
+  best = math.max(best, query.score(entry.onlineTitle, 0.98));
+  best = math.max(best, query.score(entry.series, 0.9));
+  best = math.max(best, query.score(entry.author, 0.95));
+  best = math.max(best, query.score(entry.narrator, 0.9));
+  return best;
+}
 
 double _mediaScore(MediaItem item, _NormalizedSearchQuery query) {
   var best = query.score(item.title, 1.0);

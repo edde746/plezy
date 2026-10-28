@@ -40,6 +40,8 @@
 		B1D51A6A2F00110000000007 /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000008 /* MpvPlayerPluginShared.swift */; };
 		B1D51A6A2F00110000000010 /* MpvAudioPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000011 /* MpvAudioPlayerCore.swift */; };
 		B1D51A6A2F00110000000012 /* MpvAudioPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000013 /* MpvAudioPlayerPlugin.swift */; };
+		CD0DE6EB5F0D9131708BECF5 /* DeepLinkDeliveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7278E9E14CBE2D57031E91BE /* DeepLinkDeliveryCoordinator.swift */; };
+		3C6721571E784D3A4AC4C7B3 /* DeepLinkPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61EAD3C5AC4801CFE93DFA5 /* DeepLinkPlugin.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 
 /* Begin GeneratedLocale PBXBuildFile */
@@ -84,7 +86,7 @@
 		331C80D7294CF71000263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		333000ED22D3DE5D00554162 /* Warnings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Warnings.xcconfig; sourceTree = "<group>"; };
 		335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneratedPluginRegistrant.swift; sourceTree = "<group>"; };
-		33CC10ED2044A3C60003C045 /* Plezy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Plezy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		33CC10ED2044A3C60003C045 /* PlezyNG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PlezyNG.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		33CC10F02044A3C60003C045 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		33CC10F52044A3C60003C045 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		33CC10F72044A3C60003C045 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
@@ -113,6 +115,8 @@
 		B1D51A6A2F00110000000008 /* MpvPlayerPluginShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MpvPlayerPluginShared.swift; path = ../shared/apple/MpvPlayer/MpvPlayerPluginShared.swift; sourceTree = SOURCE_ROOT; };
 		B1D51A6A2F00110000000011 /* MpvAudioPlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerCore.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerCore.swift; sourceTree = SOURCE_ROOT; };
 		B1D51A6A2F00110000000013 /* MpvAudioPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerPlugin.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift; sourceTree = SOURCE_ROOT; };
+		7278E9E14CBE2D57031E91BE /* DeepLinkDeliveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkDeliveryCoordinator.swift; path = ../shared/apple/DeepLink/DeepLinkDeliveryCoordinator.swift; sourceTree = SOURCE_ROOT; };
+		F61EAD3C5AC4801CFE93DFA5 /* DeepLinkPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkPlugin.swift; path = ../shared/apple/DeepLink/DeepLinkPlugin.swift; sourceTree = SOURCE_ROOT; };
 		B94440F7FE93A00B39D27ADF /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		DFD234339E4EACF84227E544 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
@@ -228,7 +232,7 @@
 		33CC10EE2044A3C60003C045 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				33CC10ED2044A3C60003C045 /* Plezy.app */,
+				33CC10ED2044A3C60003C045 /* PlezyNG.app */,
 				331C80D5294CF71000263BE5 /* RunnerTests.xctest */,
 			);
 			name = Products;
@@ -264,6 +268,8 @@
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
 				6AD8B1682ED7B50000E9E1B5 /* WindowUtilsPlugin.swift */,
 				6AD8B1712ED7B50000E9E1C1 /* AppLookupPlugin.swift */,
+				7278E9E14CBE2D57031E91BE /* DeepLinkDeliveryCoordinator.swift */,
+				F61EAD3C5AC4801CFE93DFA5 /* DeepLinkPlugin.swift */,
 				6AD8B1692ED7B50000E9E1B5 /* WindowDelegate.swift */,
 				6AD8B1652ED7B50000E9E1B4 /* MpvPlayer */,
 				6AD8B16C2ED7B50000E9E1B7 /* Runner-Bridging-Header.h */,
@@ -342,7 +348,7 @@
 			);
 			name = Runner;
 			productName = Runner;
-			productReference = 33CC10ED2044A3C60003C045 /* Plezy.app */;
+			productReference = 33CC10ED2044A3C60003C045 /* PlezyNG.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -582,6 +588,8 @@
 				6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */,
 				6AD8B1662ED7B50000E9E1B5 /* WindowUtilsPlugin.swift in Sources */,
 				6AD8B1702ED7B50000E9E1C1 /* AppLookupPlugin.swift in Sources */,
+				CD0DE6EB5F0D9131708BECF5 /* DeepLinkDeliveryCoordinator.swift in Sources */,
+				3C6721571E784D3A4AC4C7B3 /* DeepLinkPlugin.swift in Sources */,
 				6AD8B1672ED7B50000E9E1B5 /* WindowDelegate.swift in Sources */,
 				6AD8B16A2ED7B50000E9E1B6 /* MpvPipController.swift in Sources */,
 			);
@@ -673,7 +681,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.flutterApplication1.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Plezy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Plezy";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PlezyNG.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PlezyNG";
 			};
 			name = Debug;
 		};
@@ -688,7 +696,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.flutterApplication1.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Plezy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Plezy";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PlezyNG.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PlezyNG";
 			};
 			name = Release;
 		};
@@ -703,7 +711,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.flutterApplication1.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Plezy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Plezy";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PlezyNG.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PlezyNG";
 			};
 			name = Profile;
 		};
@@ -1024,7 +1032,7 @@
 			repositoryURL = "https://github.com/edde746/mpv-build";
 			requirement = {
 				kind = revision;
-				revision = 582f6d6e748a87a1536bf5cdad0af97b75725ffb;
+				revision = 3b9f38affe3c4171f8e6bc47331feffd3d13be1d;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

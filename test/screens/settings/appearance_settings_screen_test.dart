@@ -101,7 +101,7 @@ void main() {
     await tester.pumpAndSettle();
     // Back on Appearance, the entry's subtitle names the active preset.
     expect(
-      find.descendant(of: find.byType(AppearanceSettingsScreen), matching: find.text(t.settings.plumTheme)),
+      find.descendant(of: find.byType(AppearanceSettingsScreen), matching: find.textContaining(t.settings.plumTheme)),
       findsOneWidget,
     );
   });

@@ -1,7 +1,5 @@
 import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -11,6 +9,7 @@ import 'package:plezy/media/media_part_timeline.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/external_player_service.dart';
+import 'package:plezy/services/deep_links/deep_link.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
@@ -85,10 +84,10 @@ MediaItem _item({int? durationMs}) {
 }
 
 void main() {
-  test('Android external progress preserves null duration and still stops after start failure', () async {
+  test('External progress preserves null duration and still stops after start failure', () async {
     final client = _RecordingClient()..failStart = true;
 
-    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+    await ExternalPlayerService.reportExternalProgressForTesting(
       positionMs: 5000,
       durationMs: null,
       metadata: _item(),
@@ -99,7 +98,7 @@ void main() {
     expect(client.stopped, [(positionMs: 5000, durationMs: null)]);
   });
 
-  test('Android external progress queues unknown-duration resume when no client is available', () async {
+  test('External progress queues unknown-duration resume when no client is available', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     JellyfinApiCache.initialize(db);
     final manager = MultiServerManager();
@@ -110,7 +109,7 @@ void main() {
       await db.close();
     });
 
-    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+    await ExternalPlayerService.reportExternalProgressForTesting(
       positionMs: 5000,
       durationMs: null,
       metadata: _item(),
@@ -125,7 +124,7 @@ void main() {
     expect(action.shouldMarkWatched, isFalse);
   });
 
-  test('Android external progress emits the exact client cache scope', () async {
+  test('External progress emits the exact client cache scope', () async {
     final scope = buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a');
     final client = _RecordingClient(scopedServerId: scope);
     final events = <WatchStateEvent>[];
@@ -135,7 +134,7 @@ void main() {
         .listen(events.add);
     addTearDown(subscription.cancel);
 
-    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+    await ExternalPlayerService.reportExternalProgressForTesting(
       positionMs: 5000,
       durationMs: 100000,
       metadata: _item(durationMs: 100000),
@@ -147,10 +146,10 @@ void main() {
     expect(events.single.cacheServerId, scope);
   });
 
-  test('Android external progress ignores missing position without explicit completion', () async {
+  test('External progress ignores missing position without explicit completion', () async {
     final client = _RecordingClient();
 
-    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+    await ExternalPlayerService.reportExternalProgressForTesting(
       positionMs: null,
       durationMs: 100000,
       playbackCompleted: false,
@@ -162,10 +161,10 @@ void main() {
     expect(client.stopped, isEmpty);
   });
 
-  test('Android external progress reports full duration for explicit completion', () async {
+  test('External progress reports full duration for explicit completion', () async {
     final client = _RecordingClient();
 
-    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+    await ExternalPlayerService.reportExternalProgressForTesting(
       positionMs: null,
       durationMs: 100000,
       playbackCompleted: true,
@@ -178,10 +177,10 @@ void main() {
     expect(client.watched, ['item-1']);
   });
 
-  test('Android external completion on Jellyfin marks watched via the stop report, not markWatched (#1287)', () async {
+  test('External completion on Jellyfin marks watched via the stop report, not markWatched (#1287)', () async {
     final client = _RecordingClient(backend: MediaBackend.jellyfin);
 
-    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+    await ExternalPlayerService.reportExternalProgressForTesting(
       positionMs: null,
       durationMs: 100000,
       playbackCompleted: true,
@@ -207,7 +206,7 @@ void main() {
     test('playing out the first file leaves the item at the second, not watched', () async {
       final client = _RecordingClient();
 
-      await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      await ExternalPlayerService.reportExternalProgressForTesting(
         positionMs: null,
         durationMs: fileOneMs,
         playbackCompleted: true,
@@ -223,7 +222,7 @@ void main() {
     test('the second file reports on the item clock and finishing it finishes the item', () async {
       final client = _RecordingClient();
 
-      await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      await ExternalPlayerService.reportExternalProgressForTesting(
         positionMs: 600000,
         durationMs: 2400000,
         metadata: _item(durationMs: itemMs),
@@ -233,7 +232,7 @@ void main() {
       expect(client.stopped.last, (positionMs: fileOneMs + 600000, durationMs: itemMs));
       expect(client.watched, isEmpty);
 
-      await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      await ExternalPlayerService.reportExternalProgressForTesting(
         positionMs: null,
         durationMs: 2400000,
         playbackCompleted: true,
@@ -247,8 +246,8 @@ void main() {
   });
 
   group('x-callback-url return links', () {
-    String link(String result, String session, [String query = '']) =>
-        'plezy://external-player/$result/$session${query.isEmpty ? '' : '?$query'}';
+    Uri link(String result, String session, [String query = '']) =>
+        Uri.parse('plezy://external-player/$result/$session${query.isEmpty ? '' : '?$query'}');
 
     test('cancel reports the position the player stopped at, in seconds', () async {
       final client = _RecordingClient();
@@ -406,48 +405,41 @@ void main() {
       expect(client.stopped, [(positionMs: 10000, durationMs: null)]);
     });
 
-    testWidgets('the deep-link observer claims return links before the navigator', (tester) async {
+    test('accepts the return link the deep-link layer parsed, in the shape Outplayer opens', () async {
       final client = _RecordingClient();
-      final observer = ExternalPlayerService.callbackLinkObserverForTesting();
-      tester.binding.addObserver(observer);
-      addTearDown(() => tester.binding.removeObserver(observer));
-      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
       final session = ExternalPlayerService.beginCallbackSessionForTesting(
         metadata: _item(durationMs: 1420016),
         client: client,
       );
 
       // The exact shape Outplayer opened: the stream URL appended unencoded.
-      final location = link(
-        'cancel',
-        session,
-        'url=https://srv.plex.direct:32400/library/parts/1/2/file.mkv?X-Plex-Token=t&position=283.283&duration=1420.016',
-      );
-      await tester.runAsync(
-        () => tester.binding.defaultBinaryMessenger.handlePlatformMessage(
-          SystemChannels.navigation.name,
-          SystemChannels.navigation.codec.encodeMethodCall(
-            MethodCall('pushRouteInformation', {'location': location, 'state': null}),
-          ),
-          (_) {},
-        ),
-      );
-      await tester.pump();
+      final url =
+          '${ExternalPlayerService.returnLinks(session).cancel}'
+          '?url=https://srv.plex.direct:32400/library/parts/1/2/file.mkv?X-Plex-Token=t'
+          '&position=283.283&duration=1420.016';
+      final returnLink = DeepLink.tryParse(url) as ExternalPlayerReturnLink;
 
-      expect(tester.takeException(), isNull);
+      expect(await ExternalPlayerService.handleCallbackUrl(returnLink.uri), isTrue);
       expect(client.stopped, [(positionMs: 283283, durationMs: 1420016)]);
     });
 
-    test('a link that is not an external-player return link is left to the navigator', () async {
-      final observer = ExternalPlayerService.callbackLinkObserverForTesting();
-      final claimed = await observer.didPushRouteInformation(
-        RouteInformation(uri: Uri.parse('plezy://live?channel=4.1')),
-      );
-      expect(claimed, isFalse);
+    test('return links are built from the deep-link grammar', () {
+      final links = ExternalPlayerService.returnLinks('s1');
+
+      for (final (uri, result) in [(links.success, 'success'), (links.cancel, 'cancel'), (links.error, 'error')]) {
+        expect(DeepLink.tryParse(uri.toString()), isA<ExternalPlayerReturnLink>());
+        expect(uri.pathSegments, [result, 's1']);
+      }
     });
 
     test('other plezy links are not callbacks', () async {
-      expect(await ExternalPlayerService.handleCallbackUrl('plezy://live?channel=4.1'), isFalse);
+      expect(await ExternalPlayerService.handleCallbackUrl(Uri.parse('plezy://live?channel=4.1')), isFalse);
+    });
+
+    test('a return link without a session is not a callback', () async {
+      ExternalPlayerService.beginCallbackSessionForTesting(metadata: _item(), client: _RecordingClient());
+
+      expect(await ExternalPlayerService.handleCallbackUrl(Uri.parse('plezy://external-player/cancel')), isFalse);
     });
   });
 

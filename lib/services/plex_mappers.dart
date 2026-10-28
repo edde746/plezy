@@ -12,6 +12,7 @@
 // resolution and server-tagging.
 
 import 'package:json_annotation/json_annotation.dart';
+import '../media/chapter_marker_classifier.dart';
 import '../media/artist_discography.dart';
 import '../media/ids.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -1452,8 +1453,8 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
     mediaIndex = MediaVersion.findMatchingIndex(versions, {preferredVersionSignature}) ?? mediaIndex;
   }
   if (mediaIndex < 0 || mediaIndex >= versions.length) mediaIndex = 0;
-  if (preferPlayable && !versions[mediaIndex].isPlayable) {
-    final fallback = versions.indexWhere((v) => v.isPlayable);
+  if (preferPlayable && !versions[mediaIndex].hasPlayablePart) {
+    final fallback = versions.indexWhere((v) => v.hasPlayablePart);
     if (fallback >= 0) {
       onVersionFallback?.call(mediaIndex, fallback);
       mediaIndex = fallback;
@@ -1538,6 +1539,7 @@ MediaSourceInfo? plexMediaSourceInfoFromCacheJson(
 
 PlaybackExtras plexPlaybackExtrasFromCacheJson(
   Map<String, dynamic>? metadataJson, {
+  required ChapterMarkerClassifier classifier,
   String? introPattern,
   String? creditsPattern,
   bool forceChapterFallback = false,
@@ -1545,6 +1547,7 @@ PlaybackExtras plexPlaybackExtrasFromCacheJson(
   return PlaybackExtras.withChapterFallback(
     chapters: plexChaptersFromCacheJson(metadataJson),
     markers: plexMarkersFromCacheJson(metadataJson),
+    classifier: classifier,
     introPatternStr: introPattern,
     creditsPatternStr: creditsPattern,
     forceChapterFallback: forceChapterFallback,

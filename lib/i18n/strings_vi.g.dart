@@ -41,15 +41,11 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$vi app = _Translations$app$vi._(_root);
-	@override late final _Translations$cast$vi cast = _Translations$cast$vi._(_root);
-	@override late final _Translations$automation$vi automation = _Translations$automation$vi._(_root);
-	@override late final _Translations$notifications$vi notifications = _Translations$notifications$vi._(_root);
 	@override late final _Translations$appIcon$vi appIcon = _Translations$appIcon$vi._(_root);
 	@override late final _Translations$auth$vi auth = _Translations$auth$vi._(_root);
 	@override late final _Translations$common$vi common = _Translations$common$vi._(_root);
 	@override late final _Translations$screens$vi screens = _Translations$screens$vi._(_root);
 	@override late final _Translations$update$vi update = _Translations$update$vi._(_root);
-	@override late final _Translations$appAccess$vi appAccess = _Translations$appAccess$vi._(_root);
 	@override late final _Translations$settings$vi settings = _Translations$settings$vi._(_root);
 	@override late final _Translations$themeEditor$vi themeEditor = _Translations$themeEditor$vi._(_root);
 	@override late final _Translations$search$vi search = _Translations$search$vi._(_root);
@@ -75,7 +71,6 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$vi serverSelection = _Translations$serverSelection$vi._(_root);
 	@override late final _Translations$hubDetail$vi hubDetail = _Translations$hubDetail$vi._(_root);
 	@override late final _Translations$logs$vi logs = _Translations$logs$vi._(_root);
-	@override late final _Translations$detail$vi detail = _Translations$detail$vi._(_root);
 	@override late final _Translations$startup$vi startup = _Translations$startup$vi._(_root);
 	@override late final _Translations$licenses$vi licenses = _Translations$licenses$vi._(_root);
 	@override late final _Translations$navigation$vi navigation = _Translations$navigation$vi._(_root);
@@ -98,15 +93,24 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$vi seerr = _Translations$seerr$vi._(_root);
 	@override late final _Translations$services$vi services = _Translations$services$vi._(_root);
 	@override late final _Translations$addServer$vi addServer = _Translations$addServer$vi._(_root);
+	@override late final _Translations$cast$vi cast = _Translations$cast$vi._(_root);
+	@override late final _Translations$automation$vi automation = _Translations$automation$vi._(_root);
+	@override late final _Translations$notifications$vi notifications = _Translations$notifications$vi._(_root);
+	@override late final _Translations$appAccess$vi appAccess = _Translations$appAccess$vi._(_root);
+	@override late final _Translations$detail$vi detail = _Translations$detail$vi._(_root);
 	@override late final _Translations$watchLink$vi watchLink = _Translations$watchLink$vi._(_root);
 	@override late final _Translations$homeLayout$vi homeLayout = _Translations$homeLayout$vi._(_root);
 	@override late final _Translations$platform$vi platform = _Translations$platform$vi._(_root);
+	@override late final _Translations$universalMedia$vi universalMedia = _Translations$universalMedia$vi._(_root);
 	@override late final _Translations$fileSources$vi fileSources = _Translations$fileSources$vi._(_root);
 	@override late final _Translations$lending$vi lending = _Translations$lending$vi._(_root);
 	@override late final _Translations$audiobook$vi audiobook = _Translations$audiobook$vi._(_root);
 	@override late final _Translations$sourceSetup$vi sourceSetup = _Translations$sourceSetup$vi._(_root);
 	@override late final _Translations$comics$vi comics = _Translations$comics$vi._(_root);
 	@override late final _Translations$games$vi games = _Translations$games$vi._(_root);
+	@override late final _Translations$deepLinks$vi deepLinks = _Translations$deepLinks$vi._(_root);
+	@override late final _Translations$householdSetup$vi householdSetup = _Translations$householdSetup$vi._(_root);
+	@override late final _Translations$issueReport$vi issueReport = _Translations$issueReport$vi._(_root);
 }
 
 // Path: app
@@ -117,48 +121,6 @@ class _Translations$app$vi extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'PlezyNG';
-}
-
-// Path: cast
-class _Translations$cast$vi extends Translations$cast$en {
-	_Translations$cast$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get chooseDevice => 'Truyền đến thiết bị';
-	@override String get searching => 'Tìm kiếm các thiết bị Cast...';
-	@override String connectedTo({required Object device}) => 'Kết nối với ${device}';
-	@override String get device => 'Thiết bị truyền';
-	@override String get readyToCast => 'Sẵn sàng truyền';
-	@override String get subtitle => 'Phụ đề';
-	@override String get serverNotAvailable => 'Server phương tiện truyền thông không sẵn dùng.';
-	@override String get stopCasting => 'Dừng truyền';
-	@override String get castToDevice => 'Truyền đến thiết bị';
-	@override String get noEpisodeAvailable => 'Không có tập nào có sẵn để phát.';
-	@override String get startFailed => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.';
-}
-
-// Path: automation
-class _Translations$automation$vi extends Translations$automation$en {
-	_Translations$automation$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get noActivePlayback => 'Không có phiên video hoạt động để kiểm soát.';
-	@override String get profileNotFound => 'Hồ sơ Plezy không thể tìm thấy.';
-}
-
-// Path: notifications
-class _Translations$notifications$vi extends Translations$notifications$en {
-	_Translations$notifications$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get newEpisodeTitle => 'episode mới';
-	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -321,37 +283,6 @@ class _Translations$update$vi extends Translations$update$en {
 	@override String get viewRelease => 'Xem bản phát hành';
 	@override String get latestVersion => 'Bạn đang ở phiên bản mới nhất';
 	@override String get checkFailed => 'Không kiểm tra cho các bản cập nhật';
-}
-
-// Path: appAccess
-class _Translations$appAccess$vi extends Translations$appAccess$en {
-	_Translations$appAccess$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Cố gắng mọi tính năng miễn phí trong 7 ngày';
-	@override String get description => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.';
-	@override String get trialEndedDescription => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.';
-	@override String get startTrial => 'Bắt đầu bài kiểm tra miễn phí 7 ngày';
-	@override String get trialActive => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.';
-	@override String get trialEnded => 'Cuộc thi 7 ngày đã kết thúc';
-	@override String get trialStartFailed => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.';
-	@override String get lifetimeTitle => 'PlezyNG mở khóa suốt đời';
-	@override String get lifetimeBody => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.';
-	@override String get manageTitle => 'PlezyNG Thời gian truy cập';
-	@override String get manageDescription => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.';
-	@override String buy({required Object price}) => 'Khóa tất cả các tính năng cho ${price}';
-	@override String get loadingPrice => 'Giá bán hàng tải...';
-	@override String get retryPrice => 'Retry giá lookup';
-	@override String get restore => 'Lợi ích mua sắm suốt đời';
-	@override String get pending => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.';
-	@override String get storeUnavailable => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.';
-	@override String get productNotFound => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.';
-	@override String get productQueryFailed => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.';
-	@override String get purchaseFailed => 'Mua sắm không qua được. thử lại.';
-	@override String get restoreFailed => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.';
-	@override String get nothingToRestore => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.';
 }
 
 // Path: settings
@@ -1229,9 +1160,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	final TranslationsVi _root; // ignore: unused_field
 
 	// Translations
-	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung',
-	);
 	@override String get audioLabel => 'Âm thanh';
 	@override String get subtitlesLabel => 'Phụ đề';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
@@ -1268,9 +1196,31 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get unmuteButton => 'Bật Tiếng';
 	@override String get settingsButton => 'Cài đặt Playback';
 	@override String get tracksButton => 'Âm thanh & Subtitles';
-	@override String get trackSelectionTitle => 'Lựa chọn đường trước khi playback';
-	@override String get trackSelectionAuto => 'Tự động Selection';
 	@override String get chaptersButton => 'Chương 1';
+	@override String get segmentLoopHelp => 'Đặt A, sau đó đặt B sau đó trong dòng thời gian.';
+	@override String get setLoopStart => 'Cài đặt loop bắt đầu (A)';
+	@override String get setLoopEnd => 'Thiết lập vòng tròn kết thúc (B)';
+	@override String get clearSegmentLoop => 'Chi tiết Segment Loop';
+	@override String get setLoopStartFirst => 'Cài đặt vòng bắt đầu (A) trước khi kết thúc (B).';
+	@override String get loopEndAfterStart => 'Kết thúc vòng tròn phải là muộn hơn khởi đầu.';
+	@override String get segmentLoopUnavailable => 'Segment looping không có sẵn cho playback này.';
+	@override String get loopPointNotSet => 'Không đặt';
+	@override String get bookmarksHelp => 'Bookmarks được lưu trên thiết bị này. chọn một để đi đến thời điểm đó.';
+	@override String get bookmarksButton => 'Bookmarks Đánh giá';
+	@override String get chaptersAndBookmarks => 'Chương và Bookmark';
+	@override String get segmentLoop => 'phân đoạn loop';
+	@override String get addBookmark => 'Thêm Bookmark';
+	@override String get bookmarkName => 'Bookmark tên';
+	@override String get bookmarkNameHint => 'Ví dụ: Mở cảnh';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark Đề ${n}';
+	@override String get bookmarkNameRequired => 'Nhập tên cho bookmark này.';
+	@override String get deleteBookmark => 'xóa bookmark';
+	@override String get bookmarkLimitReached => 'Bài viết này đã có 100 bookmarks.';
+	@override String get bookmarkUnavailable => 'Không thể lưu hoặc xóa sổ này.';
+	@override String get bookmarkSaved => 'Bookmark được tiết kiệm';
+	@override String get bookmarkDeleted => 'Bookmark bị xóa';
+	@override String loopPointSet({required Object point, required Object time}) => 'Điểm Loop ${point} Set tại ${time}.';
+	@override String get noChaptersOrBookmarks => 'Không có chương hoặc bảng chữ cái có sẵn.';
 	@override String get versionQualityButton => 'Phiên bản & Chất lượng';
 	@override String get versionColumnHeader => 'Phiên bản';
 	@override String get qualityColumnHeader => 'Chất lượng';
@@ -1279,8 +1229,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get transcodeUnavailableFallback => 'Transcoding unavailable — chơi chất lượng ban đầu';
 	@override String get subtitleUnavailableFallback => 'Các tiêu đề được chọn không thể tải — tiếp tục mà không có tiêu đề';
 	@override String get pipButton => 'Hình ảnh trong hình ảnh mode';
-	@override String get openMiniPlayer => 'Trò chơi Mini Open';
-	@override String get returnToFullPlayer => 'Trở lại cầu thủ đầy đủ';
 	@override String get aspectRatioButton => 'Tỷ Lệ Khung Hình';
 	@override String get ambientLighting => 'Ánh sáng môi trường';
 	@override String get fullscreenButton => 'Nhập Fullscreen';
@@ -1289,7 +1237,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get rotationLockButton => 'Lock xoay';
 	@override String get lockScreen => 'Màn hình Lock';
 	@override String get screenLockButton => 'màn hình lock';
-	@override String get longPressToUnlock => 'Lâu áp lực để mở khóa';
 	@override String get timelineSlider => 'Thanh thời gian video';
 	@override String get volumeSlider => 'Tỷ lệ Volume';
 	@override String endsAt({required Object time}) => 'Kết thúc tại ${time}';
@@ -1306,8 +1253,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get noQueueItems => 'Không có mặt hàng trong quue';
 	@override String get noAudioDevicesAvailable => 'Không có thiết bị âm thanh';
 	@override String get searchSubtitles => 'Tìm kiếm Subtitles';
-	@override String get loadSubtitleFile => 'tải file subtitle...';
-	@override String get subtitleLoadFailed => 'Không tải file subtitle';
 	@override String get language => 'Ngôn ngữ';
 	@override String get noSubtitlesFound => 'Không tìm thấy subtitles';
 	@override String get subtitleDownloaded => 'Subtitle tải xuống';
@@ -1316,7 +1261,6 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get searchLanguages => 'Tìm kiếm ngôn ngữ...';
 	@override String get skipIntro => 'Tải Skip Intro';
 	@override String get skipCredits => 'Skip tín dụng';
-	@override String get skipAds => 'Tải Ads';
 	@override String get nextEpisode => 'Tập Kế Tiếp';
 	@override String subtitleTrack({required Object n}) => 'Đường sắt ${n}';
 	@override String subtitleFile({required Object name}) => 'Chủ đề: ${name}';
@@ -1324,6 +1268,18 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Chủ đề: Off';
 	@override String osdSubtitles({required Object track}) => 'Đánh giá: ${track}';
 	@override String osdAudio({required Object track}) => 'Âm thanh: ${track}';
+	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung',
+	);
+	@override String get trackSelectionTitle => 'Lựa chọn đường trước khi playback';
+	@override String get trackSelectionAuto => 'Tự động Selection';
+	@override String get openMiniPlayer => 'Trò chơi Mini Open';
+	@override String get returnToFullPlayer => 'Trở lại cầu thủ đầy đủ';
+	@override String get loadSubtitleFile => 'tải file subtitle...';
+	@override String get subtitleLoadFailed => 'Không tải file subtitle';
+	@override String get skipAds => 'Tải Ads';
+	@override String get tapToUnlock => 'Chạm để mở khóa';
+	@override String get tapAgainToUnlock => 'Chạm lại để mở khóa';
 }
 
 // Path: messages
@@ -1821,16 +1777,6 @@ class _Translations$logs$vi extends Translations$logs$en {
 	@override String get saveLogsFailed => 'Không thể lưu file log.';
 }
 
-// Path: detail
-class _Translations$detail$vi extends Translations$detail$en {
-	_Translations$detail$vi._(TranslationsVi root) : this._root = root, super.internal(root);
-
-	final TranslationsVi _root; // ignore: unused_field
-
-	// Translations
-	@override String endsAt({required Object time}) => 'Kết thúc tại ${time}';
-}
-
 // Path: startup
 class _Translations$startup$vi extends Translations$startup$en {
 	_Translations$startup$vi._(TranslationsVi root) : this._root = root, super.internal(root);
@@ -2137,6 +2083,7 @@ class _Translations$music$vi extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Đọc Track Analysis...';
 	@override String get visualizerAmbientMotion => 'động cơ môi trường';
 	@override String get visualizerPlexLoudness => 'Plex tiếng ồn';
+	@override String get visualizerLiveAudio => 'Phân tích âm thanh trực tiếp';
 	@override String get visualizerPreviousPreset => 'Phong cách Visual Previous';
 	@override String get visualizerNextPreset => 'Tiếp theo: Visual Style';
 	@override String get visualizerPresetAurora => 'Cực quang';
@@ -2484,6 +2431,12 @@ class _Translations$videoSettings$vi extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Bản đồ cho độ sáng cao của màn hình trong người chơi, sau đó nói với nhà soạn nhạc kết quả.';
 	@override String get hdrToneMappingFailed => 'Không thể thay đổi bản đồ âm thanh HDR - chế độ trước vẫn hoạt động.';
 	@override String get audioOutput => 'Audio output xuất';
+	@override String get videoTrack => 'Bản video';
+	@override String get videoTrackDescription => 'Chọn luồng video cần hiển thị. Có sẵn khi phát bằng MPV nếu tệp có các bản video thay thế.';
+	@override String get videoTrackDefault => 'Mặc định';
+	@override String get videoTrackUnavailable => 'Không có bản video thay thế nào.';
+	@override String get videoTrackFailed => 'Không thể đổi bản video.';
+	@override String videoTrackNumber({required Object id}) => 'Bản ${id}';
 	@override String get performanceOverlay => 'Hiệu suất Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2491,10 +2444,17 @@ class _Translations$videoSettings$vi extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'âm thanh không gian';
 	@override String get audioOutputStereo => 'Âm Thanh Nổi';
 	@override String get audioEqualizer => 'âm thanh equalizer';
-	@override String get audioEqualizerDescription => 'Tùy chỉnh 5 tần số cho thiết bị này. có sẵn trên mpv; một EQ hoạt động giải mã âm thanh và chặn phù hợp.';
+	@override String get audioEqualizerDescription => '10-band equalizer cho MPVCác bộ lọc âm thanh sử dụng âm thanh giải mã và tắt passthrough.';
 	@override String get audioEqualizerFlat => 'Đơn giản';
 	@override String get audioEqualizerActive => 'Tùy chọn';
 	@override String get audioEqualizerSaveFailed => 'Không thể tiết kiệm các thiết lập Audio Equalizer.';
+	@override String get audioEffectsDescription => 'Hiệu ứng sử dụng âm thanh giải mã, do đó passthrough xoay. không gian phòng và mở rộng stereo phụ thuộc vào MPV xây dựng và theo dõi.';
+	@override String get audioStereoWidth => 'Stereo mở rộng';
+	@override String get audioSpatializer => 'Môi trường phòng';
+	@override String get audioSpatializerDescription => 'Thêm phản ánh phòng yên tĩnh.';
+	@override String get audioPitch => 'Pitch thay đổi';
+	@override String get audioPitchDescription => 'Thay đổi vị trí mà không thay đổi tốc độ. MPV xây dựng phải bao gồm Rubber Band.';
+	@override String get audioEffectUnavailable => 'Hiệu ứng này không có sẵn cho con đường này hoặc MPV xây dựng';
 	@override String get backgroundVideoAudio => 'Video âm thanh nền';
 	@override String get backgroundVideoAudioDescription => 'Giữ video chơi âm thanh khi bạn rời chơi; hình ảnh được ẩn cho đến khi bạn trở về. Android sử dụng thông báo phát lại phương tiện truyền thông.';
 	@override String get audioNormalization => 'bình thường tiếng ồn';
@@ -2887,6 +2847,88 @@ class _Translations$addServer$vi extends Translations$addServer$en {
 	@override String get httpsRequired => 'Sử dụng HTTPS hoặc rõ ràng cho phép kết nối không mã hóa.';
 }
 
+// Path: cast
+class _Translations$cast$vi extends Translations$cast$en {
+	_Translations$cast$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseDevice => 'Truyền đến thiết bị';
+	@override String get searching => 'Tìm kiếm các thiết bị Cast...';
+	@override String connectedTo({required Object device}) => 'Kết nối với ${device}';
+	@override String get device => 'Thiết bị truyền';
+	@override String get readyToCast => 'Sẵn sàng truyền';
+	@override String get subtitle => 'Phụ đề';
+	@override String get serverNotAvailable => 'Server phương tiện truyền thông không sẵn dùng.';
+	@override String get stopCasting => 'Dừng truyền';
+	@override String get castToDevice => 'Truyền đến thiết bị';
+	@override String get noEpisodeAvailable => 'Không có tập nào có sẵn để phát.';
+	@override String get startFailed => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.';
+}
+
+// Path: automation
+class _Translations$automation$vi extends Translations$automation$en {
+	_Translations$automation$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get noActivePlayback => 'Không có phiên video hoạt động để kiểm soát.';
+}
+
+// Path: notifications
+class _Translations$notifications$vi extends Translations$notifications$en {
+	_Translations$notifications$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get newEpisodeTitle => 'episode mới';
+	@override String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
+}
+
+// Path: appAccess
+class _Translations$appAccess$vi extends Translations$appAccess$en {
+	_Translations$appAccess$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Cố gắng mọi tính năng miễn phí trong 7 ngày';
+	@override String get description => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.';
+	@override String get trialEndedDescription => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.';
+	@override String get startTrial => 'Bắt đầu bài kiểm tra miễn phí 7 ngày';
+	@override String get trialActive => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.';
+	@override String get trialEnded => 'Cuộc thi 7 ngày đã kết thúc';
+	@override String get trialStartFailed => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.';
+	@override String get lifetimeTitle => 'PlezyNG mở khóa suốt đời';
+	@override String get lifetimeBody => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.';
+	@override String get manageTitle => 'PlezyNG Thời gian truy cập';
+	@override String get manageDescription => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.';
+	@override String buy({required Object price}) => 'Khóa tất cả các tính năng cho ${price}';
+	@override String get loadingPrice => 'Giá bán hàng tải...';
+	@override String get retryPrice => 'Retry giá lookup';
+	@override String get restore => 'Lợi ích mua sắm suốt đời';
+	@override String get pending => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.';
+	@override String get storeUnavailable => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.';
+	@override String get productNotFound => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.';
+	@override String get productQueryFailed => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.';
+	@override String get purchaseFailed => 'Mua sắm không qua được. thử lại.';
+	@override String get restoreFailed => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.';
+	@override String get nothingToRestore => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.';
+}
+
+// Path: detail
+class _Translations$detail$vi extends Translations$detail$en {
+	_Translations$detail$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String endsAt({required Object time}) => 'Kết thúc tại ${time}';
+}
+
 // Path: watchLink
 class _Translations$watchLink$vi extends Translations$watchLink$en {
 	_Translations$watchLink$vi._(TranslationsVi root) : this._root = root, super.internal(root);
@@ -3026,6 +3068,216 @@ class _Translations$platform$vi extends Translations$platform$en {
 	@override String get locationPermission => 'PlezyNG sử dụng quyền truy cập vị trí khi iOS yêu cầu nó để phát hiện mạng lưới địa phương của bạn và kết nối với máy chủ truyền thông của bạn.';
 	@override String get photoLibraryPermission => 'Chọn hình ảnh từ thư viện ảnh của bạn để sử dụng như một công việc nghệ thuật phương tiện truyền thông.';
 	@override String get cameraPermission => 'Scan mã QR để kết hợp một Companion Remote.';
+}
+
+// Path: universalMedia
+class _Translations$universalMedia$vi extends Translations$universalMedia$en {
+	_Translations$universalMedia$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'phương tiện truyền thông mở';
+	@override String get shortcutHelp => 'Chơi một liên kết, danh sách chơi hoặc tệp cho phiên này.';
+	@override String get intro => 'Mở một liên kết, danh sách phát hoặc tệp. Playback sử dụng người chơi tiêu chuẩn của PlezyNG và không thêm lịch sử vào thư viện của bạn.';
+	@override String get openWhat => 'Bạn muốn mở cái gì?';
+	@override String get stream => 'Địa chỉ Stream';
+	@override String get playlist => 'Danh sách Playlist';
+	@override String get files => 'Thiết bị file';
+	@override String get favorites => 'Save Stream yêu thích';
+	@override String get address => 'Địa chỉ Media';
+	@override String get addressHelp => 'URL với các thông số xác nhận hoặc ký tự được công nhận chỉ được sử dụng cho phiên này và không thể được lưu như là yêu thích.';
+	@override String get displayName => 'Tên hiển thị (tùy chọn)';
+	@override String get displayNameHelp => 'Chọn tên ngắn cho người chơi và hệ thống điều khiển phương tiện truyền thông.';
+	@override String get allowHttp => 'Cho phép kết nối HTTP không được mã hóa';
+	@override String get allowHttpHelp => 'HTTP không mã hóa kết nối. Chỉ cho phép nó trên một mạng tin cậy. Sử dụng HTTPS khi có thể.';
+	@override String get advancedProtocols => 'Chỉ MPV: nhập một địa chỉ RTSP, RTMP/RTMPS, UDP hoặc RTP. Các địa chỉ này không thể được lưu như là yêu thích.';
+	@override String get liveStream => 'Chăm sóc như sống';
+	@override String get liveStreamHelp => 'Sử dụng điều này cho video hay radio trực tiếp. Ứng dụng che giấu thanh thời gian, nhấp chuột và tùy chọn go-to-time.';
+	@override String get privateSession => 'Chỉ bài phát này sử dụng địa chỉ.Save an eligible stream favorite to keep it in this profile.';
+	@override String get saveFavorite => 'Giữ yêu thích';
+	@override String get playNow => 'Chơi bây giờ';
+	@override String get favoriteSaved => 'Stream Favorite được tiết kiệm đến hồ sơ này';
+	@override String skippedEntries({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.',
+	);
+	@override String get playlistAddress => 'Địa chỉ Playlist';
+	@override String get playlistAddressHelp => 'Mở một danh sách chơi M3U, M3u8, hoặc PLS từ địa chỉ web. liên kết trực tiếp không lưu danh sách playlist.';
+	@override String get choosePlaylist => 'Chọn playlist file';
+	@override String get openPlaylist => 'playlist mở';
+	@override String get playlistFormatsHelp => 'Một danh sách phát có thể chứa tối đa 1.000 mục và 2 MB. HLS hiển thị mở như dòng để người chơi có thể chọn một chất lượng.';
+	@override String get saveQueuePlaylist => 'Lưu hàng đợi thành danh sách phát';
+	@override String get queuePlaylistSaved => 'Danh sách phát đã được lưu cạnh các tệp phương tiện.';
+	@override String get queuePlaylistUnavailable => 'Không thể lưu hàng đợi này thành danh sách phát cục bộ để dùng lại.';
+	@override String get queuePlaylistFolderRequired => 'Chọn vị trí lưu trong cùng thư mục với các tệp trong hàng đợi.';
+	@override String get noFavorites => 'Không được lưu stream yêu thích cho đến nay. Favorites stay in this profile.';
+	@override String get removeFavorite => 'Xóa stream yêu thích';
+	@override String get filesHelp => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.';
+	@override String get chooseFiles => 'Chọn file';
+	@override String fileQueue({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: '${count} tập tin được chọn',
+	);
+	@override String get wifiTransfer => 'Gửi file qua Wi-Fi';
+	@override String get wifiTransferHelp => 'Chuyển các tập tin được hỗ trợ từ một trình duyệt trên cùng một mạng đáng tin cậy.';
+	@override String get wifiTransferIntro => 'Mở địa chỉ này trong một trình duyệt trên thiết bị khác.Chọn các tệp để thêm chúng vào thư viện tệp và sách của thiết bị này.';
+	@override String get wifiTransferPrivacy => 'Thiết bị này nhận được tệp qua mạng địa phương của bạn. bất cứ ai biết địa chỉ này có thể gửi tệp cho đến khi bạn ngừng chuyển giao hoặc địa chỉ hết hạn sau 15 phút. tối đa: 100 tệp, 4 GiB mỗi tệp; tổng cộng 10 GiB.';
+	@override String get wifiTransferStarting => 'Chuẩn bị một chuyển giao riêng, thời gian giới hạn...';
+	@override String get wifiTransferUnavailable => 'Không thể bắt đầu chuyển giao. kiểm tra truy cập mạng địa phương và thử lại.';
+	@override String get openThisAddress => 'Mở một trong những địa chỉ này trên thiết bị gửi';
+	@override String get copyAddress => 'Bản sao địa chỉ chuyển đổi';
+	@override String get addressCopied => 'Địa chỉ chuyển đổi sao chép';
+	@override String transferExpires({required Object time}) => 'Địa chỉ này hết hạn trong ${time}.';
+	@override String uploadCount({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
+		other: '${count} file nhận được',
+	);
+	@override String uploadedData({required Object size}) => 'Nhận ${size}';
+	@override String get stopTransfer => 'Ngừng chuyển giao và vô hiệu hóa địa chỉ';
+	@override String get startTransfer => 'Bắt đầu chuyển giao';
+	@override String get wifiImportedFiles => 'Chuyển Wi-Fi';
+	@override String get wifiBrowserTitle => 'Gửi file đến PlezyNG';
+	@override String get wifiBrowserIntro => 'Chọn các tập tin âm thanh, video, ebook hoặc truyện tranh để gửi. Các tập tin được lưu trữ trong thư viện tệp và sách của thiết bị này. Tối đa: 100 tập tin, 4 GiB mỗi file, tổng cộng 10 GiB.';
+	@override String get uploadFilesLabel => 'file để gửi';
+	@override String get uploadSelected => 'Tải các tập tin được chọn';
+	@override String get uploadSelectFirst => 'Chọn một hoặc nhiều tập tin đầu tiên.';
+	@override String get uploading => 'gửi';
+	@override String get uploadComplete => 'File được thêm vào PlezyNG.';
+	@override String get uploadFailed => 'Tệp không thể được thêm vào. giữ cho trang này mở và thử lại.';
+	@override String get liveCue => 'Sống';
+	@override String get liveSession => 'Stream trực tiếp';
+	@override String get liveCueHelp => 'Đối với video hay radio trực tiếp, ứng dụng ẩn thanh thời gian và nhảy nút. nó không lưu địa chỉ hoặc xem lịch sử.';
+	@override String get sessionOnly => 'Playback này là session-only';
+	@override String get sessionOnlyHelp => 'Playback không bao giờ tiết kiệm tiến bộ hoặc lịch sử.Save the stream as a favorite to keep it in this profile if it is eligible.';
+	@override String get pictureAdjustments => 'hình ảnh điều chỉnh';
+	@override String get pictureHelp => 'Những thay đổi hình ảnh này chỉ ảnh hưởng đến playback này. họ đặt lại khi playback kết thúc.';
+	@override String get resetPicture => 'Reset hình ảnh';
+	@override String get brightness => 'Ánh sáng';
+	@override String get contrast => 'Ngược điểm';
+	@override String get gamma => 'Gamma';
+	@override String get hue => 'Hue';
+	@override String get saturation => 'Saturation';
+	@override String get view360 => 'Màn hình 360° video';
+	@override String get view360Help => 'Sử dụng điều này cho video 360° đồng chiều. MPV cần bộ lọc v360 của FFmpeg để xem.';
+	@override String get view360Unavailable => 'Thiết lập MPV này không thể áp dụng bộ lọc 360°.';
+	@override String get view360Yaw => 'tầm nhìn chân trời';
+	@override String get view360Pitch => 'Màn hình Vertical View';
+	@override String get view360FieldOfView => 'Vùng tầm nhìn';
+	@override String get recordStream => 'Đánh giá Live Stream';
+	@override String get stopRecording => 'Ngừng và tiết kiệm ghi âm';
+	@override String get recordingStarted => 'Ghi âm là hoạt động.Leaving playback stops and saves the recording.';
+	@override String get recordingSaved => 'Ghi âm được hoàn thành và tiết kiệm.';
+	@override String get recordingActive => 'Để lại playback dừng lại và tiết kiệm nó.';
+	@override String get recordingFormatHelp => 'Đối với video, chọn MKV hoặc MPEG-TS. Đối với âm thanh, chọn MKA hoặc MKV.';
+	@override String get replaceRecordingTitle => 'Thay thế bản ghi này?';
+	@override String get replaceRecordingHelp => 'PlezyNG sao lưu tệp hiện có trong khi ghi lại. nếu nó không thể tiết kiệm bản ghi mới, Plezyng khôi phục sao lưu.';
+	@override String get replaceRecording => 'Thay thế file';
+	@override String get discHelp => 'Mở một đĩa trong ổ đĩa quang của máy tính này. Bạn cũng có thể mở hình ảnh ISO từ các tệp thiết bị.';
+	@override String get discs => 'Đĩa Optical';
+	@override String get editionOrTitle => 'Ấn bản hoặc tên đĩa';
+	@override String get dvd => 'DVD';
+	@override String get bluray => 'Đánh giá Blu-ray';
+	@override String get audioCd => 'CD âm thanh';
+	@override String get discAvailability => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.';
+	@override String get converterTitle => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương';
+	@override String get converterHelp => 'Chuyển đổi một tệp địa phương hoặc sửa lại nó với FFmpeg.';
+	@override String get converterIntro => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.';
+	@override String get converterPrivacy => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.';
+	@override String get converterChooseInput => 'Chọn một tập tin phương tiện truyền thông địa phương';
+	@override String get converterFormat => 'định dạng output';
+	@override String get converterMp4 => 'MP4 · H.264 và AAC';
+	@override String get converterM4a => 'M4A · AAC âm thanh';
+	@override String get converterMp3 => 'MP3 - Âm thanh';
+	@override String get allowFtp => 'Khả năng FTP';
+	@override String get allowFtpHelp => 'FTP gửi các phương tiện truyền thông mà không có mã hóa. sử dụng chỉ trên mạng tin cậy.';
+	@override String get converterSaveAs => 'Lưu các phương tiện truyền thông được chuyển đổi như';
+	@override String get converterExtensionMismatch => 'Chọn tên file với phần mở rộng output được chọn.';
+	@override String get converterUnsupportedInput => 'Chọn một file audio hoặc video.';
+	@override String get converterLocalOnly => 'Tệp được chọn không có sẵn như một con đường thiết bị địa phương.';
+	@override String get converterReplaceTitle => 'Thay thế file này?';
+	@override String get converterReplaceHelp => 'PlezyNG khôi phục lại tệp hiện có cho đến khi bản sao được chuyển đổi được lưu.';
+	@override String get converterStarting => 'Bắt đầu FFmpeg...';
+	@override String get converterProgress => 'Chuyển đổi vào máy tính này...';
+	@override String get converterComplete => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.';
+	@override String get converterFfmpegMissing => 'FFmpeg thiếu hoặc không hỗ trợ định dạng này.';
+	@override String get converterFailed => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.';
+	@override String get converterCancelled => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.';
+	@override String get converterDesktopOnly => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.';
+	@override String get converterStart => 'chuyển đổi file';
+	@override String get mediaToolsTitle => 'Công cụ Media';
+	@override String get mediaToolsShortcut => 'Ghi hoặc chia sẻ phương tiện truyền thông, thêm phần mở rộng tìm kiếm, hoặc sử dụng dòng lệnh.';
+	@override String get mediaToolsIntro => 'Chọn một công cụ tập trung. chụp và stream-out sử dụng FFmpeg được cài đặt trên máy tính để bàn này. Extensions và CLI lệnh sử dụng giới hạn yêu cầu HTTPS và dòng Open media hiện có.';
+	@override String get mediaToolsAccessibility => 'Các công cụ lựa chọn và điều khiển làm việc với touch, point, keyboard, và D-pad tập trung. ghi âm, chia sẻ, và các thay đổi trạng thái tìm kiếm được công bố.';
+	@override String get mediaTool => 'Công cụ Media';
+	@override String get captureIntro => 'Ghi lại màn hình hoặc máy ảnh của bạn vào một tệp MP4 trên máy tính này. FFmpeg phải được cài đặt và bao gồm mã hóa H.264.';
+	@override String get captureNoDevices => 'Không tìm thấy màn hình hoặc máy ảnh. kiểm tra hỗ trợ chụp FFmpeg và quyền riêng tư hệ điều hành.';
+	@override String get captureSource => 'màn hình hoặc camera';
+	@override String get captureScreen => 'màn hình';
+	@override String get captureAudioSource => 'Audio input (tùy chọn)';
+	@override String get captureAudioHelp => 'Thêm âm thanh từ microphone hoặc input có sẵn. lựa chọn thiết bị phụ thuộc vào FFmpeg và quyền hệ thống.';
+	@override String get captureAudioNone => 'Không có Audio';
+	@override String get captureDefaultAudio => 'Lập trình Audio Input';
+	@override String get captureWaylandHelp => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.';
+	@override String get captureFrameRate => 'Tỷ lệ ghi âm frame rate';
+	@override String get capturePrivacy => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.';
+	@override String get captureSaveAs => 'Lưu màn hình ghi âm như';
+	@override String get captureExtensionMismatch => 'Chọn tên file kết thúc trong .mp4.';
+	@override String get captureFfmpegMissing => 'FFmpeg hoặc mã hóa video H.264 không sẵn dùng. cài đặt một xây dựng FFmpeg được hỗ trợ, sau đó thử lại.';
+	@override String get captureFailed => 'Kiểm tra giấy phép thiết bị, lưu trữ có sẵn, và hỗ trợ FFmpeg.';
+	@override String get captureSaved => 'Màn hình ghi âm được tiết kiệm';
+	@override String get captureElapsedLabel => 'Thời gian ghi âm';
+	@override String get captureStart => 'Bắt đầu ghi âm';
+	@override String get capturePreview => 'Xem trước trong trình phát';
+	@override String get capturePreviewHelp => 'Xem trước nguồn đã chọn trong trình phát thông thường. Bản xem trước chỉ tồn tại trong phiên này và không lưu bản ghi. Hỗ trợ thiết bị và quyền truy cập tùy thuộc vào MPV và hệ điều hành. Bản xem trước chỉ dùng video; bản ghi đã lưu có thể kèm âm thanh tùy chọn.';
+	@override String get capturePreviewActive => 'Xem trước trực tiếp · không ghi hình';
+	@override String get captureStop => 'Stop và Save';
+	@override String get captureMode => 'bắt giữ';
+	@override String get shareMode => 'chia sẻ';
+	@override String get shareIntro => 'Gửi một tệp phương tiện truyền thông địa phương đến một thiết bị khác trên mạng riêng của bạn. PlezyNG tạo ra một dòng HLS tạm thời.';
+	@override String get sharePrivacy => 'Bất cứ ai trên mạng địa phương của bạn nhận được liên kết tư nhân có thể xem trong khi nó hoạt động. liên kết hết hạn sau 60 phút. ngừng chia sẻ để đóng máy chủ và vô hiệu hóa liên kết.';
+	@override String get shareChooseFile => 'Chọn file media';
+	@override String get shareChooseHelp => 'Chọn một tệp âm thanh hoặc video địa phương. tệp vẫn ở trên máy tính này.';
+	@override String get shareFfmpegMissing => 'FFmpeg hoặc các mã hóa H.264/AAC không sẵn dùng. cài đặt FFmpeg với hỗ trợ mã hóa H.264 và AAC.';
+	@override String get shareFailed => 'Stream không thể bắt đầu hoặc dừng lại bất ngờ. kiểm tra FFmpeg và truy cập mạng.';
+	@override String get shareActive => 'Stream đã sẵn sàng trên mạng riêng của bạn.';
+	@override String get shareEnded => 'Truyền thông đã đạt đến kết thúc và không còn được chia sẻ nữa.';
+	@override String get shareStopped => 'Chia sẻ dừng lại. liên kết tạm thời không còn hợp lệ.';
+	@override String get shareUrlCopied => 'Địa chỉ dòng được sao chép.';
+	@override String get shareOpenUrl => 'Mở địa chỉ này trong một người chơi trên thiết bị khác';
+	@override String get shareQrLabel => 'Mã QR cho địa chỉ dòng tạm thời';
+	@override String get shareQrHelp => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.';
+	@override String get shareHttpHint => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.';
+	@override String get shareCopyUrl => 'Bản sao Stream Address';
+	@override String get shareExpiresLabel => 'Link kết thúc tại';
+	@override String get shareStarting => 'Chuẩn bị dòng chảy...';
+	@override String get shareStart => 'Bắt đầu chia sẻ';
+	@override String get shareStop => 'Ngừng chia sẻ';
+	@override String get extensionsMode => 'Tăng cường và CLI';
+	@override String get extensionsIntro => 'Thêm một phần mở rộng chỉ tìm kiếm dữ liệu để tìm các phương tiện truyền thông. Chọn kết quả để tải nó vào biểu mẫu quen thuộc Open media.';
+	@override String get extensionsPrivacy => 'Một biểu hiện có thể xác định một HTTPS tìm kiếm kết thúc và các trường phản ứng bản đồ. nó không thể chạy mã, thêm tiêu đề yêu cầu, đọc các tệp, hoặc lệnh khởi động shell.';
+	@override String get extensionImport => 'Thêm Extension Manifest';
+	@override String get extensionEmpty => 'Chưa có dịch vụ tìm kiếm cho đến nay. chọn một tệp hiển thị đáng tin cậy JSON để thêm một.';
+	@override String get extensionChoose => 'Dịch vụ tìm kiếm';
+	@override String get extensionSearchConsent => 'Mỗi tìm kiếm gửi từ của bạn đến dịch vụ HTTPS này. kết quả chỉ mở sau khi bạn chọn một.';
+	@override String get extensionSearchLabel => 'Tìm kiếm Media';
+	@override String get extensionSearch => 'Tìm kiếm';
+	@override String get extensionSearching => 'Tìm kiếm...';
+	@override String get extensionNoResults => 'Không có kết quả truyền thông an toàn đã được trả về.Cần tìm kiếm thêm.';
+	@override String get extensionInstallTitle => 'Thêm dịch vụ tìm kiếm này?';
+	@override String get extensionReplaceTitle => 'Cập nhật dịch vụ tìm kiếm này?';
+	@override String get extensionService => 'Dịch vụ';
+	@override String get extensionEndpoint => 'HTTPS điểm cuối';
+	@override String get extensionConsent => 'Văn bản tìm kiếm của bạn được gửi đến dịch vụ này.Manifest không chứa mã thực hiện.Hãy tiếp tục chỉ nếu bạn tin tưởng vào điểm kết thúc này.';
+	@override String get extensionInstall => 'thêm dịch vụ';
+	@override String get extensionReplace => 'Update dịch vụ';
+	@override String get extensionRemoveTitle => 'Xóa dịch vụ tìm kiếm này?';
+	@override String get extensionRemoveHelp => 'Điều này loại bỏ dịch vụ khỏi hồ sơ này.PlezyNG không liên hệ với điểm kết thúc của nó.';
+	@override String get extensionRemove => 'Xóa dịch vụ';
+	@override String get extensionInvalidManifest => 'Tệp này không phải là một biểu hiện mở rộng được hỗ trợ. xem hướng dẫn Open media cho định dạng.';
+	@override String get extensionSaveFailed => 'Việc mở rộng không thể được lưu vào hồ sơ hoạt động.';
+	@override String get extensionSearchFailed => 'Dịch vụ tìm kiếm không trả lại câu trả lời đúng. kiểm tra điểm kết thúc và thử lại.';
+	@override String get cliTitle => 'Command dòng';
+	@override String get cliHelp => 'Sử dụng hướng dẫn plezyctl để xác nhận một biểu hiện hoặc tìm kiếm cùng một phần mở rộng. Xem lại dịch vụ HTTPS của nó trước mỗi tìm kiếm. Kết quả mở trong biểu mẫu phương tiện hiện có; chọn nút playback để bắt đầu.';
+	@override String get cliCopyExample => 'copy command ví dụ';
+	@override String get cliCopied => 'Lệnh ví dụ sao chép.';
 }
 
 // Path: fileSources
@@ -3294,7 +3546,6 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Thêm Google Drive, OneDrive, Dropbox, WebDAV hoặc S3 vào tệp và sách trước.';
 	@override String get syncDestination => 'Tài khoản lưu trữ Sync';
 	@override String get syncFolder => 'Sync folder hoặc prefix';
-	@override String get syncFolderHelp => 'Sử dụng một thư mục riêng biệt hiện có trong nguồn WebDAV của bạn, hoặc một tiền lệ S3 dành riêng.';
 	@override String get syncCode => 'Mã đồng bộ riêng';
 	@override String get syncCodeHelp => 'Tạo một mã trên thiết bị đầu tiên của bạn, sau đó nhập mã đó trên các thiết bị khác của bạn. giữ một bản sao riêng: đó là chìa khóa cho trạng thái mã hóa của bạn. Sử dụng mã khác nhau cho mỗi người.';
 	@override String get showCode => 'Hiển thị hoặc ẩn mã đồng bộ';
@@ -3304,7 +3555,6 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Xóa nguồn này sẽ tắt đọc và nghe đồng bộ ở đây. các tệp đồng bộ mã hóa sẽ ở lại trong nhà cung cấp.';
 	@override String get syncReconnect => 'Kết nối lại tài khoản lưu trữ';
 	@override String lastSynced({required Object time}) => 'Kết quả tìm kiếm tại ${time}';
-	@override String get syncPrivacy => 'Chỉ mã hóa tiến bộ và ghi chú được lưu trữ. Audio và ebook tập tin, tài khoản tokens và mật khẩu không được tải lên. Google Drive và OneDrive sử dụng lưu trữ ứng dụng; Dropbox sử dụng PlezyNG Sync. Khả năng đồng bộ có thể yêu cầu thêm truy cập viết. Trong khi bật, điểm đến này sở hữu tiến bộ đồng bộ; tiến bộ máy chủ vẫn riêng biệt. Khả năng đồng bộ tắt giữ lịch sử địa phương và trạng thái từ xa.';
 	@override String get syncConflicts => 'Chọn nơi để lặp lại';
 	@override String get conflictHelp => 'Những thay đổi này được thực hiện độc lập.Chọn vị trí hoặc phiên bản đánh dấu để giữ.Một thời gian sau hoặc tỷ lệ cao hơn không tự động giành chiến thắng.';
 	@override String syncDevice({required Object device}) => 'Thiết bị ${device}';
@@ -3498,7 +3748,6 @@ class _Translations$games$vi extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3523,7 +3772,6 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3555,8 +3803,6 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3564,14 +3810,62 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
+// Path: deepLinks
+class _Translations$deepLinks$vi extends Translations$deepLinks$en {
+	_Translations$deepLinks$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalid => 'Liên kết Plezy này không hợp lệ.';
+	@override String profileNotFound({required Object profile}) => 'Không có hồ sơ phù hợp với "${profile}".';
+	@override String get serverUnavailable => 'Tôi không thể truy cập máy chủ cho liên kết này.';
+	@override String get notFound => 'Tôi không thể tìm thấy tiêu đề này trong thư viện của bạn.';
+	@override String get unsupportedItem => 'Link này không thể chơi được.';
+	@override String get noLiveTv => 'Không có máy chủ TV trực tiếp có sẵn cho liên kết này.';
+	@override String channelNotFound({required Object channel}) => 'Không thể tìm thấy kênh "${channel}".';
+	@override String get showLink => 'Hiển thị link';
+	@override String get showProfileLink => 'Hiển thị profile link';
+	@override String get dialogTitle => 'liên kết';
+	@override String get showHint => 'Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.';
+	@override String get movieHint => 'Mở liên kết này chơi bộ phim.';
+	@override String get episodeHint => 'Mở liên kết này chơi phần này.';
+	@override String get profileHint => 'Mở liên kết này chuyển đổi đến hồ sơ này.';
+	@override String openAsProfile({required Object name}) => 'Mở như ${name}';
+	@override String get copy => 'sao chép';
+	@override String get copied => 'Link copy';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$vi extends Translations$householdSetup$en {
+	_Translations$householdSetup$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Thiết lập gia đình';
+}
+
+// Path: issueReport
+class _Translations$issueReport$vi extends Translations$issueReport$en {
+	_Translations$issueReport$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Báo cáo sự cố';
+	@override String get instructions => 'Quét mã QR để mở bản nháp GitHub đã điền sẵn. Hãy xem lại và chỉ gửi khi bạn sẵn sàng.';
+	@override String get privacy => 'Bản nháp gồm phiên bản ứng dụng, nền tảng và số lượng kết nối. Bản nháp không có địa chỉ máy chủ, tên tài khoản hoặc hồ sơ, tiêu đề nội dung hay đường dẫn tệp.';
+	@override String get logPrivacy => 'Nhật ký là tùy chọn. Hãy xem lại trước khi tải lên. ID nhật ký được thêm vào bản nháp, có thể hiển thị công khai.';
+	@override String get openDraft => 'Mở bản nháp GitHub';
 }
 
 // Path: appIcon.names
@@ -4686,21 +4980,6 @@ extension on TranslationsVi {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'PlezyNG',
-			'cast.chooseDevice' => 'Truyền đến thiết bị',
-			'cast.searching' => 'Tìm kiếm các thiết bị Cast...',
-			'cast.connectedTo' => ({required Object device}) => 'Kết nối với ${device}',
-			'cast.device' => 'Thiết bị truyền',
-			'cast.readyToCast' => 'Sẵn sàng truyền',
-			'cast.subtitle' => 'Phụ đề',
-			'cast.serverNotAvailable' => 'Server phương tiện truyền thông không sẵn dùng.',
-			'cast.stopCasting' => 'Dừng truyền',
-			'cast.castToDevice' => 'Truyền đến thiết bị',
-			'cast.noEpisodeAvailable' => 'Không có tập nào có sẵn để phát.',
-			'cast.startFailed' => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.',
-			'automation.noActivePlayback' => 'Không có phiên video hoạt động để kiểm soát.',
-			'automation.profileNotFound' => 'Hồ sơ Plezy không thể tìm thấy.',
-			'notifications.newEpisodeTitle' => 'episode mới',
-			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'ứng dụng icon',
 			'appIcon.defaultIcon' => 'Mặc Định',
 			'appIcon.current' => 'Icon hiện tại',
@@ -4863,28 +5142,6 @@ extension on TranslationsVi {
 			'update.viewRelease' => 'Xem bản phát hành',
 			'update.latestVersion' => 'Bạn đang ở phiên bản mới nhất',
 			'update.checkFailed' => 'Không kiểm tra cho các bản cập nhật',
-			'appAccess.title' => 'Cố gắng mọi tính năng miễn phí trong 7 ngày',
-			'appAccess.description' => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.',
-			'appAccess.trialEndedDescription' => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.',
-			'appAccess.startTrial' => 'Bắt đầu bài kiểm tra miễn phí 7 ngày',
-			'appAccess.trialActive' => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.',
-			'appAccess.trialEnded' => 'Cuộc thi 7 ngày đã kết thúc',
-			'appAccess.trialStartFailed' => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.',
-			'appAccess.lifetimeTitle' => 'PlezyNG mở khóa suốt đời',
-			'appAccess.lifetimeBody' => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.',
-			'appAccess.manageTitle' => 'PlezyNG Thời gian truy cập',
-			'appAccess.manageDescription' => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.',
-			'appAccess.buy' => ({required Object price}) => 'Khóa tất cả các tính năng cho ${price}',
-			'appAccess.loadingPrice' => 'Giá bán hàng tải...',
-			'appAccess.retryPrice' => 'Retry giá lookup',
-			'appAccess.restore' => 'Lợi ích mua sắm suốt đời',
-			'appAccess.pending' => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.',
-			'appAccess.storeUnavailable' => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.',
-			'appAccess.productNotFound' => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.',
-			'appAccess.productQueryFailed' => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.',
-			'appAccess.purchaseFailed' => 'Mua sắm không qua được. thử lại.',
-			'appAccess.restoreFailed' => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.',
-			'appAccess.nothingToRestore' => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.',
 			'settings.title' => 'Cài đặt',
 			'settings.supportDeveloper' => 'Hỗ trợ PlezyNG',
 			'settings.supportDeveloperDescription' => 'Ưu đãi để hỗ trợ phát triển',
@@ -5197,8 +5454,6 @@ extension on TranslationsVi {
 			'settings.audioPassthrough' => 'Âm thanh trượt',
 			'settings.audioPassthroughDescription' => 'Gửi âm thanh Dolby/DTS đến máy nhận hoặc TV của bạn mà không cần mã hóa lại, duy trì âm thanh xung quanh.',
 			'settings.audioPassthroughDescriptionApple' => 'Sử dụng bộ giải mã Dolby gốc của Apple cho Dolby Digital Plus, bao gồm Atmos. DTS và TrueHD vẫn chơi như PCM đa kênh.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioPassthroughDescriptionAppleSpatial' => 'Sử dụng bộ giải mã Dolby bản địa của Apple cho Dolby Digital Plus, bao gồm Atmos. Trên iOS, iPadOS và tvOS 26 hoặc sau đó, TrueHD Atmos và DTS:X chơi như âm thanh không gian.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Tắt trong khi bình thường hóa âm thanh',
 			'settings.audioChannelLimit' => 'Kênh âm thanh',
@@ -5236,6 +5491,8 @@ extension on TranslationsVi {
 			'settings.disableDolbyVisionDescription' => 'Chơi file HDR10 hoặc lớp HLG thay vì Dolby Vision, khi nó có một',
 			'settings.hdrSdrConversion' => 'HDR sang SDR chuyển đổi',
 			'settings.hdrSdrConversionDescription' => 'Chọn những gì chuyển đổi video HDR khi màn hình không thể hiển thị HDR.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionAuto' => 'Tự động',
 			'settings.hdrSdrConversionAutoDescription' => 'Thiết bị trên Android 9 và sau, người chơi trên các phiên bản cũ hơn',
 			'settings.hdrSdrConversionDevice' => 'Thiết bị',
@@ -5697,7 +5954,6 @@ extension on TranslationsVi {
 			'tooltips.markAsWatched' => 'Mark theo dõi',
 			'tooltips.markAsUnwatched' => 'Mark như không được xem',
 			'audioTracks.track' => ({required Object n}) => 'Âm thanh Track ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung', ), 
 			'videoControls.audioLabel' => 'Âm thanh',
 			'videoControls.subtitlesLabel' => 'Phụ đề',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -5711,8 +5967,6 @@ extension on TranslationsVi {
 			'videoControls.sleepTimerEndOfVideo' => 'Kết thúc video hiện tại',
 			'videoControls.sleepTimerStopAtHeader' => 'dừng lại',
 			'videoControls.sleepTimerDurationHeader' => 'Thời gian',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.playbackWillPauseAtEnd' => 'Playback sẽ nghỉ ngơi vào cuối video này',
 			'videoControls.stillWatching' => 'vẫn đang xem?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Đánh giá tại ${seconds}s',
@@ -5736,9 +5990,33 @@ extension on TranslationsVi {
 			'videoControls.unmuteButton' => 'Bật Tiếng',
 			'videoControls.settingsButton' => 'Cài đặt Playback',
 			'videoControls.tracksButton' => 'Âm thanh & Subtitles',
-			'videoControls.trackSelectionTitle' => 'Lựa chọn đường trước khi playback',
-			'videoControls.trackSelectionAuto' => 'Tự động Selection',
 			'videoControls.chaptersButton' => 'Chương 1',
+			'videoControls.segmentLoopHelp' => 'Đặt A, sau đó đặt B sau đó trong dòng thời gian.',
+			'videoControls.setLoopStart' => 'Cài đặt loop bắt đầu (A)',
+			'videoControls.setLoopEnd' => 'Thiết lập vòng tròn kết thúc (B)',
+			'videoControls.clearSegmentLoop' => 'Chi tiết Segment Loop',
+			'videoControls.setLoopStartFirst' => 'Cài đặt vòng bắt đầu (A) trước khi kết thúc (B).',
+			'videoControls.loopEndAfterStart' => 'Kết thúc vòng tròn phải là muộn hơn khởi đầu.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping không có sẵn cho playback này.',
+			'videoControls.loopPointNotSet' => 'Không đặt',
+			'videoControls.bookmarksHelp' => 'Bookmarks được lưu trên thiết bị này. chọn một để đi đến thời điểm đó.',
+			'videoControls.bookmarksButton' => 'Bookmarks Đánh giá',
+			'videoControls.chaptersAndBookmarks' => 'Chương và Bookmark',
+			'videoControls.segmentLoop' => 'phân đoạn loop',
+			'videoControls.addBookmark' => 'Thêm Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark tên',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Ví dụ: Mở cảnh',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark Đề ${n}',
+			'videoControls.bookmarkNameRequired' => 'Nhập tên cho bookmark này.',
+			'videoControls.deleteBookmark' => 'xóa bookmark',
+			'videoControls.bookmarkLimitReached' => 'Bài viết này đã có 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Không thể lưu hoặc xóa sổ này.',
+			'videoControls.bookmarkSaved' => 'Bookmark được tiết kiệm',
+			'videoControls.bookmarkDeleted' => 'Bookmark bị xóa',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Điểm Loop ${point} Set tại ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Không có chương hoặc bảng chữ cái có sẵn.',
 			'videoControls.versionQualityButton' => 'Phiên bản & Chất lượng',
 			'videoControls.versionColumnHeader' => 'Phiên bản',
 			'videoControls.qualityColumnHeader' => 'Chất lượng',
@@ -5747,8 +6025,6 @@ extension on TranslationsVi {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — chơi chất lượng ban đầu',
 			'videoControls.subtitleUnavailableFallback' => 'Các tiêu đề được chọn không thể tải — tiếp tục mà không có tiêu đề',
 			'videoControls.pipButton' => 'Hình ảnh trong hình ảnh mode',
-			'videoControls.openMiniPlayer' => 'Trò chơi Mini Open',
-			'videoControls.returnToFullPlayer' => 'Trở lại cầu thủ đầy đủ',
 			'videoControls.aspectRatioButton' => 'Tỷ Lệ Khung Hình',
 			'videoControls.ambientLighting' => 'Ánh sáng môi trường',
 			'videoControls.fullscreenButton' => 'Nhập Fullscreen',
@@ -5757,7 +6033,6 @@ extension on TranslationsVi {
 			'videoControls.rotationLockButton' => 'Lock xoay',
 			'videoControls.lockScreen' => 'Màn hình Lock',
 			'videoControls.screenLockButton' => 'màn hình lock',
-			'videoControls.longPressToUnlock' => 'Lâu áp lực để mở khóa',
 			'videoControls.timelineSlider' => 'Thanh thời gian video',
 			'videoControls.volumeSlider' => 'Tỷ lệ Volume',
 			'videoControls.endsAt' => ({required Object time}) => 'Kết thúc tại ${time}',
@@ -5781,8 +6056,6 @@ extension on TranslationsVi {
 			'videoControls.noQueueItems' => 'Không có mặt hàng trong quue',
 			'videoControls.noAudioDevicesAvailable' => 'Không có thiết bị âm thanh',
 			'videoControls.searchSubtitles' => 'Tìm kiếm Subtitles',
-			'videoControls.loadSubtitleFile' => 'tải file subtitle...',
-			'videoControls.subtitleLoadFailed' => 'Không tải file subtitle',
 			'videoControls.language' => 'Ngôn ngữ',
 			'videoControls.noSubtitlesFound' => 'Không tìm thấy subtitles',
 			'videoControls.subtitleDownloaded' => 'Subtitle tải xuống',
@@ -5791,7 +6064,6 @@ extension on TranslationsVi {
 			'videoControls.searchLanguages' => 'Tìm kiếm ngôn ngữ...',
 			'videoControls.skipIntro' => 'Tải Skip Intro',
 			'videoControls.skipCredits' => 'Skip tín dụng',
-			'videoControls.skipAds' => 'Tải Ads',
 			'videoControls.nextEpisode' => 'Tập Kế Tiếp',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Đường sắt ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Chủ đề: ${name}',
@@ -5799,6 +6071,16 @@ extension on TranslationsVi {
 			'videoControls.osdSubtitlesOff' => 'Chủ đề: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Đánh giá: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Âm thanh: ${track}',
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung', ), 
+			'videoControls.trackSelectionTitle' => 'Lựa chọn đường trước khi playback',
+			'videoControls.trackSelectionAuto' => 'Tự động Selection',
+			'videoControls.openMiniPlayer' => 'Trò chơi Mini Open',
+			'videoControls.returnToFullPlayer' => 'Trở lại cầu thủ đầy đủ',
+			'videoControls.loadSubtitleFile' => 'tải file subtitle...',
+			'videoControls.subtitleLoadFailed' => 'Không tải file subtitle',
+			'videoControls.skipAds' => 'Tải Ads',
+			'videoControls.tapToUnlock' => 'Chạm để mở khóa',
+			'videoControls.tapAgainToUnlock' => 'Chạm lại để mở khóa',
 			'messages.markedAsWatched' => 'Đánh dấu như được xem',
 			'messages.markedAsUnwatched' => 'Đánh dấu không được xem',
 			'messages.markedAsWatchedOffline' => 'Đánh dấu như đã được xem (sẽ đồng bộ khi trực tuyến)',
@@ -6225,8 +6507,6 @@ extension on TranslationsVi {
 			'libraries.all' => 'Tất cả',
 			'libraries.clearAll' => 'Tất cả rõ ràng',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Bạn có chắc chắn bạn muốn quét "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Bạn có chắc chắn bạn muốn phân tích "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Bạn có chắc chắn rằng bạn muốn cập nhật dữ liệu metadata cho "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Bạn có chắc chắn rằng bạn muốn làm trống rỗng cho "${title}"?',
@@ -6239,6 +6519,8 @@ extension on TranslationsVi {
 			'libraries.hideLibrary' => 'ẩn thư viện',
 			'libraries.libraryOptions' => 'Tùy chọn thư viện',
 			'libraries.content' => 'Thư viện Content',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Chọn thư viện',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Bộ lọc (${count})',
 			'libraries.noRecommendations' => 'Không có khuyến nghị có sẵn',
@@ -6344,7 +6626,6 @@ extension on TranslationsVi {
 			'logs.saveLogs' => 'Save Logs to File - Lưu Logs đến File',
 			'logs.logsSaved' => ({required Object path}) => 'Đăng ký được lưu đến ${path}',
 			'logs.saveLogsFailed' => 'Không thể lưu file log.',
-			'detail.endsAt' => ({required Object time}) => 'Kết thúc tại ${time}',
 			'startup.failedTitle' => 'PlezyNG không thể bắt đầu',
 			'startup.failedBody' => 'Một cái gì đó đã sai trong quá trình khởi động. chi tiết bên dưới xác định những gì đã thất bại.',
 			'startup.failedBodyRepairable' => 'Tệp cài đặt đã lưu của PlezyNG bị hỏng và phải được tạo lại trước khi ứng dụng có thể khởi động. Thử lại sẽ không giúp ích — hãy chọn sửa bộ nhớ.',
@@ -6705,6 +6986,7 @@ extension on TranslationsVi {
 			'music.visualizerProfileLoading' => 'Đọc Track Analysis...',
 			'music.visualizerAmbientMotion' => 'động cơ môi trường',
 			'music.visualizerPlexLoudness' => 'Plex tiếng ồn',
+			'music.visualizerLiveAudio' => 'Phân tích âm thanh trực tiếp',
 			'music.visualizerPreviousPreset' => 'Phong cách Visual Previous',
 			'music.visualizerNextPreset' => 'Tiếp theo: Visual Style',
 			'music.visualizerPresetAurora' => 'Cực quang',
@@ -6739,8 +7021,6 @@ extension on TranslationsVi {
 			'watchTogether.connecting' => 'Kết nối...',
 			'watchTogether.relayPublic' => 'Các phòng sử dụng các phát sóng Open Watch Party công cộng.',
 			'watchTogether.relayCustom' => ({required Object url}) => 'Các căn phòng sử dụng điện thoại của bạn tại ${url}.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.recentRooms' => 'Phòng mới',
 			'watchTogether.roomActions' => 'Phòng hành động',
 			'watchTogether.renameRoom' => 'Đặt phòng',
@@ -6753,6 +7033,8 @@ extension on TranslationsVi {
 			'watchTogether.codeCopied' => 'Mã phòng copy',
 			'watchTogether.shareInvite' => 'Chia sẻ mời',
 			'watchTogether.inviteCopied' => 'Gửi tin nhắn, gửi nó vào một tin nhắn.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Tham gia phòng đồng hồ của tôi tại PlezyNG: mở phòng đồng hồ, chọn phòng đồng hồ và nhập phòng đồng hồ ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Cùng kiểm soát phiên',
 			'watchTogether.reconnecting' => 'Kết nối lại...',
@@ -7131,6 +7413,12 @@ extension on TranslationsVi {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Bản đồ cho độ sáng cao của màn hình trong người chơi, sau đó nói với nhà soạn nhạc kết quả.',
 			'videoSettings.hdrToneMappingFailed' => 'Không thể thay đổi bản đồ âm thanh HDR - chế độ trước vẫn hoạt động.',
 			'videoSettings.audioOutput' => 'Audio output xuất',
+			'videoSettings.videoTrack' => 'Bản video',
+			'videoSettings.videoTrackDescription' => 'Chọn luồng video cần hiển thị. Có sẵn khi phát bằng MPV nếu tệp có các bản video thay thế.',
+			'videoSettings.videoTrackDefault' => 'Mặc định',
+			'videoSettings.videoTrackUnavailable' => 'Không có bản video thay thế nào.',
+			'videoSettings.videoTrackFailed' => 'Không thể đổi bản video.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Bản ${id}',
 			'videoSettings.performanceOverlay' => 'Hiệu suất Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7138,10 +7426,17 @@ extension on TranslationsVi {
 			'videoSettings.audioOutputSpatial' => 'âm thanh không gian',
 			'videoSettings.audioOutputStereo' => 'Âm Thanh Nổi',
 			'videoSettings.audioEqualizer' => 'âm thanh equalizer',
-			'videoSettings.audioEqualizerDescription' => 'Tùy chỉnh 5 tần số cho thiết bị này. có sẵn trên mpv; một EQ hoạt động giải mã âm thanh và chặn phù hợp.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer cho MPVCác bộ lọc âm thanh sử dụng âm thanh giải mã và tắt passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Đơn giản',
 			'videoSettings.audioEqualizerActive' => 'Tùy chọn',
 			'videoSettings.audioEqualizerSaveFailed' => 'Không thể tiết kiệm các thiết lập Audio Equalizer.',
+			'videoSettings.audioEffectsDescription' => 'Hiệu ứng sử dụng âm thanh giải mã, do đó passthrough xoay. không gian phòng và mở rộng stereo phụ thuộc vào MPV xây dựng và theo dõi.',
+			'videoSettings.audioStereoWidth' => 'Stereo mở rộng',
+			'videoSettings.audioSpatializer' => 'Môi trường phòng',
+			'videoSettings.audioSpatializerDescription' => 'Thêm phản ánh phòng yên tĩnh.',
+			'videoSettings.audioPitch' => 'Pitch thay đổi',
+			'videoSettings.audioPitchDescription' => 'Thay đổi vị trí mà không thay đổi tốc độ. MPV xây dựng phải bao gồm Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Hiệu ứng này không có sẵn cho con đường này hoặc MPV xây dựng',
 			'videoSettings.backgroundVideoAudio' => 'Video âm thanh nền',
 			'videoSettings.backgroundVideoAudioDescription' => 'Giữ video chơi âm thanh khi bạn rời chơi; hình ảnh được ẩn cho đến khi bạn trở về. Android sử dụng thông báo phát lại phương tiện truyền thông.',
 			'videoSettings.audioNormalization' => 'bình thường tiếng ồn',
@@ -7252,9 +7547,9 @@ extension on TranslationsVi {
 			'metadataEdit.metadataUpdated' => 'Metadata cập nhật',
 			'metadataEdit.metadataUpdateFailed' => 'Không cập nhật metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork cập nhật',
-			'metadataEdit.artworkUpdateFailed' => 'Không cập nhật tác phẩm nghệ thuật',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Không cập nhật tác phẩm nghệ thuật',
 			'metadataEdit.noArtworkAvailable' => 'Không có tác phẩm nghệ thuật',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Tùy chọn nghệ thuật ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Tùy chọn Artwork ${index}, được chọn',
@@ -7482,6 +7777,43 @@ extension on TranslationsVi {
 			'addServer.insecureDescription' => ({required Object url}) => '${url} sử dụng HTTP. Người khác trên mạng có thể đọc hoặc thay đổi mật khẩu, mã thông báo và nội dung của bạn. Hãy dùng HTTPS nếu có. Chỉ tiếp tục nếu bạn tin tưởng mạng này và chấp nhận rủi ro.',
 			'addServer.allowHttp' => 'Cho phép HTTP',
 			'addServer.httpsRequired' => 'Sử dụng HTTPS hoặc rõ ràng cho phép kết nối không mã hóa.',
+			'cast.chooseDevice' => 'Truyền đến thiết bị',
+			'cast.searching' => 'Tìm kiếm các thiết bị Cast...',
+			'cast.connectedTo' => ({required Object device}) => 'Kết nối với ${device}',
+			'cast.device' => 'Thiết bị truyền',
+			'cast.readyToCast' => 'Sẵn sàng truyền',
+			'cast.subtitle' => 'Phụ đề',
+			'cast.serverNotAvailable' => 'Server phương tiện truyền thông không sẵn dùng.',
+			'cast.stopCasting' => 'Dừng truyền',
+			'cast.castToDevice' => 'Truyền đến thiết bị',
+			'cast.noEpisodeAvailable' => 'Không có tập nào có sẵn để phát.',
+			'cast.startFailed' => 'Không thể bắt đầu casting. kiểm tra máy chủ và thử lại.',
+			'automation.noActivePlayback' => 'Không có phiên video hoạt động để kiểm soát.',
+			'notifications.newEpisodeTitle' => 'episode mới',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
+			'appAccess.title' => 'Cố gắng mọi tính năng miễn phí trong 7 ngày',
+			'appAccess.description' => 'Bắt đầu một cuộc thử nghiệm 7 ngày với quyền truy cập đầy đủ vào mỗi tính năng PlezyNG. không có phí trong cuộc thử nghiệm và không có đăng ký. sau khi thử nghiệm, một mua hàng suốt đời tại giá của cửa hàng của bạn sẽ mở khóa PlezyNG suốt đời.',
+			'appAccess.trialEndedDescription' => 'Khóa tất cả các tính năng trong PlezyNG cho đời với một mua tại giá của cửa hàng của bạn.',
+			'appAccess.startTrial' => 'Bắt đầu bài kiểm tra miễn phí 7 ngày',
+			'appAccess.trialActive' => 'Thử nghiệm đầy đủ 7 ngày của bạn đang hoạt động.',
+			'appAccess.trialEnded' => 'Cuộc thi 7 ngày đã kết thúc',
+			'appAccess.trialStartFailed' => 'Tôi không thể tiết kiệm thử nghiệm trên thiết bị này. xin vui lòng thử lại.',
+			'appAccess.lifetimeTitle' => 'PlezyNG mở khóa suốt đời',
+			'appAccess.lifetimeBody' => 'Cảm ơn bạn! bạn có quyền truy cập suốt đời cho mỗi tính năng PlezyNG.',
+			'appAccess.manageTitle' => 'PlezyNG Thời gian truy cập',
+			'appAccess.manageDescription' => 'Cố gắng mỗi tính năng miễn phí trong 7 ngày, sau đó mở khóa mọi thứ trong suốt đời với một khoản thanh toán với giá của cửa hàng của bạn.',
+			'appAccess.buy' => ({required Object price}) => 'Khóa tất cả các tính năng cho ${price}',
+			'appAccess.loadingPrice' => 'Giá bán hàng tải...',
+			'appAccess.retryPrice' => 'Retry giá lookup',
+			'appAccess.restore' => 'Lợi ích mua sắm suốt đời',
+			'appAccess.pending' => 'Mua hàng của bạn đang chờ đợi thanh toán hoặc phê duyệt. truy cập suốt đời sẽ mở khóa ngay khi cửa hàng hoàn thành nó.',
+			'appAccess.storeUnavailable' => 'Kiểm tra rằng bạn đã đăng ký vào cửa hàng và mua hàng được phép trên thiết bị này.',
+			'appAccess.productNotFound' => 'Tính năng mở khóa PlezyNG vẫn chưa có sẵn trong cửa hàng này.',
+			'appAccess.productQueryFailed' => 'Không thể tải giá cửa hàng. kiểm tra kết nối của bạn và thử lại.',
+			'appAccess.purchaseFailed' => 'Mua sắm không qua được. thử lại.',
+			'appAccess.restoreFailed' => 'Tôi không thể đến cửa hàng để khôi phục mua hàng của bạn. thử lại.',
+			'appAccess.nothingToRestore' => 'Số PlezyNG mua hàng đời đã được tìm thấy cho tài khoản cửa hàng này.',
+			'detail.endsAt' => ({required Object time}) => 'Kết thúc tại ${time}',
 			'watchLink.serverUnavailable' => 'Tôi không thể truy cập một máy chủ Plex cho liên kết này.',
 			'watchLink.notFound' => 'Tôi không thể tìm thấy chương trình hoặc bộ phim này trên máy chủ của bạn Plex.',
 			'watchLink.ambiguous' => 'Liên kết này phù hợp với các mục trên nhiều hơn một máy chủ.Hãy thêm một máy chủ vào liên kết.',
@@ -7596,6 +7928,203 @@ extension on TranslationsVi {
 			'platform.locationPermission' => 'PlezyNG sử dụng quyền truy cập vị trí khi iOS yêu cầu nó để phát hiện mạng lưới địa phương của bạn và kết nối với máy chủ truyền thông của bạn.',
 			'platform.photoLibraryPermission' => 'Chọn hình ảnh từ thư viện ảnh của bạn để sử dụng như một công việc nghệ thuật phương tiện truyền thông.',
 			'platform.cameraPermission' => 'Scan mã QR để kết hợp một Companion Remote.',
+			'universalMedia.title' => 'phương tiện truyền thông mở',
+			'universalMedia.shortcutHelp' => 'Chơi một liên kết, danh sách chơi hoặc tệp cho phiên này.',
+			'universalMedia.intro' => 'Mở một liên kết, danh sách phát hoặc tệp. Playback sử dụng người chơi tiêu chuẩn của PlezyNG và không thêm lịch sử vào thư viện của bạn.',
+			'universalMedia.openWhat' => 'Bạn muốn mở cái gì?',
+			'universalMedia.stream' => 'Địa chỉ Stream',
+			'universalMedia.playlist' => 'Danh sách Playlist',
+			'universalMedia.files' => 'Thiết bị file',
+			'universalMedia.favorites' => 'Save Stream yêu thích',
+			'universalMedia.address' => 'Địa chỉ Media',
+			'universalMedia.addressHelp' => 'URL với các thông số xác nhận hoặc ký tự được công nhận chỉ được sử dụng cho phiên này và không thể được lưu như là yêu thích.',
+			'universalMedia.displayName' => 'Tên hiển thị (tùy chọn)',
+			'universalMedia.displayNameHelp' => 'Chọn tên ngắn cho người chơi và hệ thống điều khiển phương tiện truyền thông.',
+			'universalMedia.allowHttp' => 'Cho phép kết nối HTTP không được mã hóa',
+			'universalMedia.allowHttpHelp' => 'HTTP không mã hóa kết nối. Chỉ cho phép nó trên một mạng tin cậy. Sử dụng HTTPS khi có thể.',
+			'universalMedia.advancedProtocols' => 'Chỉ MPV: nhập một địa chỉ RTSP, RTMP/RTMPS, UDP hoặc RTP. Các địa chỉ này không thể được lưu như là yêu thích.',
+			'universalMedia.liveStream' => 'Chăm sóc như sống',
+			'universalMedia.liveStreamHelp' => 'Sử dụng điều này cho video hay radio trực tiếp. Ứng dụng che giấu thanh thời gian, nhấp chuột và tùy chọn go-to-time.',
+			'universalMedia.privateSession' => 'Chỉ bài phát này sử dụng địa chỉ.Save an eligible stream favorite to keep it in this profile.',
+			'universalMedia.saveFavorite' => 'Giữ yêu thích',
+			'universalMedia.playNow' => 'Chơi bây giờ',
+			'universalMedia.favoriteSaved' => 'Stream Favorite được tiết kiệm đến hồ sơ này',
+			'universalMedia.skippedEntries' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Tắt ${count} không được hỗ trợ hoặc không an toàn danh sách đăng nhập.', ), 
+			'universalMedia.playlistAddress' => 'Địa chỉ Playlist',
+			'universalMedia.playlistAddressHelp' => 'Mở một danh sách chơi M3U, M3u8, hoặc PLS từ địa chỉ web. liên kết trực tiếp không lưu danh sách playlist.',
+			'universalMedia.choosePlaylist' => 'Chọn playlist file',
+			'universalMedia.openPlaylist' => 'playlist mở',
+			'universalMedia.playlistFormatsHelp' => 'Một danh sách phát có thể chứa tối đa 1.000 mục và 2 MB. HLS hiển thị mở như dòng để người chơi có thể chọn một chất lượng.',
+			'universalMedia.saveQueuePlaylist' => 'Lưu hàng đợi thành danh sách phát',
+			'universalMedia.queuePlaylistSaved' => 'Danh sách phát đã được lưu cạnh các tệp phương tiện.',
+			'universalMedia.queuePlaylistUnavailable' => 'Không thể lưu hàng đợi này thành danh sách phát cục bộ để dùng lại.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Chọn vị trí lưu trong cùng thư mục với các tệp trong hàng đợi.',
+			'universalMedia.noFavorites' => 'Không được lưu stream yêu thích cho đến nay. Favorites stay in this profile.',
+			'universalMedia.removeFavorite' => 'Xóa stream yêu thích',
+			'universalMedia.filesHelp' => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.',
+			'universalMedia.chooseFiles' => 'Chọn file',
+			'universalMedia.fileQueue' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} tập tin được chọn', ), 
+			'universalMedia.wifiTransfer' => 'Gửi file qua Wi-Fi',
+			'universalMedia.wifiTransferHelp' => 'Chuyển các tập tin được hỗ trợ từ một trình duyệt trên cùng một mạng đáng tin cậy.',
+			'universalMedia.wifiTransferIntro' => 'Mở địa chỉ này trong một trình duyệt trên thiết bị khác.Chọn các tệp để thêm chúng vào thư viện tệp và sách của thiết bị này.',
+			'universalMedia.wifiTransferPrivacy' => 'Thiết bị này nhận được tệp qua mạng địa phương của bạn. bất cứ ai biết địa chỉ này có thể gửi tệp cho đến khi bạn ngừng chuyển giao hoặc địa chỉ hết hạn sau 15 phút. tối đa: 100 tệp, 4 GiB mỗi tệp; tổng cộng 10 GiB.',
+			'universalMedia.wifiTransferStarting' => 'Chuẩn bị một chuyển giao riêng, thời gian giới hạn...',
+			'universalMedia.wifiTransferUnavailable' => 'Không thể bắt đầu chuyển giao. kiểm tra truy cập mạng địa phương và thử lại.',
+			'universalMedia.openThisAddress' => 'Mở một trong những địa chỉ này trên thiết bị gửi',
+			'universalMedia.copyAddress' => 'Bản sao địa chỉ chuyển đổi',
+			'universalMedia.addressCopied' => 'Địa chỉ chuyển đổi sao chép',
+			'universalMedia.transferExpires' => ({required Object time}) => 'Địa chỉ này hết hạn trong ${time}.',
+			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${count} file nhận được', ), 
+			'universalMedia.uploadedData' => ({required Object size}) => 'Nhận ${size}',
+			'universalMedia.stopTransfer' => 'Ngừng chuyển giao và vô hiệu hóa địa chỉ',
+			'universalMedia.startTransfer' => 'Bắt đầu chuyển giao',
+			'universalMedia.wifiImportedFiles' => 'Chuyển Wi-Fi',
+			'universalMedia.wifiBrowserTitle' => 'Gửi file đến PlezyNG',
+			'universalMedia.wifiBrowserIntro' => 'Chọn các tập tin âm thanh, video, ebook hoặc truyện tranh để gửi. Các tập tin được lưu trữ trong thư viện tệp và sách của thiết bị này. Tối đa: 100 tập tin, 4 GiB mỗi file, tổng cộng 10 GiB.',
+			'universalMedia.uploadFilesLabel' => 'file để gửi',
+			'universalMedia.uploadSelected' => 'Tải các tập tin được chọn',
+			'universalMedia.uploadSelectFirst' => 'Chọn một hoặc nhiều tập tin đầu tiên.',
+			'universalMedia.uploading' => 'gửi',
+			'universalMedia.uploadComplete' => 'File được thêm vào PlezyNG.',
+			'universalMedia.uploadFailed' => 'Tệp không thể được thêm vào. giữ cho trang này mở và thử lại.',
+			'universalMedia.liveCue' => 'Sống',
+			'universalMedia.liveSession' => 'Stream trực tiếp',
+			'universalMedia.liveCueHelp' => 'Đối với video hay radio trực tiếp, ứng dụng ẩn thanh thời gian và nhảy nút. nó không lưu địa chỉ hoặc xem lịch sử.',
+			'universalMedia.sessionOnly' => 'Playback này là session-only',
+			'universalMedia.sessionOnlyHelp' => 'Playback không bao giờ tiết kiệm tiến bộ hoặc lịch sử.Save the stream as a favorite to keep it in this profile if it is eligible.',
+			'universalMedia.pictureAdjustments' => 'hình ảnh điều chỉnh',
+			'universalMedia.pictureHelp' => 'Những thay đổi hình ảnh này chỉ ảnh hưởng đến playback này. họ đặt lại khi playback kết thúc.',
+			'universalMedia.resetPicture' => 'Reset hình ảnh',
+			'universalMedia.brightness' => 'Ánh sáng',
+			'universalMedia.contrast' => 'Ngược điểm',
+			'universalMedia.gamma' => 'Gamma',
+			'universalMedia.hue' => 'Hue',
+			'universalMedia.saturation' => 'Saturation',
+			'universalMedia.view360' => 'Màn hình 360° video',
+			'universalMedia.view360Help' => 'Sử dụng điều này cho video 360° đồng chiều. MPV cần bộ lọc v360 của FFmpeg để xem.',
+			'universalMedia.view360Unavailable' => 'Thiết lập MPV này không thể áp dụng bộ lọc 360°.',
+			'universalMedia.view360Yaw' => 'tầm nhìn chân trời',
+			'universalMedia.view360Pitch' => 'Màn hình Vertical View',
+			'universalMedia.view360FieldOfView' => 'Vùng tầm nhìn',
+			'universalMedia.recordStream' => 'Đánh giá Live Stream',
+			'universalMedia.stopRecording' => 'Ngừng và tiết kiệm ghi âm',
+			'universalMedia.recordingStarted' => 'Ghi âm là hoạt động.Leaving playback stops and saves the recording.',
+			'universalMedia.recordingSaved' => 'Ghi âm được hoàn thành và tiết kiệm.',
+			'universalMedia.recordingActive' => 'Để lại playback dừng lại và tiết kiệm nó.',
+			'universalMedia.recordingFormatHelp' => 'Đối với video, chọn MKV hoặc MPEG-TS. Đối với âm thanh, chọn MKA hoặc MKV.',
+			'universalMedia.replaceRecordingTitle' => 'Thay thế bản ghi này?',
+			'universalMedia.replaceRecordingHelp' => 'PlezyNG sao lưu tệp hiện có trong khi ghi lại. nếu nó không thể tiết kiệm bản ghi mới, Plezyng khôi phục sao lưu.',
+			'universalMedia.replaceRecording' => 'Thay thế file',
+			'universalMedia.discHelp' => 'Mở một đĩa trong ổ đĩa quang của máy tính này. Bạn cũng có thể mở hình ảnh ISO từ các tệp thiết bị.',
+			'universalMedia.discs' => 'Đĩa Optical',
+			'universalMedia.editionOrTitle' => 'Ấn bản hoặc tên đĩa',
+			'universalMedia.dvd' => 'DVD',
+			'universalMedia.bluray' => 'Đánh giá Blu-ray',
+			'universalMedia.audioCd' => 'CD âm thanh',
+			'universalMedia.discAvailability' => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.',
+			'universalMedia.converterTitle' => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương',
+			'universalMedia.converterHelp' => 'Chuyển đổi một tệp địa phương hoặc sửa lại nó với FFmpeg.',
+			'universalMedia.converterIntro' => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.',
+			'universalMedia.converterPrivacy' => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.',
+			'universalMedia.converterChooseInput' => 'Chọn một tập tin phương tiện truyền thông địa phương',
+			'universalMedia.converterFormat' => 'định dạng output',
+			'universalMedia.converterMp4' => 'MP4 · H.264 và AAC',
+			'universalMedia.converterM4a' => 'M4A · AAC âm thanh',
+			'universalMedia.converterMp3' => 'MP3 - Âm thanh',
+			'universalMedia.allowFtp' => 'Khả năng FTP',
+			'universalMedia.allowFtpHelp' => 'FTP gửi các phương tiện truyền thông mà không có mã hóa. sử dụng chỉ trên mạng tin cậy.',
+			'universalMedia.converterSaveAs' => 'Lưu các phương tiện truyền thông được chuyển đổi như',
+			'universalMedia.converterExtensionMismatch' => 'Chọn tên file với phần mở rộng output được chọn.',
+			'universalMedia.converterUnsupportedInput' => 'Chọn một file audio hoặc video.',
+			'universalMedia.converterLocalOnly' => 'Tệp được chọn không có sẵn như một con đường thiết bị địa phương.',
+			'universalMedia.converterReplaceTitle' => 'Thay thế file này?',
+			'universalMedia.converterReplaceHelp' => 'PlezyNG khôi phục lại tệp hiện có cho đến khi bản sao được chuyển đổi được lưu.',
+			'universalMedia.converterStarting' => 'Bắt đầu FFmpeg...',
+			'universalMedia.converterProgress' => 'Chuyển đổi vào máy tính này...',
+			'universalMedia.converterComplete' => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg thiếu hoặc không hỗ trợ định dạng này.',
+			'universalMedia.converterFailed' => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.',
+			'universalMedia.converterCancelled' => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.',
+			'universalMedia.converterDesktopOnly' => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.',
+			'universalMedia.converterStart' => 'chuyển đổi file',
+			'universalMedia.mediaToolsTitle' => 'Công cụ Media',
+			'universalMedia.mediaToolsShortcut' => 'Ghi hoặc chia sẻ phương tiện truyền thông, thêm phần mở rộng tìm kiếm, hoặc sử dụng dòng lệnh.',
+			'universalMedia.mediaToolsIntro' => 'Chọn một công cụ tập trung. chụp và stream-out sử dụng FFmpeg được cài đặt trên máy tính để bàn này. Extensions và CLI lệnh sử dụng giới hạn yêu cầu HTTPS và dòng Open media hiện có.',
+			'universalMedia.mediaToolsAccessibility' => 'Các công cụ lựa chọn và điều khiển làm việc với touch, point, keyboard, và D-pad tập trung. ghi âm, chia sẻ, và các thay đổi trạng thái tìm kiếm được công bố.',
+			'universalMedia.mediaTool' => 'Công cụ Media',
+			'universalMedia.captureIntro' => 'Ghi lại màn hình hoặc máy ảnh của bạn vào một tệp MP4 trên máy tính này. FFmpeg phải được cài đặt và bao gồm mã hóa H.264.',
+			'universalMedia.captureNoDevices' => 'Không tìm thấy màn hình hoặc máy ảnh. kiểm tra hỗ trợ chụp FFmpeg và quyền riêng tư hệ điều hành.',
+			'universalMedia.captureSource' => 'màn hình hoặc camera',
+			'universalMedia.captureScreen' => 'màn hình',
+			'universalMedia.captureAudioSource' => 'Audio input (tùy chọn)',
+			'universalMedia.captureAudioHelp' => 'Thêm âm thanh từ microphone hoặc input có sẵn. lựa chọn thiết bị phụ thuộc vào FFmpeg và quyền hệ thống.',
+			'universalMedia.captureAudioNone' => 'Không có Audio',
+			'universalMedia.captureDefaultAudio' => 'Lập trình Audio Input',
+			'universalMedia.captureWaylandHelp' => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Tỷ lệ ghi âm frame rate',
+			'universalMedia.capturePrivacy' => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.',
+			'universalMedia.captureSaveAs' => 'Lưu màn hình ghi âm như',
+			'universalMedia.captureExtensionMismatch' => 'Chọn tên file kết thúc trong .mp4.',
+			'universalMedia.captureFfmpegMissing' => 'FFmpeg hoặc mã hóa video H.264 không sẵn dùng. cài đặt một xây dựng FFmpeg được hỗ trợ, sau đó thử lại.',
+			'universalMedia.captureFailed' => 'Kiểm tra giấy phép thiết bị, lưu trữ có sẵn, và hỗ trợ FFmpeg.',
+			'universalMedia.captureSaved' => 'Màn hình ghi âm được tiết kiệm',
+			'universalMedia.captureElapsedLabel' => 'Thời gian ghi âm',
+			'universalMedia.captureStart' => 'Bắt đầu ghi âm',
+			'universalMedia.capturePreview' => 'Xem trước trong trình phát',
+			'universalMedia.capturePreviewHelp' => 'Xem trước nguồn đã chọn trong trình phát thông thường. Bản xem trước chỉ tồn tại trong phiên này và không lưu bản ghi. Hỗ trợ thiết bị và quyền truy cập tùy thuộc vào MPV và hệ điều hành. Bản xem trước chỉ dùng video; bản ghi đã lưu có thể kèm âm thanh tùy chọn.',
+			'universalMedia.capturePreviewActive' => 'Xem trước trực tiếp · không ghi hình',
+			'universalMedia.captureStop' => 'Stop và Save',
+			'universalMedia.captureMode' => 'bắt giữ',
+			'universalMedia.shareMode' => 'chia sẻ',
+			'universalMedia.shareIntro' => 'Gửi một tệp phương tiện truyền thông địa phương đến một thiết bị khác trên mạng riêng của bạn. PlezyNG tạo ra một dòng HLS tạm thời.',
+			'universalMedia.sharePrivacy' => 'Bất cứ ai trên mạng địa phương của bạn nhận được liên kết tư nhân có thể xem trong khi nó hoạt động. liên kết hết hạn sau 60 phút. ngừng chia sẻ để đóng máy chủ và vô hiệu hóa liên kết.',
+			'universalMedia.shareChooseFile' => 'Chọn file media',
+			'universalMedia.shareChooseHelp' => 'Chọn một tệp âm thanh hoặc video địa phương. tệp vẫn ở trên máy tính này.',
+			'universalMedia.shareFfmpegMissing' => 'FFmpeg hoặc các mã hóa H.264/AAC không sẵn dùng. cài đặt FFmpeg với hỗ trợ mã hóa H.264 và AAC.',
+			'universalMedia.shareFailed' => 'Stream không thể bắt đầu hoặc dừng lại bất ngờ. kiểm tra FFmpeg và truy cập mạng.',
+			'universalMedia.shareActive' => 'Stream đã sẵn sàng trên mạng riêng của bạn.',
+			'universalMedia.shareEnded' => 'Truyền thông đã đạt đến kết thúc và không còn được chia sẻ nữa.',
+			'universalMedia.shareStopped' => 'Chia sẻ dừng lại. liên kết tạm thời không còn hợp lệ.',
+			'universalMedia.shareUrlCopied' => 'Địa chỉ dòng được sao chép.',
+			'universalMedia.shareOpenUrl' => 'Mở địa chỉ này trong một người chơi trên thiết bị khác',
+			'universalMedia.shareQrLabel' => 'Mã QR cho địa chỉ dòng tạm thời',
+			'universalMedia.shareQrHelp' => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.',
+			'universalMedia.shareHttpHint' => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.',
+			'universalMedia.shareCopyUrl' => 'Bản sao Stream Address',
+			'universalMedia.shareExpiresLabel' => 'Link kết thúc tại',
+			'universalMedia.shareStarting' => 'Chuẩn bị dòng chảy...',
+			'universalMedia.shareStart' => 'Bắt đầu chia sẻ',
+			'universalMedia.shareStop' => 'Ngừng chia sẻ',
+			'universalMedia.extensionsMode' => 'Tăng cường và CLI',
+			'universalMedia.extensionsIntro' => 'Thêm một phần mở rộng chỉ tìm kiếm dữ liệu để tìm các phương tiện truyền thông. Chọn kết quả để tải nó vào biểu mẫu quen thuộc Open media.',
+			'universalMedia.extensionsPrivacy' => 'Một biểu hiện có thể xác định một HTTPS tìm kiếm kết thúc và các trường phản ứng bản đồ. nó không thể chạy mã, thêm tiêu đề yêu cầu, đọc các tệp, hoặc lệnh khởi động shell.',
+			'universalMedia.extensionImport' => 'Thêm Extension Manifest',
+			'universalMedia.extensionEmpty' => 'Chưa có dịch vụ tìm kiếm cho đến nay. chọn một tệp hiển thị đáng tin cậy JSON để thêm một.',
+			'universalMedia.extensionChoose' => 'Dịch vụ tìm kiếm',
+			'universalMedia.extensionSearchConsent' => 'Mỗi tìm kiếm gửi từ của bạn đến dịch vụ HTTPS này. kết quả chỉ mở sau khi bạn chọn một.',
+			'universalMedia.extensionSearchLabel' => 'Tìm kiếm Media',
+			'universalMedia.extensionSearch' => 'Tìm kiếm',
+			'universalMedia.extensionSearching' => 'Tìm kiếm...',
+			'universalMedia.extensionNoResults' => 'Không có kết quả truyền thông an toàn đã được trả về.Cần tìm kiếm thêm.',
+			'universalMedia.extensionInstallTitle' => 'Thêm dịch vụ tìm kiếm này?',
+			'universalMedia.extensionReplaceTitle' => 'Cập nhật dịch vụ tìm kiếm này?',
+			'universalMedia.extensionService' => 'Dịch vụ',
+			'universalMedia.extensionEndpoint' => 'HTTPS điểm cuối',
+			'universalMedia.extensionConsent' => 'Văn bản tìm kiếm của bạn được gửi đến dịch vụ này.Manifest không chứa mã thực hiện.Hãy tiếp tục chỉ nếu bạn tin tưởng vào điểm kết thúc này.',
+			'universalMedia.extensionInstall' => 'thêm dịch vụ',
+			'universalMedia.extensionReplace' => 'Update dịch vụ',
+			'universalMedia.extensionRemoveTitle' => 'Xóa dịch vụ tìm kiếm này?',
+			'universalMedia.extensionRemoveHelp' => 'Điều này loại bỏ dịch vụ khỏi hồ sơ này.PlezyNG không liên hệ với điểm kết thúc của nó.',
+			'universalMedia.extensionRemove' => 'Xóa dịch vụ',
+			'universalMedia.extensionInvalidManifest' => 'Tệp này không phải là một biểu hiện mở rộng được hỗ trợ. xem hướng dẫn Open media cho định dạng.',
+			'universalMedia.extensionSaveFailed' => 'Việc mở rộng không thể được lưu vào hồ sơ hoạt động.',
+			'universalMedia.extensionSearchFailed' => 'Dịch vụ tìm kiếm không trả lại câu trả lời đúng. kiểm tra điểm kết thúc và thử lại.',
+			'universalMedia.cliTitle' => 'Command dòng',
+			'universalMedia.cliHelp' => 'Sử dụng hướng dẫn plezyctl để xác nhận một biểu hiện hoặc tìm kiếm cùng một phần mở rộng. Xem lại dịch vụ HTTPS của nó trước mỗi tìm kiếm. Kết quả mở trong biểu mẫu phương tiện hiện có; chọn nút playback để bắt đầu.',
+			'universalMedia.cliCopyExample' => 'copy command ví dụ',
+			'universalMedia.cliCopied' => 'Lệnh ví dụ sao chép.',
 			'fileSources.title' => 'File và sách',
 			'fileSources.subtitle' => 'Đọc, lắng nghe, và xem từ các tệp của riêng bạn.',
 			'fileSources.add' => 'thêm nguồn',
@@ -7767,8 +8296,6 @@ extension on TranslationsVi {
 			'fileSources.offlineQuotaHelp' => 'Thiết lập không gian tối đa được sử dụng bởi các bản sao ngoại tuyến, tệp nhập khẩu và tải xuống. Giảm giới hạn sẽ không loại bỏ các bản gốc hiện có.',
 			'fileSources.offlineStorageUsage' => 'Lưu trữ Offline',
 			'fileSources.reservedStorage' => 'Bảo Vệ',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.downloadQueue' => 'Tải Queue',
 			'fileSources.downloadRunning' => 'tải xuống',
 			'fileSources.downloadQueued' => 'chờ đợi',
@@ -7837,7 +8364,6 @@ extension on TranslationsVi {
 			'audiobook.addSyncSource' => 'Thêm Google Drive, OneDrive, Dropbox, WebDAV hoặc S3 vào tệp và sách trước.',
 			'audiobook.syncDestination' => 'Tài khoản lưu trữ Sync',
 			'audiobook.syncFolder' => 'Sync folder hoặc prefix',
-			'audiobook.syncFolderHelp' => 'Sử dụng một thư mục riêng biệt hiện có trong nguồn WebDAV của bạn, hoặc một tiền lệ S3 dành riêng.',
 			'audiobook.syncCode' => 'Mã đồng bộ riêng',
 			'audiobook.syncCodeHelp' => 'Tạo một mã trên thiết bị đầu tiên của bạn, sau đó nhập mã đó trên các thiết bị khác của bạn. giữ một bản sao riêng: đó là chìa khóa cho trạng thái mã hóa của bạn. Sử dụng mã khác nhau cho mỗi người.',
 			'audiobook.showCode' => 'Hiển thị hoặc ẩn mã đồng bộ',
@@ -7847,7 +8373,6 @@ extension on TranslationsVi {
 			'audiobook.syncSourceDisconnect' => 'Xóa nguồn này sẽ tắt đọc và nghe đồng bộ ở đây. các tệp đồng bộ mã hóa sẽ ở lại trong nhà cung cấp.',
 			'audiobook.syncReconnect' => 'Kết nối lại tài khoản lưu trữ',
 			'audiobook.lastSynced' => ({required Object time}) => 'Kết quả tìm kiếm tại ${time}',
-			'audiobook.syncPrivacy' => 'Chỉ mã hóa tiến bộ và ghi chú được lưu trữ. Audio và ebook tập tin, tài khoản tokens và mật khẩu không được tải lên. Google Drive và OneDrive sử dụng lưu trữ ứng dụng; Dropbox sử dụng PlezyNG Sync. Khả năng đồng bộ có thể yêu cầu thêm truy cập viết. Trong khi bật, điểm đến này sở hữu tiến bộ đồng bộ; tiến bộ máy chủ vẫn riêng biệt. Khả năng đồng bộ tắt giữ lịch sử địa phương và trạng thái từ xa.',
 			'audiobook.syncConflicts' => 'Chọn nơi để lặp lại',
 			'audiobook.conflictHelp' => 'Những thay đổi này được thực hiện độc lập.Chọn vị trí hoặc phiên bản đánh dấu để giữ.Một thời gian sau hoặc tỷ lệ cao hơn không tự động giành chiến thắng.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Thiết bị ${device}',
@@ -8014,7 +8539,6 @@ extension on TranslationsVi {
 			'comics.collections' => 'Bộ sưu tập',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8039,7 +8563,6 @@ extension on TranslationsVi {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8052,6 +8575,8 @@ extension on TranslationsVi {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8071,8 +8596,6 @@ extension on TranslationsVi {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8080,14 +8603,35 @@ extension on TranslationsVi {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'deepLinks.invalid' => 'Liên kết Plezy này không hợp lệ.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'Không có hồ sơ phù hợp với "${profile}".',
+			'deepLinks.serverUnavailable' => 'Tôi không thể truy cập máy chủ cho liên kết này.',
+			'deepLinks.notFound' => 'Tôi không thể tìm thấy tiêu đề này trong thư viện của bạn.',
+			'deepLinks.unsupportedItem' => 'Link này không thể chơi được.',
+			'deepLinks.noLiveTv' => 'Không có máy chủ TV trực tiếp có sẵn cho liên kết này.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Không thể tìm thấy kênh "${channel}".',
+			'deepLinks.showLink' => 'Hiển thị link',
+			'deepLinks.showProfileLink' => 'Hiển thị profile link',
+			'deepLinks.dialogTitle' => 'liên kết',
+			'deepLinks.showHint' => 'Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.',
+			'deepLinks.movieHint' => 'Mở liên kết này chơi bộ phim.',
+			'deepLinks.episodeHint' => 'Mở liên kết này chơi phần này.',
+			'deepLinks.profileHint' => 'Mở liên kết này chuyển đổi đến hồ sơ này.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Mở như ${name}',
+			'deepLinks.copy' => 'sao chép',
+			'deepLinks.copied' => 'Link copy',
+			'householdSetup.title' => 'Thiết lập gia đình',
+			'issueReport.title' => 'Báo cáo sự cố',
+			'issueReport.instructions' => 'Quét mã QR để mở bản nháp GitHub đã điền sẵn. Hãy xem lại và chỉ gửi khi bạn sẵn sàng.',
+			'issueReport.privacy' => 'Bản nháp gồm phiên bản ứng dụng, nền tảng và số lượng kết nối. Bản nháp không có địa chỉ máy chủ, tên tài khoản hoặc hồ sơ, tiêu đề nội dung hay đường dẫn tệp.',
+			'issueReport.logPrivacy' => 'Nhật ký là tùy chọn. Hãy xem lại trước khi tải lên. ID nhật ký được thêm vào bản nháp, có thể hiển thị công khai.',
+			'issueReport.openDraft' => 'Mở bản nháp GitHub',
 			_ => null,
 		};
 	}

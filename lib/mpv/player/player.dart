@@ -16,12 +16,6 @@ import '../../utils/platform_detector.dart';
 
 export 'player_base.dart';
 
-/// Optional capability for player implementations that can apply the
-/// device-local five-band equalizer.
-abstract interface class AudioEqualizerCapable {
-  Future<void> setAudioEqualizer(List<double> bandGains);
-}
-
 /// Abstract interface for the video player.
 ///
 /// This interface defines all playback control methods, state access,
@@ -235,12 +229,12 @@ abstract class Player {
 
   /// Enable or disable loudness normalization.
   ///
-  /// mpv backends insert/remove the `loudnorm` audio filter and, because a
-  /// filter cannot process a bitstream, leave passthrough while it is on.
-  /// Android mpv sets `audiotrack-normalize` instead, and Android ExoPlayer
-  /// attaches the same platform audio effects (DynamicsProcessing on API 28+,
-  /// LoudnessEnhancer otherwise); ExoPlayer also forces decoded non-tunneled
-  /// PCM output while enabled so the effects can process the stream.
+  /// mpv backends insert/remove an audio filter (`loudnorm`; a compressor and
+  /// limiter on Android) and, because a filter cannot process a bitstream,
+  /// leave passthrough while it is on. Android ExoPlayer attaches platform
+  /// audio effects instead (DynamicsProcessing on API 28+, LoudnessEnhancer
+  /// otherwise) and forces decoded non-tunneled PCM output while enabled so
+  /// the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);
 
   /// Cap how many channels decoded audio reaches the output with.
