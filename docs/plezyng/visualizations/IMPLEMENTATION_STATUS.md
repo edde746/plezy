@@ -18,6 +18,10 @@ This delivery is tracked by [PlezyNG PR #55](https://github.com/snapetech-org/Pl
 - MilkRust now has a deterministic `.rmpack` builder which refuses packs without explicit redistributable status, per-asset author/license/source records, complete content-file coverage and shipped license notices. The first catalog archive contains only the small CC0-authored sample fixtures.
 - Root npm scripts use the checked-in tool filenames. The stale gap audit was replaced with a source-linked remaining-work inventory.
 
+## Native renderer feasibility probe
+
+Read [NATIVE_INTEGRATION_PROBE.md](NATIVE_INTEGRATION_PROBE.md) for the 2026-10-28 API check. Flutter's Linux external-texture API expects a GL texture, while projectM 4.1.8's released API renders to framebuffer 0; projectM's user-FBO entry point is marked for 4.2.0 and is not yet in the released version. The dedicated libmpv music core also exposes no PCM stream through PlezyNG's existing Dart bridge. V1/V2 therefore remain unimplemented pending a pinned native dependency path for both user-FBO rendering and a same-player PCM tap. No test/build/CI was run.
+
 ## Still open; no release claim
 
 - PlezyNG has not integrated a MilkDrop renderer. The downloaded and imported `.milk` files are stored locally and shown in the library, but cannot be selected for playback. The six original scenes remain the only playback visualizers.
