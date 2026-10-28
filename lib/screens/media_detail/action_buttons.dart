@@ -24,10 +24,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     final providerIds = raw?['ProviderIds'];
     if (providerIds is Map) {
-      final normalized = <String, Object?>{
-        for (final entry in providerIds.entries)
-          if (entry.key is String) entry.key as String: entry.value,
-      };
+      final normalized = <String, Object?>{};
+      for (final entry in providerIds.entries) {
+        final key = entry.key;
+        if (key is String) normalized[key] = entry.value;
+      }
       ids = ids.fillFrom(ExternalIds.fromJellyfinProviderIds(normalized));
     }
     return ids.fillFrom(ExternalIds.fromLegacyPlexGuid(metadata.guid));
