@@ -2712,7 +2712,16 @@
     "audioSpatializerDescription": "Add quiet room reflections.",
     "audioPitch": "Pitch shift",
     "audioPitchDescription": "Change pitch without changing speed. The MPV build must include Rubber Band.",
-    "audioEffectUnavailable": "This effect isn't available for this track or MPV build."
+    "audioEffectUnavailable": "This effect isn't available for this track or MPV build.",
+    "subtitleCueTools": "Subtitle cues",
+    "subtitlePreviousCue": "Previous subtitle cue",
+    "subtitleNextCue": "Next subtitle cue",
+    "subtitleReplayCue": "Replay current cue",
+    "subtitleCopyCue": "Copy current cue",
+    "subtitleCueCopied": "Subtitle cue copied.",
+    "subtitleCueUnavailable": "No suitable subtitle cue is available.",
+    "subtitleCueSeekUnavailable": "Could not seek to that subtitle cue.",
+    "subtitleReplayPreroll": "Replay preroll"
   },
   "performanceOverlay": {
     "color": "Color",

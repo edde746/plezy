@@ -1094,6 +1094,52 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     return nextDelayMs;
   }
 
+
+  /// Seeks to a cue's corrected display time while the same external subtitle,
+  /// audio track, file, and playback generation remain active.
+  Future<bool> seekExternalSubtitleCue({
+    required String expectedIdentity,
+    required int cueStartMs,
+    required int delayMs,
+    required double rate,
+    required int prerollMs,
+  }) => _serialize(() async {
+    if (cueStartMs < 0 ||
+        cueStartMs > 24 * 60 * 60 * 1000 ||
+        prerollMs < 0 ||
+        prerollMs > 5000 ||
+        delayMs < ScopedPlayerPrefs.minimumSyncOffsetMs ||
+        delayMs > ScopedPlayerPrefs.maximumSyncOffsetMs ||
+        !rate.isFinite ||
+        rate < ScopedPlayerPrefs.minimumSubtitleSyncRate ||
+        rate > ScopedPlayerPrefs.maximumSubtitleSyncRate) {
+      throw RangeError('Subtitle cue seek values are outside the supported range.');
+    }
+    final native = player;
+    if (!_valid ||
+        !video ||
+        _liveInput ||
+        native == null ||
+        native.playerType != 'mpv' ||
+        !native.state.seekable ||
+        !canExportActiveExternalSubtitle ||
+        activeExternalSubtitleIdentity != expectedIdentity) {
+      return false;
+    }
+
+    final durationMs = currentFileDurationMs;
+    if (durationMs <= 0) return false;
+    final correctedCueStartMs = (cueStartMs * rate).round() + delayMs;
+    final targetInFileMs = correctedCueStartMs - prerollMs;
+    if (targetInFileMs >= durationMs) return false;
+
+    final currentFileStartMs = positionMs - currentFilePositionMs;
+    final targetInFile = targetInFileMs.clamp(0, durationMs - 1).toInt();
+    _undoSeek = (file: _fileIndex, position: currentFilePositionMs);
+    await _seek(currentFileStartMs + targetInFile);
+    return activeExternalSubtitleIdentity == expectedIdentity;
+  });
+
   Future<void> persistExternalSubtitleSync({int? delayMs, double? rate}) async {
     if (delayMs == null && rate == null) return;
     if (delayMs != null &&

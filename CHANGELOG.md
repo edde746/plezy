@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add current subtitle cue copy, previous/next cue navigation, and replay with an adjustable preroll for persistent standalone MPV text subtitles.
+
 - Fix clean tvOS CocoaPods setup, Android 17 preview SDK provisioning, and short-path Apple native-asset builds on private JIT runners.
 - Fix the macOS native reliability target to import the `PlezyNG` app module.
 - Require Android host native-test tools to be provisioned on the private runner before CI starts.

@@ -290,7 +290,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | Q12 | Refresh/retry missing or expired sidecars through the owning source transport. | M2 |
 | Q13 | Preference rules support ordered languages, script, forced/full, SDH, source audio, and explicit exceptions. | M1 |
 | Q14 | Keep secondary choices local when servers expose only one selected subtitle; no accidental server overwrite. | M1 |
-| Q15 | Expose copy current cue, previous/next cue, and replay with configurable preroll. | M3 |
+| Q15 | Standalone MPV VOD with a persistent SRT/VTT/ASS/SSA subtitle now supports copying all currently visible cue text, previous/next cue seeks, and replay with a session-adjustable 0–2500 ms preroll. Embedded tracks, server-library playback, persisted preroll preferences, and non-seekable/live sources remain open. This code is not test-verified or device-qualified. | M3 |
 | Q16 | Offer subtitle-on-mute and temporary replay captions with reliable restoration of the previous selection. | M3 |
 | Q17 | Provide quick hide/show, track cycle, timing reset, and consistent keyboard/D-pad shortcuts with visible feedback. | M1 |
 | Q18 | Show why an action is unavailable and a viable alternative, including burned text and unsupported receiver formats. | M1 |

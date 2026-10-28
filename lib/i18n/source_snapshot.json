@@ -3781,5 +3781,14 @@
   "games.streamAudioHelp": "f46606c3a610d5da",
   "games.audioStereo": "cf9ea8921749c882",
   "games.audioQuad": "0b578abf91e79ecc",
-  "games.audioSurround51": "22d3725109bf374c"
+  "games.audioSurround51": "22d3725109bf374c",
+  "videoSettings.subtitleCueTools": "2cee1ea2a88416a9",
+  "videoSettings.subtitlePreviousCue": "300bb67f621a18b2",
+  "videoSettings.subtitleNextCue": "1dba7a1bb34d201e",
+  "videoSettings.subtitleReplayCue": "298eccfc87e388d6",
+  "videoSettings.subtitleCopyCue": "70397f2fff60cc10",
+  "videoSettings.subtitleCueCopied": "a90b4893825fa855",
+  "videoSettings.subtitleCueUnavailable": "47d3a9c21c29c717",
+  "videoSettings.subtitleCueSeekUnavailable": "6e2d6055689f2397",
+  "videoSettings.subtitleReplayPreroll": "6e7fc7af2140cd9f"
 }

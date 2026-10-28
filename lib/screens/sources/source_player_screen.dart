@@ -507,6 +507,32 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     if (!mounted || playback.player != targetPlayer || initial == null) return;
     final identity = playback.activeExternalSubtitleIdentity;
     if (identity == null) return;
+    var replayPrerollMs = 500;
+    Future<List<SubtitleCue>>? cueCache;
+    Future<List<SubtitleCue>> loadSubtitleCues() {
+      return cueCache ??= (() async {
+        final file = playback.activePersistentExternalSubtitleFile;
+        if (file == null || playback.activeExternalSubtitleIdentity != identity) {
+          return const <SubtitleCue>[];
+        }
+        final size = await file.length();
+        if (size == 0 || size > SubtitleRetimer.maximumInputBytes) {
+          throw const FormatException('Subtitle is empty or exceeds the cue-inspection size limit.');
+        }
+        final bytes = await file.readAsBytes();
+        if (bytes.length > SubtitleRetimer.maximumInputBytes) {
+          throw const FormatException('Subtitle exceeds the cue-inspection size limit.');
+        }
+        if (!mounted || playback.player != targetPlayer || playback.activeExternalSubtitleIdentity != identity) {
+          return const <SubtitleCue>[];
+        }
+        final cues = SubtitleRetimer.parseCues(
+          sourceBytes: bytes,
+          extension: p.extension(file.path).toLowerCase(),
+        )..sort((a, b) => a.startMs.compareTo(b.startMs));
+        return cues;
+      })();
+    }
     var closeScheduled = false;
 
     await showModalBottomSheet<void>(
@@ -576,6 +602,195 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                       icon: const AppIcon(Symbols.vertical_align_bottom_rounded),
                       label: Text(t.videoSettings.subtitleUsePlaybackTime),
                     ),
+
+                  if (playback.canExportActiveExternalSubtitle)
+                    StatefulBuilder(
+                      builder: (context, setCueToolState) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              t['videoSettings.subtitleCueTools'] as String,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(t['videoSettings.subtitleReplayPreroll'] as String),
+                              ),
+                              Text('$replayPrerollMs ms'),
+                            ],
+                          ),
+                          Slider(
+                            value: replayPrerollMs.toDouble(),
+                            min: 0,
+                            max: 2500,
+                            divisions: 10,
+                            label: '$replayPrerollMs ms',
+                            onChanged: (value) {
+                              setCueToolState(() => replayPrerollMs = value.round());
+                            },
+                          ),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              IconButton(
+                                tooltip: t['videoSettings.subtitlePreviousCue'] as String,
+                                onPressed: targetPlayer.state.seekable
+                                    ? () => sourceAction(context, () async {
+                                        final cues = await loadSubtitleCues();
+                                        final sync = await playback.activeExternalSubtitleSync();
+                                        if (!mounted ||
+                                            playback.player != targetPlayer ||
+                                            playback.activeExternalSubtitleIdentity != identity ||
+                                            sync == null) {
+                                          return;
+                                        }
+                                        final now = playback.currentFilePositionMs;
+                                        SubtitleCue? target;
+                                        for (final cue in cues) {
+                                          final visibleStartMs = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                          if (visibleStartMs < now - 100) {
+                                            target = cue;
+                                          } else {
+                                            break;
+                                          }
+                                        }
+                                        if (target == null) {
+                                          showSnackBar(context, t['videoSettings.subtitleCueUnavailable'] as String);
+                                          return;
+                                        }
+                                        await _seekExternalSubtitleCue(
+                                          playback,
+                                          targetPlayer,
+                                          identity,
+                                          target,
+                                          sync.delayMs,
+                                          sync.rate,
+                                        );
+                                      })
+                                    : null,
+                                icon: const AppIcon(Symbols.skip_previous_rounded),
+                              ),
+                              IconButton(
+                                tooltip: t['videoSettings.subtitleCopyCue'] as String,
+                                onPressed: () => sourceAction(context, () async {
+                                  final cues = await loadSubtitleCues();
+                                  final sync = await playback.activeExternalSubtitleSync();
+                                  if (!mounted ||
+                                      playback.player != targetPlayer ||
+                                      playback.activeExternalSubtitleIdentity != identity ||
+                                      sync == null) {
+                                    return;
+                                  }
+                                  final now = playback.currentFilePositionMs;
+                                  final active = cues.where((cue) {
+                                    final start = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                    final end = (cue.endMs * sync.rate).round() + sync.delayMs;
+                                    return start <= now && now < end;
+                                  });
+                                  final text = active
+                                      .map((cue) => _plainSubtitleCueText(cue.text))
+                                      .where((value) => value.isNotEmpty)
+                                      .join('\n');
+                                  if (text.isEmpty) {
+                                    showSnackBar(context, t['videoSettings.subtitleCueUnavailable'] as String);
+                                    return;
+                                  }
+                                  await Clipboard.setData(ClipboardData(text: text));
+                                  if (mounted && playback.activeExternalSubtitleIdentity == identity) {
+                                    showSnackBar(
+                                      context,
+                                      t['videoSettings.subtitleCueCopied'] as String,
+                                      type: SnackBarType.success,
+                                    );
+                                  }
+                                }),
+                                icon: const AppIcon(Symbols.content_copy_rounded),
+                              ),
+                              IconButton(
+                                tooltip: t['videoSettings.subtitleNextCue'] as String,
+                                onPressed: targetPlayer.state.seekable
+                                    ? () => sourceAction(context, () async {
+                                        final cues = await loadSubtitleCues();
+                                        final sync = await playback.activeExternalSubtitleSync();
+                                        if (!mounted ||
+                                            playback.player != targetPlayer ||
+                                            playback.activeExternalSubtitleIdentity != identity ||
+                                            sync == null) {
+                                          return;
+                                        }
+                                        final now = playback.currentFilePositionMs;
+                                        SubtitleCue? target;
+                                        for (final cue in cues) {
+                                          final visibleStartMs = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                          if (visibleStartMs > now + 100) {
+                                            target = cue;
+                                            break;
+                                          }
+                                        }
+                                        if (target == null) {
+                                          showSnackBar(context, t['videoSettings.subtitleCueUnavailable'] as String);
+                                          return;
+                                        }
+                                        await _seekExternalSubtitleCue(
+                                          playback,
+                                          targetPlayer,
+                                          identity,
+                                          target,
+                                          sync.delayMs,
+                                          sync.rate,
+                                        );
+                                      })
+                                    : null,
+                                icon: const AppIcon(Symbols.skip_next_rounded),
+                              ),
+                              IconButton(
+                                tooltip: t['videoSettings.subtitleReplayCue'] as String,
+                                onPressed: targetPlayer.state.seekable
+                                    ? () => sourceAction(context, () async {
+                                        final cues = await loadSubtitleCues();
+                                        final sync = await playback.activeExternalSubtitleSync();
+                                        if (!mounted ||
+                                            playback.player != targetPlayer ||
+                                            playback.activeExternalSubtitleIdentity != identity ||
+                                            sync == null ||
+                                            cues.isEmpty) {
+                                          return;
+                                        }
+                                        final now = playback.currentFilePositionMs;
+                                        SubtitleCue? target;
+                                        for (final cue in cues) {
+                                          final visibleStartMs = (cue.startMs * sync.rate).round() + sync.delayMs;
+                                          if (visibleStartMs <= now) {
+                                            target = cue;
+                                          } else {
+                                            break;
+                                          }
+                                        }
+                                        target ??= cues.first;
+                                        await _seekExternalSubtitleCue(
+                                          playback,
+                                          targetPlayer,
+                                          identity,
+                                          target,
+                                          sync.delayMs,
+                                          sync.rate,
+                                          prerollMs: replayPrerollMs,
+                                        );
+                                      })
+                                    : null,
+                                icon: const AppIcon(Symbols.replay_rounded),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -583,6 +798,36 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         },
       ),
     );
+  }
+
+
+  Future<void> _seekExternalSubtitleCue(
+    SourcePlayback playback,
+    Player targetPlayer,
+    String identity,
+    SubtitleCue cue,
+    int delayMs,
+    double rate, {
+    int prerollMs = 0,
+  }) async {
+    if (!mounted || playback.player != targetPlayer || playback.activeExternalSubtitleIdentity != identity) return;
+    try {
+      final sought = await playback.seekExternalSubtitleCue(
+        expectedIdentity: identity,
+        cueStartMs: cue.startMs,
+        delayMs: delayMs,
+        rate: rate,
+        prerollMs: prerollMs,
+      );
+      if (!sought && mounted && playback.activeExternalSubtitleIdentity == identity) {
+        showSnackBar(context, t['videoSettings.subtitleCueSeekUnavailable'] as String);
+      }
+    } on Object catch (error, stackTrace) {
+      appLogger.w('Could not seek to a subtitle cue', error: error, stackTrace: stackTrace);
+      if (mounted && playback.activeExternalSubtitleIdentity == identity) {
+        showErrorSnackBar(context, t.common.error);
+      }
+    }
   }
 
   Future<void> _alignExternalSubtitleCueNow(
@@ -1731,6 +1976,15 @@ class SourceMiniPlayer extends StatelessWidget {
   }
 }
 
+
+
+String _plainSubtitleCueText(String value) => value
+    .replaceAll(RegExp(r'\{[^}]*\}'), '')
+    .replaceAll(RegExp(r'<[^>]*>'), '')
+    .replaceAll(RegExp(r'\\[Nn]'), '\n')
+    .replaceAll(RegExp(r'\\h'), ' ')
+    .replaceAll('&nbsp;', ' ')
+    .trim();
 
 class _SubtitleCuePickerSheet extends StatefulWidget {
   const _SubtitleCuePickerSheet({
