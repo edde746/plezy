@@ -441,6 +441,18 @@ class _SubtitleColumn extends StatelessWidget {
                     trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                   }
                 : null,
+            secondaryAction: supportsSecondary
+                ? IconButton(
+                    tooltip: 'Clear secondary subtitle',
+                    onPressed: hasSecondary
+                        ? () {
+                            player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+                            trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
+                          }
+                        : null,
+                    icon: const Icon(Icons.subtitles_off_outlined, size: 20),
+                  )
+                : null,
           );
         }
 
@@ -516,6 +528,19 @@ class _SubtitleColumn extends StatelessWidget {
                     trackControlsState.onSecondarySubtitleTrackChanged?.call(track);
                   }
                 }
+              : null,
+          secondaryAction: supportsSecondary
+              ? IconButton(
+                  tooltip: isSecondary ? 'Clear secondary subtitle' : 'Select as secondary subtitle',
+                  onPressed: isPrimary
+                      ? null
+                      : () {
+                          final next = isSecondary ? SubtitleTrack.off : track;
+                          player.selectSecondarySubtitleTrack(next);
+                          trackControlsState.onSecondarySubtitleTrackChanged?.call(next);
+                        },
+                  icon: Icon(isSecondary ? Icons.subtitles_off_outlined : Icons.subtitles_outlined, size: 20),
+                )
               : null,
         );
       },
