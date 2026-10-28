@@ -23,6 +23,7 @@ class StandaloneSubtitleSearchSheet extends StatefulWidget {
     this.imdbId,
     this.tmdbId,
     this.year,
+    this.movieHash,
     required this.onApply,
   });
 
@@ -31,6 +32,7 @@ class StandaloneSubtitleSearchSheet extends StatefulWidget {
   final String? imdbId;
   final String? tmdbId;
   final int? year;
+  final String? movieHash;
   final Future<void> Function(OpenSubtitleDownload download) onApply;
 
   @override
@@ -127,6 +129,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
         imdbId: widget.imdbId,
         tmdbId: widget.tmdbId,
         year: widget.year,
+        movieHash: widget.movieHash,
       );
       if (!mounted || generation != _generation) return;
       setState(() {

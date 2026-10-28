@@ -68,23 +68,33 @@ class OpenSubtitlesClient {
     String? imdbId,
     String? tmdbId,
     int? year,
+    String? movieHash,
   }) async {
     if (_closed) throw const SourceException(SourceFailure.cancelled);
     if (_apiKey.isEmpty || query.trim().isEmpty) throw const SourceException(SourceFailure.authentication);
     final imdb = imdbId?.trim().replaceFirst(RegExp(r'^(tt)', caseSensitive: false), '');
     final trimmedQuery = query.trim();
     final boundedQuery = trimmedQuery.length > 120 ? trimmedQuery.substring(0, 120) : trimmedQuery;
+    final normalizedMovieHash = movieHash?.trim().toLowerCase();
+    final validMovieHash =
+        normalizedMovieHash != null && RegExp(r'^[0-9a-f]{16}$').hasMatch(normalizedMovieHash)
+        ? normalizedMovieHash
+        : null;
     final params = <String, String>{
-      'query': boundedQuery,
+      'query': boundedQuery.toLowerCase(),
       'languages': languageCodeFor(languageCode),
       'order_by': 'download_count',
       'order_direction': 'desc',
       'limit': '30',
-      if (imdb != null && imdb.isNotEmpty) 'imdb_id': imdb,
-      if ((tmdbId?.trim().isNotEmpty ?? false)) 'tmdb_id': tmdbId!.trim(),
-      if (year != null && year > 1800 && year < 2200) 'year': '$year',
+      if (validMovieHash != null) 'moviehash': validMovieHash,
+      if (validMovieHash == null && imdb != null && imdb.isNotEmpty) 'imdb_id': imdb,
+      if (validMovieHash == null && (tmdbId?.trim().isNotEmpty ?? false)) 'tmdb_id': tmdbId!.trim(),
+      if (validMovieHash == null && year != null && year > 1800 && year < 2200) 'year': '$year',
     };
-    final uri = _api.resolve('/api/v1/subtitles').replace(queryParameters: params);
+    final sortedParams = Map.fromEntries(
+      params.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+    final uri = _api.resolve('/api/v1/subtitles').replace(queryParameters: sortedParams);
     final response = await _transport.json('GET', uri, headers: _headers);
     final rows = response['data'];
     if (rows is! List) return const [];
@@ -118,13 +128,16 @@ class OpenSubtitlesClient {
             title: title.isEmpty ? fileName : title,
             displayTitle: fileName.isEmpty ? title : fileName,
             hearingImpaired: attributes['hearing_impaired'] == true,
-            perfectMatch: attributes['match'] == true,
+            perfectMatch: attributes['moviehash_match'] == true || attributes['match'] == true,
             forced: attributes['foreign_parts_only'] == true,
           ),
         );
       }
     }
-    results.sort((a, b) => (b.score ?? 0).compareTo(a.score ?? 0));
+    results.sort((a, b) {
+      final matchOrder = (b.perfectMatch ? 1 : 0).compareTo(a.perfectMatch ? 1 : 0);
+      return matchOrder != 0 ? matchOrder : (b.score ?? 0).compareTo(a.score ?? 0);
+    });
     return results.take(40).toList(growable: false);
   }
 

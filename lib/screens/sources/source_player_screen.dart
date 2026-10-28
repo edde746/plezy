@@ -333,7 +333,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       password: credentials['openSubtitlesPassword'],
     );
     try {
-      if (!mounted) return;
+      final fingerprint = await s.currentOpenSubtitlesFingerprint();
+      if (!mounted || s.entry?.key != entry.key) return;
       await showModalBottomSheet<bool>(
         context: context,
         isScrollControlled: true,
@@ -344,6 +345,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
           imdbId: entry.identifiers['imdb'],
           tmdbId: entry.identifiers['tmdb'],
           year: entry.releaseYear,
+          movieHash: fingerprint?.movieHash,
           onApply: (download) => s.applyExternalSubtitle(
             name: download.fileName,
             bytes: download.bytes,

@@ -978,6 +978,84 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  Future<({String movieHash, int fileSize})?> currentOpenSubtitlesFingerprint() async {
+    final native = player;
+    final item = entry;
+    final profile = _profile;
+    if (!_valid ||
+        !video ||
+        _liveInput ||
+        !_persistProgress ||
+        native == null ||
+        item == null ||
+        profile == null ||
+        files.isEmpty ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length) {
+      return null;
+    }
+    final publicationFile = files[_fileIndex];
+    final fileIndex = _fileIndex;
+    final generation = _generation;
+    final fileEpoch = _fileEpoch;
+    final edition = progress?.edition;
+    if (publicationFile.streamOnly || publicationFile.size == null) return null;
+    bool current() =>
+        _valid &&
+        player == native &&
+        entry == item &&
+        _profile == profile &&
+        _generation == generation &&
+        _fileEpoch == fileEpoch &&
+        _fileIndex == fileIndex &&
+        fileIndex < files.length &&
+        files[fileIndex].fingerprint == publicationFile.fingerprint &&
+        progress?.edition == edition;
+
+    try {
+      final cached = await sources.downloads.local(profile, item.sourceId, publicationFile);
+      final Uri uri;
+      if (cached != null) {
+        uri = cached.uri;
+      } else {
+        final adapter = sources.adapter(item.sourceId);
+        if (adapter.source.kind != FileSourceKind.local) return null;
+        uri = (await adapter.resolve(publicationFile)).uri;
+      }
+      if (!current() || uri.scheme != 'file') return null;
+
+      final sourceFile = File.fromUri(uri);
+      final input = await sourceFile.open(mode: FileMode.read);
+      try {
+        const chunkSize = 64 * 1024;
+        final size = await input.length();
+        if (size < chunkSize * 2 || size != publicationFile.size || !current()) return null;
+        final mask = (BigInt.one << 64) - BigInt.one;
+        var hash = BigInt.from(size);
+        for (final offset in <int>[0, size - chunkSize]) {
+          await input.setPosition(offset);
+          final bytes = await input.read(chunkSize);
+          if (bytes.length != chunkSize) return null;
+          for (var wordOffset = 0; wordOffset < chunkSize; wordOffset += 8) {
+            var word = BigInt.zero;
+            for (var byteOffset = 7; byteOffset >= 0; byteOffset--) {
+              word = (word << 8) | BigInt.from(bytes[wordOffset + byteOffset]);
+            }
+            hash = (hash + word) & mask;
+          }
+        }
+        if (!current()) return null;
+        return (movieHash: hash.toRadixString(16).padLeft(16, '0'), fileSize: size);
+      } finally {
+        await input.close();
+      }
+    } on Object {
+      // A local hash is an optional precision improvement; unavailable files
+      // and source changes keep the ordinary title/ID search usable.
+      return null;
+    }
+  }
+
   int _indexAt(int absolute) {
     var total = 0;
     for (var i = 0; i < files.length; i++) {
