@@ -68,6 +68,30 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
     return name.split(' ').map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}').join(' ');
   }
 
+  /// Download the two selected mobile translation models ahead of a job so the
+  /// viewer can prepare an offline language pair before opening a subtitle.
+  static Future<void> prepareMobileModels({
+    required TranslateLanguage sourceLanguage,
+    required TranslateLanguage targetLanguage,
+    bool allowMobileData = false,
+    void Function(String status)? onStatus,
+  }) async {
+    if (!mobilePlatformSupported) {
+      throw UnsupportedError('Offline language model preparation is available on supported phones and tablets only.');
+    }
+    if (sourceLanguage == targetLanguage) {
+      throw ArgumentError('Choose different source and target languages.');
+    }
+    final manager = OnDeviceTranslatorModelManager();
+    for (final language in {sourceLanguage, targetLanguage}) {
+      final code = language.bcpCode;
+      if (await manager.isModelDownloaded(code)) continue;
+      onStatus?.call('Downloading the ${languageLabel(language)} model…');
+      await manager.downloadModel(code, isWifiRequired: !allowMobileData);
+    }
+    onStatus?.call('Both language models are ready for offline translation.');
+  }
+
   static String _glossaryPairKey(TranslateLanguage source, TranslateLanguage target) =>
       '${_normalizedLanguageCode(source)}>${_normalizedLanguageCode(target)}';
 

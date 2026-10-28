@@ -475,6 +475,18 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     if (mounted) setState(() => _status = _useSeriesGlossary ? 'Saved glossary override for this series and language pair.' : 'Saved glossary for this profile and language pair.');
   }
 
+  Future<void> _prepareTranslationModels() => _run(() async {
+    await SubtitleTranslationService.prepareMobileModels(
+      sourceLanguage: _sourceLanguage,
+      targetLanguage: _targetLanguage,
+      allowMobileData: _allowMobileData,
+      onStatus: (status) {
+        if (mounted) setState(() => _status = status);
+      },
+    );
+    if (mounted) setState(() => _status = 'Selected language models are ready for offline translation.');
+  });
+
   Future<void> _translate() => _run(() async {
     if (!await SubtitleTranslationService.isSupportedOnCurrentDevice()) {
       throw UnsupportedError(
@@ -1336,13 +1348,22 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
               ),
             ),
             const SizedBox(height: 8),
-            if (SubtitleTranslationService.mobilePlatformSupported)
+            if (SubtitleTranslationService.mobilePlatformSupported) ...[
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Allow language-model downloads over mobile data'),
                 value: _allowMobileData,
                 onChanged: _busy ? null : (value) => setState(() => _allowMobileData = value),
               ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : () => unawaited(_prepareTranslationModels()),
+                  icon: const Icon(Icons.download_for_offline_outlined),
+                  label: const Text('Prepare offline language models'),
+                ),
+              ),
+            ],
             if (SubtitleTranslationService.desktopPlatformSupported &&
                 (Platform.isWindows || Platform.isLinux))
               SwitchListTile(

@@ -349,7 +349,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | L14 | Support local models, configured companion models, and optional authenticated remote providers. | M5 |
 | L15 | Provide per-language font fallback, bidi shaping, line breaking, punctuation, and script QA. | M1–M6 |
 | L16 | Before attachment, generated/translated/synchronized SRT results show a bounded first/middle/end cue sample; viewers can edit any cue in a searchable full-track editor, including cue text and millisecond times, or discard without replacing the active track. Translations show the original/output text pair and reject changed cue count or timestamps. A bounded 100-edit undo stack works across the sample and full editors. Translation review flags up to 100 cue-specific glossary mismatches before attachment; broader terminology QA and multi-revision export remain open. | M7 |
-| L17 | Offline language packages declare supported source/target pairs and actual task support. | M5 |
+| L17 | Supported mobile ML Kit source/target models can be explicitly prepared for offline translation before choosing a subtitle; the same pair downloads on demand during translation. Desktop Argos packages and available language pairs remain user-installed and externally managed. | M5 |
 | L18 | UI copy uses existing Slang conventions and accessible labels; content translation does not change interface locale. | M1 |
 
 ## Speech generation and analysis
