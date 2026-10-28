@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Publish checksum-verified Snap packages with the same pinned container toolchain used for packaging, preserving private proxy routing and keeping store credentials out of command arguments.
+
+- Prepare release-channel jobs for fresh private runners: explicit GitHub repository context before checkout, native Ruby extension prerequisites, and proxy routing for both BuildKit and container build downloads.
+
 - Provision checksum- and publisher-verified NuGet and Inno Setup before Windows builds, and route ARM64 jobs through the existing PC runner pool.
 
 - Initialize webOS engine dependencies from Flutter's pinned checkout template, and build Snap packages in a digest-pinned Ubuntu 24.04 container on each native private runner architecture.

@@ -48,6 +48,10 @@ on:
           - completed
           - inProgress
 
+# Several publication gates run before checkout in fresh private guests.
+env:
+  GH_REPO: ${{ github.repository }}
+
 permissions:
   contents: read
 
@@ -151,6 +155,15 @@ jobs:
           cd "$RUNNER_TEMP/store-assets"
           sha256sum --check --ignore-missing SHA256SUMS.txt
 
+      - name: Install native Ruby extension prerequisites
+        shell: bash
+        run: |
+          sudo apt-get update -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+            build-essential pkg-config libssl-dev libyaml-dev libffi-dev zlib1g-dev
+          command -v cc
+          command -v make
+
       - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
           ruby-version: "3.3"
@@ -191,6 +204,15 @@ jobs:
             --dir "$RUNNER_TEMP/store-assets"
           cd "$RUNNER_TEMP/store-assets"
           sha256sum --check --ignore-missing SHA256SUMS.txt
+
+      - name: Install native Ruby extension prerequisites
+        shell: bash
+        run: |
+          sudo apt-get update -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+            build-essential pkg-config libssl-dev libyaml-dev libffi-dev zlib1g-dev
+          command -v cc
+          command -v make
 
       - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
         with:
