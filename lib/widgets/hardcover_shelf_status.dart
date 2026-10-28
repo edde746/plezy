@@ -74,7 +74,7 @@ class _HardcoverShelfStatusState extends State<HardcoverShelfStatus> {
         if (mounted && generation == _generation) setState(() => _record = null);
         return;
       }
-      final localIsbns = BookIdentifiers.fromValues(widget.identifiers).values.values.toSet();
+      final localIsbns = BookIdentifiers.fromValues(widget.identifiers).values.toSet();
       if (localIsbns.isEmpty) {
         if (mounted && generation == _generation) setState(() => _record = null);
         return;
@@ -83,7 +83,7 @@ class _HardcoverShelfStatusState extends State<HardcoverShelfStatus> {
       for (final row in sourceList(snapshot['records'])) {
         final record = HardcoverBookRecord.fromJson(sourceMap(row));
         if (record.userBookId <= 0) continue;
-        final remoteIsbns = BookIdentifiers.fromValues(record.identifiers).values.values.toSet();
+        final remoteIsbns = BookIdentifiers.fromValues(record.identifiers).values.toSet();
         if (localIsbns.intersection(remoteIsbns).isNotEmpty) matches[record.userBookId] = record;
       }
       if (!mounted || !_ownsProfile(sources, profileId, generation)) return;
@@ -116,7 +116,7 @@ class _HardcoverShelfStatusState extends State<HardcoverShelfStatus> {
     final status = _statusText(record?.status);
     if (record == null || status == null || status.trim().isEmpty) return const SizedBox.shrink();
     final pages = record.read?.progressPages;
-    final detail = 'Hardcover · ' + status + (pages == null ? '' : ' · p' + pages.toString());
+    final detail = 'Hardcover · $status${pages == null ? '' : ' · p$pages'}';
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Tooltip(
@@ -132,9 +132,9 @@ class _HardcoverShelfStatusState extends State<HardcoverShelfStatus> {
                   isolateDisplayText(detail),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ],

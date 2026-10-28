@@ -52,7 +52,7 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
     final password = saved['password'] ?? '';
     final legacy = username.isNotEmpty && password.isNotEmpty ? _legacyAuth(saved) : null;
     if (_apiKeyRejected && legacy != null) return [legacy];
-    return [if (apiKey.isNotEmpty) {'apiKey': apiKey}, if (legacy != null) legacy];
+    return [if (apiKey.isNotEmpty) {'apiKey': apiKey}, ?legacy];
   }
 
   Future<Map<String, dynamic>> _request(String method, [Map<String, String> parameters = const {}]) async {
@@ -167,7 +167,7 @@ class OpenSubsonicSourceAdapter extends SourceAdapter {
       releaseYear: sourceInt(row['year']),
       identifiers: {
         'subsonicId': id,
-        if (coverId != null) 'coverArt': coverId,
+        'coverArt': ?coverId,
       },
       files: [
         PublicationFile(

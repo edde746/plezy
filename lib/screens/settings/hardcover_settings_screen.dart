@@ -35,7 +35,6 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
   HardcoverAccountStore? _store;
   HardcoverClient? _client;
   HardcoverAccount? _account;
-  List<HardcoverStatus> _statuses = const [];
   List<HardcoverBookRecord> _importedRecords = const [];
   Map<String, SourceEntry> _localEntriesByUserBookId = const {};
   List<_ExportChange> _exportPreview = const [];
@@ -107,11 +106,16 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
   Future<void> _loadImportedSnapshot() async {
     final store = _store;
     if (store == null) return;
-    final value = await _sources!.repository.privatePreference(widget.profileId, HardcoverAccountStore.importedLibraryPreferenceKey);
+    final value = await _sources!.repository.privatePreference(
+      widget.profileId,
+      HardcoverAccountStore.importedLibraryPreferenceKey,
+    );
     _requireCurrentOwner();
     final accountId = _account?.id;
     final hasSnapshot = accountId != null && sourceInt(value['accountId']) == accountId && value['records'] is List;
-    final rows = hasSnapshot ? sourceList(value['records']).map((row) => HardcoverBookRecord.fromJson(sourceMap(row))).toList() : const <HardcoverBookRecord>[];
+    final rows = hasSnapshot
+        ? sourceList(value['records']).map((row) => HardcoverBookRecord.fromJson(sourceMap(row))).toList()
+        : const <HardcoverBookRecord>[];
     final localMatches = sourceMap(value['localMatches']);
     final localEntries = hasSnapshot ? await _sources!.repository.entries(widget.profileId) : const <SourceEntry>[];
     _requireCurrentOwner();
@@ -124,19 +128,25 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
       final entry = entriesByKey[entryKey];
       if (entry != null) matchedEntries[userBookId] = entry;
     }
-    final importUndo = await _sources!.repository.privatePreference(widget.profileId, HardcoverAccountStore.importUndoPreferenceKey);
+    final importUndo = await _sources!.repository.privatePreference(
+      widget.profileId,
+      HardcoverAccountStore.importUndoPreferenceKey,
+    );
     _requireCurrentOwner();
-    final exportUndo = await _sources!.repository.privatePreference(widget.profileId, HardcoverAccountStore.exportUndoPreferenceKey);
+    final exportUndo = await _sources!.repository.privatePreference(
+      widget.profileId,
+      HardcoverAccountStore.exportUndoPreferenceKey,
+    );
     _requireCurrentOwner();
     if (mounted) {
       setState(() {
         _importedRecords = rows;
         _localEntriesByUserBookId = Map.unmodifiable(matchedEntries);
         _hasImportedSnapshot = hasSnapshot;
-        _hasImportUndo = accountId != null &&
-            sourceInt(importUndo['accountId']) == accountId &&
-            importUndo['previous'] is Map;
-        _hasExportUndo = accountId != null &&
+        _hasImportUndo =
+            accountId != null && sourceInt(importUndo['accountId']) == accountId && importUndo['previous'] is Map;
+        _hasExportUndo =
+            accountId != null &&
             sourceInt(exportUndo['accountId']) == accountId &&
             sourceList(exportUndo['changes']).isNotEmpty;
       });
@@ -144,11 +154,9 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
   }
 
   Future<void> _refreshWith(HardcoverClient client) async {
-    final statuses = await client.statuses();
     _requireCurrentOwner();
     if (mounted) {
       setState(() {
-        _statuses = statuses;
         _exportPreview = const [];
       });
     }
@@ -221,7 +229,6 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
         setState(() {
           _client = null;
           _account = null;
-          _statuses = const [];
           _importedRecords = const [];
           _localEntriesByUserBookId = const {};
           _hasImportedSnapshot = false;
@@ -239,7 +246,8 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
     await _refreshWith(client);
   });
 
-  Set<String> _isbnIdentifiers(Map<String, String> identifiers) => BookIdentifiers.fromValues(identifiers).values.toSet();
+  Set<String> _isbnIdentifiers(Map<String, String> identifiers) =>
+      BookIdentifiers.fromValues(identifiers).values.toSet();
 
   Future<void> _importLibrary() => _run(() async {
     final client = _client, account = _account, store = _store;
@@ -251,7 +259,9 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
     final localEntries = await _sources!.repository.entries(widget.profileId);
     _requireCurrentOwner();
     final localByIsbn = <String, List<SourceEntry>>{};
-    for (final entry in localEntries.where((entry) => entry.kind == SourceItemKind.ebook || entry.kind == SourceItemKind.comic)) {
+    for (final entry in localEntries.where(
+      (entry) => entry.kind == SourceItemKind.ebook || entry.kind == SourceItemKind.comic,
+    )) {
       for (final isbn in _isbnIdentifiers(entry.identifiers)) {
         localByIsbn.putIfAbsent(isbn, () => []).add(entry);
       }
@@ -276,12 +286,13 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
       'previous': previous,
     });
     _requireCurrentOwner();
-    await _sources!.repository.savePrivatePreference(widget.profileId, HardcoverAccountStore.importedLibraryPreferenceKey, {
-      'accountId': account.id,
-      'importedAt': DateTime.now().millisecondsSinceEpoch,
-      'records': library.map((record) => record.toJson()).toList(),
-      'localMatches': localMatches,
-    });
+    await _sources!.repository
+        .savePrivatePreference(widget.profileId, HardcoverAccountStore.importedLibraryPreferenceKey, {
+          'accountId': account.id,
+          'importedAt': DateTime.now().millisecondsSinceEpoch,
+          'records': library.map((record) => record.toJson()).toList(),
+          'localMatches': localMatches,
+        });
     _requireCurrentOwner();
     await _loadImportedSnapshot();
   });
@@ -313,9 +324,9 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
     final statuses = await client.statuses();
     _requireCurrentOwner();
     final entries = await _sources!.repository.entries(widget.profileId);
-    final progress = (await _sources!.repository.allProgress(widget.profileId))
-        .where((record) => record.mode == PublicationMode.reading)
-        .toList();
+    final progress = (await _sources!.repository.allProgress(
+      widget.profileId,
+    )).where((record) => record.mode == PublicationMode.reading).toList();
     _requireCurrentOwner();
     final progressByEntry = <String, PublicationProgress>{};
     for (final record in progress) {
@@ -371,7 +382,9 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
         final localProgress = item.progress;
         if (remote.userBookId <= 0 || handledUserBookIds.contains(remote.userBookId) || localProgress == null) continue;
         final matchingIsbn = item.isbns.firstWhere(
-          (isbn) => (remoteByIsbn[isbn] ?? const <HardcoverBookRecord>[]).any((record) => record.userBookId == remote.userBookId),
+          (isbn) => (remoteByIsbn[isbn] ?? const <HardcoverBookRecord>[]).any(
+            (record) => record.userBookId == remote.userBookId,
+          ),
         );
         HardcoverStatus? currentStatus;
         for (final candidate in statuses) {
@@ -381,7 +394,8 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
           }
         }
         final localPage = localProgress.finished ? null : localProgress.locator?.page;
-        final canSyncPage = remote.statusId == status.id &&
+        final canSyncPage =
+            remote.statusId == status.id &&
             currentStatus != null &&
             _isCurrentlyReading(currentStatus) &&
             remote.read?.id != null &&
@@ -456,11 +470,14 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
         : (progress.fraction > 0 || progress.locator?.page != null)
         ? 'currently reading'
         : 'want to read';
-    String normalize(String value) => value.trim().toLowerCase().replaceAll(RegExp(r'[_-]+'), ' ').replaceAll(RegExp(r'\s+'), ' ');
+    String normalize(String value) =>
+        value.trim().toLowerCase().replaceAll(RegExp(r'[_-]+'), ' ').replaceAll(RegExp(r'\s+'), ' ');
     for (final status in statuses) {
       final candidates = [normalize(status.slug), normalize(status.status)];
       if (normalized == 'currently reading' &&
-          candidates.any((candidate) => candidate == 'currently reading' || candidate == 'reading' || candidate == 'in progress')) {
+          candidates.any(
+            (candidate) => candidate == 'currently reading' || candidate == 'reading' || candidate == 'in progress',
+          )) {
         return status;
       }
       if (normalized == 'want to read' &&
@@ -476,17 +493,21 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
   }
 
   bool _isCurrentlyReading(HardcoverStatus status) {
-    String normalize(String value) => value.trim().toLowerCase().replaceAll(RegExp(r'[_-]+'), ' ').replaceAll(RegExp(r'\s+'), ' ');
-    return [status.slug, status.status].map(normalize).any(
-      (value) => value == 'currently reading' || value == 'reading' || value == 'in progress',
-    );
+    String normalize(String value) =>
+        value.trim().toLowerCase().replaceAll(RegExp(r'[_-]+'), ' ').replaceAll(RegExp(r'\s+'), ' ');
+    return [
+      status.slug,
+      status.status,
+    ].map(normalize).any((value) => value == 'currently reading' || value == 'reading' || value == 'in progress');
   }
 
   String _statusLabel(HardcoverStatus? status) {
     final name = status?.normalized ?? '';
     if (name.contains('currently reading') || name.contains('reading')) return t.audiobook.statusProgress;
     if (name.contains('want to read') || name.contains('to read') || name.contains('tbr')) return t.audiobook.statusNew;
-    if (name.contains('finished') || name.contains('completed') || name == 'read read') return t.audiobook.statusFinished;
+    if (name.contains('finished') || name.contains('completed') || name == 'read read') {
+      return t.audiobook.statusFinished;
+    }
     return status?.status ?? '';
   }
 
@@ -515,9 +536,9 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
       _requireCurrentOwner();
       final statuses = await client.statuses();
       _requireCurrentOwner();
-      final progressRecords = (await repo.allProgress(widget.profileId))
-          .where((record) => record.mode == PublicationMode.reading)
-          .toList();
+      final progressRecords = (await repo.allProgress(
+        widget.profileId,
+      )).where((record) => record.mode == PublicationMode.reading).toList();
       _requireCurrentOwner();
       final localProgress = {for (final record in progressRecords) record.key: record};
       final latestProgressByEntry = <String, PublicationProgress>{};
@@ -577,10 +598,7 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
             statusId: change.targetStatusId,
           );
           _requireCurrentOwner();
-          var createdChange = change.withCreated(
-            userBookId: receipt.id,
-            expectedUpdatedAt: receipt.updatedAt,
-          );
+          var createdChange = change.withCreated(userBookId: receipt.id, expectedUpdatedAt: receipt.updatedAt);
           applied.add(createdChange);
           _hasExportUndo = true;
           await repo.savePrivatePreference(widget.profileId, HardcoverAccountStore.exportUndoPreferenceKey, {
@@ -673,7 +691,8 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
       final remote = byId[change.userBookId];
       if (remote == null) continue;
       if (change.isAddition) {
-        final readMatches = remote.recentRead?.id == change.createdReadId &&
+        final readMatches =
+            remote.recentRead?.id == change.createdReadId &&
             remote.recentRead?.progressPages == change.createdProgressPages &&
             remote.recentRead?.finishedAt == change.createdReadFinishedAt;
         if (remote.bookId != change.bookId ||
@@ -744,7 +763,6 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
                     ListTile(
                       leading: const AppIcon(Symbols.account_circle_rounded, fill: 1),
                       title: Text(t.services.connectedAs(username: account.displayName)),
-                      subtitle: Text(t.services.connected),
                     ),
                     FocusableListTile(
                       leading: AppIcon(Symbols.refresh_rounded, fill: 1),
@@ -791,13 +809,10 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
                         leading: AppIcon(change.isAddition ? Symbols.add_rounded : Symbols.sync_alt_rounded),
                         title: Text(change.title, maxLines: 2, overflow: TextOverflow.ellipsis),
                         subtitle: Text(
-                          (change.isAddition ? '' : change.oldStatus + ' → ') +
+                          (change.isAddition ? '' : '${change.oldStatus} → ') +
                               change.targetStatus +
                               (change.hasPageUpdate
-                                  ? ' · p' +
-                                      (change.oldProgressPages?.toString() ?? '–') +
-                                      ' → p' +
-                                      change.targetProgressPages.toString()
+                                  ? ' · p${change.oldProgressPages?.toString() ?? '–'} → p${change.targetProgressPages}'
                                   : ''),
                         ),
                       ),
@@ -816,10 +831,7 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
                   ],
                 ),
               ],
-              if (_busy) ...[
-                const SizedBox(height: 12),
-                const LinearProgressIndicator(),
-              ],
+              if (_busy) ...[const SizedBox(height: 12), const LinearProgressIndicator()],
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(t.common.error, style: TextStyle(color: Theme.of(context).colorScheme.error)),
@@ -862,9 +874,9 @@ class _HardcoverSettingsScreenState extends State<HardcoverSettingsScreen> {
       trailing: entry == null ? null : const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: entry == null || !_isCurrentOwner
           ? null
-          : () => Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => SourceDetailScreen(entry: entry)),
-            ),
+          : () => Navigator.of(
+              context,
+            ).push<void>(MaterialPageRoute<void>(builder: (_) => SourceDetailScreen(entry: entry))),
     );
   }
 }

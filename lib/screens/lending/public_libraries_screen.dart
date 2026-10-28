@@ -23,7 +23,9 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/provider_mark.dart';
+
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
@@ -269,8 +271,14 @@ Future<void> _signIn(BuildContext context, LendingService service, LendingLibrar
     builder: (dialogContext) => _SignInDialog(service: service, finished: finished.future),
   );
   service.cancelAuthorization();
-  if (failure != null && context.mounted) showErrorSnackBar(context, sourceFailureText(failure!));
+  if (failure != null && context.mounted) {
+    showErrorSnackBar(context, sourceFailureText(failure!));
+  }
 }
+
+/// Reuses the explicit borrower authorization flow from discovery.
+Future<void> signInToLendingLibrary(BuildContext context, LendingService service, LendingLibrary library) =>
+    _signIn(context, service, library);
 
 class _SignInDialog extends StatefulWidget {
   const _SignInDialog({required this.service, required this.finished});
@@ -345,7 +353,9 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
         integration: native?['integration'] == true,
         circulation: native?['circulation'] == true,
       );
-      if (library.name.isEmpty) throw const SourceException(SourceFailure.invalidData);
+      if (library.name.isEmpty) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
       await widget.service.save(library);
       if (!mounted) return;
       if (library.native) await _signIn(context, widget.service, library);
@@ -445,7 +455,9 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                                   setState(() => _busy = true);
                                   try {
                                     final choices = await widget.service.gatewayLibraries(_gateway.text.trim());
-                                    if (mounted) setState(() => _available = choices);
+                                    if (mounted) {
+                                      setState(() => _available = choices);
+                                    }
                                   } finally {
                                     if (mounted) setState(() => _busy = false);
                                   }
@@ -486,9 +498,19 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
 }
 
 class LibraryCatalogueScreen extends StatefulWidget {
-  const LibraryCatalogueScreen({super.key, required this.service, this.library});
+  const LibraryCatalogueScreen({
+    super.key,
+    required this.service,
+    this.library,
+    this.initialQuery,
+    this.initialBookId,
+    this.selectOnly = false,
+  });
   final LendingService service;
   final LendingLibrary? library;
+  final String? initialQuery;
+  final String? initialBookId;
+  final bool selectOnly;
   @override
   State<LibraryCatalogueScreen> createState() => _LibraryCatalogueScreenState();
 }
@@ -500,7 +522,18 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   String _catalogProvider = 'openLibrary';
   int _page = 1, _request = 0;
   bool _busy = false, _more = false;
+  bool _openedInitialBook = false;
   Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _search.text = widget.initialQuery?.trim() ?? '';
+    if (_search.text.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    }
+  }
+
   Future<void> _load({bool more = false}) async {
     if (_shelf == 'catalogue' && _search.text.trim().isEmpty) return;
     final request = ++_request;
@@ -528,6 +561,19 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
           _more = result.more;
         });
       }
+      final initialBookId = widget.initialBookId;
+      if (!more && initialBookId != null && !_openedInitialBook && mounted && request == _request) {
+        final exactBook = result.books.where((book) => book.id == initialBookId).firstOrNull;
+        if (exactBook == null) {
+          setState(() {
+            _books = [];
+            _error = const SourceException(SourceFailure.unavailable);
+          });
+        } else {
+          _openedInitialBook = true;
+          await _open(exactBook);
+        }
+      }
     } catch (error) {
       if (mounted && request == _request) setState(() => _error = error);
     } finally {
@@ -542,6 +588,10 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   }
 
   Future<void> _open(LendingBook book) async {
+    if (widget.selectOnly) {
+      Navigator.of(context).pop(book);
+      return;
+    }
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -616,7 +666,9 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                                     _books = [];
                                     _more = false;
                                   });
-                                  if (_search.text.trim().isNotEmpty) unawaited(_load());
+                                  if (_search.text.trim().isNotEmpty) {
+                                    unawaited(_load());
+                                  }
                                 },
                         ),
                     ],
@@ -639,6 +691,11 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                       ),
                     ),
                   ),
+                ),
+              if (widget.selectOnly)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(t.discover.findNext.libraryCatalogHint, style: Theme.of(context).textTheme.bodySmall),
                 ),
               if (_busy) const Padding(padding: EdgeInsets.only(top: 20), child: LinearProgressIndicator()),
               if (_error != null && _books.isEmpty)
@@ -796,7 +853,9 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
         context: context,
         builder: (ctx) {
           void submit() {
-            if (controller.text.contains('@')) Navigator.pop(ctx, controller.text.trim());
+            if (controller.text.contains('@')) {
+              Navigator.pop(ctx, controller.text.trim());
+            }
           }
 
           return AlertDialog(
@@ -932,7 +991,9 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                         context: context,
                                         builder: (ctx) {
                                           void submit() {
-                                            if (input.text.contains('@')) Navigator.pop(ctx, input.text.trim());
+                                            if (input.text.contains('@')) {
+                                              Navigator.pop(ctx, input.text.trim());
+                                            }
                                           }
 
                                           return AlertDialog(
@@ -1019,9 +1080,13 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                       setState(() => _busy = true);
                                       try {
                                         final value = await widget.service.availability(library, book);
-                                        if (mounted) setState(() => _availability = value);
+                                        if (mounted) {
+                                          setState(() => _availability = value);
+                                        }
                                       } finally {
-                                        if (mounted) setState(() => _busy = false);
+                                        if (mounted) {
+                                          setState(() => _busy = false);
+                                        }
                                       }
                                     }),
                               primary: true,

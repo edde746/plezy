@@ -154,7 +154,7 @@ class HardcoverBookRecord {
     editionId: sourceInt(json['editionId'] ?? json['edition_id']),
     editionPages: sourceInt(json['editionPages'] ?? json['edition_pages']),
     title: json['title'] as String? ?? '',
-    identifiers: sourceMap(json['identifiers']).map((key, value) => MapEntry('$key', '$value')),
+    identifiers: sourceMap(json['identifiers']).map((key, value) => MapEntry(key, '$value')),
     rating: (json['rating'] as num?)?.toDouble(),
     updatedAt: json['updatedAt'] as String?,
     status: json['status'] is Map ? HardcoverStatus.fromJson(sourceMap(json['status'])) : null,

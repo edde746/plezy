@@ -215,6 +215,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   Future<void> _importPodcastOpml() async {
+    final sourceController = context.read<SourceController>();
     final picked = await FilePickerService.instance.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['opml', 'xml'],
@@ -224,7 +225,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (bytes == null || bytes.isEmpty) return;
     if (bytes.length > PodcastOpml.maxBytes) throw const SourceException(SourceFailure.invalidData);
     final feeds = PodcastOpml.parse(utf8.decode(bytes));
-    final count = await context.read<SourceController>().importPodcastSubscriptions(feeds);
+    final count = await sourceController.importPodcastSubscriptions(feeds);
     if (!mounted) return;
     showSnackBar(context, count == 0 ? 'No new podcast subscriptions.' : 'Imported $count podcast subscriptions.');
     await _load();

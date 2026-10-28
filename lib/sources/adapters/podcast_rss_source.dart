@@ -51,12 +51,14 @@ class PodcastRssSourceAdapter extends SourceAdapter {
     final pending = _feedLoading;
     if (pending != null) return pending;
     late final Future<_PodcastFeed> request;
-    request = _fetchFeed().then((feed) {
-      if (!_closed) _feedCache = feed;
-      return feed;
-    }).whenComplete(() {
-      if (identical(_feedLoading, request)) _feedLoading = null;
-    });
+    request = _fetchFeed()
+        .then((feed) {
+          if (!_closed) _feedCache = feed;
+          return feed;
+        })
+        .whenComplete(() {
+          if (identical(_feedLoading, request)) _feedLoading = null;
+        });
     _feedLoading = request;
     return request;
   }
@@ -102,7 +104,11 @@ class PodcastRssSourceAdapter extends SourceAdapter {
     } else {
       final logo = childText(atom!, 'logo').isNotEmpty ? childText(atom, 'logo') : childText(atom, 'icon');
       if (logo.isNotEmpty) artwork = _safeResolve(feedUri, logo);
-      author = atom.childElements.where((e) => e.name.local == 'author').firstOrNull?.childElements
+      author =
+          atom.childElements
+              .where((e) => e.name.local == 'author')
+              .firstOrNull
+              ?.childElements
               .where((e) => e.name.local == 'name')
               .firstOrNull
               ?.innerText
@@ -139,13 +145,11 @@ class PodcastRssSourceAdapter extends SourceAdapter {
       final mime = declaredMime.startsWith('audio/') ? declaredMime : _audioMime(audioUri, declaredMime);
       if (!mime.startsWith('audio/')) continue;
 
-      final guid = rssChannel != null
-          ? childText(node, 'guid')
-          : childText(node, 'id');
+      final guid = rssChannel != null ? childText(node, 'guid') : childText(node, 'id');
       final published = rssChannel != null
           ? (childText(node, 'pubDate').isNotEmpty ? childText(node, 'pubDate') : childText(node, 'date'))
           : (childText(node, 'published').isNotEmpty ? childText(node, 'published') : childText(node, 'updated'));
-      final identity = guid.isNotEmpty ? guid : '${episodeTitle}\u0000$published\u0000${_urlIdentity(audioUri)}';
+      final identity = guid.isNotEmpty ? guid : '$episodeTitle\u0000$published\u0000${_urlIdentity(audioUri)}';
       final scopedIdentity = '$feedIdentity\u0000$identity';
       final id = 'episode:${sourceDigest(scopedIdentity)}';
       final rawLength = sourceInt(enclosure?.getAttribute('length'));
@@ -153,13 +157,14 @@ class PodcastRssSourceAdapter extends SourceAdapter {
       final durationText = links.where((e) => e.name.local == 'duration').firstOrNull?.innerText.trim() ?? '';
       final durationMs = _duration(durationText);
       final description = rssChannel != null
-          ? (childText(node, 'encoded').isNotEmpty
-                ? childText(node, 'encoded')
-                : childText(node, 'description'))
+          ? (childText(node, 'encoded').isNotEmpty ? childText(node, 'encoded') : childText(node, 'description'))
           : (childText(node, 'summary').isNotEmpty ? childText(node, 'summary') : childText(node, 'content'));
       final episodeAuthor = rssChannel != null
           ? (childText(node, 'creator').isNotEmpty ? childText(node, 'creator') : childText(node, 'author'))
-          : node.childElements.where((e) => e.name.local == 'author').firstOrNull?.childElements
+          : node.childElements
+                    .where((e) => e.name.local == 'author')
+                    .firstOrNull
+                    ?.childElements
                     .where((e) => e.name.local == 'name')
                     .firstOrNull
                     ?.innerText
@@ -280,10 +285,7 @@ class PodcastRssSourceAdapter extends SourceAdapter {
     final numbers = value.split(':').map((part) => int.tryParse(part.trim())).toList();
     if (numbers.any((part) => part == null)) {
       final seconds = double.tryParse(value);
-      return seconds == null ||
-              !seconds.isFinite ||
-              seconds <= 0 ||
-              seconds > 7 * 24 * 60 * 60
+      return seconds == null || !seconds.isFinite || seconds <= 0 || seconds > 7 * 24 * 60 * 60
           ? null
           : (seconds * 1000).round();
     }
@@ -314,7 +316,9 @@ class PodcastRssSourceAdapter extends SourceAdapter {
         normalized == null || normalized.isEmpty
             ? episodes
             : episodes
-                  .where((e) => '${e.title} ${e.author} ${e.series} ${e.description}'.toLowerCase().contains(normalized))
+                  .where(
+                    (e) => '${e.title} ${e.author} ${e.series} ${e.description}'.toLowerCase().contains(normalized),
+                  )
                   .toList(),
         title: feed.title,
       );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
@@ -95,6 +96,20 @@ class _DiscoverySwipeCardState extends State<DiscoverySwipeCard> {
           disableScale: true,
           borderRadius: tokens(context).radiusLg,
           onSelect: widget.onDetails,
+          onKeyEvent: (_, event) {
+            if (!widget.canSwipe) return KeyEventResult.ignored;
+            final saveKey = rtl ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight;
+            final skipKey = rtl ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft;
+            if (event.logicalKey == saveKey) {
+              if (event is KeyDownEvent) widget.onSave();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == skipKey) {
+              if (event is KeyDownEvent) widget.onSkip();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
           child: MouseRegion(
             cursor: widget.onDetails == null ? MouseCursor.defer : SystemMouseCursors.click,
             child: GestureDetector(
@@ -160,6 +175,8 @@ class DiscoveryActionBar extends StatelessWidget {
     this.onSave,
     this.onOpen,
     this.onDetails,
+    this.onPreview,
+    this.onHide,
     this.showDetails = true,
     this.onUndo,
     this.feedback,
@@ -171,6 +188,8 @@ class DiscoveryActionBar extends StatelessWidget {
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
   final VoidCallback? onDetails;
+  final VoidCallback? onPreview;
+  final VoidCallback? onHide;
   final bool showDetails;
   final VoidCallback? onUndo;
   final String? feedback;
@@ -184,7 +203,7 @@ class DiscoveryActionBar extends StatelessWidget {
     final hint = MediaQuery.accessibleNavigationOf(context)
         ? t.discover.findNext.chooseHint
         : keyboard
-        ? t.discover.findNext.controlsHelp
+        ? t.discover.findNext.remoteHint
         : t.discover.findNext.swipeHint;
     final theme = Theme.of(context);
     return ColoredBox(
@@ -239,7 +258,12 @@ class DiscoveryActionBar extends StatelessWidget {
                   children: [
                     Expanded(child: _secondary(t.discover.findNext.undo, onUndo)),
                     if (showDetails) Expanded(child: _secondary(t.discover.findNext.details, onDetails)),
-                    Expanded(child: _secondary(t.discover.findNext.howItWorks, () => showDiscoveryHelp(context))),
+                    if (onPreview != null) Expanded(child: _secondary(t.common.preview, onPreview)),
+                    Expanded(
+                      child: onHide != null
+                          ? _secondary(t.discover.findNext.hideFromDiscovery, onHide)
+                          : _secondary(t.discover.findNext.howItWorks, () => showDiscoveryHelp(context)),
+                    ),
                   ],
                 ),
               ],

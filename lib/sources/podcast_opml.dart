@@ -49,38 +49,36 @@ class PodcastOpml {
   static String write(Iterable<PodcastSubscription> subscriptions) {
     final feeds = subscriptions.toList(growable: false);
     if (feeds.length > maxFeeds) throw const SourceException(SourceFailure.invalidData);
-    if (feeds.any((feed) =>
-        feed.url.host.isEmpty ||
-        !const {'https', 'http'}.contains(feed.url.scheme) ||
-        feed.url.userInfo.isNotEmpty ||
-        feed.url.hasFragment ||
-        feed.url.toString().length > 8192)) {
+    if (feeds.any(
+      (feed) =>
+          feed.url.host.isEmpty ||
+          !const {'https', 'http'}.contains(feed.url.scheme) ||
+          feed.url.userInfo.isNotEmpty ||
+          feed.url.hasFragment ||
+          feed.url.toString().length > 8192,
+    )) {
       throw const SourceException(SourceFailure.permission);
     }
     final outlines = feeds
         .map(
-          (feed) => XmlElement(
-            XmlName('outline'),
-            [
-              XmlAttribute(XmlName('type'), 'rss'),
-              XmlAttribute(XmlName('text'), feed.title),
-              XmlAttribute(XmlName('title'), feed.title),
-              XmlAttribute(XmlName('xmlUrl'), feed.url.toString()),
-            ],
-          ),
+          (feed) => XmlElement(XmlName.parts('outline'), [
+            XmlAttribute(XmlName.parts('type'), 'rss'),
+            XmlAttribute(XmlName.parts('text'), feed.title),
+            XmlAttribute(XmlName.parts('title'), feed.title),
+            XmlAttribute(XmlName.parts('xmlUrl'), feed.url.toString()),
+          ]),
         )
         .toList();
     final document = XmlDocument([
-      XmlDeclaration([
-        XmlAttribute(XmlName('version'), '1.0'),
-        XmlAttribute(XmlName('encoding'), 'UTF-8'),
-      ]),
+      XmlDeclaration([XmlAttribute(XmlName.parts('version'), '1.0'), XmlAttribute(XmlName.parts('encoding'), 'UTF-8')]),
       XmlElement(
-        XmlName('opml'),
-        [XmlAttribute(XmlName('version'), '2.0')],
+        XmlName.parts('opml'),
+        [XmlAttribute(XmlName.parts('version'), '2.0')],
         [
-          XmlElement(XmlName('head'), [], [XmlElement(XmlName('title'), [], [XmlText('PlezyNG Podcasts')])]),
-          XmlElement(XmlName('body'), [], outlines),
+          XmlElement(XmlName.parts('head'), [], [
+            XmlElement(XmlName.parts('title'), [], [XmlText('PlezyNG Podcasts')]),
+          ]),
+          XmlElement(XmlName.parts('body'), [], outlines),
         ],
       ),
     ]);

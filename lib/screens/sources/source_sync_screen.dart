@@ -32,6 +32,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
   final _code = TextEditingController(), _folder = TextEditingController();
   String? _source;
   bool _busy = false, _reveal = false, _loaded = false;
+  bool _includeDiscovery = false;
   Object? _error;
   @override
   void didChangeDependencies() {
@@ -42,6 +43,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     _source = config?.sourceId;
     _code.text = config?.code ?? '';
     _folder.text = config?.folder ?? '.plezyng-sync';
+    _includeDiscovery = config?.includeDiscovery ?? false;
   }
 
   @override
@@ -103,7 +105,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
       builder: (dialogContext) => AlertDialog(
         scrollable: true,
         title: Text(t.audiobook.syncTitle),
-        content: Text(t.audiobook.syncPrivacy),
+        content: Text(config.includeDiscovery ? t.discover.findNext.syncSavedPicksHelp : t.audiobook.syncPrivacy),
         actions: [
           DialogActionButton(
             autofocus: true,
@@ -183,6 +185,15 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     final selected = sources.where((s) => s.id == _source).firstOrNull;
     final configured = controller.syncConfig != null;
     final sync = controller.cloudSync;
+    final discovery = controller.discoverySync;
+    final currentConfig = controller.syncConfig;
+    final configMatches =
+        currentConfig != null &&
+        currentConfig.sourceId == _source &&
+        currentConfig.code == _code.text.trim() &&
+        currentConfig.folder == _folder.text.trim() &&
+        currentConfig.includeDiscovery == _includeDiscovery;
+    final lastSuccesses = [sync.lastSuccess, discovery.lastSuccess].whereType<DateTime>().toList();
     final addSource = _busy ? null : _addSource;
     final generateCode = _busy
         ? null
@@ -194,9 +205,14 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
         ? null
         : () => _confirmSync(
             controller,
-            PublicationSyncConfig(sourceId: selected.id, code: _code.text.trim(), folder: _folder.text.trim()),
+            PublicationSyncConfig(
+              sourceId: selected.id,
+              code: _code.text.trim(),
+              folder: _folder.text.trim(),
+              includeDiscovery: _includeDiscovery,
+            ),
           );
-    final syncNow = _busy ? null : () => _action(controller.sync);
+    final syncNow = _busy || !configMatches ? null : () => _action(controller.sync);
     final disableSync = _busy ? null : () => _action(() => controller.configureCloudSync(null));
     final exportRecovery = _busy ? null : () => _exportRecovery(controller);
     final importRecovery = _busy ? null : () => _importRecovery(controller);
@@ -261,6 +277,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         FocusableTextField(
                           controller: _folder,
                           enabled: !_busy,
+                          onChanged: (_) => setState(() {}),
                           textDirection: TextDirection.ltr,
                           autocorrect: false,
                           textInputAction: TextInputAction.next,
@@ -275,6 +292,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       FocusableTextField(
                         controller: _code,
                         enabled: !_busy,
+                        onChanged: (_) => setState(() {}),
                         textDirection: TextDirection.ltr,
                         obscureText: !_reveal,
                         autocorrect: false,
@@ -290,6 +308,14 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                             icon: AppIcon(_reveal ? Symbols.visibility_off_rounded : Symbols.visibility_rounded),
                           ),
                         ),
+                      ),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _includeDiscovery,
+                        onChanged: _busy ? null : (value) => setState(() => _includeDiscovery = value == true),
+                        title: Text(t.discover.findNext.syncSavedPicks),
+                        subtitle: Text(t.discover.findNext.syncSavedPicksHelp),
+                        controlAffinity: ListTileControlAffinity.leading,
                       ),
                       if (!configured)
                         Align(
@@ -342,7 +368,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         ),
                       ),
                     ],
-                    if (_busy || sync.running)
+                    if (_busy || sync.running || discovery.running)
                       Semantics(
                         label: _busy ? t.audiobook.saveSync : t.fileSources.sync,
                         liveRegion: true,
@@ -350,7 +376,10 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       ),
                     if (configured &&
                         selected != null &&
-                        (sync.failure == SourceFailure.authentication || sync.failure == SourceFailure.permission))
+                        (sync.failure == SourceFailure.authentication ||
+                            sync.failure == SourceFailure.permission ||
+                            discovery.failure == SourceFailure.authentication ||
+                            discovery.failure == SourceFailure.permission))
                       FocusableButton(
                         onPressed: reconnect,
                         child: OutlinedButton.icon(
@@ -359,23 +388,28 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                           label: Text(t.audiobook.syncReconnect),
                         ),
                       ),
-                    if (_error != null || sync.failure != null)
+                    if (_error != null || sync.failure != null || discovery.failure != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: SourceErrorMessage(message: sourceFailureText(_error ?? SourceException(sync.failure!))),
+                        child: SourceErrorMessage(
+                          message: sourceFailureText(_error ?? SourceException(sync.failure ?? discovery.failure!)),
+                        ),
                       ),
-                    if (sync.lastSuccess != null)
+                    if (lastSuccesses.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
                           t.audiobook.lastSynced(
-                            time: MaterialLocalizations.of(
-                              context,
-                            ).formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal())),
+                            time: MaterialLocalizations.of(context).formatTimeOfDay(
+                              TimeOfDay.fromDateTime(lastSuccesses.reduce((a, b) => a.isAfter(b) ? a : b).toLocal()),
+                            ),
                           ),
                         ),
                       ),
-                    Text(t.audiobook.syncPrivacy, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      _includeDiscovery ? t.discover.findNext.syncSavedPicksHelp : t.audiobook.syncPrivacy,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     if (sync.conflicts.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       Text(t.audiobook.syncConflicts, style: Theme.of(context).textTheme.titleLarge),
@@ -405,6 +439,44 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                                       : () => _action(() async {
                                           await controller.stopPlayback?.call();
                                           await controller.resolveCloudConflict(conflict.key, version);
+                                        }),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                    if (discovery.conflicts.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      Text(t.discover.findNext.saved, style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 8),
+                      Text(t.discover.findNext.savedPickConflict),
+                      for (final conflict in discovery.conflicts.values)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                isolateDisplayText(conflict.choice.title),
+                                style: Theme.of(context).textTheme.titleMedium,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              for (final (index, version) in conflict.values.indexed)
+                                SourceTile(
+                                  title: t.discover.findNext.useThisVersion,
+                                  subtitle: sourceMap(version.value['data'])['saved'] == true
+                                      ? isolateDisplayText(
+                                          '${sourceMap(version.value['data'])['title'] ?? conflict.choice.title}',
+                                        )
+                                      : t.common.delete,
+                                  icon: Symbols.sync_alt_rounded,
+                                  index: index,
+                                  count: conflict.values.length,
+                                  onTap: _busy
+                                      ? null
+                                      : () => _action(() async {
+                                          await controller.resolveDiscoveryConflict(conflict.key, version);
                                         }),
                                 ),
                             ],

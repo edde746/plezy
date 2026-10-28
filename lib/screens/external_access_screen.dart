@@ -44,8 +44,28 @@ class ExternalAccessScreen extends StatefulWidget {
 
 class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
   static const _countryCodes = [
-    'AE', 'AU', 'BE', 'BR', 'CA', 'DE', 'EG', 'ES', 'FR', 'GB', 'IE', 'IN', 'IT', 'JP', 'MX', 'NL', 'PL', 'SA',
-    'SE', 'SG', 'TR', 'US',
+    'AE',
+    'AU',
+    'BE',
+    'BR',
+    'CA',
+    'DE',
+    'EG',
+    'ES',
+    'FR',
+    'GB',
+    'IE',
+    'IN',
+    'IT',
+    'JP',
+    'MX',
+    'NL',
+    'PL',
+    'SA',
+    'SE',
+    'SG',
+    'TR',
+    'US',
   ];
 
   final TextEditingController _filter = TextEditingController();
@@ -248,8 +268,8 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
         providerId: commerceProviderId,
         destination: target.uri,
         isbn: const {'ebooks-comics', 'bookshop-comics', 'kobo-comics'}.contains(commerceProviderId)
-             ? BookIdentifiers.preferred(widget.identifiers)
-             : null,
+            ? BookIdentifiers.preferred(widget.identifiers)
+            : null,
       );
       if (!context.mounted) return;
       if (tracked != null) {
@@ -279,20 +299,21 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     final query = _filter.text.trim().toLowerCase();
     final destinationsByCategory = {
       for (final category in widget.categories)
-        category: ExternalAccessDirectory.forCategory(category)
-            .where((destination) => destination.name.toLowerCase().contains(query))
-            .toList(growable: false)
-          ..sort((a, b) {
-            final aPreferred = _preferredProviderIds.contains(a.id);
-            final bPreferred = _preferredProviderIds.contains(b.id);
-            if (aPreferred != bPreferred) return aPreferred ? -1 : 1;
-            if (category == ExternalAccessCategory.video) {
-              final aFreeAdSupported = a.accessModels.contains(ProviderAccessModel.freeAdSupported);
-              final bFreeAdSupported = b.accessModels.contains(ProviderAccessModel.freeAdSupported);
-              if (aFreeAdSupported != bFreeAdSupported) return aFreeAdSupported ? -1 : 1;
-            }
-            return a.name.compareTo(b.name);
-          }),
+        category:
+            ExternalAccessDirectory.forCategory(
+                category,
+              ).where((destination) => destination.name.toLowerCase().contains(query)).toList(growable: false)
+              ..sort((a, b) {
+                final aPreferred = _preferredProviderIds.contains(a.id);
+                final bPreferred = _preferredProviderIds.contains(b.id);
+                if (aPreferred != bPreferred) return aPreferred ? -1 : 1;
+                if (category == ExternalAccessCategory.video) {
+                  final aFreeAdSupported = a.accessModels.contains(ProviderAccessModel.freeAdSupported);
+                  final bFreeAdSupported = b.accessModels.contains(ProviderAccessModel.freeAdSupported);
+                  if (aFreeAdSupported != bFreeAdSupported) return aFreeAdSupported ? -1 : 1;
+                }
+                return a.name.compareTo(b.name);
+              }),
     };
     final hasResults = destinationsByCategory.values.any((destinations) => destinations.isNotEmpty);
     return FocusedScrollScaffold(
@@ -340,8 +361,13 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                           )
                         : null,
                   ),
-                  items: [for (final countryCode in _countryCodes) DropdownMenuItem(value: countryCode, child: Text(countryCode))],
-                  onChanged: _savingCountry ? null : (countryCode) => countryCode == null ? null : _setCountry(countryCode),
+                  items: [
+                    for (final countryCode in _countryCodes)
+                      DropdownMenuItem(value: countryCode, child: Text(countryCode)),
+                  ],
+                  onChanged: _savingCountry
+                      ? null
+                      : (countryCode) => countryCode == null ? null : _setCountry(countryCode),
                 ),
                 const SizedBox(height: 12),
                 for (final category in widget.categories)
@@ -353,23 +379,23 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                           FocusableListTile(
                             leading: AppIcon(_icon(category)),
                             title: Text(destination.name),
-                            subtitle: Text([
-                              t.explore.detail.openOn(site: destination.name),
-                              if (_subscriptionTiers[destination.id] case final tier?) 'Plan: $tier',
-              if (destination.commerceProviderId != null) 'PlezyNG may earn a commission',
-              if (destination.offerNote case final note?) note,
-                            ].join(' · ')),
+                            subtitle: Text(
+                              [
+                                t.explore.detail.openOn(site: destination.name),
+                                if (_subscriptionTiers[destination.id] case final tier?) 'Plan: $tier',
+                                if (destination.commerceProviderId != null) 'PlezyNG may earn a commission',
+                                ?destination.offerNote,
+                              ].join(' · '),
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
                                   tooltip: _preferredProviderIds.contains(destination.id)
-                                      ? t.accessibility.unfavorite
-                                      : t.accessibility.favorite,
-                                  onPressed: () => _setPreferred(
-                                    destination.id,
-                                    !_preferredProviderIds.contains(destination.id),
-                                  ),
+                                      ? t.games.unfavorite
+                                      : t.games.favorite,
+                                  onPressed: () =>
+                                      _setPreferred(destination.id, !_preferredProviderIds.contains(destination.id)),
                                   icon: AppIcon(
                                     _preferredProviderIds.contains(destination.id)
                                         ? Symbols.star_rounded

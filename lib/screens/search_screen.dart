@@ -237,7 +237,9 @@ class _SearchScreenState extends State<SearchScreen>
     final filesFuture = _searchIndex(sources, query);
     final seerrFuture = _searchSeerr(query);
     final catalogsFuture = _searchConnectedCatalogs(query);
-    final crosswalksFuture = profileId == null ? Future.value(const <IdentityCrosswalk>[]) : _loadIdentityCrosswalks(profileId);
+    final crosswalksFuture = profileId == null
+        ? Future.value(const <IdentityCrosswalk>[])
+        : _loadIdentityCrosswalks(profileId);
     final serversFuture = () async {
       if (!hadServers) return null;
       try {
@@ -260,8 +262,8 @@ class _SearchScreenState extends State<SearchScreen>
       final catalogSearch = await catalogsFuture;
       final crosswalks = await crosswalksFuture;
       abort.throwIfAborted();
-      if (profileId != context.read<ActiveProfileProvider?>()?.activeId) return const [];
       if (!mounted) return const [];
+      if (profileId != context.read<ActiveProfileProvider?>()?.activeId) return const [];
       final serverSucceeded = result?.succeededServerIds.isNotEmpty ?? false;
       if (!serverSucceeded && !files.available && seerr == null && !catalogSearch.succeeded) {
         if (result != null && result.failedServerIds.isEmpty && result.cancelledServerIds.isNotEmpty) {
@@ -489,7 +491,9 @@ class _SearchScreenState extends State<SearchScreen>
     final raw = item.raw;
     if (item is PlexMediaItem) {
       final guids = raw?['Guid'];
-      return ExternalIds.fromGuids(guids is List ? guids : const []).fillFrom(ExternalIds.fromLegacyPlexGuid(item.guid));
+      return ExternalIds.fromGuids(
+        guids is List ? guids : const [],
+      ).fillFrom(ExternalIds.fromLegacyPlexGuid(item.guid));
     }
     final providerIds = raw?['ProviderIds'];
     if (providerIds is! Map) return const ExternalIds();
@@ -612,12 +616,15 @@ class _SearchScreenState extends State<SearchScreen>
           for (final hit in results)
             if (hit case MediaSearchHit(:final item) when item.catalogItem?.source == CatalogSourceId.seerr) item,
         ];
-    _catalogResults = matchedOutcome?.catalogs ?? [
-      for (final hit in results)
-        if (hit case MediaSearchHit(:final item)
-            when item.catalogItem?.source != null && item.catalogItem?.source != CatalogSourceId.seerr)
-          item,
-    ];
+    _catalogResults =
+        matchedOutcome?.catalogs ??
+        [
+          for (final hit in results)
+            if (hit case MediaSearchHit(
+              :final item,
+            ) when item.catalogItem?.source != null && item.catalogItem?.source != CatalogSourceId.seerr)
+              item,
+        ];
     _searchPeople =
         matched?.people ??
         [
@@ -1115,9 +1122,8 @@ class _SearchScreenState extends State<SearchScreen>
         );
       }
     }
-    if (sourceId == CatalogSourceId.seerr && _seerrRowAction(context, item.catalogItem, seerr) case final action?) {
-      actions.add(action);
-    }
+    final seerrAction = sourceId == CatalogSourceId.seerr ? _seerrRowAction(context, item.catalogItem, seerr) : null;
+    if (seerrAction != null) actions.add(seerrAction);
     if (actions.isNotEmpty) {
       row = Row(
         children: [
