@@ -15,6 +15,7 @@ import '../../../services/subtitle_rejection_service.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/language_codes.dart';
+import '../../../utils/track_label_builder.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../widgets/app_icon.dart';
@@ -507,6 +508,22 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                         result: result,
                       ));
 
+              final primaryTitle = result.title ?? result.displayTitle ?? t.common.unknown;
+              final languageDisplay = resolveTrackLanguageDisplay(
+                language: result.language,
+                languageCode: result.languageCode,
+              );
+              final detailParts = <String>[
+                if (languageDisplay != null) languageDisplay,
+                if (result.forced) t.fileInfo.flagForced,
+                if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
+                if (result.codec?.trim().isNotEmpty == true) 'Format ${result.codec!.toUpperCase()}',
+                if (result.providerTitle?.trim().isNotEmpty == true) 'Provider ${result.providerTitle!.trim()}',
+                if (result.displayTitle?.trim().isNotEmpty == true &&
+                    result.displayTitle!.trim() != primaryTitle.trim())
+                  result.displayTitle!.trim(),
+                if (isRejected) 'Ignored revision',
+              ];
               final trailingChildren = <Widget>[];
               if (isDownloading) {
                 trailingChildren.add(const LoadingIndicatorBox(size: 20));
@@ -543,16 +560,15 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
               return FocusableListTile(
                 focusNode: index == 0 ? _firstResultFocusNode : null,
-                title: Text(result.title ?? result.displayTitle ?? t.common.unknown, maxLines: 1, overflow: .ellipsis),
-                subtitle: Text(
-                  [
-                    result.displayTitle ?? '',
-                    if (isRejected) 'Ignored revision',
-                  ].where((part) => part.isNotEmpty).join(' · '),
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                  style: TextStyle(color: colorScheme.onSurfaceVariant),
-                ),
+                title: Text(primaryTitle, maxLines: 1, overflow: .ellipsis),
+                subtitle: detailParts.isEmpty
+                    ? null
+                    : Text(
+                        detailParts.join(' · '),
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
                 trailing: trailingChildren.isEmpty
                     ? null
                     : Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: trailingChildren),

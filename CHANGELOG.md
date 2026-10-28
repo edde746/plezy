@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Show language/script, format, provider, and forced/SDH metadata in server and standalone subtitle search results.
+
 - Remember rejected server and standalone subtitle revisions for 180 days; hide or restore them in search and skip rejected server results during automatic preferred-language downloads.
 
 - Add opt-in subtitle-on-mute for library playback, retrying after the native track catalog arrives and restoring a temporary Off override on unmute unless the viewer changes tracks or the item changes.

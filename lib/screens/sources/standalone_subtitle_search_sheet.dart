@@ -15,7 +15,7 @@ import '../../services/settings_service.dart';
 import '../../services/subtitle_rejection_service.dart';
 import '../../services/subtitle_retimer.dart';
 import '../../utils/formatters.dart';
-import '../../utils/language_codes.dart';
+import '../../utils/track_label_builder.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import 'source_widgets.dart';
@@ -463,9 +463,15 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                                     ? result.displayTitle!.trim()
                                     : result.title ?? t.sourceSetup.subtitle;
                                 final ignored = _isRejected(result);
+                                final languageDisplay = resolveTrackLanguageDisplay(
+                                  language: result.language,
+                                  languageCode: result.languageCode,
+                                );
                                 final tags = <String>[
-                                  if (result.language?.isNotEmpty == true) LanguageCodes.getDisplayName(result.language!),
-                                  if (result.codec?.isNotEmpty == true) result.codec!.toUpperCase(),
+                                  if (languageDisplay != null) languageDisplay,
+                                  if (result.codec?.isNotEmpty == true) 'Format ${result.codec!.toUpperCase()}',
+                                  if (result.providerTitle?.trim().isNotEmpty == true)
+                                    'Provider ${result.providerTitle!.trim()}',
                                   if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
                                   if (result.forced) t.fileInfo.flagForced,
                                   if (result.score != null)
