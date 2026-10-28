@@ -79,11 +79,12 @@ automatically reconcile every recoverable job after profile restore, outside
 the stream picker, with at most two jobs running concurrently. Recovery reuses
 saved provider job identities and never stores a signed stream URL. TorBox
 recovery polls the saved torrent ID and does not create a replacement.
-Transient failures receive a capped retry with backoff. The queue is cancelable
-from the existing streaming settings screen; cancel stops local polling and
-retries but leaves provider-side work untouched. Recovery runs in the app
-runtime, so OS suspension can pause it; this is not an OS-scheduled background
-worker, and jobs without a reusable provider ID still need a user action. A
+Transient failures receive a capped retry with backoff. The existing streaming
+settings queue can cancel local polling or manually retry an exhausted job
+using its saved provider ID; cancellation leaves provider-side work untouched.
+Recovery runs in the app runtime, so OS suspension can pause it; this is not an
+OS-scheduled background worker, and jobs without a reusable provider ID still
+need a user action. A
 Stremio choice from a matched server item now uses
 the normal video player and queue, with resume offsets reconciled through the
 existing watch queue. This does not merge cloud files into server library

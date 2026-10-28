@@ -421,6 +421,14 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
     }
   }
 
+  Future<void> _retryPreparation(String id) async {
+    try {
+      await context.read<RemoteStreamingProvider>().retryPreparation(id);
+    } on Object {
+      if (mounted) showAppSnackBar(context, t.streaming.settingsLoadFailed);
+    }
+  }
+
   String _providerName(RemoteStreamService service) => switch (service) {
     RemoteStreamService.realDebrid => t.streaming.realDebrid,
     RemoteStreamService.allDebrid => t.streaming.allDebrid,
@@ -729,17 +737,31 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                                   dimension: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const AppIcon(Symbols.cloud_queue_rounded),
+                              : const AppIcon(Symbols.error_outline_rounded),
                           title: Text(job.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                           subtitle: Text(
                             '${_providerName(job.service)} · ${job.state == RemotePreparationState.preparing ? t.streaming.streamPrepare : t.streaming.streamPrepareFailed}',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          trailing: IconButton(
-                            tooltip: t.common.cancel,
-                            onPressed: streaming.isReady ? () => unawaited(_cancelPreparation(job.id)) : null,
-                            icon: const AppIcon(Symbols.cancel_rounded),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (job.state == RemotePreparationState.interrupted && job.providerJobId != null)
+                                IconButton(
+                                  tooltip: t.common.retry,
+                                  onPressed: streaming.isReady &&
+                                          !streaming.isPreparationRecoveryScheduled(job.id)
+                                      ? () => unawaited(_retryPreparation(job.id))
+                                      : null,
+                                  icon: const AppIcon(Symbols.refresh_rounded),
+                                ),
+                              IconButton(
+                                tooltip: t.common.cancel,
+                                onPressed: streaming.isReady ? () => unawaited(_cancelPreparation(job.id)) : null,
+                                icon: const AppIcon(Symbols.cancel_rounded),
+                              ),
+                            ],
                           ),
                         ),
                     ],

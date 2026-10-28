@@ -36,6 +36,8 @@ class RemoteStreamingProvider extends ChangeNotifier {
   RemoteStreamSnapshot _snapshot = const RemoteStreamSnapshot();
   Future<void> _mutationQueue = Future.value();
   final Set<String> _cancelledPreparationIds = {};
+  final Set<String> _scheduledRecoveryIds = {};
+  final Set<String> _manualRetryIds = {};
 
   String? get profileId => _profileId;
   bool get isReady => !loading && !loadFailed && _profileId != null;
@@ -43,6 +45,9 @@ class RemoteStreamingProvider extends ChangeNotifier {
   List<StremioAddonInstallation> get addons => _snapshot.addons;
   List<RemotePreparationJob> get preparationJobs => _snapshot.preparations;
   final Map<String, Future<ResolvedRemoteStream>> _activeTorrentPreparations = {};
+
+  bool isPreparationRecoveryScheduled(String id) =>
+      _scheduledRecoveryIds.contains(id) || _manualRetryIds.contains(id);
 
   /// Stops this device from polling or retrying a preparation. This does not
   /// delete the corresponding torrent or file from the remote provider.
@@ -75,6 +80,51 @@ class RemoteStreamingProvider extends ChangeNotifier {
     ));
   }
 
+  /// Restarts local recovery for a saved provider job after automatic retries
+  /// are exhausted. The existing provider job identity is reused.
+  Future<void> retryPreparation(String id) async {
+    final (profile, generation) = _requireProfile();
+    if (_scheduledRecoveryIds.contains(id) || !_manualRetryIds.add(id)) return;
+    _notify();
+    try {
+      final job = _snapshot.preparations.where((candidate) => candidate.id == id).firstOrNull;
+      if (job == null ||
+          job.state != RemotePreparationState.interrupted ||
+          job.providerJobId == null) {
+        return;
+      }
+
+      final retryAt = DateTime.now().millisecondsSinceEpoch;
+      await _commit(profile, generation, (current) => current.copyWith(
+        preparations: [
+          for (final candidate in current.preparations)
+            if (candidate.id == id &&
+                candidate.state == RemotePreparationState.interrupted &&
+                !_scheduledRecoveryIds.contains(id))
+              candidate.copyWith(
+                state: RemotePreparationState.interrupted,
+                stage: 'interrupted',
+                updatedAt: retryAt,
+                recoveryAttempts: 0,
+                clearErrorCode: true,
+              )
+            else
+              candidate,
+        ],
+      ));
+      if (!_current(profile, generation) || _scheduledRecoveryIds.contains(id)) return;
+      final retryJob = _snapshot.preparations.where((candidate) => candidate.id == id).firstOrNull;
+      if (retryJob != null && retryJob.state == RemotePreparationState.interrupted) {
+        unawaited(_recoverInterruptedPreparations(profile, generation, [retryJob]));
+      }
+    } finally {
+      if (_current(profile, generation)) {
+        _manualRetryIds.remove(id);
+        _notify();
+      }
+    }
+  }
+
   RemoteStreamAccount? accountFor(RemoteStreamService service) =>
       accounts.where((account) => account.service == service).firstOrNull;
 
@@ -84,6 +134,8 @@ class RemoteStreamingProvider extends ChangeNotifier {
         _profileId = null;
         _generation++;
         _cancelledPreparationIds.clear();
+        _scheduledRecoveryIds.clear();
+        _manualRetryIds.clear();
         loading = false;
         loadFailed = false;
         settingsUnreadable = false;
@@ -95,6 +147,8 @@ class RemoteStreamingProvider extends ChangeNotifier {
     if (_profileId == profileId) return;
     _profileId = profileId;
     _cancelledPreparationIds.clear();
+    _scheduledRecoveryIds.clear();
+    _manualRetryIds.clear();
     final generation = ++_generation;
     loading = true;
     loadFailed = false;
@@ -170,15 +224,29 @@ class RemoteStreamingProvider extends ChangeNotifier {
   ) async {
     // A tiny concurrency cap keeps profile startup responsive and limits
     // provider pressure if several preparation requests were interrupted.
-    var nextJob = 0;
-    Future<void> runWorker() async {
-      while (_current(profile, generation) && nextJob < jobs.length) {
-        final job = jobs[nextJob++];
-        await _recoverWithBackoff(profile, generation, job);
+    final newIds = <String>{};
+    for (final job in jobs) {
+      if (_scheduledRecoveryIds.add(job.id)) newIds.add(job.id);
+    }
+    if (newIds.isEmpty) return;
+    _notify();
+    try {
+      var nextJob = 0;
+      Future<void> runWorker() async {
+        while (_current(profile, generation) && nextJob < jobs.length) {
+          final job = jobs[nextJob++];
+          if (!newIds.contains(job.id)) continue;
+          await _recoverWithBackoff(profile, generation, job);
+        }
+      }
+
+      await Future.wait([runWorker(), runWorker()]);
+    } finally {
+      if (_current(profile, generation)) {
+        _scheduledRecoveryIds.removeAll(newIds);
+        _notify();
       }
     }
-
-    await Future.wait([runWorker(), runWorker()]);
   }
 
   Future<void> _recoverWithBackoff(
