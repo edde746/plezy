@@ -11,6 +11,8 @@ abstract final class SubtitleRejectionService {
   static const int maximumRememberedRevisions = 256;
   static const Duration retention = Duration(days: 180);
 
+  static Future<void> _writeQueue = Future<void>.value();
+
   static String revisionKey({
     required String serverId,
     required String itemId,
@@ -65,21 +67,24 @@ abstract final class SubtitleRejectionService {
     required String itemId,
     required int mediaIndex,
     required SubtitleSearchResult result,
-  }) async {
-    if (result.key.trim().isEmpty) return;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final entries = _prune(settings.read(SettingsService.subtitleRejectedRevisions), now);
-    entries[revisionKey(
+  }) {
+    if (result.key.trim().isEmpty) return Future<void>.value();
+    final key = revisionKey(
       serverId: serverId,
       itemId: itemId,
       mediaIndex: mediaIndex,
       result: result,
-    )] = now;
-    while (entries.length > maximumRememberedRevisions) {
-      final oldest = entries.entries.reduce((a, b) => a.value <= b.value ? a : b).key;
-      entries.remove(oldest);
-    }
-    await settings.write(SettingsService.subtitleRejectedRevisions, Map.unmodifiable(entries));
+    );
+    return _enqueueWrite(() async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final entries = _prune(settings.read(SettingsService.subtitleRejectedRevisions), now);
+      entries[key] = now;
+      while (entries.length > maximumRememberedRevisions) {
+        final oldest = entries.entries.reduce((a, b) => a.value <= b.value ? a : b).key;
+        entries.remove(oldest);
+      }
+      await settings.write(SettingsService.subtitleRejectedRevisions, Map.unmodifiable(entries));
+    });
   }
 
   static Future<void> restore(
@@ -88,16 +93,27 @@ abstract final class SubtitleRejectionService {
     required String itemId,
     required int mediaIndex,
     required SubtitleSearchResult result,
-  }) async {
-    if (result.key.trim().isEmpty) return;
-    final entries = Map<String, int>.from(settings.read(SettingsService.subtitleRejectedRevisions));
-    entries.remove(revisionKey(
+  }) {
+    if (result.key.trim().isEmpty) return Future<void>.value();
+    final key = revisionKey(
       serverId: serverId,
       itemId: itemId,
       mediaIndex: mediaIndex,
       result: result,
-    ));
-    await settings.write(SettingsService.subtitleRejectedRevisions, Map.unmodifiable(entries));
+    );
+    return _enqueueWrite(() async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final entries = _prune(settings.read(SettingsService.subtitleRejectedRevisions), now);
+      entries.remove(key);
+      await settings.write(SettingsService.subtitleRejectedRevisions, Map.unmodifiable(entries));
+    });
+  }
+
+  static Future<void> _enqueueWrite(Future<void> Function() action) {
+    final previous = _writeQueue;
+    final operation = previous.catchError((Object _, StackTrace __) {}).then((_) => action());
+    _writeQueue = operation.catchError((Object _, StackTrace __) {});
+    return operation;
   }
 
   static Map<String, int> _prune(Map<String, int> source, int now) {
