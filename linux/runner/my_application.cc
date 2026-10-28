@@ -103,7 +103,11 @@ static void my_application_activate(GApplication* application) {
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvAudioPlugin");
   mpv_audio_plugin_register_with_registrar(audio_registrar);
 
-  gtk_widget_show(GTK_WIDGET(window));
+  bool preparation_worker = false;
+  for (char** arg = self->dart_entrypoint_arguments; arg && *arg; ++arg) {
+    if (g_strcmp0(*arg, "--plezy-preparation-worker") == 0) preparation_worker = true;
+  }
+  if (!preparation_worker) gtk_widget_show(GTK_WIDGET(window));
   gtk_widget_grab_focus(GTK_WIDGET(self->flutter_view));
 }
 
@@ -113,6 +117,11 @@ static gboolean my_application_local_command_line(GApplication* application, gch
   // Strip out the first argument as it is the binary name.
   self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
 
+  for (char** arg = self->dart_entrypoint_arguments; arg && *arg; ++arg) {
+    if (g_strcmp0(*arg, "--plezy-preparation-worker") == 0) {
+      g_application_set_flags(application, G_APPLICATION_NON_UNIQUE);
+    }
+  }
   g_autoptr(GError) error = nullptr;
   if (!g_application_register(application, nullptr, &error)) {
     g_warning("Failed to register: %s", error->message);

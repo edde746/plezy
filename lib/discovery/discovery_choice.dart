@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+import '../media/canonical_video_identity.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../models/catalog/catalog_item.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_program.dart';
 import '../sources/source_models.dart';
+
+export '../media/canonical_video_identity.dart';
 
 enum DiscoveryChoiceType { video, music, ebook, audiobook, comic, sourceVideo, liveProgram }
 
@@ -455,6 +458,20 @@ String discoveryMediaIdentity(MediaItem item) {
 String discoverySourceIdentity(SourceEntry entry) {
   if (entry.sourceId.trim().isEmpty || entry.id.trim().isEmpty) return '';
   return jsonEncode(['publication-edition', entry.sourceId, entry.id, entry.kind.name]);
+}
+
+/// Strong, cross-source identities for video choices. These keys are used to
+/// collapse a source copy into the server/catalog card that already represents
+/// the same movie or exact episode. Source-local IDs remain the playback and
+/// progress identity; these keys only coordinate browse projections.
+Set<String> discoveryCanonicalVideoIdentities(DiscoveryChoice choice) {
+  if (choice.type != DiscoveryChoiceType.video && choice.type != DiscoveryChoiceType.sourceVideo) {
+    return const {};
+  }
+  final media = choice.mediaItem;
+  if (media != null) return canonicalVideoIdentitiesForMediaItem(media);
+  final entry = choice.sourceEntry;
+  return entry == null ? const {} : canonicalVideoIdentitiesForSourceEntry(entry);
 }
 
 DiscoveryChoiceType? discoveryTypeForMediaKind(MediaKind kind) => switch (kind) {

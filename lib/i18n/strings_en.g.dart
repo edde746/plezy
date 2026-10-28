@@ -63,6 +63,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$dialog$en dialog = Translations$dialog$en.internal(_root);
 	late final Translations$profiles$en profiles = Translations$profiles$en.internal(_root);
 	late final Translations$connections$en connections = Translations$connections$en.internal(_root);
+	late final Translations$iptv$en iptv = Translations$iptv$en.internal(_root);
 	late final Translations$accountPreferences$en accountPreferences = Translations$accountPreferences$en.internal(_root);
 	late final Translations$discover$en discover = Translations$discover$en.internal(_root);
 	late final Translations$errors$en errors = Translations$errors$en.internal(_root);
@@ -92,6 +93,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$trakt$en trakt = Translations$trakt$en.internal(_root);
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
+	late final Translations$streaming$en streaming = Translations$streaming$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
 	late final Translations$automation$en automation = Translations$automation$en.internal(_root);
@@ -3973,6 +3975,450 @@ class Translations$connections$en {
 	String editMediaBrowserIntro({required Object serverName}) => 'Add or remove URLs for ${serverName}. PlezyNG will use the reachable URL with the lowest latency.';
 }
 
+// Path: iptv
+class Translations$iptv$en {
+	Translations$iptv$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Add IPTV source'
+	String get addSource => 'Add IPTV source';
+
+	/// en: 'Add an M3U or Xtream feed, including Tunerr and Dispatcharr playlist outputs.'
+	String get addSourceDescription => 'Add an M3U or Xtream feed, including Tunerr and Dispatcharr playlist outputs.';
+
+	/// en: 'IPTV sources'
+	String get sourcesTitle => 'IPTV sources';
+
+	/// en: 'Manage live channel playlists and programme guides for this profile.'
+	String get sourcesDescription => 'Manage live channel playlists and programme guides for this profile.';
+
+	/// en: 'Manage channels'
+	String get manageChannels => 'Manage channels';
+
+	/// en: 'Live channels'
+	String get liveChannelPicker => 'Live channels';
+
+	/// en: 'Search channels, groups, or sources'
+	String get searchLiveChannels => 'Search channels, groups, or sources';
+
+	/// en: 'All channels'
+	String get allLiveChannels => 'All channels';
+
+	/// en: 'Recently watched'
+	String get recentChannels => 'Recently watched';
+
+	/// en: 'Channel group'
+	String get channelGroup => 'Channel group';
+
+	/// en: 'No channels match this search.'
+	String get noLiveChannelResults => 'No channels match this search.';
+
+	/// en: 'Other channels'
+	String get uncategorizedChannels => 'Other channels';
+
+	/// en: 'Additional XMLTV guide URLs'
+	String get additionalGuideEndpoints => 'Additional XMLTV guide URLs';
+
+	/// en: 'Optional. Add one guide URL per line to combine schedules from several providers. Up to 8.'
+	String get additionalGuideEndpointsHelp => 'Optional. Add one guide URL per line to combine schedules from several providers. Up to 8.';
+
+	/// en: 'One XMLTV guide URL. Xtream credentials can supply this automatically.'
+	String get guideEndpointHelp => 'One XMLTV guide URL. Xtream credentials can supply this automatically.';
+
+	/// en: 'XMLTV channel ID'
+	String get epgChannelId => 'XMLTV channel ID';
+
+	/// en: 'Match this playlist channel to a guide entry. Leave blank to use the provider ID, then refresh the source.'
+	String get epgChannelIdHelp => 'Match this playlist channel to a guide entry. Leave blank to use the provider ID, then refresh the source.';
+
+	/// en: 'Guide match saved, but the guide could not refresh. Retry from IPTV sources.'
+	String get guideMappingRefreshFailed => 'Guide match saved, but the guide could not refresh. Retry from IPTV sources.';
+
+	/// en: 'No channels loaded from this source yet.'
+	String get noChannels => 'No channels loaded from this source yet.';
+
+	/// en: 'Search channels'
+	String get searchChannels => 'Search channels';
+
+	/// en: 'Display name'
+	String get customChannelName => 'Display name';
+
+	/// en: 'Guide group'
+	String get customGroupName => 'Guide group';
+
+	/// en: 'Leave blank to use the provider value.'
+	String get useProviderName => 'Leave blank to use the provider value.';
+
+	/// en: 'Hide this channel from the guide'
+	String get hideFromGuide => 'Hide this channel from the guide';
+
+	/// en: 'Require profile PIN to watch this channel'
+	String get lockChannel => 'Require profile PIN to watch this channel';
+
+	/// en: 'Require profile PIN for this group'
+	String get lockChannelGroup => 'Require profile PIN for this group';
+
+	/// en: 'Channel locks need a PIN-protected local profile. Add a PIN in Profiles to use parental controls.'
+	String get parentalPinRequired => 'Channel locks need a PIN-protected local profile. Add a PIN in Profiles to use parental controls.';
+
+	/// en: 'Enter the profile PIN to watch locked IPTV channels.'
+	String get parentalAccessDenied => 'Enter the profile PIN to watch locked IPTV channels.';
+
+	/// en: 'PIN locked'
+	String get parentalLockedLabel => 'PIN locked';
+
+	/// en: 'Choose a profile before adding IPTV sources.'
+	String get noActiveProfile => 'Choose a profile before adding IPTV sources.';
+
+	/// en: 'No IPTV sources'
+	String get emptyTitle => 'No IPTV sources';
+
+	/// en: 'Add an M3U playlist or Xtream provider to bring its channels into Live TV.'
+	String get emptyDescription => 'Add an M3U playlist or Xtream provider to bring its channels into Live TV.';
+
+	/// en: 'Source name'
+	String get sourceName => 'Source name';
+
+	/// en: 'Source type'
+	String get provider => 'Source type';
+
+	/// en: 'M3U playlist'
+	String get m3u => 'M3U playlist';
+
+	/// en: 'Xtream Codes'
+	String get xtream => 'Xtream Codes';
+
+	/// en: 'IPTV Tunerr'
+	String get tunerr => 'IPTV Tunerr';
+
+	/// en: 'Dispatcharr'
+	String get dispatcharr => 'Dispatcharr';
+
+	/// en: 'Stalker / MAG portal'
+	String get stalker => 'Stalker / MAG portal';
+
+	/// en: 'Connect to a Stalker or Ministra portal with the registered device MAC address.'
+	String get stalkerHelp => 'Connect to a Stalker or Ministra portal with the registered device MAC address.';
+
+	/// en: 'Registered device MAC address'
+	String get macAddress => 'Registered device MAC address';
+
+	/// en: 'Enter the registered MAC address in the form 00:1A:79:00:00:00.'
+	String get macAddressInvalid => 'Enter the registered MAC address in the form 00:1A:79:00:00:00.';
+
+	/// en: 'Playlist URL'
+	String get endpoint => 'Playlist URL';
+
+	/// en: 'Xtream server URL'
+	String get xtreamEndpoint => 'Xtream server URL';
+
+	/// en: 'XMLTV guide URL (optional)'
+	String get guideEndpoint => 'XMLTV guide URL (optional)';
+
+	/// en: 'Username'
+	String get username => 'Username';
+
+	/// en: 'Password'
+	String get password => 'Password';
+
+	/// en: 'Allow unencrypted HTTP'
+	String get allowHttp => 'Allow unencrypted HTTP';
+
+	/// en: 'Use only for a trusted local network. HTTPS is preferred when available.'
+	String get allowHttpDescription => 'Use only for a trusted local network. HTTPS is preferred when available.';
+
+	/// en: 'Paste the M3U playlist URL. Add an XMLTV URL to show programme details in the guide.'
+	String get m3uHelp => 'Paste the M3U playlist URL. Add an XMLTV URL to show programme details in the guide.';
+
+	/// en: 'Enter the provider server URL and login. PlezyNG requests its M3U playlist and XMLTV guide.'
+	String get xtreamHelp => 'Enter the provider server URL and login. PlezyNG requests its M3U playlist and XMLTV guide.';
+
+	/// en: 'Use the playlist and XMLTV URLs shown by this service. The service remains optional.'
+	String get managedFeedHelp => 'Use the playlist and XMLTV URLs shown by this service. The service remains optional.';
+
+	/// en: 'Playlist User-Agent, referrer, and origin options are honored for playback. Other playlist commands and headers are ignored.'
+	String get playlistHeadersHelp => 'Playlist User-Agent, referrer, and origin options are honored for playback. Other playlist commands and headers are ignored.';
+
+	/// en: 'Save and load channels'
+	String get saveAndImport => 'Save and load channels';
+
+	/// en: 'Retry channel import'
+	String get retryImport => 'Retry channel import';
+
+	/// en: 'Done'
+	String get done => 'Done';
+
+	/// en: 'Refresh'
+	String get refresh => 'Refresh';
+
+	/// en: 'IPTV sources refreshed.'
+	String get refreshComplete => 'IPTV sources refreshed.';
+
+	/// en: '${count} IPTV source(s) could not be refreshed.'
+	String refreshFailed({required Object count}) => '${count} IPTV source(s) could not be refreshed.';
+
+	/// en: 'Watch from start'
+	String get watchFromStart => 'Watch from start';
+
+	/// en: 'Edit source'
+	String get edit => 'Edit source';
+
+	/// en: 'Remove source'
+	String get remove => 'Remove source';
+
+	/// en: 'Remove IPTV source?'
+	String get removeTitle => 'Remove IPTV source?';
+
+	/// en: 'This removes ${name}, its imported channels, programme guide and favorites from this profile.'
+	String removeMessage({required Object name}) => 'This removes ${name}, its imported channels, programme guide and favorites from this profile.';
+
+	/// en: '${count} channels'
+	String channels({required Object count}) => '${count} channels';
+
+	/// en: '${count} guide listings'
+	String programmes({required Object count}) => '${count} guide listings';
+
+	/// en: 'Updated ${date}'
+	String lastUpdated({required Object date}) => 'Updated ${date}';
+
+	/// en: 'Not imported yet'
+	String get neverUpdated => 'Not imported yet';
+
+	/// en: 'Source saved, but channels could not be loaded. Check the feed and retry from IPTV sources.'
+	String get savedRefreshFailed => 'Source saved, but channels could not be loaded. Check the feed and retry from IPTV sources.';
+
+	/// en: 'Loaded ${count} channels'
+	String importComplete({required Object count}) => 'Loaded ${count} channels';
+
+	/// en: 'Required'
+	String get required => 'Required';
+
+	/// en: 'Check the source details and URL.'
+	String get sourceInvalid => 'Check the source details and URL.';
+
+	/// en: 'Enable HTTP for this source or use an HTTPS URL.'
+	String get httpNotAllowed => 'Enable HTTP for this source or use an HTTPS URL.';
+
+	/// en: 'The provider rejected the username or password.'
+	String get authentication => 'The provider rejected the username or password.';
+
+	/// en: 'The provider denied access to this feed.'
+	String get permission => 'The provider denied access to this feed.';
+
+	/// en: 'The provider returned an invalid playlist or guide.'
+	String get invalidData => 'The provider returned an invalid playlist or guide.';
+
+	/// en: 'This URL is a media stream. Enter the playlist URL instead.'
+	String get playlistIsStream => 'This URL is a media stream. Enter the playlist URL instead.';
+
+	/// en: 'Could not reach the provider. Check the URL and network, then retry.'
+	String get providerUnavailable => 'Could not reach the provider. Check the URL and network, then retry.';
+
+	/// en: 'The source changed during import. Retry the refresh.'
+	String get sourceChanged => 'The source changed during import. Retry the refresh.';
+
+	/// en: 'The saved credentials are unavailable. Edit this source and enter them again.'
+	String get credentialUnavailable => 'The saved credentials are unavailable. Edit this source and enter them again.';
+
+	/// en: 'This IPTV source no longer exists.'
+	String get sourceMissing => 'This IPTV source no longer exists.';
+
+	/// en: 'Use a Dispatcharr playlist URL. Add Xtream credentials for movies and series, or an API key for DVR controls.'
+	String get dispatcharrHelp => 'Use a Dispatcharr playlist URL. Add Xtream credentials for movies and series, or an API key for DVR controls.';
+
+	/// en: 'Dispatcharr DVR (optional)'
+	String get dispatcharrDvr => 'Dispatcharr DVR (optional)';
+
+	/// en: 'Connect the Dispatcharr server API to schedule and manage recordings stored on that server.'
+	String get dispatcharrDvrHelp => 'Connect the Dispatcharr server API to schedule and manage recordings stored on that server.';
+
+	/// en: 'Dispatcharr server URL'
+	String get dispatcharrApiEndpoint => 'Dispatcharr server URL';
+
+	/// en: 'Dispatcharr API key'
+	String get dispatcharrApiKey => 'Dispatcharr API key';
+
+	/// en: 'Use the player buffer for time-shifting'
+	String get localTimeShift => 'Use the player buffer for time-shifting';
+
+	/// en: 'On native MPV players, keep a bounded seek window when the stream provides seekable data.'
+	String get localTimeShiftHelp => 'On native MPV players, keep a bounded seek window when the stream provides seekable data.';
+
+	/// en: 'Movies & Series'
+	String get vodTitle => 'Movies & Series';
+
+	/// en: 'IPTV movies & series'
+	String get iptvSearchResults => 'IPTV movies & series';
+
+	/// en: 'Sync IPTV watch progress'
+	String get vodProgressSync => 'Sync IPTV watch progress';
+
+	/// en: 'Share movie and series positions through your Plex account. Each device keeps its own provider credentials.'
+	String get vodProgressSyncHelp => 'Share movie and series positions through your Plex account. Each device keeps its own provider credentials.';
+
+	/// en: 'VOD source'
+	String get vodSource => 'VOD source';
+
+	/// en: 'Movies'
+	String get movies => 'Movies';
+
+	/// en: 'Series'
+	String get series => 'Series';
+
+	/// en: 'Search movies and series'
+	String get searchVod => 'Search movies and series';
+
+	/// en: 'Category'
+	String get category => 'Category';
+
+	/// en: 'All categories'
+	String get allCategories => 'All categories';
+
+	/// en: 'No titles in this category.'
+	String get noVodItems => 'No titles in this category.';
+
+	/// en: 'This source could not load its catalogue. Check the provider credentials and retry.'
+	String get vodUnavailable => 'This source could not load its catalogue. Check the provider credentials and retry.';
+
+	/// en: 'VOD is not configured for this source.'
+	String get vodUnavailableShort => 'VOD is not configured for this source.';
+
+	/// en: 'Could not start this title. Check the provider connection and try again.'
+	String get vodPlaybackFailed => 'Could not start this title. Check the provider connection and try again.';
+
+	/// en: 'Play'
+	String get play => 'Play';
+
+	/// en: 'No episodes are available for this series.'
+	String get noEpisodes => 'No episodes are available for this series.';
+
+	/// en: 'Season'
+	String get season => 'Season';
+
+	/// en: 'Specials'
+	String get specials => 'Specials';
+
+	/// en: 'Local recordings'
+	String get localRecordings => 'Local recordings';
+
+	/// en: 'Recording saved to this device.'
+	String get recordingSavedLocal => 'Recording saved to this device.';
+
+	/// en: 'The recording could not be saved.'
+	String get recordingFailedLocal => 'The recording could not be saved.';
+
+	/// en: 'Recording'
+	String get recordingInProgressLocal => 'Recording';
+
+	/// en: 'Interrupted'
+	String get recordingInterrupted => 'Interrupted';
+
+	/// en: 'Missed'
+	String get recordingMissed => 'Missed';
+
+	/// en: 'PlezyNG closed before recording started or finished.'
+	String get recordingAppClosed => 'PlezyNG closed before recording started or finished.';
+
+	/// en: 'This provider uses an unsupported HLS encryption mode.'
+	String get recordingEncryptedHls => 'This provider uses an unsupported HLS encryption mode.';
+
+	/// en: 'The provider rejected the recording connection.'
+	String get recordingProviderAuthentication => 'The provider rejected the recording connection.';
+
+	/// en: 'The provider denied access to this stream.'
+	String get recordingProviderPermission => 'The provider denied access to this stream.';
+
+	/// en: 'This source is no longer available.'
+	String get sourceUnavailable => 'This source is no longer available.';
+
+	/// en: 'Delete recording'
+	String get deleteRecording => 'Delete recording';
+
+	/// en: 'Delete this recording and its file from this device?'
+	String get deleteRecordingConfirm => 'Delete this recording and its file from this device?';
+
+	/// en: 'Delete this recording and its file from the Dispatcharr server?'
+	String get deleteDispatcharrRecordingConfirm => 'Delete this recording and its file from the Dispatcharr server?';
+
+	/// en: 'Stop recording'
+	String get stopRecording => 'Stop recording';
+
+	/// en: 'Recording deleted.'
+	String get recordingDeleted => 'Recording deleted.';
+
+	/// en: 'Recording scheduled on Dispatcharr.'
+	String get recordingScheduled => 'Recording scheduled on Dispatcharr.';
+
+	/// en: 'Schedule local recording'
+	String get scheduleRecordingOnDevice => 'Schedule local recording';
+
+	/// en: 'Local recording scheduled. PlezyNG must be running when it starts.'
+	String get localRecordingScheduled => 'Local recording scheduled. PlezyNG must be running when it starts.';
+
+	/// en: 'This program is already scheduled for local recording.'
+	String get localRecordingAlreadyScheduled => 'This program is already scheduled for local recording.';
+
+	/// en: 'Local recording schedule'
+	String get localRecordingSchedules => 'Local recording schedule';
+
+	/// en: 'Scheduled on this device'
+	String get scheduledOnThisDevice => 'Scheduled on this device';
+
+	/// en: 'Cancel local recording?'
+	String get cancelLocalRecording => 'Cancel local recording?';
+
+	/// en: 'Cancel the local recording of ${programme}?'
+	String cancelLocalRecordingConfirm({required Object programme}) => 'Cancel the local recording of ${programme}?';
+
+	/// en: 'Cancel schedule'
+	String get cancelSchedule => 'Cancel schedule';
+
+	/// en: 'Local recording schedule cancelled.'
+	String get localRecordingCancelled => 'Local recording schedule cancelled.';
+
+	/// en: 'Dispatcharr recording stopped.'
+	String get recordingStopped => 'Dispatcharr recording stopped.';
+
+	/// en: 'Could not update the recording. Check the Dispatcharr connection and permissions.'
+	String get recordingActionFailed => 'Could not update the recording. Check the Dispatcharr connection and permissions.';
+
+	/// en: 'Some IPTV recording details could not be loaded.'
+	String get recordingLoadFailed => 'Some IPTV recording details could not be loaded.';
+
+	/// en: 'The local recording file is missing.'
+	String get recordingFileMissing => 'The local recording file is missing.';
+
+	/// en: 'There is not enough free space to start a recording. Free at least 512 MB and try again.'
+	String get recordingStorageLow => 'There is not enough free space to start a recording. Free at least 512 MB and try again.';
+
+	/// en: 'The live recording could not be finalized.'
+	String get recordingSaveFailed => 'The live recording could not be finalized.';
+
+	/// en: 'Delete recording rule?'
+	String get deleteRecordingRule => 'Delete recording rule?';
+
+	/// en: 'Delete this rule from Dispatcharr?'
+	String get deleteRecordingRuleConfirm => 'Delete this rule from Dispatcharr?';
+
+	/// en: 'Dispatcharr recordings'
+	String get dispatcharrRecordings => 'Dispatcharr recordings';
+
+	/// en: 'Dispatcharr rules'
+	String get dispatcharrRules => 'Dispatcharr rules';
+
+	/// en: 'Schedule recording'
+	String get scheduleRecording => 'Schedule recording';
+
+	/// en: 'This Dispatcharr channel could not be matched to the guide channel.'
+	String get recordingActionUnavailable => 'This Dispatcharr channel could not be matched to the guide channel.';
+
+	/// en: 'Could not save this IPTV source. Check the details and retry.'
+	String get genericError => 'Could not save this IPTV source. Check the details and retry.';
+}
+
 // Path: accountPreferences
 class Translations$accountPreferences$en {
 	Translations$accountPreferences$en.internal(this._root);
@@ -6248,24 +6694,29 @@ class Translations$videoSettings$en {
 
 	/// en: 'Decodes audio to PCM; passthrough is off while this is on'
 	String get audioNormalizationDisablesPassthrough => 'Decodes audio to PCM; passthrough is off while this is on';
+
 	/// en: 'Motion & clarity'
 	String get motionClarity => 'Motion & clarity';
+
 	/// en: 'Motion & clarity. Tap to toggle processing; hold to choose a preset.'
 	String get motionClarityQuickToggle => 'Motion & clarity. Tap to toggle processing; hold to choose a preset.';
+
 	/// en: 'Motion is on. Tap to turn it off; hold for presets.'
 	String get motionClarityQuickToggleOn => 'Motion is on. Tap to turn it off; hold for presets.';
+
 	/// en: 'Motion is off. Tap to turn on the last preset; hold for presets.'
 	String get motionClarityQuickToggleOff => 'Motion is off. Tap to turn on the last preset; hold for presets.';
 
 	/// en: 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.'
 	String get motionClarityDescription => 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.';
+
 	/// en: 'Desktop: tap the player’s Motion & clarity button to toggle motion; hold it for presets. First use starts with Balanced. Mobile: Video settings > Motion & clarity. Compare for A/B during playback.'
 	String get motionClarityControlsHint => 'Desktop: tap the player’s Motion & clarity button to toggle motion; hold it for presets. First use starts with Balanced. Mobile: Video settings > Motion & clarity. Compare for A/B during playback.';
 
 	/// en: 'Original'
 	String get motionClarityOriginal => 'Original';
 
-	/// en: 'Preserve the source cadence and the player\'s existing configuration.'
+	/// en: 'Preserve the source cadence and the player's existing configuration.'
 	String get motionClarityOriginalDescription => 'Preserve the source cadence and the player\'s existing configuration.';
 
 	/// en: 'Cinema'
@@ -6340,6 +6791,87 @@ class Translations$videoSettings$en {
 	/// en: 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.'
 	String get motionClarityThresholdDescription => 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.';
 
+	/// en: 'Motion method'
+	String get motionClarityEngine => 'Motion method';
+
+	/// en: 'Temporal blend'
+	String get motionClarityTemporalBlend => 'Temporal blend';
+
+	/// en: 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.'
+	String get motionClarityTemporalBlendDescription => 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.';
+
+	/// en: 'Motion-compensated frames'
+	String get motionClarityMotionCompensated => 'Motion-compensated frames';
+
+	/// en: 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.'
+	String get motionClarityMotionCompensatedDescription => 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.';
+
+	/// en: 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.'
+	String get motionClarityMciProfileDescription => 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.';
+
+	/// en: 'Motion search effort'
+	String get motionClarityMciQuality => 'Motion search effort';
+
+	/// en: 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.'
+	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.';
+
+	/// en: 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.'
+	String get motionClarityGuardReduced => 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.';
+
+	/// en: 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.'
+	String get motionClarityGuardFallback => 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.';
+
+	/// en: 'Motion compensation could not keep up, and temporal fallback could not be enabled.'
+	String get motionClarityGuardFallbackFailed => 'Motion compensation could not keep up, and temporal fallback could not be enabled.';
+
+	/// en: 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.'
+	String get motionClarityGuardTelemetryUnavailable => 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.';
+
+	/// en: 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.'
+	String get motionClarityGuardFailure => 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.';
+
+	/// en: 'Low search effort'
+	String get motionClarityMciFast => 'Low search effort';
+
+	/// en: 'Balanced search effort'
+	String get motionClarityMciBalanced => 'Balanced search effort';
+
+	/// en: 'High search effort'
+	String get motionClarityMciHigh => 'High search effort';
+
+	/// en: 'Generated frame-rate target'
+	String get motionClarityOutputRate => 'Generated frame-rate target';
+
+	/// en: 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.'
+	String get motionClarityOutputRateDescription => 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.';
+
+	/// en: 'Match current display'
+	String get motionClarityOutputCurrentDisplay => 'Match current display';
+
+	/// en: '48 fps'
+	String get motionClarityOutput48 => '48 fps';
+
+	/// en: '50 fps'
+	String get motionClarityOutput50 => '50 fps';
+
+	/// en: '60 fps'
+	String get motionClarityOutput60 => '60 fps';
+
+	/// en: '72 fps'
+	String get motionClarityOutput72 => '72 fps';
+
+	/// en: '90 fps'
+	String get motionClarityOutput90 => '90 fps';
+
+	/// en: '100 fps'
+	String get motionClarityOutput100 => '100 fps';
+
+	/// en: '120 fps'
+	String get motionClarityOutput120 => '120 fps';
+
+	/// en: '144 fps'
+	String get motionClarityOutput144 => '144 fps';
+
 	/// en: 'This playback route does not expose a supported motion-processing path.'
 	String get motionClarityOutputUnsupported => 'This playback route does not expose a supported motion-processing path.';
 
@@ -6348,79 +6880,33 @@ class Translations$videoSettings$en {
 
 	/// en: 'Processing options were accepted. Presented frame rate depends on the active renderer and display.'
 	String get motionClarityConfigured => 'Processing options were accepted. Presented frame rate depends on the active renderer and display.';
-	/// en: 'Renderer-reported display rate'
-	String get motionClarityReportedDisplayRate => 'Renderer-reported display rate';
-	/// en: 'Container-reported nominal rate'
-	String get motionClaritySourceRate => 'Container-reported nominal rate';
-	/// en: 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.'
-	String get motionClarityPassthroughWarning => 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.';
-	/// en: 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.'
-	String get motionClarityCompareFailed => 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.';
-	/// en: 'Couldn\'t save motion clarity settings.'
-	String get motionClaritySaveFailed => 'Couldn\'t save motion clarity settings.';
-	/// en: 'Motion method'
-	String get motionClarityEngine => 'Motion method';
-	/// en: 'Temporal blend'
-	String get motionClarityTemporalBlend => 'Temporal blend';
-	/// en: 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.'
-	String get motionClarityTemporalBlendDescription => 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.';
-	/// en: 'Motion-compensated frames'
-	String get motionClarityMotionCompensated => 'Motion-compensated frames';
-	/// en: 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.'
-	String get motionClarityMotionCompensatedDescription => 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.';
-	/// en: 'Generated frame-rate target'
-	String get motionClarityOutputRate => 'Generated frame-rate target';
-	/// en: 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.'
-	String get motionClarityOutputRateDescription => 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.';
-	/// en: 'Match current display'
-	String get motionClarityOutputCurrentDisplay => 'Match current display';
-	/// en: '48 fps'
-	String get motionClarityOutput48 => '48 fps';
-	/// en: '50 fps'
-	String get motionClarityOutput50 => '50 fps';
-	/// en: '60 fps'
-	String get motionClarityOutput60 => '60 fps';
-	/// en: '72 fps'
-	String get motionClarityOutput72 => '72 fps';
-	/// en: '90 fps'
-	String get motionClarityOutput90 => '90 fps';
-	/// en: '100 fps'
-	String get motionClarityOutput100 => '100 fps';
-	/// en: '120 fps'
-	String get motionClarityOutput120 => '120 fps';
-	/// en: '144 fps'
-	String get motionClarityOutput144 => '144 fps';
-	/// en: 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.'
-	String get motionClarityMciProfileDescription => 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.';
-	/// en: 'Motion search effort'
-	String get motionClarityMciQuality => 'Motion search effort';
-	/// en: 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.'
-	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.';
-	/// en: 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.'
-	String get motionClarityGuardReduced => 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.';
-	/// en: 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.'
-	String get motionClarityGuardFallback => 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.';
-	/// en: 'Motion compensation could not keep up, and temporal fallback could not be enabled.'
-	String get motionClarityGuardFallbackFailed => 'Motion compensation could not keep up, and temporal fallback could not be enabled.';
-	/// en: 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.'
-	String get motionClarityGuardTelemetryUnavailable => 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.';
-	/// en: 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.'
-	String get motionClarityGuardFailure => 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.';
-	/// en: 'Low search effort'
-	String get motionClarityMciFast => 'Low search effort';
-	/// en: 'Balanced search effort'
-	String get motionClarityMciBalanced => 'Balanced search effort';
-	/// en: 'High search effort'
-	String get motionClarityMciHigh => 'High search effort';
+
 	/// en: 'Motion-compensated processing is configured. Use Compare without motion processing to compare it with the same playback.'
 	String get motionClarityMciConfigured => 'Motion-compensated processing is configured. Use Compare without motion processing to compare it with the same playback.';
+
+	/// en: 'Renderer-reported display rate'
+	String get motionClarityReportedDisplayRate => 'Renderer-reported display rate';
+
+	/// en: 'Container-reported nominal rate'
+	String get motionClaritySourceRate => 'Container-reported nominal rate';
+
+	/// en: 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.'
+	String get motionClarityPassthroughWarning => 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.';
+
 	/// en: 'Compare without motion processing'
 	String get motionClarityCompareWithoutProcessing => 'Compare without motion processing';
+
 	/// en: 'Return to motion processing'
 	String get motionClarityReturnToProcessing => 'Return to motion processing';
+
 	/// en: 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.'
 	String get motionClarityCompareProcessingDescription => 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.';
 
+	/// en: 'The renderer couldn't switch comparison mode. Playback settings were left as they are.'
+	String get motionClarityCompareFailed => 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.';
+
+	/// en: 'Couldn't save motion clarity settings.'
+	String get motionClaritySaveFailed => 'Couldn\'t save motion clarity settings.';
 }
 
 // Path: performanceOverlay
@@ -7288,6 +7774,354 @@ class Translations$services$en {
 	String get seerrDescription => 'Connect to Seerr or Overseerr to search for titles and submit media requests.';
 
 	late final Translations$services$trackerDescriptions$en trackerDescriptions = Translations$services$trackerDescriptions$en.internal(_root);
+}
+
+// Path: streaming
+class Translations$streaming$en {
+	Translations$streaming$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Cloud & add-on streaming'
+	String get title => 'Cloud & add-on streaming';
+
+	/// en: 'Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.'
+	String get subtitle => 'Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.';
+
+	/// en: '${count} connected source(s)'
+	String connectionsConfigured({required Object count}) => '${count} connected source(s)';
+
+	/// en: 'Couldn't unlock the saved streaming settings. Unlock the device, then try again before changing connections.'
+	String get settingsLoadFailed => 'Couldn\'t unlock the saved streaming settings. Unlock the device, then try again before changing connections.';
+
+	/// en: 'These saved connections can't be unlocked. Clear them to reconnect services.'
+	String get settingsUnreadable => 'These saved connections can\'t be unlocked. Clear them to reconnect services.';
+
+	/// en: 'Clear saved settings'
+	String get clearUnreadableSettings => 'Clear saved settings';
+
+	/// en: 'Clear saved streaming settings?'
+	String get clearUnreadableSettingsConfirm => 'Clear saved streaming settings?';
+
+	/// en: 'This removes every saved provider account and add-on address from this profile. It can't be undone.'
+	String get clearUnreadableSettingsBody => 'This removes every saved provider account and add-on address from this profile. It can\'t be undone.';
+
+	/// en: 'Couldn't clear the saved streaming settings. Unlock the device and try again.'
+	String get clearUnreadableSettingsFailed => 'Couldn\'t clear the saved streaming settings. Unlock the device and try again.';
+
+	/// en: 'Retry loading connections'
+	String get retrySettingsLoad => 'Retry loading connections';
+
+	/// en: 'Stremio-compatible add-ons'
+	String get addons => 'Stremio-compatible add-ons';
+
+	/// en: 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.'
+	String get addonsDescription => 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.';
+
+	/// en: 'This catalog couldn't be loaded. Refresh to try again.'
+	String get catalogLoadFailed => 'This catalog couldn\'t be loaded. Refresh to try again.';
+
+	/// en: 'Choose the required filters to browse this catalog.'
+	String get catalogFiltersRequired => 'Choose the required filters to browse this catalog.';
+
+	/// en: 'Required'
+	String get catalogRequiredLabel => 'Required';
+
+	/// en: 'Import from Stremio'
+	String get importFromStremio => 'Import from Stremio';
+
+	/// en: 'Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.'
+	String get stremioImportInstructions => 'Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.';
+
+	/// en: 'Open Stremio account link'
+	String get stremioImportOpen => 'Open Stremio account link';
+
+	/// en: 'Link code'
+	String get stremioImportCode => 'Link code';
+
+	/// en: 'Choose add-ons'
+	String get stremioImportPreviewTitle => 'Choose add-ons';
+
+	/// en: 'Select the add-ons to connect to PlezyNG. Only secure HTTPS add-ons are available in this import.'
+	String get stremioImportPreviewBody => 'Select the add-ons to connect to PlezyNG. Only secure HTTPS add-ons are available in this import.';
+
+	/// en: 'Skipped ${count} add-on(s) with an unsupported or unsecured address.'
+	String stremioImportIgnored({required Object count}) => 'Skipped ${count} add-on(s) with an unsupported or unsecured address.';
+
+	/// en: 'Catalogs'
+	String get stremioCatalogs => 'Catalogs';
+
+	/// en: 'Streams'
+	String get stremioStreams => 'Streams';
+
+	/// en: 'Add selected (${count})'
+	String stremioImportAddSelected({required Object count}) => 'Add selected (${count})';
+
+	/// en: 'Connected ${count} add-on(s) from Stremio.'
+	String stremioImportAdded({required Object count}) => 'Connected ${count} add-on(s) from Stremio.';
+
+	/// en: 'Connected ${added} add-on(s); ${failed} couldn't be connected.'
+	String stremioImportPartial({required Object added, required Object failed}) => 'Connected ${added} add-on(s); ${failed} couldn\'t be connected.';
+
+	/// en: 'Couldn't import add-ons from Stremio. Try again.'
+	String get stremioImportFailed => 'Couldn\'t import add-ons from Stremio. Try again.';
+
+	/// en: 'Stremio approval timed out. Start the import again.'
+	String get stremioImportTimedOut => 'Stremio approval timed out. Start the import again.';
+
+	/// en: 'No new compatible add-ons were found in this Stremio account.'
+	String get stremioImportEmpty => 'No new compatible add-ons were found in this Stremio account.';
+
+	/// en: 'Remove an add-on before importing more.'
+	String get stremioImportLimitReached => 'Remove an add-on before importing more.';
+
+	/// en: 'Add by manifest URL'
+	String get addByManifestUrl => 'Add by manifest URL';
+
+	/// en: 'Add add-on'
+	String get addAddon => 'Add add-on';
+
+	/// en: 'Add-on manifest URL'
+	String get manifestUrl => 'Add-on manifest URL';
+
+	/// en: 'Paste the add-on's manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.'
+	String get manifestUrlHint => 'Paste the add-on\'s manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.';
+
+	/// en: 'Allow an unsecured HTTP address'
+	String get allowHttp => 'Allow an unsecured HTTP address';
+
+	/// en: 'Use only for a trusted add-on on your private network.'
+	String get allowHttpDescription => 'Use only for a trusted add-on on your private network.';
+
+	/// en: 'Connect add-on'
+	String get installAddon => 'Connect add-on';
+
+	/// en: 'Add-on connected'
+	String get addonInstalled => 'Add-on connected';
+
+	/// en: 'Add-on removed'
+	String get addonRemoved => 'Add-on removed';
+
+	/// en: 'Enable add-on'
+	String get addonToggle => 'Enable add-on';
+
+	/// en: 'No add-ons connected yet'
+	String get addonEmpty => 'No add-ons connected yet';
+
+	/// en: 'PlezyNG couldn't connect to that add-on. Check the manifest URL and try again.'
+	String get addonError => 'PlezyNG couldn\'t connect to that add-on. Check the manifest URL and try again.';
+
+	/// en: 'Install only add-ons you trust. An add-on can receive the title you ask it to search and can return third-party stream links.'
+	String get addonPrivacy => 'Install only add-ons you trust. An add-on can receive the title you ask it to search and can return third-party stream links.';
+
+	/// en: 'Real-Debrid'
+	String get realDebrid => 'Real-Debrid';
+
+	/// en: 'Resolve torrent-backed streams through your Real-Debrid account.'
+	String get realDebridDescription => 'Resolve torrent-backed streams through your Real-Debrid account.';
+
+	/// en: 'Connect with QR code'
+	String get connectRealDebrid => 'Connect with QR code';
+
+	/// en: 'Disconnect Real-Debrid'
+	String get disconnectRealDebrid => 'Disconnect Real-Debrid';
+
+	/// en: 'Connected as ${username}'
+	String realDebridConnected({required Object username}) => 'Connected as ${username}';
+
+	/// en: 'Scan the QR code or open the address, then enter this activation code to connect PlezyNG:'
+	String get realDebridInstructions => 'Scan the QR code or open the address, then enter this activation code to connect PlezyNG:';
+
+	/// en: 'Open Real-Debrid to activate'
+	String get realDebridActivate => 'Open Real-Debrid to activate';
+
+	/// en: 'Activation code'
+	String get realDebridCode => 'Activation code';
+
+	/// en: 'Couldn't connect to Real-Debrid. Try again.'
+	String get realDebridConnectFailed => 'Couldn\'t connect to Real-Debrid. Try again.';
+
+	/// en: 'AllDebrid'
+	String get allDebrid => 'AllDebrid';
+
+	/// en: 'Resolve torrent-backed streams through your AllDebrid account.'
+	String get allDebridDescription => 'Resolve torrent-backed streams through your AllDebrid account.';
+
+	/// en: 'Connect with QR code'
+	String get connectAllDebrid => 'Connect with QR code';
+
+	/// en: 'Scan the QR code or open the address to approve PlezyNG. Keep this screen open while it connects:'
+	String get allDebridInstructions => 'Scan the QR code or open the address to approve PlezyNG. Keep this screen open while it connects:';
+
+	/// en: 'Open AllDebrid to activate'
+	String get allDebridActivate => 'Open AllDebrid to activate';
+
+	/// en: 'Activation PIN'
+	String get allDebridCode => 'Activation PIN';
+
+	/// en: 'Couldn't connect to AllDebrid. Try again.'
+	String get allDebridConnectFailed => 'Couldn\'t connect to AllDebrid. Try again.';
+
+	/// en: 'Premiumize'
+	String get premiumize => 'Premiumize';
+
+	/// en: 'Resolve cached torrent streams and files through Premiumize.'
+	String get premiumizeDescription => 'Resolve cached torrent streams and files through Premiumize.';
+
+	/// en: 'TorBox'
+	String get torbox => 'TorBox';
+
+	/// en: 'Resolve cached torrent streams and files through TorBox.'
+	String get torboxDescription => 'Resolve cached torrent streams and files through TorBox.';
+
+	/// en: 'Connect with API key'
+	String get connectApiKey => 'Connect with API key';
+
+	/// en: 'Connect ${service}'
+	String apiKeyTitle({required Object service}) => 'Connect ${service}';
+
+	/// en: 'API key'
+	String get apiKey => 'API key';
+
+	/// en: 'Paste the API key from your ${service} account settings. PlezyNG encrypts it on this device and keeps it private to this profile.'
+	String apiKeyHint({required Object service}) => 'Paste the API key from your ${service} account settings. PlezyNG encrypts it on this device and keeps it private to this profile.';
+
+	/// en: 'Couldn't verify that API key. Check it and try again.'
+	String get apiKeyConnectFailed => 'Couldn\'t verify that API key. Check it and try again.';
+
+	/// en: 'Connected as ${username}'
+	String accountConnected({required Object username}) => 'Connected as ${username}';
+
+	/// en: 'Connect a debrid service to play this torrent stream.'
+	String get streamNeedsProvider => 'Connect a debrid service to play this torrent stream.';
+
+	/// en: 'Play via debrid'
+	String get playViaProvider => 'Play via debrid';
+
+	/// en: 'Disconnect ${service}?'
+	String disconnectConfirm({required Object service}) => 'Disconnect ${service}?';
+
+	/// en: 'PlezyNG will remove this device's authorization. Your provider files and transfers stay untouched.'
+	String get disconnectBody => 'PlezyNG will remove this device\'s authorization. Your provider files and transfers stay untouched.';
+
+	/// en: 'Choose a stream'
+	String get streamsTitle => 'Choose a stream';
+
+	/// en: 'Checking connected add-ons…'
+	String get searchingStreams => 'Checking connected add-ons…';
+
+	/// en: 'No streams were found for this title.'
+	String get noStreams => 'No streams were found for this title.';
+
+	/// en: 'Manage streaming services'
+	String get manageConnections => 'Manage streaming services';
+
+	/// en: '${count} subtitle track(s)'
+	String subtitleTracks({required Object count}) => '${count} subtitle track(s)';
+
+	/// en: 'Choose a subtitle'
+	String get chooseSubtitle => 'Choose a subtitle';
+
+	/// en: 'Choose a debrid service'
+	String get chooseProvider => 'Choose a debrid service';
+
+	/// en: 'No subtitle'
+	String get subtitleOff => 'No subtitle';
+
+	/// en: 'Couldn't load that subtitle. Try another track.'
+	String get subtitleLoadFailed => 'Couldn\'t load that subtitle. Try another track.';
+
+	/// en: 'Subtitle selected for playback'
+	String get subtitleApplied => 'Subtitle selected for playback';
+
+	/// en: 'Some add-ons couldn't be reached.'
+	String get streamLookupPartial => 'Some add-ons couldn\'t be reached.';
+
+	/// en: 'Couldn't check the connected add-ons.'
+	String get streamLookupFailed => 'Couldn\'t check the connected add-ons.';
+
+	/// en: 'Open external link'
+	String get streamOpenExternal => 'Open external link';
+
+	/// en: 'Preparing through your debrid service…'
+	String get streamPrepare => 'Preparing through your debrid service…';
+
+	/// en: 'This stream couldn't be prepared. Check the connected account and try another source.'
+	String get streamPrepareFailed => 'This stream couldn\'t be prepared. Check the connected account and try another source.';
+
+	/// en: 'Connect a debrid service to play this torrent stream.'
+	String get streamNeedsRealDebrid => 'Connect a debrid service to play this torrent stream.';
+
+	/// en: 'This stream format isn't supported by the in-app player.'
+	String get streamUnsupported => 'This stream format isn\'t supported by the in-app player.';
+
+	/// en: 'Choose an episode before searching for a stream.'
+	String get remoteNeedsEpisode => 'Choose an episode before searching for a stream.';
+
+	/// en: 'This episode is missing its season or episode number.'
+	String get remoteNeedsEpisodeNumber => 'This episode is missing its season or episode number.';
+
+	/// en: 'PlezyNG couldn't find an IMDb or TMDB ID for this title.'
+	String get remoteNeedsExternalId => 'PlezyNG couldn\'t find an IMDb or TMDB ID for this title.';
+
+	/// en: 'Watch with connected services'
+	String get watchWithServices => 'Watch with connected services';
+
+	/// en: 'Choose episode'
+	String get chooseEpisode => 'Choose episode';
+
+	/// en: 'Episodes'
+	String get episodes => 'Episodes';
+
+	/// en: 'Season ${season}, episode ${episode}'
+	String episodePosition({required Object season, required Object episode}) => 'Season ${season}, episode ${episode}';
+
+	/// en: 'Opens available streams for this episode.'
+	String get episodeStreamHint => 'Opens available streams for this episode.';
+
+	/// en: 'Cloud files'
+	String get cloudFiles => 'Cloud files';
+
+	/// en: 'Browse files'
+	String get browseCloud => 'Browse files';
+
+	/// en: 'No ready video files were found in this account.'
+	String get cloudEmpty => 'No ready video files were found in this account.';
+
+	/// en: 'Couldn't load cloud files. Check the connection and retry.'
+	String get cloudLoadFailed => 'Couldn\'t load cloud files. Check the connection and retry.';
+
+	/// en: 'Debrid providers'
+	String get providers => 'Debrid providers';
+
+	/// en: 'Play torrents on this device'
+	String get nativePeerTitle => 'Play torrents on this device';
+
+	/// en: 'Play on this device'
+	String get nativePeerPlay => 'Play on this device';
+
+	/// en: 'Use peers when a cloud provider is unavailable. Peers can see your IP address. Uses up to 4 GB per video and uploads up to 256 KB/s while playing; stops when playback ends.'
+	String get nativePeerHelp => 'Use peers when a cloud provider is unavailable. Peers can see your IP address. Uses up to 4 GB per video and uploads up to 256 KB/s while playing; stops when playback ends.';
+
+	/// en: 'Available sources'
+	String get availableCopies => 'Available sources';
+
+	/// en: '${count} sources'
+	String availableCopiesCount({required Object count}) => '${count} sources';
+
+	/// en: 'Finding your server and cloud copies…'
+	String get canonicalIndexing => 'Finding your server and cloud copies…';
+
+	/// en: 'Preparation continues when the app is closed. Your device decides when to run it.'
+	String get preparationBackground => 'Preparation continues when the app is closed. Your device decides when to run it.';
+
+	/// en: 'This device can resume preparation while PlezyNG is open.'
+	String get preparationForeground => 'This device can resume preparation while PlezyNG is open.';
+
+	/// en: 'Preparation'
+	String get preparationQueue => 'Preparation';
 }
 
 // Path: addServer
@@ -10111,6 +10945,9 @@ class Translations$games$en {
 
 	/// en: 'Steam account linked. Its library is private or unavailable, so no games were imported.'
 	String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
+
+	/// en: 'Steam App ID'
+	String get steamAppId => 'Steam App ID';
 
 	/// en: 'Steam could not refresh the library. Showing the last available catalog.'
 	String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
@@ -14457,6 +15294,151 @@ extension on Translations {
 			'connections.signInAgain' => 'Sign in again',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edit ${product} connection',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. PlezyNG will use the reachable URL with the lowest latency.',
+			'iptv.addSource' => 'Add IPTV source',
+			'iptv.addSourceDescription' => 'Add an M3U or Xtream feed, including Tunerr and Dispatcharr playlist outputs.',
+			'iptv.sourcesTitle' => 'IPTV sources',
+			'iptv.sourcesDescription' => 'Manage live channel playlists and programme guides for this profile.',
+			'iptv.manageChannels' => 'Manage channels',
+			'iptv.liveChannelPicker' => 'Live channels',
+			'iptv.searchLiveChannels' => 'Search channels, groups, or sources',
+			'iptv.allLiveChannels' => 'All channels',
+			'iptv.recentChannels' => 'Recently watched',
+			'iptv.channelGroup' => 'Channel group',
+			'iptv.noLiveChannelResults' => 'No channels match this search.',
+			'iptv.uncategorizedChannels' => 'Other channels',
+			'iptv.additionalGuideEndpoints' => 'Additional XMLTV guide URLs',
+			'iptv.additionalGuideEndpointsHelp' => 'Optional. Add one guide URL per line to combine schedules from several providers. Up to 8.',
+			'iptv.guideEndpointHelp' => 'One XMLTV guide URL. Xtream credentials can supply this automatically.',
+			'iptv.epgChannelId' => 'XMLTV channel ID',
+			'iptv.epgChannelIdHelp' => 'Match this playlist channel to a guide entry. Leave blank to use the provider ID, then refresh the source.',
+			'iptv.guideMappingRefreshFailed' => 'Guide match saved, but the guide could not refresh. Retry from IPTV sources.',
+			'iptv.noChannels' => 'No channels loaded from this source yet.',
+			'iptv.searchChannels' => 'Search channels',
+			'iptv.customChannelName' => 'Display name',
+			'iptv.customGroupName' => 'Guide group',
+			'iptv.useProviderName' => 'Leave blank to use the provider value.',
+			'iptv.hideFromGuide' => 'Hide this channel from the guide',
+			'iptv.lockChannel' => 'Require profile PIN to watch this channel',
+			'iptv.lockChannelGroup' => 'Require profile PIN for this group',
+			'iptv.parentalPinRequired' => 'Channel locks need a PIN-protected local profile. Add a PIN in Profiles to use parental controls.',
+			'iptv.parentalAccessDenied' => 'Enter the profile PIN to watch locked IPTV channels.',
+			'iptv.parentalLockedLabel' => 'PIN locked',
+			'iptv.noActiveProfile' => 'Choose a profile before adding IPTV sources.',
+			'iptv.emptyTitle' => 'No IPTV sources',
+			'iptv.emptyDescription' => 'Add an M3U playlist or Xtream provider to bring its channels into Live TV.',
+			'iptv.sourceName' => 'Source name',
+			'iptv.provider' => 'Source type',
+			'iptv.m3u' => 'M3U playlist',
+			'iptv.xtream' => 'Xtream Codes',
+			'iptv.tunerr' => 'IPTV Tunerr',
+			'iptv.dispatcharr' => 'Dispatcharr',
+			'iptv.stalker' => 'Stalker / MAG portal',
+			'iptv.stalkerHelp' => 'Connect to a Stalker or Ministra portal with the registered device MAC address.',
+			'iptv.macAddress' => 'Registered device MAC address',
+			'iptv.macAddressInvalid' => 'Enter the registered MAC address in the form 00:1A:79:00:00:00.',
+			'iptv.endpoint' => 'Playlist URL',
+			'iptv.xtreamEndpoint' => 'Xtream server URL',
+			'iptv.guideEndpoint' => 'XMLTV guide URL (optional)',
+			'iptv.username' => 'Username',
+			'iptv.password' => 'Password',
+			'iptv.allowHttp' => 'Allow unencrypted HTTP',
+			'iptv.allowHttpDescription' => 'Use only for a trusted local network. HTTPS is preferred when available.',
+			'iptv.m3uHelp' => 'Paste the M3U playlist URL. Add an XMLTV URL to show programme details in the guide.',
+			'iptv.xtreamHelp' => 'Enter the provider server URL and login. PlezyNG requests its M3U playlist and XMLTV guide.',
+			'iptv.managedFeedHelp' => 'Use the playlist and XMLTV URLs shown by this service. The service remains optional.',
+			'iptv.playlistHeadersHelp' => 'Playlist User-Agent, referrer, and origin options are honored for playback. Other playlist commands and headers are ignored.',
+			'iptv.saveAndImport' => 'Save and load channels',
+			'iptv.retryImport' => 'Retry channel import',
+			'iptv.done' => 'Done',
+			'iptv.refresh' => 'Refresh',
+			'iptv.refreshComplete' => 'IPTV sources refreshed.',
+			'iptv.refreshFailed' => ({required Object count}) => '${count} IPTV source(s) could not be refreshed.',
+			'iptv.watchFromStart' => 'Watch from start',
+			'iptv.edit' => 'Edit source',
+			'iptv.remove' => 'Remove source',
+			'iptv.removeTitle' => 'Remove IPTV source?',
+			'iptv.removeMessage' => ({required Object name}) => 'This removes ${name}, its imported channels, programme guide and favorites from this profile.',
+			'iptv.channels' => ({required Object count}) => '${count} channels',
+			'iptv.programmes' => ({required Object count}) => '${count} guide listings',
+			'iptv.lastUpdated' => ({required Object date}) => 'Updated ${date}',
+			'iptv.neverUpdated' => 'Not imported yet',
+			'iptv.savedRefreshFailed' => 'Source saved, but channels could not be loaded. Check the feed and retry from IPTV sources.',
+			'iptv.importComplete' => ({required Object count}) => 'Loaded ${count} channels',
+			'iptv.required' => 'Required',
+			'iptv.sourceInvalid' => 'Check the source details and URL.',
+			'iptv.httpNotAllowed' => 'Enable HTTP for this source or use an HTTPS URL.',
+			'iptv.authentication' => 'The provider rejected the username or password.',
+			'iptv.permission' => 'The provider denied access to this feed.',
+			'iptv.invalidData' => 'The provider returned an invalid playlist or guide.',
+			'iptv.playlistIsStream' => 'This URL is a media stream. Enter the playlist URL instead.',
+			'iptv.providerUnavailable' => 'Could not reach the provider. Check the URL and network, then retry.',
+			'iptv.sourceChanged' => 'The source changed during import. Retry the refresh.',
+			'iptv.credentialUnavailable' => 'The saved credentials are unavailable. Edit this source and enter them again.',
+			'iptv.sourceMissing' => 'This IPTV source no longer exists.',
+			'iptv.dispatcharrHelp' => 'Use a Dispatcharr playlist URL. Add Xtream credentials for movies and series, or an API key for DVR controls.',
+			'iptv.dispatcharrDvr' => 'Dispatcharr DVR (optional)',
+			'iptv.dispatcharrDvrHelp' => 'Connect the Dispatcharr server API to schedule and manage recordings stored on that server.',
+			'iptv.dispatcharrApiEndpoint' => 'Dispatcharr server URL',
+			'iptv.dispatcharrApiKey' => 'Dispatcharr API key',
+			'iptv.localTimeShift' => 'Use the player buffer for time-shifting',
+			'iptv.localTimeShiftHelp' => 'On native MPV players, keep a bounded seek window when the stream provides seekable data.',
+			'iptv.vodTitle' => 'Movies & Series',
+			'iptv.iptvSearchResults' => 'IPTV movies & series',
+			'iptv.vodProgressSync' => 'Sync IPTV watch progress',
+			'iptv.vodProgressSyncHelp' => 'Share movie and series positions through your Plex account. Each device keeps its own provider credentials.',
+			'iptv.vodSource' => 'VOD source',
+			'iptv.movies' => 'Movies',
+			'iptv.series' => 'Series',
+			'iptv.searchVod' => 'Search movies and series',
+			'iptv.category' => 'Category',
+			'iptv.allCategories' => 'All categories',
+			'iptv.noVodItems' => 'No titles in this category.',
+			'iptv.vodUnavailable' => 'This source could not load its catalogue. Check the provider credentials and retry.',
+			'iptv.vodUnavailableShort' => 'VOD is not configured for this source.',
+			'iptv.vodPlaybackFailed' => 'Could not start this title. Check the provider connection and try again.',
+			'iptv.play' => 'Play',
+			'iptv.noEpisodes' => 'No episodes are available for this series.',
+			'iptv.season' => 'Season',
+			'iptv.specials' => 'Specials',
+			'iptv.localRecordings' => 'Local recordings',
+			'iptv.recordingSavedLocal' => 'Recording saved to this device.',
+			'iptv.recordingFailedLocal' => 'The recording could not be saved.',
+			'iptv.recordingInProgressLocal' => 'Recording',
+			'iptv.recordingInterrupted' => 'Interrupted',
+			'iptv.recordingMissed' => 'Missed',
+			'iptv.recordingAppClosed' => 'PlezyNG closed before recording started or finished.',
+			'iptv.recordingEncryptedHls' => 'This provider uses an unsupported HLS encryption mode.',
+			'iptv.recordingProviderAuthentication' => 'The provider rejected the recording connection.',
+			'iptv.recordingProviderPermission' => 'The provider denied access to this stream.',
+			'iptv.sourceUnavailable' => 'This source is no longer available.',
+			'iptv.deleteRecording' => 'Delete recording',
+			'iptv.deleteRecordingConfirm' => 'Delete this recording and its file from this device?',
+			'iptv.deleteDispatcharrRecordingConfirm' => 'Delete this recording and its file from the Dispatcharr server?',
+			'iptv.stopRecording' => 'Stop recording',
+			'iptv.recordingDeleted' => 'Recording deleted.',
+			'iptv.recordingScheduled' => 'Recording scheduled on Dispatcharr.',
+			'iptv.scheduleRecordingOnDevice' => 'Schedule local recording',
+			'iptv.localRecordingScheduled' => 'Local recording scheduled. PlezyNG must be running when it starts.',
+			'iptv.localRecordingAlreadyScheduled' => 'This program is already scheduled for local recording.',
+			'iptv.localRecordingSchedules' => 'Local recording schedule',
+			'iptv.scheduledOnThisDevice' => 'Scheduled on this device',
+			'iptv.cancelLocalRecording' => 'Cancel local recording?',
+			'iptv.cancelLocalRecordingConfirm' => ({required Object programme}) => 'Cancel the local recording of ${programme}?',
+			'iptv.cancelSchedule' => 'Cancel schedule',
+			'iptv.localRecordingCancelled' => 'Local recording schedule cancelled.',
+			'iptv.recordingStopped' => 'Dispatcharr recording stopped.',
+			'iptv.recordingActionFailed' => 'Could not update the recording. Check the Dispatcharr connection and permissions.',
+			'iptv.recordingLoadFailed' => 'Some IPTV recording details could not be loaded.',
+			'iptv.recordingFileMissing' => 'The local recording file is missing.',
+			'iptv.recordingStorageLow' => 'There is not enough free space to start a recording. Free at least 512 MB and try again.',
+			'iptv.recordingSaveFailed' => 'The live recording could not be finalized.',
+			'iptv.deleteRecordingRule' => 'Delete recording rule?',
+			'iptv.deleteRecordingRuleConfirm' => 'Delete this rule from Dispatcharr?',
+			'iptv.dispatcharrRecordings' => 'Dispatcharr recordings',
+			'iptv.dispatcharrRules' => 'Dispatcharr rules',
+			'iptv.scheduleRecording' => 'Schedule recording',
+			'iptv.recordingActionUnavailable' => 'This Dispatcharr channel could not be matched to the guide channel.',
+			'iptv.genericError' => 'Could not save this IPTV source. Check the details and retry.',
 			'accountPreferences.sectionTitle' => 'Account preferences',
 			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Audio, subtitle and library options saved on ${account}',
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Audio, subtitle and library options saved on ${count} accounts',
@@ -14531,6 +15513,8 @@ extension on Translations {
 			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Show critic ratings and reviews.',
 			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Hide ratings and reviews.',
 			'accountPreferences.preferredAudioLanguageDescription' => 'Prefer audio tracks in this language when the server or player selects a track automatically.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.preferredSubtitleLanguageDescription' => 'Prefer subtitle tracks in this language when subtitles are selected automatically.',
 			'accountPreferences.subtitleAccessibilityDescription' => 'Choose whether SDH captions are preferred or required during automatic subtitle selection.',
 			'accountPreferences.forcedSubtitleDescription' => 'Choose whether forced subtitle tracks are preferred or required during automatic selection.',
@@ -14676,8 +15660,6 @@ extension on Translations {
 			'discover.director' => 'Director',
 			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
-			_ => null,
-		} ?? switch (path) {
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
@@ -15045,6 +16027,8 @@ extension on Translations {
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} result', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} results', ), 
@@ -15190,8 +16174,6 @@ extension on Translations {
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
 			'playlists.errorAdding' => 'Failed to add to playlist',
-			_ => null,
-		} ?? switch (path) {
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'music.goToAlbum' => 'Go to album',
@@ -15559,6 +16541,8 @@ extension on Translations {
 			'companionRemote.session.usePhoneToControl' => 'Use your mobile device to control this app',
 			'companionRemote.session.startServer' => 'Start Server',
 			'companionRemote.session.stopServer' => 'Stop Server',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimize',
 			'companionRemote.session.manualAddressHint' => 'Manual connection address:',
 			'companionRemote.pairing.discoveryDescription' => 'PlezyNG devices with the same Plex account appear here',
@@ -15663,6 +16647,77 @@ extension on Translations {
 			'videoSettings.backgroundVideoAudioDescription' => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
+			'videoSettings.motionClarity' => 'Motion & clarity',
+			'videoSettings.motionClarityQuickToggle' => 'Motion & clarity. Tap to toggle processing; hold to choose a preset.',
+			'videoSettings.motionClarityQuickToggleOn' => 'Motion is on. Tap to turn it off; hold for presets.',
+			'videoSettings.motionClarityQuickToggleOff' => 'Motion is off. Tap to turn on the last preset; hold for presets.',
+			'videoSettings.motionClarityDescription' => 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.',
+			'videoSettings.motionClarityControlsHint' => 'Desktop: tap the player’s Motion & clarity button to toggle motion; hold it for presets. First use starts with Balanced. Mobile: Video settings > Motion & clarity. Compare for A/B during playback.',
+			'videoSettings.motionClarityOriginal' => 'Original',
+			'videoSettings.motionClarityOriginalDescription' => 'Preserve the source cadence and the player\'s existing configuration.',
+			'videoSettings.motionClarityCinema' => 'Cinema',
+			'videoSettings.motionClarityCinemaDescription' => 'Light cadence blending that keeps film motion close to its original look.',
+			'videoSettings.motionClarityBalanced' => 'Balanced',
+			'videoSettings.motionClarityBalancedDescription' => 'Moderate temporal blending for a smoother picture with restrained softness.',
+			'videoSettings.motionClaritySmooth' => 'Smooth',
+			'videoSettings.motionClaritySmoothDescription' => 'Stronger blending for smoother motion; moving edges may look softer or doubled.',
+			'videoSettings.motionClarityAnimation' => 'Animation',
+			'videoSettings.motionClarityAnimationDescription' => 'A sharper temporal filter for animation and clean graphic edges.',
+			'videoSettings.motionClaritySports' => 'Sports',
+			'videoSettings.motionClaritySportsDescription' => 'A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.',
+			'videoSettings.motionClarityOled' => 'OLED',
+			'videoSettings.motionClarityOledDescription' => 'Targets the current display cadence with motion-compensated frames to reduce sample-and-hold blur. Higher rates create a smoother, more video-like look.',
+			'videoSettings.motionClarityOledEngineDescription' => 'OLED uses motion compensation at the renderer-reported display rate. Choose Custom to adjust the engine or target rate.',
+			'videoSettings.motionClarityCustom' => 'Custom',
+			'videoSettings.motionClarityCustomDescription' => 'Choose the temporal filter and when interpolation engages.',
+			'videoSettings.motionClarityKernel' => 'Temporal filter',
+			'videoSettings.motionClarityKernelOversample' => 'Oversample — sharpest, least blending',
+			'videoSettings.motionClarityKernelLinear' => 'Linear — light blending',
+			'videoSettings.motionClarityKernelCatmullRom' => 'Catmull–Rom — sharper, may ring',
+			'videoSettings.motionClarityKernelMitchell' => 'Mitchell — balanced softness',
+			'videoSettings.motionClarityKernelGaussian' => 'Gaussian — smooth, softer edges',
+			'videoSettings.motionClarityKernelBicubic' => 'Bicubic — smoothest, softest',
+			'videoSettings.motionClarityThreshold' => 'Interpolation threshold',
+			'videoSettings.motionClarityThresholdDescription' => 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.',
+			'videoSettings.motionClarityEngine' => 'Motion method',
+			'videoSettings.motionClarityTemporalBlend' => 'Temporal blend',
+			'videoSettings.motionClarityTemporalBlendDescription' => 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.',
+			'videoSettings.motionClarityMotionCompensated' => 'Motion-compensated frames',
+			'videoSettings.motionClarityMotionCompensatedDescription' => 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.',
+			'videoSettings.motionClarityMciProfileDescription' => 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.',
+			'videoSettings.motionClarityMciQuality' => 'Motion search effort',
+			'videoSettings.motionClarityMciQualityDescription' => 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.',
+			'videoSettings.motionClarityGuardReduced' => 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.',
+			'videoSettings.motionClarityGuardFallback' => 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.',
+			'videoSettings.motionClarityGuardFallbackFailed' => 'Motion compensation could not keep up, and temporal fallback could not be enabled.',
+			'videoSettings.motionClarityGuardTelemetryUnavailable' => 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.',
+			'videoSettings.motionClarityGuardFailure' => 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.',
+			'videoSettings.motionClarityMciFast' => 'Low search effort',
+			'videoSettings.motionClarityMciBalanced' => 'Balanced search effort',
+			'videoSettings.motionClarityMciHigh' => 'High search effort',
+			'videoSettings.motionClarityOutputRate' => 'Generated frame-rate target',
+			'videoSettings.motionClarityOutputRateDescription' => 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.',
+			'videoSettings.motionClarityOutputCurrentDisplay' => 'Match current display',
+			'videoSettings.motionClarityOutput48' => '48 fps',
+			'videoSettings.motionClarityOutput50' => '50 fps',
+			'videoSettings.motionClarityOutput60' => '60 fps',
+			'videoSettings.motionClarityOutput72' => '72 fps',
+			'videoSettings.motionClarityOutput90' => '90 fps',
+			'videoSettings.motionClarityOutput100' => '100 fps',
+			'videoSettings.motionClarityOutput120' => '120 fps',
+			'videoSettings.motionClarityOutput144' => '144 fps',
+			'videoSettings.motionClarityOutputUnsupported' => 'This playback route does not expose a supported motion-processing path.',
+			'videoSettings.motionClarityRestartRequired' => 'Restart playback to allocate the frame buffers required by the selected processing mode.',
+			'videoSettings.motionClarityConfigured' => 'Processing options were accepted. Presented frame rate depends on the active renderer and display.',
+			'videoSettings.motionClarityMciConfigured' => 'Motion-compensated processing is configured. Use Compare without motion processing to compare it with the same playback.',
+			'videoSettings.motionClarityReportedDisplayRate' => 'Renderer-reported display rate',
+			'videoSettings.motionClaritySourceRate' => 'Container-reported nominal rate',
+			'videoSettings.motionClarityPassthroughWarning' => 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.',
+			'videoSettings.motionClarityCompareWithoutProcessing' => 'Compare without motion processing',
+			'videoSettings.motionClarityReturnToProcessing' => 'Return to motion processing',
+			'videoSettings.motionClarityCompareProcessingDescription' => 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.',
+			'videoSettings.motionClarityCompareFailed' => 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.',
+			'videoSettings.motionClaritySaveFailed' => 'Couldn\'t save motion clarity settings.',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -15704,8 +16759,6 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
@@ -15963,6 +17016,121 @@ extension on Translations {
 			'services.trackerDescriptions.anilist' => 'Sync anime lists and watch progress with AniList.',
 			'services.trackerDescriptions.simkl' => 'Sync watched movies, TV shows, and anime with Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Show MDBList ratings and lists in recommendations and Explore.',
+			'streaming.title' => 'Cloud & add-on streaming',
+			'streaming.subtitle' => 'Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.',
+			'streaming.connectionsConfigured' => ({required Object count}) => '${count} connected source(s)',
+			'streaming.settingsLoadFailed' => 'Couldn\'t unlock the saved streaming settings. Unlock the device, then try again before changing connections.',
+			'streaming.settingsUnreadable' => 'These saved connections can\'t be unlocked. Clear them to reconnect services.',
+			'streaming.clearUnreadableSettings' => 'Clear saved settings',
+			'streaming.clearUnreadableSettingsConfirm' => 'Clear saved streaming settings?',
+			'streaming.clearUnreadableSettingsBody' => 'This removes every saved provider account and add-on address from this profile. It can\'t be undone.',
+			'streaming.clearUnreadableSettingsFailed' => 'Couldn\'t clear the saved streaming settings. Unlock the device and try again.',
+			'streaming.retrySettingsLoad' => 'Retry loading connections',
+			'streaming.addons' => 'Stremio-compatible add-ons',
+			'streaming.addonsDescription' => 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.',
+			'streaming.catalogLoadFailed' => 'This catalog couldn\'t be loaded. Refresh to try again.',
+			'streaming.catalogFiltersRequired' => 'Choose the required filters to browse this catalog.',
+			'streaming.catalogRequiredLabel' => 'Required',
+			'streaming.importFromStremio' => 'Import from Stremio',
+			'streaming.stremioImportInstructions' => 'Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.',
+			'streaming.stremioImportOpen' => 'Open Stremio account link',
+			'streaming.stremioImportCode' => 'Link code',
+			'streaming.stremioImportPreviewTitle' => 'Choose add-ons',
+			'streaming.stremioImportPreviewBody' => 'Select the add-ons to connect to PlezyNG. Only secure HTTPS add-ons are available in this import.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Skipped ${count} add-on(s) with an unsupported or unsecured address.',
+			'streaming.stremioCatalogs' => 'Catalogs',
+			'streaming.stremioStreams' => 'Streams',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Add selected (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Connected ${count} add-on(s) from Stremio.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Connected ${added} add-on(s); ${failed} couldn\'t be connected.',
+			'streaming.stremioImportFailed' => 'Couldn\'t import add-ons from Stremio. Try again.',
+			'streaming.stremioImportTimedOut' => 'Stremio approval timed out. Start the import again.',
+			'streaming.stremioImportEmpty' => 'No new compatible add-ons were found in this Stremio account.',
+			'streaming.stremioImportLimitReached' => 'Remove an add-on before importing more.',
+			'streaming.addByManifestUrl' => 'Add by manifest URL',
+			'streaming.addAddon' => 'Add add-on',
+			'streaming.manifestUrl' => 'Add-on manifest URL',
+			'streaming.manifestUrlHint' => 'Paste the add-on\'s manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.',
+			'streaming.allowHttp' => 'Allow an unsecured HTTP address',
+			'streaming.allowHttpDescription' => 'Use only for a trusted add-on on your private network.',
+			'streaming.installAddon' => 'Connect add-on',
+			'streaming.addonInstalled' => 'Add-on connected',
+			_ => null,
+		} ?? switch (path) {
+			'streaming.addonRemoved' => 'Add-on removed',
+			'streaming.addonToggle' => 'Enable add-on',
+			'streaming.addonEmpty' => 'No add-ons connected yet',
+			'streaming.addonError' => 'PlezyNG couldn\'t connect to that add-on. Check the manifest URL and try again.',
+			'streaming.addonPrivacy' => 'Install only add-ons you trust. An add-on can receive the title you ask it to search and can return third-party stream links.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Resolve torrent-backed streams through your Real-Debrid account.',
+			'streaming.connectRealDebrid' => 'Connect with QR code',
+			'streaming.disconnectRealDebrid' => 'Disconnect Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Connected as ${username}',
+			'streaming.realDebridInstructions' => 'Scan the QR code or open the address, then enter this activation code to connect PlezyNG:',
+			'streaming.realDebridActivate' => 'Open Real-Debrid to activate',
+			'streaming.realDebridCode' => 'Activation code',
+			'streaming.realDebridConnectFailed' => 'Couldn\'t connect to Real-Debrid. Try again.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Resolve torrent-backed streams through your AllDebrid account.',
+			'streaming.connectAllDebrid' => 'Connect with QR code',
+			'streaming.allDebridInstructions' => 'Scan the QR code or open the address to approve PlezyNG. Keep this screen open while it connects:',
+			'streaming.allDebridActivate' => 'Open AllDebrid to activate',
+			'streaming.allDebridCode' => 'Activation PIN',
+			'streaming.allDebridConnectFailed' => 'Couldn\'t connect to AllDebrid. Try again.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Resolve cached torrent streams and files through Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Resolve cached torrent streams and files through TorBox.',
+			'streaming.connectApiKey' => 'Connect with API key',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'Connect ${service}',
+			'streaming.apiKey' => 'API key',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Paste the API key from your ${service} account settings. PlezyNG encrypts it on this device and keeps it private to this profile.',
+			'streaming.apiKeyConnectFailed' => 'Couldn\'t verify that API key. Check it and try again.',
+			'streaming.accountConnected' => ({required Object username}) => 'Connected as ${username}',
+			'streaming.streamNeedsProvider' => 'Connect a debrid service to play this torrent stream.',
+			'streaming.playViaProvider' => 'Play via debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
+			'streaming.disconnectBody' => 'PlezyNG will remove this device\'s authorization. Your provider files and transfers stay untouched.',
+			'streaming.streamsTitle' => 'Choose a stream',
+			'streaming.searchingStreams' => 'Checking connected add-ons…',
+			'streaming.noStreams' => 'No streams were found for this title.',
+			'streaming.manageConnections' => 'Manage streaming services',
+			'streaming.subtitleTracks' => ({required Object count}) => '${count} subtitle track(s)',
+			'streaming.chooseSubtitle' => 'Choose a subtitle',
+			'streaming.chooseProvider' => 'Choose a debrid service',
+			'streaming.subtitleOff' => 'No subtitle',
+			'streaming.subtitleLoadFailed' => 'Couldn\'t load that subtitle. Try another track.',
+			'streaming.subtitleApplied' => 'Subtitle selected for playback',
+			'streaming.streamLookupPartial' => 'Some add-ons couldn\'t be reached.',
+			'streaming.streamLookupFailed' => 'Couldn\'t check the connected add-ons.',
+			'streaming.streamOpenExternal' => 'Open external link',
+			'streaming.streamPrepare' => 'Preparing through your debrid service…',
+			'streaming.streamPrepareFailed' => 'This stream couldn\'t be prepared. Check the connected account and try another source.',
+			'streaming.streamNeedsRealDebrid' => 'Connect a debrid service to play this torrent stream.',
+			'streaming.streamUnsupported' => 'This stream format isn\'t supported by the in-app player.',
+			'streaming.remoteNeedsEpisode' => 'Choose an episode before searching for a stream.',
+			'streaming.remoteNeedsEpisodeNumber' => 'This episode is missing its season or episode number.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG couldn\'t find an IMDb or TMDB ID for this title.',
+			'streaming.watchWithServices' => 'Watch with connected services',
+			'streaming.chooseEpisode' => 'Choose episode',
+			'streaming.episodes' => 'Episodes',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Season ${season}, episode ${episode}',
+			'streaming.episodeStreamHint' => 'Opens available streams for this episode.',
+			'streaming.cloudFiles' => 'Cloud files',
+			'streaming.browseCloud' => 'Browse files',
+			'streaming.cloudEmpty' => 'No ready video files were found in this account.',
+			'streaming.cloudLoadFailed' => 'Couldn\'t load cloud files. Check the connection and retry.',
+			'streaming.providers' => 'Debrid providers',
+			'streaming.nativePeerTitle' => 'Play torrents on this device',
+			'streaming.nativePeerPlay' => 'Play on this device',
+			'streaming.nativePeerHelp' => 'Use peers when a cloud provider is unavailable. Peers can see your IP address. Uses up to 4 GB per video and uploads up to 256 KB/s while playing; stops when playback ends.',
+			'streaming.availableCopies' => 'Available sources',
+			'streaming.availableCopiesCount' => ({required Object count}) => '${count} sources',
+			'streaming.canonicalIndexing' => 'Finding your server and cloud copies…',
+			'streaming.preparationBackground' => 'Preparation continues when the app is closed. Your device decides when to run it.',
+			'streaming.preparationForeground' => 'This device can resume preparation while PlezyNG is open.',
+			'streaming.preparationQueue' => 'Preparation',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
@@ -16218,8 +17386,6 @@ extension on Translations {
 			'universalMedia.wifiTransferUnavailable' => 'Could not start the transfer. Check local-network access and try again.',
 			'universalMedia.openThisAddress' => 'Open one of these addresses on the sending device',
 			'universalMedia.copyAddress' => 'Copy transfer address',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.addressCopied' => 'Transfer address copied',
 			'universalMedia.transferExpires' => ({required Object time}) => 'This address expires in ${time}.',
 			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ), 
@@ -16403,6 +17569,8 @@ extension on Translations {
 			'fileSources.removeSource' => 'Disconnect source',
 			'fileSources.disconnectMessage' => 'Disconnect this source? Downloaded files and your reading and listening history will stay on this device.',
 			'fileSources.localFolder' => 'Choose folder',
+			_ => null,
+		} ?? switch (path) {
 			'fileSources.empty' => 'Nothing here yet',
 			'fileSources.emptyHint' => 'Add a source or import a book, audiobook, music, or video.',
 			'fileSources.search' => 'Search this folder',
@@ -16732,8 +17900,6 @@ extension on Translations {
 			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API key required',
 			'sourceSetup.subtitleKeyHelp' => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
 			'sourceSetup.subtitleSearchFailed' => 'Subtitle search failed. Check the API key, connection, and service access.',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.subtitleApplyFailed' => 'Could not download or apply this subtitle. Check your connection and try another result.',
 			'sourceSetup.subtitleSearch' => 'Search OpenSubtitles',
 			'sourceSetup.subtitleSearchPrivacy' => 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.',
@@ -16856,6 +18022,7 @@ extension on Translations {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
+			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
@@ -16916,6 +18083,8 @@ extension on Translations {
 			'games.streamLimitDecoder' => 'Receiver decoder',
 			'games.streamLimitBurst' => 'Burst throttling',
 			'games.streamPresentedFps' => 'Frames submitted to the display',
+			_ => null,
+		} ?? switch (path) {
 			'games.streamReceivedBitrate' => 'Received video payload',
 			'games.streamCompletionTime' => 'Average receiver frame completion',
 			'games.streamDroppedFrames' => 'Receiver-dropped frames this session',

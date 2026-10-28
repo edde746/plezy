@@ -38,6 +38,9 @@ class PendingAuthDialog extends StatelessWidget {
   /// URL tap region.
   final String url;
 
+  /// Some services provide a distinct QR payload and browser link.
+  final String? qrData;
+
   /// Short human-readable form of [url] shown under the QR code. Defaults to
   /// [url]; the scheme is stripped for display either way.
   final String? displayUrl;
@@ -54,6 +57,7 @@ class PendingAuthDialog extends StatelessWidget {
     required this.body,
     required this.children,
     required this.url,
+    this.qrData,
     this.displayUrl,
     required this.openLabel,
     required this.onCancel,
@@ -91,9 +95,10 @@ class PendingAuthDialog extends StatelessWidget {
       dimension: qrSize,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: QrImageView(data: url, size: qrSize, version: QrVersions.auto, backgroundColor: Colors.white),
+        child: QrImageView(data: qrData ?? url, size: qrSize, version: QrVersions.auto, backgroundColor: Colors.white),
       ),
     );
+    final accessibleQr = Semantics(label: '$title QR code', image: true, child: qr);
     Widget urlChip({required TextAlign textAlign}) => CopyTapRegion(
       onCopy: () => _copyUrl(context),
       semanticLabel: t.services.pendingAuth.copyUrl,
@@ -152,7 +157,7 @@ class PendingAuthDialog extends StatelessWidget {
                   mainAxisSize: .min,
                   crossAxisAlignment: .stretch,
                   children: [
-                    Column(mainAxisSize: .min, mainAxisAlignment: .center, children: [qr]),
+                    Column(mainAxisSize: .min, mainAxisAlignment: .center, children: [accessibleQr]),
                     const SizedBox(width: 28),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 320),
@@ -189,7 +194,7 @@ class PendingAuthDialog extends StatelessWidget {
                     child: Column(
                       mainAxisSize: .min,
                       children: [
-                        qr,
+                        accessibleQr,
                         const SizedBox(height: 8),
                         ConstrainedBox(
                           constraints: BoxConstraints(maxWidth: qrSize + 32),

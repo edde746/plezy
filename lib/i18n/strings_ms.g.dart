@@ -92,6 +92,7 @@ class TranslationsMs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$ms trakt = _Translations$trakt$ms._(_root);
 	@override late final _Translations$seerr$ms seerr = _Translations$seerr$ms._(_root);
 	@override late final _Translations$services$ms services = _Translations$services$ms._(_root);
+	@override late final _Translations$streaming$ms streaming = _Translations$streaming$ms._(_root);
 	@override late final _Translations$addServer$ms addServer = _Translations$addServer$ms._(_root);
 	@override late final _Translations$cast$ms cast = _Translations$cast$ms._(_root);
 	@override late final _Translations$automation$ms automation = _Translations$automation$ms._(_root);
@@ -2776,6 +2777,119 @@ class _Translations$services$ms extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$ms libraryFilter = _Translations$services$libraryFilter$ms._(_root);
 	@override String get seerrDescription => 'Hubungi Seerr atau Overseerr untuk mencari tajuk dan mengemukakan permintaan media.';
 	@override late final _Translations$services$trackerDescriptions$ms trackerDescriptions = _Translations$services$trackerDescriptions$ms._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$ms extends Translations$streaming$en {
+	_Translations$streaming$ms._(TranslationsMs root) : this._root = root, super.internal(root);
+
+	final TranslationsMs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Penstriman awan dan add-on';
+	@override String get subtitle => 'Sambungkan akaun Debrid untuk menyemak imbas fail dalam awan dan memainkan strim yang disokong. Add-on serasi Stremio menyediakan pilihan strim pada halaman filem dan episod. Butiran sambungan disulitkan pada peranti ini dan disimpan dalam profil ini.';
+	@override String connectionsConfigured({required Object count}) => 'Sumber disambungkan: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG tidak dapat membuka kunci tetapan penstriman yang disimpan. Buka kunci peranti dan cuba lagi sebelum mengubah sambungan.';
+	@override String get settingsUnreadable => 'PlezyNG tidak dapat membuka kunci sambungan tersimpan ini. Kosongkannya untuk menyambungkan semula perkhidmatan.';
+	@override String get clearUnreadableSettings => 'Kosongkan tetapan tersimpan';
+	@override String get clearUnreadableSettingsConfirm => 'Kosongkan tetapan penstriman tersimpan?';
+	@override String get clearUnreadableSettingsBody => 'Tindakan ini mengalih keluar semua akaun penyedia dan alamat add-on yang disimpan daripada profil ini. Tindakan ini tidak boleh dibuat asal.';
+	@override String get clearUnreadableSettingsFailed => 'Tidak dapat mengosongkan tetapan penstriman tersimpan. Buka kunci peranti dan cuba lagi.';
+	@override String get retrySettingsLoad => 'Cuba muatkan semula sambungan';
+	@override String get addons => 'Add-on serasi Stremio';
+	@override String get addonsDescription => 'Import add-on daripada Stremio atau sambungkannya menggunakan URL manifes. Semak imbas katalog dalam Teroka dan buka pilihan strim daripada halaman filem atau episod.';
+	@override String get catalogLoadFailed => 'Katalog ini tidak dapat dimuatkan. Muat semula dan cuba lagi.';
+	@override String get catalogFiltersRequired => 'Pilih penapis yang diperlukan untuk menyemak imbas katalog ini.';
+	@override String get catalogRequiredLabel => 'Wajib';
+	@override String get importFromStremio => 'Import daripada Stremio';
+	@override String get stremioImportInstructions => 'Imbas kod QR atau buka pautan. Log masuk ke Stremio dan luluskan permintaan. PlezyNG hanya membaca senarai add-on anda; aplikasi tidak meminta kata laluan Stremio atau mengubah tetapannya.';
+	@override String get stremioImportOpen => 'Buka pautan Stremio';
+	@override String get stremioImportCode => 'Kod pautan';
+	@override String get stremioImportPreviewTitle => 'Pilih add-on';
+	@override String get stremioImportPreviewBody => 'Pilih add-on untuk disambungkan ke PlezyNG. Import ini hanya menerima alamat HTTPS.';
+	@override String stremioImportIgnored({required Object count}) => 'Add-on dilangkau kerana alamat tidak disokong atau tidak selamat: ${count}.';
+	@override String get stremioCatalogs => 'Katalog';
+	@override String get stremioStreams => 'Strim';
+	@override String stremioImportAddSelected({required Object count}) => 'Tambah yang dipilih (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Add-on disambungkan daripada Stremio: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Add-on disambungkan: ${added}; gagal disambungkan: ${failed}.';
+	@override String get stremioImportFailed => 'Tidak dapat mengimport add-on daripada Stremio. Cuba lagi.';
+	@override String get stremioImportTimedOut => 'Kelulusan Stremio tamat tempoh. Mulakan import sekali lagi.';
+	@override String get stremioImportEmpty => 'Tiada add-on serasi baharu ditemui dalam akaun Stremio ini.';
+	@override String get stremioImportLimitReached => 'Alih keluar satu add-on sebelum mengimport yang lain.';
+	@override String get addByManifestUrl => 'Tambah melalui URL manifes';
+	@override String get addAddon => 'Tambah add-on';
+	@override String get manifestUrl => 'URL manifes add-on';
+	@override String get manifestUrlHint => 'Tampal URL manifes add-on. PlezyNG menyemak sokongan katalog atau sumber strim sebelum menyambung.';
+	@override String get allowHttp => 'Benarkan alamat HTTP tanpa penyulitan';
+	@override String get allowHttpDescription => 'Gunakan hanya untuk add-on yang dipercayai pada rangkaian peribadi anda.';
+	@override String get installAddon => 'Sambungkan add-on';
+	@override String get addonInstalled => 'Add-on disambungkan';
+	@override String get addonRemoved => 'Add-on dialih keluar';
+	@override String get addonToggle => 'Dayakan add-on';
+	@override String get addonEmpty => 'Belum ada add-on disambungkan';
+	@override String get addonError => 'PlezyNG tidak dapat menyambung ke add-on ini. Semak URL manifes dan cuba lagi.';
+	@override String get addonPrivacy => 'Sambungkan add-on yang anda percayai sahaja. Semasa carian, add-on menerima tajuk yang dicari dan boleh memulangkan pautan strim pihak ketiga.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Mainkan strim torrent yang disokong melalui akaun Real-Debrid anda.';
+	@override String get connectRealDebrid => 'Sambung dengan kod QR';
+	@override String get disconnectRealDebrid => 'Putuskan sambungan Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'Disambungkan sebagai ${username}';
+	@override String get realDebridInstructions => 'Imbas kod QR atau buka pautan, kemudian masukkan kod pengaktifan ini untuk menyambungkan PlezyNG:';
+	@override String get realDebridActivate => 'Buka Real-Debrid untuk mengaktifkan';
+	@override String get realDebridCode => 'Kod pengaktifan';
+	@override String get realDebridConnectFailed => 'Tidak dapat menyambung ke Real-Debrid. Cuba lagi.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Mainkan strim torrent yang disokong melalui akaun AllDebrid anda.';
+	@override String get connectAllDebrid => 'Sambung dengan kod QR';
+	@override String get allDebridInstructions => 'Imbas kod QR atau buka pautan untuk membenarkan PlezyNG. Biarkan skrin ini terbuka semasa menyambung:';
+	@override String get allDebridActivate => 'Buka AllDebrid untuk mengaktifkan';
+	@override String get allDebridCode => 'PIN pengaktifan';
+	@override String get allDebridConnectFailed => 'Tidak dapat menyambung ke AllDebrid. Cuba lagi.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Mainkan strim torrent cache atau semak imbas fail melalui Premiumize.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Mainkan strim torrent cache atau semak imbas fail melalui TorBox.';
+	@override String get connectApiKey => 'Sambung dengan kunci API';
+	@override String apiKeyTitle({required Object service}) => 'Sambungkan ${service}';
+	@override String get apiKey => 'Kunci API';
+	@override String apiKeyHint({required Object service}) => 'Tampal kunci API daripada tetapan akaun ${service}. PlezyNG menyulitkannya pada peranti ini dan menyimpannya dalam profil ini.';
+	@override String get apiKeyConnectFailed => 'Tidak dapat mengesahkan kunci API ini. Semak dan cuba lagi.';
+	@override String accountConnected({required Object username}) => 'Disambungkan sebagai ${username}';
+	@override String get streamNeedsProvider => 'Sambungkan perkhidmatan Debrid untuk memainkan strim torrent ini.';
+	@override String get playViaProvider => 'Main melalui Debrid';
+	@override String disconnectConfirm({required Object service}) => 'Putuskan sambungan ${service}?';
+	@override String get disconnectBody => 'PlezyNG akan membatalkan kebenaran peranti ini. Fail penyedia dan pemindahan yang sedang berjalan tidak akan berubah.';
+	@override String get streamsTitle => 'Pilih strim';
+	@override String get searchingStreams => 'Menyemak add-on yang disambungkan…';
+	@override String get noStreams => 'Tiada strim ditemukan untuk tajuk ini.';
+	@override String get manageConnections => 'Urus perkhidmatan penstriman';
+	@override String subtitleTracks({required Object count}) => 'Trek sari kata: ${count}';
+	@override String get chooseSubtitle => 'Pilih sari kata';
+	@override String get chooseProvider => 'Pilih perkhidmatan Debrid';
+	@override String get subtitleOff => 'Sari kata dimatikan';
+	@override String get subtitleLoadFailed => 'Tidak dapat memuatkan sari kata ini. Cuba trek lain.';
+	@override String get subtitleApplied => 'Sari kata dipilih untuk main balik';
+	@override String get streamLookupPartial => 'Sesetengah add-on tidak dapat dicapai.';
+	@override String get streamLookupFailed => 'Tidak dapat menyemak add-on yang disambungkan.';
+	@override String get streamOpenExternal => 'Buka pautan luaran';
+	@override String get streamPrepare => 'Menyediakan melalui perkhidmatan Debrid…';
+	@override String get streamPrepareFailed => 'Tidak dapat menyediakan strim ini. Semak akaun yang disambungkan dan cuba sumber lain.';
+	@override String get streamNeedsRealDebrid => 'Sambungkan perkhidmatan Debrid untuk memainkan strim torrent ini.';
+	@override String get streamUnsupported => 'Format strim ini tidak disokong oleh pemain dalam aplikasi.';
+	@override String get remoteNeedsEpisode => 'Pilih episod sebelum mencari strim.';
+	@override String get remoteNeedsEpisodeNumber => 'Nombor musim atau episod tiada untuk episod ini.';
+	@override String get remoteNeedsExternalId => 'PlezyNG tidak menemukan ID IMDb atau TMDB untuk tajuk ini.';
+	@override String get watchWithServices => 'Tonton dengan perkhidmatan yang disambungkan';
+	@override String get chooseEpisode => 'Pilih episod';
+	@override String get episodes => 'Episod';
+	@override String episodePosition({required Object season, required Object episode}) => 'Musim ${season}, episod ${episode}';
+	@override String get episodeStreamHint => 'Membuka strim yang tersedia untuk episod ini.';
+	@override String get cloudFiles => 'Fail awan';
+	@override String get browseCloud => 'Semak imbas fail';
+	@override String get cloudEmpty => 'Tiada fail video boleh dimainkan ditemukan dalam akaun ini.';
+	@override String get cloudLoadFailed => 'Tidak dapat memuatkan fail awan. Semak sambungan dan cuba lagi.';
+	@override String get providers => 'Penyedia Debrid';
 }
 
 // Path: addServer
@@ -7717,6 +7831,110 @@ extension on TranslationsMs {
 			'services.trackerDescriptions.anilist' => 'Menyegerakkan senarai anime dan menonton kemajuan dengan AniList.',
 			'services.trackerDescriptions.simkl' => 'Sync menonton filem, rancangan televisyen, dan anime dengan Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Tunjukkan penarafan MDBList dan senarai dalam cadangan dan Cari.',
+			'streaming.title' => 'Penstriman awan dan add-on',
+			'streaming.subtitle' => 'Sambungkan akaun Debrid untuk menyemak imbas fail dalam awan dan memainkan strim yang disokong. Add-on serasi Stremio menyediakan pilihan strim pada halaman filem dan episod. Butiran sambungan disulitkan pada peranti ini dan disimpan dalam profil ini.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Sumber disambungkan: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG tidak dapat membuka kunci tetapan penstriman yang disimpan. Buka kunci peranti dan cuba lagi sebelum mengubah sambungan.',
+			'streaming.settingsUnreadable' => 'PlezyNG tidak dapat membuka kunci sambungan tersimpan ini. Kosongkannya untuk menyambungkan semula perkhidmatan.',
+			'streaming.clearUnreadableSettings' => 'Kosongkan tetapan tersimpan',
+			'streaming.clearUnreadableSettingsConfirm' => 'Kosongkan tetapan penstriman tersimpan?',
+			'streaming.clearUnreadableSettingsBody' => 'Tindakan ini mengalih keluar semua akaun penyedia dan alamat add-on yang disimpan daripada profil ini. Tindakan ini tidak boleh dibuat asal.',
+			'streaming.clearUnreadableSettingsFailed' => 'Tidak dapat mengosongkan tetapan penstriman tersimpan. Buka kunci peranti dan cuba lagi.',
+			'streaming.retrySettingsLoad' => 'Cuba muatkan semula sambungan',
+			'streaming.addons' => 'Add-on serasi Stremio',
+			'streaming.addonsDescription' => 'Import add-on daripada Stremio atau sambungkannya menggunakan URL manifes. Semak imbas katalog dalam Teroka dan buka pilihan strim daripada halaman filem atau episod.',
+			'streaming.catalogLoadFailed' => 'Katalog ini tidak dapat dimuatkan. Muat semula dan cuba lagi.',
+			'streaming.catalogFiltersRequired' => 'Pilih penapis yang diperlukan untuk menyemak imbas katalog ini.',
+			'streaming.catalogRequiredLabel' => 'Wajib',
+			'streaming.importFromStremio' => 'Import daripada Stremio',
+			'streaming.stremioImportInstructions' => 'Imbas kod QR atau buka pautan. Log masuk ke Stremio dan luluskan permintaan. PlezyNG hanya membaca senarai add-on anda; aplikasi tidak meminta kata laluan Stremio atau mengubah tetapannya.',
+			'streaming.stremioImportOpen' => 'Buka pautan Stremio',
+			'streaming.stremioImportCode' => 'Kod pautan',
+			'streaming.stremioImportPreviewTitle' => 'Pilih add-on',
+			'streaming.stremioImportPreviewBody' => 'Pilih add-on untuk disambungkan ke PlezyNG. Import ini hanya menerima alamat HTTPS.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Add-on dilangkau kerana alamat tidak disokong atau tidak selamat: ${count}.',
+			'streaming.stremioCatalogs' => 'Katalog',
+			'streaming.stremioStreams' => 'Strim',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Tambah yang dipilih (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Add-on disambungkan daripada Stremio: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Add-on disambungkan: ${added}; gagal disambungkan: ${failed}.',
+			'streaming.stremioImportFailed' => 'Tidak dapat mengimport add-on daripada Stremio. Cuba lagi.',
+			'streaming.stremioImportTimedOut' => 'Kelulusan Stremio tamat tempoh. Mulakan import sekali lagi.',
+			'streaming.stremioImportEmpty' => 'Tiada add-on serasi baharu ditemui dalam akaun Stremio ini.',
+			'streaming.stremioImportLimitReached' => 'Alih keluar satu add-on sebelum mengimport yang lain.',
+			'streaming.addByManifestUrl' => 'Tambah melalui URL manifes',
+			'streaming.addAddon' => 'Tambah add-on',
+			'streaming.manifestUrl' => 'URL manifes add-on',
+			'streaming.manifestUrlHint' => 'Tampal URL manifes add-on. PlezyNG menyemak sokongan katalog atau sumber strim sebelum menyambung.',
+			'streaming.allowHttp' => 'Benarkan alamat HTTP tanpa penyulitan',
+			'streaming.allowHttpDescription' => 'Gunakan hanya untuk add-on yang dipercayai pada rangkaian peribadi anda.',
+			'streaming.installAddon' => 'Sambungkan add-on',
+			'streaming.addonInstalled' => 'Add-on disambungkan',
+			'streaming.addonRemoved' => 'Add-on dialih keluar',
+			'streaming.addonToggle' => 'Dayakan add-on',
+			'streaming.addonEmpty' => 'Belum ada add-on disambungkan',
+			'streaming.addonError' => 'PlezyNG tidak dapat menyambung ke add-on ini. Semak URL manifes dan cuba lagi.',
+			'streaming.addonPrivacy' => 'Sambungkan add-on yang anda percayai sahaja. Semasa carian, add-on menerima tajuk yang dicari dan boleh memulangkan pautan strim pihak ketiga.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Mainkan strim torrent yang disokong melalui akaun Real-Debrid anda.',
+			'streaming.connectRealDebrid' => 'Sambung dengan kod QR',
+			'streaming.disconnectRealDebrid' => 'Putuskan sambungan Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Disambungkan sebagai ${username}',
+			'streaming.realDebridInstructions' => 'Imbas kod QR atau buka pautan, kemudian masukkan kod pengaktifan ini untuk menyambungkan PlezyNG:',
+			'streaming.realDebridActivate' => 'Buka Real-Debrid untuk mengaktifkan',
+			'streaming.realDebridCode' => 'Kod pengaktifan',
+			'streaming.realDebridConnectFailed' => 'Tidak dapat menyambung ke Real-Debrid. Cuba lagi.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Mainkan strim torrent yang disokong melalui akaun AllDebrid anda.',
+			'streaming.connectAllDebrid' => 'Sambung dengan kod QR',
+			'streaming.allDebridInstructions' => 'Imbas kod QR atau buka pautan untuk membenarkan PlezyNG. Biarkan skrin ini terbuka semasa menyambung:',
+			'streaming.allDebridActivate' => 'Buka AllDebrid untuk mengaktifkan',
+			'streaming.allDebridCode' => 'PIN pengaktifan',
+			'streaming.allDebridConnectFailed' => 'Tidak dapat menyambung ke AllDebrid. Cuba lagi.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Mainkan strim torrent cache atau semak imbas fail melalui Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Mainkan strim torrent cache atau semak imbas fail melalui TorBox.',
+			'streaming.connectApiKey' => 'Sambung dengan kunci API',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'Sambungkan ${service}',
+			'streaming.apiKey' => 'Kunci API',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Tampal kunci API daripada tetapan akaun ${service}. PlezyNG menyulitkannya pada peranti ini dan menyimpannya dalam profil ini.',
+			'streaming.apiKeyConnectFailed' => 'Tidak dapat mengesahkan kunci API ini. Semak dan cuba lagi.',
+			'streaming.accountConnected' => ({required Object username}) => 'Disambungkan sebagai ${username}',
+			'streaming.streamNeedsProvider' => 'Sambungkan perkhidmatan Debrid untuk memainkan strim torrent ini.',
+			'streaming.playViaProvider' => 'Main melalui Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'Putuskan sambungan ${service}?',
+			'streaming.disconnectBody' => 'PlezyNG akan membatalkan kebenaran peranti ini. Fail penyedia dan pemindahan yang sedang berjalan tidak akan berubah.',
+			'streaming.streamsTitle' => 'Pilih strim',
+			'streaming.searchingStreams' => 'Menyemak add-on yang disambungkan…',
+			'streaming.noStreams' => 'Tiada strim ditemukan untuk tajuk ini.',
+			'streaming.manageConnections' => 'Urus perkhidmatan penstriman',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Trek sari kata: ${count}',
+			'streaming.chooseSubtitle' => 'Pilih sari kata',
+			'streaming.chooseProvider' => 'Pilih perkhidmatan Debrid',
+			'streaming.subtitleOff' => 'Sari kata dimatikan',
+			'streaming.subtitleLoadFailed' => 'Tidak dapat memuatkan sari kata ini. Cuba trek lain.',
+			'streaming.subtitleApplied' => 'Sari kata dipilih untuk main balik',
+			'streaming.streamLookupPartial' => 'Sesetengah add-on tidak dapat dicapai.',
+			'streaming.streamLookupFailed' => 'Tidak dapat menyemak add-on yang disambungkan.',
+			'streaming.streamOpenExternal' => 'Buka pautan luaran',
+			'streaming.streamPrepare' => 'Menyediakan melalui perkhidmatan Debrid…',
+			'streaming.streamPrepareFailed' => 'Tidak dapat menyediakan strim ini. Semak akaun yang disambungkan dan cuba sumber lain.',
+			'streaming.streamNeedsRealDebrid' => 'Sambungkan perkhidmatan Debrid untuk memainkan strim torrent ini.',
+			'streaming.streamUnsupported' => 'Format strim ini tidak disokong oleh pemain dalam aplikasi.',
+			'streaming.remoteNeedsEpisode' => 'Pilih episod sebelum mencari strim.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Nombor musim atau episod tiada untuk episod ini.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG tidak menemukan ID IMDb atau TMDB untuk tajuk ini.',
+			'streaming.watchWithServices' => 'Tonton dengan perkhidmatan yang disambungkan',
+			'streaming.chooseEpisode' => 'Pilih episod',
+			'streaming.episodes' => 'Episod',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Musim ${season}, episod ${episode}',
+			'streaming.episodeStreamHint' => 'Membuka strim yang tersedia untuk episod ini.',
+			'streaming.cloudFiles' => 'Fail awan',
+			'streaming.browseCloud' => 'Semak imbas fail',
+			'streaming.cloudEmpty' => 'Tiada fail video boleh dimainkan ditemukan dalam akaun ini.',
+			'streaming.cloudLoadFailed' => 'Tidak dapat memuatkan fail awan. Semak sambungan dan cuba lagi.',
+			'streaming.providers' => 'Penyedia Debrid',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Menambah ${product} pelayan',
 			'addServer.serverUrls' => 'Penyimpanan URL',
 			'addServer.serverUrlsHelper' => 'Multiple URL dibenarkan, dipisahkan oleh commas.',
@@ -7957,6 +8175,8 @@ extension on TranslationsMs {
 			'universalMedia.playlistFormatsHelp' => 'Senarai main boleh mengandungi sehingga 1,000 item dan 2 MB. HLS terbuka sebagai aliran supaya pemain boleh memilih kualiti.',
 			'universalMedia.saveQueuePlaylist' => 'Simpan baris gilir sebagai senarai main',
 			'universalMedia.queuePlaylistSaved' => 'Senarai main disimpan di sebelah fail media.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => 'Baris gilir ini tidak dapat disimpan sebagai senarai main setempat yang boleh digunakan semula.',
 			'universalMedia.queuePlaylistFolderRequired' => 'Pilih lokasi simpanan dalam folder yang sama dengan fail dalam baris gilir.',
 			'universalMedia.noFavorites' => 'Tiada rangkaian kegemaran disimpan sehingga kini. kekal dalam profil ini.',
@@ -8061,8 +8281,6 @@ extension on TranslationsMs {
 			'universalMedia.captureAudioNone' => 'Tiada audio',
 			'universalMedia.captureDefaultAudio' => 'Pengenalan audio lalai',
 			'universalMedia.captureWaylandHelp' => 'Wayland membatasi penangkapan XWayland ini kepada X display. Windows di luar XWayland mungkin tidak muncul.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Kadar rakaman',
 			'universalMedia.capturePrivacy' => 'Rekod disimpan hanya untuk fail yang anda pilih. penangkapan mikrofon adalah opsional. PlezyNG tidak memuat naik rekod.',
 			'universalMedia.captureSaveAs' => 'Menyimpan rekod skrin sebagai',
@@ -8471,6 +8689,8 @@ extension on TranslationsMs {
 			'sourceSetup.nfsEncryptionFailure' => 'Untuk NFS disulitkan, semak sokongan RFC 9289 dan TLS 1.3 pada kedua-dua perkhidmatan NAS, nama sijil dan UID/GID perkongsian. PlezyNG tidak akan mencuba semula sambungan ini tanpa penyulitan.',
 			'sourceSetup.sourceConnecting' => 'Menyambung ke sumber',
 			'sourceSetup.metadataSearchPrivacy' => 'Carian tajuk ini dihantar ke Trakt. Carian menghantar tajuk yang anda masukkan, bukan video atau bukti kelayakan sumber.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Pilih padanan',
 			'sourceSetup.metadataMatchHelp' => 'Semak tajuk dan tahun sebelum memilih. Trakt menerima tajuk carian; video kekal pada sumbernya.',
 			'sourceSetup.metadataNoMatches' => 'Tiada padanan tajuk dalam talian ditemukan. Cuba tajuk lain.',
@@ -8575,8 +8795,6 @@ extension on TranslationsMs {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

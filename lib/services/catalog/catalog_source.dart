@@ -90,7 +90,33 @@ class CatalogHub {
   /// The provider's presentation hint, or null when it sent none.
   final CatalogHubStyle? style;
 
-  const CatalogHub({required this.id, required this.title, required this.page, this.style, this.errorMessage});
+  /// Provider-declared filters available on the full-list view. The values
+  /// are passed through the same filter editor used by server libraries.
+  final List<MediaFilter> filters;
+
+  /// Values already supplied by the provider's catalog descriptor. This
+  /// avoids a second request for filter values that are part of the manifest.
+  final Map<String, List<MediaFilterValue>> cachedFilterValues;
+
+  /// A valid initial selection used to fetch this hub's preview. This is
+  /// carried into View All so the first full-list request matches the shelf.
+  final List<LibraryFilter> initialFilters;
+
+  /// True when a required filter has no safe default and must be chosen
+  /// before the provider can return a meaningful first page.
+  final bool requiresFilterInput;
+
+  const CatalogHub({
+    required this.id,
+    required this.title,
+    required this.page,
+    this.style,
+    this.errorMessage,
+    this.filters = const [],
+    this.cachedFilterValues = const {},
+    this.initialFilters = const [],
+    this.requiresFilterInput = false,
+  });
 }
 
 /// Everything a catalog detail screen needs from the item's own provider.
@@ -123,7 +149,39 @@ class CatalogDetail {
   /// UI needs to head each shelf.
   final List<CatalogRelation> relations;
 
-  const CatalogDetail({required this.item, this.cast = const [], this.related = const [], this.relations = const []});
+  /// Episode entries exposed by providers that return playable episode IDs
+  /// inside a show detail body (for example, a Stremio `meta.videos` list).
+  final List<CatalogEpisode> episodes;
+
+  const CatalogDetail({
+    required this.item,
+    this.cast = const [],
+    this.related = const [],
+    this.relations = const [],
+    this.episodes = const [],
+  });
+}
+
+/// Provider-returned episode metadata for an external show detail.
+class CatalogEpisode {
+  const CatalogEpisode({
+    required this.id,
+    required this.title,
+    this.seasonNumber,
+    this.episodeNumber,
+    this.year,
+    this.runtimeMinutes,
+    this.overview,
+  });
+
+  /// Opaque ID sent back to the owning provider for stream lookup.
+  final String id;
+  final String title;
+  final int? seasonNumber;
+  final int? episodeNumber;
+  final int? year;
+  final int? runtimeMinutes;
+  final String? overview;
 }
 
 /// How a group of titles relates to the item they were fetched from.
@@ -156,6 +214,22 @@ abstract interface class CatalogHubSource {
   Future<List<CatalogHub>> fetchHubs({int limit = 25});
 
   Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25});
+}
+
+/// Optional filter support for runtime-discovered hubs. Fixed catalog rows
+/// keep using [CatalogRowFilters]; this keeps add-on catalogs from needing a
+/// fake enum entry for each dynamic filter.
+abstract interface class CatalogHubFiltersSource {
+  Future<LibraryFilterResult> fetchHubFilters(String id);
+
+  Future<List<MediaFilterValue>> fetchHubFilterValues(String id, MediaFilter filter);
+
+  Future<CatalogPage> fetchFilteredHub(
+    String id, {
+    required List<LibraryFilter> filters,
+    int page = 1,
+    int limit = 25,
+  });
 }
 
 abstract interface class CatalogRowFilters {

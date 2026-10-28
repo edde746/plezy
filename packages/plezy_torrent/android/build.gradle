@@ -1,0 +1,16 @@
+group 'org.plezy.torrent'
+version '1.0'
+buildscript {
+    repositories { google(); mavenCentral() }
+    dependencies { classpath 'com.android.tools.build:gradle:8.6.1' }
+}
+apply plugin: 'com.android.library'
+android {
+    namespace 'org.plezy.torrent'
+    compileSdk 35
+    defaultConfig {
+        minSdk 23
+        externalNativeBuild { cmake { arguments '-DANDROID_STL=c++_shared'; cppFlags '-std=c++17' } }
+    }
+    externalNativeBuild { cmake { path '../src/CMakeLists.txt'; version '3.22.1' } }
+}

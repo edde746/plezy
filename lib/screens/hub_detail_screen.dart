@@ -41,8 +41,18 @@ class HubFilterSource {
   final Future<LibraryFilterResult> Function() loadFilters;
   final FilterValuesLoader loadFilterValues;
   final Future<List<MediaItem>> Function(List<LibraryFilter> filters) loadItems;
+  final List<LibraryFilter> initialFilters;
+  final bool canLoadInitially;
+  final String? initialHint;
 
-  const HubFilterSource({required this.loadFilters, required this.loadFilterValues, required this.loadItems});
+  const HubFilterSource({
+    required this.loadFilters,
+    required this.loadFilterValues,
+    required this.loadItems,
+    this.initialFilters = const [],
+    this.canLoadInitially = true,
+    this.initialHint,
+  });
 }
 
 /// Screen to display full content of a recommendation hub
@@ -84,6 +94,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   bool _replaceContinuationItems = false;
   bool _usesPaginatedLoader = false;
   bool _nextHubPageCheckScheduled = false;
+  String? _emptyHint;
 
   late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
     loadPage: _fetchContinuationPage,
@@ -132,8 +143,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     scrollController.addListener(_scheduleNextHubPageCheck);
     _items = widget.hub.items;
     _filteredItems = widget.hub.items;
-    if (widget.hub.more) {
+    final filterSource = widget.filterSource;
+    _filters = filterSource?.initialFilters ?? const [];
+    if (widget.hub.more && (filterSource?.canLoadInitially ?? true)) {
       _loadMoreItems();
+    } else if (filterSource != null && !filterSource.canLoadInitially) {
+      _emptyHint = filterSource.initialHint;
     }
     _loadSorts();
     if (widget.filterSource case final source?) _loadFilterOptions(source);
@@ -319,6 +334,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
               _filters = pending;
               _items = [];
               _filteredItems = [];
+              _emptyHint = null;
             });
             unawaited(_loadMoreItems(restart: true));
           });
@@ -593,7 +609,10 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                 else if (_filteredItems.isEmpty)
                   SliverFillRemaining(
                     child: Center(
-                      child: Text(_filters.isEmpty ? t.hubDetail.noItemsFound : t.libraries.noItemsMatchFilters),
+                      child: Text(
+                        _emptyHint ?? (_filters.isEmpty ? t.hubDetail.noItemsFound : t.libraries.noItemsMatchFilters),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   )
                 else

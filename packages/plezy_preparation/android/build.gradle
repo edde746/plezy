@@ -1,0 +1,21 @@
+group 'org.plezy.preparation'
+version '1.0'
+buildscript {
+    ext.kotlin_version = '2.1.0'
+    repositories { google(); mavenCentral() }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.6.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+android {
+    namespace 'org.plezy.preparation'
+    compileSdk 35
+    defaultConfig { minSdk 23 }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    kotlinOptions { jvmTarget = '17' }
+}
+repositories { google(); mavenCentral() }
+dependencies { implementation 'androidx.work:work-runtime-ktx:2.10.1' }

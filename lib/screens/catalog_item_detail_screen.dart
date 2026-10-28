@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:plezy/i18n/presentation_formats.dart';
 import 'package:plezy/i18n/locale_preferences.dart';
+
 import 'dart:async';
 
 import 'package:collection/collection.dart';
@@ -22,6 +23,7 @@ import '../media/media_hub.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
+import '../media/media_kind.dart';
 import '../media/media_rating.dart';
 import '../media/playback_copy_ranking.dart';
 import '../models/catalog/catalog_cast_member.dart';
@@ -37,6 +39,8 @@ import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/community_ratings.dart';
 import '../services/catalog/seerr_catalog_source.dart';
+import '../services/remote_streams/remote_stream_models.dart';
+import '../services/remote_streams/remote_streaming_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/external_access_directory.dart';
 import '../services/settings_service.dart';
@@ -53,6 +57,8 @@ import '../utils/media_navigation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/rating_utils.dart';
 import '../utils/snackbar_helper.dart';
+import 'remote_streams/remote_stream_picker_screen.dart';
+import 'settings/remote_streaming_settings_screen.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/backend_badge.dart';
@@ -93,6 +99,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final _backgroundFocusNode = FocusNode(debugLabel: 'catalog_background');
   List<FocusNode> _linkFocusNodes = const [];
   List<FocusNode> _relationFocusNodes = const [];
+  List<FocusNode> _episodeFocusNodes = const [];
   List<CatalogTag> _orderedTags = const [];
   List<CatalogLink> _streamingLinks = const [];
   List<CatalogLink> _otherLinks = const [];
@@ -129,6 +136,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// Cast/characters from the item's own source; null while loading (the
   /// section only renders once loaded non-empty).
   List<CatalogCastMember>? _cast;
+
+  /// Provider-returned playable episodes, currently supplied by Stremio.
+  List<CatalogEpisode> _episodes = const [];
 
   /// "More like this" from the item's own source; null while loading (the
   /// row only renders once loaded non-empty).
@@ -180,6 +190,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       node.dispose();
     }
     for (final node in _relationFocusNodes) {
+      node.dispose();
+    }
+    for (final node in _episodeFocusNodes) {
       node.dispose();
     }
     _scrollController.dispose();
@@ -349,18 +362,26 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       try {
         final detail = await source.fetchDetail(widget.item);
         if (!mounted) return;
+        final hadActions = _hasActions;
         final relationEntries = [
           for (final relation in detail.relations)
             for (final item in relation.items) (type: relation.type, item: item),
         ];
         _syncDetailCollections(detail.item);
         _replaceRelationFocusNodes(relationEntries.length);
+        _replaceEpisodeFocusNodes(detail.episodes);
         setState(() {
           _detailItem = detail.item;
           _cast = detail.cast;
           _related = detail.related;
           _relationEntries = relationEntries;
+          _episodes = detail.episodes;
         });
+        if (!hadActions && _hasActions) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _actionBarKey.currentState?.requestFocusOnFirst();
+          });
+        }
         // The row form of a Plex Discover item carries only its rating key;
         // the detail body brings the external ids (#1715). Ask again with the
         // full set whenever enrichment added id forms — not just when the bare
@@ -399,6 +420,15 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     ];
   }
 
+  void _replaceEpisodeFocusNodes(List<CatalogEpisode> episodes) {
+    for (final node in _episodeFocusNodes) {
+      node.dispose();
+    }
+    _episodeFocusNodes = [
+      for (var index = 0; index < episodes.length; index++) FocusNode(debugLabel: 'catalog_episode_$index'),
+    ];
+  }
+
   bool get _hasTrailer => _item.trailerUrl?.trim().isNotEmpty ?? false;
 
   /// The Seerr source when the signed-in user may request this kind. Read
@@ -421,9 +451,219 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
+  String? _streamLookupId(CatalogItem item) =>
+      item.ids.imdb ??
+      (item.ids.tmdb == null ? null : 'tmdb:${item.ids.tmdb}') ??
+      (item.ids.tvdb == null ? null : 'tvdb:${item.ids.tvdb}') ??
+      (item.source == CatalogSourceId.stremio ? item.sourceItemId : null);
+
+  bool get _canWatchWithServices => _item.kind == MediaKind.movie && _streamLookupId(_item) != null;
+
+  bool get _hasEpisodes => _episodes.isNotEmpty;
+
   bool get _hasAccessDirectory => ExternalAccessDirectory.forMediaKind(_item.kind) != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer || _hasAccessDirectory;
+  bool get _hasActions =>
+      _watchlistSource != null ||
+      _canRequest ||
+      _canWatchWithServices ||
+      _hasEpisodes ||
+      _hasTrailer ||
+      _hasAccessDirectory;
+
+  Future<Map<String, MediaItem>> _serverEpisodeQueue(CatalogItem item) async {
+    if (item.kind != MediaKind.show) return const {};
+    try {
+      final matches = _matches;
+      if (matches == null || _resolvingMatches || _uncheckedServerIds.isNotEmpty) return const {};
+      final shows = matches
+          .where((media) => media.kind == MediaKind.show && (media.serverId?.trim().isNotEmpty ?? false))
+          .toList(growable: false);
+      final multiServer = context.read<MultiServerProvider>();
+      final manager = multiServer.serverManager;
+      // Exact matches are already verified by the catalog matcher. Keep a
+      // stable server preference across episodes, filling holes from another
+      // verified copy when one library has only part of the series.
+      final ordered = [...shows]..sort((a, b) => a.globalKey.compareTo(b.globalKey));
+      final byCoordinates = <String, MediaItem>{};
+      for (final show in ordered) {
+        final serverId = ServerId(show.serverId!);
+        if (!multiServer.expectedServerIds.contains(show.serverId) || !manager.isClientOnline(serverId)) continue;
+        final client = manager.getClient(serverId);
+        if (client == null) continue;
+        try {
+          final episodes = await client.fetchClientSideEpisodeQueue(show.id);
+          if (!mounted) return const {};
+          if (episodes == null || !multiServer.expectedServerIds.contains(show.serverId)) continue;
+          final unique = <String, MediaItem>{};
+          final ambiguous = <String>{};
+          for (final episode in episodes) {
+            final season = episode.parentIndex, number = episode.index;
+            if (episode.kind != MediaKind.episode ||
+                episode.serverId != show.serverId ||
+                season == null ||
+                number == null ||
+                season < 0 ||
+                number < 0) {
+              continue;
+            }
+            final key = '$season:$number';
+            if (unique.containsKey(key)) {
+              ambiguous.add(key);
+            } else {
+              unique[key] = episode;
+            }
+          }
+          for (final row in unique.entries) {
+            if (!ambiguous.contains(row.key)) byCoordinates.putIfAbsent(row.key, () => row.value);
+          }
+        } on Object {
+          // Another exact copy can still fill this server's missing episodes.
+        }
+      }
+      return byCoordinates;
+    } on Object catch (error, stackTrace) {
+      appLogger.d('Server episodes unavailable for catalog queue', error: error, stackTrace: stackTrace);
+      return const {};
+    }
+  }
+
+  Future<bool> _ensureStreamingAddons() async {
+    var streaming = context.read<RemoteStreamingProvider>();
+    if (!streaming.isReady || streaming.addons.where((addon) => addon.enabled).isEmpty) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
+      if (!mounted) return false;
+      streaming = context.read<RemoteStreamingProvider>();
+    }
+    return streaming.isReady && streaming.addons.any((addon) => addon.enabled);
+  }
+
+  Future<void> _watchWithServices() async {
+    if (!_canWatchWithServices || !await _ensureStreamingAddons() || !mounted) return;
+
+    final item = _item;
+    final id = _streamLookupId(item);
+    if (id == null) return;
+    final identifiers = <String, String>{
+      if (item.ids.imdb != null) 'imdb': item.ids.imdb!,
+      if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
+      if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
+    };
+    final libraryMatches = (_matches ?? const <MediaItem>[]).where((match) => match.kind == MediaKind.movie).toList();
+    try {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'remote-stream-picker'),
+          builder: (_) => RemoteStreamPickerScreen(
+            request: RemoteStreamRequest(type: 'movie', id: id, title: item.title, year: item.year),
+            identifiers: identifiers,
+            durationMs: item.runtimeMinutes == null ? null : Duration(minutes: item.runtimeMinutes!).inMilliseconds,
+            playbackItem: libraryMatches.length == 1 ? libraryMatches.single : null,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.streaming.streamLookupFailed);
+    }
+  }
+
+  Future<void> _watchEpisode(CatalogEpisode episode) async {
+    if (!await _ensureStreamingAddons()) return;
+    if (!mounted) return;
+    final item = _item;
+    final season = episode.seasonNumber;
+    final number = episode.episodeNumber;
+    final position = season != null && number != null
+        ? t.streaming.episodePosition(season: season, episode: number)
+        : null;
+    final titleParts = <String>[item.title];
+    if (position != null) titleParts.add(position);
+    titleParts.add(episode.title);
+    final title = titleParts.join(' · ');
+    final identifiers = <String, String>{
+      if (item.ids.imdb != null) 'imdb': item.ids.imdb!,
+      if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
+      if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
+    };
+    final episodeOrder = {for (var index = 0; index < _episodes.length; index++) _episodes[index].id: index};
+    final orderedEpisodes = List<CatalogEpisode>.of(_episodes)
+      ..sort((a, b) {
+        final seasonOrder = (a.seasonNumber ?? -1).compareTo(b.seasonNumber ?? -1);
+        if (seasonOrder != 0) return seasonOrder;
+        final episodeOrderComparison = (a.episodeNumber ?? -1).compareTo(b.episodeNumber ?? -1);
+        if (episodeOrderComparison != 0) return episodeOrderComparison;
+        return (episodeOrder[a.id] ?? 0).compareTo(episodeOrder[b.id] ?? 0);
+      });
+    String episodePlaybackTitle(CatalogEpisode row) {
+      final rowSeason = row.seasonNumber;
+      final rowNumber = row.episodeNumber;
+      final rowPosition = rowSeason != null && rowNumber != null
+          ? t.streaming.episodePosition(season: rowSeason, episode: rowNumber)
+          : null;
+      return [item.title, ?rowPosition, row.title].join(' · ');
+    }
+
+    List<RemoteStreamQueueItem> queueItemsFor(Map<String, MediaItem> serverEpisodes) => [
+      for (final row in orderedEpisodes)
+        RemoteStreamQueueItem(
+          request: RemoteStreamRequest(
+            type: 'series',
+            id: row.id,
+            title: episodePlaybackTitle(row),
+            year: row.year ?? item.year,
+            season: row.seasonNumber,
+            episode: row.episodeNumber,
+          ),
+          identifiers: identifiers,
+          mediaTitle: row.title,
+          seriesTitle: item.title,
+          identityNamespace: item.sourceInstallationId ?? '${item.source.name}:${item.entryIdentityKey}',
+          durationMs: row.runtimeMinutes == null ? null : Duration(minutes: row.runtimeMinutes!).inMilliseconds,
+          serverItem: row.seasonNumber == null || row.episodeNumber == null
+              ? null
+              : serverEpisodes['${row.seasonNumber}:${row.episodeNumber}'],
+        ),
+    ];
+    final playbackQueue = orderedEpisodes.length == 1 ? queueItemsFor(const {}) : const <RemoteStreamQueueItem>[];
+    final Future<List<RemoteStreamQueueItem>>? playbackQueueFuture = orderedEpisodes.length <= 1
+        ? null
+        : _serverEpisodeQueue(item).then(queueItemsFor);
+    final queueStartIndex = orderedEpisodes.indexWhere(
+      (row) =>
+          row.id == episode.id &&
+          row.seasonNumber == episode.seasonNumber &&
+          row.episodeNumber == episode.episodeNumber,
+    );
+    try {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'remote-stream-picker'),
+          builder: (_) => RemoteStreamPickerScreen(
+            request: RemoteStreamRequest(
+              type: 'series',
+              id: episode.id,
+              title: title,
+              year: episode.year ?? item.year,
+              season: season,
+              episode: number,
+            ),
+            identifiers: identifiers,
+            seriesTitle: item.title,
+            durationMs: episode.runtimeMinutes == null
+                ? null
+                : Duration(minutes: episode.runtimeMinutes!).inMilliseconds,
+            playbackQueue: playbackQueue,
+            playbackQueueFuture: playbackQueueFuture,
+            queueStartIndex: queueStartIndex < 0 ? 0 : queueStartIndex,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.streaming.streamLookupFailed);
+    }
+  }
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -466,6 +706,33 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final node = _libraryMatchFocusNodes[index];
     node.requestFocus();
     _revealFocusNode(node);
+  }
+
+  void _requestEpisodeFocus(int index) {
+    if (index < 0 || index >= _episodeFocusNodes.length) return;
+    final node = _episodeFocusNodes[index];
+    node.requestFocus();
+    _revealFocusNode(node);
+  }
+
+  void _focusSectionAboveEpisodes() {
+    if (_hasLibraryMatches) {
+      _requestLibraryMatchFocus(_libraryMatchFocusNodes.length - 1);
+    } else {
+      _focusSectionAboveLibraryMatches();
+    }
+  }
+
+  bool _focusSectionBelowEpisodes() {
+    if (_hasCast) {
+      _requestCastFocus();
+      return true;
+    }
+    if (_hasSectionsBelowCast) {
+      _focusSectionBelowCast();
+      return true;
+    }
+    return false;
   }
 
   void _requestLinkFocus(int index) {
@@ -546,6 +813,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   bool _focusSectionBelowLibraryMatches() {
+    if (_hasEpisodes) {
+      _requestEpisodeFocus(0);
+      return true;
+    }
     if (_hasCast) {
       _requestCastFocus();
       return true;
@@ -616,7 +887,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   void _focusSectionAboveCast() {
-    if (_hasLibraryMatches) {
+    if (_hasEpisodes) {
+      _requestEpisodeFocus(_episodeFocusNodes.length - 1);
+    } else if (_hasLibraryMatches) {
       _requestLibraryMatchFocus(_libraryMatchFocusNodes.length - 1);
     } else if (_hasDetailActions) {
       _requestLastDetailActionFocus();
@@ -803,6 +1076,115 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
           note(t.explore.libraryCheckFailed(n: unchecked), icon: Symbols.cloud_off_rounded),
         ],
       ],
+    );
+  }
+
+  Widget _buildEpisodesSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        Text(t.streaming.episodes, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          t.streaming.episodeStreamHint,
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.65)),
+        ),
+        const SizedBox(height: 10),
+        for (var index = 0; index < _episodes.length; index++) ...[
+          if (index > 0) const SizedBox(height: 8),
+          _buildEpisodeTile(theme, _episodes[index], index),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildEpisodeTile(ThemeData theme, CatalogEpisode episode, int index) {
+    final season = episode.seasonNumber;
+    final number = episode.episodeNumber;
+    final position = season != null && number != null
+        ? t.streaming.episodePosition(season: season, episode: number)
+        : null;
+    final details = <String>[];
+    if (position != null) details.add(position);
+    if (episode.runtimeMinutes != null) {
+      details.add(formatDurationTextual(Duration(minutes: episode.runtimeMinutes!).inMilliseconds));
+    }
+    if (episode.year != null) details.add('${episode.year}');
+    final semanticLabel = position == null ? episode.title : '$position: ${episode.title}';
+    final canMoveDown = index + 1 < _episodes.length || _hasCast || _hasSectionsBelowCast;
+    return FocusableWrapper(
+      focusNode: _episodeFocusNodes[index],
+      borderRadius: 14,
+      semanticLabel: semanticLabel,
+      semanticValue: t.streaming.episodeStreamHint,
+      onSelect: () => unawaited(_watchEpisode(episode)),
+      onNavigateUp: index > 0 ? () => _requestEpisodeFocus(index - 1) : _focusSectionAboveEpisodes,
+      onNavigateDown: canMoveDown
+          ? () {
+              if (index + 1 < _episodes.length) {
+                _requestEpisodeFocus(index + 1);
+              } else {
+                _focusSectionBelowEpisodes();
+              }
+            }
+          : null,
+      child: GestureDetector(
+        onTap: () => unawaited(_watchEpisode(episode)),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 76),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: AppIcon(Symbols.play_arrow_rounded, fill: 1, color: theme.colorScheme.onPrimaryContainer),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: .start,
+                  children: [
+                    Text(episode.title, style: theme.textTheme.titleSmall, maxLines: 2, overflow: .ellipsis),
+                    if (details.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        details.join(' · '),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                        ),
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                      ),
+                    ],
+                    if (episode.overview?.trim() case final overview? when overview.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(overview, style: theme.textTheme.bodySmall, maxLines: 2, overflow: .ellipsis),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              AppIcon(
+                Directionality.of(context) == ui.TextDirection.rtl
+                    ? Symbols.chevron_left_rounded
+                    : Symbols.chevron_right_rounded,
+                fill: 1,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1654,6 +2036,20 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                   ),
                                                 ),
                                               ),
+                                            if (_canWatchWithServices)
+                                              FocusableAction(
+                                                debugLabel: 'catalog_watch_with_services',
+                                                icon: Symbols.cloud_rounded,
+                                                tooltip: t.streaming.watchWithServices,
+                                                onPressed: () => unawaited(_watchWithServices()),
+                                              ),
+                                            if (_hasEpisodes)
+                                              FocusableAction(
+                                                debugLabel: 'catalog_choose_episode',
+                                                icon: Symbols.play_arrow_rounded,
+                                                tooltip: t.streaming.chooseEpisode,
+                                                onPressed: () => _requestEpisodeFocus(0),
+                                              ),
                                             if (item.trailerUrl?.trim() case final trailer? when trailer.isNotEmpty)
                                               FocusableAction(
                                                 debugLabel: 'catalog_trailer',
@@ -1713,6 +2109,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             ],
                             const SizedBox(height: 24),
                             _buildLibrarySection(theme),
+                            if (_hasEpisodes) ...[const SizedBox(height: 28), _buildEpisodesSection(theme)],
                             if (_cast case final List<CatalogCastMember> cast when cast.isNotEmpty) ...[
                               const SizedBox(height: 28),
                               _buildCastSection(theme, cast),

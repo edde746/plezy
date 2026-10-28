@@ -1524,9 +1524,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
   });
 
-  testWidgets('up from the first library copy reaches the overview despite the service action', (tester) async {
-    // The official service handoff remains above the copies when watchlist,
-    // trailer, and Seerr actions are unavailable. Up still reaches overview.
+  testWidgets('service streams are available and copy navigation returns to the overview', (tester) async {
     final source = _FakeCatalogSource(supportsWatchlist: false);
     await _pumpDetail(
       tester,
@@ -1541,6 +1539,7 @@ void main() {
       ],
     );
     expect(find.byType(FocusableActionBar), findsOneWidget);
+    expect(find.byTooltip(t.streaming.watchWithServices), findsOneWidget);
 
     final tile = tester.widget<FocusableListTile>(
       find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),

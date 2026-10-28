@@ -1,3 +1,7 @@
+unless system('python3', File.expand_path('../scripts/p2p/build_apple.py', __dir__), 'tvos')
+  raise 'Native torrent framework build failed'
+end
+
 platform :tvos, '15.0'
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
@@ -54,6 +58,7 @@ def tvos_depends_on_flutter?(target, visited = {})
 end
 
 target 'Runner' do
+  pod 'plezy_torrent_tvos', :path => '../packages/plezy_torrent/ios'
   use_frameworks!
   pod 'Flutter', :path => 'Flutter'
   tvos_pod_plugins.each do |name|

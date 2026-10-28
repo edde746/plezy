@@ -1,4 +1,3 @@
-import 'package:plezy/widgets/app_brand.dart';
 import 'dart:async';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
@@ -14,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:plezy/widgets/app_brand.dart';
 import 'connection/connection.dart';
 import 'connection/connection_bootstrap.dart';
 import 'connection/connection_registry.dart';
@@ -39,6 +39,7 @@ import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
 import 'services/storage_service.dart';
+import 'services/remote_streams/remote_preparation_worker.dart';
 import 'services/assistive_technology_service.dart';
 import 'services/device_performance.dart';
 import 'services/cast_media_service.dart';
@@ -78,6 +79,7 @@ import 'services/library_events/library_event_service.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/credential_vault.dart';
+import 'services/remote_streams/remote_streaming_provider.dart';
 import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
@@ -159,6 +161,10 @@ void _registerTvosPlatformPlugins() {
 
 void main([List<String> args = const <String>[]]) {
   final binding = PlezyWidgetsBinding.ensureInitialized();
+  if (args.contains('--plezy-preparation-worker')) {
+    unawaited(runDesktopPreparationWorker());
+    return;
+  }
   for (final argument in args) {
     final normalized = argument.toLowerCase();
     if (normalized.startsWith('plezy://') || normalized.startsWith('plezxyng://')) {
@@ -1238,6 +1244,10 @@ void _registerAppLicenses() {
       'Foliate JS',
     ], await rootBundle.loadString('assets/reader/foliate/LICENSE'));
     yield LicenseEntryWithLineBreaks(const [
+      'libtorrent-rasterbar 2.0.11',
+    ], await rootBundle.loadString('assets/licenses/Libtorrent.txt'));
+    yield LicenseEntryWithLineBreaks(const ['Boost 1.86.0'], await rootBundle.loadString('assets/licenses/Boost.txt'));
+    yield LicenseEntryWithLineBreaks(const [
       'Provider artwork',
     ], await rootBundle.loadString('assets/provider_marks/NOTICE.txt'));
   });
@@ -1901,15 +1911,25 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
           dispose: (_, binder) => binder.dispose(),
         ),
-        // Download provider. Downloads are shared, but sync rules are scoped to
-        // the active profile and reload when the profile changes.
-        ChangeNotifierProxyProvider<ActiveProfileProvider, SourceController>(
-          create: (_) => SourceController(),
+        ChangeNotifierProxyProvider<ActiveProfileProvider, RemoteStreamingProvider>(
+          create: (_) => RemoteStreamingProvider(),
           update: (_, active, previous) {
             previous!.attachProfile(active.activeId, blocked: active.isBinding || !active.lastBindingSucceeded);
             return previous;
           },
         ),
+        // File sources project connected debrid inventories into the same
+        // profile-scoped file browser and progress journal.
+        ChangeNotifierProxyProvider<ActiveProfileProvider, SourceController>(
+          create: (context) => SourceController(remoteStreamingProvider: context.read<RemoteStreamingProvider>()),
+          update: (_, active, previous) {
+            final controller = previous!;
+            controller.attachProfile(active.activeId, blocked: active.isBinding || !active.lastBindingSucceeded);
+            return controller;
+          },
+        ),
+        // Download provider. Downloads are shared, but sync rules are scoped to
+        // the active profile and reload when the profile changes.
         ChangeNotifierProvider<SourcePlayback>(create: (context) => SourcePlayback(context.read<SourceController>())),
         ChangeNotifierProxyProvider<ActiveProfileProvider, DownloadProvider>(
           create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),

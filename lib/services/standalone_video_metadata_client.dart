@@ -97,6 +97,9 @@ class StandaloneVideoMetadataClient {
     var title = media.title?.trim() ?? query.title;
     final identifiers = <String, String>{
       'trakt': traktId.toString(),
+      'plezyMediaType': isShow ? 'show' : 'movie',
+      if (query.season != null && query.episode != null) 'plezySeason': query.season.toString(),
+      if (query.season != null && query.episode != null) 'plezyEpisode': query.episode.toString(),
       if (media.ids.tmdb != null) 'tmdb': media.ids.tmdb.toString(),
       if (media.ids.imdb != null) 'imdb': media.ids.imdb!,
       if (media.ids.tvdb != null) 'tvdb': media.ids.tvdb.toString(),

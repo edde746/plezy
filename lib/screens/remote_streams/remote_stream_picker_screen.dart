@@ -1,0 +1,1205 @@
+import 'package:plezy_torrent/plezy_torrent.dart';
+
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../i18n/strings.g.dart';
+import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
+import '../../media/play_queue.dart';
+import '../../providers/playback_state_provider.dart';
+import '../../services/playback_context.dart';
+import '../../services/remote_streams/real_debrid_client.dart';
+import '../../services/remote_streams/remote_stream_models.dart';
+import '../../services/remote_streams/remote_streaming_provider.dart';
+import '../../sources/external_video_progress.dart';
+import '../../sources/source_controller.dart';
+import '../../sources/source_video_session.dart';
+import '../../providers/multi_server_provider.dart';
+import '../../media/ids.dart';
+import '../../sources/source_models.dart';
+import '../../sources/source_playback.dart';
+import '../../screens/video_player_screen.dart';
+import '../../utils/snackbar_helper.dart';
+import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
+import 'remote_cloud_files_screen.dart';
+import '../settings/remote_streaming_settings_screen.dart';
+import '../sources/sources_screen.dart';
+
+class RemoteStreamPickerScreen extends StatefulWidget {
+  const RemoteStreamPickerScreen({
+    super.key,
+    required this.request,
+    required this.identifiers,
+    this.seriesTitle,
+    this.durationMs,
+    this.playbackItem,
+    this.playbackQueue = const [],
+    this.playbackQueueFuture,
+    this.queueStartIndex = 0,
+  });
+
+  final RemoteStreamRequest request;
+  final Map<String, String> identifiers;
+  final String? seriesTitle;
+  final int? durationMs;
+  final MediaItem? playbackItem;
+  final List<RemoteStreamQueueItem> playbackQueue;
+  final Future<List<RemoteStreamQueueItem>>? playbackQueueFuture;
+  final int queueStartIndex;
+
+  @override
+  State<RemoteStreamPickerScreen> createState() => _RemoteStreamPickerScreenState();
+}
+
+class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
+  RemoteStreamSearchResult? _result;
+  bool _loading = true;
+  bool _error = false;
+  String? _loadedProfileId;
+  bool _profileReloadQueued = false;
+  String? _busyCandidate;
+  String? _busyCloudMatch;
+  List<SourceEntry> _cloudMatches = const [];
+  final Map<String, RemoteSubtitle> _selectedSubtitles = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = false;
+    });
+    final provider = context.read<RemoteStreamingProvider>();
+    final profileId = provider.profileId;
+    try {
+      final sourceController = context.read<SourceController?>();
+      final cloudMatchesFuture = sourceController == null || widget.identifiers.isEmpty
+          ? Future<List<SourceEntry>>.value(const [])
+          : sourceController
+                .matchRemoteCloudEntries(
+                  title: widget.seriesTitle ?? widget.request.title,
+                  mediaType: widget.request.type == 'series' ? 'show' : widget.request.type,
+                  identifiers: widget.identifiers,
+                  season: widget.request.season,
+                  episode: widget.request.episode,
+                  year: widget.request.year,
+                )
+                .catchError((Object _) => const <SourceEntry>[]);
+      final resultFuture = provider.streamsFor(widget.request);
+      final result = await resultFuture;
+      final cloudMatches = await cloudMatchesFuture;
+      if (!mounted) return;
+      if (provider.profileId != profileId || (sourceController != null && sourceController.profileId != profileId)) {
+        setState(() => _loading = false);
+        return;
+      }
+      setState(() {
+        _loadedProfileId = profileId;
+        _result = result;
+        _cloudMatches = cloudMatches;
+        _loading = false;
+      });
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = provider.profileId == profileId;
+        _cloudMatches = const [];
+      });
+    }
+  }
+
+  Future<void> _play(RemoteStreamCandidate candidate, {bool viaProvider = false, bool native = false}) async {
+    if (_busyCandidate != null || _busyCloudMatch != null) return;
+    final streaming = context.read<RemoteStreamingProvider>();
+    final startingProfile = streaming.profileId;
+    if (startingProfile == null || !streaming.isReady) return;
+    final accounts = viaProvider
+        ? streaming.accounts.where((account) => account.service != RemoteStreamService.torbox).toList()
+        : streaming.accounts;
+    native =
+        native ||
+        (candidate.url == null && candidate.infoHash != null && accounts.isEmpty && streaming.nativePeerEnabled);
+    final needsProvider = !native && (viaProvider || candidate.url == null && candidate.infoHash != null);
+    final service = !needsProvider
+        ? null
+        : accounts.length == 1
+        ? accounts.single.service
+        : accounts.isEmpty
+        ? null
+        : await _chooseProvider(accounts);
+    if (needsProvider && service == null) {
+      if (mounted) showAppSnackBar(context, t.streaming.streamNeedsProvider);
+      return;
+    }
+    if (!mounted || streaming.profileId != startingProfile || !streaming.isReady) return;
+    setState(() => _busyCandidate = candidate.addonId + candidate.label);
+    TorrentLease? peer;
+    try {
+      Uri? uri = candidate.url;
+      Map<String, String> headers = candidate.headers;
+      String fileName = _fileNameFor(candidate);
+      int? size;
+      if (native) {
+        peer = await streaming.resolveNativeTorrent(candidate, shouldCancel: () => !mounted);
+        uri = peer.uri;
+        fileName = peer.fileName;
+        size = peer.size;
+        headers = const {};
+      } else if (viaProvider && candidate.url != null) {
+        final resolved = await streaming.resolveHosterLink(candidate.url!, service: service!);
+        uri = resolved.uri;
+        fileName = resolved.fileName;
+        size = resolved.size;
+        headers = const {};
+      } else if (candidate.url == null && candidate.infoHash != null) {
+        final resolved = await streaming.resolveTorrent(candidate, service: service, request: widget.request);
+        uri = resolved.uri;
+        fileName = resolved.fileName;
+        size = resolved.size;
+        headers = const {};
+      }
+      if (streaming.profileId != startingProfile || !streaming.isReady) return;
+      if (uri == null || !const {'http', 'https'}.contains(uri.scheme) || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+        throw const RealDebridException(RealDebridFailure.unsupported);
+      }
+      if (!mounted) return;
+      await _openPlayer(
+        candidate,
+        uri,
+        headers,
+        fileName,
+        size,
+        _selectedSubtitles[_candidateKey(candidate)],
+        viaProvider: viaProvider,
+        service: service,
+        profileId: startingProfile,
+        peer: peer,
+      );
+    } on RemoteProviderException catch (error) {
+      if (mounted && error.reason != RemoteProviderFailure.cancelled) {
+        showAppSnackBar(
+          context,
+          error.reason == RemoteProviderFailure.authentication
+              ? t.streaming.streamNeedsProvider
+              : t.streaming.streamPrepareFailed,
+        );
+      }
+    } on RealDebridException catch (error) {
+      if (mounted && error.reason != RealDebridFailure.cancelled) {
+        showAppSnackBar(
+          context,
+          error.reason == RealDebridFailure.authentication
+              ? t.streaming.streamNeedsProvider
+              : t.streaming.streamPrepareFailed,
+        );
+      }
+    } on SourceException catch (error) {
+      if (mounted && error.reason != SourceFailure.cancelled) showAppSnackBar(context, t.streaming.streamUnsupported);
+    } on Object {
+      if (mounted) showAppSnackBar(context, t.streaming.streamPrepareFailed);
+    } finally {
+      await peer?.close();
+      if (mounted) setState(() => _busyCandidate = null);
+    }
+  }
+
+  Future<RemoteStreamService?> _chooseProvider(List<RemoteStreamAccount> accounts) =>
+      showModalBottomSheet<RemoteStreamService>(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(title: Text(t.streaming.chooseProvider), enabled: false),
+              for (final account in accounts)
+                ListTile(
+                  leading: const AppIcon(Symbols.cloud_rounded),
+                  title: Text(_serviceName(account.service)),
+                  subtitle: Text(t.streaming.accountConnected(username: account.displayName)),
+                  onTap: () => Navigator.pop(context, account.service),
+                ),
+            ],
+          ),
+        ),
+      );
+
+  Future<void> _browseCloudFiles() async {
+    final streaming = context.read<RemoteStreamingProvider>();
+    final profileId = streaming.profileId;
+    if (!streaming.isReady || profileId == null || streaming.accounts.isEmpty) return;
+    final accounts = streaming.accounts;
+    final service = accounts.length == 1 ? accounts.single.service : await _chooseProvider(accounts);
+    if (!mounted || service == null || streaming.profileId != profileId || !streaming.isReady) return;
+    final account = streaming.accountFor(service);
+    if (account == null) return;
+    final sourceController = context.read<SourceController>();
+    final fileSource = sourceController.sources
+        .where(
+          (source) =>
+              source.kind == FileSourceKind.remoteCloud &&
+              source.options['accountId'] == account.id &&
+              source.options['service'] == service.name &&
+              source.profileId == profileId &&
+              sourceController.profileId == profileId,
+        )
+        .firstOrNull;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => fileSource == null
+            ? RemoteCloudFilesScreen(
+                service: service,
+                onManageConnections: _manageRemoteStreaming,
+                expectedAccountId: account.id,
+                expectedProfileId: profileId,
+              )
+            : SourcesScreen(source: fileSource, title: Text('${_serviceName(service)} · ${account.displayName}')),
+      ),
+    );
+  }
+
+  Future<void> _manageRemoteStreaming() async {
+    if (!mounted) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
+  }
+
+  String _serviceName(RemoteStreamService service) => switch (service) {
+    RemoteStreamService.realDebrid => t.streaming.realDebrid,
+    RemoteStreamService.allDebrid => t.streaming.allDebrid,
+    RemoteStreamService.premiumize => t.streaming.premiumize,
+    RemoteStreamService.torbox => t.streaming.torbox,
+  };
+
+  Future<void> _playCloudMatch(SourceEntry entry) async {
+    if (_busyCloudMatch != null || _busyCandidate != null || !mounted) return;
+    final sources = context.read<SourceController?>();
+    final streaming = context.read<RemoteStreamingProvider>();
+    final profileId = sources?.profileId;
+    if (sources == null || profileId == null || sources.blocked || streaming.profileId != profileId) return;
+    final generation = sources.generation;
+    setState(() => _busyCloudMatch = entry.key);
+    try {
+      final freshEntry = entry;
+      if (!mounted ||
+          sources.blocked ||
+          sources.profileId != profileId ||
+          !sources.current(generation) ||
+          !streaming.isReady) {
+        return;
+      }
+      final file = freshEntry.files.where((row) => row.kind == SourceItemKind.video).firstOrNull;
+      final playbackItem = widget.playbackItem;
+      if (file == null) throw const SourceException(SourceFailure.unavailable);
+
+      final queueFuture = widget.playbackQueueFuture;
+      final queueItems = queueFuture == null ? widget.playbackQueue : await queueFuture;
+      if (!mounted ||
+          sources.blocked ||
+          sources.profileId != profileId ||
+          !sources.current(generation) ||
+          !streaming.isReady) {
+        return;
+      }
+      final queueStartIndex = widget.queueStartIndex.clamp(0, queueItems.isEmpty ? 0 : queueItems.length - 1).toInt();
+      final hasQueue = playbackItem == null && queueItems.length > 1;
+      final queueMediaItems = hasQueue
+          ? queueItems.map(_mediaItemForQueueItem).toList(growable: false)
+          : const <MediaItem>[];
+      final currentQueueItem = queueItems.isEmpty ? _queueItemForCurrentRequest() : queueItems[queueStartIndex];
+      final media =
+          playbackItem ??
+          (hasQueue
+              ? queueMediaItems[queueStartIndex]
+              : _mediaItemForQueueItem(currentQueueItem, durationMs: widget.durationMs));
+      final session = await SourceVideoSession.open(sources, freshEntry, [file]);
+      try {
+        final descriptor = await session.resolveFile(
+          file,
+          metadata: media,
+          trackProgress: playbackItem == null && currentQueueItem.serverItem == null,
+        );
+        if (!mounted || !session.valid || !streaming.isReady) throw const SourceException(SourceFailure.cancelled);
+        if (playbackItem == null) {
+          final source = sources.sources.where((row) => row.id == freshEntry.sourceId).firstOrNull;
+          final serviceName = source?.options['service'];
+          final service = RemoteStreamService.values.where((row) => row.name == serviceName).firstOrNull;
+          _publishExternalQueue(
+            queueItems: queueItems,
+            queueMediaItems: queueMediaItems,
+            startIndex: queueStartIndex,
+            profileId: profileId,
+            contextKey:
+                'remote:${sourceDigest('${currentQueueItem.identityNamespace}:${currentQueueItem.request.id}')}',
+            preferredService: service,
+            preferredAddonId: '',
+            resolveHosterLinks: false,
+            sources: sources,
+            streaming: streaming,
+          );
+        }
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'video-player-cloud-file'),
+            builder: (_) => VideoPlayerScreen(
+              metadata: media,
+              externalPlaybackSource: descriptor,
+              initialPosition: descriptor.onProgress == null ? null : descriptor.initialPosition,
+            ),
+          ),
+        );
+      } finally {
+        await session.close();
+      }
+    } on SourceException catch (error) {
+      if (mounted && error.reason != SourceFailure.cancelled) {
+        showAppSnackBar(
+          context,
+          error.reason == SourceFailure.authentication
+              ? t.streaming.streamNeedsProvider
+              : t.streaming.streamPrepareFailed,
+        );
+      }
+    } on Object {
+      if (mounted) showAppSnackBar(context, t.streaming.streamPrepareFailed);
+    } finally {
+      if (mounted) setState(() => _busyCloudMatch = null);
+    }
+  }
+
+  Future<void> _openPlayer(
+    RemoteStreamCandidate candidate,
+    Uri uri,
+    Map<String, String> headers,
+    String fileName,
+    int? size,
+    RemoteSubtitle? subtitle, {
+    required bool viaProvider,
+    required RemoteStreamService? service,
+    required String profileId,
+    TorrentLease? peer,
+  }) async {
+    final sources = context.read<SourceController>();
+    final streaming = context.read<RemoteStreamingProvider>();
+    final profile = sources.profileId;
+    if (profile == null || profile != profileId || streaming.profileId != profile) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final request = widget.request;
+    final queueItem = _queueItemForCurrentRequest();
+    final fileId = sourceDigest(
+      '${candidate.addonId}\u0000${request.id}\u0000${candidate.label}\u0000${candidate.infoHash ?? ''}'
+      '\u0000${candidate.fileIndex ?? ''}\u0000${candidate.url == null ? '' : sourceDigest(candidate.url.toString())}'
+      '\u0000${candidate.externalUrl == null ? '' : sourceDigest(candidate.externalUrl.toString())}',
+    );
+    final file = PublicationFile(
+      id: fileId,
+      name: fileName,
+      mimeType: _mimeType(fileName),
+      size: size,
+      durationMs: queueItem.durationMs ?? widget.durationMs,
+      streamOnly: true,
+    );
+    final entry = SourceEntry(
+      sourceId: 'stremio:${candidate.addonId}',
+      id: request.id,
+      title: request.title,
+      kind: SourceItemKind.video,
+      files: [file],
+      identifiers: _remoteSourceIdentifiers(queueItem),
+      releaseYear: request.year,
+      onlineTitle: request.title,
+    );
+    Future<({Uri uri, Map<String, String> headers})> renewStream() async {
+      if (streaming.profileId != profileId || !streaming.isReady) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
+      if (peer != null) return (uri: peer.uri, headers: const <String, String>{});
+      late final Uri renewedUri;
+      late final Map<String, String> renewedHeaders;
+      if (viaProvider && candidate.url != null) {
+        final provider = service;
+        if (provider == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
+        final renewed = await streaming.resolveHosterLink(candidate.url!, service: provider);
+        renewedUri = renewed.uri;
+        renewedHeaders = const {};
+      } else if (candidate.url == null && candidate.infoHash != null) {
+        final renewed = await streaming.resolveTorrent(candidate, service: service, request: request);
+        renewedUri = renewed.uri;
+        renewedHeaders = const {};
+      } else {
+        final refreshed = await streaming.streamsFor(request);
+        final current = refreshed.candidates
+            .where(
+              (row) =>
+                  row.addonId == candidate.addonId &&
+                  row.label == candidate.label &&
+                  row.infoHash == candidate.infoHash &&
+                  row.fileIndex == candidate.fileIndex,
+            )
+            .firstOrNull;
+        if (current?.url == null) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+        renewedUri = current!.url!;
+        renewedHeaders = current.headers;
+      }
+      if (streaming.profileId != profileId || !streaming.isReady) {
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
+      return (uri: renewedUri, headers: renewedHeaders);
+    }
+
+    ExternalPlaybackRenewal? renewSubtitle;
+    if (subtitle != null) {
+      renewSubtitle = () async {
+        if (streaming.profileId != profileId || !streaming.isReady) {
+          throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+        }
+        final refreshed = await streaming.streamsFor(request);
+        final current = refreshed.candidates
+            .where(
+              (row) =>
+                  row.addonId == candidate.addonId &&
+                  row.label == candidate.label &&
+                  row.infoHash == candidate.infoHash &&
+                  row.fileIndex == candidate.fileIndex,
+            )
+            .firstOrNull;
+        final currentSubtitle = current?.subtitles.where((row) => row.id == subtitle.id).firstOrNull;
+        if (currentSubtitle == null || streaming.profileId != profileId || !streaming.isReady) {
+          throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+        }
+        return (uri: currentSubtitle.url, headers: const <String, String>{});
+      };
+    }
+
+    await context.read<SourcePlayback>().stop();
+    if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final playbackItem = widget.playbackItem;
+    final queueFuture = widget.playbackQueueFuture;
+    final queueItems = queueFuture == null ? widget.playbackQueue : await queueFuture;
+    if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final hasRemoteQueue = playbackItem == null && queueItems.length > 1;
+    final queueStartIndex = widget.queueStartIndex.clamp(0, queueItems.isEmpty ? 0 : queueItems.length - 1).toInt();
+    final queueMediaItems = hasRemoteQueue
+        ? queueItems.map(_mediaItemForQueueItem).toList(growable: false)
+        : const <MediaItem>[];
+    final media =
+        playbackItem ??
+        (hasRemoteQueue
+            ? queueMediaItems[queueStartIndex]
+            : _mediaItemForQueueItem(
+                queueItems.isEmpty ? queueItem : queueItems[queueStartIndex],
+                durationMs: widget.durationMs,
+              ));
+    final currentQueueItem = queueItems.isEmpty ? queueItem : queueItems[queueStartIndex];
+    final progress = playbackItem == null && currentQueueItem.serverItem == null
+        ? await ExternalVideoProgressSession.open(sources, entry, file)
+        : null;
+    if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
+      await progress?.close();
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final descriptor = ExternalPlaybackSource(
+      mediaGlobalKey: media.globalKey,
+      profileId: profile,
+      uri: uri,
+      headers: headers,
+      renew: renewStream,
+      subtitleUri: subtitle?.url,
+      subtitleTitle: subtitle == null ? null : _subtitleLabel(subtitle),
+      subtitleLanguage: subtitle?.lang,
+      subtitleRenew: renewSubtitle,
+      onProgress: progress?.record,
+      initialPosition: Duration(milliseconds: progress?.resumePositionMs ?? 0),
+      onRelease: () async {
+        await progress?.close();
+        await peer?.close();
+      },
+    );
+    try {
+      if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      if (playbackItem == null) {
+        _publishExternalQueue(
+          queueItems: queueItems,
+          queueMediaItems: queueMediaItems,
+          startIndex: queueStartIndex,
+          profileId: profile,
+          contextKey: 'remote:${sourceDigest('${currentQueueItem.identityNamespace}:${currentQueueItem.request.id}')}',
+          preferredService: service,
+          preferredAddonId: candidate.addonId,
+          resolveHosterLinks: viaProvider,
+          preferNative: peer != null,
+          sources: sources,
+          streaming: streaming,
+        );
+      }
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'video-player-remote-stream'),
+          builder: (_) => VideoPlayerScreen(
+            metadata: media,
+            externalPlaybackSource: descriptor,
+            initialPosition: descriptor.onProgress == null ? null : descriptor.initialPosition,
+          ),
+        ),
+      );
+    } finally {
+      await progress?.close();
+    }
+  }
+
+  RemoteStreamQueueItem _queueItemForCurrentRequest() => RemoteStreamQueueItem(
+    request: widget.request,
+    identifiers: widget.identifiers,
+    mediaTitle: widget.request.title,
+    seriesTitle: widget.request.type == 'series' ? widget.request.title : '',
+    identityNamespace: 'remote:${widget.request.type}:${widget.request.id}',
+    durationMs: widget.durationMs,
+  );
+
+  MediaItem _mediaItemForQueueItem(RemoteStreamQueueItem item, {int? durationMs}) {
+    if (item.serverItem case final serverItem?) return serverItem;
+    final request = item.request;
+    final itemId = sourceDigest(
+      jsonEncode([item.identityNamespace, request.type, request.id, request.season, request.episode]),
+    );
+    final guids = [
+      for (final key in const ['imdb', 'tmdb', 'tvdb'])
+        if (item.identifiers[key]?.trim().isNotEmpty == true)
+          {'id': '$key://${_unprefixedIdentifier(key, item.identifiers[key]!)}'},
+    ];
+    return MediaItem.plex(
+      id: 'remote-stream:$itemId',
+      kind: request.type == 'series' ? MediaKind.episode : MediaKind.movie,
+      title: item.mediaTitle,
+      year: request.year,
+      parentTitle: request.type == 'series' ? item.seriesTitle : null,
+      grandparentTitle: request.type == 'series' ? item.seriesTitle : null,
+      parentIndex: request.season,
+      index: request.episode,
+      durationMs: durationMs ?? item.durationMs,
+      raw: guids.isEmpty ? null : {'Guid': guids},
+    );
+  }
+
+  void _publishExternalQueue({
+    required List<RemoteStreamQueueItem> queueItems,
+    required List<MediaItem> queueMediaItems,
+    required int startIndex,
+    required String profileId,
+    required String contextKey,
+    required RemoteStreamService? preferredService,
+    required String preferredAddonId,
+    required bool resolveHosterLinks,
+    bool preferNative = false,
+    required SourceController sources,
+    required RemoteStreamingProvider streaming,
+  }) {
+    final playbackState = context.read<PlaybackStateProvider>();
+    if (queueItems.length <= 1 || queueItems.length != queueMediaItems.length) {
+      playbackState.clearShuffle();
+      return;
+    }
+    final sourceGeneration = sources.generation;
+    final servers = context.read<MultiServerProvider>();
+    final resolvers = <String, ExternalPlaybackSourceResolver>{};
+    for (var index = 0; index < queueItems.length; index++) {
+      final item = queueItems[index];
+      final queuedMedia = queueMediaItems[index];
+      resolvers[queuedMedia.globalKey] = (metadata) async {
+        // Keep normal server playback when that copy is reachable. The same
+        // stable queue identity can fall back to an exact cloud/add-on copy.
+        final server = item.serverItem?.serverId;
+        if (server != null &&
+            servers.expectedServerIds.contains(server) &&
+            servers.serverManager.isClientOnline(ServerId(server))) {
+          return null;
+        }
+        return _RemoteStreamPickerScreenState._resolveQueuedStream(
+          item: item,
+          metadata: metadata,
+          profileId: profileId,
+          sourceGeneration: sourceGeneration,
+          preferredService: preferredService,
+          preferredAddonId: preferredAddonId,
+          resolveHosterLinks: resolveHosterLinks,
+          preferNative: preferNative,
+          sources: sources,
+          streaming: streaming,
+        );
+      };
+    }
+    playbackState.setPlaybackFromLocalQueue(
+      LocalPlayQueue(items: queueMediaItems, currentIndex: startIndex),
+      contextKey: contextKey,
+      externalSourceResolvers: resolvers,
+    );
+  }
+
+  static Future<ExternalPlaybackSource> _resolveQueuedStream({
+    required RemoteStreamQueueItem item,
+    required MediaItem metadata,
+    required String profileId,
+    required int sourceGeneration,
+    required RemoteStreamService? preferredService,
+    required String preferredAddonId,
+    required bool resolveHosterLinks,
+    bool preferNative = false,
+    required SourceController sources,
+    required RemoteStreamingProvider streaming,
+  }) async {
+    void requireCurrent() {
+      if (sources.blocked ||
+          sources.profileId != profileId ||
+          !sources.current(sourceGeneration) ||
+          streaming.profileId != profileId ||
+          !streaming.isReady) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+    }
+
+    requireCurrent();
+    Object? lastFailure;
+    final request = item.request;
+    if (request.type == 'series' && request.season != null && request.episode != null && item.identifiers.isNotEmpty) {
+      try {
+        final cloudMatches = await sources.matchRemoteCloudEntries(
+          title: item.seriesTitle,
+          mediaType: 'show',
+          identifiers: item.identifiers,
+          season: request.season,
+          episode: request.episode,
+          year: request.year,
+          limit: 4,
+        );
+        requireCurrent();
+        for (final entry in cloudMatches) {
+          try {
+            final file = entry.files.where((row) => row.kind == SourceItemKind.video).firstOrNull;
+            if (file == null) continue;
+            final session = await SourceVideoSession.open(sources, entry, [file]);
+            try {
+              final descriptor = await session.resolveFile(
+                file,
+                metadata: metadata,
+                trackProgress: item.serverItem == null,
+              );
+              requireCurrent();
+              // The descriptor owns the session and all renewal/progress work.
+              return ExternalPlaybackSource(
+                mediaGlobalKey: metadata.globalKey,
+                profileId: profileId,
+                uri: descriptor.uri,
+                headers: descriptor.headers,
+                renew: descriptor.renew,
+                initialPosition: descriptor.initialPosition,
+                onProgress: descriptor.onProgress,
+                onRelease: session.close,
+              );
+            } catch (_) {
+              await session.close();
+              rethrow;
+            }
+          } on SourceException catch (error) {
+            if (error.reason == SourceFailure.cancelled) rethrow;
+            lastFailure = error;
+          } on Object catch (error) {
+            lastFailure = error;
+          }
+        }
+      } on SourceException catch (error) {
+        if (error.reason == SourceFailure.cancelled) rethrow;
+        lastFailure = error;
+      } on Object catch (error) {
+        lastFailure = error;
+      }
+    }
+    final search = await streaming.streamsFor(item.request);
+    requireCurrent();
+    final candidates = search.candidates.where((candidate) => candidate.isInAppPlayable).toList(growable: false);
+    final orderedCandidates = [...candidates]
+      ..sort((a, b) {
+        final aPreferred = a.addonId == preferredAddonId ? 0 : 1;
+        final bPreferred = b.addonId == preferredAddonId ? 0 : 1;
+        if (aPreferred != bPreferred) return aPreferred.compareTo(bPreferred);
+        // Direct links are inexpensive and avoid preparing a new provider
+        // transfer when an add-on already supplied a playable stream.
+        final aNeedsPreparation = a.url == null ? 1 : 0;
+        final bNeedsPreparation = b.url == null ? 1 : 0;
+        return aNeedsPreparation.compareTo(bNeedsPreparation);
+      });
+    for (final candidate in orderedCandidates.take(8)) {
+      TorrentLease? peer;
+      var transferred = false;
+      try {
+        requireCurrent();
+        Uri? uri = candidate.url;
+        var headers = candidate.headers;
+        var fileName = _remoteFileNameFor(candidate, item.mediaTitle);
+        int? size;
+        var resolvedByProvider = false;
+        RemoteStreamService? selectedService = preferredService;
+        if (selectedService != null && streaming.accountFor(selectedService) == null) selectedService = null;
+        if (candidate.url != null && resolveHosterLinks) {
+          selectedService ??= streaming.accounts
+              .where((account) => account.service != RemoteStreamService.torbox)
+              .map((account) => account.service)
+              .firstOrNull;
+          if (selectedService == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
+          final resolved = await streaming.resolveHosterLink(candidate.url!, service: selectedService);
+          uri = resolved.uri;
+          fileName = resolved.fileName;
+          size = resolved.size;
+          headers = const {};
+          resolvedByProvider = true;
+        } else if (candidate.url == null && candidate.infoHash != null) {
+          if ((preferNative || streaming.accounts.isEmpty) && streaming.nativePeerEnabled) {
+            peer = await streaming.resolveNativeTorrent(
+              candidate,
+              shouldCancel: () =>
+                  sources.blocked || sources.profileId != profileId || !sources.current(sourceGeneration),
+            );
+            uri = peer.uri;
+            fileName = peer.fileName;
+            size = peer.size;
+            headers = const {};
+          } else {
+            final resolved = await streaming.resolveTorrent(candidate, service: selectedService, request: item.request);
+            uri = resolved.uri;
+            fileName = resolved.fileName;
+            size = resolved.size;
+            headers = const {};
+            resolvedByProvider = true;
+          }
+        }
+        if (uri == null || !_isSafeRemoteStreamUri(uri)) {
+          throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+        }
+        requireCurrent();
+        final fileId = sourceDigest(
+          '${candidate.addonId}\u0000${item.request.id}\u0000${candidate.label}\u0000${candidate.infoHash ?? ''}'
+          '\u0000${candidate.fileIndex ?? ''}\u0000${candidate.url == null ? '' : sourceDigest(candidate.url.toString())}'
+          '\u0000${candidate.externalUrl == null ? '' : sourceDigest(candidate.externalUrl.toString())}',
+        );
+        final file = PublicationFile(
+          id: fileId,
+          name: fileName,
+          mimeType: _remoteMimeType(fileName),
+          size: size,
+          durationMs: item.durationMs,
+          streamOnly: true,
+        );
+        final entry = SourceEntry(
+          sourceId: 'stremio:${candidate.addonId}',
+          id: item.request.id,
+          title: item.request.title,
+          kind: SourceItemKind.video,
+          files: [file],
+          identifiers: _remoteSourceIdentifiers(item),
+          releaseYear: item.request.year,
+          onlineTitle: item.request.title,
+        );
+        final progress = item.serverItem == null ? await ExternalVideoProgressSession.open(sources, entry, file) : null;
+        try {
+          requireCurrent();
+          Future<({Uri uri, Map<String, String> headers})> renew() async {
+            requireCurrent();
+            if (peer != null) return (uri: peer.uri, headers: const <String, String>{});
+            if (resolvedByProvider && candidate.infoHash != null) {
+              final current = await streaming.resolveTorrent(
+                candidate,
+                service: selectedService,
+                request: item.request,
+              );
+              requireCurrent();
+              return (uri: current.uri, headers: const <String, String>{});
+            }
+            final refreshed = await streaming.streamsFor(item.request);
+            requireCurrent();
+            final current = refreshed.candidates.where((row) => _sameRemoteCandidate(row, candidate)).firstOrNull;
+            if (current == null) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+            if (resolveHosterLinks && current.url != null) {
+              if (selectedService == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
+              final renewed = await streaming.resolveHosterLink(current.url!, service: selectedService);
+              requireCurrent();
+              return (uri: renewed.uri, headers: const <String, String>{});
+            }
+            final renewedUri = current.url;
+            if (renewedUri == null || !_isSafeRemoteStreamUri(renewedUri)) {
+              throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+            }
+            return (uri: renewedUri, headers: current.headers);
+          }
+
+          transferred = true;
+          return ExternalPlaybackSource(
+            mediaGlobalKey: metadata.globalKey,
+            profileId: profileId,
+            uri: uri,
+            headers: headers,
+            renew: renew,
+            onProgress: progress?.record,
+            initialPosition: Duration(milliseconds: progress?.resumePositionMs ?? 0),
+            onRelease: () async {
+              await progress?.close();
+              await peer?.close();
+            },
+          );
+        } catch (_) {
+          await progress?.close();
+          rethrow;
+        }
+      } on SourceException catch (error) {
+        if (error.reason == SourceFailure.cancelled) rethrow;
+        lastFailure = error;
+      } on RemoteProviderException catch (error) {
+        if (error.reason == RemoteProviderFailure.cancelled) rethrow;
+        lastFailure = error;
+      } on RealDebridException catch (error) {
+        if (error.reason == RealDebridFailure.cancelled) rethrow;
+        lastFailure = error;
+      } on Object catch (error) {
+        lastFailure = error;
+      } finally {
+        if (!transferred) await peer?.close();
+      }
+    }
+    if (lastFailure != null) throw lastFailure;
+    throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+  }
+
+  static bool _sameRemoteCandidate(RemoteStreamCandidate a, RemoteStreamCandidate b) =>
+      a.addonId == b.addonId && a.label == b.label && a.infoHash == b.infoHash && a.fileIndex == b.fileIndex;
+
+  Future<void> _chooseSubtitle(RemoteStreamCandidate candidate) async {
+    final choice = await showModalBottomSheet<int>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: Text(t.streaming.chooseSubtitle), enabled: false),
+            ListTile(
+              leading: const AppIcon(Symbols.subtitles_off_rounded),
+              title: Text(t.streaming.subtitleOff),
+              onTap: () => Navigator.pop(context, -1),
+            ),
+            for (var index = 0; index < candidate.subtitles.length; index++)
+              ListTile(
+                leading: const AppIcon(Symbols.subtitles_rounded),
+                title: Text(_subtitleLabel(candidate.subtitles[index])),
+                onTap: () => Navigator.pop(context, index),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    setState(() {
+      if (choice < 0 || choice >= candidate.subtitles.length) {
+        _selectedSubtitles.remove(_candidateKey(candidate));
+      } else {
+        _selectedSubtitles[_candidateKey(candidate)] = candidate.subtitles[choice];
+      }
+    });
+  }
+
+  String _candidateKey(RemoteStreamCandidate candidate) =>
+      '${candidate.addonId}\u0000${candidate.label}\u0000${candidate.infoHash ?? ''}'
+      '\u0000${candidate.url == null ? candidate.fileIndex ?? '' : sourceDigest(candidate.url.toString())}'
+      '\u0000${candidate.externalUrl == null ? '' : sourceDigest(candidate.externalUrl.toString())}';
+
+  String _subtitleLabel(RemoteSubtitle subtitle) => subtitle.label?.trim().isNotEmpty == true
+      ? subtitle.label!
+      : subtitle.lang?.trim().isNotEmpty == true
+      ? subtitle.lang!
+      : t.streaming.subtitleTracks(count: 1);
+
+  Future<void> _openExternal(Uri uri) async {
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } on Object {
+      if (mounted) showAppSnackBar(context, t.streaming.streamUnsupported);
+    }
+  }
+
+  Future<void> _openStreamingSettings() async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
+    if (mounted) await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final streaming = context.watch<RemoteStreamingProvider>();
+    final result = _result;
+    final staleProfile = streaming.profileId != _loadedProfileId;
+    if (staleProfile && !_loading && !_profileReloadQueued) {
+      _profileReloadQueued = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _profileReloadQueued = false;
+        _selectedSubtitles.clear();
+        _load();
+      });
+    }
+    final hasDebrid = streaming.accounts.isNotEmpty;
+    final hasHosterResolver = streaming.accounts.any((account) => account.service != RemoteStreamService.torbox);
+    return FocusedScrollScaffold(
+      title: Text(t.streaming.streamsTitle),
+      slivers: [
+        if (_loading || staleProfile)
+          const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()))
+        else if (_error || result == null)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(t.streaming.streamLookupFailed, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: _load,
+                    icon: const AppIcon(Symbols.refresh_rounded),
+                    label: Text(t.common.retry),
+                  ),
+                  TextButton.icon(
+                    onPressed: _openStreamingSettings,
+                    icon: const AppIcon(Symbols.settings_rounded),
+                    label: Text(t.streaming.manageConnections),
+                  ),
+                  if (streaming.accounts.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: _browseCloudFiles,
+                      icon: const AppIcon(Symbols.folder_open_rounded),
+                      label: Text(t.streaming.browseCloud),
+                    ),
+                ],
+              ),
+            ),
+          )
+        else if (result.candidates.isEmpty && _cloudMatches.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AppIcon(Symbols.search_off_rounded, size: 40),
+                    const SizedBox(height: 16),
+                    Text(t.streaming.noStreams, textAlign: TextAlign.center),
+                    if (result.failedAddons > 0) ...[
+                      const SizedBox(height: 8),
+                      Text(t.streaming.streamLookupPartial, textAlign: TextAlign.center),
+                    ],
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: _openStreamingSettings,
+                      icon: const AppIcon(Symbols.settings_rounded),
+                      label: Text(t.streaming.manageConnections),
+                    ),
+                    if (hasDebrid)
+                      TextButton.icon(
+                        onPressed: _browseCloudFiles,
+                        icon: const AppIcon(Symbols.folder_open_rounded),
+                        label: Text(t.streaming.browseCloud),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildListDelegate([
+              if (_cloudMatches.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
+                  child: Text(t.streaming.cloudFiles, style: Theme.of(context).textTheme.titleMedium),
+                ),
+                for (final entry in _cloudMatches) _cloudMatchTile(entry),
+                const Divider(height: 24),
+              ],
+              if (result.failedAddons > 0)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: Text(t.streaming.streamLookupPartial, style: Theme.of(context).textTheme.bodySmall),
+                ),
+              for (final candidate in result.candidates)
+                _candidateTile(candidate, hasDebrid, hasHosterResolver, _preparationFor(candidate, streaming)),
+              const SizedBox(height: 24),
+            ]),
+          ),
+      ],
+    );
+  }
+
+  Widget _cloudMatchTile(SourceEntry entry) {
+    final sources = context.read<SourceController?>();
+    final sourceName = sources?.sources.where((source) => source.id == entry.sourceId).firstOrNull?.name;
+    final busy = _busyCloudMatch == entry.key;
+    return FocusableListTile(
+      leading: const AppIcon(Symbols.cloud_rounded, fill: 1),
+      title: Text(entry.displayTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+      subtitle: Text(sourceName?.isNotEmpty == true ? sourceName! : t.streaming.cloudFiles),
+      trailing: busy
+          ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
+          : const AppIcon(Symbols.play_arrow_rounded),
+      onTap: busy ? null : () => _playCloudMatch(entry),
+    );
+  }
+
+  RemotePreparationJob? _preparationFor(RemoteStreamCandidate candidate, RemoteStreamingProvider streaming) => streaming
+      .preparationJobs
+      .where(
+        (job) =>
+            job.requestId == widget.request.id &&
+            job.infoHash.toLowerCase() == candidate.infoHash?.toLowerCase() &&
+            job.fileIndex == candidate.fileIndex,
+      )
+      .firstOrNull;
+
+  Widget _candidateTile(
+    RemoteStreamCandidate candidate,
+    bool hasDebrid,
+    bool hasHosterResolver,
+    RemotePreparationJob? preparation,
+  ) {
+    final busy = _busyCandidate == '${candidate.addonId}${candidate.label}';
+    final selectedSubtitle = _selectedSubtitles[_candidateKey(candidate)];
+    final nativeEnabled = context.read<RemoteStreamingProvider>().nativePeerEnabled;
+    final canPlay = candidate.url != null || candidate.infoHash != null && (hasDebrid || nativeEnabled);
+    final subtitle = [
+      candidate.addonName,
+      if (candidate.description?.isNotEmpty == true) candidate.description!,
+      if (candidate.infoHash != null && !hasDebrid)
+        nativeEnabled ? t.streaming.nativePeerPlay : t.streaming.streamNeedsProvider,
+      if (preparation?.state == RemotePreparationState.preparing) t.streaming.streamPrepare,
+      if (preparation?.state == RemotePreparationState.failed ||
+          preparation?.state == RemotePreparationState.interrupted)
+        t.streaming.streamPrepareFailed,
+      if (candidate.subtitles.isNotEmpty) t.streaming.subtitleTracks(count: candidate.subtitles.length),
+      if (selectedSubtitle != null) _subtitleLabel(selectedSubtitle),
+    ].join(' · ');
+    final trailing = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (candidate.infoHash != null && nativeEnabled && !busy)
+          IconButton(
+            tooltip: t.streaming.nativePeerPlay,
+            onPressed: () => _play(candidate, native: true),
+            icon: const AppIcon(Symbols.devices_rounded),
+          ),
+        if (candidate.subtitles.isNotEmpty)
+          IconButton(
+            tooltip: t.streaming.chooseSubtitle,
+            onPressed: busy ? null : () => _chooseSubtitle(candidate),
+            icon: const AppIcon(Symbols.subtitles_rounded),
+          ),
+        if (candidate.url != null && candidate.url!.scheme == 'https' && hasHosterResolver && !busy)
+          IconButton(
+            tooltip: t.streaming.playViaProvider,
+            onPressed: () => _play(candidate, viaProvider: true),
+            icon: const AppIcon(Symbols.cloud_download_rounded),
+          ),
+        if (busy)
+          const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
+        else if (candidate.externalUrl != null && candidate.url == null && candidate.infoHash == null)
+          TextButton(
+            onPressed: () => _openExternal(candidate.externalUrl!),
+            child: Text(t.streaming.streamOpenExternal),
+          )
+        else if (!canPlay && candidate.infoHash != null && !hasDebrid)
+          TextButton(onPressed: _openStreamingSettings, child: Text(t.streaming.manageConnections))
+        else if (canPlay)
+          const AppIcon(Symbols.chevron_right_rounded),
+      ],
+    );
+    return FocusableListTile(
+      leading: AppIcon(
+        candidate.externalUrl != null && candidate.url == null && candidate.infoHash == null
+            ? Symbols.open_in_new_rounded
+            : candidate.infoHash != null
+            ? Symbols.cloud_download_rounded
+            : Symbols.play_circle_rounded,
+        fill: 1,
+      ),
+      title: Text(candidate.label),
+      subtitle: Text(subtitle, maxLines: 3, overflow: TextOverflow.ellipsis),
+      trailing: trailing,
+      onTap: busy
+          ? null
+          : candidate.externalUrl != null && candidate.url == null && candidate.infoHash == null
+          ? () => _openExternal(candidate.externalUrl!)
+          : canPlay
+          ? () => _play(candidate)
+          : !canPlay && candidate.infoHash != null && !hasDebrid
+          ? _openStreamingSettings
+          : null,
+    );
+  }
+
+  String _fileNameFor(RemoteStreamCandidate candidate) {
+    return _remoteFileNameFor(candidate, widget.request.title);
+  }
+
+  String _mimeType(String name) => _remoteMimeType(name);
+}
+
+String _unprefixedIdentifier(String key, String value) {
+  final normalized = value.trim();
+  final prefix = '$key:';
+  return normalized.toLowerCase().startsWith(prefix) ? normalized.substring(prefix.length) : normalized;
+}
+
+Map<String, String> _remoteSourceIdentifiers(RemoteStreamQueueItem item) => {
+  ...item.identifiers,
+  'plezyMediaType': item.request.type == 'series' ? 'show' : 'movie',
+  if (item.request.type == 'series' && item.request.season != null) 'plezySeason': '${item.request.season}',
+  if (item.request.type == 'series' && item.request.episode != null) 'plezyEpisode': '${item.request.episode}',
+};
+
+String _remoteFileNameFor(RemoteStreamCandidate candidate, String fallbackTitle) {
+  final uri = candidate.url;
+  final name = uri == null || uri.pathSegments.isEmpty ? '' : uri.pathSegments.last;
+  final decoded = Uri.decodeComponent(name);
+  final safeName = decoded.replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1f]'), '').trim();
+  if (safeName.contains('.') && safeName.length <= 240) return safeName;
+  final label = candidate.label.replaceAll(RegExp(r'[\\/:*?"<>|\x00-\x1f]'), '').trim();
+  return '${label.isEmpty ? fallbackTitle : label}.mp4';
+}
+
+String _remoteMimeType(String name) => switch (name.toLowerCase().split('.').last) {
+  'mkv' => 'video/x-matroska',
+  'm4v' => 'video/x-m4v',
+  'mov' => 'video/quicktime',
+  'webm' => 'video/webm',
+  'avi' => 'video/x-msvideo',
+  'ts' => 'video/mp2t',
+  _ => 'video/mp4',
+};
+
+bool _isSafeRemoteStreamUri(Uri uri) =>
+    const {'http', 'https'}.contains(uri.scheme) && uri.host.isNotEmpty && uri.userInfo.isEmpty;

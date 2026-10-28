@@ -92,6 +92,7 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$he trakt = _Translations$trakt$he._(_root);
 	@override late final _Translations$seerr$he seerr = _Translations$seerr$he._(_root);
 	@override late final _Translations$services$he services = _Translations$services$he._(_root);
+	@override late final _Translations$streaming$he streaming = _Translations$streaming$he._(_root);
 	@override late final _Translations$addServer$he addServer = _Translations$addServer$he._(_root);
 	@override late final _Translations$cast$he cast = _Translations$cast$he._(_root);
 	@override late final _Translations$automation$he automation = _Translations$automation$he._(_root);
@@ -2799,6 +2800,119 @@ class _Translations$services$he extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$he libraryFilter = _Translations$services$libraryFilter$he._(_root);
 	@override String get seerrDescription => 'התחבר ל-Seerr או Overseerr כדי לחפש כותרות ולשלוח בקשות למדיה.';
 	@override late final _Translations$services$trackerDescriptions$he trackerDescriptions = _Translations$services$trackerDescriptions$he._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$he extends Translations$streaming$en {
+	_Translations$streaming$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'הזרמה מהענן ומתוספים';
+	@override String get subtitle => 'חברו חשבון Debrid כדי לעיין בקבצים שבענן ולהפעיל זרמים נתמכים. תוספים תואמי Stremio מציעים אפשרויות צפייה בעמודי סרטים ופרקים. פרטי החיבור מוצפנים במכשיר הזה ונשמרים בפרופיל הזה.';
+	@override String connectionsConfigured({required Object count}) => 'מקורות מחוברים: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG לא הצליחה לפתוח את הגדרות ההזרמה השמורות. פתחו את נעילת המכשיר ונסו שוב לפני שינוי חיבורים.';
+	@override String get settingsUnreadable => 'PlezyNG לא הצליחה לפתוח את החיבורים השמורים האלה. מחקו אותם כדי לחבר את השירותים מחדש.';
+	@override String get clearUnreadableSettings => 'מחיקת הגדרות שמורות';
+	@override String get clearUnreadableSettingsConfirm => 'למחוק את הגדרות ההזרמה השמורות?';
+	@override String get clearUnreadableSettingsBody => 'פעולה זו מסירה מהפרופיל את כל חשבונות הספק וכתובות התוספים השמורים. אי אפשר לבטל אותה.';
+	@override String get clearUnreadableSettingsFailed => 'לא ניתן למחוק את הגדרות ההזרמה השמורות. פתחו את נעילת המכשיר ונסו שוב.';
+	@override String get retrySettingsLoad => 'ניסיון לטעון מחדש את החיבורים';
+	@override String get addons => 'תוספים תואמי Stremio';
+	@override String get addonsDescription => 'ייבאו תוספים מ‑Stremio או חברו תוסף באמצעות כתובת המניפסט שלו. עיינו בקטלוגים ב״גילוי״ ופתחו אפשרויות הזרמה מעמודי סרטים או פרקים.';
+	@override String get catalogLoadFailed => 'לא ניתן לטעון את הקטלוג. רעננו ונסו שוב.';
+	@override String get catalogFiltersRequired => 'בחרו את המסננים הנדרשים כדי לעיין בקטלוג הזה.';
+	@override String get catalogRequiredLabel => 'נדרש';
+	@override String get importFromStremio => 'ייבוא מ‑Stremio';
+	@override String get stremioImportInstructions => 'סרקו את קוד ה‑QR או פתחו את הקישור. היכנסו ל‑Stremio ואשרו את הבקשה. PlezyNG קוראת רק את רשימת התוספים שלכם; היא לעולם לא מבקשת את סיסמת Stremio או משנה את ההגדרות.';
+	@override String get stremioImportOpen => 'פתיחת קישור Stremio';
+	@override String get stremioImportCode => 'קוד קישור';
+	@override String get stremioImportPreviewTitle => 'בחירת תוספים';
+	@override String get stremioImportPreviewBody => 'בחרו אילו תוספים לחבר ל‑PlezyNG. הייבוא הזה מקבל כתובות HTTPS בלבד.';
+	@override String stremioImportIgnored({required Object count}) => 'תוספים שדולגו בגלל כתובות לא נתמכות או לא מאובטחות: ${count}.';
+	@override String get stremioCatalogs => 'קטלוגים';
+	@override String get stremioStreams => 'זרמים';
+	@override String stremioImportAddSelected({required Object count}) => 'הוספת הבחירה (${count})';
+	@override String stremioImportAdded({required Object count}) => 'תוספים שחוברו מ‑Stremio: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'תוספים שחוברו: ${added}; לא ניתן לחבר: ${failed}.';
+	@override String get stremioImportFailed => 'לא ניתן לייבא תוספים מ‑Stremio. נסו שוב.';
+	@override String get stremioImportTimedOut => 'האישור של Stremio פג. התחילו את הייבוא מחדש.';
+	@override String get stremioImportEmpty => 'לא נמצאו תוספים תואמים חדשים בחשבון Stremio הזה.';
+	@override String get stremioImportLimitReached => 'הסירו תוסף לפני ייבוא נוספים.';
+	@override String get addByManifestUrl => 'הוספה באמצעות כתובת מניפסט';
+	@override String get addAddon => 'הוספת תוסף';
+	@override String get manifestUrl => 'כתובת מניפסט של תוסף';
+	@override String get manifestUrlHint => 'הדביקו את כתובת המניפסט. PlezyNG בודקת אם התוסף תומך בקטלוגים או במשאבי זרם לפני החיבור.';
+	@override String get allowHttp => 'אישור כתובת HTTP לא מוצפנת';
+	@override String get allowHttpDescription => 'השתמשו בזה רק עבור תוסף מהימן ברשת הפרטית שלכם.';
+	@override String get installAddon => 'חיבור תוסף';
+	@override String get addonInstalled => 'התוסף חובר';
+	@override String get addonRemoved => 'התוסף הוסר';
+	@override String get addonToggle => 'הפעלת תוסף';
+	@override String get addonEmpty => 'עדיין אין תוספים מחוברים';
+	@override String get addonError => 'PlezyNG לא הצליחה להתחבר לתוסף הזה. בדקו את כתובת המניפסט ונסו שוב.';
+	@override String get addonPrivacy => 'חברו רק תוספים שאתם סומכים עליהם. בחיפוש, התוסף מקבל את שם התוכן שביקשתם לחפש ועשוי להחזיר קישורי זרם של צד שלישי.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'הפעילו זרמי טורנט נתמכים דרך חשבון Real-Debrid שלכם.';
+	@override String get connectRealDebrid => 'חיבור באמצעות קוד QR';
+	@override String get disconnectRealDebrid => 'ניתוק Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'מחובר בתור ${username}';
+	@override String get realDebridInstructions => 'סרקו את קוד ה‑QR או פתחו את הקישור, ואז הזינו את קוד ההפעלה הזה כדי לחבר את PlezyNG:';
+	@override String get realDebridActivate => 'פתיחת Real-Debrid להפעלה';
+	@override String get realDebridCode => 'קוד הפעלה';
+	@override String get realDebridConnectFailed => 'לא ניתן להתחבר ל‑Real-Debrid. נסו שוב.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'הפעילו זרמי טורנט נתמכים דרך חשבון AllDebrid שלכם.';
+	@override String get connectAllDebrid => 'חיבור באמצעות קוד QR';
+	@override String get allDebridInstructions => 'סרקו את קוד ה‑QR או פתחו את הקישור כדי לאשר את PlezyNG. השאירו את המסך הזה פתוח בזמן החיבור:';
+	@override String get allDebridActivate => 'פתיחת AllDebrid להפעלה';
+	@override String get allDebridCode => 'קוד PIN להפעלה';
+	@override String get allDebridConnectFailed => 'לא ניתן להתחבר ל‑AllDebrid. נסו שוב.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'הפעילו זרמי טורנט שמורים במטמון או עיינו בקבצים דרך Premiumize.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'הפעילו זרמי טורנט שמורים במטמון או עיינו בקבצים דרך TorBox.';
+	@override String get connectApiKey => 'חיבור באמצעות מפתח API';
+	@override String apiKeyTitle({required Object service}) => 'חיבור ${service}';
+	@override String get apiKey => 'מפתח API';
+	@override String apiKeyHint({required Object service}) => 'הדביקו את מפתח ה‑API מהגדרות החשבון של ${service}. PlezyNG מצפינה אותו במכשיר הזה ושומרת אותו בפרופיל.';
+	@override String get apiKeyConnectFailed => 'לא ניתן לאמת את מפתח ה‑API. בדקו אותו ונסו שוב.';
+	@override String accountConnected({required Object username}) => 'מחובר בתור ${username}';
+	@override String get streamNeedsProvider => 'חברו שירות Debrid כדי להפעיל את זרם הטורנט הזה.';
+	@override String get playViaProvider => 'הפעלה דרך Debrid';
+	@override String disconnectConfirm({required Object service}) => 'לנתק את ${service}?';
+	@override String get disconnectBody => 'PlezyNG תסיר את הרשאת המכשיר. הקבצים אצל הספק וההעברות הפעילות לא ישתנו.';
+	@override String get streamsTitle => 'בחירת זרם';
+	@override String get searchingStreams => 'בדיקת התוספים המחוברים…';
+	@override String get noStreams => 'לא נמצאו זרמים עבור התוכן הזה.';
+	@override String get manageConnections => 'ניהול שירותי הזרמה';
+	@override String subtitleTracks({required Object count}) => 'רצועות כתוביות: ${count}';
+	@override String get chooseSubtitle => 'בחירת כתובית';
+	@override String get chooseProvider => 'בחירת שירות Debrid';
+	@override String get subtitleOff => 'כתוביות כבויות';
+	@override String get subtitleLoadFailed => 'לא ניתן לטעון את הכתובית. נסו רצועה אחרת.';
+	@override String get subtitleApplied => 'הכתובית נבחרה להפעלה';
+	@override String get streamLookupPartial => 'לא ניתן להגיע לחלק מהתוספים.';
+	@override String get streamLookupFailed => 'לא ניתן לבדוק את התוספים המחוברים.';
+	@override String get streamOpenExternal => 'פתיחת קישור חיצוני';
+	@override String get streamPrepare => 'מתכונן דרך שירות Debrid…';
+	@override String get streamPrepareFailed => 'לא ניתן להכין את הזרם הזה. בדקו את החשבון המחובר ונסו מקור אחר.';
+	@override String get streamNeedsRealDebrid => 'חברו שירות Debrid כדי להפעיל את זרם הטורנט הזה.';
+	@override String get streamUnsupported => 'נגן האפליקציה לא תומך בפורמט הזרם הזה.';
+	@override String get remoteNeedsEpisode => 'בחרו פרק לפני חיפוש זרם.';
+	@override String get remoteNeedsEpisodeNumber => 'חסר לפרק הזה מספר עונה או פרק.';
+	@override String get remoteNeedsExternalId => 'PlezyNG לא מצאה מזהה IMDb או TMDB עבור התוכן הזה.';
+	@override String get watchWithServices => 'צפייה באמצעות שירותים מחוברים';
+	@override String get chooseEpisode => 'בחירת פרק';
+	@override String get episodes => 'פרקים';
+	@override String episodePosition({required Object season, required Object episode}) => 'עונה ${season}, פרק ${episode}';
+	@override String get episodeStreamHint => 'פותח זרמים זמינים עבור הפרק הזה.';
+	@override String get cloudFiles => 'קבצים בענן';
+	@override String get browseCloud => 'עיון בקבצים';
+	@override String get cloudEmpty => 'לא נמצאו קובצי וידאו שניתן להפעיל בחשבון הזה.';
+	@override String get cloudLoadFailed => 'לא ניתן לטעון קובצי ענן. בדקו את החיבור ונסו שוב.';
+	@override String get providers => 'ספקי Debrid';
 }
 
 // Path: addServer
@@ -7750,6 +7864,110 @@ extension on TranslationsHe {
 			'services.trackerDescriptions.anilist' => 'לסנכרן רשימות אנמיה ולצפות בהתקדמות עם AniList.',
 			'services.trackerDescriptions.simkl' => 'סינק צפה בסרטים, תוכניות טלוויזיה ואנימה עם Simkl.',
 			'services.trackerDescriptions.mdblist' => 'הצג דירוגים ורשימות MDBList בהמלצות ולחקור.',
+			'streaming.title' => 'הזרמה מהענן ומתוספים',
+			'streaming.subtitle' => 'חברו חשבון Debrid כדי לעיין בקבצים שבענן ולהפעיל זרמים נתמכים. תוספים תואמי Stremio מציעים אפשרויות צפייה בעמודי סרטים ופרקים. פרטי החיבור מוצפנים במכשיר הזה ונשמרים בפרופיל הזה.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'מקורות מחוברים: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG לא הצליחה לפתוח את הגדרות ההזרמה השמורות. פתחו את נעילת המכשיר ונסו שוב לפני שינוי חיבורים.',
+			'streaming.settingsUnreadable' => 'PlezyNG לא הצליחה לפתוח את החיבורים השמורים האלה. מחקו אותם כדי לחבר את השירותים מחדש.',
+			'streaming.clearUnreadableSettings' => 'מחיקת הגדרות שמורות',
+			'streaming.clearUnreadableSettingsConfirm' => 'למחוק את הגדרות ההזרמה השמורות?',
+			'streaming.clearUnreadableSettingsBody' => 'פעולה זו מסירה מהפרופיל את כל חשבונות הספק וכתובות התוספים השמורים. אי אפשר לבטל אותה.',
+			'streaming.clearUnreadableSettingsFailed' => 'לא ניתן למחוק את הגדרות ההזרמה השמורות. פתחו את נעילת המכשיר ונסו שוב.',
+			'streaming.retrySettingsLoad' => 'ניסיון לטעון מחדש את החיבורים',
+			'streaming.addons' => 'תוספים תואמי Stremio',
+			'streaming.addonsDescription' => 'ייבאו תוספים מ‑Stremio או חברו תוסף באמצעות כתובת המניפסט שלו. עיינו בקטלוגים ב״גילוי״ ופתחו אפשרויות הזרמה מעמודי סרטים או פרקים.',
+			'streaming.catalogLoadFailed' => 'לא ניתן לטעון את הקטלוג. רעננו ונסו שוב.',
+			'streaming.catalogFiltersRequired' => 'בחרו את המסננים הנדרשים כדי לעיין בקטלוג הזה.',
+			'streaming.catalogRequiredLabel' => 'נדרש',
+			'streaming.importFromStremio' => 'ייבוא מ‑Stremio',
+			'streaming.stremioImportInstructions' => 'סרקו את קוד ה‑QR או פתחו את הקישור. היכנסו ל‑Stremio ואשרו את הבקשה. PlezyNG קוראת רק את רשימת התוספים שלכם; היא לעולם לא מבקשת את סיסמת Stremio או משנה את ההגדרות.',
+			'streaming.stremioImportOpen' => 'פתיחת קישור Stremio',
+			'streaming.stremioImportCode' => 'קוד קישור',
+			'streaming.stremioImportPreviewTitle' => 'בחירת תוספים',
+			'streaming.stremioImportPreviewBody' => 'בחרו אילו תוספים לחבר ל‑PlezyNG. הייבוא הזה מקבל כתובות HTTPS בלבד.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'תוספים שדולגו בגלל כתובות לא נתמכות או לא מאובטחות: ${count}.',
+			'streaming.stremioCatalogs' => 'קטלוגים',
+			'streaming.stremioStreams' => 'זרמים',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'הוספת הבחירה (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'תוספים שחוברו מ‑Stremio: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'תוספים שחוברו: ${added}; לא ניתן לחבר: ${failed}.',
+			'streaming.stremioImportFailed' => 'לא ניתן לייבא תוספים מ‑Stremio. נסו שוב.',
+			'streaming.stremioImportTimedOut' => 'האישור של Stremio פג. התחילו את הייבוא מחדש.',
+			'streaming.stremioImportEmpty' => 'לא נמצאו תוספים תואמים חדשים בחשבון Stremio הזה.',
+			'streaming.stremioImportLimitReached' => 'הסירו תוסף לפני ייבוא נוספים.',
+			'streaming.addByManifestUrl' => 'הוספה באמצעות כתובת מניפסט',
+			'streaming.addAddon' => 'הוספת תוסף',
+			'streaming.manifestUrl' => 'כתובת מניפסט של תוסף',
+			'streaming.manifestUrlHint' => 'הדביקו את כתובת המניפסט. PlezyNG בודקת אם התוסף תומך בקטלוגים או במשאבי זרם לפני החיבור.',
+			'streaming.allowHttp' => 'אישור כתובת HTTP לא מוצפנת',
+			'streaming.allowHttpDescription' => 'השתמשו בזה רק עבור תוסף מהימן ברשת הפרטית שלכם.',
+			'streaming.installAddon' => 'חיבור תוסף',
+			'streaming.addonInstalled' => 'התוסף חובר',
+			'streaming.addonRemoved' => 'התוסף הוסר',
+			'streaming.addonToggle' => 'הפעלת תוסף',
+			'streaming.addonEmpty' => 'עדיין אין תוספים מחוברים',
+			'streaming.addonError' => 'PlezyNG לא הצליחה להתחבר לתוסף הזה. בדקו את כתובת המניפסט ונסו שוב.',
+			'streaming.addonPrivacy' => 'חברו רק תוספים שאתם סומכים עליהם. בחיפוש, התוסף מקבל את שם התוכן שביקשתם לחפש ועשוי להחזיר קישורי זרם של צד שלישי.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'הפעילו זרמי טורנט נתמכים דרך חשבון Real-Debrid שלכם.',
+			'streaming.connectRealDebrid' => 'חיבור באמצעות קוד QR',
+			'streaming.disconnectRealDebrid' => 'ניתוק Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'מחובר בתור ${username}',
+			'streaming.realDebridInstructions' => 'סרקו את קוד ה‑QR או פתחו את הקישור, ואז הזינו את קוד ההפעלה הזה כדי לחבר את PlezyNG:',
+			'streaming.realDebridActivate' => 'פתיחת Real-Debrid להפעלה',
+			'streaming.realDebridCode' => 'קוד הפעלה',
+			'streaming.realDebridConnectFailed' => 'לא ניתן להתחבר ל‑Real-Debrid. נסו שוב.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'הפעילו זרמי טורנט נתמכים דרך חשבון AllDebrid שלכם.',
+			'streaming.connectAllDebrid' => 'חיבור באמצעות קוד QR',
+			'streaming.allDebridInstructions' => 'סרקו את קוד ה‑QR או פתחו את הקישור כדי לאשר את PlezyNG. השאירו את המסך הזה פתוח בזמן החיבור:',
+			'streaming.allDebridActivate' => 'פתיחת AllDebrid להפעלה',
+			'streaming.allDebridCode' => 'קוד PIN להפעלה',
+			'streaming.allDebridConnectFailed' => 'לא ניתן להתחבר ל‑AllDebrid. נסו שוב.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'הפעילו זרמי טורנט שמורים במטמון או עיינו בקבצים דרך Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'הפעילו זרמי טורנט שמורים במטמון או עיינו בקבצים דרך TorBox.',
+			'streaming.connectApiKey' => 'חיבור באמצעות מפתח API',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'חיבור ${service}',
+			'streaming.apiKey' => 'מפתח API',
+			'streaming.apiKeyHint' => ({required Object service}) => 'הדביקו את מפתח ה‑API מהגדרות החשבון של ${service}. PlezyNG מצפינה אותו במכשיר הזה ושומרת אותו בפרופיל.',
+			'streaming.apiKeyConnectFailed' => 'לא ניתן לאמת את מפתח ה‑API. בדקו אותו ונסו שוב.',
+			'streaming.accountConnected' => ({required Object username}) => 'מחובר בתור ${username}',
+			'streaming.streamNeedsProvider' => 'חברו שירות Debrid כדי להפעיל את זרם הטורנט הזה.',
+			'streaming.playViaProvider' => 'הפעלה דרך Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'לנתק את ${service}?',
+			'streaming.disconnectBody' => 'PlezyNG תסיר את הרשאת המכשיר. הקבצים אצל הספק וההעברות הפעילות לא ישתנו.',
+			'streaming.streamsTitle' => 'בחירת זרם',
+			'streaming.searchingStreams' => 'בדיקת התוספים המחוברים…',
+			'streaming.noStreams' => 'לא נמצאו זרמים עבור התוכן הזה.',
+			'streaming.manageConnections' => 'ניהול שירותי הזרמה',
+			'streaming.subtitleTracks' => ({required Object count}) => 'רצועות כתוביות: ${count}',
+			'streaming.chooseSubtitle' => 'בחירת כתובית',
+			'streaming.chooseProvider' => 'בחירת שירות Debrid',
+			'streaming.subtitleOff' => 'כתוביות כבויות',
+			'streaming.subtitleLoadFailed' => 'לא ניתן לטעון את הכתובית. נסו רצועה אחרת.',
+			'streaming.subtitleApplied' => 'הכתובית נבחרה להפעלה',
+			'streaming.streamLookupPartial' => 'לא ניתן להגיע לחלק מהתוספים.',
+			'streaming.streamLookupFailed' => 'לא ניתן לבדוק את התוספים המחוברים.',
+			'streaming.streamOpenExternal' => 'פתיחת קישור חיצוני',
+			'streaming.streamPrepare' => 'מתכונן דרך שירות Debrid…',
+			'streaming.streamPrepareFailed' => 'לא ניתן להכין את הזרם הזה. בדקו את החשבון המחובר ונסו מקור אחר.',
+			'streaming.streamNeedsRealDebrid' => 'חברו שירות Debrid כדי להפעיל את זרם הטורנט הזה.',
+			'streaming.streamUnsupported' => 'נגן האפליקציה לא תומך בפורמט הזרם הזה.',
+			'streaming.remoteNeedsEpisode' => 'בחרו פרק לפני חיפוש זרם.',
+			'streaming.remoteNeedsEpisodeNumber' => 'חסר לפרק הזה מספר עונה או פרק.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG לא מצאה מזהה IMDb או TMDB עבור התוכן הזה.',
+			'streaming.watchWithServices' => 'צפייה באמצעות שירותים מחוברים',
+			'streaming.chooseEpisode' => 'בחירת פרק',
+			'streaming.episodes' => 'פרקים',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'עונה ${season}, פרק ${episode}',
+			'streaming.episodeStreamHint' => 'פותח זרמים זמינים עבור הפרק הזה.',
+			'streaming.cloudFiles' => 'קבצים בענן',
+			'streaming.browseCloud' => 'עיון בקבצים',
+			'streaming.cloudEmpty' => 'לא נמצאו קובצי וידאו שניתן להפעיל בחשבון הזה.',
+			'streaming.cloudLoadFailed' => 'לא ניתן לטעון קובצי ענן. בדקו את החיבור ונסו שוב.',
+			'streaming.providers' => 'ספקי Debrid',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'הוסף ${product} שרת',
 			'addServer.serverUrls' => 'שרת URL',
 			'addServer.serverUrlsHelper' => 'URLים מרובים מותרים, נפרדים על ידי commas.',
@@ -7990,6 +8208,8 @@ extension on TranslationsHe {
 			'universalMedia.playlistFormatsHelp' => 'רשימת משחקים יכולה להכיל עד 1,000 פריטים ו 2 MB. HLS מופיע פתוח כמו זרמים כך שהשחקן יכול לבחור איכות.',
 			'universalMedia.saveQueuePlaylist' => 'שמירת התור כפלייליסט',
 			'universalMedia.queuePlaylistSaved' => 'הפלייליסט נשמר לצד קובצי המדיה.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => 'אי אפשר לשמור את התור הזה כפלייליסט מקומי לשימוש חוזר.',
 			'universalMedia.queuePlaylistFolderRequired' => 'יש לבחור מיקום שמירה באותה תיקייה שבה נמצאים הקבצים שבתור.',
 			'universalMedia.noFavorites' => 'עדיין לא נשמר זרימת הפופולרים.Favorites להישאר בפרופיל זה.',
@@ -8094,8 +8314,6 @@ extension on TranslationsHe {
 			'universalMedia.captureAudioNone' => 'אין אודיו',
 			'universalMedia.captureDefaultAudio' => 'כניסה אודיו',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'שיעור הקלטת',
 			'universalMedia.capturePrivacy' => 'ההקלטה מאוחסנת רק לקובץ שבחרת.הקלטת המיקרופון היא אופציונלית.PlezyNG אינו מעלה את ההקלטה.',
 			'universalMedia.captureSaveAs' => 'שמור את הקלטת המסך כ',
@@ -8504,6 +8722,8 @@ extension on TranslationsHe {
 			'sourceSetup.nfsEncryptionFailure' => 'עבור NFS מוצפן, יש לבדוק תמיכה ב־RFC 9289 וב־TLS 1.3 בשני שירותי ה־NAS, את שם האישור ואת מזהי UID/GID של הייצוא. PlezyNG לא ינסה שוב את החיבור הזה ללא הצפנה.',
 			'sourceSetup.sourceConnecting' => 'מתבצע חיבור למקור',
 			'sourceSetup.metadataSearchPrivacy' => 'חיפוש השם הזה נשלח ל־Trakt. נשלח רק השם שהוזן, ולא הווידאו או פרטי הגישה למקור.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'בחירת תוצאה תואמת',
 			'sourceSetup.metadataMatchHelp' => 'לפני הבחירה, יש לבדוק את השם והשנה. Trakt מקבל את שם החיפוש; הווידאו נשאר במקור שלו.',
 			'sourceSetup.metadataNoMatches' => 'לא נמצאו שמות תואמים בחיפוש המקוון. כדאי לנסות שם אחר.',
@@ -8608,8 +8828,6 @@ extension on TranslationsHe {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

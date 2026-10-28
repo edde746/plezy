@@ -92,6 +92,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$nb trakt = _Translations$trakt$nb._(_root);
 	@override late final _Translations$seerr$nb seerr = _Translations$seerr$nb._(_root);
 	@override late final _Translations$services$nb services = _Translations$services$nb._(_root);
+	@override late final _Translations$streaming$nb streaming = _Translations$streaming$nb._(_root);
 	@override late final _Translations$addServer$nb addServer = _Translations$addServer$nb._(_root);
 	@override late final _Translations$cast$nb cast = _Translations$cast$nb._(_root);
 	@override late final _Translations$automation$nb automation = _Translations$automation$nb._(_root);
@@ -2795,6 +2796,119 @@ class _Translations$services$nb extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$nb libraryFilter = _Translations$services$libraryFilter$nb._(_root);
 	@override String get seerrDescription => 'Koble til Seerr eller Overseerr for å søke etter titler og sende medieforespørsler.';
 	@override late final _Translations$services$trackerDescriptions$nb trackerDescriptions = _Translations$services$trackerDescriptions$nb._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$nb extends Translations$streaming$en {
+	_Translations$streaming$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Strømming fra skyen og tillegg';
+	@override String get subtitle => 'Koble til en Debrid-konto for å bla gjennom filer i skyen og spille av støttede strømmer. Stremio-kompatible tillegg gir strømmevalg på film- og seriesider. Tilkoblingsopplysninger krypteres på denne enheten og lagres i denne profilen.';
+	@override String connectionsConfigured({required Object count}) => 'Tilkoblede kilder: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG klarte ikke å låse opp de lagrede strømmeinnstillingene. Lås opp enheten og prøv igjen før du endrer tilkoblingene.';
+	@override String get settingsUnreadable => 'PlezyNG klarte ikke å låse opp disse lagrede tilkoblingene. Fjern dem for å koble til tjenestene på nytt.';
+	@override String get clearUnreadableSettings => 'Fjern lagrede innstillinger';
+	@override String get clearUnreadableSettingsConfirm => 'Fjerne lagrede strømmeinnstillinger?';
+	@override String get clearUnreadableSettingsBody => 'Dette fjerner alle lagrede leverandørkontoer og tilleggsadresser fra denne profilen. Handlingen kan ikke angres.';
+	@override String get clearUnreadableSettingsFailed => 'Kunne ikke fjerne de lagrede strømmeinnstillingene. Lås opp enheten og prøv igjen.';
+	@override String get retrySettingsLoad => 'Prøv å laste inn tilkoblingene på nytt';
+	@override String get addons => 'Stremio-kompatible tillegg';
+	@override String get addonsDescription => 'Importer tillegg fra Stremio, eller koble til et med manifest-URL. Bla gjennom kataloger i Utforsk og åpne strømmevalg fra film- eller seriesider.';
+	@override String get catalogLoadFailed => 'Katalogen kunne ikke lastes inn. Oppdater og prøv igjen.';
+	@override String get catalogFiltersRequired => 'Velg de nødvendige filtrene for å bla gjennom katalogen.';
+	@override String get catalogRequiredLabel => 'Påkrevd';
+	@override String get importFromStremio => 'Importer fra Stremio';
+	@override String get stremioImportInstructions => 'Skann QR-koden eller åpne lenken. Logg inn på Stremio og godkjenn forespørselen. PlezyNG leser bare tilleggslisten din; appen ber aldri om Stremio-passordet ditt eller endrer innstillingene.';
+	@override String get stremioImportOpen => 'Åpne Stremio-lenke';
+	@override String get stremioImportCode => 'Tilkoblingskode';
+	@override String get stremioImportPreviewTitle => 'Velg tillegg';
+	@override String get stremioImportPreviewBody => 'Velg tilleggene du vil koble til PlezyNG. Denne importen godtar bare HTTPS-adresser.';
+	@override String stremioImportIgnored({required Object count}) => 'Hoppet over tillegg med adresser som ikke støttes eller er usikre: ${count}.';
+	@override String get stremioCatalogs => 'Kataloger';
+	@override String get stremioStreams => 'Strømmer';
+	@override String stremioImportAddSelected({required Object count}) => 'Legg til valgte (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Tillegg koblet til fra Stremio: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Tilkoblede tillegg: ${added}; kunne ikke koble til: ${failed}.';
+	@override String get stremioImportFailed => 'Kunne ikke importere tillegg fra Stremio. Prøv igjen.';
+	@override String get stremioImportTimedOut => 'Stremio-godkjenningen utløp. Start importen på nytt.';
+	@override String get stremioImportEmpty => 'Fant ingen nye kompatible tillegg i denne Stremio-kontoen.';
+	@override String get stremioImportLimitReached => 'Fjern et tillegg før du importerer flere.';
+	@override String get addByManifestUrl => 'Legg til med manifest-URL';
+	@override String get addAddon => 'Legg til tillegg';
+	@override String get manifestUrl => 'Manifest-URL for tillegg';
+	@override String get manifestUrlHint => 'Lim inn manifest-URL-en til tillegget. PlezyNG sjekker om det støtter kataloger eller strømmeressurser før tilkobling.';
+	@override String get allowHttp => 'Tillat en ukryptert HTTP-adresse';
+	@override String get allowHttpDescription => 'Bruk bare for et tillegg du stoler på i ditt private nettverk.';
+	@override String get installAddon => 'Koble til tillegg';
+	@override String get addonInstalled => 'Tillegg tilkoblet';
+	@override String get addonRemoved => 'Tillegg fjernet';
+	@override String get addonToggle => 'Slå på tillegg';
+	@override String get addonEmpty => 'Ingen tillegg er tilkoblet ennå';
+	@override String get addonError => 'PlezyNG kunne ikke koble til dette tillegget. Kontroller manifest-URL-en og prøv igjen.';
+	@override String get addonPrivacy => 'Koble bare til tillegg du stoler på. Når du søker, mottar tillegget tittelen du søker etter, og kan returnere strømmelenker fra tredjeparter.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Spill av støttede torrentstrømmer via Real-Debrid-kontoen din.';
+	@override String get connectRealDebrid => 'Koble til med QR-kode';
+	@override String get disconnectRealDebrid => 'Koble fra Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'Tilkoblet som ${username}';
+	@override String get realDebridInstructions => 'Skann QR-koden eller åpne lenken, og skriv deretter inn denne aktiveringskoden for å koble til PlezyNG:';
+	@override String get realDebridActivate => 'Åpne Real-Debrid for å aktivere';
+	@override String get realDebridCode => 'Aktiveringskode';
+	@override String get realDebridConnectFailed => 'Kunne ikke koble til Real-Debrid. Prøv igjen.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Spill av støttede torrentstrømmer via AllDebrid-kontoen din.';
+	@override String get connectAllDebrid => 'Koble til med QR-kode';
+	@override String get allDebridInstructions => 'Skann QR-koden eller åpne lenken for å godkjenne PlezyNG. La denne skjermen stå åpen mens tilkoblingen opprettes:';
+	@override String get allDebridActivate => 'Åpne AllDebrid for å aktivere';
+	@override String get allDebridCode => 'Aktiverings-PIN';
+	@override String get allDebridConnectFailed => 'Kunne ikke koble til AllDebrid. Prøv igjen.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Spill av bufrede torrentstrømmer eller bla gjennom filer med Premiumize.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Spill av bufrede torrentstrømmer eller bla gjennom filer med TorBox.';
+	@override String get connectApiKey => 'Koble til med API-nøkkel';
+	@override String apiKeyTitle({required Object service}) => 'Koble til ${service}';
+	@override String get apiKey => 'API-nøkkel';
+	@override String apiKeyHint({required Object service}) => 'Lim inn API-nøkkelen fra kontoinnstillingene for ${service}. PlezyNG krypterer den på denne enheten og lagrer den i denne profilen.';
+	@override String get apiKeyConnectFailed => 'Kunne ikke bekrefte API-nøkkelen. Kontroller den og prøv igjen.';
+	@override String accountConnected({required Object username}) => 'Tilkoblet som ${username}';
+	@override String get streamNeedsProvider => 'Koble til en Debrid-tjeneste for å spille av denne torrentstrømmen.';
+	@override String get playViaProvider => 'Spill av med Debrid';
+	@override String disconnectConfirm({required Object service}) => 'Koble fra ${service}?';
+	@override String get disconnectBody => 'PlezyNG fjerner denne enhetens tilgang. Filer hos leverandøren og pågående overføringer påvirkes ikke.';
+	@override String get streamsTitle => 'Velg en strøm';
+	@override String get searchingStreams => 'Sjekker tilkoblede tillegg…';
+	@override String get noStreams => 'Fant ingen strømmer for denne tittelen.';
+	@override String get manageConnections => 'Administrer strømmetjenester';
+	@override String subtitleTracks({required Object count}) => 'Undertekstspor: ${count}';
+	@override String get chooseSubtitle => 'Velg undertekst';
+	@override String get chooseProvider => 'Velg Debrid-tjeneste';
+	@override String get subtitleOff => 'Undertekster av';
+	@override String get subtitleLoadFailed => 'Kunne ikke laste inn denne underteksten. Prøv et annet spor.';
+	@override String get subtitleApplied => 'Undertekst valgt for avspilling';
+	@override String get streamLookupPartial => 'Noen tillegg kan ikke nås.';
+	@override String get streamLookupFailed => 'Kunne ikke sjekke de tilkoblede tilleggene.';
+	@override String get streamOpenExternal => 'Åpne ekstern lenke';
+	@override String get streamPrepare => 'Forbereder via Debrid-tjenesten din…';
+	@override String get streamPrepareFailed => 'Denne strømmen kunne ikke klargjøres. Kontroller den tilkoblede kontoen og prøv en annen kilde.';
+	@override String get streamNeedsRealDebrid => 'Koble til en Debrid-tjeneste for å spille av denne torrentstrømmen.';
+	@override String get streamUnsupported => 'Dette strømmeformatet støttes ikke av den innebygde spilleren.';
+	@override String get remoteNeedsEpisode => 'Velg en episode før du søker etter en strøm.';
+	@override String get remoteNeedsEpisodeNumber => 'Denne episoden mangler sesong- eller episodenummer.';
+	@override String get remoteNeedsExternalId => 'PlezyNG fant ingen IMDb- eller TMDB-ID for denne tittelen.';
+	@override String get watchWithServices => 'Se med tilkoblede tjenester';
+	@override String get chooseEpisode => 'Velg episode';
+	@override String get episodes => 'Episoder';
+	@override String episodePosition({required Object season, required Object episode}) => 'Sesong ${season}, episode ${episode}';
+	@override String get episodeStreamHint => 'Åpner tilgjengelige strømmer for denne episoden.';
+	@override String get cloudFiles => 'Filer i skyen';
+	@override String get browseCloud => 'Bla gjennom filer';
+	@override String get cloudEmpty => 'Fant ingen spillbare videofiler i denne kontoen.';
+	@override String get cloudLoadFailed => 'Kunne ikke laste inn skyfiler. Kontroller tilkoblingen og prøv igjen.';
+	@override String get providers => 'Debrid-leverandører';
 }
 
 // Path: addServer
@@ -7742,6 +7856,110 @@ extension on TranslationsNb {
 			'services.trackerDescriptions.anilist' => 'Synkronisere anime-lister og se fremskritt med AniList.',
 			'services.trackerDescriptions.simkl' => 'Sync så filmer, TV-programmer og anime med Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Vis MDBList-vurderinger og lister i anbefalinger og Utforsk.',
+			'streaming.title' => 'Strømming fra skyen og tillegg',
+			'streaming.subtitle' => 'Koble til en Debrid-konto for å bla gjennom filer i skyen og spille av støttede strømmer. Stremio-kompatible tillegg gir strømmevalg på film- og seriesider. Tilkoblingsopplysninger krypteres på denne enheten og lagres i denne profilen.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Tilkoblede kilder: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG klarte ikke å låse opp de lagrede strømmeinnstillingene. Lås opp enheten og prøv igjen før du endrer tilkoblingene.',
+			'streaming.settingsUnreadable' => 'PlezyNG klarte ikke å låse opp disse lagrede tilkoblingene. Fjern dem for å koble til tjenestene på nytt.',
+			'streaming.clearUnreadableSettings' => 'Fjern lagrede innstillinger',
+			'streaming.clearUnreadableSettingsConfirm' => 'Fjerne lagrede strømmeinnstillinger?',
+			'streaming.clearUnreadableSettingsBody' => 'Dette fjerner alle lagrede leverandørkontoer og tilleggsadresser fra denne profilen. Handlingen kan ikke angres.',
+			'streaming.clearUnreadableSettingsFailed' => 'Kunne ikke fjerne de lagrede strømmeinnstillingene. Lås opp enheten og prøv igjen.',
+			'streaming.retrySettingsLoad' => 'Prøv å laste inn tilkoblingene på nytt',
+			'streaming.addons' => 'Stremio-kompatible tillegg',
+			'streaming.addonsDescription' => 'Importer tillegg fra Stremio, eller koble til et med manifest-URL. Bla gjennom kataloger i Utforsk og åpne strømmevalg fra film- eller seriesider.',
+			'streaming.catalogLoadFailed' => 'Katalogen kunne ikke lastes inn. Oppdater og prøv igjen.',
+			'streaming.catalogFiltersRequired' => 'Velg de nødvendige filtrene for å bla gjennom katalogen.',
+			'streaming.catalogRequiredLabel' => 'Påkrevd',
+			'streaming.importFromStremio' => 'Importer fra Stremio',
+			'streaming.stremioImportInstructions' => 'Skann QR-koden eller åpne lenken. Logg inn på Stremio og godkjenn forespørselen. PlezyNG leser bare tilleggslisten din; appen ber aldri om Stremio-passordet ditt eller endrer innstillingene.',
+			'streaming.stremioImportOpen' => 'Åpne Stremio-lenke',
+			'streaming.stremioImportCode' => 'Tilkoblingskode',
+			'streaming.stremioImportPreviewTitle' => 'Velg tillegg',
+			'streaming.stremioImportPreviewBody' => 'Velg tilleggene du vil koble til PlezyNG. Denne importen godtar bare HTTPS-adresser.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Hoppet over tillegg med adresser som ikke støttes eller er usikre: ${count}.',
+			'streaming.stremioCatalogs' => 'Kataloger',
+			'streaming.stremioStreams' => 'Strømmer',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Legg til valgte (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Tillegg koblet til fra Stremio: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Tilkoblede tillegg: ${added}; kunne ikke koble til: ${failed}.',
+			'streaming.stremioImportFailed' => 'Kunne ikke importere tillegg fra Stremio. Prøv igjen.',
+			'streaming.stremioImportTimedOut' => 'Stremio-godkjenningen utløp. Start importen på nytt.',
+			'streaming.stremioImportEmpty' => 'Fant ingen nye kompatible tillegg i denne Stremio-kontoen.',
+			'streaming.stremioImportLimitReached' => 'Fjern et tillegg før du importerer flere.',
+			'streaming.addByManifestUrl' => 'Legg til med manifest-URL',
+			'streaming.addAddon' => 'Legg til tillegg',
+			'streaming.manifestUrl' => 'Manifest-URL for tillegg',
+			'streaming.manifestUrlHint' => 'Lim inn manifest-URL-en til tillegget. PlezyNG sjekker om det støtter kataloger eller strømmeressurser før tilkobling.',
+			'streaming.allowHttp' => 'Tillat en ukryptert HTTP-adresse',
+			'streaming.allowHttpDescription' => 'Bruk bare for et tillegg du stoler på i ditt private nettverk.',
+			'streaming.installAddon' => 'Koble til tillegg',
+			'streaming.addonInstalled' => 'Tillegg tilkoblet',
+			'streaming.addonRemoved' => 'Tillegg fjernet',
+			'streaming.addonToggle' => 'Slå på tillegg',
+			'streaming.addonEmpty' => 'Ingen tillegg er tilkoblet ennå',
+			'streaming.addonError' => 'PlezyNG kunne ikke koble til dette tillegget. Kontroller manifest-URL-en og prøv igjen.',
+			'streaming.addonPrivacy' => 'Koble bare til tillegg du stoler på. Når du søker, mottar tillegget tittelen du søker etter, og kan returnere strømmelenker fra tredjeparter.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Spill av støttede torrentstrømmer via Real-Debrid-kontoen din.',
+			'streaming.connectRealDebrid' => 'Koble til med QR-kode',
+			'streaming.disconnectRealDebrid' => 'Koble fra Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Tilkoblet som ${username}',
+			'streaming.realDebridInstructions' => 'Skann QR-koden eller åpne lenken, og skriv deretter inn denne aktiveringskoden for å koble til PlezyNG:',
+			'streaming.realDebridActivate' => 'Åpne Real-Debrid for å aktivere',
+			'streaming.realDebridCode' => 'Aktiveringskode',
+			'streaming.realDebridConnectFailed' => 'Kunne ikke koble til Real-Debrid. Prøv igjen.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Spill av støttede torrentstrømmer via AllDebrid-kontoen din.',
+			'streaming.connectAllDebrid' => 'Koble til med QR-kode',
+			'streaming.allDebridInstructions' => 'Skann QR-koden eller åpne lenken for å godkjenne PlezyNG. La denne skjermen stå åpen mens tilkoblingen opprettes:',
+			'streaming.allDebridActivate' => 'Åpne AllDebrid for å aktivere',
+			'streaming.allDebridCode' => 'Aktiverings-PIN',
+			'streaming.allDebridConnectFailed' => 'Kunne ikke koble til AllDebrid. Prøv igjen.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Spill av bufrede torrentstrømmer eller bla gjennom filer med Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Spill av bufrede torrentstrømmer eller bla gjennom filer med TorBox.',
+			'streaming.connectApiKey' => 'Koble til med API-nøkkel',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'Koble til ${service}',
+			'streaming.apiKey' => 'API-nøkkel',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Lim inn API-nøkkelen fra kontoinnstillingene for ${service}. PlezyNG krypterer den på denne enheten og lagrer den i denne profilen.',
+			'streaming.apiKeyConnectFailed' => 'Kunne ikke bekrefte API-nøkkelen. Kontroller den og prøv igjen.',
+			'streaming.accountConnected' => ({required Object username}) => 'Tilkoblet som ${username}',
+			'streaming.streamNeedsProvider' => 'Koble til en Debrid-tjeneste for å spille av denne torrentstrømmen.',
+			'streaming.playViaProvider' => 'Spill av med Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'Koble fra ${service}?',
+			'streaming.disconnectBody' => 'PlezyNG fjerner denne enhetens tilgang. Filer hos leverandøren og pågående overføringer påvirkes ikke.',
+			'streaming.streamsTitle' => 'Velg en strøm',
+			'streaming.searchingStreams' => 'Sjekker tilkoblede tillegg…',
+			'streaming.noStreams' => 'Fant ingen strømmer for denne tittelen.',
+			'streaming.manageConnections' => 'Administrer strømmetjenester',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Undertekstspor: ${count}',
+			'streaming.chooseSubtitle' => 'Velg undertekst',
+			'streaming.chooseProvider' => 'Velg Debrid-tjeneste',
+			'streaming.subtitleOff' => 'Undertekster av',
+			'streaming.subtitleLoadFailed' => 'Kunne ikke laste inn denne underteksten. Prøv et annet spor.',
+			'streaming.subtitleApplied' => 'Undertekst valgt for avspilling',
+			'streaming.streamLookupPartial' => 'Noen tillegg kan ikke nås.',
+			'streaming.streamLookupFailed' => 'Kunne ikke sjekke de tilkoblede tilleggene.',
+			'streaming.streamOpenExternal' => 'Åpne ekstern lenke',
+			'streaming.streamPrepare' => 'Forbereder via Debrid-tjenesten din…',
+			'streaming.streamPrepareFailed' => 'Denne strømmen kunne ikke klargjøres. Kontroller den tilkoblede kontoen og prøv en annen kilde.',
+			'streaming.streamNeedsRealDebrid' => 'Koble til en Debrid-tjeneste for å spille av denne torrentstrømmen.',
+			'streaming.streamUnsupported' => 'Dette strømmeformatet støttes ikke av den innebygde spilleren.',
+			'streaming.remoteNeedsEpisode' => 'Velg en episode før du søker etter en strøm.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Denne episoden mangler sesong- eller episodenummer.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG fant ingen IMDb- eller TMDB-ID for denne tittelen.',
+			'streaming.watchWithServices' => 'Se med tilkoblede tjenester',
+			'streaming.chooseEpisode' => 'Velg episode',
+			'streaming.episodes' => 'Episoder',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Sesong ${season}, episode ${episode}',
+			'streaming.episodeStreamHint' => 'Åpner tilgjengelige strømmer for denne episoden.',
+			'streaming.cloudFiles' => 'Filer i skyen',
+			'streaming.browseCloud' => 'Bla gjennom filer',
+			'streaming.cloudEmpty' => 'Fant ingen spillbare videofiler i denne kontoen.',
+			'streaming.cloudLoadFailed' => 'Kunne ikke laste inn skyfiler. Kontroller tilkoblingen og prøv igjen.',
+			'streaming.providers' => 'Debrid-leverandører',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Legg til ${product}-server',
 			'addServer.serverUrls' => 'Server-URL-er',
 			'addServer.serverUrlsHelper' => 'Flere URL-er er tillatt, atskilt med komma.',
@@ -7982,6 +8200,8 @@ extension on TranslationsNb {
 			'universalMedia.playlistFormatsHelp' => 'En spillliste kan inneholde opptil 1000 elementer og 2 MB. HLS manifesterer seg åpent som strømmer slik at spilleren kan velge en kvalitet.',
 			'universalMedia.saveQueuePlaylist' => 'Lagre køen som spilleliste',
 			'universalMedia.queuePlaylistSaved' => 'Spillelisten ble lagret ved siden av mediefilene.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => 'Denne køen kan ikke lagres som en gjenbrukbar lokal spilleliste.',
 			'universalMedia.queuePlaylistFolderRequired' => 'Velg et lagringssted i samme mappe som filene i køen.',
 			'universalMedia.noFavorites' => 'Ingen sparte stream favoritter ennå. Favoritter forblir i denne profilen.',
@@ -8086,8 +8306,6 @@ extension on TranslationsNb {
 			'universalMedia.captureAudioNone' => 'Ingen lyd',
 			'universalMedia.captureDefaultAudio' => 'Standard lydinngang',
 			'universalMedia.captureWaylandHelp' => 'Wayland begrenser denne XWayland fangen til X display. Windows utenfor XWayland kan ikke vises.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Rekordframe rate',
 			'universalMedia.capturePrivacy' => 'Opptaket lagres kun til filen du velger. mikrofonopptak er valgfritt. PlezyNG laster ikke opp opptaket.',
 			'universalMedia.captureSaveAs' => 'Lagre skjermopptak som',
@@ -8496,6 +8714,8 @@ extension on TranslationsNb {
 			'sourceSetup.nfsEncryptionFailure' => 'For kryptert NFS må du kontrollere støtte for RFC 9289 og TLS 1.3 på begge NAS-tjenestene, sertifikatnavnet og delingens UID/GID. PlezyNG prøver ikke denne tilkoblingen på nytt uten kryptering.',
 			'sourceSetup.sourceConnecting' => 'Kobler til kilde',
 			'sourceSetup.metadataSearchPrivacy' => 'Dette tittelsøket sendes til Trakt. Det sender tittelen du oppgir, ikke videoen eller kildens påloggingsinformasjon.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Velg et treff',
 			'sourceSetup.metadataMatchHelp' => 'Kontroller tittel og år før du velger. Trakt mottar søketittelen; videoen blir på kilden sin.',
 			'sourceSetup.metadataNoMatches' => 'Ingen samsvarende titler funnet på nettet. Prøv en annen tittel.',
@@ -8600,8 +8820,6 @@ extension on TranslationsNb {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

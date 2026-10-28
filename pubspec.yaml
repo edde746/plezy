@@ -15,6 +15,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   clock: ^1.1.2
+  plezy_torrent:
+    path: packages/plezy_torrent
+  plezy_preparation:
+    path: packages/plezy_preparation
   intl: ^0.20.2
   json_annotation: ^4.12.0
   shared_preferences: ^2.5.4
@@ -251,6 +255,8 @@ flutter:
     - assets/licenses/AMSMB2_MIT_LICENSE.txt
     - assets/licenses/libsmb2-LGPL-2.1.txt
     - assets/licenses/Unicode.txt
+    - assets/licenses/Libtorrent.txt
+    - assets/licenses/Boost.txt
     - assets/licenses/JellyfinWebTranslations.txt
     - assets/licenses/MilkRust_Sample_Pack.txt
     - assets/visualizer/milkrust-sample-pack-0.1.0.rmpack
@@ -273,6 +279,7 @@ flutter:
     - assets/simkl_mark.svg
     - assets/seerr_mark.svg
     - assets/mdblist_mark.svg
+    - assets/addon_source_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/go-noto-kurrent-hangul.ttf
     # Intro/credits chapter classifier; scripts/codegen/train_chapter_marker_model.py writes it.

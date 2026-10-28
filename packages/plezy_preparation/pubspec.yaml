@@ -1,0 +1,17 @@
+name: plezy_preparation
+description: OS scheduled preparation workers for PlezyNG.
+version: 1.0.0
+publish_to: none
+environment:
+  sdk: '>=3.12.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: org.plezy.preparation
+        pluginClass: PlezyPreparationPlugin
+      ios:
+        pluginClass: PlezyPreparationPlugin

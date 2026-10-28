@@ -32,7 +32,7 @@ class PackageTest(unittest.TestCase):
         entries = {'tizen-manifest.xml': manifest or self.manifest,
                    'author-signature.xml': b'<Signature/>', 'signature1.xml': b'<Signature/>'}
         entries.update({f'lib/{name}': elf(arch) for name in
-                        ('libapp.so', 'libdart_smb2.so', 'libplezy_sqlite3.so',
+                        ('libapp.so', 'libdart_smb2.so', 'libplezy_sqlite3.so', 'libplezy_torrent.so',
                          'libflutter_engine.so', 'libflutter_plugins.so', 'libflutter_tizen_tv.so',
                          'libftpw_video_player_videohole.so')})
         entries.update({'bin/plezyng': elf(arch), 'res/icudtl.dat': b'fixture',
@@ -64,7 +64,7 @@ class PackageTest(unittest.TestCase):
             package.inspect_package(path, 'arm')
 
     def test_signature_storage_library_and_identity_are_required(self):
-        for omit in ('signature1.xml', 'lib/libdart_smb2.so', 'lib/libplezy_sqlite3.so',
+        for omit in ('signature1.xml', 'lib/libdart_smb2.so', 'lib/libplezy_sqlite3.so', 'lib/libplezy_torrent.so',
                      'lib/libflutter_engine.so', 'lib/libflutter_plugins.so',
                      'lib/libftpw_video_player_videohole.so', 'bin/plezyng', 'res/icudtl.dat'):
             with self.subTest(omit=omit), self.assertRaises(ValueError):
@@ -166,7 +166,7 @@ class PackageTest(unittest.TestCase):
         (source / '.dart_tool').mkdir()
         (source / '.dart_tool/package_config.json').write_text(json.dumps({'packages': [{'name': 'dart_smb2', 'rootUri': smb.as_uri()}]}))
         report = {'architecture': 'arm', 'pins': package.PINS, 'libraries': {}}
-        for name in ('libdart_smb2.so', 'libplezy_sqlite3.so'):
+        for name in ('libdart_smb2.so', 'libplezy_sqlite3.so', 'libplezy_torrent.so'):
             p = native / name
             p.write_bytes(elf())
             report['libraries'][name] = package.sha256(p)

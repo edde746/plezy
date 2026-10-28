@@ -46,12 +46,22 @@ class LibraryQuickPickerSheet extends StatelessWidget {
         buildItem: (library, {required bool showServerName}) =>
             _buildLibraryTile(context, library, showServerName: showServerName),
       ),
-      for (final row in sourceLibraryMenu(context).whereType<AppMenuItem<String>>())
-        FocusableListTile(
-          leading: AppIcon(row.icon!, fill: 1, size: 22),
-          title: Text(row.label!),
-          onTap: () => onSelected(row.value),
-        ),
+      for (final row in sourceLibraryMenu(context))
+        if (row is AppMenuHeader<String>)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(row.label ?? '', style: Theme.of(context).textTheme.labelLarge),
+          )
+        else if (row is AppMenuItem<String>)
+          FocusableListTile(
+            key: ValueKey('library_quick_picker_${row.value}'),
+            leading: row.icon == null ? null : AppIcon(row.icon!, fill: 1, size: 22),
+            title: Text(row.label ?? ''),
+            subtitle: row.subtitle == null ? null : Text(row.subtitle!),
+            selected: row.value == selectedLibraryKey,
+            trailing: row.value == selectedLibraryKey ? const AppIcon(Symbols.check_rounded) : null,
+            onTap: () => onSelected(row.value),
+          ),
     ];
   }
 

@@ -4681,6 +4681,7 @@ class PlexClient
     // Browse tab always asked for collections; preserve as Plex's default
     // server behaviour can vary across versions.
     filters['includeCollections'] = '1';
+    filters['includeGuids'] = '1';
     final result = await fetchLibraryPage(
       libraryId,
       start: query.offset,

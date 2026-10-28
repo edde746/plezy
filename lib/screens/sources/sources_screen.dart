@@ -1,3 +1,16 @@
+import '../../providers/hidden_libraries_provider.dart';
+import '../../media/media_library.dart';
+import '../../media/canonical_video_identity.dart';
+import '../../utils/external_ids.dart';
+import '../../media/canonical_library.dart';
+import '../../media/ids.dart';
+import '../../media/library_query.dart';
+import '../../media/media_kind.dart';
+import '../../providers/libraries_provider.dart';
+import '../../providers/multi_server_provider.dart';
+import '../../widgets/media_card.dart';
+import 'canonical_library_navigation.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -16,6 +29,8 @@ import '../../sources/source_models.dart';
 import '../../sources/podcast_opml.dart';
 import '../../sources/offline_readiness.dart';
 import '../../sources/publication_library.dart';
+import '../../services/remote_streams/remote_stream_models.dart';
+import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
@@ -35,6 +50,8 @@ import '../../sources/publication_shelf.dart';
 import 'source_navigation.dart';
 import 'source_sync_screen.dart';
 import '../lending/public_libraries_screen.dart';
+import '../remote_streams/remote_cloud_files_screen.dart';
+import '../settings/remote_streaming_settings_screen.dart';
 
 String sourceTransportLabel(FileSource source) {
   final type = sourceKindName(source.kind);
@@ -61,6 +78,7 @@ String sourceTransportLabel(FileSource source) {
           : t.sourceSetup.checkEndpointSecurity,
     FileSourceKind.local => null,
     FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox => t.fileSources.signIn,
+    FileSourceKind.remoteCloud => t.streaming.cloudFiles,
   };
   return transport == null ? type : '$type · $transport';
 }
@@ -87,6 +105,143 @@ class SourcesScreen extends StatefulWidget {
 
 class _SourcesScreenState extends State<SourcesScreen> {
   List<SourceEntry> _entries = [];
+  final Map<String, CanonicalLibraryCard> _canonicalCards = {};
+  int _canonicalLimit = 120;
+  bool _canonicalIndexing = false;
+  String? _canonicalIndexedProfile;
+  DateTime? _canonicalIndexedAt;
+  bool get _mergedVideos => widget.shelf == PublicationShelf.videos && widget.source == null && !widget.offlineOnly;
+
+  Future<void> _indexCanonicalServers(SourceController sources) async {
+    if (!_mergedVideos || _canonicalIndexing || !mounted) return;
+    final profile = sources.profileId, epoch = sources.generation;
+    if (profile == null ||
+        (_canonicalIndexedProfile == profile &&
+            _canonicalIndexedAt != null &&
+            DateTime.now().difference(_canonicalIndexedAt!) < const Duration(minutes: 5))) {
+      return;
+    }
+    final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+    final libraries = visibleMediaLibraries(
+      context.read<LibrariesProvider>().libraries,
+      hiddenKeys: hidden,
+      hideEmpty: false,
+    );
+    if (libraries.isEmpty) return;
+    final servers = context.read<MultiServerProvider>();
+    final identity = CanonicalLibrary(sources.repository.database);
+    final seriesIds = <String, ExternalIds>{};
+    setState(() => _canonicalIndexing = true);
+    var succeeded = true;
+    try {
+      for (final library in libraries) {
+        if (library.serverId == null || (library.kind != MediaKind.movie && library.kind != MediaKind.show)) continue;
+        final client = servers.getClientForServer(ServerId(library.serverId!));
+        if (client == null) continue;
+        var offset = 0;
+        final scanStarted = DateTime.now().millisecondsSinceEpoch;
+        final seen = <String>{};
+        var complete = false;
+        String? previousPage;
+        try {
+          while (mounted && sources.current(epoch) && sources.profileId == profile) {
+            final page = await client.fetchLibraryPagedContent(
+              library.id,
+              query: LibraryQuery(
+                kind: library.kind == MediaKind.show ? MediaKind.episode : MediaKind.movie,
+                offset: offset,
+                limit: 100,
+              ),
+              libraryKind: library.kind,
+            );
+            if (!mounted || !sources.current(epoch) || sources.profileId != profile) return;
+            if (page.items.isEmpty) {
+              complete = offset >= page.totalCount;
+              break;
+            }
+            final pageIdentity = page.items.map((item) => item.id).join('|');
+            if (pageIdentity == previousPage) break;
+            previousPage = pageIdentity;
+            final aliases = <String, Set<String>>{};
+            for (final item in page.items) {
+              if (item.kind != MediaKind.episode || item.grandparentId == null) continue;
+              final showKey = '${library.serverId}:${item.grandparentId}';
+              final ids = seriesIds[showKey] ??= await client.fetchExternalIds(item.grandparentId!);
+              if (!mounted || !sources.current(epoch) || sources.profileId != profile) return;
+              aliases[item.globalKey] = canonicalVideoIdentitiesForExternalIds(
+                identifiers: {
+                  if (ids.imdb != null) 'imdb': ids.imdb!,
+                  if (ids.tmdb != null) 'tmdb': '${ids.tmdb}',
+                  if (ids.tvdb != null) 'tvdb': '${ids.tvdb}',
+                },
+                mediaType: 'show',
+                season: item.parentIndex,
+                episode: item.index,
+              );
+            }
+            await identity.recordServerItems(profile, page.items, identities: aliases, libraryId: library.id);
+            seen.addAll(page.items.map(CanonicalLibrary.serverKey));
+            offset += page.items.length;
+            if (offset >= page.totalCount) {
+              complete = true;
+              break;
+            }
+          }
+          if (complete && sources.current(epoch) && sources.profileId == profile) {
+            await identity.reconcileServerLibrary(profile, library.serverId!, library.id, seen, scanStarted);
+          } else {
+            succeeded = false;
+          }
+        } on Object {
+          succeeded = false;
+        }
+      }
+      if (succeeded && sources.profileId == profile) {
+        _canonicalIndexedProfile = profile;
+        _canonicalIndexedAt = DateTime.now();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _canonicalIndexing = false);
+        if (sources.current(epoch) && sources.profileId == profile) await _load(reindex: false);
+      }
+    }
+  }
+
+  Widget _poster(SourceEntry entry) {
+    final card = _canonicalCards[entry.key];
+    final count = card?.copies.length ?? 1;
+    final poster = card?.serverItem == null
+        ? SourcePosterCard(
+            key: ValueKey(card?.id ?? entry.key),
+            entry: entry,
+            onTap: () => _open(entry),
+            progress: _progress.where((p) => p.entryKey == entry.key && !p.finished).firstOrNull?.fraction,
+          )
+        : MediaCard(
+            key: ValueKey(card!.id),
+            item: card.serverItem!,
+            onTap: () => _open(entry),
+            semanticValue: t.streaming.availableCopiesCount(count: count),
+          );
+    if (count < 2) return poster;
+    return Stack(
+      children: [
+        Positioned.fill(child: poster),
+        PositionedDirectional(
+          top: 10,
+          end: 10,
+          child: IgnorePointer(
+            child: Tooltip(
+              message: t.streaming.availableCopiesCount(count: count),
+              child: Chip(avatar: const AppIcon(Symbols.layers_rounded, size: 16), label: Text('$count')),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   List<PublicationProgress> _progress = [];
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _offline = {};
@@ -120,9 +275,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  Future<void> _load({bool more = false}) async {
+  Future<void> _load({bool more = false, bool reindex = true, bool refresh = false}) async {
+    if (refresh) _canonicalIndexedAt = null;
     if (!mounted) return;
     final controller = context.read<SourceController>(), request = ++_request;
+    final servers = context.read<MultiServerProvider>();
+    final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
     if (!more && widget.source != null) _usingIndexFallback = false;
     setState(() {
       _loading = true;
@@ -133,6 +291,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
       controller.requireSession();
       final epoch = controller.generation, profile = controller.profileId!;
       if (_preferenceProfile != profile) {
+        _canonicalCards.clear();
+        _canonicalIndexedProfile = null;
         final prefs = await controller.repository.preference(profile, _browsePreference);
         controller.requireSession(epoch);
         _sort = PublicationSort.values.where((v) => v.name == prefs['sort']).firstOrNull ?? PublicationSort.title;
@@ -140,7 +300,40 @@ class _SourcesScreenState extends State<SourcesScreen> {
         _preferenceProfile = profile;
       }
       List<SourceEntry> items;
-      if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
+      if (_mergedVideos) {
+        _canonicalLimit = more ? _canonicalLimit + 120 : 120;
+        final cards = await CanonicalLibrary(controller.repository.database).cards(
+          profile,
+          limit: _canonicalLimit + 1,
+          query: _query,
+          serverIds: servers.expectedServerIds.toSet(),
+          hiddenLibraryKeys: hidden,
+        );
+        controller.requireSession(epoch);
+        if (!mounted || request != _request) return;
+        _next = cards.length > _canonicalLimit ? 'canonical' : null;
+        _canonicalCards.clear();
+        items = [];
+        for (final card in cards.take(_canonicalLimit)) {
+          final visible = card;
+          final media = visible.serverItem;
+          final entry =
+              visible.entry ??
+              (media == null
+                  ? null
+                  : SourceEntry(
+                      sourceId: 'canonical',
+                      id: card.id,
+                      title: media.displayTitle,
+                      kind: SourceItemKind.video,
+                      releaseYear: media.year,
+                    ));
+          if (entry == null) continue;
+          items.add(entry);
+          _canonicalCards[entry.key] = visible;
+        }
+        if (reindex) unawaited(_indexCanonicalServers(controller));
+      } else if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
         final page = await controller.repository.entriesPage(
           profile,
           source: widget.source?.id,
@@ -259,6 +452,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   Future<void> _open(SourceEntry entry) async {
+    final card = _canonicalCards[entry.key];
+    if (card != null) {
+      await openCanonicalCard(context, card);
+      if (mounted) await _load();
+      return;
+    }
     if (entry.isFolder) {
       final source = context.read<SourceController>().sources.where((s) => s.id == entry.sourceId).firstOrNull;
       if (source == null) return;
@@ -280,6 +479,57 @@ class _SourcesScreenState extends State<SourcesScreen> {
     await sourceAction(context, () async {
       await context.read<SourceController>().importFiles(files.files, name: t.fileSources.localFiles);
     });
+    if (mounted) await _load();
+  }
+
+  String _remoteServiceName(RemoteStreamService service) => switch (service) {
+    RemoteStreamService.realDebrid => t.streaming.realDebrid,
+    RemoteStreamService.allDebrid => t.streaming.allDebrid,
+    RemoteStreamService.premiumize => t.streaming.premiumize,
+    RemoteStreamService.torbox => t.streaming.torbox,
+  };
+
+  Future<void> _openRemoteCloud(RemoteStreamAccount account) async {
+    final streaming = context.read<RemoteStreamingProvider>();
+    final sources = context.read<SourceController>();
+    final profileId = streaming.profileId;
+    if (!streaming.isReady ||
+        profileId == null ||
+        sources.profileId != profileId ||
+        streaming.accountFor(account.service)?.id != account.id) {
+      return;
+    }
+    final remoteSource = sources.sources
+        .where(
+          (source) =>
+              source.kind == FileSourceKind.remoteCloud &&
+              source.options['accountId'] == account.id &&
+              source.options['service'] == account.service.name &&
+              source.profileId == profileId,
+        )
+        .firstOrNull;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => remoteSource == null
+            ? RemoteCloudFilesScreen(
+                service: account.service,
+                onManageConnections: _manageRemoteStreaming,
+                expectedAccountId: account.id,
+                expectedProfileId: profileId,
+              )
+            : SourcesScreen(
+                source: remoteSource,
+                title: Text('${_remoteServiceName(account.service)} · ${account.displayName}'),
+              ),
+      ),
+    );
+    if (mounted) await _load();
+  }
+
+  Future<void> _manageRemoteStreaming() async {
+    if (!mounted) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
     if (mounted) await _load();
   }
 
@@ -451,9 +701,15 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   Widget itemTile(SourceEntry e, int index, int count, {PublicationProgress? progress}) => SourceTile(
-    key: ValueKey('${e.key}:${progress?.mode.name ?? ''}'),
+    key: ValueKey('${_canonicalCards[e.key]?.id ?? e.key}:${progress?.mode.name ?? ''}'),
     title: e.displayTitle,
-    subtitle: [e.author, e.series, ?_offlineLabel(e)].where((s) => s.isNotEmpty).join(' · '),
+    subtitle: [
+      e.author,
+      e.series,
+      ?_offlineLabel(e),
+      if ((_canonicalCards[e.key]?.copies.length ?? 0) > 1)
+        t.streaming.availableCopiesCount(count: _canonicalCards[e.key]!.copies.length),
+    ].where((s) => s.isNotEmpty).join(' · '),
     icon: sourceItemIcon(e.kind),
     onTap: () => _open(e),
     index: index,
@@ -463,6 +719,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
   @override
   Widget build(BuildContext context) {
     final sources = context.watch<SourceController>();
+    final streaming = context.watch<RemoteStreamingProvider?>();
+    final streamingReadyForSource = streaming?.isReady == true && streaming?.profileId == sources.profileId;
+    final remoteAccounts = streamingReadyForSource ? streaming!.accounts : const <RemoteStreamAccount>[];
+    final remoteAddonCount = streamingReadyForSource ? streaming!.addons.length : 0;
+    final configuredSources = sources.sources.where((source) => source.kind != FileSourceKind.remoteCloud).toList();
     final root = widget.source == null && !widget.offlineOnly && widget.shelf == null;
     final filtered = _entries
         .where(
@@ -471,7 +732,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
               (widget.shelf == null || widget.shelf!.includes(e)) &&
               (!widget.offlineOnly || downloaded(e)) &&
               (_filter == null || e.kind == _filter) &&
-              ('${e.title} ${e.author} ${e.narrator} ${e.series}').toLowerCase().contains(_query.toLowerCase()),
+              (_mergedVideos ||
+                  ('${e.title} ${e.author} ${e.narrator} ${e.series}').toLowerCase().contains(_query.toLowerCase())),
         )
         .toList();
     final entries = organizePublications(
@@ -542,6 +804,14 @@ class _SourcesScreenState extends State<SourcesScreen> {
               ),
               AppMenuItem(value: 'offline-quota', label: t.fileSources.offlineQuota, icon: Symbols.storage_rounded),
             ],
+            if (widget.source?.kind == FileSourceKind.remoteCloud) ...[
+              const AppMenuDivider(),
+              AppMenuItem(
+                value: 'manage-streaming-connections',
+                label: t.streaming.manageConnections,
+                icon: Symbols.tune_rounded,
+              ),
+            ],
             if (root) ...[
               const AppMenuDivider(),
               AppMenuItem(
@@ -578,12 +848,14 @@ class _SourcesScreenState extends State<SourcesScreen> {
               if (mounted) await _load();
             } else if (action == 'offline-quota') {
               await _editOfflineQuota(sources);
+            } else if (action == 'manage-streaming-connections') {
+              await _manageRemoteStreaming();
             } else if (action == 'import-podcast-opml') {
               await sourceAction(context, _importPodcastOpml);
             } else if (action == 'export-podcast-opml') {
               await sourceAction(context, _exportPodcastOpml);
             } else if (action == 'refresh') {
-              await _load();
+              await _load(refresh: true);
             }
           },
         ),
@@ -619,7 +891,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
             onPressed: () => sourceAction(context, () async {
               await sources.sync();
               if (context.mounted) showSnackBar(context, t.fileSources.synced);
-              await _load();
+              await _load(refresh: true);
             }),
             icon: const AppIcon(Symbols.sync_rounded),
           ),
@@ -652,19 +924,59 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     onTap: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PublicLibrariesScreen())),
                   ),
-                  const SizedBox(height: 16),
-                  for (var i = 0; i < sources.sources.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(t.streaming.title, style: Theme.of(context).textTheme.titleLarge),
+                  ),
+                  if (!streamingReadyForSource || remoteAccounts.isEmpty)
                     SourceTile(
-                      title: sources.sources[i].name,
-                      subtitle: sourceTransportLabel(sources.sources[i]),
+                      title: t.streaming.manageConnections,
+                      subtitle: streaming?.loadFailed == true
+                          ? t.streaming.settingsLoadFailed
+                          : remoteAddonCount == 0
+                          ? t.streaming.subtitle
+                          : t.streaming.connectionsConfigured(count: remoteAddonCount),
+                      icon: Symbols.play_circle_rounded,
+                      trailing: const AppIcon(Symbols.chevron_right_rounded),
+                      onTap: _manageRemoteStreaming,
+                    )
+                  else ...[
+                    for (var i = 0; i < remoteAccounts.length; i++)
+                      SourceTile(
+                        title: _remoteServiceName(remoteAccounts[i].service),
+                        subtitle: [
+                          t.streaming.browseCloud,
+                          t.streaming.accountConnected(username: remoteAccounts[i].displayName),
+                        ].join(' · '),
+                        icon: Symbols.cloud_rounded,
+                        trailing: const AppIcon(Symbols.chevron_right_rounded),
+                        index: i,
+                        count: remoteAccounts.length + 1,
+                        onTap: () => _openRemoteCloud(remoteAccounts[i]),
+                      ),
+                    SourceTile(
+                      title: t.streaming.manageConnections,
+                      subtitle: t.streaming.connectionsConfigured(count: remoteAccounts.length + remoteAddonCount),
+                      icon: Symbols.tune_rounded,
+                      trailing: const AppIcon(Symbols.chevron_right_rounded),
+                      index: remoteAccounts.length,
+                      count: remoteAccounts.length + 1,
+                      onTap: _manageRemoteStreaming,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  for (var i = 0; i < configuredSources.length; i++)
+                    SourceTile(
+                      title: configuredSources[i].name,
+                      subtitle: sourceTransportLabel(configuredSources[i]),
                       icon: Symbols.cloud_queue_rounded,
-                      leading: FileSourceMark(sources.sources[i].kind),
+                      leading: FileSourceMark(configuredSources[i].kind),
                       index: i,
-                      count: sources.sources.length,
+                      count: configuredSources.length,
                       onTap: () async {
                         await Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => SourcesScreen(source: sources.sources[i])),
+                          MaterialPageRoute(builder: (_) => SourcesScreen(source: configuredSources[i])),
                         );
                         if (mounted) await _load();
                       },
@@ -674,15 +986,15 @@ class _SourcesScreenState extends State<SourcesScreen> {
                         adaptiveSheet: true,
                         entriesBuilder: (_) => [
                           AppMenuItem(
-                            value: sources.scanning.containsKey(sources.sources[i].id) ? 'cancel-scan' : 'scan',
-                            label: sources.scanning.containsKey(sources.sources[i].id)
+                            value: sources.scanning.containsKey(configuredSources[i].id) ? 'cancel-scan' : 'scan',
+                            label: sources.scanning.containsKey(configuredSources[i].id)
                                 ? t.fileSources.cancelScan
                                 : t.fileSources.scan,
                           ),
                           AppMenuItem(value: 'reconnect', label: t.fileSources.reconnect),
                           AppMenuItem(value: 'remove', label: t.fileSources.removeSource, destructive: true),
                         ],
-                        onSelected: (value) => _sourceAction(value, sources.sources[i]),
+                        onSelected: (value) => _sourceAction(value, configuredSources[i]),
                       ),
                     ),
                   const SizedBox(height: 16),
@@ -752,6 +1064,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: SourceErrorMessage(message: sourceFailureText(_error!)),
                   ),
+                if (_canonicalIndexing)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: LinearProgressIndicator(semanticsLabel: t.streaming.canonicalIndexing),
+                  ),
                 if (_loading)
                   const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
                 if (entries.isEmpty && !_loading)
@@ -765,7 +1082,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
         ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          sliver: widget.shelf != null
+          sliver: widget.shelf != null || widget.source?.kind == FileSourceKind.remoteCloud
               ? SliverLayoutBuilder(
                   builder: (context, constraints) {
                     final scaler = MediaQuery.textScalerOf(context);
@@ -781,14 +1098,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                         mainAxisExtent: width * 1.5 + scaler.scale(14) * 2.8 + scaler.scale(12) * 1.5 + 10,
                       ),
                       itemCount: entries.length,
-                      itemBuilder: (context, i) => SourcePosterCard(
-                        entry: entries[i],
-                        onTap: () => _open(entries[i]),
-                        progress: _progress
-                            .where((p) => p.entryKey == entries[i].key && !p.finished)
-                            .firstOrNull
-                            ?.fraction,
-                      ),
+                      itemBuilder: (context, i) => _poster(entries[i]),
                     );
                   },
                 )

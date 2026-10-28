@@ -38,6 +38,7 @@ import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
 import '../services/music/music_session_store.dart';
 import '../services/offline_watch_sync_service.dart';
+import '../services/remote_streams/remote_streaming_provider.dart';
 import '../services/storage_service.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
@@ -218,10 +219,11 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   return provider;
                 },
               ),
-              ChangeNotifierProxyProvider3<
+              ChangeNotifierProxyProvider4<
                 TrackersProvider,
                 SeerrAccountProvider,
                 ActiveProfileProvider,
+                RemoteStreamingProvider,
                 CatalogSourcesProvider
               >(
                 create: (context) {
@@ -233,9 +235,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   );
                   return provider;
                 },
-                update: (context, trackers, seerr, activeProfile, previous) {
+                update: (context, trackers, seerr, activeProfile, streaming, previous) {
                   final provider = previous ?? _createCatalogSourcesProvider(context);
-                  provider.update(trackers, seerr);
+                  provider.update(trackers, seerr, streaming);
                   unawaited(provider.onProfileBindingStateChanged(activeProfile.isBinding));
                   return provider;
                 },
