@@ -831,6 +831,67 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     return null;
   }
 
+  /// Aligns a chosen subtitle cue's start to a captured playback position.
+  ///
+  /// The correction is scoped to the active subtitle asset and selected audio
+  /// stream. The player's value is restored if the manifest write fails.
+  Future<int> alignExternalSubtitleCueNow({
+    required String expectedIdentity,
+    required int cueStartMs,
+    required int playbackPositionMs,
+  }) async {
+    if (cueStartMs < 0 || cueStartMs > 60 * 24 * 60 * 60 * 1000 || playbackPositionMs < 0) {
+      throw RangeError('Subtitle cue and playback times must be non-negative and within the supported range.');
+    }
+    if (activeExternalSubtitleIdentity != expectedIdentity) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final native = player;
+    final previous = await activeExternalSubtitleSync();
+    if (native == null ||
+        player != native ||
+        previous == null ||
+        activeExternalSubtitleIdentity != expectedIdentity ||
+        !previous.rate.isFinite) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final nextDelayMs = playbackPositionMs - (cueStartMs * previous.rate).round();
+    if (nextDelayMs < ScopedPlayerPrefs.minimumSyncOffsetMs ||
+        nextDelayMs > ScopedPlayerPrefs.maximumSyncOffsetMs) {
+      throw RangeError.range(
+        nextDelayMs,
+        ScopedPlayerPrefs.minimumSyncOffsetMs,
+        ScopedPlayerPrefs.maximumSyncOffsetMs,
+        'delayMs',
+      );
+    }
+
+    await _applyExternalSubtitleSync(native, delayMs: nextDelayMs, rate: previous.rate);
+    try {
+      if (player != native || activeExternalSubtitleIdentity != expectedIdentity) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      await persistExternalSubtitleSync(delayMs: nextDelayMs);
+      if (player != native || activeExternalSubtitleIdentity != expectedIdentity) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+    } on Object catch (error, stackTrace) {
+      if (player == native && activeExternalSubtitleIdentity == expectedIdentity) {
+        try {
+          await _applyExternalSubtitleSync(native, delayMs: previous.delayMs, rate: previous.rate);
+        } on Object catch (rollbackError, rollbackStackTrace) {
+          appLogger.w(
+            'Could not restore subtitle timing after one-cue alignment failed',
+            error: rollbackError,
+            stackTrace: rollbackStackTrace,
+          );
+        }
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+    return nextDelayMs;
+  }
+
   Future<void> persistExternalSubtitleSync({int? delayMs, double? rate}) async {
     if (delayMs == null && rate == null) return;
     if (delayMs != null &&

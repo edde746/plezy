@@ -16,13 +16,29 @@ final class SubtitleRetimingResult {
   final String format;
 }
 
-/// Loss-aware SRT/WebVTT retimer for export.
+/// A text-backed subtitle event available for manual timing alignment.
+final class SubtitleCue {
+  const SubtitleCue({
+    required this.index,
+    required this.startMs,
+    required this.endMs,
+    required this.text,
+  });
+
+  final int index;
+  final int startMs;
+  final int endMs;
+  final String text;
+}
+
+/// Loss-aware SRT/WebVTT retimer for export and cue inspection.
 ///
 /// MPV applies subtitle timing as `sourceTime * sub-speed + sub-delay`.
 /// This exporter uses that same affine transform, preserving cue payload,
 /// WebVTT cue settings, identifiers, and file line endings.
 abstract final class SubtitleRetimer {
   static const int maximumInputBytes = 5 * 1024 * 1024;
+  static const int maximumCueCount = 50000;
   static const int maximumTimeMs = 60 * 24 * 60 * 60 * 1000;
   static const int minimumDelayMs = -60000;
   static const int maximumDelayMs = 60000;
@@ -30,6 +46,80 @@ abstract final class SubtitleRetimer {
   static const double maximumRate = 1.25;
 
   static final RegExp _timingLine = RegExp(r'^([ \t]*)(\S+)([ \t]+-->[ \t]+)(\S+)(.*)$');
+
+  /// Parses bounded SRT/WebVTT cue timing and payload for an interactive cue
+  /// picker. The source bytes remain untouched and cues retain display text.
+  static List<SubtitleCue> parseCues({
+    required List<int> sourceBytes,
+    required String extension,
+  }) {
+    final format = extension.toLowerCase();
+    if (format != '.srt' && format != '.vtt') {
+      throw ArgumentError.value(extension, 'extension', 'Only SRT and WebVTT cue inspection is supported.');
+    }
+    if (sourceBytes.isEmpty || sourceBytes.length > maximumInputBytes) {
+      throw FormatException('Subtitle input is empty or larger than the 5 MiB processing bound.');
+    }
+
+    var source = utf8.decode(sourceBytes, allowMalformed: false);
+    if (source.startsWith('\uFEFF')) source = source.substring(1);
+    if (source.contains('\u0000')) throw const FormatException('Subtitle contains a NUL byte.');
+    final lines = source.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
+    final isVtt = format == '.vtt';
+    final cues = <SubtitleCue>[];
+    final block = <String>[];
+
+    void flushBlock() {
+      if (block.isEmpty) return;
+      final firstLine = block.first.trimLeft().toUpperCase();
+      final isNoteBlock = firstLine == 'NOTE' || firstLine.startsWith('NOTE ');
+      final noteHasCueTiming = block.length > 1 && _timingLine.firstMatch(block[1]) != null;
+      if (isVtt &&
+          (firstLine == 'WEBVTT' ||
+              firstLine.startsWith('WEBVTT ') ||
+              (isNoteBlock && !noteHasCueTiming) ||
+              firstLine == 'STYLE' ||
+              firstLine == 'REGION')) {
+        block.clear();
+        return;
+      }
+
+      for (var lineIndex = 0; lineIndex < block.length; lineIndex++) {
+        final match = _timingLine.firstMatch(block[lineIndex]);
+        if (match == null) continue;
+        final start = _parseTime(match.group(2)!, isVtt: isVtt);
+        final end = _parseTime(match.group(4)!, isVtt: isVtt);
+        if (start == null || end == null) {
+          throw const FormatException('Subtitle cue contains an invalid timestamp.');
+        }
+        if (end <= start) throw const FormatException('Subtitle cue end must be after its start.');
+        final text = block.skip(lineIndex + 1).join('\n').trim();
+        if (text.isNotEmpty) {
+          if (cues.length >= maximumCueCount) {
+            throw const FormatException('Subtitle has more cues than the 50000 cue processing bound.');
+          }
+          cues.add(SubtitleCue(index: cues.length + 1, startMs: start, endMs: end, text: text));
+        }
+        break;
+      }
+      block.clear();
+    }
+
+    for (final line in lines) {
+      if (line.trim().isEmpty) {
+        flushBlock();
+      } else {
+        block.add(line);
+      }
+    }
+    flushBlock();
+    if (cues.isEmpty) throw const FormatException('No text subtitle cues were found.');
+    cues.sort((a, b) {
+      final timeOrder = a.startMs.compareTo(b.startMs);
+      return timeOrder != 0 ? timeOrder : a.index.compareTo(b.index);
+    });
+    return List.unmodifiable(cues);
+  }
 
   static SubtitleRetimingResult retime({
     required List<int> sourceBytes,

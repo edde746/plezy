@@ -302,15 +302,15 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | S01 | Existing manual delay retains 50 ms granularity, scope behavior, rollback on failed writes, and correct displayed value. | M0 |
 | S02 | Primary and secondary delays are independent; changing one leaves the other unchanged. | M1 |
 | S03 | Extend timing range through deliberate advanced entry; no arbitrary short slider becomes the data-model limit. Exact signed millisecond entry and MPV cue-step correction are implemented in this branch. The player applies bounded two-anchor text-subtitle rate/delay calibration with current-playhead capture, scoped persistence, noncommitting preview, cancel rollback, and one-step undo. Standalone MPV OpenSubtitles assets also retain that correction per selected audio stream. | M1 |
-| S04 | One-anchor align-this-line-now workflow previews the resulting shift. | M2 |
-| S05 | MPV text subtitles support bounded two-anchor affine calibration with scoped persistence, live preview, cancel rollback, and one-step undo. Piecewise cut mapping, corrected-sidecar export, and calibration history remain. | M2 |
+| S04 | The branch adds bounded SRT/VTT cue parsing and a standalone MPV VOD one-anchor align-this-line-now picker. It scrolls to the cue nearest the current corrected playhead; selecting a cue binds its start to the playback position at selection and persists the resulting delay for that audio and subtitle asset. This code has not been test-verified or device-qualified; main-library playback and other backends remain open. | M2 |
+| S05 | MPV text subtitles support bounded two-anchor affine calibration with scoped persistence, live preview, cancel rollback, and one-step undo. Standalone MPV VOD also exports corrected SRT/VTT copies. Piecewise cut mapping and persistent calibration history remain. | M2 |
 | S06 | Automatic global alignment uses selected-audio VAD and a separate validation window. | M3 |
 | S07 | Automatic drift detection compares multiple windows before applying a rate correction. | M3 |
 | S08 | Piecewise repair handles inserted/deleted scenes and reports unmatched spans. | M7 |
 | S09 | Allow an already synchronized subtitle as the reference instead of audio. | M3 |
 | S10 | Forced alignment is restricted to matching spoken-language transcripts and returns unsupported/uncertain regions. | M5 |
 | S11 | Standalone MPV OpenSubtitles corrections persist by profile, edition, source-file fingerprint, subtitle digest, and selected audio descriptor; v1 manifests migrate with neutral timing. Main-library corrections remain title-scoped pending edition/audio/subtitle identity support. | M2 |
-| S12 | Preview, undo, and reset are implemented for player timing controls. Standalone MPV VOD can export a corrected SRT/VTT copy using the active per-audio delay/rate; cues wholly before time zero require confirmation before omission. Structured provenance metadata, ASS/SSA/bitmap export, and broader server-library export remain. Original imported assets remain immutable. | M2 |
+| S12 | Preview, undo, reset, one-cue alignment, two-anchor calibration, and corrected SRT/VTT export are implemented for standalone MPV VOD imported assets. Export applies the active per-audio delay/rate; cues wholly before time zero require confirmation before omission. Structured provenance metadata, ASS/SSA/bitmap export, and broader server-library export remain. Original imported assets remain immutable. | M2 |
 | S13 | Explicit FPS conversion is tested with 23.976/24/25 cases and does not treat VFR as a blanket error. | M2 |
 | S14 | Multipart, transcode starts, ads, discontinuities, and DVR seeks retain correct source-time mapping. | M3 |
 | S15 | Sparse forced/sign tracks are not forcibly matched to every spoken segment. | M3 |
@@ -507,7 +507,7 @@ For a companion, define `capabilities`, `createJob`, `appendAudio`, `events`, `c
 
 ## First vertical slice
 
-The initial integrated slice now has explicit primary/secondary selection, independent manual offset, preview/undo, persistent per-audio correction, and corrected SRT/VTT export for imported OpenSubtitles assets on MPV VOD. The analysis path still needs selected-audio VAD alignment on a local file using the same correction identity. CPU ASR then turns selected audio into a reusable timed asset, with Vulkan qualification and platform adapters proceeding against the same job/asset contracts. These connected work streams expose the difficult clock/identity/renderer boundaries early without narrowing the overall scope.
+The initial integrated slice now has explicit primary/secondary selection, independent manual offset, one-cue alignment, two-anchor preview/undo, persistent per-audio correction, and corrected SRT/VTT export for imported OpenSubtitles assets on MPV VOD. The next alignment path is selected-audio VAD on a local file using the same correction identity. CPU ASR then turns selected audio into a reusable timed asset, with Vulkan qualification and platform adapters proceeding against the same job/asset contracts. These connected work streams expose the difficult clock/identity/renderer boundaries early without narrowing the overall scope.
 
 Do not start with NPU dispatch, OCR, or a large language-model editor. Those features depend on the same correct subtitle document, source clock, and job lifecycle.
 
