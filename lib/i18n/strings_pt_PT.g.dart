@@ -85,6 +85,8 @@ class TranslationsPtPt extends TranslationsPt with BaseTranslations<AppLocale, T
 	@override late final Translations$fileSources$pt_PT fileSources = Translations$fileSources$pt_PT.internal(_root);
 	@override late final Translations$lending$pt_PT lending = Translations$lending$pt_PT.internal(_root);
 	@override late final Translations$sourceSetup$pt_PT sourceSetup = Translations$sourceSetup$pt_PT.internal(_root);
+	@override late final Translations$householdSetup$pt_PT householdSetup = Translations$householdSetup$pt_PT.internal(_root);
+	@override late final Translations$issueReport$pt_PT issueReport = Translations$issueReport$pt_PT.internal(_root);
 }
 
 // Path: cast
@@ -821,6 +823,30 @@ class Translations$sourceSetup$pt_PT extends Translations$sourceSetup$pt {
 	@override String subtitleDownloading({required Object title}) => 'A descarregar a legenda: ${title}';
 }
 
+// Path: householdSetup
+class Translations$householdSetup$pt_PT extends Translations$householdSetup$pt {
+	Translations$householdSetup$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPtPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuração do agregado familiar';
+}
+
+// Path: issueReport
+class Translations$issueReport$pt_PT extends Translations$issueReport$pt {
+	Translations$issueReport$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPtPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Comunicar um problema';
+	@override String get instructions => 'Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.';
+	@override String get privacy => 'O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.';
+	@override String get logPrivacy => 'Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.';
+	@override String get openDraft => 'Abrir rascunho do GitHub';
+}
+
 // Path: common.mediaKind
 class Translations$common$mediaKind$pt_PT extends Translations$common$mediaKind$pt {
 	Translations$common$mediaKind$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
@@ -1507,6 +1533,12 @@ extension on TranslationsPtPt {
 			'sourceSetup.subtitleApplyFailed' => 'Não foi possível descarregar ou aplicar esta legenda. Verifique a ligação e tente outro resultado.',
 			'sourceSetup.subtitleSearching' => 'A pesquisar no OpenSubtitles',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'A descarregar a legenda: ${title}',
+			'householdSetup.title' => 'Configuração do agregado familiar',
+			'issueReport.title' => 'Comunicar um problema',
+			'issueReport.instructions' => 'Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.',
+			'issueReport.privacy' => 'O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.',
+			'issueReport.logPrivacy' => 'Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.',
+			'issueReport.openDraft' => 'Abrir rascunho do GitHub',
 			_ => null,
 		};
 	}

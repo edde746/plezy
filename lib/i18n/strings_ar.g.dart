@@ -109,6 +109,8 @@ class TranslationsAr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$ar comics = _Translations$comics$ar._(_root);
 	@override late final _Translations$games$ar games = _Translations$games$ar._(_root);
 	@override late final _Translations$deepLinks$ar deepLinks = _Translations$deepLinks$ar._(_root);
+	@override late final _Translations$householdSetup$ar householdSetup = _Translations$householdSetup$ar._(_root);
+	@override late final _Translations$issueReport$ar issueReport = _Translations$issueReport$ar._(_root);
 }
 
 // Path: app
@@ -3915,6 +3917,30 @@ class _Translations$deepLinks$ar extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'افتح كـ ${name}';
 	@override String get copy => 'نسخة';
 	@override String get copied => 'Link نسخ';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$ar extends Translations$householdSetup$en {
+	_Translations$householdSetup$ar._(TranslationsAr root) : this._root = root, super.internal(root);
+
+	final TranslationsAr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'إعداد المنزل';
+}
+
+// Path: issueReport
+class _Translations$issueReport$ar extends Translations$issueReport$en {
+	_Translations$issueReport$ar._(TranslationsAr root) : this._root = root, super.internal(root);
+
+	final TranslationsAr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'الإبلاغ عن مشكلة';
+	@override String get instructions => 'امسح رمز QR لفتح مسودة GitHub مُعبأة مسبقًا. راجعها وأرسلها عندما تكون مستعدًا.';
+	@override String get privacy => 'تتضمن المسودة إصدار التطبيق والمنصة وأعداد الاتصالات. لا تتضمن عناوين الخوادم أو أسماء الحسابات والملفات الشخصية أو عناوين الوسائط أو مسارات الملفات.';
+	@override String get logPrivacy => 'السجلات اختيارية. راجعها قبل رفعها. يُضاف معرّف السجل إلى المسودة، وقد تكون المشكلة عامة.';
+	@override String get openDraft => 'فتح مسودة GitHub';
 }
 
 // Path: appIcon.names
@@ -8645,6 +8671,12 @@ extension on TranslationsAr {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'افتح كـ ${name}',
 			'deepLinks.copy' => 'نسخة',
 			'deepLinks.copied' => 'Link نسخ',
+			'householdSetup.title' => 'إعداد المنزل',
+			'issueReport.title' => 'الإبلاغ عن مشكلة',
+			'issueReport.instructions' => 'امسح رمز QR لفتح مسودة GitHub مُعبأة مسبقًا. راجعها وأرسلها عندما تكون مستعدًا.',
+			'issueReport.privacy' => 'تتضمن المسودة إصدار التطبيق والمنصة وأعداد الاتصالات. لا تتضمن عناوين الخوادم أو أسماء الحسابات والملفات الشخصية أو عناوين الوسائط أو مسارات الملفات.',
+			'issueReport.logPrivacy' => 'السجلات اختيارية. راجعها قبل رفعها. يُضاف معرّف السجل إلى المسودة، وقد تكون المشكلة عامة.',
+			'issueReport.openDraft' => 'فتح مسودة GitHub',
 			_ => null,
 		};
 	}

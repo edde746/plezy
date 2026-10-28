@@ -3886,5 +3886,15 @@
     "openAsProfile": "Mở như ${name}",
     "copy": "sao chép",
     "copied": "Link copy"
+  },
+  "householdSetup": {
+    "title": "Thiết lập gia đình"
+  },
+  "issueReport": {
+    "title": "Báo cáo sự cố",
+    "instructions": "Quét mã QR để mở bản nháp GitHub đã điền sẵn. Hãy xem lại và chỉ gửi khi bạn sẵn sàng.",
+    "privacy": "Bản nháp gồm phiên bản ứng dụng, nền tảng và số lượng kết nối. Bản nháp không có địa chỉ máy chủ, tên tài khoản hoặc hồ sơ, tiêu đề nội dung hay đường dẫn tệp.",
+    "logPrivacy": "Nhật ký là tùy chọn. Hãy xem lại trước khi tải lên. ID nhật ký được thêm vào bản nháp, có thể hiển thị công khai.",
+    "openDraft": "Mở bản nháp GitHub"
   }
 }

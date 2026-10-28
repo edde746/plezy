@@ -109,6 +109,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
 	late final Translations$games$en games = Translations$games$en.internal(_root);
 	late final Translations$deepLinks$en deepLinks = Translations$deepLinks$en.internal(_root);
+	late final Translations$householdSetup$en householdSetup = Translations$householdSetup$en.internal(_root);
+	late final Translations$issueReport$en issueReport = Translations$issueReport$en.internal(_root);
 }
 
 // Path: app
@@ -9797,6 +9799,42 @@ class Translations$deepLinks$en {
 	String get copied => 'Link copied';
 }
 
+// Path: householdSetup
+class Translations$householdSetup$en {
+	Translations$householdSetup$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Household setup'
+	String get title => 'Household setup';
+}
+
+// Path: issueReport
+class Translations$issueReport$en {
+	Translations$issueReport$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Report a problem'
+	String get title => 'Report a problem';
+
+	/// en: 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.'
+	String get instructions => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.';
+
+	/// en: 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.'
+	String get privacy => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.';
+
+	/// en: 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.'
+	String get logPrivacy => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.';
+
+	/// en: 'Open GitHub draft'
+	String get openDraft => 'Open GitHub draft';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -15761,6 +15799,12 @@ extension on Translations {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Open as ${name}',
 			'deepLinks.copy' => 'Copy',
 			'deepLinks.copied' => 'Link copied',
+			'householdSetup.title' => 'Household setup',
+			'issueReport.title' => 'Report a problem',
+			'issueReport.instructions' => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.',
+			'issueReport.privacy' => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.',
+			'issueReport.logPrivacy' => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.',
+			'issueReport.openDraft' => 'Open GitHub draft',
 			_ => null,
 		};
 	}

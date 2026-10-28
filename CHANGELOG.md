@@ -3,6 +3,21 @@
 ## [Unreleased]
 
 - Add a searchable, region-aware directory of official video, rental, book, audiobook, comics, music and game storefronts to Services and title details; add Google Books catalog search with country-specific sale metadata and official purchase handoff.
+- Keep file-source activation profile-scoped through download and shelf reconciliation, and stop cloud settings backup or restore when the initiating profile session changes.
+- Require every release-critical CI job, including each native platform matrix row, to pass for the exact release commit; keep implementation and qualification claims in a source-linked capability ledger.
+- Add household readiness checks and a QR support flow that drafts a privacy-safe GitHub issue, with optional redacted log upload.
+- Add profile-local Find your next review history with localized timestamps and safe detail revalidation.
+- Add exact genre filtering across server, catalog, and publication picks within the existing filter sheet.
+- Filter Find your next by its displayed source within the existing filter sheet.
+- Search Saved picks by title, source, type, or subtitle; Shuffle uses the matching shortlist.
+- Add a Home shortcut that opens Saved picks without loading the discovery deck.
+- Let people shuffle a saved pick back onto the deck for a deliberate action, without auto-starting playback.
+- Clear all active Find your next filters directly from a no-match result.
+- Link the QR GitHub issue draft directly from Household setup for faster problem reporting.
+- Offer the same QR report flow from the startup failure screen, alongside copy and log upload.
+- Include the startup phase and exception type in its reviewed GitHub issue draft while excluding the raw message and stack trace from the QR payload.
+- Search the full Find your next source and genre option lists from the existing filter sheet when the quick chips are insufficient.
+- Retry an individual Find your next history pick into the deck without changing its Saved picks membership or launching playback.
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
 - Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
 - Preserve the last reliable Files playback position across native stream failures and expose Retry in the existing player without advancing editions or marking failed playback finished.
@@ -13,6 +28,7 @@
 - Attach the validated ARM Tizen tester handoff to versioned releases and fail closed if its package, checksum, provenance or toolchain files are missing.
 - Retain previous server results when a new search is cancelled, while preserving indexed Files and Seerr results.
 - Route Windows x64 native CI through the private Packer JIT workflow allowlist.
+- Lock iOS, macOS and tvOS CocoaPods dependencies for CI, and retain root dependency overrides when resolving tvOS packages.
 
 ## [3.0.0] - 2026-10-27
 

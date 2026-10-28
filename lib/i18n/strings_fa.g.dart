@@ -109,6 +109,8 @@ class TranslationsFa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$fa comics = _Translations$comics$fa._(_root);
 	@override late final _Translations$games$fa games = _Translations$games$fa._(_root);
 	@override late final _Translations$deepLinks$fa deepLinks = _Translations$deepLinks$fa._(_root);
+	@override late final _Translations$householdSetup$fa householdSetup = _Translations$householdSetup$fa._(_root);
+	@override late final _Translations$issueReport$fa issueReport = _Translations$issueReport$fa._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$fa extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'باز کردن به عنوان ${name}';
 	@override String get copy => 'کپی';
 	@override String get copied => 'لینک کپی شده';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$fa extends Translations$householdSetup$en {
+	_Translations$householdSetup$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'راه‌اندازی خانه';
+}
+
+// Path: issueReport
+class _Translations$issueReport$fa extends Translations$issueReport$en {
+	_Translations$issueReport$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'گزارش مشکل';
+	@override String get instructions => 'برای باز کردن پیش‌نویس ازپیش‌پرشده GitHub، کد QR را اسکن کنید. آن را بررسی کنید و فقط وقتی آماده‌اید ارسال کنید.';
+	@override String get privacy => 'پیش‌نویس نسخه برنامه، پلتفرم و تعداد اتصال‌ها را دارد. نشانی سرورها، نام حساب‌ها و پروفایل‌ها، عنوان رسانه‌ها و مسیر فایل‌ها در آن نیست.';
+	@override String get logPrivacy => 'گزارش‌ها اختیاری‌اند. پیش از بارگذاری آن‌ها را بررسی کنید. شناسه گزارش به پیش‌نویس اضافه می‌شود و ممکن است عمومی باشد.';
+	@override String get openDraft => 'باز کردن پیش‌نویس GitHub';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsFa {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'باز کردن به عنوان ${name}',
 			'deepLinks.copy' => 'کپی',
 			'deepLinks.copied' => 'لینک کپی شده',
+			'householdSetup.title' => 'راه‌اندازی خانه',
+			'issueReport.title' => 'گزارش مشکل',
+			'issueReport.instructions' => 'برای باز کردن پیش‌نویس ازپیش‌پرشده GitHub، کد QR را اسکن کنید. آن را بررسی کنید و فقط وقتی آماده‌اید ارسال کنید.',
+			'issueReport.privacy' => 'پیش‌نویس نسخه برنامه، پلتفرم و تعداد اتصال‌ها را دارد. نشانی سرورها، نام حساب‌ها و پروفایل‌ها، عنوان رسانه‌ها و مسیر فایل‌ها در آن نیست.',
+			'issueReport.logPrivacy' => 'گزارش‌ها اختیاری‌اند. پیش از بارگذاری آن‌ها را بررسی کنید. شناسه گزارش به پیش‌نویس اضافه می‌شود و ممکن است عمومی باشد.',
+			'issueReport.openDraft' => 'باز کردن پیش‌نویس GitHub',
 			_ => null,
 		};
 	}

@@ -109,6 +109,8 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$comics$zh comics = Translations$comics$zh.internal(_root);
 	@override late final Translations$games$zh games = Translations$games$zh.internal(_root);
 	@override late final Translations$deepLinks$zh deepLinks = Translations$deepLinks$zh.internal(_root);
+	@override late final Translations$householdSetup$zh householdSetup = Translations$householdSetup$zh.internal(_root);
+	@override late final Translations$issueReport$zh issueReport = Translations$issueReport$zh.internal(_root);
 }
 
 // Path: app
@@ -3818,6 +3820,30 @@ class Translations$deepLinks$zh extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '打开 ${name}';
 	@override String get copy => '复制';
 	@override String get copied => '链接复制';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$zh extends Translations$householdSetup$en {
+	Translations$householdSetup$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '家庭设置';
+}
+
+// Path: issueReport
+class Translations$issueReport$zh extends Translations$issueReport$en {
+	Translations$issueReport$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '报告问题';
+	@override String get instructions => '扫描二维码即可打开已预填的 GitHub 草稿。请先检查内容，准备好后再提交。';
+	@override String get privacy => '草稿包含应用版本、平台和连接数量，不包含服务器地址、账户或个人资料名称、媒体标题及文件路径。';
+	@override String get logPrivacy => '日志为可选项。上传前请先检查。日志 ID 会加入草稿，而问题可能是公开的。';
+	@override String get openDraft => '打开 GitHub 草稿';
 }
 
 // Path: appIcon.names
@@ -8540,6 +8566,12 @@ extension on TranslationsZh {
 			'deepLinks.openAsProfile' => ({required Object name}) => '打开 ${name}',
 			'deepLinks.copy' => '复制',
 			'deepLinks.copied' => '链接复制',
+			'householdSetup.title' => '家庭设置',
+			'issueReport.title' => '报告问题',
+			'issueReport.instructions' => '扫描二维码即可打开已预填的 GitHub 草稿。请先检查内容，准备好后再提交。',
+			'issueReport.privacy' => '草稿包含应用版本、平台和连接数量，不包含服务器地址、账户或个人资料名称、媒体标题及文件路径。',
+			'issueReport.logPrivacy' => '日志为可选项。上传前请先检查。日志 ID 会加入草稿，而问题可能是公开的。',
+			'issueReport.openDraft' => '打开 GitHub 草稿',
 			_ => null,
 		};
 	}

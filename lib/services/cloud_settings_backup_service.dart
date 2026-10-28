@@ -48,9 +48,13 @@ class CloudSettingsBackupService {
     await prefs.setString(_passwordKey, password.isEmpty ? '' : await CredentialVault.protect(password));
   }
 
-  Future<void> backUp({required String? expectedProfileId, required String? expectedOwner}) async {
+  Future<void> backUp({
+    required String? expectedProfileId,
+    required String? expectedOwner,
+    bool Function()? isCurrentSession,
+  }) async {
     final storage = await StorageService.getInstance();
-    if (!_sameOwner(storage, expectedProfileId, expectedOwner)) {
+    if (!_sameOwner(storage, expectedProfileId, expectedOwner, isCurrentSession: isCurrentSession)) {
       throw const CloudSettingsBackupException('The active profile changed before the backup started.');
     }
     final configuration = await loadConfiguration();
@@ -62,7 +66,7 @@ class CloudSettingsBackupService {
     } catch (_) {
       // Version is informational and unavailable on some test or desktop hosts.
     }
-    if (!_sameOwner(storage, expectedProfileId, expectedOwner)) {
+    if (!_sameOwner(storage, expectedProfileId, expectedOwner, isCurrentSession: isCurrentSession)) {
       throw const CloudSettingsBackupException('The active profile changed before the backup was sent.');
     }
     final data = SettingsExportService.buildExportMap(
@@ -79,23 +83,37 @@ class CloudSettingsBackupService {
           )
           .timeout(_timeout),
     );
+    if (!_sameOwner(storage, expectedProfileId, expectedOwner, isCurrentSession: isCurrentSession)) {
+      throw const CloudSettingsBackupException('The active profile changed while the backup was being sent.');
+    }
     if (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 204) {
       throw CloudSettingsBackupException('The WebDAV server rejected the backup (HTTP ${response.statusCode}).');
     }
   }
 
-  Future<ImportResult> restore({required String? expectedProfileId, required String? expectedOwner}) async {
+  Future<ImportResult> restore({
+    required String? expectedProfileId,
+    required String? expectedOwner,
+    bool Function()? isCurrentSession,
+  }) async {
     if (expectedProfileId == null || expectedProfileId.isEmpty || expectedOwner == null || expectedOwner.isEmpty) {
       throw const CloudSettingsBackupException('Sign in before restoring settings.');
     }
     final storage = await StorageService.getInstance();
-    if (!_sameOwner(storage, expectedProfileId, expectedOwner)) {
+    bool isOwnerCurrent() =>
+        _sameOwner(storage, expectedProfileId, expectedOwner, isCurrentSession: isCurrentSession);
+    if (!isOwnerCurrent()) {
       throw const CloudSettingsBackupException('The active profile changed before the restore started.');
     }
     final configuration = await loadConfiguration();
     final uri = _destination(configuration.url);
-    final response = await _request(() => _getBounded(uri, _headers(configuration)).timeout(_timeout));
-    if (!_sameOwner(storage, expectedProfileId, expectedOwner)) {
+    if (!isOwnerCurrent()) {
+      throw const CloudSettingsBackupException('The active profile changed before the backup was downloaded.');
+    }
+    final response = await _request(
+      () => _getBounded(uri, _headers(configuration), isOwnerCurrent: isOwnerCurrent).timeout(_timeout),
+    );
+    if (!isOwnerCurrent()) {
       throw const CloudSettingsBackupException('The active profile changed while the backup was downloading.');
     }
     if (response.statusCode != 200) {
@@ -115,26 +133,40 @@ class CloudSettingsBackupService {
     }
 
     final settings = await SettingsService.getInstance();
-    if (!_sameOwner(storage, expectedProfileId, expectedOwner)) {
+    if (!isOwnerCurrent()) {
       throw const CloudSettingsBackupException('The active profile changed before the backup could be applied.');
     }
     return SettingsExportService.applyImportMap(
       decoded,
       settings.prefs,
       currentUserUuid: expectedOwner,
-      isCurrent: () => _sameOwner(storage, expectedProfileId, expectedOwner),
+      isCurrent: isOwnerCurrent,
     );
   }
 
-  bool _sameOwner(StorageService storage, String? profileId, String? owner) =>
-      storage.getActiveProfileId() == profileId && storage.activeUserScope() == owner;
+  bool _sameOwner(
+    StorageService storage,
+    String? profileId,
+    String? owner, {
+    bool Function()? isCurrentSession,
+  }) =>
+      (isCurrentSession?.call() ?? true) &&
+      storage.getActiveProfileId() == profileId &&
+      storage.activeUserScope() == owner;
 
-  Future<http.Response> _getBounded(Uri uri, Map<String, String> headers) async {
+  Future<http.Response> _getBounded(
+    Uri uri,
+    Map<String, String> headers, {
+    required bool Function() isOwnerCurrent,
+  }) async {
     final request = http.Request('GET', uri)..headers.addAll(headers);
     final response = await sendWithSafeRedirects(_http, request, allowCrossOrigin: false);
     final body = BytesBuilder(copy: false);
     var length = 0;
     await for (final chunk in response.stream.timeout(_timeout)) {
+      if (!isOwnerCurrent()) {
+        throw const CloudSettingsBackupException('The active profile changed while the backup was downloading.');
+      }
       length += chunk.length;
       if (length > _maxBackupBytes) {
         throw const CloudSettingsBackupException('The remote settings backup is larger than 4 MiB.');

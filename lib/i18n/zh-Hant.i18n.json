@@ -3906,5 +3906,15 @@
     "openAsProfile": "開啟 ${name}",
     "copy": "複製",
     "copied": "連結複製"
+  },
+  "householdSetup": {
+    "title": "家庭設定"
+  },
+  "issueReport": {
+    "title": "回報問題",
+    "instructions": "掃描 QR 碼即可開啟已預填的 GitHub 草稿。請先檢查內容，準備好後再送出。",
+    "privacy": "草稿包含應用程式版本、平台和連線數量，不包含伺服器位址、帳戶或個人資料名稱、媒體標題及檔案路徑。",
+    "logPrivacy": "記錄檔為選填。上傳前請先檢查。記錄檔 ID 會加入草稿，而問題可能是公開的。",
+    "openDraft": "開啟 GitHub 草稿"
   }
 }

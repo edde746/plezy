@@ -3906,5 +3906,15 @@
     "openAsProfile": "${name}으로 열기",
     "copy": "복사본",
     "copied": "링크 복사"
+  },
+  "householdSetup": {
+    "title": "가정 설정"
+  },
+  "issueReport": {
+    "title": "문제 신고",
+    "instructions": "QR 코드를 스캔해 미리 작성된 GitHub 초안을 여세요. 내용을 확인한 뒤 준비되면 제출하세요.",
+    "privacy": "초안에는 앱 버전, 플랫폼, 연결 수가 포함됩니다. 서버 주소, 계정 및 프로필 이름, 미디어 제목, 파일 경로는 포함되지 않습니다.",
+    "logPrivacy": "로그 첨부는 선택 사항입니다. 업로드 전에 확인하세요. 로그 ID는 공개될 수 있는 초안에 추가됩니다.",
+    "openDraft": "GitHub 초안 열기"
   }
 }

@@ -3591,5 +3591,11 @@
   "deepLinks.profileHint": "2c6d23e6b0432c6d",
   "deepLinks.openAsProfile": "01966336f687c80b",
   "deepLinks.copy": "4f60d1e142affa9c",
-  "deepLinks.copied": "7cde41165fe82bad"
+  "deepLinks.copied": "7cde41165fe82bad",
+  "householdSetup.title": "50ff3f79ec484f08",
+  "issueReport.title": "243582cbecf55957",
+  "issueReport.instructions": "ba5cd1aafd91f243",
+  "issueReport.privacy": "18f52ee7b3a27de8",
+  "issueReport.logPrivacy": "e6b034062755b9e7",
+  "issueReport.openDraft": "ae8533f1a1a2875b"
 }

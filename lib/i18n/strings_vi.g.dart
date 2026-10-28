@@ -109,6 +109,8 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$vi comics = _Translations$comics$vi._(_root);
 	@override late final _Translations$games$vi games = _Translations$games$vi._(_root);
 	@override late final _Translations$deepLinks$vi deepLinks = _Translations$deepLinks$vi._(_root);
+	@override late final _Translations$householdSetup$vi householdSetup = _Translations$householdSetup$vi._(_root);
+	@override late final _Translations$issueReport$vi issueReport = _Translations$issueReport$vi._(_root);
 }
 
 // Path: app
@@ -3800,6 +3802,30 @@ class _Translations$deepLinks$vi extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Mở như ${name}';
 	@override String get copy => 'sao chép';
 	@override String get copied => 'Link copy';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$vi extends Translations$householdSetup$en {
+	_Translations$householdSetup$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Thiết lập gia đình';
+}
+
+// Path: issueReport
+class _Translations$issueReport$vi extends Translations$issueReport$en {
+	_Translations$issueReport$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Báo cáo sự cố';
+	@override String get instructions => 'Quét mã QR để mở bản nháp GitHub đã điền sẵn. Hãy xem lại và chỉ gửi khi bạn sẵn sàng.';
+	@override String get privacy => 'Bản nháp gồm phiên bản ứng dụng, nền tảng và số lượng kết nối. Bản nháp không có địa chỉ máy chủ, tên tài khoản hoặc hồ sơ, tiêu đề nội dung hay đường dẫn tệp.';
+	@override String get logPrivacy => 'Nhật ký là tùy chọn. Hãy xem lại trước khi tải lên. ID nhật ký được thêm vào bản nháp, có thể hiển thị công khai.';
+	@override String get openDraft => 'Mở bản nháp GitHub';
 }
 
 // Path: appIcon.names
@@ -8520,6 +8546,12 @@ extension on TranslationsVi {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Mở như ${name}',
 			'deepLinks.copy' => 'sao chép',
 			'deepLinks.copied' => 'Link copy',
+			'householdSetup.title' => 'Thiết lập gia đình',
+			'issueReport.title' => 'Báo cáo sự cố',
+			'issueReport.instructions' => 'Quét mã QR để mở bản nháp GitHub đã điền sẵn. Hãy xem lại và chỉ gửi khi bạn sẵn sàng.',
+			'issueReport.privacy' => 'Bản nháp gồm phiên bản ứng dụng, nền tảng và số lượng kết nối. Bản nháp không có địa chỉ máy chủ, tên tài khoản hoặc hồ sơ, tiêu đề nội dung hay đường dẫn tệp.',
+			'issueReport.logPrivacy' => 'Nhật ký là tùy chọn. Hãy xem lại trước khi tải lên. ID nhật ký được thêm vào bản nháp, có thể hiển thị công khai.',
+			'issueReport.openDraft' => 'Mở bản nháp GitHub',
 			_ => null,
 		};
 	}

@@ -109,6 +109,8 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$he comics = _Translations$comics$he._(_root);
 	@override late final _Translations$games$he games = _Translations$games$he._(_root);
 	@override late final _Translations$deepLinks$he deepLinks = _Translations$deepLinks$he._(_root);
+	@override late final _Translations$householdSetup$he householdSetup = _Translations$householdSetup$he._(_root);
+	@override late final _Translations$issueReport$he issueReport = _Translations$issueReport$he._(_root);
 }
 
 // Path: app
@@ -3831,6 +3833,30 @@ class _Translations$deepLinks$he extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'פתח כ ${name}';
 	@override String get copy => 'עותק';
 	@override String get copied => 'קישור עותק';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$he extends Translations$householdSetup$en {
+	_Translations$householdSetup$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'הגדרת הבית';
+}
+
+// Path: issueReport
+class _Translations$issueReport$he extends Translations$issueReport$en {
+	_Translations$issueReport$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'דיווח על בעיה';
+	@override String get instructions => 'סרקו את קוד ה-QR כדי לפתוח טיוטה מוכנה ב-GitHub. בדקו אותה ושלחו רק כשתהיו מוכנים.';
+	@override String get privacy => 'הטיוטה כוללת את גרסת האפליקציה, הפלטפורמה ומספר החיבורים. היא אינה כוללת כתובות שרתים, שמות חשבונות ופרופילים, שמות מדיה או נתיבי קבצים.';
+	@override String get logPrivacy => 'יומנים הם אפשרות בלבד. בדקו אותם לפני ההעלאה. המזהה שלהם נוסף לטיוטה, שעשויה להיות ציבורית.';
+	@override String get openDraft => 'פתיחת טיוטה ב-GitHub';
 }
 
 // Path: appIcon.names
@@ -8553,6 +8579,12 @@ extension on TranslationsHe {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'פתח כ ${name}',
 			'deepLinks.copy' => 'עותק',
 			'deepLinks.copied' => 'קישור עותק',
+			'householdSetup.title' => 'הגדרת הבית',
+			'issueReport.title' => 'דיווח על בעיה',
+			'issueReport.instructions' => 'סרקו את קוד ה-QR כדי לפתוח טיוטה מוכנה ב-GitHub. בדקו אותה ושלחו רק כשתהיו מוכנים.',
+			'issueReport.privacy' => 'הטיוטה כוללת את גרסת האפליקציה, הפלטפורמה ומספר החיבורים. היא אינה כוללת כתובות שרתים, שמות חשבונות ופרופילים, שמות מדיה או נתיבי קבצים.',
+			'issueReport.logPrivacy' => 'יומנים הם אפשרות בלבד. בדקו אותם לפני ההעלאה. המזהה שלהם נוסף לטיוטה, שעשויה להיות ציבורית.',
+			'issueReport.openDraft' => 'פתיחת טיוטה ב-GitHub',
 			_ => null,
 		};
 	}

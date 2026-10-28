@@ -109,6 +109,8 @@ class TranslationsAz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$az comics = _Translations$comics$az._(_root);
 	@override late final _Translations$games$az games = _Translations$games$az._(_root);
 	@override late final _Translations$deepLinks$az deepLinks = _Translations$deepLinks$az._(_root);
+	@override late final _Translations$householdSetup$az householdSetup = _Translations$householdSetup$az._(_root);
+	@override late final _Translations$issueReport$az issueReport = _Translations$issueReport$az._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$az extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name} kimi açılır';
 	@override String get copy => 'Kopya';
 	@override String get copied => 'Link kopyalar';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$az extends Translations$householdSetup$en {
+	_Translations$householdSetup$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Ev qurulumu';
+}
+
+// Path: issueReport
+class _Translations$issueReport$az extends Translations$issueReport$en {
+	_Translations$issueReport$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Problemi bildirin';
+	@override String get instructions => 'Əvvəlcədən doldurulmuş GitHub qaralamasını açmaq üçün QR kodunu skan edin. Göndərməzdən əvvəl nəzərdən keçirin.';
+	@override String get privacy => 'Qaralamaya tətbiqin versiyası, platforma və bağlantı sayı daxildir. Server ünvanları, hesab və profil adları, media başlıqları və fayl yolları daxil edilmir.';
+	@override String get logPrivacy => 'Jurnallar istəyə bağlıdır. Yükləməzdən əvvəl nəzərdən keçirin. Jurnal ID-si ictimai ola bilən qaralamaya əlavə olunur.';
+	@override String get openDraft => 'GitHub qaralamasını açın';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsAz {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} kimi açılır',
 			'deepLinks.copy' => 'Kopya',
 			'deepLinks.copied' => 'Link kopyalar',
+			'householdSetup.title' => 'Ev qurulumu',
+			'issueReport.title' => 'Problemi bildirin',
+			'issueReport.instructions' => 'Əvvəlcədən doldurulmuş GitHub qaralamasını açmaq üçün QR kodunu skan edin. Göndərməzdən əvvəl nəzərdən keçirin.',
+			'issueReport.privacy' => 'Qaralamaya tətbiqin versiyası, platforma və bağlantı sayı daxildir. Server ünvanları, hesab və profil adları, media başlıqları və fayl yolları daxil edilmir.',
+			'issueReport.logPrivacy' => 'Jurnallar istəyə bağlıdır. Yükləməzdən əvvəl nəzərdən keçirin. Jurnal ID-si ictimai ola bilən qaralamaya əlavə olunur.',
+			'issueReport.openDraft' => 'GitHub qaralamasını açın',
 			_ => null,
 		};
 	}

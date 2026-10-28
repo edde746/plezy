@@ -109,6 +109,8 @@ class TranslationsIt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$it comics = _Translations$comics$it._(_root);
 	@override late final _Translations$games$it games = _Translations$games$it._(_root);
 	@override late final _Translations$deepLinks$it deepLinks = _Translations$deepLinks$it._(_root);
+	@override late final _Translations$householdSetup$it householdSetup = _Translations$householdSetup$it._(_root);
+	@override late final _Translations$issueReport$it issueReport = _Translations$issueReport$it._(_root);
 }
 
 // Path: app
@@ -3830,6 +3832,30 @@ class _Translations$deepLinks$it extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Apri come ${name}';
 	@override String get copy => 'Copia';
 	@override String get copied => 'Link copiato';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$it extends Translations$householdSetup$en {
+	_Translations$householdSetup$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configurazione famiglia';
+}
+
+// Path: issueReport
+class _Translations$issueReport$it extends Translations$issueReport$en {
+	_Translations$issueReport$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Segnala un problema';
+	@override String get instructions => 'Scansiona il codice QR per aprire una bozza GitHub precompilata. Controllala e inviala solo quando sei pronto.';
+	@override String get privacy => 'La bozza include versione dell’app, piattaforma e numero di connessioni. Esclude indirizzi dei server, nomi di account e profili, titoli e percorsi dei file.';
+	@override String get logPrivacy => 'I log sono facoltativi. Controllali prima di caricarli. Il loro ID viene aggiunto alla bozza, che potrebbe essere pubblica.';
+	@override String get openDraft => 'Apri la bozza GitHub';
 }
 
 // Path: appIcon.names
@@ -8552,6 +8578,12 @@ extension on TranslationsIt {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Apri come ${name}',
 			'deepLinks.copy' => 'Copia',
 			'deepLinks.copied' => 'Link copiato',
+			'householdSetup.title' => 'Configurazione famiglia',
+			'issueReport.title' => 'Segnala un problema',
+			'issueReport.instructions' => 'Scansiona il codice QR per aprire una bozza GitHub precompilata. Controllala e inviala solo quando sei pronto.',
+			'issueReport.privacy' => 'La bozza include versione dell’app, piattaforma e numero di connessioni. Esclude indirizzi dei server, nomi di account e profili, titoli e percorsi dei file.',
+			'issueReport.logPrivacy' => 'I log sono facoltativi. Controllali prima di caricarli. Il loro ID viene aggiunto alla bozza, che potrebbe essere pubblica.',
+			'issueReport.openDraft' => 'Apri la bozza GitHub',
 			_ => null,
 		};
 	}

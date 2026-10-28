@@ -56,9 +56,13 @@ target 'Runner' do
   use_frameworks!
   pod 'Flutter', :path => 'Flutter'
   tvos_pod_plugins.each do |name|
-    base = plugin_paths[name] or
+    plugin_paths[name] or
       raise "tvos/Podfile: plugin '#{name}' not in .flutter-plugins-dependencies"
-    pod name, :path => File.join(base, 'ios')
+    relative_pod_path = File.join('..', 'ios', '.symlinks', 'plugins', name, 'ios')
+    unless Dir.exist?(File.expand_path(relative_pod_path, __dir__))
+      raise "tvos/Podfile: plugin '#{name}' is missing at #{relative_pod_path}"
+    end
+    pod name, :path => relative_pod_path
   end
   target 'RunnerTests' do
     inherit! :search_paths

@@ -3906,5 +3906,15 @@
     "openAsProfile": "打开 ${name}",
     "copy": "复制",
     "copied": "链接复制"
+  },
+  "householdSetup": {
+    "title": "家庭设置"
+  },
+  "issueReport": {
+    "title": "报告问题",
+    "instructions": "扫描二维码即可打开已预填的 GitHub 草稿。请先检查内容，准备好后再提交。",
+    "privacy": "草稿包含应用版本、平台和连接数量，不包含服务器地址、账户或个人资料名称、媒体标题及文件路径。",
+    "logPrivacy": "日志为可选项。上传前请先检查。日志 ID 会加入草稿，而问题可能是公开的。",
+    "openDraft": "打开 GitHub 草稿"
   }
 }
