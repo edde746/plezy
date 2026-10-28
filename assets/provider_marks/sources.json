@@ -23,5 +23,15 @@
     "url": "https://static.od-cdn.com/LIBBY%20ICON-CIRCLE.ZIP",
     "member": "Libby Icon (Circle)/Libby Logo_Icon_White Outline.png",
     "sha256": "3a0481a03f401b9621e02471a43dd8bc89f8ef3641dc97e704a2955c2492fc73"
+  },
+  "fontawesome_amazon.svg": {
+    "url": "https://github.com/FortAwesome/Font-Awesome/blob/7.x/svgs/brands/amazon.svg",
+    "upstream_blob": "7b467597992d023d75f988954f87c7c3e23fb8c3",
+    "sha256": "5f19f99e541b501f0571c65eb7ba18553dcaf388510d60b836211f2bff1ac16c"
+  },
+  "fontawesome_xbox.svg": {
+    "url": "https://github.com/FortAwesome/Font-Awesome/blob/7.x/svgs/brands/xbox.svg",
+    "upstream_blob": "85fac0a4c40d5612145c073eb40999bda5133d06",
+    "sha256": "c0ca5594b6732847d7b97688662aef6dc25a11139bd14d2776578edcc734a96b"
   }
 }

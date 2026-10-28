@@ -13,3 +13,9 @@ These assets are used to identify and link to the services. This does not assert
 sources.json records the exact official asset locations and SHA-256 hashes. No provider artwork has been recoloured, redrawn, or used as PlezyNG's app identity. Generic protocols (WebDAV, OPDS, S3-compatible storage) use PlezyNG's existing Material Symbols; they do not imply a particular vendor.
 
 The connectors hub also renders provider marks from the bundled simple_icons 16.23.0 package (Simple Icons: https://simpleicons.org/ and https://github.com/jlnrrg/simple_icons). Shapes and published brand colors are used without redrawing. Provider names and marks remain their owners' trademarks; follow each provider's brand guidance and do not imply endorsement. When no mark is present in the bundled collection, the app uses a neutral name monogram rather than another provider's logo.
+
+Font Awesome Free 7.3.1 brand SVGs (CC BY 4.0; attribution: Fonticons, Inc., https://fontawesome.com):
+- fontawesome_amazon.svg is copied without path changes from https://github.com/FortAwesome/Font-Awesome/blob/7.x/svgs/brands/amazon.svg (upstream blob 7b467597992d023d75f988954f87c7c3e23fb8c3).
+- fontawesome_xbox.svg is copied without path changes from https://github.com/FortAwesome/Font-Awesome/blob/7.x/svgs/brands/xbox.svg (upstream blob 85fac0a4c40d5612145c073eb40999bda5133d06).
+
+The marks are used only for Amazon- and Xbox-owned destinations. Their upstream SVG attribution comments are retained. License: https://creativecommons.org/licenses/by/4.0/ .

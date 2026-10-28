@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:simple_icons/simple_icons.dart';
 
 /// Brand marks used for official provider hand-offs and connection actions.
@@ -83,6 +84,14 @@ class ConnectorBrandMark extends StatelessWidget {
     'dropbox': 'dropbox',
   };
 
+  static const Map<String, String> _assetNames = {
+    'amazon-books': 'fontawesome_amazon.svg',
+    'amazon-kindle': 'fontawesome_amazon.svg',
+    'amazon-music': 'fontawesome_amazon.svg',
+    'comixology': 'fontawesome_amazon.svg',
+    'xbox-store': 'fontawesome_xbox.svg',
+  };
+
   String? get _resolvedIconName {
     final explicit = _iconNames[providerId];
     if (explicit != null) return explicit;
@@ -99,6 +108,29 @@ class ConnectorBrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final assetName = _assetNames[providerId];
+    if (assetName != null) {
+      return Semantics(
+        label: name,
+        image: true,
+        child: Container(
+          width: size,
+          height: size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: const Color(0xfff4f4f4),
+            borderRadius: BorderRadius.circular(size * .24),
+          ),
+          padding: EdgeInsets.all(size * .13),
+          child: SvgPicture.asset(
+            'assets/provider_marks/$assetName',
+            fit: BoxFit.contain,
+            theme: const SvgTheme(currentColor: Color(0xff111111)),
+          ),
+        ),
+      );
+    }
+
     final iconName = _resolvedIconName;
     final icon = iconName == null ? null : SimpleIcons.values[iconName];
     if (icon == null) {
