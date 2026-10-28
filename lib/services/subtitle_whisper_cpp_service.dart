@@ -51,6 +51,28 @@ abstract final class SubtitleWhisperCppService {
           Platform.isMacOS ||
           Platform.isLinux);
 
+  /// Loads the same verified multilingual model used by WAV transcription for
+  /// repeated, in-memory Android PCM windows. The caller owns and disposes it.
+  Future<whisper.FlutterWhisper> loadLiveCpuSession({
+    void Function(String phase, int received, int total)? onProgress,
+  }) async {
+    if (!supportedPlatform) {
+      throw UnsupportedError('Local Whisper inference is unavailable on this platform.');
+    }
+    final modelDirectory =
+        p.join((await getApplicationSupportDirectory()).path, 'subtitle_models', 'whisper_cpp');
+    final model = whisper.WhisperModels.baseQ5_1;
+    return whisper.FlutterWhisper.loadModel(
+      model: model,
+      modelDirectory: modelDirectory,
+      config: const whisper.WhisperModelConfig(useGpu: false),
+      onDownloadProgress: (progress) {
+        onProgress?.call('Downloading multilingual ' + model.id, progress.receivedBytes, progress.totalBytes);
+      },
+      onModelProgress: (progress) => onProgress?.call('Loading Whisper model', progress, 100),
+    );
+  }
+
   Future<SubtitleWhisperResult> transcribeWav(
     String wavPath, {
     required bool requestGpu,

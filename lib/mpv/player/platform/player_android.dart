@@ -50,6 +50,12 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
 
   bool get usingMpvFallback => _usingMpvFallback;
 
+  /// Whether the current ExoPlayer item is a live stream.
+  bool get isLivePlayback => _isLive;
+
+  /// Changes whenever a new item replaces the current media session.
+  int get mediaSessionGeneration => _mediaSessionGeneration;
+
   /// Subtitles are hidden through the player's visibility toggle. Sticky
   /// across media opens, like mpv's global `sub-visibility`, so an episode
   /// change cannot put them back on screen.
@@ -553,6 +559,27 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
 
   /// Handles the shared local-subtitle import command on ExoPlayer and its
   /// mpv fallback. Other mpv-specific commands remain unsupported here.
+  /// Starts or stops a bounded copy of decoded PCM for local subtitle ASR.
+  /// The ExoPlayer fallback path does not expose PCM and returns false.
+  Future<bool> setSubtitlePcmCaptureEnabled(bool enabled) async {
+    if (disposed || _usingMpvFallback) return false;
+    return await methodChannel.invokeMethod<bool>(
+          'setSubtitlePcmCaptureEnabled',
+          {'enabled': enabled},
+        ) ??
+        false;
+  }
+
+  /// Drains captured PCM packets. Each packet carries its media presentation timestamp.
+  Future<List<Map<String, Object?>>> drainSubtitlePcmCapture() async {
+    if (disposed || _usingMpvFallback) return const [];
+    final packets = await methodChannel.invokeMethod<List<dynamic>>('drainSubtitlePcmCapture');
+    return packets
+            ?.map((packet) => Map<String, Object?>.from(packet as Map))
+            .toList(growable: false) ??
+        const [];
+  }
+
   @override
   Future<void> command(List<String> args) async {
     if (disposed || args.isEmpty || args.first != 'sub-add') return;

@@ -265,6 +265,8 @@ open class ExoPlayerPlugin(
           playerCore?.isInitialized ?: false
         }
       )
+      "setSubtitlePcmCaptureEnabled" -> handleSetSubtitlePcmCaptureEnabled(call, result)
+      "drainSubtitlePcmCapture" -> handleDrainSubtitlePcmCapture(result)
       "getStats" -> handleGetStats(result)
       "getPlayerType" -> result.success(if (usingMpvFallback) "mpv" else "exoplayer")
       "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
@@ -401,6 +403,7 @@ open class ExoPlayerPlugin(
         result.success(null)
         return@runOnMain
       }
+      playerCore?.setSubtitlePcmCaptureEnabled(false)
       teardownSession(clearActivity = false)
       Log.d(TAG, "Disposed")
       result.success(null)
@@ -423,6 +426,8 @@ open class ExoPlayerPlugin(
       result.error("INVALID_ARGS", "Missing 'uri'", null)
       return
     }
+    // A new media item must not inherit an opt-in PCM capture session.
+    playerCore?.setSubtitlePcmCaptureEnabled(false)
     val currentActivity = activity
     if (currentActivity == null) {
       result.error("NO_ACTIVITY", "Activity not available", null)
@@ -1323,6 +1328,27 @@ open class ExoPlayerPlugin(
 
     // Before fallback this is queue acceptance, not a completed MPV write.
     result.success(null)
+  }
+
+  private fun handleSetSubtitlePcmCaptureEnabled(call: MethodCall, result: MethodChannel.Result) {
+    if (usingMpvFallback || fallbackInProgress) {
+      result.success(false)
+      return
+    }
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    result.success(playerCore?.setSubtitlePcmCaptureEnabled(enabled) ?: false)
+  }
+
+  private fun handleDrainSubtitlePcmCapture(result: MethodChannel.Result) {
+    if (usingMpvFallback || fallbackInProgress) {
+      result.success(emptyList<Map<String, Any>>())
+      return
+    }
+    result.success(playerCore?.drainSubtitlePcmCapture() ?: emptyList<Map<String, Any>>())
   }
 
   private fun handleGetStats(result: MethodChannel.Result) {

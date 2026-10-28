@@ -47,6 +47,7 @@ abstract final class SubtitleSyncService {
     required List<SubtitleCue> speechCues,
     required int mediaDurationMs,
     required bool repairCuts,
+    bool preserveUnmatchedOutsideEvidence = false,
   }) {
     if (subtitleCues.length < _minimumMatches || speechCues.length < _minimumMatches) {
       throw const FormatException('At least three subtitle and speech cues are needed for automatic alignment.');
@@ -211,6 +212,18 @@ abstract final class SubtitleSyncService {
     for (var index = 0; index < orderedSubtitles.length; index++) {
       final source = orderedSubtitles[index];
       final anchor = matchedBySubtitle[index];
+      if (preserveUnmatchedOutsideEvidence && !anchors.any((evidence) {
+        final speech = orderedSpeech[evidence.speechIndex];
+        return source.startMs <= speech.endMs + 15000 && source.endMs >= speech.startMs - 15000;
+      })) {
+        repaired.add(SubtitleCue(
+          index: repaired.length + 1,
+          startMs: source.startMs,
+          endMs: source.endMs,
+          text: source.text,
+        ));
+        continue;
+      }
       final correction = repairCuts && anchor != null
           ? orderedSpeech[anchor.speechIndex].startMs - source.startMs
           : offsetAt(source.startMs);
