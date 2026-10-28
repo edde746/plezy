@@ -3569,7 +3569,6 @@ class _Translations$audiobook$az extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Google Drive, OneDrive, Dropbox, WebDAV və ya S3 filləri və kitabları ilk dəfə ekləyin.';
 	@override String get syncDestination => 'Sync hesabı';
 	@override String get syncFolder => 'Xatırmaq və / və ya prefix';
-	@override String get syncFolderHelp => 'WebDAV kaynağınızın içində ayrı bir var olan klassiyayı və ya özgün bir S3 prefiksini istifadə edin.';
 	@override String get syncCode => 'Private Sink kodları';
 	@override String get syncCodeHelp => 'İlk cihazınızda bir kod oluşturun, sonra o kodu diğer cihazlarınızda yazın. özel bir kopya tutun: bu şifrə edilmiş durumunuzun anahtarıdır. hər kişi için farklı bir kod kullanın.';
 	@override String get showCode => 'Sink kodu göstərmək və ya gizləmək';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$az extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Bu kayanın kaldırılması burada oxuma və dinləmə sinqə açılır. şifrə edilmiş sinq filları sağlayıcının içində kalır.';
 	@override String get syncReconnect => 'Depozito hesabını yeniden bağlayın';
 	@override String lastSynced({required Object time}) => 'Son zamanlarda ${time}';
-	@override String get syncPrivacy => 'Sadəcə şifrə edilmiş progres və notlar kaydedilir. Audio və ebook filləri, hesab tokenləri və şifrələr yüklə edilmir. Google Drive və OneDrive istifadə app depolama; Dropbox kullanır PlezyNG Sync. Enable sync ekstra yazma qapı isteyebilir. Enable, bu destinasyon progres sync sahibidir; server progres ayrı kalır. Turn sync off yerel tarih və uzaq durum tutar.';
 	@override String get syncConflicts => 'Yenə qayıtma yeri seçin';
 	@override String get conflictHelp => 'Bu değişikliklər bağımsızdır. tutmaq üçün pozisyonu və ya kart versiyonu seçin. Daha sonra bir zaman çizgisi və ya daha yüksek bir faiz oranı otomatik olarak kazanmaz.';
 	@override String syncDevice({required Object device}) => '${device} və QXZQ';
@@ -8391,7 +8389,6 @@ extension on TranslationsAz {
 			'audiobook.addSyncSource' => 'Google Drive, OneDrive, Dropbox, WebDAV və ya S3 filləri və kitabları ilk dəfə ekləyin.',
 			'audiobook.syncDestination' => 'Sync hesabı',
 			'audiobook.syncFolder' => 'Xatırmaq və / və ya prefix',
-			'audiobook.syncFolderHelp' => 'WebDAV kaynağınızın içində ayrı bir var olan klassiyayı və ya özgün bir S3 prefiksini istifadə edin.',
 			'audiobook.syncCode' => 'Private Sink kodları',
 			'audiobook.syncCodeHelp' => 'İlk cihazınızda bir kod oluşturun, sonra o kodu diğer cihazlarınızda yazın. özel bir kopya tutun: bu şifrə edilmiş durumunuzun anahtarıdır. hər kişi için farklı bir kod kullanın.',
 			'audiobook.showCode' => 'Sink kodu göstərmək və ya gizləmək',
@@ -8401,7 +8398,6 @@ extension on TranslationsAz {
 			'audiobook.syncSourceDisconnect' => 'Bu kayanın kaldırılması burada oxuma və dinləmə sinqə açılır. şifrə edilmiş sinq filları sağlayıcının içində kalır.',
 			'audiobook.syncReconnect' => 'Depozito hesabını yeniden bağlayın',
 			'audiobook.lastSynced' => ({required Object time}) => 'Son zamanlarda ${time}',
-			'audiobook.syncPrivacy' => 'Sadəcə şifrə edilmiş progres və notlar kaydedilir. Audio və ebook filləri, hesab tokenləri və şifrələr yüklə edilmir. Google Drive və OneDrive istifadə app depolama; Dropbox kullanır PlezyNG Sync. Enable sync ekstra yazma qapı isteyebilir. Enable, bu destinasyon progres sync sahibidir; server progres ayrı kalır. Turn sync off yerel tarih və uzaq durum tutar.',
 			'audiobook.syncConflicts' => 'Yenə qayıtma yeri seçin',
 			'audiobook.conflictHelp' => 'Bu değişikliklər bağımsızdır. tutmaq üçün pozisyonu və ya kart versiyonu seçin. Daha sonra bir zaman çizgisi və ya daha yüksek bir faiz oranı otomatik olarak kazanmaz.',
 			'audiobook.syncDevice' => ({required Object device}) => '${device} və QXZQ',
@@ -8602,10 +8598,10 @@ extension on TranslationsAz {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

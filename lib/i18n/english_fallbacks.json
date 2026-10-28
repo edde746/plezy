@@ -1,7 +1,9 @@
 {
   "baseLocale": "en",
-  "reason": "Product-specific service-integration, cross-media discovery, and Trakt export copy use English fallback until reviewed translations are available. This fallback does not imply language review; remove each key after its translation has been reviewed.",
+  "reason": "Product-specific service-integration, cross-media discovery, cloud-sync privacy, and Trakt export copy use English fallback until reviewed translations are available. This fallback does not imply language review; remove each key after its translation has been reviewed.",
   "keys": [
+    "audiobook.syncFolderHelp",
+    "audiobook.syncPrivacy",
     "common.compare",
     "common.preview",
     "discover.findNext.aiApiKey",
