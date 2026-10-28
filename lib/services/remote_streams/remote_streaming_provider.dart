@@ -236,7 +236,37 @@ class RemoteStreamingProvider extends ChangeNotifier {
         while (_current(profile, generation) && nextJob < jobs.length) {
           final job = jobs[nextJob++];
           if (!newIds.contains(job.id)) continue;
-          await _recoverWithBackoff(profile, generation, job);
+          try {
+            await _recoverWithBackoff(profile, generation, job);
+          } on Object {
+            if (_current(profile, generation) && !_cancelledPreparationIds.contains(job.id)) {
+              final failedAt = DateTime.now().millisecondsSinceEpoch;
+              try {
+                await _commit(profile, generation, (current) => current.copyWith(
+                  preparations: [
+                    for (final candidate in current.preparations)
+                      if (candidate.id == job.id &&
+                          !_cancelledPreparationIds.contains(job.id) &&
+                          (candidate.state == RemotePreparationState.preparing ||
+                              candidate.state == RemotePreparationState.interrupted))
+                        candidate.copyWith(
+                          state: RemotePreparationState.interrupted,
+                          stage: 'resume_failed',
+                          updatedAt: failedAt,
+                          errorCode: 'unavailable',
+                          recoveryAttempts: candidate.recoveryAttempts + 1,
+                        )
+                      else
+                        candidate,
+                  ],
+                ));
+              } on Object {
+                // Leave the last durable checkpoint for the next profile load.
+              }
+            }
+            // Keep draining the bounded queue so one unexpected failure cannot
+            // starve later jobs.
+          }
         }
       }
 
