@@ -90,9 +90,10 @@ class WireMpvTest < Minitest::Test
 
     project = Xcodeproj::Project.open(project_path)
     references = project.root_object.package_references.select do |candidate|
-      (candidate.repositoryURL rescue nil)
+      url = (candidate.repositoryURL rescue nil)
+      url && %w[mpvkit mpv-build].include?(File.basename(url, '.git').downcase)
     end
-    assert_equal 1, references.count, 'expected exactly one remote package reference'
+    assert_equal 1, references.count, 'expected exactly one native MPV package reference'
     assert_equal 'https://github.com/edde746/mpv-build', references.first.repositoryURL
     assert_equal({ 'kind' => 'revision', 'revision' => revision }, references.first.requirement)
     assert_complete_source_graph

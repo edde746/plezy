@@ -1,13 +1,15 @@
-<h1>
-  <img src="assets/plezy.png" alt="PlezyNG Logo" height="24" style="vertical-align: middle;" />
-  PlezyNG
-</h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/branding/plezyng-artwork-dark.webp">
+  <img src="assets/branding/plezyng-artwork-light.webp" alt="PlezyNG — coral folded-ribbon identity" width="840">
+</picture>
 
 A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
 PlezyNG is a downstream fork for feature requests that Plezy upstream has declined, left open, or not yet shipped. The table below maps those upstream gaps to the corresponding downstream implementation. If upstream provides equivalent behavior with comparable Plex, Jellyfin, and Emby coverage, PlezyNG can retire the duplicate implementation and converge on upstream. Until then, the fork maintains and validates the capabilities listed here.
 
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
+
+The [capability and qualification ledger](docs/maintainers/capability-manifest.json) tracks implementation evidence, release status, platform limits and remaining gates. Code being present does not imply device qualification or a published download.
 
 The [debrid, Stremio and remote-streaming implementation plan](docs/plezyng/remote-streams/README.md) documents the proposed provider integrations, native PlezyNG flows, architecture, and Luna delivery/validation handoff.
 

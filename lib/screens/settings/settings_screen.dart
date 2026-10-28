@@ -63,6 +63,8 @@ import 'account_preferences_screen.dart';
 import 'appearance_settings_screen.dart';
 import 'cloud_settings_backup_dialog.dart';
 import 'general_settings_screen.dart';
+import 'household_setup_screen.dart';
+import 'issue_report_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
@@ -124,6 +126,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDebugLogging = 'debug_logging';
   static const _kAutoHidePerformanceOverlay = 'auto_hide_performance_overlay';
   static const _kViewLogs = 'view_logs';
+  static const _kIssueReport = 'issue_report';
   static const _kClearImageCache = 'clear_image_cache';
   static const _kResetSettings = 'reset_settings';
   static const _kCheckForUpdates = 'check_for_updates';
@@ -134,6 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kExportSettings = 'export_settings';
   static const _kImportSettings = 'import_settings';
   static const _kAccountPreferences = 'account_preferences';
+  static const _kHouseholdSetup = 'household_setup';
 
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
@@ -445,6 +449,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return SettingsGroup(
       title: t.connections.sectionTitle,
       children: [
+        _buildHouseholdSetupTile(context),
         // Connections are managed per-profile (via the Profiles section
         // and each profile's detail screen). The shortcut here just opens
         // the picker scoped to the active profile so users can add a Plex
@@ -462,6 +467,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         if (context.select<AccountPreferencesController, bool>((c) => c.accounts.isNotEmpty))
           _buildAccountPreferencesTile(context),
       ],
+    );
+  }
+
+  Widget _buildHouseholdSetupTile(BuildContext context) {
+    final profiles = context.select<ActiveProfileProvider, List<Profile>>((provider) => provider.profiles);
+    final active = context.select<ActiveProfileProvider, Profile?>((provider) => provider.active);
+    final subtitle = active == null
+        ? t.connections.addConnectionSubtitleNoProfile
+        : profiles.length > 1
+        ? t.profiles.summaryMultipleWithActive(count: profiles.length, activeName: active.displayName)
+        : t.profiles.summarySingle;
+    return SettingNavigationTile(
+      focusNode: _focusTracker.get(_kHouseholdSetup),
+      icon: Symbols.home_rounded,
+      title: t.householdSetup.title,
+      subtitle: subtitle,
+      destinationBuilder: (_) => const HouseholdSetupScreen(),
     );
   }
 
@@ -717,6 +739,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           title: t.settings.viewLogs,
           subtitle: t.settings.viewLogsDescription,
           destinationBuilder: (context) => const LogsScreen(),
+        ),
+        SettingNavigationTile(
+          focusNode: _focusTracker.get(_kIssueReport),
+          icon: Symbols.qr_code_2_rounded,
+          title: t.issueReport.title,
+          subtitle: t.issueReport.instructions,
+          destinationBuilder: (context) => const IssueReportScreen(),
         ),
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kClearImageCache),

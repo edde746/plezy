@@ -33,6 +33,12 @@ def check(root: Path = ROOT) -> list[str]:
     if manifest['source_sha256'] != config['source_sha256']:
         errors.append('Manifest does not describe the approved master')
     exports = manifest['exports']
+    if manifest.get('sources') != config['sources']:
+        errors.append('Manifest does not describe every approved theme master')
+    for name, source in config['sources'].items():
+        path = root / source['path']
+        if not path.is_file() or digest(path) != source['sha256']:
+            errors.append(f'Missing or changed theme master: {name}')
     for path, expected in exports.items():
         file = root / path
         if not file.is_file() or digest(file) != expected:

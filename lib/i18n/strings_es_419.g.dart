@@ -84,6 +84,8 @@ class TranslationsEs419 extends TranslationsEs with BaseTranslations<AppLocale, 
 	@override late final _Translations$homeLayout$es_419 homeLayout = _Translations$homeLayout$es_419._(_root);
 	@override late final _Translations$fileSources$es_419 fileSources = _Translations$fileSources$es_419._(_root);
 	@override late final _Translations$lending$es_419 lending = _Translations$lending$es_419._(_root);
+	@override late final _Translations$householdSetup$es_419 householdSetup = _Translations$householdSetup$es_419._(_root);
+	@override late final _Translations$issueReport$es_419 issueReport = _Translations$issueReport$es_419._(_root);
 }
 
 // Path: cast
@@ -798,6 +800,30 @@ class _Translations$lending$es_419 extends Translations$lending$es {
 	@override String get cancel => 'Cancelar';
 }
 
+// Path: householdSetup
+class _Translations$householdSetup$es_419 extends Translations$householdSetup$es {
+	_Translations$householdSetup$es_419._(TranslationsEs419 root) : this._root = root, super.internal(root);
+
+	final TranslationsEs419 _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuración del hogar';
+}
+
+// Path: issueReport
+class _Translations$issueReport$es_419 extends Translations$issueReport$es {
+	_Translations$issueReport$es_419._(TranslationsEs419 root) : this._root = root, super.internal(root);
+
+	final TranslationsEs419 _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Reportar un problema';
+	@override String get instructions => 'Escanea el código QR para abrir un borrador de GitHub ya llenado. Revísalo y envíalo cuando estés listo.';
+	@override String get privacy => 'El borrador incluye la versión de la app, la plataforma y el número de conexiones. No incluye direcciones de servidores, nombres de cuentas o perfiles, títulos de contenido ni rutas de archivos.';
+	@override String get logPrivacy => 'Los registros son opcionales. Revísalos antes de subirlos. Su ID se agrega al borrador, que podría ser público.';
+	@override String get openDraft => 'Abrir borrador de GitHub';
+}
+
 // Path: common.mediaKind
 class _Translations$common$mediaKind$es_419 extends Translations$common$mediaKind$es {
 	_Translations$common$mediaKind$es_419._(TranslationsEs419 root) : this._root = root, super.internal(root);
@@ -1467,6 +1493,12 @@ extension on TranslationsEs419 {
 			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(count, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutos', one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuto', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutos', ), 
 			'fileSources.googleDrive' => 'Google Drive',
 			'lending.cancel' => 'Cancelar',
+			'householdSetup.title' => 'Configuración del hogar',
+			'issueReport.title' => 'Reportar un problema',
+			'issueReport.instructions' => 'Escanea el código QR para abrir un borrador de GitHub ya llenado. Revísalo y envíalo cuando estés listo.',
+			'issueReport.privacy' => 'El borrador incluye la versión de la app, la plataforma y el número de conexiones. No incluye direcciones de servidores, nombres de cuentas o perfiles, títulos de contenido ni rutas de archivos.',
+			'issueReport.logPrivacy' => 'Los registros son opcionales. Revísalos antes de subirlos. Su ID se agrega al borrador, que podría ser público.',
+			'issueReport.openDraft' => 'Abrir borrador de GitHub',
 			_ => null,
 		};
 	}

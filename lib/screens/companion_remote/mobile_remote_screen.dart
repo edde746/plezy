@@ -19,6 +19,7 @@ import '../../widgets/companion_remote/discovery_view.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/pill_input_decoration.dart';
+import 'game_sessions_dialog.dart';
 
 class MobileRemoteScreen extends StatefulWidget {
   const MobileRemoteScreen({super.key});
@@ -392,7 +393,8 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
   }
 
   Widget _buildQuickActionsTab() {
-    final isPlayerActive = context.watch<CompanionRemoteProvider>().isPlayerActive;
+    final provider = context.watch<CompanionRemoteProvider>();
+    final isPlayerActive = provider.isPlayerActive;
 
     return Column(
       children: [
@@ -402,6 +404,21 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           runSpacing: 12,
           alignment: WrapAlignment.center,
           children: [
+            if (provider.supportsGameSessions)
+              _RemoteCard(
+                icon: Symbols.sports_esports_rounded,
+                label: t.games.remoteSessions,
+                onPressed: () {
+                  final connection = provider.gameSessionConnection;
+                  showScopedDialog<void>(
+                    context: context,
+                    builder: (_) => GameSessionsDialog(
+                      request: provider.requestGameSession,
+                      isCurrent: () => connection != null && identical(provider.gameSessionConnection, connection),
+                    ),
+                  );
+                },
+              ),
             if (!isPlayerActive)
               _RemoteCard(icon: Symbols.search_rounded, label: t.common.search, onPressed: _showSearchSheet),
             if (isPlayerActive) ...[

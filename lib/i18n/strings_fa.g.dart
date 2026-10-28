@@ -109,6 +109,8 @@ class TranslationsFa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$fa comics = _Translations$comics$fa._(_root);
 	@override late final _Translations$games$fa games = _Translations$games$fa._(_root);
 	@override late final _Translations$deepLinks$fa deepLinks = _Translations$deepLinks$fa._(_root);
+	@override late final _Translations$householdSetup$fa householdSetup = _Translations$householdSetup$fa._(_root);
+	@override late final _Translations$issueReport$fa issueReport = _Translations$issueReport$fa._(_root);
 }
 
 // Path: app
@@ -3771,7 +3773,6 @@ class _Translations$games$fa extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3796,7 +3797,6 @@ class _Translations$games$fa extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3828,8 +3828,6 @@ class _Translations$games$fa extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3837,14 +3835,12 @@ class _Translations$games$fa extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -3871,6 +3867,30 @@ class _Translations$deepLinks$fa extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'باز کردن به عنوان ${name}';
 	@override String get copy => 'کپی';
 	@override String get copied => 'لینک کپی شده';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$fa extends Translations$householdSetup$en {
+	_Translations$householdSetup$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'راه‌اندازی خانه';
+}
+
+// Path: issueReport
+class _Translations$issueReport$fa extends Translations$issueReport$en {
+	_Translations$issueReport$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'گزارش مشکل';
+	@override String get instructions => 'برای باز کردن پیش‌نویس ازپیش‌پرشده GitHub، کد QR را اسکن کنید. آن را بررسی کنید و فقط وقتی آماده‌اید ارسال کنید.';
+	@override String get privacy => 'پیش‌نویس نسخه برنامه، پلتفرم و تعداد اتصال‌ها را دارد. نشانی سرورها، نام حساب‌ها و پروفایل‌ها، عنوان رسانه‌ها و مسیر فایل‌ها در آن نیست.';
+	@override String get logPrivacy => 'گزارش‌ها اختیاری‌اند. پیش از بارگذاری آن‌ها را بررسی کنید. شناسه گزارش به پیش‌نویس اضافه می‌شود و ممکن است عمومی باشد.';
+	@override String get openDraft => 'باز کردن پیش‌نویس GitHub';
 }
 
 // Path: appIcon.names
@@ -8548,7 +8568,6 @@ extension on TranslationsFa {
 			'comics.collections' => 'مجموعه‌ها',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8573,7 +8592,6 @@ extension on TranslationsFa {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8582,10 +8600,10 @@ extension on TranslationsFa {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			_ => null,
-		} ?? switch (path) {
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
@@ -8607,8 +8625,6 @@ extension on TranslationsFa {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8616,14 +8632,12 @@ extension on TranslationsFa {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'این لینک Plezy معتبر نیست.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'هیچ پروفایل با "${profile}" مطابقت ندارد.',
 			'deepLinks.serverUnavailable' => 'من نمی توانستم به سرور برای این لینک دسترسی داشته باشم.',
@@ -8641,6 +8655,12 @@ extension on TranslationsFa {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'باز کردن به عنوان ${name}',
 			'deepLinks.copy' => 'کپی',
 			'deepLinks.copied' => 'لینک کپی شده',
+			'householdSetup.title' => 'راه‌اندازی خانه',
+			'issueReport.title' => 'گزارش مشکل',
+			'issueReport.instructions' => 'برای باز کردن پیش‌نویس ازپیش‌پرشده GitHub، کد QR را اسکن کنید. آن را بررسی کنید و فقط وقتی آماده‌اید ارسال کنید.',
+			'issueReport.privacy' => 'پیش‌نویس نسخه برنامه، پلتفرم و تعداد اتصال‌ها را دارد. نشانی سرورها، نام حساب‌ها و پروفایل‌ها، عنوان رسانه‌ها و مسیر فایل‌ها در آن نیست.',
+			'issueReport.logPrivacy' => 'گزارش‌ها اختیاری‌اند. پیش از بارگذاری آن‌ها را بررسی کنید. شناسه گزارش به پیش‌نویس اضافه می‌شود و ممکن است عمومی باشد.',
+			'issueReport.openDraft' => 'باز کردن پیش‌نویس GitHub',
 			_ => null,
 		};
 	}

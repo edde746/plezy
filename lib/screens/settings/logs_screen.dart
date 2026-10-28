@@ -101,10 +101,11 @@ class _LogRecordState extends State<_LogRecord> {
 }
 
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({super.key, this.httpClient, this.deviceInfoPlugin});
+  const LogsScreen({super.key, this.httpClient, this.deviceInfoPlugin, this.returnUploadedLogId = false});
 
   final MediaServerHttpClient? httpClient;
   final DeviceInfoPlugin? deviceInfoPlugin;
+  final bool returnUploadedLogId;
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
@@ -308,6 +309,11 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
 
       if (!mounted) return;
       Navigator.of(context).pop(); // dismiss loading
+
+      if (widget.returnUploadedLogId) {
+        Navigator.of(context).pop(id);
+        return;
+      }
 
       unawaited(
         showScopedDialog<void>(

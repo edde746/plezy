@@ -1,8 +1,8 @@
 {
-  "schema": 1,
+  "schema": 2,
   "source": "assets/branding/plezyng-approved.png",
-  "source_sha256": "05b148e47d322debe3501a552c932b5b6c8b90a488bf71262404bf13b4251e4d",
-  "default_background": "#131928",
+  "source_sha256": "90e6ac90fce3ca7d9822ec9a457c751aa41e3b93f168676654596b56a95e05e0",
+  "default_background": "#071527",
   "themes": {
     "crt": "#f1e7d3",
     "ember": "#ec714d",
@@ -80,7 +80,8 @@
         1024
       ],
       "role": "logo",
-      "fit": 1
+      "fit": 1,
+      "appearance": "light"
     },
     {
       "path": "macos/plezy.icon/Assets/plezyng-app-icon.png",
@@ -89,7 +90,8 @@
         1024
       ],
       "role": "logo",
-      "fit": 1
+      "fit": 1,
+      "appearance": "light"
     },
     {
       "path": "android/app/src/main/res/drawable-hdpi/ic_stat_notification.png",
@@ -4135,7 +4137,8 @@
         16
       ],
       "role": "logo",
-      "fit": 0.88
+      "fit": 0.88,
+      "appearance": "light"
     },
     {
       "path": "windows/msix/assets/Square44x44Logo.targetsize-16_altform-unplated.png",
@@ -4162,7 +4165,8 @@
         24
       ],
       "role": "logo",
-      "fit": 0.88
+      "fit": 0.88,
+      "appearance": "light"
     },
     {
       "path": "windows/msix/assets/Square44x44Logo.targetsize-24_altform-unplated.png",
@@ -4189,7 +4193,8 @@
         256
       ],
       "role": "logo",
-      "fit": 0.88
+      "fit": 0.88,
+      "appearance": "light"
     },
     {
       "path": "windows/msix/assets/Square44x44Logo.targetsize-256_altform-unplated.png",
@@ -4216,7 +4221,8 @@
         32
       ],
       "role": "logo",
-      "fit": 0.88
+      "fit": 0.88,
+      "appearance": "light"
     },
     {
       "path": "windows/msix/assets/Square44x44Logo.targetsize-32_altform-unplated.png",
@@ -4243,7 +4249,8 @@
         48
       ],
       "role": "logo",
-      "fit": 0.88
+      "fit": 0.88,
+      "appearance": "light"
     },
     {
       "path": "windows/msix/assets/Square44x44Logo.targetsize-48_altform-unplated.png",
@@ -4331,6 +4338,298 @@
         2556
       ],
       "role": "iphone_server_options"
+    },
+    {
+      "path": "assets/branding/plezyng-mark-light.png",
+      "role": "logo",
+      "size": [
+        1024,
+        1024
+      ],
+      "fit": 1,
+      "appearance": "light"
+    },
+    {
+      "path": "assets/branding/plezyng-wordmark-light.png",
+      "role": "wordmark",
+      "size": [
+        1200,
+        300
+      ],
+      "fit": 1,
+      "appearance": "light"
+    },
+    {
+      "path": "assets/branding/plezyng-artwork-light.webp",
+      "role": "artwork",
+      "size": [
+        1672,
+        941
+      ],
+      "fit": 1,
+      "appearance": "light"
+    },
+    {
+      "path": "assets/branding/web/favicon-light-16.png",
+      "role": "logo",
+      "size": [
+        16,
+        16
+      ],
+      "fit": 1,
+      "appearance": "light",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-light-32.png",
+      "role": "logo",
+      "size": [
+        32,
+        32
+      ],
+      "fit": 1,
+      "appearance": "light",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-light-48.png",
+      "role": "logo",
+      "size": [
+        48,
+        48
+      ],
+      "fit": 1,
+      "appearance": "light",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-light-64.png",
+      "role": "logo",
+      "size": [
+        64,
+        64
+      ],
+      "fit": 1,
+      "appearance": "light",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-light-128.png",
+      "role": "logo",
+      "size": [
+        128,
+        128
+      ],
+      "fit": 1,
+      "appearance": "light",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-light-256.png",
+      "role": "logo",
+      "size": [
+        256,
+        256
+      ],
+      "fit": 1,
+      "appearance": "light",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/social-light.png",
+      "role": "artwork",
+      "size": [
+        1200,
+        630
+      ],
+      "appearance": "light"
+    },
+    {
+      "path": "assets/branding/plezyng-mark-dark.png",
+      "role": "logo",
+      "size": [
+        1024,
+        1024
+      ],
+      "fit": 1,
+      "appearance": "dark"
+    },
+    {
+      "path": "assets/branding/plezyng-wordmark-dark.png",
+      "role": "wordmark",
+      "size": [
+        1200,
+        300
+      ],
+      "fit": 1,
+      "appearance": "dark"
+    },
+    {
+      "path": "assets/branding/plezyng-artwork-dark.webp",
+      "role": "artwork",
+      "size": [
+        1672,
+        941
+      ],
+      "fit": 1,
+      "appearance": "dark"
+    },
+    {
+      "path": "assets/branding/web/favicon-dark-16.png",
+      "role": "logo",
+      "size": [
+        16,
+        16
+      ],
+      "fit": 1,
+      "appearance": "dark",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-dark-32.png",
+      "role": "logo",
+      "size": [
+        32,
+        32
+      ],
+      "fit": 1,
+      "appearance": "dark",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-dark-48.png",
+      "role": "logo",
+      "size": [
+        48,
+        48
+      ],
+      "fit": 1,
+      "appearance": "dark",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-dark-64.png",
+      "role": "logo",
+      "size": [
+        64,
+        64
+      ],
+      "fit": 1,
+      "appearance": "dark",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-dark-128.png",
+      "role": "logo",
+      "size": [
+        128,
+        128
+      ],
+      "fit": 1,
+      "appearance": "dark",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon-dark-256.png",
+      "role": "logo",
+      "size": [
+        256,
+        256
+      ],
+      "fit": 1,
+      "appearance": "dark",
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/social-dark.png",
+      "role": "artwork",
+      "size": [
+        1200,
+        630
+      ],
+      "appearance": "dark"
+    },
+    {
+      "path": "assets/branding/web/app-icon-180.png",
+      "role": "plate",
+      "size": [
+        180,
+        180
+      ],
+      "fit": 0.9
+    },
+    {
+      "path": "assets/branding/web/app-icon-192.png",
+      "role": "plate",
+      "size": [
+        192,
+        192
+      ],
+      "fit": 0.9
+    },
+    {
+      "path": "assets/branding/web/app-icon-512.png",
+      "role": "plate",
+      "size": [
+        512,
+        512
+      ],
+      "fit": 0.9
+    },
+    {
+      "path": "assets/branding/plezyng-compact.png",
+      "role": "logo",
+      "size": [
+        1024,
+        1024
+      ],
+      "fit": 1,
+      "compact": true
+    },
+    {
+      "path": "assets/branding/web/favicon.ico",
+      "role": "ico",
+      "size": [
+        256,
+        256
+      ],
+      "fit": 1,
+      "compact": true
+    },
+    {
+      "path": "assets/branding/plezyng-adaptive-light.png",
+      "role": "adaptive",
+      "size": [
+        1024,
+        1024
+      ],
+      "appearance": "light"
     }
-  ]
+  ],
+  "sources": {
+    "mark_light": {
+      "path": "assets/branding/source/mark-light.png",
+      "sha256": "478edfff1dfde1cc867edae366599fd4ab50fcef06c1b274cd4490607a41cfc1"
+    },
+    "compact": {
+      "path": "assets/branding/source/compact.png",
+      "sha256": "5ef10b9ec13e136b70db0400ce9eb7e76ecb375b714e9f3ca74741e05301c522"
+    },
+    "wordmark_dark": {
+      "path": "assets/branding/source/wordmark-dark.png",
+      "sha256": "895049d73bd2a077dc37b2659b58c5d0e7db4588bb0849db617c20335b431b63"
+    },
+    "wordmark_light": {
+      "path": "assets/branding/source/wordmark-light.png",
+      "sha256": "059e5de1e453f7242812fd2bccf522a6207286f24c7b98af7ef4e729896a905f"
+    },
+    "artwork_dark": {
+      "path": "assets/branding/source/artwork-dark.png",
+      "sha256": "458d09ec6d3a9ffc5d0a26236bdb3b5dc3b54f54e70da11284aadb7c1af2f2a1"
+    },
+    "artwork_light": {
+      "path": "assets/branding/source/artwork-light.png",
+      "sha256": "d3d3f2da2c9710b7d71643054c7d9ac993f7c0873e45ddc3478e079601e170d0"
+    }
+  }
 }

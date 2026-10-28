@@ -1,0 +1,40 @@
+{
+  "method": "Built-in image generation, followed by deterministic platform resizing and export",
+  "prompts": [
+    {
+      "asset": "ribbon-transparent",
+      "transparent_background": true,
+      "prompt": "Use case: background-extraction. Asset type: reusable full-detail transparent PNG brand emblem for PlezyNG.\nInput image 1 is the edit target and shape reference. Extract and faithfully redraw ONLY the large coral-orange sculptural folded-ribbon play emblem centered in the original. Preserve its recognizable silhouette, broad rounded left lobes, sweeping top ribbon, right curl, open negative spaces, material finish, fold geometry, orange-to-coral depth, delicate warm edge highlights, and the small cream italic \"NG\" inside its lower-right opening.\nRemove the large PlezyNG wordmark below the emblem, the tiny corner duplicate, navy backdrop, floor, reflection, ambient haze, and all scene shadows. There must be genuinely transparent alpha everywhere around the emblem and through its open holes; do not paint dark navy into the holes. Preserve the ribbon surfaces and their own local shading. One isolated emblem, front-facing in the same original three-quarter folded geometry, ample 10 percent clear padding, centered square canvas, highest useful resolution. No backdrop, no checkerboard, no labels, no new elements. The output is a clean reusable cutout, with crisp antialiased edges and no dark halo."
+    },
+    {
+      "asset": "artwork-dark",
+      "transparent_background": false,
+      "prompt": "Use case: logo-brand. Asset type: finished reusable dark-theme wide hero artwork / splash banner for PlezyNG. Image 1 is the original identity; image 2 shows the approved color and typography family. Preserve exactly the iconic coral-orange folded ribbon play-symbol silhouette, proportions, folds, and small NG detail from image 1. Create a cinematic but minimal studio artwork, 16:9 landscape. Midnight navy-black background (#071527 direction), subtle blue atmospheric light, orange ribbon large and prominent in the RIGHT half of the frame, elegant warm highlights, no excessive glow. Lower-left to middle-left contains the exact italic wordmark \"PlezyNG\", P l e z y N G, warm ivory with the original folded z accent. Clean deliberate balance with generous negative space, nothing cropped. Tiny soft reflection or grounding shadow, satin material with beautiful dimensional folds. All words must be correctly spelled. Only text is PlezyNG on the left and NG within the ribbon. No interface, no panel borders, no small duplicate watermark, no mountains, no objects, no tagline. Premium reusable brand artwork."
+    },
+    {
+      "asset": "artwork-light",
+      "transparent_background": false,
+      "prompt": "Use case: lighting-weather. Asset type: matching LIGHT-theme PlezyNG hero / splash artwork. Edit the supplied artwork. Preserve its composition exactly: large folded-ribbon play logo on right, large italic \"PlezyNG\" wordmark on lower left, the same object proportions, letter shapes and positions, same wide 16:9 framing.\nChange ONLY the theme and lighting: replace navy studio and floor with warm ivory #FFF8EE, subtle warm-gray studio depth, navy-black #071527 lettering instead of cream for PlezyNG. Preserve coral-orange folded ribbon but use soft satin studio light without emissive glow, realistic restrained soft contact shadow, minimal reflection. The small NG inside the emblem becomes navy to stay readable against the light opening. The folded z accent stays coral/ivory as appropriate. Match the exact same silhouette and mark, no extra words, no new objects, no watermark, no outlines. This must feel like the light-mode twin of the input."
+    },
+    {
+      "asset": "wordmark-for-dark-clean",
+      "transparent_background": true,
+      "prompt": "Use case: precise-object-edit. Clean this exact transparent PlezyNG wordmark for professional reuse. Keep the lettering shape, position, spelling, italic angle, and cream/coral colors exactly. Remove ALL the accidental speckles, white crumbs, streaks, isolated pixels, jagged debris and distressed/grunge texture visible around the edges and inside the letter holes. Redraw with immaculate continuous clean smooth antialiased edges. Clear every hole and every space between letters to actual transparency. Solid opaque smooth ivory lettering; the z retains its coral folded interior. Only the single word \"PlezyNG\". There is no texture, no white spray around letters, no border, no shadow, no haze, no scene, no white rectangle, no checkerboard. Render transparent alpha cleanly with absolutely zero detached pixels. All canvas pixels outside the exact solid letterforms must be fully transparent. Preserve one horizontal wordmark, comfortable clear padding and the original letter shapes."
+    },
+    {
+      "asset": "wordmark-for-light",
+      "transparent_background": true,
+      "prompt": "Use case: precise-object-edit. Create the LIGHT-background version of this exact transparent PlezyNG wordmark. Preserve exact letter shapes, positions, spelling and italic angle, and the small folded z design. Recolor main lettering to solid very dark midnight navy #071527; the custom folded z becomes vivid coral #FF6847 with a darker coral inside fold. Remove ALL accidental speckles, white crumbs, streaks, isolated pixels, jagged debris and distressed/grunge texture visible around the edges and inside the letter holes. Redraw the letterforms with immaculate continuous smooth clean antialiased boundaries. Solid opaque smooth navy lettering, no texture, no distressed effects, no stroke, no shadow, no haze. Only the exact single word \"PlezyNG\", P l e z y N G. Genuine transparent alpha outside the exact letterforms and within all holes and between letters; absolutely zero detached pixels, no checkerboard, no backdrop, no other marks. One horizontal wordmark with comfortable clear padding."
+    },
+    {
+      "asset": "icon-flat-clean",
+      "transparent_background": true,
+      "prompt": "Use case: precise-object-edit. Repair and simplify this PlezyNG ribbon symbol for a real small icon. Keep the recognizable rounded folded-play ribbon silhouette, but remove ALL detached pixels, splatters, streaks and edge noise. Remove the hairline bottom-right returning ribbon and the large extra lower loop opening; the lower lobe should be a bold rounded solid area merging cleanly into the rounded right tip. Keep one spacious main diagonal play-shaped negative-space hole. A single confident smooth compact symbol with no narrow necks, no thin details, no NG letters. Fill is uniformly solid coral #FF6847. Zero gradients, zero shading, zero glows, no outlines. One single smooth silhouette, visually precise like a professionally drafted vector. The top ribbon and lower rounded lobe still evoke the original fold. True transparent background and internal hole, completely clean antialiased edges, absolutely no fragments or speckles, no checkerboard, no labels. Centered square canvas with 16% clear padding."
+    },
+    {
+      "asset": "ribbon-transparent-light",
+      "transparent_background": true,
+      "prompt": "Use case: precise-object-edit. This is the approved PlezyNG ribbon emblem PNG. Change ONLY the small \"NG\" lettering in its lower-right opening from ivory to solid dark midnight navy #071527, so it remains legible on an ivory or white background. Preserve EVERYTHING ELSE exactly: same coral ribbon, same geometry, silhouette, holes, shading, position, transparent alpha, resolution and padding. Do not invent a dark patch behind NG, do not alter the ribbon, do not add a backdrop or cast shadow. True transparent background and open internal voids; only the NG letter fill changes to midnight navy. Clean antialiasing, no new speckles. One isolated emblem."
+    }
+  ]
+}

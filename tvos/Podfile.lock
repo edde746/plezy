@@ -1,0 +1,34 @@
+PODS:
+  - Flutter (1.0.0)
+  - os_media_controls (0.2.4):
+    - Flutter
+  - universal_gamepad (1.5.8):
+    - Flutter
+  - wakelock_plus (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - os_media_controls (from `../ios/.symlinks/plugins/os_media_controls/ios`)
+  - universal_gamepad (from `../ios/.symlinks/plugins/universal_gamepad/ios`)
+  - wakelock_plus (from `../ios/.symlinks/plugins/wakelock_plus/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  os_media_controls:
+    :path: "../ios/.symlinks/plugins/os_media_controls/ios"
+  universal_gamepad:
+    :path: "../ios/.symlinks/plugins/universal_gamepad/ios"
+  wakelock_plus:
+    :path: "../ios/.symlinks/plugins/wakelock_plus/ios"
+
+SPEC CHECKSUMS:
+  Flutter: f241167288a285322faa6d3e8a9c29c5bdb725ef
+  os_media_controls: 10677b8012bf315d313649822324cc0bd03f3bb8
+  universal_gamepad: 7c0cc0c2e3909dfb803d325387e42963b3ed842c
+  wakelock_plus: 5aaa6a7ccaf4749a96a7d8ff0721d68061ad62cf
+
+PODFILE CHECKSUM: 26c5c9489a956493bf999317b7934f3bc9b1eeaf
+
+COCOAPODS: 1.17.0

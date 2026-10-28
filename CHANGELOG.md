@@ -2,16 +2,41 @@
 
 ## [Unreleased]
 
-### Release automation
+- Add profile-scoped stereo, quad and 5.1 Steam audio requests with bounded Opus multistream decoding, explicit speaker mapping and a stereo compatibility retry for unsupported layouts or outputs.
 
-- Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
-- Add integrated VLC-inspired media capture, private-LAN HLS sharing, consent-based search extensions and the `plezyctl` helper, with accessible cues, deep links, platform registrations and setup documentation.
-- Expand the VLC feature comparison with safe local playlist references, more conversion formats, MPV audio effects, device-local playback bookmarks and temporary A/B loops in existing playback controls.
-- Save eligible same-folder desktop file queues as reopenable M3U playlists, and select alternate video tracks through existing MPV playback controls.
-- Show direct-input MPV file details in the shared File Info sheet, and expose edition/disc-title switching only when multiple choices are available.
-- Preview discovered desktop camera and display inputs in the existing MPV player from Media tools → Capture; keep preview session-only and video-only.
-- Use optional MPV audio-analysis metadata in the existing visualizer when Plex loudness data is unavailable, and show conversion profiles only when the installed FFmpeg build supports them.
-- Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows link forwarding for the native toolchain.
+- Preserve TV navigation-remote assistance for player one without consuming a Steam gamepad seat; release both input paths when a composite device disconnects.
+
+- Add opt-in Companion Remote controls for active PlezyNG game streams: inspect titles, choose audio, mute, fullscreen and confirm disconnect, using temporary session handles that expire on reconnection or replacement.
+- Prevent a timed-out Steam host inventory check from launching later, using monotonic deadlines and explicit operation retirement.
+
+- Add live Steam connection details from native receiver counters and host adaptation messages, including actual codec, frame rate, received video payload, queue depth and input reliability; opening details releases game input and keeps measurements local.
+
+- Add one-to-four independent Android Steam controller seats, with a profile setting, stable HID identities, shared native/Flutter device mapping and per-device disconnect cleanup; preserve the single-controller default.
+
+- Add on-demand Steam achievements, news and optional friends-playing context to game details, with identity-bound server requests, spoiler protection and confirmed Steam destinations.
+- Add separately permissioned Companion Remote requests to launch installed Steam games, request installation, and open Steam/downloads on the authenticated computer; reject replayed or arbitrary commands and preserve Steam's authority over launch/install results.
+- Unify Steam games across computers and library drives with one poster grid, shared favorites, computer filters, timestamped installation snapshots and optional encrypted Companion Remote inventory sharing.
+- Refresh linked Steam catalogs with encrypted, revocable, identity-scoped credentials while retaining compatibility with older relays and saved game libraries.
+- Add profile-scoped Android Steam quality and codec preferences, first-frame connection state, accessible reconnect controls and teardown acknowledgement before retrying a stream. Other embedded receiver platforms remain in development.
+
+- Apply the coral ribbon identity across native launchers, store artwork and in-app branding, with light/dark marks, matching wordmarks and simplified small-size icons.
+- Add a searchable, region-aware directory of official video, rental, book, audiobook, comics, music and game storefronts to Services and title details; add Google Books catalog search with country-specific sale metadata and official purchase handoff.
+- Keep file-source activation profile-scoped through download and shelf reconciliation, and stop cloud settings backup or restore when the initiating profile session changes.
+- Require every release-critical CI job, including each native platform matrix row, to pass for the exact release commit; keep implementation and qualification claims in a source-linked capability ledger.
+- Add household readiness checks and a QR support flow that drafts a privacy-safe GitHub issue, with optional redacted log upload.
+- Add profile-local Find your next review history with localized timestamps and safe detail revalidation.
+- Add exact genre filtering across server, catalog, and publication picks within the existing filter sheet.
+- Filter Find your next by its displayed source within the existing filter sheet.
+- Search Saved picks by title, source, type, or subtitle; Shuffle uses the matching shortlist.
+- Add a Home shortcut that opens Saved picks without loading the discovery deck.
+- Let people shuffle a saved pick back onto the deck for a deliberate action, without auto-starting playback.
+- Clear all active Find your next filters directly from a no-match result.
+- Link the QR GitHub issue draft directly from Household setup for faster problem reporting.
+- Fix compile errors in discovery, source details and issue reporting by using existing translations and framework symbols; localize the Steam source badge.
+- Offer the same QR report flow from the startup failure screen, alongside copy and log upload.
+- Include the startup phase and exception type in its reviewed GitHub issue draft while excluding the raw message and stack trace from the QR payload.
+- Search the full Find your next source and genre option lists from the existing filter sheet when the quick chips are insufficient.
+- Retry an individual Find your next history pick into the deck without changing its Saved picks membership or launching playback.
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
 - Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
 - Preserve the last reliable Files playback position across native stream failures and expose Retry in the existing player without advancing editions or marking failed playback finished.
@@ -22,9 +47,23 @@
 - Attach the validated ARM Tizen tester handoff to versioned releases and fail closed if its package, checksum, provenance or toolchain files are missing.
 - Retain previous server results when a new search is cancelled, while preserving indexed Files and Seerr results.
 - Route Windows x64 native CI through the private Packer JIT workflow allowlist.
+- Lock iOS, macOS and tvOS CocoaPods dependencies for CI, and retain root dependency overrides when resolving tvOS packages.
+
+### Release automation
+
+- Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
+
+### Platform integration
+
+- Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows link forwarding for the native toolchain.
 
 ### VLC feature parity
 
+- Expand the VLC feature comparison with safe local playlist references, more conversion formats, MPV audio effects, device-local playback bookmarks and temporary A/B loops in existing playback controls.
+- Save eligible same-folder desktop file queues as reopenable M3U playlists, and select alternate video tracks through existing MPV playback controls.
+- Show direct-input MPV file details in the shared File Info sheet, and expose edition/disc-title switching only when multiple choices are available.
+- Preview discovered desktop camera and display inputs in the existing MPV player from Media tools → Capture; keep preview session-only and video-only.
+- Use optional MPV audio-analysis metadata in the existing visualizer when Plex loudness data is unavailable, and show conversion profiles only when the installed FFmpeg build supports them.
 - Fix the MPV edition selector so it refreshes when a new file loads, without passing an asynchronous value through Flutter's state update callback.
 - Keep temporary HLS sharing within its startup window for long-GOP sources by forcing keyframes at the segment cadence; verify that playlist and media segments remain token-scoped and the listener closes cleanly.
 - Translate the added video-track, playlist, edition, and capture-preview cues across supported locales, and use the converter's concise help on the existing Open media tile.

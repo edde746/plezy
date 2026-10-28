@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../games/steam_stream_preferences.dart';
 import '../media/ids.dart';
 import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
@@ -762,8 +763,38 @@ class SettingsService extends BaseSharedPreferencesService {
       BoolPref(profileScopedPrefsKey(profileId, 'show_games_tab'), defaultValue: false);
   static BoolPref gameTouchControlsForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_touch_controls'), defaultValue: true);
+  static BoolPref shareSteamInventoryForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'share_steam_inventory'), defaultValue: false);
+  static BoolPref allowSteamActionsForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'allow_steam_actions'), defaultValue: false);
+  static BoolPref allowGameSessionControlForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'allow_game_session_control'), defaultValue: false);
+  static BoolPref allowSteamInstallForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'allow_steam_install'), defaultValue: false);
+  static StringPref steamInstallRootForProfile(String profileId) =>
+      StringPref(profileScopedPrefsKey(profileId, 'steam_install_root'));
   static BoolPref gamePyrowaveForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_pyrowave'), defaultValue: false);
+  static EnumPref<SteamStreamQuality> steamQualityForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_quality'),
+    values: SteamStreamQuality.values,
+    defaultValue: SteamStreamQuality.balanced,
+  );
+  static EnumPref<SteamStreamCodec> steamCodecForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_codec'),
+    values: SteamStreamCodec.values,
+    defaultValue: SteamStreamCodec.automatic,
+  );
+  static EnumPref<SteamStreamAudio> steamAudioForProfile(String profileId) => EnumPref(
+    profileScopedPrefsKey(profileId, 'steam_stream_audio'),
+    values: SteamStreamAudio.values,
+    defaultValue: SteamStreamAudio.stereo,
+  );
+  static IntPref steamControllerCountForProfile(String profileId) => IntPref(
+    profileScopedPrefsKey(profileId, 'steam_controller_count'),
+    defaultValue: 1,
+    transform: (value) => value >= 1 && value <= 4 ? value : 1,
+  );
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>
