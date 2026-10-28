@@ -18,10 +18,10 @@ The implemented slices below are not substitutes for the remaining scope.
 | Catalog refresh and revocation | Implemented, Go race tests pass | Relay deployment and live account exercise |
 | Grid, details, routes and filtering | Implemented using existing app components | Device accessibility, RTL, controller and visual qualification; new strings currently use the English fallback |
 | Android stream preferences / recovery | Implemented through Flutter, Java and JNI | Full Android build/minification, real host reconnect and negotiated-quality measurements |
-| Native Steam transport | Portable Linux build and 38 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
-| View-independent stream lifetime | Partial: retained Multiview surface | Native session still belongs to its PlatformView; surface destruction stops it |
-| Adaptive metrics / advanced codecs | Host-driven adaptive feedback, native stream diagnostics, request ceilings and one-to-four Android controller seats | Live adaptation/performance qualification, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround and physical multi-controller qualification |
-| Other embedded receiver platforms | Library browsing/sharing only | Linux/SteamOS, Windows, macOS, iOS/iPadOS/tvOS receivers and TV capability qualification |
+| Native Steam transport | Portable Linux build and 40 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
+| View-independent stream lifetime | Retained Android PlatformView and Linux texture surfaces | Native session still belongs to its retained surface; surface destruction stops it |
+| Adaptive metrics / advanced codecs | Host-driven adaptive feedback, native stream diagnostics, request ceilings and one-to-four Android controller seats | Live adaptation/performance qualification, direct GPU Pyrowave, HDR, 4:4:4, 4K, multichannel mapping/host qualification and physical multi-controller qualification |
+| Other embedded receiver platforms | Linux embedded receiver, texture lifecycle, native decoder and input tests implemented | Full Linux/SteamOS packaging and host qualification; Windows, macOS, iOS/iPadOS/tvOS receivers |
 | Rich Steam / host features | Achievements/news/optional friends-playing and confirmed Steam destinations implemented | Live API qualification, host cloud/family state APIs, Steam Input/remapping, Together and captures |
 | Companion game control / internet transport | Inventory, permissioned host launch/install/views, and active stream audio/fullscreen/disconnect controls implemented | Signaling/NAT/relay, internet connection diagnostics and actual host/device qualification |
 
@@ -378,3 +378,38 @@ channels, not a guarantee about the OS's physical speaker routing.
 Validation includes actual Opus multistream encode/decode with distinct tones
 per channel, speaker isolation, malformed mapping/header rejection, request-wire
 channel count and legacy defaults. Device/AVR output is unqualified.
+
+### Linux embedded receiver
+
+Linux now uses the existing Steam protocol/runtime with a dedicated GStreamer
+receiver and Flutter pixel-buffer texture. It does not instantiate an mpv
+player, spawn Steam Link, or send game data through the movie library. H.264
+and HEVC use the installed/bundled libav decoder; this implementation reports
+software decoding and SDR RGBA texture output, not direct GPU, HDR or Pyrowave.
+Video parsing is restricted to bounded H.264/HEVC access units and 1920×1080
+output caps before decode. Video input, outstanding frames, decoded output and
+PCM queues all have fixed limits. Actual texture consumption settles the native
+frame ticket; replacement drops the old frame instead of acknowledging it twice.
+
+PIN trust is in libsecret's OS credential store, keyed by numeric Steam host
+identity, never in Dart preferences. Missing/locked storage fails closed. DNS
+resolution and keyring access are cancellable. Pairing is serialized. Session
+creation is capped at eight receivers. Controller seats and keyboard input obey
+workspace ownership and neutralize on release. Stop acknowledges only after
+transport and decoder workers have exited and the texture has unregistered.
+Late texture creation after a profile/view retirement is explicitly disconnected.
+
+The current Linux port offers conventional codecs only. HEVC decoder failure
+may retry H.264; unsupported multichannel layout/output may retry stereo. Each
+retry removes a capability, with at most three attempts. Native capability
+queries require the actual parser/decoder/audio plugins, so a build without
+those plugins does not advertise a working receiver. The build can explicitly
+omit it with `-DPLEZY_STEAM_RECEIVER=OFF`. Release bundles include the fixed
+pipelines' plugins and matching scanner; the launcher confines plugin discovery
+to that set. Distribution, Flatpak keyring/audio, full-runner builds and actual
+Steam hosts still require private-JIT and hardware qualification.
+
+Local verification: strict C++ compilation against Flutter Linux headers;
+actual H.264 encode→decode pixel checks; common Opus/speaker and controller seat
+tests; Flutter texture lifecycle, timeout and late-retirement tests. These are
+not evidence of Apple/Windows receiver completion or live-host qualification.

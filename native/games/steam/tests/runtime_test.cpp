@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "steam_runtime.h"
+#include "steam_input.h"
 extern "C" {
 #include "protobuf/discovery.pb-c.h"
 #include "session/frame_tracker.h"
@@ -129,6 +130,24 @@ int main() {
       IHS_SessionHIDProviderDestroy(provider);
     }
     assert(makeController(RuntimeTest::pad(controllers, 0), 4) == nullptr);
+  }
+  {
+    Runtime r;
+    InputState input(2);
+    input.button(r, 1, "a", true); // No lease, no input.
+    assert(RuntimeTest::pad(r, 0)->buttons == 0);
+    input.enabled(r, true);
+    input.button(r, 10, "a", true);
+    input.axis(r, 20, "leftStickX", 0.5);
+    input.button(r, 30, "b", true); // Third device cannot steal a seat.
+    assert(RuntimeTest::pad(r, 0)->buttons == 1 && RuntimeTest::pad(r, 1)->axes[0] == 16383);
+    input.disconnect(r, 10);
+    assert(RuntimeTest::pad(r, 1)->axes[0] == 16383);
+    input.button(r, 30, "b", true);
+    assert(RuntimeTest::pad(r, 0)->buttons == 2);
+    input.enabled(r, false);
+    input.axis(r, 20, "leftStickX", 1);
+    assert(RuntimeTest::pad(r, 0)->buttons == 0 && RuntimeTest::pad(r, 1)->axes[0] == 0);
   }
   Credentials c{};
   c.device = 123;

@@ -8,6 +8,9 @@
 
 #include "flutter/generated_plugin_registrant.h"
 #include "mpv/mpv_plugin.h"
+#ifdef PLEZY_STEAM_RECEIVER
+#include "games/steam_plugin.h"
+#endif
 
 // On Wayland the mpv video plane is a wl_subsurface stacked *below* this
 // window's surface, so the window needs an alpha channel for it to show
@@ -84,6 +87,10 @@ static void my_application_activate(GApplication* application) {
 
   // Register Flutter plugins.
   fl_register_plugins(FL_PLUGIN_REGISTRY(self->flutter_view));
+#ifdef PLEZY_STEAM_RECEIVER
+  steam_plugin_register_with_registrar(fl_plugin_registry_get_registrar_for_plugin(
+      FL_PLUGIN_REGISTRY(self->flutter_view), "SteamReceiver"));
+#endif
 
   // Register the MPV plugin. Video goes to the native Wayland plane; there is no other path, so a session that
   // cannot host one is refused by name rather than played into nothing.

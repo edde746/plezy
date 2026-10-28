@@ -163,3 +163,24 @@ No external streaming-app handoff is used.
   stream still accepts its first physical pad after TV-remote input; composite
   device removal releases both paths without clearing another player's state.
 - Android SurfaceView compilation and physical TV input remain release gates.
+
+### Linux receiver and multichannel audio
+
+The local Debug native suite now includes a dedicated GStreamer H.264 decoder
+fixture (real encoded frames, RGBA pixel values, audio reconfiguration and
+teardown), and Opus mono/stereo/quad/5.1 speaker-isolation tests. Android Java
+sources were type-checked against API 36 with resource-name constants generated
+from the module's actual XML; this is **not** an APK/Gradle/resource packaging
+build, and the project still targets compileSdk 37. JNI strict compilation passes.
+Linux Flutter adapter translation units compile with `-Wall -Wextra -Werror`.
+
+The native CI recipe enables GStreamer tests on its existing private JIT job.
+No private JIT run, live Steam host, speaker/AVR, Linux full-runner release,
+Flatpak keyring, Apple SDK or Windows receiver validation has run locally.
+
+The Linux/texture follow-up passed 154 Dart/widget tests and 40 native Debug
+tests, plus strict Linux adapter compilation. The isolated GStreamer queue/
+decoder test also passed AddressSanitizer and UndefinedBehaviorSanitizer. Local
+LeakSanitizer could not inspect `/proc` under this environment, so leak detection
+remains enabled in private JIT and is not claimed as locally passed. Workflow
+security, action-pin and architecture checks passed; no runner routing changed.

@@ -25,3 +25,21 @@ The feasibility judgments and delivery ordering are engineering inferences from 
 - [Valve's current Steam Link distribution](https://repo.steampowered.com/steamlink/latest/) lists build 1.4.3.323. Its presence is not an embeddable-client SDK or redistribution grant; PlezyNG uses source-built independent libraries.
 
 The exact IHS runtime pin includes game-ID serialization and current/legacy authorization support upstream. The former preparation-only game-ID patch has been removed. The Pyrowave Android path patches the pinned ihslib source to negotiate codec 9 and preserve its block framing, then uses the pinned Vulkan decoder through CPU readback. Regression fixtures cover offered/unoffered codec negotiation and bounded SDR bitstream parsing. The parser and color-conversion fixture passed a standalone strict C++ build; GitHub Actions run 40356122282 passed the current Android module builds and all 38 native tests with sanitizers. No real Steam beta host or Android device/GPU was available for interoperability or sustained-performance qualification.
+
+## Linux receiver and audio references
+
+- [GStreamer appsrc](https://gstreamer.freedesktop.org/documentation/app/appsrc.html),
+  [appsink](https://gstreamer.freedesktop.org/documentation/app/appsink.html),
+  and the SDK's public video-frame headers define buffer ownership and bounds.
+  The Linux port uses dedicated libav decoder pipelines and a bounded Flutter
+  pixel-buffer texture, not a network URI or a media-player instance. GStreamer
+  is LGPL; its libav plugin/FFmpeg licensing and redistributed runtime notices
+  must be included with the Linux distribution's existing native notices.
+- [Flutter Linux texture API](https://github.com/flutter/flutter/blob/master/engine/src/flutter/shell/platform/linux/public/flutter_linux/fl_pixel_buffer_texture.h)
+  requires the returned RGBA storage to remain alive until texture retirement.
+- [Opus multistream API](https://opus-codec.org/docs/opus_api-1.6/group__opus__multistream.html)
+  and [RFC 7845](https://www.rfc-editor.org/rfc/rfc7845) define the decoded channel
+  mapping; they do not establish that a Steam host supplies an OpusHead header.
+- [Valve surround guidance](https://help.steampowered.com/en/faqs/view/32ED-36ED-8BC1-1B98)
+  describes host and speaker requirements. Live host/output qualification remains
+  separate from the codec's multichannel unit tests.

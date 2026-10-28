@@ -32,7 +32,7 @@ CMAKE_INPUTS = ("runner/CMakeLists.txt", "CMakeLists.txt", "flutter/CMakeLists.t
 # Pins the walk's reach: gtk+-3.0, mpv, epoxy, glib-2.0, gio-2.0 and the three the
 # video plane added. A drop here means the parser stopped seeing something rather
 # than that a link was removed.
-FULL_WALK_SUMMARY = "(8 pkg-config links, 8 modules)"
+FULL_WALK_SUMMARY = "(9 pkg-config links, 9 modules)"
 
 # The success line has to name its own scope. A reader who takes it for a
 # whole-binary check trusts it past the plugin link edges it never walked, so

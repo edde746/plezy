@@ -73,6 +73,24 @@ target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
 
+# The game receiver is independent of the movie/music mpv instances. Builds
+# that deliberately omit native games retain the existing library-only UI.
+option(PLEZY_STEAM_RECEIVER "Include the Linux Steam receiver" ON)
+if(PLEZY_STEAM_RECEIVER)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  execute_process(COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../scripts/games/prepare_steam.py"
+    RESULT_VARIABLE STEAM_PREPARE_RESULT)
+  if(NOT STEAM_PREPARE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Could not prepare the pinned Steam runtime")
+  endif()
+  set(PLEZY_STEAM_GSTREAMER ON CACHE BOOL "" FORCE)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/../native/games/steam" "${CMAKE_CURRENT_BINARY_DIR}/steam")
+  pkg_check_modules(STEAM_SECRET REQUIRED IMPORTED_TARGET libsecret-1)
+  target_sources(${BINARY_NAME} PRIVATE "games/steam_plugin.cc")
+  target_compile_definitions(${BINARY_NAME} PRIVATE PLEZY_STEAM_RECEIVER=1)
+  target_link_libraries(${BINARY_NAME} PRIVATE plezy_steam_gstreamer PkgConfig::STEAM_SECRET)
+endif()
+
 function(check_mpv_sanitizer_support SANITIZER_FLAG RESULT_VARIABLE)
   include(CheckCXXSourceCompiles)
   # Force an executable try-compile: sanitizer availability depends on the

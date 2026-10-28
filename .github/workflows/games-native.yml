@@ -33,11 +33,11 @@ jobs:
       - name: Install Vulkan loader, headers and software driver
         run: |
           sudo apt-get update
-          sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers
+          sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-good
       - name: Configure transport and lifecycle tests with sanitizers
         run: >-
           cmake -S native/games/steam -B build/games-steam-tests
-          -DPLEZY_STEAM_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
+          -DPLEZY_STEAM_TESTS=ON -DPLEZY_STEAM_GSTREAMER=ON -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
           -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer'
           -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'

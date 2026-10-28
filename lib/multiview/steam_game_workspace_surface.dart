@@ -59,6 +59,7 @@ class SteamGameWorkspaceSession {
   bool _restarting = false;
   int _stateRevision = 0;
   final ValueNotifier<int> surfaceGeneration = ValueNotifier(0);
+  final ValueNotifier<double> streamAspectRatio = ValueNotifier(16 / 9);
   final ValueNotifier<String> sessionState = ValueNotifier('connecting');
   MethodChannel? _channel;
   bool _audioEnabled = false;
@@ -172,6 +173,12 @@ class SteamGameWorkspaceSession {
   }
 
   Widget build() {
+    if (Platform.isLinux) {
+      return ValueListenableBuilder<int>(
+        valueListenable: surfaceGeneration,
+        builder: (_, generation, _) => _SteamTextureSurface(key: ValueKey(generation), session: this),
+      );
+    }
     if (!Platform.isAndroid) {
       return ColoredBox(
         color: Colors.black,
@@ -202,6 +209,14 @@ class SteamGameWorkspaceSession {
     final replayRevision = _stateRevision;
     channel.setMethodCallHandler((call) async {
       if (_disposed || _channel != channel || _restarting) return null;
+      if (call.method == 'videoSize') {
+        final args = call.arguments;
+        if (args is Map && args['width'] is int && args['height'] is int) {
+          final width = args['width'] as int, height = args['height'] as int;
+          if (width > 0 && height > 0 && width <= 1920 && height <= 1080) streamAspectRatio.value = width / height;
+        }
+        return null;
+      }
       if (call.method == 'sessionState') {
         _stateRevision++;
         _stateChanged(call.arguments);
@@ -305,7 +320,87 @@ class SteamGameWorkspaceSession {
     detach();
     sessionState.dispose();
     surfaceGeneration.dispose();
+    streamAspectRatio.dispose();
   }
+}
+
+/// Native texture ownership stays with this retained workspace surface. Late
+/// creation responses are explicitly retired after disposal or startup timeout.
+class _SteamTextureSurface extends StatefulWidget {
+  const _SteamTextureSurface({super.key, required this.session});
+  final SteamGameWorkspaceSession session;
+  @override
+  State<_SteamTextureSurface> createState() => _SteamTextureSurfaceState();
+}
+
+class _SteamTextureSurfaceState extends State<_SteamTextureSurface> {
+  static const receiver = MethodChannel('com.plezy/games/steam_receiver');
+  int? _id, _texture;
+  Timer? _deadline;
+  bool _expired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _deadline = Timer(const Duration(seconds: 10), () {
+      _expired = true;
+      if (mounted && !widget.session._disposed) widget.session._stateChanged('failed');
+    });
+    unawaited(_create());
+  }
+
+  static Future<void> _retire(int id) async {
+    try {
+      await MethodChannel(
+        SteamGameWorkspaceSession.channelNameForViewId(id),
+      ).invokeMethod<void>('disconnect').timeout(const Duration(seconds: 6));
+    } catch (_) {
+      /* Native teardown continues even after a window is removed. */
+    }
+  }
+
+  Future<void> _create() async {
+    try {
+      final result = await receiver.invokeMapMethod<String, dynamic>('create', widget.session.creationParams);
+      _deadline?.cancel();
+      final id = result?['id'], texture = result?['textureId'];
+      if (id is! int || id < 1 || texture is! int || texture < 0) throw const FormatException('Invalid receiver');
+      if (!mounted || _expired || widget.session._disposed) {
+        await _retire(id);
+        return;
+      }
+      _id = id;
+      widget.session.attachPlatformView(id);
+      setState(() => _texture = texture);
+    } catch (_) {
+      _deadline?.cancel();
+      if (mounted && !widget.session._disposed) widget.session._stateChanged('failed');
+    }
+  }
+
+  @override
+  void dispose() {
+    _expired = true;
+    _deadline?.cancel();
+    if (_id case final id?) unawaited(_retire(id));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Colors.black,
+    child: _texture == null
+        ? const SizedBox.expand()
+        : Center(
+            child: ValueListenableBuilder<double>(
+              valueListenable: widget.session.streamAspectRatio,
+              builder: (_, ratio, _) => AspectRatio(
+                aspectRatio: ratio,
+                child: Texture(textureId: _texture!),
+              ),
+            ),
+          ),
+  );
 }
 
 class SteamGameWorkspaceSurface extends StatefulWidget {
@@ -353,7 +448,7 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
-    if (!Platform.isAndroid) return session.build();
+    if (!Platform.isAndroid && !Platform.isLinux) return session.build();
     return Stack(
       fit: StackFit.expand,
       children: [

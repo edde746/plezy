@@ -17,6 +17,13 @@ if [[ -d "$INSTALL_DIR/lib" ]]; then
     export LD_LIBRARY_PATH="$INSTALL_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 fi
 
+# Fixed Steam decoder plugins matching the bundled GStreamer runtime.
+if [[ -d "$INSTALL_DIR/lib/gstreamer-1.0" ]]; then
+    export GST_PLUGIN_SYSTEM_PATH_1_0="$INSTALL_DIR/lib/gstreamer-1.0"
+    export GST_PLUGIN_PATH_1_0=""
+    export GST_PLUGIN_SCANNER_1_0="$INSTALL_DIR/lib/gstreamer-tools/gst-plugin-scanner"
+fi
+
 # gdk-pixbuf loaders
 if [[ -f "$INSTALL_DIR/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache" ]]; then
     export GDK_PIXBUF_MODULE_FILE="$INSTALL_DIR/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add an embedded Linux Steam receiver with OS-keyring pairing, dedicated H.264/HEVC and PCM decoding, retained Flutter textures, controller seats, connection details and acknowledged reconnect; bundle its fixed GStreamer plugins with Linux releases.
+
 - Add profile-scoped stereo, quad and 5.1 Steam audio requests with bounded Opus multistream decoding, explicit speaker mapping and a stereo compatibility retry for unsupported layouts or outputs.
 
 - Preserve TV navigation-remote assistance for player one without consuming a Steam gamepad seat; release both input paths when a composite device disconnects.

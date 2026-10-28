@@ -573,7 +573,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
   Future<void> _openInWorkspace(GameHost host, StreamGame game, {bool fullscreen = false}) => _run((c) async {
     final capability = await c.client.capabilities(host);
     if (!mounted || !c.current) return;
-    if (!capability.embeddedSurface || host.protocol != GameProtocol.steam || !Platform.isAndroid) {
+    if (!capability.embeddedSurface ||
+        host.protocol != GameProtocol.steam ||
+        (!Platform.isAndroid && !Platform.isLinux)) {
       await _engineUnavailable(host);
       return;
     }
