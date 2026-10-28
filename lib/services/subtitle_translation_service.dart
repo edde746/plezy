@@ -390,7 +390,7 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
           source.contains('>') ||
           target.contains('<') ||
           target.contains('>')) {
-        throw const FormatException('Glossary terms and translations must be single-line text of at most 128 characters.');
+        throw const FormatException('Glossary terms and translations must be single-line plain text of at most 128 characters.');
       }
       if (!normalizedTerms.add(source.toLowerCase())) {
         throw const FormatException('Glossary source terms must be unique without regard to case.');

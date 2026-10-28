@@ -464,8 +464,109 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     await _showApplied();
   });
 
+  Future<SubtitleCue?> _editCueForReview(BuildContext dialogContext, SubtitleCue cue) async {
+    final textController = TextEditingController(text: cue.text);
+    final startController = TextEditingController(text: cue.startMs.toString());
+    final endController = TextEditingController(text: cue.endMs.toString());
+    SubtitleCue? edited;
+    String? validationError;
+    try {
+      await showDialog<bool>(
+        context: dialogContext,
+        builder: (editorContext) => StatefulBuilder(
+          builder: (context, setEditorState) => AlertDialog(
+            title: const Text('Edit subtitle cue'),
+            content: SizedBox(
+              width: 480,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: textController,
+                      minLines: 3,
+                      maxLines: 8,
+                      decoration: const InputDecoration(
+                        labelText: 'Cue text',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: startController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Start (ms)',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: endController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'End (ms)',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (validationError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(validationError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(editorContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final startMs = int.tryParse(startController.text.trim());
+                  final endMs = int.tryParse(endController.text.trim());
+                  final text = textController.text.trimRight();
+                  if (startMs == null ||
+                      endMs == null ||
+                      startMs < 0 ||
+                      endMs <= startMs ||
+                      endMs > SubtitleRetimer.maximumTimeMs ||
+                      text.trim().isEmpty ||
+                      text.length > 4000) {
+                    setEditorState(() {
+                      validationError = 'Use non-empty text up to 4000 characters and valid millisecond times.';
+                    });
+                    return;
+                  }
+                  edited = SubtitleCue(index: cue.index, startMs: startMs, endMs: endMs, text: text);
+                  Navigator.of(editorContext).pop(true);
+                },
+                child: const Text('Save cue'),
+              ),
+            ],
+          ),
+        ),
+      );
+      return edited;
+    } finally {
+      textController.dispose();
+      startController.dispose();
+      endController.dispose();
+    }
+  }
+
   Future<bool> _writeAndApply(List<SubtitleCue> cues, {required String operationLabel}) async {
-    final bytes = SubtitleSyncService.writeSrt(cues);
+    final reviewedCues = List<SubtitleCue>.from(cues);
     final List<int> previewIndexes;
     if (cues.length <= 12) {
       previewIndexes = List<int>.generate(cues.length, (index) => index);
@@ -479,8 +580,9 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     }
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Review $operationLabel'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Review $operationLabel'),
         content: SizedBox(
           width: 560,
           height: (MediaQuery.sizeOf(dialogContext).height - 220).clamp(240.0, 420.0).toDouble(),
@@ -494,7 +596,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                   itemCount: previewIndexes.length,
                   itemBuilder: (context, index) {
                     final cueIndex = previewIndexes[index];
-                    final cue = cues[cueIndex];
+                    final cue = reviewedCues[cueIndex];
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Column(
@@ -506,6 +608,17 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                           ),
                           const SizedBox(height: 2),
                           SelectableText(cue.text),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                final edited = await _editCueForReview(dialogContext, cue);
+                                if (edited != null && mounted) setDialogState(() => reviewedCues[cueIndex] = edited);
+                              },
+                              icon: const Icon(Icons.edit_outlined),
+                              label: const Text('Edit sample cue'),
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -524,13 +637,15 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Attach subtitle'),
           ),
-        ],
+          ],
+        ),
       ),
     );
     if (!mounted || accepted != true) {
       if (mounted) setState(() => _status = 'Subtitle result discarded; the current track and source file are unchanged.');
       return false;
     }
+    final bytes = SubtitleSyncService.writeSrt(reviewedCues);
     final directory = await getTemporaryDirectory();
     final path = p.join(directory.path, 'plezyng_subtitle_${DateTime.now().microsecondsSinceEpoch}.srt');
     await File(path).writeAsBytes(bytes, flush: true);
