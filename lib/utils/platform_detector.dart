@@ -264,7 +264,8 @@ class PlatformDetector {
 
   /// Candidate platforms; the native capability query verifies the installed engine.
   static bool supportsEmbeddedGameStreaming() =>
-      (Platform.isAndroid || Platform.isLinux || Platform.isMacOS || Platform.isIOS) && !isAutomotive();
+      (Platform.isAndroid || Platform.isLinux || Platform.isMacOS || Platform.isIOS || Platform.isWindows) &&
+      !isAutomotive();
 
   /// Detects if the app should use side navigation (Desktop or TV).
   /// TV is covered because [isMobile] excludes it, so [isDesktop] is true there.

@@ -14,6 +14,9 @@ class H26xParser {
   // IHS wire codec identifiers: H.264 = 4, HEVC = 5.
   bool configure(int codec, const uint8_t* bytes, size_t length);
   bool accessUnit(const uint8_t* bytes, size_t length, std::vector<uint8_t>& output, bool& changed);
+  // Media Foundation consumes Annex-B, including parameter sets. Normalize both
+  // wire representations through the same bounded parser used by VideoToolbox.
+  bool annexB(const uint8_t* bytes, size_t length, std::vector<uint8_t>& output);
   bool ready() const;
   int codec() const { return codec_; }
   const std::array<std::vector<uint8_t>, 3>& parameters() const { return parameters_; }

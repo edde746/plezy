@@ -173,4 +173,35 @@ bool H26xParser::accessUnit(const uint8_t* b, size_t n, std::vector<uint8_t>& ou
   if (!picture) out.clear();
   return true;
 }
+bool H26xParser::annexB(const uint8_t* bytes, size_t length, std::vector<uint8_t>& output) {
+  output.clear();
+  std::vector<uint8_t> prefixed;
+  bool changed = false;
+  if (!accessUnit(bytes, length, prefixed, changed)) return false;
+  if (prefixed.empty()) return true;
+  if (!ready()) return false;
+  for (const auto& parameter : parameters_) {
+    if (parameter.empty()) continue;
+    output.insert(output.end(), {0, 0, 0, 1});
+    output.insert(output.end(), parameter.begin(), parameter.end());
+  }
+  size_t offset = 0;
+  while (offset < prefixed.size()) {
+    // accessUnit produced these four-byte sizes; keep the invariant explicit.
+    if (prefixed.size() - offset < 4) {
+      output.clear();
+      return false;
+    }
+    uint32_t size = 0;
+    for (int i = 0; i < 4; ++i) size = (size << 8) | prefixed[offset++];
+    if (!size || size > prefixed.size() - offset) {
+      output.clear();
+      return false;
+    }
+    output.insert(output.end(), {0, 0, 0, 1});
+    output.insert(output.end(), prefixed.begin() + offset, prefixed.begin() + offset + size);
+    offset += size;
+  }
+  return true;
+}
 }  // namespace plezy::steam

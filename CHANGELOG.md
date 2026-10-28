@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add an experimental Windows Steam receiver with Credential Manager pairing, cancellable DNS, Media Foundation video, bounded XAudio2 surround audio, retained workspace textures and shared input controls. Windows SDK and device qualification remain required; missing Media Feature Pack support keeps library browsing available.
+
 - Clarify the experimental Steam receiver coverage in Games help and give touch controls descriptive screen-reader labels; preserve existing theme, icon and controller geometry conventions.
 
 - Add themed multi-touch controls to Apple/Linux Steam surfaces, including dual sticks, independent buttons and triggers, compact landscape layout and player-one assistance that preserves physical controller seats.

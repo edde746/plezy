@@ -10,6 +10,9 @@
 #include "flutter/generated_plugin_registrant.h"
 #include "mpv/display_mode_manager.h"
 #include "mpv/mpv_plugin.h"
+#ifdef PLEZY_STEAM_RECEIVER
+#include "games/steam_plugin.h"
+#endif
 
 static constexpr wchar_t kWindowPlacementKey[] = L"Software\\Plezy";
 static constexpr wchar_t kWindowPlacementValue[] = L"WindowPlacement";
@@ -175,6 +178,9 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+#ifdef PLEZY_STEAM_RECEIVER
+  SteamPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("SteamPlugin"));
+#endif
 
   MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
   MpvWorkspacePlayerPluginRegisterWithRegistrar(

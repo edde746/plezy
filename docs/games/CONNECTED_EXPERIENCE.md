@@ -18,10 +18,10 @@ The implemented slices below are not substitutes for the remaining scope.
 | Catalog refresh and revocation | Implemented, Go race tests pass | Relay deployment and live account exercise |
 | Grid, details, routes and filtering | Implemented using existing app components | Device accessibility, RTL, controller and visual qualification; new strings currently use the English fallback |
 | Android stream preferences / recovery | Implemented through Flutter, Java and JNI | Full Android build/minification, real host reconnect and negotiated-quality measurements |
-| Native Steam transport | Portable Linux build and 41 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
-| View-independent stream lifetime | Retained Android PlatformView and Linux/Apple texture surfaces | Native session still belongs to its retained surface; surface destruction stops it |
+| Native Steam transport | Portable Linux build and 41 tests pass locally; Windows runtime and five test executables cross-compile | Current-head sanitizer CI, Android packaging and live transport qualification |
+| View-independent stream lifetime | Retained Android PlatformView and Windows/Linux/Apple texture surfaces | Native session still belongs to its retained surface; surface destruction stops it |
 | Adaptive metrics / advanced codecs | Host-driven feedback, measured diagnostics, request ceilings, one-to-four controller seats, mono/stereo/quad/5.1 mapping; Apple Metal direct GPU SDR 4:2:0/4:4:4 source | Apple SDK/GPU tests; Android/Linux direct GPU Pyrowave, HDR and 4K implementation; real host/audio/controller and adaptation measurements |
-| Other embedded receiver platforms | Linux receiver implemented; Apple VideoToolbox/Core Audio/Metal and Xcode integration source added; shared texture/touch input and workspace ownership | Full Linux/SteamOS packaging and host qualification; Apple SDK/device qualification; Windows receiver implementation |
+| Other embedded receiver platforms | Linux receiver implemented; Windows Media Foundation/XAudio2 and Apple VideoToolbox/Core Audio/Metal receiver sources integrated; shared texture/touch input and workspace ownership | Full Linux/SteamOS packaging and host qualification; Apple SDK/device qualification; Windows MSVC x64/ARM64 and device qualification |
 | Rich Steam / host features | Achievements/news/optional friends-playing, Input/properties host actions, and confirmed Cloud/Families destinations implemented | Live API qualification, host cloud/family state APIs, live Steam Input configuration, Together and captures |
 | Companion game control / internet transport | Inventory, permissioned host launch/install/views, and active stream audio/fullscreen/disconnect controls implemented | Signaling/NAT/relay, internet connection diagnostics and actual host/device qualification |
 
@@ -525,3 +525,45 @@ accepts eight-bit BGRA and eight-bit NV12, and treats YUV as BT.601. The receive
 therefore uses explicit BT.709 GPU conversion and rejects PQ/BT.2020 streams.
 An EDR/HDR native presentation layer, host negotiation and color/device tests
 are required; adding an HDR toggle alone would misrepresent support.
+
+
+## Windows receiver follow-up — 2026-10-28
+
+The Windows build now includes the shared Steam transport with app-owned
+Winsock sockets, recursive Win32 synchronization and monotonic QPC timing.
+No SDL event loop is required. Oversized datagrams are discarded instead of
+being delivered as valid truncated packets; receive timeouts and transient
+ICMP errors retain the connection. Thread creation uses the CRT-aware API.
+
+The native adapter stores only host-keyed pairing material in the current
+user's Windows Credential Manager (`CRED_PERSIST_LOCAL_MACHINE`). It obtains
+entropy from BCrypt, cancels DNS through the documented asynchronous Winsock
+API, and retires cancelled pairing writes. Credentials do not cross the Dart
+boundary. DNS and connection work run off the platform thread. Pairing and
+trust removal are serialized; creating a receiver during either returns busy.
+
+Media Foundation receives bounded Annex-B H.264/HEVC access units normalized
+from the shared parser, including avcC/hvcC parameters. The eight-bit NV12 SDR
+output is converted to a retained RGBA Flutter texture. This path uses CPU
+pixels; it does not claim direct GPU output or HDR. PQ, HLG and BT.2020 outputs
+are rejected. Synchronous installed decoders are probed; HEVC failure retries
+H.264. The MSVC build delay-loads Media Foundation so Windows N without the
+Media Feature Pack keeps the Games library available instead of failing app
+startup. The receiver can also be omitted with `PLEZY_STEAM_RECEIVER=OFF`.
+
+XAudio2 consumes the shared decoder's explicit mono/stereo/quad/5.1 speaker
+order. Audio starts muted and follows the workspace lease. It retains at most
+eight submitted audio buffers, with callback contexts held until completion
+or `DestroyVoice`. Unsupported surround retries stereo. Video admission is
+bounded to four queued packets and eight pending tickets. A disconnect reply
+follows worker shutdown and Flutter texture unregistration; input is
+neutralized on focus loss, suspend, menu ownership changes and disconnect.
+
+Windows uses the existing Games routes, themes, menus, touch controls,
+controller seats and diagnostics. No new parallel player UI was introduced.
+The private `windows-native-test` matrix now builds five focused Steam test
+executables for x64 and ARM64 and runs them with the existing native checks.
+Cross-compilation is evidence of source/link portability only; an actual
+Windows SDK build, real decoder fixture execution, audio/output tests and
+Steam-host qualification remain required. Confidence: high in the recorded
+cross-compilation and portable tests; unknown for Windows device playback.

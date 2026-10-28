@@ -226,7 +226,7 @@ class SteamGameWorkspaceSession {
   }
 
   Widget build() {
-    if (Platform.isLinux || Platform.isMacOS || Platform.isIOS) {
+    if (Platform.isLinux || Platform.isMacOS || Platform.isIOS || Platform.isWindows) {
       return ValueListenableBuilder<int>(
         valueListenable: surfaceGeneration,
         builder: (_, generation, _) => _SteamTextureSurface(key: ValueKey(generation), session: this),
@@ -579,7 +579,9 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
-    if (!Platform.isAndroid && !Platform.isLinux && !Platform.isMacOS && !Platform.isIOS) return session.build();
+    if (!Platform.isAndroid && !Platform.isLinux && !Platform.isMacOS && !Platform.isIOS && !Platform.isWindows) {
+      return session.build();
+    }
     return Stack(
       fit: StackFit.expand,
       children: [

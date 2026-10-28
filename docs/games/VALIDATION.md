@@ -288,3 +288,29 @@ gh workflow run ci.yml --repo snapetech-org/PlezyNG \
 
 Verify the run's head matches the PR head. A rerun of an older workflow revision
 does not validate these sources. No hosted fallback is authorized.
+
+
+### Windows receiver source and cross-compilation — 2026-10-28
+
+- The shared transport, Windows Media Foundation/XAudio2 adapter and five
+  Windows test executables compile and link with MinGW-w64 GCC 13.2. The
+  Flutter Windows plugin passes `-Wall -Wextra -Werror` syntax/type checking
+  against Flutter 3.47.1 headers. This is **not MSVC or Windows execution**.
+- The new tests exercise actual loopback UDP, oversized datagram rejection,
+  receive timeouts, recursive locks/conditions, pairing cancellation and a
+  real 64×64 H.264 red-pixel fixture. Their Windows execution is still pending.
+- All three native source patches replay cleanly against the pinned IHS
+  revision and reproduce the prepared source. Shared IHS compilation also
+  succeeds with variable-length arrays rejected, for MSVC portability.
+- **41 Linux native tests passed across the run and targeted rerun**. Two
+  rebuilt test binaries initially lacked executable permissions; restoring
+  those local generated-file permissions allowed both to run and pass.
+  The later Annex-B normalization regression passes independently.
+- **24 focused Flutter tests passed** for workspace/session lifecycle,
+  textures, native capability behavior and accessible touch controls. Focused
+  Dart analysis is clean. These overlap the earlier 192-test suite.
+- **46 packaging/workflow contract tests passed** after the workflow extension.
+- Private Windows CI now builds and runs the Steam tests alongside existing
+  native checks, preserving x64/ARM64 private JIT routing and manual dispatch.
+  Current-head CI, Apple SDK builds, Windows N startup, Windows audio devices,
+  actual host playback and GPU/HDR qualification remain open.

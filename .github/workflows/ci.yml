@@ -745,6 +745,7 @@ jobs:
         run: |
           $buildDir = "build/windows/${{ matrix.arch }}"
           cmake -S windows -B $buildDir `
+            -DPLEZY_STEAM_TESTS=ON `
             -DPLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS=ON `
             -DPLEZY_BUILD_DISPLAY_RECOVERY_TESTS=ON
 
@@ -756,7 +757,12 @@ jobs:
             plezy `
             mpv_property_result_contract_test `
             mpv_player_property_contract_test `
-            display_mode_manager_test
+            display_mode_manager_test `
+            plezy_windows_platform_test `
+            plezy_windows_sink_test `
+            plezy_h26x_test `
+            plezy_audio_test `
+            plezy_pyrowave_test
 
       - name: Run Windows native reliability tests
         shell: pwsh

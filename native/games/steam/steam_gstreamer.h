@@ -2,13 +2,10 @@
 #pragma once
 #include <functional>
 
+#include "steam_pixels.h"
 #include "steam_runtime.h"
 
 namespace plezy::steam {
-struct DecodedPixels {
-  uint32_t width = 0, height = 0, id = 0;
-  std::vector<uint8_t> rgba;
-};
 // A dedicated games decoder. No media-library player, file URI, external
 // process or user-provided pipeline is involved. All queues are bounded.
 class GStreamerSink final : public Sink {

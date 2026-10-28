@@ -43,6 +43,23 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
 
+option(PLEZY_STEAM_RECEIVER "Include the Windows Steam receiver" ON)
+if(PLEZY_STEAM_RECEIVER)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  execute_process(COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../scripts/games/prepare_steam.py"
+    RESULT_VARIABLE STEAM_PREPARE_RESULT)
+  if(NOT STEAM_PREPARE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Could not prepare the pinned Steam runtime")
+  endif()
+  set(PLEZY_STEAM_PYROWAVE OFF CACHE BOOL "" FORCE)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/../native/games/steam" "${CMAKE_CURRENT_BINARY_DIR}/steam")
+  target_sources(${BINARY_NAME} PRIVATE "games/steam_plugin.cpp")
+  # Winsock2 must precede windows.h; this adapter owns that include ordering.
+  set_source_files_properties("games/steam_plugin.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+  target_compile_definitions(${BINARY_NAME} PRIVATE PLEZY_STEAM_RECEIVER=1 _WIN32_WINNT=0x0602)
+  target_link_libraries(${BINARY_NAME} PRIVATE plezy_steam_windows bcrypt)
+endif()
+
 option(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS
   "Build the focused Windows mpv property-result contract tests" OFF)
 if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
