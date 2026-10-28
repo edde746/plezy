@@ -27,6 +27,7 @@ final class SubtitleArchiveCandidate {
 /// application's temporary directory. Archive names are never used as paths.
 abstract final class SubtitleArchiveImporter {
   static const int maximumArchiveBytes = 50 * 1024 * 1024;
+  static const int maximumExpandedArchiveBytes = 64 * 1024 * 1024;
   static const int maximumEntries = 4096;
   static const int maximumCandidates = 256;
   static const int maximumMemberBytes = 32 * 1024 * 1024;
@@ -75,7 +76,8 @@ abstract final class SubtitleArchiveImporter {
     if (bytes.isEmpty || bytes.lengthInBytes > maximumArchiveBytes) {
       throw const FormatException('ZIP archive must be between 1 byte and 50 MiB.');
     }
-    final archive = ZipDecoder().decodeBytes(bytes, verify: false);
+    _validateZipResourceBounds(bytes);
+    final archive = ZipDecoder().decodeBytes(bytes, verify: true);
     if (archive.files.length > maximumEntries) {
       throw const FormatException('ZIP archive contains too many entries to inspect safely.');
     }
@@ -149,6 +151,159 @@ abstract final class SubtitleArchiveImporter {
     }
     candidates.sort((a, b) => a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()));
     return SubtitleArchiveDocument._(archiveDigest: digest, candidates: List.unmodifiable(candidates));
+  }
+
+  /// Validate the central directory and cap actual DEFLATE output before the
+  /// archive package expands every member into memory.
+  static void _validateZipResourceBounds(Uint8List bytes) {
+    if (bytes.lengthInBytes < 22) throw const FormatException('ZIP archive is truncated.');
+    final view = ByteData.sublistView(bytes);
+    final searchStart = bytes.lengthInBytes > 22 + 0xffff ? bytes.lengthInBytes - 22 - 0xffff : 0;
+    var endRecord = -1;
+    for (var offset = bytes.lengthInBytes - 22; offset >= searchStart; offset--) {
+      if (view.getUint32(offset, Endian.little) != 0x06054b50) continue;
+      final commentLength = view.getUint16(offset + 20, Endian.little);
+      if (offset + 22 + commentLength == bytes.lengthInBytes) {
+        endRecord = offset;
+        break;
+      }
+    }
+    if (endRecord < 0) throw const FormatException('ZIP archive has no valid end-of-directory record.');
+
+    final diskNumber = view.getUint16(endRecord + 4, Endian.little);
+    final directoryDisk = view.getUint16(endRecord + 6, Endian.little);
+    final diskEntryCount = view.getUint16(endRecord + 8, Endian.little);
+    final entryCount = view.getUint16(endRecord + 10, Endian.little);
+    final directoryBytes = view.getUint32(endRecord + 12, Endian.little);
+    final directoryOffset = view.getUint32(endRecord + 16, Endian.little);
+    if (diskNumber != 0 || directoryDisk != 0 || diskEntryCount != entryCount) {
+      throw const FormatException('Split or multi-disk ZIP archives are not supported.');
+    }
+    if (entryCount == 0xffff || directoryBytes == 0xffffffff || directoryOffset == 0xffffffff) {
+      throw const FormatException('ZIP64 archives are not supported by the bounded subtitle importer.');
+    }
+    if (entryCount > maximumEntries) {
+      throw const FormatException('ZIP archive contains too many entries to inspect safely.');
+    }
+    final directoryEnd = directoryOffset + directoryBytes;
+    if (directoryEnd > endRecord || directoryEnd < directoryOffset) {
+      throw const FormatException('ZIP central directory is outside the archive bounds.');
+    }
+
+    var cursor = directoryOffset;
+    var expandedBytes = 0;
+    for (var index = 0; index < entryCount; index++) {
+      if (cursor + 46 > directoryEnd || view.getUint32(cursor, Endian.little) != 0x02014b50) {
+        throw const FormatException('ZIP central directory contains an invalid entry.');
+      }
+      final flags = view.getUint16(cursor + 8, Endian.little);
+      final method = view.getUint16(cursor + 10, Endian.little);
+      final compressedSize = view.getUint32(cursor + 20, Endian.little);
+      final uncompressedSize = view.getUint32(cursor + 24, Endian.little);
+      final nameLength = view.getUint16(cursor + 28, Endian.little);
+      final extraLength = view.getUint16(cursor + 30, Endian.little);
+      final commentLength = view.getUint16(cursor + 32, Endian.little);
+      final startDisk = view.getUint16(cursor + 34, Endian.little);
+      final localHeaderOffset = view.getUint32(cursor + 42, Endian.little);
+      final recordEnd = cursor + 46 + nameLength + extraLength + commentLength;
+      if (recordEnd > directoryEnd) {
+        throw const FormatException('ZIP central directory entry exceeds its declared bounds.');
+      }
+      if (startDisk != 0 ||
+          compressedSize == 0xffffffff ||
+          uncompressedSize == 0xffffffff ||
+          localHeaderOffset == 0xffffffff) {
+        throw const FormatException('ZIP64 and multi-disk entries are not supported.');
+      }
+      if ((flags & 0x0041) != 0) {
+        throw const FormatException('Encrypted ZIP entries are not supported.');
+      }
+      if (method != 0 && method != 8) {
+        throw const FormatException('ZIP entries must use stored or DEFLATE compression.');
+      }
+      if (uncompressedSize > maximumMemberBytes ||
+          uncompressedSize > maximumExpandedArchiveBytes - expandedBytes) {
+        throw const FormatException('ZIP expands beyond the 64 MiB subtitle import bound.');
+      }
+      _rejectZip64ExtraFields(bytes, cursor + 46 + nameLength, extraLength);
+
+      if (localHeaderOffset + 30 > directoryOffset ||
+          view.getUint32(localHeaderOffset, Endian.little) != 0x04034b50) {
+        throw const FormatException('ZIP local file header is invalid.');
+      }
+      final localFlags = view.getUint16(localHeaderOffset + 6, Endian.little);
+      final localMethod = view.getUint16(localHeaderOffset + 8, Endian.little);
+      final localCompressedSize = view.getUint32(localHeaderOffset + 18, Endian.little);
+      final localUncompressedSize = view.getUint32(localHeaderOffset + 22, Endian.little);
+      final localNameLength = view.getUint16(localHeaderOffset + 26, Endian.little);
+      final localExtraLength = view.getUint16(localHeaderOffset + 28, Endian.little);
+      final usesDataDescriptor = (flags & 0x0008) != 0;
+      if ((localFlags & 0x0041) != 0 ||
+          localMethod != method ||
+          ((localFlags ^ flags) & 0x0008) != 0 ||
+          localCompressedSize == 0xffffffff ||
+          localUncompressedSize == 0xffffffff ||
+          (!usesDataDescriptor &&
+              (localCompressedSize != compressedSize || localUncompressedSize != uncompressedSize)) ||
+          (usesDataDescriptor &&
+              ((localCompressedSize != 0 && localCompressedSize != compressedSize) ||
+                  (localUncompressedSize != 0 && localUncompressedSize != uncompressedSize)))) {
+        throw const FormatException('ZIP local and central entry headers do not match.');
+      }
+      final dataOffset = localHeaderOffset + 30 + localNameLength + localExtraLength;
+      final dataEnd = dataOffset + compressedSize;
+      if (dataEnd > directoryOffset || dataEnd < dataOffset) {
+        throw const FormatException('ZIP compressed entry data is outside the archive bounds.');
+      }
+      _rejectZip64ExtraFields(bytes, localHeaderOffset + 30 + localNameLength, localExtraLength);
+
+      if (method == 0) {
+        if (compressedSize != uncompressedSize) {
+          throw const FormatException('Stored ZIP entry has inconsistent size metadata.');
+        }
+        expandedBytes += compressedSize;
+      } else {
+        final sink = _ZipOutputLimitSink(maximumMemberBytes);
+        try {
+          final decoder = ZLibCodec(raw: true).decoder.startChunkedConversion(sink);
+          decoder.add(Uint8List.sublistView(bytes, dataOffset, dataEnd));
+          decoder.close();
+        } on FormatException {
+          rethrow;
+        } catch (_) {
+          throw const FormatException('ZIP contains a malformed or oversized DEFLATE stream.');
+        }
+        if (sink.bytes != uncompressedSize) {
+          throw const FormatException('ZIP entry output does not match its declared uncompressed size.');
+        }
+        expandedBytes += sink.bytes;
+      }
+      cursor = recordEnd;
+    }
+
+    if (cursor != directoryEnd) {
+      // The optional digital-signature record is the only supported trailer.
+      if (cursor + 6 > directoryEnd ||
+          view.getUint32(cursor, Endian.little) != 0x05054b50 ||
+          cursor + 6 + view.getUint16(cursor + 4, Endian.little) != directoryEnd) {
+        throw const FormatException('ZIP central directory has unexpected trailing data.');
+      }
+    }
+  }
+
+  static void _rejectZip64ExtraFields(Uint8List bytes, int offset, int length) {
+    final view = ByteData.sublistView(bytes);
+    final end = offset + length;
+    var cursor = offset;
+    while (cursor < end) {
+      if (cursor + 4 > end) throw const FormatException('ZIP extra field is truncated.');
+      final identifier = view.getUint16(cursor, Endian.little);
+      final fieldLength = view.getUint16(cursor + 2, Endian.little);
+      cursor += 4;
+      if (cursor + fieldLength > end) throw const FormatException('ZIP extra field is outside its declared bounds.');
+      if (identifier == 0x0001) throw const FormatException('ZIP64 extra fields are not supported.');
+      cursor += fieldLength;
+    }
   }
 
   static String _validateEntryName(String rawName) {
@@ -226,4 +381,20 @@ final class SubtitleArchiveDocument {
       rethrow;
     }
   }
+}
+
+final class _ZipOutputLimitSink implements Sink<List<int>> {
+  _ZipOutputLimitSink(this.limit);
+
+  final int limit;
+  int bytes = 0;
+
+  @override
+  void add(List<int> chunk) {
+    bytes += chunk.length;
+    if (bytes > limit) throw const FormatException('ZIP entry expands beyond the 32 MiB per-file bound.');
+  }
+
+  @override
+  void close() {}
 }
