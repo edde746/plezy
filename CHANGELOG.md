@@ -50,6 +50,7 @@
 - Lock iOS, macOS and tvOS CocoaPods dependencies for CI, and retain root dependency overrides when resolving tvOS packages.
 - Fix clean tvOS CocoaPods setup, Android 17 preview SDK provisioning, and short-path Apple native-asset builds on private JIT runners.
 - Fix the macOS native reliability target to import the `PlezyNG` app module.
+- Require Android host native-test tools to be provisioned on the private runner before CI starts.
 
 ## [3.0.0] - 2026-10-27
 
