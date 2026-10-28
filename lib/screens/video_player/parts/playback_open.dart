@@ -235,7 +235,18 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       if (!isCurrent()) return (result: result, streamId: null);
 
       final candidates = results
-          .where((candidate) => candidate.key.isNotEmpty && matchesLanguage(candidate.languageCode, candidate.language))
+          .where(
+            (candidate) =>
+                candidate.key.isNotEmpty &&
+                matchesLanguage(candidate.languageCode, candidate.language) &&
+                !SubtitleRejectionService.isRejected(
+                  settings,
+                  serverId: metadata.serverId!,
+                  itemId: metadata.id,
+                  mediaIndex: result.selectedMediaIndex,
+                  result: candidate,
+                ),
+          )
           .toList();
       candidates.sort((a, b) {
         final perfect = (b.perfectMatch ? 1 : 0).compareTo(a.perfectMatch ? 1 : 0);

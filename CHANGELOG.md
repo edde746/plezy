@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Remember rejected server subtitle revisions for 180 days; hide or restore them in subtitle search and skip rejected results during automatic preferred-language downloads.
+
 - Add opt-in subtitle-on-mute for library playback, retrying after the native track catalog arrives and restoring a temporary Off override on unmute unless the viewer changes tracks or the item changes.
 - Extend opt-in subtitle-on-mute to standalone source video playback with guarded restoration of the prior track on unmute.
 - Add a configurable shortcut to reset subtitle timing to zero through the selected persistence scope and show the applied value.

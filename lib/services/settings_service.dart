@@ -861,6 +861,16 @@ class SettingsService extends BaseSharedPreferencesService {
     transform: (value) => value.isFinite && value >= 0.8 && value <= 1.25 ? value : 1.0,
   );
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
+  /// Rejected server subtitle revisions, stored as content fingerprints → epoch ms.
+  static final subtitleRejectedRevisions = JsonPref<Map<String, int>>(
+    'subtitle_rejected_revisions_v1',
+    defaultValue: const {},
+    encode: json.encode,
+    decode: (raw) => (raw as Map<String, dynamic>).map((key, value) {
+      final timestamp = value is int ? value : int.tryParse(value.toString()) ?? 0;
+      return MapEntry(key, timestamp);
+    }),
+  );
   /// Ordered device-local subtitle language fallbacks; server profile language remains first.
   static const subtitleLanguageOrder = StringListPref('subtitle_language_order');
   static const volume = DoublePref('volume', defaultValue: 100.0);
