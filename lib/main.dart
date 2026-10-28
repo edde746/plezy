@@ -1230,6 +1230,9 @@ void _registerAppLicenses() {
       'Jellyfin Web translations',
     ], await rootBundle.loadString('assets/licenses/JellyfinWebTranslations.txt'));
     yield LicenseEntryWithLineBreaks(const [
+      'MilkRust sample presets (CC0)',
+    ], await rootBundle.loadString('assets/licenses/MilkRust_Sample_Pack.txt'));
+    yield LicenseEntryWithLineBreaks(const [
       'Foliate JS',
     ], await rootBundle.loadString('assets/reader/foliate/LICENSE'));
     yield LicenseEntryWithLineBreaks(const [
