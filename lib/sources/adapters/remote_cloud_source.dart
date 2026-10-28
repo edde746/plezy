@@ -4,6 +4,7 @@ import '../../services/remote_streams/remote_stream_models.dart';
 
 typedef RemoteCloudPageLoader = Future<RemoteCloudPage> Function({String? parentId, String? cursor});
 typedef RemoteCloudContentResolver = Future<ContentLease> Function(RemoteCloudItem item);
+typedef RemoteCloudParentIdLoader = Future<String?> Function(String entryId);
 
 /// Presents one connected debrid account as a virtual file source.
 ///
@@ -17,12 +18,14 @@ class RemoteCloudSourceAdapter extends SourceAdapter {
     required this.accountId,
     required this.loadPage,
     required this.resolveContent,
+    this.loadParentProviderId,
   });
 
   final RemoteStreamService service;
   final String accountId;
   final RemoteCloudPageLoader loadPage;
   final RemoteCloudContentResolver resolveContent;
+  final RemoteCloudParentIdLoader? loadParentProviderId;
 
   final Map<String, RemoteCloudItem> _items = {};
   final Map<String, String> _folderProviderIds = {};
@@ -33,7 +36,17 @@ class RemoteCloudSourceAdapter extends SourceAdapter {
 
   @override
   Future<SourcePage> browse({String? parent, String? cursor, String? query}) async {
-    final providerParent = parent == null || parent.isEmpty ? null : _folderProviderIds[parent];
+    String? providerParent;
+    if (parent != null && parent.isNotEmpty) {
+      providerParent = _folderProviderIds[parent];
+      if (providerParent == null) {
+        final restored = await loadParentProviderId?.call(parent);
+        if (restored != null && restored.isNotEmpty && restored.length <= 256) {
+          providerParent = restored;
+          _folderProviderIds[parent] = restored;
+        }
+      }
+    }
     if (parent != null && parent.isNotEmpty && providerParent == null) {
       throw const SourceException(SourceFailure.unavailable);
     }

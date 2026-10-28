@@ -18,6 +18,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import 'remote_cloud_files_screen.dart';
 import '../settings/remote_streaming_settings_screen.dart';
 import '../sources/source_player_screen.dart';
+import '../sources/sources_screen.dart';
 
 class RemoteStreamPickerScreen extends StatefulWidget {
   const RemoteStreamPickerScreen({
@@ -180,15 +181,29 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     if (!mounted || service == null || streaming.profileId != profileId || !streaming.isReady) return;
     final account = streaming.accountFor(service);
     if (account == null) return;
+    final sourceController = context.read<SourceController>();
+    final fileSource = sourceController.sources
+        .where(
+          (source) =>
+              source.kind == FileSourceKind.remoteCloud &&
+              source.options['accountId'] == account.id &&
+              sourceController.profileId == profileId,
+        )
+        .firstOrNull;
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => RemoteCloudFilesScreen(
-          service: service,
-          onManageConnections: _manageRemoteStreaming,
-          expectedAccountId: account.id,
-          expectedProfileId: profileId,
-        ),
+        builder: (_) => fileSource == null
+            ? RemoteCloudFilesScreen(
+                service: service,
+                onManageConnections: _manageRemoteStreaming,
+                expectedAccountId: account.id,
+                expectedProfileId: profileId,
+              )
+            : SourcesScreen(
+                source: fileSource,
+                title: Text('${_serviceName(service)} · ${account.displayName}'),
+              ),
       ),
     );
   }

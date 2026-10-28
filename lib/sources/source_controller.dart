@@ -659,6 +659,16 @@ class SourceController extends ChangeNotifier {
       return ContentLease(resolved.uri, size: resolved.size ?? item.size);
     }
 
+    Future<String?> loadParentProviderId(String entryId) async {
+      checkAccount();
+      final entry = await repository.entryById(source.profileId, source.id, entryId);
+      checkAccount();
+      if (entry == null || !entry.isFolder) return null;
+      final providerId = entry.identifiers['remoteCloudProviderId'];
+      if (providerId == null || providerId.isEmpty || providerId.length > 256) return null;
+      return providerId;
+    }
+
     return RemoteCloudSourceAdapter(
       source,
       transport,
@@ -666,6 +676,7 @@ class SourceController extends ChangeNotifier {
       accountId: accountId,
       loadPage: loadPage,
       resolveContent: resolveContent,
+      loadParentProviderId: loadParentProviderId,
     );
   }
 

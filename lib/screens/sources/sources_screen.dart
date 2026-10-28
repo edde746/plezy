@@ -543,6 +543,14 @@ class _SourcesScreenState extends State<SourcesScreen> {
               ),
               AppMenuItem(value: 'offline-quota', label: t.fileSources.offlineQuota, icon: Symbols.storage_rounded),
             ],
+            if (widget.source?.kind == FileSourceKind.remoteCloud) ...[
+              const AppMenuDivider(),
+              AppMenuItem(
+                value: 'manage-streaming-connections',
+                label: t.streaming.manageConnections,
+                icon: Symbols.tune_rounded,
+              ),
+            ],
             const AppMenuDivider(),
             AppMenuItem(
               value: 'refresh',
@@ -565,6 +573,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
               if (mounted) await _load();
             } else if (action == 'offline-quota') {
               await _editOfflineQuota(sources);
+            } else if (action == 'manage-streaming-connections') {
+              await _manageRemoteStreaming();
             } else if (action == 'refresh') {
               await _load();
             }
