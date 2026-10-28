@@ -76,12 +76,6 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     required String ratingKey,
   }) async {
     if (!mounted) return SubtitleDownloadApplyOutcome.unavailable;
-
-    // Plex-only: the OpenSubtitles polling flow uses [getVideoPlaybackData]
-    // and the Plex token. Jellyfin has no analogue and the entry point
-    // (`subtitleSearchSupported`) is already gated on backend, but guard
-    // here too in case a future caller wires the same handler elsewhere.
-    if (widget.metadata.backend != MediaBackend.plex) return SubtitleDownloadApplyOutcome.unavailable;
     if (widget.metadata.serverId != serverId || widget.metadata.id != ratingKey) {
       return SubtitleDownloadApplyOutcome.superseded;
     }
@@ -96,16 +90,17 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         widget.metadata.id == ratingKey;
 
     try {
-      final client = context.getPlexClientForServer(ServerId(serverId));
+      final client = context.getMediaClientForServer(ServerId(serverId)) as ExternalSubtitleSearchClient;
 
-      // Plex's OpenSubtitles download is asynchronous: the PUT returns immediately
+      // The server downloads asynchronously: the request returns immediately
       // but the new stream entry shows up in metadata seconds later. Poll until it
-      // appears. Up to 15s matches what Plex-web tolerates before giving up.
+      // appears. Up to 15s matches what Plex-web tolerates before giving up;
+      // Jellyfin lists the file after a rescan that can queue behind library scans.
       // Snapshot the authoritative source IDs so we can identify the new
       // download without asking mpv to synchronously open its remote URL.
       final existingSourceIds = widget.sourceSubtitleTracks.map((track) => track.id).toSet();
 
-      final deadline = DateTime.now().add(const Duration(seconds: 15));
+      final deadline = DateTime.now().add(Duration(seconds: widget.metadata.backend == MediaBackend.plex ? 15 : 30));
       MediaSubtitleTrack? newTrack;
 
       while (mounted && DateTime.now().isBefore(deadline)) {
@@ -114,20 +109,12 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
         try {
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
-          // forceRefresh: playback start left a fresh /library/metadata row in
-          // the cache (and each network poll would re-stamp it), so a
-          // cache-eligible read here would never observe the new stream.
-          // The position keeps a stacked item on the file that is playing,
-          // whose streams [existingSourceIds] came from.
-          final data = await client.getVideoPlaybackData(
+          newTrack = await client.findDownloadedSubtitle(
             ratingKey,
+            existingTrackIds: existingSourceIds,
             position: widget.player.state.position,
-            forceRefresh: true,
           );
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
-          if (data.mediaInfo == null) continue;
-
-          newTrack = findNewExternalSubtitleTrack(data.mediaInfo!.subtitleTracks, existingSourceIds);
           if (newTrack != null) break;
         } catch (e) {
           appLogger.w('Subtitle download poll iteration failed', error: e);
@@ -137,7 +124,14 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
       if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
       if (newTrack == null) return SubtitleDownloadApplyOutcome.timedOut;
-      final outcome = await switchSource(newSubtitleChoice: PlaybackSourceSubtitleChoice.source(newTrack.id));
+      // Plex selects a downloaded subtitle itself, and the reload follows that.
+      // Jellyfin renumbers its streams on the rescan, so the pick travels as
+      // the freshly read row instead of an id from the old catalog.
+      final outcome = await switchSource(
+        newSubtitleChoice: widget.metadata.backend == MediaBackend.plex
+            ? PlaybackSourceSubtitleChoice.source(newTrack.id)
+            : PlaybackSourceSubtitleChoice.downloaded(newTrack),
+      );
       return subtitleDownloadApplyOutcomeFor(outcome);
     } catch (e) {
       appLogger.w('Failed to refresh subtitles after download', error: e);

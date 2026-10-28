@@ -1,11 +1,13 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../utils/json_utils.dart';
+import '../utils/json_utils.dart';
 
-part 'plex_subtitle_search_result.g.dart';
+part 'subtitle_search_result.g.dart';
 
+/// One row of a server's external subtitle search: Plex's OpenSubtitles agent
+/// (whose search-stream fields these are) or Jellyfin's subtitle plugins.
 @JsonSerializable()
-class PlexSubtitleSearchResult {
+class SubtitleSearchResult {
   @JsonKey(fromJson: flexibleIntOrZero)
   final int id;
   @JsonKey(readValue: readStringField, defaultValue: '')
@@ -33,7 +35,7 @@ class PlexSubtitleSearchResult {
   @JsonKey(fromJson: flexibleBool)
   final bool forced;
 
-  PlexSubtitleSearchResult({
+  SubtitleSearchResult({
     required this.id,
     required this.key,
     this.codec,
@@ -49,7 +51,7 @@ class PlexSubtitleSearchResult {
     this.forced = false,
   });
 
-  factory PlexSubtitleSearchResult.fromJson(Map<String, dynamic> json) => _$PlexSubtitleSearchResultFromJson(json);
+  factory SubtitleSearchResult.fromJson(Map<String, dynamic> json) => _$SubtitleSearchResultFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PlexSubtitleSearchResultToJson(this);
+  Map<String, dynamic> toJson() => _$SubtitleSearchResultToJson(this);
 }

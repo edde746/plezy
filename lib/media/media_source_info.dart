@@ -513,3 +513,10 @@ class PlaybackExtras {
     return PlaybackExtras(chapters: chapters, markers: synthetic);
   }
 }
+
+MediaSubtitleTrack? findNewExternalSubtitleTrack(List<MediaSubtitleTrack> tracks, Set<int> existingSourceIds) {
+  for (final track in tracks) {
+    if (track.isExternal && !existingSourceIds.contains(track.id)) return track;
+  }
+  return null;
+}

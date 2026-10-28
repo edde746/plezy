@@ -37,6 +37,7 @@ import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
+import '../media/subtitle_search_result.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/jellyfin/jellyfin_account_preferences.dart';
 import '../models/jellyfin/jellyfin_display_preferences.dart';
@@ -100,6 +101,7 @@ part 'jellyfin_client/parts/live_tv.dart';
 part 'jellyfin_client/parts/live_tv_dvr.dart';
 part 'jellyfin_client/parts/images_downloads.dart';
 part 'jellyfin_client/parts/metadata_edit.dart';
+part 'jellyfin_client/parts/subtitle_search.dart';
 
 /// Canonical declarations of the [JellyfinClient] internals that the `part`
 /// mixins call into.
@@ -278,13 +280,15 @@ class JellyfinClient
         _JellyfinFileInfoMethods,
         _JellyfinLiveTvMethods,
         _JellyfinImageDownloadMethods,
-        _JellyfinMetadataEditMethods
+        _JellyfinMetadataEditMethods,
+        _JellyfinSubtitleSearchMethods
     implements
         MediaServerClient,
         SeasonEpisodePagingClient,
         MediaDeletionPermissionClient,
         ScopedMediaServerClient,
-        GracefullyCloseable {
+        GracefullyCloseable,
+        ExternalSubtitleSearchClient {
   JellyfinClient._({required this._connection, required this._http, FavoriteChannelsRepository? favoritesRepository})
     : _favoritesRepository = favoritesRepository ?? const SharedPreferencesFavoriteChannelsRepository(),
       _paths = MediaBrowserPaths(dialect: _connection.dialect, userId: _connection.userId);
@@ -481,7 +485,9 @@ class JellyfinClient
 
   @override
   ServerCapabilities get capabilities => switch (dialect) {
-    MediaBrowserDialect.jellyfin => ServerCapabilities.jellyfin,
+    MediaBrowserDialect.jellyfin => ServerCapabilities.jellyfin.copyWith(
+      externalSubtitleSearch: remoteSubtitleSearchAvailable,
+    ),
     MediaBrowserDialect.emby => ServerCapabilities.emby,
   };
 
@@ -573,6 +579,9 @@ class JellyfinClient
         final data = response.data;
         if (data is Map<String, dynamic>) {
           final policy = data['Policy'];
+          // Every add, reuse and reconnect checks health first: follow whether
+          // this user can search subtitles here, once the health answer is out.
+          unawaited(Future(() => probeRemoteSubtitleSearch(policy: policy)));
           final freshIsAdministrator = policy is Map<String, dynamic> ? policy['IsAdministrator'] as bool? : null;
           final freshPrimaryImageTag = JellyfinConnection.readPrimaryImageTag(data);
           final isAdministratorChanged =

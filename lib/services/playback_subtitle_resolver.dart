@@ -17,11 +17,20 @@ final class PlaybackSourceSubtitleChoice {
   final bool isOff;
   final int? sourceStreamId;
 
+  /// The row a subtitle download just added, read after the server's rescan.
+  /// The player's catalog predates it, and a rescan may have renumbered the
+  /// streams (Jellyfin), so this row — not a lookup of [sourceStreamId] —
+  /// describes the pick, and it always reloads.
+  final MediaSubtitleTrack? downloadedTrack;
+
   const PlaybackSourceSubtitleChoice.off() : this._(isOff: true);
 
   const PlaybackSourceSubtitleChoice.source(int sourceStreamId) : this._(isOff: false, sourceStreamId: sourceStreamId);
 
-  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId});
+  PlaybackSourceSubtitleChoice.downloaded(MediaSubtitleTrack track)
+    : this._(isOff: false, sourceStreamId: track.id, downloadedTrack: track);
+
+  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId, this.downloadedTrack});
 
   @override
   bool operator ==(Object other) =>

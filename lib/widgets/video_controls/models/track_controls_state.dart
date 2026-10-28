@@ -78,10 +78,9 @@ class TrackControlsState {
   final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
   onSubtitleDownloaded;
 
-  /// Whether OpenSubtitles search is reachable for this server. The Plex
-  /// server proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
-  /// equivalent. The track sheet hides the "Search subtitles" tile when
-  /// this is false.
+  /// Whether OpenSubtitles search is reachable for this server
+  /// ([ServerCapabilities.externalSubtitleSearch]). The track sheet hides the
+  /// "Search subtitles" tile when this is false.
   final bool subtitleSearchSupported;
 
   const TrackControlsState({
