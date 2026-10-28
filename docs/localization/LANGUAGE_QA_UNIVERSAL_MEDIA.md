@@ -24,9 +24,11 @@ for privacy, capture, streaming, extensions, playback, and accessibility wording
 Structural coverage checks keys, interpolation placeholders, and plural structure; it does not
 measure fluency or certify safety language.
 
-The current machine-readable coverage report records no missing, unknown, or
-placeholder errors for `universalMedia`. The 3.0.0 catalog cleanup resolved the
-previously stale source checkpoint and catalog issues. The current whole-project
-check passes for 37 locales and 3,593 source messages; strict translation cleanup
-reports zero unused catalog keys. The new media strings are present in each base
-locale with per-message draft/fallback provenance recorded.
+The current machine-readable coverage report records no missing, unknown,
+placeholder, or plural-structure errors for the 37 locale catalogs and 3,626
+English messages. The VLC parity batch is tracked separately in
+`LANGUAGE_QA_VLC_PARITY.md`. The English source checkpoint is pending review for
+36 changed messages across the current localization work; it was not refreshed
+because the new translations have not received native-speaker review. The media
+strings are present in each base locale with per-message draft/fallback
+provenance recorded.

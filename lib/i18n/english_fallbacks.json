@@ -138,6 +138,11 @@
     "videoSettings.subtitleExportSuccess",
     "videoSettings.subtitlePlaybackTimeAnchor1",
     "videoSettings.subtitlePlaybackTimeAnchor2",
-    "videoSettings.subtitleUsePlaybackTime"
+    "videoSettings.subtitleUsePlaybackTime",
+    "games.audioQuad",
+    "games.audioStereo",
+    "games.audioSurround51",
+    "games.streamAudio",
+    "games.streamAudioHelp"
   ]
 }

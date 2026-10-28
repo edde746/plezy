@@ -55,11 +55,11 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 | Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Local profile PIN gates Settings, download deletion, and entry to Explore; Explore can also be hidden per profile. Plex Home PINs remain server-owned. |
 | Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory, optional pre-play selection, device-local preferred-language selection and opt-in provider downloads, and scoped sync offsets are implemented across Plex, Jellyfin, and Emby; explicit server-selected tracks, account Off, and local picks remain authoritative |
 | Files and books | Standalone file sources, metadata, subtitles, ebooks and audiobooks | SMB2/3, optional encrypted NFSv3 RPC-with-TLS, FTP-family, SFTP, DLNA, Komga, WebDAV, S3, OPDS, cloud drives and Audiobookshelf; local Kodi/Jellyfin NFO/posters, confidence-gated Trakt metadata/cast/artwork/trailers, and OpenSubtitles search (including SMB; file-hash matching when an exact local or cached copy is available); EPUB/PDF/CBZ, multipart audiobook playback and progress sync. Availability varies by platform; see the [setup guide](docs/FILES_AND_BOOKS.md) for limits and security. |
-| Universal media tools | Direct media URLs, radio playlists, local files, capture, sharing, extensions, Wi-Fi transfer, conversion, recording and picture controls | **Open media** handles session-only HTTP(S)/MPV streams, M3U/PLS/HLS playlists, file queues and supported ISO/disc inputs; safe favorites are profile-local. Desktop tools add screen/camera capture, temporary private-LAN HLS sharing, declarative HTTPS search extensions, `plezyctl` (Python 3.10+), FFmpeg conversion and MPV stream recording. See the [Open media guide](docs/UNIVERSAL_MEDIA.md) and [VLC feature comparison](docs/VLC_FEATURE_PARITY.md) for privacy and platform limits. |
+| Universal media tools | Direct media URLs, radio playlists, local files, capture, sharing, extensions, Wi-Fi transfer, conversion, recording and picture controls | **Open media** handles session-only HTTP(S)/MPV streams, M3U/PLS/HLS playlists, temporary file and desktop folder queues, and supported ISO/disc inputs; the active source player offers queue browsing, upcoming-file shuffle, repeat, and item selection in one adaptive sheet. Eligible desktop queues can be saved as sibling-relative M3U files in current playback order. MPV exposes direct-input File Info and edition/disc-title choices when available. Safe stream favorites are profile-local. Desktop tools add screen/camera recording and live preview, temporary private-LAN HLS sharing, declarative HTTPS search extensions, `plezyctl` (Python 3.10 ), FFmpeg conversion and MPV live-stream recording. See the [Open media guide](docs/UNIVERSAL_MEDIA.md) and [VLC feature comparison](docs/VLC_FEATURE_PARITY.md) for privacy and platform limits. |
 | Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player styling, local import, exact sync entry, MPV cue-step alignment, independent secondary delay, bounded two-anchor text-track drift calibration, and durable profile/edition-bound OpenSubtitles assets for MPV VOD are implemented where supported; audio-derived auto-sync and piecewise cut repair remain planned |
 | Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in PlezyNG |
 | Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Configured cinema intros work on Plex, Jellyfin, and Emby; local pre-rolls, detail-page theme songs, and home spotlight music are implemented |
-| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A five-band device-local equalizer is available in mpv, and opt-in intro fallback is implemented. |
+| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A ten-band device-local equalizer plus MPV stereo widening, room ambience, and pitch shift are available where the build and track support them; opt-in intro fallback is implemented. |
 | Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in PlezyNG |
 | Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search, random movie selection, and shuffled playback of movie and TV libraries are implemented across connected servers; detail-page finish time is shown on media details |
 | Home screen | Configurable rows, merged library and collection rows, organizer controls, and Plex account layout sync (#1652/#2203) | Implemented; Plex account sync applies to Plex profiles. Custom rows can combine selected libraries across connected servers |
@@ -92,7 +92,7 @@ Published PlezyNG downloads appear on the [GitHub Releases page](https://github.
 | Platform | Download |
 | --- | --- |
 | Desktop and mobile | Download links are added after the corresponding release is published. |
-| webOS TV | Experimental ARMv7 IPK; one LG C6 running webOS 26 has been tested. LG's native Flutter floor is webOS 26 Re:New+, and older firmware or other models are not qualified. No webOS package is published yet; see the [compatibility matrix and port status](docs/maintainers/webos-tv.md) |
+| webOS TV | Experimental ARMv7 IPK; one LG C6 running webOS 26 has been tested. LG's native Flutter floor is webOS 26 Re:New , and older firmware or other models are not qualified. No webOS package is published yet; see the [compatibility matrix and port status](docs/maintainers/webos-tv.md) |
 | Samsung Tizen TV | Experimental ARM TPK builds for Tizen 6–9, with a prebuilt tester handoff/re-signing path. TV qualification and the 2026/Tizen 10 target remain pending. See the [research, build guide and rollout plan](docs/maintainers/tizen-tv.md). |
 
 <details>
@@ -193,6 +193,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Optional TheIntroDB intro timings when Plex, Jellyfin, or Emby has no intro marker; disabled by default
 - Online subtitle search & download[^plex]
 - Audio and subtitle track selection with server-provided defaults
+- MPV alternate video-track selection when a source exposes multiple video streams
 - Progress sync and resume
 - Auto-play next episode with skip intro / skip credits
 - Optional audio-only continuation when the app backgrounds on Android and iOS
@@ -200,18 +201,19 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Playback speed from 0.25x to 8x, audio sync offset, sleep timer (fixed durations or end of video)
 - Video zoom 50-200% with pinch, presets, and hotkeys
 - Audio passthrough[^pass], output channel limit (5.1 or stereo, with center-channel boost), and loudness normalization
-- Five-band device-local audio equalizer for mpv playback
+- Ten-band device-local equalizer plus MPV stereo widening, room ambience and pitch shift; active filters decode audio and turn passthrough off
+- Named device-local playback bookmarks for server media and Open media audio/video, plus temporary MPV A/B segment looping in existing playback controls
 - File Info sheet — every version, file, and stream the server reports
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]
 - Refresh-rate matching[^rrm]
 - External player launch (VLC, MX Player, etc.) with progress sync back[^android]
-- **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists, profile-local safe favorites, and temporary local file queues
-- Advanced RTSP/RTMP/RTMPS/UDP/RTP inputs, optical-disc/ISO playback, and Wi-Fi file transfer on supported builds
+- **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists (including safe same-folder local entries), profile-local safe favorites, temporary local file and desktop folder queues, desktop same-folder M3U export, direct MPV File Info, and edition/disc-title choices when exposed by the input
+- Advanced RTSP/RTMP/RTMPS/UDP/RTP inputs, opt-in unencrypted FTP streams, optical-disc/ISO playback, and Wi-Fi file transfer on supported builds
 - MPV picture adjustments and optional 360° flat view; desktop MPV live-stream recording
-- Desktop screen/camera recording with optional audio, plus temporary HLS sharing over a private IPv4 network
+- Desktop screen/camera recording with optional audio or live preview in the MPV player, plus temporary HLS sharing over a private IPv4 network
 - Data-only HTTPS search extensions and the `tools/plezyctl` CLI, with results handed to the existing Open media form
-- Desktop local conversion to MP4 (H.264/AAC), M4A, or MP3 with user-installed FFmpeg
+- Desktop local conversion/remux to MP4/MKV, M4A, MP3, FLAC, WAV, Ogg Opus, or WebM when the user-installed FFmpeg has the required encoders and output containers
 - Direct HTTP(S) playback uses a session-owned loopback gateway; recognized credential/signature parameters cannot be saved. Platform boundaries and transfer limits are in the [Open media guide](docs/UNIVERSAL_MEDIA.md).
 
 ### <img src="assets/readme_icons/music.svg" height="20" alt="" align="center" /> Music
@@ -219,6 +221,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Album and artist screens with play, shuffle, and Instant Mix
 - Gapless playback with a full play queue — reorder, remove, play next, add to queue
 - Now Playing with synced lyrics[^lyrics], persistent mini-player, and sleep timer
+- Accessible visualizer that follows Plex analysis or optional live audio stats on compatible MPV builds
 - Background playback with lock-screen, media-key, and notification controls[^bgaudio]
 - Offline playback of downloaded albums and tracks
 - Streaming quality presets — Original, 320, 192, or 128 kbps
@@ -309,7 +312,7 @@ On iOS, use the Open URLs action in Shortcuts.
 ## Building from Source
 
 ### Prerequisites
-- Flutter SDK 3.47.0+
+- Flutter SDK 3.47.0 
 - A Plex account, or a Jellyfin or Emby server with user credentials
 
 ### Setup

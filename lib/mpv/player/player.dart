@@ -16,12 +16,6 @@ import '../../utils/platform_detector.dart';
 
 export 'player_base.dart';
 
-/// Optional capability for player implementations that can apply the
-/// device-local five-band equalizer.
-abstract interface class AudioEqualizerCapable {
-  Future<void> setAudioEqualizer(List<double> bandGains);
-}
-
 /// Abstract interface for the video player.
 ///
 /// This interface defines all playback control methods, state access,
@@ -139,7 +133,7 @@ abstract class Player {
 
   /// Select a secondary subtitle track (displayed simultaneously with primary).
   ///
-  /// Only supported on mpv backends (desktop + Android mpv fallback).
+  /// Only supported on mpv backends (desktop   Android mpv fallback).
   /// Pass [SubtitleTrack.off] to disable secondary subtitles.
   Future<void> selectSecondarySubtitleTrack(SubtitleTrack track);
 
@@ -250,7 +244,7 @@ abstract class Player {
   /// mpv backends insert/remove an audio filter (`loudnorm`; a compressor and
   /// limiter on Android) and, because a filter cannot process a bitstream,
   /// leave passthrough while it is on. Android ExoPlayer attaches platform
-  /// audio effects instead (DynamicsProcessing on API 28+, LoudnessEnhancer
+  /// audio effects instead (DynamicsProcessing on API 28 , LoudnessEnhancer
   /// otherwise) and forces decoded non-tunneled PCM output while enabled so
   /// the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);

@@ -64,6 +64,7 @@ enum _SettingsView {
   hdrToneMapping,
   audioChannelLimit,
   audioEqualizer,
+  videoTrack,
 }
 
 class _SettingsMenuItem extends StatelessWidget {
@@ -205,21 +206,21 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
   void didUpdateWidget(covariant _SettingsToggleItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.pref != widget.pref) {
-      ++_writeGeneration;
+        _writeGeneration;
       _pendingValue = null;
     }
   }
 
   @override
   void dispose() {
-    ++_writeGeneration;
+      _writeGeneration;
     super.dispose();
   }
 
   void _write(bool next) {
     final pref = widget.pref;
     final callback = widget.onAfterWrite;
-    final generation = ++_writeGeneration;
+    final generation =   _writeGeneration;
     final writeToken = _prefWrites.begin(pref.key);
     setState(() {
       _pendingValue = next;
@@ -384,6 +385,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late HdrToneMapping _hdrToneMapping;
   late AudioChannelLimit _audioChannelLimit;
   late List<double> _audioEqualizerGains;
+  late PlayerAudioEffects _audioEffects;
+  late PlayerAudioEffects _acceptedAudioEffects;
+  Future<void> _audioEffectsWrite = Future<void>.value();
+  int _audioEffectsWriteGeneration = 0;
 
   TrackControlsState get _state => widget.trackControlsState;
 
@@ -418,6 +423,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _audioEqualizerGains = SettingsService.audioEqualizerBandPrefs
         .map((pref) => SettingsService.instance.read(pref))
         .toList(growable: false);
+    _audioEffects = (
+      stereoWidth: SettingsService.instance.read(SettingsService.audioStereoWidth),
+      spatializer: SettingsService.instance.read(SettingsService.audioSpatializer),
+      pitchSemitones: SettingsService.instance.read(SettingsService.audioPitchShiftSemitones),
+    );
+    _acceptedAudioEffects = _audioEffects;
     _loadDebugDvConversionMode();
     if (_probesHdrSupport) {
       _hdrSupportLifecycle = AppLifecycleListener(onResume: _refreshLinuxHdrSupport, onShow: _refreshLinuxHdrSupport);
@@ -586,7 +597,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   void _setDebugDvConversionMode(String mode) {
     final targetPlayer = widget.player;
-    final generation = ++_dvConversionWriteGeneration;
+    final generation =   _dvConversionWriteGeneration;
     unawaited(() async {
       try {
         await targetPlayer.setProperty('dv-conversion-mode', mode);
@@ -709,6 +720,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.settings.audioChannelLimit;
       case _SettingsView.audioEqualizer:
         return t.videoSettings.audioEqualizer;
+      case _SettingsView.videoTrack:
+        return t.videoSettings.videoTrack;
     }
   }
 
@@ -736,6 +749,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.speaker_group_rounded;
       case _SettingsView.audioEqualizer:
         return Symbols.graphic_eq_rounded;
+      case _SettingsView.videoTrack:
+        return Symbols.video_library_rounded;
     }
   }
 
@@ -851,6 +866,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return ListView(
       shrinkWrap: true,
       children: [
+        StreamBuilder<Tracks>(
+          stream: widget.player.streams.tracks,
+          initialData: widget.player.state.tracks,
+          builder: (context, snapshot) {
+            final tracks = snapshot.data?.video ?? const <VideoTrack>[];
+            if (widget.player.playerType != 'mpv' || tracks.length < 2) return const SizedBox.shrink();
+            VideoTrack? selected;
+            for (final track in tracks) {
+              if (track.isSelected) {
+                selected = track;
+                break;
+              }
+            }
+            return _SettingsMenuItem(
+              icon: Symbols.video_library_rounded,
+              title: t.videoSettings.videoTrack,
+              valueText: selected == null ? t.videoSettings.videoTrackDefault : _videoTrackLabel(selected),
+              onTap: () => _navigateTo(_SettingsView.videoTrack),
+            );
+          },
+        ),
         // Playback Speed - hidden for live TV and when user cannot control playback
         if (_state.canControl && !_state.isLive)
           StreamBuilder<double>(
@@ -1004,10 +1040,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _SettingsMenuItem(
             icon: Symbols.graphic_eq_rounded,
             title: t.videoSettings.audioEqualizer,
-            valueText: _audioEqualizerGains.every((gain) => gain.abs() < 0.05)
+            valueText:
+                _audioEqualizerGains.every((gain) => gain.abs() < 0.05) &&
+                    _audioEffects.stereoWidth < 0.01 &&
+                    !_audioEffects.spatializer &&
+                    _audioEffects.pitchSemitones.abs() < 0.05
                 ? t.videoSettings.audioEqualizerFlat
                 : t.videoSettings.audioEqualizerActive,
-            isHighlighted: _audioEqualizerGains.any((gain) => gain.abs() >= 0.05),
+            isHighlighted:
+                _audioEqualizerGains.any((gain) => gain.abs() >= 0.05) ||
+                _audioEffects.stereoWidth >= 0.01 ||
+                _audioEffects.spatializer ||
+                _audioEffects.pitchSemitones.abs() >= 0.05,
             onTap: () => _navigateTo(_SettingsView.audioEqualizer),
           ),
 
@@ -1184,7 +1228,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildAudioEqualizerView() {
-    final frequencies = [60, 250, 1000, 4000, 12000];
+    final frequencies = [60, 125, 250, 500, 1000, 2000, 4000, 8000, 12000, 16000];
     final prefs = SettingsService.audioEqualizerBandPrefs;
     return ListView(
       children: [
@@ -1195,7 +1239,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
           ),
         ),
-        for (var index = 0; index < frequencies.length; index++)
+        for (var index = 0; index < frequencies.length; index  )
           ListTile(
             title: Text('${frequencies[index]} Hz'),
             subtitle: FocusableSlider(
@@ -1215,13 +1259,119 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           leading: AppIcon(Symbols.restart_alt_rounded, fill: 1, color: tokens(context).textMuted),
           title: Text(t.videoSettings.audioEqualizerFlat),
           onTap: () {
-            for (var index = 0; index < frequencies.length; index++) {
+            for (var index = 0; index < frequencies.length; index  ) {
               _setAudioEqualizerBand(index, 0);
               unawaited(_persistAudioEqualizerBand(prefs[index], 0));
             }
+            _setAudioEffects(stereoWidth: 0, spatializer: false, pitchSemitones: 0);
+            unawaited(_persistAudioEffects());
           },
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            t.videoSettings.audioEffectsDescription,
+            style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+          ),
+        ),
+        ListTile(
+          title: Text(t.videoSettings.audioStereoWidth),
+          subtitle: FocusableSlider(
+            value: (_audioEffects.stereoWidth * 100).clamp(0.0, 100.0),
+            min: 0,
+            max: 100,
+            divisions: 20,
+            semanticLabel: t.videoSettings.audioStereoWidth,
+            semanticFormatterCallback: (value) => '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)}%',
+            onChanged: (value) => _setAudioEffects(stereoWidth: value / 100),
+            onChangeEnd: (_) => unawaited(_persistAudioEffects()),
+          ),
+          trailing: Text('${formatDecimal(_audioEffects.stereoWidth * 100, minimumDecimals: 0, maximumDecimals: 0)}%'),
+        ),
+        SwitchListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          title: Text(t.videoSettings.audioSpatializer),
+          subtitle: Text(t.videoSettings.audioSpatializerDescription),
+          value: _audioEffects.spatializer,
+          onChanged: (enabled) {
+            _setAudioEffects(spatializer: enabled);
+            unawaited(_persistAudioEffects());
+          },
+        ),
+        ListTile(
+          title: Text(t.videoSettings.audioPitch),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.videoSettings.audioPitchDescription, style: TextStyle(color: tokens(context).textMuted)),
+              FocusableSlider(
+                value: _audioEffects.pitchSemitones.clamp(-12.0, 12.0),
+                min: -12,
+                max: 12,
+                divisions: 24,
+                semanticLabel: t.videoSettings.audioPitch,
+                semanticFormatterCallback: (value) =>
+                    '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)} semitones',
+                onChanged: (value) => _setAudioEffects(pitchSemitones: value),
+                onChangeEnd: (_) => unawaited(_persistAudioEffects()),
+              ),
+            ],
+          ),
+          trailing: Text('${formatDecimal(_audioEffects.pitchSemitones, minimumDecimals: 0, maximumDecimals: 0)} st'),
+        ),
       ],
+    );
+  }
+
+  String _videoTrackLabel(VideoTrack track) {
+    final title = track.title?.trim();
+    final dimensions = track.width != null && track.height != null ? '${track.width} × ${track.height}' : null;
+    final language = track.language?.trim();
+    return [
+      if (title case final title? when title.isNotEmpty) title,
+      ?dimensions,
+      if (language case final language? when language.isNotEmpty && language != 'und') language.toUpperCase(),
+      if (track.codec case final codec? when codec.isNotEmpty) codec.toUpperCase(),
+    ].join(' · ');
+  }
+
+  Widget _buildVideoTrackView() {
+    final primary = Theme.of(context).colorScheme.primary;
+    return StreamBuilder<Tracks>(
+      stream: widget.player.streams.tracks,
+      initialData: widget.player.state.tracks,
+      builder: (context, snapshot) {
+        final tracks = snapshot.data?.video ?? const <VideoTrack>[];
+        if (tracks.length < 2) return Center(child: Text(t.videoSettings.videoTrackUnavailable));
+        return ListView(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Text(t.videoSettings.videoTrackDescription, style: Theme.of(context).textTheme.bodySmall),
+            ),
+            for (final track in tracks)
+              FocusableListTile(
+                title: Text(
+                  _videoTrackLabel(track).isEmpty
+                      ? t.videoSettings.videoTrackNumber(id: track.id)
+                      : _videoTrackLabel(track),
+                  style: TextStyle(color: track.isSelected ? primary : null),
+                ),
+                subtitle: track.isDefault ? Text(t.videoSettings.videoTrackDefault) : null,
+                trailing: track.isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+                onTap: () async {
+                  try {
+                    await widget.player.setProperty('vid', track.id);
+                    if (mounted) _navigateBack();
+                  } on Object catch (error, stackTrace) {
+                    appLogger.w('Failed to select video track', error: error, stackTrace: stackTrace);
+                    if (mounted) showErrorSnackBar(this.context, t.videoSettings.videoTrackFailed);
+                  }
+                },
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -1236,6 +1386,47 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       await (widget.player as AudioEqualizerCapable).setAudioEqualizer(gains);
     } catch (error, stackTrace) {
       appLogger.w('Failed to apply audio equalizer', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.audioEqualizerSaveFailed);
+    }
+  }
+
+  void _setAudioEffects({double? stereoWidth, bool? spatializer, double? pitchSemitones}) {
+    final next = (
+      stereoWidth: stereoWidth ?? _audioEffects.stereoWidth,
+      spatializer: spatializer ?? _audioEffects.spatializer,
+      pitchSemitones: pitchSemitones ?? _audioEffects.pitchSemitones,
+    );
+    setState(() => _audioEffects = next);
+    final generation =   _audioEffectsWriteGeneration;
+    _audioEffectsWrite = _applyAudioEffects(next, generation);
+  }
+
+  Future<void> _applyAudioEffects(PlayerAudioEffects effects, int generation) async {
+    try {
+      await (widget.player as AudioEffectsCapable).setAudioEffects(effects);
+      if (mounted && generation == _audioEffectsWriteGeneration) {
+        setState(() => _acceptedAudioEffects = effects);
+      }
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to apply MPV audio effects', error: error, stackTrace: stackTrace);
+      if (mounted && generation == _audioEffectsWriteGeneration) {
+        setState(() => _audioEffects = _acceptedAudioEffects);
+        showErrorSnackBar(context, t.videoSettings.audioEffectUnavailable);
+      }
+    }
+  }
+
+  Future<void> _persistAudioEffects() async {
+    await _audioEffectsWrite;
+    final accepted = _acceptedAudioEffects;
+    try {
+      await Future.wait([
+        SettingsService.instance.write(SettingsService.audioStereoWidth, accepted.stereoWidth),
+        SettingsService.instance.write(SettingsService.audioSpatializer, accepted.spatializer),
+        SettingsService.instance.write(SettingsService.audioPitchShiftSemitones, accepted.pitchSemitones),
+      ]);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to save MPV audio effects', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.audioEqualizerSaveFailed);
     }
   }
@@ -1398,7 +1589,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final descCounts = <String, int>{};
             for (final d in devices) {
               final desc = d.description.isEmpty ? d.name : d.description;
-              descCounts[desc] = (descCounts[desc] ?? 0) + 1;
+              descCounts[desc] = (descCounts[desc] ?? 0)   1;
             }
             final hasDuplicates = descCounts.values.any((c) => c > 1);
 
@@ -1484,10 +1675,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         final currentPreset = _state.shaderService!.currentPreset;
         final presets = shaderProvider.allPresets;
 
-        // +1 for the import button at the end
+        //  1 for the import button at the end
         return ListView.builder(
           shrinkWrap: true,
-          itemCount: presets.length + 1,
+          itemCount: presets.length   1,
           itemBuilder: (context, index) {
             if (index == presets.length) {
               return FocusableListTile(
@@ -1687,6 +1878,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildAudioChannelLimitView();
           case _SettingsView.audioEqualizer:
             return _buildAudioEqualizerView();
+          case _SettingsView.videoTrack:
+            return _buildVideoTrackView();
         }
       }(),
     );

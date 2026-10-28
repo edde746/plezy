@@ -1202,6 +1202,30 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get settingsButton => 'Lejátszási beállítások';
 	@override String get tracksButton => 'Hang és feliratok';
 	@override String get chaptersButton => 'Fejezetek';
+	@override String get segmentLoopHelp => 'Az A beállítása, majd a B későbbi beállítás az idővonalon.';
+	@override String get setLoopStart => 'Kezdőlap Hírek A (A)';
+	@override String get setLoopEnd => 'A csúszás vége (B)';
+	@override String get clearSegmentLoop => 'Tiszta szegmens';
+	@override String get setLoopStartFirst => 'Állítsa be a pályát kezdődik (A) előtt a véget (B).';
+	@override String get loopEndAfterStart => 'A befejezésnek későn kell lennie, mint a kezdet.';
+	@override String get segmentLoopUnavailable => 'A Segment Looping nem érhető el ebben a playbackben.';
+	@override String get loopPointNotSet => 'Nem állít';
+	@override String get bookmarksHelp => 'A könyvjelzők ebben a készülékben kerülnek mentésre. Válassza ki az egyiket, hogy menjen erre az időre.';
+	@override String get bookmarksButton => 'könyvjelzők';
+	@override String get chaptersAndBookmarks => 'fejezetek és könyvjelzők';
+	@override String get segmentLoop => 'Segmentális lejátszás';
+	@override String get addBookmark => 'Hozzáadása Bookmark';
+	@override String get bookmarkName => 'Bookmark név';
+	@override String get bookmarkNameHint => 'Például a színpad megnyitása';
+	@override String bookmarkDefaultName({required Object n}) => 'könyvjelző ${n}';
+	@override String get bookmarkNameRequired => 'Írjon be egy nevet erre a könyvjelzőre.';
+	@override String get deleteBookmark => 'Távolítsa el a Bookmark';
+	@override String get bookmarkLimitReached => 'Ez a cikk már 100 könyvjelzővel rendelkezik.';
+	@override String get bookmarkUnavailable => 'Nem tudtam menteni vagy eltávolítani ezt a könyvjelzőt.';
+	@override String get bookmarkSaved => 'A könyv megmentett.';
+	@override String get bookmarkDeleted => 'Bookmark törlésre került.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop pont ${point} beállítása a ${time}A';
+	@override String get noChaptersOrBookmarks => 'Nincs rendelkezésre álló fejezetek vagy könyvjelzők.';
 	@override String get versionQualityButton => 'Verzió és minőség';
 	@override String get versionColumnHeader => 'Verzió';
 	@override String get qualityColumnHeader => 'Minőség';
@@ -2072,6 +2096,7 @@ class _Translations$music$hu extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'A track analízis...';
 	@override String get visualizerAmbientMotion => 'Környezetmoció';
 	@override String get visualizerPlexLoudness => 'Plex hangzás';
+	@override String get visualizerLiveAudio => 'Élő hangelemzés';
 	@override String get visualizerPreviousPreset => 'Előző vizuális stílus';
 	@override String get visualizerNextPreset => 'Következő vizuális stílus';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2425,6 +2450,12 @@ class _Translations$videoSettings$hu extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'A lejátszóban a kijelző maximális fényerejéhez igazítja a képet, majd közli az eredményt a kompozitorral.';
 	@override String get hdrToneMappingFailed => 'Nem sikerült módosítani a HDR-tónusleképezést – továbbra is az előző mód aktív.';
 	@override String get audioOutput => 'Hangkimenet';
+	@override String get videoTrack => 'Videósáv';
+	@override String get videoTrackDescription => 'Válaszd ki a megjelenítendő videofolyamot. MPV-lejátszáskor érhető el, ha a fájl több videósávot tartalmaz.';
+	@override String get videoTrackDefault => 'Alapértelmezett';
+	@override String get videoTrackUnavailable => 'Nincsenek elérhető alternatív videósávok.';
+	@override String get videoTrackFailed => 'Nem sikerült megváltoztatni a videósávot.';
+	@override String videoTrackNumber({required Object id}) => '${id}. sáv';
 	@override String get performanceOverlay => 'Teljesítményadatok';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2432,10 +2463,17 @@ class _Translations$videoSettings$hu extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Térbeli hang';
 	@override String get audioOutputStereo => 'Sztereó';
 	@override String get audioEqualizer => 'Audio egyenlet';
-	@override String get audioEqualizerDescription => 'Ez a készülék öt frekvenciájú sávját állítja be. elérhető a mpv-en; egy aktív EQ hangtávolít és megakadályozza a hangszórót.';
+	@override String get audioEqualizerDescription => '10 Band Equalizer MPV. A hangszűrők dekódolt audio használatát használják, és kapcsolja ki a passthrough-t.';
 	@override String get audioEqualizerFlat => 'Sík';
 	@override String get audioEqualizerActive => 'Egyéni';
 	@override String get audioEqualizerSaveFailed => 'Nem menthetek meg a hang egyenletítő beállításokat.';
+	@override String get audioEffectsDescription => 'A hatások dekódolt hangot használnak, így a passthrough elfordul. szoba környezete és sztereó kiterjesztése függ a MPV Építsen és nyomon kövesse.';
+	@override String get audioStereoWidth => 'Stereó bővítés';
+	@override String get audioSpatializer => 'Szoba környezete';
+	@override String get audioSpatializerDescription => 'Adjunk nyugodt helyiség reflexiókat.';
+	@override String get audioPitch => 'Pécsi változás';
+	@override String get audioPitchDescription => 'Változtassa meg a pályát, nem változtatja meg a sebességet MPV Az építkezésnek tartalmaznia kell Rubber BandA';
+	@override String get audioEffectUnavailable => 'Ez a hatás nem áll rendelkezésre ezen a pályán, vagy MPV Az építkezés.';
 	@override String get backgroundVideoAudio => 'Videó audio háttér';
 	@override String get backgroundVideoAudioDescription => 'A videó hangjátékot a lejátszó elhagyása után tartsa; a kép elrejtve van, amíg visszatér. Android médiaszámlálási értesítést használ.';
 	@override String get audioNormalization => 'Hangerő normalizálása';
@@ -3088,6 +3126,10 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Válassza ki a Playlist fájlt';
 	@override String get openPlaylist => 'Nyílt Playlist';
 	@override String get playlistFormatsHelp => 'A lejátszó listája legfeljebb 1000 elemet és 2 MB-ot tartalmazhat. a HLS nyílt áramlatként jelenik meg, így a játékos kiválaszthatja a minőséget.';
+	@override String get saveQueuePlaylist => 'Sor mentése lejátszási listaként';
+	@override String get queuePlaylistSaved => 'A lejátszási lista a médiafájlok mellé lett mentve.';
+	@override String get queuePlaylistUnavailable => 'Ez a sor nem menthető újra felhasználható helyi lejátszási listaként.';
+	@override String get queuePlaylistFolderRequired => 'A sor fájljaival azonos mappát válassz mentési helyként.';
 	@override String get noFavorites => 'Nincs mentett stream kedvencek még. Favoritek maradnak ebben a profilban.';
 	@override String get removeFavorite => 'Távolítsa el a kedvenc stream';
 	@override String get filesHelp => 'Válassza ki az audio, a videó vagy az ISO fájlokat egy ideiglenes tartományhoz. A fájlok és URL-ek nem kerülnek hozzáadásra a könyvtár történetéhez.';
@@ -3152,12 +3194,13 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Fájl cseréje';
 	@override String get discHelp => 'Nyissa meg a lemezt ebben a számítógép optikai lemezében.Az ISO-képet is megnyithatja a Device fájlokból.';
 	@override String get discs => 'Optikai lemez';
+	@override String get editionOrTitle => 'Kiadás vagy lemezcím';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray';
 	@override String get audioCd => 'Audió CD';
 	@override String get discAvailability => 'A lemezlejátszásnak kompatibilis MPV szerkezetre, támogatott lemezre és operációs rendszer engedélyére van szüksége.';
 	@override String get converterTitle => 'A helyi média fájl átalakítása';
-	@override String get converterHelp => 'Az FFmpeg segítségével MP4, M4A vagy MP3 másolatot készíthet.';
+	@override String get converterHelp => 'Konvertáljon egy helyi fájlt, vagy helyreállítsa a FFmpegA';
 	@override String get converterIntro => 'Konvertáljon egy helyi audio vagy videó fájlt olyan formátumra, amely több eszközön működik.';
 	@override String get converterPrivacy => 'FFmpeg kell telepíteni ezen a számítógépen. konverzió csak helyi fájlokat olvasható. nem tölt le áramlatok vagy eltávolítja DRM-t.';
 	@override String get converterChooseInput => 'Válasszon egy helyi média fájlt';
@@ -3165,6 +3208,8 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 és AAC';
 	@override String get converterM4a => 'M4A · AAC audio';
 	@override String get converterMp3 => 'MP3 hangszóró';
+	@override String get allowFtp => 'FTP engedélyezése';
+	@override String get allowFtpHelp => 'Az FTP titkosítás nélküli médiát küld, csak megbízható hálózatokon használja.';
 	@override String get converterSaveAs => 'Az átalakított média mentése';
 	@override String get converterExtensionMismatch => 'Válasszon egy fájlnevet a kiválasztott kimeneti kiterjesztéssel.';
 	@override String get converterUnsupportedInput => 'Válasszon egy audio vagy videó fájlt.';
@@ -3174,7 +3219,7 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Megkezdődött az FFmpeg...';
 	@override String get converterProgress => 'Ezzel a számítógéppel átalakítva...';
 	@override String get converterComplete => 'Az új fájl készen áll.';
-	@override String get converterFfmpegMissing => 'FFmpeg nem tudta megtalálni a szükséges kódot. telepítse az FFmpeget H.264, AAC és MP3 támogatással, majd próbálja meg újra.';
+	@override String get converterFfmpegMissing => 'FFmpeg hiányzik, vagy nem támogatja ezt a formátumot.';
 	@override String get converterFailed => 'Ellenőrizze, hogy a forráskód fájl olvasható és a rendeltetési hely elegendő szabad hely.';
 	@override String get converterCancelled => 'Az átalakítás törlésre került, a hiányos eredményt eltávolították.';
 	@override String get converterDesktopOnly => 'Helyi átalakítás elérhető asztali számítógépeken FFmpeg telepítve.';
@@ -3202,6 +3247,9 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get captureSaved => 'A képernyő felvétele mentett.';
 	@override String get captureElapsedLabel => 'Rekordidő';
 	@override String get captureStart => 'Kezdődik a felvétel';
+	@override String get capturePreview => 'Előnézet a lejátszóban';
+	@override String get capturePreviewHelp => 'A kiválasztott forrás előnézete a szokásos lejátszóban. Csak erre a munkamenetre szól, és nem ment felvételt. Az eszköztámogatás és az engedélyek az MPV-től és az operációs rendszertől függenek. Az előnézet csak videót használ; a mentett felvételekhez opcionális hang is tartozhat.';
+	@override String get capturePreviewActive => 'Élő előnézet · nincs felvétel';
 	@override String get captureStop => 'Állj meg és mentse meg';
 	@override String get captureMode => 'fogság';
 	@override String get shareMode => 'megosztás';
@@ -5970,6 +6018,32 @@ extension on TranslationsHu {
 			'videoControls.settingsButton' => 'Lejátszási beállítások',
 			'videoControls.tracksButton' => 'Hang és feliratok',
 			'videoControls.chaptersButton' => 'Fejezetek',
+			'videoControls.segmentLoopHelp' => 'Az A beállítása, majd a B későbbi beállítás az idővonalon.',
+			'videoControls.setLoopStart' => 'Kezdőlap Hírek A (A)',
+			'videoControls.setLoopEnd' => 'A csúszás vége (B)',
+			'videoControls.clearSegmentLoop' => 'Tiszta szegmens',
+			'videoControls.setLoopStartFirst' => 'Állítsa be a pályát kezdődik (A) előtt a véget (B).',
+			'videoControls.loopEndAfterStart' => 'A befejezésnek későn kell lennie, mint a kezdet.',
+			'videoControls.segmentLoopUnavailable' => 'A Segment Looping nem érhető el ebben a playbackben.',
+			'videoControls.loopPointNotSet' => 'Nem állít',
+			'videoControls.bookmarksHelp' => 'A könyvjelzők ebben a készülékben kerülnek mentésre. Válassza ki az egyiket, hogy menjen erre az időre.',
+			'videoControls.bookmarksButton' => 'könyvjelzők',
+			'videoControls.chaptersAndBookmarks' => 'fejezetek és könyvjelzők',
+			'videoControls.segmentLoop' => 'Segmentális lejátszás',
+			'videoControls.addBookmark' => 'Hozzáadása Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark név',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Például a színpad megnyitása',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'könyvjelző ${n}',
+			'videoControls.bookmarkNameRequired' => 'Írjon be egy nevet erre a könyvjelzőre.',
+			'videoControls.deleteBookmark' => 'Távolítsa el a Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Ez a cikk már 100 könyvjelzővel rendelkezik.',
+			'videoControls.bookmarkUnavailable' => 'Nem tudtam menteni vagy eltávolítani ezt a könyvjelzőt.',
+			'videoControls.bookmarkSaved' => 'A könyv megmentett.',
+			'videoControls.bookmarkDeleted' => 'Bookmark törlésre került.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop pont ${point} beállítása a ${time}A',
+			'videoControls.noChaptersOrBookmarks' => 'Nincs rendelkezésre álló fejezetek vagy könyvjelzők.',
 			'videoControls.versionQualityButton' => 'Verzió és minőség',
 			'videoControls.versionColumnHeader' => 'Verzió',
 			'videoControls.qualityColumnHeader' => 'Minőség',
@@ -5984,8 +6058,6 @@ extension on TranslationsHu {
 			'videoControls.exitFullscreenButton' => 'Teljes képernyős mód kikapcsolása',
 			'videoControls.alwaysOnTopButton' => 'Mindig legfelül',
 			'videoControls.rotationLockButton' => 'Elforgatás zárolása',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Képernyő zárolása',
 			'videoControls.screenLockButton' => 'Képernyőzár',
 			'videoControls.timelineSlider' => 'Videó idősáv',
@@ -6474,6 +6546,8 @@ extension on TranslationsHu {
 			'libraries.hideLibrary' => 'Könyvtár elrejtése',
 			'libraries.libraryOptions' => 'Könyvtár beállításai',
 			'libraries.content' => 'könyvtár tartalma',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Könyvtár kiválasztása',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Szűrők (${count})',
 			'libraries.noRecommendations' => 'Nincsenek elérhető ajánlások',
@@ -6498,8 +6572,6 @@ extension on TranslationsHu {
 			'libraries.filterCategories.year' => 'Év',
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
 			'libraries.filterCategories.tag' => 'Címke',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Nem látott',
 			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			'libraries.filterCategories.favorites' => 'Kedvencek',
@@ -6941,6 +7013,7 @@ extension on TranslationsHu {
 			'music.visualizerProfileLoading' => 'A track analízis...',
 			'music.visualizerAmbientMotion' => 'Környezetmoció',
 			'music.visualizerPlexLoudness' => 'Plex hangzás',
+			'music.visualizerLiveAudio' => 'Élő hangelemzés',
 			'music.visualizerPreviousPreset' => 'Előző vizuális stílus',
 			'music.visualizerNextPreset' => 'Következő vizuális stílus',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6987,6 +7060,8 @@ extension on TranslationsHu {
 			'watchTogether.codeCopied' => 'Szobakód másolva',
 			'watchTogether.shareInvite' => 'Meghívó megosztása',
 			'watchTogether.inviteCopied' => 'Meghívó másolva. Illeszd be egy üzenetbe.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Csatlakozz a Watch Together-szobámhoz a Plezyben: nyisd meg a Watch Together (Közös nézés) menüt, válaszd a Csatlakozás szobához lehetőséget, és írd be ezt a kódot: ${code}.',
 			'watchTogether.openSessionControls' => 'Watch Together munkamenet-vezérlők megnyitása',
 			'watchTogether.reconnecting' => 'Újracsatlakozás...',
@@ -7012,8 +7087,6 @@ extension on TranslationsHu {
 			'watchTogether.playAnyway' => 'Lejátszás mégis',
 			'watchTogether.chooseAnotherCopy' => 'Másik példány választása',
 			'watchTogether.dontPlay' => 'Ne játszd le',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Ez a videó nincs meg neked',
 			'watchTogether.unavailableDescription' => 'A PlezyNG nem találta meg a könyvtáraidban. Válassz ki magad egy példányt, vagy keress újra.',
 			'watchTogether.chooseCopy' => 'Példány választása',
@@ -7367,6 +7440,12 @@ extension on TranslationsHu {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'A lejátszóban a kijelző maximális fényerejéhez igazítja a képet, majd közli az eredményt a kompozitorral.',
 			'videoSettings.hdrToneMappingFailed' => 'Nem sikerült módosítani a HDR-tónusleképezést – továbbra is az előző mód aktív.',
 			'videoSettings.audioOutput' => 'Hangkimenet',
+			'videoSettings.videoTrack' => 'Videósáv',
+			'videoSettings.videoTrackDescription' => 'Válaszd ki a megjelenítendő videofolyamot. MPV-lejátszáskor érhető el, ha a fájl több videósávot tartalmaz.',
+			'videoSettings.videoTrackDefault' => 'Alapértelmezett',
+			'videoSettings.videoTrackUnavailable' => 'Nincsenek elérhető alternatív videósávok.',
+			'videoSettings.videoTrackFailed' => 'Nem sikerült megváltoztatni a videósávot.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => '${id}. sáv',
 			'videoSettings.performanceOverlay' => 'Teljesítményadatok',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7374,10 +7453,17 @@ extension on TranslationsHu {
 			'videoSettings.audioOutputSpatial' => 'Térbeli hang',
 			'videoSettings.audioOutputStereo' => 'Sztereó',
 			'videoSettings.audioEqualizer' => 'Audio egyenlet',
-			'videoSettings.audioEqualizerDescription' => 'Ez a készülék öt frekvenciájú sávját állítja be. elérhető a mpv-en; egy aktív EQ hangtávolít és megakadályozza a hangszórót.',
+			'videoSettings.audioEqualizerDescription' => '10 Band Equalizer MPV. A hangszűrők dekódolt audio használatát használják, és kapcsolja ki a passthrough-t.',
 			'videoSettings.audioEqualizerFlat' => 'Sík',
 			'videoSettings.audioEqualizerActive' => 'Egyéni',
 			'videoSettings.audioEqualizerSaveFailed' => 'Nem menthetek meg a hang egyenletítő beállításokat.',
+			'videoSettings.audioEffectsDescription' => 'A hatások dekódolt hangot használnak, így a passthrough elfordul. szoba környezete és sztereó kiterjesztése függ a MPV Építsen és nyomon kövesse.',
+			'videoSettings.audioStereoWidth' => 'Stereó bővítés',
+			'videoSettings.audioSpatializer' => 'Szoba környezete',
+			'videoSettings.audioSpatializerDescription' => 'Adjunk nyugodt helyiség reflexiókat.',
+			'videoSettings.audioPitch' => 'Pécsi változás',
+			'videoSettings.audioPitchDescription' => 'Változtassa meg a pályát, nem változtatja meg a sebességet MPV Az építkezésnek tartalmaznia kell Rubber BandA',
+			'videoSettings.audioEffectUnavailable' => 'Ez a hatás nem áll rendelkezésre ezen a pályán, vagy MPV Az építkezés.',
 			'videoSettings.backgroundVideoAudio' => 'Videó audio háttér',
 			'videoSettings.backgroundVideoAudioDescription' => 'A videó hangjátékot a lejátszó elhagyása után tartsa; a kép elrejtve van, amíg visszatér. Android médiaszámlálási értesítést használ.',
 			'videoSettings.audioNormalization' => 'Hangerő normalizálása',
@@ -7488,6 +7574,8 @@ extension on TranslationsHu {
 			'metadataEdit.metadataUpdated' => 'Metaadatok frissítve',
 			'metadataEdit.metadataUpdateFailed' => 'Nem sikerült a metaadatok frissítése',
 			'metadataEdit.artworkUpdated' => 'Képek frissítve',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Nem sikerült a képek frissítése',
 			'metadataEdit.noArtworkAvailable' => 'Nincsenek elérhető képek',
 			'metadataEdit.artworkOption' => ({required Object index}) => '${index}. képváltozat',
@@ -7526,8 +7614,6 @@ extension on TranslationsHu {
 			'metadataEdit.shownWithForeignAudio' => 'Idegen nyelvű hang esetén megjelenítve',
 			'metadataEdit.alwaysEnabled' => 'Mindig engedélyezve',
 			'metadataEdit.tags' => 'Címkék',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Címke hozzáadása',
 			'metadataEdit.genre' => 'Műfaj',
 			'metadataEdit.director' => 'Rendező',
@@ -7896,6 +7982,10 @@ extension on TranslationsHu {
 			'universalMedia.choosePlaylist' => 'Válassza ki a Playlist fájlt',
 			'universalMedia.openPlaylist' => 'Nyílt Playlist',
 			'universalMedia.playlistFormatsHelp' => 'A lejátszó listája legfeljebb 1000 elemet és 2 MB-ot tartalmazhat. a HLS nyílt áramlatként jelenik meg, így a játékos kiválaszthatja a minőséget.',
+			'universalMedia.saveQueuePlaylist' => 'Sor mentése lejátszási listaként',
+			'universalMedia.queuePlaylistSaved' => 'A lejátszási lista a médiafájlok mellé lett mentve.',
+			'universalMedia.queuePlaylistUnavailable' => 'Ez a sor nem menthető újra felhasználható helyi lejátszási listaként.',
+			'universalMedia.queuePlaylistFolderRequired' => 'A sor fájljaival azonos mappát válassz mentési helyként.',
 			'universalMedia.noFavorites' => 'Nincs mentett stream kedvencek még. Favoritek maradnak ebben a profilban.',
 			'universalMedia.removeFavorite' => 'Távolítsa el a kedvenc stream',
 			'universalMedia.filesHelp' => 'Válassza ki az audio, a videó vagy az ISO fájlokat egy ideiglenes tartományhoz. A fájlok és URL-ek nem kerülnek hozzáadásra a könyvtár történetéhez.',
@@ -7954,12 +8044,13 @@ extension on TranslationsHu {
 			'universalMedia.replaceRecording' => 'Fájl cseréje',
 			'universalMedia.discHelp' => 'Nyissa meg a lemezt ebben a számítógép optikai lemezében.Az ISO-képet is megnyithatja a Device fájlokból.',
 			'universalMedia.discs' => 'Optikai lemez',
+			'universalMedia.editionOrTitle' => 'Kiadás vagy lemezcím',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'Audió CD',
 			'universalMedia.discAvailability' => 'A lemezlejátszásnak kompatibilis MPV szerkezetre, támogatott lemezre és operációs rendszer engedélyére van szüksége.',
 			'universalMedia.converterTitle' => 'A helyi média fájl átalakítása',
-			'universalMedia.converterHelp' => 'Az FFmpeg segítségével MP4, M4A vagy MP3 másolatot készíthet.',
+			'universalMedia.converterHelp' => 'Konvertáljon egy helyi fájlt, vagy helyreállítsa a FFmpegA',
 			'universalMedia.converterIntro' => 'Konvertáljon egy helyi audio vagy videó fájlt olyan formátumra, amely több eszközön működik.',
 			'universalMedia.converterPrivacy' => 'FFmpeg kell telepíteni ezen a számítógépen. konverzió csak helyi fájlokat olvasható. nem tölt le áramlatok vagy eltávolítja DRM-t.',
 			'universalMedia.converterChooseInput' => 'Válasszon egy helyi média fájlt',
@@ -7967,6 +8058,8 @@ extension on TranslationsHu {
 			'universalMedia.converterMp4' => 'MP4 · H.264 és AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC audio',
 			'universalMedia.converterMp3' => 'MP3 hangszóró',
+			'universalMedia.allowFtp' => 'FTP engedélyezése',
+			'universalMedia.allowFtpHelp' => 'Az FTP titkosítás nélküli médiát küld, csak megbízható hálózatokon használja.',
 			'universalMedia.converterSaveAs' => 'Az átalakított média mentése',
 			'universalMedia.converterExtensionMismatch' => 'Válasszon egy fájlnevet a kiválasztott kimeneti kiterjesztéssel.',
 			'universalMedia.converterUnsupportedInput' => 'Válasszon egy audio vagy videó fájlt.',
@@ -7976,7 +8069,7 @@ extension on TranslationsHu {
 			'universalMedia.converterStarting' => 'Megkezdődött az FFmpeg...',
 			'universalMedia.converterProgress' => 'Ezzel a számítógéppel átalakítva...',
 			'universalMedia.converterComplete' => 'Az új fájl készen áll.',
-			'universalMedia.converterFfmpegMissing' => 'FFmpeg nem tudta megtalálni a szükséges kódot. telepítse az FFmpeget H.264, AAC és MP3 támogatással, majd próbálja meg újra.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg hiányzik, vagy nem támogatja ezt a formátumot.',
 			'universalMedia.converterFailed' => 'Ellenőrizze, hogy a forráskód fájl olvasható és a rendeltetési hely elegendő szabad hely.',
 			'universalMedia.converterCancelled' => 'Az átalakítás törlésre került, a hiányos eredményt eltávolították.',
 			'universalMedia.converterDesktopOnly' => 'Helyi átalakítás elérhető asztali számítógépeken FFmpeg telepítve.',
@@ -7995,6 +8088,8 @@ extension on TranslationsHu {
 			'universalMedia.captureAudioNone' => 'Nincs audio',
 			'universalMedia.captureDefaultAudio' => 'Audio beviteli előzetes',
 			'universalMedia.captureWaylandHelp' => 'Wayland korlátozza ezt a XWayland fogást a X display-re. A XWayland-en kívüli Windows nem jelenik meg.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Részletesebben Regisztrációs ráta',
 			'universalMedia.capturePrivacy' => 'A rögzítés csak az Ön által kiválasztott fájlra menthető. a mikrofon rögzítése opcionális. a PlezyNG nem tölti fel a rögzítést.',
 			'universalMedia.captureSaveAs' => 'A képernyő felvétele, mint',
@@ -8004,6 +8099,9 @@ extension on TranslationsHu {
 			'universalMedia.captureSaved' => 'A képernyő felvétele mentett.',
 			'universalMedia.captureElapsedLabel' => 'Rekordidő',
 			'universalMedia.captureStart' => 'Kezdődik a felvétel',
+			'universalMedia.capturePreview' => 'Előnézet a lejátszóban',
+			'universalMedia.capturePreviewHelp' => 'A kiválasztott forrás előnézete a szokásos lejátszóban. Csak erre a munkamenetre szól, és nem ment felvételt. Az eszköztámogatás és az engedélyek az MPV-től és az operációs rendszertől függenek. Az előnézet csak videót használ; a mentett felvételekhez opcionális hang is tartozhat.',
+			'universalMedia.capturePreviewActive' => 'Élő előnézet · nincs felvétel',
 			'universalMedia.captureStop' => 'Állj meg és mentse meg',
 			'universalMedia.captureMode' => 'fogság',
 			'universalMedia.shareMode' => 'megosztás',
@@ -8040,8 +8138,6 @@ extension on TranslationsHu {
 			'universalMedia.extensionInstallTitle' => 'Adja meg ezt a keresési szolgáltatást?',
 			'universalMedia.extensionReplaceTitle' => 'Aktualizálja ezt a keresési szolgáltatást?',
 			'universalMedia.extensionService' => 'Szolgáltatás',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS végpont',
 			'universalMedia.extensionConsent' => 'A keresési szöveget küldik erre a szolgáltatásra. a manifeszt nem tartalmaz végrehajtható kódot. Csak akkor folytatja, ha ezt a végpontot bízik.',
 			'universalMedia.extensionInstall' => 'Add szolgáltatás',
@@ -8506,6 +8602,8 @@ extension on TranslationsHu {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
@@ -8554,8 +8652,6 @@ extension on TranslationsHu {
 			'deepLinks.movieHint' => 'A link megnyitása a filmet játssza.',
 			'deepLinks.episodeHint' => 'A link megnyitása ezt az epizódot játssza.',
 			'deepLinks.profileHint' => 'A link megnyitása váltja át ezt a profilot.',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Nyissa meg, mint ${name}',
 			'deepLinks.copy' => 'másolás',
 			'deepLinks.copied' => 'Link másolat',
