@@ -7,9 +7,18 @@ import '../sources/source_transport.dart';
 import '../utils/language_codes.dart';
 
 class OpenSubtitleDownload {
-  const OpenSubtitleDownload({required this.fileName, required this.bytes});
+  const OpenSubtitleDownload({
+    required this.fileName,
+    required this.bytes,
+    this.languageCode = '',
+    this.forced = false,
+    this.hearingImpaired = false,
+  });
   final String fileName;
   final Uint8List bytes;
+  final String languageCode;
+  final bool forced;
+  final bool hearingImpaired;
 }
 
 /// Small OpenSubtitles REST client for user-initiated standalone-file searches.
@@ -161,9 +170,14 @@ class OpenSubtitlesClient {
       throw const SourceException(SourceFailure.invalidData);
     }
     final fileName = _string(response['file_name']).trim();
+    final resultLanguage = result.languageCode?.trim();
+    final languageCode = resultLanguage?.isNotEmpty == true ? resultLanguage! : result.language?.trim() ?? '';
     return OpenSubtitleDownload(
       fileName: fileName.isEmpty ? 'subtitle.${result.codec ?? 'srt'}' : fileName,
       bytes: Uint8List.fromList(bytes),
+      languageCode: languageCode,
+      forced: result.forced,
+      hearingImpaired: result.hearingImpaired,
     );
   }
 

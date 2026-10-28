@@ -344,7 +344,13 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
           imdbId: entry.identifiers['imdb'],
           tmdbId: entry.identifiers['tmdb'],
           year: entry.releaseYear,
-          onApply: (download) => s.applyExternalSubtitle(name: download.fileName, bytes: download.bytes),
+          onApply: (download) => s.applyExternalSubtitle(
+            name: download.fileName,
+            bytes: download.bytes,
+            languageCode: download.languageCode,
+            forced: download.forced,
+            hearingImpaired: download.hearingImpaired,
+          ),
         ),
       );
     } finally {

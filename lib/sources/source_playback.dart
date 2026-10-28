@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:path/path.dart' as p;
@@ -528,11 +529,22 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       rethrow;
     }
   });
-  Future<void> applyExternalSubtitle({required String name, required List<int> bytes}) async {
+  Future<void> applyExternalSubtitle({
+    required String name,
+    required List<int> bytes,
+    String languageCode = '',
+    bool forced = false,
+    bool hearingImpaired = false,
+  }) => _serialize(() async {
     final native = player;
     final profile = _profile;
-    if (!_valid || !video || native == null || profile == null) {
+    final item = entry;
+    final currentProgress = progress;
+    if (!_valid || !video || native == null || profile == null || item == null) {
       throw const SourceException(SourceFailure.cancelled);
+    }
+    if (native.playerType != 'mpv' || files.isEmpty || _fileIndex < 0 || _fileIndex >= files.length) {
+      throw const SourceException(SourceFailure.unsupported);
     }
     if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
       throw const SourceException(SourceFailure.invalidData);
@@ -541,20 +553,428 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final extension = const {'.srt', '.ass', '.ssa', '.vtt', '.sub'}.contains(requestedExtension)
         ? requestedExtension
         : '.srt';
-    final directory = Directory(p.join(sources.downloads.directory.path, sourceDigest(profile), 'external-subtitles'));
+    if (!native.supportedLocalSubtitleExtensions.contains(extension.substring(1))) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    final generation = _generation;
+    final fileEpoch = _fileEpoch;
+    final edition = currentProgress?.edition;
+    final normalizedLanguage = _normalizeSubtitleLanguage(languageCode);
+    final fileIndex = _fileIndex;
+    final publicationFile = files[fileIndex];
+    bool current() => _isCurrentExternalSubtitleScope(
+      native: native,
+      item: item,
+      publicationFile: publicationFile,
+      fileIndex: fileIndex,
+      profile: profile,
+      edition: edition,
+      generation: generation,
+      fileEpoch: fileEpoch,
+    );
+
+    final persistent = _persistProgress && !_liveInput && currentProgress != null && edition != null;
+    if (!persistent) {
+      final directory = Directory(
+        p.join(sources.downloads.directory.path, sourceDigest(profile), 'external-subtitles'),
+      );
+      await directory.create(recursive: true);
+      if (!current()) throw const SourceException(SourceFailure.cancelled);
+      final file = File(p.join(directory.path, '${const Uuid().v4()}$extension'));
+      try {
+        await file.writeAsBytes(bytes, flush: true);
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+        await native.command(
+          _externalSubtitleCommand(
+            path: file.path,
+            language: normalizedLanguage,
+            forced: forced,
+            hearingImpaired: hearingImpaired,
+          ),
+        );
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+        _temporarySubtitles.add(file);
+        _notify();
+      } catch (_) {
+        if (await file.exists()) await file.delete();
+        rethrow;
+      }
+      return;
+    }
+
+    final directory = _externalSubtitleAssetDirectory(
+      profile: profile,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
     await directory.create(recursive: true);
-    if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
-    final file = File(p.join(directory.path, '${const Uuid().v4()}$extension'));
+    if (!current()) throw const SourceException(SourceFailure.cancelled);
+    final manifestFile = File(p.join(directory.path, 'manifest.json'));
+    final previousManifest = await _readExternalSubtitleManifest(
+      directory: directory,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    final oldAssets = (previousManifest?['assets'] as List<Map<String, dynamic>>?) ?? const [];
+    final slot = sha256
+        .convert(utf8.encode(jsonEncode([normalizedLanguage, forced, hearingImpaired])))
+        .toString();
+    final checksum = sha256.convert(bytes).toString();
+    final assetName = '$checksum$extension';
+    final assetFile = File(p.join(directory.path, assetName));
+    final nextAssets = <Map<String, dynamic>>[
+      ...oldAssets.where((asset) => asset['slot'] != slot),
+      {
+        'slot': slot,
+        'sha256': checksum,
+        'file': assetName,
+        'size': bytes.length,
+        'language': normalizedLanguage,
+        'forced': forced,
+        'hearingImpaired': hearingImpaired,
+      },
+    ];
+    final uniqueFiles = nextAssets.map((asset) => asset['file'] as String).toSet();
+    final totalBytes = uniqueFiles.fold<int>(
+      0,
+      (total, fileName) => total + (nextAssets.firstWhere((asset) => asset['file'] == fileName)['size'] as int),
+    );
+    if (nextAssets.length > 8 || totalBytes > 20 * 1024 * 1024) {
+      throw const SourceException(SourceFailure.quotaExceeded);
+    }
+    final nextManifest = <String, dynamic>{
+      'version': 1,
+      'entry': sourceDigest(item.key),
+      'edition': edition,
+      'fileFingerprint': publicationFile.fingerprint,
+      'selected': slot,
+      'assets': nextAssets,
+    };
+
+    final stagedAsset = File('${assetFile.path}.${const Uuid().v4()}.pending');
+    final hadAsset = await assetFile.exists();
+    var manifestWritten = false;
     try {
-      await file.writeAsBytes(bytes, flush: true);
-      if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
-      await native.command(['sub-add', file.path, 'select']);
-      if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
-      _temporarySubtitles.add(file);
+      if (!hadAsset ||
+          await assetFile.length() != bytes.length ||
+          sha256.convert(await assetFile.readAsBytes()).toString() != checksum) {
+        await stagedAsset.writeAsBytes(bytes, flush: true);
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+        if (await assetFile.exists()) await assetFile.delete();
+        await stagedAsset.rename(assetFile.path);
+      }
+      if (!current()) throw const SourceException(SourceFailure.cancelled);
+      await _writeExternalSubtitleManifest(manifestFile, nextManifest);
+      manifestWritten = true;
+      try {
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+        await native.command(['sub-add', assetFile.path, 'select']);
+        if (!current()) throw const SourceException(SourceFailure.cancelled);
+      } catch (_) {
+        if (previousManifest == null) {
+          if (await manifestFile.exists()) await manifestFile.delete();
+          manifestWritten = false;
+        } else {
+          await _writeExternalSubtitleManifest(manifestFile, previousManifest);
+        }
+        if (!hadAsset && !oldAssets.any((asset) => asset['file'] == assetName) && await assetFile.exists()) {
+          await assetFile.delete();
+        }
+        rethrow;
+      }
+      try {
+        await _pruneExternalSubtitleAssets(directory, nextAssets);
+      } on Object {
+        // Playback and the committed manifest remain valid if cache pruning fails.
+      }
       _notify();
     } catch (_) {
-      if (await file.exists()) await file.delete();
+      if (await stagedAsset.exists()) await stagedAsset.delete();
+      if (!hadAsset && !manifestWritten && await assetFile.exists()) await assetFile.delete();
       rethrow;
+    }
+  });
+
+  bool _isCurrentExternalSubtitleScope({
+    required Player native,
+    required SourceEntry item,
+    required PublicationFile publicationFile,
+    required int fileIndex,
+    required String profile,
+    required String? edition,
+    required int generation,
+    required int fileEpoch,
+  }) =>
+      _valid &&
+      player == native &&
+      entry == item &&
+      _profile == profile &&
+      _generation == generation &&
+      _fileEpoch == fileEpoch &&
+      _fileIndex == fileIndex &&
+      fileIndex >= 0 &&
+      fileIndex < files.length &&
+      files[fileIndex].fingerprint == publicationFile.fingerprint &&
+      progress?.edition == edition;
+
+  Directory _externalSubtitleAssetDirectory({
+    required String profile,
+    required SourceEntry item,
+    required String edition,
+    required PublicationFile publicationFile,
+  }) {
+    final digestPattern = RegExp(r'^[0-9a-f]{64}$');
+    if (!digestPattern.hasMatch(edition) || !digestPattern.hasMatch(publicationFile.fingerprint)) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    return Directory(
+      p.join(
+        sources.downloads.directory.path,
+        sourceDigest(profile),
+        'external-subtitles',
+        sourceDigest(item.key),
+        edition,
+        publicationFile.fingerprint,
+      ),
+    );
+  }
+
+  String _normalizeSubtitleLanguage(String value) {
+    final normalized = value.trim().toLowerCase().replaceAll('_', '-');
+    return RegExp(r'^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$').hasMatch(normalized) ? normalized : '';
+  }
+
+  List<String> _externalSubtitleCommand({
+    required String path,
+    required String language,
+    required bool forced,
+    required bool hearingImpaired,
+  }) {
+    final flags = [
+      'select',
+      if (forced) 'forced',
+      if (hearingImpaired) 'hearing-impaired',
+    ].join('+');
+    final title = language.isEmpty ? 'External subtitle' : language;
+    return ['sub-add', path, flags, title, if (language.isNotEmpty) language];
+  }
+
+  Map<String, dynamic>? _safeExternalSubtitleAsset(Object? value) {
+    if (value is! Map) return null;
+    final asset = Map<String, dynamic>.from(value);
+    final slot = asset['slot'];
+    final checksum = asset['sha256'];
+    final fileName = asset['file'];
+    final size = asset['size'];
+    final language = asset['language'];
+    final forced = asset['forced'];
+    final hearingImpaired = asset['hearingImpaired'];
+    if (slot is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(slot) ||
+        checksum is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum) ||
+        fileName is! String ||
+        p.basename(fileName) != fileName ||
+        size is! int ||
+        size <= 0 ||
+        size > 5 * 1024 * 1024 ||
+        language is! String ||
+        _normalizeSubtitleLanguage(language) != language ||
+        forced is! bool ||
+        hearingImpaired is! bool) {
+      return null;
+    }
+    final extension = p.extension(fileName).toLowerCase();
+    if (!const {'.srt', '.ass', '.ssa', '.vtt', '.sub'}.contains(extension) ||
+        fileName != '$checksum$extension' ||
+        slot !=
+            sha256
+                .convert(utf8.encode(jsonEncode([language, forced, hearingImpaired])))
+                .toString()) {
+      return null;
+    }
+    return {
+      'slot': slot,
+      'sha256': checksum,
+      'file': fileName,
+      'size': size,
+      'language': language,
+      'forced': forced,
+      'hearingImpaired': hearingImpaired,
+    };
+  }
+
+  Future<Map<String, dynamic>?> _readExternalSubtitleManifest({
+    required Directory directory,
+    required SourceEntry item,
+    required String edition,
+    required PublicationFile publicationFile,
+  }) async {
+    final manifestFile = File(p.join(directory.path, 'manifest.json'));
+    final backupFile = File('${manifestFile.path}.backup');
+    try {
+      if (!await manifestFile.exists() && await backupFile.exists()) {
+        await backupFile.rename(manifestFile.path);
+      } else if (await manifestFile.exists() && await backupFile.exists()) {
+        await backupFile.delete();
+      }
+      if (!await manifestFile.exists() || await manifestFile.length() > 64 * 1024) return null;
+      final decoded = jsonDecode(await manifestFile.readAsString());
+      if (decoded is! Map) return null;
+      final manifest = Map<String, dynamic>.from(decoded);
+      if (manifest['version'] != 1 ||
+          manifest['entry'] != sourceDigest(item.key) ||
+          manifest['edition'] != edition ||
+          manifest['fileFingerprint'] != publicationFile.fingerprint ||
+          manifest['assets'] is! List) {
+        return null;
+      }
+      final rawAssets = manifest['assets'] as List;
+      if (rawAssets.length > 8) return null;
+      final assets = rawAssets.map(_safeExternalSubtitleAsset).whereType<Map<String, dynamic>>().toList();
+      final selected = manifest['selected'];
+      return {
+        'version': 1,
+        'entry': sourceDigest(item.key),
+        'edition': edition,
+        'fileFingerprint': publicationFile.fingerprint,
+        'selected': selected is String && assets.any((asset) => asset['slot'] == selected) ? selected : '',
+        'assets': assets,
+      };
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<void> _writeExternalSubtitleManifest(File manifestFile, Map<String, dynamic> manifest) async {
+    final staged = File('${manifestFile.path}.${const Uuid().v4()}.pending');
+    final backup = File('${manifestFile.path}.backup');
+    try {
+      await staged.writeAsString(jsonEncode(manifest), flush: true);
+      if (await backup.exists()) await backup.delete();
+      if (await manifestFile.exists()) await manifestFile.rename(backup.path);
+      try {
+        await staged.rename(manifestFile.path);
+        if (await backup.exists()) {
+          try {
+            await backup.delete();
+          } on Object {
+            // The main manifest is already committed; recover by preferring it next time.
+          }
+        }
+      } catch (_) {
+        if (!await manifestFile.exists() && await backup.exists()) {
+          await backup.rename(manifestFile.path);
+        }
+        rethrow;
+      }
+    } finally {
+      if (await staged.exists()) await staged.delete();
+    }
+  }
+
+  Future<void> _pruneExternalSubtitleAssets(
+    Directory directory,
+    List<Map<String, dynamic>> assets,
+  ) async {
+    final keep = assets.map((asset) => asset['file'] as String).toSet();
+    final ownedAsset = RegExp(r'^[0-9a-f]{64}\.(?:srt|ass|ssa|vtt|sub)$');
+    for (final entity in await directory.list(followLinks: false).toList()) {
+      if (entity is! File) continue;
+      final name = p.basename(entity.path);
+      if (ownedAsset.hasMatch(name) && !keep.contains(name)) {
+        try {
+          await entity.delete();
+        } on Object {
+          // Stale, unreferenced cache cleanup is best effort.
+        }
+      } else if (name.endsWith('.pending')) {
+        try {
+          await entity.delete();
+        } on Object {
+          // Stale, unreferenced cache cleanup is best effort.
+        }
+      }
+    }
+  }
+
+  Future<void> _restoreExternalSubtitleAssets({
+    required Player native,
+    required SourceEntry item,
+    required PublicationFile publicationFile,
+    required int fileIndex,
+    required String profile,
+    required String edition,
+    required int generation,
+    required int fileEpoch,
+  }) async {
+    if (!_persistProgress || _liveInput || !video || native.playerType != 'mpv') return;
+    final directory = _externalSubtitleAssetDirectory(
+      profile: profile,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    final manifest = await _readExternalSubtitleManifest(
+      directory: directory,
+      item: item,
+      edition: edition,
+      publicationFile: publicationFile,
+    );
+    if (manifest == null) return;
+    final assets = (manifest['assets'] as List<Map<String, dynamic>>)
+        .where(
+          (asset) => native.supportedLocalSubtitleExtensions.contains(
+            p.extension(asset['file'] as String).substring(1),
+          ),
+        )
+        .toList();
+    final selected = manifest['selected'];
+    assets.sort((a, b) => (a['slot'] == selected ? 1 : 0).compareTo(b['slot'] == selected ? 1 : 0));
+    for (final asset in assets) {
+      if (!_isCurrentExternalSubtitleScope(
+        native: native,
+        item: item,
+        publicationFile: publicationFile,
+        fileIndex: fileIndex,
+        profile: profile,
+        edition: edition,
+        generation: generation,
+        fileEpoch: fileEpoch,
+      )) {
+        return;
+      }
+      final fileName = asset['file'] as String;
+      final file = File(p.join(directory.path, fileName));
+      try {
+        if (!await file.exists() || await file.length() != asset['size']) continue;
+        final contents = await file.readAsBytes();
+        if (sha256.convert(contents).toString() != asset['sha256']) continue;
+        if (!_isCurrentExternalSubtitleScope(
+          native: native,
+          item: item,
+          publicationFile: publicationFile,
+          fileIndex: fileIndex,
+          profile: profile,
+          edition: edition,
+          generation: generation,
+          fileEpoch: fileEpoch,
+        )) {
+          return;
+        }
+        await native.command(
+          _externalSubtitleCommand(
+            path: file.path,
+            language: asset['language'] as String,
+            forced: asset['forced'] as bool,
+            hearingImpaired: asset['hearingImpaired'] as bool,
+          ),
+        );
+      } on Object {
+        appLogger.w('Saved external subtitle could not be restored');
+      }
     }
   }
 
@@ -578,6 +998,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     }
     opening = true;
     _fileEpoch++;
+    final generation = _generation;
+    final fileEpoch = _fileEpoch;
+    final edition = progress?.edition;
     _notify();
     _fileIndex = index;
     _lastKnownFilePositionMs = math.max(0, localPosition);
@@ -610,7 +1033,20 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       play: play && automotivePlaybackAllowedNow(),
     );
     await native.setRate(speed);
-    if (!_valid || player != native) return;
+    if (!_valid || player != native || generation != _generation || fileEpoch != _fileEpoch) return;
+    if (edition != null) {
+      await _restoreExternalSubtitleAssets(
+        native: native,
+        item: item,
+        publicationFile: file,
+        fileIndex: index,
+        profile: _profile!,
+        edition: edition,
+        generation: generation,
+        fileEpoch: fileEpoch,
+      );
+    }
+    if (!_valid || player != native || generation != _generation || fileEpoch != _fileEpoch) return;
     await _controls?.updateFileMetadata(
       title: item.displayTitle,
       author: item.narrator.isEmpty ? item.author : item.narrator,

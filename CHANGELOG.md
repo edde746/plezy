@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Retain downloaded OpenSubtitles text subtitles for standalone MPV VOD, bound to profile, source item, edition and file fingerprint; verify content hashes when restoring and enforce per-file asset limits. Preserve session-only cleanup for transient and live playback.
 - Add bounded two-anchor subtitle drift calibration for MPV text tracks. Capture matching playback positions, fit one timestamp multiplier plus delay, persist both in the existing scope, and exclude unsupported players and known bitmap subtitle codecs.
 - Add exact millisecond audio/subtitle sync entry and backend-aware local subtitle import: MPV keeps its existing formats, Android ExoPlayer accepts SRT/ASS/SSA/VTT on VOD, and Tizen/webOS add SRT/VTT overlays.
 - Add a separately persisted sync offset for MPV's secondary subtitle track, using the existing scoped timing controls.
