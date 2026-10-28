@@ -50,11 +50,7 @@ class TraktSettingsScreen extends StatelessWidget {
           canPop: false,
           child: AlertDialog(
             title: Text(t.trakt.historyExportLoading),
-            content: const SizedBox(
-              width: 48,
-              height: 48,
-              child: Center(child: CircularProgressIndicator()),
-            ),
+            content: const SizedBox(width: 48, height: 48, child: Center(child: CircularProgressIndicator())),
           ),
         ),
       ),
@@ -81,11 +77,7 @@ class TraktSettingsScreen extends StatelessWidget {
     }
 
     final review = StringBuffer(
-      t.trakt.historyExportReview(
-        plays: export.playCount,
-        movies: export.movieCount,
-        files: export.parts.length,
-      ),
+      t.trakt.historyExportReview(plays: export.playCount, movies: export.movieCount, files: export.parts.length),
     );
     if (export.skippedCount > 0) {
       review.write('\n\n');
@@ -98,13 +90,10 @@ class TraktSettingsScreen extends StatelessWidget {
         title: Text(t.trakt.historyExportReviewTitle),
         content: SingleChildScrollView(child: Text(review.toString())),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(t.common.cancel),
-          ),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(t.common.cancel)),
           FilledButton.icon(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            icon: const Icon(Symbols.file_download_rounded),
+            icon: const AppIcon(Symbols.file_download_rounded, fill: 1),
             label: Text(t.trakt.historyExportSave),
           ),
         ],
@@ -143,10 +132,7 @@ class TraktSettingsScreen extends StatelessWidget {
     if (saved == export.parts.length) {
       _showHistoryExportMessage(context, t.trakt.historyExportSaved(count: saved));
     } else if (saved > 0) {
-      _showHistoryExportMessage(
-        context,
-        t.trakt.historyExportPartial(saved: saved, total: export.parts.length),
-      );
+      _showHistoryExportMessage(context, t.trakt.historyExportPartial(saved: saved, total: export.parts.length));
     }
   }
 

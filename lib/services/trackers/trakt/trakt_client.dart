@@ -92,11 +92,7 @@ class TraktClient implements DisposableTrackerClient {
       throw ArgumentError('Trakt history page and limit are out of range');
     }
     final query = Uri(
-      queryParameters: {
-        'page': page.toString(),
-        'limit': limit.toString(),
-        'end_at': endAt.toUtc().toIso8601String(),
-      },
+      queryParameters: {'page': page.toString(), 'limit': limit.toString(), 'end_at': endAt.toUtc().toIso8601String()},
     ).query;
     final res = await _requestResponse('GET', '/users/me/history/movies?$query');
     return TrackerPage.fromResponse(res, _decodeMovieHistory(res.body));
