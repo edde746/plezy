@@ -2,10 +2,15 @@
 
 ## [Unreleased]
 
+- Fix clean tvOS CocoaPods setup, Android 17 preview SDK provisioning, and short-path Apple native-asset builds on private JIT runners.
+- Fix the macOS native reliability target to import the `PlezyNG` app module.
+- Require Android host native-test tools to be provisioned on the private runner before CI starts.
+
 - Add an MPV subtitle-drift preview that applies calibration temporarily and restores prior timing on cancel; saving commits the read-back values.
 - Add one-step undo for the most recent applied MPV subtitle drift calibration or reset, including its prior scoped rate and delay.
 - Retain downloaded OpenSubtitles text subtitles for standalone MPV VOD, bound to profile, source item, edition and file fingerprint; verify content hashes when restoring and enforce per-file asset limits. Preserve session-only cleanup for transient and live playback.
 - Roll back native sync timing when saving an offset fails, keeping player state, confirmation state and persisted settings consistent.
+- Export synchronized SRT/WebVTT copies for standalone MPV VOD subtitles, preserve cue payload and settings, and confirm before removing cues wholly before playback starts.
 - Add subtitle sync controls to standalone MPV VOD OpenSubtitles assets. Persist delay and drift rate by the current audio descriptor, reapply only matching audio calibration after a track switch, and restore corrections only when edition, source file, and subtitle digest still match.
 - Search OpenSubtitles by moviehash when a local or cached file is available and its byte size matches the source record; rank reported hash matches ahead of title-only results.
 - Add bounded two-anchor subtitle drift calibration for MPV text tracks. Capture matching playback positions, fit one timestamp multiplier plus delay, persist both in the existing scope, and exclude unsupported players and known bitmap subtitle codecs.

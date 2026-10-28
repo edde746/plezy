@@ -2,7 +2,7 @@ import Libmpv
 import FlutterMacOS
 import XCTest
 
-@testable import Plezy
+@testable import PlezyNG
 
 final class ControllablePropertyCore: MpvPlayerCoreBase {
   var nextResult: Result<Void, Error>?

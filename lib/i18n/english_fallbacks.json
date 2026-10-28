@@ -131,6 +131,11 @@
     "videoSettings.subtitleDriftPreviewActive",
     "videoSettings.subtitleDriftPreviewFailed",
     "videoSettings.subtitleDriftUndo",
+    "videoSettings.subtitleExport",
+    "videoSettings.subtitleExportClipped",
+    "videoSettings.subtitleExportFailed",
+    "videoSettings.subtitleExportReplace",
+    "videoSettings.subtitleExportSuccess",
     "videoSettings.subtitlePlaybackTimeAnchor1",
     "videoSettings.subtitlePlaybackTimeAnchor2",
     "videoSettings.subtitleUsePlaybackTime"

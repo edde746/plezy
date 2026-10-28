@@ -20,6 +20,7 @@ import '../../multiview/workspace_models.dart';
 import '../../utils/formatters.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../services/player_sync_offsets.dart';
+import '../../services/subtitle_retimer.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/listening_tools.dart';
@@ -433,6 +434,110 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     );
   }
 
+  Future<void> _exportSynchronizedSubtitle(SourcePlayback playback) async {
+    final sourceFile = playback.activePersistentExternalSubtitleFile;
+    final targetPlayer = playback.player;
+    if (sourceFile == null || targetPlayer == null || !playback.canExportActiveExternalSubtitle) return;
+    final extension = p.extension(sourceFile.path).toLowerCase();
+    final identity = playback.activeExternalSubtitleIdentity;
+    if (identity == null) return;
+
+    try {
+      final sync = await playback.activeExternalSubtitleSync();
+      if (!mounted ||
+          playback.player != targetPlayer ||
+          playback.activeExternalSubtitleIdentity != identity ||
+          sync == null) {
+        return;
+      }
+      final sourceBytes = await sourceFile.readAsBytes();
+      final result = SubtitleRetimer.retime(
+        sourceBytes: sourceBytes,
+        extension: extension,
+        delayMs: sync.delayMs,
+        rate: sync.rate,
+      );
+      if (!mounted || playback.activeExternalSubtitleIdentity != identity) return;
+
+      if (result.clippedCueCount > 0) {
+        final proceed = await showConfirmDialog(
+          context,
+          title: t['videoSettings.subtitleExport'] as String,
+          message: t['videoSettings.subtitleExportClipped'] as String,
+        );
+        if (!proceed || !mounted || playback.activeExternalSubtitleIdentity != identity) return;
+      }
+
+      final rawTitle = playback.entry?.displayTitle ?? '';
+      var baseName = rawTitle
+          .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+          .trim();
+      while (baseName.endsWith('.')) {
+        baseName = baseName.substring(0, baseName.length - 1);
+      }
+      if (baseName.isEmpty) baseName = 'subtitle';
+      baseName = baseName.substring(0, math.min(120, baseName.length));
+      var path = await FilePicker.saveFile(
+        dialogTitle: t['videoSettings.subtitleExport'] as String,
+        fileName: baseName + '.synced' + extension,
+        type: FileType.custom,
+        allowedExtensions: [extension.substring(1)],
+      );
+      if (path == null || !mounted) return;
+      if (p.extension(path).isEmpty) path += extension;
+      if (p.extension(path).toLowerCase() != extension ||
+          p.equals(p.normalize(p.absolute(path)), p.normalize(sourceFile.absolute.path))) {
+        showErrorSnackBar(context, t['videoSettings.subtitleExportFailed'] as String);
+        return;
+      }
+
+      final target = File(path);
+      if (await target.exists()) {
+        if (!mounted) return;
+        final replace = await showConfirmDialog(
+          context,
+          title: t['videoSettings.subtitleExport'] as String,
+          message: t['videoSettings.subtitleExportReplace'] as String,
+        );
+        if (!replace || !mounted) return;
+      }
+      if (playback.activeExternalSubtitleIdentity != identity) return;
+      await _writeSubtitleExport(target, result.bytes);
+      if (mounted) showSnackBar(context, t['videoSettings.subtitleExportSuccess'] as String);
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t['videoSettings.subtitleExportFailed'] as String);
+    }
+  }
+
+  Future<void> _writeSubtitleExport(File target, List<int> bytes) async {
+    final nonce = DateTime.now().microsecondsSinceEpoch.toString();
+    final staged = File(target.path + '.plezyng.' + nonce + '.pending');
+    final backup = File(target.path + '.plezyng.' + nonce + '.backup');
+    var backedUp = false;
+    try {
+      await staged.writeAsBytes(bytes, flush: true);
+      if (await target.exists()) {
+        await target.rename(backup.path);
+        backedUp = true;
+      }
+      try {
+        await staged.rename(target.path);
+      } catch (_) {
+        if (backedUp && await backup.exists()) await backup.rename(target.path);
+        rethrow;
+      }
+      if (backedUp && await backup.exists()) {
+        try {
+          await backup.delete();
+        } on Object {
+          // The new export is committed; a stale backup is safe to remove later.
+        }
+      }
+    } finally {
+      if (await staged.exists()) await staged.delete();
+    }
+  }
+
   Widget controls(SourcePlayback s) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -680,6 +785,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceListeningSettings())),
             icon: const AppIcon(Symbols.tune_rounded),
           ),
+          if (s.video && s.canExportActiveExternalSubtitle)
+            IconButton(
+              tooltip: t['videoSettings.subtitleExport'] as String,
+              onPressed: () => sourceAction(context, () => _exportSynchronizedSubtitle(s)),
+              icon: const AppIcon(Symbols.download_rounded),
+            ),
           if (s.video && s.hasSelectedPersistentExternalSubtitle)
             IconButton(
               tooltip: t.videoSettings.subtitleSync,

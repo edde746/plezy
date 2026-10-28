@@ -310,7 +310,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | S09 | Allow an already synchronized subtitle as the reference instead of audio. | M3 |
 | S10 | Forced alignment is restricted to matching spoken-language transcripts and returns unsupported/uncertain regions. | M5 |
 | S11 | Standalone MPV OpenSubtitles corrections persist by profile, edition, source-file fingerprint, subtitle digest, and selected audio descriptor; v1 manifests migrate with neutral timing. Main-library corrections remain title-scoped pending edition/audio/subtitle identity support. | M2 |
-| S12 | Preview, undo, and reset are implemented for player timing controls; corrected-sidecar export with provenance remains. Original imported assets remain immutable. | M2 |
+| S12 | Preview, undo, and reset are implemented for player timing controls. Standalone MPV VOD can export a corrected SRT/VTT copy using the active per-audio delay/rate; cues wholly before time zero require confirmation before omission. Structured provenance metadata, ASS/SSA/bitmap export, and broader server-library export remain. Original imported assets remain immutable. | M2 |
 | S13 | Explicit FPS conversion is tested with 23.976/24/25 cases and does not treat VFR as a blanket error. | M2 |
 | S14 | Multipart, transcode starts, ads, discontinuities, and DVR seeks retain correct source-time mapping. | M3 |
 | S15 | Sparse forced/sign tracks are not forcibly matched to every spoken segment. | M3 |
@@ -412,7 +412,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | --- | --- | --- |
 | O01 | Imported OpenSubtitles originals are immutable and content-addressed; manifests use staged replacement and backup recovery. Derived retimed revisions and export remain. | M2 |
 | O02 | Attach derived assets durably to server and standalone-source editions without requiring server write access. PR #53 covers imported OpenSubtitles text assets on standalone MPV VOD only; server-side attachment and cross-device distribution remain open. | M2 |
-| O03 | Export SRT/VTT/ASS and structured word/cue JSON with explicit lossy-format reporting. | M4 |
+| O03 | Standalone MPV VOD exports corrected SRT/VTT copies with clipping confirmation. ASS/SSA, bitmap formats, structured word/cue JSON, and cross-platform server-library export remain. | M4 |
 | O04 | Include selected subtitle assets and required fonts in offline downloads with quota accounting. | M6 |
 | O05 | Cross-device sync transfers manifests, corrections, preferences, and selected assets with conflict handling. | M8 |
 | O06 | Model packages have hashes, sizes, task/language metadata, compatibility, update rollback, and licenses. | M4 |
@@ -499,7 +499,7 @@ Proposed new paths below are names to create, not claims that they already exist
 | Translation | Subtitle documents and inference manager | `lib/subtitles/translation/`, glossary/revision store | Multilingual output is valid, aligned, editable, and traceable to source cues. |
 | Live renderer | `PlayerNative`, ExoPlayer text/ASS integration, Tizen/webOS adapters where feasible | Bounded cue stream API and renderer acknowledgements | Caption finalization/seek/discontinuity causes no duplicates, stale lines, or leaked memory. |
 | Companion | Existing pairing/credential/transport conventions after code audit | `tools/subtitle-companion/` and client adapter, or equivalent repository layout | Pair, probe, submit, cancel, resume, and fetch results; disconnected jobs cannot mutate another profile. |
-| Persistence and export | Downloads, source files, profile lifecycle | Derived-asset manifests, exporters, conflict handling | Offline playback works without source access; exports explicitly report lost style/metadata. |
+| Persistence and export | Downloads, source files, profile lifecycle | Derived-asset manifests, exporters, conflict handling | MPV standalone exports affine-retimed SRT/VTT and confirms cues removed before time zero; broader format support, embedded provenance, and source-download packaging remain. |
 
 The inference ABI should expose capability discovery, model creation, buffered audio submission, event polling, cancellation, and destruction. Return structured errors and actual backend placement. Keep the ABI stable across Flutter and platform implementations. Native workers own long-lived tensor buffers. Dart owns high-level job state and uses bounded event batches.
 
@@ -507,7 +507,7 @@ For a companion, define `capabilities`, `createJob`, `appendAudio`, `events`, `c
 
 ## First vertical slice
 
-The initial integrated slice now has explicit primary/secondary selection, independent manual offset, preview/undo, and persistent per-audio correction for imported OpenSubtitles assets on MPV VOD. Corrected-sidecar export remains the immediate shared-asset gap. The analysis path still needs selected-audio VAD alignment on a local file using that correction identity. CPU ASR then turns selected audio into a reusable timed asset, with Vulkan qualification and platform adapters proceeding against the same job/asset contracts. These connected work streams expose the difficult clock/identity/renderer boundaries early without narrowing the overall scope.
+The initial integrated slice now has explicit primary/secondary selection, independent manual offset, preview/undo, persistent per-audio correction, and corrected SRT/VTT export for imported OpenSubtitles assets on MPV VOD. The analysis path still needs selected-audio VAD alignment on a local file using the same correction identity. CPU ASR then turns selected audio into a reusable timed asset, with Vulkan qualification and platform adapters proceeding against the same job/asset contracts. These connected work streams expose the difficult clock/identity/renderer boundaries early without narrowing the overall scope.
 
 Do not start with NPU dispatch, OCR, or a large language-model editor. Those features depend on the same correct subtitle document, source clock, and job lifecycle.
 

@@ -145,6 +145,14 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     player?.state.track.subtitle,
     _selectedExternalSubtitlePath,
   );
+  File? get activePersistentExternalSubtitleFile {
+    final path = _selectedExternalSubtitlePath;
+    return hasSelectedPersistentExternalSubtitle && path != null ? File(path) : null;
+  }
+  bool get canExportActiveExternalSubtitle {
+    final file = activePersistentExternalSubtitleFile;
+    return file != null && const {'.srt', '.vtt'}.contains(p.extension(file.path).toLowerCase());
+  }
   String? get activeExternalSubtitleIdentity {
     final native = player;
     final selectedPath = _selectedExternalSubtitlePath;
