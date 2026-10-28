@@ -22,14 +22,20 @@ class BrandAssetsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'checksum changed'):
             BrandRenderer({**self.config, 'source_sha256': '0' * 64})
 
-    def test_dark_centre_survives_colour_export(self):
-        image = self.renderer.frame((512, 512), 1)
-        red, green, blue, alpha = image.getpixel((256, 256))
-        self.assertGreaterEqual(alpha, 250)
-        self.assertLess(max(red, green, blue), 70)
-        self.assertGreater(blue, red)
+    def test_ribbon_cutout_remains_transparent_on_both_surfaces(self):
+        for appearance in ('light', 'dark'):
+            image = self.renderer.frame((512, 512), 1, appearance=appearance)
+            self.assertEqual(image.getpixel((256, 256))[3], 0)
+            self.assertEqual(image.getpixel((10, 10))[3], 0)
+            self.assertGreater(image.getpixel((100, 200))[3], 240)
 
-    def test_monochrome_retains_hollow_triangles_and_ng(self):
+    def test_ng_lettering_has_contrast_on_both_surfaces(self):
+        image = self.renderer.frame((512, 512), 1)
+        self.assertGreater(min(image.getpixel((384, 384))[:3]), 200)
+        light = self.renderer.frame((512, 512), 1, appearance='light')
+        self.assertLess(max(light.getpixel((384, 384))[:3]), 70)
+
+    def test_monochrome_retains_the_open_compact_ribbon(self):
         image = self.renderer.frame((512, 512), 1, mono=True)
         self.assertEqual(image.getpixel((256, 256))[3], 0)
         self.assertGreater(image.crop((240, 360, 470, 490)).getchannel('A').getextrema()[1], 240)
