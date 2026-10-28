@@ -259,7 +259,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     });
   }
 
-  ExternalAccessDestination? _watchmodeDestination(WatchmodeAvailabilitySource source) {
+  Uri? _watchmodeUri(WatchmodeAvailabilitySource source) {
     final raw = PlatformDetector.isTV()
         ? (PlatformDetector.isAppleTV()
               ? (source.tvosUrl ?? source.webUrl)
@@ -271,7 +271,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
             TargetPlatform.android => source.androidUrl ?? source.webUrl,
             _ => source.webUrl,
           };
-    if (raw == null) return null;
+    if (raw == null || raw.length > 2048) return null;
     final uri = Uri.tryParse(raw);
     if (uri == null ||
         uri.scheme != 'https' ||
@@ -281,14 +281,20 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
         uri.hasPort) {
       return null;
     }
+    return uri;
+  }
+
+  ExternalAccessDestination? _watchmodeDestination(WatchmodeAvailabilitySource source) {
+    final uri = _watchmodeUri(source);
+    if (uri == null) return null;
 
     final candidates = [
       ...ExternalAccessDirectory.forCategory(ExternalAccessCategory.video),
       ...ExternalAccessDirectory.forCategory(ExternalAccessCategory.rentals),
     ];
-    final host = uri.host.toLowerCase().replaceFirst(RegExp(r'^www\\.'), '');
+    final host = uri.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
     for (final destination in candidates) {
-      final registered = destination.host.toLowerCase().replaceFirst(RegExp(r'^www\\.'), '');
+      final registered = destination.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
       if (host != registered && !host.endsWith('.' + registered)) continue;
       final provider = destination.integrationDefinition((_countryCode ?? _defaultCountryCode()).toLowerCase());
       final decision = ActionPolicyEvaluator.evaluate(
@@ -306,17 +312,8 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
   }
 
   Future<void> _openWatchmodeSource(WatchmodeAvailabilitySource source) async {
-    final destination = _watchmodeDestination(source);
-    if (destination == null) return;
-    final uri = PlatformDetector.isTV()
-        ? (PlatformDetector.isAppleTV() ? source.tvosUrl ?? source.webUrl : source.androidTvUrl ?? source.webUrl)
-        : (Theme.of(context).platform == TargetPlatform.iOS
-              ? source.iosUrl ?? source.webUrl
-              : Theme.of(context).platform == TargetPlatform.android
-              ? source.androidUrl ?? source.webUrl
-              : source.webUrl);
-    final target = uri == null ? null : Uri.tryParse(uri);
-    if (target == null) return;
+    final target = _watchmodeUri(source);
+    if (target == null || _watchmodeDestination(source) == null) return;
     try {
       if (await launchUrl(target, mode: LaunchMode.externalApplication)) return;
     } on Object {
@@ -519,6 +516,15 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                       : (countryCode) => countryCode == null ? null : _setCountry(countryCode),
                 ),
                 const SizedBox(height: 12),
+                if (_watchmodeLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: LinearProgressIndicator(),
+                  ),
+                if (_watchmodeResult?.sources.isNotEmpty ?? false) ...[
+                  _buildWatchmodeSection(),
+                  const SizedBox(height: 8),
+                ],
                 for (final category in widget.categories)
                   if (destinationsByCategory[category]!.isNotEmpty)
                     SettingsGroup(
