@@ -28,7 +28,8 @@ class SteamHostActionExchange {
   Timer? _timer;
   bool _closed = false, _serving = false;
   int _generation = 0;
-  DateTime? _lastAction;
+  final Stopwatch _clock = Stopwatch()..start();
+  Duration? _lastAction;
 
   Future<SteamHostActionResult> request(SteamHostAction action, {int? appId}) {
     steamHostActionUri(action, appId);
@@ -83,21 +84,23 @@ class SteamHostActionExchange {
       _reply(id, SteamHostActionResult.denied);
       return;
     }
-    if (_serving || (_lastAction != null && DateTime.now().difference(_lastAction!) < const Duration(seconds: 2))) {
+    if (_serving || (_lastAction != null && _clock.elapsed - _lastAction! < const Duration(seconds: 2))) {
       _reply(id, SteamHostActionResult.unavailable);
       return;
     }
     _serving = true;
-    _lastAction = DateTime.now();
+    _lastAction = _clock.elapsed;
     final generation = _generation;
-    final deadline = DateTime.now().add(const Duration(seconds: 20));
-    bool current() => !_closed && generation == _generation && allowed(action) && DateTime.now().isBefore(deadline);
+    final deadline = _clock.elapsed + const Duration(seconds: 20);
+    var active = true;
+    bool current() => active && !_closed && generation == _generation && allowed(action) && _clock.elapsed < deadline;
     try {
       final submitted = await execute(action, appId, current).timeout(const Duration(seconds: 20));
       if (current()) _reply(id, submitted ? SteamHostActionResult.submitted : SteamHostActionResult.unavailable);
     } catch (_) {
       if (!_closed && generation == _generation) _reply(id, SteamHostActionResult.unavailable);
     } finally {
+      active = false; // A timed-out asynchronous scan cannot launch later.
       if (generation == _generation) _serving = false;
     }
   }

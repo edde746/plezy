@@ -1192,6 +1192,13 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                   subtitle: t.games.touchDescription,
                 ),
                 Padding(padding: const EdgeInsets.all(16), child: Text(t.games.touchSetupHint)),
+                if (PlatformDetector.supportsEmbeddedGameStreaming())
+                  SettingSwitchTile(
+                    pref: SettingsService.allowGameSessionControlForProfile(_profile!),
+                    icon: Symbols.phonelink_rounded,
+                    title: t.games.allowSessionControl,
+                    subtitle: t.games.allowSessionControlHelp,
+                  ),
               ],
             ),
           ),

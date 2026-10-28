@@ -47,6 +47,11 @@ void main() {
         english.games.steamBetaTitle,
         reason: '${locale.languageTag} must use English for revised Steam copy awaiting translation review',
       );
+      expect(
+        translations.games.remoteSessions,
+        english.games.remoteSessions,
+        reason: '${locale.languageTag} must use English for new Companion Remote copy awaiting translation review',
+      );
     }
   });
 }

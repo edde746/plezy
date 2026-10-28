@@ -659,6 +659,20 @@
     "streamReliableRetries": "",
     "streamSoftwareDecoder": "",
     "streamVideo": "",
-    "streamVideoQueue": ""
+    "streamVideoQueue": "",
+    "allowSessionControl": "",
+    "allowSessionControlHelp": "",
+    "noRemoteSessions": "",
+    "remoteSessionActions": "",
+    "remoteSessionAudible": "",
+    "remoteSessionListen": "",
+    "remoteSessionMute": "",
+    "remoteSessionMuted": "",
+    "remoteSessionSubmitted": "",
+    "remoteSessions": "",
+    "remoteSessionsDenied": "",
+    "remoteSessionsHelp": "",
+    "remoteSessionsRefresh": "",
+    "remoteSessionsUnavailable": ""
   }
 }

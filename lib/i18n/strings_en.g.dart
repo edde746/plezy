@@ -9801,6 +9801,48 @@ class Translations$games$en {
 	/// en: 'Steam controllers'
 	String get controllerSeats => 'Steam controllers';
 
+	/// en: 'Allow companion game session controls'
+	String get allowSessionControl => 'Allow companion game session controls';
+
+	/// en: 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.'
+	String get allowSessionControlHelp => 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.';
+
+	/// en: 'Game sessions'
+	String get remoteSessions => 'Game sessions';
+
+	/// en: 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.'
+	String get remoteSessionsHelp => 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.';
+
+	/// en: 'Enable companion game session controls in Games settings on the connected device.'
+	String get remoteSessionsDenied => 'Enable companion game session controls in Games settings on the connected device.';
+
+	/// en: 'Game session controls are unavailable. Reconnect or refresh to try again.'
+	String get remoteSessionsUnavailable => 'Game session controls are unavailable. Reconnect or refresh to try again.';
+
+	/// en: 'The request was accepted. Refresh to check the current sessions.'
+	String get remoteSessionSubmitted => 'The request was accepted. Refresh to check the current sessions.';
+
+	/// en: 'No active game streams are available on this device.'
+	String get noRemoteSessions => 'No active game streams are available on this device.';
+
+	/// en: 'Game audio is selected'
+	String get remoteSessionAudible => 'Game audio is selected';
+
+	/// en: 'Game audio is not selected'
+	String get remoteSessionMuted => 'Game audio is not selected';
+
+	/// en: 'Game session actions'
+	String get remoteSessionActions => 'Game session actions';
+
+	/// en: 'Listen to this game'
+	String get remoteSessionListen => 'Listen to this game';
+
+	/// en: 'Mute this game'
+	String get remoteSessionMute => 'Mute this game';
+
+	/// en: 'Refresh sessions'
+	String get remoteSessionsRefresh => 'Refresh sessions';
+
 	/// en: 'Steam connection details'
 	String get streamDetails => 'Steam connection details';
 
@@ -16103,6 +16145,20 @@ extension on Translations {
 			'games.automaticFolder' => 'Find automatically',
 			'games.streamQuality' => 'Steam stream quality',
 			'games.controllerSeats' => 'Steam controllers',
+			'games.allowSessionControl' => 'Allow companion game session controls',
+			'games.allowSessionControlHelp' => 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.',
+			'games.remoteSessions' => 'Game sessions',
+			'games.remoteSessionsHelp' => 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.',
+			'games.remoteSessionsDenied' => 'Enable companion game session controls in Games settings on the connected device.',
+			'games.remoteSessionsUnavailable' => 'Game session controls are unavailable. Reconnect or refresh to try again.',
+			'games.remoteSessionSubmitted' => 'The request was accepted. Refresh to check the current sessions.',
+			'games.noRemoteSessions' => 'No active game streams are available on this device.',
+			'games.remoteSessionAudible' => 'Game audio is selected',
+			'games.remoteSessionMuted' => 'Game audio is not selected',
+			'games.remoteSessionActions' => 'Game session actions',
+			'games.remoteSessionListen' => 'Listen to this game',
+			'games.remoteSessionMute' => 'Mute this game',
+			'games.remoteSessionsRefresh' => 'Refresh sessions',
 			'games.streamDetails' => 'Steam connection details',
 			'games.streamFeedbackHelp' => 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.',
 			'games.streamMeasurements' => 'Receiver measurements',

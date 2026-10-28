@@ -5,6 +5,32 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public final class SteamControllerSeatsTest {
+  @Test public void tvNavigationDoesNotTakeTheSingleControllerSeat() {
+    SteamControllerSeats seats = new SteamControllerSeats(1);
+    seats.navigationButton(100, 11, true);
+    assertEquals(1 << 11, seats.navigation().buttons());
+    assertEquals(0, seats.seat(200));
+    seats.state(0).setButton("a", true);
+    assertEquals(0, seats.disconnect(100));
+    assertEquals(0, seats.navigation().buttons());
+    assertEquals(1, seats.state(0).buttons());
+    seats.navigationButton(100, 12, true);
+    seats.reset();
+    assertEquals(0, seats.navigation().buttons());
+    assertEquals(0, seats.state(0).buttons());
+  }
+
+  @Test public void compositeDeviceDisconnectReleasesNavigationAndItsPad() {
+    SteamControllerSeats seats = new SteamControllerSeats(4);
+    seats.seat(1);
+    int seat = seats.seat(2);
+    seats.navigationButton(2, 14, true);
+    seats.state(seat).setButton("b", true);
+    assertEquals(seat, seats.disconnect(2));
+    assertEquals(0, seats.navigation().buttons());
+    assertEquals(0, seats.state(seat).buttons());
+  }
+
   @Test public void devicesShareTheirOwnStateAcrossInputPaths() {
     SteamControllerSeats seats = new SteamControllerSeats(4);
     int nativeSeat = seats.seat(201), flutterSeat = seats.seat(201);
