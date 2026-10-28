@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -71,6 +72,7 @@ type watchmodeAvailabilityHandler struct {
 	allowedOrigins map[string]struct{}
 	client *http.Client
 	apiKey string
+	apiBase string
 	commercialApproved bool
 	now func() time.Time
 
@@ -89,6 +91,7 @@ func newWatchmodeAvailabilityHandler(clientIPs clientIPResolver) *watchmodeAvail
 			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 		},
 		apiKey: strings.TrimSpace(os.Getenv("WATCHMODE_API_KEY")),
+		apiBase: "https://api.watchmode.com",
 		commercialApproved: envEnabled("WATCHMODE_COMMERCIAL_APPROVED"),
 		now: time.Now,
 		cache: make(map[string]watchmodeCacheEntry),
@@ -218,7 +221,11 @@ func (h *watchmodeAvailabilityHandler) fetch(
 	region string,
 ) ([]watchmodeAvailabilitySource, error) {
 	titleID := tmdbType + "-" + strconv.FormatInt(tmdbID, 10)
-	apiURL := &url.URL{Scheme: "https", Host: "api.watchmode.com", Path: "/v1/title/" + titleID + "/sources/"}
+	apiURL, err := url.Parse(h.apiBase)
+	if err != nil || apiURL.Scheme != "https" || apiURL.Host == "" {
+		return nil, errors.New("watchmode endpoint is invalid")
+	}
+	apiURL.Path = strings.TrimRight(apiURL.Path, "/") + "/v1/title/" + titleID + "/sources/"
 	query := apiURL.Query()
 	query.Set("apiKey", h.apiKey)
 	query.Set("regions", region)
