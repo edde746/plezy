@@ -926,19 +926,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           onPressed: openWatchTogether,
                           tooltip: t.watchTogether.title,
                         ),
+                        // This badge overlays its button, so let hover and clicks reach the button.
                         if (watchTogether.isInSession && watchTogether.participantCount > 1)
                           PositionedDirectional(
                             top: 6,
                             end: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: const BorderRadius.all(Radius.circular(8)),
-                              ),
-                              child: Text(
-                                '${watchTogether.participantCount}',
-                                style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                            child: IgnorePointer(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                ),
+                                child: Text(
+                                  '${watchTogether.participantCount}',
+                                  style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                                ),
                               ),
                             ),
                           ),
@@ -963,13 +966,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           PositionedDirectional(
                             top: 6,
                             end: 6,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
+                            child: IgnorePointer(
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
+                                ),
                               ),
                             ),
                           ),
