@@ -344,6 +344,7 @@ void Session::method(FlutterMethodCall* call,FlutterResult reply) {
   if (closing) { reply(unavailable()); return; }
   std::lock_guard<std::mutex> lock(mutex);
   if ([method isEqualToString:@"resetInput"]) { if (runtime) input.reset(*runtime); }
+  else if ([method isEqualToString:@"releaseTouchControls"]) { if (runtime) input.releaseAssistance(*runtime); }
   else if ([method isEqualToString:@"getStreamMetrics"]) {
     if (!runtime) { reply(nil); return; }
     const auto m = runtime->metrics();
@@ -381,8 +382,9 @@ void Session::method(FlutterMethodCall* call,FlutterResult reply) {
           input.mouse(*runtime,[args[@"x"] doubleValue],[args[@"y"] doubleValue],number(args,@"button",0,0,16),boolean(args,@"down"));
         }
       }
-    } else if ([method isEqualToString:@"disconnectController"] || [method isEqualToString:@"setControllerDeviceState"]) {
-      int64_t device = integer(args[@"deviceId"]);
+    } else if ([@[@"disconnectController",@"setControllerDeviceState",@"setTouchControllerState"] containsObject:method]) {
+      const bool assistance = [method isEqualToString:@"setTouchControllerState"];
+      int64_t device = assistance ? 0 : integer(args[@"deviceId"]);
       if (runtime && active && runtime->metrics().epoch == renderedEpoch) {
         if ([method isEqualToString:@"disconnectController"]) input.disconnect(*runtime,device);
         else {
@@ -392,8 +394,8 @@ void Session::method(FlutterMethodCall* call,FlutterResult reply) {
             if (values.count > 32) throw std::invalid_argument("Too many controls");
             for (NSString* key in values) {
               auto name = stringValue(key);
-              if ([group isEqualToString:@"buttons"]) input.button(*runtime,device,name,boolean(values,key));
-              else if (isNumber(values[key])) input.axis(*runtime,device,name,[values[key] doubleValue]);
+              if ([group isEqualToString:@"buttons"]) input.button(*runtime,device,name,boolean(values,key),assistance);
+              else if (isNumber(values[key])) input.axis(*runtime,device,name,[values[key] doubleValue],assistance);
             }
           }
         }

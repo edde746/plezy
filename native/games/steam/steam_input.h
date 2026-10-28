@@ -12,7 +12,7 @@ class InputState {
  public:
   explicit InputState(unsigned count) : count_(std::clamp(count, 1u, 4u)) {}
   void enabled(Runtime& runtime, bool value) { if (!value) reset(runtime); enabled_ = value; }
-  void button(Runtime& runtime, int64_t device, const std::string& name, bool down) {
+  void button(Runtime& runtime, int64_t device, const std::string& name, bool down, bool assistance = false) {
     if (!enabled_) return;
     const auto key = normalize(name);
     static const std::map<std::string, unsigned> bits = {
@@ -20,32 +20,32 @@ class InputState {
       {"mode",5},{"guide",5},{"home",5},{"start",6},{"leftstick",7},{"rightstick",8},
       {"leftbumper",9},{"leftshoulder",9},{"rightbumper",10},{"rightshoulder",10},
       {"dpadup",11},{"dpaddown",12},{"dpadleft",13},{"dpadright",14}};
-    if (key == "lefttrigger" || key == "righttrigger") { axis(runtime, device, key, down ? 1 : 0); return; }
+    if (key == "lefttrigger" || key == "righttrigger") { axis(runtime, device, key, down ? 1 : 0, assistance); return; }
     auto found = bits.find(key);
     if (found == bits.end()) return;
-    int slot = seat(device);
+    int slot = assistance ? 0 : seat(device);
     if (slot < 0) return;
-    auto& state = pads_[slot];
+    auto& state = assistance ? assistance_ : pads_[slot];
     if (down) state.buttons |= 1u << found->second; else state.buttons &= ~(1u << found->second);
-    runtime.padSeat(slot, state.axes, state.buttons);
+    emit(runtime, slot);
   }
-  void axis(Runtime& runtime, int64_t device, const std::string& name, double value) {
+  void axis(Runtime& runtime, int64_t device, const std::string& name, double value, bool assistance = false) {
     if (!enabled_ || !std::isfinite(value)) return;
     static const std::array<std::string, 6> names = {
         "leftstickx","leftsticky","rightstickx","rightsticky","lefttrigger","righttrigger"};
     auto it = std::find(names.begin(), names.end(), normalize(name));
     if (it == names.end()) return;
-    int slot = seat(device);
+    int slot = assistance ? 0 : seat(device);
     if (slot < 0) return;
     const size_t index = it - names.begin();
-    pads_[slot].axes[index] = int16_t(std::clamp(value, index < 4 ? -1.0 : 0.0, 1.0) * 32767);
-    runtime.padSeat(slot, pads_[slot].axes, pads_[slot].buttons);
+    (assistance ? assistance_ : pads_[slot]).axes[index] = int16_t(std::clamp(value, index < 4 ? -1.0 : 0.0, 1.0) * 32767);
+    emit(runtime, slot);
   }
   void disconnect(Runtime& runtime, int64_t device) {
     auto it = seats_.find(device);
     if (it == seats_.end()) return;
     pads_[it->second] = {};
-    runtime.padSeat(it->second, {}, 0);
+    emit(runtime, it->second);
     seats_.erase(it);
   }
   void key(Runtime& runtime, const std::string& name, bool down) {
@@ -87,13 +87,24 @@ class InputState {
     for (int button : mouseButtons_) runtime.mouse(mouseX_, mouseY_, button, false);
     mouseButtons_.clear();
   }
+  void releaseAssistance(Runtime& runtime) { assistance_ = {}; emit(runtime, 0); }
   void reset(Runtime& runtime) {
+    assistance_ = {};
     for (unsigned seat = 0; seat < count_; ++seat) { pads_[seat] = {}; runtime.padSeat(seat, {}, 0); }
     for (auto key : keys_) runtime.key(key, false);
     keys_.clear();
     releasePointer(runtime);
   }
  private:
+  void emit(Runtime& runtime, unsigned seat) {
+    auto state = pads_[seat];
+    if (seat == 0) {
+      state.buttons |= assistance_.buttons;
+      for (size_t i = 0; i < state.axes.size(); ++i)
+        if (std::abs(int(assistance_.axes[i])) > std::abs(int(state.axes[i]))) state.axes[i] = assistance_.axes[i];
+    }
+    runtime.padSeat(seat,state.axes,state.buttons);
+  }
   static std::string normalize(const std::string& s) {
     std::string out;
     for (unsigned char c : s) {
@@ -114,6 +125,7 @@ class InputState {
   }
   struct Pad { std::array<int16_t,6> axes{}; uint32_t buttons = 0; };
   std::array<Pad,4> pads_{};
+  Pad assistance_{}; // Touch/TV assistance shares player one without consuming a physical seat.
   std::map<int64_t,unsigned> seats_;
   std::set<uint32_t> keys_;
   std::set<int> mouseButtons_;

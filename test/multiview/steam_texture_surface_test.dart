@@ -46,7 +46,7 @@ void main() {
     expect(stream.sessionState.value, 'playing');
     expect(calls.any((c) => c.method == 'setAudioEnabled' && c.arguments['enabled'] == true), isTrue);
     final response = Completer<void>();
-    messenger.handlePlatformMessage(
+    await messenger.handlePlatformMessage(
       streamChannel.name,
       const StandardMethodCodec().encodeMethodCall(const MethodCall('videoSize', {'width': 1280, 'height': 800})),
       (_) => response.complete(),
@@ -75,6 +75,36 @@ void main() {
     created.complete({'id': 99, 'textureId': 7});
     await tester.pump();
     expect(calls, ['disconnect']);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isLinux);
+
+  testWidgets('touch assistance uses its own channel state and retires with the input lease', (tester) async {
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(receiver, (_) async => {'id': 99, 'textureId': 0});
+    messenger.setMockMethodCallHandler(streamChannel, (call) async {
+      calls.add(call);
+      return call.method == 'getSessionState' ? 'playing' : null;
+    });
+    final stream = session();
+    await stream.setInputEnabled(true);
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: stream.workspaceSurface())));
+    await tester.pump();
+    await tester.tap(find.byTooltip('On-screen controller'));
+    await tester.pump();
+    final button = find.byKey(const ValueKey('a'));
+    expect(button, findsOneWidget);
+    final touch = await tester.startGesture(tester.getCenter(button));
+    await tester.pump();
+    expect(calls.where((c) => c.method == 'setTouchControllerState').last.arguments, {
+      'buttons': {'a': true},
+    });
+    await stream.setInputEnabled(false);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('a')), findsNothing);
+    expect(calls.any((c) => c.method == 'releaseTouchControls'), isTrue);
+    await touch.cancel();
+    await tester.pumpWidget(const SizedBox());
+    stream.dispose();
     expect(tester.takeException(), isNull);
   }, skip: !Platform.isLinux);
 

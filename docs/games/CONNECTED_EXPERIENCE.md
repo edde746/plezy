@@ -480,8 +480,15 @@ Physical USB keyboard usages preserve keyboard layout semantics, with named
 key fallback. Controller seats, pointer buttons and held keys all release on
 focus/lease reset. Shift+Escape releases game input to the existing workspace
 controls; details dialogs suspend it without reclaiming another pane's lease.
-Apple on-screen gamepad controls are a separate follow-up; physical gamepads,
-keyboard and direct pointer input are the current adapters.
+Apple/Linux also offer an on-screen controller in the connection toolbar.
+It defaults to the profile preference on iOS and stays hidden initially on
+desktop. Its physical gamepad layout stays stable in RTL, uses theme colors,
+48-pixel labeled buttons, independently captured fingers, dual sticks, click
+gestures, shoulders/triggers and a compact landscape arrangement. Small panes
+explain how to enlarge the window. Touch assistance merges into player one
+without reserving or clearing a physical controller seat; removing the overlay
+releases that assistance only. Focus, profile or session retirement releases
+all held controls. Shift+Escape remains available to reach workspace menus.
 
 
 ### Native Metal Pyrowave

@@ -150,6 +150,29 @@ int main() {
     assert(RuntimeTest::pad(r, 0)->buttons == 0 && RuntimeTest::pad(r, 1)->axes[0] == 0);
   }
   Credentials c{};
+  {
+    Runtime r;
+    InputState input(2);
+    input.enabled(r,true);
+    input.button(r,10,"b",true);
+    input.button(r,20,"y",true);
+    input.button(r,0,"a",true,true); // Touch shares seat one, never reserves seat three.
+    input.axis(r,10,"leftStickX",0.75);
+    input.axis(r,0,"leftStickX",0.5,true);
+    assert(RuntimeTest::pad(r,0)->buttons == 3 && RuntimeTest::pad(r,1)->buttons == 8);
+    assert(RuntimeTest::pad(r,0)->axes[0] == 24575);
+    input.releaseAssistance(r);
+    assert(RuntimeTest::pad(r,0)->buttons == 2 && RuntimeTest::pad(r,0)->axes[0] == 24575);
+    input.button(r,0,"a",true,true);
+    input.disconnect(r,10);
+    assert(RuntimeTest::pad(r,0)->buttons == 1 && RuntimeTest::pad(r,1)->buttons == 8);
+    input.button(r,30,"x",true);
+    assert(RuntimeTest::pad(r,0)->buttons == 5);
+    input.enabled(r,false);
+    input.button(r,0,"a",true,true);
+    input.enabled(r,true);
+    assert(RuntimeTest::pad(r,0)->buttons == 0 && RuntimeTest::pad(r,1)->buttons == 0);
+  }
   c.device = 123;
   c.user = 456;
   c.key.fill(42);

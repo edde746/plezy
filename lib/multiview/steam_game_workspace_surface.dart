@@ -13,6 +13,7 @@ import '../games/steam_stream_preferences.dart';
 import '../games/steam_stream_metrics.dart';
 import '../services/gamepad_service.dart';
 import '../screens/games/steam_stream_diagnostics.dart';
+import '../screens/games/steam_touch_controls.dart';
 import '../utils/dialogs.dart';
 import '../widgets/app_icon.dart';
 import '../focus/focusable_button.dart';
@@ -63,12 +64,15 @@ class SteamGameWorkspaceSession {
   final ValueNotifier<int> surfaceGeneration = ValueNotifier(0);
   final ValueNotifier<double> streamAspectRatio = ValueNotifier(16 / 9);
   final ValueNotifier<String> sessionState = ValueNotifier('connecting');
+  final ValueNotifier<bool> inputAvailable = ValueNotifier(false);
+  final ValueNotifier<int> inputResets = ValueNotifier(0);
   MethodChannel? _channel;
   bool _audioEnabled = false;
   bool _inputEnabled = false;
   int _inputSuspensions = 0;
   int _inputRevision = 0;
-  bool get _canInput => !_disposed && _inputEnabled && _inputSuspensions == 0 && sessionState.value == 'playing';
+  bool get _canInput =>
+      !_disposed && !_restarting && _inputEnabled && _inputSuspensions == 0 && sessionState.value == 'playing';
   late final WorkspaceGameInputBinding _inputBinding;
   final GlobalKey _surfaceKey = GlobalKey();
 
@@ -103,6 +107,7 @@ class SteamGameWorkspaceSession {
     _inputEnabled = enabled;
     final canInput = _canInput;
     _inputBinding.setEnabled(canInput);
+    inputAvailable.value = canInput;
     if (!enabled) {
       await _invoke('resetInput');
     }
@@ -136,7 +141,7 @@ class SteamGameWorkspaceSession {
     final usage = event.physicalKey.usbHidUsage;
     unawaited(
       _invoke('inputKey', {
-        'key': event.logicalKey.keyLabel.length == 1
+        'key': event.logicalKey.keyLabel.length == 1 && event.logicalKey.keyLabel.trim().isNotEmpty
             ? event.logicalKey.keyLabel
             : event.logicalKey.debugName ?? event.logicalKey.keyLabel,
         if ((usage >> 16) == 7 && (usage & 0xffff) >= 4 && (usage & 0xffff) <= 231) 'usage': usage & 0xffff,
@@ -161,8 +166,30 @@ class SteamGameWorkspaceSession {
     if (_canInput && direction >= 1 && direction <= 4) unawaited(_invoke('inputWheel', {'direction': direction}));
   }
 
+  void handleTouchButton(String button, bool down) {
+    if (_canInput) {
+      unawaited(
+        _invoke('setTouchControllerState', {
+          'buttons': {button: down},
+        }),
+      );
+    }
+  }
+
+  void handleTouchStick(String stick, Offset value) {
+    if (!_canInput || !{'leftStick', 'rightStick'}.contains(stick) || !value.dx.isFinite || !value.dy.isFinite) return;
+    unawaited(
+      _invoke('setTouchControllerState', {
+        'axes': {'${stick}X': value.dx.clamp(-1.0, 1.0), '${stick}Y': value.dy.clamp(-1.0, 1.0)},
+      }),
+    );
+  }
+
+  void releaseTouchControls() => unawaited(_invoke('releaseTouchControls'));
+
   void resetInput() {
     _inputRevision++;
+    inputResets.value = _inputRevision;
     unawaited(_invoke('resetInput'));
   }
 
@@ -172,6 +199,7 @@ class SteamGameWorkspaceSession {
     if (_disposed) return;
     _inputSuspensions++;
     _inputBinding.setEnabled(false);
+    inputAvailable.value = false;
     await _invoke('setInputEnabled', {'enabled': false});
     try {
       if (!_disposed) await action();
@@ -179,6 +207,7 @@ class SteamGameWorkspaceSession {
       _inputSuspensions--;
       if (!_disposed) {
         _inputBinding.setEnabled(_canInput);
+        inputAvailable.value = _canInput;
         await _invoke('setInputEnabled', {'enabled': _canInput});
       }
     }
@@ -273,6 +302,7 @@ class SteamGameWorkspaceSession {
     }
     sessionState.value = state;
     _inputBinding.setEnabled(_canInput);
+    inputAvailable.value = _canInput;
     unawaited(_invoke('setInputEnabled', {'enabled': _canInput}));
     if (state == 'playing' && !_reportedFirstFrame) {
       _reportedFirstFrame = true;
@@ -286,6 +316,7 @@ class SteamGameWorkspaceSession {
   Future<void> reconnect() async {
     if (_disposed || _restarting || !{'failed', 'disconnected'}.contains(sessionState.value)) return;
     _restarting = true;
+    inputAvailable.value = false;
     _inputBinding.setEnabled(false);
     resetInput();
     sessionState.value = 'reconnecting';
@@ -307,6 +338,7 @@ class SteamGameWorkspaceSession {
     if (_disposed || _restarting) return;
     resetInput();
     _restarting = true;
+    inputAvailable.value = false;
     _inputBinding.setEnabled(false);
     try {
       await _channel?.invokeMethod<void>('disconnect').timeout(const Duration(seconds: 6));
@@ -348,6 +380,8 @@ class SteamGameWorkspaceSession {
     sessionState.dispose();
     surfaceGeneration.dispose();
     streamAspectRatio.dispose();
+    inputAvailable.dispose();
+    inputResets.dispose();
   }
 }
 
@@ -372,7 +406,7 @@ class _SteamTextureSurfaceState extends State<_SteamTextureSurface> {
   int _pointerRevision = -1;
 
   void _pointer(PointerEvent event, Size size, {bool ending = false}) {
-    if (size.isEmpty) return;
+    if (!mounted || size.isEmpty) return;
     if (_pointerRevision != widget.session._inputRevision) {
       _pointerRevision = widget.session._inputRevision;
       _buttons = 0;
@@ -481,8 +515,9 @@ class _SteamTextureSurfaceState extends State<_SteamTextureSurface> {
                     onPointerUp: (event) => _pointer(event, constraints.biggest, ending: true),
                     onPointerCancel: (event) => _pointer(event, constraints.biggest, ending: true),
                     onPointerSignal: (event) {
-                      if (event is PointerScrollEvent && widget.session._canInput) {
+                      if (mounted && event is PointerScrollEvent && widget.session._canInput) {
                         GestureBinding.instance.pointerSignalResolver.register(event, (_) {
+                          if (!mounted) return;
                           final delta = event.scrollDelta;
                           if (delta.dy != 0) widget.session.handleWheel(delta.dy < 0 ? 1 : 2);
                           if (delta.dx != 0) widget.session.handleWheel(delta.dx < 0 ? 3 : 4);
@@ -509,6 +544,7 @@ class SteamGameWorkspaceSurface extends StatefulWidget {
 
 class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
   bool _detailsOpen = false;
+  late bool _touchVisible = widget.session.touchControls && Platform.isIOS;
 
   Future<void> _showDetails() async {
     if (_detailsOpen) return;
@@ -548,6 +584,21 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
       fit: StackFit.expand,
       children: [
         session.build(),
+        if (!Platform.isAndroid && _touchVisible)
+          ValueListenableBuilder<bool>(
+            valueListenable: session.inputAvailable,
+            builder: (_, enabled, _) => !enabled
+                ? const SizedBox.shrink()
+                : ValueListenableBuilder<int>(
+                    valueListenable: session.inputResets,
+                    builder: (_, revision, _) => SteamTouchControls(
+                      key: ValueKey(revision),
+                      onButton: session.handleTouchButton,
+                      onStick: session.handleTouchStick,
+                      onRelease: session.releaseTouchControls,
+                    ),
+                  ),
+          ),
         ValueListenableBuilder<String>(
           valueListenable: session.sessionState,
           builder: (context, state, _) {
@@ -597,13 +648,28 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
             valueListenable: session.sessionState,
             builder: (context, state, _) => state != 'playing'
                 ? const SizedBox.shrink()
-                : FocusableButton(
-                    onPressed: _detailsOpen ? null : _showDetails,
-                    child: IconButton.filledTonal(
-                      tooltip: '${t.games.streamDetails}\n${t.games.inputReleaseHint}',
-                      onPressed: _detailsOpen ? null : _showDetails,
-                      icon: const AppIcon(Symbols.monitoring_rounded),
-                    ),
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!Platform.isAndroid)
+                        FocusableButton(
+                          onPressed: () => setState(() => _touchVisible = !_touchVisible),
+                          child: IconButton.filledTonal(
+                            tooltip: t.games.touchControls,
+                            isSelected: _touchVisible,
+                            onPressed: () => setState(() => _touchVisible = !_touchVisible),
+                            icon: const AppIcon(Symbols.sports_esports_rounded),
+                          ),
+                        ),
+                      FocusableButton(
+                        onPressed: _detailsOpen ? null : _showDetails,
+                        child: IconButton.filledTonal(
+                          tooltip: '${t.games.streamDetails}\n${t.games.inputReleaseHint}',
+                          onPressed: _detailsOpen ? null : _showDetails,
+                          icon: const AppIcon(Symbols.monitoring_rounded),
+                        ),
+                      ),
+                    ],
                   ),
           ),
         ),

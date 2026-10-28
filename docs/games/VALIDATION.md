@@ -233,3 +233,20 @@ tests** passed after these changes, including the narrow RTL diagnostics view
 with Metal/chroma labels. Focused Dart analysis reports no issues. Structural
 localization checks pass for 37 locales and 3,728 messages. These counts do not
 include the Apple-only decoder tests.
+
+
+### Touch assistance and ownership
+
+The shared Apple/Linux overlay uses the existing theme and connection toolbar.
+Native runtime tests verify that assistance shares player one without consuming
+a controller seat, and that hiding touch controls or unplugging a controller
+does not clear another input source. Multi-touch widget tests cover simultaneous
+buttons, cancellation, 48-pixel semantics targets at double text size in RTL,
+clamped sticks, stick clicks and resizing guidance. Apple GPU and device checks
+remain outstanding; Flutter gesture tests do not validate an iOS touch driver.
+
+After fixing late pointer cancellation during disposal, **27 focused
+touch/texture/workspace/gamepad tests pass**, including removal of a held
+control when its input lease is revoked. Focused Dart analysis is clean. The
+portable runtime test passes the separate assistance/physical-pad merge cases,
+and the Linux adapter passes strict compilation against Flutter's headers.

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add themed multi-touch controls to Apple/Linux Steam surfaces, including dual sticks, independent buttons and triggers, compact landscape layout and player-one assistance that preserves physical controller seats.
+
 - Add opt-in Apple Metal Pyrowave source integration with direct GPU conversion, bounded 4:2:0/4:4:4 SDR textures, observed-chroma diagnostics and conventional-codec fallback; retain explicit HDR rejection pending a qualified HDR surface.
 - Route normal Linux and Apple Steam launches into the retained workspace receiver as well as supporting the window action.
 

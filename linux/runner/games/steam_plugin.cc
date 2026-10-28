@@ -383,6 +383,7 @@ void Session::method(FlMethodCall* call) {
   } else if (method == "setInputEnabled") {
     if (runtime) input.enabled(*runtime, boolean(args, "enabled") && state == "playing");
   } else if (method == "resetInput") { if (runtime) input.reset(*runtime);
+  } else if (method == "releaseTouchControls") { if (runtime) input.releaseAssistance(*runtime);
   } else if (method == "inputKey") {
     if (runtime && active && runtime->metrics().epoch == renderedEpoch) {
       if (field(args, "usage")) input.hidKey(*runtime, number(args,"usage",0,4,231), boolean(args,"down"));
@@ -394,11 +395,12 @@ void Session::method(FlMethodCall* call) {
       else if (method == "inputWheel") input.wheel(*runtime,number(args,"direction",0,1,4));
       else input.mouse(*runtime,real(args,"x"),real(args,"y"),number(args,"button",0,0,16),boolean(args,"down"));
     }
-  } else if (method == "disconnectController" || method == "setControllerDeviceState") {
+  } else if (method == "disconnectController" || method == "setControllerDeviceState" || method == "setTouchControllerState") {
+    const bool assistance = method == "setTouchControllerState";
     auto* device = field(args, "deviceId");
-    if (!device || fl_value_get_type(device) != FL_VALUE_TYPE_INT) throw std::invalid_argument("Invalid device");
+    if (!assistance && (!device || fl_value_get_type(device) != FL_VALUE_TYPE_INT)) throw std::invalid_argument("Invalid device");
     if (runtime && active && runtime->metrics().epoch == renderedEpoch) {
-      auto id = fl_value_get_int(device);
+      auto id = assistance ? 0 : fl_value_get_int(device);
       if (method == "disconnectController") input.disconnect(*runtime, id);
       else {
         for (const char* group : {"buttons", "axes"}) {
@@ -410,11 +412,11 @@ void Session::method(FlMethodCall* call) {
             auto* k = fl_value_get_map_key(values, i); auto* v = fl_value_get_map_value(values, i);
             if (fl_value_get_type(k) != FL_VALUE_TYPE_STRING) continue;
             if (std::strcmp(group,"buttons") == 0 && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
-              input.button(*runtime, id, fl_value_get_string(k), fl_value_get_bool(v));
+              input.button(*runtime, id, fl_value_get_string(k), fl_value_get_bool(v), assistance);
             else if (fl_value_get_type(v) == FL_VALUE_TYPE_FLOAT)
-              input.axis(*runtime, id, fl_value_get_string(k), fl_value_get_float(v));
+              input.axis(*runtime, id, fl_value_get_string(k), fl_value_get_float(v), assistance);
             else if (fl_value_get_type(v) == FL_VALUE_TYPE_INT)
-              input.axis(*runtime, id, fl_value_get_string(k), double(fl_value_get_int(v)));
+              input.axis(*runtime, id, fl_value_get_string(k), double(fl_value_get_int(v)), assistance);
           }
         }
       }

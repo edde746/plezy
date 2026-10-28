@@ -9633,6 +9633,15 @@ class Translations$games$en {
 	/// en: 'Press Shift+Escape to release game input and return to the workspace controls.'
 	String get inputReleaseHint => 'Press Shift+Escape to release game input and return to the workspace controls.';
 
+	/// en: 'Left stick'
+	String get leftStick => 'Left stick';
+
+	/// en: 'Right stick'
+	String get rightStick => 'Right stick';
+
+	/// en: 'Enlarge this game window or use full screen to show the controller.'
+	String get touchResizeHint => 'Enlarge this game window or use full screen to show the controller.';
+
 	/// en: 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.'
 	String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
 
@@ -16132,6 +16141,9 @@ extension on Translations {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
 			'games.inputReleaseHint' => 'Press Shift+Escape to release game input and return to the workspace controls.',
+			'games.leftStick' => 'Left stick',
+			'games.rightStick' => 'Right stick',
+			'games.touchResizeHint' => 'Enlarge this game window or use full screen to show the controller.',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -16172,11 +16184,11 @@ extension on Translations {
 			'games.connectToPlay' => 'Connect a gaming computer to play this game inside PlezyNG.',
 			'games.availabilityHint' => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.',
 			'games.steamSource' => 'From Steam',
+			_ => null,
+		} ?? switch (path) {
 			'games.disconnected' => 'Disconnected',
 			'games.installed' => 'Installed',
 			'games.installationIncomplete' => 'Installation incomplete',
-			_ => null,
-		} ?? switch (path) {
 			'games.notInstalled' => 'Not in the last inventory',
 			'games.installationUnknown' => 'Installation not checked',
 			'games.allComputers' => 'All computers',
