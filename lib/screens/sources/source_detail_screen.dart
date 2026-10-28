@@ -104,10 +104,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             mode: PublicationMode.listening,
             session: const Uuid().v4(),
           ),
-        if (_entry.kind == SourceItemKind.video && _entry.files.isNotEmpty)
+        if (_entry.kind == SourceItemKind.video && _entry.files.any((f) => !f.sampleOnly))
           PublicationProgress(
             entryKey: _entry.key,
-            edition: sourceDigest(jsonEncode(_entry.files.map((f) => f.fingerprint).toList())),
+            edition: sourceDigest(
+              jsonEncode(_entry.files.where((f) => !f.sampleOnly).map((f) => f.fingerprint).toList()),
+            ),
             mode: PublicationMode.watching,
             session: const Uuid().v4(),
           ),
@@ -124,8 +126,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         if (conflict != null) _conflicts[progress.key] = conflict;
       }
       _offline.clear();
-      for (final file in _entry.files) {
-        if (await sources.downloads.local(profile, _entry.sourceId, file) != null) _offline.add(file.id);
+      for (final file in _entry.files.where((file) => !file.sampleOnly)) {
+        if (await sources.downloads.local(profile, _entry.sourceId, file) != null) {
+          _offline.add(file.id);
+        }
       }
       sources.requireSession(epoch);
       if (mounted) setState(() => _progress = progresses);
@@ -151,7 +155,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     });
     try {
       final matched = await sources.identifyOnlineMetadata(_entry);
-      if (!mounted || sources.generation != epoch || _entry.key != entryKey) return;
+      if (!mounted || sources.generation != epoch || _entry.key != entryKey) {
+        return;
+      }
       setState(() {
         _entry = matched;
         _metadataLookupPending = false;
@@ -241,7 +247,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                 decoration: InputDecoration(labelText: t.sourceSetup.sharedEntryId),
                 validator: (value) {
                   final id = value?.trim() ?? '';
-                  if (id.isEmpty || RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id)) return null;
+                  if (id.isEmpty || RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id)) {
+                    return null;
+                  }
                   return t.sourceSetup.sharedLibraryInvalid;
                 },
                 onFieldSubmitted: (_) {
@@ -460,7 +468,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Uri? get _trailerUri {
     final uri = Uri.tryParse(_entry.trailerUrl ?? '');
     final host = uri?.host.toLowerCase();
-    if (uri == null || uri.scheme != 'https' || host == null || uri.userInfo.isNotEmpty) return null;
+    if (uri == null || uri.scheme != 'https' || host == null || uri.userInfo.isNotEmpty) {
+      return null;
+    }
     if (host == 'youtu.be' ||
         host == 'youtube.com' ||
         host.endsWith('.youtube.com') ||
@@ -478,10 +488,17 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
 
   Future<void> _play(List<PublicationFile> files) async {
     final playback = context.read<SourcePlayback>();
+    final sources = context.read<SourceController>();
+    final sampleOnly = files.isNotEmpty && files.every((file) => file.sampleOnly);
+    if (sampleOnly && files.length != 1) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
     await playback.start(
       _entry,
       files,
       playbackMode: files.first.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening,
+      persistProgress: !sampleOnly,
+      samplePreview: sampleOnly ? sources.beginPreview(_entry, files.single) : null,
     );
     if (mounted) {
       await Navigator.push(
@@ -496,7 +513,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   }
 
   Future<void> _read(PublicationFile file) async {
-    if (PlatformDetector.isTV()) throw const SourceException(SourceFailure.unsupported);
+    if (PlatformDetector.isTV()) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
     await Navigator.push(
       context,
       PageRouteBuilder<void>(
@@ -516,7 +535,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         _entry,
         file,
         onProgress: (done, total) {
-          if (mounted) setState(() => _transfers[file.id] = total == null ? null : done / total);
+          if (mounted) {
+            setState(() => _transfers[file.id] = total == null ? null : done / total);
+          }
         },
       );
     } finally {
@@ -625,6 +646,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
+    final editionFiles = _entry.files
+        .where((file) => !file.sampleOnly || file.previewableSample)
+        .toList(growable: false);
     final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
     final source = context.watch<SourceController>().sources.where((item) => item.id == _entry.sourceId).firstOrNull;
     final automaticMetadataEnabled = source?.options['onlineMetadata'] == 'true';
@@ -773,9 +797,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                     icon: const AppIcon(Symbols.headphones_rounded),
                                     label: Text(t.fileSources.listen),
                                   ),
-                                if (_entry.kind == SourceItemKind.video)
+                                if (_entry.kind == SourceItemKind.video && _entry.files.any((file) => !file.sampleOnly))
                                   FilledButton.icon(
-                                    onPressed: () => sourceAction(context, () => _play(_entry.files)),
+                                    onPressed: () => sourceAction(
+                                      context,
+                                      () => _play(_entry.files.where((file) => !file.sampleOnly).toList()),
+                                    ),
                                     icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
                                     label: Text(t.fileSources.play),
                                   ),
@@ -988,7 +1015,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             ? Symbols.headphones_rounded
                             : Symbols.movie_rounded,
                         onTap: progress.mode == PublicationMode.watching
-                            ? () => sourceAction(context, () => _play(_entry.files))
+                            ? () => sourceAction(
+                                context,
+                                () => _play(_entry.files.where((file) => !file.sampleOnly).toList()),
+                              )
                             : null,
                         trailing: AppMenuButton<String>(
                           icon: const AppIcon(Symbols.more_vert_rounded),
@@ -1012,21 +1042,25 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                     const SizedBox(height: 24),
                     Text(t.fileSources.editions, style: theme.textTheme.titleLarge),
                     const SizedBox(height: 16),
-                    for (var i = 0; i < _entry.files.length; i++)
+                    for (var i = 0; i < editionFiles.length; i++)
                       Builder(
                         builder: (context) {
-                          final f = _entry.files[i];
+                          final f = editionFiles[i];
                           return SourceTile(
                             title: f.name,
-                            subtitle: _offline.contains(f.id) ? t.fileSources.offline : f.mimeType,
+                            subtitle: f.sampleOnly
+                                ? '${t.common.preview} · ${f.mimeType}'
+                                : _offline.contains(f.id)
+                                ? t.fileSources.offline
+                                : f.mimeType,
                             icon: sourceItemIcon(f.kind),
                             index: i,
-                            count: _entry.files.length,
+                            count: editionFiles.length,
                             progress: _transfers.containsKey(f.id) ? _transfers[f.id] ?? 0 : null,
                             onTap: (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)
                                 ? () => sourceAction(context, () => _read(f))
                                 : () => sourceAction(context, () => _play([f])),
-                            trailing: f.streamOnly
+                            trailing: f.streamOnly || f.sampleOnly
                                 ? null
                                 : _transfers.containsKey(f.id)
                                 ? const SizedBox(

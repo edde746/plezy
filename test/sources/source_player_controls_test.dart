@@ -142,6 +142,8 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   bool get isLiveInput => false;
   @override
+  bool get isSamplePreview => false;
+  @override
   bool get isCapturePreview => false;
   @override
   bool get isRecordingStream => false;

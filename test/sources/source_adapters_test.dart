@@ -197,6 +197,53 @@ void main() {
     expect((await source.browse()).entries, isEmpty);
     source.close();
   });
+  test('OPDS marks provider-declared samples as isolated previews', () async {
+    final source = OpdsSourceAdapter(
+      const FileSource(
+        id: 'samples',
+        profileId: 'p',
+        kind: FileSourceKind.opds,
+        name: 'Books',
+        endpoint: 'https://catalog.example/feed',
+      ),
+      SourceTransport(
+        client: MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'publications': [
+                {
+                  'metadata': {'title': 'Sampled book', 'identifier': 'sampled'},
+                  'links': [
+                    {
+                      'rel': 'http://opds-spec.org/acquisition/sample',
+                      'type': 'application/epub+zip',
+                      'href': '/book-sample.epub',
+                    },
+                    {
+                      'rel': 'http://opds-spec.org/acquisition/open-access',
+                      'type': 'application/epub+zip',
+                      'href': '/book.epub',
+                    },
+                  ],
+                },
+              ],
+            }),
+            200,
+          ),
+        ),
+      ),
+      () async => {},
+    );
+
+    final files = (await source.browse()).entries.single.files;
+    expect(files, hasLength(2));
+    expect(files.first.sampleOnly, isTrue);
+    expect(files.first.previewableSample, isTrue);
+    expect(files.last.sampleOnly, isFalse);
+    expect(files.first.fingerprint, isNot(files.last.fingerprint));
+    expect(PublicationFile.fromJson(files.first.toJson()).sampleOnly, isTrue);
+    source.close();
+  });
   test('WebDAV rejects traversal and external origins', () {
     final source = WebDavSourceAdapter(
       const FileSource(

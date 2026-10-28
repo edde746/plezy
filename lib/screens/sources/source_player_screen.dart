@@ -254,6 +254,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   }
 
   void _attachToExistingWorkspaceSession(SourcePlayback playback, MultiviewWorkspaceController workspace) {
+    if (playback.isSamplePreview) return;
     final id = _stableWorkspaceSessionId(playback);
     if (id == null || _workspaceSessionId != null || workspace.session(id) == null) return;
     _workspace = workspace;
@@ -268,6 +269,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     if (!mounted ||
         _autoJoinScheduled ||
         playback == null ||
+        playback.isSamplePreview ||
         !playback.active ||
         _workspaceSessionId != null ||
         workspace == null ||
@@ -317,7 +319,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
 
   void _toggleSourceWorkspace() {
     final playback = _session;
-    if (playback == null || !playback.active) return;
+    if (playback == null || !playback.active || playback.isSamplePreview) return;
     final controller = _workspace ?? context.read<MultiviewWorkspaceController>();
     final existingId = _workspaceSessionId;
     if (existingId != null) {
@@ -926,7 +928,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               onPressed: () => sourceAction(context, () => _toggleStreamRecording(s)),
               icon: AppIcon(s.isRecordingStream ? Symbols.stop_circle_rounded : Symbols.radio_button_checked_rounded),
             ),
-          if (s.video && _full)
+          if (s.video && _full && !s.isSamplePreview)
             FocusableButton(
               autoScroll: false,
               onPressed: _toggleSourceWorkspace,
@@ -1071,41 +1073,43 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
               focusableAppBarActions: true,
               actions: [
-                if (!s.video && core is AudioSpectrumAnalyzer)
+                if (!s.isSamplePreview) ...[
+                  if (!s.video && core is AudioSpectrumAnalyzer)
+                    FocusableButton(
+                      autoScroll: false,
+                      onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                      child: IconButton(
+                        tooltip: t.music.visualizer,
+                        isSelected: _sourceVisualizerVisible,
+                        onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                        selectedIcon: const AppIcon(Symbols.graphic_eq_rounded, fill: 1),
+                        icon: const AppIcon(Symbols.graphic_eq_rounded),
+                      ),
+                    ),
+                  if (s.canUseDirectQueueControls)
+                    IconButton(
+                      tooltip: t.music.queue,
+                      onPressed: () => unawaited(showSourceQueueSheet(context, s)),
+                      icon: const AppIcon(Symbols.queue_music_rounded),
+                    ),
+                  if (s.canExportLocalPlaylist)
+                    IconButton(
+                      tooltip: t.universalMedia.saveQueuePlaylist,
+                      onPressed: () => unawaited(_saveLocalPlaylist(s)),
+                      icon: const AppIcon(Symbols.playlist_add_check_rounded),
+                    ),
                   FocusableButton(
                     autoScroll: false,
-                    onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                    onPressed: _toggleSourceWorkspace,
                     child: IconButton(
-                      tooltip: t.music.visualizer,
-                      isSelected: _sourceVisualizerVisible,
-                      onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
-                      selectedIcon: const AppIcon(Symbols.graphic_eq_rounded, fill: 1),
-                      icon: const AppIcon(Symbols.graphic_eq_rounded),
+                      tooltip: _workspaceDetached
+                          ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
+                          : t.videoControls.openMiniPlayer,
+                      onPressed: _toggleSourceWorkspace,
+                      icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
                     ),
                   ),
-                if (s.canUseDirectQueueControls)
-                  IconButton(
-                    tooltip: t.music.queue,
-                    onPressed: () => unawaited(showSourceQueueSheet(context, s)),
-                    icon: const AppIcon(Symbols.queue_music_rounded),
-                  ),
-                if (s.canExportLocalPlaylist)
-                  IconButton(
-                    tooltip: t.universalMedia.saveQueuePlaylist,
-                    onPressed: () => unawaited(_saveLocalPlaylist(s)),
-                    icon: const AppIcon(Symbols.playlist_add_check_rounded),
-                  ),
-                FocusableButton(
-                  autoScroll: false,
-                  onPressed: _toggleSourceWorkspace,
-                  child: IconButton(
-                    tooltip: _workspaceDetached
-                        ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
-                        : t.videoControls.openMiniPlayer,
-                    onPressed: _toggleSourceWorkspace,
-                    icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
-                  ),
-                ),
+                ],
                 IconButton(
                   tooltip: t.fileSources.stop,
                   onPressed: () => sourceAction(context, () async {

@@ -190,6 +190,7 @@ class PublicationFile {
     this.durationMs,
     this.primary = true,
     this.streamOnly = false,
+    this.sampleOnly = false,
   });
   final String id;
   final String name;
@@ -199,9 +200,22 @@ class PublicationFile {
   final int? durationMs;
   final bool primary;
   final bool streamOnly;
+
+  /// Provider-declared sample content. It must only be opened through an
+  /// ephemeral preview session and must never acquire ordinary progress.
+  final bool sampleOnly;
   SourceItemKind get kind => classifySourceFile(name, mimeType);
+  bool get previewableSample =>
+      sampleOnly &&
+      const {
+        SourceItemKind.ebook,
+        SourceItemKind.comic,
+        SourceItemKind.audiobook,
+        SourceItemKind.music,
+        SourceItemKind.video,
+      }.contains(kind);
   // Delivery permissions do not change the content edition or its saved progress.
-  String get fingerprint => sourceDigest(jsonEncode([id, revision, size]));
+  String get fingerprint => sourceDigest(jsonEncode(sampleOnly ? [id, revision, size, true] : [id, revision, size]));
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -211,6 +225,7 @@ class PublicationFile {
     'durationMs': durationMs,
     'primary': primary,
     'streamOnly': streamOnly,
+    'sampleOnly': sampleOnly,
   };
   factory PublicationFile.fromJson(Map<String, dynamic> j) => PublicationFile(
     id: j['id'] as String,
@@ -221,6 +236,7 @@ class PublicationFile {
     durationMs: sourceInt(j['durationMs']),
     primary: j['primary'] as bool? ?? true,
     streamOnly: j['streamOnly'] as bool? ?? false,
+    sampleOnly: j['sampleOnly'] as bool? ?? false,
   );
 }
 
@@ -360,10 +376,12 @@ class SourceEntry {
     return isFilename ? p.withoutExtension(title) : title;
   }
 
+  List<PublicationFile> get sampleFiles => files.where((f) => f.sampleOnly).toList(growable: false);
   List<PublicationFile> get ebooks =>
-      files.where((f) => (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)).toList();
-  List<PublicationFile> get audio =>
-      files.where((f) => f.kind == SourceItemKind.music || f.kind == SourceItemKind.audiobook).toList();
+      files.where((f) => !f.sampleOnly && (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)).toList();
+  List<PublicationFile> get audio => files
+      .where((f) => !f.sampleOnly && (f.kind == SourceItemKind.music || f.kind == SourceItemKind.audiobook))
+      .toList();
   Map<String, dynamic> toJson() => {
     'sourceId': sourceId,
     'id': id,

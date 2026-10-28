@@ -1524,9 +1524,9 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
   });
 
-  testWidgets('up from the first library copy reaches the overview when the item has no action bar', (tester) async {
-    // No watchlist support, trailer, or Seerr: nothing above the copies is a
-    // button, but the overview is still a stop rather than a dead end.
+  testWidgets('up from the first library copy reaches the overview despite the service action', (tester) async {
+    // No watchlist support, trailer, or Seerr is available, but the official
+    // service handoff remains above the copies. Up should still reach overview.
     final source = _FakeCatalogSource(supportsWatchlist: false);
     await _pumpDetail(
       tester,
@@ -1540,7 +1540,7 @@ void main() {
         ),
       ],
     );
-    expect(find.byType(FocusableActionBar), findsNothing);
+    expect(find.byType(FocusableActionBar), findsOneWidget);
 
     final tile = tester.widget<FocusableListTile>(
       find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),
