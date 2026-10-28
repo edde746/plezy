@@ -905,7 +905,7 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
                   if (PlatformDetector.isDesktopOS()) ...[
                     SourceTile(
                       title: t.universalMedia.converterTitle,
-                      subtitle: t.universalMedia.converterIntro,
+                      subtitle: t.universalMedia.converterHelp,
                       icon: Symbols.swap_horiz_rounded,
                       onTap: _busy
                           ? null

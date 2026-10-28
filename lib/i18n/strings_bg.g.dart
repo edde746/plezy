@@ -1200,6 +1200,30 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get settingsButton => 'Настройки на възпроизвеждането';
 	@override String get tracksButton => 'Аудио и субтитри';
 	@override String get chaptersButton => 'Глави';
+	@override String get segmentLoopHelp => 'Направете секция по време на това възпроизвеждане.Настройка А, след което задайте B по-късно в часовата линия.';
+	@override String get setLoopStart => 'Настройки за стартиране (A)';
+	@override String get setLoopEnd => 'Завършване на края (б)';
+	@override String get clearSegmentLoop => 'Четвърти сегменти';
+	@override String get setLoopStartFirst => 'Поставете началото на кръга (A) преди края (B).';
+	@override String get loopEndAfterStart => 'Краят на тръбата трябва да бъде по-късно от началото.';
+	@override String get segmentLoopUnavailable => 'Segment looping не е на разположение за тази игра.';
+	@override String get loopPointNotSet => 'Не се поставя';
+	@override String get bookmarksHelp => 'Книжките се съхраняват на това устройство.Изберете един, за да отидете в този момент.';
+	@override String get bookmarksButton => 'Книжни знаци';
+	@override String get chaptersAndBookmarks => 'Глави и книжници';
+	@override String get segmentLoop => 'Сегментът Лоу';
+	@override String get addBookmark => 'Добавяне на Bookmark';
+	@override String get bookmarkName => 'Bookmark име';
+	@override String get bookmarkNameHint => 'Например, отваряща сцена';
+	@override String bookmarkDefaultName({required Object n}) => 'Букмарк ${n}';
+	@override String get bookmarkNameRequired => 'Въведете име за тази книжка.';
+	@override String get deleteBookmark => 'Изтриване Bookmark';
+	@override String get bookmarkLimitReached => 'Тази статия вече има 100 книжни знака.';
+	@override String get bookmarkUnavailable => 'Не можех да изтрия или премахна тази книжка.';
+	@override String get bookmarkSaved => 'Книжката е спасена.';
+	@override String get bookmarkDeleted => 'Bookmark е изтрит.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Лоп точка ${point} Създайте на ${time}и';
+	@override String get noChaptersOrBookmarks => 'Няма глави и книги, налични.';
 	@override String get versionQualityButton => 'Версия и качество';
 	@override String get versionColumnHeader => 'Версия';
 	@override String get qualityColumnHeader => 'Качество';
@@ -1260,30 +1284,6 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get skipAds => 'Скип реклами';
 	@override String get tapToUnlock => 'Докоснете, за да отключите';
 	@override String get tapAgainToUnlock => 'Докоснете отново, за да отключите';
-	@override String get segmentLoopHelp => 'Направете секция по време на това възпроизвеждане.Настройка А, след което задайте B по-късно в часовата линия.';
-	@override String get setLoopStart => 'Настройки за стартиране (A)';
-	@override String get setLoopEnd => 'Завършване на края (б)';
-	@override String get clearSegmentLoop => 'Четвърти сегменти';
-	@override String get setLoopStartFirst => 'Поставете началото на кръга (A) преди края (B).';
-	@override String get loopEndAfterStart => 'Краят на тръбата трябва да бъде по-късно от началото.';
-	@override String get segmentLoopUnavailable => 'Segment looping не е на разположение за тази игра.';
-	@override String get bookmarksHelp => 'Книжките се съхраняват на това устройство.Изберете един, за да отидете в този момент.';
-	@override String get bookmarksButton => 'Книжни знаци';
-	@override String get chaptersAndBookmarks => 'Глави и книжници';
-	@override String get segmentLoop => 'Сегментът Лоу';
-	@override String get addBookmark => 'Добавяне на Bookmark';
-	@override String get bookmarkName => 'Bookmark име';
-	@override String get bookmarkNameHint => 'Например, отваряща сцена';
-	@override String bookmarkDefaultName({required Object n}) => 'Букмарк ${n}';
-	@override String get bookmarkNameRequired => 'Въведете име за тази книжка.';
-	@override String get deleteBookmark => 'Изтриване Bookmark';
-	@override String get bookmarkLimitReached => 'Тази статия вече има 100 книжни знака.';
-	@override String get bookmarkUnavailable => 'Не можех да изтрия или премахна тази книжка.';
-	@override String get bookmarkSaved => 'Книжката е спасена.';
-	@override String get bookmarkDeleted => 'Bookmark е изтрит.';
-	@override String loopPointSet({required Object point, required Object time}) => 'Лоп точка ${point} Създайте на ${time}и';
-	@override String get noChaptersOrBookmarks => 'Няма глави и книги, налични.';
-	@override String get loopPointNotSet => 'Не се поставя';
 }
 
 // Path: messages
@@ -2447,6 +2447,12 @@ class _Translations$videoSettings$bg extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Извършва тоналното преобразуване в плейъра според пиковата яркост на дисплея, след което указва резултата на композитора.';
 	@override String get hdrToneMappingFailed => 'Тоналното преобразуване на HDR не можа да бъде променено — предишният режим остава активен.';
 	@override String get audioOutput => 'Аудио изход';
+	@override String get videoTrack => 'Видео писта';
+	@override String get videoTrackDescription => 'Изберете кой видео поток да се показва. Налично при възпроизвеждане с MPV, когато файлът съдържа алтернативни видео писти.';
+	@override String get videoTrackDefault => 'По подразбиране';
+	@override String get videoTrackUnavailable => 'Няма налични алтернативни видео писти.';
+	@override String get videoTrackFailed => 'Видео пистата не можа да бъде сменена.';
+	@override String videoTrackNumber({required Object id}) => 'Писта ${id}';
 	@override String get performanceOverlay => 'Оверлей за производителност';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2458,10 +2464,6 @@ class _Translations$videoSettings$bg extends Translations$videoSettings$en {
 	@override String get audioEqualizerFlat => 'Платък';
 	@override String get audioEqualizerActive => 'Персонализирана';
 	@override String get audioEqualizerSaveFailed => 'Не може да се запази настройките на аудио уравнение.';
-	@override String get backgroundVideoAudio => 'Видео аудио фонове';
-	@override String get backgroundVideoAudioDescription => 'Дръжте видео аудио игра, когато напуснете играча; снимката е скрита, докато не се върнете. Android използва медийна преносна информация.';
-	@override String get audioNormalization => 'Нормализиране на силата на звука';
-	@override String get audioNormalizationDisablesPassthrough => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено';
 	@override String get audioEffectsDescription => 'Ефектите използват декодиран аудио, така че passthrough се върти. стайна атмосфера и стерео разширяване зависи от MPV Изграждане и проследяване.';
 	@override String get audioStereoWidth => 'Стерео разширяване';
 	@override String get audioSpatializer => 'Облачна атмосфера';
@@ -2469,6 +2471,10 @@ class _Translations$videoSettings$bg extends Translations$videoSettings$en {
 	@override String get audioPitch => 'Питър промяна';
 	@override String get audioPitchDescription => 'Промяна на скоростта, без да се променя скоростта. MPV Строителството трябва да включва Rubber Bandи';
 	@override String get audioEffectUnavailable => 'Този ефект не е на разположение за тази линия или MPV Създайте .';
+	@override String get backgroundVideoAudio => 'Видео аудио фонове';
+	@override String get backgroundVideoAudioDescription => 'Дръжте видео аудио игра, когато напуснете играча; снимката е скрита, докато не се върнете. Android използва медийна преносна информация.';
+	@override String get audioNormalization => 'Нормализиране на силата на звука';
+	@override String get audioNormalizationDisablesPassthrough => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено';
 }
 
 // Path: performanceOverlay
@@ -3117,6 +3123,10 @@ class _Translations$universalMedia$bg extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Изберете Playlist файлове';
 	@override String get openPlaylist => 'Отворена игра';
 	@override String get playlistFormatsHelp => 'Възпроизвеждащият списък може да съдържа до 1000 елемента и 2 MB. HLS се отваря като потоци, така че играчът може да избере качество.';
+	@override String get saveQueuePlaylist => 'Запази опашката като плейлист';
+	@override String get queuePlaylistSaved => 'Плейлистът е запазен до медийните файлове.';
+	@override String get queuePlaylistUnavailable => 'Тази опашка не може да бъде запазена като преизползваем локален плейлист.';
+	@override String get queuePlaylistFolderRequired => 'Изберете място за запис в същата папка като файловете в опашката.';
 	@override String get noFavorites => 'Все още не са спасени любимите потоци.Favorites остават в този профил.';
 	@override String get removeFavorite => 'Премахване на любимия поток';
 	@override String get filesHelp => 'Изберете аудио, видео или ISO файлове за временна лента.Файлове и URL адреси не се добавят към историята на библиотеката.';
@@ -3181,6 +3191,7 @@ class _Translations$universalMedia$bg extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Замяна на файлове';
 	@override String get discHelp => 'Отворете диск в оптичния диск на този компютър. Можете също да отворите ISO изображение от файлове на устройството.';
 	@override String get discs => 'Оптичен диск';
+	@override String get editionOrTitle => 'Издание или заглавие на диск';
 	@override String get dvd => 'ДВД';
 	@override String get bluray => 'Блу-рай';
 	@override String get audioCd => 'Аудио CD';
@@ -3194,6 +3205,8 @@ class _Translations$universalMedia$bg extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 и AAC';
 	@override String get converterM4a => 'M4A · AAC аудио';
 	@override String get converterMp3 => 'MP3 и аудио';
+	@override String get allowFtp => 'Разрешаване на FTP';
+	@override String get allowFtpHelp => 'FTP изпраща медиите без криптиране. използвайте само на надеждни мрежи.';
 	@override String get converterSaveAs => 'Съхраняване на конвертирани медии като';
 	@override String get converterExtensionMismatch => 'Изберете името на файла с избраното разширение за изход.';
 	@override String get converterUnsupportedInput => 'Изберете аудио или видео файл.';
@@ -3216,9 +3229,11 @@ class _Translations$universalMedia$bg extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Запишете екрана или камерата си към файл MP4 на този компютър. FFmpeg трябва да бъде инсталиран и да включва кодиращия H.264.';
 	@override String get captureNoDevices => 'Не са намерени никакви екрани или камери. проверете FFmpeg поддръжка за снимане и разрешения за поверителност на операционната система.';
 	@override String get captureSource => 'екран или камера';
+	@override String get captureScreen => 'екран';
 	@override String get captureAudioSource => 'Аудио вход (опционално)';
 	@override String get captureAudioHelp => 'Добавете аудио от микрофон или наличен вход. Изборът на устройството зависи от FFmpeg и системните разрешения.';
 	@override String get captureAudioNone => 'Няма аудио';
+	@override String get captureDefaultAudio => 'Задължителен аудио вход';
 	@override String get captureWaylandHelp => 'Wayland ограничава това XWayland записване до X display. Windows извън XWayland може да не се появи.';
 	@override String get captureFrameRate => 'Рекордна рамкова скорост';
 	@override String get capturePrivacy => 'Записът се съхранява само за избрания от вас файл. микрофонът е факултативен. PlezyNG не изтегля записите.';
@@ -3229,6 +3244,9 @@ class _Translations$universalMedia$bg extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Записът на екрана е спасен.';
 	@override String get captureElapsedLabel => 'Време за записване';
 	@override String get captureStart => 'Започнете записването';
+	@override String get capturePreview => 'Преглед в плейъра';
+	@override String get capturePreviewHelp => 'Прегледайте избрания източник в стандартния плейър. Прегледът е само за текущата сесия и не записва файл. Поддръжката на устройства и разрешенията зависят от MPV и операционната система. Прегледът използва само видео; в запазените записи може да се включи незадължително аудио.';
+	@override String get capturePreviewActive => 'Изображение на живо · без запис';
 	@override String get captureStop => 'Спрете и спасете';
 	@override String get captureMode => 'Задържане';
 	@override String get shareMode => 'Споделяне';
@@ -3243,6 +3261,9 @@ class _Translations$universalMedia$bg extends Translations$universalMedia$en {
 	@override String get shareStopped => 'Разпределянето е спряно. временният линк вече не е валиден.';
 	@override String get shareUrlCopied => 'Електронна адреса е копирана.';
 	@override String get shareOpenUrl => 'Отворете този адрес в един играч на друго устройство';
+	@override String get shareQrLabel => 'QR код за временния поток адрес';
+	@override String get shareQrHelp => 'Скениране с съвместим играч, свързан към една и съща частна мрежа.';
+	@override String get shareHttpHint => 'Този поток използва нешифрована HTTP. В PlezyNG, позволете HTTP преди да я отворите.';
 	@override String get shareCopyUrl => 'Копиране на адрес Stream';
 	@override String get shareExpiresLabel => 'Линкът изтича';
 	@override String get shareStarting => 'Приготвянето на потока...';
@@ -3276,13 +3297,6 @@ class _Translations$universalMedia$bg extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Използвайте ръководството plezyctl, за да валидирате манифест или да търсите същото разширение. Прегледайте услугата HTTPS преди всяко търсене. Резултатите се отварят в съществуващата медийна форма; изберете бутона за възпроизвеждане, за да започнете.';
 	@override String get cliCopyExample => 'Копиране на командния пример';
 	@override String get cliCopied => 'Примерът е копиран.';
-	@override String get captureScreen => 'екран';
-	@override String get captureDefaultAudio => 'Задължителен аудио вход';
-	@override String get shareQrLabel => 'QR код за временния поток адрес';
-	@override String get shareQrHelp => 'Скениране с съвместим играч, свързан към една и съща частна мрежа.';
-	@override String get shareHttpHint => 'Този поток използва нешифрована HTTP. В PlezyNG, позволете HTTP преди да я отворите.';
-	@override String get allowFtp => 'Разрешаване на FTP';
-	@override String get allowFtpHelp => 'FTP изпраща медиите без криптиране. използвайте само на надеждни мрежи.';
 }
 
 // Path: fileSources
@@ -5983,6 +5997,32 @@ extension on TranslationsBg {
 			'videoControls.settingsButton' => 'Настройки на възпроизвеждането',
 			'videoControls.tracksButton' => 'Аудио и субтитри',
 			'videoControls.chaptersButton' => 'Глави',
+			'videoControls.segmentLoopHelp' => 'Направете секция по време на това възпроизвеждане.Настройка А, след което задайте B по-късно в часовата линия.',
+			'videoControls.setLoopStart' => 'Настройки за стартиране (A)',
+			'videoControls.setLoopEnd' => 'Завършване на края (б)',
+			'videoControls.clearSegmentLoop' => 'Четвърти сегменти',
+			'videoControls.setLoopStartFirst' => 'Поставете началото на кръга (A) преди края (B).',
+			'videoControls.loopEndAfterStart' => 'Краят на тръбата трябва да бъде по-късно от началото.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping не е на разположение за тази игра.',
+			'videoControls.loopPointNotSet' => 'Не се поставя',
+			'videoControls.bookmarksHelp' => 'Книжките се съхраняват на това устройство.Изберете един, за да отидете в този момент.',
+			'videoControls.bookmarksButton' => 'Книжни знаци',
+			'videoControls.chaptersAndBookmarks' => 'Глави и книжници',
+			'videoControls.segmentLoop' => 'Сегментът Лоу',
+			'videoControls.addBookmark' => 'Добавяне на Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark име',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Например, отваряща сцена',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Букмарк ${n}',
+			'videoControls.bookmarkNameRequired' => 'Въведете име за тази книжка.',
+			'videoControls.deleteBookmark' => 'Изтриване Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Тази статия вече има 100 книжни знака.',
+			'videoControls.bookmarkUnavailable' => 'Не можех да изтрия или премахна тази книжка.',
+			'videoControls.bookmarkSaved' => 'Книжката е спасена.',
+			'videoControls.bookmarkDeleted' => 'Bookmark е изтрит.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Лоп точка ${point} Създайте на ${time}и',
+			'videoControls.noChaptersOrBookmarks' => 'Няма глави и книги, налични.',
 			'videoControls.versionQualityButton' => 'Версия и качество',
 			'videoControls.versionColumnHeader' => 'Версия',
 			'videoControls.qualityColumnHeader' => 'Качество',
@@ -5997,8 +6037,6 @@ extension on TranslationsBg {
 			'videoControls.exitFullscreenButton' => 'Излез от цял екран',
 			'videoControls.alwaysOnTopButton' => 'Винаги отгоре',
 			'videoControls.rotationLockButton' => 'Заключване на завъртането',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Заключи екрана',
 			'videoControls.screenLockButton' => 'Заключване на екрана',
 			'videoControls.timelineSlider' => 'Видео времева линия',
@@ -6049,30 +6087,6 @@ extension on TranslationsBg {
 			'videoControls.skipAds' => 'Скип реклами',
 			'videoControls.tapToUnlock' => 'Докоснете, за да отключите',
 			'videoControls.tapAgainToUnlock' => 'Докоснете отново, за да отключите',
-			'videoControls.segmentLoopHelp' => 'Направете секция по време на това възпроизвеждане.Настройка А, след което задайте B по-късно в часовата линия.',
-			'videoControls.setLoopStart' => 'Настройки за стартиране (A)',
-			'videoControls.setLoopEnd' => 'Завършване на края (б)',
-			'videoControls.clearSegmentLoop' => 'Четвърти сегменти',
-			'videoControls.setLoopStartFirst' => 'Поставете началото на кръга (A) преди края (B).',
-			'videoControls.loopEndAfterStart' => 'Краят на тръбата трябва да бъде по-късно от началото.',
-			'videoControls.segmentLoopUnavailable' => 'Segment looping не е на разположение за тази игра.',
-			'videoControls.bookmarksHelp' => 'Книжките се съхраняват на това устройство.Изберете един, за да отидете в този момент.',
-			'videoControls.bookmarksButton' => 'Книжни знаци',
-			'videoControls.chaptersAndBookmarks' => 'Глави и книжници',
-			'videoControls.segmentLoop' => 'Сегментът Лоу',
-			'videoControls.addBookmark' => 'Добавяне на Bookmark',
-			'videoControls.bookmarkName' => 'Bookmark име',
-			'videoControls.bookmarkNameHint' => 'Например, отваряща сцена',
-			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Букмарк ${n}',
-			'videoControls.bookmarkNameRequired' => 'Въведете име за тази книжка.',
-			'videoControls.deleteBookmark' => 'Изтриване Bookmark',
-			'videoControls.bookmarkLimitReached' => 'Тази статия вече има 100 книжни знака.',
-			'videoControls.bookmarkUnavailable' => 'Не можех да изтрия или премахна тази книжка.',
-			'videoControls.bookmarkSaved' => 'Книжката е спасена.',
-			'videoControls.bookmarkDeleted' => 'Bookmark е изтрит.',
-			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Лоп точка ${point} Създайте на ${time}и',
-			'videoControls.noChaptersOrBookmarks' => 'Няма глави и книги, налични.',
-			'videoControls.loopPointNotSet' => 'Не се поставя',
 			'messages.markedAsWatched' => 'Маркирано като гледано',
 			'messages.markedAsUnwatched' => 'Маркирано като негледано',
 			'messages.markedAsWatchedOffline' => 'Маркирано като гледано (ще се синхронизира, когато сте онлайн)',
@@ -7404,6 +7418,12 @@ extension on TranslationsBg {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Извършва тоналното преобразуване в плейъра според пиковата яркост на дисплея, след което указва резултата на композитора.',
 			'videoSettings.hdrToneMappingFailed' => 'Тоналното преобразуване на HDR не можа да бъде променено — предишният режим остава активен.',
 			'videoSettings.audioOutput' => 'Аудио изход',
+			'videoSettings.videoTrack' => 'Видео писта',
+			'videoSettings.videoTrackDescription' => 'Изберете кой видео поток да се показва. Налично при възпроизвеждане с MPV, когато файлът съдържа алтернативни видео писти.',
+			'videoSettings.videoTrackDefault' => 'По подразбиране',
+			'videoSettings.videoTrackUnavailable' => 'Няма налични алтернативни видео писти.',
+			'videoSettings.videoTrackFailed' => 'Видео пистата не можа да бъде сменена.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Писта ${id}',
 			'videoSettings.performanceOverlay' => 'Оверлей за производителност',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7415,10 +7435,6 @@ extension on TranslationsBg {
 			'videoSettings.audioEqualizerFlat' => 'Платък',
 			'videoSettings.audioEqualizerActive' => 'Персонализирана',
 			'videoSettings.audioEqualizerSaveFailed' => 'Не може да се запази настройките на аудио уравнение.',
-			'videoSettings.backgroundVideoAudio' => 'Видео аудио фонове',
-			'videoSettings.backgroundVideoAudioDescription' => 'Дръжте видео аудио игра, когато напуснете играча; снимката е скрита, докато не се върнете. Android използва медийна преносна информация.',
-			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
-			'videoSettings.audioNormalizationDisablesPassthrough' => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено',
 			'videoSettings.audioEffectsDescription' => 'Ефектите използват декодиран аудио, така че passthrough се върти. стайна атмосфера и стерео разширяване зависи от MPV Изграждане и проследяване.',
 			'videoSettings.audioStereoWidth' => 'Стерео разширяване',
 			'videoSettings.audioSpatializer' => 'Облачна атмосфера',
@@ -7426,6 +7442,10 @@ extension on TranslationsBg {
 			'videoSettings.audioPitch' => 'Питър промяна',
 			'videoSettings.audioPitchDescription' => 'Промяна на скоростта, без да се променя скоростта. MPV Строителството трябва да включва Rubber Bandи',
 			'videoSettings.audioEffectUnavailable' => 'Този ефект не е на разположение за тази линия или MPV Създайте .',
+			'videoSettings.backgroundVideoAudio' => 'Видео аудио фонове',
+			'videoSettings.backgroundVideoAudioDescription' => 'Дръжте видео аудио игра, когато напуснете играча; снимката е скрита, докато не се върнете. Android използва медийна преносна информация.',
+			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
+			'videoSettings.audioNormalizationDisablesPassthrough' => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено',
 			'performanceOverlay.color' => 'Цвят',
 			'performanceOverlay.performance' => 'Производителност',
 			'performanceOverlay.buffer' => 'Буфер',
@@ -7533,14 +7553,14 @@ extension on TranslationsBg {
 			'metadataEdit.metadataUpdateFailed' => 'Неуспешно обновяване на метаданни',
 			'metadataEdit.artworkUpdated' => 'Обложката е обновена',
 			'metadataEdit.artworkUpdateFailed' => 'Неуспешно обновяване на обложката',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Няма налична обложка',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Вариант за обложка ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Вариант за обложка ${index}, избран',
 			'metadataEdit.notSet' => 'Не е зададено',
 			'metadataEdit.libraryDefault' => 'По подразбиране за библиотеката',
 			'metadataEdit.accountDefault' => 'По подразбиране за акаунта',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'По подразбиране за сериала',
 			'metadataEdit.episodeSorting' => 'Сортиране на епизоди',
 			'metadataEdit.oldestFirst' => 'Най-старите първо',
@@ -7940,6 +7960,10 @@ extension on TranslationsBg {
 			'universalMedia.choosePlaylist' => 'Изберете Playlist файлове',
 			'universalMedia.openPlaylist' => 'Отворена игра',
 			'universalMedia.playlistFormatsHelp' => 'Възпроизвеждащият списък може да съдържа до 1000 елемента и 2 MB. HLS се отваря като потоци, така че играчът може да избере качество.',
+			'universalMedia.saveQueuePlaylist' => 'Запази опашката като плейлист',
+			'universalMedia.queuePlaylistSaved' => 'Плейлистът е запазен до медийните файлове.',
+			'universalMedia.queuePlaylistUnavailable' => 'Тази опашка не може да бъде запазена като преизползваем локален плейлист.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Изберете място за запис в същата папка като файловете в опашката.',
 			'universalMedia.noFavorites' => 'Все още не са спасени любимите потоци.Favorites остават в този профил.',
 			'universalMedia.removeFavorite' => 'Премахване на любимия поток',
 			'universalMedia.filesHelp' => 'Изберете аудио, видео или ISO файлове за временна лента.Файлове и URL адреси не се добавят към историята на библиотеката.',
@@ -7998,6 +8022,7 @@ extension on TranslationsBg {
 			'universalMedia.replaceRecording' => 'Замяна на файлове',
 			'universalMedia.discHelp' => 'Отворете диск в оптичния диск на този компютър. Можете също да отворите ISO изображение от файлове на устройството.',
 			'universalMedia.discs' => 'Оптичен диск',
+			'universalMedia.editionOrTitle' => 'Издание или заглавие на диск',
 			'universalMedia.dvd' => 'ДВД',
 			'universalMedia.bluray' => 'Блу-рай',
 			'universalMedia.audioCd' => 'Аудио CD',
@@ -8011,6 +8036,8 @@ extension on TranslationsBg {
 			'universalMedia.converterMp4' => 'MP4 · H.264 и AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC аудио',
 			'universalMedia.converterMp3' => 'MP3 и аудио',
+			'universalMedia.allowFtp' => 'Разрешаване на FTP',
+			'universalMedia.allowFtpHelp' => 'FTP изпраща медиите без криптиране. използвайте само на надеждни мрежи.',
 			'universalMedia.converterSaveAs' => 'Съхраняване на конвертирани медии като',
 			'universalMedia.converterExtensionMismatch' => 'Изберете името на файла с избраното разширение за изход.',
 			'universalMedia.converterUnsupportedInput' => 'Изберете аудио или видео файл.',
@@ -8033,11 +8060,15 @@ extension on TranslationsBg {
 			'universalMedia.captureIntro' => 'Запишете екрана или камерата си към файл MP4 на този компютър. FFmpeg трябва да бъде инсталиран и да включва кодиращия H.264.',
 			'universalMedia.captureNoDevices' => 'Не са намерени никакви екрани или камери. проверете FFmpeg поддръжка за снимане и разрешения за поверителност на операционната система.',
 			'universalMedia.captureSource' => 'екран или камера',
+			'universalMedia.captureScreen' => 'екран',
 			'universalMedia.captureAudioSource' => 'Аудио вход (опционално)',
 			'universalMedia.captureAudioHelp' => 'Добавете аудио от микрофон или наличен вход. Изборът на устройството зависи от FFmpeg и системните разрешения.',
 			'universalMedia.captureAudioNone' => 'Няма аудио',
+			'universalMedia.captureDefaultAudio' => 'Задължителен аудио вход',
 			'universalMedia.captureWaylandHelp' => 'Wayland ограничава това XWayland записване до X display. Windows извън XWayland може да не се появи.',
 			'universalMedia.captureFrameRate' => 'Рекордна рамкова скорост',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.capturePrivacy' => 'Записът се съхранява само за избрания от вас файл. микрофонът е факултативен. PlezyNG не изтегля записите.',
 			'universalMedia.captureSaveAs' => 'Записване на екрана като',
 			'universalMedia.captureExtensionMismatch' => 'Изберете име, което завършва в .mp4.',
@@ -8046,6 +8077,9 @@ extension on TranslationsBg {
 			'universalMedia.captureSaved' => 'Записът на екрана е спасен.',
 			'universalMedia.captureElapsedLabel' => 'Време за записване',
 			'universalMedia.captureStart' => 'Започнете записването',
+			'universalMedia.capturePreview' => 'Преглед в плейъра',
+			'universalMedia.capturePreviewHelp' => 'Прегледайте избрания източник в стандартния плейър. Прегледът е само за текущата сесия и не записва файл. Поддръжката на устройства и разрешенията зависят от MPV и операционната система. Прегледът използва само видео; в запазените записи може да се включи незадължително аудио.',
+			'universalMedia.capturePreviewActive' => 'Изображение на живо · без запис',
 			'universalMedia.captureStop' => 'Спрете и спасете',
 			'universalMedia.captureMode' => 'Задържане',
 			'universalMedia.shareMode' => 'Споделяне',
@@ -8053,8 +8087,6 @@ extension on TranslationsBg {
 			'universalMedia.sharePrivacy' => 'Всеки в местната мрежа, който получава личния линк, може да наблюдава, докато е активен. линкът изтича след 60 минути. престанете да споделяте, за да затворите сървъра и да деактивирате връзката.',
 			'universalMedia.shareChooseFile' => 'Изберете медийни файлове',
 			'universalMedia.shareChooseHelp' => 'Изберете локален аудио или видео файл. файлът остава на този компютър.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg или кодовете H.264/AAC не са на разположение. Инсталирайте FFmpeg с H.264 и AAC поддръжка на кодовете.',
 			'universalMedia.shareFailed' => 'Потокът не може да започне или да спре неочаквано. проверете FFmpeg и достъп до мрежата.',
 			'universalMedia.shareActive' => 'Продължителността на потока е готова в частната ви мрежа.',
@@ -8062,6 +8094,9 @@ extension on TranslationsBg {
 			'universalMedia.shareStopped' => 'Разпределянето е спряно. временният линк вече не е валиден.',
 			'universalMedia.shareUrlCopied' => 'Електронна адреса е копирана.',
 			'universalMedia.shareOpenUrl' => 'Отворете този адрес в един играч на друго устройство',
+			'universalMedia.shareQrLabel' => 'QR код за временния поток адрес',
+			'universalMedia.shareQrHelp' => 'Скениране с съвместим играч, свързан към една и съща частна мрежа.',
+			'universalMedia.shareHttpHint' => 'Този поток използва нешифрована HTTP. В PlezyNG, позволете HTTP преди да я отворите.',
 			'universalMedia.shareCopyUrl' => 'Копиране на адрес Stream',
 			'universalMedia.shareExpiresLabel' => 'Линкът изтича',
 			'universalMedia.shareStarting' => 'Приготвянето на потока...',
@@ -8095,13 +8130,6 @@ extension on TranslationsBg {
 			'universalMedia.cliHelp' => 'Използвайте ръководството plezyctl, за да валидирате манифест или да търсите същото разширение. Прегледайте услугата HTTPS преди всяко търсене. Резултатите се отварят в съществуващата медийна форма; изберете бутона за възпроизвеждане, за да започнете.',
 			'universalMedia.cliCopyExample' => 'Копиране на командния пример',
 			'universalMedia.cliCopied' => 'Примерът е копиран.',
-			'universalMedia.captureScreen' => 'екран',
-			'universalMedia.captureDefaultAudio' => 'Задължителен аудио вход',
-			'universalMedia.shareQrLabel' => 'QR код за временния поток адрес',
-			'universalMedia.shareQrHelp' => 'Скениране с съвместим играч, свързан към една и съща частна мрежа.',
-			'universalMedia.shareHttpHint' => 'Този поток използва нешифрована HTTP. В PlezyNG, позволете HTTP преди да я отворите.',
-			'universalMedia.allowFtp' => 'Разрешаване на FTP',
-			'universalMedia.allowFtpHelp' => 'FTP изпраща медиите без криптиране. използвайте само на надеждни мрежи.',
 			'fileSources.title' => 'Филми и книги',
 			'fileSources.subtitle' => 'Прочетете, слушате и наблюдавате от собствените си файлове.',
 			'fileSources.add' => 'Добавяне на източник',
@@ -8553,6 +8581,8 @@ extension on TranslationsBg {
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
@@ -8567,8 +8597,6 @@ extension on TranslationsBg {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			_ => null,
-		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',

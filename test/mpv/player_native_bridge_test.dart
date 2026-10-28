@@ -1421,6 +1421,42 @@ void main() {
     );
   });
 
+  test('ten-band equalizer and MPV audio effects produce a bounded filter chain', () async {
+    final filters = <String>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty' && (call.arguments as Map)['name'] == 'af') {
+          filters.add((call.arguments as Map)['value'] as String);
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioEqualizer([0, 20, 0, 0, 0, 0, 0, 0, 0, 0]);
+          await player.setAudioEffects((stereoWidth: 1.5, spatializer: true, pitchSemitones: -20));
+
+          expect(filters, [
+            'equalizer=f=125:t=q:w=1:g=12.0',
+            'equalizer=f=125:t=q:w=1:g=12.0,'
+                'stereowiden=delay=20:feedback=0.250:crossfeed=0.300:drymix=0.8,'
+                'aecho=0.8:0.9:35|55:0.18|0.12,'
+                'rubberband=pitch=0.50000:tempo=1:formant=preserved',
+          ]);
+
+          final writeCount = filters.length;
+          await player.setAudioEqualizer([6]);
+          expect(filters, hasLength(writeCount), reason: 'incomplete bands are ignored');
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
   test('exclusive-audio hint failure does not reject accepted passthrough', () async {
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',

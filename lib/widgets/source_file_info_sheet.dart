@@ -263,8 +263,7 @@ class _SourceFileInfoSheetState extends State<SourceFileInfoSheet> {
     return isolateDisplayText(value);
   }
 
-  bool _looksLikeWindowsPath(String value) =>
-      RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(value) || value.startsWith(r'\\');
+  bool _looksLikeWindowsPath(String value) => RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(value) || value.startsWith(r'\\');
 
   String _portableBasename(String value) =>
       value.replaceAll('\\', '/').split('/').where((part) => part.isNotEmpty).lastOrNull ?? '';

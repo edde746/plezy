@@ -1210,6 +1210,30 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get settingsButton => 'Playback nastavení';
 	@override String get tracksButton => 'Audio a subtituly';
 	@override String get chaptersButton => 'Kapitoly';
+	@override String get segmentLoopHelp => 'Nastavení A, pak nastavení B později v časovém řádku.';
+	@override String get setLoopStart => 'Nastavit začátek smyčky (A)';
+	@override String get setLoopEnd => 'Set loop konec (B)';
+	@override String get clearSegmentLoop => 'Čistý segment';
+	@override String get setLoopStartFirst => 'Nastavte začátek (A) před koncem (B).';
+	@override String get loopEndAfterStart => 'Závěrečný konec musí být později než začátek.';
+	@override String get segmentLoopUnavailable => 'Segment looping není k dispozici pro tento playback.';
+	@override String get loopPointNotSet => 'Není nastaven';
+	@override String get bookmarksHelp => 'Čísla jsou uložena na tomto zařízení. Vyberte jednu pro jít do té doby.';
+	@override String get bookmarksButton => 'Bookmarky';
+	@override String get chaptersAndBookmarks => 'Kapitoly a bookmarks';
+	@override String get segmentLoop => 'Segmentový loop';
+	@override String get addBookmark => 'Přidat bookmark';
+	@override String get bookmarkName => 'Bookmark jméno';
+	@override String get bookmarkNameHint => 'Například otevírací scény';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmarková ${n}';
+	@override String get bookmarkNameRequired => 'Zadejte jméno pro tuto knižní značku.';
+	@override String get deleteBookmark => 'Odstranit bookmark';
+	@override String get bookmarkLimitReached => 'Tato položka má již 100 bookmarků.';
+	@override String get bookmarkUnavailable => 'Nemohla jsem tuto knižní značku uložit nebo odstranit.';
+	@override String get bookmarkSaved => 'Bookmark je zachráněn.';
+	@override String get bookmarkDeleted => 'Bookmark byl vymazán.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop bod ${point} Set na ${time}A to';
+	@override String get noChaptersOrBookmarks => 'Není k dispozici žádná kapitola ani knihovna.';
 	@override String get versionQualityButton => 'Verze a kvalita';
 	@override String get versionColumnHeader => 'Verze';
 	@override String get qualityColumnHeader => 'Kvalita';
@@ -1257,30 +1281,6 @@ class _Translations$videoControls$cs extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Název titulu: Off';
 	@override String osdSubtitles({required Object track}) => 'Články v kategorii: ${track}';
 	@override String osdAudio({required Object track}) => 'Audio číslo: ${track}';
-	@override String get segmentLoopHelp => 'Nastavení A, pak nastavení B později v časovém řádku.';
-	@override String get setLoopStart => 'Set loop start (A)';
-	@override String get setLoopEnd => 'Set loop konec (B)';
-	@override String get clearSegmentLoop => 'Čistý segment';
-	@override String get setLoopStartFirst => 'Nastavte začátek (A) před koncem (B).';
-	@override String get loopEndAfterStart => 'Závěrečný konec musí být později než začátek.';
-	@override String get segmentLoopUnavailable => 'Segment looping není k dispozici pro tento playback.';
-	@override String get bookmarksHelp => 'Čísla jsou uložena na tomto zařízení. Vyberte jednu pro jít do té doby.';
-	@override String get bookmarksButton => 'Bookmarky';
-	@override String get chaptersAndBookmarks => 'Kapitoly a bookmarks';
-	@override String get segmentLoop => 'Segmentový loop';
-	@override String get addBookmark => 'Přidat bookmark';
-	@override String get bookmarkName => 'Bookmark jméno';
-	@override String get bookmarkNameHint => 'Například otevírací scény';
-	@override String bookmarkDefaultName({required Object n}) => 'Bookmarková ${n}';
-	@override String get bookmarkNameRequired => 'Zadejte jméno pro tuto knižní značku.';
-	@override String get deleteBookmark => 'Odstranit bookmark';
-	@override String get bookmarkLimitReached => 'Tato položka má již 100 bookmarků.';
-	@override String get bookmarkUnavailable => 'Nemohla jsem tuto knižní značku uložit nebo odstranit.';
-	@override String get bookmarkSaved => 'Bookmark je zachráněn.';
-	@override String get bookmarkDeleted => 'Bookmark byl vymazán.';
-	@override String loopPointSet({required Object point, required Object time}) => 'Loop bod ${point} Set na ${time}A to';
-	@override String get noChaptersOrBookmarks => 'Není k dispozici žádná kapitola ani knihovna.';
-	@override String get loopPointNotSet => 'Není nastaven';
 	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n,
 		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek',
 		few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky',
@@ -2481,6 +2481,12 @@ class _Translations$videoSettings$cs extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Mapa na špičkové jasnosti displeje v hráči, pak řekněte skladatelovi výsledek.';
 	@override String get hdrToneMappingFailed => 'Nemohlo by se změnit mapování HDR tónu - předchozí režim je stále aktivní.';
 	@override String get audioOutput => 'Audio výstup';
+	@override String get videoTrack => 'Video stopa';
+	@override String get videoTrackDescription => 'Vyberte video stream, který se má zobrazit. Funkce je dostupná při přehrávání v MPV, pokud soubor obsahuje alternativní video stopy.';
+	@override String get videoTrackDefault => 'Výchozí';
+	@override String get videoTrackUnavailable => 'Nejsou dostupné žádné alternativní video stopy.';
+	@override String get videoTrackFailed => 'Video stopu se nepodařilo změnit.';
+	@override String videoTrackNumber({required Object id}) => 'Stopa ${id}';
 	@override String get performanceOverlay => 'Výsledky Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2492,10 +2498,6 @@ class _Translations$videoSettings$cs extends Translations$videoSettings$en {
 	@override String get audioEqualizerFlat => 'ploché';
 	@override String get audioEqualizerActive => 'Vlastní';
 	@override String get audioEqualizerSaveFailed => 'Nemohl jsem zachránit nastavení audio ekvalizátoru.';
-	@override String get backgroundVideoAudio => 'Video audio pozadí';
-	@override String get backgroundVideoAudioDescription => 'Udržujte video audio přehrávač, když opustíte přehrávač; obrázek je skryt, dokud se nevrátíte. Android používá oznámení pro přehrávač médií.';
-	@override String get audioNormalization => 'Normalizace hluku';
-	@override String get audioNormalizationDisablesPassthrough => 'Odstraňte audio na PCM; passthrough je vypnutý, zatímco toto je na';
 	@override String get audioEffectsDescription => 'Efekty používají dekódovaný zvuk, takže passthrough otáčí. místnost atmosféra a stereo rozšíření závisí na MPV Stavět a sledovat.';
 	@override String get audioStereoWidth => 'Stereo rozšíření';
 	@override String get audioSpatializer => 'pokojová atmosféra';
@@ -2503,6 +2505,10 @@ class _Translations$videoSettings$cs extends Translations$videoSettings$en {
 	@override String get audioPitch => 'Pichová změna';
 	@override String get audioPitchDescription => 'Změna místa bez změny rychlosti. MPV Stavba musí zahrnovat Rubber BandA to';
 	@override String get audioEffectUnavailable => 'Tento efekt není k dispozici pro tuto trať nebo MPV a stavět .';
+	@override String get backgroundVideoAudio => 'Video audio pozadí';
+	@override String get backgroundVideoAudioDescription => 'Udržujte video audio přehrávač, když opustíte přehrávač; obrázek je skryt, dokud se nevrátíte. Android používá oznámení pro přehrávač médií.';
+	@override String get audioNormalization => 'Normalizace hluku';
+	@override String get audioNormalizationDisablesPassthrough => 'Odstraňte audio na PCM; passthrough je vypnutý, zatímco toto je na';
 }
 
 // Path: performanceOverlay
@@ -3153,6 +3159,10 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Vyberte soubor playlist';
 	@override String get openPlaylist => 'Otevřená playlist';
 	@override String get playlistFormatsHelp => 'Přehrávač může obsahovat až 1000 položek a 2 MB. HLS se otevírají jako toky, takže hráč si může vybrat kvalitu.';
+	@override String get saveQueuePlaylist => 'Uložit frontu jako seznam skladeb';
+	@override String get queuePlaylistSaved => 'Seznam skladeb byl uložen vedle souborů médií.';
+	@override String get queuePlaylistUnavailable => 'Tuto frontu nelze uložit jako znovu použitelný místní seznam skladeb.';
+	@override String get queuePlaylistFolderRequired => 'Vyberte umístění ve stejné složce, ve které jsou soubory ve frontě.';
 	@override String get noFavorites => 'Není zachráněno stream oblíbené zatím. Oblíbené zůstanou v tomto profilu.';
 	@override String get removeFavorite => 'Odstranit stream oblíbené';
 	@override String get filesHelp => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.';
@@ -3221,6 +3231,7 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'nahrazení souborů';
 	@override String get discHelp => 'Otevřete disk v optickém disku tohoto počítače.Můžete také otevřít obraz ISO z souborů zařízení.';
 	@override String get discs => 'Optický disk';
+	@override String get editionOrTitle => 'Edice nebo název disku';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray';
 	@override String get audioCd => 'Audio CD';
@@ -3234,6 +3245,8 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 a AAC';
 	@override String get converterM4a => 'M4A - AAC audio';
 	@override String get converterMp3 => 'MP3 a audio';
+	@override String get allowFtp => 'Umožňuje FTP';
+	@override String get allowFtpHelp => 'FTP odesílá média bez šifrování. Používejte pouze na důvěryhodných sítích.';
 	@override String get converterSaveAs => 'Shromažďování převedených médií jako';
 	@override String get converterExtensionMismatch => 'Vyberte název s vybraným rozšířením výstupu.';
 	@override String get converterUnsupportedInput => 'Vyberte si audio nebo video soubor.';
@@ -3256,9 +3269,11 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Na tomto počítači zaznamenáváte obrazovku nebo fotoaparát do souboru MP4. FFmpeg musí být nainstalován a obsahuje kódovač H.264.';
 	@override String get captureNoDevices => 'Nebyly nalezeny žádné obrazovky nebo fotoaparáty. zkontrolujte FFmpeg zachycenou podporu a oprávnění k soukromí operačního systému.';
 	@override String get captureSource => 'obrazovka nebo fotoaparát';
+	@override String get captureScreen => 'obrazovka';
 	@override String get captureAudioSource => 'Audio vstup (volitelné)';
 	@override String get captureAudioHelp => 'Přidejte zvuk z mikrofonu nebo dostupného vstupu. volby zařízení závisí na FFmpeg a systémových povoleních.';
 	@override String get captureAudioNone => 'Žádný audio';
+	@override String get captureDefaultAudio => 'Předvolený audio vstup';
 	@override String get captureWaylandHelp => 'Wayland omezuje toto XWayland zachycení na X display. Windows mimo XWayland se nemusí zobrazit.';
 	@override String get captureFrameRate => 'Rekordní rámová sazba';
 	@override String get capturePrivacy => 'Záznam se ukládá pouze na vybranou souboru. mikrofonový záznam je volitelný. PlezyNG záznam nezakládá.';
@@ -3269,6 +3284,9 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Scénární záznam byl zachráněn.';
 	@override String get captureElapsedLabel => 'Záznamový čas';
 	@override String get captureStart => 'Začíná nahrávání';
+	@override String get capturePreview => 'Náhled v přehrávači';
+	@override String get capturePreviewHelp => 'Prohlédněte vybraný zdroj ve standardním přehrávači. Náhled je pouze pro tuto relaci a neukládá záznam. Podpora zařízení a oprávnění závisí na MPV a operačním systému. Náhled používá pouze video; do uložených záznamů lze přidat volitelný zvuk.';
+	@override String get capturePreviewActive => 'Živý náhled · nenahrává se';
 	@override String get captureStop => 'Zastavte se a zachraňte';
 	@override String get captureMode => 'únos';
 	@override String get shareMode => 'Sdílejte';
@@ -3283,6 +3301,9 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get shareStopped => 'Sdílení přerušeno. dočasný odkaz již neplatí.';
 	@override String get shareUrlCopied => 'Přenosová adresa je kopírována.';
 	@override String get shareOpenUrl => 'Otevřete tuto adresu v jednom hráči na jiném zařízení';
+	@override String get shareQrLabel => 'QR kód pro dočasnou adresu toku';
+	@override String get shareQrHelp => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.';
+	@override String get shareHttpHint => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.';
 	@override String get shareCopyUrl => 'Kopírování streamové adresy';
 	@override String get shareExpiresLabel => 'Link vyprší na';
 	@override String get shareStarting => 'Připravování toku...';
@@ -3316,13 +3337,6 @@ class _Translations$universalMedia$cs extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Použijte průvodce plezyctl k ověření manifestu nebo vyhledávání stejného rozšíření. Před každým vyhledáváním zkontrolujte službu HTTPS. Výsledky se otevřou ve stávající mediální formě; vyberte tlačítko zpětné vazby.';
 	@override String get cliCopyExample => 'Kopírování příkladu';
 	@override String get cliCopied => 'Příklad příkazů kopírován.';
-	@override String get captureScreen => 'obrazovka';
-	@override String get captureDefaultAudio => 'Předvolený audio vstup';
-	@override String get shareQrLabel => 'QR kód pro dočasnou adresu toku';
-	@override String get shareQrHelp => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.';
-	@override String get shareHttpHint => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.';
-	@override String get allowFtp => 'Umožňuje FTP';
-	@override String get allowFtpHelp => 'FTP odesílá média bez šifrování. Používejte pouze na důvěryhodných sítích.';
 }
 
 // Path: fileSources
@@ -6027,6 +6041,32 @@ extension on TranslationsCs {
 			'videoControls.settingsButton' => 'Playback nastavení',
 			'videoControls.tracksButton' => 'Audio a subtituly',
 			'videoControls.chaptersButton' => 'Kapitoly',
+			'videoControls.segmentLoopHelp' => 'Nastavení A, pak nastavení B později v časovém řádku.',
+			'videoControls.setLoopStart' => 'Nastavit začátek smyčky (A)',
+			'videoControls.setLoopEnd' => 'Set loop konec (B)',
+			'videoControls.clearSegmentLoop' => 'Čistý segment',
+			'videoControls.setLoopStartFirst' => 'Nastavte začátek (A) před koncem (B).',
+			'videoControls.loopEndAfterStart' => 'Závěrečný konec musí být později než začátek.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping není k dispozici pro tento playback.',
+			'videoControls.loopPointNotSet' => 'Není nastaven',
+			'videoControls.bookmarksHelp' => 'Čísla jsou uložena na tomto zařízení. Vyberte jednu pro jít do té doby.',
+			'videoControls.bookmarksButton' => 'Bookmarky',
+			'videoControls.chaptersAndBookmarks' => 'Kapitoly a bookmarks',
+			'videoControls.segmentLoop' => 'Segmentový loop',
+			'videoControls.addBookmark' => 'Přidat bookmark',
+			'videoControls.bookmarkName' => 'Bookmark jméno',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Například otevírací scény',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmarková ${n}',
+			'videoControls.bookmarkNameRequired' => 'Zadejte jméno pro tuto knižní značku.',
+			'videoControls.deleteBookmark' => 'Odstranit bookmark',
+			'videoControls.bookmarkLimitReached' => 'Tato položka má již 100 bookmarků.',
+			'videoControls.bookmarkUnavailable' => 'Nemohla jsem tuto knižní značku uložit nebo odstranit.',
+			'videoControls.bookmarkSaved' => 'Bookmark je zachráněn.',
+			'videoControls.bookmarkDeleted' => 'Bookmark byl vymazán.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop bod ${point} Set na ${time}A to',
+			'videoControls.noChaptersOrBookmarks' => 'Není k dispozici žádná kapitola ani knihovna.',
 			'videoControls.versionQualityButton' => 'Verze a kvalita',
 			'videoControls.versionColumnHeader' => 'Verze',
 			'videoControls.qualityColumnHeader' => 'Kvalita',
@@ -6041,8 +6081,6 @@ extension on TranslationsCs {
 			'videoControls.exitFullscreenButton' => 'Výstup na plný obrazovek',
 			'videoControls.alwaysOnTopButton' => 'Vždy na vrcholu',
 			'videoControls.rotationLockButton' => 'rotační zámek',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Závěsný obrazovek',
 			'videoControls.screenLockButton' => 'Zámek obrazovky',
 			'videoControls.timelineSlider' => 'Video časové linie',
@@ -6083,30 +6121,6 @@ extension on TranslationsCs {
 			'videoControls.osdSubtitlesOff' => 'Název titulu: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Články v kategorii: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio číslo: ${track}',
-			'videoControls.segmentLoopHelp' => 'Nastavení A, pak nastavení B později v časovém řádku.',
-			'videoControls.setLoopStart' => 'Set loop start (A)',
-			'videoControls.setLoopEnd' => 'Set loop konec (B)',
-			'videoControls.clearSegmentLoop' => 'Čistý segment',
-			'videoControls.setLoopStartFirst' => 'Nastavte začátek (A) před koncem (B).',
-			'videoControls.loopEndAfterStart' => 'Závěrečný konec musí být později než začátek.',
-			'videoControls.segmentLoopUnavailable' => 'Segment looping není k dispozici pro tento playback.',
-			'videoControls.bookmarksHelp' => 'Čísla jsou uložena na tomto zařízení. Vyberte jednu pro jít do té doby.',
-			'videoControls.bookmarksButton' => 'Bookmarky',
-			'videoControls.chaptersAndBookmarks' => 'Kapitoly a bookmarks',
-			'videoControls.segmentLoop' => 'Segmentový loop',
-			'videoControls.addBookmark' => 'Přidat bookmark',
-			'videoControls.bookmarkName' => 'Bookmark jméno',
-			'videoControls.bookmarkNameHint' => 'Například otevírací scény',
-			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmarková ${n}',
-			'videoControls.bookmarkNameRequired' => 'Zadejte jméno pro tuto knižní značku.',
-			'videoControls.deleteBookmark' => 'Odstranit bookmark',
-			'videoControls.bookmarkLimitReached' => 'Tato položka má již 100 bookmarků.',
-			'videoControls.bookmarkUnavailable' => 'Nemohla jsem tuto knižní značku uložit nebo odstranit.',
-			'videoControls.bookmarkSaved' => 'Bookmark je zachráněn.',
-			'videoControls.bookmarkDeleted' => 'Bookmark byl vymazán.',
-			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop bod ${point} Set na ${time}A to',
-			'videoControls.noChaptersOrBookmarks' => 'Není k dispozici žádná kapitola ani knihovna.',
-			'videoControls.loopPointNotSet' => 'Není nastaven',
 			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('cs'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímek', few: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímky', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímku', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} snímků', ), 
 			'videoControls.trackSelectionTitle' => 'Zvolte stopy před playbackem',
 			'videoControls.trackSelectionAuto' => 'Automatické výběr',
@@ -7448,6 +7462,12 @@ extension on TranslationsCs {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Mapa na špičkové jasnosti displeje v hráči, pak řekněte skladatelovi výsledek.',
 			'videoSettings.hdrToneMappingFailed' => 'Nemohlo by se změnit mapování HDR tónu - předchozí režim je stále aktivní.',
 			'videoSettings.audioOutput' => 'Audio výstup',
+			'videoSettings.videoTrack' => 'Video stopa',
+			'videoSettings.videoTrackDescription' => 'Vyberte video stream, který se má zobrazit. Funkce je dostupná při přehrávání v MPV, pokud soubor obsahuje alternativní video stopy.',
+			'videoSettings.videoTrackDefault' => 'Výchozí',
+			'videoSettings.videoTrackUnavailable' => 'Nejsou dostupné žádné alternativní video stopy.',
+			'videoSettings.videoTrackFailed' => 'Video stopu se nepodařilo změnit.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Stopa ${id}',
 			'videoSettings.performanceOverlay' => 'Výsledky Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7459,10 +7479,6 @@ extension on TranslationsCs {
 			'videoSettings.audioEqualizerFlat' => 'ploché',
 			'videoSettings.audioEqualizerActive' => 'Vlastní',
 			'videoSettings.audioEqualizerSaveFailed' => 'Nemohl jsem zachránit nastavení audio ekvalizátoru.',
-			'videoSettings.backgroundVideoAudio' => 'Video audio pozadí',
-			'videoSettings.backgroundVideoAudioDescription' => 'Udržujte video audio přehrávač, když opustíte přehrávač; obrázek je skryt, dokud se nevrátíte. Android používá oznámení pro přehrávač médií.',
-			'videoSettings.audioNormalization' => 'Normalizace hluku',
-			'videoSettings.audioNormalizationDisablesPassthrough' => 'Odstraňte audio na PCM; passthrough je vypnutý, zatímco toto je na',
 			'videoSettings.audioEffectsDescription' => 'Efekty používají dekódovaný zvuk, takže passthrough otáčí. místnost atmosféra a stereo rozšíření závisí na MPV Stavět a sledovat.',
 			'videoSettings.audioStereoWidth' => 'Stereo rozšíření',
 			'videoSettings.audioSpatializer' => 'pokojová atmosféra',
@@ -7470,6 +7486,10 @@ extension on TranslationsCs {
 			'videoSettings.audioPitch' => 'Pichová změna',
 			'videoSettings.audioPitchDescription' => 'Změna místa bez změny rychlosti. MPV Stavba musí zahrnovat Rubber BandA to',
 			'videoSettings.audioEffectUnavailable' => 'Tento efekt není k dispozici pro tuto trať nebo MPV a stavět .',
+			'videoSettings.backgroundVideoAudio' => 'Video audio pozadí',
+			'videoSettings.backgroundVideoAudioDescription' => 'Udržujte video audio přehrávač, když opustíte přehrávač; obrázek je skryt, dokud se nevrátíte. Android používá oznámení pro přehrávač médií.',
+			'videoSettings.audioNormalization' => 'Normalizace hluku',
+			'videoSettings.audioNormalizationDisablesPassthrough' => 'Odstraňte audio na PCM; passthrough je vypnutý, zatímco toto je na',
 			'performanceOverlay.color' => 'Barva',
 			'performanceOverlay.performance' => 'Výkon',
 			'performanceOverlay.buffer' => 'Bufferová',
@@ -7577,14 +7597,14 @@ extension on TranslationsCs {
 			'metadataEdit.metadataUpdateFailed' => 'Nedokázal aktualizovat metadata',
 			'metadataEdit.artworkUpdated' => 'Umělecká aktualizace',
 			'metadataEdit.artworkUpdateFailed' => 'Nedokázal aktualizovat umělecké dílo',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'K dispozici žádné umělecké dílo',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Umělecká volba ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Možnost umělecké práce ${index}, vybraná',
 			'metadataEdit.notSet' => 'Není nastaven',
 			'metadataEdit.libraryDefault' => 'knihovny defektní',
 			'metadataEdit.accountDefault' => 'Účetní default',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'Seriál default',
 			'metadataEdit.episodeSorting' => 'Epizoda rozvrhována',
 			'metadataEdit.oldestFirst' => 'Nejstarší první',
@@ -7984,6 +8004,10 @@ extension on TranslationsCs {
 			'universalMedia.choosePlaylist' => 'Vyberte soubor playlist',
 			'universalMedia.openPlaylist' => 'Otevřená playlist',
 			'universalMedia.playlistFormatsHelp' => 'Přehrávač může obsahovat až 1000 položek a 2 MB. HLS se otevírají jako toky, takže hráč si může vybrat kvalitu.',
+			'universalMedia.saveQueuePlaylist' => 'Uložit frontu jako seznam skladeb',
+			'universalMedia.queuePlaylistSaved' => 'Seznam skladeb byl uložen vedle souborů médií.',
+			'universalMedia.queuePlaylistUnavailable' => 'Tuto frontu nelze uložit jako znovu použitelný místní seznam skladeb.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Vyberte umístění ve stejné složce, ve které jsou soubory ve frontě.',
 			'universalMedia.noFavorites' => 'Není zachráněno stream oblíbené zatím. Oblíbené zůstanou v tomto profilu.',
 			'universalMedia.removeFavorite' => 'Odstranit stream oblíbené',
 			'universalMedia.filesHelp' => 'Vyberte si audio, video nebo ISO soubory pro dočasný průběh. Soubory a URL nejsou přidány do historie knihovny.',
@@ -8042,6 +8066,7 @@ extension on TranslationsCs {
 			'universalMedia.replaceRecording' => 'nahrazení souborů',
 			'universalMedia.discHelp' => 'Otevřete disk v optickém disku tohoto počítače.Můžete také otevřít obraz ISO z souborů zařízení.',
 			'universalMedia.discs' => 'Optický disk',
+			'universalMedia.editionOrTitle' => 'Edice nebo název disku',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'Audio CD',
@@ -8055,6 +8080,8 @@ extension on TranslationsCs {
 			'universalMedia.converterMp4' => 'MP4 · H.264 a AAC',
 			'universalMedia.converterM4a' => 'M4A - AAC audio',
 			'universalMedia.converterMp3' => 'MP3 a audio',
+			'universalMedia.allowFtp' => 'Umožňuje FTP',
+			'universalMedia.allowFtpHelp' => 'FTP odesílá média bez šifrování. Používejte pouze na důvěryhodných sítích.',
 			'universalMedia.converterSaveAs' => 'Shromažďování převedených médií jako',
 			'universalMedia.converterExtensionMismatch' => 'Vyberte název s vybraným rozšířením výstupu.',
 			'universalMedia.converterUnsupportedInput' => 'Vyberte si audio nebo video soubor.',
@@ -8077,11 +8104,15 @@ extension on TranslationsCs {
 			'universalMedia.captureIntro' => 'Na tomto počítači zaznamenáváte obrazovku nebo fotoaparát do souboru MP4. FFmpeg musí být nainstalován a obsahuje kódovač H.264.',
 			'universalMedia.captureNoDevices' => 'Nebyly nalezeny žádné obrazovky nebo fotoaparáty. zkontrolujte FFmpeg zachycenou podporu a oprávnění k soukromí operačního systému.',
 			'universalMedia.captureSource' => 'obrazovka nebo fotoaparát',
+			'universalMedia.captureScreen' => 'obrazovka',
 			'universalMedia.captureAudioSource' => 'Audio vstup (volitelné)',
 			'universalMedia.captureAudioHelp' => 'Přidejte zvuk z mikrofonu nebo dostupného vstupu. volby zařízení závisí na FFmpeg a systémových povoleních.',
 			'universalMedia.captureAudioNone' => 'Žádný audio',
+			'universalMedia.captureDefaultAudio' => 'Předvolený audio vstup',
 			'universalMedia.captureWaylandHelp' => 'Wayland omezuje toto XWayland zachycení na X display. Windows mimo XWayland se nemusí zobrazit.',
 			'universalMedia.captureFrameRate' => 'Rekordní rámová sazba',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.capturePrivacy' => 'Záznam se ukládá pouze na vybranou souboru. mikrofonový záznam je volitelný. PlezyNG záznam nezakládá.',
 			'universalMedia.captureSaveAs' => 'Shromažďujte záznam obrazovky jako',
 			'universalMedia.captureExtensionMismatch' => 'Vyberte název, který končí v .mp4.',
@@ -8090,6 +8121,9 @@ extension on TranslationsCs {
 			'universalMedia.captureSaved' => 'Scénární záznam byl zachráněn.',
 			'universalMedia.captureElapsedLabel' => 'Záznamový čas',
 			'universalMedia.captureStart' => 'Začíná nahrávání',
+			'universalMedia.capturePreview' => 'Náhled v přehrávači',
+			'universalMedia.capturePreviewHelp' => 'Prohlédněte vybraný zdroj ve standardním přehrávači. Náhled je pouze pro tuto relaci a neukládá záznam. Podpora zařízení a oprávnění závisí na MPV a operačním systému. Náhled používá pouze video; do uložených záznamů lze přidat volitelný zvuk.',
+			'universalMedia.capturePreviewActive' => 'Živý náhled · nenahrává se',
 			'universalMedia.captureStop' => 'Zastavte se a zachraňte',
 			'universalMedia.captureMode' => 'únos',
 			'universalMedia.shareMode' => 'Sdílejte',
@@ -8097,8 +8131,6 @@ extension on TranslationsCs {
 			'universalMedia.sharePrivacy' => 'Kdokoliv na vaší místní síti, kdo dostává soukromý odkaz může sledovat, zatímco je aktivní. odkaz vyprší po 60 minutách. zastavit sdílení, aby se server uzavřel a zrušit odkaz.',
 			'universalMedia.shareChooseFile' => 'Vyberte mediální soubor',
 			'universalMedia.shareChooseHelp' => 'Vyberte místní audio nebo video soubor. soubor zůstává na tomto počítači.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg nebo kódování H.264/AAC nejsou k dispozici. Instalace FFmpeg s podporou kódování H.264 a AAC.',
 			'universalMedia.shareFailed' => 'Stream se nemohl začít ani nečekaně zastavit. zkontrolujte FFmpeg a přístup k síti.',
 			'universalMedia.shareActive' => 'Stream je připraven na vaší soukromé síti.',
@@ -8106,6 +8138,9 @@ extension on TranslationsCs {
 			'universalMedia.shareStopped' => 'Sdílení přerušeno. dočasný odkaz již neplatí.',
 			'universalMedia.shareUrlCopied' => 'Přenosová adresa je kopírována.',
 			'universalMedia.shareOpenUrl' => 'Otevřete tuto adresu v jednom hráči na jiném zařízení',
+			'universalMedia.shareQrLabel' => 'QR kód pro dočasnou adresu toku',
+			'universalMedia.shareQrHelp' => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.',
+			'universalMedia.shareHttpHint' => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.',
 			'universalMedia.shareCopyUrl' => 'Kopírování streamové adresy',
 			'universalMedia.shareExpiresLabel' => 'Link vyprší na',
 			'universalMedia.shareStarting' => 'Připravování toku...',
@@ -8139,13 +8174,6 @@ extension on TranslationsCs {
 			'universalMedia.cliHelp' => 'Použijte průvodce plezyctl k ověření manifestu nebo vyhledávání stejného rozšíření. Před každým vyhledáváním zkontrolujte službu HTTPS. Výsledky se otevřou ve stávající mediální formě; vyberte tlačítko zpětné vazby.',
 			'universalMedia.cliCopyExample' => 'Kopírování příkladu',
 			'universalMedia.cliCopied' => 'Příklad příkazů kopírován.',
-			'universalMedia.captureScreen' => 'obrazovka',
-			'universalMedia.captureDefaultAudio' => 'Předvolený audio vstup',
-			'universalMedia.shareQrLabel' => 'QR kód pro dočasnou adresu toku',
-			'universalMedia.shareQrHelp' => 'Skenování pomocí kompatibilního přehrávače připojeného k téže soukromé síti.',
-			'universalMedia.shareHttpHint' => 'Tento tok používá nekryptované HTTP. V PlezyNG, dovolte HTTP před otevřením.',
-			'universalMedia.allowFtp' => 'Umožňuje FTP',
-			'universalMedia.allowFtpHelp' => 'FTP odesílá média bez šifrování. Používejte pouze na důvěryhodných sítích.',
 			'fileSources.title' => 'Soubory a knihy',
 			'fileSources.subtitle' => 'Číst, poslouchat a sledovat z vlastních souborů.',
 			'fileSources.add' => 'Přidat zdroj',
@@ -8597,6 +8625,8 @@ extension on TranslationsCs {
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
@@ -8611,8 +8641,6 @@ extension on TranslationsCs {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			_ => null,
-		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',

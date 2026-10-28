@@ -1264,7 +1264,7 @@ return $default(_that.id,_that.title,_that.language,_that.codec,_that.width,_tha
 
 class _VideoTrack extends VideoTrack {
   const _VideoTrack({required this.id, this.title, this.language, this.codec, this.width, this.height, this.isDefault = false, this.isSelected = false, this.isExternal = false}): super._();
-
+  
 
 @override final  String id;
 @override final  String? title;

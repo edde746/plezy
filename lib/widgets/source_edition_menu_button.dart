@@ -39,7 +39,9 @@ class _SourceEditionMenuButtonState extends State<SourceEditionMenuButton> {
 
   void _refreshEditions() {
     if (!mounted) return;
-    setState(() => _editions = _readEditions());
+    setState(() {
+      _editions = _readEditions();
+    });
   }
 
   @override

@@ -1200,6 +1200,30 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get settingsButton => 'Afspilningsindstillinger';
 	@override String get tracksButton => 'Lyd og undertekster';
 	@override String get chaptersButton => 'Kapitler';
+	@override String get segmentLoopHelp => 'Set A, derefter set B senere i timelinjen.';
+	@override String get setLoopStart => 'Sæt loop start (A)';
+	@override String get setLoopEnd => 'Sæt loop end (B)';
+	@override String get clearSegmentLoop => 'Det tydelige segment loop';
+	@override String get setLoopStartFirst => 'Set loop start (A) før slutningen (B).';
+	@override String get loopEndAfterStart => 'Slutningen skal være senere end begyndelsen.';
+	@override String get segmentLoopUnavailable => 'Segment looping er ikke tilgængelig for denne playback.';
+	@override String get loopPointNotSet => 'Ikke set';
+	@override String get bookmarksHelp => 'Bookmarks er gemt på denne enhed. Vælg en for at gå til den tid.';
+	@override String get bookmarksButton => 'Bookmarker';
+	@override String get chaptersAndBookmarks => 'Kapitel og bogmærker';
+	@override String get segmentLoop => 'Segment Løgn';
+	@override String get addBookmark => 'Tilføj Bookmark';
+	@override String get bookmarkName => 'Bookmark navn';
+	@override String get bookmarkNameHint => 'For eksempel åbningsscenen';
+	@override String bookmarkDefaultName({required Object n}) => 'Bogmærke ${n}';
+	@override String get bookmarkNameRequired => 'Indtast et navn til denne bogmærke.';
+	@override String get deleteBookmark => 'Fjern bookmark';
+	@override String get bookmarkLimitReached => 'Denne artikel har allerede 100 bogmærker.';
+	@override String get bookmarkUnavailable => 'Jeg kunne ikke gemme eller fjerne denne bogmærke.';
+	@override String get bookmarkSaved => 'Bookmark blev reddet.';
+	@override String get bookmarkDeleted => 'Bookmark er slettet';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop point ${point} Sæt på ${time}og';
+	@override String get noChaptersOrBookmarks => 'Der er ingen kapitel eller bookmarks til rådighed.';
 	@override String get versionQualityButton => 'Version og kvalitet';
 	@override String get versionColumnHeader => 'Version';
 	@override String get qualityColumnHeader => 'Kvalitet';
@@ -1260,30 +1284,6 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get skipAds => 'Skær Ads';
 	@override String get tapToUnlock => 'Tryk for at låse op';
 	@override String get tapAgainToUnlock => 'Tryk igen for at låse op';
-	@override String get segmentLoopHelp => 'Set A, derefter set B senere i timelinjen.';
-	@override String get setLoopStart => 'Sæt loop start (A)';
-	@override String get setLoopEnd => 'Sæt loop end (B)';
-	@override String get clearSegmentLoop => 'Det tydelige segment loop';
-	@override String get setLoopStartFirst => 'Set loop start (A) før slutningen (B).';
-	@override String get loopEndAfterStart => 'Slutningen skal være senere end begyndelsen.';
-	@override String get segmentLoopUnavailable => 'Segment looping er ikke tilgængelig for denne playback.';
-	@override String get bookmarksHelp => 'Bookmarks er gemt på denne enhed. Vælg en for at gå til den tid.';
-	@override String get bookmarksButton => 'Bookmarker';
-	@override String get chaptersAndBookmarks => 'Kapitel og bogmærker';
-	@override String get segmentLoop => 'Segment Løgn';
-	@override String get addBookmark => 'Tilføj Bookmark';
-	@override String get bookmarkName => 'Bookmark navn';
-	@override String get bookmarkNameHint => 'For eksempel åbningsscenen';
-	@override String bookmarkDefaultName({required Object n}) => 'Bookmark ${n}';
-	@override String get bookmarkNameRequired => 'Indtast et navn til denne bogmærke.';
-	@override String get deleteBookmark => 'Fjern bookmark';
-	@override String get bookmarkLimitReached => 'Denne artikel har allerede 100 bogmærker.';
-	@override String get bookmarkUnavailable => 'Jeg kunne ikke gemme eller fjerne denne bogmærke.';
-	@override String get bookmarkSaved => 'Bookmark blev reddet.';
-	@override String get bookmarkDeleted => 'Bookmark er slettet';
-	@override String loopPointSet({required Object point, required Object time}) => 'Loop point ${point} Sæt på ${time}og';
-	@override String get noChaptersOrBookmarks => 'Der er ingen kapitel eller bookmarks til rådighed.';
-	@override String get loopPointNotSet => 'Ikke set';
 }
 
 // Path: messages
@@ -2447,6 +2447,12 @@ class _Translations$videoSettings$da extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Tilpas til skærmens maksimale lysstyrke i afspilleren, og fortæl derefter kompositoren om resultatet.';
 	@override String get hdrToneMappingFailed => 'Kunne ikke ændre HDR-tonemapping – den tidligere tilstand er stadig aktiv.';
 	@override String get audioOutput => 'Lydoutput';
+	@override String get videoTrack => 'Videospor';
+	@override String get videoTrackDescription => 'Vælg, hvilken videostrøm der skal vises. Tilgængelig ved MPV-afspilning, når en fil indeholder alternative videospor.';
+	@override String get videoTrackDefault => 'Standard';
+	@override String get videoTrackUnavailable => 'Der er ingen alternative videospor.';
+	@override String get videoTrackFailed => 'Videosporet kunne ikke ændres.';
+	@override String videoTrackNumber({required Object id}) => 'Spor ${id}';
 	@override String get performanceOverlay => 'Ydelsesoverlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2458,10 +2464,6 @@ class _Translations$videoSettings$da extends Translations$videoSettings$en {
 	@override String get audioEqualizerFlat => 'Fladt';
 	@override String get audioEqualizerActive => 'Brugerdefineret';
 	@override String get audioEqualizerSaveFailed => 'Jeg kunne ikke spare lydekvivalenter indstillinger.';
-	@override String get backgroundVideoAudio => 'Video Audio baggrund';
-	@override String get backgroundVideoAudioDescription => 'Hold video-audio-spillet, når du forlader spilleren; billedet er skjult, indtil du vender tilbage. Android bruger en medie-spillet meddelelse.';
-	@override String get audioNormalization => 'Normalisér lydstyrke';
-	@override String get audioNormalizationDisablesPassthrough => 'Dekoder lyd til PCM; passthrough er fra, mens dette er slået til';
 	@override String get audioEffectsDescription => 'Effekter bruger dekoderet lyd, så passthrough vender ud. Rummiljø og stereo udvidelse afhænger af MPV Opbygge og spor.';
 	@override String get audioStereoWidth => 'Stereo udvidelse';
 	@override String get audioSpatializer => 'Værelsesmiljø';
@@ -2469,6 +2471,10 @@ class _Translations$videoSettings$da extends Translations$videoSettings$en {
 	@override String get audioPitch => 'Pitch skift';
 	@override String get audioPitchDescription => 'Ændre pladsen uden at ændre hastighed. MPV Bygningen skal omfatte Rubber Bandog';
 	@override String get audioEffectUnavailable => 'Denne effekt er ikke tilgængelig for denne track eller MPV at bygge.';
+	@override String get backgroundVideoAudio => 'Video Audio baggrund';
+	@override String get backgroundVideoAudioDescription => 'Hold video-audio-spillet, når du forlader spilleren; billedet er skjult, indtil du vender tilbage. Android bruger en medie-spillet meddelelse.';
+	@override String get audioNormalization => 'Normalisér lydstyrke';
+	@override String get audioNormalizationDisablesPassthrough => 'Dekoder lyd til PCM; passthrough er fra, mens dette er slået til';
 }
 
 // Path: performanceOverlay
@@ -3117,6 +3123,10 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Vælg Playlist fil';
 	@override String get openPlaylist => 'Åbent playlist';
 	@override String get playlistFormatsHelp => 'En playlist kan indeholde op til 1.000 elementer og 2 MB. HLS manifesterer sig åbent som strømme, så spilleren kan vælge en kvalitet.';
+	@override String get saveQueuePlaylist => 'Gem kø som afspilningsliste';
+	@override String get queuePlaylistSaved => 'Afspilningslisten blev gemt ved siden af mediefilerne.';
+	@override String get queuePlaylistUnavailable => 'Denne kø kan ikke gemmes som en genbrugelig lokal afspilningsliste.';
+	@override String get queuePlaylistFolderRequired => 'Vælg en placering i samme mappe som filerne i køen.';
 	@override String get noFavorites => 'Der er endnu ingen gemt streaming favoritter. Favoritter forbliver i denne profil.';
 	@override String get removeFavorite => 'Fjern streaming favorit';
 	@override String get filesHelp => 'Vælg lyd, video eller ISO-filer for en midlertidig kue. filer og URL\'er tilføjes ikke til bibliotekets historie.';
@@ -3181,6 +3191,7 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Udskiftning af fil';
 	@override String get discHelp => 'Du kan også åbne et ISO-billede fra Device-filer.';
 	@override String get discs => 'Optik disk';
+	@override String get editionOrTitle => 'Udgave eller disktitel';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'af Blu-ray';
 	@override String get audioCd => 'Audio cd';
@@ -3194,6 +3205,8 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 og AAC';
 	@override String get converterM4a => 'M4A · AAC lyd';
 	@override String get converterMp3 => 'MP3 og audio';
+	@override String get allowFtp => 'Tilladelse af FTP';
+	@override String get allowFtpHelp => 'FTP sender medier uden kryptering. Brug kun på betroede netværk.';
 	@override String get converterSaveAs => 'Save konverterede medier som';
 	@override String get converterExtensionMismatch => 'Vælg et filnavn med den valgte udvidelse.';
 	@override String get converterUnsupportedInput => 'Vælg en audio eller video fil.';
@@ -3216,9 +3229,11 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Registrer din skærm eller en kamera til en MP4-fil på denne computer. FFmpeg skal installeres og inkluderes koderen H.264.';
 	@override String get captureNoDevices => 'Ingen skærm eller kamera blev fundet. tjek FFmpeg optagelse support og operativsystem privatliv tilladelser.';
 	@override String get captureSource => 'Skærm eller kamera';
+	@override String get captureScreen => 'Skærmen';
 	@override String get captureAudioSource => 'Audio indtastning (optional)';
 	@override String get captureAudioHelp => 'Tilføj lyd fra en mikrofon eller tilgængelig input. Enhedsvalg afhænger af FFmpeg og systemtilladelser.';
 	@override String get captureAudioNone => 'Ingen lyd';
+	@override String get captureDefaultAudio => 'Standard lydindtægter';
 	@override String get captureWaylandHelp => 'Wayland begrænser denne XWayland optagelse til X display. Windows uden for XWayland kan ikke vises.';
 	@override String get captureFrameRate => 'Rekorder rammeværdi';
 	@override String get capturePrivacy => 'Optagelsen gemmes kun til den fil, du vælger. Microphone optagelse er valgfri. PlezyNG optager ikke optagelsen.';
@@ -3229,6 +3244,9 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Skærmoptagelser er reddet.';
 	@override String get captureElapsedLabel => 'Optagelsestid';
 	@override String get captureStart => 'Start med optagelse';
+	@override String get capturePreview => 'Forhåndsvis i afspiller';
+	@override String get capturePreviewHelp => 'Forhåndsvis den valgte kilde i standardafspilleren. Forhåndsvisningen gælder kun denne session og gemmer ikke en optagelse. Enhedsunderstøttelse og tilladelser afhænger af MPV og operativsystemet. Forhåndsvisningen bruger kun video; valgfri lyd kan medtages i gemte optagelser.';
+	@override String get capturePreviewActive => 'Liveforhåndsvisning · optager ikke';
 	@override String get captureStop => 'Stop og red';
 	@override String get captureMode => 'Fængsel';
 	@override String get shareMode => 'Deling';
@@ -3243,6 +3261,9 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get shareStopped => 'Deling stoppet. den midlertidige link er ikke længere gyldig.';
 	@override String get shareUrlCopied => 'Stream adresser kopieret.';
 	@override String get shareOpenUrl => 'Åbn denne adresse i en spiller på den anden enhed';
+	@override String get shareQrLabel => 'QR-kode til den midlertidige strømadresse';
+	@override String get shareQrHelp => 'Scan med en kompatibel spiller, der er forbundet til det samme private netværk.';
+	@override String get shareHttpHint => 'Denne strøm bruger uencryptet HTTP. i PlezyNG, tillade HTTP, før du åbner det.';
 	@override String get shareCopyUrl => 'Kopiering af streams adresse';
 	@override String get shareExpiresLabel => 'Linken udløber ved';
 	@override String get shareStarting => 'Forberedelse af strømmen...';
@@ -3276,13 +3297,6 @@ class _Translations$universalMedia$da extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Brug plezyctl guide til at validere en manifest eller søge efter den samme udvidelse. gennemgå HTTPS service før hver søgning. Resultater åbnes i den eksisterende medieformular; vælg playback-knappen til at starte.';
 	@override String get cliCopyExample => 'Kopiering af kommandoen';
 	@override String get cliCopied => 'Kommando eksempler kopieret.';
-	@override String get captureScreen => 'Skærmen';
-	@override String get captureDefaultAudio => 'Standard lydindtægter';
-	@override String get shareQrLabel => 'QR-kode til den midlertidige strømadresse';
-	@override String get shareQrHelp => 'Scan med en kompatibel spiller, der er forbundet til det samme private netværk.';
-	@override String get shareHttpHint => 'Denne strøm bruger uencryptet HTTP. i PlezyNG, tillade HTTP, før du åbner det.';
-	@override String get allowFtp => 'Tilladelse af FTP';
-	@override String get allowFtpHelp => 'FTP sender medier uden kryptering. Brug kun på betroede netværk.';
 }
 
 // Path: fileSources
@@ -5983,6 +5997,32 @@ extension on TranslationsDa {
 			'videoControls.settingsButton' => 'Afspilningsindstillinger',
 			'videoControls.tracksButton' => 'Lyd og undertekster',
 			'videoControls.chaptersButton' => 'Kapitler',
+			'videoControls.segmentLoopHelp' => 'Set A, derefter set B senere i timelinjen.',
+			'videoControls.setLoopStart' => 'Sæt loop start (A)',
+			'videoControls.setLoopEnd' => 'Sæt loop end (B)',
+			'videoControls.clearSegmentLoop' => 'Det tydelige segment loop',
+			'videoControls.setLoopStartFirst' => 'Set loop start (A) før slutningen (B).',
+			'videoControls.loopEndAfterStart' => 'Slutningen skal være senere end begyndelsen.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping er ikke tilgængelig for denne playback.',
+			'videoControls.loopPointNotSet' => 'Ikke set',
+			'videoControls.bookmarksHelp' => 'Bookmarks er gemt på denne enhed. Vælg en for at gå til den tid.',
+			'videoControls.bookmarksButton' => 'Bookmarker',
+			'videoControls.chaptersAndBookmarks' => 'Kapitel og bogmærker',
+			'videoControls.segmentLoop' => 'Segment Løgn',
+			'videoControls.addBookmark' => 'Tilføj Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark navn',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'For eksempel åbningsscenen',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bogmærke ${n}',
+			'videoControls.bookmarkNameRequired' => 'Indtast et navn til denne bogmærke.',
+			'videoControls.deleteBookmark' => 'Fjern bookmark',
+			'videoControls.bookmarkLimitReached' => 'Denne artikel har allerede 100 bogmærker.',
+			'videoControls.bookmarkUnavailable' => 'Jeg kunne ikke gemme eller fjerne denne bogmærke.',
+			'videoControls.bookmarkSaved' => 'Bookmark blev reddet.',
+			'videoControls.bookmarkDeleted' => 'Bookmark er slettet',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop point ${point} Sæt på ${time}og',
+			'videoControls.noChaptersOrBookmarks' => 'Der er ingen kapitel eller bookmarks til rådighed.',
 			'videoControls.versionQualityButton' => 'Version og kvalitet',
 			'videoControls.versionColumnHeader' => 'Version',
 			'videoControls.qualityColumnHeader' => 'Kvalitet',
@@ -5997,8 +6037,6 @@ extension on TranslationsDa {
 			'videoControls.exitFullscreenButton' => 'Forlad fuldskærm',
 			'videoControls.alwaysOnTopButton' => 'Altid øverst',
 			'videoControls.rotationLockButton' => 'Rotationslås',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Lås skærm',
 			'videoControls.screenLockButton' => 'Skærmlås',
 			'videoControls.timelineSlider' => 'Videotidslinje',
@@ -6049,30 +6087,6 @@ extension on TranslationsDa {
 			'videoControls.skipAds' => 'Skær Ads',
 			'videoControls.tapToUnlock' => 'Tryk for at låse op',
 			'videoControls.tapAgainToUnlock' => 'Tryk igen for at låse op',
-			'videoControls.segmentLoopHelp' => 'Set A, derefter set B senere i timelinjen.',
-			'videoControls.setLoopStart' => 'Sæt loop start (A)',
-			'videoControls.setLoopEnd' => 'Sæt loop end (B)',
-			'videoControls.clearSegmentLoop' => 'Det tydelige segment loop',
-			'videoControls.setLoopStartFirst' => 'Set loop start (A) før slutningen (B).',
-			'videoControls.loopEndAfterStart' => 'Slutningen skal være senere end begyndelsen.',
-			'videoControls.segmentLoopUnavailable' => 'Segment looping er ikke tilgængelig for denne playback.',
-			'videoControls.bookmarksHelp' => 'Bookmarks er gemt på denne enhed. Vælg en for at gå til den tid.',
-			'videoControls.bookmarksButton' => 'Bookmarker',
-			'videoControls.chaptersAndBookmarks' => 'Kapitel og bogmærker',
-			'videoControls.segmentLoop' => 'Segment Løgn',
-			'videoControls.addBookmark' => 'Tilføj Bookmark',
-			'videoControls.bookmarkName' => 'Bookmark navn',
-			'videoControls.bookmarkNameHint' => 'For eksempel åbningsscenen',
-			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark ${n}',
-			'videoControls.bookmarkNameRequired' => 'Indtast et navn til denne bogmærke.',
-			'videoControls.deleteBookmark' => 'Fjern bookmark',
-			'videoControls.bookmarkLimitReached' => 'Denne artikel har allerede 100 bogmærker.',
-			'videoControls.bookmarkUnavailable' => 'Jeg kunne ikke gemme eller fjerne denne bogmærke.',
-			'videoControls.bookmarkSaved' => 'Bookmark blev reddet.',
-			'videoControls.bookmarkDeleted' => 'Bookmark er slettet',
-			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop point ${point} Sæt på ${time}og',
-			'videoControls.noChaptersOrBookmarks' => 'Der er ingen kapitel eller bookmarks til rådighed.',
-			'videoControls.loopPointNotSet' => 'Ikke set',
 			'messages.markedAsWatched' => 'Markeret som set',
 			'messages.markedAsUnwatched' => 'Markeret som uset',
 			'messages.markedAsWatchedOffline' => 'Markeret som set (synkroniseres online)',
@@ -7404,6 +7418,12 @@ extension on TranslationsDa {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Tilpas til skærmens maksimale lysstyrke i afspilleren, og fortæl derefter kompositoren om resultatet.',
 			'videoSettings.hdrToneMappingFailed' => 'Kunne ikke ændre HDR-tonemapping – den tidligere tilstand er stadig aktiv.',
 			'videoSettings.audioOutput' => 'Lydoutput',
+			'videoSettings.videoTrack' => 'Videospor',
+			'videoSettings.videoTrackDescription' => 'Vælg, hvilken videostrøm der skal vises. Tilgængelig ved MPV-afspilning, når en fil indeholder alternative videospor.',
+			'videoSettings.videoTrackDefault' => 'Standard',
+			'videoSettings.videoTrackUnavailable' => 'Der er ingen alternative videospor.',
+			'videoSettings.videoTrackFailed' => 'Videosporet kunne ikke ændres.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Spor ${id}',
 			'videoSettings.performanceOverlay' => 'Ydelsesoverlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7415,10 +7435,6 @@ extension on TranslationsDa {
 			'videoSettings.audioEqualizerFlat' => 'Fladt',
 			'videoSettings.audioEqualizerActive' => 'Brugerdefineret',
 			'videoSettings.audioEqualizerSaveFailed' => 'Jeg kunne ikke spare lydekvivalenter indstillinger.',
-			'videoSettings.backgroundVideoAudio' => 'Video Audio baggrund',
-			'videoSettings.backgroundVideoAudioDescription' => 'Hold video-audio-spillet, når du forlader spilleren; billedet er skjult, indtil du vender tilbage. Android bruger en medie-spillet meddelelse.',
-			'videoSettings.audioNormalization' => 'Normalisér lydstyrke',
-			'videoSettings.audioNormalizationDisablesPassthrough' => 'Dekoder lyd til PCM; passthrough er fra, mens dette er slået til',
 			'videoSettings.audioEffectsDescription' => 'Effekter bruger dekoderet lyd, så passthrough vender ud. Rummiljø og stereo udvidelse afhænger af MPV Opbygge og spor.',
 			'videoSettings.audioStereoWidth' => 'Stereo udvidelse',
 			'videoSettings.audioSpatializer' => 'Værelsesmiljø',
@@ -7426,6 +7442,10 @@ extension on TranslationsDa {
 			'videoSettings.audioPitch' => 'Pitch skift',
 			'videoSettings.audioPitchDescription' => 'Ændre pladsen uden at ændre hastighed. MPV Bygningen skal omfatte Rubber Bandog',
 			'videoSettings.audioEffectUnavailable' => 'Denne effekt er ikke tilgængelig for denne track eller MPV at bygge.',
+			'videoSettings.backgroundVideoAudio' => 'Video Audio baggrund',
+			'videoSettings.backgroundVideoAudioDescription' => 'Hold video-audio-spillet, når du forlader spilleren; billedet er skjult, indtil du vender tilbage. Android bruger en medie-spillet meddelelse.',
+			'videoSettings.audioNormalization' => 'Normalisér lydstyrke',
+			'videoSettings.audioNormalizationDisablesPassthrough' => 'Dekoder lyd til PCM; passthrough er fra, mens dette er slået til',
 			'performanceOverlay.color' => 'Farve',
 			'performanceOverlay.performance' => 'Ydeevne',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -7533,14 +7553,14 @@ extension on TranslationsDa {
 			'metadataEdit.metadataUpdateFailed' => 'Kunne ikke opdatere metadata',
 			'metadataEdit.artworkUpdated' => 'Grafik opdateret',
 			'metadataEdit.artworkUpdateFailed' => 'Kunne ikke opdatere grafik',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Ingen grafik tilgængelig',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Grafikvalg ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Grafikvalg ${index}, valgt',
 			'metadataEdit.notSet' => 'Ikke indstillet',
 			'metadataEdit.libraryDefault' => 'Biblioteksstandard',
 			'metadataEdit.accountDefault' => 'Kontostandard',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'Seriestandard',
 			'metadataEdit.episodeSorting' => 'Episodesortering',
 			'metadataEdit.oldestFirst' => 'Ældste først',
@@ -7940,6 +7960,10 @@ extension on TranslationsDa {
 			'universalMedia.choosePlaylist' => 'Vælg Playlist fil',
 			'universalMedia.openPlaylist' => 'Åbent playlist',
 			'universalMedia.playlistFormatsHelp' => 'En playlist kan indeholde op til 1.000 elementer og 2 MB. HLS manifesterer sig åbent som strømme, så spilleren kan vælge en kvalitet.',
+			'universalMedia.saveQueuePlaylist' => 'Gem kø som afspilningsliste',
+			'universalMedia.queuePlaylistSaved' => 'Afspilningslisten blev gemt ved siden af mediefilerne.',
+			'universalMedia.queuePlaylistUnavailable' => 'Denne kø kan ikke gemmes som en genbrugelig lokal afspilningsliste.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Vælg en placering i samme mappe som filerne i køen.',
 			'universalMedia.noFavorites' => 'Der er endnu ingen gemt streaming favoritter. Favoritter forbliver i denne profil.',
 			'universalMedia.removeFavorite' => 'Fjern streaming favorit',
 			'universalMedia.filesHelp' => 'Vælg lyd, video eller ISO-filer for en midlertidig kue. filer og URL\'er tilføjes ikke til bibliotekets historie.',
@@ -7998,6 +8022,7 @@ extension on TranslationsDa {
 			'universalMedia.replaceRecording' => 'Udskiftning af fil',
 			'universalMedia.discHelp' => 'Du kan også åbne et ISO-billede fra Device-filer.',
 			'universalMedia.discs' => 'Optik disk',
+			'universalMedia.editionOrTitle' => 'Udgave eller disktitel',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'af Blu-ray',
 			'universalMedia.audioCd' => 'Audio cd',
@@ -8011,6 +8036,8 @@ extension on TranslationsDa {
 			'universalMedia.converterMp4' => 'MP4 · H.264 og AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC lyd',
 			'universalMedia.converterMp3' => 'MP3 og audio',
+			'universalMedia.allowFtp' => 'Tilladelse af FTP',
+			'universalMedia.allowFtpHelp' => 'FTP sender medier uden kryptering. Brug kun på betroede netværk.',
 			'universalMedia.converterSaveAs' => 'Save konverterede medier som',
 			'universalMedia.converterExtensionMismatch' => 'Vælg et filnavn med den valgte udvidelse.',
 			'universalMedia.converterUnsupportedInput' => 'Vælg en audio eller video fil.',
@@ -8033,11 +8060,15 @@ extension on TranslationsDa {
 			'universalMedia.captureIntro' => 'Registrer din skærm eller en kamera til en MP4-fil på denne computer. FFmpeg skal installeres og inkluderes koderen H.264.',
 			'universalMedia.captureNoDevices' => 'Ingen skærm eller kamera blev fundet. tjek FFmpeg optagelse support og operativsystem privatliv tilladelser.',
 			'universalMedia.captureSource' => 'Skærm eller kamera',
+			'universalMedia.captureScreen' => 'Skærmen',
 			'universalMedia.captureAudioSource' => 'Audio indtastning (optional)',
 			'universalMedia.captureAudioHelp' => 'Tilføj lyd fra en mikrofon eller tilgængelig input. Enhedsvalg afhænger af FFmpeg og systemtilladelser.',
 			'universalMedia.captureAudioNone' => 'Ingen lyd',
+			'universalMedia.captureDefaultAudio' => 'Standard lydindtægter',
 			'universalMedia.captureWaylandHelp' => 'Wayland begrænser denne XWayland optagelse til X display. Windows uden for XWayland kan ikke vises.',
 			'universalMedia.captureFrameRate' => 'Rekorder rammeværdi',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.capturePrivacy' => 'Optagelsen gemmes kun til den fil, du vælger. Microphone optagelse er valgfri. PlezyNG optager ikke optagelsen.',
 			'universalMedia.captureSaveAs' => 'Spare skærmoptagelse som',
 			'universalMedia.captureExtensionMismatch' => 'Vælg et filnamed, der slutter i .mp4.',
@@ -8046,6 +8077,9 @@ extension on TranslationsDa {
 			'universalMedia.captureSaved' => 'Skærmoptagelser er reddet.',
 			'universalMedia.captureElapsedLabel' => 'Optagelsestid',
 			'universalMedia.captureStart' => 'Start med optagelse',
+			'universalMedia.capturePreview' => 'Forhåndsvis i afspiller',
+			'universalMedia.capturePreviewHelp' => 'Forhåndsvis den valgte kilde i standardafspilleren. Forhåndsvisningen gælder kun denne session og gemmer ikke en optagelse. Enhedsunderstøttelse og tilladelser afhænger af MPV og operativsystemet. Forhåndsvisningen bruger kun video; valgfri lyd kan medtages i gemte optagelser.',
+			'universalMedia.capturePreviewActive' => 'Liveforhåndsvisning · optager ikke',
 			'universalMedia.captureStop' => 'Stop og red',
 			'universalMedia.captureMode' => 'Fængsel',
 			'universalMedia.shareMode' => 'Deling',
@@ -8053,8 +8087,6 @@ extension on TranslationsDa {
 			'universalMedia.sharePrivacy' => 'Enhver på dit lokale netværk, der modtager den private link, kan se, mens den er aktiv.Links udløber efter 60 minutter.Stop deling for at lukke serveren og annullere linket.',
 			'universalMedia.shareChooseFile' => 'Vælg mediefil',
 			'universalMedia.shareChooseHelp' => 'Vælg en lokal audio eller videofil. filen forbliver på denne computer.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg eller H.264/AAC kodere er ikke tilgængelige. Installere FFmpeg med H.264 og AAC koder støtte.',
 			'universalMedia.shareFailed' => 'Strømmen kunne ikke starte eller stoppe uventet. tjek FFmpeg og netværkstilgang.',
 			'universalMedia.shareActive' => 'Stream er klar på dit private netværk.',
@@ -8062,6 +8094,9 @@ extension on TranslationsDa {
 			'universalMedia.shareStopped' => 'Deling stoppet. den midlertidige link er ikke længere gyldig.',
 			'universalMedia.shareUrlCopied' => 'Stream adresser kopieret.',
 			'universalMedia.shareOpenUrl' => 'Åbn denne adresse i en spiller på den anden enhed',
+			'universalMedia.shareQrLabel' => 'QR-kode til den midlertidige strømadresse',
+			'universalMedia.shareQrHelp' => 'Scan med en kompatibel spiller, der er forbundet til det samme private netværk.',
+			'universalMedia.shareHttpHint' => 'Denne strøm bruger uencryptet HTTP. i PlezyNG, tillade HTTP, før du åbner det.',
 			'universalMedia.shareCopyUrl' => 'Kopiering af streams adresse',
 			'universalMedia.shareExpiresLabel' => 'Linken udløber ved',
 			'universalMedia.shareStarting' => 'Forberedelse af strømmen...',
@@ -8095,13 +8130,6 @@ extension on TranslationsDa {
 			'universalMedia.cliHelp' => 'Brug plezyctl guide til at validere en manifest eller søge efter den samme udvidelse. gennemgå HTTPS service før hver søgning. Resultater åbnes i den eksisterende medieformular; vælg playback-knappen til at starte.',
 			'universalMedia.cliCopyExample' => 'Kopiering af kommandoen',
 			'universalMedia.cliCopied' => 'Kommando eksempler kopieret.',
-			'universalMedia.captureScreen' => 'Skærmen',
-			'universalMedia.captureDefaultAudio' => 'Standard lydindtægter',
-			'universalMedia.shareQrLabel' => 'QR-kode til den midlertidige strømadresse',
-			'universalMedia.shareQrHelp' => 'Scan med en kompatibel spiller, der er forbundet til det samme private netværk.',
-			'universalMedia.shareHttpHint' => 'Denne strøm bruger uencryptet HTTP. i PlezyNG, tillade HTTP, før du åbner det.',
-			'universalMedia.allowFtp' => 'Tilladelse af FTP',
-			'universalMedia.allowFtpHelp' => 'FTP sender medier uden kryptering. Brug kun på betroede netværk.',
 			'fileSources.title' => 'Filer og bøger',
 			'fileSources.subtitle' => 'Læs, lytte og se fra dine egne filer.',
 			'fileSources.add' => 'Tilføj kilde',
@@ -8553,6 +8581,8 @@ extension on TranslationsDa {
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
@@ -8567,8 +8597,6 @@ extension on TranslationsDa {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			_ => null,
-		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',

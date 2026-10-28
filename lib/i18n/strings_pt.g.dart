@@ -1202,6 +1202,30 @@ class Translations$videoControls$pt extends Translations$videoControls$en {
 	@override String get settingsButton => 'Configurações de reprodução';
 	@override String get tracksButton => 'Áudio e legendas';
 	@override String get chaptersButton => 'Capítulos';
+	@override String get segmentLoopHelp => 'Faça uma seção durante este playback. Configura A, depois confira B mais tarde na linha de tempo.';
+	@override String get setLoopStart => 'Começando com o gênero (A)';
+	@override String get setLoopEnd => 'Coloque o fim do loop (B)';
+	@override String get clearSegmentLoop => 'Clareamento de segmento';
+	@override String get setLoopStartFirst => 'Coloque o início (A) antes do fim (B).';
+	@override String get loopEndAfterStart => 'O final da curva deve ser mais tarde do que o início.';
+	@override String get segmentLoopUnavailable => 'Segment looping não está disponível para este playback.';
+	@override String get loopPointNotSet => 'Não estabelece';
+	@override String get bookmarksHelp => 'As notas são salvas neste dispositivo. selecione uma para ir a esse tempo.';
+	@override String get bookmarksButton => 'Bookmarcação';
+	@override String get chaptersAndBookmarks => 'Capítulos e Bookmarks';
+	@override String get segmentLoop => 'Segmentação Loop';
+	@override String get addBookmark => 'Adicionar Bookmark';
+	@override String get bookmarkName => 'Nome do Bookmark';
+	@override String get bookmarkNameHint => 'Por exemplo, a cena de abertura';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmarcação ${n}';
+	@override String get bookmarkNameRequired => 'Digite um nome para este livro.';
+	@override String get deleteBookmark => 'Eliminar o Bookmark';
+	@override String get bookmarkLimitReached => 'Este item já tem 100 bookmarks.';
+	@override String get bookmarkUnavailable => 'Não podia salvar ou remover este bookmark.';
+	@override String get bookmarkSaved => 'Bookmark foi salvo.';
+	@override String get bookmarkDeleted => 'Bookmark foi apagado.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Ponto de Loop ${point} Estabelecendo em ${time}.';
+	@override String get noChaptersOrBookmarks => 'Não há capítulos ou livros disponíveis.';
 	@override String get versionQualityButton => 'Versão e qualidade';
 	@override String get versionColumnHeader => 'Versão';
 	@override String get qualityColumnHeader => 'Qualidade';
@@ -1262,30 +1286,6 @@ class Translations$videoControls$pt extends Translations$videoControls$en {
 	@override String get skipAds => 'Escape de anúncios';
 	@override String get tapToUnlock => 'Toque para desbloquear';
 	@override String get tapAgainToUnlock => 'Toque novamente para desbloquear';
-	@override String get segmentLoopHelp => 'Faça uma seção durante este playback. Configura A, depois confira B mais tarde na linha de tempo.';
-	@override String get setLoopStart => 'Começando com o gênero (A)';
-	@override String get setLoopEnd => 'Coloque o fim do loop (B)';
-	@override String get clearSegmentLoop => 'Clareamento de segmento';
-	@override String get setLoopStartFirst => 'Coloque o início (A) antes do fim (B).';
-	@override String get loopEndAfterStart => 'O final da curva deve ser mais tarde do que o início.';
-	@override String get segmentLoopUnavailable => 'Segment looping não está disponível para este playback.';
-	@override String get bookmarksHelp => 'As notas são salvas neste dispositivo. selecione uma para ir a esse tempo.';
-	@override String get bookmarksButton => 'Bookmarcação';
-	@override String get chaptersAndBookmarks => 'Capítulos e Bookmarks';
-	@override String get segmentLoop => 'Segmentação Loop';
-	@override String get addBookmark => 'Adicionar Bookmark';
-	@override String get bookmarkName => 'Nome do Bookmark';
-	@override String get bookmarkNameHint => 'Por exemplo, a cena de abertura';
-	@override String bookmarkDefaultName({required Object n}) => 'Bookmarcação ${n}';
-	@override String get bookmarkNameRequired => 'Digite um nome para este livro.';
-	@override String get deleteBookmark => 'Eliminar o Bookmark';
-	@override String get bookmarkLimitReached => 'Este item já tem 100 bookmarks.';
-	@override String get bookmarkUnavailable => 'Não podia salvar ou remover este bookmark.';
-	@override String get bookmarkSaved => 'Bookmark foi salvo.';
-	@override String get bookmarkDeleted => 'Bookmark foi apagado.';
-	@override String loopPointSet({required Object point, required Object time}) => 'Ponto de Loop ${point} Estabelecendo em ${time}.';
-	@override String get noChaptersOrBookmarks => 'Não há capítulos ou livros disponíveis.';
-	@override String get loopPointNotSet => 'Não estabelece';
 }
 
 // Path: messages
@@ -2450,6 +2450,12 @@ class Translations$videoSettings$pt extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Mapear para o brilho máximo da tela no reprodutor e informar o resultado ao compositor.';
 	@override String get hdrToneMappingFailed => 'Não foi possível alterar o mapeamento de tons HDR — o modo anterior continua ativo.';
 	@override String get audioOutput => 'Saída de áudio';
+	@override String get videoTrack => 'Faixa de vídeo';
+	@override String get videoTrackDescription => 'Escolha qual fluxo de vídeo apresentar. Disponível na reprodução com MPV quando o ficheiro contém faixas de vídeo alternativas.';
+	@override String get videoTrackDefault => 'Predefinida';
+	@override String get videoTrackUnavailable => 'Não existem faixas de vídeo alternativas disponíveis.';
+	@override String get videoTrackFailed => 'Não foi possível alterar a faixa de vídeo.';
+	@override String videoTrackNumber({required Object id}) => 'Faixa ${id}';
 	@override String get performanceOverlay => 'Painel de desempenho';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2461,10 +2467,6 @@ class Translations$videoSettings$pt extends Translations$videoSettings$en {
 	@override String get audioEqualizerFlat => 'Neutro';
 	@override String get audioEqualizerActive => 'Personalizado';
 	@override String get audioEqualizerSaveFailed => 'Não poderia salvar as configurações do equalizador de áudio.';
-	@override String get backgroundVideoAudio => 'Audio de vídeo de fundo';
-	@override String get backgroundVideoAudioDescription => 'Mantenha o vídeo a tocar quando você sair do jogador; a imagem está escondida até que você retornar. Android usa uma notificação de reprodução de mídia.';
-	@override String get audioNormalization => 'Normalizar intensidade sonora';
-	@override String get audioNormalizationDisablesPassthrough => 'Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa';
 	@override String get audioEffectsDescription => 'Os efeitos usam áudio descodificado, por isso o ajuste se desvia. ambiente de quarto e estereó ampliação dependem do MPV Construir e rastrear.';
 	@override String get audioStereoWidth => 'Extensão Stereo';
 	@override String get audioSpatializer => 'ambiente de quarto';
@@ -2472,6 +2474,10 @@ class Translations$videoSettings$pt extends Translations$videoSettings$en {
 	@override String get audioPitch => 'Mudança de Pitch';
 	@override String get audioPitchDescription => 'Mude a velocidade sem mudança de velocidade. MPV A construção deve incluir Rubber Band.';
 	@override String get audioEffectUnavailable => 'Este efeito não está disponível para esta pista ou MPV Construção .';
+	@override String get backgroundVideoAudio => 'Audio de vídeo de fundo';
+	@override String get backgroundVideoAudioDescription => 'Mantenha o vídeo a tocar quando você sair do jogador; a imagem está escondida até que você retornar. Android usa uma notificação de reprodução de mídia.';
+	@override String get audioNormalization => 'Normalizar intensidade sonora';
+	@override String get audioNormalizationDisablesPassthrough => 'Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa';
 }
 
 // Path: performanceOverlay
@@ -3121,6 +3127,10 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Escolha o arquivo de playlist';
 	@override String get openPlaylist => 'Playlist aberta';
 	@override String get playlistFormatsHelp => 'Uma lista de reprodução pode conter até 1.000 itens e 2 MB. HLS manifesta-se aberta como fluxos para que o jogador possa escolher uma qualidade.';
+	@override String get saveQueuePlaylist => 'Guardar fila como lista de reprodução';
+	@override String get queuePlaylistSaved => 'A lista de reprodução foi guardada junto aos ficheiros multimédia.';
+	@override String get queuePlaylistUnavailable => 'Esta fila não pode ser guardada como uma lista local reutilizável.';
+	@override String get queuePlaylistFolderRequired => 'Escolha uma localização na mesma pasta dos ficheiros da fila.';
 	@override String get noFavorites => 'Não foram salvos favoritos ainda. favoritos permanecem neste perfil.';
 	@override String get removeFavorite => 'Remover streaming favorito';
 	@override String get filesHelp => 'Escolha arquivos de áudio, vídeo ou ISO para uma quebra temporária. arquivos e URLs não são adicionados ao histórico da biblioteca.';
@@ -3187,6 +3197,7 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Substituição de arquivo';
 	@override String get discHelp => 'Abra um disco no disco óptico deste computador. Você também pode abrir uma imagem ISO dos arquivos de dispositivo.';
 	@override String get discs => 'Discos ópticos';
+	@override String get editionOrTitle => 'Edição ou título do disco';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray em';
 	@override String get audioCd => 'CD de áudio';
@@ -3200,6 +3211,8 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 e AAC';
 	@override String get converterM4a => 'M4A - Áudio AAC';
 	@override String get converterMp3 => 'MP3 - Áudio';
+	@override String get allowFtp => 'Permitir FTP';
+	@override String get allowFtpHelp => 'FTP envia mídias sem criptografia. Use apenas em redes confiáveis.';
 	@override String get converterSaveAs => 'Mídia convertida como';
 	@override String get converterExtensionMismatch => 'Escolha um nome de arquivo com a extensão de saída selecionada.';
 	@override String get converterUnsupportedInput => 'Escolha um arquivo de áudio ou vídeo.';
@@ -3222,9 +3235,11 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Recorde a sua tela ou uma câmera para um arquivo MP4 neste computador. FFmpeg deve ser instalado e incluir o codificador H.264.';
 	@override String get captureNoDevices => 'Não foi encontrado nenhum ecrã ou câmera. Verifique o suporte de captura da FFmpeg e permissões de privacidade do sistema operacional.';
 	@override String get captureSource => 'tela ou câmera';
+	@override String get captureScreen => 'ecrã';
 	@override String get captureAudioSource => 'Introdução de áudio (opcional)';
 	@override String get captureAudioHelp => 'Adicione áudio a partir de um microfone ou entrada disponível. as escolhas do dispositivo dependem da FFmpeg e das permissões do sistema.';
 	@override String get captureAudioNone => 'Não há áudio';
+	@override String get captureDefaultAudio => 'Introdução de áudio';
 	@override String get captureWaylandHelp => 'Wayland limita esta captura XWayland para o X display. Windows fora XWayland pode não aparecer.';
 	@override String get captureFrameRate => 'Rápido de gravação';
 	@override String get capturePrivacy => 'A gravação é salvida apenas para o arquivo que você escolher. captura de microfone é opcional. PlezyNG não carrega a gravação.';
@@ -3235,6 +3250,9 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get captureSaved => 'A gravação de tela foi salvida.';
 	@override String get captureElapsedLabel => 'Tempo de gravação';
 	@override String get captureStart => 'Começa a gravação';
+	@override String get capturePreview => 'Pré-visualizar no leitor';
+	@override String get capturePreviewHelp => 'Pré-visualize a origem selecionada no leitor padrão. A pré-visualização só dura nesta sessão e não guarda uma gravação. O suporte dos dispositivos e as permissões dependem do MPV e do sistema operativo. A pré-visualização usa apenas vídeo; as gravações guardadas podem incluir áudio opcional.';
+	@override String get capturePreviewActive => 'Pré-visualização em direto · sem gravação';
 	@override String get captureStop => 'Parar e salvar';
 	@override String get captureMode => 'captura';
 	@override String get shareMode => 'Compartilhar';
@@ -3249,6 +3267,9 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get shareStopped => 'O link temporário já não é válido.';
 	@override String get shareUrlCopied => 'Endereço de transmissão copiado.';
 	@override String get shareOpenUrl => 'Abra este endereço em um jogador no outro dispositivo';
+	@override String get shareQrLabel => 'Código QR para o endereço de fluxo temporário';
+	@override String get shareQrHelp => 'Escanear com um jogador compatível conectado à mesma rede privada.';
+	@override String get shareHttpHint => 'Este fluxo usa HTTP não criptografado. em PlezyNG, permita HTTP antes de abri-lo.';
 	@override String get shareCopyUrl => 'Cópia de endereço de fluxo';
 	@override String get shareExpiresLabel => 'O link expira em';
 	@override String get shareStarting => 'Preparando o fluxo...';
@@ -3282,13 +3303,6 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Use o guia plezyctl para validar um manifesto ou pesquisar a mesma extensão. Revise seu serviço HTTPS antes de cada pesquisa. Resultados abrem no formulário de mídia existente; selecione o botão de reprodução para começar.';
 	@override String get cliCopyExample => 'Exemplo de comando de cópia';
 	@override String get cliCopied => 'Exemplo de comando copiado.';
-	@override String get captureScreen => 'ecrã';
-	@override String get captureDefaultAudio => 'Introdução de áudio';
-	@override String get shareQrLabel => 'Código QR para o endereço de fluxo temporário';
-	@override String get shareQrHelp => 'Escanear com um jogador compatível conectado à mesma rede privada.';
-	@override String get shareHttpHint => 'Este fluxo usa HTTP não criptografado. em PlezyNG, permita HTTP antes de abri-lo.';
-	@override String get allowFtp => 'Permitir FTP';
-	@override String get allowFtpHelp => 'FTP envia mídias sem criptografia. Use apenas em redes confiáveis.';
 }
 
 // Path: fileSources
@@ -5990,6 +6004,32 @@ extension on TranslationsPt {
 			'videoControls.settingsButton' => 'Configurações de reprodução',
 			'videoControls.tracksButton' => 'Áudio e legendas',
 			'videoControls.chaptersButton' => 'Capítulos',
+			'videoControls.segmentLoopHelp' => 'Faça uma seção durante este playback. Configura A, depois confira B mais tarde na linha de tempo.',
+			'videoControls.setLoopStart' => 'Começando com o gênero (A)',
+			'videoControls.setLoopEnd' => 'Coloque o fim do loop (B)',
+			'videoControls.clearSegmentLoop' => 'Clareamento de segmento',
+			'videoControls.setLoopStartFirst' => 'Coloque o início (A) antes do fim (B).',
+			'videoControls.loopEndAfterStart' => 'O final da curva deve ser mais tarde do que o início.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping não está disponível para este playback.',
+			'videoControls.loopPointNotSet' => 'Não estabelece',
+			'videoControls.bookmarksHelp' => 'As notas são salvas neste dispositivo. selecione uma para ir a esse tempo.',
+			'videoControls.bookmarksButton' => 'Bookmarcação',
+			'videoControls.chaptersAndBookmarks' => 'Capítulos e Bookmarks',
+			'videoControls.segmentLoop' => 'Segmentação Loop',
+			'videoControls.addBookmark' => 'Adicionar Bookmark',
+			'videoControls.bookmarkName' => 'Nome do Bookmark',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Por exemplo, a cena de abertura',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmarcação ${n}',
+			'videoControls.bookmarkNameRequired' => 'Digite um nome para este livro.',
+			'videoControls.deleteBookmark' => 'Eliminar o Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Este item já tem 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Não podia salvar ou remover este bookmark.',
+			'videoControls.bookmarkSaved' => 'Bookmark foi salvo.',
+			'videoControls.bookmarkDeleted' => 'Bookmark foi apagado.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Ponto de Loop ${point} Estabelecendo em ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Não há capítulos ou livros disponíveis.',
 			'videoControls.versionQualityButton' => 'Versão e qualidade',
 			'videoControls.versionColumnHeader' => 'Versão',
 			'videoControls.qualityColumnHeader' => 'Qualidade',
@@ -6004,8 +6044,6 @@ extension on TranslationsPt {
 			'videoControls.exitFullscreenButton' => 'Sair da tela cheia',
 			'videoControls.alwaysOnTopButton' => 'Sempre no topo',
 			'videoControls.rotationLockButton' => 'Travar rotação',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Travar tela',
 			'videoControls.screenLockButton' => 'Travar tela',
 			'videoControls.timelineSlider' => 'Linha do tempo do vídeo',
@@ -6056,30 +6094,6 @@ extension on TranslationsPt {
 			'videoControls.skipAds' => 'Escape de anúncios',
 			'videoControls.tapToUnlock' => 'Toque para desbloquear',
 			'videoControls.tapAgainToUnlock' => 'Toque novamente para desbloquear',
-			'videoControls.segmentLoopHelp' => 'Faça uma seção durante este playback. Configura A, depois confira B mais tarde na linha de tempo.',
-			'videoControls.setLoopStart' => 'Começando com o gênero (A)',
-			'videoControls.setLoopEnd' => 'Coloque o fim do loop (B)',
-			'videoControls.clearSegmentLoop' => 'Clareamento de segmento',
-			'videoControls.setLoopStartFirst' => 'Coloque o início (A) antes do fim (B).',
-			'videoControls.loopEndAfterStart' => 'O final da curva deve ser mais tarde do que o início.',
-			'videoControls.segmentLoopUnavailable' => 'Segment looping não está disponível para este playback.',
-			'videoControls.bookmarksHelp' => 'As notas são salvas neste dispositivo. selecione uma para ir a esse tempo.',
-			'videoControls.bookmarksButton' => 'Bookmarcação',
-			'videoControls.chaptersAndBookmarks' => 'Capítulos e Bookmarks',
-			'videoControls.segmentLoop' => 'Segmentação Loop',
-			'videoControls.addBookmark' => 'Adicionar Bookmark',
-			'videoControls.bookmarkName' => 'Nome do Bookmark',
-			'videoControls.bookmarkNameHint' => 'Por exemplo, a cena de abertura',
-			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmarcação ${n}',
-			'videoControls.bookmarkNameRequired' => 'Digite um nome para este livro.',
-			'videoControls.deleteBookmark' => 'Eliminar o Bookmark',
-			'videoControls.bookmarkLimitReached' => 'Este item já tem 100 bookmarks.',
-			'videoControls.bookmarkUnavailable' => 'Não podia salvar ou remover este bookmark.',
-			'videoControls.bookmarkSaved' => 'Bookmark foi salvo.',
-			'videoControls.bookmarkDeleted' => 'Bookmark foi apagado.',
-			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Ponto de Loop ${point} Estabelecendo em ${time}.',
-			'videoControls.noChaptersOrBookmarks' => 'Não há capítulos ou livros disponíveis.',
-			'videoControls.loopPointNotSet' => 'Não estabelece',
 			'messages.markedAsWatched' => 'Marcado como assistido',
 			'messages.markedAsUnwatched' => 'Marcado como não assistido',
 			'messages.markedAsWatchedOffline' => 'Marcado como assistido (será sincronizado quando online)',
@@ -7411,6 +7425,12 @@ extension on TranslationsPt {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Mapear para o brilho máximo da tela no reprodutor e informar o resultado ao compositor.',
 			'videoSettings.hdrToneMappingFailed' => 'Não foi possível alterar o mapeamento de tons HDR — o modo anterior continua ativo.',
 			'videoSettings.audioOutput' => 'Saída de áudio',
+			'videoSettings.videoTrack' => 'Faixa de vídeo',
+			'videoSettings.videoTrackDescription' => 'Escolha qual fluxo de vídeo apresentar. Disponível na reprodução com MPV quando o ficheiro contém faixas de vídeo alternativas.',
+			'videoSettings.videoTrackDefault' => 'Predefinida',
+			'videoSettings.videoTrackUnavailable' => 'Não existem faixas de vídeo alternativas disponíveis.',
+			'videoSettings.videoTrackFailed' => 'Não foi possível alterar a faixa de vídeo.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Faixa ${id}',
 			'videoSettings.performanceOverlay' => 'Painel de desempenho',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7422,10 +7442,6 @@ extension on TranslationsPt {
 			'videoSettings.audioEqualizerFlat' => 'Neutro',
 			'videoSettings.audioEqualizerActive' => 'Personalizado',
 			'videoSettings.audioEqualizerSaveFailed' => 'Não poderia salvar as configurações do equalizador de áudio.',
-			'videoSettings.backgroundVideoAudio' => 'Audio de vídeo de fundo',
-			'videoSettings.backgroundVideoAudioDescription' => 'Mantenha o vídeo a tocar quando você sair do jogador; a imagem está escondida até que você retornar. Android usa uma notificação de reprodução de mídia.',
-			'videoSettings.audioNormalization' => 'Normalizar intensidade sonora',
-			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa',
 			'videoSettings.audioEffectsDescription' => 'Os efeitos usam áudio descodificado, por isso o ajuste se desvia. ambiente de quarto e estereó ampliação dependem do MPV Construir e rastrear.',
 			'videoSettings.audioStereoWidth' => 'Extensão Stereo',
 			'videoSettings.audioSpatializer' => 'ambiente de quarto',
@@ -7433,6 +7449,10 @@ extension on TranslationsPt {
 			'videoSettings.audioPitch' => 'Mudança de Pitch',
 			'videoSettings.audioPitchDescription' => 'Mude a velocidade sem mudança de velocidade. MPV A construção deve incluir Rubber Band.',
 			'videoSettings.audioEffectUnavailable' => 'Este efeito não está disponível para esta pista ou MPV Construção .',
+			'videoSettings.backgroundVideoAudio' => 'Audio de vídeo de fundo',
+			'videoSettings.backgroundVideoAudioDescription' => 'Mantenha o vídeo a tocar quando você sair do jogador; a imagem está escondida até que você retornar. Android usa uma notificação de reprodução de mídia.',
+			'videoSettings.audioNormalization' => 'Normalizar intensidade sonora',
+			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa',
 			'performanceOverlay.color' => 'Cor',
 			'performanceOverlay.performance' => 'Desempenho',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -7540,14 +7560,14 @@ extension on TranslationsPt {
 			'metadataEdit.metadataUpdateFailed' => 'Falha ao atualizar metadados',
 			'metadataEdit.artworkUpdated' => 'Arte atualizada',
 			'metadataEdit.artworkUpdateFailed' => 'Falha ao atualizar arte',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Nenhuma arte disponível',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Opção de arte ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Opção de arte ${index}, selecionada',
 			'metadataEdit.notSet' => 'Não definido',
 			'metadataEdit.libraryDefault' => 'Padrão da biblioteca',
 			'metadataEdit.accountDefault' => 'Padrão da conta',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'Padrão da série',
 			'metadataEdit.episodeSorting' => 'Ordenação de Episódios',
 			'metadataEdit.oldestFirst' => 'Mais antigos primeiro',
@@ -7947,6 +7967,10 @@ extension on TranslationsPt {
 			'universalMedia.choosePlaylist' => 'Escolha o arquivo de playlist',
 			'universalMedia.openPlaylist' => 'Playlist aberta',
 			'universalMedia.playlistFormatsHelp' => 'Uma lista de reprodução pode conter até 1.000 itens e 2 MB. HLS manifesta-se aberta como fluxos para que o jogador possa escolher uma qualidade.',
+			'universalMedia.saveQueuePlaylist' => 'Guardar fila como lista de reprodução',
+			'universalMedia.queuePlaylistSaved' => 'A lista de reprodução foi guardada junto aos ficheiros multimédia.',
+			'universalMedia.queuePlaylistUnavailable' => 'Esta fila não pode ser guardada como uma lista local reutilizável.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Escolha uma localização na mesma pasta dos ficheiros da fila.',
 			'universalMedia.noFavorites' => 'Não foram salvos favoritos ainda. favoritos permanecem neste perfil.',
 			'universalMedia.removeFavorite' => 'Remover streaming favorito',
 			'universalMedia.filesHelp' => 'Escolha arquivos de áudio, vídeo ou ISO para uma quebra temporária. arquivos e URLs não são adicionados ao histórico da biblioteca.',
@@ -8005,6 +8029,7 @@ extension on TranslationsPt {
 			'universalMedia.replaceRecording' => 'Substituição de arquivo',
 			'universalMedia.discHelp' => 'Abra um disco no disco óptico deste computador. Você também pode abrir uma imagem ISO dos arquivos de dispositivo.',
 			'universalMedia.discs' => 'Discos ópticos',
+			'universalMedia.editionOrTitle' => 'Edição ou título do disco',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray em',
 			'universalMedia.audioCd' => 'CD de áudio',
@@ -8018,6 +8043,8 @@ extension on TranslationsPt {
 			'universalMedia.converterMp4' => 'MP4 · H.264 e AAC',
 			'universalMedia.converterM4a' => 'M4A - Áudio AAC',
 			'universalMedia.converterMp3' => 'MP3 - Áudio',
+			'universalMedia.allowFtp' => 'Permitir FTP',
+			'universalMedia.allowFtpHelp' => 'FTP envia mídias sem criptografia. Use apenas em redes confiáveis.',
 			'universalMedia.converterSaveAs' => 'Mídia convertida como',
 			'universalMedia.converterExtensionMismatch' => 'Escolha um nome de arquivo com a extensão de saída selecionada.',
 			'universalMedia.converterUnsupportedInput' => 'Escolha um arquivo de áudio ou vídeo.',
@@ -8040,11 +8067,15 @@ extension on TranslationsPt {
 			'universalMedia.captureIntro' => 'Recorde a sua tela ou uma câmera para um arquivo MP4 neste computador. FFmpeg deve ser instalado e incluir o codificador H.264.',
 			'universalMedia.captureNoDevices' => 'Não foi encontrado nenhum ecrã ou câmera. Verifique o suporte de captura da FFmpeg e permissões de privacidade do sistema operacional.',
 			'universalMedia.captureSource' => 'tela ou câmera',
+			'universalMedia.captureScreen' => 'ecrã',
 			'universalMedia.captureAudioSource' => 'Introdução de áudio (opcional)',
 			'universalMedia.captureAudioHelp' => 'Adicione áudio a partir de um microfone ou entrada disponível. as escolhas do dispositivo dependem da FFmpeg e das permissões do sistema.',
 			'universalMedia.captureAudioNone' => 'Não há áudio',
+			'universalMedia.captureDefaultAudio' => 'Introdução de áudio',
 			'universalMedia.captureWaylandHelp' => 'Wayland limita esta captura XWayland para o X display. Windows fora XWayland pode não aparecer.',
 			'universalMedia.captureFrameRate' => 'Rápido de gravação',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.capturePrivacy' => 'A gravação é salvida apenas para o arquivo que você escolher. captura de microfone é opcional. PlezyNG não carrega a gravação.',
 			'universalMedia.captureSaveAs' => 'Salve a gravação de tela como',
 			'universalMedia.captureExtensionMismatch' => 'Escolha um nome de arquivo que termina em .mp4.',
@@ -8053,6 +8084,9 @@ extension on TranslationsPt {
 			'universalMedia.captureSaved' => 'A gravação de tela foi salvida.',
 			'universalMedia.captureElapsedLabel' => 'Tempo de gravação',
 			'universalMedia.captureStart' => 'Começa a gravação',
+			'universalMedia.capturePreview' => 'Pré-visualizar no leitor',
+			'universalMedia.capturePreviewHelp' => 'Pré-visualize a origem selecionada no leitor padrão. A pré-visualização só dura nesta sessão e não guarda uma gravação. O suporte dos dispositivos e as permissões dependem do MPV e do sistema operativo. A pré-visualização usa apenas vídeo; as gravações guardadas podem incluir áudio opcional.',
+			'universalMedia.capturePreviewActive' => 'Pré-visualização em direto · sem gravação',
 			'universalMedia.captureStop' => 'Parar e salvar',
 			'universalMedia.captureMode' => 'captura',
 			'universalMedia.shareMode' => 'Compartilhar',
@@ -8060,8 +8094,6 @@ extension on TranslationsPt {
 			'universalMedia.sharePrivacy' => 'Qualquer pessoa na sua rede local que recebe o link privado pode assistir enquanto estiver ativo. o link expira após 60 minutos. parar de compartilhar para fechar o servidor e invalidar o link.',
 			'universalMedia.shareChooseFile' => 'Escolha o arquivo de mídia',
 			'universalMedia.shareChooseHelp' => 'Selecione um arquivo local de áudio ou vídeo. o arquivo permanece neste computador.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg ou os codificadores H.264/AAC não estão disponíveis. instalar FFmpeg com o suporte de codificação H.264 e AAC.',
 			'universalMedia.shareFailed' => 'O fluxo não podia começar ou parar inesperadamente. verificar FFmpeg e acesso à rede.',
 			'universalMedia.shareActive' => 'O fluxo está pronto na sua rede privada.',
@@ -8069,6 +8101,9 @@ extension on TranslationsPt {
 			'universalMedia.shareStopped' => 'O link temporário já não é válido.',
 			'universalMedia.shareUrlCopied' => 'Endereço de transmissão copiado.',
 			'universalMedia.shareOpenUrl' => 'Abra este endereço em um jogador no outro dispositivo',
+			'universalMedia.shareQrLabel' => 'Código QR para o endereço de fluxo temporário',
+			'universalMedia.shareQrHelp' => 'Escanear com um jogador compatível conectado à mesma rede privada.',
+			'universalMedia.shareHttpHint' => 'Este fluxo usa HTTP não criptografado. em PlezyNG, permita HTTP antes de abri-lo.',
 			'universalMedia.shareCopyUrl' => 'Cópia de endereço de fluxo',
 			'universalMedia.shareExpiresLabel' => 'O link expira em',
 			'universalMedia.shareStarting' => 'Preparando o fluxo...',
@@ -8102,13 +8137,6 @@ extension on TranslationsPt {
 			'universalMedia.cliHelp' => 'Use o guia plezyctl para validar um manifesto ou pesquisar a mesma extensão. Revise seu serviço HTTPS antes de cada pesquisa. Resultados abrem no formulário de mídia existente; selecione o botão de reprodução para começar.',
 			'universalMedia.cliCopyExample' => 'Exemplo de comando de cópia',
 			'universalMedia.cliCopied' => 'Exemplo de comando copiado.',
-			'universalMedia.captureScreen' => 'ecrã',
-			'universalMedia.captureDefaultAudio' => 'Introdução de áudio',
-			'universalMedia.shareQrLabel' => 'Código QR para o endereço de fluxo temporário',
-			'universalMedia.shareQrHelp' => 'Escanear com um jogador compatível conectado à mesma rede privada.',
-			'universalMedia.shareHttpHint' => 'Este fluxo usa HTTP não criptografado. em PlezyNG, permita HTTP antes de abri-lo.',
-			'universalMedia.allowFtp' => 'Permitir FTP',
-			'universalMedia.allowFtpHelp' => 'FTP envia mídias sem criptografia. Use apenas em redes confiáveis.',
 			'fileSources.title' => 'Arquivos e livros',
 			'fileSources.subtitle' => 'Leia, ouça e veja de seus próprios arquivos.',
 			'fileSources.add' => 'Adicionar fonte',
@@ -8560,6 +8588,8 @@ extension on TranslationsPt {
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
@@ -8574,8 +8604,6 @@ extension on TranslationsPt {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			_ => null,
-		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',

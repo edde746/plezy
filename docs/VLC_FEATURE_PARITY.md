@@ -66,6 +66,31 @@ PR #42 already adds desktop capture, temporary HLS sharing, data-only media sear
 
 The additions stay in the current **Files and books → Open media → Media tools** and existing playback-settings/chapter sheets. They reuse PlezyNG’s source tiles, mono palette, focus handling, shared dialogs, player lifecycle, and semantic feedback. No new top-level navigation section or standalone settings window is added. See the [Open media and local media tools guide](UNIVERSAL_MEDIA.md) for operating details and exact platform behavior.
 
+### Headless QA coverage
+
+The regression checks exercise the source-player flow and narrow-screen navigation, including direct-input File Info privacy, edition refresh and selection, alternate video tracks, MPV audio effects, A/B loop actions, local playlist export boundaries, transient bookmark identity, and capture-preview argument validation. The Media tools screen check opens the capture, local sharing, and search-extension flows and verifies their phone layouts use the shared scrolling form, source tiles, palette, and accessible labels. A local FFmpeg integration test generates a short H.264/AAC sample, then checks that temporary sharing publishes an HLS media segment, rejects an invalid token and unsupported methods, and releases its listener when stopped. Encoder and network-interface prerequisites are detected and skipped explicitly. The new playback and capture strings are translated into the supported locale catalogs, with placeholder and source-catalog checks.
+
+Run the source and focused playback checks with:
+
+```sh
+flutter test --no-pub test/sources
+flutter test --no-pub test/media/media_playlist_test.dart
+flutter test --no-pub test/mpv/player_native_bridge_test.dart
+flutter test --no-pub test/widgets/video_settings_sheet_test.dart
+flutter test --no-pub test/widgets/source_direct_player_features_test.dart
+flutter test --no-pub test/services/video_bookmark_service_test.dart
+python3 -m unittest test/tools/plezyctl_test.py
+python3 scripts/checks/clean_translations.py --check --strict
+python3 scripts/checks/check_localizations.py
+flutter analyze --no-pub
+```
+
+For a desktop conversion smoke check, generate a small video/audio file and
+run one profile from `LocalMediaConverterScreen` with the installed FFmpeg.
+The output should be inspected with `ffprobe` to confirm its container and
+audio/video streams. Encoder availability varies by FFmpeg build, matching the
+screen's profile availability cues.
+
 ## Deliberate compatibility boundaries
 
 This is a feature comparison, not a claim of binary parity. The following VLC capabilities are intentionally not recreated as if they worked everywhere:

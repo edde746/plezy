@@ -30,7 +30,13 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   bool get active => true;
   @override
+  List<PublicationFile> get files => const [];
+  @override
   bool get video => false;
+  @override
+  bool get isTransientInput => false;
+  @override
+  bool get isLiveInput => false;
   @override
   Player? get player => null;
   @override
@@ -56,9 +62,19 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   int get currentFilePositionMs => positionMs;
   @override
+  int get fileIndex => 0;
+  @override
   bool get hasCompleteTimeline => true;
   @override
   bool get canUndoSeek => false;
+  @override
+  bool get canExportLocalPlaylist => false;
+  @override
+  bool get isCapturePreview => false;
+  @override
+  bool get isRecordingStream => false;
+  @override
+  String? get localVideoBookmarkKey => null;
   @override
   DateTime? get sleepDeadline => null;
   @override

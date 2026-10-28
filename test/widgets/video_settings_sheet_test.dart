@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/focus/focusable_slider.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_file_info.dart';
@@ -503,6 +504,88 @@ void main() {
     });
   });
 
+  group('MPV playback additions', () {
+    testWidgets('equalizer and audio effects are usable and their controls are announced', (tester) async {
+      final equalizerWrites = <List<double>>[];
+      final effectsWrites = <PlayerAudioEffects>[];
+      final player = _FakeSettingsPlayer(
+        playerType: 'mpv',
+        onSetAudioEqualizer: (bands) async => equalizerWrites.add(List.of(bands)),
+        onSetAudioEffects: (effects) async => effectsWrites.add(effects),
+      );
+      addTearDown(player.dispose);
+      final semantics = tester.ensureSemantics();
+      await _pumpSheetViaOverlayRoute(tester, player);
+
+      await tester.tap(find.text(t.videoSettings.audioEqualizer));
+      await tester.pumpAndSettle();
+      expect(find.text('60 Hz'), findsOneWidget);
+      final scrollable = find.byType(Scrollable).last;
+      await tester.scrollUntilVisible(find.text('16000 Hz'), 180, scrollable: scrollable);
+      expect(find.text('16000 Hz'), findsOneWidget);
+      await tester.drag(scrollable, const Offset(0, 2000));
+      await tester.pumpAndSettle();
+      final firstBand = find.ancestor(of: find.text('60 Hz'), matching: find.byType(ListTile)).first;
+      final slider = find.descendant(of: firstBand, matching: find.byType(FocusableSlider));
+      expect(tester.getSemantics(slider).getSemanticsData().label, '60 Hz');
+      tester.widget<FocusableSlider>(slider).onChanged!(6);
+      await tester.pumpAndSettle();
+      expect(equalizerWrites.last, [6, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+      await tester.scrollUntilVisible(find.text(t.videoSettings.audioSpatializer), 180, scrollable: scrollable);
+      final spatializer = find.ancestor(
+        of: find.text(t.videoSettings.audioSpatializer),
+        matching: find.byType(SwitchListTile),
+      );
+      await tester.tap(spatializer);
+      await tester.pumpAndSettle();
+      expect(effectsWrites.last.spatializer, isTrue);
+      expect(SettingsService.instance.read(SettingsService.audioSpatializer), isTrue);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+
+    testWidgets('alternate MPV video tracks use readable labels and select the requested stream', (tester) async {
+      final writes = <(String, String)>[];
+      final player = _FakeSettingsPlayer(
+        playerType: 'mpv',
+        state: const PlayerState(
+          tracks: Tracks(
+            video: [
+              VideoTrack(
+                id: '1',
+                title: 'Main feature',
+                language: 'eng',
+                codec: 'hevc',
+                width: 1920,
+                height: 1080,
+                isDefault: true,
+                isSelected: true,
+              ),
+              VideoTrack(id: '2', title: 'Director view', language: 'fra', codec: 'h264', width: 1280, height: 720),
+            ],
+          ),
+        ),
+        onSetProperty: (name, value) async => writes.add((name, value)),
+      );
+      addTearDown(player.dispose);
+      await _pumpSheetViaOverlayRoute(tester, player);
+
+      await tester.tap(find.text(t.videoSettings.videoTrack));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Main feature'), findsOneWidget);
+      final alternate = find.textContaining('Director view');
+      expect(alternate, findsOneWidget);
+      expect(find.textContaining('1280 × 720'), findsOneWidget);
+      await tester.tap(alternate);
+      await tester.pumpAndSettle();
+
+      expect(writes, [('vid', '2')]);
+      expect(find.text(t.videoSettings.videoTrack), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('File Info', () {
     testWidgets('opens the playing item as a nested page whose back button returns to the menu', (tester) async {
       final client = _FileInfoClient();
@@ -683,12 +766,15 @@ Future<void> _pumpSheetViaOverlayRoute(WidgetTester tester, Player player) async
   await tester.pumpAndSettle();
 }
 
-class _FakeSettingsPlayer implements Player {
+class _FakeSettingsPlayer implements Player, AudioEqualizerCapable, AudioEffectsCapable {
   _FakeSettingsPlayer({
+    this.playerType = 'exoplayer',
     this.onSetProperty,
     this.onSetRate,
     this.onSetAudioChannelLimit,
     this.onSetAudioDevice,
+    this.onSetAudioEqualizer,
+    this.onSetAudioEffects,
     this.state = const PlayerState(),
     this.hdrOutputSupported = false,
   });
@@ -710,6 +796,10 @@ class _FakeSettingsPlayer implements Player {
   final Future<void> Function(double rate)? onSetRate;
   final Future<void> Function(AudioChannelLimit limit, int centerBoostDb, bool normalize)? onSetAudioChannelLimit;
   final Future<void> Function(AudioDevice device)? onSetAudioDevice;
+  final Future<void> Function(List<double> bands)? onSetAudioEqualizer;
+  final Future<void> Function(PlayerAudioEffects effects)? onSetAudioEffects;
+  @override
+  final String playerType;
   bool hdrOutputSupported;
   int probeCount = 0;
 
@@ -726,10 +816,14 @@ class _FakeSettingsPlayer implements Player {
   PlayerStreams get streams => _streams;
 
   @override
-  String get playerType => 'exoplayer';
+  Future<void> setAudioPassthrough(bool enabled) async {}
 
   @override
-  Future<void> setAudioPassthrough(bool enabled) async {}
+  Future<void> setAudioEqualizer(List<double> bandGains) =>
+      onSetAudioEqualizer?.call(bandGains) ?? Future<void>.value();
+
+  @override
+  Future<void> setAudioEffects(PlayerAudioEffects effects) => onSetAudioEffects?.call(effects) ?? Future<void>.value();
 
   @override
   Future<void> setProperty(String name, String value) {

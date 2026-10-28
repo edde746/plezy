@@ -1210,6 +1210,30 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get settingsButton => 'Настройки воспроизведения';
 	@override String get tracksButton => 'Аудио и субтитры';
 	@override String get chaptersButton => 'Главы';
+	@override String get segmentLoopHelp => 'Пройдите секцию во время этого воспроизведения.Настройка A, затем настройка B позже в часовой линии.';
+	@override String get setLoopStart => 'Настройка лопатки старта (A)';
+	@override String get setLoopEnd => 'Настройка кругового конца (B)';
+	@override String get clearSegmentLoop => 'Чистый сегмент роуп';
+	@override String get setLoopStartFirst => 'Постарайтесь установить начало (А) до конца (Б).';
+	@override String get loopEndAfterStart => 'Конец круга должен быть позднее начала.';
+	@override String get segmentLoopUnavailable => 'Segment looping не доступен для этого воспроизведения.';
+	@override String get loopPointNotSet => 'Не устанавливать';
+	@override String get bookmarksHelp => 'Книжные знаки хранятся на этом устройстве. Выберите один, чтобы перейти к этому времени.';
+	@override String get bookmarksButton => 'Букмарки';
+	@override String get chaptersAndBookmarks => 'Главы и книжные знаки';
+	@override String get segmentLoop => 'Сегмент Лоуп';
+	@override String get addBookmark => 'Добавить Bookmark';
+	@override String get bookmarkName => 'Bookmark имя';
+	@override String get bookmarkNameHint => 'Например, сцены открытия';
+	@override String bookmarkDefaultName({required Object n}) => 'Букмарк ${n}';
+	@override String get bookmarkNameRequired => 'Введите имя для этой книжной марки.';
+	@override String get deleteBookmark => 'Удаление букмекеры';
+	@override String get bookmarkLimitReached => 'Эта статья уже имеет 100 книжных знаков.';
+	@override String get bookmarkUnavailable => 'Мы не смогли сохранить или удалить эту книжку.';
+	@override String get bookmarkSaved => 'Книжный знак спасен.';
+	@override String get bookmarkDeleted => 'Книжный знак удален.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Лоуп пункт ${point} Постарайтесь на ${time}И';
+	@override String get noChaptersOrBookmarks => 'Никаких статей, ни книжных знаков нет.';
 	@override String get versionQualityButton => 'Версия и качество';
 	@override String get versionColumnHeader => 'Версия';
 	@override String get qualityColumnHeader => 'Качество';
@@ -1272,30 +1296,6 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get skipAds => 'Скачать Ads';
 	@override String get tapToUnlock => 'Нажмите, чтобы разблокировать';
 	@override String get tapAgainToUnlock => 'Нажмите ещё раз, чтобы разблокировать';
-	@override String get segmentLoopHelp => 'Пройдите секцию во время этого воспроизведения.Настройка A, затем настройка B позже в часовой линии.';
-	@override String get setLoopStart => 'Настройка лопатки старта (A)';
-	@override String get setLoopEnd => 'Настройка кругового конца (B)';
-	@override String get clearSegmentLoop => 'Чистый сегмент роуп';
-	@override String get setLoopStartFirst => 'Постарайтесь установить начало (А) до конца (Б).';
-	@override String get loopEndAfterStart => 'Конец круга должен быть позднее начала.';
-	@override String get segmentLoopUnavailable => 'Segment looping не доступен для этого воспроизведения.';
-	@override String get bookmarksHelp => 'Книжные знаки хранятся на этом устройстве. Выберите один, чтобы перейти к этому времени.';
-	@override String get bookmarksButton => 'Букмарки';
-	@override String get chaptersAndBookmarks => 'Главы и книжные знаки';
-	@override String get segmentLoop => 'Сегмент Лоуп';
-	@override String get addBookmark => 'Добавить Bookmark';
-	@override String get bookmarkName => 'Bookmark имя';
-	@override String get bookmarkNameHint => 'Например, сцены открытия';
-	@override String bookmarkDefaultName({required Object n}) => 'Букмарк ${n}';
-	@override String get bookmarkNameRequired => 'Введите имя для этой книжной марки.';
-	@override String get deleteBookmark => 'Удаление букмекеры';
-	@override String get bookmarkLimitReached => 'Эта статья уже имеет 100 книжных знаков.';
-	@override String get bookmarkUnavailable => 'Мы не смогли сохранить или удалить эту книжку.';
-	@override String get bookmarkSaved => 'Книжный знак спасен.';
-	@override String get bookmarkDeleted => 'Книжный знак удален.';
-	@override String loopPointSet({required Object point, required Object time}) => 'Лоуп пункт ${point} Постарайтесь на ${time}И';
-	@override String get noChaptersOrBookmarks => 'Никаких статей, ни книжных знаков нет.';
-	@override String get loopPointNotSet => 'Не устанавливать';
 }
 
 // Path: messages
@@ -2485,6 +2485,12 @@ class _Translations$videoSettings$ru extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Выполнять тональное отображение в проигрывателе с учётом пиковой яркости дисплея, а затем передавать результат композитору.';
 	@override String get hdrToneMappingFailed => 'Не удалось изменить тональное отображение HDR — предыдущий режим по-прежнему активен.';
 	@override String get audioOutput => 'Аудиовыход';
+	@override String get videoTrack => 'Видеодорожка';
+	@override String get videoTrackDescription => 'Выберите видеопоток для отображения. Доступно при воспроизведении в MPV, если файл содержит альтернативные видеодорожки.';
+	@override String get videoTrackDefault => 'По умолчанию';
+	@override String get videoTrackUnavailable => 'Нет доступных альтернативных видеодорожек.';
+	@override String get videoTrackFailed => 'Не удалось изменить видеодорожку.';
+	@override String videoTrackNumber({required Object id}) => 'Дорожка ${id}';
 	@override String get performanceOverlay => 'Оверлей производительности';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2496,10 +2502,6 @@ class _Translations$videoSettings$ru extends Translations$videoSettings$en {
 	@override String get audioEqualizerFlat => 'Плат';
 	@override String get audioEqualizerActive => 'Своя';
 	@override String get audioEqualizerSaveFailed => 'Не смог бы сохранить настройки аудиоэквилятора.';
-	@override String get backgroundVideoAudio => 'Видео аудио фоновый';
-	@override String get backgroundVideoAudioDescription => 'Дайте видео аудио, когда вы покидаете плейер; изображение скрывается до возвращения. Android использует уведомление о воспроизведении медиа.';
-	@override String get audioNormalization => 'Нормализация громкости';
-	@override String get audioNormalizationDisablesPassthrough => 'Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена';
 	@override String get audioEffectsDescription => 'Эффекты используют декодированный аудио, поэтому passthrough отвергается. комнатная атмосфера и стерео расширение зависят от MPV Строить и следить.';
 	@override String get audioStereoWidth => 'Стерео расширение';
 	@override String get audioSpatializer => 'комнатная атмосфера';
@@ -2507,6 +2509,10 @@ class _Translations$videoSettings$ru extends Translations$videoSettings$en {
 	@override String get audioPitch => 'Питч перемен';
 	@override String get audioPitchDescription => 'Изменение площади без изменения скорости. MPV Строительство должно включать Rubber BandИ';
 	@override String get audioEffectUnavailable => 'Этот эффект не доступен для этой трассы или MPV и строить .';
+	@override String get backgroundVideoAudio => 'Видео аудио фоновый';
+	@override String get backgroundVideoAudioDescription => 'Дайте видео аудио, когда вы покидаете плейер; изображение скрывается до возвращения. Android использует уведомление о воспроизведении медиа.';
+	@override String get audioNormalization => 'Нормализация громкости';
+	@override String get audioNormalizationDisablesPassthrough => 'Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена';
 }
 
 // Path: performanceOverlay
@@ -3157,6 +3163,10 @@ class _Translations$universalMedia$ru extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Выберите файл playlist';
 	@override String get openPlaylist => 'Открытый playlist';
 	@override String get playlistFormatsHelp => 'Список игр может содержать не более 1000 элементов и 2 Мб. HLS открывается как потоки, чтобы игрок мог выбрать качество.';
+	@override String get saveQueuePlaylist => 'Сохранить очередь как плейлист';
+	@override String get queuePlaylistSaved => 'Плейлист сохранён рядом с медиафайлами.';
+	@override String get queuePlaylistUnavailable => 'Эту очередь нельзя сохранить как повторно используемый локальный плейлист.';
+	@override String get queuePlaylistFolderRequired => 'Выберите место сохранения в той же папке, где находятся файлы очереди.';
 	@override String get noFavorites => 'До сих пор не сохранились любимые потоки.Фавориты остаются в этом профиле.';
 	@override String get removeFavorite => 'Удаление любимого потока';
 	@override String get filesHelp => 'Выберите аудио, видео или файлы ISO для временного перевода.Файлы и URL не добавляются в историю библиотеки.';
@@ -3225,6 +3235,7 @@ class _Translations$universalMedia$ru extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Замена файлов';
 	@override String get discHelp => 'Откройте диск в оптическом диске этого компьютера. Вы также можете открыть изображение ISO из файлов устройств.';
 	@override String get discs => 'Оптический диск';
+	@override String get editionOrTitle => 'Издание или название диска';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Блу-рей';
 	@override String get audioCd => 'Аудио CD';
@@ -3238,6 +3249,8 @@ class _Translations$universalMedia$ru extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 и AAC';
 	@override String get converterM4a => 'M4A · AAC аудио';
 	@override String get converterMp3 => 'MP3 · аудио';
+	@override String get allowFtp => 'Допустим FTP';
+	@override String get allowFtpHelp => 'FTP отправляет медиа без шифрования. используйте только на доверенных сетях.';
 	@override String get converterSaveAs => 'Сохранить конвертированные медиа как';
 	@override String get converterExtensionMismatch => 'Выберите фамильное имя с выбранным продлением выхода.';
 	@override String get converterUnsupportedInput => 'Выберите аудио- или видеофайл.';
@@ -3260,9 +3273,11 @@ class _Translations$universalMedia$ru extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Запишите экран или камеру на файл MP4 на этом компьютере. FFmpeg должен быть установлен и включать кодировку H.264.';
 	@override String get captureNoDevices => 'Никакого экрана или камеры не найдено. проверьте поддержку поймания FFmpeg и разрешения на конфиденциальность операционной системы.';
 	@override String get captureSource => 'экран или камера';
+	@override String get captureScreen => 'экран';
 	@override String get captureAudioSource => 'Аудио вход (опциональный)';
 	@override String get captureAudioHelp => 'Добавьте звук из микрофона или доступный вход. Выборы устройства зависят от FFmpeg и системных разрешений.';
 	@override String get captureAudioNone => 'Никакого аудио';
+	@override String get captureDefaultAudio => 'Стандартный аудио вход';
 	@override String get captureWaylandHelp => 'Wayland ограничивает эту XWayland запись на X display. Windows за пределами XWayland может не появляться.';
 	@override String get captureFrameRate => 'Рекордная скорость кадров';
 	@override String get capturePrivacy => 'Запись сохраняется только на выбранный файл. микрофонная запись является факультативной. PlezyNG не загружает запись.';
@@ -3273,6 +3288,9 @@ class _Translations$universalMedia$ru extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Запись экрана спасена.';
 	@override String get captureElapsedLabel => 'Время записи';
 	@override String get captureStart => 'Начало записи';
+	@override String get capturePreview => 'Предпросмотр в плеере';
+	@override String get capturePreviewHelp => 'Просмотрите выбранный источник в стандартном плеере. Предпросмотр действует только в этом сеансе и не сохраняет запись. Поддержка устройств и разрешения зависят от MPV и операционной системы. В предпросмотре используется только видео; в сохранённые записи можно включить звук.';
+	@override String get capturePreviewActive => 'Предпросмотр в реальном времени · без записи';
 	@override String get captureStop => 'Спрей и спаси';
 	@override String get captureMode => 'Задержание';
 	@override String get shareMode => 'Поделиться';
@@ -3287,6 +3305,9 @@ class _Translations$universalMedia$ru extends Translations$universalMedia$en {
 	@override String get shareStopped => 'Разделение прекращено. временный ссылок больше не валиден.';
 	@override String get shareUrlCopied => 'Режим адресов копирован.';
 	@override String get shareOpenUrl => 'Откройте этот адрес в одном игроке на другом устройстве';
+	@override String get shareQrLabel => 'QR-код для временного адреса потока';
+	@override String get shareQrHelp => 'Сканирование с помощью совместимого игрока, подключенного к той же частной сети.';
+	@override String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
 	@override String get shareCopyUrl => 'Копирование Stream Address';
 	@override String get shareExpiresLabel => 'Линк истекает';
 	@override String get shareStarting => 'Подготовка потока...';
@@ -3320,13 +3341,6 @@ class _Translations$universalMedia$ru extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Используйте руководство plezyctl для подтверждения манифеста или поиск того же расширения. Пересмотреть его сервис HTTPS перед каждым поиском. Результаты открыты в существующей медиаформе; выберите кнопку воспроизведения для начала.';
 	@override String get cliCopyExample => 'Копирование командного примера';
 	@override String get cliCopied => 'Копированный пример приказа.';
-	@override String get captureScreen => 'экран';
-	@override String get captureDefaultAudio => 'Стандартный аудио вход';
-	@override String get shareQrLabel => 'QR-код для временного адреса потока';
-	@override String get shareQrHelp => 'Сканирование с помощью совместимого игрока, подключенного к той же частной сети.';
-	@override String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
-	@override String get allowFtp => 'Допустим FTP';
-	@override String get allowFtpHelp => 'FTP отправляет медиа без шифрования. используйте только на доверенных сетях.';
 }
 
 // Path: fileSources
@@ -6033,6 +6047,32 @@ extension on TranslationsRu {
 			'videoControls.settingsButton' => 'Настройки воспроизведения',
 			'videoControls.tracksButton' => 'Аудио и субтитры',
 			'videoControls.chaptersButton' => 'Главы',
+			'videoControls.segmentLoopHelp' => 'Пройдите секцию во время этого воспроизведения.Настройка A, затем настройка B позже в часовой линии.',
+			'videoControls.setLoopStart' => 'Настройка лопатки старта (A)',
+			'videoControls.setLoopEnd' => 'Настройка кругового конца (B)',
+			'videoControls.clearSegmentLoop' => 'Чистый сегмент роуп',
+			'videoControls.setLoopStartFirst' => 'Постарайтесь установить начало (А) до конца (Б).',
+			'videoControls.loopEndAfterStart' => 'Конец круга должен быть позднее начала.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping не доступен для этого воспроизведения.',
+			'videoControls.loopPointNotSet' => 'Не устанавливать',
+			'videoControls.bookmarksHelp' => 'Книжные знаки хранятся на этом устройстве. Выберите один, чтобы перейти к этому времени.',
+			'videoControls.bookmarksButton' => 'Букмарки',
+			'videoControls.chaptersAndBookmarks' => 'Главы и книжные знаки',
+			'videoControls.segmentLoop' => 'Сегмент Лоуп',
+			'videoControls.addBookmark' => 'Добавить Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark имя',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Например, сцены открытия',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Букмарк ${n}',
+			'videoControls.bookmarkNameRequired' => 'Введите имя для этой книжной марки.',
+			'videoControls.deleteBookmark' => 'Удаление букмекеры',
+			'videoControls.bookmarkLimitReached' => 'Эта статья уже имеет 100 книжных знаков.',
+			'videoControls.bookmarkUnavailable' => 'Мы не смогли сохранить или удалить эту книжку.',
+			'videoControls.bookmarkSaved' => 'Книжный знак спасен.',
+			'videoControls.bookmarkDeleted' => 'Книжный знак удален.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Лоуп пункт ${point} Постарайтесь на ${time}И',
+			'videoControls.noChaptersOrBookmarks' => 'Никаких статей, ни книжных знаков нет.',
 			'videoControls.versionQualityButton' => 'Версия и качество',
 			'videoControls.versionColumnHeader' => 'Версия',
 			'videoControls.qualityColumnHeader' => 'Качество',
@@ -6047,8 +6087,6 @@ extension on TranslationsRu {
 			'videoControls.exitFullscreenButton' => 'Выйти из полноэкранного режима',
 			'videoControls.alwaysOnTopButton' => 'Всегда поверх',
 			'videoControls.rotationLockButton' => 'Блокировка поворота',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Заблокировать экран',
 			'videoControls.screenLockButton' => 'Блокировка экрана',
 			'videoControls.timelineSlider' => 'Временная шкала',
@@ -6099,30 +6137,6 @@ extension on TranslationsRu {
 			'videoControls.skipAds' => 'Скачать Ads',
 			'videoControls.tapToUnlock' => 'Нажмите, чтобы разблокировать',
 			'videoControls.tapAgainToUnlock' => 'Нажмите ещё раз, чтобы разблокировать',
-			'videoControls.segmentLoopHelp' => 'Пройдите секцию во время этого воспроизведения.Настройка A, затем настройка B позже в часовой линии.',
-			'videoControls.setLoopStart' => 'Настройка лопатки старта (A)',
-			'videoControls.setLoopEnd' => 'Настройка кругового конца (B)',
-			'videoControls.clearSegmentLoop' => 'Чистый сегмент роуп',
-			'videoControls.setLoopStartFirst' => 'Постарайтесь установить начало (А) до конца (Б).',
-			'videoControls.loopEndAfterStart' => 'Конец круга должен быть позднее начала.',
-			'videoControls.segmentLoopUnavailable' => 'Segment looping не доступен для этого воспроизведения.',
-			'videoControls.bookmarksHelp' => 'Книжные знаки хранятся на этом устройстве. Выберите один, чтобы перейти к этому времени.',
-			'videoControls.bookmarksButton' => 'Букмарки',
-			'videoControls.chaptersAndBookmarks' => 'Главы и книжные знаки',
-			'videoControls.segmentLoop' => 'Сегмент Лоуп',
-			'videoControls.addBookmark' => 'Добавить Bookmark',
-			'videoControls.bookmarkName' => 'Bookmark имя',
-			'videoControls.bookmarkNameHint' => 'Например, сцены открытия',
-			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Букмарк ${n}',
-			'videoControls.bookmarkNameRequired' => 'Введите имя для этой книжной марки.',
-			'videoControls.deleteBookmark' => 'Удаление букмекеры',
-			'videoControls.bookmarkLimitReached' => 'Эта статья уже имеет 100 книжных знаков.',
-			'videoControls.bookmarkUnavailable' => 'Мы не смогли сохранить или удалить эту книжку.',
-			'videoControls.bookmarkSaved' => 'Книжный знак спасен.',
-			'videoControls.bookmarkDeleted' => 'Книжный знак удален.',
-			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Лоуп пункт ${point} Постарайтесь на ${time}И',
-			'videoControls.noChaptersOrBookmarks' => 'Никаких статей, ни книжных знаков нет.',
-			'videoControls.loopPointNotSet' => 'Не устанавливать',
 			'messages.markedAsWatched' => 'Отмечено как просмотренное',
 			'messages.markedAsUnwatched' => 'Отмечено как непросмотренное',
 			'messages.markedAsWatchedOffline' => 'Отмечено как просмотренное (синхронизируется при подключении)',
@@ -7454,6 +7468,12 @@ extension on TranslationsRu {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Выполнять тональное отображение в проигрывателе с учётом пиковой яркости дисплея, а затем передавать результат композитору.',
 			'videoSettings.hdrToneMappingFailed' => 'Не удалось изменить тональное отображение HDR — предыдущий режим по-прежнему активен.',
 			'videoSettings.audioOutput' => 'Аудиовыход',
+			'videoSettings.videoTrack' => 'Видеодорожка',
+			'videoSettings.videoTrackDescription' => 'Выберите видеопоток для отображения. Доступно при воспроизведении в MPV, если файл содержит альтернативные видеодорожки.',
+			'videoSettings.videoTrackDefault' => 'По умолчанию',
+			'videoSettings.videoTrackUnavailable' => 'Нет доступных альтернативных видеодорожек.',
+			'videoSettings.videoTrackFailed' => 'Не удалось изменить видеодорожку.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Дорожка ${id}',
 			'videoSettings.performanceOverlay' => 'Оверлей производительности',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7465,10 +7485,6 @@ extension on TranslationsRu {
 			'videoSettings.audioEqualizerFlat' => 'Плат',
 			'videoSettings.audioEqualizerActive' => 'Своя',
 			'videoSettings.audioEqualizerSaveFailed' => 'Не смог бы сохранить настройки аудиоэквилятора.',
-			'videoSettings.backgroundVideoAudio' => 'Видео аудио фоновый',
-			'videoSettings.backgroundVideoAudioDescription' => 'Дайте видео аудио, когда вы покидаете плейер; изображение скрывается до возвращения. Android использует уведомление о воспроизведении медиа.',
-			'videoSettings.audioNormalization' => 'Нормализация громкости',
-			'videoSettings.audioNormalizationDisablesPassthrough' => 'Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена',
 			'videoSettings.audioEffectsDescription' => 'Эффекты используют декодированный аудио, поэтому passthrough отвергается. комнатная атмосфера и стерео расширение зависят от MPV Строить и следить.',
 			'videoSettings.audioStereoWidth' => 'Стерео расширение',
 			'videoSettings.audioSpatializer' => 'комнатная атмосфера',
@@ -7476,6 +7492,10 @@ extension on TranslationsRu {
 			'videoSettings.audioPitch' => 'Питч перемен',
 			'videoSettings.audioPitchDescription' => 'Изменение площади без изменения скорости. MPV Строительство должно включать Rubber BandИ',
 			'videoSettings.audioEffectUnavailable' => 'Этот эффект не доступен для этой трассы или MPV и строить .',
+			'videoSettings.backgroundVideoAudio' => 'Видео аудио фоновый',
+			'videoSettings.backgroundVideoAudioDescription' => 'Дайте видео аудио, когда вы покидаете плейер; изображение скрывается до возвращения. Android использует уведомление о воспроизведении медиа.',
+			'videoSettings.audioNormalization' => 'Нормализация громкости',
+			'videoSettings.audioNormalizationDisablesPassthrough' => 'Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена',
 			'performanceOverlay.color' => 'Цвет',
 			'performanceOverlay.performance' => 'Производительность',
 			'performanceOverlay.buffer' => 'Буфер',
@@ -7583,14 +7603,14 @@ extension on TranslationsRu {
 			'metadataEdit.metadataUpdateFailed' => 'Не удалось обновить метаданные',
 			'metadataEdit.artworkUpdated' => 'Обложка обновлена',
 			'metadataEdit.artworkUpdateFailed' => 'Не удалось обновить обложку',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.noArtworkAvailable' => 'Обложки недоступны',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Вариант обложки ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Вариант обложки ${index}, выбран',
 			'metadataEdit.notSet' => 'Не задано',
 			'metadataEdit.libraryDefault' => 'По умолчанию библиотеки',
 			'metadataEdit.accountDefault' => 'По умолчанию аккаунта',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'По умолчанию сериала',
 			'metadataEdit.episodeSorting' => 'Сортировка эпизодов',
 			'metadataEdit.oldestFirst' => 'Сначала старые',
@@ -7990,6 +8010,10 @@ extension on TranslationsRu {
 			'universalMedia.choosePlaylist' => 'Выберите файл playlist',
 			'universalMedia.openPlaylist' => 'Открытый playlist',
 			'universalMedia.playlistFormatsHelp' => 'Список игр может содержать не более 1000 элементов и 2 Мб. HLS открывается как потоки, чтобы игрок мог выбрать качество.',
+			'universalMedia.saveQueuePlaylist' => 'Сохранить очередь как плейлист',
+			'universalMedia.queuePlaylistSaved' => 'Плейлист сохранён рядом с медиафайлами.',
+			'universalMedia.queuePlaylistUnavailable' => 'Эту очередь нельзя сохранить как повторно используемый локальный плейлист.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Выберите место сохранения в той же папке, где находятся файлы очереди.',
 			'universalMedia.noFavorites' => 'До сих пор не сохранились любимые потоки.Фавориты остаются в этом профиле.',
 			'universalMedia.removeFavorite' => 'Удаление любимого потока',
 			'universalMedia.filesHelp' => 'Выберите аудио, видео или файлы ISO для временного перевода.Файлы и URL не добавляются в историю библиотеки.',
@@ -8048,6 +8072,7 @@ extension on TranslationsRu {
 			'universalMedia.replaceRecording' => 'Замена файлов',
 			'universalMedia.discHelp' => 'Откройте диск в оптическом диске этого компьютера. Вы также можете открыть изображение ISO из файлов устройств.',
 			'universalMedia.discs' => 'Оптический диск',
+			'universalMedia.editionOrTitle' => 'Издание или название диска',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Блу-рей',
 			'universalMedia.audioCd' => 'Аудио CD',
@@ -8061,6 +8086,8 @@ extension on TranslationsRu {
 			'universalMedia.converterMp4' => 'MP4 · H.264 и AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC аудио',
 			'universalMedia.converterMp3' => 'MP3 · аудио',
+			'universalMedia.allowFtp' => 'Допустим FTP',
+			'universalMedia.allowFtpHelp' => 'FTP отправляет медиа без шифрования. используйте только на доверенных сетях.',
 			'universalMedia.converterSaveAs' => 'Сохранить конвертированные медиа как',
 			'universalMedia.converterExtensionMismatch' => 'Выберите фамильное имя с выбранным продлением выхода.',
 			'universalMedia.converterUnsupportedInput' => 'Выберите аудио- или видеофайл.',
@@ -8083,11 +8110,15 @@ extension on TranslationsRu {
 			'universalMedia.captureIntro' => 'Запишите экран или камеру на файл MP4 на этом компьютере. FFmpeg должен быть установлен и включать кодировку H.264.',
 			'universalMedia.captureNoDevices' => 'Никакого экрана или камеры не найдено. проверьте поддержку поймания FFmpeg и разрешения на конфиденциальность операционной системы.',
 			'universalMedia.captureSource' => 'экран или камера',
+			'universalMedia.captureScreen' => 'экран',
 			'universalMedia.captureAudioSource' => 'Аудио вход (опциональный)',
 			'universalMedia.captureAudioHelp' => 'Добавьте звук из микрофона или доступный вход. Выборы устройства зависят от FFmpeg и системных разрешений.',
 			'universalMedia.captureAudioNone' => 'Никакого аудио',
+			'universalMedia.captureDefaultAudio' => 'Стандартный аудио вход',
 			'universalMedia.captureWaylandHelp' => 'Wayland ограничивает эту XWayland запись на X display. Windows за пределами XWayland может не появляться.',
 			'universalMedia.captureFrameRate' => 'Рекордная скорость кадров',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.capturePrivacy' => 'Запись сохраняется только на выбранный файл. микрофонная запись является факультативной. PlezyNG не загружает запись.',
 			'universalMedia.captureSaveAs' => 'Запись экрана как',
 			'universalMedia.captureExtensionMismatch' => 'Выберите фамильное имя, заканчивающееся в .mp4.',
@@ -8096,6 +8127,9 @@ extension on TranslationsRu {
 			'universalMedia.captureSaved' => 'Запись экрана спасена.',
 			'universalMedia.captureElapsedLabel' => 'Время записи',
 			'universalMedia.captureStart' => 'Начало записи',
+			'universalMedia.capturePreview' => 'Предпросмотр в плеере',
+			'universalMedia.capturePreviewHelp' => 'Просмотрите выбранный источник в стандартном плеере. Предпросмотр действует только в этом сеансе и не сохраняет запись. Поддержка устройств и разрешения зависят от MPV и операционной системы. В предпросмотре используется только видео; в сохранённые записи можно включить звук.',
+			'universalMedia.capturePreviewActive' => 'Предпросмотр в реальном времени · без записи',
 			'universalMedia.captureStop' => 'Спрей и спаси',
 			'universalMedia.captureMode' => 'Задержание',
 			'universalMedia.shareMode' => 'Поделиться',
@@ -8103,8 +8137,6 @@ extension on TranslationsRu {
 			'universalMedia.sharePrivacy' => 'Любой, кто находится в вашей местной сети, получающий личный ссылок, может наблюдать, пока он активен. ссылка истекает после 60 минут. прекратить обмен, чтобы закрыть сервер и отменить ссылку.',
 			'universalMedia.shareChooseFile' => 'Выберите медиафайл',
 			'universalMedia.shareChooseHelp' => 'Выберите локальный аудио- или видеофайл. файл остается на этом компьютере.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg или коды H.264/AAC недоступны. Инсталлировать FFmpeg с поддержкой коды H.264 и AAC.',
 			'universalMedia.shareFailed' => 'Поток не мог начинаться или остановиться неожиданно. проверьте FFmpeg и сетевой доступ.',
 			'universalMedia.shareActive' => 'Поток готов на вашей частной сети.',
@@ -8112,6 +8144,9 @@ extension on TranslationsRu {
 			'universalMedia.shareStopped' => 'Разделение прекращено. временный ссылок больше не валиден.',
 			'universalMedia.shareUrlCopied' => 'Режим адресов копирован.',
 			'universalMedia.shareOpenUrl' => 'Откройте этот адрес в одном игроке на другом устройстве',
+			'universalMedia.shareQrLabel' => 'QR-код для временного адреса потока',
+			'universalMedia.shareQrHelp' => 'Сканирование с помощью совместимого игрока, подключенного к той же частной сети.',
+			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
 			'universalMedia.shareCopyUrl' => 'Копирование Stream Address',
 			'universalMedia.shareExpiresLabel' => 'Линк истекает',
 			'universalMedia.shareStarting' => 'Подготовка потока...',
@@ -8145,13 +8180,6 @@ extension on TranslationsRu {
 			'universalMedia.cliHelp' => 'Используйте руководство plezyctl для подтверждения манифеста или поиск того же расширения. Пересмотреть его сервис HTTPS перед каждым поиском. Результаты открыты в существующей медиаформе; выберите кнопку воспроизведения для начала.',
 			'universalMedia.cliCopyExample' => 'Копирование командного примера',
 			'universalMedia.cliCopied' => 'Копированный пример приказа.',
-			'universalMedia.captureScreen' => 'экран',
-			'universalMedia.captureDefaultAudio' => 'Стандартный аудио вход',
-			'universalMedia.shareQrLabel' => 'QR-код для временного адреса потока',
-			'universalMedia.shareQrHelp' => 'Сканирование с помощью совместимого игрока, подключенного к той же частной сети.',
-			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
-			'universalMedia.allowFtp' => 'Допустим FTP',
-			'universalMedia.allowFtpHelp' => 'FTP отправляет медиа без шифрования. используйте только на доверенных сетях.',
 			'fileSources.title' => 'Файлы и книги',
 			'fileSources.subtitle' => 'Читайте, слушайте и следите за своими собственными файлами.',
 			'fileSources.add' => 'Добавить источник',
@@ -8603,6 +8631,8 @@ extension on TranslationsRu {
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
@@ -8617,8 +8647,6 @@ extension on TranslationsRu {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			_ => null,
-		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',

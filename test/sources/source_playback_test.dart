@@ -3,6 +3,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/playback_coordinator.dart';
+import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_playback.dart';
@@ -47,6 +48,26 @@ class _Controls extends FakeMediaControlsManager {
 class _FailingStopPlayer extends FakePlayer {
   @override
   Future<void> stop() async => throw StateError('native stop failure');
+}
+
+class _RecordingMpvPlayer extends FakePlayer {
+  final properties = <String, String>{};
+  final propertyWrites = <(String, String)>[];
+
+  @override
+  String get playerType => 'mpv';
+
+  @override
+  PlayerState get state => super.state.copyWith(seekable: true);
+
+  @override
+  Future<void> setProperty(String name, String value) async {
+    propertyWrites.add((name, value));
+    properties[name] = value;
+  }
+
+  @override
+  Future<String?> getProperty(String name) async => properties[name];
 }
 
 void main() {
@@ -250,4 +271,142 @@ void main() {
     expect(playback.progress!.positionMs, 0);
     expect(native.openStarts.single, Duration.zero);
   });
+
+  test('capture preview opens only the validated device address as a live transient item', () async {
+    final capturePlayer = _RecordingMpvPlayer();
+    native = capturePlayer;
+    const captureFile = PublicationFile(
+      id: 'desktop',
+      name: 'Desktop screen',
+      mimeType: 'video/avdevice',
+      streamOnly: true,
+    );
+    const captureEntry = SourceEntry(
+      sourceId: 'open:capture:test',
+      id: 'capture-test',
+      title: 'Desktop screen',
+      kind: SourceItemKind.video,
+      files: [captureFile],
+    );
+
+    await playback.start(
+      captureEntry,
+      const [captureFile],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      liveInput: true,
+      directPlayerAddresses: const {'desktop': 'av://x11grab::0.0+0,0'},
+      localPlayerOptions: const {'demuxer-lavf-format': 'x11grab', 'demuxer-lavf-o': 'framerate=30,draw_mouse=1'},
+    );
+
+    expect(playback.isCapturePreview, isTrue);
+    expect(playback.isTransientInput, isTrue);
+    expect(playback.isLiveInput, isTrue);
+    expect(capturePlayer.propertyWrites, [
+      ('file-local-options/demuxer-lavf-format', 'x11grab'),
+      ('file-local-options/demuxer-lavf-o', 'framerate=30,draw_mouse=1'),
+    ]);
+    expect(native.openedUris, ['av://x11grab::0.0+0,0']);
+    expect(controls.canSeek, isFalse);
+    expect(await sources.repository.allProgress('alice'), isEmpty);
+  }, skip: !(Platform.isWindows || Platform.isLinux || Platform.isMacOS));
+
+  test('capture preview rejects arbitrary MPV input options before opening a device', () async {
+    final capturePlayer = _RecordingMpvPlayer();
+    native = capturePlayer;
+    const captureFile = PublicationFile(id: 'desktop', name: 'Desktop screen', mimeType: 'video/avdevice');
+    const captureEntry = SourceEntry(
+      sourceId: 'open:capture:test',
+      id: 'capture-test',
+      title: 'Desktop screen',
+      kind: SourceItemKind.video,
+      files: [captureFile],
+    );
+
+    await expectLater(
+      playback.start(
+        captureEntry,
+        const [captureFile],
+        playbackMode: PublicationMode.watching,
+        persistProgress: false,
+        liveInput: true,
+        directPlayerAddresses: const {'desktop': 'av://x11grab::0.0+0,0'},
+        localPlayerOptions: const {'demuxer-lavf-format': 'x11grab', 'demuxer-lavf-o': 'framerate=30,format=anything'},
+      ),
+      throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.unsupported)),
+    );
+    expect(capturePlayer.propertyWrites, isEmpty);
+    expect(capturePlayer.openedUris, isEmpty);
+  }, skip: !(Platform.isWindows || Platform.isLinux || Platform.isMacOS));
+
+  test('local video bookmark identity hashes the file URI and is available only while seekable', () async {
+    native = _RecordingMpvPlayer();
+    const videoFile = PublicationFile(
+      id: 'local-movie',
+      name: 'A movie.mkv',
+      mimeType: 'video/x-matroska',
+      durationMs: 180000,
+    );
+    const videoEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'local-movie',
+      title: 'A movie',
+      kind: SourceItemKind.video,
+      files: [videoFile],
+    );
+    final uri = Uri.file('${directory.path}/private-movie.mkv');
+
+    await playback.start(
+      videoEntry,
+      const [videoFile],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      localOverrides: {'local-movie': uri},
+    );
+
+    final key = playback.localVideoBookmarkKey;
+    expect(key, startsWith('open-media:'));
+    expect(key, isNot(contains(directory.path)));
+    expect(key, isNot(contains('private-movie')));
+    expect(playback.isLiveInput, isFalse);
+  });
+
+  test('local queue export returns safe sibling entries and refuses a mixed folder', () async {
+    const firstVideo = PublicationFile(id: 'one', name: 'First.mkv', mimeType: 'video/x-matroska');
+    const secondVideo = PublicationFile(id: 'two', name: 'Second.mkv', mimeType: 'video/x-matroska');
+    const videoEntry = SourceEntry(
+      sourceId: 'local',
+      id: 'local-set',
+      title: 'A local set',
+      kind: SourceItemKind.video,
+      files: [firstVideo, secondVideo],
+    );
+    final firstFile = File('${directory.path}/First.mkv')..writeAsBytesSync([1]);
+    final secondFile = File('${directory.path}/Second.mkv')..writeAsBytesSync([2]);
+
+    await playback.start(
+      videoEntry,
+      const [firstVideo, secondVideo],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      localOverrides: {'one': firstFile.uri, 'two': secondFile.uri},
+    );
+
+    expect(playback.canExportLocalPlaylist, isTrue);
+    final entries = await playback.localPlaylistExportItems();
+    expect(entries?.map((item) => item.title), ['First.mkv', 'Second.mkv']);
+    expect(entries?.map((item) => item.uri), [firstFile.uri, secondFile.uri]);
+
+    final otherDirectory = Directory('${directory.path}/other')..createSync();
+    final other = File('${otherDirectory.path}/Second.mkv')..writeAsBytesSync([2]);
+    await playback.start(
+      videoEntry,
+      const [firstVideo, secondVideo],
+      playbackMode: PublicationMode.watching,
+      persistProgress: false,
+      localOverrides: {'one': firstFile.uri, 'two': other.uri},
+    );
+    expect(playback.canExportLocalPlaylist, isFalse);
+    expect(await playback.localPlaylistExportItems(), isNull);
+  }, skip: !(Platform.isWindows || Platform.isLinux || Platform.isMacOS));
 }
