@@ -10,8 +10,7 @@ import kotlin.math.roundToInt
  * fixed buffer size below its view size; SurfaceFlinger scales the plane back
  * up. Every stage of the OSD pass (libass rasterization, the software
  * composite, the Surface copy) is proportional to that pixel count, which is
- * what makes the setting a throughput knob on render-bound TV hardware. The
- * ExoPlayer path applies the same fraction to its libass overlay.
+ * what makes the setting a throughput knob on render-bound TV hardware.
  */
 internal object OsdPlanePolicy {
   data class Size(val width: Int, val height: Int)

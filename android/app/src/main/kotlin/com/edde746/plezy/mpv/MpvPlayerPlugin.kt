@@ -6,9 +6,11 @@ import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.res.Configuration
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import com.edde746.plezy.exoplayer.supportedMpvSpdifCodecs
+import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerChannelBinding
 import com.edde746.plezy.shared.PlayerDebugLog
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -69,6 +71,11 @@ open class MpvPlayerPlugin(
   private var playerCore: MpvPlayerCore? = null
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
+
+  // The window's display mode, one owner per attached Activity (null on the
+  // audio-only instance). Cores come and go under it: a replacement's core
+  // inherits the mode and cancels what its predecessor's teardown queued.
+  private var displayMode: FrameRateManager? = null
   private var applicationContext: Context? = null
   private val nameToId = mutableMapOf<String, Int>()
   private var sessionGeneration = 0
@@ -95,9 +102,8 @@ open class MpvPlayerPlugin(
   // settle the Dart future.
   private val initWatchdogMs = 20_000L
 
-  // Test seams, mirroring ExoPlayerPlugin.createMpvCore/initializeMpvCore:
-  // MpvPlayer's companion loads libmpv, so substituting both is the only way
-  // a JVM test can drive this plugin's initialization path.
+  // Test seams: MpvPlayer's companion loads libmpv, so substituting both is
+  // the only way a JVM test can drive this plugin's initialization path.
   internal var createCore: (Context, Boolean, Float, String) -> MpvPlayerCore =
     { context, hardwareDecoding, subtitleRenderScale, logLevel ->
       MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel)
@@ -160,8 +166,7 @@ open class MpvPlayerPlugin(
     // dead messenger.
     binding.applicationContext.unregisterComponentCallbacks(memoryCallbacks)
     disposeCoreForTeardown()
-    activity = null
-    activityBinding = null
+    detachActivity()
     applicationContext = null
     channels.detach()
   }
@@ -178,12 +183,29 @@ open class MpvPlayerPlugin(
   private fun disposeCoreForTeardown() {
     // Activity/engine detach never reaches Dart's clearVideoFrameRate, so
     // the display mode is restored here or not at all.
-    takeCoreForTeardown()?.dispose(preserveDisplayMode = false)
+    val core = takeCoreForTeardown() ?: return
+    displayMode?.clearVideoFrameRate(hdrActive = core.hdrDisplayActive)
+    core.dispose()
+  }
+
+  private fun attachActivity(binding: ActivityPluginBinding) {
+    activity = binding.activity
+    activityBinding = binding
+    if (!audioOnly) displayMode = FrameRateManager(binding.activity, Handler(Looper.getMainLooper()), ::logFrameRate)
+  }
+
+  private fun detachActivity() {
+    activity = null
+    activityBinding = null
+    displayMode = null
+  }
+
+  private fun logFrameRate(message: String) {
+    onEvent("log-message", mapOf("prefix" to "framerate", "level" to "info", "text" to message))
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-    activity = binding.activity
-    activityBinding = binding
+    attachActivity(binding)
     PlayerDebugLog.d(tag) { "Attached to activity" }
   }
 
@@ -193,14 +215,12 @@ open class MpvPlayerPlugin(
     if (!audioOnly) {
       disposeCoreForTeardown()
     }
-    activity = null
-    activityBinding = null
+    detachActivity()
     PlayerDebugLog.d(tag) { "Detached from activity" }
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-    activity = binding.activity
-    activityBinding = binding
+    attachActivity(binding)
     PlayerDebugLog.d(tag) { "Reattached to activity for config changes" }
   }
 
@@ -211,8 +231,7 @@ open class MpvPlayerPlugin(
     if (!audioOnly) {
       disposeCoreForTeardown()
     }
-    activity = null
-    activityBinding = null
+    detachActivity()
     PlayerDebugLog.d(tag) { "Detached from activity for config changes" }
   }
 
@@ -236,7 +255,7 @@ open class MpvPlayerPlugin(
       "setVisible" -> handleSetVisible(call, result)
       "updateFrame" -> handleUpdateFrame(result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
-      "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+      "clearVideoFrameRate" -> handleClearVideoFrameRate(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "getAudioSpdifCodecs" -> handleGetAudioSpdifCodecs(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
@@ -244,7 +263,6 @@ open class MpvPlayerPlugin(
       "closeContentFd" -> handleCloseContentFd(call, result)
       "getHeapSize" -> {
         // Device heap class for Dart-side memory tiering (stream ring cache).
-        // Lives on the always-registered mpv channel so it survives backends.
         val context: Context? = activity ?: applicationContext
         val am = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         result.success(am?.largeMemoryClass ?: 0)
@@ -271,7 +289,7 @@ open class MpvPlayerPlugin(
     // from older callers; hardware decode is the setting's default.
     val hardwareDecoding = call.argument<Boolean>("hardwareDecoding") ?: true
     // Subtitle "Render Resolution" for the vo=mediacodec OSD plane (Full / ¾ / ½ /
-    // ⅓ / ¼ of the surface); the same fraction the ExoPlayer overlay applies.
+    // ⅓ / ¼ of the surface).
     // Absent from older callers and the audio-only core; full is the default.
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
     val logLevel = call.argument<String>("logLevel") ?: "warn"
@@ -335,6 +353,7 @@ open class MpvPlayerPlugin(
         gen = ++sessionGeneration
         core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel).apply {
           delegate = this@MpvPlayerPlugin
+          frameRateManager = displayMode
         }
         playerCore = core
         coreInstanceId = call.argument<Number>("instanceId")?.toLong()
@@ -372,7 +391,7 @@ open class MpvPlayerPlugin(
           }
         } else {
           // Start hidden - now safe because setVisible operates on the container,
-          // not the SurfaceView directly (matching ExoPlayer's approach).
+          // not the SurfaceView directly.
           // No-op on the audio-only core, which has no render layer.
           core.setVisible(false)
           PlayerDebugLog.d(tag) { "Initialized: true" }
@@ -435,6 +454,13 @@ open class MpvPlayerPlugin(
         return@runOnMain
       }
       val core = takeCoreForTeardown()
+      // Leaving playback restores the mode even without a live core: a
+      // replacement whose core failed to initialize still inherited it.
+      if (preserveDisplayMode) {
+        displayMode?.releasePending()
+      } else {
+        displayMode?.clearVideoFrameRate(hdrActive = core?.hdrDisplayActive == true)
+      }
       if (core == null) {
         result.success(null)
         return@runOnMain
@@ -453,7 +479,7 @@ open class MpvPlayerPlugin(
       channels.mainHandler.postDelayed({
         completeOnce("Dispose watchdog fired after ${disposeWatchdogMs}ms; teardown continues in background")
       }, disposeWatchdogMs)
-      core.dispose(preserveDisplayMode) { completeOnce("Disposed") }
+      core.dispose { completeOnce("Disposed") }
     }
   }
 
@@ -638,10 +664,24 @@ open class MpvPlayerPlugin(
     }
   }
 
-  private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
-    PlayerDebugLog.d(tag) { "clearVideoFrameRate" }
-    playerCore?.clearVideoFrameRate()
-    result.success(null)
+  // `awaitDisplayRestore` holds the reply until the display has left the
+  // content mode (see FrameRateManager.clearVideoFrameRate), so the route
+  // exit can keep the player on screen through the HDMI renegotiation.
+  private fun handleClearVideoFrameRate(call: MethodCall, result: MethodChannel.Result) {
+    val awaitDisplayRestore = call.argument<Boolean>("awaitDisplayRestore") == true
+    PlayerDebugLog.d(tag) { "clearVideoFrameRate(awaitDisplayRestore=$awaitDisplayRestore)" }
+    val core = playerCore
+    val manager = displayMode
+    if (core == null || manager == null) {
+      result.success(null)
+      return
+    }
+    if (awaitDisplayRestore) {
+      manager.clearVideoFrameRate(hdrActive = core.hdrDisplayActive) { result.success(null) }
+    } else {
+      manager.clearVideoFrameRate(hdrActive = core.hdrDisplayActive)
+      result.success(null)
+    }
   }
 
   private fun handleRequestAudioFocus(result: MethodChannel.Result) {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mpv/player/platform/player_android.dart';
+import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/mock_player_channels.dart';
@@ -20,12 +20,12 @@ void main() {
     await SettingsService.getInstance();
   });
 
-  Future<void> withPlayer(Future<void> Function(PlayerAndroid player) body) async {
+  Future<void> withPlayer(Future<void> Function(PlayerNative player) body) async {
     await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/exo_player',
-      eventChannelName: 'com.plezy/exo_player/events',
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
       testBody: () async {
-        final player = PlayerAndroid();
+        final player = PlayerNative();
         try {
           await body(player);
         } finally {
@@ -63,7 +63,7 @@ void main() {
       });
     });
 
-    test('a selected subtitle without main-selection stays the primary (ExoPlayer shape)', () async {
+    test('a selected subtitle without main-selection stays the primary', () async {
       await withPlayer((player) async {
         final result = player.parseTrackList(const [
           {'type': 'audio', 'id': '1', 'lang': 'eng', 'selected': true},

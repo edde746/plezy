@@ -123,11 +123,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<void> _wirePlayerStreams({
-    required Player currentPlayer,
-    required SettingsService settingsService,
-    required bool useExoPlayer,
-  }) async {
+  Future<void> _wirePlayerStreams({required Player currentPlayer, required SettingsService settingsService}) async {
     // Re-wire scope: exactly the player-stream slice of
     // [_cancelPlayerStreamSubscriptions]. The media-controls listeners belong
     // to _initializeServices in this file and the sleep-timer/Apple TV ones to
@@ -197,10 +193,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           .listen(_onPlayerLog),
     );
 
-    if (Platform.isAndroid && useExoPlayer) {
-      _playerStreamSubscriptions.add(currentPlayer.streams.backendSwitched.listen((_) => _onBackendSwitched()));
-    }
-
     _playerStreamSubscriptions.add(
       currentPlayer.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
@@ -268,11 +260,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         if (activePlayer == null || activePlayer != currentPlayer) return;
 
         // Fallback for MPV backends whose playbackRestart event is unavailable.
-        // Android ExoPlayer position can advance on its standalone clock without
-        // a renderer, so it may infer readiness only after switching to MPV.
-        final canInferRenderedFrameFromPosition =
-            !(Platform.isAndroid && useExoPlayer) || (currentPlayer is PlayerAndroid && currentPlayer.usingMpvFallback);
-        if (canInferRenderedFrameFromPosition && !_firstFrame.rendered) {
+        if (!_firstFrame.rendered) {
           if (lastObservedPositionMs != null && position.inMilliseconds != lastObservedPositionMs) {
             unawaited(_markFirstFrameReady(currentPlayer, settingsService));
           }
@@ -767,10 +755,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     if (isPlaying && !automotivePlaybackAllowedNow()) {
       // Native audio-focus regain resumes the platform player directly
-      // (ExoPlayer's AudioFocusManager, mpv's resumeAfterAudioFocusGain), so it
-      // never passes through the Dart playback-intent wrappers. Last line of
-      // defence for `DD-2`: audio must not resume while the vehicle restricts
-      // the app. Also catches any async open that raced the lifecycle pause.
+      // (mpv's resumeAfterAudioFocusGain), so it never passes through the
+      // Dart playback-intent wrappers. Last line of defence for `DD-2`: audio
+      // must not resume while the vehicle restricts the app. Also catches any
+      // async open that raced the lifecycle pause.
       appLogger.w('Playback started while Android Automotive UX restrictions are active; pausing');
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Blocked automotive restricted playback start', category: 'player.driver_distraction'),

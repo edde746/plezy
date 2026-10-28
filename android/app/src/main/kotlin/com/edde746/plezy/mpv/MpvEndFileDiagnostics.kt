@@ -18,7 +18,7 @@ internal class MpvEndFileDiagnostics {
     /**
      * The audio device stopped taking audio (or never could) and mpv gave up
      * on it. Keep in sync with PlayerError.audioOutputFailed in Dart: a device
-     * fault, so no stream retry or backend switch can recover it.
+     * fault, so no stream retry can recover it.
      */
     const val CAUSE_AUDIO_OUTPUT_FAILED = "audio-output-failed"
   }

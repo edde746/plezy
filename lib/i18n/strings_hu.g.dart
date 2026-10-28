@@ -349,16 +349,8 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Kevesebb animáció és alacsonyabb felbontású képek';
 	@override String get hideSpoilers => 'Spoilerek elrejtése a nem látott epizódoknál';
 	@override String get hideSpoilersDescription => 'Bélyegképek és leírások elhomályosítása a még meg nem nézett epizódoknál';
-	@override String get playerBackend => 'Lejátszómotor';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardveres dekódolás';
 	@override String get hardwareDecodingDescription => 'Hardveres gyorsítás használata, ha elérhető';
-	@override String get playbackBuffer => 'Lejátszási puffer';
-	@override String get playbackBufferAuto => 'Automatikus (ajánlott)';
-	@override String get playbackBufferLarge => 'Nagy';
-	@override String get playbackBufferExtraLarge => 'Extra nagy';
-	@override String get playbackBufferDescription => 'Több puffert használ instabil kapcsolatok ellen. A pufferméret is korlátozza.';
 	@override String get defaultQualityTitle => 'Alapértelmezett minőség';
 	@override String get cellularQualityTitle => 'Alapértelmezett minőség mobilhálózaton';
 	@override String get cellularQualitySameAsDefault => 'Ugyanaz, mint az alapértelmezett minőség';
@@ -504,8 +496,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Dinamikatartomány illesztése';
 	@override String get matchDynamicRangeDescription => 'HDR bekapcsolása HDR-tartalmak esetén, majd visszaváltás SDR-re';
 	@override String get displaySwitchDelay => 'Kijelzőváltási késleltetés';
-	@override String get tunneledPlayback => 'Alagutas lejátszás';
-	@override String get tunneledPlaybackDescription => 'Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.';
 	@override String get audioPassthrough => 'Hangtovábbítás (passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.';
 	@override String get audioPassthroughDescriptionApple => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.';
@@ -546,7 +536,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Lejátszó';
 	@override String get hdrSdrConversionPlayerDescription => 'A lejátszó alakítja át. Egységes színek, de a 4K akadozhat a gyengébb TV-boxokon';
 	@override String get deinterlace => 'Deinterlacing';
-	@override String get deinterlaceDescription => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból (csak mpv lejátszóval)';
+	@override String get deinterlaceDescription => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból';
 	@override String get deinterlaceOff => 'Ki';
 	@override String get deinterlaceOffDescription => 'A váltott soros videó megjelenítése úgy, ahogy dekódolva lett';
 	@override String get deinterlaceVideo => 'Videó';
@@ -1076,7 +1066,6 @@ class _Translations$messages$hu extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Nincsenek elérhető elemek';
 	@override String get failedToCreatePlayQueueNoItems => 'Nem sikerült létrehozni a lejátszási sort — nincsenek elemek';
 	@override String failedPlayback({required Object action, required Object error}) => 'Nem sikerült a művelet (${action}): ${error}';
-	@override String get switchingToCompatiblePlayer => 'Váltás kompatibilis lejátszóra...';
 	@override String get serverLimitTitle => 'A lejátszás nem sikerült';
 	@override String get serverLimitBody => 'Szerverhiba (HTTP 500). A munkamenetet valószínűleg egy sávszélességi vagy átkódolási korlát utasította el. Kérd meg a tulajdonost a korlát módosítására.';
 	@override String get mediaUnreadableTitle => 'A fájl nem érhető el';
@@ -1123,8 +1112,6 @@ class _Translations$subtitlingStyling$hu extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Lent';
 	@override String get useMargins => 'Margók használata';
 	@override String get useMarginsDescription => 'A szöveges feliratok a videón kívüli területen is megjelenhetnek. A stilizált feliratok megtarthatják eredeti pozíciójukat.';
-	@override String get anchorToScreen => 'Képernyőhöz rögzítés';
-	@override String get anchorToScreenDescription => 'A szöveges feliratok megjelenítése a szélesvásznú videó alatti fekete sávban';
 	@override String get bold => 'Félkövér';
 	@override String get italic => 'Dőlt';
 	@override String get renderResolution => 'Renderelési felbontás';
@@ -2107,8 +2094,6 @@ class _Translations$performanceOverlay$hu extends Translations$performanceOverla
 	@override String get buffer => 'Puffer';
 	@override String get app => 'Alkalmazás';
 	@override String get decoder => 'Dekóder';
-	@override String get rawDecoder => 'Nyers dekóder';
-	@override String get tunneling => 'Alagutazás';
 	@override String get passthrough => 'Passthrough';
 	@override String get aspect => 'Méretarány';
 	@override String get rotation => 'Forgatás';
@@ -2121,7 +2106,6 @@ class _Translations$performanceOverlay$hu extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG-alapréteg';
 	@override String get dvRouteBaseLayerSdr => 'SDR-alapréteg';
 	@override String get dvRouteReshaped => 'RPU-átformálás (gpu-next)';
-	@override String get p7Conversion => 'P7-átalakítás';
 	@override String get sampleRate => 'Mintavételezési frekvencia';
 	@override String get pixelFormat => 'Képpontformátum';
 	@override String get hwFormat => 'Hardverformátum';
@@ -2132,9 +2116,6 @@ class _Translations$performanceOverlay$hu extends Translations$performanceOverla
 	@override String get displayFps => 'Kijelző-FPS';
 	@override String get avSync => 'A/V-szinkron';
 	@override String get dropped => 'Eldobva';
-	@override String get dvRpus => 'DV RPU-k';
-	@override String get dvRpuAverage => 'DV RPU-átlag';
-	@override String get dvSampleAverage => 'DV-mintaátlag';
 	@override String get maxLuma => 'Maximális luma';
 	@override String get minLuma => 'Minimális luma';
 	@override String get maxCll => 'MaxCLL';
@@ -2146,15 +2127,7 @@ class _Translations$performanceOverlay$hu extends Translations$performanceOverla
 	@override String get memory => 'Memória';
 	@override String get uiFps => 'Felület-FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android HW';
-	@override String get decoderNvidiaHw => 'NVIDIA HW';
-	@override String get decoderQualcommHw => 'Qualcomm HW';
-	@override String get decoderMediatekHw => 'MediaTek HW';
-	@override String get decoderExynosHw => 'Exynos HW';
 	@override String get decoderSoftware => 'Szoftveres';
-	@override String get decoderHardware => 'Hardveres';
-	@override String get tunnelingActive => 'Aktív';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)';
 }
 
 // Path: externalPlayer
@@ -3628,16 +3601,8 @@ extension on TranslationsHu {
 			'settings.visualEffectsReducedDescription' => 'Kevesebb animáció és alacsonyabb felbontású képek',
 			'settings.hideSpoilers' => 'Spoilerek elrejtése a nem látott epizódoknál',
 			'settings.hideSpoilersDescription' => 'Bélyegképek és leírások elhomályosítása a még meg nem nézett epizódoknál',
-			'settings.playerBackend' => 'Lejátszómotor',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardveres dekódolás',
 			'settings.hardwareDecodingDescription' => 'Hardveres gyorsítás használata, ha elérhető',
-			'settings.playbackBuffer' => 'Lejátszási puffer',
-			'settings.playbackBufferAuto' => 'Automatikus (ajánlott)',
-			'settings.playbackBufferLarge' => 'Nagy',
-			'settings.playbackBufferExtraLarge' => 'Extra nagy',
-			'settings.playbackBufferDescription' => 'Több puffert használ instabil kapcsolatok ellen. A pufferméret is korlátozza.',
 			'settings.defaultQualityTitle' => 'Alapértelmezett minőség',
 			'settings.cellularQualityTitle' => 'Alapértelmezett minőség mobilhálózaton',
 			'settings.cellularQualitySameAsDefault' => 'Ugyanaz, mint az alapértelmezett minőség',
@@ -3783,8 +3748,6 @@ extension on TranslationsHu {
 			'settings.matchDynamicRange' => 'Dinamikatartomány illesztése',
 			'settings.matchDynamicRangeDescription' => 'HDR bekapcsolása HDR-tartalmak esetén, majd visszaváltás SDR-re',
 			'settings.displaySwitchDelay' => 'Kijelzőváltási késleltetés',
-			'settings.tunneledPlayback' => 'Alagutas lejátszás',
-			'settings.tunneledPlaybackDescription' => 'Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.',
 			'settings.audioPassthrough' => 'Hangtovábbítás (passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughDescriptionApple' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
@@ -3825,7 +3788,7 @@ extension on TranslationsHu {
 			'settings.hdrSdrConversionPlayer' => 'Lejátszó',
 			'settings.hdrSdrConversionPlayerDescription' => 'A lejátszó alakítja át. Egységes színek, de a 4K akadozhat a gyengébb TV-boxokon',
 			'settings.deinterlace' => 'Deinterlacing',
-			'settings.deinterlaceDescription' => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból (csak mpv lejátszóval)',
+			'settings.deinterlaceDescription' => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból',
 			'settings.deinterlaceOff' => 'Ki',
 			'settings.deinterlaceOffDescription' => 'A váltott soros videó megjelenítése úgy, ahogy dekódolva lett',
 			'settings.deinterlaceVideo' => 'Videó',
@@ -3906,8 +3869,6 @@ extension on TranslationsHu {
 			'themeEditor.slots.text' => 'Szöveg',
 			'themeEditor.slots.textMuted' => 'Másodlagos szöveg',
 			'themeEditor.slots.accent' => 'Kiemelőszín',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Átlátszatlanság',
 			'themeEditor.hexHint' => '#RRGGBB vagy #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Más témákból',
@@ -3918,6 +3879,8 @@ extension on TranslationsHu {
 			'themeEditor.contrast.textMutedOnSurface' => 'Másodlagos szöveg a felületen',
 			'themeEditor.contrast.accentOnBg' => 'Kiemelőszín a háttéren',
 			'themeEditor.contrast.accentOnSurface' => 'Kiemelőszín a felületen',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Gombfelirat a kiemelőszínen',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, az ajánlott ${minimum}:1 alatt',
 			'themeEditor.discardTitle' => 'Elveted a módosításokat?',
@@ -4288,7 +4251,6 @@ extension on TranslationsHu {
 			'messages.noItemsAvailable' => 'Nincsenek elérhető elemek',
 			'messages.failedToCreatePlayQueueNoItems' => 'Nem sikerült létrehozni a lejátszási sort — nincsenek elemek',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Nem sikerült a művelet (${action}): ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Váltás kompatibilis lejátszóra...',
 			'messages.serverLimitTitle' => 'A lejátszás nem sikerült',
 			'messages.serverLimitBody' => 'Szerverhiba (HTTP 500). A munkamenetet valószínűleg egy sávszélességi vagy átkódolási korlát utasította el. Kérd meg a tulajdonost a korlát módosítására.',
 			'messages.mediaUnreadableTitle' => 'A fájl nem érhető el',
@@ -4326,8 +4288,6 @@ extension on TranslationsHu {
 			'subtitlingStyling.positionBottom' => 'Lent',
 			'subtitlingStyling.useMargins' => 'Margók használata',
 			'subtitlingStyling.useMarginsDescription' => 'A szöveges feliratok a videón kívüli területen is megjelenhetnek. A stilizált feliratok megtarthatják eredeti pozíciójukat.',
-			'subtitlingStyling.anchorToScreen' => 'Képernyőhöz rögzítés',
-			'subtitlingStyling.anchorToScreenDescription' => 'A szöveges feliratok megjelenítése a szélesvásznú videó alatti fekete sávban',
 			'subtitlingStyling.bold' => 'Félkövér',
 			'subtitlingStyling.italic' => 'Dőlt',
 			'subtitlingStyling.renderResolution' => 'Renderelési felbontás',
@@ -4420,8 +4380,6 @@ extension on TranslationsHu {
 			'connections.sectionTitle' => 'Kapcsolatok',
 			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} szerver munkamenete lejárt',
@@ -4435,6 +4393,8 @@ extension on TranslationsHu {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Hang-, felirat- és könyvtárbeállítások mentve ${count} fiókra',
 			'accountPreferences.pickAccount' => 'Minden fiók a saját beállításait tárolja. Válaszd ki a szerkesztendőt.',
 			'accountPreferences.storedOnAccount' => 'Ezek a beállítások magán a fiókon tárolódnak, így minden bejelentkezett alkalmazás használja őket — beleértve a Plezyt a többi eszközödön.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Nincs beállítható fiók',
 			'accountPreferences.noAccountsHint' => 'Jelentkezz be a Plexbe, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert, és az azon a fiókon tárolt beállítások itt jelennek meg.',
 			'accountPreferences.unavailable' => 'Ez a fiók nem érhető el',
@@ -4934,8 +4894,6 @@ extension on TranslationsHu {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} perc múlva kezdődik',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Nem sikerült elindítani az élő csatornát',
 			'liveTv.failedToBuildStreamUrl' => 'Nem sikerült összeállítani a stream URL-címét',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Nem sikerült elindítani a csatornát: ${reason}',
@@ -4949,6 +4907,8 @@ extension on TranslationsHu {
 			'collections.deleteFailed' => 'Nem sikerült a gyűjtemény törlése',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Nem sikerült a gyűjtemény törlése: ${error}',
 			'collections.selectCollection' => 'Gyűjtemény kiválasztása',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Gyűjtemény neve',
 			'collections.enterCollectionName' => 'Add meg a gyűjtemény nevét',
 			'collections.addedToCollection' => 'Hozzáadva a gyűjteményhez',
@@ -5399,8 +5359,6 @@ extension on TranslationsHu {
 			'performanceOverlay.buffer' => 'Puffer',
 			'performanceOverlay.app' => 'Alkalmazás',
 			'performanceOverlay.decoder' => 'Dekóder',
-			'performanceOverlay.rawDecoder' => 'Nyers dekóder',
-			'performanceOverlay.tunneling' => 'Alagutazás',
 			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Méretarány',
 			'performanceOverlay.rotation' => 'Forgatás',
@@ -5413,7 +5371,6 @@ extension on TranslationsHu {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG-alapréteg',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR-alapréteg',
 			'performanceOverlay.dvRouteReshaped' => 'RPU-átformálás (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7-átalakítás',
 			'performanceOverlay.sampleRate' => 'Mintavételezési frekvencia',
 			'performanceOverlay.pixelFormat' => 'Képpontformátum',
 			'performanceOverlay.hwFormat' => 'Hardverformátum',
@@ -5424,9 +5381,6 @@ extension on TranslationsHu {
 			'performanceOverlay.displayFps' => 'Kijelző-FPS',
 			'performanceOverlay.avSync' => 'A/V-szinkron',
 			'performanceOverlay.dropped' => 'Eldobva',
-			'performanceOverlay.dvRpus' => 'DV RPU-k',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU-átlag',
-			'performanceOverlay.dvSampleAverage' => 'DV-mintaátlag',
 			'performanceOverlay.maxLuma' => 'Maximális luma',
 			'performanceOverlay.minLuma' => 'Minimális luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5438,18 +5392,8 @@ extension on TranslationsHu {
 			'performanceOverlay.memory' => 'Memória',
 			'performanceOverlay.uiFps' => 'Felület-FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Szoftveres',
-			'performanceOverlay.decoderHardware' => 'Hardveres',
-			'performanceOverlay.tunnelingActive' => 'Aktív',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
 			'externalPlayer.title' => 'Külső lejátszó',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Külső lejátszó használata',
 			'externalPlayer.useExternalPlayerDescription' => 'Videók megnyitása egy másik alkalmazásban',
 			'externalPlayer.selectPlayer' => 'Lejátszó kiválasztása',
@@ -5477,6 +5421,8 @@ extension on TranslationsHu {
 			'metadataEdit.contentRating' => 'Korhatár-besorolás',
 			'metadataEdit.studio' => 'Stúdió',
 			'metadataEdit.tagline' => 'Jelmondat',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Összefoglaló',
 			'metadataEdit.poster' => 'Poszter',
 			'metadataEdit.background' => 'Háttér',

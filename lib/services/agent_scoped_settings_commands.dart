@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:provider/provider.dart';
 
@@ -192,8 +191,7 @@ class AgentScopedSettingsCommands {
         type: 'string',
         defaultValue: SettingsService.globalShaderPreset.defaultValue,
         choices: shaderProvider.allPresets.map((p) => p.id).toList(),
-        isSupported: () =>
-            ShaderService.isPlatformSupported && !(Platform.isAndroid && settings.read(SettingsService.useExoPlayer)),
+        isSupported: () => ShaderService.isPlatformSupported,
         decode: (v) {
           if (v is! String || shaderProvider.findPresetById(v) == null) _invalid('Select an available shader preset.');
           return v;

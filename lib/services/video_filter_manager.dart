@@ -79,7 +79,6 @@ class VideoFilterManager {
   /// Last values actually written to the player. A missing key means unknown,
   /// so the next run rewrites it.
   final Map<String, String> _appliedProps = {};
-  int? _appliedBoxFitMode;
   double? _appliedVideoZoom;
 
   /// In-progress update loop; concurrent callers mark it dirty and share it.
@@ -247,14 +246,6 @@ class VideoFilterManager {
       final playerSize = _playerSize;
       final coverMode = boxFitMode == 1;
 
-      // ExoPlayer handles scaling via AspectRatioFrameLayout (no-op on mpv
-      // backends). The MPV properties below still run — on ExoPlayer they
-      // forward to setMpvProperty, which queues them for any future fallback.
-      if (_appliedBoxFitMode != boxFitMode) {
-        _appliedBoxFitMode = null;
-        await player.setBoxFitMode(boxFitMode);
-        _appliedBoxFitMode = boxFitMode;
-      }
       if (_appliedVideoZoom != zoomScale) {
         _appliedVideoZoom = null;
         await player.setVideoZoom(zoomScale);

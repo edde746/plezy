@@ -19,15 +19,14 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import com.edde746.mpv.*
 import com.edde746.plezy.NativeModuleCache
-import com.edde746.plezy.exoplayer.DoviBridge
 import com.edde746.plezy.shared.AudioFocusManager
+import com.edde746.plezy.shared.DisplayHdrCapabilities
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.GlCapabilities
 import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.PlayerDebugLog
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.PlayerSurfaceHost
-import com.edde746.plezy.shared.SurfacePlayerCore
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -54,36 +53,21 @@ class MpvPlayerCore private constructor(
   private val osdRenderScale: Float,
   private val initialLogLevel: String,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
-  /**
-   * Test seam standing in for the native player's command path: returns what
-   * [MpvPlayer.command] would (the playlist entry id of a `loadfile`, else
-   * null) or throws to reject the command. Null keeps the production rule
-   * that a command without a native player fails.
-   */
-  private val commandRunnerOverride: (suspend (Array<String>) -> Long?)?,
   initializedForTesting: Boolean
-) : SurfaceHolder.Callback,
-  SurfacePlayerCore {
+) : SurfaceHolder.Callback {
   constructor(
     context: Context,
     audioOnly: Boolean = false,
     hardwareDecoding: Boolean = true,
     osdRenderScale: Float = 1f,
     initialLogLevel: String = "warn"
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, null, false)
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, null, true)
-
-  internal constructor(
-    context: Context,
-    audioOnly: Boolean,
-    propertyWriter: (suspend (String, String) -> Unit)?,
-    commandRunner: suspend (Array<String>) -> Long?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, commandRunner, true)
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -348,10 +332,11 @@ class MpvPlayerCore private constructor(
   @Volatile private var hdrSurfaceDecided: Boolean = false
 
   /** Whether this session outputs HDR to an HDR-capable display — via the PQ
-   * GL surface or the MediaCodec plane's decoder dataspace. Gates the
-   * deferred display-mode restore on teardown (see
+   * GL surface or the MediaCodec plane's decoder dataspace. The plugin reads
+   * it to defer the display-mode restore past the HDR exit (see
    * [FrameRateManager.clearVideoFrameRate]). */
-  @Volatile private var hdrDisplayActive: Boolean = false
+  @Volatile var hdrDisplayActive: Boolean = false
+    private set
 
   /** Read at [initialize], before the app's own display-mode switch:
    * `Display.getHdrCapabilities` answers for the active mode, and a
@@ -723,7 +708,10 @@ class MpvPlayerCore private constructor(
     )
   }
 
-  private var frameRateManager: FrameRateManager? = null
+  /** The plugin's window-scoped display-mode owner, set before [initialize]
+   * (null on the audio-only core). The core only requests switches through
+   * it; restoring the window's mode is the plugin's call. */
+  internal var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
 
   // Result-callback marshaling. Separate from [handler], whose queued
@@ -953,18 +941,14 @@ class MpvPlayerCore private constructor(
         isPaused = { desiredPaused }
       )
       if (!audioOnly) {
-        displayHdrSupported = DoviBridge.displaySupportsHdr(context)
-        displayDvSupported = DoviBridge.displaySupportsDolbyVision(context)
+        displayHdrSupported = DisplayHdrCapabilities.displaySupportsHdr(context)
+        displayDvSupported = DisplayHdrCapabilities.displaySupportsDolbyVision(context)
 
-        frameRateManager = FrameRateManager(
-          activity = activity,
-          handler = handler,
-          log = { emitLog("info", "framerate", it) }
-        )
         emitLog(
           "info",
           "display",
-          "hdr=$displayHdrSupported dv=$displayDvSupported ${frameRateManager!!.describeDisplay()}"
+          "hdr=$displayHdrSupported dv=$displayDvSupported " +
+            (frameRateManager?.describeDisplay() ?: "display modes unavailable")
         )
 
         surfaceContainer = PlayerSurfaceHost.createContainer(activity)
@@ -1367,7 +1351,7 @@ class MpvPlayerCore private constructor(
 
   // Audio Focus
 
-  override fun requestAudioFocus(): Boolean {
+  fun requestAudioFocus(): Boolean {
     val granted = audioFocusManager?.requestAudioFocus() ?: false
     if (granted && pausedForAudioFocusLoss) {
       resumeAfterAudioFocusGain("audio focus request granted")
@@ -1375,7 +1359,7 @@ class MpvPlayerCore private constructor(
     return granted
   }
 
-  override fun abandonAudioFocus() {
+  fun abandonAudioFocus() {
     audioFocusManager?.abandonAudioFocus()
   }
 
@@ -1571,7 +1555,7 @@ class MpvPlayerCore private constructor(
    * BT.2020 with an SDR transfer, and the HWC applies the RPU after the
    * readback point. A capture shows inverted hue while the display is in
    * Dolby Vision mode with correct colour - measured on a Google TV
-   * Streamer with this path and with ExoPlayer, identical captures, both
+   * Streamer with this path and with Media3, identical captures, both
    * correct on the panel. That capture once cost this file a MediaTek
    * exclusion that sent every P5 file into software decode.
    */
@@ -2490,20 +2474,13 @@ class MpvPlayerCore private constructor(
   /** The command counterpart of [writeProperty], on the same write operation. */
   private suspend fun runCommand(vararg args: String) {
     currentCoroutineContext().ensureActive()
-    val runner = commandRunnerOverride
-    if (runner != null) {
-      runner(arrayOf(*args))
-    } else {
-      val currentPlayer = player ?: throw CancellationException("MPV player unavailable")
-      currentPlayer.command(*args)
-    }
+    val currentPlayer = player ?: throw CancellationException("MPV player unavailable")
+    currentPlayer.command(*args)
   }
 
   /**
-   * Test seam standing in for the native player's property read path. A
-   * constructor parameter would collide on the JVM with the command-runner
-   * one, both being a single suspend function. Null keeps the production rule
-   * that a read without a native player answers null.
+   * Test seam standing in for the native player's property read path. Null
+   * keeps the production rule that a read without a native player answers null.
    */
   internal var propertyReaderOverride: (suspend (String) -> String?)? = null
 
@@ -2519,32 +2496,8 @@ class MpvPlayerCore private constructor(
 
   // Public API
   /**
-   * Atomically records the public pause intent applied by the next loadfile
-   * operation. The load owns the native state transition, so this deliberately
-   * does not enqueue a second pause property write.
-   */
-  fun setPauseIntentForLoad(paused: Boolean) {
-    if (!isInitialized || disposing || !scope.isActive) return
-
-    synchronized(publicPauseIntentLock) {
-      publicPauseIntentGeneration += 1L
-      desiredPaused = paused
-      resumeBlockedByPublicPause = paused
-      if (paused) {
-        cachedPaused = true
-        pausedForSurfaceLoss = false
-        pausedForAudioFocusLoss = false
-        deferredResumeRequested = false
-      } else if (!pausedForSurfaceLoss && !pausedForAudioFocusLoss && !deferredResumeRequested) {
-        cachedPaused = false
-      }
-    }
-    PlayerDebugLog.d(TAG) { "Load pause intent updated: paused=$paused" }
-  }
-
-  /**
-   * `dv-conversion-mode` is an app-level property shared with the ExoPlayer
-   * and Apple cores, not an mpv one. It maps onto the fork FFmpeg
+   * `dv-conversion-mode` is an app-level property shared with the Apple core,
+   * not an mpv one. It maps onto the fork FFmpeg
    * hevc_mediacodec decoder options through [GpuVoPolicy.dvDecoderOptions],
    * resolved against the file currently loaded: the answer depends on its
    * profile, and `vd-lavc-o` re-opens a running decoder, so a mode change
@@ -2866,8 +2819,7 @@ class MpvPlayerCore private constructor(
   }
 
   /**
-   * One property, synchronously. Kept for the ExoPlayer plugin's `hdr-compute-peak`
-   * probe, which has no coroutine to suspend in.
+   * One property, synchronously, for callers with no coroutine to suspend in.
    */
   fun getProperty(name: String): String? {
     if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -2924,21 +2876,6 @@ class MpvPlayerCore private constructor(
         onResult(if (!disposing && isInitialized) stats ?: unavailable else unavailable)
       }
     }
-  }
-
-  /**
-   * The overlay's sweep, synchronously. Kept for the ExoPlayer plugin, which
-   * reads it from a blocking method-channel handler; [getStatsAsync] is the
-   * mpv path. One `runBlocking` for the whole sweep, where reading each
-   * property through the blocking single-read entry meant one per property,
-   * nested inside whatever coroutine was already running the sweep.
-   */
-  fun getStats(): Map<String, Any?> {
-    if (Looper.myLooper() == Looper.getMainLooper()) {
-      Log.w(TAG, "Refusing synchronous getStats() on the main thread")
-      return mapOf("playerType" to "mpv")
-    }
-    return runBlocking(Dispatchers.IO) { readStats() }
   }
 
   /** Every property the overlay renders, read in one pass off the main thread. */
@@ -3045,17 +2982,12 @@ class MpvPlayerCore private constructor(
       return
     }
     submitMpvOperation(writeOperations, "command", onComplete) {
-      val runner = commandRunnerOverride
-      if (runner != null) {
-        runner(args)
-      } else {
-        val p = player ?: throw IllegalStateException("MPV player unavailable")
-        p.command(*args)
-      }
+      val p = player ?: throw IllegalStateException("MPV player unavailable")
+      p.command(*args)
     }
   }
 
-  override fun setVisible(visible: Boolean) {
+  fun setVisible(visible: Boolean) {
     // Audio-only: no render layer to show or hide — tolerated no-op.
     if (audioOnly || disposing) return
     runOnMain {
@@ -3080,11 +3012,7 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  override fun onPipModeChanged(isInPipMode: Boolean) {
-    // MPV handles aspect ratio internally via its own surface management
-  }
-
-  override fun updateFrame() {
+  fun updateFrame() {
     // Audio-only: no surface to refresh — tolerated no-op.
     if (audioOnly || disposing) return
     runOnMain {
@@ -3119,7 +3047,7 @@ class MpvPlayerCore private constructor(
 
   // Frame Rate Matching
 
-  override fun setVideoFrameRate(
+  fun setVideoFrameRate(
     fps: Float,
     videoDurationMs: Long,
     extraDelayMs: Long,
@@ -3138,10 +3066,6 @@ class MpvPlayerCore private constructor(
         onComplete(switched)
       }
     }
-  }
-
-  override fun clearVideoFrameRate() {
-    frameRateManager?.clearVideoFrameRate(hdrActive = hdrDisplayActive)
   }
 
   // Cleanup
@@ -3163,16 +3087,7 @@ class MpvPlayerCore private constructor(
     queued.forEach { it.invoke() }
   }
 
-  /**
-   * [preserveDisplayMode] keeps the window's preferredDisplayModeId across
-   * a player→player replacement (the successor inherits the rate without a
-   * second HDMI renegotiation); false restores the display's default mode,
-   * deferred past the HDR exit when the session output HDR
-   * ([FrameRateManager.clearVideoFrameRate]). Restoring here, not only from
-   * Dart's explicit `clearVideoFrameRate`, is what covers activity and
-   * engine detach, which never reach that call.
-   */
-  fun dispose(preserveDisplayMode: Boolean = false, onComplete: (() -> Unit)? = null) {
+  fun dispose(onComplete: (() -> Unit)? = null) {
     if (disposing) {
       // Answering now would report a teardown that is still running; the
       // in-flight disposal settles this caller too.
@@ -3199,15 +3114,8 @@ class MpvPlayerCore private constructor(
 
     handler.removeCallbacksAndMessages(null)
 
-    // Clean up frame rate and audio focus. The display-mode restore is owned
-    // here; Dart's explicit clearVideoFrameRate before dispose is idempotent
-    // against it (the manager returns once preferredDisplayModeId is 0, and
-    // re-arms the same deferred HDR restore otherwise). The deferred restore
-    // runs on the manager's own handler, not [handler], so the wholesale
-    // removeCallbacksAndMessages above cannot cancel it.
-    frameRateManager?.let { manager ->
-      if (preserveDisplayMode) manager.releasePending() else manager.clearVideoFrameRate(hdrActive = hdrDisplayActive)
-    }
+    // Clean up audio focus. The window's display mode is the plugin's: it
+    // restores or keeps it (a player→player replacement) before disposing.
     frameRateManager = null
     audioFocusManager?.release()
     audioFocusManager = null

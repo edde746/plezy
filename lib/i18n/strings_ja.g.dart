@@ -349,16 +349,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'アニメーションを減らし、低解像度のアートワークを使用します';
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => '未視聴エピソードのサムネイルと説明をぼかします';
-	@override String get playerBackend => 'プレーヤーバックエンド';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'ハードウェアデコード';
 	@override String get hardwareDecodingDescription => '利用可能な場合にハードウェアアクセラレーションを使用';
-	@override String get playbackBuffer => '再生バッファー';
-	@override String get playbackBufferAuto => '自動（推奨）';
-	@override String get playbackBufferLarge => '大';
-	@override String get playbackBufferExtraLarge => '特大';
-	@override String get playbackBufferDescription => '不安定な接続に備えてより多くのバッファーを使用します。バッファーサイズによっても制限されます。';
 	@override String get defaultQualityTitle => 'デフォルト画質';
 	@override String get cellularQualityTitle => 'モバイルデータ通信時のデフォルト画質';
 	@override String get cellularQualitySameAsDefault => 'デフォルト画質と同じ';
@@ -504,8 +496,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get matchDynamicRange => 'ダイナミックレンジを合わせる';
 	@override String get matchDynamicRangeDescription => 'HDRコンテンツではHDRに切り替え、その後SDRに戻します';
 	@override String get displaySwitchDelay => 'ディスプレイ切り替え遅延';
-	@override String get tunneledPlayback => 'トンネル再生';
-	@override String get tunneledPlaybackDescription => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合や動きがカクつく場合は無効にしてください。';
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioPassthroughDescription => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。';
 	@override String get audioPassthroughDescriptionApple => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。';
@@ -546,7 +536,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'プレーヤー';
 	@override String get hdrSdrConversionPlayerDescription => 'プレーヤーで変換します。色は一定ですが、低価格なTVボックスでは4Kがカクつくことがあります';
 	@override String get deinterlace => 'デインターレース';
-	@override String get deinterlaceDescription => 'インターレース映像のくし型ノイズを除去します（mpvプレーヤーのみ）';
+	@override String get deinterlaceDescription => 'インターレース映像のくし型ノイズを除去します';
 	@override String get deinterlaceOff => 'オフ';
 	@override String get deinterlaceOffDescription => 'インターレース映像をデコードされたまま表示します';
 	@override String get deinterlaceVideo => 'ビデオ';
@@ -1072,7 +1062,6 @@ class _Translations$messages$ja extends Translations$messages$en {
 	@override String get noItemsAvailable => 'アイテムがありません';
 	@override String get failedToCreatePlayQueueNoItems => '再生キューを作成できませんでした — アイテムがありません';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}に失敗しました: ${error}';
-	@override String get switchingToCompatiblePlayer => '互換性のあるプレーヤーに切り替え中…';
 	@override String get serverLimitTitle => '再生に失敗しました';
 	@override String get serverLimitBody => 'サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。';
 	@override String get mediaUnreadableTitle => 'ファイルを利用できません';
@@ -1119,8 +1108,6 @@ class _Translations$subtitlingStyling$ja extends Translations$subtitlingStyling$
 	@override String get positionBottom => '下';
 	@override String get useMargins => '余白を使用';
 	@override String get useMarginsDescription => 'テキスト字幕を動画の外側の領域に表示できるようにします。スタイル付き字幕は元の配置を維持する場合があります。';
-	@override String get anchorToScreen => '画面に固定';
-	@override String get anchorToScreenDescription => 'ワイドスクリーン映像の下にある黒帯にテキスト字幕を表示します';
 	@override String get bold => '太字';
 	@override String get italic => '斜体';
 	@override String get renderResolution => 'レンダリング解像度';
@@ -2097,8 +2084,6 @@ class _Translations$performanceOverlay$ja extends Translations$performanceOverla
 	@override String get buffer => 'バッファ';
 	@override String get app => 'アプリ';
 	@override String get decoder => 'デコーダー';
-	@override String get rawDecoder => 'Raw デコーダー';
-	@override String get tunneling => 'トンネリング';
 	@override String get passthrough => 'パススルー';
 	@override String get aspect => 'アスペクト';
 	@override String get rotation => '回転';
@@ -2111,7 +2096,6 @@ class _Translations$performanceOverlay$ja extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG ベースレイヤー';
 	@override String get dvRouteBaseLayerSdr => 'SDR ベースレイヤー';
 	@override String get dvRouteReshaped => 'RPU リシェイプ（gpu-next）';
-	@override String get p7Conversion => 'P7 変換';
 	@override String get sampleRate => 'サンプルレート';
 	@override String get pixelFormat => 'ピクセル形式';
 	@override String get hwFormat => 'HW 形式';
@@ -2122,9 +2106,6 @@ class _Translations$performanceOverlay$ja extends Translations$performanceOverla
 	@override String get displayFps => '表示 FPS';
 	@override String get avSync => 'A/V 同期';
 	@override String get dropped => 'ドロップ';
-	@override String get dvRpus => 'DV RPU';
-	@override String get dvRpuAverage => 'DV RPU 平均';
-	@override String get dvSampleAverage => 'DV サンプル平均';
 	@override String get maxLuma => '最大輝度';
 	@override String get minLuma => '最小輝度';
 	@override String get maxCll => 'MaxCLL';
@@ -2136,15 +2117,7 @@ class _Translations$performanceOverlay$ja extends Translations$performanceOverla
 	@override String get memory => 'メモリ';
 	@override String get uiFps => 'UI FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android HW';
-	@override String get decoderNvidiaHw => 'NVIDIA HW';
-	@override String get decoderQualcommHw => 'Qualcomm HW';
-	@override String get decoderMediatekHw => 'MediaTek HW';
-	@override String get decoderExynosHw => 'Exynos HW';
 	@override String get decoderSoftware => 'ソフトウェア';
-	@override String get decoderHardware => 'ハードウェア';
-	@override String get tunnelingActive => '有効';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）';
 }
 
 // Path: externalPlayer
@@ -3616,16 +3589,8 @@ extension on TranslationsJa {
 			'settings.visualEffectsReducedDescription' => 'アニメーションを減らし、低解像度のアートワークを使用します',
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => '未視聴エピソードのサムネイルと説明をぼかします',
-			'settings.playerBackend' => 'プレーヤーバックエンド',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'ハードウェアデコード',
 			'settings.hardwareDecodingDescription' => '利用可能な場合にハードウェアアクセラレーションを使用',
-			'settings.playbackBuffer' => '再生バッファー',
-			'settings.playbackBufferAuto' => '自動（推奨）',
-			'settings.playbackBufferLarge' => '大',
-			'settings.playbackBufferExtraLarge' => '特大',
-			'settings.playbackBufferDescription' => '不安定な接続に備えてより多くのバッファーを使用します。バッファーサイズによっても制限されます。',
 			'settings.defaultQualityTitle' => 'デフォルト画質',
 			'settings.cellularQualityTitle' => 'モバイルデータ通信時のデフォルト画質',
 			'settings.cellularQualitySameAsDefault' => 'デフォルト画質と同じ',
@@ -3771,8 +3736,6 @@ extension on TranslationsJa {
 			'settings.matchDynamicRange' => 'ダイナミックレンジを合わせる',
 			'settings.matchDynamicRangeDescription' => 'HDRコンテンツではHDRに切り替え、その後SDRに戻します',
 			'settings.displaySwitchDelay' => 'ディスプレイ切り替え遅延',
-			'settings.tunneledPlayback' => 'トンネル再生',
-			'settings.tunneledPlaybackDescription' => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合や動きがカクつく場合は無効にしてください。',
 			'settings.audioPassthrough' => 'オーディオパススルー',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。',
@@ -3813,7 +3776,7 @@ extension on TranslationsJa {
 			'settings.hdrSdrConversionPlayer' => 'プレーヤー',
 			'settings.hdrSdrConversionPlayerDescription' => 'プレーヤーで変換します。色は一定ですが、低価格なTVボックスでは4Kがカクつくことがあります',
 			'settings.deinterlace' => 'デインターレース',
-			'settings.deinterlaceDescription' => 'インターレース映像のくし型ノイズを除去します（mpvプレーヤーのみ）',
+			'settings.deinterlaceDescription' => 'インターレース映像のくし型ノイズを除去します',
 			'settings.deinterlaceOff' => 'オフ',
 			'settings.deinterlaceOffDescription' => 'インターレース映像をデコードされたまま表示します',
 			'settings.deinterlaceVideo' => 'ビデオ',
@@ -3894,8 +3857,6 @@ extension on TranslationsJa {
 			'themeEditor.slots.text' => 'テキスト',
 			'themeEditor.slots.textMuted' => '補助テキスト',
 			'themeEditor.slots.accent' => 'アクセント',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB または #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '他のテーマから',
@@ -3906,6 +3867,8 @@ extension on TranslationsJa {
 			'themeEditor.contrast.textMutedOnSurface' => 'サーフェス上の補助テキスト',
 			'themeEditor.contrast.accentOnBg' => '背景上のアクセント',
 			'themeEditor.contrast.accentOnSurface' => 'サーフェス上のアクセント',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'アクセント上のボタンラベル',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1（推奨値の${minimum}:1未満）',
 			'themeEditor.discardTitle' => '変更を破棄しますか？',
@@ -4276,7 +4239,6 @@ extension on TranslationsJa {
 			'messages.noItemsAvailable' => 'アイテムがありません',
 			'messages.failedToCreatePlayQueueNoItems' => '再生キューを作成できませんでした — アイテムがありません',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}に失敗しました: ${error}',
-			'messages.switchingToCompatiblePlayer' => '互換性のあるプレーヤーに切り替え中…',
 			'messages.serverLimitTitle' => '再生に失敗しました',
 			'messages.serverLimitBody' => 'サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。',
 			'messages.mediaUnreadableTitle' => 'ファイルを利用できません',
@@ -4314,8 +4276,6 @@ extension on TranslationsJa {
 			'subtitlingStyling.positionBottom' => '下',
 			'subtitlingStyling.useMargins' => '余白を使用',
 			'subtitlingStyling.useMarginsDescription' => 'テキスト字幕を動画の外側の領域に表示できるようにします。スタイル付き字幕は元の配置を維持する場合があります。',
-			'subtitlingStyling.anchorToScreen' => '画面に固定',
-			'subtitlingStyling.anchorToScreenDescription' => 'ワイドスクリーン映像の下にある黒帯にテキスト字幕を表示します',
 			'subtitlingStyling.bold' => '太字',
 			'subtitlingStyling.italic' => '斜体',
 			'subtitlingStyling.renderResolution' => 'レンダリング解像度',
@@ -4408,8 +4368,6 @@ extension on TranslationsJa {
 			'connections.sectionTitle' => '接続',
 			'connections.addConnection' => '接続を追加',
 			'connections.addConnectionSubtitleNoProfile' => 'Plexでサインインするか、JellyfinまたはEmbyサーバーに接続',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました',
@@ -4423,6 +4381,8 @@ extension on TranslationsJa {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '音声・字幕・ライブラリのオプションは${count}個のアカウントに保存されています',
 			'accountPreferences.pickAccount' => '各アカウントに独自の設定が保存されています。編集するアカウントを選択してください。',
 			'accountPreferences.storedOnAccount' => 'これらのオプションはアカウント自体に保存されるため、サインインしているすべてのアプリ（他のデバイスのPlezyを含む）で使用されます。',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => '設定できるアカウントがありません',
 			'accountPreferences.noAccountsHint' => 'Plexにサインインするか、JellyfinまたはEmbyサーバーに接続すると、そのアカウントに保存された設定がここに表示されます。',
 			'accountPreferences.unavailable' => 'このアカウントにアクセスできません',
@@ -4922,8 +4882,6 @@ extension on TranslationsJa {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}から無効なライブTV再生データが返されました',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'ライブチャンネルを開始できませんでした',
 			'liveTv.failedToBuildStreamUrl' => 'ストリームURLを生成できませんでした',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'チャンネルを再生できませんでした: ${reason}',
@@ -4937,6 +4895,8 @@ extension on TranslationsJa {
 			'collections.deleteFailed' => 'コレクションの削除に失敗しました',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'コレクションの削除に失敗しました: ${error}',
 			'collections.selectCollection' => 'コレクションを選択',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'コレクション名',
 			'collections.enterCollectionName' => 'コレクション名を入力',
 			'collections.addedToCollection' => 'コレクションに追加しました',
@@ -5387,8 +5347,6 @@ extension on TranslationsJa {
 			'performanceOverlay.buffer' => 'バッファ',
 			'performanceOverlay.app' => 'アプリ',
 			'performanceOverlay.decoder' => 'デコーダー',
-			'performanceOverlay.rawDecoder' => 'Raw デコーダー',
-			'performanceOverlay.tunneling' => 'トンネリング',
 			'performanceOverlay.passthrough' => 'パススルー',
 			'performanceOverlay.aspect' => 'アスペクト',
 			'performanceOverlay.rotation' => '回転',
@@ -5401,7 +5359,6 @@ extension on TranslationsJa {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG ベースレイヤー',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR ベースレイヤー',
 			'performanceOverlay.dvRouteReshaped' => 'RPU リシェイプ（gpu-next）',
-			'performanceOverlay.p7Conversion' => 'P7 変換',
 			'performanceOverlay.sampleRate' => 'サンプルレート',
 			'performanceOverlay.pixelFormat' => 'ピクセル形式',
 			'performanceOverlay.hwFormat' => 'HW 形式',
@@ -5412,9 +5369,6 @@ extension on TranslationsJa {
 			'performanceOverlay.displayFps' => '表示 FPS',
 			'performanceOverlay.avSync' => 'A/V 同期',
 			'performanceOverlay.dropped' => 'ドロップ',
-			'performanceOverlay.dvRpus' => 'DV RPU',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
-			'performanceOverlay.dvSampleAverage' => 'DV サンプル平均',
 			'performanceOverlay.maxLuma' => '最大輝度',
 			'performanceOverlay.minLuma' => '最小輝度',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5426,18 +5380,8 @@ extension on TranslationsJa {
 			'performanceOverlay.memory' => 'メモリ',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'ソフトウェア',
-			'performanceOverlay.decoderHardware' => 'ハードウェア',
-			'performanceOverlay.tunnelingActive' => '有効',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			'externalPlayer.title' => '外部プレーヤー',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => '外部プレーヤーを使用',
 			'externalPlayer.useExternalPlayerDescription' => '動画を別のアプリで開きます',
 			'externalPlayer.selectPlayer' => 'プレーヤーを選択',
@@ -5465,6 +5409,8 @@ extension on TranslationsJa {
 			'metadataEdit.contentRating' => 'コンテンツレーティング',
 			'metadataEdit.studio' => 'スタジオ',
 			'metadataEdit.tagline' => 'タグライン',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',

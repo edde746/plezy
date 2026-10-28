@@ -349,16 +349,8 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => '애니메이션을 줄이고 아트워크 해상도를 낮춥니다';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
-	@override String get playerBackend => '플레이어 백엔드';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
-	@override String get playbackBuffer => '재생 버퍼';
-	@override String get playbackBufferAuto => '자동 (권장)';
-	@override String get playbackBufferLarge => '대형';
-	@override String get playbackBufferExtraLarge => '초대형';
-	@override String get playbackBufferDescription => '불안정한 연결에 대비해 더 많은 버퍼를 사용합니다. 버퍼 크기에 의해서도 제한됩니다.';
 	@override String get defaultQualityTitle => '기본 화질';
 	@override String get cellularQualityTitle => '셀룰러에서 기본 화질';
 	@override String get cellularQualitySameAsDefault => '기본 화질과 동일';
@@ -504,8 +496,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get matchDynamicRange => '다이나믹 레인지 맞춤';
 	@override String get matchDynamicRangeDescription => 'HDR 콘텐츠에서는 HDR로 전환한 뒤 SDR로 되돌림';
 	@override String get displaySwitchDelay => '디스플레이 전환 지연';
-	@override String get tunneledPlayback => '터널 재생';
-	@override String get tunneledPlaybackDescription => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이거나 움직임이 끊기면 비활성화하세요.';
 	@override String get audioPassthrough => '오디오 패스스루';
 	@override String get audioPassthroughDescription => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.';
 	@override String get audioPassthroughDescriptionApple => 'Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.';
@@ -546,7 +536,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => '플레이어';
 	@override String get hdrSdrConversionPlayerDescription => '플레이어가 변환합니다. 색상은 일정하지만 저사양 TV 박스에서는 4K가 끊길 수 있습니다';
 	@override String get deinterlace => '디인터레이싱';
-	@override String get deinterlaceDescription => '인터레이스 비디오의 빗살 무늬 아티팩트를 제거합니다 (mpv 플레이어만 해당)';
+	@override String get deinterlaceDescription => '인터레이스 비디오의 빗살 무늬 아티팩트를 제거합니다';
 	@override String get deinterlaceOff => '끄기';
 	@override String get deinterlaceOffDescription => '인터레이스 비디오를 디코딩된 그대로 표시합니다';
 	@override String get deinterlaceVideo => '비디오';
@@ -1072,7 +1062,6 @@ class _Translations$messages$ko extends Translations$messages$en {
 	@override String get noItemsAvailable => '사용 가능한 항목이 없습니다';
 	@override String get failedToCreatePlayQueueNoItems => '재생 대기열을 만들지 못했습니다 — 항목이 없습니다';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}';
-	@override String get switchingToCompatiblePlayer => '호환되는 플레이어로 전환 중...';
 	@override String get serverLimitTitle => '재생 실패';
 	@override String get serverLimitBody => '서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.';
 	@override String get mediaUnreadableTitle => '파일을 사용할 수 없음';
@@ -1119,8 +1108,6 @@ class _Translations$subtitlingStyling$ko extends Translations$subtitlingStyling$
 	@override String get positionBottom => '아래';
 	@override String get useMargins => '여백 사용';
 	@override String get useMarginsDescription => '텍스트 자막을 비디오 바깥 영역에 표시할 수 있습니다. 스타일이 적용된 자막은 원래 위치를 유지할 수 있습니다.';
-	@override String get anchorToScreen => '화면에 고정';
-	@override String get anchorToScreenDescription => '와이드스크린 비디오 아래의 검은 여백에 텍스트 자막을 표시합니다';
 	@override String get bold => '굵게';
 	@override String get italic => '기울임꼴';
 	@override String get renderResolution => '렌더링 해상도';
@@ -2097,8 +2084,6 @@ class _Translations$performanceOverlay$ko extends Translations$performanceOverla
 	@override String get buffer => '버퍼';
 	@override String get app => '앱';
 	@override String get decoder => '디코더';
-	@override String get rawDecoder => '원본 디코더';
-	@override String get tunneling => '터널링';
 	@override String get passthrough => '패스스루';
 	@override String get aspect => '화면비';
 	@override String get rotation => '회전';
@@ -2111,7 +2096,6 @@ class _Translations$performanceOverlay$ko extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG 베이스 레이어';
 	@override String get dvRouteBaseLayerSdr => 'SDR 베이스 레이어';
 	@override String get dvRouteReshaped => 'RPU 리셰이핑 (gpu-next)';
-	@override String get p7Conversion => 'P7 변환';
 	@override String get sampleRate => '샘플 레이트';
 	@override String get pixelFormat => '픽셀 형식';
 	@override String get hwFormat => 'HW 형식';
@@ -2122,9 +2106,6 @@ class _Translations$performanceOverlay$ko extends Translations$performanceOverla
 	@override String get displayFps => '디스플레이 FPS';
 	@override String get avSync => 'A/V 동기화';
 	@override String get dropped => '드롭됨';
-	@override String get dvRpus => 'DV RPU';
-	@override String get dvRpuAverage => 'DV RPU 평균';
-	@override String get dvSampleAverage => 'DV 샘플 평균';
 	@override String get maxLuma => '최대 휘도';
 	@override String get minLuma => '최소 휘도';
 	@override String get maxCll => 'MaxCLL';
@@ -2136,15 +2117,7 @@ class _Translations$performanceOverlay$ko extends Translations$performanceOverla
 	@override String get memory => '메모리';
 	@override String get uiFps => 'UI FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android HW';
-	@override String get decoderNvidiaHw => 'NVIDIA HW';
-	@override String get decoderQualcommHw => 'Qualcomm HW';
-	@override String get decoderMediatekHw => 'MediaTek HW';
-	@override String get decoderExynosHw => 'Exynos HW';
 	@override String get decoderSoftware => '소프트웨어';
-	@override String get decoderHardware => '하드웨어';
-	@override String get tunnelingActive => '활성';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)';
 }
 
 // Path: externalPlayer
@@ -3616,16 +3589,8 @@ extension on TranslationsKo {
 			'settings.visualEffectsReducedDescription' => '애니메이션을 줄이고 아트워크 해상도를 낮춥니다',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
-			'settings.playerBackend' => '플레이어 백엔드',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
-			'settings.playbackBuffer' => '재생 버퍼',
-			'settings.playbackBufferAuto' => '자동 (권장)',
-			'settings.playbackBufferLarge' => '대형',
-			'settings.playbackBufferExtraLarge' => '초대형',
-			'settings.playbackBufferDescription' => '불안정한 연결에 대비해 더 많은 버퍼를 사용합니다. 버퍼 크기에 의해서도 제한됩니다.',
 			'settings.defaultQualityTitle' => '기본 화질',
 			'settings.cellularQualityTitle' => '셀룰러에서 기본 화질',
 			'settings.cellularQualitySameAsDefault' => '기본 화질과 동일',
@@ -3771,8 +3736,6 @@ extension on TranslationsKo {
 			'settings.matchDynamicRange' => '다이나믹 레인지 맞춤',
 			'settings.matchDynamicRangeDescription' => 'HDR 콘텐츠에서는 HDR로 전환한 뒤 SDR로 되돌림',
 			'settings.displaySwitchDelay' => '디스플레이 전환 지연',
-			'settings.tunneledPlayback' => '터널 재생',
-			'settings.tunneledPlaybackDescription' => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이거나 움직임이 끊기면 비활성화하세요.',
 			'settings.audioPassthrough' => '오디오 패스스루',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.',
@@ -3813,7 +3776,7 @@ extension on TranslationsKo {
 			'settings.hdrSdrConversionPlayer' => '플레이어',
 			'settings.hdrSdrConversionPlayerDescription' => '플레이어가 변환합니다. 색상은 일정하지만 저사양 TV 박스에서는 4K가 끊길 수 있습니다',
 			'settings.deinterlace' => '디인터레이싱',
-			'settings.deinterlaceDescription' => '인터레이스 비디오의 빗살 무늬 아티팩트를 제거합니다 (mpv 플레이어만 해당)',
+			'settings.deinterlaceDescription' => '인터레이스 비디오의 빗살 무늬 아티팩트를 제거합니다',
 			'settings.deinterlaceOff' => '끄기',
 			'settings.deinterlaceOffDescription' => '인터레이스 비디오를 디코딩된 그대로 표시합니다',
 			'settings.deinterlaceVideo' => '비디오',
@@ -3894,8 +3857,6 @@ extension on TranslationsKo {
 			'themeEditor.slots.text' => '텍스트',
 			'themeEditor.slots.textMuted' => '보조 텍스트',
 			'themeEditor.slots.accent' => '강조색',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => '불투명도',
 			'themeEditor.hexHint' => '#RRGGBB 또는 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '다른 테마에서',
@@ -3906,6 +3867,8 @@ extension on TranslationsKo {
 			'themeEditor.contrast.textMutedOnSurface' => '표면 위 보조 텍스트',
 			'themeEditor.contrast.accentOnBg' => '배경 위 강조색',
 			'themeEditor.contrast.accentOnSurface' => '표면 위 강조색',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => '강조색 위 버튼 라벨',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, 권장 기준 ${minimum}:1 미만',
 			'themeEditor.discardTitle' => '변경 사항을 버리시겠습니까?',
@@ -4276,7 +4239,6 @@ extension on TranslationsKo {
 			'messages.noItemsAvailable' => '사용 가능한 항목이 없습니다',
 			'messages.failedToCreatePlayQueueNoItems' => '재생 대기열을 만들지 못했습니다 — 항목이 없습니다',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}',
-			'messages.switchingToCompatiblePlayer' => '호환되는 플레이어로 전환 중...',
 			'messages.serverLimitTitle' => '재생 실패',
 			'messages.serverLimitBody' => '서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.',
 			'messages.mediaUnreadableTitle' => '파일을 사용할 수 없음',
@@ -4314,8 +4276,6 @@ extension on TranslationsKo {
 			'subtitlingStyling.positionBottom' => '아래',
 			'subtitlingStyling.useMargins' => '여백 사용',
 			'subtitlingStyling.useMarginsDescription' => '텍스트 자막을 비디오 바깥 영역에 표시할 수 있습니다. 스타일이 적용된 자막은 원래 위치를 유지할 수 있습니다.',
-			'subtitlingStyling.anchorToScreen' => '화면에 고정',
-			'subtitlingStyling.anchorToScreenDescription' => '와이드스크린 비디오 아래의 검은 여백에 텍스트 자막을 표시합니다',
 			'subtitlingStyling.bold' => '굵게',
 			'subtitlingStyling.italic' => '기울임꼴',
 			'subtitlingStyling.renderResolution' => '렌더링 해상도',
@@ -4408,8 +4368,6 @@ extension on TranslationsKo {
 			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name}의 세션이 만료되었습니다',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count}개 서버의 세션이 만료되었습니다',
@@ -4423,6 +4381,8 @@ extension on TranslationsKo {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '${count}개 계정에 저장된 오디오, 자막 및 라이브러리 옵션',
 			'accountPreferences.pickAccount' => '각 계정은 고유한 기본 설정을 저장합니다. 편집할 계정을 선택하세요.',
 			'accountPreferences.storedOnAccount' => '이 옵션은 계정 자체에 저장되므로 해당 계정으로 로그인한 모든 앱에서 사용됩니다 — 다른 기기의 Plezy를 포함합니다.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => '구성할 계정이 없습니다',
 			'accountPreferences.noAccountsHint' => 'Plex에 로그인하거나 Jellyfin 또는 Emby 서버에 연결하면 해당 계정에 저장된 기본 설정이 여기에 표시됩니다.',
 			'accountPreferences.unavailable' => '이 계정에 연결할 수 없습니다',
@@ -4922,8 +4882,6 @@ extension on TranslationsKo {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => '실시간 채널을 시작할 수 없습니다',
 			'liveTv.failedToBuildStreamUrl' => '스트림 URL을 생성할 수 없습니다',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => '채널을 시작하지 못했습니다: ${reason}',
@@ -4937,6 +4895,8 @@ extension on TranslationsKo {
 			'collections.deleteFailed' => '컬렉션 삭제 실패',
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => '컬렉션 이름',
 			'collections.enterCollectionName' => '컬렉션 이름 입력',
 			'collections.addedToCollection' => '컬렉션에 추가됨',
@@ -5387,8 +5347,6 @@ extension on TranslationsKo {
 			'performanceOverlay.buffer' => '버퍼',
 			'performanceOverlay.app' => '앱',
 			'performanceOverlay.decoder' => '디코더',
-			'performanceOverlay.rawDecoder' => '원본 디코더',
-			'performanceOverlay.tunneling' => '터널링',
 			'performanceOverlay.passthrough' => '패스스루',
 			'performanceOverlay.aspect' => '화면비',
 			'performanceOverlay.rotation' => '회전',
@@ -5401,7 +5359,6 @@ extension on TranslationsKo {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG 베이스 레이어',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR 베이스 레이어',
 			'performanceOverlay.dvRouteReshaped' => 'RPU 리셰이핑 (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7 변환',
 			'performanceOverlay.sampleRate' => '샘플 레이트',
 			'performanceOverlay.pixelFormat' => '픽셀 형식',
 			'performanceOverlay.hwFormat' => 'HW 형식',
@@ -5412,9 +5369,6 @@ extension on TranslationsKo {
 			'performanceOverlay.displayFps' => '디스플레이 FPS',
 			'performanceOverlay.avSync' => 'A/V 동기화',
 			'performanceOverlay.dropped' => '드롭됨',
-			'performanceOverlay.dvRpus' => 'DV RPU',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU 평균',
-			'performanceOverlay.dvSampleAverage' => 'DV 샘플 평균',
 			'performanceOverlay.maxLuma' => '최대 휘도',
 			'performanceOverlay.minLuma' => '최소 휘도',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5426,18 +5380,8 @@ extension on TranslationsKo {
 			'performanceOverlay.memory' => '메모리',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => '소프트웨어',
-			'performanceOverlay.decoderHardware' => '하드웨어',
-			'performanceOverlay.tunnelingActive' => '활성',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)',
 			'externalPlayer.title' => '외부 플레이어',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
 			'externalPlayer.useExternalPlayerDescription' => '동영상을 다른 앱에서 열기',
 			'externalPlayer.selectPlayer' => '플레이어 선택',
@@ -5465,6 +5409,8 @@ extension on TranslationsKo {
 			'metadataEdit.contentRating' => '콘텐츠 등급',
 			'metadataEdit.studio' => '스튜디오',
 			'metadataEdit.tagline' => '태그라인',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',

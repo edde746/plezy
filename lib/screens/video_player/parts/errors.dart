@@ -301,18 +301,4 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     await showServerBusyDialog(context);
     if (mounted) unawaited(_handleBackButton());
   }
-
-  /// Handle notification when native player switched from ExoPlayer to MPV
-  Future<void> _onBackendSwitched() async {
-    _playerBackendLabel = 'mpv';
-    _recordLifecycleState('backend_switched', action: 'mpv_fallback');
-
-    _toastController.show(
-      Symbols.swap_horiz_rounded,
-      t.messages.switchingToCompatiblePlayer,
-      duration: const Duration(seconds: 2),
-    );
-
-    await _trackManager?.onBackendSwitched();
-  }
 }

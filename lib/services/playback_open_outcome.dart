@@ -1,25 +1,14 @@
 import 'dart:async';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/platform/player_android.dart';
 import '../utils/app_logger.dart';
-
-/// Whose load-scoped signals describe the file one playback attempt opens.
-enum _OpenSignalSource {
-  /// mpv everywhere, including Android once its fallback core owns the file.
-  mpv,
-
-  /// Android ExoPlayer, which may hand the file to mpv mid-open
-  /// (`backend-switched`) and restart the load from scratch there.
-  androidExoPlayer,
-}
 
 /// The single owner of one playback attempt's open result.
 ///
 /// [Player.open] resolves as soon as the load is dispatched; the backend
 /// reports success (`file-loaded`, `playback-restart`) or failure (`end-file
-/// reason=error`) later, as events. Every startup waiter — the Android mpv
-/// frame-rate startup gate, post-open external-subtitle readiness, the
+/// reason=error`) later, as events. Every startup waiter — the frame-rate
+/// startup gate, post-open external-subtitle readiness, the
 /// sidecar open guard — derives from this object, so a failed, aborted, or
 /// disposed open settles all of them at once instead of each dying with a
 /// private timeout or a `Stream.first` that only errors once the player
@@ -27,11 +16,7 @@ enum _OpenSignalSource {
 ///
 /// Arm before [Player.open] so a synchronously fast backend cannot outrun the
 /// subscriptions. Only signals for the file this attempt loads count: mpv's
-/// `start-file` after arming delimits them, and on Android ExoPlayer only a
-/// first frame after its media-item transition is conclusive — an `end-file`
-/// before [backendSwitched] is not, because the fallback core may still load
-/// the file. Such a terminal ExoPlayer failure reaches this object through
-/// the screen's error handler and [abort].
+/// `start-file` after arming delimits them.
 ///
 /// Every future resolves `true` on its event and `false` — never throws —
 /// once the load failed, [abort] ran, or the player's streams closed. The
@@ -42,7 +27,7 @@ enum _OpenSignalSource {
 /// moving (a resume seek decoding its way from a keyframe over a thin link)
 /// is not a stalled one.
 class PlaybackOpenOutcome {
-  PlaybackOpenOutcome._(Player player, this._source, this._deadline, this._onDeadline) {
+  PlaybackOpenOutcome._(Player player, this._deadline, this._onDeadline) {
     final streams = player.streams;
     _subscriptions.add(streams.fileStarted.listen((_) => _onFileStarted(), onDone: _onStreamsClosed));
     _subscriptions.add(streams.primaryMediaReady.listen((_) => _onPrimaryMediaReady(), onDone: _onStreamsClosed));
@@ -52,9 +37,6 @@ class PlaybackOpenOutcome {
     // No onDone: a backend without demuxer progress publishes an empty
     // stream, which is the absence of a signal, not a closed player.
     _subscriptions.add(streams.demuxerProgress.listen((_) => _onDemuxerProgress()));
-    if (_source == _OpenSignalSource.androidExoPlayer) {
-      _subscriptions.add(streams.backendSwitched.listen((_) => _onBackendSwitched(), onDone: _onStreamsClosed));
-    }
     // A stream that completes during listen has already settled this object.
     if (isSettled) _release();
   }
@@ -65,35 +47,15 @@ class PlaybackOpenOutcome {
   /// aborted the open, so the owner can raise the failure the backend never
   /// reported.
   static PlaybackOpenOutcome arm(Player player, {Duration? deadline, void Function()? onDeadline}) {
-    final source = switch (player) {
-      PlayerAndroid(usingMpvFallback: false) => _OpenSignalSource.androidExoPlayer,
-      _ => _OpenSignalSource.mpv,
-    };
-    return PlaybackOpenOutcome._(player, source, deadline, onDeadline);
+    return PlaybackOpenOutcome._(player, deadline, onDeadline);
   }
 
-  static PlaybackOpenOutcome armForTesting(
-    Player player, {
-    bool startsOnAndroidExoPlayer = false,
-    Duration? deadline,
-    void Function()? onDeadline,
-  }) {
-    return PlaybackOpenOutcome._(
-      player,
-      startsOnAndroidExoPlayer ? _OpenSignalSource.androidExoPlayer : _OpenSignalSource.mpv,
-      deadline,
-      onDeadline,
-    );
-  }
-
-  final _OpenSignalSource _source;
   final Duration? _deadline;
   final void Function()? _onDeadline;
   final List<StreamSubscription<void>> _subscriptions = [];
   final Completer<bool> _primaryMediaReady = Completer<bool>();
   final Completer<bool> _fileLoaded = Completer<bool>();
   final Completer<bool> _firstFrame = Completer<bool>();
-  final Completer<void> _backendSwitched = Completer<void>();
   Timer? _deadlineTimer;
 
   /// Whether the backend in charge has started this attempt's file since
@@ -112,12 +74,6 @@ class PlaybackOpenOutcome {
 
   /// The backend rendered the file's first frame.
   Future<bool> get firstFrame => _firstFrame.future;
-
-  /// Completes once Android ExoPlayer handed the load to the mpv fallback
-  /// core. Never completes otherwise.
-  Future<void> get backendSwitched => _backendSwitched.future;
-
-  bool get startsOnAndroidExoPlayer => _source == _OpenSignalSource.androidExoPlayer;
 
   /// Whether every future has resolved. A first frame settles all of them;
   /// failure, [abort], and a closed player settle whatever is still pending.
@@ -141,26 +97,16 @@ class PlaybackOpenOutcome {
     _release();
   }
 
-  bool get _mpvSignalsActive => _source == _OpenSignalSource.mpv || _backendSwitched.isCompleted;
-
   void _onFileStarted() {
-    if (!_mpvSignalsActive) return;
     _loadStarted = true;
     _restartDeadline();
   }
 
   void _onPrimaryMediaReady() {
-    if (_loadStarted && _mpvSignalsActive) _complete(_primaryMediaReady, true);
+    if (_loadStarted) _complete(_primaryMediaReady, true);
   }
 
   void _onFileLoaded() {
-    if (!_mpvSignalsActive) {
-      // ExoPlayer's media-item transition: the file is this attempt's, but the
-      // format decision — and with it the backend — is still open.
-      _loadStarted = true;
-      _restartDeadline();
-      return;
-    }
     if (!_loadStarted) return;
     _complete(_primaryMediaReady, true);
     _complete(_fileLoaded, true);
@@ -168,7 +114,7 @@ class PlaybackOpenOutcome {
   }
 
   void _onDemuxerProgress() {
-    if (_loadStarted && _mpvSignalsActive) _restartDeadline();
+    if (_loadStarted) _restartDeadline();
   }
 
   void _onPlaybackRestart() {
@@ -180,17 +126,10 @@ class PlaybackOpenOutcome {
   }
 
   void _onFileLoadFailed() {
-    if (!_loadStarted || !_mpvSignalsActive || isSettled) return;
+    if (!_loadStarted || isSettled) return;
     _failed = true;
     _settlePending(false);
     _release();
-  }
-
-  void _onBackendSwitched() {
-    if (_backendSwitched.isCompleted) return;
-    // mpv restarts the load: its own start-file re-delimits the signals.
-    _loadStarted = false;
-    _backendSwitched.complete();
   }
 
   void _onStreamsClosed() => abort('player streams closed');

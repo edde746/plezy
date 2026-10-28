@@ -181,7 +181,7 @@ void main() {
       expect(CodecUtils.formatAudioCodec('truehd', profile: null), 'TrueHD');
     });
 
-    test('RFC 6381 codec IDs from ExoPlayer map to friendly names', () {
+    test('RFC 6381 codec IDs map to friendly names', () {
       // AAC-LC as reported for MP4/HLS direct play (#1899).
       expect(CodecUtils.formatAudioCodec('mp4a.40.2'), 'AAC');
       expect(CodecUtils.formatAudioCodec('MP4A.40.2'), 'AAC');
@@ -220,7 +220,7 @@ void main() {
       expect(CodecUtils.formatAudioCodec('weird'), 'WEIRD');
     });
 
-    test('audio MIME types from ExoPlayer Format.sampleMimeType map to friendly names (#2063)', () {
+    test('audio MIME types map to friendly names (#2063)', () {
       expect(CodecUtils.formatAudioCodec('audio/mp4a-latm'), 'AAC');
       expect(CodecUtils.formatAudioCodec('audio/mpeg'), 'MP3');
       expect(CodecUtils.formatAudioCodec('audio/ac3'), 'AC3');

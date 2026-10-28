@@ -100,7 +100,6 @@ class FakePlayer implements Player {
   final bufferRangesCtrl = StreamController<List<BufferRange>>.broadcast(sync: true);
   final playbackRestartCtrl = StreamController<void>.broadcast(sync: true);
   final fileLoadedCtrl = StreamController<void>.broadcast(sync: true);
-  final backendSwitchedCtrl = StreamController<void>.broadcast(sync: true);
   final trackTransitionCtrl = StreamController<String>.broadcast(sync: true);
   final sourceStartedCtrl = StreamController<PlayerSourceStarted>.broadcast(sync: true);
   final sourceReadyCtrl = StreamController<PlayerSourceReady>.broadcast(sync: true);
@@ -126,7 +125,6 @@ class FakePlayer implements Player {
     bufferRanges: bufferRangesCtrl.stream,
     playbackRestart: playbackRestartCtrl.stream,
     fileLoaded: fileLoadedCtrl.stream,
-    backendSwitched: backendSwitchedCtrl.stream,
     trackTransition: trackTransitionCtrl.stream,
     sourceStarted: sourceStartedCtrl.stream,
     sourceReady: sourceReadyCtrl.stream,
@@ -224,7 +222,6 @@ class FakePlayer implements Player {
     bufferRangesCtrl.close();
     playbackRestartCtrl.close();
     fileLoadedCtrl.close();
-    backendSwitchedCtrl.close();
     trackTransitionCtrl.close();
     sourceStartedCtrl.close();
     sourceReadyCtrl.close();
@@ -337,12 +334,6 @@ class FakePlayer implements Player {
   Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {}
 
   @override
-  bool get supportsSecondarySubtitles => false;
-
-  @override
-  bool get detectsFpsAfterRender => false;
-
-  @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
   @override
@@ -412,33 +403,13 @@ class FakePlayer implements Player {
   }) async => false;
 
   @override
-  Future<void> clearVideoFrameRate() async {}
-
-  @override
-  Future<void> setSubtitleStyle({
-    required double fontSize,
-    required String textColor,
-    required double borderSize,
-    required String borderColor,
-    required String bgColor,
-    required int bgOpacity,
-    int subtitlePosition = 100,
-    bool bold = false,
-    bool italic = false,
-    bool anchorToScreen = false,
-  }) async {}
-
-  @override
-  Future<void> setBoxFitMode(int mode) async {}
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {}
 
   @override
   Future<void> setVideoZoom(double scale) async {}
 
   @override
   Future<Map<String, dynamic>> getStats() async => {};
-
-  @override
-  Future<String> runtimePlayerType() async => 'fake';
 
   @override
   Future<bool> requestAudioFocus() async => true;

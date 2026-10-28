@@ -203,7 +203,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
-      onToggleAmbientLighting: widget.player.playerType != 'exoplayer' ? widget.onToggleAmbientLighting : null,
+      onToggleAmbientLighting: widget.onToggleAmbientLighting,
       canControl: widget.canControl,
       isLive: widget.isLive,
       subtitlesVisible: _subtitlesVisible,

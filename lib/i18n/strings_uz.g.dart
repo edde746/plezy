@@ -349,16 +349,8 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Kamroq animatsiya va pastroq sifatli rasmlar';
 	@override String get hideSpoilers => 'Koʻrilmagan qismlar uchun spoylerlarni yashirish';
 	@override String get hideSpoilersDescription => 'Koʻrilmagan qismlar rasmlari va tavsiflarini xiralashtirish';
-	@override String get playerBackend => 'Pleyer infratuzilmasi';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Apparatli dekodlash';
 	@override String get hardwareDecodingDescription => 'Imkon qadar apparatli tezlashtirishdan foydalanish';
-	@override String get playbackBuffer => 'Ijro buferi';
-	@override String get playbackBufferAuto => 'Avto (tavsiya etiladi)';
-	@override String get playbackBufferLarge => 'Katta';
-	@override String get playbackBufferExtraLarge => 'Juda katta';
-	@override String get playbackBufferDescription => 'Beqaror ulanishlarga qarshi koʻproq buferlaydi. Bufer hajmi bilan ham cheklanadi.';
 	@override String get defaultQualityTitle => 'Standart sifat';
 	@override String get cellularQualityTitle => 'Mobil tarmoqda standart sifat';
 	@override String get cellularQualitySameAsDefault => 'Standart sifat bilan bir xil';
@@ -504,8 +496,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Dinamik diapazonni moslashtirish';
 	@override String get matchDynamicRangeDescription => 'HDR kontent uchun HDR-ni yoqish, soʻng SDR-ga qaytish';
 	@override String get displaySwitchDelay => 'Ekranni almashtirish kechikishi';
-	@override String get tunneledPlayback => 'Tunnelli ijro';
-	@override String get tunneledPlaybackDescription => 'Video tunnellashdan foydalanish. HDR ijrosida ekran qora boʻlsa yoki harakat uzilib qolsa, oʻchiring.';
 	@override String get audioPassthrough => 'Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.';
 	@override String get audioPassthroughDescriptionApple => 'Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.';
@@ -546,7 +536,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Pleyer';
 	@override String get hdrSdrConversionPlayerDescription => 'Aylantirishni pleyer bajaradi. Ranglar bir xil, lekin kuchsiz TV-pristavkalarda 4K qotishi mumkin';
 	@override String get deinterlace => 'Interleysni olib tashlash';
-	@override String get deinterlaceDescription => 'Interleys videodagi taroqsimon artefaktlarni olib tashlash (faqat mpv pleyerida)';
+	@override String get deinterlaceDescription => 'Interleys videodagi taroqsimon artefaktlarni olib tashlash';
 	@override String get deinterlaceOff => 'Oʻchirilgan';
 	@override String get deinterlaceOffDescription => 'Interleys videoni dekodlangan holicha koʻrsatish';
 	@override String get deinterlaceVideo => 'Video';
@@ -1076,7 +1066,6 @@ class _Translations$messages$uz extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Elementlar yoʻq';
 	@override String get failedToCreatePlayQueueNoItems => 'Ijro navbatini yaratib boʻlmadi — elementlar yoʻq';
 	@override String failedPlayback({required Object action, required Object error}) => '${action} muvaffaqiyatsiz tugadi: ${error}';
-	@override String get switchingToCompatiblePlayer => 'Mos keluvchi pleyerga oʻtilmoqda...';
 	@override String get serverLimitTitle => 'Ijro etishda xatolik';
 	@override String get serverLimitBody => 'Server xatoligi (HTTP 500). Cheklov ushbu seansni rad etdi.';
 	@override String get mediaUnreadableTitle => 'Fayl mavjud emas';
@@ -1123,8 +1112,6 @@ class _Translations$subtitlingStyling$uz extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Pastki';
 	@override String get useMargins => 'Chekkalardan foydalanish';
 	@override String get useMarginsDescription => 'Matnli subtitrlarga videodan tashqaridagi joydan foydalanishga ruxsat berish. Uslubiy subtitrlar oʻz joylashuvini saqlashi mumkin.';
-	@override String get anchorToScreen => 'Ekranga mahkamlash';
-	@override String get anchorToScreenDescription => 'Matnli subtitrlarni keng ekranli video ostidagi qora hoshiyalarda koʻrsatish';
 	@override String get bold => 'Qalin';
 	@override String get italic => 'Qiya';
 	@override String get renderResolution => 'Renderlash oʻlchamlari';
@@ -2107,8 +2094,6 @@ class _Translations$performanceOverlay$uz extends Translations$performanceOverla
 	@override String get buffer => 'Bufer';
 	@override String get app => 'Ilova';
 	@override String get decoder => 'Dekoder';
-	@override String get rawDecoder => 'Ishlov berilmagan dekoder';
-	@override String get tunneling => 'Tunnellash';
 	@override String get passthrough => 'Toʻgʻridan-toʻgʻri oʻtkazish';
 	@override String get aspect => 'Nisbat';
 	@override String get rotation => 'Aylanish';
@@ -2121,7 +2106,6 @@ class _Translations$performanceOverlay$uz extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG asosiy qatlami';
 	@override String get dvRouteBaseLayerSdr => 'SDR asosiy qatlami';
 	@override String get dvRouteReshaped => 'RPU orqali qayta shakllantirilgan (gpu-next)';
-	@override String get p7Conversion => 'P7 oʻtkazmasi';
 	@override String get sampleRate => 'Diskretlash chastotasi';
 	@override String get pixelFormat => 'Piksel formati';
 	@override String get hwFormat => 'HW formati';
@@ -2132,9 +2116,6 @@ class _Translations$performanceOverlay$uz extends Translations$performanceOverla
 	@override String get displayFps => 'Displey FPS';
 	@override String get avSync => 'A/V sinxronlash';
 	@override String get dropped => 'Tushirib qoldirilgan kadrlar';
-	@override String get dvRpus => 'DV RPU-lar';
-	@override String get dvRpuAverage => 'DV RPU Oʻrt.';
-	@override String get dvSampleAverage => 'DV Namuna Oʻrt.';
 	@override String get maxLuma => 'Maks Luma';
 	@override String get minLuma => 'Min Luma';
 	@override String get maxCll => 'MaxCLL';
@@ -2146,15 +2127,7 @@ class _Translations$performanceOverlay$uz extends Translations$performanceOverla
 	@override String get memory => 'Xotira';
 	@override String get uiFps => 'Interfeys (UI) FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android HW';
-	@override String get decoderNvidiaHw => 'NVIDIA HW';
-	@override String get decoderQualcommHw => 'Qualcomm HW';
-	@override String get decoderMediatekHw => 'MediaTek HW';
-	@override String get decoderExynosHw => 'Exynos HW';
 	@override String get decoderSoftware => 'Dasturiy';
-	@override String get decoderHardware => 'Apparat';
-	@override String get tunnelingActive => 'Faol';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)';
 }
 
 // Path: externalPlayer
@@ -3628,16 +3601,8 @@ extension on TranslationsUz {
 			'settings.visualEffectsReducedDescription' => 'Kamroq animatsiya va pastroq sifatli rasmlar',
 			'settings.hideSpoilers' => 'Koʻrilmagan qismlar uchun spoylerlarni yashirish',
 			'settings.hideSpoilersDescription' => 'Koʻrilmagan qismlar rasmlari va tavsiflarini xiralashtirish',
-			'settings.playerBackend' => 'Pleyer infratuzilmasi',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Apparatli dekodlash',
 			'settings.hardwareDecodingDescription' => 'Imkon qadar apparatli tezlashtirishdan foydalanish',
-			'settings.playbackBuffer' => 'Ijro buferi',
-			'settings.playbackBufferAuto' => 'Avto (tavsiya etiladi)',
-			'settings.playbackBufferLarge' => 'Katta',
-			'settings.playbackBufferExtraLarge' => 'Juda katta',
-			'settings.playbackBufferDescription' => 'Beqaror ulanishlarga qarshi koʻproq buferlaydi. Bufer hajmi bilan ham cheklanadi.',
 			'settings.defaultQualityTitle' => 'Standart sifat',
 			'settings.cellularQualityTitle' => 'Mobil tarmoqda standart sifat',
 			'settings.cellularQualitySameAsDefault' => 'Standart sifat bilan bir xil',
@@ -3783,8 +3748,6 @@ extension on TranslationsUz {
 			'settings.matchDynamicRange' => 'Dinamik diapazonni moslashtirish',
 			'settings.matchDynamicRangeDescription' => 'HDR kontent uchun HDR-ni yoqish, soʻng SDR-ga qaytish',
 			'settings.displaySwitchDelay' => 'Ekranni almashtirish kechikishi',
-			'settings.tunneledPlayback' => 'Tunnelli ijro',
-			'settings.tunneledPlaybackDescription' => 'Video tunnellashdan foydalanish. HDR ijrosida ekran qora boʻlsa yoki harakat uzilib qolsa, oʻchiring.',
 			'settings.audioPassthrough' => 'Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.',
 			'settings.audioPassthroughDescriptionApple' => 'Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.',
@@ -3825,7 +3788,7 @@ extension on TranslationsUz {
 			'settings.hdrSdrConversionPlayer' => 'Pleyer',
 			'settings.hdrSdrConversionPlayerDescription' => 'Aylantirishni pleyer bajaradi. Ranglar bir xil, lekin kuchsiz TV-pristavkalarda 4K qotishi mumkin',
 			'settings.deinterlace' => 'Interleysni olib tashlash',
-			'settings.deinterlaceDescription' => 'Interleys videodagi taroqsimon artefaktlarni olib tashlash (faqat mpv pleyerida)',
+			'settings.deinterlaceDescription' => 'Interleys videodagi taroqsimon artefaktlarni olib tashlash',
 			'settings.deinterlaceOff' => 'Oʻchirilgan',
 			'settings.deinterlaceOffDescription' => 'Interleys videoni dekodlangan holicha koʻrsatish',
 			'settings.deinterlaceVideo' => 'Video',
@@ -3906,8 +3869,6 @@ extension on TranslationsUz {
 			'themeEditor.slots.text' => 'Matn',
 			'themeEditor.slots.textMuted' => 'Ikkilamchi matn',
 			'themeEditor.slots.accent' => 'Urgʻu rangi',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Noshaffoflik',
 			'themeEditor.hexHint' => '#RRGGBB yoki #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Boshqa mavzulardan',
@@ -3918,6 +3879,8 @@ extension on TranslationsUz {
 			'themeEditor.contrast.textMutedOnSurface' => 'Sirtdagi ikkilamchi matn',
 			'themeEditor.contrast.accentOnBg' => 'Fondagi urgʻu rangi',
 			'themeEditor.contrast.accentOnSurface' => 'Sirtdagi urgʻu rangi',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Urgʻu rangidagi tugma matni',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, tavsiya etilgan ${minimum}:1 dan past',
 			'themeEditor.discardTitle' => 'Oʻzgarishlardan voz kechilsinmi?',
@@ -4288,7 +4251,6 @@ extension on TranslationsUz {
 			'messages.noItemsAvailable' => 'Elementlar yoʻq',
 			'messages.failedToCreatePlayQueueNoItems' => 'Ijro navbatini yaratib boʻlmadi — elementlar yoʻq',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action} muvaffaqiyatsiz tugadi: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Mos keluvchi pleyerga oʻtilmoqda...',
 			'messages.serverLimitTitle' => 'Ijro etishda xatolik',
 			'messages.serverLimitBody' => 'Server xatoligi (HTTP 500). Cheklov ushbu seansni rad etdi.',
 			'messages.mediaUnreadableTitle' => 'Fayl mavjud emas',
@@ -4326,8 +4288,6 @@ extension on TranslationsUz {
 			'subtitlingStyling.positionBottom' => 'Pastki',
 			'subtitlingStyling.useMargins' => 'Chekkalardan foydalanish',
 			'subtitlingStyling.useMarginsDescription' => 'Matnli subtitrlarga videodan tashqaridagi joydan foydalanishga ruxsat berish. Uslubiy subtitrlar oʻz joylashuvini saqlashi mumkin.',
-			'subtitlingStyling.anchorToScreen' => 'Ekranga mahkamlash',
-			'subtitlingStyling.anchorToScreenDescription' => 'Matnli subtitrlarni keng ekranli video ostidagi qora hoshiyalarda koʻrsatish',
 			'subtitlingStyling.bold' => 'Qalin',
 			'subtitlingStyling.italic' => 'Qiya',
 			'subtitlingStyling.renderResolution' => 'Renderlash oʻlchamlari',
@@ -4420,8 +4380,6 @@ extension on TranslationsUz {
 			'connections.sectionTitle' => 'Ulanishlar',
 			'connections.addConnection' => 'Ulanish qoʻshish',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} uchun seans vaqti tugadi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server uchun seans vaqti tugadi',
@@ -4435,6 +4393,8 @@ extension on TranslationsUz {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '${count} ta hisobda saqlangan audio, subtitr va kutubxona parametrlari',
 			'accountPreferences.pickAccount' => 'Har bir hisob oʻz sozlamalarini saqlaydi. Tahrirlash uchun birini tanlang.',
 			'accountPreferences.storedOnAccount' => 'Bu parametrlar hisobning oʻzida saqlanadi — unga kirilgan har bir ilova ulardan foydalanadi, jumladan boshqa qurilmalaringizdagi Plezy ham.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Sozlanadigan hisoblar yoʻq',
 			'accountPreferences.noAccountsHint' => 'Plex-ga kiring yoki Jellyfin yoki Emby serverini ulang — shunda oʻsha hisobda saqlangan sozlamalar shu yerda koʻrinadi.',
 			'accountPreferences.unavailable' => 'Bu hisobga ulanib boʻlmadi',
@@ -4934,8 +4894,6 @@ extension on TranslationsUz {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, soat ${time} da',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Jonli kanalni boshlab boʻlmadi',
 			'liveTv.failedToBuildStreamUrl' => 'Oqim URL-ini tuzib boʻlmadi',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanalni ishga tushirib boʻlmadi: ${reason}',
@@ -4949,6 +4907,8 @@ extension on TranslationsUz {
 			'collections.deleteFailed' => 'Toʻplamni oʻchirib boʻlmadi',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Toʻplamni oʻchirish xatoligi: ${error}',
 			'collections.selectCollection' => 'Toʻplamni tanlash',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Toʻplam nomi',
 			'collections.enterCollectionName' => 'Toʻplam nomini kiriting',
 			'collections.addedToCollection' => 'Toʻplamga qoʻshildi',
@@ -5399,8 +5359,6 @@ extension on TranslationsUz {
 			'performanceOverlay.buffer' => 'Bufer',
 			'performanceOverlay.app' => 'Ilova',
 			'performanceOverlay.decoder' => 'Dekoder',
-			'performanceOverlay.rawDecoder' => 'Ishlov berilmagan dekoder',
-			'performanceOverlay.tunneling' => 'Tunnellash',
 			'performanceOverlay.passthrough' => 'Toʻgʻridan-toʻgʻri oʻtkazish',
 			'performanceOverlay.aspect' => 'Nisbat',
 			'performanceOverlay.rotation' => 'Aylanish',
@@ -5413,7 +5371,6 @@ extension on TranslationsUz {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG asosiy qatlami',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR asosiy qatlami',
 			'performanceOverlay.dvRouteReshaped' => 'RPU orqali qayta shakllantirilgan (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7 oʻtkazmasi',
 			'performanceOverlay.sampleRate' => 'Diskretlash chastotasi',
 			'performanceOverlay.pixelFormat' => 'Piksel formati',
 			'performanceOverlay.hwFormat' => 'HW formati',
@@ -5424,9 +5381,6 @@ extension on TranslationsUz {
 			'performanceOverlay.displayFps' => 'Displey FPS',
 			'performanceOverlay.avSync' => 'A/V sinxronlash',
 			'performanceOverlay.dropped' => 'Tushirib qoldirilgan kadrlar',
-			'performanceOverlay.dvRpus' => 'DV RPU-lar',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU Oʻrt.',
-			'performanceOverlay.dvSampleAverage' => 'DV Namuna Oʻrt.',
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5438,18 +5392,8 @@ extension on TranslationsUz {
 			'performanceOverlay.memory' => 'Xotira',
 			'performanceOverlay.uiFps' => 'Interfeys (UI) FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Dasturiy',
-			'performanceOverlay.decoderHardware' => 'Apparat',
-			'performanceOverlay.tunnelingActive' => 'Faol',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)',
 			'externalPlayer.title' => 'Tashqi pleyer',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Tashqi pleyerdan foydalanish',
 			'externalPlayer.useExternalPlayerDescription' => 'Videolarni boshqa ilovada ochish',
 			'externalPlayer.selectPlayer' => 'Pleyerni tanlash',
@@ -5477,6 +5421,8 @@ extension on TranslationsUz {
 			'metadataEdit.contentRating' => 'Kontent reytingi',
 			'metadataEdit.studio' => 'Studiya',
 			'metadataEdit.tagline' => 'Shior/Slogan',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Tavsif/Qisqacha',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Fon',

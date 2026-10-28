@@ -124,10 +124,8 @@ class CodecUtils {
   /// Formats an audio codec name to a user-friendly display format.
   ///
   /// Accepts ffmpeg-style names as reported by mpv and the media
-  /// servers ('aac', 'eac3'), RFC 6381 codec IDs as reported by
-  /// ExoPlayer's `Format.codecs` ('mp4a.40.2', 'ec-3', 'dtsc'), and
-  /// `audio/...` MIME types as reported by ExoPlayer's
-  /// `Format.sampleMimeType` ('audio/eac3', 'audio/vnd.dts').
+  /// servers ('aac', 'eac3'), RFC 6381 codec IDs ('mp4a.40.2', 'ec-3',
+  /// 'dtsc'), and `audio/...` MIME types ('audio/eac3', 'audio/vnd.dts').
   ///
   /// [profile] is ffmpeg's profile name as mpv reports it in `codec-profile`.
   /// It names the DTS variant, which the codec cannot: mpv calls every DTS

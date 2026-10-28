@@ -129,7 +129,7 @@ class PlayerStreams {
   /// packets from the demuxer (`reader-pts` moved), or a demuxer that is
   /// starving a decoder received data. Silence while a load is pending means
   /// neither the network nor the decode pipeline is moving. Backends without
-  /// mpv's demuxer reader state (ExoPlayer) never emit.
+  /// mpv's demuxer reader state never emit.
   final Stream<void> demuxerProgress;
 
   /// Emits when the compositor's preferred colour description for the video
@@ -141,10 +141,6 @@ class PlayerStreams {
 
   /// Stream of seekable buffer ranges from the demuxer cache.
   final Stream<List<BufferRange>> bufferRanges;
-
-  /// Stream that emits when the native player backend switches (e.g., ExoPlayer to MPV).
-  /// Only emitted on Android when ExoPlayer encounters an unsupported format.
-  final Stream<void> backendSwitched;
 
   /// Emits the URI the backend auto-advanced into after playing out the
   /// current item, when a next item was pre-armed via [Player.setNext]
@@ -180,7 +176,6 @@ class PlayerStreams {
     this.primaryMediaReady = const Stream<void>.empty(),
     this.demuxerProgress = const Stream<void>.empty(),
     this.hdrOutputChanged = const Stream<void>.empty(),
-    required this.backendSwitched,
     this.trackTransition = const Stream<String>.empty(),
   });
 }

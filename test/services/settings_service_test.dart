@@ -268,6 +268,22 @@ void main() {
     }
   });
 
+  test('startup drops the settings of the removed ExoPlayer backend', () async {
+    const orphaned = <String, Object>{
+      'use_exoplayer': true,
+      'android_use_exoplayer': true,
+      'tunneled_playback': true,
+      'playback_buffer_tier': 'large',
+      'subtitle_anchor_to_screen': true,
+    };
+    resetSharedPreferencesForTest(initialAsync: orphaned);
+    final settings = await SettingsService.getInstance();
+
+    for (final key in orphaned.keys) {
+      expect(settings.prefs.containsKey(key), isFalse, reason: key);
+    }
+  });
+
   group('SettingsService player setting scopes', () {
     test('a keyed scope chosen before #2722 drops its stale Everywhere value once', () async {
       resetSharedPreferencesForTest(

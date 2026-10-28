@@ -69,7 +69,6 @@ void main() {
     manager.setZoomScale(1.5);
     await Future<void>.delayed(Duration.zero);
 
-    expect(player.boxFitCalls, isEmpty);
     expect(player.zoomCalls, [1.5]);
     expect(player.writes, hasLength(1));
     expect(player.writes.single.key, 'video-zoom');
@@ -110,7 +109,6 @@ void main() {
     await manager.updateVideoFilter();
 
     expect(player.writes, isEmpty);
-    expect(player.boxFitCalls, isEmpty);
     expect(player.zoomCalls, isEmpty);
   });
 
@@ -184,23 +182,16 @@ void main() {
 
 class _RecordingPlayer implements Player {
   final writes = <MapEntry<String, String>>[];
-  final boxFitCalls = <int>[];
   final zoomCalls = <double>[];
 
   void clearRecords() {
     writes.clear();
-    boxFitCalls.clear();
     zoomCalls.clear();
   }
 
   @override
   Future<void> setProperty(String name, String value) async {
     writes.add(MapEntry(name, value));
-  }
-
-  @override
-  Future<void> setBoxFitMode(int mode) async {
-    boxFitCalls.add(mode);
   }
 
   @override

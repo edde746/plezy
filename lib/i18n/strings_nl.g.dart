@@ -349,16 +349,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => 'Minder animaties en illustraties met lagere resolutie';
 	@override String get hideSpoilers => 'Spoilers voor ongekeken afleveringen verbergen';
 	@override String get hideSpoilersDescription => 'Vervaag miniaturen en beschrijvingen van ongekeken afleveringen';
-	@override String get playerBackend => 'Afspeelbackend';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardwaredecodering';
 	@override String get hardwareDecodingDescription => 'Gebruik hardwareversnelling indien beschikbaar';
-	@override String get playbackBuffer => 'Afspeelbuffer';
-	@override String get playbackBufferAuto => 'Auto (aanbevolen)';
-	@override String get playbackBufferLarge => 'Groot';
-	@override String get playbackBufferExtraLarge => 'Extra groot';
-	@override String get playbackBufferDescription => 'Buffert meer tegen onstabiele verbindingen. Ook beperkt door de buffergrootte.';
 	@override String get defaultQualityTitle => 'Standaardkwaliteit';
 	@override String get cellularQualityTitle => 'Standaardkwaliteit bij mobiele data';
 	@override String get cellularQualitySameAsDefault => 'Zelfde als standaardkwaliteit';
@@ -504,8 +496,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get matchDynamicRange => 'Dynamisch bereik afstemmen';
 	@override String get matchDynamicRangeDescription => 'Schakel HDR in voor HDR-content en daarna terug naar SDR';
 	@override String get displaySwitchDelay => 'Vertraging bij schermwisseling';
-	@override String get tunneledPlayback => 'Getunnelde weergave';
-	@override String get tunneledPlaybackDescription => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.';
 	@override String get audioPassthrough => 'Audio-doorvoer';
 	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
 	@override String get audioPassthroughDescriptionApple => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.';
@@ -546,7 +536,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => 'Speler';
 	@override String get hdrSdrConversionPlayerDescription => 'De speler zet het om. Consistente kleuren, maar 4K kan haperen op eenvoudige tv-boxen';
 	@override String get deinterlace => 'Deinterlacing';
-	@override String get deinterlaceDescription => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)';
+	@override String get deinterlaceDescription => 'Verwijder kamartefacten uit interlaced video';
 	@override String get deinterlaceOff => 'Uit';
 	@override String get deinterlaceOffDescription => 'Toon interlaced video zoals deze wordt gedecodeerd';
 	@override String get deinterlaceVideo => 'Video';
@@ -1076,7 +1066,6 @@ class _Translations$messages$nl extends Translations$messages$en {
 	@override String get noItemsAvailable => 'Geen items beschikbaar';
 	@override String get failedToCreatePlayQueueNoItems => 'Afspeelwachtrij maken mislukt — geen items';
 	@override String failedPlayback({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
-	@override String get switchingToCompatiblePlayer => 'Overschakelen naar compatibele speler...';
 	@override String get serverLimitTitle => 'Afspelen mislukt';
 	@override String get serverLimitBody => 'Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.';
 	@override String get mediaUnreadableTitle => 'Bestand niet beschikbaar';
@@ -1123,8 +1112,6 @@ class _Translations$subtitlingStyling$nl extends Translations$subtitlingStyling$
 	@override String get positionBottom => 'Onderaan';
 	@override String get useMargins => 'Marges gebruiken';
 	@override String get useMarginsDescription => 'Sta tekstondertitels toe in de ruimte buiten de video. Ondertitels met opmaak kunnen hun oorspronkelijke plaatsing behouden.';
-	@override String get anchorToScreen => 'Aan scherm verankeren';
-	@override String get anchorToScreenDescription => 'Toon tekstondertitels in de zwarte balken onder breedbeeldvideo';
 	@override String get bold => 'Vet';
 	@override String get italic => 'Cursief';
 	@override String get renderResolution => 'Renderresolutie';
@@ -2107,8 +2094,6 @@ class _Translations$performanceOverlay$nl extends Translations$performanceOverla
 	@override String get buffer => 'Buffer';
 	@override String get app => 'App';
 	@override String get decoder => 'Decoder';
-	@override String get rawDecoder => 'Raw-decoder';
-	@override String get tunneling => 'Tunneling';
 	@override String get passthrough => 'Doorvoer';
 	@override String get aspect => 'Verhouding';
 	@override String get rotation => 'Rotatie';
@@ -2121,7 +2106,6 @@ class _Translations$performanceOverlay$nl extends Translations$performanceOverla
 	@override String get dvRouteBaseLayerHlg => 'HLG-basislaag';
 	@override String get dvRouteBaseLayerSdr => 'SDR-basislaag';
 	@override String get dvRouteReshaped => 'RPU-reshaping (gpu-next)';
-	@override String get p7Conversion => 'P7-conv.';
 	@override String get sampleRate => 'Samplefrequentie';
 	@override String get pixelFormat => 'Pixelformaat';
 	@override String get hwFormat => 'HW-formaat';
@@ -2132,9 +2116,6 @@ class _Translations$performanceOverlay$nl extends Translations$performanceOverla
 	@override String get displayFps => 'Scherm-FPS';
 	@override String get avSync => 'A/V-sync';
 	@override String get dropped => 'Gedropt';
-	@override String get dvRpus => 'DV RPU’s';
-	@override String get dvRpuAverage => 'DV RPU gem.';
-	@override String get dvSampleAverage => 'DV-sample gem.';
 	@override String get maxLuma => 'Max luma';
 	@override String get minLuma => 'Min luma';
 	@override String get maxCll => 'MaxCLL';
@@ -2146,15 +2127,7 @@ class _Translations$performanceOverlay$nl extends Translations$performanceOverla
 	@override String get memory => 'Geheugen';
 	@override String get uiFps => 'UI FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android HW';
-	@override String get decoderNvidiaHw => 'NVIDIA HW';
-	@override String get decoderQualcommHw => 'Qualcomm HW';
-	@override String get decoderMediatekHw => 'MediaTek HW';
-	@override String get decoderExynosHw => 'Exynos HW';
 	@override String get decoderSoftware => 'Software';
-	@override String get decoderHardware => 'Hardware';
-	@override String get tunnelingActive => 'Actief';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)';
 }
 
 // Path: externalPlayer
@@ -3628,16 +3601,8 @@ extension on TranslationsNl {
 			'settings.visualEffectsReducedDescription' => 'Minder animaties en illustraties met lagere resolutie',
 			'settings.hideSpoilers' => 'Spoilers voor ongekeken afleveringen verbergen',
 			'settings.hideSpoilersDescription' => 'Vervaag miniaturen en beschrijvingen van ongekeken afleveringen',
-			'settings.playerBackend' => 'Afspeelbackend',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardwaredecodering',
 			'settings.hardwareDecodingDescription' => 'Gebruik hardwareversnelling indien beschikbaar',
-			'settings.playbackBuffer' => 'Afspeelbuffer',
-			'settings.playbackBufferAuto' => 'Auto (aanbevolen)',
-			'settings.playbackBufferLarge' => 'Groot',
-			'settings.playbackBufferExtraLarge' => 'Extra groot',
-			'settings.playbackBufferDescription' => 'Buffert meer tegen onstabiele verbindingen. Ook beperkt door de buffergrootte.',
 			'settings.defaultQualityTitle' => 'Standaardkwaliteit',
 			'settings.cellularQualityTitle' => 'Standaardkwaliteit bij mobiele data',
 			'settings.cellularQualitySameAsDefault' => 'Zelfde als standaardkwaliteit',
@@ -3783,8 +3748,6 @@ extension on TranslationsNl {
 			'settings.matchDynamicRange' => 'Dynamisch bereik afstemmen',
 			'settings.matchDynamicRangeDescription' => 'Schakel HDR in voor HDR-content en daarna terug naar SDR',
 			'settings.displaySwitchDelay' => 'Vertraging bij schermwisseling',
-			'settings.tunneledPlayback' => 'Getunnelde weergave',
-			'settings.tunneledPlaybackDescription' => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.',
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.audioPassthroughDescriptionApple' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
@@ -3825,7 +3788,7 @@ extension on TranslationsNl {
 			'settings.hdrSdrConversionPlayer' => 'Speler',
 			'settings.hdrSdrConversionPlayerDescription' => 'De speler zet het om. Consistente kleuren, maar 4K kan haperen op eenvoudige tv-boxen',
 			'settings.deinterlace' => 'Deinterlacing',
-			'settings.deinterlaceDescription' => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)',
+			'settings.deinterlaceDescription' => 'Verwijder kamartefacten uit interlaced video',
 			'settings.deinterlaceOff' => 'Uit',
 			'settings.deinterlaceOffDescription' => 'Toon interlaced video zoals deze wordt gedecodeerd',
 			'settings.deinterlaceVideo' => 'Video',
@@ -3906,8 +3869,6 @@ extension on TranslationsNl {
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Secundaire tekst',
 			'themeEditor.slots.accent' => 'Accent',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Dekking',
 			'themeEditor.hexHint' => '#RRGGBB of #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Uit andere thema\'s',
@@ -3918,6 +3879,8 @@ extension on TranslationsNl {
 			'themeEditor.contrast.textMutedOnSurface' => 'Secundaire tekst op oppervlak',
 			'themeEditor.contrast.accentOnBg' => 'Accent op achtergrond',
 			'themeEditor.contrast.accentOnSurface' => 'Accent op oppervlak',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => 'Knoptekst op accent',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, onder de aanbevolen ${minimum}:1',
 			'themeEditor.discardTitle' => 'Wijzigingen negeren?',
@@ -4288,7 +4251,6 @@ extension on TranslationsNl {
 			'messages.noItemsAvailable' => 'Geen items beschikbaar',
 			'messages.failedToCreatePlayQueueNoItems' => 'Afspeelwachtrij maken mislukt — geen items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}',
-			'messages.switchingToCompatiblePlayer' => 'Overschakelen naar compatibele speler...',
 			'messages.serverLimitTitle' => 'Afspelen mislukt',
 			'messages.serverLimitBody' => 'Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.',
 			'messages.mediaUnreadableTitle' => 'Bestand niet beschikbaar',
@@ -4326,8 +4288,6 @@ extension on TranslationsNl {
 			'subtitlingStyling.positionBottom' => 'Onderaan',
 			'subtitlingStyling.useMargins' => 'Marges gebruiken',
 			'subtitlingStyling.useMarginsDescription' => 'Sta tekstondertitels toe in de ruimte buiten de video. Ondertitels met opmaak kunnen hun oorspronkelijke plaatsing behouden.',
-			'subtitlingStyling.anchorToScreen' => 'Aan scherm verankeren',
-			'subtitlingStyling.anchorToScreenDescription' => 'Toon tekstondertitels in de zwarte balken onder breedbeeldvideo',
 			'subtitlingStyling.bold' => 'Vet',
 			'subtitlingStyling.italic' => 'Cursief',
 			'subtitlingStyling.renderResolution' => 'Renderresolutie',
@@ -4420,8 +4380,6 @@ extension on TranslationsNl {
 			'connections.sectionTitle' => 'Verbindingen',
 			'connections.addConnection' => 'Verbinding toevoegen',
 			'connections.addConnectionSubtitleNoProfile' => 'Meld je aan met Plex of verbind een Jellyfin- of Emby-server',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Toevoegen aan ${displayName}: Plex, Jellyfin, Emby of een andere profielverbinding',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessie verlopen voor ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessie verlopen voor ${count} servers',
@@ -4435,6 +4393,8 @@ extension on TranslationsNl {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts',
 			'accountPreferences.pickAccount' => 'Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.',
 			'accountPreferences.storedOnAccount' => 'Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => 'Geen accounts om te configureren',
 			'accountPreferences.noAccountsHint' => 'Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.',
 			'accountPreferences.unavailable' => 'Dit account is niet bereikbaar',
@@ -4934,8 +4894,6 @@ extension on TranslationsNl {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Begint over ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} om ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Kon de livezender niet starten',
 			'liveTv.failedToBuildStreamUrl' => 'Kon de stream-URL niet samenstellen',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kon het kanaal niet starten: ${reason}',
@@ -4949,6 +4907,8 @@ extension on TranslationsNl {
 			'collections.deleteFailed' => 'Collectie verwijderen mislukt',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
 			'collections.selectCollection' => 'Collectie selecteren',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer een collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
@@ -5399,8 +5359,6 @@ extension on TranslationsNl {
 			'performanceOverlay.buffer' => 'Buffer',
 			'performanceOverlay.app' => 'App',
 			'performanceOverlay.decoder' => 'Decoder',
-			'performanceOverlay.rawDecoder' => 'Raw-decoder',
-			'performanceOverlay.tunneling' => 'Tunneling',
 			'performanceOverlay.passthrough' => 'Doorvoer',
 			'performanceOverlay.aspect' => 'Verhouding',
 			'performanceOverlay.rotation' => 'Rotatie',
@@ -5413,7 +5371,6 @@ extension on TranslationsNl {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG-basislaag',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR-basislaag',
 			'performanceOverlay.dvRouteReshaped' => 'RPU-reshaping (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7-conv.',
 			'performanceOverlay.sampleRate' => 'Samplefrequentie',
 			'performanceOverlay.pixelFormat' => 'Pixelformaat',
 			'performanceOverlay.hwFormat' => 'HW-formaat',
@@ -5424,9 +5381,6 @@ extension on TranslationsNl {
 			'performanceOverlay.displayFps' => 'Scherm-FPS',
 			'performanceOverlay.avSync' => 'A/V-sync',
 			'performanceOverlay.dropped' => 'Gedropt',
-			'performanceOverlay.dvRpus' => 'DV RPU’s',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU gem.',
-			'performanceOverlay.dvSampleAverage' => 'DV-sample gem.',
 			'performanceOverlay.maxLuma' => 'Max luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5438,18 +5392,8 @@ extension on TranslationsNl {
 			'performanceOverlay.memory' => 'Geheugen',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
-			'performanceOverlay.decoderHardware' => 'Hardware',
-			'performanceOverlay.tunnelingActive' => 'Actief',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)',
 			'externalPlayer.title' => 'Externe speler',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een andere app',
 			'externalPlayer.selectPlayer' => 'Speler selecteren',
@@ -5477,6 +5421,8 @@ extension on TranslationsNl {
 			'metadataEdit.contentRating' => 'Leeftijdsclassificatie',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Slogan',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Samenvatting',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Achtergrond',

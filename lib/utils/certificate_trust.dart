@@ -10,11 +10,11 @@ import 'app_logger.dart';
 ///
 /// dart:io does its own TLS in BoringSSL. On Android that means the system
 /// store on disk and nothing else: `network_security_config.xml` is read by
-/// the platform stack alone (`background_downloader`, ExoPlayer's Cronet data
-/// source), so its `<certificates src="user" />` anchor stopped reaching the
-/// app's own requests when Cronet was dropped (#2140). A self-hosted server
-/// behind a private CA the device owner installed then failed every probe —
-/// #1564 came back as #2339.
+/// the platform stack alone (`background_downloader`), so its
+/// `<certificates src="user" />` anchor stopped reaching the app's own
+/// requests when Cronet was dropped (#2140). A self-hosted server behind a
+/// private CA the device owner installed then failed every probe — #1564
+/// came back as #2339.
 ///
 /// [loadUserAuthorities] pulls that user store over a platform channel and
 /// [contextFor] hands it out for exactly the hosts the security config gives

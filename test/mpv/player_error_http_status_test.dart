@@ -12,16 +12,6 @@ void main() {
       expect(PlayerError.httpStatusFromLog('http: HTTP error 503 Service Unavailable'), 503);
     });
 
-    test('reads the status media3 stringifies into its exception chain', () {
-      expect(
-        PlayerError.httpStatusFromLog(
-          'androidx.media3.datasource.HttpDataSource\$InvalidResponseCodeException: Response code: 404',
-        ),
-        404,
-      );
-      expect(PlayerError.httpStatusFromLog('Response code: 500'), 500);
-    });
-
     test('returns null for player logs that name no status', () {
       expect(PlayerError.httpStatusFromLog('Failed to open https://jf.example.com/Videos/item-1/stream.'), isNull);
       expect(PlayerError.httpStatusFromLog('loading failed'), isNull);

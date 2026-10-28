@@ -19,8 +19,6 @@ class _StreamPlayer implements Player {
     required Stream<void> primaryMediaReady,
     required Stream<void> fileLoaded,
     Stream<void>? fileLoadFailed,
-    Stream<void>? playbackRestart,
-    Stream<void>? backendSwitched,
     Stream<PlayerError> error = const Stream.empty(),
   }) : streams = PlayerStreams(
          playing: const Stream.empty(),
@@ -39,26 +37,20 @@ class _StreamPlayer implements Player {
          audioDevice: const Stream.empty(),
          audioDevices: const Stream.empty(),
          bufferRanges: const Stream.empty(),
-         playbackRestart: playbackRestart ?? _idle(),
+         playbackRestart: _idle(),
          fileStarted: fileStarted ?? _idle(),
          fileLoaded: fileLoaded,
          fileLoadFailed: fileLoadFailed ?? _idle(),
          primaryMediaReady: primaryMediaReady,
-         backendSwitched: backendSwitched ?? _idle(),
        );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-MpvSidecarOpenGuard _arm(
-  Player player, {
-  required Duration discoveryTimeout,
-  required Duration fileLoadedTimeout,
-  bool startsOnAndroidExoPlayer = false,
-}) {
+MpvSidecarOpenGuard _arm(Player player, {required Duration discoveryTimeout, required Duration fileLoadedTimeout}) {
   return MpvSidecarOpenGuard.armForTesting(
-    outcome: PlaybackOpenOutcome.armForTesting(player, startsOnAndroidExoPlayer: startsOnAndroidExoPlayer),
+    outcome: PlaybackOpenOutcome.arm(player),
     discoveryTimeout: discoveryTimeout,
     fileLoadedTimeout: fileLoadedTimeout,
   );
@@ -197,111 +189,6 @@ void main() {
     expect(await guard.wait(), MpvSidecarOpenOutcome.inconclusive);
   });
 
-  test('Android ExoPlayer success completes without waiting for mpv signals', () async {
-    final primary = StreamController<void>.broadcast();
-    final loaded = StreamController<void>.broadcast();
-    final restarted = StreamController<void>.broadcast();
-    final switched = StreamController<void>.broadcast();
-    final started = StreamController<void>.broadcast();
-    addTearDown(primary.close);
-    addTearDown(loaded.close);
-    addTearDown(restarted.close);
-    addTearDown(switched.close);
-    addTearDown(started.close);
-    final guard = _arm(
-      _StreamPlayer(
-        fileStarted: started.stream,
-        primaryMediaReady: primary.stream,
-        fileLoaded: loaded.stream,
-        playbackRestart: restarted.stream,
-        backendSwitched: switched.stream,
-      ),
-      discoveryTimeout: const Duration(milliseconds: 50),
-      fileLoadedTimeout: const Duration(milliseconds: 10),
-      startsOnAndroidExoPlayer: true,
-    );
-
-    final outcome = guard.wait();
-    loaded.add(null); // ExoPlayer's media-item transition is not mpv readiness.
-    restarted.add(null);
-
-    expect(await outcome, MpvSidecarOpenOutcome.loaded);
-  });
-
-  test('Android fallback ignores stale Exo terminal events and detects an mpv sidecar stall', () async {
-    final primary = StreamController<void>.broadcast();
-    final loaded = StreamController<void>.broadcast();
-    final failed = StreamController<void>.broadcast();
-    final restarted = StreamController<void>.broadcast();
-    final switched = StreamController<void>.broadcast();
-    final started = StreamController<void>.broadcast();
-    addTearDown(primary.close);
-    addTearDown(loaded.close);
-    addTearDown(failed.close);
-    addTearDown(restarted.close);
-    addTearDown(switched.close);
-    addTearDown(started.close);
-    final guard = _arm(
-      _StreamPlayer(
-        fileStarted: started.stream,
-        primaryMediaReady: primary.stream,
-        fileLoaded: loaded.stream,
-        fileLoadFailed: failed.stream,
-        playbackRestart: restarted.stream,
-        backendSwitched: switched.stream,
-      ),
-      discoveryTimeout: const Duration(milliseconds: 50),
-      fileLoadedTimeout: const Duration(milliseconds: 10),
-      startsOnAndroidExoPlayer: true,
-    );
-
-    final outcome = guard.wait();
-    loaded.add(null);
-    failed.add(null);
-    switched.add(null);
-    await Future<void>.delayed(Duration.zero);
-    started.add(null);
-    primary.add(null);
-
-    expect(await outcome, MpvSidecarOpenOutcome.stalled);
-  });
-
-  test('Android fallback shares one bounded primary-discovery budget with mpv', () async {
-    final primary = StreamController<void>.broadcast();
-    final loaded = StreamController<void>.broadcast();
-    final restarted = StreamController<void>.broadcast();
-    final switched = StreamController<void>.broadcast();
-    final started = StreamController<void>.broadcast();
-    addTearDown(primary.close);
-    addTearDown(loaded.close);
-    addTearDown(restarted.close);
-    addTearDown(switched.close);
-    addTearDown(started.close);
-    final guard = _arm(
-      _StreamPlayer(
-        fileStarted: started.stream,
-        primaryMediaReady: primary.stream,
-        fileLoaded: loaded.stream,
-        playbackRestart: restarted.stream,
-        backendSwitched: switched.stream,
-      ),
-      discoveryTimeout: const Duration(milliseconds: 100),
-      fileLoadedTimeout: const Duration(milliseconds: 20),
-      startsOnAndroidExoPlayer: true,
-    );
-
-    final clock = Stopwatch()..start();
-    final outcome = guard.wait();
-    await Future<void>.delayed(const Duration(milliseconds: 60));
-    switched.add(null);
-    await Future<void>.delayed(Duration.zero);
-    started.add(null);
-
-    expect(await outcome, MpvSidecarOpenOutcome.inconclusive);
-    clock.stop();
-    expect(clock.elapsed, lessThan(const Duration(milliseconds: 145)));
-  });
-
   test('closing player streams aborts the guard without waiting forever', () async {
     final primary = StreamController<void>.broadcast();
     final loaded = StreamController<void>.broadcast();
@@ -325,7 +212,7 @@ void main() {
     addTearDown(primary.close);
     addTearDown(loaded.close);
     addTearDown(started.close);
-    final openOutcome = PlaybackOpenOutcome.armForTesting(
+    final openOutcome = PlaybackOpenOutcome.arm(
       _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
     );
     final guard = MpvSidecarOpenGuard.armForTesting(

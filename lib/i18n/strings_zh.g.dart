@@ -349,16 +349,8 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get visualEffectsReducedDescription => '减少动画并使用较低分辨率的封面图片';
 	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
 	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图和描述';
-	@override String get playerBackend => '播放器引擎';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '硬件解码';
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
-	@override String get playbackBuffer => '播放缓冲';
-	@override String get playbackBufferAuto => '自动（推荐）';
-	@override String get playbackBufferLarge => '大';
-	@override String get playbackBufferExtraLarge => '特大';
-	@override String get playbackBufferDescription => '针对不稳定的连接缓冲更多内容。也受缓冲大小限制。';
 	@override String get defaultQualityTitle => '默认画质';
 	@override String get cellularQualityTitle => '移动网络默认画质';
 	@override String get cellularQualitySameAsDefault => '与默认画质相同';
@@ -504,8 +496,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get matchDynamicRange => '匹配动态范围';
 	@override String get matchDynamicRangeDescription => 'HDR 内容切换到 HDR，随后切回 SDR';
 	@override String get displaySwitchDelay => '显示切换延迟';
-	@override String get tunneledPlayback => '隧道播放';
-	@override String get tunneledPlaybackDescription => '使用视频隧道模式。若播放 HDR 内容时出现黑屏或画面卡顿，请将其关闭。';
 	@override String get audioPassthrough => '音频直通';
 	@override String get audioPassthroughDescription => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。';
 	@override String get audioPassthroughDescriptionApple => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。';
@@ -546,7 +536,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayer => '播放器';
 	@override String get hdrSdrConversionPlayerDescription => '由播放器转换。色彩一致，但在低端电视盒上 4K 可能卡顿';
 	@override String get deinterlace => '去隔行';
-	@override String get deinterlaceDescription => '消除隔行扫描视频中的梳状伪影（仅 mpv 播放器）';
+	@override String get deinterlaceDescription => '消除隔行扫描视频中的梳状伪影';
 	@override String get deinterlaceOff => '关闭';
 	@override String get deinterlaceOffDescription => '按解码原样显示隔行扫描视频';
 	@override String get deinterlaceVideo => '视频';
@@ -1072,7 +1062,6 @@ class Translations$messages$zh extends Translations$messages$en {
 	@override String get noItemsAvailable => '没有可用的项目';
 	@override String get failedToCreatePlayQueueNoItems => '创建播放队列失败：没有可用项目';
 	@override String failedPlayback({required Object action, required Object error}) => '无法执行“${action}”：${error}';
-	@override String get switchingToCompatiblePlayer => '正在切换到兼容的播放器…';
 	@override String get serverLimitTitle => '播放失败';
 	@override String get serverLimitBody => '服务器错误（HTTP 500）。此次会话可能因带宽或转码限制而被拒绝。请联系服务器所有者调整限制。';
 	@override String get mediaUnreadableTitle => '文件不可用';
@@ -1119,8 +1108,6 @@ class Translations$subtitlingStyling$zh extends Translations$subtitlingStyling$e
 	@override String get positionBottom => '底部';
 	@override String get useMargins => '使用边距';
 	@override String get useMarginsDescription => '允许文字字幕显示在视频画面之外的区域。样式字幕可能保留其原始位置。';
-	@override String get anchorToScreen => '锚定到屏幕';
-	@override String get anchorToScreenDescription => '在宽屏视频下方的黑边中显示文本字幕';
 	@override String get bold => '粗体';
 	@override String get italic => '斜体';
 	@override String get renderResolution => '渲染分辨率';
@@ -2097,8 +2084,6 @@ class Translations$performanceOverlay$zh extends Translations$performanceOverlay
 	@override String get buffer => '缓冲';
 	@override String get app => '应用';
 	@override String get decoder => '解码器';
-	@override String get rawDecoder => '原始解码器';
-	@override String get tunneling => '隧道';
 	@override String get passthrough => '直通';
 	@override String get aspect => '宽高比';
 	@override String get rotation => '旋转';
@@ -2111,7 +2096,6 @@ class Translations$performanceOverlay$zh extends Translations$performanceOverlay
 	@override String get dvRouteBaseLayerHlg => 'HLG 基础层';
 	@override String get dvRouteBaseLayerSdr => 'SDR 基础层';
 	@override String get dvRouteReshaped => 'RPU 重塑（gpu-next）';
-	@override String get p7Conversion => 'P7 转换';
 	@override String get sampleRate => '采样率';
 	@override String get pixelFormat => '像素格式';
 	@override String get hwFormat => '硬件格式';
@@ -2122,9 +2106,6 @@ class Translations$performanceOverlay$zh extends Translations$performanceOverlay
 	@override String get displayFps => '显示 FPS';
 	@override String get avSync => 'A/V 同步';
 	@override String get dropped => '丢帧';
-	@override String get dvRpus => 'DV RPU';
-	@override String get dvRpuAverage => 'DV RPU 平均';
-	@override String get dvSampleAverage => 'DV 采样平均';
 	@override String get maxLuma => '最大亮度';
 	@override String get minLuma => '最小亮度';
 	@override String get maxCll => 'MaxCLL';
@@ -2136,15 +2117,7 @@ class Translations$performanceOverlay$zh extends Translations$performanceOverlay
 	@override String get memory => '内存';
 	@override String get uiFps => 'UI FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android 硬件';
-	@override String get decoderNvidiaHw => 'NVIDIA 硬件';
-	@override String get decoderQualcommHw => 'Qualcomm 硬件';
-	@override String get decoderMediatekHw => 'MediaTek 硬件';
-	@override String get decoderExynosHw => 'Exynos 硬件';
 	@override String get decoderSoftware => '软件';
-	@override String get decoderHardware => '硬件';
-	@override String get tunnelingActive => '已启用';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）';
 }
 
 // Path: externalPlayer
@@ -3616,16 +3589,8 @@ extension on TranslationsZh {
 			'settings.visualEffectsReducedDescription' => '减少动画并使用较低分辨率的封面图片',
 			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
 			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图和描述',
-			'settings.playerBackend' => '播放器引擎',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '硬件解码',
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
-			'settings.playbackBuffer' => '播放缓冲',
-			'settings.playbackBufferAuto' => '自动（推荐）',
-			'settings.playbackBufferLarge' => '大',
-			'settings.playbackBufferExtraLarge' => '特大',
-			'settings.playbackBufferDescription' => '针对不稳定的连接缓冲更多内容。也受缓冲大小限制。',
 			'settings.defaultQualityTitle' => '默认画质',
 			'settings.cellularQualityTitle' => '移动网络默认画质',
 			'settings.cellularQualitySameAsDefault' => '与默认画质相同',
@@ -3771,8 +3736,6 @@ extension on TranslationsZh {
 			'settings.matchDynamicRange' => '匹配动态范围',
 			'settings.matchDynamicRangeDescription' => 'HDR 内容切换到 HDR，随后切回 SDR',
 			'settings.displaySwitchDelay' => '显示切换延迟',
-			'settings.tunneledPlayback' => '隧道播放',
-			'settings.tunneledPlaybackDescription' => '使用视频隧道模式。若播放 HDR 内容时出现黑屏或画面卡顿，请将其关闭。',
 			'settings.audioPassthrough' => '音频直通',
 			'settings.audioPassthroughDescription' => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。',
 			'settings.audioPassthroughDescriptionApple' => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。',
@@ -3813,7 +3776,7 @@ extension on TranslationsZh {
 			'settings.hdrSdrConversionPlayer' => '播放器',
 			'settings.hdrSdrConversionPlayerDescription' => '由播放器转换。色彩一致，但在低端电视盒上 4K 可能卡顿',
 			'settings.deinterlace' => '去隔行',
-			'settings.deinterlaceDescription' => '消除隔行扫描视频中的梳状伪影（仅 mpv 播放器）',
+			'settings.deinterlaceDescription' => '消除隔行扫描视频中的梳状伪影',
 			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOffDescription' => '按解码原样显示隔行扫描视频',
 			'settings.deinterlaceVideo' => '视频',
@@ -3894,8 +3857,6 @@ extension on TranslationsZh {
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
 			'themeEditor.slots.accent' => '强调色',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '来自其他主题',
@@ -3906,6 +3867,8 @@ extension on TranslationsZh {
 			'themeEditor.contrast.textMutedOnSurface' => '表面上的次要文字',
 			'themeEditor.contrast.accentOnBg' => '背景上的强调色',
 			'themeEditor.contrast.accentOnSurface' => '表面上的强调色',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => '强调色上的按钮文字',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}：${ratio}:1，低于建议的 ${minimum}:1',
 			'themeEditor.discardTitle' => '放弃更改？',
@@ -4276,7 +4239,6 @@ extension on TranslationsZh {
 			'messages.noItemsAvailable' => '没有可用的项目',
 			'messages.failedToCreatePlayQueueNoItems' => '创建播放队列失败：没有可用项目',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '无法执行“${action}”：${error}',
-			'messages.switchingToCompatiblePlayer' => '正在切换到兼容的播放器…',
 			'messages.serverLimitTitle' => '播放失败',
 			'messages.serverLimitBody' => '服务器错误（HTTP 500）。此次会话可能因带宽或转码限制而被拒绝。请联系服务器所有者调整限制。',
 			'messages.mediaUnreadableTitle' => '文件不可用',
@@ -4314,8 +4276,6 @@ extension on TranslationsZh {
 			'subtitlingStyling.positionBottom' => '底部',
 			'subtitlingStyling.useMargins' => '使用边距',
 			'subtitlingStyling.useMarginsDescription' => '允许文字字幕显示在视频画面之外的区域。样式字幕可能保留其原始位置。',
-			'subtitlingStyling.anchorToScreen' => '锚定到屏幕',
-			'subtitlingStyling.anchorToScreenDescription' => '在宽屏视频下方的黑边中显示文本字幕',
 			'subtitlingStyling.bold' => '粗体',
 			'subtitlingStyling.italic' => '斜体',
 			'subtitlingStyling.renderResolution' => '渲染分辨率',
@@ -4408,8 +4368,6 @@ extension on TranslationsZh {
 			'connections.sectionTitle' => '连接',
 			'connections.addConnection' => '添加连接',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登录，或连接 Jellyfin 或 Emby 服务器',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的会话已过期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 个服务器的会话已过期',
@@ -4423,6 +4381,8 @@ extension on TranslationsZh {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '音频、字幕和媒体库选项已保存在 ${count} 个账户上',
 			'accountPreferences.pickAccount' => '每个账户都保存自己的偏好设置。选择要编辑的账户。',
 			'accountPreferences.storedOnAccount' => '这些选项保存在账户本身，因此所有登录该账户的应用都会使用它们——包括你其他设备上的 Plezy。',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => '没有可配置的账户',
 			'accountPreferences.noAccountsHint' => '登录 Plex，或连接 Jellyfin 或 Emby 服务器，该账户上保存的偏好设置就会显示在这里。',
 			'accountPreferences.unavailable' => '无法访问此账户',
@@ -4922,8 +4882,6 @@ extension on TranslationsZh {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => '无法播放直播频道',
 			'liveTv.failedToBuildStreamUrl' => '无法生成视频流 URL',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => '无法启动该频道：${reason}',
@@ -4937,6 +4895,8 @@ extension on TranslationsZh {
 			'collections.deleteFailed' => '删除合集失败',
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
 			'collections.selectCollection' => '选择合集',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
@@ -5387,8 +5347,6 @@ extension on TranslationsZh {
 			'performanceOverlay.buffer' => '缓冲',
 			'performanceOverlay.app' => '应用',
 			'performanceOverlay.decoder' => '解码器',
-			'performanceOverlay.rawDecoder' => '原始解码器',
-			'performanceOverlay.tunneling' => '隧道',
 			'performanceOverlay.passthrough' => '直通',
 			'performanceOverlay.aspect' => '宽高比',
 			'performanceOverlay.rotation' => '旋转',
@@ -5401,7 +5359,6 @@ extension on TranslationsZh {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG 基础层',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR 基础层',
 			'performanceOverlay.dvRouteReshaped' => 'RPU 重塑（gpu-next）',
-			'performanceOverlay.p7Conversion' => 'P7 转换',
 			'performanceOverlay.sampleRate' => '采样率',
 			'performanceOverlay.pixelFormat' => '像素格式',
 			'performanceOverlay.hwFormat' => '硬件格式',
@@ -5412,9 +5369,6 @@ extension on TranslationsZh {
 			'performanceOverlay.displayFps' => '显示 FPS',
 			'performanceOverlay.avSync' => 'A/V 同步',
 			'performanceOverlay.dropped' => '丢帧',
-			'performanceOverlay.dvRpus' => 'DV RPU',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
-			'performanceOverlay.dvSampleAverage' => 'DV 采样平均',
 			'performanceOverlay.maxLuma' => '最大亮度',
 			'performanceOverlay.minLuma' => '最小亮度',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5426,18 +5380,8 @@ extension on TranslationsZh {
 			'performanceOverlay.memory' => '内存',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android 硬件',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA 硬件',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm 硬件',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬件',
-			'performanceOverlay.decoderExynosHw' => 'Exynos 硬件',
 			'performanceOverlay.decoderSoftware' => '软件',
-			'performanceOverlay.decoderHardware' => '硬件',
-			'performanceOverlay.tunnelingActive' => '已启用',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			'externalPlayer.title' => '外部播放器',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他应用中打开视频',
 			'externalPlayer.selectPlayer' => '选择播放器',
@@ -5465,6 +5409,8 @@ extension on TranslationsZh {
 			'metadataEdit.contentRating' => '内容分级',
 			'metadataEdit.studio' => '制片厂',
 			'metadataEdit.tagline' => '标语',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => '简介',
 			'metadataEdit.poster' => '海报',
 			'metadataEdit.background' => '背景',

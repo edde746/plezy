@@ -42,8 +42,6 @@ class SubtitleStylingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Each backend exposes its own text-subtitle placement preference.
-    final exoActive = Platform.isAndroid && SettingsService.instance.read(SettingsService.useExoPlayer);
     return SettingsPage(
       title: Text(t.screens.subtitleStyling),
       children: [
@@ -106,20 +104,12 @@ class SubtitleStylingScreen extends StatelessWidget {
               labelText: t.subtitlingStyling.position,
               suffixText: '%',
             ),
-            if (!exoActive)
-              SettingSwitchTile(
-                pref: SettingsService.subtitleUseMargins,
-                icon: Symbols.fit_screen_rounded,
-                title: t.subtitlingStyling.useMargins,
-                subtitle: t.subtitlingStyling.useMarginsDescription,
-              ),
-            if (exoActive)
-              SettingSwitchTile(
-                pref: SettingsService.subtitleAnchorToScreen,
-                icon: Symbols.fit_screen_rounded,
-                title: t.subtitlingStyling.anchorToScreen,
-                subtitle: t.subtitlingStyling.anchorToScreenDescription,
-              ),
+            SettingSwitchTile(
+              pref: SettingsService.subtitleUseMargins,
+              icon: Symbols.fit_screen_rounded,
+              title: t.subtitlingStyling.useMargins,
+              subtitle: t.subtitlingStyling.useMarginsDescription,
+            ),
             SettingSwitchTile(
               pref: SettingsService.subtitleBold,
               icon: Symbols.format_bold_rounded,

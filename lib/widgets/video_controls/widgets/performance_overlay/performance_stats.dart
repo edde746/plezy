@@ -31,8 +31,8 @@ enum DvRoute {
 
 /// Data model for video player performance statistics.
 ///
-/// Contains metrics queried from the video player (MPV or ExoPlayer)
-/// including video/audio codec info, playback performance, and buffer state.
+/// Contains metrics queried from the mpv player, including video/audio codec
+/// info, playback performance, and buffer state.
 class PerformanceStats {
   final String playerType;
 
@@ -44,7 +44,6 @@ class PerformanceStats {
   final int? videoBitrate;
   final String? aspectName;
   final int? rotate;
-  final String? videoDecoderName;
 
   final String? pixelformat;
   final String? hwPixelformat;
@@ -61,14 +60,10 @@ class PerformanceStats {
   final int? audioSamplerate;
   final String? audioChannels;
   final int? audioBitrate;
-  final String? audioDecoderName;
 
   /// mpv `audio-params/format` when it names an IEC 61937 bitstream
   /// ('spdif-eac3'); null when audio is decoded locally.
   final String? audioPassthroughFormat;
-
-  final bool tunneledPlayback;
-  final String? tunnelingStatus;
 
   final double? actualFps;
   final double? avsyncChange;
@@ -80,19 +75,10 @@ class PerformanceStats {
   final int? cacheLimit;
   final double? cacheSpeed;
   final double? cacheDuration;
-  final int? bufferTargetBytes;
-  final int? bufferMaxMs;
 
-  final bool dvConversionActive;
-  final String dvConversionMode;
-  final int? dvConvertedRpus;
-  final int? dvRpuConversionFailures;
-  final int? dvAvgRpuConversionUs;
-  final int? dvAvgSampleProcessingUs;
   final int? dvSourceProfile;
-  final String? dvPlaybackPath;
 
-  /// Android mpv's Dolby Vision route; ExoPlayer reports [dvPlaybackPath] instead.
+  /// Android mpv's Dolby Vision route.
   final DvRoute? dvRoute;
 
   final int? appMemoryBytes;
@@ -108,7 +94,6 @@ class PerformanceStats {
     this.videoBitrate,
     this.aspectName,
     this.rotate,
-    this.videoDecoderName,
     this.pixelformat,
     this.hwPixelformat,
     this.colormatrix,
@@ -122,10 +107,7 @@ class PerformanceStats {
     this.audioSamplerate,
     this.audioChannels,
     this.audioBitrate,
-    this.audioDecoderName,
     this.audioPassthroughFormat,
-    this.tunneledPlayback = false,
-    this.tunnelingStatus,
     this.actualFps,
     this.avsyncChange,
     this.displayFps,
@@ -135,16 +117,7 @@ class PerformanceStats {
     this.cacheLimit,
     this.cacheSpeed,
     this.cacheDuration,
-    this.bufferTargetBytes,
-    this.bufferMaxMs,
-    this.dvConversionActive = false,
-    this.dvConversionMode = '',
-    this.dvConvertedRpus,
-    this.dvRpuConversionFailures,
-    this.dvAvgRpuConversionUs,
-    this.dvAvgSampleProcessingUs,
     this.dvSourceProfile,
-    this.dvPlaybackPath,
     this.dvRoute,
     this.appMemoryBytes,
     this.uiFps,
@@ -163,17 +136,6 @@ class PerformanceStats {
     if (videoBitrate == null || videoBitrate == 0) return t.common.notAvailable;
     final mbps = videoBitrate! / 1_000_000;
     return '${mbps.toStringAsFixed(1)} Mbps';
-  }
-
-  /// Both ExoPlayer read-ahead ceilings: the duration target and the hard byte cap.
-  /// The smaller one binds, so showing both explains a duration setting that
-  /// appears to have no effect on high-bitrate media.
-  String get bufferLimitsFormatted {
-    if (bufferMaxMs == null || bufferMaxMs! <= 0) return t.common.notAvailable;
-    final duration = '${bufferMaxMs! ~/ 1000}s';
-    if (bufferTargetBytes == null) return duration;
-    final targetBufferMb = bufferTargetBytes! ~/ (1024 * 1024);
-    return '$duration / ${targetBufferMb}MB';
   }
 
   String get audioBitrateFormatted {
@@ -269,44 +231,11 @@ class PerformanceStats {
 
   /// Format hardware decoding mode.
   String get hwdecFormatted {
-    // For ExoPlayer, use the decoder name
-    if (videoDecoderName != null && videoDecoderName!.isNotEmpty) {
-      // Check if it's a hardware decoder (contains OMX, c2, or MediaCodec patterns)
-      final decoder = videoDecoderName!;
-      if (decoder.contains('c2.') || decoder.contains('OMX.') || decoder.contains('.hw.')) {
-        // Extract a cleaner name
-        if (decoder.contains('c2.android.')) return t.performanceOverlay.decoderAndroidHw;
-        if (decoder.contains('c2.nvidia')) return t.performanceOverlay.decoderNvidiaHw;
-        if (decoder.contains('c2.qti') || decoder.contains('c2.qcom')) {
-          return t.performanceOverlay.decoderQualcommHw;
-        }
-        if (decoder.contains('c2.mtk') || decoder.contains('c2.mediatek')) {
-          return t.performanceOverlay.decoderMediatekHw;
-        }
-        if (decoder.contains('c2.exynos') || decoder.contains('c2.samsung')) {
-          return t.performanceOverlay.decoderExynosHw;
-        }
-        if (decoder.contains('OMX.google')) return t.performanceOverlay.decoderSoftware;
-        return t.performanceOverlay.decoderHardware;
-      }
-      return t.performanceOverlay.decoderSoftware;
-    }
-    // For MPV, use hwdec-current property
     if (hwdecCurrent == null || hwdecCurrent!.isEmpty || hwdecCurrent == 'no') {
       return t.performanceOverlay.decoderSoftware;
     }
     return hwdecCurrent!;
   }
-
-  /// Raw video decoder name (e.g. c2.qti.video.decoder.hevc).
-  String get videoDecoderRaw => videoDecoderName ?? t.common.notAvailable;
-
-  String get audioDecoderFormatted => audioDecoderName ?? t.common.notAvailable;
-
-  String get tunneledPlaybackFormatted =>
-      tunnelingStatus ?? (tunneledPlayback ? t.performanceOverlay.tunnelingActive : t.common.off);
-
-  String get dvConversionFormatted => dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC';
 
   String get dvSourceProfileFormatted => dvSourceProfile == null ? t.common.notAvailable : 'P$dvSourceProfile';
 
@@ -322,32 +251,10 @@ class PerformanceStats {
       null || '' || 'auto' => t.performanceOverlay.dvRouteBaseLayer,
       _ => t.performanceOverlay.dvRouteBaseLayerSdr,
     },
-    null => dvPlaybackPath ?? t.common.notAvailable,
+    null => t.common.notAvailable,
   };
 
-  bool get hasDvPlaybackPath => dvRoute != null || dvPlaybackPath != null;
-
-  String get dvRpuCountFormatted {
-    final converted = dvConvertedRpus ?? 0;
-    final failures = dvRpuConversionFailures ?? 0;
-    return failures > 0
-        ? t.performanceOverlay.dvRpuFailed(converted: converted, failures: failures)
-        : converted.toString();
-  }
-
-  /// Format DV conversion timing in microseconds.
-  String get dvAvgRpuConversionFormatted {
-    final us = dvAvgRpuConversionUs;
-    if (us == null || us <= 0) return t.common.notAvailable;
-    return '${us}us';
-  }
-
-  /// Format DV sample processing timing in microseconds.
-  String get dvAvgSampleProcessingFormatted {
-    final us = dvAvgSampleProcessingUs;
-    if (us == null || us <= 0) return t.common.notAvailable;
-    return '${us}us';
-  }
+  bool get hasDvPlaybackPath => dvRoute != null;
 
   /// Format app memory usage in MB.
   String get appMemoryFormatted {
@@ -407,8 +314,6 @@ class PerformanceStats {
     return videoBitrate != null && videoBitrate! > 0;
   }
 
-  bool get hasValidBufferLimits => bufferMaxMs != null && bufferMaxMs! > 0;
-
   /// Check if audio bitrate is valid (not null, not negative, not zero).
   bool get hasValidAudioBitrate {
     return audioBitrate != null && audioBitrate! > 0;
@@ -417,7 +322,6 @@ class PerformanceStats {
   String get playerTypeFormatted {
     return switch (playerType.toLowerCase()) {
       'mpv' => 'MPV',
-      'exoplayer' => 'ExoPlayer',
       _ => playerType,
     };
   }

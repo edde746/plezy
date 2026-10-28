@@ -267,11 +267,10 @@ class TrackManager {
   }
 
   /// Whether the carried secondary subtitle, if there is one, has a native track to land on.
-  /// Vacuously true when none is wanted, or when the backend has no secondary lane at all.
+  /// Vacuously true when none is wanted.
   bool _secondaryPreferenceResolves(TrackSelectionService service, List<SubtitleTrack> realSubtitleTracks) {
     final preference = preferredSecondarySubtitleTrack;
     if (preference == null || preference is SubtitleOffPreference) return true;
-    if (!player.supportsSecondarySubtitles) return true;
     final match = switch (preference) {
       SubtitleOffPreference() => null,
       SubtitleTrackPreference(:final track) =>
@@ -359,20 +358,6 @@ class TrackManager {
         idleCompleter.complete();
       }
     }
-  }
-
-  // ── Backend fallback ───────────────────────────────────────────────
-
-  /// Handle ExoPlayer → MPV backend switch: reapply selection.
-  Future<void> onBackendSwitched() async {
-    final pendingSelection = _selectionIdleCompleter?.future;
-    final playerMutationDrain = invalidatePendingSelection();
-    if (pendingSelection != null) await pendingSelection;
-    await playerMutationDrain;
-    if (!_managerIsActive) return;
-
-    appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
-    applyTrackSelectionWhenReady();
   }
 
   // ── Track cycling (remote/keyboard shortcuts) ──────────────────────

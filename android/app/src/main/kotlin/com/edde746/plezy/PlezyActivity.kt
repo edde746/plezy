@@ -29,7 +29,6 @@ import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.deeplink.DeepLinkPlugin
-import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
 import com.edde746.plezy.shared.AssistiveTechnologyMonitor
@@ -872,7 +871,6 @@ class PlezyActivity : FlutterActivity() {
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
     flutterEngine.plugins.add(MpvPlayerPlugin())
-    flutterEngine.plugins.add(ExoPlayerPlugin())
     flutterEngine.plugins.add(MpvAudioPlayerPlugin())
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
@@ -1160,9 +1158,6 @@ class PlezyActivity : FlutterActivity() {
     super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
     flutterEngine?.let { engine ->
       MethodChannel(engine.dartExecutor.binaryMessenger, PIP_CHANNEL).invokeMethod("onPipChanged", isInPictureInPictureMode)
-      engine.plugins.get(ExoPlayerPlugin::class.java)?.let { plugin ->
-        (plugin as? ExoPlayerPlugin)?.onPipModeChanged(isInPictureInPictureMode)
-      }
     }
   }
 

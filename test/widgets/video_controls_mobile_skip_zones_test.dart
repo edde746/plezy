@@ -459,7 +459,6 @@ class _RecordingPlayer implements Player {
     audioDevices: const Stream<List<AudioDevice>>.empty(),
     bufferRanges: const Stream<List<BufferRange>>.empty(),
     playbackRestart: const Stream<void>.empty(),
-    backendSwitched: const Stream<void>.empty(),
   );
 
   @override

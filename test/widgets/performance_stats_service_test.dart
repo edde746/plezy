@@ -35,7 +35,6 @@ class _PropertyPlayer implements Player {
     fileLoaded: Stream.empty(),
     fileLoadFailed: Stream.empty(),
     primaryMediaReady: Stream.empty(),
-    backendSwitched: Stream.empty(),
   );
 
   @override
@@ -45,13 +44,10 @@ class _PropertyPlayer implements Player {
   Future<String?> getProperty(String name) async => properties[name];
 
   @override
-  Future<String> runtimePlayerType() async => 'mpv';
-
-  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// Player fake that reports native (Android ExoPlayer) stats.
+/// Player fake that reports Android mpv's native stats map.
 class _NativeStatsPlayer extends _PropertyPlayer {
   _NativeStatsPlayer(this.stats) : super(const {});
 
@@ -62,9 +58,6 @@ class _NativeStatsPlayer extends _PropertyPlayer {
 
   @override
   Future<Map<String, dynamic>> getStats() async => stats;
-
-  @override
-  Future<String> runtimePlayerType() async => 'exoplayer';
 }
 
 Future<PerformanceStats> _firstStats(_PropertyPlayer player) async {
@@ -132,53 +125,6 @@ void main() {
       expect(stats.audioChannels, isNull);
       expect(stats.audioPassthrough, isTrue);
       expect(stats.audioPassthroughFormatted, 'DTS-HD');
-    });
-  });
-
-  group('PerformanceStatsService ExoPlayer codec display (#2063)', () {
-    test('falls back to the sample MIME type when the container has no codecs string', () async {
-      // Matroska: Format.codecs is null; only the MIME types identify the
-      // streams.
-      final stats = await _firstStats(
-        _NativeStatsPlayer({
-          'playerType': 'exoplayer',
-          'videoCodec': null,
-          'videoMimeType': 'video/hevc',
-          'audioCodec': null,
-          'audioMimeType': 'audio/eac3',
-          'audioSampleRate': 48000,
-          'audioChannels': 6,
-        }),
-      );
-
-      expect(stats.videoCodec, 'HEVC');
-      expect(stats.audioCodec, 'E-AC3');
-      expect(stats.audioChannels, '5.1');
-    });
-
-    test('an explicit codecs string wins over the MIME type', () async {
-      final stats = await _firstStats(
-        _NativeStatsPlayer({
-          'playerType': 'exoplayer',
-          'videoCodec': 'hvc1.2.4.L153.B0',
-          'videoMimeType': 'video/hevc',
-          'audioCodec': 'mp4a.40.2',
-          'audioMimeType': 'audio/mp4a-latm',
-        }),
-      );
-
-      expect(stats.videoCodec, 'HEVC');
-      expect(stats.audioCodec, 'AAC');
-    });
-
-    test('measured audio bitrate from the native side is surfaced', () async {
-      final stats = await _firstStats(
-        _NativeStatsPlayer({'playerType': 'exoplayer', 'audioMimeType': 'audio/vnd.dts', 'audioBitrate': 1509000}),
-      );
-
-      expect(stats.audioCodec, 'DTS');
-      expect(stats.hasValidAudioBitrate, isTrue);
-      expect(stats.audioBitrateFormatted, '1509 kbps');
     });
   });
 

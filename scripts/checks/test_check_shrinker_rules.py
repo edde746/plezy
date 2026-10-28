@@ -11,8 +11,8 @@ CHECKER = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(CHECKER)
 
-# The descriptor is split across two literals exactly as ffmpeg_jni.cc has it, so the
-# fixture also covers C string concatenation.
+# The descriptor is split across two literals, so the fixture also covers C string
+# concatenation.
 JNI_SOURCE = """
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   jclass clazz = env->FindClass("androidx/media3/decoder/ffmpeg/FfmpegAudioDecoder");

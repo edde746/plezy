@@ -1,4 +1,4 @@
-package com.edde746.plezy.exoplayer
+package com.edde746.plezy.mpv
 
 import android.content.Context
 import android.media.AudioDeviceInfo
@@ -11,57 +11,10 @@ import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.audio.AudioCapabilities
 
-private const val TAG = "AudioOutputPolicy"
-
-internal fun isPassthroughAudioMimeType(mimeType: String): Boolean = when (mimeType) {
-  "audio/ac3",
-  "audio/eac3",
-  "audio/eac3-joc",
-  "audio/ac4",
-  "audio/vnd.dts",
-  "audio/vnd.dts.hd",
-  "audio/vnd.dts.uhd",
-  MimeTypes.AUDIO_TRUEHD -> true
-  else -> false
-}
-
-internal fun shouldBlockDirectOutputForPassthrough(mimeType: String, audioPassthroughEnabled: Boolean): Boolean = !audioPassthroughEnabled && isPassthroughAudioMimeType(mimeType)
-
-/**
- * The DTS-family mimes the bundled FFmpeg decoder claims (`FfmpegLibrary` maps both to `dca`).
- *
- * DTS Express (`audio/vnd.dts.hd;profile=lbr`) and DTS:X (`audio/vnd.dts.uhd`) are deliberately
- * excluded: FFmpeg does not claim them, so hiding their platform decoders would leave those
- * streams with no decoder at all.
- */
-internal fun isFfmpegDtsMimeType(mimeType: String): Boolean = mimeType == MimeTypes.AUDIO_DTS || mimeType == MimeTypes.AUDIO_DTS_HD
-
-/**
- * Whether a DTS stream should decode in the app's FFmpeg decoder instead of a platform
- * MediaCodec decoder.
- *
- * Platform DTS decoders cannot be trusted with decode. On Amlogic-based Google TV boxes (the
- * Onn family) DTS decode is license-gated in firmware, so `c2.amlogic.audio.decoder.dtshd`
- * initialises, drains and advances the playback position while rendering silence — and collapses
- * 5.1 to stereo where it does produce sound (#1995). FFmpeg decodes the whole `dca` family to
- * full multichannel PCM everywhere, which is what mpv and Kodi ship on the same hardware.
- *
- * Scoped to streams that are actually going to decode: [directOutputBlocked] (passthrough off,
- * downmix, normalization, the AudioTrack-failure blocklist) or a route that cannot bitstream DTS
- * in any shape ([routeCanBitstreamDts] false — the Android TV default leaves passthrough on, so
- * the setting alone cannot identify the decode path). Bitstream-capable routes are left exactly
- * alone: media3 selects direct output before it ever consults the decoder list, and leaving the
- * platform decoder visible there keeps the hardware-decoder tunneling gate unchanged.
- */
-internal fun shouldForceFfmpegDtsDecode(
-  mimeType: String,
-  directOutputBlocked: () -> Boolean,
-  routeCanBitstreamDts: () -> Boolean
-): Boolean = isFfmpegDtsMimeType(mimeType) && (directOutputBlocked() || !routeCanBitstreamDts())
+private const val TAG = "MpvAudioOutputPolicy"
 
 /**
  * Linear PCM output encodings, i.e. the sink decoded the bitstream instead of
@@ -94,7 +47,7 @@ private class MpvSpdifCodec(
  * bitstream, and the track shape the fork's `ao_audiotrack` opens for it.
  *
  * Since the raw-passthrough patch (0102), the AO feeds AC3, E-AC3 and the DTS core to a raw
- * `ENCODING_AC3`/`E_AC3`/`DTS` track at 48kHz/stereo — the transport ExoPlayer and Kodi use —
+ * `ENCODING_AC3`/`E_AC3`/`DTS` track at 48kHz/stereo — the transport media3 and Kodi use —
  * and only falls back to the IEC 61937 carrier when the route rejects the raw encoding
  * outright. Raw tracks keep the platform's Dolby/DTS transcoder in the path; a pre-packed IEC
  * track bypasses it and drains into silence on routes whose sink cannot decode the codec
@@ -189,7 +142,7 @@ internal fun mpvSpdifCodecs(
  *   sink whose profiles do not list it.
  */
 // Deprecated only in favour of an overload that also takes spatializer channel masks, which
-// do not affect bitstream routing. Same probe ExoPlayerCore's TrueHD decision uses.
+// do not affect bitstream routing.
 @Suppress("DEPRECATION")
 @OptIn(UnstableApi::class)
 internal fun supportedMpvSpdifCodecs(context: Context): String {
@@ -228,6 +181,13 @@ private fun routeTakesIecShape(context: Context, shape: MpvIecShape): Boolean = 
 private const val MPV_IEC_SAMPLE_RATE = 48_000
 private const val MPV_IEC_CHANNEL_COUNT = 2
 private const val MPV_IEC_HIGH_SAMPLE_RATE = 192_000
+
+/**
+ * The IEC 61937 carrier tuple TrueHD (as MAT) and DTS-HD MA ride: 192kHz, 7.1, PCM-16 shaped.
+ * This is the high-bitrate HDMI shape Kodi uses for both, and the one [supportsIecCarrier] probes.
+ */
+private const val IEC_CARRIER_SAMPLE_RATE = 192_000
+private const val IEC_CARRIER_CHANNEL_COUNT = 8
 
 internal fun supportsMpvIecShape(context: Context): Boolean = iecRouteSupported(
   sdkInt = Build.VERSION.SDK_INT,
@@ -300,7 +260,7 @@ internal fun mpvRawChannelMask(encoding: Int): Int = when (encoding) {
  * any direct mode does. The answer only names the flag on the output profile that matched the
  * tuple, and a HAL that declares its passthrough port `DIRECT|COMPRESS_OFFLOAD` reports
  * offload-only for the very port it bitstreams through — #2333's TCL C8K has no other
- * encoded-format port, ExoPlayer plays E-AC3 5.1 on it, and demanding the bitstream bit refused
+ * encoded-format port, media3 plays E-AC3 5.1 on it, and demanding the bitstream bit refused
  * every codec. The AudioTrack open (`getProfileForOutput`, which prefers offload-capable
  * profiles), the API 29–32 tier (`isDirectPlaybackSupported`) and media3's `AudioCapabilities`
  * all accept such a profile; this was the one probe that did not.
@@ -352,48 +312,26 @@ internal fun supportsMpvHighRateIecShape(context: Context): Boolean = iecRouteSu
  *   bitstream from offload — but an IEC 61937 track is PCM-shaped by definition, so direct support
  *   for it means the route carries the frames. Fire OS 8 (API 30) devices bitstream TrueHD this way
  *   and lost passthrough entirely under an API 33 gate (#1863). A route that still lies here fails
- *   AudioTrack initialisation, which the audio recovery path answers by force-decoding.
+ *   AudioTrack initialisation, and mpv has no decode fallback for a codec named in `audio-spdif`.
  * - API 24–28: no runtime oracle exists, so the HDMI `AudioDeviceInfo` must explicitly advertise
  *   IEC 61937 at 192kHz/8ch. Shield Experience 8.x is API 28, and the previous flat `false` on
  *   this tier force-decoded TrueHD on routes that genuinely carry it (#1991). A route that
- *   advertises and still refuses the track fails AudioTrack initialisation into the same
- *   recovery path as the tier above.
+ *   advertises and still refuses the track fails AudioTrack initialisation the same way.
  */
 internal fun supportsIecCarrier(context: Context): Boolean = iecRouteSupported(
   sdkInt = Build.VERSION.SDK_INT,
-  canSizeBuffer = { canSizeIecBuffer(IecCarrier.SAMPLE_RATE, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND) },
+  canSizeBuffer = { canSizeIecBuffer(IEC_CARRIER_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND) },
   // The SDK_INT guards repeat iecRouteSupported's tiering only because lint's NewApi
   // check cannot see through the injected lambdas.
   bitstreamSupported = {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-      iecBitstreamSupported(iecProbeFormat(IecCarrier.SAMPLE_RATE, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND))
+      iecBitstreamSupported(iecProbeFormat(IEC_CARRIER_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND))
   },
   directPlaybackSupported = {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-      iecDirectPlaybackSupported(iecProbeFormat(IecCarrier.SAMPLE_RATE, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND))
+      iecDirectPlaybackSupported(iecProbeFormat(IEC_CARRIER_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_7POINT1_SURROUND))
   },
-  hdmiRouteAdvertised = { hdmiAdvertisesIecRoute(context, IecCarrier.SAMPLE_RATE, IecCarrier.CHANNEL_COUNT) }
-)
-
-/**
- * Whether the route carries the IEC 61937 tuple, the platform advertises DTS-HD, *and* the HDMI
- * sink itself advertises DTS. TrueHD rides the same tuple, so carrying it says nothing about
- * whether the receiver decodes DTS-HD. The platform encoding alone is not enough either: an
- * Amlogic HAL advertises `ENCODING_DTS_HD` because it can decode DTS itself, and the carrier
- * bypasses that decoder ([sinkAdvertisesDts]).
- */
-internal fun dtsHdCarrierUsable(
-  supportsEncoding: (Int) -> Boolean,
-  supportsCarrier: () -> Boolean,
-  sinkDecodesDts: () -> Boolean = { true }
-): Boolean = supportsEncoding(C.ENCODING_DTS_HD) && sinkDecodesDts() && supportsCarrier()
-
-/** [dtsHdCarrierUsable] resolved against the audio route [context] is currently routed to. */
-internal fun supportsDtsHdIecCarrier(context: Context): Boolean = dtsHdCarrierUsable(
-  // Encoding first: it skips the carrier tiering's several route calls.
-  supportsEncoding = { encoding -> routeSupportsEncoding(context, encoding) },
-  supportsCarrier = { supportsIecCarrier(context) },
-  sinkDecodesDts = { hdmiSinkDecodesDts(context) }
+  hdmiRouteAdvertised = { hdmiAdvertisesIecRoute(context, IEC_CARRIER_SAMPLE_RATE, IEC_CARRIER_CHANNEL_COUNT) }
 )
 
 /** The mpv spdif table's DTS entries: the codecs [hdmiSinkDecodesDts] gates. */
@@ -490,8 +428,7 @@ private fun movieHdmiSinkEncodings(manager: AudioManager): List<IntArray> {
  * [sinkAdvertisesDts] resolved against the HDMI outputs a movie would play through. When the
  * sink advertises no DTS, [mpvSpdifCodecs] names no DTS codec (mpv decodes DTS-HD MA to the
  * multichannel PCM the sink takes, where the Mi Box HAL would decode a raw DTS track to stereo
- * only) and [dtsHdCarrierUsable] keeps DTS-HD off the carrier. Logs only when the verdict or
- * the encodings change, since ExoPlayer asks on every format-support query.
+ * only). Logs only when the verdict or the encodings change.
  */
 private fun hdmiSinkDecodesDts(context: Context): Boolean = try {
   val manager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -508,15 +445,6 @@ private fun hdmiSinkDecodesDts(context: Context): Boolean = try {
 } catch (error: Exception) {
   Log.w(TAG, "HDMI sink inspection failed; keeping the DTS carrier decision to the route probes", error)
   true
-}
-
-@Suppress("DEPRECATION")
-@OptIn(UnstableApi::class)
-private fun routeSupportsEncoding(context: Context, encoding: Int): Boolean = try {
-  AudioCapabilities.getCapabilities(context, movieMedia3AudioAttributes(), null).supportsEncoding(encoding)
-} catch (error: Exception) {
-  Log.w(TAG, "Audio route capabilities unavailable; DTS-HD will not bitstream", error)
-  false
 }
 
 /**
@@ -577,7 +505,7 @@ private fun iecDirectPlaybackSupported(format: AudioFormat): Boolean = try {
  *
  * Empty `AudioDeviceInfo` capability arrays mean "unspecified" and deliberately fail this
  * check: an unvouched IEC track that initialises on a route that then renders it as PCM plays
- * the carrier as full-scale noise, which the AudioTrack-init recovery path cannot catch.
+ * the carrier as full-scale noise, which no AudioTrack-init failure would reveal.
  */
 private fun hdmiAdvertisesIecRoute(context: Context, sampleRate: Int, channelCount: Int): Boolean = try {
   val manager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -592,7 +520,7 @@ private fun hdmiAdvertisesIecRoute(context: Context, sampleRate: Int, channelCou
   false
 }
 
-/** The exact tuple an IEC output's `AudioTrack` is built with; see [PlezyRenderersFactory]. */
+/** The exact tuple mpv's audiotrack AO builds an IEC output's `AudioTrack` with. */
 private fun iecProbeFormat(sampleRate: Int, channelMask: Int): AudioFormat = directProbeFormat(AudioFormat.ENCODING_IEC61937, sampleRate, channelMask)
 
 private fun directProbeFormat(encoding: Int, sampleRate: Int, channelMask: Int): AudioFormat = AudioFormat.Builder()

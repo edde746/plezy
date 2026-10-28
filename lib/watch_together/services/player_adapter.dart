@@ -92,7 +92,7 @@ final class PlezyPlayerAdapter extends owp.PlayerAdapter {
   @override
   bool get canSetRate => !player.audioPassthroughActive;
 
-  /// mpv's absolute seeks and ExoPlayer's seeks land where asked, so 0 while
+  /// mpv's absolute seeks land where asked, so 0 while
   /// the file can seek. A file that shows frames but can't seek (a stream
   /// without an index) would otherwise be sought again every couple of
   /// seconds.

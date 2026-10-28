@@ -1,19 +1,14 @@
 import 'dart:async';
 
-/// Per-screen state for display matching: the retry counter for backends
-/// that detect fps only after rendering, whether a switch was already applied
-/// for the current item, the MediaSession pause-suppression window armed
-/// around HDMI renegotiations, and the hold that keeps the first frame behind
-/// the loading UI while the display is negotiated from it.
+/// Per-screen state for display matching: whether a switch was already
+/// applied for the current item, the MediaSession pause-suppression window
+/// armed around HDMI renegotiations, and the hold that keeps the first frame
+/// behind the loading UI while the display is negotiated from it.
 ///
 /// One instance lives on the player screen; the open/reload pipelines and
 /// Live TV channel opens call [resetForNewItem] before each open and the
-/// display-matching paths flip [applied]/[retries] as they negotiate.
+/// display-matching paths flip [applied] as they negotiate.
 class FrameRateMatcher {
-  /// Retries left for late fps detection (ExoPlayer reports container fps
-  /// only after ~8 rendered frames).
-  int retries = 0;
-
   /// Whether a display switch was already applied for the current item —
   /// the post-first-frame path bails instead of switching twice.
   bool applied = false;
@@ -74,7 +69,6 @@ class FrameRateMatcher {
 
   /// Reset the per-item negotiation state before opening new media.
   void resetForNewItem() {
-    retries = 0;
     applied = false;
     _abandonDisplayNegotiation();
   }

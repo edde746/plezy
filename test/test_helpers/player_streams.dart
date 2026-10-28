@@ -2,7 +2,7 @@ import 'package:plezy/mpv/mpv.dart';
 
 /// A [PlayerStreams] whose every stream is empty unless the caller names it.
 ///
-/// Test-only. Production keeps all 18 required parameters required so that a
+/// Test-only. Production keeps all 17 required parameters required so that a
 /// real player forgetting to publish a stream stays a compile error; a fake
 /// that drives one or two streams should not have to respell the rest.
 PlayerStreams emptyPlayerStreams({
@@ -32,7 +32,6 @@ PlayerStreams emptyPlayerStreams({
   Stream<void> primaryMediaReady = const Stream<void>.empty(),
   Stream<void> hdrOutputChanged = const Stream<void>.empty(),
   Stream<List<BufferRange>> bufferRanges = const Stream<List<BufferRange>>.empty(),
-  Stream<void> backendSwitched = const Stream<void>.empty(),
   Stream<String> trackTransition = const Stream<String>.empty(),
 }) => PlayerStreams(
   playing: playing,
@@ -61,6 +60,5 @@ PlayerStreams emptyPlayerStreams({
   primaryMediaReady: primaryMediaReady,
   hdrOutputChanged: hdrOutputChanged,
   bufferRanges: bufferRanges,
-  backendSwitched: backendSwitched,
   trackTransition: trackTransition,
 );

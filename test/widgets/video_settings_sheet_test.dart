@@ -57,8 +57,7 @@ void main() {
 
   testWidgets('keeps audio passthrough out of the in-player sheet', (tester) async {
     // It configures the audio output route, not this playback, and applying it
-    // mid-stream bounces the audio renderer and re-decides video tunneling. Settings >
-    // Video Playback owns it, alongside Tunneled Playback.
+    // mid-stream reloads the audio output. Settings > Video Playback owns it.
     await _pumpSheet(tester);
 
     // Positive control: land on the audio block that used to hold the toggle. Without
@@ -726,7 +725,7 @@ class _FakeSettingsPlayer implements Player {
   PlayerStreams get streams => _streams;
 
   @override
-  String get playerType => 'exoplayer';
+  String get playerType => 'fake';
 
   @override
   Future<void> setAudioPassthrough(bool enabled) async {}

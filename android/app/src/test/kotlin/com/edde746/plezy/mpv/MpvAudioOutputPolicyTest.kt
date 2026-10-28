@@ -1,114 +1,15 @@
-package com.edde746.plezy.exoplayer
+package com.edde746.plezy.mpv
 
 import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
 import androidx.media3.common.C
-import androidx.media3.common.MimeTypes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class AudioOutputPolicyTest {
-
-  @Test
-  fun passthroughDisabledBlocksBitstreamFormats() {
-    val bitstreamFormats = listOf(
-      "audio/ac3",
-      "audio/eac3",
-      "audio/eac3-joc",
-      "audio/ac4",
-      "audio/vnd.dts",
-      "audio/vnd.dts.hd",
-      "audio/vnd.dts.uhd",
-      MimeTypes.AUDIO_TRUEHD
-    )
-
-    for (mimeType in bitstreamFormats) {
-      assertTrue(mimeType, shouldBlockDirectOutputForPassthrough(mimeType, audioPassthroughEnabled = false))
-    }
-  }
-
-  @Test
-  fun passthroughEnabledAllowsBitstreamFormats() {
-    assertFalse(shouldBlockDirectOutputForPassthrough("audio/ac3", audioPassthroughEnabled = true))
-    assertFalse(shouldBlockDirectOutputForPassthrough(MimeTypes.AUDIO_TRUEHD, audioPassthroughEnabled = true))
-  }
-
-  @Test
-  fun passthroughDisabledLeavesDecodedFormatsAvailable() {
-    val decodedFormats = listOf(
-      MimeTypes.AUDIO_AAC,
-      MimeTypes.AUDIO_OPUS,
-      MimeTypes.AUDIO_RAW,
-      MimeTypes.AUDIO_FLAC
-    )
-
-    for (mimeType in decodedFormats) {
-      assertFalse(mimeType, shouldBlockDirectOutputForPassthrough(mimeType, audioPassthroughEnabled = false))
-    }
-  }
-
-  @Test
-  fun dtsDecodeIsForcedToFfmpegWhenDirectOutputIsBlocked() {
-    // Passthrough disabled (the #1995 report), downmix, normalization, or a failure block:
-    // the stream decodes, and platform DTS decoders render silence on license-gated devices.
-    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts", { true }, { true }))
-    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd", { true }, { true }))
-  }
-
-  @Test
-  fun dtsDecodeIsForcedToFfmpegWhenTheRouteCannotBitstream() {
-    // Onn 4K Plus over HDMI to a Dolby-only TV: passthrough enabled (the Android TV default)
-    // still decodes because the route carries no DTS shape (#1995).
-    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts", { false }, { false }))
-    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd", { false }, { false }))
-  }
-
-  @Test
-  fun bitstreamCapableDtsRoutesKeepThePlatformDecoderVisible() {
-    // A bitstreaming session never engages a decoder; leaving the platform decoder visible
-    // keeps the hardware-decoder tunneling gate exactly as it was.
-    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts", { false }, { true }))
-    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd", { false }, { true }))
-  }
-
-  @Test
-  fun dtsVariantsFfmpegCannotClaimAreLeftAlone() {
-    // DTS Express and DTS:X are not in FfmpegLibrary's mime map; hiding their platform
-    // decoders would leave those streams with no decoder at all.
-    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd;profile=lbr", { true }, { false }))
-    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts.uhd", { true }, { false }))
-    assertFalse(shouldForceFfmpegDtsDecode(MimeTypes.AUDIO_TRUEHD, { true }, { false }))
-  }
-
-  @Test
-  fun dtsHdTakesTheCarrierOnlyWhenTheRouteAdvertisesDtsHd() {
-    assertTrue(dtsHdCarrierUsable({ it == C.ENCODING_DTS_HD }, { true }))
-    // Carries the tuple for TrueHD but decodes no DTS-HD: the burst would drain unheard.
-    assertFalse(dtsHdCarrierUsable({ false }, { true }))
-    assertFalse(dtsHdCarrierUsable({ true }, { false }))
-  }
-
-  @Test
-  fun theCarrierProbeIsSkippedWhenDtsHdIsNotAdvertised() {
-    // The carrier tiering costs several route calls; a route without DTS-HD must not pay them.
-    assertFalse(dtsHdCarrierUsable({ false }, { throw AssertionError("carrier probed without DTS-HD") }))
-  }
-
-  @Test
-  fun nonDtsMimesNeverConsultTheDtsProbes() {
-    // Decoder selection runs this predicate for every mime, video included; the probes make
-    // binder calls and must stay behind the mime gate.
-    assertFalse(
-      shouldForceFfmpegDtsDecode(
-        MimeTypes.VIDEO_H265,
-        { throw AssertionError("directOutputBlocked consulted for a non-DTS mime") },
-        { throw AssertionError("routeCanBitstreamDts consulted for a non-DTS mime") }
-      )
-    )
-  }
+class MpvAudioOutputPolicyTest {
 
   @Test
   fun spdifListNamesEveryCodecARouteWithAllShapesCanCarry() {
@@ -180,7 +81,7 @@ class AudioOutputPolicyTest {
   @Test
   fun rawCapableRouteBitstreamsTheCoreCodecsWithoutAnyIecShape() {
     // #2177's Shield: every mpv IEC track opens and drains into silence, while raw
-    // ENCODING_AC3/E_AC3/DTS tracks (the ExoPlayer transport) play. The AO opens raw first,
+    // ENCODING_AC3/E_AC3/DTS tracks (the media3 transport) play. The AO opens raw first,
     // so raw support alone must qualify the core codecs.
     assertEquals(
       "ac3,eac3,dts",
@@ -191,7 +92,7 @@ class AudioOutputPolicyTest {
   @Test
   fun rawDtsHdTrackQualifiesDtsHdWithoutTheCarrier() {
     // #2333's TCL C8K: no IEC 61937 profile at all, but a native DTS-HD offload port at
-    // 48kHz/7.1 that ExoPlayer plays DTS-HD MA through. The AO unwraps the burst into that
+    // 48kHz/7.1 that media3 plays DTS-HD MA through. The AO unwraps the burst into that
     // track when the route refuses the carrier, so raw support alone must name `dts-hd` — and
     // it still supersedes the plain core name. The same port offers raw TrueHD.
     assertEquals("ac3,eac3,truehd,dts-hd", spdifCodecs(allEncodings, emptySet(), raw = allEncodings))
@@ -222,7 +123,7 @@ class AudioOutputPolicyTest {
 
   @Test
   fun rawTracksAreProbedInTheShapeTheAoOpens() {
-    // ExoPlayer opened DTS-HD MA at 48kHz/8ch on #2333's route, and the AO opens raw TrueHD at
+    // media3 opened DTS-HD MA at 48kHz/8ch on #2333's route, and the AO opens raw TrueHD at
     // Kodi's 192kHz/7.1, not media3's stream rate: probing any other shape asks about a track
     // the AO never opens.
     assertEquals(AudioFormat.CHANNEL_OUT_7POINT1_SURROUND, mpvRawChannelMask(C.ENCODING_DTS_HD))
@@ -346,7 +247,7 @@ class AudioOutputPolicyTest {
   @Test
   fun rawTrackAcceptsAnOffloadFlaggedRouteWhereAnIecShapeDoesNot() {
     // #2333's TCL C8K declares its only encoded-format port DIRECT|COMPRESS_OFFLOAD, so
-    // getDirectPlaybackSupport answers offload-only for the port ExoPlayer bitstreams E-AC3
+    // getDirectPlaybackSupport answers offload-only for the port media3 bitstreams E-AC3
     // through. The raw AC3/E-AC3/DTS tracks open on that port; the IEC shapes keep demanding
     // the bitstream bit (raw TrueHD behind #1804 reported offload-only and never drained).
     val offloadOnly = AudioManager.DIRECT_PLAYBACK_OFFLOAD_GAPLESS_SUPPORTED
@@ -381,19 +282,6 @@ class AudioOutputPolicyTest {
       spdifCodecs(allEncodings, emptySet(), raw = allEncodings, sinkDecodes = noDtsSink)
     )
     assertEquals("", spdifCodecs(setOf(C.ENCODING_DTS), allShapes, raw = setOf(C.ENCODING_DTS), sinkDecodes = noDtsSink))
-  }
-
-  @Test
-  fun dtsHdCarrierIsRefusedWhenTheSinkAdvertisesNoDts() {
-    assertFalse(dtsHdCarrierUsable({ true }, { true }, sinkDecodesDts = { false }))
-    assertFalse(
-      dtsHdCarrierUsable(
-        { true },
-        { throw AssertionError("carrier probed for a sink without DTS") },
-        sinkDecodesDts = { false }
-      )
-    )
-    assertTrue(dtsHdCarrierUsable({ true }, { true }, sinkDecodesDts = { true }))
   }
 
   @Test

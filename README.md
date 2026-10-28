@@ -186,7 +186,7 @@ sudo moss pad plezy
 [^connect]: Requires connecting the service under Settings > Services.
 [^hdr]: In-app HDR toggle on Windows, macOS, iOS, tvOS, and Linux — Linux needs a colour-managed Wayland compositor. Dolby Vision on Android, macOS, and Apple TV.
 [^pass]: Desktop, Android TV, and Apple TV.
-[^mpv]: Requires mpv's GPU renderer — unavailable on iOS, tvOS, and macOS, and Android defaults to ExoPlayer.
+[^mpv]: Requires mpv's GPU renderer — unavailable on iOS, tvOS, and macOS.
 [^pip]: Android, iOS, and macOS — not on Android TV or Apple TV.
 [^rrm]: Windows, Android, and tvOS.
 [^android]: Progress sync on Android.
@@ -317,4 +317,4 @@ Plezy is licensed under [GPL-3.0](LICENSE).
 
 - Built with [Flutter](https://flutter.dev)
 - Supports [Plex Media Server](https://www.plex.tv), [Jellyfin](https://jellyfin.org), and [Emby](https://emby.media)
-- Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), and [libass-android](https://github.com/peerless2012/libass-android)
+- Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android))

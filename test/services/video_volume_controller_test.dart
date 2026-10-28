@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/mpv/player/platform/player_android.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
@@ -316,90 +315,68 @@ void main() {
     expect(persisted, isEmpty);
   });
 
-  for (final adapter in <({String name, String methodChannel, String eventChannel, Player Function() create})>[
-    (
-      name: 'PlayerNative',
-      methodChannel: 'com.plezy/mpv_player',
-      eventChannel: 'com.plezy/mpv_player/events',
-      create: PlayerNative.new,
-    ),
-    (
-      name: 'PlayerAndroid',
-      methodChannel: 'com.plezy/exo_player',
-      eventChannel: 'com.plezy/exo_player/events',
-      create: PlayerAndroid.new,
-    ),
-  ]) {
-    test('${adapter.name} receives one ordered native volume write at a time', () async {
-      final firstWriteStarted = Completer<void>();
-      final releaseFirstWrite = Completer<void>();
-      final nativeVolumes = <double>[];
-      var activeWrites = 0;
-      var maxActiveWrites = 0;
+  test('PlayerNative receives one ordered native volume write at a time', () async {
+    final firstWriteStarted = Completer<void>();
+    final releaseFirstWrite = Completer<void>();
+    final nativeVolumes = <double>[];
+    var activeWrites = 0;
+    var maxActiveWrites = 0;
 
-      await withMockPlayerChannels(
-        methodChannelName: adapter.methodChannel,
-        eventChannelName: adapter.eventChannel,
-        methodHandler: (MethodCall call) async {
-          if (call.method == 'initialize') return true;
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (MethodCall call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method != 'setProperty') return null;
+        final arguments = call.arguments as Map;
+        if (arguments['name'] != 'volume') return null;
+        final volume = double.parse(arguments['value'] as String);
 
-          double? volume;
-          if (call.method == 'setVolume') {
-            volume = ((call.arguments as Map)['volume'] as num).toDouble();
-          } else if (call.method == 'setProperty') {
-            final arguments = call.arguments as Map;
-            if (arguments['name'] == 'volume') {
-              volume = double.parse(arguments['value'] as String);
-            }
-          }
-          if (volume == null) return null;
+        nativeVolumes.add(volume);
+        activeWrites++;
+        if (activeWrites > maxActiveWrites) maxActiveWrites = activeWrites;
+        if (!firstWriteStarted.isCompleted) {
+          firstWriteStarted.complete();
+          await releaseFirstWrite.future;
+        }
+        activeWrites--;
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        final persisted = <double>[];
+        final controller = VideoVolumeController(
+          player: player,
+          settings: settings,
+          initialVolume: 50,
+          persistVolume: (volume) async => persisted.add(volume),
+        );
+        try {
+          controller.adjust(5);
+          controller.adjust(5);
+          controller.adjust(5);
+          await firstWriteStarted.future;
+          expect(nativeVolumes, [55]);
 
-          nativeVolumes.add(volume);
-          activeWrites++;
-          if (activeWrites > maxActiveWrites) maxActiveWrites = activeWrites;
-          if (!firstWriteStarted.isCompleted) {
-            firstWriteStarted.complete();
-            await releaseFirstWrite.future;
-          }
-          activeWrites--;
-          return null;
-        },
-        testBody: () async {
-          final player = adapter.create();
-          final persisted = <double>[];
-          final controller = VideoVolumeController(
-            player: player,
-            settings: settings,
-            initialVolume: 50,
-            persistVolume: (volume) async => persisted.add(volume),
-          );
-          try {
-            controller.adjust(5);
-            controller.adjust(5);
-            controller.adjust(5);
-            await firstWriteStarted.future;
-            expect(nativeVolumes, [55]);
-
-            releaseFirstWrite.complete();
-            await controller.idle;
-            expect(nativeVolumes, [55, 65]);
-            expect(persisted, [65]);
-            expect(maxActiveWrites, 1);
-            controller.dispose();
-            controller.adjust(10);
-            controller.toggleMute();
-            await _flush();
-            expect(nativeVolumes, [55, 65]);
-            expect(persisted, [65]);
-          } finally {
-            if (!releaseFirstWrite.isCompleted) releaseFirstWrite.complete();
-            controller.dispose();
-            await player.dispose();
-          }
-        },
-      );
-    });
-  }
+          releaseFirstWrite.complete();
+          await controller.idle;
+          expect(nativeVolumes, [55, 65]);
+          expect(persisted, [65]);
+          expect(maxActiveWrites, 1);
+          controller.dispose();
+          controller.adjust(10);
+          controller.toggleMute();
+          await _flush();
+          expect(nativeVolumes, [55, 65]);
+          expect(persisted, [65]);
+        } finally {
+          if (!releaseFirstWrite.isCompleted) releaseFirstWrite.complete();
+          controller.dispose();
+          await player.dispose();
+        }
+      },
+    );
+  });
 }
 
 Future<void> _flush() => Future<void>.delayed(Duration.zero);
@@ -436,7 +413,6 @@ final class _ControlledVolumePlayer implements Player {
     audioDevices: const Stream<List<AudioDevice>>.empty(),
     bufferRanges: const Stream<List<BufferRange>>.empty(),
     playbackRestart: const Stream<void>.empty(),
-    backendSwitched: const Stream<void>.empty(),
   );
 
   @override

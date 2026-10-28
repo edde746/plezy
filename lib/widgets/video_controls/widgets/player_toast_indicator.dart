@@ -60,7 +60,7 @@ class PlayerToastIndicator extends StatelessWidget {
 /// How a transient in-player notification presents itself.
 enum PlayerToastKind {
   /// Textual dark pill at the top of the frame: rate changes, chapter titles,
-  /// backend switches, errors.
+  /// errors.
   notice,
 
   /// Icon-only disc at the centre of the frame confirming an accepted

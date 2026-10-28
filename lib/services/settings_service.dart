@@ -189,8 +189,8 @@ extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
 /// Who converts HDR for a display without HDR output, on the Android mpv
 /// backend.
 ///
-/// [device] leaves the video on the platform's video plane, as ExoPlayer,
-/// Kodi and VLC do: free on weak GPUs, colours up to the device. [player]
+/// [device] leaves the video on the platform's video plane, as Kodi and VLC
+/// do: free on weak GPUs, colours up to the device. [player]
 /// tone-maps in mpv's GL renderer, which 4K outruns on low-end TV GPUs.
 /// [auto] picks [device] from Android 9, whose compositor converts an HDR
 /// layer itself, and [player] below it.
@@ -204,18 +204,7 @@ extension HdrSdrConversionNativeValue on HdrSdrConversion {
   };
 }
 
-enum PlaybackBufferTier { auto, large, extraLarge }
-
-extension PlaybackBufferTierNativeValue on PlaybackBufferTier {
-  String get nativeValue => switch (this) {
-    PlaybackBufferTier.auto => 'auto',
-    PlaybackBufferTier.large => 'large',
-    PlaybackBufferTier.extraLarge => 'extra_large',
-  };
-}
-
-/// What mpv does with interlaced video. mpv-only by design: ExoPlayer has no
-/// filter chain.
+/// What mpv does with interlaced video.
 ///
 /// [video] is mpv's `deinterlace=auto` (#2149): content flagged interlaced
 /// is deinterlaced, one frame per field. [film] is the fork's
@@ -239,7 +228,16 @@ const String _legacyBufferSizeKey = 'buffer_size';
 const String _legacyDemuxerModeKey = 'demuxer_mode';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
-const String _legacyUseExoPlayerKey = 'use_exoplayer';
+
+/// Keys of the removed Android ExoPlayer backend and its settings.
+const List<String> _exoPlayerBackendKeys = [
+  'use_exoplayer',
+  'android_use_exoplayer',
+  'tunneled_playback',
+  'playback_buffer_tier',
+  'subtitle_anchor_to_screen',
+];
+
 const String _legacyCustomRelayUrlKey = 'custom_relay_url';
 const String _legacyAutoSkipIntroKey = 'auto_skip_intro';
 const String _legacyAutoSkipCreditsKey = 'auto_skip_credits';
@@ -492,12 +490,11 @@ class _AudioPassthroughPref extends Pref<bool> {
     final stored = svc.readNullableBool(key);
     if (stored != null) return stored;
     // TV form factors default to handing Dolby to the TV/AVR, preserving
-    // surround. Android TV bitstreams Dolby/DTS; both Android backends decide
-    // from the same source — the sink's advertised capabilities: Media3 via
-    // AudioCapabilities, mpv via the route-probed audio-spdif list
-    // (supportedMpvSpdifCodecs), which names only codecs the live route
-    // accepts rather than forcing the whole set. That probe is the only
-    // safety net on the mpv path: ao_audiotrack fails the open outright when a
+    // surround. Android TV bitstreams Dolby/DTS from the sink's advertised
+    // capabilities: mpv's route-probed audio-spdif list
+    // (supportedMpvSpdifCodecs) names only codecs the live route accepts
+    // rather than forcing the whole set. That probe is the only safety net on
+    // the mpv path: ao_audiotrack fails the open outright when a
     // route lied about a format, with no decode fallback behind it (#1458,
     // #1703). Apple TV routes E-AC-3 (incl. Atmos) through the native
     // sample-buffer renderer, hardware-verified on real receivers (#1300).
@@ -683,12 +680,6 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Allow MPV text subtitles to use space outside the video rectangle.
   /// Authored ASS placement remains controlled by its existing styling rules.
   static const subtitleUseMargins = BoolPref('subtitle_use_margins', defaultValue: true);
-
-  /// Render text subtitles (SRT/VTT/mov_text) anchored to the physical screen
-  /// instead of the video rect, so they land in the letterbox bars of
-  /// widescreen video (#1730). ExoPlayer backend only; MPV uses
-  /// [subtitleUseMargins] instead.
-  static const subtitleAnchorToScreen = BoolPref('subtitle_anchor_to_screen');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
 
   /// Last confirmed Supporter entitlement on this device. Runtime state owned
@@ -739,7 +730,6 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const matchContentResolution = BoolPref('match_content_resolution');
-  static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: false);
   static const dvConversionMode = EnumPref<DvConversionModePreference>(
     'dv_conversion_mode',
     values: DvConversionModePreference.values,
@@ -851,15 +841,6 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: SpecialsOrdering.respectServer,
   );
 
-  /// mpv is the Android backend; ExoPlayer stays selectable as the escape
-  /// hatch while it still ships.
-  ///
-  /// Deliberately a different key from the `use_exoplayer` it replaces. That
-  /// key only ever holds an explicit pick made while ExoPlayer was the
-  /// default, and honoring those picks would leave the devices that most
-  /// need the new backend on the old one. Dropping it ([onInit]) puts every
-  /// install on mpv; choosing ExoPlayer again writes this key and sticks.
-  static const useExoPlayer = BoolPref('android_use_exoplayer');
   static const startupSection = EnumPref<NavigationTabId>(
     'startup_section',
     values: NavigationTabId.values,
@@ -946,7 +927,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static final maxVolume = IntPref('max_volume', defaultValue: 100, transform: (v) => v.clamp(100, 300));
   static final downmixCenterBoost = IntPref('downmix_center_boost', transform: (v) => v.clamp(0, 12));
   // mpv's sub-pos range: values above 100 move subtitles further down than
-  // their default bottom margin (#2331). ExoPlayer still caps at 100.
+  // their default bottom margin (#2331).
   static final subtitlePosition = IntPref('subtitle_position', defaultValue: 100, transform: (v) => v.clamp(0, 150));
   static final defaultPlaybackSpeed = DoublePref(
     'default_playback_speed',
@@ -994,11 +975,6 @@ class SettingsService extends BaseSharedPreferencesService {
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
 
-  static const playbackBufferTier = EnumPref<PlaybackBufferTier>(
-    'playback_buffer_tier',
-    values: PlaybackBufferTier.values,
-    defaultValue: PlaybackBufferTier.auto,
-  );
   static const libraryDensity = _LibraryDensityPref();
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
@@ -1151,9 +1127,11 @@ class SettingsService extends BaseSharedPreferencesService {
 
     const legacyRecentRoomsKey = 'watch_together_recent_rooms';
     await prefs.remove(legacyRecentRoomsKey);
-    // One-way move to the mpv default: the pre-`android_use_exoplayer` pick is
-    // dropped rather than carried over, and nothing reads the old key.
-    await prefs.remove(_legacyUseExoPlayerKey);
+    // One-way cleanup: nothing reads these keys since the ExoPlayer backend
+    // was removed.
+    for (final key in _exoPlayerBackendKeys) {
+      await prefs.remove(key);
+    }
     await _resetGlobalsOfKeyedPlayerScopes();
 
     // The custom relay of Plezy's former Watch Together protocol: no Open
@@ -1504,7 +1482,6 @@ class SettingsService extends BaseSharedPreferencesService {
     for (final s in TrackerService.values) scrobblePref(s),
     matchContentFrameRate,
     matchContentResolution,
-    tunneledPlayback,
     dvConversionMode,
     disableDolbyVision,
     hdrSdrConversion,
@@ -1521,7 +1498,6 @@ class SettingsService extends BaseSharedPreferencesService {
     deinterlaceMode,
     playerAlwaysOnTop,
     specialsOrdering,
-    useExoPlayer,
     startupSection,
     showExploreTab,
     alwaysKeepSidebarOpen,
@@ -1548,7 +1524,6 @@ class SettingsService extends BaseSharedPreferencesService {
     downmixCenterBoost,
     subtitlePosition,
     subtitleUseMargins,
-    subtitleAnchorToScreen,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
     playbackSpeedScope,
@@ -1559,7 +1534,6 @@ class SettingsService extends BaseSharedPreferencesService {
     themeMode,
     customThemePalette,
     videoPlayerNavigationEnabled,
-    playbackBufferTier,
     libraryDensity,
     gridSpacing,
     automotiveUiScale,

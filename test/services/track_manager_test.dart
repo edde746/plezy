@@ -40,8 +40,6 @@ import '../test_helpers/media_items.dart';
 // What's NOT covered:
 //   - Most `applyTrackSelection` selection permutations — the matching logic
 //     itself lives in [TrackSelectionService] and is covered there.
-//   - `onBackendSwitched` — wraps applyTrackSelectionWhenReady and is
-//     therefore gated on the same SettingsService dependency.
 
 MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie);
 
@@ -108,9 +106,6 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   Future<void> selectSubtitleTrack(SubtitleTrack t) async {
     selectedSubtitle.add(t);
   }
-
-  @override
-  bool get supportsSecondarySubtitles => true;
 
   final List<SubtitleTrack> selectedSecondarySubtitle = [];
 

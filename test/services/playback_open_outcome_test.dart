@@ -13,7 +13,6 @@ class _StreamPlayer implements Player {
   final loaded = StreamController<void>.broadcast();
   final restarted = StreamController<void>.broadcast();
   final failed = StreamController<void>.broadcast();
-  final switched = StreamController<void>.broadcast();
   final progress = StreamController<void>.broadcast();
 
   @override
@@ -40,7 +39,6 @@ class _StreamPlayer implements Player {
     fileLoadFailed: failed.stream,
     primaryMediaReady: primaryReady.stream,
     demuxerProgress: progress.stream,
-    backendSwitched: switched.stream,
   );
 
   Future<void> close() => Future.wait([
@@ -49,7 +47,6 @@ class _StreamPlayer implements Player {
     loaded.close(),
     restarted.close(),
     failed.close(),
-    switched.close(),
     progress.close(),
   ]);
 
@@ -71,7 +68,7 @@ void main() {
   tearDown(() => player.close());
 
   test('a load-scoped end-file error settles every waiter false without throwing', () async {
-    final outcome = PlaybackOpenOutcome.armForTesting(player);
+    final outcome = PlaybackOpenOutcome.arm(player);
 
     player.started.add(null);
     player.failed.add(null);
@@ -84,7 +81,7 @@ void main() {
   });
 
   test('closing the player streams settles pending waiters false instead of erroring', () async {
-    final outcome = PlaybackOpenOutcome.armForTesting(player);
+    final outcome = PlaybackOpenOutcome.arm(player);
     final fileLoaded = outcome.fileLoaded;
     final firstFrame = outcome.firstFrame;
 
@@ -96,7 +93,7 @@ void main() {
   });
 
   test('abort settles every pending waiter and is idempotent', () async {
-    final outcome = PlaybackOpenOutcome.armForTesting(player);
+    final outcome = PlaybackOpenOutcome.arm(player);
 
     outcome.abort('fatal player error');
     outcome.abort('screen disposed');
@@ -115,7 +112,7 @@ void main() {
   });
 
   test('success resolves true and a later failure does not flip it', () async {
-    final outcome = PlaybackOpenOutcome.armForTesting(player);
+    final outcome = PlaybackOpenOutcome.arm(player);
 
     player.started.add(null);
     player.loaded.add(null);
@@ -131,7 +128,7 @@ void main() {
     expect(await outcome.firstFrame, isFalse);
 
     // And a first frame settles everything true at once.
-    final rendered = PlaybackOpenOutcome.armForTesting(player);
+    final rendered = PlaybackOpenOutcome.arm(player);
     player.started.add(null);
     player.restarted.add(null);
     await _settle();
@@ -144,7 +141,7 @@ void main() {
   });
 
   test('signals before this attempt starts its file belong to the previous file', () async {
-    final outcome = PlaybackOpenOutcome.armForTesting(player);
+    final outcome = PlaybackOpenOutcome.arm(player);
 
     // A seek on the outgoing item, then its death, while the new open is
     // still being resolved.
@@ -161,52 +158,10 @@ void main() {
     expect(await outcome.firstFrame, isTrue);
   });
 
-  test('Android ExoPlayer: an end-file before the backend switch is not terminal', () async {
-    final outcome = PlaybackOpenOutcome.armForTesting(player, startsOnAndroidExoPlayer: true);
-
-    player.loaded.add(null); // ExoPlayer media-item transition.
-    player.failed.add(null); // Unsupported format; the mpv fallback follows.
-    await _settle();
-    expect(outcome.isSettled, isFalse);
-    expect(outcome.failed, isFalse);
-
-    var switched = false;
-    unawaited(outcome.backendSwitched.then((_) => switched = true));
-    player.switched.add(null);
-    await _settle();
-    expect(switched, isTrue);
-
-    // mpv's own load delimits the signals from here on.
-    player.started.add(null);
-    player.primaryReady.add(null);
-    player.loaded.add(null);
-    expect(await outcome.primaryMediaReady, isTrue);
-    expect(await outcome.fileLoaded, isTrue);
-    expect(outcome.isSettled, isFalse);
-
-    player.failed.add(null);
-    expect(await outcome.firstFrame, isFalse);
-    expect(outcome.failed, isTrue);
-  });
-
-  test('Android ExoPlayer: its first frame after the media-item transition settles the open', () async {
-    final outcome = PlaybackOpenOutcome.armForTesting(player, startsOnAndroidExoPlayer: true);
-
-    // A rebuffer of the outgoing item while the new open resolves.
-    player.restarted.add(null);
-    await _settle();
-    expect(outcome.isSettled, isFalse);
-
-    player.loaded.add(null);
-    player.restarted.add(null);
-    expect(await outcome.fileLoaded, isTrue);
-    expect(await outcome.firstFrame, isTrue);
-  });
-
   test('the deadline counts from load start, aborts a backend that goes silent, and tells the owner', () {
     fakeAsync((async) {
       var deadlines = 0;
-      final outcome = PlaybackOpenOutcome.armForTesting(
+      final outcome = PlaybackOpenOutcome.arm(
         player,
         deadline: const Duration(seconds: 30),
         onDeadline: () => deadlines++,
@@ -241,7 +196,7 @@ void main() {
   test('a slow load that keeps progressing outlives the deadline, and a stall after it still fails', () {
     fakeAsync((async) {
       var deadlines = 0;
-      final outcome = PlaybackOpenOutcome.armForTesting(
+      final outcome = PlaybackOpenOutcome.arm(
         player,
         deadline: const Duration(seconds: 30),
         onDeadline: () => deadlines++,
@@ -275,7 +230,7 @@ void main() {
   test('a deadline the backend beats never fires its callback', () {
     fakeAsync((async) {
       var deadlines = 0;
-      final outcome = PlaybackOpenOutcome.armForTesting(
+      final outcome = PlaybackOpenOutcome.arm(
         player,
         deadline: const Duration(seconds: 30),
         onDeadline: () => deadlines++,
@@ -290,7 +245,7 @@ void main() {
 
   test('a rendered first frame cancels the deadline', () {
     fakeAsync((async) {
-      final outcome = PlaybackOpenOutcome.armForTesting(player, deadline: const Duration(seconds: 30));
+      final outcome = PlaybackOpenOutcome.arm(player, deadline: const Duration(seconds: 30));
 
       player.started.add(null);
       player.restarted.add(null);

@@ -350,16 +350,8 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get visualEffectsReducedDescription => '減少動畫並使用較低解析度的封面圖片';
 	@override String get hideSpoilers => '隱藏未觀看單集的劇透內容';
 	@override String get hideSpoilersDescription => '模糊未觀看單集的縮圖與描述';
-	@override String get playerBackend => '播放器引擎';
-	@override String get exoPlayer => 'ExoPlayer';
-	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '硬體解碼';
 	@override String get hardwareDecodingDescription => '如果支援，使用硬體加速';
-	@override String get playbackBuffer => '播放緩衝';
-	@override String get playbackBufferAuto => '自動（建議）';
-	@override String get playbackBufferLarge => '大';
-	@override String get playbackBufferExtraLarge => '特大';
-	@override String get playbackBufferDescription => '針對不穩定的連線緩衝更多內容。也受緩衝大小限制。';
 	@override String get defaultQualityTitle => '預設畫質';
 	@override String get cellularQualityTitle => '行動網路上的預設畫質';
 	@override String get cellularQualitySameAsDefault => '與預設畫質相同';
@@ -505,8 +497,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get matchDynamicRange => '同步動態範圍';
 	@override String get matchDynamicRangeDescription => 'HDR 內容切換至 HDR，播放結束切回 SDR';
 	@override String get displaySwitchDelay => '顯示器切換延遲時間';
-	@override String get tunneledPlayback => '通道化播放（Tunneled Playback）';
-	@override String get tunneledPlaybackDescription => '使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。';
 	@override String get audioPassthrough => '音訊直通';
 	@override String get audioPassthroughDescription => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。';
 	@override String get audioPassthroughDescriptionApple => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。';
@@ -547,7 +537,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get hdrSdrConversionPlayer => '播放器';
 	@override String get hdrSdrConversionPlayerDescription => '由播放器轉換。色彩一致，但在低階電視盒上 4K 可能卡頓';
 	@override String get deinterlace => '去交錯';
-	@override String get deinterlaceDescription => '移除交錯影片中的梳狀雜訊（僅限 mpv 播放器）';
+	@override String get deinterlaceDescription => '移除交錯影片中的梳狀雜訊';
 	@override String get deinterlaceOff => '關閉';
 	@override String get deinterlaceOffDescription => '以解碼後的原樣顯示交錯影片';
 	@override String get deinterlaceVideo => '視訊';
@@ -1073,7 +1063,6 @@ class _Translations$messages$zh_Hant extends Translations$messages$zh {
 	@override String get noItemsAvailable => '沒有可用的項目';
 	@override String get failedToCreatePlayQueueNoItems => '無法建立播放佇列 — 沒有項目';
 	@override String failedPlayback({required Object action, required Object error}) => '無法${action}：${error}';
-	@override String get switchingToCompatiblePlayer => '正在切換至相容的播放器…';
 	@override String get serverLimitTitle => '播放失敗';
 	@override String get serverLimitBody => '伺服器錯誤（HTTP 500）。伺服器的頻寬或轉碼限制可能拒絕此播放要求。請聯絡伺服器擁有者調整設定。';
 	@override String get mediaUnreadableTitle => '檔案無法使用';
@@ -1120,8 +1109,6 @@ class _Translations$subtitlingStyling$zh_Hant extends Translations$subtitlingSty
 	@override String get positionBottom => '底部';
 	@override String get useMargins => '使用邊距';
 	@override String get useMarginsDescription => '允許文字字幕顯示在影片畫面之外的區域。樣式字幕可能保留其原始位置。';
-	@override String get anchorToScreen => '錨定至螢幕';
-	@override String get anchorToScreenDescription => '在寬螢幕影片下方的黑邊顯示文字字幕';
 	@override String get bold => '粗體';
 	@override String get italic => '斜體';
 	@override String get renderResolution => '渲染解析度';
@@ -2098,8 +2085,6 @@ class _Translations$performanceOverlay$zh_Hant extends Translations$performanceO
 	@override String get buffer => '緩衝';
 	@override String get app => '應用程式';
 	@override String get decoder => '解碼器';
-	@override String get rawDecoder => '原始解碼器';
-	@override String get tunneling => '通道模式';
 	@override String get passthrough => '直通';
 	@override String get aspect => '寬高比';
 	@override String get rotation => '旋轉角度';
@@ -2112,7 +2097,6 @@ class _Translations$performanceOverlay$zh_Hant extends Translations$performanceO
 	@override String get dvRouteBaseLayerHlg => 'HLG 基礎層';
 	@override String get dvRouteBaseLayerSdr => 'SDR 基礎層';
 	@override String get dvRouteReshaped => 'RPU 重塑（gpu-next）';
-	@override String get p7Conversion => 'P7 轉換';
 	@override String get sampleRate => '取樣率';
 	@override String get pixelFormat => '像素格式';
 	@override String get hwFormat => '硬體格式';
@@ -2123,9 +2107,6 @@ class _Translations$performanceOverlay$zh_Hant extends Translations$performanceO
 	@override String get displayFps => '螢幕 FPS';
 	@override String get avSync => '影音同步（A/V Sync）';
 	@override String get dropped => '丟格數（Dropped）';
-	@override String get dvRpus => 'DV RPU 數';
-	@override String get dvRpuAverage => 'DV RPU 平均';
-	@override String get dvSampleAverage => 'DV 取樣平均';
 	@override String get maxLuma => '最大亮度';
 	@override String get minLuma => '最小亮度';
 	@override String get maxCll => 'MaxCLL';
@@ -2137,15 +2118,7 @@ class _Translations$performanceOverlay$zh_Hant extends Translations$performanceO
 	@override String get memory => '記憶體';
 	@override String get uiFps => '介面 FPS';
 	@override String get fps => 'FPS';
-	@override String get decoderAndroidHw => 'Android 硬體';
-	@override String get decoderNvidiaHw => 'NVIDIA 硬體';
-	@override String get decoderQualcommHw => 'Qualcomm 硬體';
-	@override String get decoderMediatekHw => 'MediaTek 硬體';
-	@override String get decoderExynosHw => 'Exynos 硬體';
 	@override String get decoderSoftware => '軟體';
-	@override String get decoderHardware => '硬體';
-	@override String get tunnelingActive => '已啟用';
-	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）';
 }
 
 // Path: externalPlayer
@@ -3617,16 +3590,8 @@ extension on TranslationsZhHant {
 			'settings.visualEffectsReducedDescription' => '減少動畫並使用較低解析度的封面圖片',
 			'settings.hideSpoilers' => '隱藏未觀看單集的劇透內容',
 			'settings.hideSpoilersDescription' => '模糊未觀看單集的縮圖與描述',
-			'settings.playerBackend' => '播放器引擎',
-			'settings.exoPlayer' => 'ExoPlayer',
-			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '硬體解碼',
 			'settings.hardwareDecodingDescription' => '如果支援，使用硬體加速',
-			'settings.playbackBuffer' => '播放緩衝',
-			'settings.playbackBufferAuto' => '自動（建議）',
-			'settings.playbackBufferLarge' => '大',
-			'settings.playbackBufferExtraLarge' => '特大',
-			'settings.playbackBufferDescription' => '針對不穩定的連線緩衝更多內容。也受緩衝大小限制。',
 			'settings.defaultQualityTitle' => '預設畫質',
 			'settings.cellularQualityTitle' => '行動網路上的預設畫質',
 			'settings.cellularQualitySameAsDefault' => '與預設畫質相同',
@@ -3772,8 +3737,6 @@ extension on TranslationsZhHant {
 			'settings.matchDynamicRange' => '同步動態範圍',
 			'settings.matchDynamicRangeDescription' => 'HDR 內容切換至 HDR，播放結束切回 SDR',
 			'settings.displaySwitchDelay' => '顯示器切換延遲時間',
-			'settings.tunneledPlayback' => '通道化播放（Tunneled Playback）',
-			'settings.tunneledPlaybackDescription' => '使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。',
 			'settings.audioPassthrough' => '音訊直通',
 			'settings.audioPassthroughDescription' => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。',
 			'settings.audioPassthroughDescriptionApple' => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。',
@@ -3814,7 +3777,7 @@ extension on TranslationsZhHant {
 			'settings.hdrSdrConversionPlayer' => '播放器',
 			'settings.hdrSdrConversionPlayerDescription' => '由播放器轉換。色彩一致，但在低階電視盒上 4K 可能卡頓',
 			'settings.deinterlace' => '去交錯',
-			'settings.deinterlaceDescription' => '移除交錯影片中的梳狀雜訊（僅限 mpv 播放器）',
+			'settings.deinterlaceDescription' => '移除交錯影片中的梳狀雜訊',
 			'settings.deinterlaceOff' => '關閉',
 			'settings.deinterlaceOffDescription' => '以解碼後的原樣顯示交錯影片',
 			'settings.deinterlaceVideo' => '視訊',
@@ -3895,8 +3858,6 @@ extension on TranslationsZhHant {
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
 			'themeEditor.slots.accent' => '強調色',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '來自其他主題',
@@ -3907,6 +3868,8 @@ extension on TranslationsZhHant {
 			'themeEditor.contrast.textMutedOnSurface' => '面板上的次要文字',
 			'themeEditor.contrast.accentOnBg' => '背景上的強調色',
 			'themeEditor.contrast.accentOnSurface' => '面板上的強調色',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.labelOnAccent' => '強調色上的按鈕文字',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}：${ratio}:1，低於建議的 ${minimum}:1',
 			'themeEditor.discardTitle' => '要捨棄變更嗎？',
@@ -4277,7 +4240,6 @@ extension on TranslationsZhHant {
 			'messages.noItemsAvailable' => '沒有可用的項目',
 			'messages.failedToCreatePlayQueueNoItems' => '無法建立播放佇列 — 沒有項目',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '無法${action}：${error}',
-			'messages.switchingToCompatiblePlayer' => '正在切換至相容的播放器…',
 			'messages.serverLimitTitle' => '播放失敗',
 			'messages.serverLimitBody' => '伺服器錯誤（HTTP 500）。伺服器的頻寬或轉碼限制可能拒絕此播放要求。請聯絡伺服器擁有者調整設定。',
 			'messages.mediaUnreadableTitle' => '檔案無法使用',
@@ -4315,8 +4277,6 @@ extension on TranslationsZhHant {
 			'subtitlingStyling.positionBottom' => '底部',
 			'subtitlingStyling.useMargins' => '使用邊距',
 			'subtitlingStyling.useMarginsDescription' => '允許文字字幕顯示在影片畫面之外的區域。樣式字幕可能保留其原始位置。',
-			'subtitlingStyling.anchorToScreen' => '錨定至螢幕',
-			'subtitlingStyling.anchorToScreenDescription' => '在寬螢幕影片下方的黑邊顯示文字字幕',
 			'subtitlingStyling.bold' => '粗體',
 			'subtitlingStyling.italic' => '斜體',
 			'subtitlingStyling.renderResolution' => '渲染解析度',
@@ -4409,8 +4369,6 @@ extension on TranslationsZhHant {
 			'connections.sectionTitle' => '連線',
 			'connections.addConnection' => '新增連線',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 個伺服器的工作階段已過期',
@@ -4424,6 +4382,8 @@ extension on TranslationsZhHant {
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '已在 ${count} 個帳戶上儲存音訊、字幕與媒體庫選項',
 			'accountPreferences.pickAccount' => '每個帳戶都會儲存各自的偏好設定。請選擇要編輯的帳戶。',
 			'accountPreferences.storedOnAccount' => '這些選項會儲存在帳戶本身，因此登入該帳戶的所有應用程式都會使用它們，包括您其他裝置上的 Plezy。',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.noAccounts' => '沒有可設定的帳戶',
 			'accountPreferences.noAccountsHint' => '登入 Plex，或連線至 Jellyfin 或 Emby 伺服器，儲存在該帳戶上的偏好設定便會顯示在此處。',
 			'accountPreferences.unavailable' => '無法連線至此帳戶',
@@ -4923,8 +4883,6 @@ extension on TranslationsZhHant {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => '無法啟動直播頻道',
 			'liveTv.failedToBuildStreamUrl' => '無法建立串流 URL',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => '無法開始播放此頻道：${reason}',
@@ -4938,6 +4896,8 @@ extension on TranslationsZhHant {
 			'collections.deleteFailed' => '刪除收藏集失敗',
 			'collections.deleteFailedWithError' => ({required Object error}) => '刪除收藏集失敗：${error}',
 			'collections.selectCollection' => '選擇收藏集',
+			_ => null,
+		} ?? switch (path) {
 			'collections.collectionName' => '收藏集名稱',
 			'collections.enterCollectionName' => '輸入收藏集名稱',
 			'collections.addedToCollection' => '已新增至收藏集',
@@ -5388,8 +5348,6 @@ extension on TranslationsZhHant {
 			'performanceOverlay.buffer' => '緩衝',
 			'performanceOverlay.app' => '應用程式',
 			'performanceOverlay.decoder' => '解碼器',
-			'performanceOverlay.rawDecoder' => '原始解碼器',
-			'performanceOverlay.tunneling' => '通道模式',
 			'performanceOverlay.passthrough' => '直通',
 			'performanceOverlay.aspect' => '寬高比',
 			'performanceOverlay.rotation' => '旋轉角度',
@@ -5402,7 +5360,6 @@ extension on TranslationsZhHant {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG 基礎層',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR 基礎層',
 			'performanceOverlay.dvRouteReshaped' => 'RPU 重塑（gpu-next）',
-			'performanceOverlay.p7Conversion' => 'P7 轉換',
 			'performanceOverlay.sampleRate' => '取樣率',
 			'performanceOverlay.pixelFormat' => '像素格式',
 			'performanceOverlay.hwFormat' => '硬體格式',
@@ -5413,9 +5370,6 @@ extension on TranslationsZhHant {
 			'performanceOverlay.displayFps' => '螢幕 FPS',
 			'performanceOverlay.avSync' => '影音同步（A/V Sync）',
 			'performanceOverlay.dropped' => '丟格數（Dropped）',
-			'performanceOverlay.dvRpus' => 'DV RPU 數',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
-			'performanceOverlay.dvSampleAverage' => 'DV 取樣平均',
 			'performanceOverlay.maxLuma' => '最大亮度',
 			'performanceOverlay.minLuma' => '最小亮度',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5427,18 +5381,8 @@ extension on TranslationsZhHant {
 			'performanceOverlay.memory' => '記憶體',
 			'performanceOverlay.uiFps' => '介面 FPS',
 			'performanceOverlay.fps' => 'FPS',
-			'performanceOverlay.decoderAndroidHw' => 'Android 硬體',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA 硬體',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm 硬體',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬體',
-			'performanceOverlay.decoderExynosHw' => 'Exynos 硬體',
 			'performanceOverlay.decoderSoftware' => '軟體',
-			'performanceOverlay.decoderHardware' => '硬體',
-			'performanceOverlay.tunnelingActive' => '已啟用',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
 			'externalPlayer.title' => '外部播放器',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他應用程式中開啟影片',
 			'externalPlayer.selectPlayer' => '選擇播放器',
@@ -5466,6 +5410,8 @@ extension on TranslationsZhHant {
 			'metadataEdit.contentRating' => '內容分級',
 			'metadataEdit.studio' => '製片商',
 			'metadataEdit.tagline' => '宣傳標語',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => '大綱簡介',
 			'metadataEdit.poster' => '海報',
 			'metadataEdit.background' => '背景圖',

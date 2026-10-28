@@ -204,16 +204,6 @@ class CiGroupTests(unittest.TestCase):
         self.assertEqual(exit_status, 1)
         self.assertEqual(run.call_count, expected_runs)
 
-    def test_android_15_instrumentation_has_an_isolated_target(self) -> None:
-        with (
-            patch.object(run_maestro_ci, "run_android_15_instrumentation") as instrumentation,
-            redirect_stdout(io.StringIO()),
-        ):
-            exit_status = run_maestro_ci.run_target(run_maestro_ci.ANDROID_15_INSTRUMENTATION_TARGET)
-
-        self.assertEqual(exit_status, 0)
-        instrumentation.assert_called_once_with()
-
     def test_all_automatic_and_manual_recipes_are_valid_runner_invocations(
         self,
     ) -> None:

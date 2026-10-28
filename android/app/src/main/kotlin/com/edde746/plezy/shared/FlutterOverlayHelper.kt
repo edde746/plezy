@@ -46,9 +46,8 @@ object FlutterOverlayHelper {
    * and skips the hole-punch in `draw()`; `mSubLayer < 0` (negative `order`) is
    * behind the parent window and the SurfaceView is made visible by punching a
    * transparent hole in the parent canvas. Valid range is `[-2, 2]`. Picking the
-   * right sign matters: any view that draws on the parent canvas (e.g. Media3's
-   * `CanvasSubtitleOutput` for SRT/VTT/SDH) is hidden by SurfaceViews with
-   * non-negative orders that sit on top of the same area.
+   * right sign matters: any view that draws on the parent canvas is hidden by
+   * SurfaceViews with non-negative orders that sit on top of the same area.
    */
   fun applyCompositionOrder(view: SurfaceView, order: Int) {
     if (Build.VERSION.SDK_INT >= 36) view.compositionOrder = order
@@ -79,7 +78,7 @@ object FlutterOverlayHelper {
           surface.compositionOrder = compositionOrder
         } else {
           // Pre-36 has 3 coarse sublayer buckets. Put Flutter in the on-top
-          // bucket so it renders above the video (default) and libass subtitle
+          // bucket so it renders above the video (default) and OSD/subtitle
           // (media overlay) SurfaceViews. NB: setZOrderMediaOverlay overwrites
           // mSubLayer internally, so don't call it here or it cancels setZOrderOnTop.
           surface.setZOrderOnTop(compositionOrder > 0)

@@ -64,10 +64,9 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   }
 
   /// Post-first-frame display matching for an Android open that no startup
-  /// gate owned: ExoPlayer without a metadata rate, VOD and Live TV alike.
-  /// mpv opens — VOD items and Live TV channels — behind
-  /// [_FrameRateStartupPlan.needsFirstFrameSwitch] instead, which marks the
-  /// item applied before open so this stays a no-op for it.
+  /// gate owned. VOD items and Live TV channels open behind
+  /// [_FrameRateStartupPlan.needsFirstFrameSwitch] when matching is on, which
+  /// marks the item applied before open so this stays a no-op for them.
   Future<void> _applyFrameRateMatching() async {
     if (player == null || !Platform.isAndroid) return;
     if (_frameRate.applied) return;
@@ -77,20 +76,6 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       final output = await PlayerOutputFormat.read(player!);
       if (!mounted || player == null) return;
 
-      if (settingsService.read(SettingsService.matchContentFrameRate) && !output.hasFrameRate) {
-        // ExoPlayer detects FPS from frame timestamps after ~8 rendered frames.
-        // STATE_READY fires before frames render, so retry until detection
-        // completes — also with resolution matching on, so one switch can
-        // serve both rather than committing a resolution-only mode early.
-        if (player!.detectsFpsAfterRender && _frameRate.retries < 10) {
-          _frameRate.retries++;
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted && player != null) _applyFrameRateMatching();
-          });
-          return;
-        }
-      }
-      _frameRate.retries = 0;
       final target = _displayTargetFor(settingsService, output);
       if (target == null) return;
 

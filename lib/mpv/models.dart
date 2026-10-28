@@ -8,7 +8,7 @@ sealed class BufferRange with _$BufferRange {
   const factory BufferRange({required Duration start, required Duration end}) = _BufferRange;
 }
 
-final RegExp _httpStatusPattern = RegExp(r'\b(?:HTTP error |Response code: )(\d{3})\b');
+final RegExp _httpStatusPattern = RegExp(r'\bHTTP error (\d{3})\b');
 
 /// Server statuses that end playback outright: nothing client-side recovers a
 /// refusal of this account or connection, a transcoding-limit rejection, or a
@@ -40,7 +40,7 @@ sealed class PlayerError with _$PlayerError {
 
   /// Cause tag for a server-side HTTP 404 on the media stream. The server
   /// resolved the item but cannot read the file behind it (moved, deleted, or
-  /// on unavailable storage), so no retry or backend switch can recover it.
+  /// on unavailable storage), so no retry can recover it.
   static const String serverHttp404 = 'server-http-404';
 
   /// Cause tag for a persistent HTTP 503 on the media stream during the open
@@ -72,8 +72,8 @@ sealed class PlayerError with _$PlayerError {
 
   /// Cause tag for an audio device that stopped taking audio (or never
   /// could) after the native core's own bounded recovery. A device fault, not
-  /// a stream fault: no stream retry, quality change, or backend switch can
-  /// recover it, so it is terminal on live TV too. Keep in sync with
+  /// a stream fault: no stream retry or quality change can recover it, so it
+  /// is terminal on live TV too. Keep in sync with
   /// MpvEndFileDiagnostics.CAUSE_AUDIO_OUTPUT_FAILED on Android.
   static const String audioOutputFailed = 'audio-output-failed';
 
@@ -81,9 +81,8 @@ sealed class PlayerError with _$PlayerError {
   ///
   /// A [PlayerError] carries no status field: mpv only ever tells us the
   /// end-file reason. ffmpeg does log the status, one warn-level line ahead of
-  /// the error-level failure (`http: HTTP error 404 Not Found`), and media3's
-  /// exception chain stringifies it as `Response code: 404`, so scanning the
-  /// player's own log stream is the only way to recover it.
+  /// the error-level failure (`http: HTTP error 404 Not Found`), so scanning
+  /// the player's own log stream is the only way to recover it.
   static int? httpStatusFromLog(String logText) {
     final match = _httpStatusPattern.firstMatch(logText);
     return match == null ? null : int.tryParse(match.group(1)!);

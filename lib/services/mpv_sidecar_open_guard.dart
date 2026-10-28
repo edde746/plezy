@@ -11,10 +11,8 @@ enum MpvSidecarOpenOutcome { loaded, stalled, inconclusive, aborted }
 /// for external files. Once that milestone is observed, a missing file-loaded
 /// event can be attributed to the sidecar phase and recovered safely.
 ///
-/// The signals come from the attempt's [PlaybackOpenOutcome] — including the
-/// Android rule that nothing ExoPlayer reports before it hands the file to
-/// mpv counts as mpv readiness — so this guard adds only the two bounded
-/// waits.
+/// The signals come from the attempt's [PlaybackOpenOutcome], so this guard
+/// adds only the two bounded waits.
 class MpvSidecarOpenGuard {
   MpvSidecarOpenGuard._(this._outcome, this.discoveryTimeout, this.fileLoadedTimeout);
 
@@ -41,42 +39,6 @@ class MpvSidecarOpenGuard {
   }
 
   Future<MpvSidecarOpenOutcome> wait() async {
-    final discoveryClock = Stopwatch()..start();
-    try {
-      if (_outcome.startsOnAndroidExoPlayer) {
-        final androidOutcome = await _waitForAndroidBackendDecision();
-        if (androidOutcome != null) return androidOutcome;
-      }
-      final remainingDiscoveryTime = discoveryTimeout - discoveryClock.elapsed;
-      if (remainingDiscoveryTime <= Duration.zero) return MpvSidecarOpenOutcome.inconclusive;
-      return await _waitForMpvLoad(remainingDiscoveryTime);
-    } finally {
-      discoveryClock.stop();
-    }
-  }
-
-  /// ExoPlayer rendering the file settles the open; a backend switch hands
-  /// the remaining discovery budget to the mpv wait (null).
-  Future<MpvSidecarOpenOutcome?> _waitForAndroidBackendDecision() async {
-    try {
-      final signal = await Future.any([
-        _outcome.firstFrame.then(
-          (rendered) => rendered ? _MpvSidecarOpenSignal.playbackRestart : _MpvSidecarOpenSignal.terminal,
-        ),
-        _outcome.backendSwitched.then((_) => _MpvSidecarOpenSignal.backendSwitched),
-      ]).timeout(discoveryTimeout);
-      return switch (signal) {
-        _MpvSidecarOpenSignal.playbackRestart => MpvSidecarOpenOutcome.loaded,
-        _MpvSidecarOpenSignal.backendSwitched => null,
-        _MpvSidecarOpenSignal.terminal => _terminalOutcome(),
-        _ => throw StateError('Unexpected Android sidecar-open signal: $signal'),
-      };
-    } on TimeoutException {
-      return MpvSidecarOpenOutcome.inconclusive;
-    }
-  }
-
-  Future<MpvSidecarOpenOutcome> _waitForMpvLoad(Duration remainingDiscoveryTime) async {
     final _MpvSidecarOpenSignal first;
     try {
       first = await Future.any([
@@ -86,7 +48,7 @@ class MpvSidecarOpenGuard {
         _outcome.fileLoaded.then(
           (loaded) => loaded ? _MpvSidecarOpenSignal.fileLoaded : _MpvSidecarOpenSignal.terminal,
         ),
-      ]).timeout(remainingDiscoveryTime);
+      ]).timeout(discoveryTimeout);
     } on TimeoutException {
       return MpvSidecarOpenOutcome.inconclusive;
     }
@@ -116,4 +78,4 @@ class MpvSidecarOpenGuard {
   }
 }
 
-enum _MpvSidecarOpenSignal { primaryReady, fileLoaded, playbackRestart, backendSwitched, terminal }
+enum _MpvSidecarOpenSignal { primaryReady, fileLoaded, terminal }

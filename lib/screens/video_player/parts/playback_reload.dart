@@ -663,7 +663,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           preferredAudioTrack: initializationAudioTrack,
           wtStartupHold: () => reloadStartupHold,
           primarySubtitleTranscoding: () => result.isTranscoding,
-          ensureAudioFocus: () => currentPlayer.requestAudioFocus(),
           clearFirstFrameForOpen: false,
           deferAutomotiveStart: false,
           beforeArm: () async {

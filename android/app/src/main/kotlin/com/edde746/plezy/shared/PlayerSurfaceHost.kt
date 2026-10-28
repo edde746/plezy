@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.edde746.plezy.mpv.OsdPlanePolicy
 
-/** Shared Android view scaffold beneath the ExoPlayer and mpv cores. */
+/** Android view scaffold beneath the mpv video core. */
 internal object PlayerSurfaceHost {
   /**
    * The black background is only ever visible where no below-window
@@ -18,13 +18,13 @@ internal object PlayerSurfaceHost {
    * is punched out of the window and the letterbox is that plane's pixels
    * instead; see [createOsdSurface].
    */
-  fun createContainer(activity: Activity, clipChildren: Boolean = false): FrameLayout = FrameLayout(activity).apply {
+  fun createContainer(activity: Activity): FrameLayout = FrameLayout(activity).apply {
     layoutParams = ViewGroup.LayoutParams(
       ViewGroup.LayoutParams.MATCH_PARENT,
       ViewGroup.LayoutParams.MATCH_PARENT
     )
     setBackgroundColor(Color.BLACK)
-    this.clipChildren = clipChildren
+    clipChildren = false
   }
 
   fun createVideoSurface(activity: Activity, callback: SurfaceHolder.Callback): SurfaceView = SurfaceView(activity).apply {

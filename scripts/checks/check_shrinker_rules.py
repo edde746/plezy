@@ -5,14 +5,13 @@ Flutter minifies every release build, so anything the app reaches only by name i
 invisible to R8 and gets shrunk or renamed away. Four such surfaces exist:
 
 * app-module classes placed in a library namespace so that library discovers them with
-  ``Class.forName`` (the bundled ``androidx.media3.decoder.ffmpeg`` audio decoder);
+  ``Class.forName`` (sources under a ``REFLECTED_NAMESPACES`` package);
 * classes resolved from native code with ``FindClass``;
 * members resolved from native code with ``Get*MethodID``/``Get*FieldID``, including
   every type named in the descriptor those lookups pass;
 * classes and members resolved by name from Kotlin/Java itself with ``Class.forName``
-  and ``getDeclaredField``/``getDeclaredMethod`` (the Matroska extractor wrappers reach
-  private ``MatroskaExtractor`` fields this way), in every ``android/**/src/main``
-  source root including the ``libass`` module.
+  and ``getDeclaredField``/``getDeclaredMethod``, in every ``android/**/src/main``
+  source root.
 
 None of these lookups leaves a reference R8 can see, so only the keep rules R8
 actually receives — ``android/app/proguard-rules.pro`` plus each library module's

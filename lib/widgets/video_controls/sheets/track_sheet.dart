@@ -70,8 +70,6 @@ class TrackSheet extends StatelessWidget {
             builder: (context, selSnapshot) {
               final selection = selSnapshot.data ?? player.state.track;
 
-              final supportsSecondary = player.supportsSecondarySubtitles;
-
               Widget audioColumnFor(TrackSelection sel, bool showHeader) {
                 if (useSourceAudio) {
                   return _SourceAudioColumn(
@@ -106,7 +104,6 @@ class TrackSheet extends StatelessWidget {
                   tracks: subtitleTracks,
                   selection: sel,
                   player: player,
-                  supportsSecondary: supportsSecondary,
                   showHeader: showHeader,
                   trackControlsState: state,
                   sourceSidecars: state.directPlaySourceSidecars,
@@ -328,7 +325,6 @@ class _SubtitleColumn extends StatelessWidget {
   final List<SubtitleTrack> tracks;
   final TrackSelection selection;
   final Player player;
-  final bool supportsSecondary;
   final bool showHeader;
   final TrackControlsState trackControlsState;
   final List<MediaSubtitleTrack> sourceSidecars;
@@ -337,7 +333,6 @@ class _SubtitleColumn extends StatelessWidget {
     required this.tracks,
     required this.selection,
     required this.player,
-    this.supportsSecondary = false,
     required this.showHeader,
     required this.trackControlsState,
     this.sourceSidecars = const [],
@@ -348,7 +343,7 @@ class _SubtitleColumn extends StatelessWidget {
     final selectedSub = selection.subtitle;
     final secondarySub = selection.secondarySubtitle;
     final isOffSelected = selectedSub == null || selectedSub.id == 'no';
-    final hasSecondary = supportsSecondary && secondarySub != null;
+    final hasSecondary = secondarySub != null;
     final selectedSourceId = trackControlsState.selectedSubtitleChoice?.sourceStreamId;
     final selectedSecondarySourceId = trackControlsState.selectedSecondarySubtitleStreamId;
     final attachedSourceSidecarIds = <int>{};
@@ -396,13 +391,13 @@ class _SubtitleColumn extends StatelessWidget {
               trackControlsState.onSubtitleTrackChanged?.call(SubtitleTrack.off);
               OverlaySheetController.of(context).close();
             },
-            onLongPress: supportsSecondary && hasSecondary
+            onLongPress: hasSecondary
                 ? () {
                     player.selectSecondarySubtitleTrack(SubtitleTrack.off);
                     trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                   }
                 : null,
-            onSecondaryTap: supportsSecondary && hasSecondary
+            onSecondaryTap: hasSecondary
                 ? () {
                     player.selectSecondarySubtitleTrack(SubtitleTrack.off);
                     trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
@@ -437,7 +432,7 @@ class _SubtitleColumn extends StatelessWidget {
         );
 
         Widget? badge;
-        if (supportsSecondary && hasSecondary) {
+        if (hasSecondary) {
           if (isPrimary) {
             badge = TrackSelectionHelper.buildTrackBadge(context, 1);
           } else if (isSecondary) {
@@ -460,30 +455,26 @@ class _SubtitleColumn extends StatelessWidget {
             trackControlsState.onSubtitleTrackChanged?.call(track);
             OverlaySheetController.of(context).close();
           },
-          onLongPress: supportsSecondary
-              ? () {
-                  if (isSecondary) {
-                    // Already secondary — clear it
-                    player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                    trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
-                  } else if (!isPrimary) {
-                    // Set as secondary (don't close sheet so user sees badge update)
-                    player.selectSecondarySubtitleTrack(track);
-                    trackControlsState.onSecondarySubtitleTrackChanged?.call(track);
-                  }
-                }
-              : null,
-          onSecondaryTap: supportsSecondary
-              ? () {
-                  if (isSecondary) {
-                    player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                    trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
-                  } else if (!isPrimary) {
-                    player.selectSecondarySubtitleTrack(track);
-                    trackControlsState.onSecondarySubtitleTrackChanged?.call(track);
-                  }
-                }
-              : null,
+          onLongPress: () {
+            if (isSecondary) {
+              // Already secondary — clear it
+              player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+              trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
+            } else if (!isPrimary) {
+              // Set as secondary (don't close sheet so user sees badge update)
+              player.selectSecondarySubtitleTrack(track);
+              trackControlsState.onSecondarySubtitleTrackChanged?.call(track);
+            }
+          },
+          onSecondaryTap: () {
+            if (isSecondary) {
+              player.selectSecondarySubtitleTrack(SubtitleTrack.off);
+              trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
+            } else if (!isPrimary) {
+              player.selectSecondarySubtitleTrack(track);
+              trackControlsState.onSecondarySubtitleTrackChanged?.call(track);
+            }
+          },
         );
       },
     );
