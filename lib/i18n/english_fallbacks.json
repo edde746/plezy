@@ -139,6 +139,17 @@
     "games.streamSoftwareDecoder",
     "games.streamVideo",
     "games.streamVideoQueue",
-    "games.touchResizeHint"
+    "games.touchDpadDown",
+    "games.touchDpadLeft",
+    "games.touchDpadRight",
+    "games.touchDpadUp",
+    "games.touchLeftBumper",
+    "games.touchLeftTrigger",
+    "games.touchMenuButton",
+    "games.touchResizeHint",
+    "games.touchRightBumper",
+    "games.touchRightTrigger",
+    "games.touchStickHint",
+    "games.touchViewButton"
   ]
 }

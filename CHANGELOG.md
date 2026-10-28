@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Clarify the experimental Steam receiver coverage in Games help and give touch controls descriptive screen-reader labels; preserve existing theme, icon and controller geometry conventions.
+
 - Add themed multi-touch controls to Apple/Linux Steam surfaces, including dual sticks, independent buttons and triggers, compact landscape layout and player-one assistance that preserves physical controller seats.
 
 - Add opt-in Apple Metal Pyrowave source integration with direct GPU conversion, bounded 4:2:0/4:4:4 SDR textures, observed-chroma diagnostics and conventional-codec fallback; retain explicit HDR rejection pending a qualified HDR surface.

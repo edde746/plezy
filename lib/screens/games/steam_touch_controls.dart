@@ -25,9 +25,9 @@ class _SteamTouchControlsState extends State<SteamTouchControls> {
     super.dispose();
   }
 
-  Widget _button(String name, String label, {IconData? icon}) => _HeldButton(
+  Widget _button(String name, String label, {IconData? icon, String? semantics}) => _HeldButton(
     key: ValueKey(name),
-    label: label,
+    label: semantics ?? label,
     onChanged: (down) => widget.onButton(name, down),
     child: icon == null ? Text(label) : AppIcon(icon),
   );
@@ -40,22 +40,30 @@ class _SteamTouchControlsState extends State<SteamTouchControls> {
         Positioned(
           left: 48,
           top: 0,
-          child: directions ? _button('dpadUp', '↑', icon: Symbols.arrow_upward_rounded) : _button('y', 'Y'),
+          child: directions
+              ? _button('dpadUp', '↑', icon: Symbols.arrow_upward_rounded, semantics: t.games.touchDpadUp)
+              : _button('y', 'Y'),
         ),
         Positioned(
           left: 0,
           top: 48,
-          child: directions ? _button('dpadLeft', '←', icon: Symbols.arrow_back_rounded) : _button('x', 'X'),
+          child: directions
+              ? _button('dpadLeft', '←', icon: Symbols.arrow_back_rounded, semantics: t.games.touchDpadLeft)
+              : _button('x', 'X'),
         ),
         Positioned(
           left: 96,
           top: 48,
-          child: directions ? _button('dpadRight', '→', icon: Symbols.arrow_forward_rounded) : _button('b', 'B'),
+          child: directions
+              ? _button('dpadRight', '→', icon: Symbols.arrow_forward_rounded, semantics: t.games.touchDpadRight)
+              : _button('b', 'B'),
         ),
         Positioned(
           left: 48,
           top: 96,
-          child: directions ? _button('dpadDown', '↓', icon: Symbols.arrow_downward_rounded) : _button('a', 'A'),
+          child: directions
+              ? _button('dpadDown', '↓', icon: Symbols.arrow_downward_rounded, semantics: t.games.touchDpadDown)
+              : _button('a', 'A'),
         ),
       ],
     ),
@@ -67,6 +75,18 @@ class _SteamTouchControlsState extends State<SteamTouchControls> {
     marker: left ? 'L' : 'R',
     onChanged: (offset) => widget.onStick(left ? 'leftStick' : 'rightStick', offset),
     onClick: (down) => widget.onButton(left ? 'leftStick' : 'rightStick', down),
+  );
+
+  Widget _shoulders(bool left) => Row(
+    children: [
+      if (left) _button('leftBumper', 'LB', semantics: t.games.touchLeftBumper),
+      _button(
+        left ? 'leftTrigger' : 'rightTrigger',
+        left ? 'LT' : 'RT',
+        semantics: left ? t.games.touchLeftTrigger : t.games.touchRightTrigger,
+      ),
+      if (!left) _button('rightBumper', 'RB', semantics: t.games.touchRightBumper),
+    ],
   );
 
   @override
@@ -101,21 +121,10 @@ class _SteamTouchControlsState extends State<SteamTouchControls> {
                   ? Row(
                       children: [
                         _cross(directions: true),
-                        Column(
-                          children: [
-                            Row(children: [_button('leftBumper', 'LB'), _button('leftTrigger', 'LT')]),
-                            _stick(true),
-                          ],
-                        ),
+                        Column(children: [_shoulders(true), _stick(true)]),
                       ],
                     )
-                  : Column(
-                      children: [
-                        Row(children: [_button('leftBumper', 'LB'), _button('leftTrigger', 'LT')]),
-                        _stick(true),
-                        _cross(directions: true),
-                      ],
-                    ),
+                  : Column(children: [_shoulders(true), _stick(true), _cross(directions: true)]),
             ),
             Positioned(
               right: 8,
@@ -123,22 +132,11 @@ class _SteamTouchControlsState extends State<SteamTouchControls> {
               child: wide
                   ? Row(
                       children: [
-                        Column(
-                          children: [
-                            Row(children: [_button('rightTrigger', 'RT'), _button('rightBumper', 'RB')]),
-                            _stick(false),
-                          ],
-                        ),
+                        Column(children: [_shoulders(false), _stick(false)]),
                         _cross(directions: false),
                       ],
                     )
-                  : Column(
-                      children: [
-                        Row(children: [_button('rightTrigger', 'RT'), _button('rightBumper', 'RB')]),
-                        _cross(directions: false),
-                        _stick(false),
-                      ],
-                    ),
+                  : Column(children: [_shoulders(false), _cross(directions: false), _stick(false)]),
             ),
             Positioned(
               left: 0,
@@ -147,8 +145,8 @@ class _SteamTouchControlsState extends State<SteamTouchControls> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _button('select', 'View', icon: Symbols.tab_rounded),
-                  _button('start', 'Menu', icon: Symbols.menu_rounded),
+                  _button('select', t.games.touchViewButton, icon: Symbols.tab_rounded),
+                  _button('start', t.games.touchMenuButton, icon: Symbols.menu_rounded),
                 ],
               ),
             ),
@@ -299,6 +297,8 @@ class _StickState extends State<_Stick> {
     final colors = Theme.of(context).colorScheme;
     return Semantics(
       label: widget.label,
+      hint: t.games.touchStickHint,
+      excludeSemantics: true,
       onTap: _click,
       child: GestureDetector(
         onDoubleTap: _click,
@@ -326,7 +326,7 @@ class _StickState extends State<_Stick> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: colors.surfaceContainerHighest,
-              border: Border.all(color: colors.outline),
+              border: Border.all(color: colors.onSurfaceVariant),
             ),
             child: Center(
               child: Transform.translate(

@@ -4,7 +4,10 @@ For current follow-up PR #54 completion status, see
 [CONNECTED_EXPERIENCE.md](CONNECTED_EXPERIENCE.md#scope-and-acceptance).
 Historical builds below do not validate the current branch.
 
-Recorded 2026-10-26. This is an experimental implementation, not a claim of certified streaming support.
+Historical evidence begins on 2026-10-26; PR #54 follow-up records appear below.
+The earlier platform/codec descriptions are snapshots, not the current support
+matrix. Use [ARCHITECTURE.md](ARCHITECTURE.md#platform-matrix) for current source
+coverage. This is experimental implementation, not certified streaming support.
 
 ## Evidence
 
@@ -250,3 +253,38 @@ touch/texture/workspace/gamepad tests pass**, including removal of a held
 control when its input lease is revoked. Focused Dart analysis is clean. The
 portable runtime test passes the separate assistance/physical-pad merge cases,
 and the Linux adapter passes strict compilation against Flutter's headers.
+
+### Combined PR #54 verification after merging main
+
+- Merged main `574e5420`, preserving the media-player work, reviewed locale
+  translations, private ephemeral JIT routing and manual workflow triggers.
+- **192 Games/Multiview/gamepad/companion Dart and widget tests passed**.
+  After the final accessibility-label changes, all six focused touch/texture
+  regressions passed again. Counts overlap; they are not additive.
+- **41 portable native Debug tests passed**, with Vulkan and GStreamer enabled,
+  after formatting and fixing Pyrowave's required Vulkan-header include order.
+  Strict Linux Steam adapter compilation passed against Flutter 3.47.1 headers.
+- **46 packaging/workflow tests passed**, plus two source-preparation tests.
+  These are packaging contracts, not a full Linux application/package build.
+- Focused Dart analysis is clean. Source hashes and placeholders pass for
+  37 locales / 3,790 messages. New control labels use explicit English fallback;
+  they are not presented as reviewed translations.
+- Touch layouts were rendered at 800×400 and 390×750, with RTL and double-sized
+  text, for visual inspection. Existing theme and icon assets are reused.
+- Xcode project structure verifies all three Apple source sets, archive build
+  order, framework links and test inclusion; existing minimum OS versions are
+  unchanged. This is not SDK compilation or GPU execution.
+- Current-head private-JIT CI has **not** run. Workflow dispatch is unavailable
+  through the connected GitHub API, and the available browser is not signed in.
+  Apple SDK/device validation and full platform build/release gates remain open.
+
+To run the existing private workflow from an authenticated maintainer session:
+
+```sh
+gh workflow run ci.yml --repo snapetech-org/PlezyNG \
+  --ref codex/steam-receivers-and-controls \
+  -f action=ci -f runner_pool=private -f build_linux_packages=true
+```
+
+Verify the run's head matches the PR head. A rerun of an older workflow revision
+does not validate these sources. No hosted fallback is authorized.

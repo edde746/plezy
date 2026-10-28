@@ -238,7 +238,7 @@ void Runtime::videoFramerate(IHS_Session*, uint32_t numerator, uint32_t denomina
   std::lock_guard<std::mutex> lock(self->frameMutex_);
   self->metrics_.fpsNumerator = numerator;
   self->metrics_.fpsDenominator = denominator;
-  self->metrics_.fpsReasons = reasons & 0x5f; // Ignore unknown host flags and private game timing.
+  self->metrics_.fpsReasons = reasons & 0x5f;  // Ignore unknown host flags and private game timing.
 }
 void Runtime::videoBitrate(IHS_Session*, int32_t bitrate, void* ctx) {
   if (bitrate < 0 || bitrate > 1000000000) return;
@@ -249,8 +249,7 @@ void Runtime::videoBitrate(IHS_Session*, int32_t bitrate, void* ctx) {
 bool Runtime::startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength) {
   return pyrowave_.start(width, height, initial, initialLength);
 }
-PyrowaveDecodeStatus Runtime::decodePyrowave(
-    const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb) {
+PyrowaveDecodeStatus Runtime::decodePyrowave(const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb) {
   return pyrowave_.decode(bytes, length, argb);
 }
 void Runtime::stopPyrowave() { pyrowave_.reset(); }
@@ -317,9 +316,7 @@ void Runtime::audioStop(IHS_Session*, void* ctx) {
   std::lock_guard<std::mutex> lock(self->frameMutex_);
   self->metrics_.audioChannels = 0;
 }
-void Runtime::pad(const std::array<int16_t, 6>& axes, uint32_t buttons) {
-  padSeat(0, axes, buttons);
-}
+void Runtime::pad(const std::array<int16_t, 6>& axes, uint32_t buttons) { padSeat(0, axes, buttons); }
 void Runtime::padSeat(unsigned seat, const std::array<int16_t, 6>& axes, uint32_t buttons) {
   if (seat >= pads_.size()) return;
   const auto& pad = pads_[seat];
@@ -367,8 +364,10 @@ void Runtime::frameComplete(uint32_t id, bool displayed) {
     ticket = it->second.ticket;
     metrics_.completionTotalUs += nowUs() - it->second.receivedUs;
     ++metrics_.completedFrames;
-    if (displayed) ++metrics_.presentedFrames;
-    else ++metrics_.droppedFrames;
+    if (displayed)
+      ++metrics_.presentedFrames;
+    else
+      ++metrics_.droppedFrames;
     frames_.erase(it);
   }
   IHS_FrameTicketDecodeStage(ticket, true, nowUs());

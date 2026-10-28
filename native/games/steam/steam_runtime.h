@@ -9,9 +9,10 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "steam_audio.h"
 #include "steam_pyrowave.h"
 #include "steam_stream_options.h"
-#include "steam_audio.h"
 extern "C" {
 #include <ihslib.h>
 #include <ihslib/frame_ticket.h>
@@ -38,7 +39,7 @@ struct PadState {
   uint32_t buttons = 0;
 };
 struct StreamMetrics {
-  uint64_t epoch = 0; // Local measurement epoch, never a host/account identity.
+  uint64_t epoch = 0;  // Local measurement epoch, never a host/account identity.
   uint64_t sampledAtUs = 0, receivedFrames = 0, presentedFrames = 0, droppedFrames = 0, resetFrames = 0;
   uint64_t videoBytes = 0, completionTotalUs = 0, completedFrames = 0;
   uint32_t width = 0, height = 0, codec = 0, audioChannels = 0;
@@ -65,8 +66,9 @@ class Runtime {
   // One operation per Runtime. pair/run execute on a worker; cancel is immediate.
   // Return 0 on success, -2 on cancellation, -3 on timeout, positive host error.
   int pair(const Host&, Credentials&, const std::string& pin);
-  int run(const Host&, const Credentials&, uint64_t game, bool hevc, bool pyrowave, std::shared_ptr<Sink>,
-          StreamOptions options = {});
+  int run(
+      const Host&, const Credentials&, uint64_t game, bool hevc, bool pyrowave, std::shared_ptr<Sink>,
+      StreamOptions options = {});
   bool startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength);
   PyrowaveDecodeStatus decodePyrowave(const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb);
   void stopPyrowave();
@@ -112,8 +114,11 @@ class Runtime {
   PyrowaveDecoder pyrowave_;
   std::mutex frameMutex_;
   uint32_t nextFrame_ = 1;
-  struct PendingFrame { IHS_FrameTicket* ticket; uint64_t receivedUs; };
+  struct PendingFrame {
+    IHS_FrameTicket* ticket;
+    uint64_t receivedUs;
+  };
   std::unordered_map<uint32_t, PendingFrame> frames_;
-  StreamMetrics metrics_; // frameMutex_; contains no host/account/device identifiers.
+  StreamMetrics metrics_;  // frameMutex_; contains no host/account/device identifiers.
 };
 }  // namespace plezy::steam

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
-#include "steam_runtime.h"
 #include <functional>
+
+#include "steam_runtime.h"
 
 namespace plezy::steam {
 struct DecodedPixels {
@@ -25,8 +26,9 @@ class GStreamerSink final : public Sink {
   void samples(const int16_t*, size_t) override;
   void volume(bool enabled);
   void close();
+
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
-} // namespace plezy::steam
+}  // namespace plezy::steam

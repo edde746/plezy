@@ -29,6 +29,14 @@ void main() {
     final a = find.byKey(const ValueKey('a')), b = find.byKey(const ValueKey('b'));
     expect(tester.getSize(a), const Size(48, 48));
     expect(tester.getSemantics(a), matchesSemantics(label: 'A', isButton: true, hasTapAction: true));
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('leftBumper'))),
+      matchesSemantics(label: 'Left shoulder button', isButton: true, hasTapAction: true),
+    );
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('dpadLeft'))),
+      matchesSemantics(label: 'Directional pad left', isButton: true, hasTapAction: true),
+    );
     final first = await tester.startGesture(tester.getCenter(a), pointer: 1);
     final second = await tester.startGesture(tester.getCenter(b), pointer: 2);
     await tester.pump();

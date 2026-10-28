@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-#include "steam_pyrowave.h"
-
 #include <array>
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
+#include "steam_pyrowave.h"
 
 namespace {
 void write32(uint8_t* out, uint32_t value) {
@@ -31,15 +31,16 @@ void sequenceValidation() {
   bytes[7] |= 0x10;  // PQ transfer function
   assert(!plezy::steam::parsePyrowaveFrame(bytes.data(), bytes.size(), 2, 2, info));
   assert(!plezy::steam::parsePyrowaveFrame(bytes.data(), bytes.size(), 2, 2, info, true));
-  bytes = sequenceFrame(); bytes[7] |= 0x84; // 4:4:4, left chroma siting.
+  bytes = sequenceFrame();
+  bytes[7] |= 0x84;  // 4:4:4, left chroma siting.
   assert(!plezy::steam::parsePyrowaveFrame(bytes.data(), bytes.size(), 2, 2, info));
   assert(plezy::steam::parsePyrowaveFrame(bytes.data(), bytes.size(), 2, 2, info, true));
   assert(info.chroma444 && info.chromaLeft && !info.fullRange);
-  std::vector<uint8_t> duplicate(bytes.begin(),bytes.end());
-  duplicate.insert(duplicate.end(),bytes.begin(),bytes.begin()+8);
-  assert(plezy::steam::parsePyrowaveFrame(duplicate.data(),duplicate.size(),2,2,info,true));
-  duplicate[duplicate.size()-5] ^= 0x10; // Conflicting frame sequence within an access unit.
-  assert(!plezy::steam::parsePyrowaveFrame(duplicate.data(),duplicate.size(),2,2,info,true));
+  std::vector<uint8_t> duplicate(bytes.begin(), bytes.end());
+  duplicate.insert(duplicate.end(), bytes.begin(), bytes.begin() + 8);
+  assert(plezy::steam::parsePyrowaveFrame(duplicate.data(), duplicate.size(), 2, 2, info, true));
+  duplicate[duplicate.size() - 5] ^= 0x10;  // Conflicting frame sequence within an access unit.
+  assert(!plezy::steam::parsePyrowaveFrame(duplicate.data(), duplicate.size(), 2, 2, info, true));
 }
 void colorConversion() {
   const uint8_t y[4] = {16, 235, 16, 235};

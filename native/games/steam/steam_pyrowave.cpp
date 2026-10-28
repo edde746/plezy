@@ -8,6 +8,8 @@
 
 #if PLEZY_STEAM_PYROWAVE
 #include <vulkan/vulkan.h>
+
+// The Pyrowave ABI selects its Vulkan entry points from the headers above.
 #include <pyrowave.h>
 #endif
 
@@ -24,8 +26,8 @@ uint32_t read32(const uint8_t* p) {
 uint8_t clamp8(int value) { return static_cast<uint8_t>(std::clamp(value, 0, 255)); }
 }  // namespace
 
-bool parsePyrowaveFrame(const uint8_t* bytes, size_t length, uint32_t width, uint32_t height,
-                        PyrowaveFrameInfo& info, bool allow444) {
+bool parsePyrowaveFrame(
+    const uint8_t* bytes, size_t length, uint32_t width, uint32_t height, PyrowaveFrameInfo& info, bool allow444) {
   if (!bytes || length < 8 || length > kMaxFrameBytes || width == 0 || height == 0 || width > kMaxWidth ||
       height > kMaxHeight || (width & 1) != 0 || (height & 1) != 0) {
     return false;
@@ -50,7 +52,8 @@ bool parsePyrowaveFrame(const uint8_t* bytes, size_t length, uint32_t width, uin
       const uint32_t transform = (second >> 29) & 0x1u;
       const uint32_t range = (second >> 30) & 0x1u;
       if (foundSequence && (sequenceHeader != first || sequenceFlags != second)) return false;
-      sequenceHeader = first; sequenceFlags = second;
+      sequenceHeader = first;
+      sequenceFlags = second;
 
       // Current surfaces are SDR BT.709. The legacy Android converter accepts
       // 4:2:0 only; the Metal path explicitly opts into full-resolution chroma.
@@ -59,7 +62,9 @@ bool parsePyrowaveFrame(const uint8_t* bytes, size_t length, uint32_t width, uin
         return false;
       }
       const bool left = (second >> 31) != 0;
-      if (foundSequence && (result.fullRange != (range == 0) || result.chroma444 != (chroma != 0) || result.chromaLeft != left)) return false;
+      if (foundSequence &&
+          (result.fullRange != (range == 0) || result.chroma444 != (chroma != 0) || result.chromaLeft != left))
+        return false;
       result.width = packetWidth;
       result.height = packetHeight;
       result.fullRange = range == 0;
@@ -80,12 +85,11 @@ bool parsePyrowaveFrame(const uint8_t* bytes, size_t length, uint32_t width, uin
   return true;
 }
 
-void convertPyrowave420ToArgb(const uint8_t* y, size_t yStride, const uint8_t* cb, size_t cbStride,
-                              const uint8_t* cr, size_t crStride, const PyrowaveFrameInfo& info,
-                              std::vector<uint8_t>& argb) {
+void convertPyrowave420ToArgb(
+    const uint8_t* y, size_t yStride, const uint8_t* cb, size_t cbStride, const uint8_t* cr, size_t crStride,
+    const PyrowaveFrameInfo& info, std::vector<uint8_t>& argb) {
   if (!y || !cb || !cr || info.chroma444 || info.width == 0 || info.height == 0 || info.width > kMaxWidth ||
-      info.height > kMaxHeight || yStride < info.width || cbStride < info.width / 2 ||
-      crStride < info.width / 2) {
+      info.height > kMaxHeight || yStride < info.width || cbStride < info.width / 2 || crStride < info.width / 2) {
     throw std::invalid_argument("invalid Pyrowave output planes");
   }
   const size_t pixels = size_t(info.width) * info.height;
@@ -195,7 +199,8 @@ bool PyrowaveDecoder::start(int width, int height, const uint8_t* initial, size_
   impl_->height = height;
   if (initialLength != 0) {
     PyrowaveFrameInfo info;
-    if (!parsePyrowaveFrame(initial, initialLength, static_cast<uint32_t>(width), static_cast<uint32_t>(height), info) ||
+    if (!parsePyrowaveFrame(
+            initial, initialLength, static_cast<uint32_t>(width), static_cast<uint32_t>(height), info) ||
         pyrowave_decoder_push_packet(impl_->decoder, initial, initialLength) != PYROWAVE_SUCCESS) {
       reset();
       return false;
@@ -231,8 +236,7 @@ PyrowaveDecodeStatus PyrowaveDecoder::decode(const uint8_t* bytes, size_t length
   output.format = PYROWAVE_CPU_BUFFER_FORMAT_YUV420P;
   if (pyrowave_decoder_decode_cpu_buffer_synchronous(impl_->decoder, &output) != PYROWAVE_SUCCESS)
     return PyrowaveDecodeStatus::invalid;
-  convertPyrowave420ToArgb(y.data(), impl_->width, cb.data(), chromaStride, cr.data(), chromaStride, frameInfo,
-                           argb);
+  convertPyrowave420ToArgb(y.data(), impl_->width, cb.data(), chromaStride, cr.data(), chromaStride, frameInfo, argb);
   return PyrowaveDecodeStatus::frame;
 }
 

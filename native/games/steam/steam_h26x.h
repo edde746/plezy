@@ -17,10 +17,11 @@ class H26xParser {
   bool ready() const;
   int codec() const { return codec_; }
   const std::array<std::vector<uint8_t>, 3>& parameters() const { return parameters_; }
+
  private:
   bool nal(const uint8_t*, size_t, std::vector<uint8_t>*, bool& changed, bool& picture);
   bool split(const uint8_t*, size_t, std::vector<uint8_t>*, bool& changed, bool& picture);
   int codec_ = 0, lengthSize_ = 0;
   std::array<std::vector<uint8_t>, 3> parameters_;
 };
-} // namespace plezy::steam
+}  // namespace plezy::steam

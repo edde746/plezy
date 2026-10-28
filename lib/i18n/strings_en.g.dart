@@ -9786,8 +9786,8 @@ class Translations$games$en {
 	/// en: 'Enlarge this game window or use full screen to show the controller.'
 	String get touchResizeHint => 'Enlarge this game window or use full screen to show the controller.';
 
-	/// en: 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.'
-	String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
+	/// en: 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.'
+	String get touchDescription => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
 
 	/// en: 'On-screen controls'
 	String get touchSetup => 'On-screen controls';
@@ -9819,8 +9819,8 @@ class Translations$games$en {
 	/// en: 'Games help'
 	String get help => 'Games help';
 
-	/// en: 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library. Both Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development. Pairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network. Disconnecting leaves the game running on the computer.'
-	String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
+	/// en: 'Enable Games for your profile, choose a computer and approve the first connection. Steam can open Big Picture or launch a saved game shortcut inside PlezyNG on receivers that support it. Connect Companion Remote to combine installed games from your computers in one library. Steam pairing does not grant access to a private account library. Steam receivers are experimental on Android, Linux and Apple. The stream menu provides controller, audio and connection controls. Pyrowave is an optional codec on compatible Android and Apple receivers and needs a fast network. Pairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network. Disconnecting leaves the game running on the computer.'
+	String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Steam can open Big Picture or launch a saved game shortcut inside PlezyNG on receivers that support it. Connect Companion Remote to combine installed games from your computers in one library. Steam pairing does not grant access to a private account library.\n\nSteam receivers are experimental on Android, Linux and Apple. The stream menu provides controller, audio and connection controls. Pyrowave is an optional codec on compatible Android and Apple receivers and needs a fast network.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
 
 	/// en: 'Cancel'
 	String get cancel => 'Cancel';
@@ -9840,8 +9840,8 @@ class Translations$games$en {
 	/// en: 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.'
 	String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 
-	/// en: 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.'
-	String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
+	/// en: 'This build does not include an embedded Steam receiver for this device. You can browse your library and manage computers. Playing here requires a build with a compatible receiver.'
+	String get steamEnginePending => 'This build does not include an embedded Steam receiver for this device. You can browse your library and manage computers. Playing here requires a build with a compatible receiver.';
 
 	/// en: 'Pyrowave · experimental'
 	String get steamBetaTitle => 'Pyrowave · experimental';
@@ -10277,6 +10277,39 @@ class Translations$games$en {
 
 	/// en: 'Open Steam Families in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Invitations, household eligibility, copy availability and parental controls are managed by Steam.'
 	String get steamFamiliesHelp => 'Open Steam Families in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Invitations, household eligibility, copy availability and parental controls are managed by Steam.';
+
+	/// en: 'Directional pad up'
+	String get touchDpadUp => 'Directional pad up';
+
+	/// en: 'Directional pad down'
+	String get touchDpadDown => 'Directional pad down';
+
+	/// en: 'Directional pad left'
+	String get touchDpadLeft => 'Directional pad left';
+
+	/// en: 'Directional pad right'
+	String get touchDpadRight => 'Directional pad right';
+
+	/// en: 'Left shoulder button'
+	String get touchLeftBumper => 'Left shoulder button';
+
+	/// en: 'Right shoulder button'
+	String get touchRightBumper => 'Right shoulder button';
+
+	/// en: 'Left trigger'
+	String get touchLeftTrigger => 'Left trigger';
+
+	/// en: 'Right trigger'
+	String get touchRightTrigger => 'Right trigger';
+
+	/// en: 'View button'
+	String get touchViewButton => 'View button';
+
+	/// en: 'Menu button'
+	String get touchMenuButton => 'Menu button';
+
+	/// en: 'Drag to move. Double-tap to press the stick.'
+	String get touchStickHint => 'Drag to move. Double-tap to press the stick.';
 }
 
 // Path: deepLinks
@@ -16338,7 +16371,7 @@ extension on Translations {
 			'games.leftStick' => 'Left stick',
 			'games.rightStick' => 'Right stick',
 			'games.touchResizeHint' => 'Enlarge this game window or use full screen to show the controller.',
-			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
+			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
 			'games.addGame' => 'Add game shortcut',
@@ -16349,14 +16382,14 @@ extension on Translations {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Steam can open Big Picture or launch a saved game shortcut inside PlezyNG on receivers that support it. Connect Companion Remote to combine installed games from your computers in one library. Steam pairing does not grant access to a private account library.\n\nSteam receivers are experimental on Android, Linux and Apple. The stream menu provides controller, audio and connection controls. Pyrowave is an optional codec on compatible Android and Apple receivers and needs a fast network.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
 			'games.saveShortcut' => 'Save shortcut',
 			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
-			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
+			'games.steamEnginePending' => 'This build does not include an embedded Steam receiver for this device. You can browse your library and manage computers. Playing here requires a build with a compatible receiver.',
 			'games.steamBetaTitle' => 'Pyrowave · experimental',
 			'games.steamBetaDescription' => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.',
 			'games.steamLibrary' => 'Steam library',
@@ -16502,6 +16535,17 @@ extension on Translations {
 			'games.steamFamilies' => 'Steam Families',
 			'games.steamCloudHelp' => 'Open this game’s Steam Cloud files in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Steam handles downloads, sync and conflicts. Files depend on the game’s Cloud support.',
 			'games.steamFamiliesHelp' => 'Open Steam Families in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Invitations, household eligibility, copy availability and parental controls are managed by Steam.',
+			'games.touchDpadUp' => 'Directional pad up',
+			'games.touchDpadDown' => 'Directional pad down',
+			'games.touchDpadLeft' => 'Directional pad left',
+			'games.touchDpadRight' => 'Directional pad right',
+			'games.touchLeftBumper' => 'Left shoulder button',
+			'games.touchRightBumper' => 'Right shoulder button',
+			'games.touchLeftTrigger' => 'Left trigger',
+			'games.touchRightTrigger' => 'Right trigger',
+			'games.touchViewButton' => 'View button',
+			'games.touchMenuButton' => 'Menu button',
+			'games.touchStickHint' => 'Drag to move. Double-tap to press the stick.',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',

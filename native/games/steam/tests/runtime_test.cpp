@@ -9,12 +9,12 @@
 #include <future>
 #include <thread>
 
-#include "steam_runtime.h"
 #include "steam_input.h"
+#include "steam_runtime.h"
 extern "C" {
+#include "hid/provider.h"
 #include "protobuf/discovery.pb-c.h"
 #include "session/frame_tracker.h"
-#include "hid/provider.h"
 }
 using namespace plezy::steam;
 namespace plezy::steam {
@@ -86,7 +86,7 @@ void frameOwnership() {
   assert(metrics.epoch != 0 && metrics.sampledAtUs != 0);
   assert(metrics.receivedFrames == 3 && metrics.presentedFrames == 2);
   assert(metrics.completedFrames == 2 && metrics.resetFrames == 1 && metrics.droppedFrames == 0);
-  assert(metrics.videoBytes == 12); // Duplicate completions must not inflate feedback.
+  assert(metrics.videoBytes == 12);  // Duplicate completions must not inflate feedback.
   RuntimeTest::target(runtime, 30000, 1001, 0xffffffff, 12000000);
   auto target = runtime.metrics();
   assert(target.fpsNumerator == 30000 && target.fpsDenominator == 1001 && target.fpsReasons == 0x5f);
@@ -108,7 +108,7 @@ int main() {
     std::array<int16_t, 6> axes{12000, -4000, 0, 0, 32767, 0};
     controllers.pad(axes, 0xffffffff);
     controllers.padSeat(3, {}, 4);
-    controllers.padSeat(4, axes, 8); // Rejected without writing outside the array.
+    controllers.padSeat(4, axes, 8);  // Rejected without writing outside the array.
     assert(RuntimeTest::pad(controllers, 0)->axes == axes);
     assert(RuntimeTest::pad(controllers, 0)->buttons == 0x7fff);
     assert(RuntimeTest::pad(controllers, 1)->buttons == 0);
@@ -134,12 +134,12 @@ int main() {
   {
     Runtime r;
     InputState input(2);
-    input.button(r, 1, "a", true); // No lease, no input.
+    input.button(r, 1, "a", true);  // No lease, no input.
     assert(RuntimeTest::pad(r, 0)->buttons == 0);
     input.enabled(r, true);
     input.button(r, 10, "a", true);
     input.axis(r, 20, "leftStickX", 0.5);
-    input.button(r, 30, "b", true); // Third device cannot steal a seat.
+    input.button(r, 30, "b", true);  // Third device cannot steal a seat.
     assert(RuntimeTest::pad(r, 0)->buttons == 1 && RuntimeTest::pad(r, 1)->axes[0] == 16383);
     input.disconnect(r, 10);
     assert(RuntimeTest::pad(r, 1)->axes[0] == 16383);
@@ -153,36 +153,39 @@ int main() {
   {
     Runtime r;
     InputState input(2);
-    input.enabled(r,true);
-    input.button(r,10,"b",true);
-    input.button(r,20,"y",true);
-    input.button(r,0,"a",true,true); // Touch shares seat one, never reserves seat three.
-    input.axis(r,10,"leftStickX",0.75);
-    input.axis(r,0,"leftStickX",0.5,true);
-    assert(RuntimeTest::pad(r,0)->buttons == 3 && RuntimeTest::pad(r,1)->buttons == 8);
-    assert(RuntimeTest::pad(r,0)->axes[0] == 24575);
+    input.enabled(r, true);
+    input.button(r, 10, "b", true);
+    input.button(r, 20, "y", true);
+    input.button(r, 0, "a", true, true);  // Touch shares seat one, never reserves seat three.
+    input.axis(r, 10, "leftStickX", 0.75);
+    input.axis(r, 0, "leftStickX", 0.5, true);
+    assert(RuntimeTest::pad(r, 0)->buttons == 3 && RuntimeTest::pad(r, 1)->buttons == 8);
+    assert(RuntimeTest::pad(r, 0)->axes[0] == 24575);
     input.releaseAssistance(r);
-    assert(RuntimeTest::pad(r,0)->buttons == 2 && RuntimeTest::pad(r,0)->axes[0] == 24575);
-    input.button(r,0,"a",true,true);
-    input.disconnect(r,10);
-    assert(RuntimeTest::pad(r,0)->buttons == 1 && RuntimeTest::pad(r,1)->buttons == 8);
-    input.button(r,30,"x",true);
-    assert(RuntimeTest::pad(r,0)->buttons == 5);
-    input.enabled(r,false);
-    input.button(r,0,"a",true,true);
-    input.enabled(r,true);
-    assert(RuntimeTest::pad(r,0)->buttons == 0 && RuntimeTest::pad(r,1)->buttons == 0);
+    assert(RuntimeTest::pad(r, 0)->buttons == 2 && RuntimeTest::pad(r, 0)->axes[0] == 24575);
+    input.button(r, 0, "a", true, true);
+    input.disconnect(r, 10);
+    assert(RuntimeTest::pad(r, 0)->buttons == 1 && RuntimeTest::pad(r, 1)->buttons == 8);
+    input.button(r, 30, "x", true);
+    assert(RuntimeTest::pad(r, 0)->buttons == 5);
+    input.enabled(r, false);
+    input.button(r, 0, "a", true, true);
+    input.enabled(r, true);
+    assert(RuntimeTest::pad(r, 0)->buttons == 0 && RuntimeTest::pad(r, 1)->buttons == 0);
   }
   c.device = 123;
   c.user = 456;
   c.key.fill(42);
   Runtime invalid;
-  for (const auto& options : {StreamOptions{0, 1080, 60, 30000}, {1920, 1081, 60, 30000},
-                              {1920, 1080, 120, 30000}, {1920, 1080, 60, 50001},
-                              {1920, 1080, 60, 30000, 0}, {1920, 1080, 60, 30000, 5},
-                              {1920, 1080, 60, 30000, 1, 3}}) {
-    assert(invalid.run({"127.0.0.1", 27036, 1}, c, 620, false, false,
-                       std::make_shared<NullSink>(), options) == -1);
+  for (const auto& options :
+       {StreamOptions{0, 1080, 60, 30000},
+        {1920, 1081, 60, 30000},
+        {1920, 1080, 120, 30000},
+        {1920, 1080, 60, 50001},
+        {1920, 1080, 60, 30000, 0},
+        {1920, 1080, 60, 30000, 5},
+        {1920, 1080, 60, 30000, 1, 3}}) {
+    assert(invalid.run({"127.0.0.1", 27036, 1}, c, 620, false, false, std::make_shared<NullSink>(), options) == -1);
   }
   assert(invalid.pair({"127.0.0.1", 0, 1}, c, "1234") == -1);
   assert(invalid.pair({"127.0.0.1", 27036, 1}, c, "xx12") == -1);
@@ -205,8 +208,9 @@ int main() {
   setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   Runtime stream;
   auto run = std::async(std::launch::async, [&] {
-    return stream.run({"127.0.0.1", ntohs(addr.sin_port), 9}, c, 620, false, false,
-                      std::make_shared<NullSink>(), {1280, 720, 30, 12000, 4, 6});
+    return stream.run(
+        {"127.0.0.1", ntohs(addr.sin_port), 9}, c, 620, false, false, std::make_shared<NullSink>(),
+        {1280, 720, 30, 12000, 4, 6});
   });
   uint8_t bytes[4096];
   ssize_t length = recv(fd, bytes, sizeof(bytes), 0);
