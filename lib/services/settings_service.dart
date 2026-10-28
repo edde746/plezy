@@ -50,7 +50,7 @@ import '../theme/mono_theme.dart' show MonoPalette;
 import '../watch_together/services/watch_party_relays.dart';
 
 Map<String, List<MediaBookmark>> _decodeMediaBookmarks(dynamic raw) {
-  if (raw is! Map) return const {};
+  if (raw is! Map) return const <String, Map<String, String>>{};
   final decoded = <String, List<MediaBookmark>>{};
   for (final entry in raw.entries) {
     if (entry.key is! String || (entry.key as String).isEmpty || entry.value is! List) continue;
@@ -1283,6 +1283,50 @@ class SettingsService extends BaseSharedPreferencesService {
       throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
     }
     return NullableStringPref(profileScopedPrefsKey(profileId, 'metadata_recent_tags'));
+  }
+
+  /// Translation terminology saved locally for one profile, keyed by
+  /// normalized source/target language pair. Oldest pairs are evicted by the
+  /// writer after the 16-pair bound; series identity is handled separately.
+  static JsonPref<Map<String, Map<String, String>>> subtitleTranslationGlossariesForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return JsonPref<Map<String, Map<String, String>>>(
+      profileScopedPrefsKey(profileId, 'subtitle_translation_glossaries_v1'),
+      defaultValue: const {},
+      encode: json.encode,
+      decode: (raw) {
+        if (raw is! Map) return const {};
+        final pairs = <String, Map<String, String>>{};
+        for (final pair in raw.entries) {
+          if (pair.key is! String || pair.value is! Map) continue;
+          final terms = <String, String>{};
+          final seen = <String>{};
+          for (final term in (pair.value as Map).entries) {
+            if (term.key is! String || term.value is! String) continue;
+            final source = (term.key as String).trim();
+            final target = (term.value as String).trim();
+            if (source.isEmpty ||
+                target.isEmpty ||
+                source.runes.length > 128 ||
+                target.runes.length > 128 ||
+                source.contains('\n') ||
+                source.contains('\r') ||
+                target.contains('\n') ||
+                target.contains('\r') ||
+                !seen.add(source.toLowerCase())) {
+              continue;
+            }
+            terms[source] = target;
+            if (terms.length >= 200) break;
+          }
+          if (terms.isNotEmpty) pairs[pair.key as String] = Map.unmodifiable(terms);
+          if (pairs.length >= 16) break;
+        }
+        return Map.unmodifiable(pairs);
+      },
+    );
   }
 
   static final companionRemoteLastHostAddress = NullableStringPref(

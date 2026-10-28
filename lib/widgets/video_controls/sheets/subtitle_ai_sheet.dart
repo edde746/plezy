@@ -7,10 +7,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as p;
+import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
 import '../../../mpv/mpv.dart';
+import '../../../profiles/active_profile_provider.dart';
 import '../../../mpv/player/platform/player_android.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/subtitle_ai_service.dart';
@@ -43,6 +45,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   bool _requestTranslationCuda = false;
   bool _bilingualTranslation = false;
   final TextEditingController _glossaryController = TextEditingController();
+  final Map<String, String> _glossaryDrafts = <String, String>{};
   bool _playbackCaptureSupported = false;
   String? _status;
   String? _error;
@@ -60,6 +63,9 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   void initState() {
     super.initState();
     unawaited(_refreshCapabilityState());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_loadGlossaryForCurrentPair());
+    });
   }
 
   Future<void> _refreshCapabilityState() async {
@@ -301,6 +307,69 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     return glossary;
   }
 
+  String? get _activeProfileId {
+    try {
+      return context.read<ActiveProfileProvider>().activeId;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _currentGlossaryPairKey() {
+    String code(TranslateLanguage language) => language.bcpCode.toLowerCase().split('-').first;
+    return '${code(_sourceLanguage)}>${code(_targetLanguage)}';
+  }
+
+  Future<void> _loadGlossaryForCurrentPair() async {
+    final pairKey = _currentGlossaryPairKey();
+    final draft = _glossaryDrafts[pairKey];
+    final profileId = _activeProfileId;
+    Map<String, String> saved = const {};
+    if (draft == null && profileId != null) {
+      try {
+        saved = SubtitleTranslationService.loadGlossaryForProfile(
+          profileId: profileId,
+          sourceLanguage: _sourceLanguage,
+          targetLanguage: _targetLanguage,
+        );
+      } catch (_) {
+        saved = const {};
+      }
+    }
+    if (!mounted) return;
+    _glossaryController.text = draft ?? (saved.isEmpty ? '' : const JsonEncoder.withIndent('  ').convert(saved));
+  }
+
+  void _changeTranslationLanguage({required bool source, required TranslateLanguage? value}) {
+    if (value == null || (source ? value == _sourceLanguage : value == _targetLanguage)) return;
+    _glossaryDrafts[_currentGlossaryPairKey()] = _glossaryController.text;
+    if (_glossaryDrafts.length > 16) _glossaryDrafts.remove(_glossaryDrafts.keys.first);
+    setState(() {
+      if (source) {
+        _sourceLanguage = value;
+      } else {
+        _targetLanguage = value;
+      }
+    });
+    unawaited(_loadGlossaryForCurrentPair());
+  }
+
+  Future<void> _saveGlossary() async {
+    final profileId = _activeProfileId;
+    if (profileId == null) {
+      throw StateError('An active profile is required to save a translation glossary.');
+    }
+    final glossary = _parseGlossary();
+    await SubtitleTranslationService.saveGlossaryForProfile(
+      profileId: profileId,
+      sourceLanguage: _sourceLanguage,
+      targetLanguage: _targetLanguage,
+      glossary: glossary,
+    );
+    _glossaryDrafts[_currentGlossaryPairKey()] = _glossaryController.text;
+    if (mounted) setState(() => _status = 'Saved glossary for this profile and language pair.');
+  }
+
   Future<void> _translate() => _run(() async {
     if (!await SubtitleTranslationService.isSupportedOnCurrentDevice()) {
       throw UnsupportedError(
@@ -311,6 +380,17 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     }
     final selected = await _pickSubtitleCues();
     if (selected == null || !mounted) return;
+    final glossary = _parseGlossary();
+    final profileId = _activeProfileId;
+    if (profileId != null) {
+      await SubtitleTranslationService.saveGlossaryForProfile(
+        profileId: profileId,
+        sourceLanguage: _sourceLanguage,
+        targetLanguage: _targetLanguage,
+        glossary: glossary,
+      );
+      _glossaryDrafts[_currentGlossaryPairKey()] = _glossaryController.text;
+    }
     setState(() => _status = SubtitleTranslationService.desktopPlatformSupported
         ? 'Starting local translation…'
         : 'Preparing on-device language models…');
@@ -321,7 +401,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       allowMobileData: _allowMobileData,
       requestDesktopCuda: _requestTranslationCuda,
       bilingual: _bilingualTranslation,
-      glossary: _parseGlossary(),
+      glossary: glossary,
       onProgress: (completed, total) {
         if (mounted) setState(() => _status = 'Translating cue $completed of $total on this device…');
       },
@@ -550,13 +630,13 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                 _languageSelector(
                   label: 'Source',
                   value: _sourceLanguage,
-                  onChanged: (value) => setState(() => _sourceLanguage = value ?? _sourceLanguage),
+                  onChanged: (value) => _changeTranslationLanguage(source: true, value: value),
                 ),
                 const SizedBox(width: 8),
                 _languageSelector(
                   label: 'Target',
                   value: _targetLanguage,
-                  onChanged: (value) => setState(() => _targetLanguage = value ?? _targetLanguage),
+                  onChanged: (value) => _changeTranslationLanguage(source: false, value: value),
                 ),
               ],
             ),
@@ -575,8 +655,17 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
               decoration: const InputDecoration(
                 labelText: 'Translation glossary (JSON)',
                 hintText: '{"TARDIS":"TARDIS","The Doctor":"El Doctor"}',
-                helperText: 'Protects up to 200 whole terms. Source subtitle text is never changed.',
+                helperText: 'Protects up to 200 whole terms. Saved for this profile and language pair.',
                 border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => _glossaryDrafts[_currentGlossaryPairKey()] = value,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _busy ? null : () => unawaited(_run(_saveGlossary)),
+                icon: const Icon(Icons.save_outlined),
+                label: const Text('Save glossary'),
               ),
             ),
             const SizedBox(height: 8),

@@ -6,6 +6,7 @@ import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
 import '../utils/platform_detector.dart';
 import 'subtitle_retimer.dart';
+import 'settings_service.dart';
 
 /// Subtitle text translated on-device, using ML Kit on mobile or an optional
 /// locally installed Argos Translate runtime on desktop.
@@ -63,6 +64,44 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
   static String languageLabel(TranslateLanguage language) {
     final name = language.name.replaceAll('_', ' ');
     return name.split(' ').map((word) => word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}').join(' ');
+  }
+
+  static String _glossaryPairKey(TranslateLanguage source, TranslateLanguage target) =>
+      '${_normalizedLanguageCode(source)}>${_normalizedLanguageCode(target)}';
+
+  static String _normalizedLanguageCode(TranslateLanguage language) =>
+      language.bcpCode.toLowerCase().split('-').first;
+
+  /// Read this profile's local terminology for the selected language pair.
+  static Map<String, String> loadGlossaryForProfile({
+    required String profileId,
+    required TranslateLanguage sourceLanguage,
+    required TranslateLanguage targetLanguage,
+  }) {
+    final saved = SettingsService.instance.read(
+      SettingsService.subtitleTranslationGlossariesForProfile(profileId),
+    );
+    return Map.unmodifiable(saved[_glossaryPairKey(sourceLanguage, targetLanguage)] ?? const {});
+  }
+
+  /// Save the validated glossary for this profile and language pair. The
+  /// preference retains at most 16 language pairs and evicts the oldest entry.
+  static Future<void> saveGlossaryForProfile({
+    required String profileId,
+    required TranslateLanguage sourceLanguage,
+    required TranslateLanguage targetLanguage,
+    required Map<String, String> glossary,
+  }) async {
+    final normalized = _validateGlossary(glossary);
+    final pref = SettingsService.subtitleTranslationGlossariesForProfile(profileId);
+    final pairs = Map<String, Map<String, String>>.from(SettingsService.instance.read(pref));
+    final key = _glossaryPairKey(sourceLanguage, targetLanguage);
+    pairs.remove(key);
+    if (normalized.isNotEmpty) pairs[key] = normalized;
+    while (pairs.length > 16) {
+      pairs.remove(pairs.keys.first);
+    }
+    await SettingsService.instance.write(pref, Map.unmodifiable(pairs));
   }
 
   static Future<bool> isSupportedOnCurrentDevice() async {
@@ -346,7 +385,11 @@ json.dump(translated, sys.stdout, ensure_ascii=False)
           source.contains('\n') ||
           source.contains('\r') ||
           target.contains('\n') ||
-          target.contains('\r')) {
+          target.contains('\r') ||
+          source.contains('<') ||
+          source.contains('>') ||
+          target.contains('<') ||
+          target.contains('>')) {
         throw const FormatException('Glossary terms and translations must be single-line text of at most 128 characters.');
       }
       if (!normalizedTerms.add(source.toLowerCase())) {
