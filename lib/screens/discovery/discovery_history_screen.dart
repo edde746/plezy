@@ -50,7 +50,9 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
   Future<void> _load() async {
     try {
       final state = await widget.store.load(widget.profileId);
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+      if (!mounted ||
+          context.read<ActiveProfileProvider>().active?.id != widget.profileId)
+        return;
       setState(() {
         _state = state;
         _loading = false;
@@ -75,13 +77,15 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
       DiscoveryChoiceType.audiobook => t.fileSources.audiobooks,
       DiscoveryChoiceType.comic => t.fileSources.comics,
       DiscoveryChoiceType.music => t.common.mediaKind.album,
-      DiscoveryChoiceType.video || DiscoveryChoiceType.sourceVideo => t.common.mediaKind.movie,
+      DiscoveryChoiceType.video ||
+      DiscoveryChoiceType.sourceVideo => t.common.mediaKind.movie,
       DiscoveryChoiceType.liveProgram => t.liveTv.title,
     };
   }
 
   IconData _iconFor(DiscoveryChoice choice) => switch (choice.type) {
-    DiscoveryChoiceType.video || DiscoveryChoiceType.sourceVideo => Symbols.movie_rounded,
+    DiscoveryChoiceType.video ||
+    DiscoveryChoiceType.sourceVideo => Symbols.movie_rounded,
     DiscoveryChoiceType.music => Symbols.album_rounded,
     DiscoveryChoiceType.audiobook => Symbols.headphones_rounded,
     DiscoveryChoiceType.ebook => Symbols.menu_book_rounded,
@@ -90,7 +94,9 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
   };
 
   Future<void> _restoreToDeck(DiscoveryChoice choice) async {
-    if (_restoring.contains(choice.id) || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+    if (_restoring.contains(choice.id) ||
+        context.read<ActiveProfileProvider>().active?.id != widget.profileId)
+      return;
     setState(() => _restoring.add(choice.id));
     try {
       await widget.onRestoreToDeck(choice);
@@ -101,9 +107,13 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profileChanged = context.watch<ActiveProfileProvider>().active?.id != widget.profileId;
+    final profileChanged =
+        context.watch<ActiveProfileProvider>().active?.id != widget.profileId;
     final recent = _state.history
-        .where((decision) => widget.includeCatalog || decision.choice.catalogSourceId == null)
+        .where(
+          (decision) =>
+              widget.includeCatalog || decision.choice.catalogSourceId == null,
+        )
         .toList(growable: false)
         .reversed
         .toList(growable: false);
@@ -128,26 +138,41 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
                   _actionLabel(decision),
                   _choiceType(choice),
                   if (createdAtMs != null && createdAtMs > 0)
-                    formatDateTime(DateTime.fromMillisecondsSinceEpoch(createdAtMs)),
+                    formatDateTime(
+                      DateTime.fromMillisecondsSinceEpoch(createdAtMs),
+                    ),
                 ].where((value) => value.isNotEmpty).join(' · ');
 
                 return FocusableListTile(
                   autofocus: index == 0,
-                  leading: CircleAvatar(child: AppIcon(_iconFor(choice), size: 22)),
-                  title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(details, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  leading: CircleAvatar(
+                    child: AppIcon(_iconFor(choice), size: 22),
+                  ),
+                  title: Text(
+                    isolateDisplayText(choice.title),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    details,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   onTap: profileChanged ? null : () => widget.onDetails(choice),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         tooltip: t.discover.findNext.details,
-                        onPressed: profileChanged ? null : () => widget.onDetails(choice),
+                        onPressed: profileChanged
+                            ? null
+                            : () => widget.onDetails(choice),
                         icon: const AppIcon(Symbols.info_rounded),
                       ),
                       IconButton(
                         tooltip: t.common.retry,
-                        onPressed: profileChanged || _restoring.contains(choice.id)
+                        onPressed:
+                            profileChanged || _restoring.contains(choice.id)
                             ? null
                             : () => unawaited(_restoreToDeck(choice)),
                         icon: const AppIcon(Symbols.replay_rounded),

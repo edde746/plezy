@@ -10,12 +10,15 @@ static uint64_t nowUs() {
       .count();
 }
 Runtime::Runtime() {
+  static std::atomic<uint64_t> nextEpoch{1};
+  metrics_.epoch = nextEpoch++;
+  for (auto& pad : pads_) pad = std::make_shared<PadState>();
   static std::once_flag init;
   std::call_once(init, [] { IHS_Init(); });
 }
 Runtime::~Runtime() {
   clearFrames();
-  if (opus_) opus_decoder_destroy(opus_);
+  audio_.reset();
   // Keys never enter logs, Dart preferences, or an activity intent.
   volatile uint8_t* key = paired_.key.data();
   for (size_t i = 0; i < paired_.key.size(); ++i) key[i] = 0;
@@ -82,8 +85,8 @@ int Runtime::pair(const Host& host, Credentials& credentials, const std::string&
 
 int Runtime::run(
     const Host& host, const Credentials& credentials, uint64_t game, bool hevc, bool pyrowave,
-    std::shared_ptr<Sink> sink) {
-  if (!sink || !credentials.device || !credentials.user || cancelled_) return -1;
+    std::shared_ptr<Sink> sink, StreamOptions options) {
+  if (!sink || !credentials.device || !credentials.user || cancelled_ || !options.valid()) return -1;
   IHS_HostInfo target{};
   if (!hostInfo(host, target)) return -1;
   sink_ = std::move(sink);
@@ -111,11 +114,12 @@ int Runtime::run(
   IHS_ClientSetStreamingCallbacks(client, &streamCallbacks, this);
   IHS_StreamingRequest request{};
   request.streamingEnable = {true, true, true};
-  request.maxResolution = {1920, 1080};
-  request.audioChannelCount = 2;
+  request.maxResolution = {options.width, options.height};
+  requestedAudioChannels_ = options.audioChannels;
+  request.audioChannelCount = options.audioChannels;
   request.streamingInterface = IHS_StreamInterfaceBigPicture;
   request.gameId = game;
-  request.gamepadCount = 1;
+  request.gamepadCount = options.controllerCount;
   request.streamDesktop = false;
   int result = IHS_ClientStreamingRequest(client, &target, &request) ? wait(std::chrono::seconds(30)) : -1;
   if (result == 0 && !cancelled_)
@@ -132,20 +136,22 @@ int Runtime::run(
     Runtime* owner;
     bool hevc;
     bool pyrowave;
-  } context{this, hevc, pyrowave};
+    StreamOptions options;
+  } context{this, hevc, pyrowave, options};
   static const IHS_StreamSessionCallbacks sessionCallbacks{
       nullptr,
       nullptr,
       [](IHS_Session*, IHS_SessionConfig* c, void* ctx) {
         auto* state = static_cast<SessionContext*>(ctx);
         c->enableAudio = true;
+        c->audioChannels = state->options.audioChannels;
         c->enableHevc = state->hevc;
         c->enablePyrowave = state->pyrowave;
-        c->maxBitrateKbps = 30000;
+        c->maxBitrateKbps = state->options.bitrateKbps;
         c->quality = IHS_StreamQualityBalanced;
-        c->maxWidth = 1920;
-        c->maxHeight = 1080;
-        c->maxFps = 60;
+        c->maxWidth = state->options.width;
+        c->maxHeight = state->options.height;
+        c->maxFps = state->options.fps;
       },
       [](IHS_Session*, void* ctx) {
         auto* self = static_cast<SessionContext*>(ctx)->owner;
@@ -165,8 +171,8 @@ int Runtime::run(
       nullptr,
       nullptr,
       nullptr,
-      nullptr,
-      nullptr,
+      videoFramerate,
+      videoBitrate,
       nullptr,
       nullptr,
       [](IHS_Session* s, const IHS_VideoEpochInfo*, const IHS_StreamVideoConfig* c, void* ctx) {
@@ -180,7 +186,8 @@ int Runtime::run(
   IHS_SessionSetVideoCallbacks(session, &videoCallbacks, this);
   IHS_SessionSetVideoTrackingIdentity(session, credentials.device);
   IHS_SessionSetAudioCallbacks(session, &audioCallbacks, this);
-  IHS_SessionHIDAddProvider(session, makeController(pad_));
+  for (int seat = 0; seat < options.controllerCount; ++seat)
+    IHS_SessionHIDAddProvider(session, makeController(pads_[seat], static_cast<unsigned>(seat)));
   {
     std::lock_guard<std::mutex> lock(apiMutex_);
     session_ = session;
@@ -217,7 +224,26 @@ int Runtime::videoStart(IHS_Session*, const IHS_StreamVideoConfig* c, void* ctx)
   if (c->codec != IHS_StreamVideoCodecH264 && c->codec != IHS_StreamVideoCodecHEVC &&
       (c->codec != IHS_StreamVideoCodecPyrowave || !self->pyrowaveEnabled_))
     return -1;
-  return self->sink_->video(c->codec, c->width, c->height, c->codecData, c->codecDataLen) ? 0 : -1;
+  if (!self->sink_->video(c->codec, c->width, c->height, c->codecData, c->codecDataLen)) return -1;
+  std::lock_guard<std::mutex> lock(self->frameMutex_);
+  self->metrics_.codec = c->codec;
+  self->metrics_.width = c->width;
+  self->metrics_.height = c->height;
+  return 0;
+}
+void Runtime::videoFramerate(IHS_Session*, uint32_t numerator, uint32_t denominator, uint32_t reasons, void* ctx) {
+  if (denominator == 0 || numerator == 0 || uint64_t(numerator) > uint64_t(denominator) * 240) return;
+  auto* self = static_cast<Runtime*>(ctx);
+  std::lock_guard<std::mutex> lock(self->frameMutex_);
+  self->metrics_.fpsNumerator = numerator;
+  self->metrics_.fpsDenominator = denominator;
+  self->metrics_.fpsReasons = reasons & 0x5f; // Ignore unknown host flags and private game timing.
+}
+void Runtime::videoBitrate(IHS_Session*, int32_t bitrate, void* ctx) {
+  if (bitrate < 0 || bitrate > 1000000000) return;
+  auto* self = static_cast<Runtime*>(ctx);
+  std::lock_guard<std::mutex> lock(self->frameMutex_);
+  self->metrics_.targetBitrate = static_cast<uint32_t>(bitrate);
 }
 bool Runtime::startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength) {
   return pyrowave_.start(width, height, initial, initialLength);
@@ -235,13 +261,21 @@ IHS_StreamVideoSubmitResult Runtime::videoSubmit(
   uint32_t id;
   {
     std::lock_guard<std::mutex> lock(self->frameMutex_);
-    if (self->frames_.size() >= 64) return IHS_StreamVideoSubmitReportLost;
+    ++self->metrics_.receivedFrames;
+    self->metrics_.videoBytes += b->size;
+    if (self->frames_.size() >= 64) {
+      ++self->metrics_.droppedFrames;
+      return IHS_StreamVideoSubmitReportLost;
+    }
     do {
       id = self->nextFrame_++;
     } while (id == 0 || self->frames_.count(id));
     // Keep our own reference. The callback's reference remains owned by ihslib.
-    if (!IHS_FrameTicketRetain(ticket)) return IHS_StreamVideoSubmitReportLost;
-    self->frames_.emplace(id, ticket);
+    if (!IHS_FrameTicketRetain(ticket)) {
+      ++self->metrics_.droppedFrames;
+      return IHS_StreamVideoSubmitReportLost;
+    }
+    self->frames_.emplace(id, PendingFrame{ticket, nowUs()});
   }
   IHS_FrameTicketDecodeStage(ticket, false, nowUs());
   if (self->sink_->frame(IHS_BufferPointer(b), b->size, id, flags & IHS_StreamVideoFrameKeyFrame)) {
@@ -256,31 +290,41 @@ IHS_StreamVideoSubmitResult Runtime::videoSubmit(
 int Runtime::audioStart(IHS_Session*, const IHS_StreamAudioConfig* c, void* ctx) {
   auto* self = static_cast<Runtime*>(ctx);
   audioStop(nullptr, ctx);
-  if (!c || c->codec != IHS_StreamAudioCodecOpus || c->channels < 1 || c->channels > 2 || c->frequency != 48000)
+  if (!c || c->codec != IHS_StreamAudioCodecOpus || c->channels > unsigned(self->requestedAudioChannels_) ||
+      !self->audio_.start(c->channels, c->frequency, c->codecData, c->codecDataLen) ||
+      !self->sink_->audio(c->channels, c->frequency)) {
+    self->audio_.reset();
+    self->sink_->audioUnavailable();
     return -1;
-  int error = 0;
-  self->channels_ = c->channels;
-  self->opus_ = opus_decoder_create(48000, c->channels, &error);
-  return error == OPUS_OK && self->sink_->audio(c->channels, c->frequency) ? 0 : -1;
+  }
+  std::lock_guard<std::mutex> lock(self->frameMutex_);
+  self->metrics_.audioChannels = c->channels;
+  return 0;
 }
 int Runtime::audioSubmit(IHS_Session*, IHS_Buffer* b, void* ctx) {
   auto* self = static_cast<Runtime*>(ctx);
-  if (!self->opus_ || !b || b->size > 16384 || self->cancelled_) return -1;
-  std::array<int16_t, 5760 * 2> pcm{};
-  int samples = opus_decode(self->opus_, IHS_BufferPointer(b), static_cast<opus_int32>(b->size), pcm.data(), 5760, 0);
+  if (!b || self->cancelled_) return -1;
+  std::array<int16_t, AudioDecoder::maxSamples> pcm{};
+  int samples = self->audio_.decode(IHS_BufferPointer(b), b->size, pcm.data());
   if (samples < 0) return -1;
-  self->sink_->samples(pcm.data(), samples * self->channels_);
+  if (samples) self->sink_->samples(pcm.data(), samples);
   return 0;
 }
 void Runtime::audioStop(IHS_Session*, void* ctx) {
   auto* self = static_cast<Runtime*>(ctx);
-  if (self->opus_) opus_decoder_destroy(self->opus_);
-  self->opus_ = nullptr;
+  self->audio_.reset();
+  std::lock_guard<std::mutex> lock(self->frameMutex_);
+  self->metrics_.audioChannels = 0;
 }
 void Runtime::pad(const std::array<int16_t, 6>& axes, uint32_t buttons) {
-  std::lock_guard<std::mutex> lock(pad_->mutex);
-  pad_->axes = axes;
-  pad_->buttons = buttons & 0x7fff;
+  padSeat(0, axes, buttons);
+}
+void Runtime::padSeat(unsigned seat, const std::array<int16_t, 6>& axes, uint32_t buttons) {
+  if (seat >= pads_.size()) return;
+  const auto& pad = pads_[seat];
+  std::lock_guard<std::mutex> lock(pad->mutex);
+  pad->axes = axes;
+  pad->buttons = buttons & 0x7fff;
 }
 void Runtime::key(uint32_t usage, bool down) {
   if (usage > 255) return;
@@ -313,7 +357,11 @@ void Runtime::frameComplete(uint32_t id, bool displayed) {
     std::lock_guard<std::mutex> lock(frameMutex_);
     auto it = frames_.find(id);
     if (it == frames_.end()) return;
-    ticket = it->second;
+    ticket = it->second.ticket;
+    metrics_.completionTotalUs += nowUs() - it->second.receivedUs;
+    ++metrics_.completedFrames;
+    if (displayed) ++metrics_.presentedFrames;
+    else ++metrics_.droppedFrames;
     frames_.erase(it);
   }
   IHS_FrameTicketDecodeStage(ticket, true, nowUs());
@@ -330,9 +378,23 @@ void Runtime::clearFrames() {
     IHS_FrameOutcome outcome{};
     outcome.completionUs = nowUs();
     outcome.result = IHS_VideoFrameResultDroppedReset;
-    IHS_FrameTicketComplete(item.second, &outcome);
-    IHS_FrameTicketRelease(item.second);
+    IHS_FrameTicketComplete(item.second.ticket, &outcome);
+    IHS_FrameTicketRelease(item.second.ticket);
+    ++metrics_.resetFrames;
   }
   frames_.clear();
+}
+StreamMetrics Runtime::metrics() {
+  StreamMetrics snapshot;
+  {
+    std::lock_guard<std::mutex> lock(frameMutex_);
+    snapshot = metrics_;
+    snapshot.sampledAtUs = nowUs();
+  }
+  {
+    std::lock_guard<std::mutex> lock(apiMutex_);
+    if (session_) IHS_SessionGetReliabilityStats(session_, &snapshot.reliability);
+  }
+  return snapshot;
 }
 }  // namespace plezy::steam

@@ -18,6 +18,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 I18N = ROOT / 'lib/i18n'
 SNAPSHOT = I18N / 'source_snapshot.json'
+FALLBACK_MANIFEST = I18N / 'english_fallbacks.json'
 PLURALS = {'zero', 'one', 'two', 'few', 'many', 'other'}
 INTERPOLATION = re.compile(r'\$\{\s*([a-zA-Z_]\w*)(?:\s*:[^}]+)?\s*\}|\$([a-zA-Z_]\w*(?:\.\w+)*)')
 BIDI_EMBEDDINGS = re.compile('[\u202a-\u202e]')
@@ -92,6 +93,57 @@ def validate_message(path, source, target):
     return errors
 
 
+def is_empty_fallback(value):
+    """Return whether Slang's base-locale strategy will use English for value."""
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    return is_plural(value) and all(
+        isinstance(text, str) and not text.strip() for text in value.values()
+    )
+
+
+def uses_english_fallback(locale, base_locale, key, value, fallback_keys):
+    return (
+        locale != base_locale
+        and key in fallback_keys
+        and is_empty_fallback(value)
+    )
+
+
+def load_english_fallbacks(directory, base_locale, base_messages):
+    """Load explicitly approved untranslated keys that use Slang's English fallback."""
+    manifest_path = directory / 'english_fallbacks.json'
+    if not manifest_path.exists():
+        return set(), []
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return set(), ['english_fallbacks.json: invalid JSON']
+    if not isinstance(manifest, dict):
+        return set(), ['english_fallbacks.json: expected an object']
+    if manifest.get('baseLocale') != base_locale:
+        return set(), ['english_fallbacks.json: baseLocale must match locale_catalog.json']
+    if not isinstance(manifest.get('reason'), str) or not manifest['reason'].strip():
+        return set(), ['english_fallbacks.json: reason must explain the fallback']
+    values = manifest.get('keys')
+    if not isinstance(values, list) or any(not isinstance(key, str) or not key.strip() for key in values):
+        return set(), ['english_fallbacks.json: keys must be a list of non-empty message keys']
+    if len(values) != len(set(values)):
+        return set(), ['english_fallbacks.json: keys must be unique']
+    fallback_keys = set(values)
+    errors = [f'english_fallbacks.json: unknown English message {key}' for key in sorted(fallback_keys - base_messages.keys())]
+    config_path = directory.parent.parent / 'slang.yaml'
+    try:
+        config = config_path.read_text(encoding='utf-8')
+    except OSError:
+        config = ''
+    if fallback_keys and not re.search(r'(?m)^fallback_strategy:\s*base_locale_empty_string\s*$', config):
+        errors.append('english_fallbacks.json requires Slang fallback_strategy: base_locale_empty_string')
+    return fallback_keys, errors
+
+
 def check(directory=I18N):
     catalog = json.loads((directory / 'locale_catalog.json').read_text())
     locales = catalog['locales']
@@ -108,6 +160,9 @@ def check(directory=I18N):
     base = messages(raw.get(catalog['base'], {}))
     if not base:
         errors.append('base catalog is empty')
+    fallback_keys, fallback_errors = load_english_fallbacks(directory, catalog['base'], base)
+    errors.extend(fallback_errors)
+    fallback_usage = Counter()
     resolved = {}
     def resolve(tag, ancestors=()):
         if tag in ancestors:
@@ -126,10 +181,21 @@ def check(directory=I18N):
             continue
         for key in target.keys() - base.keys():
             errors.append(f'{tag}.{key}: unknown message')
+        fallback_count = 0
         for key, source in base.items():
-            errors.extend(validate_message(f'{tag}.{key}', source, target.get(key)))
+            translation = target.get(key)
+            if uses_english_fallback(tag, catalog['base'], key, translation, fallback_keys):
+                fallback_count += 1
+                fallback_usage[key] += 1
+                continue
+            errors.extend(validate_message(f'{tag}.{key}', source, translation))
         report[tag] = {'messages': len(base), 'inheritedFrom': parents.get(tag),
-                       'sameAsEnglish': sum(target.get(k) == v for k, v in base.items())}
+                       'sameAsEnglish': sum(target.get(k) == v for k, v in base.items()),
+                       'englishFallbacks': fallback_count}
+    errors.extend(
+        f'english_fallbacks.json: {key} is no longer using the English fallback'
+        for key in sorted(fallback_keys - fallback_usage.keys())
+    )
     return errors, base, report
 
 
@@ -153,7 +219,12 @@ def main():
         print('\n'.join(errors[:100]))
         print(f'Localization checks failed: {len(errors)} issues')
         return 1
-    print(f'Localization checks passed: {len(report)} locales, {len(base)} messages; placeholders and source hashes verified')
+    fallback_count = sum(locale.get('englishFallbacks', 0) for locale in report.values())
+    print(
+        f'Localization checks passed: {len(report)} locales, {len(base)} messages; '
+        f'{fallback_count} explicitly allowlisted English fallback entries; '
+        'placeholders and source hashes verified'
+    )
     return 0
 
 if __name__ == '__main__':

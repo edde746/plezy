@@ -15,12 +15,7 @@ import '../widgets/settings_section.dart';
 /// territory, account and access decision; this screen never implies that a
 /// title is available or that opening a destination changed library state.
 class ExternalAccessScreen extends StatefulWidget {
-  const ExternalAccessScreen({
-    super.key,
-    required this.title,
-    this.creator = '',
-    required this.categories,
-  });
+  const ExternalAccessScreen({super.key, required this.title, this.creator = '', required this.categories});
 
   final String title;
   final String creator;
@@ -73,9 +68,9 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     final query = _filter.text.trim().toLowerCase();
     final destinationsByCategory = {
       for (final category in widget.categories)
-        category: ExternalAccessDirectory.forCategory(category)
-            .where((destination) => destination.name.toLowerCase().contains(query))
-            .toList(growable: false),
+        category: ExternalAccessDirectory.forCategory(
+          category,
+        ).where((destination) => destination.name.toLowerCase().contains(query)).toList(growable: false),
     };
     final hasResults = destinationsByCategory.values.any((destinations) => destinations.isNotEmpty);
     return FocusedScrollScaffold(
