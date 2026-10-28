@@ -1,6 +1,10 @@
-# Luna implementation plan
+# Luna implementation plan and delivery record
 
-Everything below is **planned**. This PR contains research and specifications only. Use a dedicated implementation PR branch, preserve concurrent work, and do not enable partner-gated features from fixtures alone.
+The roadmap below describes remaining work unless marked complete. This PR now carries a code-level first slice on the same PR branch as the audit documents. It adds a shared official-destination directory for video, rentals, books, audiobooks, comics, music and games; title-prefilled launch flows from Explore/media/source/game details; a searchable provider directory in Settings → Services; catalog-link exclusion for Netflix, Prime Video and Disney+; and an in-app Open Library/Google Books catalogue switch with country-specific Google sale metadata and official purchase handoff.
+
+This is a handoff and public-catalog slice, not a universal provider-account, entitlement, playback, comparison-shopping or affiliate implementation. Existing local files, media servers, trackers, OPDS and lending continue through their current owners. Do not claim partner-gated features based on search fixtures or official links alone.
+
+W03/W04 have a working handoff surface; W05 has a public Google Books lookup and store handoffs but still needs an approved merchant feed/tracking path for commissions; W13 has title-level store search, not catalog offers or activation mapping. Those larger package estimates remain estimates for the full target, not the effort left after this branch.
 
 ## First session
 
@@ -8,7 +12,7 @@ Everything below is **planned**. This PR contains research and specifications on
 2. Fetch current main and active integration branches. Record exact SHAs and compare the debrid/Stremio account/source work with the contracts proposed here. Do not reset or overwrite another agent's branch.
 3. Create an implementation branch from the agreed current base. Reuse this assessment as documentation; no need to cherry-pick unrelated integration implementations blindly.
 4. Inventory existing tests and dependency injection around profiles, catalogs, sources, playback, lending, navigation and service settings. Reuse fake HTTP/clock/platform seams.
-5. Implement one coherent access-options vertical slice with an existing native copy, an external destination and a store offer. It must work with all partner capabilities disabled and contain no production API secrets.
+5. Extend the delivered handoff slice only through supported public/approved routes. Keep store offers, affiliate tracking, service accounts and playback capability separate.
 6. Commit small packages with exact evidence. Keep a provider capability/qualification ledger and update it in every subsequent implementation PR.
 
 ## Work packages
@@ -116,10 +120,10 @@ No messages, applications, payments, deployments or agreements were sent/accepte
 
 ## Commit and PR discipline
 
-Use coherent PRs for contracts/persistence, launch/UI, each merchant/feed, each lending adapter and each SDK. Explain user-visible behavior and evidence; do not call a fixture-only provider supported. Avoid broad format churn, dependency upgrades or unrelated player rewrites. Preserve `AGENTS.md` private-JIT policy. Do not dispatch CI or a release merely to prove a documentation change.
+Use coherent PRs for contracts/persistence, launch/UI, each merchant/feed, each lending adapter and each SDK. Explain user-visible behavior and evidence; do not call a fixture-only provider supported. Avoid broad format churn, dependency upgrades or unrelated player rewrites. Preserve `AGENTS.md` private-JIT policy. Use the repository's normal verification path for code changes and affected suites for follow-up work.
 
 For an implementation PR, run meaningful affected tests, formatting, analyzer/localization and required repository checks under the current instructions. CI results must identify the exact tested SHA and private runner workflow. Missing capacity is a blocker, not permission to switch to hosted runners. Manual device results require model/OS/build, account/library sandbox and reproducer.
 
 ## Copyable handoff prompt
 
-> Implement PlezyNG's service-integration roadmap starting with W00–W04 in `docs/plezyng/service-integrations/IMPLEMENTATION.md`, then a single approved book-commerce/availability slice. Read the audit, architecture, UX, commercial gates, source register and validation plan first. Reconcile current main with the debrid/Stremio work before changing registries or catalog IDs. Preserve all existing native source/player/profile/design owners. Do not claim external playback, purchases, entitlements or partner approval from links, fixtures or browser returns. Keep blocked provider capabilities disabled and record the exact missing evidence. Use a dedicated PR branch, commit/push reviewable checkpoints, and follow current `AGENTS.md` private-JIT rules. Update delivery/qualification evidence with exact SHAs and tests; do not merge to main or deploy as part of a planning-only authorization.
+> Continue PlezyNG's service-integration roadmap in `docs/plezyng/service-integrations/IMPLEMENTATION.md`. The current PR branch already has official title-search handoffs, a searchable provider directory, opt-out filtering, and Google Books public search. Read the audit, architecture, UX, commercial gates, source register and validation plan. Reconcile current main and concurrent provider/source work before changing registries or catalog IDs. Preserve existing native source/player/profile/design owners. Do not claim external playback, purchases, entitlements, affiliate commissions or partner approval from links, fixtures or browser returns. Keep blocked capabilities disabled and record missing evidence. Follow current `AGENTS.md` verification and private-JIT rules; keep commits reviewable and do not merge or deploy without explicit authorization.

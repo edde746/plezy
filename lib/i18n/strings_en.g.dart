@@ -109,6 +109,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
 	late final Translations$games$en games = Translations$games$en.internal(_root);
 	late final Translations$deepLinks$en deepLinks = Translations$deepLinks$en.internal(_root);
+	late final Translations$householdSetup$en householdSetup = Translations$householdSetup$en.internal(_root);
+	late final Translations$issueReport$en issueReport = Translations$issueReport$en.internal(_root);
 }
 
 // Path: app
@@ -9514,8 +9516,8 @@ class Translations$games$en {
 	/// en: 'Show Games for this profile'
 	String get enable => 'Show Games for this profile';
 
-	/// en: 'Discover your gaming computers and play with an embedded streaming engine.'
-	String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
+	/// en: 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.'
+	String get enableDescription => 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.';
 
 	/// en: 'Your games, from your computers.'
 	String get subtitle => 'Your games, from your computers.';
@@ -9589,8 +9591,8 @@ class Translations$games$en {
 	/// en: 'Play'
 	String get play => 'Play';
 
-	/// en: 'Recently opened'
-	String get recent => 'Recently opened';
+	/// en: 'Recently played'
+	String get recent => 'Recently played';
 
 	/// en: 'Favorites'
 	String get favorites => 'Favorites';
@@ -9685,11 +9687,11 @@ class Translations$games$en {
 	/// en: 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.'
 	String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
 
-	/// en: 'Steam beta · Pyrowave'
-	String get steamBetaTitle => 'Steam beta · Pyrowave';
+	/// en: 'Pyrowave · experimental'
+	String get steamBetaTitle => 'Pyrowave · experimental';
 
-	/// en: 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.'
-	String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
+	/// en: 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.'
+	String get steamBetaDescription => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.';
 
 	/// en: 'Steam library'
 	String get steamLibrary => 'Steam library';
@@ -9712,9 +9714,6 @@ class Translations$games$en {
 	/// en: 'Steam account linked. Its library is private or unavailable, so no games were imported.'
 	String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
 
-	/// en: 'Steam App ID'
-	String get steamAppId => 'Steam App ID';
-
 	/// en: 'Steam could not refresh the library. Showing the last available catalog.'
 	String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 
@@ -9733,8 +9732,368 @@ class Translations$games$en {
 	/// en: 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.'
 	String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
 
-	/// en: 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.'
-	String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+	/// en: 'Game details'
+	String get gameDetails => 'Game details';
+
+	/// en: 'Choose computer'
+	String get chooseComputer => 'Choose computer';
+
+	/// en: 'Connect a computer'
+	String get connectComputer => 'Connect a computer';
+
+	/// en: 'Connect a gaming computer to play this game inside PlezyNG.'
+	String get connectToPlay => 'Connect a gaming computer to play this game inside PlezyNG.';
+
+	/// en: 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.'
+	String get availabilityHint => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.';
+
+	/// en: 'From Steam'
+	String get steamSource => 'From Steam';
+
+	/// en: 'Disconnected'
+	String get disconnected => 'Disconnected';
+
+	/// en: 'Installed'
+	String get installed => 'Installed';
+
+	/// en: 'Installation incomplete'
+	String get installationIncomplete => 'Installation incomplete';
+
+	/// en: 'Not in the last inventory'
+	String get notInstalled => 'Not in the last inventory';
+
+	/// en: 'Installation not checked'
+	String get installationUnknown => 'Installation not checked';
+
+	/// en: 'All computers'
+	String get allComputers => 'All computers';
+
+	/// en: 'Import installed games'
+	String get importInstalledGames => 'Import installed games';
+
+	/// en: 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.'
+	String get inventoryConnectHelp => 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.';
+
+	/// en: 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.'
+	String inventoryConfirm({required Object peer, required Object computer}) => 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.';
+
+	/// en: 'Installed games updated.'
+	String get inventoryImported => 'Installed games updated.';
+
+	/// en: 'Last checked ${date}'
+	String inventoryChecked({required Object date}) => 'Last checked ${date}';
+
+	/// en: 'Share installed Steam games'
+	String get shareLibrary => 'Share installed Steam games';
+
+	/// en: 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.'
+	String get shareLibraryHelp => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.';
+
+	/// en: 'Steam installation folder'
+	String get steamInstallFolder => 'Steam installation folder';
+
+	/// en: 'Find automatically'
+	String get automaticFolder => 'Find automatically';
+
+	/// en: 'Steam stream quality'
+	String get streamQuality => 'Steam stream quality';
+
+	/// en: 'Steam controllers'
+	String get controllerSeats => 'Steam controllers';
+
+	/// en: 'Allow companion game session controls'
+	String get allowSessionControl => 'Allow companion game session controls';
+
+	/// en: 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.'
+	String get allowSessionControlHelp => 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.';
+
+	/// en: 'Game sessions'
+	String get remoteSessions => 'Game sessions';
+
+	/// en: 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.'
+	String get remoteSessionsHelp => 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.';
+
+	/// en: 'Enable companion game session controls in Games settings on the connected device.'
+	String get remoteSessionsDenied => 'Enable companion game session controls in Games settings on the connected device.';
+
+	/// en: 'Game session controls are unavailable. Reconnect or refresh to try again.'
+	String get remoteSessionsUnavailable => 'Game session controls are unavailable. Reconnect or refresh to try again.';
+
+	/// en: 'The request was accepted. Refresh to check the current sessions.'
+	String get remoteSessionSubmitted => 'The request was accepted. Refresh to check the current sessions.';
+
+	/// en: 'No active game streams are available on this device.'
+	String get noRemoteSessions => 'No active game streams are available on this device.';
+
+	/// en: 'Game audio is selected'
+	String get remoteSessionAudible => 'Game audio is selected';
+
+	/// en: 'Game audio is not selected'
+	String get remoteSessionMuted => 'Game audio is not selected';
+
+	/// en: 'Game session actions'
+	String get remoteSessionActions => 'Game session actions';
+
+	/// en: 'Listen to this game'
+	String get remoteSessionListen => 'Listen to this game';
+
+	/// en: 'Mute this game'
+	String get remoteSessionMute => 'Mute this game';
+
+	/// en: 'Refresh sessions'
+	String get remoteSessionsRefresh => 'Refresh sessions';
+
+	/// en: 'Steam connection details'
+	String get streamDetails => 'Steam connection details';
+
+	/// en: 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.'
+	String get streamFeedbackHelp => 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.';
+
+	/// en: 'Receiver measurements'
+	String get streamMeasurements => 'Receiver measurements';
+
+	/// en: 'Not available yet'
+	String get streamMeasurementsUnavailable => 'Not available yet';
+
+	/// en: 'Video format'
+	String get streamVideo => 'Video format';
+
+	/// en: 'Decoder'
+	String get streamDecoder => 'Decoder';
+
+	/// en: 'Hardware'
+	String get streamHardwareDecoder => 'Hardware';
+
+	/// en: 'Software'
+	String get streamSoftwareDecoder => 'Software';
+
+	/// en: 'Vulkan with CPU readback'
+	String get streamReadbackDecoder => 'Vulkan with CPU readback';
+
+	/// en: 'Host frame rate target'
+	String get streamHostFps => 'Host frame rate target';
+
+	/// en: 'Host bitrate target'
+	String get streamHostBitrate => 'Host bitrate target';
+
+	/// en: 'Host-reported frame rate limits'
+	String get streamLimits => 'Host-reported frame rate limits';
+
+	/// en: 'Host capture or encoder'
+	String get streamLimitHost => 'Host capture or encoder';
+
+	/// en: 'Network'
+	String get streamLimitNetwork => 'Network';
+
+	/// en: 'Receiver decoder'
+	String get streamLimitDecoder => 'Receiver decoder';
+
+	/// en: 'Burst throttling'
+	String get streamLimitBurst => 'Burst throttling';
+
+	/// en: 'Frames submitted to the display'
+	String get streamPresentedFps => 'Frames submitted to the display';
+
+	/// en: 'Received video payload'
+	String get streamReceivedBitrate => 'Received video payload';
+
+	/// en: 'Average receiver frame completion'
+	String get streamCompletionTime => 'Average receiver frame completion';
+
+	/// en: 'Receiver-dropped frames this session'
+	String get streamDroppedFrames => 'Receiver-dropped frames this session';
+
+	/// en: 'Video queue'
+	String get streamVideoQueue => 'Video queue';
+
+	/// en: 'Audio queue'
+	String get streamAudioQueue => 'Audio queue';
+
+	/// en: 'Audio channels'
+	String get streamAudioChannels => 'Audio channels';
+
+	/// en: 'Input packets queued + awaiting confirmation'
+	String get streamInputBacklog => 'Input packets queued + awaiting confirmation';
+
+	/// en: 'Reliable packet retries this session'
+	String get streamReliableRetries => 'Reliable packet retries this session';
+
+	/// en: 'Reliable packets abandoned this session'
+	String get streamReliableGiveUps => 'Reliable packets abandoned this session';
+
+	/// en: 'Longest reliable packet acknowledgement'
+	String get streamMaxAck => 'Longest reliable packet acknowledgement';
+
+	/// en: 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.'
+	String get streamMeasurementsHelp => 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.';
+
+	/// en: 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.'
+	String get controllerSeatsHelp => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.';
+
+	/// en: 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.'
+	String get streamQualityHelp => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.';
+
+	/// en: 'Steam video codec'
+	String get streamCodec => 'Steam video codec';
+
+	/// en: 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.'
+	String get streamCodecHelp => 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.';
+
+	/// en: 'Automatic · H.264 / HEVC'
+	String get codecAutomatic => 'Automatic · H.264 / HEVC';
+
+	/// en: 'Balanced'
+	String get qualityBalanced => 'Balanced';
+
+	/// en: 'Lower bandwidth'
+	String get qualityReducedBandwidth => 'Lower bandwidth';
+
+	/// en: 'Sharper picture'
+	String get qualitySharperPicture => 'Sharper picture';
+
+	/// en: 'Lower frame rate'
+	String get qualityReducedFrameRate => 'Lower frame rate';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
+
+	/// en: 'Reconnecting…'
+	String get reconnecting => 'Reconnecting…';
+
+	/// en: 'Disconnecting leaves the game running on the computer.'
+	String get disconnectHelp => 'Disconnecting leaves the game running on the computer.';
+
+	/// en: 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.'
+	String get streamFailed => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.';
+
+	/// en: 'Steam activity'
+	String get steamActivity => 'Steam activity';
+
+	/// en: 'Load news and achievements for your linked account. Activity is kept only while these details are open.'
+	String get steamActivityHelp => 'Load news and achievements for your linked account. Activity is kept only while these details are open.';
+
+	/// en: 'Include friends playing'
+	String get includeFriends => 'Include friends playing';
+
+	/// en: 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.'
+	String get includeFriendsHelp => 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.';
+
+	/// en: 'Load Steam activity'
+	String get loadSteamActivity => 'Load Steam activity';
+
+	/// en: 'Loading Steam activity…'
+	String get activityLoading => 'Loading Steam activity…';
+
+	/// en: 'Steam activity is unavailable. Try again shortly.'
+	String get activityUnavailable => 'Steam activity is unavailable. Try again shortly.';
+
+	/// en: 'Private or unavailable from Steam.'
+	String get activityPrivate => 'Private or unavailable from Steam.';
+
+	/// en: 'Achievements'
+	String get achievements => 'Achievements';
+
+	/// en: '$unlocked of $total unlocked'
+	String achievementProgress({required Object unlocked, required Object total}) => '${unlocked} of ${total} unlocked';
+
+	/// en: 'Hidden achievement'
+	String get hiddenAchievement => 'Hidden achievement';
+
+	/// en: 'Details appear after you unlock it.'
+	String get hiddenAchievementHelp => 'Details appear after you unlock it.';
+
+	/// en: 'Unlocked'
+	String get achievementUnlocked => 'Unlocked';
+
+	/// en: 'Locked'
+	String get achievementLocked => 'Locked';
+
+	/// en: 'Show more achievements'
+	String get moreAchievements => 'Show more achievements';
+
+	/// en: 'Game news'
+	String get gameNews => 'Game news';
+
+	/// en: 'No recent news available.'
+	String get noGameNews => 'No recent news available.';
+
+	/// en: 'Friends playing this game'
+	String get friendsPlaying => 'Friends playing this game';
+
+	/// en: 'No friends are reported playing in this snapshot.'
+	String get noFriendsPlaying => 'No friends are reported playing in this snapshot.';
+
+	/// en: 'This snapshot is limited; some achievements or friends may not be included.'
+	String get activityTruncated => 'This snapshot is limited; some achievements or friends may not be included.';
+
+	/// en: 'Steam store'
+	String get steamStore => 'Steam store';
+
+	/// en: 'Community'
+	String get steamCommunity => 'Community';
+
+	/// en: 'Workshop'
+	String get steamWorkshop => 'Workshop';
+
+	/// en: 'Open Steam page'
+	String get openSteamPage => 'Open Steam page';
+
+	/// en: 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.'
+	String get openSteamPageHelp => 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.';
+
+	/// en: 'Computer actions'
+	String get hostActions => 'Computer actions';
+
+	/// en: 'Launch on computer'
+	String get launchOnComputer => 'Launch on computer';
+
+	/// en: 'Install on computer'
+	String get installOnComputer => 'Install on computer';
+
+	/// en: 'Open Steam on computer'
+	String get hostLibrary => 'Open Steam on computer';
+
+	/// en: 'Open downloads on computer'
+	String get hostDownloads => 'Open downloads on computer';
+
+	/// en: 'Send this action to $computer? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.'
+	String hostActionConfirm({required Object computer}) => 'Send this action to ${computer}? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.';
+
+	/// en: 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.'
+	String get hostActionPairingHelp => 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.';
+
+	/// en: 'Request handed to Steam on the computer. Check Steam for the result or any prompts.'
+	String get hostActionSubmitted => 'Request handed to Steam on the computer. Check Steam for the result or any prompts.';
+
+	/// en: 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.'
+	String get hostActionDenied => 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.';
+
+	/// en: 'Allow paired remotes to control Steam'
+	String get allowHostActions => 'Allow paired remotes to control Steam';
+
+	/// en: 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.'
+	String get allowHostActionsHelp => 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.';
+
+	/// en: 'Allow Steam install requests'
+	String get allowHostInstall => 'Allow Steam install requests';
+
+	/// en: 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.'
+	String get allowHostInstallHelp => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.';
+
+	/// en: 'Steam audio'
+	String get streamAudio => 'Steam audio';
+
+	/// en: 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.'
+	String get streamAudioHelp => 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.';
+
+	/// en: 'Stereo'
+	String get audioStereo => 'Stereo';
+
+	/// en: 'Quad (4 speakers)'
+	String get audioQuad => 'Quad (4 speakers)';
+
+	/// en: 'Surround (5.1)'
+	String get audioSurround51 => 'Surround (5.1)';
 }
 
 // Path: deepLinks
@@ -9795,6 +10154,42 @@ class Translations$deepLinks$en {
 
 	/// en: 'Link copied'
 	String get copied => 'Link copied';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$en {
+	Translations$householdSetup$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Household setup'
+	String get title => 'Household setup';
+}
+
+// Path: issueReport
+class Translations$issueReport$en {
+	Translations$issueReport$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Report a problem'
+	String get title => 'Report a problem';
+
+	/// en: 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.'
+	String get instructions => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.';
+
+	/// en: 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.'
+	String get privacy => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.';
+
+	/// en: 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.'
+	String get logPrivacy => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.';
+
+	/// en: 'Open GitHub draft'
+	String get openDraft => 'Open GitHub draft';
 }
 
 // Path: appIcon.names
@@ -15668,7 +16063,7 @@ extension on Translations {
 			'comics.collections' => 'Collections',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
+			'games.enableDescription' => 'Browse your games and connect gaming computers. In-app playback depends on this device’s streaming support.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -15693,7 +16088,7 @@ extension on Translations {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
+			'games.recent' => 'Recently played',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -15725,8 +16120,8 @@ extension on Translations {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
+			'games.steamBetaTitle' => 'Pyrowave · experimental',
+			'games.steamBetaDescription' => 'Try Steam’s low-latency codec on a fast wired network. Uses substantially more bandwidth. If it cannot start, PlezyNG reconnects using a compatible codec.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -15734,14 +16129,135 @@ extension on Translations {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
+			'games.gameDetails' => 'Game details',
+			'games.chooseComputer' => 'Choose computer',
+			'games.connectComputer' => 'Connect a computer',
+			'games.connectToPlay' => 'Connect a gaming computer to play this game inside PlezyNG.',
+			'games.availabilityHint' => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.',
+			'games.steamSource' => 'From Steam',
+			'games.disconnected' => 'Disconnected',
+			'games.installed' => 'Installed',
+			'games.installationIncomplete' => 'Installation incomplete',
+			'games.notInstalled' => 'Not in the last inventory',
+			_ => null,
+		} ?? switch (path) {
+			'games.installationUnknown' => 'Installation not checked',
+			'games.allComputers' => 'All computers',
+			'games.importInstalledGames' => 'Import installed games',
+			'games.inventoryConnectHelp' => 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.',
+			'games.inventoryConfirm' => ({required Object peer, required Object computer}) => 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.',
+			'games.inventoryImported' => 'Installed games updated.',
+			'games.inventoryChecked' => ({required Object date}) => 'Last checked ${date}',
+			'games.shareLibrary' => 'Share installed Steam games',
+			'games.shareLibraryHelp' => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.',
+			'games.steamInstallFolder' => 'Steam installation folder',
+			'games.automaticFolder' => 'Find automatically',
+			'games.streamQuality' => 'Steam stream quality',
+			'games.controllerSeats' => 'Steam controllers',
+			'games.allowSessionControl' => 'Allow companion game session controls',
+			'games.allowSessionControlHelp' => 'Let your authenticated companion view active game titles, choose game audio, show a stream fullscreen or disconnect it. Disconnecting leaves the game running on its computer. Off by default for each profile.',
+			'games.remoteSessions' => 'Game sessions',
+			'games.remoteSessionsHelp' => 'Control streams inside PlezyNG on the connected device. This does not quit games on their computers or send gamepad input.',
+			'games.remoteSessionsDenied' => 'Enable companion game session controls in Games settings on the connected device.',
+			'games.remoteSessionsUnavailable' => 'Game session controls are unavailable. Reconnect or refresh to try again.',
+			'games.remoteSessionSubmitted' => 'The request was accepted. Refresh to check the current sessions.',
+			'games.noRemoteSessions' => 'No active game streams are available on this device.',
+			'games.remoteSessionAudible' => 'Game audio is selected',
+			'games.remoteSessionMuted' => 'Game audio is not selected',
+			'games.remoteSessionActions' => 'Game session actions',
+			'games.remoteSessionListen' => 'Listen to this game',
+			'games.remoteSessionMute' => 'Mute this game',
+			'games.remoteSessionsRefresh' => 'Refresh sessions',
+			'games.streamDetails' => 'Steam connection details',
+			'games.streamFeedbackHelp' => 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.',
+			'games.streamMeasurements' => 'Receiver measurements',
+			'games.streamMeasurementsUnavailable' => 'Not available yet',
+			'games.streamVideo' => 'Video format',
+			'games.streamDecoder' => 'Decoder',
+			'games.streamHardwareDecoder' => 'Hardware',
+			'games.streamSoftwareDecoder' => 'Software',
+			'games.streamReadbackDecoder' => 'Vulkan with CPU readback',
+			'games.streamHostFps' => 'Host frame rate target',
+			'games.streamHostBitrate' => 'Host bitrate target',
+			'games.streamLimits' => 'Host-reported frame rate limits',
+			'games.streamLimitHost' => 'Host capture or encoder',
+			'games.streamLimitNetwork' => 'Network',
+			'games.streamLimitDecoder' => 'Receiver decoder',
+			'games.streamLimitBurst' => 'Burst throttling',
+			'games.streamPresentedFps' => 'Frames submitted to the display',
+			'games.streamReceivedBitrate' => 'Received video payload',
+			'games.streamCompletionTime' => 'Average receiver frame completion',
+			'games.streamDroppedFrames' => 'Receiver-dropped frames this session',
+			'games.streamVideoQueue' => 'Video queue',
+			'games.streamAudioQueue' => 'Audio queue',
+			'games.streamAudioChannels' => 'Audio channels',
+			'games.streamInputBacklog' => 'Input packets queued + awaiting confirmation',
+			'games.streamReliableRetries' => 'Reliable packet retries this session',
+			'games.streamReliableGiveUps' => 'Reliable packets abandoned this session',
+			'games.streamMaxAck' => 'Longest reliable packet acknowledgement',
+			'games.streamMeasurementsHelp' => 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.',
+			'games.controllerSeatsHelp' => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.',
+			'games.streamQualityHelp' => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.',
+			'games.streamCodec' => 'Steam video codec',
+			'games.streamCodecHelp' => 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.',
+			'games.codecAutomatic' => 'Automatic · H.264 / HEVC',
+			'games.qualityBalanced' => 'Balanced',
+			'games.qualityReducedBandwidth' => 'Lower bandwidth',
+			'games.qualitySharperPicture' => 'Sharper picture',
+			'games.qualityReducedFrameRate' => 'Lower frame rate',
+			'games.reconnect' => 'Reconnect',
+			'games.reconnecting' => 'Reconnecting…',
+			'games.disconnectHelp' => 'Disconnecting leaves the game running on the computer.',
+			'games.streamFailed' => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.',
+			'games.steamActivity' => 'Steam activity',
+			'games.steamActivityHelp' => 'Load news and achievements for your linked account. Activity is kept only while these details are open.',
+			'games.includeFriends' => 'Include friends playing',
+			'games.includeFriendsHelp' => 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.',
+			'games.loadSteamActivity' => 'Load Steam activity',
+			'games.activityLoading' => 'Loading Steam activity…',
+			'games.activityUnavailable' => 'Steam activity is unavailable. Try again shortly.',
+			'games.activityPrivate' => 'Private or unavailable from Steam.',
+			'games.achievements' => 'Achievements',
+			'games.achievementProgress' => ({required Object unlocked, required Object total}) => '${unlocked} of ${total} unlocked',
+			'games.hiddenAchievement' => 'Hidden achievement',
+			'games.hiddenAchievementHelp' => 'Details appear after you unlock it.',
+			'games.achievementUnlocked' => 'Unlocked',
+			'games.achievementLocked' => 'Locked',
+			'games.moreAchievements' => 'Show more achievements',
+			'games.gameNews' => 'Game news',
+			'games.noGameNews' => 'No recent news available.',
+			'games.friendsPlaying' => 'Friends playing this game',
+			'games.noFriendsPlaying' => 'No friends are reported playing in this snapshot.',
+			'games.activityTruncated' => 'This snapshot is limited; some achievements or friends may not be included.',
+			'games.steamStore' => 'Steam store',
+			'games.steamCommunity' => 'Community',
+			'games.steamWorkshop' => 'Workshop',
+			'games.openSteamPage' => 'Open Steam page',
+			'games.openSteamPageHelp' => 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.',
+			'games.hostActions' => 'Computer actions',
+			'games.launchOnComputer' => 'Launch on computer',
+			'games.installOnComputer' => 'Install on computer',
+			'games.hostLibrary' => 'Open Steam on computer',
+			'games.hostDownloads' => 'Open downloads on computer',
+			'games.hostActionConfirm' => ({required Object computer}) => 'Send this action to ${computer}? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.',
+			'games.hostActionPairingHelp' => 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.',
+			'games.hostActionSubmitted' => 'Request handed to Steam on the computer. Check Steam for the result or any prompts.',
+			'games.hostActionDenied' => 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.',
+			'games.allowHostActions' => 'Allow paired remotes to control Steam',
+			'games.allowHostActionsHelp' => 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.',
+			'games.allowHostInstall' => 'Allow Steam install requests',
+			'games.allowHostInstallHelp' => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.',
+			'games.streamAudio' => 'Steam audio',
+			'games.streamAudioHelp' => 'Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.',
+			'games.audioStereo' => 'Stereo',
+			'games.audioQuad' => 'Quad (4 speakers)',
+			'games.audioSurround51' => 'Surround (5.1)',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',
@@ -15750,8 +16266,6 @@ extension on Translations {
 			'deepLinks.noLiveTv' => 'No Live TV server is available for this link.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Couldn\'t find channel "${channel}".',
 			'deepLinks.showLink' => 'Show link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Show profile link',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.',
@@ -15761,6 +16275,12 @@ extension on Translations {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Open as ${name}',
 			'deepLinks.copy' => 'Copy',
 			'deepLinks.copied' => 'Link copied',
+			'householdSetup.title' => 'Household setup',
+			'issueReport.title' => 'Report a problem',
+			'issueReport.instructions' => 'Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.',
+			'issueReport.privacy' => 'The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.',
+			'issueReport.logPrivacy' => 'Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.',
+			'issueReport.openDraft' => 'Open GitHub draft',
 			_ => null,
 		};
 	}

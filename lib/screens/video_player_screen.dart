@@ -128,6 +128,7 @@ import 'video_player/media_controls_screen_controller.dart';
 import 'video_player/media_reload_outcome.dart';
 import 'video_player/spurious_eof_recovery.dart';
 import 'video_player/live_stream_retry.dart';
+import 'settings/issue_report_screen.dart';
 import 'video_player/live_timeline_report.dart';
 import 'video_player/wakelock_controller.dart';
 import 'video_player/playback_failure_action.dart';

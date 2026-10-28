@@ -1,20 +1,20 @@
 # Validation and qualification plan
 
-Status: planned runtime tests. This audit PR only validates its documentation and source references; it does not certify new service integrations. **High confidence:** the following boundary tests are necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
+Status: qualification remains outstanding. This branch adds title-search handoffs and public Google Books search, but does not certify provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
 
 ## Functional acceptance matrix
 
 | ID | Scenario | Required result | Packages |
 | --- | --- | --- | --- |
-| V01 | Same movie available from an existing server, cached file, Netflix and a rental store | Native Play stays native; external rows are explicit; no synthetic entitlement | W01/W04 |
-| V02 | Selected Netflix/Disney subscription with no account API | Preference saved; no auth token, connected account or synced library claimed | W02/W04 |
+| V01 | Same movie exists on an owned server and cached file, with a Crave or rental search handoff | Native Play stays native; external rows are explicit; no synthetic entitlement | W01/W04 |
+| V02 | Official-provider directory is opened without an account API | No password, auth token, connected account, saved subscription or synced library is claimed | W03/W04 |
 | V03 | Store click, app launch succeeds, user cancels purchase and returns | No purchased/owned/read/watched state; focus restored to originating detail | W03/W05 |
 | V04 | App handler missing, website unavailable or TV has no browser | Safe tested fallback or clear recovery; no loop, silent success or unsupported URI dispatch | W03 |
 | V05 | Profile/account switches during auth, search, token refresh, circulation or SDK launch | Old work retired; no state/credentials/audio published into new owner | W02/all |
 | V06 | Two instances of same provider with different accounts/library tenants | Distinct state, rates, secrets and provenance; no accidental cache reuse | W02/W08 |
 | V07 | Duplicate title but different ISBN/format/narrator/abridgement | Separate editions and progress; optional reversible relationship | W01/W05/W09 |
 | V08 | TMDB movie/show ID collision, anime season mapping, game DLC/base edition | Typed namespaces preserve identity; no wrong offer or playable target | W01/W09/W13 |
-| V09 | Availability data says Prime channel, user only selects base Prime | Channel requirement remains visible; no “included for you” claim | W04/W06 |
+| V09 | Availability data says a title requires a channel/add-on, but user selects only a base service | Channel requirement remains visible; no “included for you” claim | W04/W06 |
 | V10 | Canadian locale, US-only offer, foreign currency or stale price | Correct country/price labeling or exclusion; unknown is not free; no invented FX guarantee | W05/W06 |
 | V11 | Partner API times out/429/returns invalid schema | Local results continue; bounded retry/backoff; partial error; stale data clearly labeled | W06/W09 |
 | V12 | Supplier changes cache terms or access is revoked | Required cache purge/feature disable without deleting user-owned media | W02/W06/W15 |

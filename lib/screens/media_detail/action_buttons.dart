@@ -628,6 +628,44 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       item: metadata,
       onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
       onPlayTrailer: onPlayTrailer,
+      extraEntries: switch (ExternalAccessDirectory.forMediaKind(metadata.kind)) {
+        ExternalAccessCategory.video => [
+          MediaMenuExtraEntry(
+            icon: Symbols.open_in_new_rounded,
+            label: t.explore.detail.links,
+            onSelected: () => unawaited(
+              Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => ExternalAccessScreen(
+                    title: metadata.displayTitle,
+                    categories: const [ExternalAccessCategory.video, ExternalAccessCategory.rentals],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        ExternalAccessCategory.music => [
+          MediaMenuExtraEntry(
+            icon: Symbols.open_in_new_rounded,
+            label: t.explore.detail.links,
+            onSelected: () => unawaited(
+              Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => ExternalAccessScreen(
+                    title: metadata.displayTitle,
+                    creator: metadata.trackArtistTitle ?? metadata.albumArtistTitle ?? '',
+                    categories: const [ExternalAccessCategory.music],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        _ => const [],
+      },
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
           onPressed: () {

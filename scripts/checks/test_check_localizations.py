@@ -35,5 +35,18 @@ class LocalizationChecksTest(unittest.TestCase):
         self.assertNotEqual(checks.digest('Delete'), checks.digest('Remove'))
         self.assertNotEqual(checks.digest({'other':'${n} files'}), checks.digest({'one':'One file','other':'${n} files'}))
 
+    def test_english_fallback_requires_an_explicit_empty_allowlisted_key(self):
+        allowed = {'games.newCopy'}
+        self.assertTrue(checks.uses_english_fallback('fr', 'en', 'games.newCopy', '', allowed))
+        self.assertTrue(checks.uses_english_fallback('fr', 'en', 'games.newCopy', None, allowed))
+        self.assertFalse(checks.uses_english_fallback('fr', 'en', 'games.other', '', allowed))
+        self.assertFalse(checks.uses_english_fallback('en', 'en', 'games.newCopy', '', allowed))
+        self.assertFalse(checks.uses_english_fallback('fr', 'en', 'games.newCopy', 'Texte', allowed))
+
+    def test_plural_fallback_requires_every_form_to_be_empty(self):
+        self.assertTrue(checks.is_empty_fallback({'one': '', 'other': ''}))
+        self.assertFalse(checks.is_empty_fallback({'one': '', 'other': 'Text'}))
+
+
 if __name__ == '__main__':
     unittest.main()

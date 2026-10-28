@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
+import '../../profiles/active_profile_provider.dart';
 import '../../services/cloud_settings_backup_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
@@ -75,11 +77,13 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
 
   Future<void> _backUp() async {
     await _run(() async {
-      final storage = await StorageService.getInstance();
-      final expectedProfileId = storage.getActiveProfileId();
-      final expectedOwner = storage.activeUserScope();
+      final owner = await _captureOwner();
       await _backup.saveConfiguration(url: _url.text, username: _username.text, password: _password.text);
-      await _backup.backUp(expectedProfileId: expectedProfileId, expectedOwner: expectedOwner);
+      await _backup.backUp(
+        expectedProfileId: owner.profileId,
+        expectedOwner: owner.owner,
+        isCurrentSession: owner.isCurrent,
+      );
       return t.settings.cloudBackupComplete;
     });
   }
@@ -98,15 +102,31 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
     );
     if (confirmed != true || !mounted) return;
     await _run(() async {
-      final storage = await StorageService.getInstance();
-      final expectedProfileId = storage.getActiveProfileId();
-      final expectedOwner = storage.activeUserScope();
+      final owner = await _captureOwner();
       await _backup.saveConfiguration(url: _url.text, username: _username.text, password: _password.text);
       widget.beforeRestore();
-      await _backup.restore(expectedProfileId: expectedProfileId, expectedOwner: expectedOwner);
+      await _backup.restore(
+        expectedProfileId: owner.profileId,
+        expectedOwner: owner.owner,
+        isCurrentSession: owner.isCurrent,
+      );
       await widget.afterRestore();
       return t.settings.cloudBackupRestored;
     });
+  }
+
+  Future<({String? profileId, String? owner, bool Function() isCurrent})> _captureOwner() async {
+    final profile = context.read<ActiveProfileProvider>();
+    final expectedProfileId = profile.activeId;
+    final expectedGeneration = profile.identityMutationGeneration;
+    bool isCurrent() =>
+        profile.identityMutationGeneration == expectedGeneration && profile.activeId == expectedProfileId;
+
+    final storage = await StorageService.getInstance();
+    if (!isCurrent() || storage.getActiveProfileId() != expectedProfileId) {
+      throw const CloudSettingsBackupException('The active profile changed before the backup action started.');
+    }
+    return (profileId: expectedProfileId, owner: storage.activeUserScope(), isCurrent: isCurrent);
   }
 
   Future<void> _run(Future<String> Function() operation) async {

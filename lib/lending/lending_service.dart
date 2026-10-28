@@ -88,12 +88,17 @@ class LendingBook {
     this.author = '',
     this.cover,
     this.page,
+    this.purchaseLink,
+    this.price,
+    this.currency,
     this.data = const {},
     this.loan = false,
     this.hold = false,
   });
   final String id, title, author;
-  final Uri? cover, page;
+  final Uri? cover, page, purchaseLink;
+  final double? price;
+  final String? currency;
   final Map<String, dynamic> data;
   final bool loan, hold;
   DateTime? get due => DateTime.tryParse(data['expires'] as String? ?? '');
@@ -133,6 +138,7 @@ class LendingService {
   final Map<String, Future<Map<String, dynamic>>> _refreshing = {};
   final Map<String, Map<String, dynamic>> _patrons = {};
   static DateTime _lastSearch = DateTime.fromMillisecondsSinceEpoch(0);
+  static DateTime _lastGoogleBooksSearch = DateTime.fromMillisecondsSinceEpoch(0);
   int _authorization = 0;
   final _removedLibraries = <String>{};
   bool _closed = false;
@@ -208,6 +214,81 @@ class LendingService {
         })
         .toList();
     return LendingPage(books, more: page * 30 < (sourceInt(result['numFound']) ?? 0));
+  }
+
+  /// Public Google Books catalog search, including country-specific sale
+  /// metadata when Google supplies it. Search results are unauthenticated;
+  /// only Google's own purchase URL is exposed as a checkout handoff.
+  Future<LendingPage> googleBooksSearch(String query, {int page = 1, String country = 'CA'}) async {
+    check();
+    final normalizedCountry = RegExp(r'^[A-Za-z]{2}$').hasMatch(country) ? country.toUpperCase() : 'CA';
+    final now = DateTime.now();
+    final next = _lastGoogleBooksSearch.add(const Duration(milliseconds: 300));
+    _lastGoogleBooksSearch = next.isAfter(now) ? next : now;
+    final delay = _lastGoogleBooksSearch.difference(now);
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
+    check();
+    const pageSize = 20;
+    final result = await transport.json(
+      'GET',
+      Uri.https('www.googleapis.com', '/books/v1/volumes', {
+        'q': query,
+        'country': normalizedCountry,
+        'printType': 'books',
+        'projection': 'lite',
+        'maxResults': '$pageSize',
+        'startIndex': '${(page - 1).clamp(0, 10000) * pageSize}',
+      }),
+    );
+    check();
+    final books = <LendingBook>[];
+    for (final raw in sourceList(result['items'])) {
+      final volume = sourceMap(raw);
+      final id = volume['id'];
+      if (id is! String || !RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(id)) continue;
+      final info = sourceMap(volume['volumeInfo']);
+      final title = info['title'];
+      if (title is! String || title.trim().isEmpty) continue;
+      final sale = sourceMap(volume['saleInfo']);
+      final buyLink = _googleBooksLink(sale['buyLink']);
+      final saleability = sale['saleability'];
+      final priceData = sourceMap(sale['retailPrice']);
+      final rawAmount = priceData['amount'];
+      final amount = rawAmount is num ? rawAmount.toDouble() : null;
+      final currencyCode = priceData['currencyCode'];
+      final forSale = saleability == 'FOR_SALE' || saleability == 'FOR_PREORDER';
+      final thumbnails = sourceMap(info['imageLinks']);
+      final cover = _googleBooksLink(thumbnails['thumbnail']);
+      final pageLink = _googleBooksLink(info['infoLink']) ?? Uri.https('books.google.com', '/books', {'id': id});
+      books.add(
+        LendingBook(
+          id: 'google-books:$id',
+          title: title.trim(),
+          author: sourceList(info['authors']).whereType<String>().join(', '),
+          cover: cover,
+          page: pageLink,
+          purchaseLink: forSale ? buyLink : null,
+          price: forSale && buyLink != null && amount != null && amount >= 0 ? amount : null,
+          currency: currencyCode is String && RegExp(r'^[A-Z]{3}$').hasMatch(currencyCode) ? currencyCode : null,
+          data: {'source': 'googleBooks', if (saleability is String) 'saleability': saleability},
+        ),
+      );
+    }
+    final total = sourceInt(result['totalItems']) ?? 0;
+    return LendingPage(books, more: page * pageSize < total);
+  }
+
+  static Uri? _googleBooksLink(Object? value) {
+    if (value is! String) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        uri.userInfo.isNotEmpty ||
+        uri.host.toLowerCase() != 'books.google.com' ||
+        !uri.path.startsWith('/books') ||
+        (uri.scheme != 'https' && uri.scheme != 'http')) {
+      return null;
+    }
+    return uri.replace(scheme: 'https');
   }
 
   Uri _gateway(LendingLibrary library, String path) {
