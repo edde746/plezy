@@ -1627,7 +1627,7 @@ jobs:
           if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'NVIDIA Corporation') {
             throw "CUDA installer signature is not valid for NVIDIA Corporation: $($signature.Status)"
           }
-          $arguments = @('-s', '-n', 'nvcc_13.4', 'cublas_13.4', 'cublas_dev_13.4', 'cudart_13.4')
+          $arguments = @('-s', 'nvcc_13.4', 'cublas_13.4', 'cublas_dev_13.4', 'cudart_13.4')
           $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
           if ($process.ExitCode -ne 0) {
             throw "CUDA Toolkit installer failed with exit code $($process.ExitCode)"
