@@ -268,6 +268,22 @@ extern "C" JNIEXPORT jbyteArray JNICALL JNI(pyrowaveDecode)(JNIEnv* env, jclass,
 extern "C" JNIEXPORT void JNICALL JNI(pyrowaveStop)(JNIEnv*, jclass, jlong id) {
   if (auto r = get(id)) r->stopPyrowave();
 }
+extern "C" JNIEXPORT jlongArray JNICALL JNI(metrics)(JNIEnv* env, jclass, jlong id) {
+  auto r = get(id);
+  if (!r) return nullptr;
+  const auto m = r->metrics();
+  // Versioned fixed layout; no strings, addresses, identifiers or credentials.
+  const uint64_t values[] = {1, m.sampledAtUs, m.receivedFrames, m.presentedFrames, m.droppedFrames,
+      m.resetFrames, m.videoBytes, m.completionTotalUs, m.completedFrames, m.width, m.height, m.codec,
+      m.audioChannels, m.fpsNumerator, m.fpsDenominator, m.fpsReasons, m.targetBitrate,
+      m.reliability.reliableRetries, m.reliability.reliableGiveUps, m.reliability.reliableOutstanding,
+      m.reliability.reliableMaxAckLatencyMs, m.reliability.hidPending, m.reliability.hidInFlight, m.epoch};
+  jlong output[24];
+  for (size_t i = 0; i < 24; ++i) output[i] = static_cast<jlong>(values[i]);
+  jlongArray result = env->NewLongArray(24);
+  if (result) env->SetLongArrayRegion(result, 0, 24, output);
+  return result;
+}
 extern "C" JNIEXPORT void JNICALL JNI(pad)(JNIEnv* env, jclass, jlong id, jshortArray axes, jint buttons) {
   auto r = get(id);
   if (!r || !axes || env->GetArrayLength(axes) != 6) return;

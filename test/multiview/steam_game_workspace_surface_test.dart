@@ -33,6 +33,46 @@ void main() {
 
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
+  test('closing diagnostics cannot reclaim a retired input lease', () async {
+    final commands = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      commands.add(call);
+      return call.method == 'getSessionState' ? 'playing' : null;
+    });
+    final stream = session();
+    addTearDown(stream.dispose);
+    stream.attachPlatformView(99);
+    await state('playing');
+    await stream.setInputEnabled(true);
+    final closed = Completer<void>(), opened = Completer<void>();
+    final dialog = stream.withInputSuspended(() async {
+      opened.complete();
+      await closed.future;
+    });
+    await opened.future;
+    expect(commands.last.arguments, {'enabled': false});
+    await state('playing'); // A duplicate state callback must not restore input.
+    expect(commands.last.arguments, {'enabled': false});
+    await stream.setInputEnabled(false); // Another pane/profile took ownership.
+    closed.complete();
+    await dialog;
+    expect(commands.last.arguments, {'enabled': false});
+  });
+
+  test('missing metrics support preserves the stream', () async {
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'getSessionState') return 'playing';
+      if (call.method == 'getStreamMetrics') throw MissingPluginException();
+      return null;
+    });
+    final stream = session();
+    addTearDown(stream.dispose);
+    stream.attachPlatformView(99);
+    await state('playing');
+    expect(await stream.readMetrics(), isNull);
+    expect(stream.sessionState.value, 'playing');
+  });
+
   test('controller events retain device identity and disconnect releases only that controller', () async {
     final commands = <MethodCall>[];
     messenger.setMockMethodCallHandler(channel, (call) async {

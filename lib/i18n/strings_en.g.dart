@@ -9805,6 +9805,90 @@ class Translations$games$en {
 	/// en: 'Steam controllers'
 	String get controllerSeats => 'Steam controllers';
 
+	/// en: 'Steam connection details'
+	String get streamDetails => 'Steam connection details';
+
+	/// en: 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.'
+	String get streamFeedbackHelp => 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.';
+
+	/// en: 'Receiver measurements'
+	String get streamMeasurements => 'Receiver measurements';
+
+	/// en: 'Not available yet'
+	String get streamMeasurementsUnavailable => 'Not available yet';
+
+	/// en: 'Video format'
+	String get streamVideo => 'Video format';
+
+	/// en: 'Decoder'
+	String get streamDecoder => 'Decoder';
+
+	/// en: 'Hardware'
+	String get streamHardwareDecoder => 'Hardware';
+
+	/// en: 'Software'
+	String get streamSoftwareDecoder => 'Software';
+
+	/// en: 'Vulkan with CPU readback'
+	String get streamReadbackDecoder => 'Vulkan with CPU readback';
+
+	/// en: 'Host frame rate target'
+	String get streamHostFps => 'Host frame rate target';
+
+	/// en: 'Host bitrate target'
+	String get streamHostBitrate => 'Host bitrate target';
+
+	/// en: 'Host-reported frame rate limits'
+	String get streamLimits => 'Host-reported frame rate limits';
+
+	/// en: 'Host capture or encoder'
+	String get streamLimitHost => 'Host capture or encoder';
+
+	/// en: 'Network'
+	String get streamLimitNetwork => 'Network';
+
+	/// en: 'Receiver decoder'
+	String get streamLimitDecoder => 'Receiver decoder';
+
+	/// en: 'Burst throttling'
+	String get streamLimitBurst => 'Burst throttling';
+
+	/// en: 'Frames submitted to the display'
+	String get streamPresentedFps => 'Frames submitted to the display';
+
+	/// en: 'Received video payload'
+	String get streamReceivedBitrate => 'Received video payload';
+
+	/// en: 'Average receiver frame completion'
+	String get streamCompletionTime => 'Average receiver frame completion';
+
+	/// en: 'Receiver-dropped frames this session'
+	String get streamDroppedFrames => 'Receiver-dropped frames this session';
+
+	/// en: 'Video queue'
+	String get streamVideoQueue => 'Video queue';
+
+	/// en: 'Audio queue'
+	String get streamAudioQueue => 'Audio queue';
+
+	/// en: 'Audio channels'
+	String get streamAudioChannels => 'Audio channels';
+
+	/// en: 'Input packets queued + awaiting confirmation'
+	String get streamInputBacklog => 'Input packets queued + awaiting confirmation';
+
+	/// en: 'Reliable packet retries this session'
+	String get streamReliableRetries => 'Reliable packet retries this session';
+
+	/// en: 'Reliable packets abandoned this session'
+	String get streamReliableGiveUps => 'Reliable packets abandoned this session';
+
+	/// en: 'Longest reliable packet acknowledgement'
+	String get streamMaxAck => 'Longest reliable packet acknowledgement';
+
+	/// en: 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.'
+	String get streamMeasurementsHelp => 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.';
+
 	/// en: 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.'
 	String get controllerSeatsHelp => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.';
 
@@ -15989,6 +16073,34 @@ extension on Translations {
 			'games.automaticFolder' => 'Find automatically',
 			'games.streamQuality' => 'Steam stream quality',
 			'games.controllerSeats' => 'Steam controllers',
+			'games.streamDetails' => 'Steam connection details',
+			'games.streamFeedbackHelp' => 'Steam can adapt its bitrate and frame rate using receiver feedback. Your stream quality setting supplies the requested limits.',
+			'games.streamMeasurements' => 'Receiver measurements',
+			'games.streamMeasurementsUnavailable' => 'Not available yet',
+			'games.streamVideo' => 'Video format',
+			'games.streamDecoder' => 'Decoder',
+			'games.streamHardwareDecoder' => 'Hardware',
+			'games.streamSoftwareDecoder' => 'Software',
+			'games.streamReadbackDecoder' => 'Vulkan with CPU readback',
+			'games.streamHostFps' => 'Host frame rate target',
+			'games.streamHostBitrate' => 'Host bitrate target',
+			'games.streamLimits' => 'Host-reported frame rate limits',
+			'games.streamLimitHost' => 'Host capture or encoder',
+			'games.streamLimitNetwork' => 'Network',
+			'games.streamLimitDecoder' => 'Receiver decoder',
+			'games.streamLimitBurst' => 'Burst throttling',
+			'games.streamPresentedFps' => 'Frames submitted to the display',
+			'games.streamReceivedBitrate' => 'Received video payload',
+			'games.streamCompletionTime' => 'Average receiver frame completion',
+			'games.streamDroppedFrames' => 'Receiver-dropped frames this session',
+			'games.streamVideoQueue' => 'Video queue',
+			'games.streamAudioQueue' => 'Audio queue',
+			'games.streamAudioChannels' => 'Audio channels',
+			'games.streamInputBacklog' => 'Input packets queued + awaiting confirmation',
+			'games.streamReliableRetries' => 'Reliable packet retries this session',
+			'games.streamReliableGiveUps' => 'Reliable packets abandoned this session',
+			'games.streamMaxAck' => 'Longest reliable packet acknowledgement',
+			'games.streamMeasurementsHelp' => 'Updated once a second while this view is open. Video bitrate excludes network overhead. Frame completion includes receiver queuing, decoding and submission to the display; it does not measure network latency or screen scanout. Packet acknowledgement includes retries and is not RTT. Measurements stay on this device.',
 			'games.controllerSeatsHelp' => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.',
 			'games.streamQualityHelp' => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.',
 			'games.streamCodec' => 'Steam video codec',

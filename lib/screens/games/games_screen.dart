@@ -46,6 +46,7 @@ import 'game_connection_dialogs.dart';
 import '../../widgets/oauth_proxy_dialog.dart';
 import 'game_card.dart';
 import 'steam_game_activity_panel.dart';
+import 'steam_stream_diagnostics.dart';
 import '../settings/settings_utils.dart' show DialogOption;
 
 class GamesScreen extends StatefulWidget {
@@ -523,6 +524,15 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                     c.library.steamCatalogCredential == activityCredential,
                 onLink: () => Navigator.pop(dialogContext, 'link'),
               ),
+            for (final entry in _workspaceGameSessions.entries.where(
+              (entry) => game.routes.any((route) => route.game.key == entry.value.game.key),
+            ))
+              FocusableListTile(
+                leading: const AppIcon(Symbols.monitoring_rounded),
+                title: Text(t.games.streamDetails),
+                subtitle: Text(isolateDisplayText(entry.value.host.name)),
+                onTap: () => Navigator.pop(dialogContext, 'metrics:${entry.key}'),
+              ),
           ],
         ),
         actions: [
@@ -539,6 +549,16 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       ),
     );
     if (!mounted || !c.current) return;
+    if (choice?.startsWith('metrics:') == true) {
+      final session = _workspaceGameSessions[choice!.substring(8)];
+      await session?.withInputSuspended(() async {
+        if (!mounted || !c.current) return;
+        await showScopedDialog<void>(
+          context: context,
+          builder: (_) => SteamStreamDiagnostics(readMetrics: session.readMetrics),
+        );
+      });
+    }
     if (choice == 'favorite') await _run((c) => c.toggleLibraryFavorite(game));
     if (choice == 'link') await _linkSteamAccount();
     if (choice == 'route') {

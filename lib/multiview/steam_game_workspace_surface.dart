@@ -4,10 +4,15 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:universal_gamepad/universal_gamepad.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../games/game_models.dart';
 import '../games/steam_stream_preferences.dart';
+import '../games/steam_stream_metrics.dart';
 import '../services/gamepad_service.dart';
+import '../screens/games/steam_stream_diagnostics.dart';
+import '../utils/dialogs.dart';
+import '../widgets/app_icon.dart';
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import 'workspace_game_input.dart';
@@ -56,6 +61,8 @@ class SteamGameWorkspaceSession {
   MethodChannel? _channel;
   bool _audioEnabled = false;
   bool _inputEnabled = false;
+  int _inputSuspensions = 0;
+  bool get _canInput => !_disposed && _inputEnabled && _inputSuspensions == 0 && sessionState.value == 'playing';
   late final WorkspaceGameInputBinding _inputBinding;
   final GlobalKey _surfaceKey = GlobalKey();
 
@@ -87,7 +94,7 @@ class SteamGameWorkspaceSession {
   Future<void> setInputEnabled(bool enabled) async {
     if (_disposed) return;
     _inputEnabled = enabled;
-    final canInput = enabled && sessionState.value == 'playing';
+    final canInput = _canInput;
     _inputBinding.setEnabled(canInput);
     if (!enabled) {
       await _invoke('resetInput');
@@ -96,7 +103,7 @@ class SteamGameWorkspaceSession {
   }
 
   void handleInput(GamepadEvent event) {
-    if (!_inputEnabled || sessionState.value != 'playing') return;
+    if (!_canInput) return;
     if (event is GamepadButtonEvent) {
       unawaited(
         _invoke('setControllerDeviceState', {
@@ -118,7 +125,7 @@ class SteamGameWorkspaceSession {
   }
 
   void handleNativeKey(KeyEvent event) {
-    if (!_inputEnabled || sessionState.value != 'playing') return;
+    if (!_canInput) return;
     unawaited(
       _invoke('inputKey', {
         'key': event.logicalKey.debugName ?? event.logicalKey.keyLabel,
@@ -129,6 +136,36 @@ class SteamGameWorkspaceSession {
 
   void resetInput() {
     unawaited(_invoke('resetInput'));
+  }
+
+  /// The desired workspace lease may change while a dialog is open. Restore
+  /// only its current value, never a captured lease from a different pane.
+  Future<void> withInputSuspended(Future<void> Function() action) async {
+    if (_disposed) return;
+    _inputSuspensions++;
+    _inputBinding.setEnabled(false);
+    await _invoke('setInputEnabled', {'enabled': false});
+    try {
+      if (!_disposed) await action();
+    } finally {
+      _inputSuspensions--;
+      if (!_disposed) {
+        _inputBinding.setEnabled(_canInput);
+        await _invoke('setInputEnabled', {'enabled': _canInput});
+      }
+    }
+  }
+
+  Future<SteamStreamMetrics?> readMetrics() async {
+    final channel = _channel;
+    if (_disposed || channel == null || sessionState.value != 'playing') return null;
+    try {
+      final data = await channel.invokeMapMethod<Object?, Object?>('getStreamMetrics');
+      if (_disposed || _channel != channel || data == null) return null;
+      return SteamStreamMetrics.fromNative(data);
+    } catch (_) {
+      return null;
+    }
   }
 
   Widget build() {
@@ -183,7 +220,7 @@ class SteamGameWorkspaceSession {
           .catchError((Object _) {}),
     );
     unawaited(_invoke('setAudioEnabled', {'enabled': _audioEnabled}));
-    unawaited(_invoke('setInputEnabled', {'enabled': _inputEnabled && sessionState.value == 'playing'}));
+    unawaited(_invoke('setInputEnabled', {'enabled': _canInput}));
   }
 
   void _stateChanged(Object? state) {
@@ -193,8 +230,8 @@ class SteamGameWorkspaceSession {
       return;
     }
     sessionState.value = state;
-    _inputBinding.setEnabled(_inputEnabled && state == 'playing');
-    unawaited(_invoke('setInputEnabled', {'enabled': _inputEnabled && state == 'playing'}));
+    _inputBinding.setEnabled(_canInput);
+    unawaited(_invoke('setInputEnabled', {'enabled': _canInput}));
     if (state == 'playing' && !_reportedFirstFrame) {
       _reportedFirstFrame = true;
       onFirstFrame?.call();
@@ -278,6 +315,24 @@ class SteamGameWorkspaceSurface extends StatefulWidget {
 }
 
 class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
+  bool _detailsOpen = false;
+
+  Future<void> _showDetails() async {
+    if (_detailsOpen) return;
+    setState(() => _detailsOpen = true);
+    try {
+      await widget.session.withInputSuspended(() async {
+        if (!mounted) return;
+        await showScopedDialog<void>(
+          context: context,
+          builder: (_) => SteamStreamDiagnostics(readMetrics: widget.session.readMetrics),
+        );
+      });
+    } finally {
+      if (mounted) setState(() => _detailsOpen = false);
+    }
+  }
+
   @override
   void didUpdateWidget(covariant SteamGameWorkspaceSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -341,6 +396,23 @@ class _SteamGameWorkspaceSurfaceState extends State<SteamGameWorkspaceSurface> {
               ),
             );
           },
+        ),
+        PositionedDirectional(
+          top: 8,
+          end: 8,
+          child: ValueListenableBuilder<String>(
+            valueListenable: session.sessionState,
+            builder: (context, state, _) => state != 'playing'
+                ? const SizedBox.shrink()
+                : FocusableButton(
+                    onPressed: _detailsOpen ? null : _showDetails,
+                    child: IconButton.filledTonal(
+                      tooltip: t.games.streamDetails,
+                      onPressed: _detailsOpen ? null : _showDetails,
+                      icon: const AppIcon(Symbols.monitoring_rounded),
+                    ),
+                  ),
+          ),
         ),
       ],
     );

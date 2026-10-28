@@ -49,6 +49,7 @@ final class SteamDecoder implements AutoCloseable {
   private volatile float audioVolume = 1.0f;
   private boolean shown;
   private volatile boolean pyrowaveActive;
+  private volatile int decoderKind; // 0 unknown, 1 hardware, 2 software, 3 Vulkan readback.
   private Bitmap pyrowaveBitmap;
   private final Paint pyrowavePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
   SteamDecoder(long handle, SurfaceHolder surfaceHolder, Events events) {
@@ -64,6 +65,11 @@ final class SteamDecoder implements AutoCloseable {
   static boolean supportsHevc() {
     MediaFormat format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, 1920, 1080);
     return new MediaCodecList(MediaCodecList.REGULAR_CODECS).findDecoderForFormat(format) != null;
+  }
+  void appendMetrics(Map<String, Object> metrics) {
+    metrics.put("decoderKind", decoderKind);
+    metrics.put("videoQueue", video.size());
+    metrics.put("audioQueue", audio.size());
   }
   public boolean onVideo(int codec, int width, int height, byte[] extra) {
     if (closed)
@@ -225,6 +231,7 @@ final class SteamDecoder implements AutoCloseable {
             if (!NativeSteam.pyrowaveStart(handle, item.width, item.height, item.bytes))
               throw new IllegalStateException("Pyrowave decoder initialization failed");
             pyrowaveBitmap = Bitmap.createBitmap(item.width, item.height, Bitmap.Config.ARGB_8888);
+            decoderKind = 3;
             events.size(item.width, item.height);
             continue;
           }
@@ -238,6 +245,7 @@ final class SteamDecoder implements AutoCloseable {
           decoder = MediaCodec.createDecoderByType(mime);
           decoder.configure(format, surface, null, 0);
           decoder.start();
+          decoderKind = Build.VERSION.SDK_INT >= 29 ? (decoder.getCodecInfo().isHardwareAccelerated() ? 1 : 2) : 0;
           events.size(item.width, item.height);
         } else if (item != null && pyrowaveActive) {
           byte[] argb = NativeSteam.pyrowaveDecode(handle, item.bytes);

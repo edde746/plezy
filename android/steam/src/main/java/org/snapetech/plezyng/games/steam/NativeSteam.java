@@ -25,5 +25,6 @@ final class NativeSteam {
   static native void mouse(long handle, float x, float y, int button, boolean down);
   static native void text(long handle, String text);
   static native void frameComplete(long handle, int id, boolean displayed);
+  static native long[] metrics(long handle);
   private NativeSteam() {}
 }

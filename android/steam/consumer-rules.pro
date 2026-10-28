@@ -8,9 +8,12 @@
     public void setOnFailure(java.lang.Runnable);
     public void setOnStateChanged(java.lang.Runnable);
     public java.lang.String getSessionState();
+    public java.util.Map getStreamMetrics();
     public boolean isFailed();
     public void toggleTouchControls();
     public void setControllerState(java.util.Map, java.util.Map);
+    public void setControllerDeviceState(int, java.util.Map, java.util.Map);
+    public void disconnectController(int);
     public void inputKey(java.lang.String, boolean);
     public void resetInput();
     public void close();

@@ -127,3 +127,17 @@ No external streaming-app handoff is used.
   negotiation in the actual serialized streaming request.
 - Strict host-JDK JNI syntax/type check passed. Full Android compilation,
   minification and real multi-controller/host behavior remain unverified.
+
+
+### Native stream diagnostics follow-up
+
+- Focused metrics/dialog/session Flutter suite: **14 tests passed**. Coverage
+  includes missing targets, fractional host rates, counter deltas, reconnect
+  epochs, backwards timestamps, unknown native versions, old native modules,
+  input lease changes while a dialog is open, and polling teardown. The dialog
+  is exercised at 320px width with RTL and 2× text.
+- Portable native Debug build and **38 native tests passed**. Adapter tests
+  assert duplicate frame callbacks do not inflate counts, reset frames remain
+  separate, malformed host targets are ignored and receiver epochs are unique.
+- Strict host-JDK JNI syntax/type check passed. Full Android packaging and live
+  host adaptation/latency measurement have not been run.

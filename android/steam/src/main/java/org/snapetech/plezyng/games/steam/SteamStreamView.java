@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -103,6 +104,20 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
   public void setOnFailure(Runnable callback) { onFailure = callback; }
   public void setOnStateChanged(Runnable callback) { onStateChanged = callback; }
   public String getSessionState() { return sessionState; }
+  public Map<String, Object> getStreamMetrics() {
+    long current = handle;
+    long[] values = current == 0 || stopping ? null : NativeSteam.metrics(current);
+    if (values == null || values.length != 24 || values[0] != 1) return null;
+    String[] keys = {"version", "sampledAtUs", "receivedFrames", "presentedFrames", "droppedFrames",
+        "resetFrames", "videoBytes", "completionTotalUs", "completedFrames", "width", "height", "codec",
+        "audioChannels", "fpsNumerator", "fpsDenominator", "fpsReasons", "targetBitrate", "reliableRetries",
+        "reliableGiveUps", "reliableOutstanding", "maxAckLatencyMs", "hidPending", "hidInFlight", "epoch"};
+    Map<String, Object> metrics = new HashMap<>();
+    for (int i = 0; i < keys.length; i++) metrics.put(keys[i], values[i]);
+    SteamDecoder currentDecoder = decoder;
+    if (currentDecoder != null) currentDecoder.appendMetrics(metrics);
+    return metrics;
+  }
   private void state(String value) {
     sessionState = value;
     Runnable callback = onStateChanged;

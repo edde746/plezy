@@ -18,6 +18,10 @@ extern "C" {
 using namespace plezy::steam;
 namespace plezy::steam {
 struct RuntimeTest {
+  static void target(Runtime& runtime, uint32_t numerator, uint32_t denominator, uint32_t reasons, int32_t bitrate) {
+    Runtime::videoFramerate(nullptr, numerator, denominator, reasons, &runtime);
+    Runtime::videoBitrate(nullptr, bitrate, &runtime);
+  }
   static std::shared_ptr<PadState> pad(Runtime& runtime, unsigned seat) { return runtime.pads_[seat]; }
   static void renderer(Runtime& runtime, std::shared_ptr<Sink> sink) { runtime.sink_ = std::move(sink); }
   static bool submit(Runtime& runtime, IHS_FrameTicket* ticket) {
@@ -77,6 +81,21 @@ void frameOwnership() {
     runtime.frameComplete(sink->last, true);  // Duplicate/late callbacks are ignored.
   }
   IHS_FrameTrackerClose(tracker);
+  const auto metrics = runtime.metrics();
+  assert(metrics.epoch != 0 && metrics.sampledAtUs != 0);
+  assert(metrics.receivedFrames == 3 && metrics.presentedFrames == 2);
+  assert(metrics.completedFrames == 2 && metrics.resetFrames == 1 && metrics.droppedFrames == 0);
+  assert(metrics.videoBytes == 12); // Duplicate completions must not inflate feedback.
+  RuntimeTest::target(runtime, 30000, 1001, 0xffffffff, 12000000);
+  auto target = runtime.metrics();
+  assert(target.fpsNumerator == 30000 && target.fpsDenominator == 1001 && target.fpsReasons == 0x5f);
+  assert(target.targetBitrate == 12000000);
+  RuntimeTest::target(runtime, 60, 0, 0, -1);
+  RuntimeTest::target(runtime, UINT32_MAX, 1, 0, 1000000001);
+  target = runtime.metrics();
+  assert(target.fpsDenominator == 1001 && target.targetBitrate == 12000000);
+  Runtime second;
+  assert(second.metrics().epoch != metrics.epoch);
 }
 uint32_t le(const uint8_t* p) {
   return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24;

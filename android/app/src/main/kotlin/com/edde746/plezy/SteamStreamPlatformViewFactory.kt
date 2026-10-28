@@ -57,6 +57,10 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
             result.success(target.javaClass.getMethod("getSessionState").invoke(target))
             return
           }
+          "getStreamMetrics" -> {
+            result.success(target.javaClass.getMethod("getStreamMetrics").invoke(target))
+            return
+          }
           "setAudioEnabled" -> invoke("setAudioEnabled", arrayOf(booleanType), call.argument<Boolean>("enabled") == true)
           "setInputEnabled" -> invoke("setInputEnabled", arrayOf(booleanType), call.argument<Boolean>("enabled") == true)
           "setControllerState" -> invoke(

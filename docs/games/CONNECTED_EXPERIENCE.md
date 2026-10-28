@@ -20,7 +20,7 @@ The implemented slices below are not substitutes for the remaining scope.
 | Android stream preferences / recovery | Implemented through Flutter, Java and JNI | Full Android build/minification, real host reconnect and negotiated-quality measurements |
 | Native Steam transport | Portable Linux build and 38 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
 | View-independent stream lifetime | Partial: retained Multiview surface | Native session still belongs to its PlatformView; surface destruction stops it |
-| Adaptive metrics / advanced codecs | Fixed request presets and one-to-four Android controller seats | Negotiated statistics, adaptive policy, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround and physical multi-controller qualification |
+| Adaptive metrics / advanced codecs | Host-driven adaptive feedback, native stream diagnostics, request ceilings and one-to-four Android controller seats | Live adaptation/performance qualification, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround and physical multi-controller qualification |
 | Other embedded receiver platforms | Library browsing/sharing only | Linux/SteamOS, Windows, macOS, iOS/iPadOS/tvOS receivers and TV capability qualification |
 | Rich Steam / host features | Achievements/news/optional friends-playing and confirmed Steam destinations implemented | Live API qualification, host cloud/family state APIs, Steam Input/remapping, Together and captures |
 | Companion game control / internet transport | Inventory plus permissioned launch/install and host Steam/download views implemented | Session controls, signaling/NAT/relay, connection diagnostics and actual host action qualification |
@@ -298,3 +298,28 @@ lease loss, teardown and profile retirement neutralize every seat and keyboard
 key. Local allocation is bounded to four devices. Game/host support, Android
 hotplug and controller ordering still require physical-device qualification;
 rumble, gyro and Steam Input configuration are separate unfinished features.
+
+
+### Stage 6 — Measured streaming diagnostics and adaptive feedback
+
+Steam's host-driven adaptation already receives frame outcomes through ihslib's
+tracked-frame feedback. The receiver now consumes host target bitrate, target
+frame-rate fractions and limiter reasons, and exposes them alongside local
+counters. These are not reconstructed from quality preferences. Unknown targets
+remain unknown; request presets continue to define ceilings, not actual quality.
+
+The existing themed dialog is available from the stream surface and active
+game details. It samples once a second only while visible, uses a bounded native
+snapshot, and keeps all data on device. It reports negotiated format, decoder
+kind where the OS exposes it, received compressed-video payload, submitted
+presentation rate, frame completion time, queue depth and HID/reliable-packet
+backlog. Reconnects change a local epoch so rates cannot span separate sessions.
+Native counters ignore duplicate completion callbacks and separate reset frames.
+
+Completion time includes receiver queuing/decode/surface submission; it is not
+network latency or physical display scanout. Video payload excludes transport
+overhead. Maximum reliable acknowledgement includes retries and is not RTT.
+Opening the dialog neutralizes game input, and closing it respects the current
+workspace lease. Missing/older native measurement methods produce an unavailable
+state without stopping playback. No client-side reconnect loop changes quality.
+Actual adaptation and presentation timings still need host/device measurements.
