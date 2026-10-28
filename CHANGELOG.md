@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Apply the coral ribbon identity across native launchers, store artwork and in-app branding, with light/dark marks, matching wordmarks and simplified small-size icons.
+
 - Add metadata-backed mood and familiarity filters, explicit local genre taste controls with hide/restore/reset, private co-present shortlist voting, optional bounded AI reranking, Open Library catalog-only candidates, and gated borrower-catalog candidates to Find your next.
 - Add capped, disposable OPDS sample previews, exact-ID adaptation matching, side-by-side Saved-pick comparison, and opt-in encrypted Saved-pick sync with exact-identity re-resolution.
 - Add a searchable, region-aware directory of official video, rental, book, audiobook, comics, music and game storefronts to Services and title details; add Google Books catalog search with country-specific sale metadata and official purchase handoff.

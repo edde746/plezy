@@ -1,3 +1,4 @@
+import 'package:plezy/widgets/app_brand.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -18,8 +19,6 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appName = t.app.title;
-
     return FutureBuilder<PackageInfo>(
       future: _packageInfoFuture,
       builder: (context, snapshot) {
@@ -35,9 +34,9 @@ class AboutScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         const SizedBox(height: 24),
-                        Image.asset('assets/plezy.png', width: 80, height: 80),
+                        const AppBrandMark(decorative: true),
                         const SizedBox(height: 16),
-                        Text(appName, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: .bold)),
+                        const AppBrandWordmark(),
                         const SizedBox(height: 8),
                         Text(
                           t.about.versionLabel(version: appVersion),

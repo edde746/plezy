@@ -257,8 +257,8 @@ class _DefaultIconPreview extends StatelessWidget {
   const _DefaultIconPreview();
 
   static const _iosFill = Color(0xFFF1F1F1);
-  static const _androidDayFill = Color(0xFF131928);
-  static const _androidNightFill = Color(0xFF131928);
+  static const _androidDayFill = Color(0xFF071527);
+  static const _androidNightFill = Color(0xFF071527);
 
   @override
   Widget build(BuildContext context) {
@@ -275,7 +275,12 @@ class _DefaultIconPreview extends StatelessWidget {
         : _androidDayFill;
     return ColoredBox(
       color: fill,
-      child: Image.asset('assets/plezy_adaptive_foreground.png', fit: BoxFit.contain),
+      child: Image.asset(
+        defaultTargetPlatform == TargetPlatform.android
+            ? 'assets/plezy_adaptive_foreground.png'
+            : 'assets/branding/plezyng-adaptive-light.png',
+        fit: BoxFit.contain,
+      ),
     );
   }
 }

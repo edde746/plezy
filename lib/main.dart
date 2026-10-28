@@ -1,3 +1,4 @@
+import 'package:plezy/widgets/app_brand.dart';
 import 'dart:async';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
@@ -2606,7 +2607,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    const coralColor = Color(0xFFE5A00D);
+    const coralColor = Color(0xFFFF6847);
     final height = MediaQuery.sizeOf(context).height;
     // The stacked layout below hangs its two rows off fixed ±170/180 offsets from the middle, which
     // needs roughly 700 logical pixels of height. A car at a large interface scale — and a phone in
@@ -2621,7 +2622,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset('assets/plezy.png', width: 160, height: 160, fit: BoxFit.contain),
+                  const AppBrandMark(size: 160),
                   _buildStatusText(context),
                   const SizedBox(height: 16),
                   Center(
@@ -2644,7 +2645,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
         children: [
-          Center(child: Image.asset('assets/plezy.png', width: 288, height: 288, fit: BoxFit.contain)),
+          Center(child: const AppBrandMark(size: 288)),
           Positioned(left: 0, right: 0, bottom: height * 0.5 - 170, child: _buildStatusText(context)),
           Positioned(
             left: 0,
