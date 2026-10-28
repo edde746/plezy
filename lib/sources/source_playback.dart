@@ -66,6 +66,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool opening = false;
   bool fullPlayerVisible = false;
   Map<String, Uri> _localOverrides = const {};
+  Map<String, Map<String, String>> _localOverrideHeaders = const {};
   bool _persistProgress = true;
   bool _liveInput = false;
   List<File> _temporaryMediaFiles = const [];
@@ -278,6 +279,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     List<PublicationFile> selected, {
     PublicationMode? playbackMode,
     Map<String, Uri> localOverrides = const {},
+    Map<String, Map<String, String>> localOverrideHeaders = const {},
     bool persistProgress = true,
     bool liveInput = false,
     List<File> temporaryMediaFiles = const [],
@@ -315,6 +317,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       entry = item;
       files = List.unmodifiable(selected);
       _localOverrides = Map.unmodifiable(localOverrides);
+      _localOverrideHeaders = Map.unmodifiable({
+        for (final entry in localOverrideHeaders.entries) entry.key: Map<String, String>.unmodifiable(entry.value),
+      });
       _persistProgress = persistProgress;
       _liveInput = liveInput;
       _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
@@ -568,7 +573,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final Uri uri;
     if (_localOverrides[file.id] != null) {
       final override = _localOverrides[file.id]!;
-      uri = const {'http', 'https'}.contains(override.scheme) ? await _gateway!.registerUri(override) : override;
+      uri = const {'http', 'https'}.contains(override.scheme)
+          ? await _gateway!.registerUri(override, headers: _localOverrideHeaders[file.id] ?? const {})
+          : override;
     } else if (cached != null) {
       uri = cached.uri;
     } else {
@@ -1031,6 +1038,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     entry = null;
     files = const [];
     _localOverrides = const {};
+    _localOverrideHeaders = const {};
     _persistProgress = true;
     _liveInput = false;
     progress = null;

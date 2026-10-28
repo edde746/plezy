@@ -1,10 +1,37 @@
-# Debrid, Stremio and remote streaming: implementation handoff
+# Debrid, Stremio and remote streaming
 
-Status: design ready for Luna; implementation is not included in this change.
-Prepared 2026-10-27 (America/Regina). Repository inspected at
+Status: initial stream playback implementation is on
+`codex/debrid-stremio-integration-20261028`; the broader design below remains
+the target. This implementation is not full native P2P or a merged cloud
+library. See [IMPLEMENTATION.md](IMPLEMENTATION.md) for completed behavior and
+the exact remaining packages.
+
+Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 `a7b172b00ff437eb431fb5d3e7b8b758f4a5c422` on `main`.
 
-## The experience to build
+## Current behavior
+
+- Connect Real-Debrid or AllDebrid through a QR/code flow; connect Premiumize
+  or TorBox with an API key.
+- Browse ready cloud files from each connected provider in a focused list and
+  open videos in the existing player.
+- Install a Stremio-compatible add-on by manifest URL and fetch its stream
+  options for a Plex/Jellyfin/Emby movie or episode detail.
+- Play direct HTTP streams, select add-on subtitles, open explicit external
+  links, or resolve supported hash/file-host candidates through a selected
+  connected provider.
+- Keep provider credentials and add-on URLs encrypted and scoped to the active
+  profile; use the existing standalone video player and local resume journal.
+  Unreadable saved settings remain intact until the user explicitly clears
+  them to reconnect; a temporarily locked device uses a retry path.
+
+Unified cloud-source rows in Libraries/Home/Search, Stremio catalogs and account
+import, shared server player reporting, remote job management,
+renewable/background leases and an embedded P2P engine are not part of this
+implementation. Cloud inventory is currently fetched on demand from provider
+settings and is not cached or merged into catalog surfaces.
+
+## Target experience after full completion
 
 Connect a service, authorize it in a browser or with a QR code, and return to
 populated PlezyNG screens. Movies remain movies; episodes remain episodes.
@@ -37,7 +64,10 @@ help sentence at setup, rather than requiring users to learn the architecture.
 
 1. Implement Real-Debrid, AllDebrid, Premiumize and TorBox as native account,
    cloud-library and resolution adapters. Use each service's actual auth flow.
-2. Implement the Stremio HTTP add-on protocol as a data adapter. Run no add-on
+   The current branch has account and supported stream-resolution paths, but
+   not cloud-library inventory.
+2. Implement the Stremio HTTP add-on protocol as a data adapter. The current
+   branch supports manifest and stream lookup only. Run no add-on
    JavaScript, Node server, downloaded executable or arbitrary script in the app.
 3. Support configured manifest URLs and Stremio account import. The latter uses
    the first-party account/link protocol behind an isolated compatibility client;
@@ -59,15 +89,16 @@ help sentence at setup, rather than requiring users to learn the architecture.
     source-specific limits, and existing server progress-reporting behavior.
 11. No PlezyNG-hosted stream proxy or credential service is required for the core
     feature. Optional companion input and user-owned bridges remain optional.
-12. Commit the implementation in coherent checkpoints. This plan is a direct
-    `main` documentation change; no PR, workflow dispatch or release is needed.
+12. Commit implementation in coherent checkpoints on the owner-authorized PR
+    branch. Do not dispatch CI or use hosted runners without authorization.
 
 ## Delivery scope
 
 | Completion level | Required outcome |
 | --- | --- |
-| First useful vertical slice | Real-Debrid QR sign-in, account cloud browse, metadata, ordinary video playback, resume, profile teardown and expired-link recovery |
-| Core integration | All four native providers; Stremio manifests and account import; shared Home/Explore/Search/details; source choice; preparation queue; subtitles; next episode; all regression gates |
+| Implemented stream slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud file browsing; Stremio manifest/stream requests; direct, hash, file-host and subtitle choices; existing standalone player and local resume |
+| First useful vertical slice still needed | Unified cloud source rows, source metadata, durable identity, server-style player integration, profile teardown evidence and same-copy expired-link recovery |
+| Core integration | Cloud catalog surfaces, Stremio catalogs/account import; shared Home/Explore/Search/details; source choice; preparation queue; next episode; all regression gates |
 | Ecosystem breadth | put.io, Debrid-Link and Seedr qualification; user-configured aggregators; seedboxes and Usenet bridges through the existing file/HTTP adapters; capability-aware downloads and casting |
 | Native P2P | An actual bounded streaming engine, byte-range bridge, seek scheduling, native builds and device tests; a `magnet:` parser is not completion |
 | Full handoff scope | All preceding work packages either implemented and evidenced, or explicitly recorded with the exact external credential/device/API dependency; no placeholder success states |

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/seerr_account_provider.dart';
+import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/app_icon.dart';
@@ -17,6 +18,7 @@ import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_section.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
+import 'remote_streaming_settings_screen.dart';
 import 'tracker_service_info.dart';
 
 /// Unified hub for all connected services: the watch-progress trackers
@@ -37,7 +39,13 @@ class ServicesSettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: SettingsHelpHint(text: t.services.hubSubtitle),
             ),
-            SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
+            SettingsGroup(
+              children: [
+                for (final info in TrackerServiceInfo.all) _TrackerHubRow(info),
+                _seerr(),
+                _remoteStreaming(),
+              ],
+            ),
             if (profileId != null && PlatformDetector.supportsEmbeddedGameStreaming())
               SettingsGroup(
                 title: t.games.title,
@@ -84,6 +92,28 @@ class ServicesSettingsScreen extends StatelessWidget {
         );
       },
     ),
+  );
+
+  Widget _remoteStreaming() => Consumer<RemoteStreamingProvider>(
+    builder: (context, streaming, _) {
+      final configured = streaming.accounts.length + streaming.addons.length;
+      return FocusableListTile(
+        leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
+        title: Text(t.streaming.title),
+        subtitle: Text(
+          streaming.loading
+              ? t.streaming.subtitle
+              : configured == 0
+              ? t.streaming.addonsDescription
+              : t.streaming.connectionsConfigured(count: configured),
+        ),
+        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()),
+        ),
+      );
+    },
   );
 }
 

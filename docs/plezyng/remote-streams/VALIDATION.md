@@ -1,8 +1,9 @@
 # Acceptance, qualification and regression plan
 
-This file defines future implementation checks. None of the live-provider or
-device results below is asserted by the planning commit. Confidence in those
-results is unknown until recorded against an exact build.
+This file remains the acceptance plan for the broader design. The current PR
+branch has not been validated against live provider accounts or packaged
+devices. No app build or automated tests were run for this branch; source
+inspection and `git diff --check` are the local review evidence only.
 
 ## Definition of done
 
@@ -155,6 +156,7 @@ affected by integration. Reuse tests such as `test/providers/catalog_sources_pro
 Add new behavior tests for the matrix above instead of tests that just mirror
 new class constructors. Use packaged-target smoke tests for native behavior.
 
-The documentation-only planning change needs link/path, Markdown structure,
-source attribution and diff-scope checks, not application builds. Do not launch
-CI or change workflow triggers to validate this plan.
+The current implementation still needs the behavioral matrix below, plus
+link/path, Markdown structure, source attribution and diff-scope review for
+these design documents. Do not launch CI or change workflow triggers for this
+branch.

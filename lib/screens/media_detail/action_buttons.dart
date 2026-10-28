@@ -316,6 +316,80 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       }
     }
 
+    Future<void> onWatchWithServicesPressed() async {
+      if (!_canUseDetail || !context.mounted) return;
+      final streaming = context.read<RemoteStreamingProvider>();
+      if (streaming.addons.where((addon) => addon.enabled).isEmpty && streaming.accounts.isEmpty) {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
+        if (!context.mounted ||
+            (streaming.addons.where((addon) => addon.enabled).isEmpty && streaming.accounts.isEmpty)) {
+          return;
+        }
+      }
+      final MediaItem? playbackItem = metadata.isShow
+          ? _showPlayEpisode()
+          : metadata.isSeason
+          ? (_episodes.isEmpty ? null : _episodes.first)
+          : metadata.isMovie || metadata.isEpisode
+          ? metadata
+          : null;
+      if (playbackItem == null) {
+        showErrorSnackBar(context, t.streaming.remoteNeedsEpisode);
+        return;
+      }
+      final client = _getMediaClientForMetadata(context);
+      if (client == null) {
+        showErrorSnackBar(context, t.cast.serverNotAvailable);
+        return;
+      }
+      try {
+        final lookupItemId = playbackItem.isEpisode
+            ? (playbackItem.grandparentId ?? playbackItem.raw?['SeriesId'] as String? ?? playbackItem.id)
+            : playbackItem.id;
+        final ids = await client.fetchExternalIds(lookupItemId);
+        if (!context.mounted || !_canUseDetail) return;
+        final titleId = ids.imdb ?? (ids.tmdb == null ? null : 'tmdb:${ids.tmdb}');
+        if (titleId == null || titleId.isEmpty) {
+          showErrorSnackBar(context, t.streaming.remoteNeedsExternalId);
+          return;
+        }
+        final episodeSuffix = playbackItem.isEpisode
+            ? (playbackItem.parentIndex != null && playbackItem.index != null
+                  ? ':${playbackItem.parentIndex}:${playbackItem.index}'
+                  : null)
+            : '';
+        if (episodeSuffix == null) {
+          showErrorSnackBar(context, t.streaming.remoteNeedsEpisodeNumber);
+          return;
+        }
+        final request = RemoteStreamRequest(
+          type: playbackItem.isEpisode ? 'series' : 'movie',
+          id: '$titleId$episodeSuffix',
+          title: playbackItem.title ?? metadata.title ?? '',
+          year: playbackItem.year,
+          season: playbackItem.isEpisode ? playbackItem.parentIndex : null,
+          episode: playbackItem.isEpisode ? playbackItem.index : null,
+        );
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'remote-stream-picker'),
+            builder: (_) => RemoteStreamPickerScreen(
+              request: request,
+              identifiers: {
+                if (ids.imdb != null) 'imdb': ids.imdb!,
+                if (ids.tmdb != null) 'tmdb': '${ids.tmdb}',
+                if (ids.tvdb != null) 'tvdb': '${ids.tvdb}',
+              },
+              durationMs: playbackItem.durationMs,
+            ),
+          ),
+        );
+      } catch (_) {
+        if (context.mounted) showErrorSnackBar(context, t.streaming.streamLookupFailed);
+      }
+    }
+
     final castAction =
         CastMediaService.isSupportedPlatform &&
             !widget.isOffline &&
@@ -335,6 +409,20 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                     ? t.cast.connectedTo(device: CastMediaService.instance.deviceName ?? t.cast.device)
                     : t.cast.castToDevice,
               ),
+            ),
+          )
+        : null;
+
+    final remoteStreamAction = !widget.isOffline &&
+            (metadata.isMovie || metadata.isEpisode || metadata.isShow || metadata.isSeason)
+        ? FocusableAction(
+            debugLabel: 'detail_watch_with_services',
+            onPressed: onWatchWithServicesPressed,
+            builder: (context, state) => iconActionButton(
+              state,
+              onPressed: onWatchWithServicesPressed,
+              icon: const AppIcon(Symbols.cloud_rounded, fill: 1),
+              tooltip: t.streaming.watchWithServices,
             ),
           )
         : null;
@@ -417,12 +505,14 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               actionButtonStyle,
               tvScale,
               onPlayTrailer: onPlayTrailer,
+              onWatchWithServices: onWatchWithServicesPressed,
               showFocus: state.showFocus,
             ),
           );
 
     final allActions = <FocusableAction>[
       playAction,
+      ?remoteStreamAction,
       ?versionAction,
       ?trailerAction,
       ?castAction,
@@ -469,16 +559,24 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         playAction,
         ?versionAction,
         ?castAction,
+        ?remoteStreamAction,
         ?downloadAction,
         watchedAction,
         ?moreActionsAction,
       ];
       if (!maxWidth.isFinite || estimatedRowWidth(medium) <= maxWidth) return medium;
 
-      final compact = <FocusableAction>[playAction, ?versionAction, ?castAction, watchedAction, ?moreActionsAction];
+      final compact = <FocusableAction>[
+        playAction,
+        ?versionAction,
+        ?castAction,
+        ?remoteStreamAction,
+        watchedAction,
+        ?moreActionsAction,
+      ];
       if (estimatedRowWidth(compact) <= maxWidth) return compact;
 
-      return [playAction, ?versionAction, ?castAction, ?moreActionsAction];
+      return [playAction, ?versionAction, ?remoteStreamAction, ?moreActionsAction];
     }
 
     Widget actionBar(List<FocusableAction> actions) {
@@ -621,6 +719,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     actionButtonStyle,
     double tvScale, {
     VoidCallback? onPlayTrailer,
+    VoidCallback? onWatchWithServices,
     bool showFocus = false,
   }) {
     return MediaContextMenu(
@@ -628,6 +727,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       item: metadata,
       onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
       onPlayTrailer: onPlayTrailer,
+      extraEntries: onWatchWithServices == null
+          ? const []
+          : [
+              MediaMenuExtraEntry(
+                icon: Symbols.cloud_rounded,
+                label: t.streaming.watchWithServices,
+                onSelected: onWatchWithServices,
+              ),
+            ],
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
           onPressed: () {

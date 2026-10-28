@@ -77,6 +77,7 @@ import 'services/library_events/library_event_service.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/credential_vault.dart';
+import 'services/remote_streams/remote_streaming_provider.dart';
 import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
@@ -1893,6 +1894,13 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // the active profile and reload when the profile changes.
         ChangeNotifierProxyProvider<ActiveProfileProvider, SourceController>(
           create: (_) => SourceController(),
+          update: (_, active, previous) {
+            previous!.attachProfile(active.activeId, blocked: active.isBinding || !active.lastBindingSucceeded);
+            return previous;
+          },
+        ),
+        ChangeNotifierProxyProvider<ActiveProfileProvider, RemoteStreamingProvider>(
+          create: (_) => RemoteStreamingProvider(),
           update: (_, active, previous) {
             previous!.attachProfile(active.activeId, blocked: active.isBinding || !active.lastBindingSucceeded);
             return previous;

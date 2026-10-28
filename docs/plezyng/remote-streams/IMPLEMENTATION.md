@@ -1,25 +1,48 @@
-# Luna implementation work packages
+# Luna implementation and remaining work register
 
-Every package below is planned, not implemented by this documentation commit.
-Work sequentially through dependencies and commit coherent checkpoints to the
-owner-authorized branch. For this request that branch is `main`; preserve
-concurrent changes, use fast-forward updates, and do not create a PR or dispatch
-CI. Local validation remains part of implementation. Future CI/build execution
-must follow the repository's private-JIT policy.
+This register now tracks the code on
+`codex/debrid-stremio-integration-20261028`. The branch implements an initial
+connected-stream vertical slice. It does **not** complete the full R01–R16
+product plan: cloud-file inventory, Stremio catalogs/account import, native P2P,
+background lease renewal, downloads and cross-surface media merging remain
+separate packages below. Keep those gaps explicit in release notes and UI.
+
+The owner requested implementation on a PR branch. Commit and push only to that
+branch; do not dispatch GitHub Actions or use hosted runners. The repository
+requires private ephemeral JIT runners for any later authorized build/CI work.
+
+## Implemented on this branch
+
+| Area | Current implementation | Scope limit |
+| --- | --- | --- |
+| Profile ownership and secrets | `RemoteStreamingProvider` follows `ActiveProfileProvider`; accounts, signed manifest URLs and descriptors are protected by `CredentialVault` in profile-scoped preferences. Unreadable ciphertext is preserved until the user explicitly clears it. | Cloud inventory is fetched on demand and not persisted as source records. OS keychain lock errors use the retry path; unrecoverable ciphertext loss requires explicit clearing and reconnect. |
+| Connection setup | Real-Debrid device authorization and AllDebrid PIN flow use the shared QR/code dialog. Premiumize and TorBox API keys are validated with their account endpoints before encrypted save. | Premiumize uses API-key setup because PlezyNG does not yet have a registered OAuth client. TorBox device flow is not wired. |
+| Stremio add-ons | Manifest validation and stream-resource discovery support configured stream add-ons, per-installation enable/remove, external links, HTTPS streams, hash/file index, request headers and subtitle descriptors. | Catalog/meta resources, account import, required extras/configuration and manifest update review are not implemented. |
+| Playback | Stream choices open the existing standalone `SourcePlayback`/`SourcePlayerScreen`, retain the title's external identifiers and duration, and persist local resume progress. Subtitle selection downloads a bounded file and uses the existing external-subtitle path. | This does not join the server video queue/player chrome or report remote playback to a Plex/Jellyfin/Emby server. PiP/multiview and background playback qualification are outstanding. |
+| Resolver services | Real-Debrid, AllDebrid and Premiumize resolve v1 hashes and supported file-host links. TorBox resolves cached v1 torrents only and only creates items with `add_only_if_cached`. All four providers expose on-demand video-file browsing from their cloud inventory. When multiple services are connected, the picker asks which account to use. | No v2 hash resolution, uncached TorBox jobs, durable operation ledger or same-copy lease renewal. A generated CDN link can expire during long playback. |
+| Network boundary | Add-on request headers are bounded and validated, then held in memory behind the loopback media gateway. HTTP is opt-in per add-on. HLS children inherit headers only on the same origin; redirect policy prevents HTTPS downgrade and strips sensitive headers on cross-origin redirects. | Provider-specific DNS/IP egress blocking, DASH nested-resource handling and native-engine fetch auditing remain unqualified. |
+| App integration | A contextual watch action is added to supported media details; connected provider settings offer an on-demand cloud-file browser; the existing Services hub routes into provider/add-on settings. | Cloud files are not projected into Home, Search, Libraries, Explore or Downloads. |
+
+No automated tests or app builds were run for this implementation. The current
+workspace does not include the Dart or Flutter SDK, and the user requested no
+CI dispatch. `git diff --check` and source/document inspection are the local
+review gates for this branch; live account and packaged-device behavior remain
+unverified.
 
 ## Start here
 
-1. Read this folder and current `AGENTS.md`; inspect `main` again. The planning
-   baseline is recorded in README, but current code is authoritative.
-2. Find current profile-binding, startup, source, catalog, playback, download,
-   PiP and multiview tests before editing. Use existing dependency injection,
-   HTTP factories, clock and platform abstractions.
+1. Read this folder and current `AGENTS.md`; inspect the current PR branch.
+   Current code is authoritative over this design baseline.
+2. Before implementing a remaining package, inspect its profile-binding,
+   startup, source, catalog, playback, download, PiP and multiview contracts.
+   Use existing dependency injection, HTTP factories, clocks and platform
+   abstractions.
 3. Establish a provider fixture harness using synthetic public test media and
    sanitized captured protocol shapes. Keep live accounts out of unit tests.
-4. Build the Real-Debrid cloud vertical slice before generalizing every screen.
-   Prove connection → inventory → metadata → playback → resume → teardown.
-5. Generalize only the boundaries that this slice and the Stremio fixtures
-   require. Do not rewrite server clients or the entire player at once.
+4. Promote the on-demand provider inventory into the existing source/catalog
+   queries with stable account and file identities, then implement Stremio
+   catalogs and account import. Do not rewrite server clients or the entire
+   player at once.
 
 ## Proposed code layout
 
@@ -204,8 +227,8 @@ the current remote head before writing and replay additive changes if it moved.
 Never force-push, replace another agent's files wholesale, merge unrelated
 branches, or enable Actions to validate this feature without authorization.
 
-At handoff report completed package IDs, commits, remaining exact work, local
-test results and separately qualified targets. A provider adapter returning
+At handoff report the implemented slice, commits, remaining exact work, local
+review steps and separately qualified targets. A provider adapter returning
 empty lists, an “unsupported” implementation behind a visible Connect button,
 a source route that opens a browser instead of the native player, or a parser
 without an engine must not be reported as code-complete functionality.
