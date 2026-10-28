@@ -432,7 +432,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 | O09 | A paired companion exposes capabilities, jobs, cancellation, results, and narrow authenticated media access. | M6 |
 | O10 | Cloud/remote processing starts only under configured policy and reports cost/quota/failure states. | M5 |
 | O11 | Logs avoid credentials and full transcript text by default; diagnostics identify versions, epochs, timing, and actual devices. | M0 |
-| O12 | Malformed subtitles, fonts, archives, and model files are bounded and parser-fuzzed. PR #53 bounds local ZIP and plain TAR inputs and entries, rejects unsafe archive paths and symlinks, checks ZIP output before expansion and TAR headers before decode, and never extracts using archive-controlled paths; parser fuzzing remains open. | M2–M6 |
+| O12 | Malformed subtitles, fonts, archives, and model files are bounded and parser-fuzzed. PR #53 bounds local ZIP, plain TAR, and gzip-compressed TAR inputs and entries; rejects unsafe archive paths and symlinks; checks ZIP resource bounds before expansion, gzip output before TAR decoding, and TAR headers before decode; and never extracts using archive-controlled paths. Parser fuzzing remains open. | M2–M6 |
 | O13 | Cast/external-player handoff exports compatible subtitles or offers explicit server burn-in; local overlays are not reported as delivered. | M8 |
 | O14 | Provider APIs respect quotas, retries, cancellation, and account boundaries; no executable provider scripts from subtitles. | M2 |
 | O15 | Cross-source subtitle search/transcription uses current source leases and handles renewable URLs without cache identity churn. | M4 |
