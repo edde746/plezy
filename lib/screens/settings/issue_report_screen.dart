@@ -84,9 +84,9 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final servers = context.watch<MultiServerProvider>();
-    final online = servers.onlineServerCount;
-    final expected = servers.expectedServerIds.length;
+    final servers = context.watch<MultiServerProvider?>();
+    final online = servers?.onlineServerCount ?? 0;
+    final expected = servers?.expectedServerIds.length ?? 0;
 
     return FutureBuilder<PackageInfo?>(
       future: _packageInfo,
