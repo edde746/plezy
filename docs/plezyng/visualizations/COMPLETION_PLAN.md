@@ -210,3 +210,7 @@ This closes a targeted EEL semantics slice, not the MilkRust compatibility gate.
 ## Implementation checkpoint — 2026-10-28 (memory-reference follow-up)
 
 MilkRust PR #20 now includes commit [521beb4](https://github.com/snapetech-org/MilkRust/commit/521beb41275cf94d4145d142c7c693323c270adc). Both EEL evaluators preserve the destination-buffer lvalue for simple `memcpy(...) = value` and `memset(...) = value` assignment targets. Regression cases were added but not run. This closes those direct assignment forms only; generic reference propagation through nested function results and arithmetic, full memory-index semantics, RNG traces and the remaining engine/rendering gates are still open. No build, test, CI, rendering or device qualification was run.
+
+## Implementation checkpoint — 2026-10-28 (library organization)
+
+PlezyNG commit [44c7ecc](https://github.com/snapetech-org/PlezyNG/commit/44c7ecca4973e9c88f91590204f79b67a4d47ffc) adds local search across pinned pack metadata, imported pack authors/preset titles/tags, and imported loose-preset filenames. Favorites persist on the device for catalog pack entries, imported packs and loose preset imports. They are not profile-specific, and presets inside packs do not yet have per-preset controls. This is library organization only: MilkDrop content remains non-playable until renderer and PCM integration. Search/favorites do not close the V8 UX package or the catalog, renderer or qualification gates. No tests/build/CI/render/device work was run.
