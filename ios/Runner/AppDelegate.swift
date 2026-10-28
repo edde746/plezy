@@ -6,7 +6,10 @@ import MediaPlayer
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private var deviceAdjustmentChannel: FlutterMethodChannel?
-  private var originalBrightness: CGFloat?
+  /// The screen whose brightness the player changed, and the level to restore
+  /// on it. Tracked per screen because iPhone Duo moves the app between its
+  /// outer and inner displays when folded or unfolded (#2861).
+  private var brightnessOverride: (screen: UIScreen, original: CGFloat)?
   private var volumeView: MPVolumeView?
   private weak var volumeSlider: UISlider?
 
@@ -78,18 +81,26 @@ import MediaPlayer
   private func handleDeviceAdjustmentCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "getBrightness":
-      result(Double(UIScreen.main.brightness))
+      result(activeScreen.map { Double($0.brightness) })
     case "setBrightness":
       guard let value = normalizedArgument(call.arguments, result: result) else { return }
-      if originalBrightness == nil {
-        originalBrightness = UIScreen.main.brightness
+      guard let screen = activeScreen else {
+        result(FlutterError(code: "DEVICE_ADJUSTMENT_UNAVAILABLE", message: "No active screen", details: nil))
+        return
       }
-      UIScreen.main.brightness = CGFloat(value)
+      if let override = brightnessOverride, override.screen !== screen {
+        override.screen.brightness = override.original
+        brightnessOverride = nil
+      }
+      if brightnessOverride == nil {
+        brightnessOverride = (screen, screen.brightness)
+      }
+      screen.brightness = CGFloat(value)
       result(nil)
     case "restoreBrightness":
-      if let originalBrightness = originalBrightness {
-        UIScreen.main.brightness = originalBrightness
-        self.originalBrightness = nil
+      if let override = brightnessOverride {
+        override.screen.brightness = override.original
+        brightnessOverride = nil
       }
       result(nil)
     case "getMediaVolume":
@@ -155,6 +166,12 @@ import MediaPlayer
       if let slider = findVolumeSlider(in: subview) { return slider }
     }
     return nil
+  }
+
+  /// The display showing the app. Not `UIScreen.main`: on iPhone Duo that is
+  /// the outer display even while the app is on the inner one (#2861).
+  private var activeScreen: UIScreen? {
+    activeWindow?.windowScene?.screen
   }
 
   private var activeWindow: UIWindow? {
