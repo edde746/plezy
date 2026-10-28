@@ -41,6 +41,12 @@ def configure_proxy(env: dict[str, str]) -> None:
         output.writelines(lines)
 
 
+def platform_package(api: int) -> str:
+    # Google publishes API 37 and later with a minor version
+    # (platforms;android-37.0); there is no plain platforms;android-37.
+    return f"platforms;android-{api}.0" if api >= 37 else f"platforms;android-{api}"
+
+
 def required_packages(root: Path) -> list[str]:
     packages = {"platform-tools"}
     sources = list((root / "android").glob("*.gradle*"))
@@ -50,7 +56,7 @@ def required_packages(root: Path) -> list[str]:
             continue
         source = path.read_text(encoding="utf-8")
         for value in re.findall(r"\bcompileSdk\s*(?:=\s*)?(\d+)\b", source):
-            packages.add(f"platforms;android-{value}")
+            packages.add(platform_package(int(value)))
         for field, package in (("buildToolsVersion", "build-tools"), ("ndkVersion", "ndk")):
             pattern = rf"\b{field}\s*(?:=\s*)?['\"]([0-9.]+)['\"]"
             for value in re.findall(pattern, source):
