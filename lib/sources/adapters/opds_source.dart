@@ -15,6 +15,7 @@ class OpdsSourceAdapter extends SourceAdapter {
   final Map<String, ({String template, int count})> _streams = {};
   static const _pse = 'http://vaemendis.net/opds-pse/stream';
   static const _pseNamespace = 'http://vaemendis.net/opds-pse/ns';
+  static const _sampleRel = 'http://opds-spec.org/acquisition/sample';
   String _streamKey(Uri catalog, String id) => jsonEncode([catalog.toString(), id]);
   void _stream(String id, Uri catalog, String? href, Object? count, String type) {
     final pages = sourceInt(count);
@@ -52,16 +53,16 @@ class OpdsSourceAdapter extends SourceAdapter {
         fragment: '',
       )
       .toString();
-  String _fileRef(Uri catalog, String id, Uri download, String type) => jsonEncode({
+  String _fileRef(Uri catalog, String id, Uri download, String type, {required bool sampleOnly}) => jsonEncode({
     'catalog': catalog.toString(),
     'entry': id,
-    'link': sourceDigest(jsonEncode([_identity(download), type])),
+    'link': sourceDigest(jsonEncode(sampleOnly ? [_identity(download), type, true] : [_identity(download), type])),
   });
-  bool _downloadable(String rel) => const {
-    'http://opds-spec.org/acquisition',
-    'http://opds-spec.org/acquisition/open-access',
-    'http://opds-spec.org/acquisition/sample',
-  }.contains(rel);
+  bool _downloadable(String rel) => rel
+      .split(RegExp(r'\s+'))
+      .any(
+        const {'http://opds-spec.org/acquisition', 'http://opds-spec.org/acquisition/open-access', _sampleRel}.contains,
+      );
 
   @override
   SourceCapabilities get capabilities => const SourceCapabilities();
@@ -104,6 +105,67 @@ class OpdsSourceAdapter extends SourceAdapter {
     if (value is List) return value.map(_label).join(', ');
     final map = sourceMap(value);
     return '${map['name'] ?? map['en'] ?? map.values.firstOrNull ?? ''}';
+  }
+
+  Map<String, String> _portableIdentifiers(Object? raw) {
+    final values = <String>[];
+    void collect(Object? value) {
+      if (value is String) {
+        values.add(value.trim());
+      } else if (value is List) {
+        for (final item in value) {
+          collect(item);
+        }
+      } else if (value is Map) {
+        final item = sourceMap(value);
+        final scheme = '${item['scheme'] ?? item['type'] ?? ''}'.trim();
+        final normalizedScheme = scheme.toLowerCase();
+        final prefix = normalizedScheme.contains('isbn')
+            ? 'isbn'
+            : normalizedScheme.contains('asin')
+            ? 'asin'
+            : normalizedScheme.contains('doi')
+            ? 'doi'
+            : scheme;
+        for (final key in const ['value', 'identifier', 'id', 'text']) {
+          if (item[key] is String) {
+            final text = (item[key] as String).trim();
+            values.add(prefix.isEmpty ? text : '$prefix:$text');
+          }
+        }
+      }
+    }
+
+    collect(raw);
+    final result = <String, String>{};
+    for (final original in values.where((value) => value.isNotEmpty)) {
+      final value = original.trim();
+      final isbn = value
+          .replaceFirst(RegExp(r'^(?:(?:urn:)?isbn\s*:\s*)+', caseSensitive: false), '')
+          .replaceAll(RegExp(r'[\s-]'), '')
+          .toUpperCase();
+      if (RegExp(r'^[0-9]{13}$').hasMatch(isbn)) {
+        result.putIfAbsent('isbn13', () => isbn);
+        continue;
+      }
+      if (RegExp(r'^[0-9]{9}[0-9X]$').hasMatch(isbn)) {
+        result.putIfAbsent('isbn10', () => isbn);
+        continue;
+      }
+      final asinValue = value.replaceFirst(RegExp(r'^(?:(?:urn:)?asin\s*:\s*)+', caseSensitive: false), '');
+      final asin = RegExp(r'^([A-Z0-9]{10})$', caseSensitive: false).firstMatch(asinValue);
+      if (asin != null) {
+        result.putIfAbsent('asin', () => asin.group(1)!.toUpperCase());
+        continue;
+      }
+      final doi = value
+          .replaceFirst(RegExp(r'^(?:(?:urn:)?doi\s*:\s*)+', caseSensitive: false), '')
+          .replaceFirst(RegExp(r'^https?://(?:dx\.)?doi\.org/', caseSensitive: false), '');
+      if (RegExp(r'^10\.[0-9]{4,9}/[^\s]{1,100}$', caseSensitive: false).hasMatch(doi)) {
+        result.putIfAbsent('doi', () => doi.toLowerCase());
+      }
+    }
+    return Map.unmodifiable(result);
   }
 
   SourcePage _json(Uri uri, Map<String, dynamic> feed) {
@@ -168,9 +230,12 @@ class OpdsSourceAdapter extends SourceAdapter {
         if (!_rels(link).any((r) => _downloadable(r)) || link['href'] is! String) continue;
         final mime = link['type'] as String? ?? '';
         final name = '${_label(meta['title'])}${_extension(mime)}';
-        final ref = _fileRef(uri, id, uri.resolve(link['href'] as String), mime);
+        final sampleOnly = _rels(link).any((rel) => rel.split(RegExp(r'\s+')).contains(_sampleRel));
+        final ref = _fileRef(uri, id, uri.resolve(link['href'] as String), mime, sampleOnly: sampleOnly);
         _acquisitions[ref] = uri.resolve(link['href'] as String);
-        files.add(PublicationFile(id: ref, name: name, mimeType: mime, size: sourceInt(link['length'])));
+        files.add(
+          PublicationFile(id: ref, name: name, mimeType: mime, size: sourceInt(link['length']), sampleOnly: sampleOnly),
+        );
       }
       if (files.isEmpty && _streams.containsKey(_streamKey(uri, id))) {
         files.add(_streamFile(uri, id, _label(meta['title'])));
@@ -186,6 +251,7 @@ class OpdsSourceAdapter extends SourceAdapter {
           author: _label(meta['author']),
           language: _label(meta['language']),
           description: _label(meta['description']),
+          identifiers: _portableIdentifiers(meta['identifier']),
           files: files,
         ),
       );
@@ -248,9 +314,12 @@ class OpdsSourceAdapter extends SourceAdapter {
         if (href == null) continue;
         final rel = link.getAttribute('rel') ?? '', mime = link.getAttribute('type') ?? '';
         if (_downloadable(rel)) {
-          final ref = _fileRef(uri, id, uri.resolve(href), mime);
+          final sampleOnly = rel.split(RegExp(r'\s+')).contains(_sampleRel);
+          final ref = _fileRef(uri, id, uri.resolve(href), mime, sampleOnly: sampleOnly);
           _acquisitions[ref] = uri.resolve(href);
-          files.add(PublicationFile(id: ref, name: '$title${_extension(mime)}', mimeType: mime));
+          files.add(
+            PublicationFile(id: ref, name: '$title${_extension(mime)}', mimeType: mime, sampleOnly: sampleOnly),
+          );
         } else if ((rel == 'subsection' || rel == 'alternate' || rel.isEmpty) &&
             (mime.contains('atom') || mime.contains('opds'))) {
           result.add(
@@ -278,6 +347,12 @@ class OpdsSourceAdapter extends SourceAdapter {
                 .join(', '),
             description: text('summary').isEmpty ? text('content') : text('summary'),
             parentId: uri.toString(),
+            identifiers: _portableIdentifiers(
+              entry.childElements
+                  .where((element) => element.name.local == 'identifier')
+                  .map((element) => element.innerText)
+                  .toList(),
+            ),
             files: files,
           ),
         );

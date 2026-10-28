@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add capped, disposable OPDS sample previews, exact-ID adaptation matching, side-by-side Saved-pick comparison, and opt-in encrypted Saved-pick sync with exact-identity re-resolution.
 - Add a searchable, region-aware directory of official video, rental, book, audiobook, comics, music and game storefronts to Services and title details; add Google Books catalog search with country-specific sale metadata and official purchase handoff.
 - Keep file-source activation profile-scoped through download and shelf reconciliation, and stop cloud settings backup or restore when the initiating profile session changes.
 - Require every release-critical CI job, including each native platform matrix row, to pass for the exact release commit; keep implementation and qualification claims in a source-linked capability ledger.
@@ -27,8 +28,6 @@
 - Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
 - Attach the validated ARM Tizen tester handoff to versioned releases and fail closed if its package, checksum, provenance or toolchain files are missing.
 - Retain previous server results when a new search is cancelled, while preserving indexed Files and Seerr results.
-- Route Windows x64 native CI through the private Packer JIT workflow allowlist.
-- Lock iOS, macOS and tvOS CocoaPods dependencies for CI, and retain root dependency overrides when resolving tvOS packages.
 
 ## [3.0.0] - 2026-10-27
 

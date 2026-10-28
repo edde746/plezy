@@ -160,6 +160,7 @@ class DiscoveryActionBar extends StatelessWidget {
     this.onSave,
     this.onOpen,
     this.onDetails,
+    this.onPreview,
     this.showDetails = true,
     this.onUndo,
     this.feedback,
@@ -171,6 +172,7 @@ class DiscoveryActionBar extends StatelessWidget {
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
   final VoidCallback? onDetails;
+  final VoidCallback? onPreview;
   final bool showDetails;
   final VoidCallback? onUndo;
   final String? feedback;
@@ -239,6 +241,7 @@ class DiscoveryActionBar extends StatelessWidget {
                   children: [
                     Expanded(child: _secondary(t.discover.findNext.undo, onUndo)),
                     if (showDetails) Expanded(child: _secondary(t.discover.findNext.details, onDetails)),
+                    if (onPreview != null) Expanded(child: _secondary(t.common.preview, onPreview)),
                     Expanded(child: _secondary(t.discover.findNext.howItWorks, () => showDiscoveryHelp(context))),
                   ],
                 ),

@@ -488,6 +488,77 @@ class SourceRepository {
         .toList();
   }
 
+  /// Finds locally indexed entries that carry one of the supplied public
+  /// identifiers. The JSON query narrows the candidate set in SQLite; callers
+  /// still compare the decoded identifiers exactly before opening anything.
+  Future<List<SourceEntry>> entriesByPublicIdentifiers(
+    String profile,
+    Map<String, String> identifiers, {
+    SourceItemKind? kind,
+    Set<String>? sourceIds,
+    int limit = 500,
+  }) async {
+    if (identifiers.isEmpty) return const [];
+    final configuredSourceIds = sourceIds?.where((id) => id.trim().isNotEmpty).toList(growable: false);
+    if (configuredSourceIds != null && configuredSourceIds.isEmpty) return const [];
+    const aliases = <String, List<String>>{
+      'imdb': ['imdb', 'imdbid'],
+      'tmdb': ['tmdb', 'tmdbid', 'themoviedb'],
+      'tvdb': ['tvdb', 'tvdbid', 'thetvdb'],
+      'mal': ['mal', 'malid', 'myanimelist'],
+      'anilist': ['anilist', 'anilistid'],
+      'simkl': ['simkl', 'simklid'],
+      'trakt': ['trakt', 'traktid'],
+      'isbn13': ['isbn', 'isbn13', 'isbn13id'],
+      'isbn10': ['isbn', 'isbn10', 'isbn10id'],
+      'asin': ['asin', 'asinid'],
+      'doi': ['doi', 'doiid'],
+    };
+    final clauses = <String>[];
+    final variables = <Variable<Object>>[Variable(profile)];
+    final predicates = <String>[];
+    if (kind != null) {
+      predicates.add("json_extract(entries.payload,'\$.kind')=?");
+      variables.add(Variable<Object>(kind.name));
+    }
+    if (configuredSourceIds != null) {
+      predicates.add('entries.source IN (${List.filled(configuredSourceIds.length, '?').join(',')})');
+      variables.addAll(configuredSourceIds.map((id) => Variable<Object>(id)));
+    }
+    final keyExpression = "lower(replace(replace(replace(identifier.key,'-',''),'_',''),' ',''))";
+    final valueExpression = "lower(trim(CAST(identifier.value AS TEXT)))";
+    for (final entry in identifiers.entries) {
+      final normalizedKey = entry.key.toLowerCase();
+      final keyAliases = aliases[normalizedKey];
+      if (keyAliases == null || entry.value.trim().isEmpty) continue;
+      final normalizedValue = normalizedKey == 'isbn10' || normalizedKey == 'isbn13'
+          ? entry.value.replaceAll(RegExp(r'[\s-]'), '').toLowerCase()
+          : entry.value.trim().toLowerCase();
+      final compareExpression = normalizedKey == 'isbn10' || normalizedKey == 'isbn13'
+          ? "lower(replace(replace(trim(CAST(identifier.value AS TEXT)),'-',''),' ',''))"
+          : valueExpression;
+      clauses.add(
+        '($keyExpression IN (${List.filled(keyAliases.length, '?').join(',')}) AND '
+        '($compareExpression=?${normalizedKey == 'doi' ? ' OR instr($valueExpression,?)>0' : ''}))',
+      );
+      variables.addAll(keyAliases.map((key) => Variable<Object>(key)));
+      variables.add(Variable<Object>(normalizedValue));
+      if (normalizedKey == 'doi') variables.add(Variable<Object>(normalizedValue));
+    }
+    if (clauses.isEmpty) return const [];
+    final rows = await database
+        .customSelect(
+          "SELECT DISTINCT entries.payload FROM entries, json_each(entries.payload, '\$.identifiers') AS identifier "
+          'WHERE entries.profile=?${predicates.isEmpty ? '' : ' AND ${predicates.join(' AND ')}'} '
+          'AND (${clauses.join(' OR ')}) LIMIT ?',
+          variables: [...variables, Variable(limit.clamp(1, 500).toInt())],
+        )
+        .get();
+    return rows
+        .map((row) => SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload')))))
+        .toList(growable: false);
+  }
+
   /// Returns a bounded source-index slice. Only the selected payloads are
   /// decoded; the stable rowid cursor avoids loading the entire profile index
   /// to satisfy a small first page or a text search.

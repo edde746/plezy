@@ -28,11 +28,15 @@ import '../../providers/explore_provider.dart';
 import '../../providers/offline_mode_provider.dart';
 import '../../screens/livetv/program_details_sheet.dart';
 import '../../screens/sources/source_detail_screen.dart';
+import '../../screens/sources/source_player_screen.dart';
+import '../../screens/sources/publication_reader_screen.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
+import '../../sources/source_playback.dart';
 import '../../services/settings_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/catalog_navigation_helper.dart';
+import '../../utils/external_ids.dart';
 import '../../utils/global_key_utils.dart';
 import '../../utils/layout_constants.dart';
 import '../../utils/live_tv_matching.dart';
@@ -472,6 +476,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       catalogEntryKey: entryKey,
       catalogItem: item,
       artworkPath: item.posterFor(640),
+      portableIds: sanitizeDiscoveryPortableIds(item.ids.toJson().map((key, value) => MapEntry(key, '$value'))),
     );
   }
 
@@ -488,7 +493,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     if (offlineOnly) {
       final playableFiles = switch (entry.kind) {
         SourceItemKind.ebook || SourceItemKind.comic => entry.ebooks,
-        SourceItemKind.audiobook || SourceItemKind.music || SourceItemKind.video => entry.files,
+        SourceItemKind.audiobook ||
+        SourceItemKind.music ||
+        SourceItemKind.video => entry.files.where((file) => !file.sampleOnly).toList(growable: false),
         SourceItemKind.folder || SourceItemKind.unknown => const <PublicationFile>[],
       };
       var hasLocalFile = source.kind == FileSourceKind.local && playableFiles.isNotEmpty;
@@ -503,7 +510,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
       if (!hasLocalFile) return null;
     }
     final audio = entry.audio;
-    final totalDuration = _sumKnownDurations(entry.files.map((file) => file.durationMs));
+    final totalDuration = _sumKnownDurations(
+      entry.files.where((file) => !file.sampleOnly).map((file) => file.durationMs),
+    );
     var unitDuration = totalDuration;
     var isEstimate = false;
     var unitLabel = '';
@@ -547,6 +556,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       year: null,
       sourceEntry: entry,
       offlineReady: offlineOnly,
+      portableIds: sanitizeDiscoveryPortableIds(entry.identifiers),
     );
   }
 
@@ -705,10 +715,8 @@ class _FindNextScreenState extends State<FindNextScreen> {
                             return FocusableListTile(
                               title: Text(t.discover.findNext.filterAnything),
                               trailing: selected == null ? const AppIcon(Symbols.check_rounded) : null,
-                              onTap: () => OverlaySheetController.popAdaptive(
-                                sheetContext,
-                                (applied: true, value: null),
-                              ),
+                              onTap: () =>
+                                  OverlaySheetController.popAdaptive(sheetContext, (applied: true, value: null)),
                             );
                           }
                           if (filtered.isEmpty) {
@@ -722,10 +730,8 @@ class _FindNextScreenState extends State<FindNextScreen> {
                           return FocusableListTile(
                             title: Text(isolateDisplayText(value), maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: isSelected ? const AppIcon(Symbols.check_rounded) : null,
-                            onTap: () => OverlaySheetController.popAdaptive(
-                              sheetContext,
-                              (applied: true, value: value),
-                            ),
+                            onTap: () =>
+                                OverlaySheetController.popAdaptive(sheetContext, (applied: true, value: value)),
                           );
                         },
                       ),
@@ -755,11 +761,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       if (shownGenres.length == 48) shownGenres.removeLast();
       shownGenres.insert(0, selectedGenre);
     }
-    final availableSources = _choices
-        .map((choice) => choice.reason)
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList()
+    final availableSources = _choices.map((choice) => choice.reason).where((value) => value.isNotEmpty).toSet().toList()
       ..sort((left, right) => left.toLowerCase().compareTo(right.toLowerCase()));
     final selectedSource = sourceReason;
     final shownSources = availableSources.take(48).toList();
@@ -767,198 +769,196 @@ class _FindNextScreenState extends State<FindNextScreen> {
       if (shownSources.length == 48) shownSources.removeLast();
       shownSources.insert(0, selectedSource);
     }
-    final result = await OverlaySheetController.showAdaptive<
-      ({_DiscoveryFamily family, int? minutes, String? genre, String? sourceReason})
-    >(
-      context,
-      showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.68),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(t.discover.findNext.filters, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+    final result =
+        await OverlaySheetController.showAdaptive<
+          ({_DiscoveryFamily family, int? minutes, String? genre, String? sourceReason})
+        >(
+          context,
+          showDragHandle: true,
+          builder: (sheetContext) => StatefulBuilder(
+            builder: (context, setSheetState) => Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.68),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final item in _DiscoveryFamily.values)
-                        FocusableButton(
-                          onPressed: () => setSheetState(() => family = item),
-                          autoScroll: false,
-                          child: ChoiceChip(
-                            label: Text(_familyLabel(item)),
-                            selected: item == family,
-                            onSelected: (_) => setSheetState(() => family = item),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(child: Text(t.fileSources.source, style: Theme.of(context).textTheme.titleSmall)),
-                      if (availableSources.length > shownSources.length)
-                        TextButton(
-                          onPressed: () async {
-                            final selection = await _pickFilterValue(
-                              title: t.fileSources.source,
-                              options: availableSources,
-                              selected: sourceReason,
-                            );
-                            if (selection != null && selection.applied) {
-                              final value = selection.value;
-                              if (value != null && !shownSources.contains(value)) {
-                                if (shownSources.length == 48) shownSources.removeLast();
-                                shownSources.insert(0, value);
-                              }
-                              setSheetState(() => sourceReason = value);
-                            }
-                          },
-                          child: Text(t.common.viewAll),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 48,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        for (final item in <String?>[null, ...shownSources])
-                          FocusableButton(
-                            onPressed: () => setSheetState(() => sourceReason = item),
-                            autoScroll: false,
-                            child: ChoiceChip(
-                              label: ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
-                                child: Text(
-                                  item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                      Text(t.discover.findNext.filters, style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final item in _DiscoveryFamily.values)
+                            FocusableButton(
+                              onPressed: () => setSheetState(() => family = item),
+                              autoScroll: false,
+                              child: ChoiceChip(
+                                label: Text(_familyLabel(item)),
+                                selected: item == family,
+                                onSelected: (_) => setSheetState(() => family = item),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: Text(t.fileSources.source, style: Theme.of(context).textTheme.titleSmall)),
+                          if (availableSources.length > shownSources.length)
+                            TextButton(
+                              onPressed: () async {
+                                final selection = await _pickFilterValue(
+                                  title: t.fileSources.source,
+                                  options: availableSources,
+                                  selected: sourceReason,
+                                );
+                                if (selection != null && selection.applied) {
+                                  final value = selection.value;
+                                  if (value != null && !shownSources.contains(value)) {
+                                    if (shownSources.length == 48) shownSources.removeLast();
+                                    shownSources.insert(0, value);
+                                  }
+                                  setSheetState(() => sourceReason = value);
+                                }
+                              },
+                              child: Text(t.common.viewAll),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 48,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final item in <String?>[null, ...shownSources])
+                              FocusableButton(
+                                onPressed: () => setSheetState(() => sourceReason = item),
+                                autoScroll: false,
+                                child: ChoiceChip(
+                                  label: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
+                                    child: Text(
+                                      item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  selected: item == sourceReason,
+                                  onSelected: (_) => setSheetState(() => sourceReason = item),
                                 ),
                               ),
-                              selected: item == sourceReason,
-                              onSelected: (_) => setSheetState(() => sourceReason = item),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              t.libraries.filterCategories.genre,
+                              style: Theme.of(context).textTheme.titleSmall,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(t.libraries.filterCategories.genre, style: Theme.of(context).textTheme.titleSmall),
+                          if (availableGenres.length > shownGenres.length)
+                            TextButton(
+                              onPressed: () async {
+                                final selection = await _pickFilterValue(
+                                  title: t.libraries.filterCategories.genre,
+                                  options: availableGenres,
+                                  selected: genre,
+                                );
+                                if (selection != null && selection.applied) {
+                                  final value = selection.value;
+                                  if (value != null &&
+                                      !shownGenres.any((item) => item.toLowerCase() == value.toLowerCase())) {
+                                    if (shownGenres.length == 48) shownGenres.removeLast();
+                                    shownGenres.insert(0, value);
+                                  }
+                                  setSheetState(() => genre = value);
+                                }
+                              },
+                              child: Text(t.common.viewAll),
+                            ),
+                        ],
                       ),
-                      if (availableGenres.length > shownGenres.length)
-                        TextButton(
-                          onPressed: () async {
-                            final selection = await _pickFilterValue(
-                              title: t.libraries.filterCategories.genre,
-                              options: availableGenres,
-                              selected: genre,
-                            );
-                            if (selection != null && selection.applied) {
-                              final value = selection.value;
-                              if (value != null &&
-                                  !shownGenres.any((item) => item.toLowerCase() == value.toLowerCase())) {
-                                if (shownGenres.length == 48) shownGenres.removeLast();
-                                shownGenres.insert(0, value);
-                              }
-                              setSheetState(() => genre = value);
-                            }
-                          },
-                          child: Text(t.common.viewAll),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 48,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        for (final item in <String?>[null, ...shownGenres])
-                          FocusableButton(
-                            onPressed: () => setSheetState(() => genre = item),
-                            autoScroll: false,
-                            child: ChoiceChip(
-                              label: ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
-                                child: Text(
-                                  item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 48,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final item in <String?>[null, ...shownGenres])
+                              FocusableButton(
+                                onPressed: () => setSheetState(() => genre = item),
+                                autoScroll: false,
+                                child: ChoiceChip(
+                                  label: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.55),
+                                    child: Text(
+                                      item == null ? t.discover.findNext.filterAnything : isolateDisplayText(item),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  selected: item == genre,
+                                  onSelected: (_) => setSheetState(() => genre = item),
                                 ),
                               ),
-                              selected: item == genre,
-                              onSelected: (_) => setSheetState(() => genre = item),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(t.discover.findNext.timeAvailable, style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final item in <int?>[null, 20, 45, 90])
+                            FocusableButton(
+                              onPressed: () => setSheetState(() => maxMinutes = item),
+                              autoScroll: false,
+                              child: ChoiceChip(
+                                label: Text(
+                                  localizeDecimalDigits(switch (item) {
+                                    null => t.discover.findNext.anyTime,
+                                    20 => t.discover.findNext.twentyMinutes,
+                                    45 => t.discover.findNext.fortyFiveMinutes,
+                                    _ => t.discover.findNext.ninetyMinutes,
+                                  }),
+                                ),
+                                selected: item == maxMinutes,
+                                onSelected: (_) => setSheetState(() => maxMinutes = item),
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(t.discover.findNext.timeAvailable, style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final item in <int?>[null, 20, 45, 90])
-                        FocusableButton(
-                          onPressed: () => setSheetState(() => maxMinutes = item),
-                          autoScroll: false,
-                          child: ChoiceChip(
-                            label: Text(
-                              localizeDecimalDigits(switch (item) {
-                                null => t.discover.findNext.anyTime,
-                                20 => t.discover.findNext.twentyMinutes,
-                                45 => t.discover.findNext.fortyFiveMinutes,
-                                _ => t.discover.findNext.ninetyMinutes,
-                              }),
-                            ),
-                            selected: item == maxMinutes,
-                            onSelected: (_) => setSheetState(() => maxMinutes = item),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: FocusableButton(
+                          onPressed: () => Navigator.of(
+                            sheetContext,
+                          ).pop((family: family, minutes: maxMinutes, genre: genre, sourceReason: sourceReason)),
+                          useBackgroundFocus: true,
+                          child: FilledButton(
+                            onPressed: () => Navigator.of(
+                              sheetContext,
+                            ).pop((family: family, minutes: maxMinutes, genre: genre, sourceReason: sourceReason)),
+                            child: Text(t.discover.findNext.apply),
                           ),
                         ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: FocusableButton(
-                      onPressed: () => Navigator.of(sheetContext).pop((
-                        family: family,
-                        minutes: maxMinutes,
-                        genre: genre,
-                        sourceReason: sourceReason,
-                      )),
-                      useBackgroundFocus: true,
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(sheetContext).pop((
-                          family: family,
-                          minutes: maxMinutes,
-                          genre: genre,
-                          sourceReason: sourceReason,
-                        )),
-                        child: Text(t.discover.findNext.apply),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
     if (!mounted || result == null) return;
     setState(() {
       _restoredChoice = null;
@@ -994,7 +994,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   Future<void> _decide(DiscoveryDecisionAction action) async {
     if (_committing || _current == null) return;
-    final choice = _current!;
+    var choice = _current!;
     if (action == DiscoveryDecisionAction.save &&
         !_state.saved.any((saved) => saved.id == choice.id) &&
         _state.saved.length >= DiscoveryStore.maxSaved) {
@@ -1006,6 +1006,10 @@ class _FindNextScreenState extends State<FindNextScreen> {
     if (profileId == null || sources.profileId != profileId || !sources.current(_sourceGeneration)) return;
     setState(() => _committing = true);
     try {
+      if (action == DiscoveryDecisionAction.save) {
+        choice = await _withPortableIdentifiers(choice, profileId, sources);
+        if (!sources.current(_sourceGeneration) || sources.profileId != profileId) return;
+      }
       final state = await _store.decide(profileId, choice, action);
       if (!mounted ||
           context.read<ActiveProfileProvider>().active?.id != profileId ||
@@ -1015,19 +1019,53 @@ class _FindNextScreenState extends State<FindNextScreen> {
       setState(() {
         _state = state;
         _restoredChoice = null;
-        if (_current == choice || _position < _choices.length) {
-          final index = _choices.indexWhere((item) => item.id == choice.id);
-          if (index >= _position) _position = index + 1;
-        }
+        final index = _choices.indexWhere((item) => item.id == choice.id);
+        if (index >= _position) _position = index + 1;
         _feedback = action == DiscoveryDecisionAction.save
             ? t.discover.findNext.savedFeedback
             : t.discover.findNext.skippedFeedback;
       });
+      if (action == DiscoveryDecisionAction.save) sources.scheduleSync();
       if (widget.openSavedPicksOnStart && _choices.isEmpty) unawaited(_load());
     } catch (_) {
       if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
     } finally {
       if (mounted) setState(() => _committing = false);
+    }
+  }
+
+  Future<DiscoveryChoice> _withPortableIdentifiers(
+    DiscoveryChoice choice,
+    String profileId,
+    SourceController sources,
+  ) async {
+    if (choice.portableIds.isNotEmpty) return choice;
+    if (choice.catalogItem case final item?) {
+      return choice.withPortableIds(item.ids.toJson().map((key, value) => MapEntry(key, '$value')));
+    }
+    if (choice.sourceEntry case final entry?) {
+      return choice.withPortableIds(entry.identifiers);
+    }
+    final serverId = choice.serverId;
+    final mediaId = choice.mediaId;
+    final kind = choice.mediaKind;
+    if (serverId == null || mediaId == null || (kind != MediaKind.movie && kind != MediaKind.show)) return choice;
+    final multiServer = context.read<MultiServerProvider>();
+    final client = multiServer.getClientForServer(ServerId(serverId));
+    if (client == null) return choice;
+    final authentication = client.authenticationSessionId;
+    try {
+      final ids = await client.fetchExternalIds(mediaId).timeout(const Duration(seconds: 8));
+      if (!mounted ||
+          context.read<ActiveProfileProvider>().active?.id != profileId ||
+          !sources.current(_sourceGeneration) ||
+          !multiServer.serverIds.contains(serverId) ||
+          !identical(client.authenticationSessionId, authentication)) {
+        return choice;
+      }
+      return choice.withPortableIds(ids.toJson().map((key, value) => MapEntry(key, '$value')));
+    } catch (_) {
+      return choice;
     }
   }
 
@@ -1053,6 +1091,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
           _feedback = null;
           _restoredChoice = currentVersion ?? snapshot;
         });
+        if (lastDecision?.savedChanged == true) sources.scheduleSync();
       }
     } catch (_) {
       if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
@@ -1070,6 +1109,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
           profileId: profileId,
           store: _store,
           includeCatalog: _catalogAllowed,
+          syncSavedPicks: context.read<SourceController>().syncConfig?.includeDiscovery == true,
           onOpen: _openChoice,
           onChooseForMe: _chooseSavedPick,
           onChanged: () async {
@@ -1175,6 +1215,13 @@ class _FindNextScreenState extends State<FindNextScreen> {
       return;
     }
     try {
+      if (choice.serverId == null &&
+          choice.sourceId == null &&
+          choice.catalogSourceId == null &&
+          choice.portableKey != null) {
+        await _openPortableChoice(choice, profileId, detailsOnly: detailsOnly);
+        return;
+      }
       if (choice.catalogSourceId != null) {
         if (!_catalogAllowed) throw const SourceException(SourceFailure.permission);
         await _openCatalogChoice(choice, profileId);
@@ -1194,7 +1241,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
         }
         if (!sourceConnected) {
           var hasLocalContent = false;
-          for (final file in entry.files) {
+          for (final file in entry.files.where((item) => !item.sampleOnly)) {
             if (await sources.downloads.local(profileId, entry.sourceId, file) != null) {
               hasLocalContent = true;
               break;
@@ -1309,6 +1356,124 @@ class _FindNextScreenState extends State<FindNextScreen> {
     }
   }
 
+  bool _publicIdsOverlap(Map<String, String> left, Map<String, String> right) =>
+      left.entries.any((entry) => right[entry.key] == entry.value);
+
+  bool _matchesPortableChoice(DiscoveryChoice candidate, DiscoveryChoice saved) =>
+      candidate.type == saved.type &&
+      candidate.mediaKind == saved.mediaKind &&
+      _publicIdsOverlap(candidate.portableIds, saved.portableIds);
+
+  SourceItemKind? _sourceKindForPortableChoice(DiscoveryChoice choice) => switch (choice.type) {
+    DiscoveryChoiceType.ebook => SourceItemKind.ebook,
+    DiscoveryChoiceType.audiobook => SourceItemKind.audiobook,
+    DiscoveryChoiceType.comic => SourceItemKind.comic,
+    DiscoveryChoiceType.music => SourceItemKind.music,
+    DiscoveryChoiceType.sourceVideo => SourceItemKind.video,
+    DiscoveryChoiceType.video || DiscoveryChoiceType.liveProgram => null,
+  };
+
+  Future<void> _openPortableChoice(DiscoveryChoice choice, String profileId, {required bool detailsOnly}) async {
+    final sources = context.read<SourceController>();
+    sources.requireSession(_sourceGeneration);
+
+    if (choice.type == DiscoveryChoiceType.ebook ||
+        choice.type == DiscoveryChoiceType.audiobook ||
+        choice.type == DiscoveryChoiceType.comic ||
+        choice.type == DiscoveryChoiceType.music ||
+        choice.type == DiscoveryChoiceType.sourceVideo) {
+      final bySource = {for (final source in sources.sources) source.id: source};
+      final candidates = await sources.repository.entriesByPublicIdentifiers(
+        profileId,
+        choice.portableIds,
+        kind: _sourceKindForPortableChoice(choice),
+        sourceIds: bySource.keys.toSet(),
+      );
+      sources.requireSession(_sourceGeneration);
+      final matches = candidates
+          .where(
+            (entry) =>
+                discoveryTypeForSourceKind(entry.kind) == choice.type &&
+                _publicIdsOverlap(choice.portableIds, sanitizeDiscoveryPortableIds(entry.identifiers)) &&
+                bySource.containsKey(entry.sourceId),
+          )
+          .toList(growable: false);
+      for (final entry in matches) {
+        final rebound = await _choiceForSource(entry, bySource[entry.sourceId]!, sources, profileId);
+        if (rebound == null || !_matchesPortableChoice(rebound, choice)) continue;
+        sources.requireSession(_sourceGeneration);
+        await _openChoice(rebound, detailsOnly: detailsOnly);
+        return;
+      }
+    }
+
+    if (choice.type == DiscoveryChoiceType.video &&
+        (choice.mediaKind == MediaKind.movie || choice.mediaKind == MediaKind.show)) {
+      final ids = ExternalIds(
+        imdb: choice.portableIds['imdb'],
+        tmdb: int.tryParse(choice.portableIds['tmdb'] ?? ''),
+        tvdb: int.tryParse(choice.portableIds['tvdb'] ?? ''),
+      );
+      if (ids.hasCatalogIds) {
+        final multiServer = context.read<MultiServerProvider>();
+        final result = await multiServer.aggregationService.findByExternalIdsAcrossServers(
+          ids,
+          kind: choice.mediaKind!,
+          serverIds: multiServer.expectedServerIds.toSet(),
+          titles: [choice.title],
+        );
+        sources.requireSession(_sourceGeneration);
+        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+        final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+        final libraries = context.read<LibrariesProvider>().libraries;
+        final visibleCopy = result.items.where((item) {
+          if (item.kind != choice.mediaKind) return false;
+          final libraryId = item.libraryId;
+          final serverId = item.serverId;
+          if (libraryId == null || serverId == null) return true;
+          final key = buildGlobalKey(ServerId(serverId), libraryId);
+          return !hidden.contains(key) && libraries.any((library) => library.globalKey == key);
+        }).firstOrNull;
+        if (visibleCopy != null) {
+          if (detailsOnly) {
+            await navigateToMediaItemDetails(context, visibleCopy);
+          } else {
+            await navigateToMediaItem(context, visibleCopy, playDirectly: visibleCopy.kind == MediaKind.movie);
+          }
+          return;
+        }
+      }
+    }
+
+    final catalogProvider = context.read<CatalogSourcesProvider?>();
+    if (_catalogAllowed && catalogProvider != null && choice.type == DiscoveryChoiceType.video) {
+      for (final source in catalogProvider.connectedSources) {
+        List<CatalogItem> items;
+        try {
+          items = await source.search(choice.title, limit: 50).timeout(const Duration(seconds: 8));
+        } catch (_) {
+          continue;
+        }
+        sources.requireSession(_sourceGeneration);
+        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+        final stillConnected =
+            context.read<CatalogSourcesProvider?>()?.connectedSources.any((value) => identical(value, source)) ?? false;
+        if (!_catalogAllowed || !stillConnected) continue;
+        final match = items.where((item) {
+          if (item.kind != choice.mediaKind) return false;
+          final ids = sanitizeDiscoveryPortableIds(item.ids.toJson().map((key, value) => MapEntry(key, '$value')));
+          return _publicIdsOverlap(choice.portableIds, ids);
+        }).firstOrNull;
+        if (match != null) {
+          await navigateToCatalogItem(context, match);
+          return;
+        }
+      }
+    }
+
+    throw const SourceException(SourceFailure.unavailable);
+  }
+
   Future<void> _openCatalogChoice(DiscoveryChoice choice, String profileId) async {
     final sourceName = choice.catalogSourceId;
     final entryKey = choice.catalogEntryKey;
@@ -1399,6 +1564,62 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   Future<void> _showDetails(DiscoveryChoice choice) async {
     await _openChoice(choice, detailsOnly: true);
+  }
+
+  Future<void> _previewChoice(DiscoveryChoice choice) async {
+    final profileId = _ownerProfileId;
+    final sourceId = choice.sourceId;
+    final entryId = choice.entryId;
+    final sources = context.read<SourceController>();
+    if (profileId == null ||
+        sourceId == null ||
+        entryId == null ||
+        context.read<ActiveProfileProvider>().active?.id != profileId ||
+        !sources.current(_sourceGeneration)) {
+      return;
+    }
+    try {
+      final source = sources.sources.where((item) => item.id == sourceId).firstOrNull;
+      if (source == null) throw const SourceException(SourceFailure.unavailable);
+      final storedEntry = await sources.repository.entryById(profileId, sourceId, entryId) ?? choice.sourceEntry;
+      if (storedEntry == null ||
+          storedEntry.kind == SourceItemKind.folder ||
+          storedEntry.kind == SourceItemKind.unknown) {
+        throw const SourceException(SourceFailure.unavailable);
+      }
+      var entry = storedEntry;
+      try {
+        entry = await sources.hydrate(entry);
+      } on SourceException catch (error) {
+        if (error.reason == SourceFailure.cancelled) rethrow;
+      }
+      sources.requireSession(_sourceGeneration);
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+      final sample = entry.sampleFiles.where((file) => file.previewableSample).firstOrNull;
+      if (sample == null) throw const SourceException(SourceFailure.unavailable);
+      if (sample.kind == SourceItemKind.ebook || sample.kind == SourceItemKind.comic) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => PublicationReaderScreen(entry: entry!, file: sample),
+          ),
+        );
+      } else {
+        final playback = context.read<SourcePlayback>();
+        await playback.start(
+          entry,
+          [sample],
+          playbackMode: sample.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening,
+          persistProgress: false,
+          samplePreview: sources.beginPreview(entry, sample),
+        );
+        if (!mounted || context.read<ActiveProfileProvider>().active?.id != profileId) return;
+        await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => const SourcePlayerScreen()));
+      }
+    } catch (_) {
+      if (mounted && context.read<ActiveProfileProvider>().active?.id == profileId) {
+        showErrorSnackBar(context, t.discover.findNext.openFailed);
+      }
+    }
   }
 
   String _typeLabel(DiscoveryChoice choice) {
@@ -1549,6 +1770,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
       onDetails: _committing || _primaryLabel(choice) == t.discover.findNext.details
           ? null
           : () => _showDetails(choice),
+      onPreview: _committing || choice.sourceEntry?.sampleFiles.isNotEmpty != true
+          ? null
+          : () => _previewChoice(choice),
       onUndo: _committing || !canUndo ? null : _undo,
       feedback: _feedback,
     ),
@@ -1632,10 +1856,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
               IconButton(
                 tooltip: t.discover.findNext.filters,
                 onPressed: profileChanged || _loading ? null : _showFilters,
-                icon: Badge(
-                  isLabelVisible: _hasActiveFilters,
-                  child: const AppIcon(Symbols.tune_rounded),
-                ),
+                icon: Badge(isLabelVisible: _hasActiveFilters, child: const AppIcon(Symbols.tune_rounded)),
               ),
               IconButton(
                 tooltip: t.fileSources.history,
@@ -1689,6 +1910,7 @@ class _SavedPicksScreen extends StatefulWidget {
     required this.profileId,
     required this.store,
     required this.includeCatalog,
+    required this.syncSavedPicks,
     required this.onOpen,
     required this.onChooseForMe,
     required this.onChanged,
@@ -1696,6 +1918,7 @@ class _SavedPicksScreen extends StatefulWidget {
   final String profileId;
   final DiscoveryStore store;
   final bool includeCatalog;
+  final bool syncSavedPicks;
   final ValueChanged<DiscoveryChoice> onOpen;
   final ValueChanged<List<DiscoveryChoice>> onChooseForMe;
   final Future<void> Function() onChanged;
@@ -1709,6 +1932,10 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
   bool _loading = true;
   bool _busy = false;
   bool _searching = false;
+  bool _compareMode = false;
+  bool _comparing = false;
+  int _sourceGeneration = -1;
+  final Set<String> _comparisonIds = {};
   String _query = '';
 
   @override
@@ -1718,8 +1945,16 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
   }
 
   Future<void> _load() async {
+    final sources = context.read<SourceController>();
+    if (sources.profileId != widget.profileId || sources.blocked) return;
+    _sourceGeneration = sources.generation;
     final state = await widget.store.load(widget.profileId);
-    if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+    if (!mounted ||
+        !sources.current(_sourceGeneration) ||
+        sources.profileId != widget.profileId ||
+        context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+      return;
+    }
     setState(() {
       _state = state;
       _loading = false;
@@ -1732,7 +1967,11 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
     try {
       final state = await widget.store.decide(widget.profileId, choice, DiscoveryDecisionAction.removeSaved);
       if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
-      setState(() => _state = state);
+      setState(() {
+        _state = state;
+        _comparisonIds.remove(choice.id);
+      });
+      context.read<SourceController>().scheduleSync();
       await widget.onChanged();
     } catch (_) {
       if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
@@ -1745,11 +1984,13 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
     if (_busy || _state.history.isEmpty || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
       return;
     }
+    final savedChanged = _state.history.last.savedChanged;
     setState(() => _busy = true);
     try {
       final (state, _) = await widget.store.undo(widget.profileId);
       if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
       setState(() => _state = state);
+      if (savedChanged) context.read<SourceController>().scheduleSync();
       await widget.onChanged();
     } catch (_) {
       if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
@@ -1766,6 +2007,267 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
     });
   }
 
+  void _toggleCompareMode() {
+    setState(() {
+      _compareMode = !_compareMode;
+      _comparisonIds.clear();
+    });
+  }
+
+  void _toggleComparison(DiscoveryChoice choice) {
+    if (_comparisonIds.contains(choice.id)) {
+      setState(() => _comparisonIds.remove(choice.id));
+      return;
+    }
+    if (_comparisonIds.length >= 3) {
+      showErrorSnackBar(context, t.discover.findNext.compareLimit);
+      return;
+    }
+    setState(() => _comparisonIds.add(choice.id));
+  }
+
+  Future<void> _compareSelected(List<DiscoveryChoice> choices) async {
+    if (_comparing || _comparisonIds.length < 2) return;
+    final sources = context.read<SourceController>();
+    if (!sources.current(_sourceGeneration) || sources.profileId != widget.profileId) return;
+    setState(() => _comparing = true);
+    try {
+      final selected = choices.where((choice) => _comparisonIds.contains(choice.id)).toList(growable: false);
+      if (selected.length < 2) {
+        if (mounted) {
+          setState(() => _comparisonIds.removeWhere((id) => !choices.any((choice) => choice.id == id)));
+          showErrorSnackBar(context, t.discover.findNext.compareNeedsTwo);
+        }
+        return;
+      }
+      final facts = await Future.wait(selected.map(_comparisonFacts));
+      sources.requireSession(_sourceGeneration);
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+      await OverlaySheetController.showAdaptive<void>(
+        context,
+        showDragHandle: true,
+        builder: (sheetContext) {
+          final screenHeight = MediaQuery.sizeOf(sheetContext).height;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: screenHeight * 0.84),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(t.common.compare, style: Theme.of(sheetContext).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wide = constraints.maxWidth >= 720;
+                        if (wide) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (var index = 0; index < facts.length; index++) ...[
+                                if (index > 0) const SizedBox(width: 12),
+                                Expanded(child: _comparisonCard(context, facts[index])),
+                              ],
+                            ],
+                          );
+                        }
+                        return ListView.separated(
+                          itemCount: facts.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) => _comparisonCard(context, facts[index]),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton(onPressed: () => Navigator.of(sheetContext).pop(), child: Text(t.common.close)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.discover.findNext.openFailed);
+    } finally {
+      if (mounted) setState(() => _comparing = false);
+    }
+  }
+
+  Future<_SavedPickFacts> _comparisonFacts(DiscoveryChoice choice) async {
+    final sources = context.read<SourceController>();
+    sources.requireSession(_sourceGeneration);
+    final downloads = context.read<DownloadProvider>();
+    var entry = choice.sourceEntry;
+    if (entry == null && choice.sourceId != null && choice.entryId != null) {
+      try {
+        entry = await sources.repository.entryById(widget.profileId, choice.sourceId!, choice.entryId!);
+        sources.requireSession(_sourceGeneration);
+      } catch (_) {}
+    }
+    if (entry == null &&
+        choice.portableKey != null &&
+        (choice.type == DiscoveryChoiceType.ebook ||
+            choice.type == DiscoveryChoiceType.audiobook ||
+            choice.type == DiscoveryChoiceType.comic ||
+            choice.type == DiscoveryChoiceType.music ||
+            choice.type == DiscoveryChoiceType.sourceVideo)) {
+      try {
+        final configured = {for (final source in sources.sources) source.id};
+        entry =
+            (await sources.repository.entriesByPublicIdentifiers(
+                  widget.profileId,
+                  choice.portableIds,
+                  kind: _sourceKindForPortableChoice(choice),
+                  sourceIds: configured,
+                ))
+                .where(
+                  (candidate) =>
+                      discoveryTypeForSourceKind(candidate.kind) == choice.type &&
+                      configured.contains(candidate.sourceId) &&
+                      _sharesPublicId(choice.portableIds, sanitizeDiscoveryPortableIds(candidate.identifiers)),
+                )
+                .firstOrNull;
+        sources.requireSession(_sourceGeneration);
+      } catch (_) {}
+    }
+    var offline = false;
+    var language = '';
+    var narrator = '';
+    var edition = '';
+    if (entry != null) {
+      language = entry.language.trim();
+      narrator = entry.narrator.trim();
+      final ordinary = entry.files.where((file) => !file.sampleOnly).toList(growable: false);
+      edition = ordinary.map((file) => isolateDisplayText(file.name)).take(4).join('\n');
+      for (final file in ordinary) {
+        if (await sources.hasOfflineContent(entry, file)) {
+          sources.requireSession(_sourceGeneration);
+          offline = true;
+          break;
+        }
+        sources.requireSession(_sourceGeneration);
+      }
+    } else if (choice.serverId != null && choice.mediaId != null) {
+      final media =
+          choice.mediaItem ??
+          downloads.metadata.values
+              .where((item) => item.serverId == choice.serverId && item.id == choice.mediaId)
+              .firstOrNull;
+      if (media != null && await downloads.getCompletedDownload(media.globalKey) != null) {
+        try {
+          if (media.kind == MediaKind.movie || media.kind == MediaKind.episode || media.kind == MediaKind.clip) {
+            offline = await downloads.getVideoFilePath(media.globalKey).timeout(const Duration(seconds: 2)) != null;
+          }
+        } catch (_) {}
+      }
+    } else if (choice.type == DiscoveryChoiceType.video &&
+        (choice.mediaKind == MediaKind.movie || choice.mediaKind == MediaKind.show)) {
+      final media = await _findPortableLibraryCopy(choice);
+      sources.requireSession(_sourceGeneration);
+      if (media != null && await downloads.getCompletedDownload(media.globalKey) != null) {
+        try {
+          if (media.kind == MediaKind.movie || media.kind == MediaKind.episode || media.kind == MediaKind.clip) {
+            offline = await downloads.getVideoFilePath(media.globalKey).timeout(const Duration(seconds: 2)) != null;
+          }
+        } catch (_) {}
+      }
+    }
+    return _SavedPickFacts(
+      title: isolateDisplayText(choice.title),
+      type: _localizedChoiceType(choice),
+      localOnly: widget.syncSavedPicks && choice.portableKey == null,
+      duration: choice.totalDurationMs ?? choice.durationMs,
+      language: language.isEmpty ? t.common.notAvailable : language,
+      narrator: narrator.isEmpty ? t.common.notAvailable : isolateDisplayText(narrator),
+      edition: edition.isEmpty ? t.common.notAvailable : edition,
+      availability: offline ? t.fileSources.offline : t.common.notAvailable,
+      summary: isolateDisplayText(choice.summary).trim().isEmpty
+          ? t.common.notAvailable
+          : isolateDisplayText(choice.summary),
+    );
+  }
+
+  bool _sharesPublicId(Map<String, String> left, Map<String, String> right) =>
+      left.entries.any((entry) => right[entry.key] == entry.value);
+
+  Future<MediaItem?> _findPortableLibraryCopy(DiscoveryChoice choice) async {
+    final sourceController = context.read<SourceController>();
+    if (!sourceController.current(_sourceGeneration) || sourceController.profileId != widget.profileId) return null;
+    final ids = ExternalIds(
+      imdb: choice.portableIds['imdb'],
+      tmdb: int.tryParse(choice.portableIds['tmdb'] ?? ''),
+      tvdb: int.tryParse(choice.portableIds['tvdb'] ?? ''),
+    );
+    if (!ids.hasCatalogIds) return null;
+    try {
+      final multiServer = context.read<MultiServerProvider>();
+      final result = await multiServer.aggregationService.findByExternalIdsAcrossServers(
+        ids,
+        kind: choice.mediaKind!,
+        serverIds: multiServer.expectedServerIds.toSet(),
+        titles: [choice.title],
+      );
+      if (!sourceController.current(_sourceGeneration) || sourceController.profileId != widget.profileId) return null;
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return null;
+      final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+      final libraries = context.read<LibrariesProvider>().libraries;
+      return result.items.where((item) {
+        if (item.kind != choice.mediaKind) return false;
+        final libraryId = item.libraryId;
+        final serverId = item.serverId;
+        if (libraryId == null || serverId == null) return true;
+        final key = buildGlobalKey(ServerId(serverId), libraryId);
+        return !hidden.contains(key) && libraries.any((library) => library.globalKey == key);
+      }).firstOrNull;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _comparisonCard(BuildContext context, _SavedPickFacts facts) {
+    final theme = Theme.of(context);
+    Widget field(String label, String value) => Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 3),
+          Text(value, style: theme.textTheme.bodyMedium),
+        ],
+      ),
+    );
+    return Card(
+      margin: EdgeInsets.zero,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(facts.title, style: theme.textTheme.titleMedium, maxLines: 3, overflow: TextOverflow.ellipsis),
+            field(t.common.mediaType, facts.type),
+            if (widget.syncSavedPicks)
+              field(t.discover.findNext.syncSavedPicks, facts.localOnly ? t.discover.findNext.localOnly : t.common.yes),
+            field(
+              t.common.duration,
+              facts.duration == null ? t.common.notAvailable : formatDurationTextual(facts.duration!),
+            ),
+            field(t.common.language, facts.language),
+            field(t.fileSources.narrator, facts.narrator),
+            field(t.fileSources.editions, facts.edition),
+            field(t.fileSources.offline, facts.availability),
+            field(t.discover.overview, facts.summary),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -1774,7 +2276,13 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profileChanged = context.watch<ActiveProfileProvider>().active?.id != widget.profileId;
+    final activeProfile = context.watch<ActiveProfileProvider>().active;
+    final sources = context.watch<SourceController>();
+    final profileChanged =
+        activeProfile?.id != widget.profileId ||
+        sources.profileId != widget.profileId ||
+        sources.blocked ||
+        !sources.current(_sourceGeneration);
     final savedChoices = _state.saved
         .where((choice) => widget.includeCatalog || choice.catalogSourceId == null)
         .toList();
@@ -1803,30 +2311,62 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
                 decoration: InputDecoration(hintText: t.common.search, border: InputBorder.none, isDense: true),
                 onChanged: (value) => setState(() => _query = value),
               )
-            : Text(t.discover.findNext.saved),
+            : Text(
+                _compareMode
+                    ? t.discover.selection.selectedCount(count: localizeDecimalDigits('${_comparisonIds.length}'))
+                    : t.discover.findNext.saved,
+              ),
         actions: [
+          if (_compareMode)
+            IconButton(
+              tooltip: t.common.close,
+              onPressed: profileChanged || _busy || _comparing ? null : _toggleCompareMode,
+              icon: const AppIcon(Symbols.close_rounded),
+            )
+          else
+            IconButton(
+              tooltip: t.discover.findNext.selectToCompare,
+              onPressed: profileChanged || _busy || _searching || savedChoices.length < 2 ? null : _toggleCompareMode,
+              icon: const AppIcon(Symbols.compare_arrows_rounded),
+            ),
+          if (_compareMode)
+            FocusableButton(
+              onPressed: profileChanged || _busy || _comparing || _comparisonIds.length < 2
+                  ? null
+                  : () => _compareSelected(savedChoices),
+              autoScroll: false,
+              child: TextButton.icon(
+                onPressed: profileChanged || _busy || _comparing || _comparisonIds.length < 2
+                    ? null
+                    : () => _compareSelected(savedChoices),
+                icon: const AppIcon(Symbols.compare_arrows_rounded),
+                label: Text(t.common.compare),
+              ),
+            ),
           if (_searching || savedChoices.isNotEmpty)
             IconButton(
               tooltip: _searching ? t.common.close : t.common.search,
               onPressed: profileChanged ? null : _toggleSearch,
               icon: AppIcon(_searching ? Symbols.close_rounded : Symbols.search_rounded),
             ),
-          IconButton(
-            tooltip: t.common.shuffle,
-            onPressed: _busy || visibleChoices.isEmpty || profileChanged
-                ? null
-                : () => widget.onChooseForMe(visibleChoices),
-            icon: const AppIcon(Symbols.shuffle_rounded),
-          ),
-          FocusableButton(
-            onPressed: _busy || !canUndo || profileChanged ? null : _undo,
-            autoScroll: false,
-            child: TextButton.icon(
-              onPressed: _busy || !canUndo || profileChanged ? null : _undo,
-              icon: const AppIcon(Symbols.undo_rounded),
-              label: Text(t.discover.findNext.undo),
+          if (!_compareMode)
+            IconButton(
+              tooltip: t.common.shuffle,
+              onPressed: _busy || visibleChoices.isEmpty || profileChanged
+                  ? null
+                  : () => widget.onChooseForMe(visibleChoices),
+              icon: const AppIcon(Symbols.shuffle_rounded),
             ),
-          ),
+          if (!_compareMode)
+            FocusableButton(
+              onPressed: _busy || !canUndo || profileChanged ? null : _undo,
+              autoScroll: false,
+              child: TextButton.icon(
+                onPressed: _busy || !canUndo || profileChanged ? null : _undo,
+                icon: const AppIcon(Symbols.undo_rounded),
+                label: Text(t.discover.findNext.undo),
+              ),
+            ),
         ],
       ),
       body: profileChanged
@@ -1843,6 +2383,7 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final choice = visibleChoices[index];
+                final selectedForComparison = _comparisonIds.contains(choice.id);
                 return FocusableListTile(
                   autofocus: index == 0 && !_searching,
                   leading: CircleAvatar(child: AppIcon(_savedIcon(choice), size: 22)),
@@ -1851,16 +2392,31 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
                     [
                       _localizedChoiceType(choice),
                       isolateDisplayText(choice.subtitle),
+                      if (widget.syncSavedPicks && choice.portableKey == null) t.discover.findNext.localOnly,
                       choice.durationMs == null ? null : formatDurationTextual(choice.durationMs!),
                     ].whereType<String>().where((value) => value.isNotEmpty).join(' · '),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  onTap: _busy || profileChanged ? null : () => widget.onOpen(choice),
+                  onTap: _busy || profileChanged
+                      ? null
+                      : _compareMode
+                      ? () => _toggleComparison(choice)
+                      : () => widget.onOpen(choice),
                   trailing: IconButton(
-                    tooltip: t.common.delete,
-                    onPressed: _busy || profileChanged ? null : () => _remove(choice),
-                    icon: const AppIcon(Symbols.bookmark_remove_rounded),
+                    tooltip: _compareMode ? t.discover.findNext.selectToCompare : t.common.delete,
+                    onPressed: _busy || profileChanged
+                        ? null
+                        : _compareMode
+                        ? () => _toggleComparison(choice)
+                        : () => _remove(choice),
+                    icon: AppIcon(
+                      _compareMode
+                          ? selectedForComparison
+                                ? Symbols.check_circle_rounded
+                                : Symbols.radio_button_unchecked_rounded
+                          : Symbols.bookmark_remove_rounded,
+                    ),
                   ),
                 );
               },
@@ -1876,4 +2432,27 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
     DiscoveryChoiceType.comic => Symbols.auto_stories_rounded,
     DiscoveryChoiceType.liveProgram => Symbols.live_tv_rounded,
   };
+}
+
+class _SavedPickFacts {
+  const _SavedPickFacts({
+    required this.title,
+    required this.type,
+    required this.localOnly,
+    required this.duration,
+    required this.language,
+    required this.narrator,
+    required this.edition,
+    required this.availability,
+    required this.summary,
+  });
+  final String title;
+  final String type;
+  final bool localOnly;
+  final int? duration;
+  final String language;
+  final String narrator;
+  final String edition;
+  final String availability;
+  final String summary;
 }

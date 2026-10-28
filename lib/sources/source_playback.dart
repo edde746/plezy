@@ -69,6 +69,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool _persistProgress = true;
   bool _liveInput = false;
   List<File> _temporaryMediaFiles = const [];
+  SourcePreviewSession? _previewSession;
   File? _streamRecordingTarget;
   File? _streamRecordingPartial;
   File? _streamRecordingBackup;
@@ -133,6 +134,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool get active => entry != null;
   bool get video => mode == PublicationMode.watching;
   bool get isTransientInput => !_persistProgress;
+  bool get isSamplePreview => files.isNotEmpty && files.every((file) => file.sampleOnly);
   bool get isLiveInput => _liveInput;
   bool get isRecordingStream => _streamRecordingPartial != null;
   bool get playing => player?.state.isActive ?? false;
@@ -289,11 +291,27 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     bool persistProgress = true,
     bool liveInput = false,
     List<File> temporaryMediaFiles = const [],
+    SourcePreviewSession? samplePreview,
   }) => _serialize(() async {
     await _stop();
     try {
       sources.requireSession();
       if (selected.isEmpty) throw const SourceException(SourceFailure.unsupported);
+      final containsSample = selected.any((file) => file.sampleOnly);
+      if (containsSample &&
+          (!selected.every((file) => file.sampleOnly) ||
+              selected.length != 1 ||
+              persistProgress ||
+              samplePreview == null ||
+              samplePreview.file.fingerprint != selected.single.fingerprint)) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      if (containsSample) _previewSession = samplePreview;
+      final effectiveOverrides = Map<String, Uri>.from(localOverrides);
+      if (containsSample) {
+        final previewFile = await samplePreview!.open();
+        effectiveOverrides[selected.single.id] = previewFile.uri;
+      }
       if (PlatformDetector.isAutomotive()) await CarUxRestrictionsService.instance.ensureResolved();
       final requestedMode =
           playbackMode ?? (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
@@ -322,7 +340,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _profileGeneration = sources.generation;
       entry = item;
       files = List.unmodifiable(selected);
-      _localOverrides = Map.unmodifiable(localOverrides);
+      _localOverrides = Map.unmodifiable(effectiveOverrides);
       _persistProgress = persistProgress;
       _liveInput = liveInput;
       _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
@@ -1081,6 +1099,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _controls = null;
     await release(() async => _gateway?.close());
     _gateway = null;
+    final preview = _previewSession;
+    _previewSession = null;
+    if (preview != null) await release(preview.dispose);
     entry = null;
     files = const [];
     _localOverrides = const {};

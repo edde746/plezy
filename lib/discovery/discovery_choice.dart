@@ -45,6 +45,7 @@ class DiscoveryChoice {
     this.liveChannel,
     this.catalogItem,
     this.artworkPath,
+    this.portableIds = const {},
   });
 
   final String id;
@@ -89,6 +90,36 @@ class DiscoveryChoice {
   final LiveTvChannel? liveChannel;
   final CatalogItem? catalogItem;
   final String? artworkPath;
+
+  /// Whitelisted public identifiers used only for optional cross-device
+  /// Saved picks. Server, source, library, and account identifiers never
+  /// belong in this map.
+  final Map<String, String> portableIds;
+
+  String? get portableReference {
+    final resolvable = switch (type) {
+      DiscoveryChoiceType.video => mediaKind == MediaKind.movie || mediaKind == MediaKind.show,
+      DiscoveryChoiceType.music =>
+        mediaKind == null ||
+            mediaKind == MediaKind.artist ||
+            mediaKind == MediaKind.album ||
+            mediaKind == MediaKind.track,
+      DiscoveryChoiceType.ebook ||
+      DiscoveryChoiceType.audiobook ||
+      DiscoveryChoiceType.comic ||
+      DiscoveryChoiceType.sourceVideo => mediaKind == null,
+      DiscoveryChoiceType.liveProgram => false,
+    };
+    if (!resolvable) return null;
+    final id = _canonicalPortableId(portableIds);
+    if (id == null) return null;
+    return jsonEncode(['discovery-pick-v1', type.name, mediaKind?.id, id.$1, id.$2]);
+  }
+
+  String? get portableKey {
+    final reference = portableReference;
+    return reference == null ? null : sourceDigest(reference);
+  }
 
   String get typeLabel => switch (type) {
     DiscoveryChoiceType.video => 'Video',
@@ -145,6 +176,42 @@ class DiscoveryChoice {
     liveChannel: liveChannel,
     catalogItem: catalogItem,
     artworkPath: art ?? artworkPath,
+    portableIds: portableIds,
+  );
+
+  DiscoveryChoice withPortableIds(Map<String, String> value) => DiscoveryChoice(
+    id: id,
+    type: type,
+    title: title,
+    subtitle: subtitle,
+    reason: reason,
+    summary: summary,
+    durationMs: durationMs,
+    totalDurationMs: totalDurationMs,
+    isEstimate: isEstimate,
+    unitLabel: unitLabel,
+    serverId: serverId,
+    mediaId: mediaId,
+    mediaKind: mediaKind,
+    sourceId: sourceId,
+    entryId: entryId,
+    libraryId: libraryId,
+    catalogSourceId: catalogSourceId,
+    catalogEntryKey: catalogEntryKey,
+    year: year,
+    liveProgramId: liveProgramId,
+    channelId: channelId,
+    dvrKey: dvrKey,
+    liveBeginsAtSeconds: liveBeginsAtSeconds,
+    liveEndsAtSeconds: liveEndsAtSeconds,
+    offlineReady: offlineReady,
+    mediaItem: mediaItem,
+    sourceEntry: sourceEntry,
+    liveProgram: liveProgram,
+    liveChannel: liveChannel,
+    catalogItem: catalogItem,
+    artworkPath: artworkPath,
+    portableIds: sanitizeDiscoveryPortableIds(value),
   );
 
   Map<String, dynamic> toSnapshot() => {
@@ -173,6 +240,7 @@ class DiscoveryChoice {
     'liveBeginsAtSeconds': liveBeginsAtSeconds,
     'liveEndsAtSeconds': liveEndsAtSeconds,
     'offlineReady': offlineReady,
+    if (portableIds.isNotEmpty) 'portableIds': portableIds,
   };
 
   factory DiscoveryChoice.fromSnapshot(Map<String, dynamic> json) {
@@ -205,6 +273,9 @@ class DiscoveryChoice {
       liveBeginsAtSeconds: json['liveBeginsAtSeconds'] is num ? (json['liveBeginsAtSeconds'] as num).toInt() : null,
       liveEndsAtSeconds: json['liveEndsAtSeconds'] is num ? (json['liveEndsAtSeconds'] as num).toInt() : null,
       offlineReady: json['offlineReady'] == true,
+      portableIds: sanitizeDiscoveryPortableIds(
+        sourceMap(json['portableIds']).map((key, value) => MapEntry(key, '$value')),
+      ),
     );
     if (choice.id.isEmpty || choice.title.isEmpty) throw const FormatException('Invalid discovery choice snapshot');
     return choice;
@@ -222,6 +293,86 @@ class DiscoveryChoice {
     if (value is! String || value.trim().isEmpty) return null;
     return value.trim();
   }
+}
+
+/// Identifiers eligible for replication. These are public title identities;
+/// provider URLs and PlezyNG's local ids are intentionally excluded.
+Map<String, String> sanitizeDiscoveryPortableIds(Map<String, String> raw) {
+  final result = <String, String>{};
+  for (final entry in raw.entries.take(16)) {
+    final key = entry.key.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    var value = entry.value.trim();
+    if (value.length > 128) continue;
+    switch (key) {
+      case 'imdb':
+      case 'imdbid':
+        final normalized = value.toLowerCase();
+        if (RegExp(r'^tt[0-9]{6,12}$').hasMatch(normalized)) result.putIfAbsent('imdb', () => normalized);
+      case 'tmdb':
+      case 'tmdbid':
+      case 'themoviedb':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('tmdb', () => value);
+      case 'tvdb':
+      case 'tvdbid':
+      case 'thetvdb':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('tvdb', () => value);
+      case 'mal':
+      case 'malid':
+      case 'myanimelist':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('mal', () => value);
+      case 'anilist':
+      case 'anilistid':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('anilist', () => value);
+      case 'simkl':
+      case 'simklid':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('simkl', () => value);
+      case 'trakt':
+      case 'traktid':
+        if (RegExp(r'^[0-9]{1,12}$').hasMatch(value)) result.putIfAbsent('trakt', () => value);
+      case 'isbn':
+      case 'isbn10':
+      case 'isbn13':
+      case 'isbn10id':
+      case 'isbn13id':
+        value = value.replaceAll(RegExp(r'[\s-]'), '').toUpperCase();
+        if (RegExp(r'^[0-9]{13}$').hasMatch(value)) {
+          result.putIfAbsent('isbn13', () => value);
+        } else if (RegExp(r'^[0-9]{9}[0-9X]$').hasMatch(value)) {
+          result.putIfAbsent('isbn10', () => value);
+        }
+      case 'asin':
+      case 'asinid':
+        final normalized = value.toUpperCase();
+        if (RegExp(r'^[A-Z0-9]{10}$').hasMatch(normalized)) result.putIfAbsent('asin', () => normalized);
+      case 'doi':
+      case 'doiid':
+        value = value.replaceFirst(RegExp(r'^https?://(?:dx\.)?doi\.org/', caseSensitive: false), '');
+        if (RegExp(r'^10\.[0-9]{4,9}/[^\s]{1,100}$', caseSensitive: false).hasMatch(value)) {
+          result.putIfAbsent('doi', () => value.toLowerCase());
+        }
+    }
+  }
+  return Map.unmodifiable(result);
+}
+
+(String, String)? _canonicalPortableId(Map<String, String> ids) {
+  for (final key in const [
+    'imdb',
+    'isbn13',
+    'isbn10',
+    'tmdb',
+    'tvdb',
+    'asin',
+    'mal',
+    'anilist',
+    'simkl',
+    'trakt',
+    'doi',
+  ]) {
+    final value = ids[key];
+    if (value != null && value.isNotEmpty) return (key, value);
+  }
+  return null;
 }
 
 String discoveryMediaIdentity(MediaItem item) {

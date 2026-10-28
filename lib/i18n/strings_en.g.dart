@@ -363,6 +363,9 @@ class Translations$common$en {
 	/// en: 'Shuffle'
 	String get shuffle => 'Shuffle';
 
+	/// en: 'Compare'
+	String get compare => 'Compare';
+
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
 
@@ -10509,6 +10512,33 @@ class Translations$discover$findNext$en {
 	/// en: 'Saved picks'
 	String get saved => 'Saved picks';
 
+	/// en: 'Select picks to compare'
+	String get selectToCompare => 'Select picks to compare';
+
+	/// en: 'Compare up to three picks at a time.'
+	String get compareLimit => 'Compare up to three picks at a time.';
+
+	/// en: 'Choose at least two saved picks to compare.'
+	String get compareNeedsTwo => 'Choose at least two saved picks to compare.';
+
+	/// en: 'On this device'
+	String get localOnly => 'On this device';
+
+	/// en: 'Sync Saved picks across devices'
+	String get syncSavedPicks => 'Sync Saved picks across devices';
+
+	/// en: 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.'
+	String get syncSavedPicksHelp => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.';
+
+	/// en: 'These devices changed this saved pick independently. Choose which saved state to keep.'
+	String get savedPickConflict => 'These devices changed this saved pick independently. Choose which saved state to keep.';
+
+	/// en: 'Keep this device'
+	String get keepThisDevice => 'Keep this device';
+
+	/// en: 'Use this version'
+	String get useThisVersion => 'Use this version';
+
 	/// en: 'Saved picks · ${count}'
 	String savedCount({required Object count}) => 'Saved picks · ${count}';
 
@@ -12286,6 +12316,7 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.edit' => 'Edit',
 			'common.shuffle' => 'Shuffle',
+			'common.compare' => 'Compare',
 			'common.addTo' => 'Add to...',
 			'common.createNew' => 'Create new',
 			'common.connect' => 'Connect',
@@ -12703,9 +12734,9 @@ extension on Translations {
 			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
-			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
 			'settings.hdrSdrConversionAutoDescription' => 'Device on Android 9 and later, player on older versions',
 			'settings.hdrSdrConversionDevice' => 'Device',
@@ -13217,9 +13248,9 @@ extension on Translations {
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
-			'videoControls.rotationLockButton' => 'Rotation lock',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.rotationLockButton' => 'Rotation lock',
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
 			'videoControls.timelineSlider' => 'Video timeline',
@@ -13599,6 +13630,15 @@ extension on Translations {
 			'discover.findNext.notNow' => 'Not now',
 			'discover.findNext.swipeHint' => 'Swipe the cover toward an arrow, or use the buttons below.',
 			'discover.findNext.saved' => 'Saved picks',
+			'discover.findNext.selectToCompare' => 'Select picks to compare',
+			'discover.findNext.compareLimit' => 'Compare up to three picks at a time.',
+			'discover.findNext.compareNeedsTwo' => 'Choose at least two saved picks to compare.',
+			'discover.findNext.localOnly' => 'On this device',
+			'discover.findNext.syncSavedPicks' => 'Sync Saved picks across devices',
+			'discover.findNext.syncSavedPicksHelp' => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.',
+			'discover.findNext.savedPickConflict' => 'These devices changed this saved pick independently. Choose which saved state to keep.',
+			'discover.findNext.keepThisDevice' => 'Keep this device',
+			'discover.findNext.useThisVersion' => 'Use this version',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
 			'discover.findNext.details' => 'Details',
@@ -13722,6 +13762,8 @@ extension on Translations {
 			'libraries.groupings.all' => 'All',
 			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
 			'libraries.groupings.artists' => 'Artists',
@@ -13732,8 +13774,6 @@ extension on Translations {
 			'libraries.filterCategories.year' => 'Year',
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Unwatched',
 			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
@@ -14236,6 +14276,8 @@ extension on Translations {
 			'watchTogether.nothingPlaying' => 'Nothing playing',
 			'watchTogether.nothingPlayingHost' => 'Play something from any library to share it with the room.',
 			'watchTogether.nothingPlayingGuest' => 'When the host plays something, it opens here.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.notShareable' => 'This video has no catalogue match, so only people with access to the same server can play it.',
 			'watchTogether.searching' => 'Looking for this video in your libraries...',
 			'watchTogether.yourCopy' => 'Your copy',
@@ -14246,8 +14288,6 @@ extension on Translations {
 			'watchTogether.playAnyway' => 'Play Anyway',
 			'watchTogether.chooseAnotherCopy' => 'Choose Another Copy',
 			'watchTogether.dontPlay' => 'Don\'t Play',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'You don\'t have this video',
 			'watchTogether.unavailableDescription' => 'PlezyNG couldn\'t find it in your libraries. Pick a copy yourself or search again.',
 			'watchTogether.chooseCopy' => 'Choose a Copy',
@@ -14750,6 +14790,8 @@ extension on Translations {
 			'metadataEdit.episodeOrdering' => 'Episode Ordering',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
 			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
@@ -14760,8 +14802,6 @@ extension on Translations {
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
 			'metadataEdit.alwaysEnabled' => 'Always enabled',
 			'metadataEdit.tags' => 'Tags',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Add tag',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Director',
@@ -15264,6 +15304,8 @@ extension on Translations {
 			'universalMedia.extensionsIntro' => 'Add a data-only search extension to find media. Choose a result to load it into the familiar Open media form.',
 			'universalMedia.extensionsPrivacy' => 'A manifest can define one HTTPS search endpoint and map response fields. It cannot run code, add request headers, read files, or launch shell commands.',
 			'universalMedia.extensionImport' => 'Add extension manifest',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.extensionEmpty' => 'No search services yet. Choose a trusted manifest JSON file to add one.',
 			'universalMedia.extensionChoose' => 'Search service',
 			'universalMedia.extensionSearchConsent' => 'Each search sends your words to this HTTPS service. Results open only after you select one.',
@@ -15274,8 +15316,6 @@ extension on Translations {
 			'universalMedia.extensionInstallTitle' => 'Add this search service?',
 			'universalMedia.extensionReplaceTitle' => 'Update this search service?',
 			'universalMedia.extensionService' => 'Service',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.',
 			'universalMedia.extensionInstall' => 'Add service',
@@ -15778,6 +15818,8 @@ extension on Translations {
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
+			_ => null,
+		} ?? switch (path) {
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
 			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
@@ -15788,8 +15830,6 @@ extension on Translations {
 			'deepLinks.noLiveTv' => 'No Live TV server is available for this link.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Couldn\'t find channel "${channel}".',
 			'deepLinks.showLink' => 'Show link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Show profile link',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.',

@@ -129,6 +129,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   }
 
   void _attachToExistingWorkspaceSession(SourcePlayback playback, MultiviewWorkspaceController workspace) {
+    if (playback.isSamplePreview) return;
     final id = _stableWorkspaceSessionId(playback);
     if (id == null || _workspaceSessionId != null || workspace.session(id) == null) return;
     _workspace = workspace;
@@ -143,6 +144,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     if (!mounted ||
         _autoJoinScheduled ||
         playback == null ||
+        playback.isSamplePreview ||
         !playback.active ||
         _workspaceSessionId != null ||
         workspace == null ||
@@ -180,7 +182,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
 
   void _toggleSourceWorkspace() {
     final playback = _session;
-    if (playback == null || !playback.active) return;
+    if (playback == null || !playback.active || playback.isSamplePreview) return;
     final controller = _workspace ?? context.read<MultiviewWorkspaceController>();
     final existingId = _workspaceSessionId;
     if (existingId != null) {
@@ -636,7 +638,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               onPressed: () => sourceAction(context, () => _toggleStreamRecording(s)),
               icon: AppIcon(s.isRecordingStream ? Symbols.stop_circle_rounded : Symbols.radio_button_checked_rounded),
             ),
-          if (s.video && _full)
+          if (s.video && _full && !s.isSamplePreview)
             FocusableButton(
               autoScroll: false,
               onPressed: _toggleSourceWorkspace,
@@ -777,17 +779,18 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
               focusableAppBarActions: true,
               actions: [
-                FocusableButton(
-                  autoScroll: false,
-                  onPressed: _toggleSourceWorkspace,
-                  child: IconButton(
-                    tooltip: _workspaceDetached
-                        ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
-                        : t.videoControls.openMiniPlayer,
+                if (!s.isSamplePreview)
+                  FocusableButton(
+                    autoScroll: false,
                     onPressed: _toggleSourceWorkspace,
-                    icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+                    child: IconButton(
+                      tooltip: _workspaceDetached
+                          ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
+                          : t.videoControls.openMiniPlayer,
+                      onPressed: _toggleSourceWorkspace,
+                      icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+                    ),
                   ),
-                ),
                 IconButton(
                   tooltip: t.fileSources.stop,
                   onPressed: () => sourceAction(context, () async {
