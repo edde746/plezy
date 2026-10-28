@@ -394,12 +394,13 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final shuffleFromBeginning =
         requested == null && mounted && _opensShuffledFromBeginning(await SettingsService.getInstance());
     int? offlineOffsetMs;
-    // In offline mode, prefer locally tracked progress over the cached server
-    // value since the user may have watched further since downloading.
-    if (requested == null && !shuffleFromBeginning && isOffline) {
+    // Offline copies and connected remote streams use the durable local watch
+    // queue before the last server snapshot. Remote viewing writes progress
+    // there without opening a false server playback session.
+    if (requested == null && !shuffleFromBeginning && (isOffline || _externalSourceFor(metadata) != null)) {
       offlineOffsetMs = await offlineWatchService.getLocalViewOffset(metadata.globalKey);
       if (offlineOffsetMs != null && offlineOffsetMs > 0) {
-        appLogger.d('Resuming offline playback from local progress: ${offlineOffsetMs}ms');
+        appLogger.d('Resuming from local playback progress: ${offlineOffsetMs}ms');
       }
     }
     return resolveOpenResumePosition(

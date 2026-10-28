@@ -92,6 +92,7 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$kk trakt = _Translations$trakt$kk._(_root);
 	@override late final _Translations$seerr$kk seerr = _Translations$seerr$kk._(_root);
 	@override late final _Translations$services$kk services = _Translations$services$kk._(_root);
+	@override late final _Translations$streaming$kk streaming = _Translations$streaming$kk._(_root);
 	@override late final _Translations$addServer$kk addServer = _Translations$addServer$kk._(_root);
 	@override late final _Translations$cast$kk cast = _Translations$cast$kk._(_root);
 	@override late final _Translations$automation$kk automation = _Translations$automation$kk._(_root);
@@ -2795,6 +2796,119 @@ class _Translations$services$kk extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$kk libraryFilter = _Translations$services$libraryFilter$kk._(_root);
 	@override String get seerrDescription => 'Серер немесе Оверсеерлер қосылды және медиа жабдықтауға болады.';
 	@override late final _Translations$services$trackerDescriptions$kk trackerDescriptions = _Translations$services$trackerDescriptions$kk._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$kk extends Translations$streaming$en {
+	_Translations$streaming$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Бұлт пен қосымшалардан ағын';
+	@override String get subtitle => 'Бұлттағы файлдарды қарап, қолдау көрсетілетін ағындарды ойнату үшін Debrid есептік жазбасын қосыңыз. Stremio-мен үйлесімді қосымшалар фильмдер мен эпизодтар бетінде ағын таңдауын ұсынады. Қосылым деректері осы құрылғыда шифрланып, осы профильде сақталады.';
+	@override String connectionsConfigured({required Object count}) => 'Қосылған көздер: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG сақталған ағын параметрлерінің құлпын аша алмады. Қосылымдарды өзгертпес бұрын құрылғы құлпын ашып, қайта көріңіз.';
+	@override String get settingsUnreadable => 'PlezyNG осы сақталған қосылымдардың құлпын аша алмады. Қызметтерді қайта қосу үшін оларды тазалаңыз.';
+	@override String get clearUnreadableSettings => 'Сақталған параметрлерді тазалау';
+	@override String get clearUnreadableSettingsConfirm => 'Сақталған ағын параметрлері тазалансын ба?';
+	@override String get clearUnreadableSettingsBody => 'Бұл осы профильдегі барлық сақталған провайдер есептік жазбалары мен қосымша мекенжайларын жояды. Әрекетті қайтару мүмкін емес.';
+	@override String get clearUnreadableSettingsFailed => 'Сақталған ағын параметрлерін тазалау мүмкін болмады. Құрылғы құлпын ашып, қайта көріңіз.';
+	@override String get retrySettingsLoad => 'Қосылымдарды қайта жүктеу';
+	@override String get addons => 'Stremio-мен үйлесімді қосымшалар';
+	@override String get addonsDescription => 'Қосымшаларды Stremio-дан импорттаңыз немесе манифест URL-і арқылы қосыңыз. Зерттеу бөлімінде каталогтарды қарап, фильм не эпизод беттерінен ағын таңдауын ашыңыз.';
+	@override String get catalogLoadFailed => 'Бұл каталогты жүктеу мүмкін болмады. Жаңартып, қайта көріңіз.';
+	@override String get catalogFiltersRequired => 'Бұл каталогты қарау үшін қажетті сүзгілерді таңдаңыз.';
+	@override String get catalogRequiredLabel => 'Міндетті';
+	@override String get importFromStremio => 'Stremio-дан импорттау';
+	@override String get stremioImportInstructions => 'QR кодын сканерлеңіз немесе сілтемені ашыңыз. Stremio жүйесіне кіріп, сұрауды мақұлдаңыз. PlezyNG тек қосымшалар тізімін оқиды; Stremio құпиясөзін сұрамайды және параметрлерді өзгертпейді.';
+	@override String get stremioImportOpen => 'Stremio сілтемесін ашу';
+	@override String get stremioImportCode => 'Байланыстыру коды';
+	@override String get stremioImportPreviewTitle => 'Қосымшаларды таңдау';
+	@override String get stremioImportPreviewBody => 'PlezyNG-ге қосқыңыз келетін қосымшаларды таңдаңыз. Бұл импорт тек HTTPS мекенжайларын қабылдайды.';
+	@override String stremioImportIgnored({required Object count}) => 'Қолдау көрсетілмейтін немесе қауіпсіз емес мекенжайларға байланысты өткізіліп кеткен қосымшалар: ${count}.';
+	@override String get stremioCatalogs => 'Каталогтар';
+	@override String get stremioStreams => 'Ағындар';
+	@override String stremioImportAddSelected({required Object count}) => 'Таңдалғандарды қосу (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Stremio-дан қосылған қосымшалар: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Қосылған қосымшалар: ${added}; қосылмағаны: ${failed}.';
+	@override String get stremioImportFailed => 'Қосымшаларды Stremio-дан импорттау мүмкін болмады. Қайталап көріңіз.';
+	@override String get stremioImportTimedOut => 'Stremio мақұлдауының мерзімі аяқталды. Импортты қайта бастаңыз.';
+	@override String get stremioImportEmpty => 'Бұл Stremio есептік жазбасынан жаңа үйлесімді қосымшалар табылмады.';
+	@override String get stremioImportLimitReached => 'Қосымша импорттамас бұрын біреуін алып тастаңыз.';
+	@override String get addByManifestUrl => 'Манифест URL-і арқылы қосу';
+	@override String get addAddon => 'Қосымша қосу';
+	@override String get manifestUrl => 'Қосымша манифестінің URL-і';
+	@override String get manifestUrlHint => 'Қосымша манифестінің URL-ін қойыңыз. Қоспас бұрын PlezyNG каталогтар мен ағын ресурстарына қолдау барын тексереді.';
+	@override String get allowHttp => 'Шифрланбаған HTTP мекенжайына рұқсат беру';
+	@override String get allowHttpDescription => 'Мұны тек жеке желідегі сенімді қосымша үшін пайдаланыңыз.';
+	@override String get installAddon => 'Қосымшаны қосу';
+	@override String get addonInstalled => 'Қосымша қосылды';
+	@override String get addonRemoved => 'Қосымша жойылды';
+	@override String get addonToggle => 'Қосымшаны қосу';
+	@override String get addonEmpty => 'Әзірге қосылған қосымша жоқ';
+	@override String get addonError => 'PlezyNG бұл қосымшаға қосыла алмады. Манифест URL-ін тексеріп, қайталап көріңіз.';
+	@override String get addonPrivacy => 'Тек сенімді қосымшаларды қосыңыз. Іздеу кезінде қосымша іздеген атауды алады және үшінші тараптың ағын сілтемелерін қайтаруы мүмкін.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Real-Debrid есептік жазбасымен қолдау көрсетілетін торрент ағындарын ойнатыңыз.';
+	@override String get connectRealDebrid => 'QR кодымен қосу';
+	@override String get disconnectRealDebrid => 'Real-Debrid қызметін ажырату';
+	@override String realDebridConnected({required Object username}) => '${username} ретінде қосылды';
+	@override String get realDebridInstructions => 'QR кодын сканерлеңіз немесе сілтемені ашыңыз, содан кейін PlezyNG-ді қосу үшін осы белсендіру кодын енгізіңіз:';
+	@override String get realDebridActivate => 'Белсендіру үшін Real-Debrid ашу';
+	@override String get realDebridCode => 'Белсендіру коды';
+	@override String get realDebridConnectFailed => 'Real-Debrid қызметіне қосылу мүмкін болмады. Қайталап көріңіз.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'AllDebrid есептік жазбасымен қолдау көрсетілетін торрент ағындарын ойнатыңыз.';
+	@override String get connectAllDebrid => 'QR кодымен қосу';
+	@override String get allDebridInstructions => 'PlezyNG-ге рұқсат беру үшін QR кодын сканерлеңіз немесе сілтемені ашыңыз. Қосылып жатқанда осы экранды ашық қалдырыңыз:';
+	@override String get allDebridActivate => 'Белсендіру үшін AllDebrid ашу';
+	@override String get allDebridCode => 'Белсендіру PIN-коды';
+	@override String get allDebridConnectFailed => 'AllDebrid қызметіне қосылу мүмкін болмады. Қайталап көріңіз.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Premiumize арқылы кэштелген торрент ағындарын ойнатыңыз немесе файлдарды шолыңыз.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'TorBox арқылы кэштелген торрент ағындарын ойнатыңыз немесе файлдарды шолыңыз.';
+	@override String get connectApiKey => 'API кілтімен қосу';
+	@override String apiKeyTitle({required Object service}) => '${service} қызметіне қосылу';
+	@override String get apiKey => 'API кілті';
+	@override String apiKeyHint({required Object service}) => '${service} есептік жазбасының параметрлерінен API кілтін қойыңыз. PlezyNG оны осы құрылғыда шифрлап, осы профильде сақтайды.';
+	@override String get apiKeyConnectFailed => 'Бұл API кілтін тексеру мүмкін болмады. Тексеріп, қайталап көріңіз.';
+	@override String accountConnected({required Object username}) => '${username} ретінде қосылды';
+	@override String get streamNeedsProvider => 'Осы торрент ағынын ойнату үшін Debrid қызметін қосыңыз.';
+	@override String get playViaProvider => 'Debrid арқылы ойнату';
+	@override String disconnectConfirm({required Object service}) => '${service} қызметін ажырату керек пе?';
+	@override String get disconnectBody => 'PlezyNG осы құрылғының рұқсатын жояды. Провайдердегі файлдар мен орындалып жатқан тасымалдар өзгермейді.';
+	@override String get streamsTitle => 'Ағынды таңдау';
+	@override String get searchingStreams => 'Қосылған қосымшалар тексерілуде…';
+	@override String get noStreams => 'Бұл атауға арналған ағындар табылмады.';
+	@override String get manageConnections => 'Ағын қызметтерін басқару';
+	@override String subtitleTracks({required Object count}) => 'Субтитр жолдары: ${count}';
+	@override String get chooseSubtitle => 'Субтитрді таңдау';
+	@override String get chooseProvider => 'Debrid қызметін таңдау';
+	@override String get subtitleOff => 'Субтитрлер өшірулі';
+	@override String get subtitleLoadFailed => 'Бұл субтитрді жүктеу мүмкін болмады. Басқа жолды қолданып көріңіз.';
+	@override String get subtitleApplied => 'Ойнату үшін субтитр таңдалды';
+	@override String get streamLookupPartial => 'Кейбір қосымшаларға қол жеткізу мүмкін болмады.';
+	@override String get streamLookupFailed => 'Қосылған қосымшаларды тексеру мүмкін болмады.';
+	@override String get streamOpenExternal => 'Сыртқы сілтемені ашу';
+	@override String get streamPrepare => 'Debrid қызметі арқылы дайындалуда…';
+	@override String get streamPrepareFailed => 'Бұл ағынды дайындау мүмкін болмады. Қосылған есептік жазбаны тексеріп, басқа көзді қолданып көріңіз.';
+	@override String get streamNeedsRealDebrid => 'Осы торрент ағынын ойнату үшін Debrid қызметін қосыңыз.';
+	@override String get streamUnsupported => 'Қолданбадағы ойнатқыш бұл ағын пішімін қолдамайды.';
+	@override String get remoteNeedsEpisode => 'Ағын іздемес бұрын эпизодты таңдаңыз.';
+	@override String get remoteNeedsEpisodeNumber => 'Бұл эпизодта маусым не эпизод нөмірі жоқ.';
+	@override String get remoteNeedsExternalId => 'PlezyNG бұл атау үшін IMDb немесе TMDB ID таба алмады.';
+	@override String get watchWithServices => 'Қосылған қызметтер арқылы көру';
+	@override String get chooseEpisode => 'Эпизодты таңдау';
+	@override String get episodes => 'Эпизодтар';
+	@override String episodePosition({required Object season, required Object episode}) => '${season}-маусым, ${episode}-эпизод';
+	@override String get episodeStreamHint => 'Осы эпизодтағы қолжетімді ағындарды ашады.';
+	@override String get cloudFiles => 'Бұлттағы файлдар';
+	@override String get browseCloud => 'Файлдарды шолу';
+	@override String get cloudEmpty => 'Бұл есептік жазбадан ойнатылатын бейне файлдар табылмады.';
+	@override String get cloudLoadFailed => 'Бұлттағы файлдарды жүктеу мүмкін болмады. Қосылымды тексеріп, қайталап көріңіз.';
+	@override String get providers => 'Debrid провайдерлері';
 }
 
 // Path: addServer
@@ -7742,6 +7856,110 @@ extension on TranslationsKk {
 			'services.trackerDescriptions.anilist' => 'Өзінің аниме списы бар, және AniList-ге прогрес қараңыз.',
 			'services.trackerDescriptions.simkl' => 'Өзі сүйікті жарық, телешоу және анимациясы Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Өзі сүйікті жабдықтар мен ұлтқыштық ғылыми сессиялармен таныстырылған.',
+			'streaming.title' => 'Бұлт пен қосымшалардан ағын',
+			'streaming.subtitle' => 'Бұлттағы файлдарды қарап, қолдау көрсетілетін ағындарды ойнату үшін Debrid есептік жазбасын қосыңыз. Stremio-мен үйлесімді қосымшалар фильмдер мен эпизодтар бетінде ағын таңдауын ұсынады. Қосылым деректері осы құрылғыда шифрланып, осы профильде сақталады.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Қосылған көздер: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG сақталған ағын параметрлерінің құлпын аша алмады. Қосылымдарды өзгертпес бұрын құрылғы құлпын ашып, қайта көріңіз.',
+			'streaming.settingsUnreadable' => 'PlezyNG осы сақталған қосылымдардың құлпын аша алмады. Қызметтерді қайта қосу үшін оларды тазалаңыз.',
+			'streaming.clearUnreadableSettings' => 'Сақталған параметрлерді тазалау',
+			'streaming.clearUnreadableSettingsConfirm' => 'Сақталған ағын параметрлері тазалансын ба?',
+			'streaming.clearUnreadableSettingsBody' => 'Бұл осы профильдегі барлық сақталған провайдер есептік жазбалары мен қосымша мекенжайларын жояды. Әрекетті қайтару мүмкін емес.',
+			'streaming.clearUnreadableSettingsFailed' => 'Сақталған ағын параметрлерін тазалау мүмкін болмады. Құрылғы құлпын ашып, қайта көріңіз.',
+			'streaming.retrySettingsLoad' => 'Қосылымдарды қайта жүктеу',
+			'streaming.addons' => 'Stremio-мен үйлесімді қосымшалар',
+			'streaming.addonsDescription' => 'Қосымшаларды Stremio-дан импорттаңыз немесе манифест URL-і арқылы қосыңыз. Зерттеу бөлімінде каталогтарды қарап, фильм не эпизод беттерінен ағын таңдауын ашыңыз.',
+			'streaming.catalogLoadFailed' => 'Бұл каталогты жүктеу мүмкін болмады. Жаңартып, қайта көріңіз.',
+			'streaming.catalogFiltersRequired' => 'Бұл каталогты қарау үшін қажетті сүзгілерді таңдаңыз.',
+			'streaming.catalogRequiredLabel' => 'Міндетті',
+			'streaming.importFromStremio' => 'Stremio-дан импорттау',
+			'streaming.stremioImportInstructions' => 'QR кодын сканерлеңіз немесе сілтемені ашыңыз. Stremio жүйесіне кіріп, сұрауды мақұлдаңыз. PlezyNG тек қосымшалар тізімін оқиды; Stremio құпиясөзін сұрамайды және параметрлерді өзгертпейді.',
+			'streaming.stremioImportOpen' => 'Stremio сілтемесін ашу',
+			'streaming.stremioImportCode' => 'Байланыстыру коды',
+			'streaming.stremioImportPreviewTitle' => 'Қосымшаларды таңдау',
+			'streaming.stremioImportPreviewBody' => 'PlezyNG-ге қосқыңыз келетін қосымшаларды таңдаңыз. Бұл импорт тек HTTPS мекенжайларын қабылдайды.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Қолдау көрсетілмейтін немесе қауіпсіз емес мекенжайларға байланысты өткізіліп кеткен қосымшалар: ${count}.',
+			'streaming.stremioCatalogs' => 'Каталогтар',
+			'streaming.stremioStreams' => 'Ағындар',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Таңдалғандарды қосу (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Stremio-дан қосылған қосымшалар: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Қосылған қосымшалар: ${added}; қосылмағаны: ${failed}.',
+			'streaming.stremioImportFailed' => 'Қосымшаларды Stremio-дан импорттау мүмкін болмады. Қайталап көріңіз.',
+			'streaming.stremioImportTimedOut' => 'Stremio мақұлдауының мерзімі аяқталды. Импортты қайта бастаңыз.',
+			'streaming.stremioImportEmpty' => 'Бұл Stremio есептік жазбасынан жаңа үйлесімді қосымшалар табылмады.',
+			'streaming.stremioImportLimitReached' => 'Қосымша импорттамас бұрын біреуін алып тастаңыз.',
+			'streaming.addByManifestUrl' => 'Манифест URL-і арқылы қосу',
+			'streaming.addAddon' => 'Қосымша қосу',
+			'streaming.manifestUrl' => 'Қосымша манифестінің URL-і',
+			'streaming.manifestUrlHint' => 'Қосымша манифестінің URL-ін қойыңыз. Қоспас бұрын PlezyNG каталогтар мен ағын ресурстарына қолдау барын тексереді.',
+			'streaming.allowHttp' => 'Шифрланбаған HTTP мекенжайына рұқсат беру',
+			'streaming.allowHttpDescription' => 'Мұны тек жеке желідегі сенімді қосымша үшін пайдаланыңыз.',
+			'streaming.installAddon' => 'Қосымшаны қосу',
+			'streaming.addonInstalled' => 'Қосымша қосылды',
+			'streaming.addonRemoved' => 'Қосымша жойылды',
+			'streaming.addonToggle' => 'Қосымшаны қосу',
+			'streaming.addonEmpty' => 'Әзірге қосылған қосымша жоқ',
+			'streaming.addonError' => 'PlezyNG бұл қосымшаға қосыла алмады. Манифест URL-ін тексеріп, қайталап көріңіз.',
+			'streaming.addonPrivacy' => 'Тек сенімді қосымшаларды қосыңыз. Іздеу кезінде қосымша іздеген атауды алады және үшінші тараптың ағын сілтемелерін қайтаруы мүмкін.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Real-Debrid есептік жазбасымен қолдау көрсетілетін торрент ағындарын ойнатыңыз.',
+			'streaming.connectRealDebrid' => 'QR кодымен қосу',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid қызметін ажырату',
+			'streaming.realDebridConnected' => ({required Object username}) => '${username} ретінде қосылды',
+			'streaming.realDebridInstructions' => 'QR кодын сканерлеңіз немесе сілтемені ашыңыз, содан кейін PlezyNG-ді қосу үшін осы белсендіру кодын енгізіңіз:',
+			'streaming.realDebridActivate' => 'Белсендіру үшін Real-Debrid ашу',
+			'streaming.realDebridCode' => 'Белсендіру коды',
+			'streaming.realDebridConnectFailed' => 'Real-Debrid қызметіне қосылу мүмкін болмады. Қайталап көріңіз.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'AllDebrid есептік жазбасымен қолдау көрсетілетін торрент ағындарын ойнатыңыз.',
+			'streaming.connectAllDebrid' => 'QR кодымен қосу',
+			'streaming.allDebridInstructions' => 'PlezyNG-ге рұқсат беру үшін QR кодын сканерлеңіз немесе сілтемені ашыңыз. Қосылып жатқанда осы экранды ашық қалдырыңыз:',
+			'streaming.allDebridActivate' => 'Белсендіру үшін AllDebrid ашу',
+			'streaming.allDebridCode' => 'Белсендіру PIN-коды',
+			'streaming.allDebridConnectFailed' => 'AllDebrid қызметіне қосылу мүмкін болмады. Қайталап көріңіз.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Premiumize арқылы кэштелген торрент ағындарын ойнатыңыз немесе файлдарды шолыңыз.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'TorBox арқылы кэштелген торрент ағындарын ойнатыңыз немесе файлдарды шолыңыз.',
+			'streaming.connectApiKey' => 'API кілтімен қосу',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service} қызметіне қосылу',
+			'streaming.apiKey' => 'API кілті',
+			'streaming.apiKeyHint' => ({required Object service}) => '${service} есептік жазбасының параметрлерінен API кілтін қойыңыз. PlezyNG оны осы құрылғыда шифрлап, осы профильде сақтайды.',
+			'streaming.apiKeyConnectFailed' => 'Бұл API кілтін тексеру мүмкін болмады. Тексеріп, қайталап көріңіз.',
+			'streaming.accountConnected' => ({required Object username}) => '${username} ретінде қосылды',
+			'streaming.streamNeedsProvider' => 'Осы торрент ағынын ойнату үшін Debrid қызметін қосыңыз.',
+			'streaming.playViaProvider' => 'Debrid арқылы ойнату',
+			'streaming.disconnectConfirm' => ({required Object service}) => '${service} қызметін ажырату керек пе?',
+			'streaming.disconnectBody' => 'PlezyNG осы құрылғының рұқсатын жояды. Провайдердегі файлдар мен орындалып жатқан тасымалдар өзгермейді.',
+			'streaming.streamsTitle' => 'Ағынды таңдау',
+			'streaming.searchingStreams' => 'Қосылған қосымшалар тексерілуде…',
+			'streaming.noStreams' => 'Бұл атауға арналған ағындар табылмады.',
+			'streaming.manageConnections' => 'Ағын қызметтерін басқару',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Субтитр жолдары: ${count}',
+			'streaming.chooseSubtitle' => 'Субтитрді таңдау',
+			'streaming.chooseProvider' => 'Debrid қызметін таңдау',
+			'streaming.subtitleOff' => 'Субтитрлер өшірулі',
+			'streaming.subtitleLoadFailed' => 'Бұл субтитрді жүктеу мүмкін болмады. Басқа жолды қолданып көріңіз.',
+			'streaming.subtitleApplied' => 'Ойнату үшін субтитр таңдалды',
+			'streaming.streamLookupPartial' => 'Кейбір қосымшаларға қол жеткізу мүмкін болмады.',
+			'streaming.streamLookupFailed' => 'Қосылған қосымшаларды тексеру мүмкін болмады.',
+			'streaming.streamOpenExternal' => 'Сыртқы сілтемені ашу',
+			'streaming.streamPrepare' => 'Debrid қызметі арқылы дайындалуда…',
+			'streaming.streamPrepareFailed' => 'Бұл ағынды дайындау мүмкін болмады. Қосылған есептік жазбаны тексеріп, басқа көзді қолданып көріңіз.',
+			'streaming.streamNeedsRealDebrid' => 'Осы торрент ағынын ойнату үшін Debrid қызметін қосыңыз.',
+			'streaming.streamUnsupported' => 'Қолданбадағы ойнатқыш бұл ағын пішімін қолдамайды.',
+			'streaming.remoteNeedsEpisode' => 'Ағын іздемес бұрын эпизодты таңдаңыз.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Бұл эпизодта маусым не эпизод нөмірі жоқ.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG бұл атау үшін IMDb немесе TMDB ID таба алмады.',
+			'streaming.watchWithServices' => 'Қосылған қызметтер арқылы көру',
+			'streaming.chooseEpisode' => 'Эпизодты таңдау',
+			'streaming.episodes' => 'Эпизодтар',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '${season}-маусым, ${episode}-эпизод',
+			'streaming.episodeStreamHint' => 'Осы эпизодтағы қолжетімді ағындарды ашады.',
+			'streaming.cloudFiles' => 'Бұлттағы файлдар',
+			'streaming.browseCloud' => 'Файлдарды шолу',
+			'streaming.cloudEmpty' => 'Бұл есептік жазбадан ойнатылатын бейне файлдар табылмады.',
+			'streaming.cloudLoadFailed' => 'Бұлттағы файлдарды жүктеу мүмкін болмады. Қосылымды тексеріп, қайталап көріңіз.',
+			'streaming.providers' => 'Debrid провайдерлері',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} серверін қосу',
 			'addServer.serverUrls' => 'Сервер URL-дері',
 			'addServer.serverUrlsHelper' => 'Үтірмен бөлінген бірнеше URL мекенжайына рұқсат етіледі.',
@@ -7982,6 +8200,8 @@ extension on TranslationsKk {
 			'universalMedia.playlistFormatsHelp' => 'Өмірінің соңына дейін 1 тыс. нәрсе бар және 2 Мб. HLS-дер көшірмеген, оның ішінде жүктеуге ұсынады.',
 			'universalMedia.saveQueuePlaylist' => 'Кезекті ойнату тізімі ретінде сақтау',
 			'universalMedia.queuePlaylistSaved' => 'Ойнату тізімі медиа файлдарының жанына сақталды.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => 'Бұл кезекті қайта пайдалануға болатын жергілікті ойнату тізімі ретінде сақтау мүмкін емес.',
 			'universalMedia.queuePlaylistFolderRequired' => 'Кезектегі файлдармен бір қалтадағы сақтау орнын таңдаңыз.',
 			'universalMedia.noFavorites' => 'Қазіргі таңда бүкіл әлемде өте көп айтылады.Favorites stay in this profile.',
@@ -8086,8 +8306,6 @@ extension on TranslationsKk {
 			'universalMedia.captureAudioNone' => 'Аудиолық',
 			'universalMedia.captureDefaultAudio' => 'Аудиолық аудіолық',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Серіктің қабығы',
 			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
 			'universalMedia.captureSaveAs' => 'Серіктің қабырға айналады.',
@@ -8496,6 +8714,8 @@ extension on TranslationsKk {
 			'sourceSetup.nfsEncryptionFailure' => 'Шифрланған NFS үшін NAS-тың екі қызметінде де RFC 9289 және TLS 1.3 қолдауын, сертификат атауын және ортақ ресурстың UID/GID мәндерін тексеріңіз. PlezyNG бұл қосылымды шифрлаусыз қайта жасамайды.',
 			'sourceSetup.sourceConnecting' => 'Дереккөзге қосылуда',
 			'sourceSetup.metadataSearchPrivacy' => 'Бұл атау іздеуі Trakt қызметіне жіберіледі. Енгізген атауыңыз жіберіледі, бейне не дереккөздің кіру деректері жіберілмейді.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Сәйкес нәтижені таңдау',
 			'sourceSetup.metadataMatchHelp' => 'Таңдамас бұрын атауы мен жылын тексеріңіз. Trakt ізделген атауды алады; бейне өз дереккөзінде қалады.',
 			'sourceSetup.metadataNoMatches' => 'Онлайн сәйкес атаулар табылмады. Басқа атауды байқап көріңіз.',
@@ -8600,8 +8820,6 @@ extension on TranslationsKk {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

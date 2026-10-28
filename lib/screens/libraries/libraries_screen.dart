@@ -906,7 +906,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ),
       );
     }
-
     // Explicit navigation can select a hidden library; visibility filters
     // choose defaults, not the content of an already selected library.
     // The server may temporarily disappear during refresh.

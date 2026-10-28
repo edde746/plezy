@@ -24,6 +24,7 @@ class WatchmodeAvailabilitySource {
   final String type;
   final String region;
   final String? format;
+
   /// API-provided text only. Null means unknown; the client never treats it as zero.
   final String? price;
   final String? webUrl;
@@ -112,13 +113,13 @@ class WatchmodeAvailabilityClient {
     }
 
     final base = plezyWatchmodeAvailabilityBaseUrl.replaceFirst(RegExp(r'/+$'), '');
-    final uri = Uri.parse('$base/commerce/watchmode-availability').replace(
-      queryParameters: {'tmdbType': type, 'tmdbId': tmdbId.toString(), 'region': country},
-    );
+    final uri = Uri.parse(
+      '$base/commerce/watchmode-availability',
+    ).replace(queryParameters: {'tmdbType': type, 'tmdbId': tmdbId.toString(), 'region': country});
     try {
-      final response = await _http.get(uri, headers: const {'Accept': 'application/json'}).timeout(
-        const Duration(seconds: 8),
-      );
+      final response = await _http
+          .get(uri, headers: const {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 8));
       if (response.statusCode != 200 || response.bodyBytes.length > 256 * 1024) return null;
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
       if (decoded is! Map<String, dynamic> ||

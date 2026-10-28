@@ -110,6 +110,15 @@ class MediaFilter {
   @JsonKey(includeFromJson: false, includeToJson: false)
   final List<LibraryFilterOperator> operators;
 
+  /// Maximum values accepted for a value-list filter. Null leaves the
+  /// editor's normal multi-select behavior unchanged.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final int? selectionLimit;
+
+  /// Whether the provider requires this value before a catalog request.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final bool isRequired;
+
   MediaFilter({
     required this.filter,
     required this.filterType,
@@ -118,6 +127,8 @@ class MediaFilter {
     required this.type,
     List<LibraryFilterOperator>? operators,
     this.unit = MediaFilterUnit.none,
+    this.selectionLimit,
+    this.isRequired = false,
   }) : operators = operators ?? defaultOperatorsFor(filterType);
 
   factory MediaFilter.fromJson(Map<String, dynamic> json) => _$MediaFilterFromJson(json);

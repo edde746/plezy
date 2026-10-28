@@ -37,6 +37,8 @@ REST methods include `/user`, `/torrents`, `/torrents/info/{id}`,
 not document `instantAvailability`; do not depend on it. The documented ceiling
 is 250 requests/minute, including refused calls. The documented open-source
 client ID is available; a PlezyNG registration can provide distinct branding.
+The `/torrents` list accepts `offset` and `limit`; the cloud browser requests
+bounded 100-item pages and lets the user continue explicitly.
 
 **Adapter design:** provide cloud inventory plus selected-link resolution.
 Keep the original provider file ID, hash, normalized relative path and size.
@@ -101,7 +103,9 @@ codes. The [main API reference](https://api-docs.torbox.app/) documents bearer
 keys, torrents, web downloads and Usenet. Torrent methods include `mylist`,
 `checkcached`, `createtorrent`, `controltorrent`, `requestdl`. The inspected
 OpenAPI requires a query `token` for `requestdl`: do not assume every endpoint
-accepts header-only auth. [Official WebDAV help](https://support.torbox.app/en/articles/14662867-torbox-webdav)
+accepts header-only auth. `mylist` accepts `offset` and `limit`; the cloud
+browser requests bounded 100-item pages and lets the user continue explicitly.
+[Official WebDAV help](https://support.torbox.app/en/articles/14662867-torbox-webdav)
 supports API-key credentials and describes a 15-minute refresh interval;
 deleting one WebDAV file can delete its whole underlying item.
 

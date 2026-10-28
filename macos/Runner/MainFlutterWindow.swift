@@ -3,7 +3,17 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
-    let flutterViewController = FlutterViewController()
+    let project = FlutterDartProject()
+    project.dartEntrypointArguments = Array(CommandLine.arguments.dropFirst())
+    let flutterViewController = FlutterViewController(project: project)
+    let preparationWorker = CommandLine.arguments.contains("--plezy-preparation-worker")
+    if preparationWorker {
+      NSApp.setActivationPolicy(.prohibited)
+      self.orderOut(nil)
+      RegisterGeneratedPlugins(registry: flutterViewController)
+      self.contentViewController = flutterViewController
+      return
+    }
 
     // Keep the window itself opaque so WindowServer does not have to blend the
     // whole video window with the desktop every frame. Flutter stays clear so

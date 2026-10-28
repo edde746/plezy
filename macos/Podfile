@@ -1,3 +1,7 @@
+unless system('python3', File.expand_path('../scripts/p2p/build_apple.py', __dir__), 'macos')
+  raise 'Native torrent framework build failed'
+end
+
 platform :osx, '14.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.

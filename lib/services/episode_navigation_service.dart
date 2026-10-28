@@ -104,11 +104,11 @@ class EpisodeNavigationService {
       }
 
       final nextResult = await playbackState.getNextEpisode(
-        metadata.id,
+        metadata.globalKey,
         loopQueue: playbackState.isRepeatActive,
         playedPartId: playedPartId,
       );
-      final previousResult = await playbackState.getPreviousEpisode(metadata.id, playedPartId: playedPartId);
+      final previousResult = await playbackState.getPreviousEpisode(metadata.globalKey, playedPartId: playedPartId);
       final nextStatus = nextResult.status == QueueNavigationStatus.unavailable
           ? QueueNavigationStatus.failed
           : nextResult.status;

@@ -7,7 +7,7 @@ import 'catalog_cast_member.dart';
 import 'catalog_metadata.dart';
 
 /// External catalog providers that can back the Explore tab.
-enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr, mdblist }
+enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr, mdblist, stremio }
 
 /// Normalized airing/production status across providers (Trakt `status`,
 /// MAL `status`). Null when unknown or uninteresting (released movies).
@@ -155,6 +155,14 @@ class CatalogItem {
   static const String rawKey = 'plezyCatalog';
 
   final CatalogSourceId source;
+
+  /// Stable installation identity for sources that are configured more than
+  /// once (Stremio-compatible add-ons). It is never an account secret.
+  final String? sourceInstallationId;
+
+  /// Provider-native entry identifier used for this source's detail/resource
+  /// requests. It remains separate from cross-provider external IDs.
+  final String? sourceItemId;
 
   /// [MediaKind.movie] or [MediaKind.show].
   final MediaKind kind;
@@ -328,6 +336,8 @@ class CatalogItem {
 
   const CatalogItem({
     required this.source,
+    this.sourceInstallationId,
+    this.sourceItemId,
     required this.kind,
     required this.title,
     this.altTitles = const [],
@@ -396,6 +406,8 @@ class CatalogItem {
   /// returns tmdb.
   CatalogItem enrichedWith(CatalogItem detail) => CatalogItem(
     source: source,
+    sourceInstallationId: sourceInstallationId ?? detail.sourceInstallationId,
+    sourceItemId: sourceItemId ?? detail.sourceItemId,
     kind: kind,
     title: detail.title.isNotEmpty ? detail.title : title,
     year: detail.year ?? year,
@@ -485,7 +497,7 @@ class CatalogItem {
   /// tag required by the union type. Poster/backdrop are absolute URLs, which
   /// the image pipeline loads directly.
   MediaItem toMediaItem() => MediaItem(
-    id: 'catalog:${source.name}:$identityKey',
+    id: 'catalog:${source.name}:${sourceInstallationId == null ? '' : '$sourceInstallationId:'}$identityKey',
     backend: MediaBackend.plex,
     kind: kind,
     title: title,
@@ -503,6 +515,8 @@ class CatalogItem {
 
   Map<String, Object?> toJson() => {
     'source': source.name,
+    if (sourceInstallationId != null) 'sourceInstallationId': sourceInstallationId,
+    if (sourceItemId != null) 'sourceItemId': sourceItemId,
     'kind': kind.id,
     'title': title,
     if (altTitles.isNotEmpty) 'altTitles': altTitles,
@@ -567,6 +581,8 @@ class CatalogItem {
     source:
         CatalogSourceId.values.asNameMap()[json['source']] ??
         (throw ArgumentError('Unknown catalog source: ${json['source']}')),
+    sourceInstallationId: json['sourceInstallationId'] as String?,
+    sourceItemId: json['sourceItemId'] as String?,
     kind: MediaKind.fromString(json['kind'] as String?),
     title: json['title'] as String? ?? '',
     altTitles: (json['altTitles'] as List?)?.cast<String>() ?? const [],

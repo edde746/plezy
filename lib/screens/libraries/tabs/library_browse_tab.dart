@@ -1,3 +1,5 @@
+import '../../../sources/source_controller.dart';
+import '../../../media/canonical_library.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
@@ -1050,6 +1052,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   void onPageLoaded(int start, List<MediaItem> pageItems) {
     _prefetchImages(start, pageItems);
+    final sources = context.read<SourceController?>();
+    if (sources != null) {
+      final generation = sources.generation;
+      unawaited(
+        () async {
+          await sources.ready;
+          if (!sources.current(generation) || sources.profileId == null || sources.blocked) return;
+          await CanonicalLibrary(sources.repository.database).recordServerItems(sources.profileId!, pageItems);
+        }().catchError((Object _) {}),
+      );
+    }
   }
 
   String _getDefaultGrouping() {

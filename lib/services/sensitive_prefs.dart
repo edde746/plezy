@@ -59,7 +59,11 @@ const String seerrSessionBaseKey = 'seerr_session';
 
 /// Every credential slot that is profile-scoped through `profileScopedPrefsKey`,
 /// so a stored key is either the bare base key or `user_{scope}_{baseKey}`.
-const List<String> profileScopedCredentialBaseKeys = <String>[...trackerSessionBaseKeys, seerrSessionBaseKey];
+const List<String> profileScopedCredentialBaseKeys = <String>[
+  ...trackerSessionBaseKeys,
+  seerrSessionBaseKey,
+  'remote_streaming_v1',
+];
 
 final RegExp _profileScopedCredentialPattern = RegExp(
   '^(?:user_.+_)?(?:${profileScopedCredentialBaseKeys.join('|')})\$',

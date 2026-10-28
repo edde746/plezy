@@ -1,3 +1,4 @@
+import plezy_preparation
 import Flutter
 import UIKit
 import AVFoundation
@@ -15,6 +16,9 @@ import MusicKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    PlezyPreparationPlugin.registerBackgroundTasks { registry in
+      GeneratedPluginRegistrant.register(with: registry)
+    }
     // Configure the non-mixing session; activate it only when playback starts.
     do {
       let session = AVAudioSession.sharedInstance()

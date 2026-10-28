@@ -2,12 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class AppleMusicSong {
-  const AppleMusicSong({
-    required this.id,
-    required this.title,
-    required this.artist,
-    this.album,
-  });
+  const AppleMusicSong({required this.id, required this.title, required this.artist, this.album});
 
   final String id;
   final String title;
@@ -40,7 +35,8 @@ class AppleMusicSong {
 /// iOS-only MusicKit pilot. Catalog search is explicit and playback is handed
 /// to Apple's native ApplicationMusicPlayer; this never downloads Apple files.
 class AppleMusicKitClient {
-  AppleMusicKitClient({MethodChannel? channel}) : _channel = channel ?? const MethodChannel('com.plezy/apple_music_kit');
+  AppleMusicKitClient({MethodChannel? channel})
+    : _channel = channel ?? const MethodChannel('com.plezy/apple_music_kit');
 
   static const enabled = bool.fromEnvironment('ENABLE_APPLE_MUSICKIT', defaultValue: false);
 

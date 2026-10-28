@@ -21,6 +21,7 @@ IconData shelfIcon(PublicationShelf shelf) => switch (shelf) {
   PublicationShelf.comics => Symbols.auto_stories_rounded,
   PublicationShelf.videos => Symbols.movie_rounded,
 };
+
 List<AppMenuEntry<String>> sourceLibraryMenu(BuildContext context) => [
   for (final shelf in context.read<SourceController?>()?.shelves ?? <PublicationShelf>{})
     AppMenuItem(value: 'source:${shelf.name}', label: shelfLabel(shelf), icon: shelfIcon(shelf)),

@@ -18,6 +18,17 @@ class _Version8Database extends SourceDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) async {
       await super.migration.onCreate(migrator);
+      for (final table in [
+        'canonical_cards',
+        'canonical_aliases',
+        'canonical_copies',
+        'canonical_redirects',
+        'remote_stream_state',
+        'remote_preparation_claims',
+        'remote_deleted_profiles',
+      ]) {
+        await customStatement('DROP TABLE $table');
+      }
       await customStatement('DROP TRIGGER entries_search_update');
       await customStatement('DROP TRIGGER entries_search_delete');
       await customStatement(
@@ -91,7 +102,7 @@ void main() {
     final repository = SourceRepository(database);
     expect((await repository.entries('alice')).single.title, 'Original title');
     final version = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 10);
+    expect(version.read<int>('user_version'), 11);
     expect(
       await database.customSelect("SELECT rowid FROM entries_search_fts WHERE search MATCH 'Original'").get(),
       hasLength(1),

@@ -247,7 +247,14 @@ No account API bearer token is attached to a CDN stream unless the documented
 stream endpoint specifically requires it under an origin-bound grant.
 
 Lease renewal reacquires the same file, updates expiry and egress binding, and
-single-flights concurrent 401/403/expiry failures. Distinguish expired signed
+single-flights concurrent 401/403/410 failures. The loopback HLS proxy binds a
+child reference to its parent playlist, ordinal, and resolved path. On an
+expired child it refreshes the parent, then accepts only the reference at that
+ordinal with the same path; a missing or changed reference fails closed rather
+than combining bytes from a different segment. Query tokens may rotate and
+CDN hosts may change, but credentials remain origin-scoped. This conservative
+rule can reject a legitimate live-playlist rollover and still needs player and
+provider qualification. Distinguish expired signed
 URL from expired account auth and deleted file. Try one renewal and one reopen
 of the same copy; do not loop. If the file revision, size or timeline changed,
 do not stitch bytes or silently restore a foreign timestamp. Track/subtitle

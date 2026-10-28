@@ -235,7 +235,6 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     }
   }
 
-
   Future<void> _loadWatchmodeAvailability() async {
     final type = widget.tmdbType?.toLowerCase();
     final tmdbId = widget.tmdbId;
@@ -355,32 +354,28 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
               FocusableListTile(
                 leading: const AppIcon(Symbols.play_circle_outline_rounded),
                 title: Text(source.name),
-                subtitle: Text([
-                  source.typeLabel,
-                  source.region,
-                  if (source.price case final price?) price,
-                  if (source.format case final format?) format,
-                ].join(' · ')),
-                trailing: _watchmodeDestination(source) == null
-                    ? null
-                    : const AppIcon(Symbols.open_in_new_rounded),
+                subtitle: Text(
+                  [
+                    source.typeLabel,
+                    source.region,
+                    if (source.price case final price?) price,
+                    if (source.format case final format?) format,
+                  ].join(' · '),
+                ),
+                trailing: _watchmodeDestination(source) == null ? null : const AppIcon(Symbols.open_in_new_rounded),
                 onTap: _watchmodeDestination(source) == null ? null : () => _openWatchmodeSource(source),
               ),
           ],
         ),
         Padding(
           padding: const EdgeInsets.only(left: 16, top: 2, bottom: 8),
-          child: Text(
-            'Streaming availability powered by Watchmode',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          child: Text('Streaming availability powered by Watchmode', style: Theme.of(context).textTheme.bodySmall),
         ),
       ],
     );
   }
 
-  bool get _showAppleMusic =>
-      _appleMusic.isAvailable && widget.categories.contains(ExternalAccessCategory.music);
+  bool get _showAppleMusic => _appleMusic.isAvailable && widget.categories.contains(ExternalAccessCategory.music);
 
   Future<void> _searchAppleMusic() async {
     if (_appleMusicLoading || !_showAppleMusic) return;
@@ -588,7 +583,8 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                 return a.name.compareTo(b.name);
               }),
     };
-    final hasResults = destinationsByCategory.values.any((destinations) => destinations.isNotEmpty) ||
+    final hasResults =
+        destinationsByCategory.values.any((destinations) => destinations.isNotEmpty) ||
         _watchmodeLoading ||
         (_watchmodeResult?.sources.isNotEmpty ?? false) ||
         _showAppleMusic;
@@ -655,10 +651,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                   _buildWatchmodeSection(),
                   const SizedBox(height: 8),
                 ],
-                if (_showAppleMusic) ...[
-                  _buildAppleMusicSection(),
-                  const SizedBox(height: 8),
-                ],
+                if (_showAppleMusic) ...[_buildAppleMusicSection(), const SizedBox(height: 8)],
                 for (final category in widget.categories)
                   if (destinationsByCategory[category]!.isNotEmpty)
                     SettingsGroup(

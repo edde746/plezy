@@ -100,16 +100,28 @@ class _FilterValuePageState extends State<FilterValuePage> {
   void _toggle(MediaFilterValue value) {
     final id = _idOf(value);
     final selected = List<String>.from(widget.clause?.values ?? const []);
-    if (!selected.remove(id)) {
-      selected.add(id);
-      FilterValueNames.remember(
-        serverId: widget.serverId,
-        libraryKey: widget.libraryKey,
-        field: widget.filter.filter,
-        value: id,
-        title: value.title,
-      );
+    if (selected.remove(id)) {
+      if (widget.filter.isRequired && selected.isEmpty) return;
+      _emit(selected, _operator);
+      return;
     }
+    final limit = widget.filter.selectionLimit;
+    if (limit == 1) {
+      selected
+        ..clear()
+        ..add(id);
+    } else if (limit != null && selected.length >= limit) {
+      return;
+    } else {
+      selected.add(id);
+    }
+    FilterValueNames.remember(
+      serverId: widget.serverId,
+      libraryKey: widget.libraryKey,
+      field: widget.filter.filter,
+      value: id,
+      title: value.title,
+    );
     _emit(selected, _operator);
   }
 
@@ -128,6 +140,21 @@ class _FilterValuePageState extends State<FilterValuePage> {
       itemCount: visible.length + headerCount,
       itemBuilder: (context, index) {
         if (index == 0) {
+          if (widget.filter.isRequired) {
+            return Padding(
+              key: _firstItemKey,
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Semantics(
+                label: t.streaming.catalogRequiredLabel,
+                child: Text(
+                  t.streaming.catalogRequiredLabel,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            );
+          }
           return FilterClearRow(
             key: _firstItemKey,
             selected: selected.isEmpty,
@@ -145,8 +172,24 @@ class _FilterValuePageState extends State<FilterValuePage> {
         }
         final value = visible[index - headerCount];
         final id = _idOf(value);
+        final requiredChoiceFocusNode =
+            widget.filter.isRequired && index == headerCount ? widget.initialFocusNode : null;
+        final requiredChoiceAutofocus = widget.filter.isRequired && index == headerCount && autofocusFirst;
+        if (widget.filter.selectionLimit == 1) {
+          final checked = selected.contains(id);
+          return FocusableListTile(
+            focusNode: requiredChoiceFocusNode,
+            autofocus: requiredChoiceAutofocus,
+            leading: AppIcon(filterRadioIcon(checked), fill: 1),
+            title: Text(value.title),
+            selected: checked,
+            onTap: () => _toggle(value),
+          );
+        }
         return FocusableCheckboxListTile(
           value: selected.contains(id),
+          focusNode: requiredChoiceFocusNode,
+          autofocus: requiredChoiceAutofocus,
           onChanged: (_) => _toggle(value),
           title: Text(value.title),
         );

@@ -92,6 +92,7 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$hu trakt = _Translations$trakt$hu._(_root);
 	@override late final _Translations$seerr$hu seerr = _Translations$seerr$hu._(_root);
 	@override late final _Translations$services$hu services = _Translations$services$hu._(_root);
+	@override late final _Translations$streaming$hu streaming = _Translations$streaming$hu._(_root);
 	@override late final _Translations$addServer$hu addServer = _Translations$addServer$hu._(_root);
 	@override late final _Translations$cast$hu cast = _Translations$cast$hu._(_root);
 	@override late final _Translations$automation$hu automation = _Translations$automation$hu._(_root);
@@ -2795,6 +2796,119 @@ class _Translations$services$hu extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$hu libraryFilter = _Translations$services$libraryFilter$hu._(_root);
 	@override String get seerrDescription => 'Csatlakozzon a Seerr-hez vagy az Overseerr-hoz, hogy címeket keressen és médiakérdéseket küldjön.';
 	@override late final _Translations$services$trackerDescriptions$hu trackerDescriptions = _Translations$services$trackerDescriptions$hu._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$hu extends Translations$streaming$en {
+	_Translations$streaming$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Felhő és kiegészítők közvetítése';
+	@override String get subtitle => 'Csatlakoztass egy Debrid-fiókot a felhőben lévő fájlok böngészéséhez és a támogatott streamek lejátszásához. A Stremio-kompatibilis kiegészítők streamlehetőségeket kínálnak a filmek és epizódok oldalán. A kapcsolat adatai ezen az eszközön titkosítva, ebben a profilban tárolódnak.';
+	@override String connectionsConfigured({required Object count}) => 'Csatlakoztatott források: ${count}';
+	@override String get settingsLoadFailed => 'A PlezyNG nem tudta feloldani a mentett streamelési beállításokat. A kapcsolatok módosítása előtt oldd fel az eszköz zárolását, majd próbáld újra.';
+	@override String get settingsUnreadable => 'A PlezyNG nem tudta feloldani ezeket a mentett kapcsolatokat. Töröld őket a szolgáltatások újbóli csatlakoztatásához.';
+	@override String get clearUnreadableSettings => 'Mentett beállítások törlése';
+	@override String get clearUnreadableSettingsConfirm => 'Törlöd a mentett streamelési beállításokat?';
+	@override String get clearUnreadableSettingsBody => 'Ez eltávolítja a profilból az összes mentett szolgáltatói fiókot és kiegészítőcímet. Nem lehet visszavonni.';
+	@override String get clearUnreadableSettingsFailed => 'Nem sikerült törölni a mentett streamelési beállításokat. Oldd fel az eszköz zárolását, és próbáld újra.';
+	@override String get retrySettingsLoad => 'Kapcsolatok újratöltése';
+	@override String get addons => 'Stremio-kompatibilis kiegészítők';
+	@override String get addonsDescription => 'Importálj kiegészítőket a Stremióból, vagy csatlakoztass egyet a manifest URL-címével. Böngéssz katalógusokat a Felfedezésben, és nyisd meg a streamlehetőségeket a filmek vagy epizódok oldalán.';
+	@override String get catalogLoadFailed => 'Nem sikerült betölteni a katalógust. Frissíts, és próbáld újra.';
+	@override String get catalogFiltersRequired => 'A katalógus böngészéséhez válaszd ki a szükséges szűrőket.';
+	@override String get catalogRequiredLabel => 'Kötelező';
+	@override String get importFromStremio => 'Importálás a Stremióból';
+	@override String get stremioImportInstructions => 'Olvasd be a QR-kódot, vagy nyisd meg a hivatkozást. Jelentkezz be a Stremióba, és hagyd jóvá a kérést. A PlezyNG csak a kiegészítőlistádat olvassa; nem kéri el a Stremio-jelszavadat, és nem módosítja a beállításaidat.';
+	@override String get stremioImportOpen => 'Stremio-hivatkozás megnyitása';
+	@override String get stremioImportCode => 'Összekapcsolási kód';
+	@override String get stremioImportPreviewTitle => 'Kiegészítők kiválasztása';
+	@override String get stremioImportPreviewBody => 'Válaszd ki a PlezyNG-hez csatlakoztatni kívánt kiegészítőket. Ez az importálás csak HTTPS-címeket fogad el.';
+	@override String stremioImportIgnored({required Object count}) => 'Nem támogatott vagy nem biztonságos című kihagyott kiegészítők: ${count}.';
+	@override String get stremioCatalogs => 'Katalógusok';
+	@override String get stremioStreams => 'Streamek';
+	@override String stremioImportAddSelected({required Object count}) => 'Kijelöltek hozzáadása (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Stremióból csatlakoztatott kiegészítők: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Csatlakoztatott kiegészítők: ${added}; sikertelen csatlakoztatás: ${failed}.';
+	@override String get stremioImportFailed => 'Nem sikerült importálni a kiegészítőket a Stremióból. Próbáld újra.';
+	@override String get stremioImportTimedOut => 'A Stremio-jóváhagyás lejárt. Indítsd újra az importálást.';
+	@override String get stremioImportEmpty => 'Nem található új, kompatibilis kiegészítő ebben a Stremio-fiókban.';
+	@override String get stremioImportLimitReached => 'Távolíts el egy kiegészítőt, mielőtt többet importálsz.';
+	@override String get addByManifestUrl => 'Hozzáadás manifest URL-címmel';
+	@override String get addAddon => 'Kiegészítő hozzáadása';
+	@override String get manifestUrl => 'Kiegészítő manifest URL-címe';
+	@override String get manifestUrlHint => 'Illeszd be a kiegészítő manifest URL-címét. Csatlakozás előtt a PlezyNG ellenőrzi a katalógusok vagy streamforrások támogatását.';
+	@override String get allowHttp => 'Nem titkosított HTTP-cím engedélyezése';
+	@override String get allowHttpDescription => 'Csak megbízható kiegészítőhöz használd a privát hálózatodon.';
+	@override String get installAddon => 'Kiegészítő csatlakoztatása';
+	@override String get addonInstalled => 'Kiegészítő csatlakoztatva';
+	@override String get addonRemoved => 'Kiegészítő eltávolítva';
+	@override String get addonToggle => 'Kiegészítő engedélyezése';
+	@override String get addonEmpty => 'Még nincs csatlakoztatott kiegészítő';
+	@override String get addonError => 'A PlezyNG nem tudott csatlakozni ehhez a kiegészítőhöz. Ellenőrizd a manifest URL-címét, és próbáld újra.';
+	@override String get addonPrivacy => 'Csak olyan kiegészítőket csatlakoztass, amelyekben megbízol. Kereséskor a kiegészítő megkapja a keresett címet, és harmadik féltől származó streamhivatkozásokat adhat vissza.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Támogatott torrentstreamek lejátszása a Real-Debrid-fiókoddal.';
+	@override String get connectRealDebrid => 'Csatlakozás QR-kóddal';
+	@override String get disconnectRealDebrid => 'Real-Debrid leválasztása';
+	@override String realDebridConnected({required Object username}) => 'Csatlakoztatva: ${username}';
+	@override String get realDebridInstructions => 'Olvasd be a QR-kódot vagy nyisd meg a hivatkozást, majd add meg ezt az aktiválókódot a PlezyNG csatlakoztatásához:';
+	@override String get realDebridActivate => 'Real-Debrid megnyitása az aktiváláshoz';
+	@override String get realDebridCode => 'Aktiválókód';
+	@override String get realDebridConnectFailed => 'Nem sikerült csatlakozni a Real-Debridhez. Próbáld újra.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Támogatott torrentstreamek lejátszása az AllDebrid-fiókoddal.';
+	@override String get connectAllDebrid => 'Csatlakozás QR-kóddal';
+	@override String get allDebridInstructions => 'Olvasd be a QR-kódot vagy nyisd meg a hivatkozást a PlezyNG engedélyezéséhez. A csatlakozás alatt hagyd nyitva ezt a képernyőt:';
+	@override String get allDebridActivate => 'AllDebrid megnyitása az aktiváláshoz';
+	@override String get allDebridCode => 'Aktiváló PIN';
+	@override String get allDebridConnectFailed => 'Nem sikerült csatlakozni az AllDebridhez. Próbáld újra.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Gyorsítótárazott torrentstreamek lejátszása vagy fájlok böngészése a Premiumize-zal.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Gyorsítótárazott torrentstreamek lejátszása vagy fájlok böngészése a TorBoxszal.';
+	@override String get connectApiKey => 'Csatlakozás API-kulccsal';
+	@override String apiKeyTitle({required Object service}) => '${service} csatlakoztatása';
+	@override String get apiKey => 'API-kulcs';
+	@override String apiKeyHint({required Object service}) => 'Illeszd be az API-kulcsot a ${service}-fiók beállításaiból. A PlezyNG titkosítja ezen az eszközön, és menti ebbe a profilba.';
+	@override String get apiKeyConnectFailed => 'Nem sikerült ellenőrizni az API-kulcsot. Ellenőrizd, és próbáld újra.';
+	@override String accountConnected({required Object username}) => 'Csatlakoztatva: ${username}';
+	@override String get streamNeedsProvider => 'A torrentstream lejátszásához csatlakoztass egy Debrid-szolgáltatást.';
+	@override String get playViaProvider => 'Lejátszás Debriddel';
+	@override String disconnectConfirm({required Object service}) => 'Leválasztod a ${service} szolgáltatást?';
+	@override String get disconnectBody => 'A PlezyNG eltávolítja az eszköz engedélyét. A szolgáltatónál tárolt fájlok és a folyamatban lévő átvitelek változatlanok maradnak.';
+	@override String get streamsTitle => 'Stream kiválasztása';
+	@override String get searchingStreams => 'Csatlakoztatott kiegészítők ellenőrzése…';
+	@override String get noStreams => 'Ehhez a címhez nem található stream.';
+	@override String get manageConnections => 'Streamingszolgáltatások kezelése';
+	@override String subtitleTracks({required Object count}) => 'Feliratsávok: ${count}';
+	@override String get chooseSubtitle => 'Felirat kiválasztása';
+	@override String get chooseProvider => 'Debrid-szolgáltatás kiválasztása';
+	@override String get subtitleOff => 'Feliratok kikapcsolva';
+	@override String get subtitleLoadFailed => 'Nem sikerült betölteni ezt a feliratot. Próbálj másik sávot.';
+	@override String get subtitleApplied => 'Felirat kiválasztva a lejátszáshoz';
+	@override String get streamLookupPartial => 'Néhány kiegészítő nem érhető el.';
+	@override String get streamLookupFailed => 'Nem sikerült ellenőrizni a csatlakoztatott kiegészítőket.';
+	@override String get streamOpenExternal => 'Külső hivatkozás megnyitása';
+	@override String get streamPrepare => 'Előkészítés a Debrid-szolgáltatással…';
+	@override String get streamPrepareFailed => 'Nem sikerült előkészíteni a streamet. Ellenőrizd a csatlakoztatott fiókot, és próbálkozz másik forrással.';
+	@override String get streamNeedsRealDebrid => 'A torrentstream lejátszásához csatlakoztass egy Debrid-szolgáltatást.';
+	@override String get streamUnsupported => 'Ezt a streamformátumot nem támogatja az alkalmazáslejátszó.';
+	@override String get remoteNeedsEpisode => 'Stream keresése előtt válassz epizódot.';
+	@override String get remoteNeedsEpisodeNumber => 'Ennél az epizódnál hiányzik az évad- vagy epizódszám.';
+	@override String get remoteNeedsExternalId => 'A PlezyNG nem talált IMDb- vagy TMDB-azonosítót ehhez a címhez.';
+	@override String get watchWithServices => 'Megtekintés csatlakoztatott szolgáltatásokkal';
+	@override String get chooseEpisode => 'Epizód kiválasztása';
+	@override String get episodes => 'Epizódok';
+	@override String episodePosition({required Object season, required Object episode}) => '${season}. évad, ${episode}. epizód';
+	@override String get episodeStreamHint => 'Megnyitja az epizódhoz elérhető streameket.';
+	@override String get cloudFiles => 'Felhőfájlok';
+	@override String get browseCloud => 'Fájlok böngészése';
+	@override String get cloudEmpty => 'Ebben a fiókban nem található lejátszható videófájl.';
+	@override String get cloudLoadFailed => 'Nem sikerült betölteni a felhőfájlokat. Ellenőrizd a kapcsolatot, és próbáld újra.';
+	@override String get providers => 'Debrid-szolgáltatók';
 }
 
 // Path: addServer
@@ -7742,6 +7856,110 @@ extension on TranslationsHu {
 			'services.trackerDescriptions.anilist' => 'Szinkronizálja az anime listákat, és nézd meg a haladást az AniList segítségével.',
 			'services.trackerDescriptions.simkl' => 'Sync filmeket, televíziós műsorokat és anime-t nézett a Simklrel.',
 			'services.trackerDescriptions.mdblist' => 'MDBList minősítések és listák megjelenítése az ajánlásokban és a felfedezésben.',
+			'streaming.title' => 'Felhő és kiegészítők közvetítése',
+			'streaming.subtitle' => 'Csatlakoztass egy Debrid-fiókot a felhőben lévő fájlok böngészéséhez és a támogatott streamek lejátszásához. A Stremio-kompatibilis kiegészítők streamlehetőségeket kínálnak a filmek és epizódok oldalán. A kapcsolat adatai ezen az eszközön titkosítva, ebben a profilban tárolódnak.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Csatlakoztatott források: ${count}',
+			'streaming.settingsLoadFailed' => 'A PlezyNG nem tudta feloldani a mentett streamelési beállításokat. A kapcsolatok módosítása előtt oldd fel az eszköz zárolását, majd próbáld újra.',
+			'streaming.settingsUnreadable' => 'A PlezyNG nem tudta feloldani ezeket a mentett kapcsolatokat. Töröld őket a szolgáltatások újbóli csatlakoztatásához.',
+			'streaming.clearUnreadableSettings' => 'Mentett beállítások törlése',
+			'streaming.clearUnreadableSettingsConfirm' => 'Törlöd a mentett streamelési beállításokat?',
+			'streaming.clearUnreadableSettingsBody' => 'Ez eltávolítja a profilból az összes mentett szolgáltatói fiókot és kiegészítőcímet. Nem lehet visszavonni.',
+			'streaming.clearUnreadableSettingsFailed' => 'Nem sikerült törölni a mentett streamelési beállításokat. Oldd fel az eszköz zárolását, és próbáld újra.',
+			'streaming.retrySettingsLoad' => 'Kapcsolatok újratöltése',
+			'streaming.addons' => 'Stremio-kompatibilis kiegészítők',
+			'streaming.addonsDescription' => 'Importálj kiegészítőket a Stremióból, vagy csatlakoztass egyet a manifest URL-címével. Böngéssz katalógusokat a Felfedezésben, és nyisd meg a streamlehetőségeket a filmek vagy epizódok oldalán.',
+			'streaming.catalogLoadFailed' => 'Nem sikerült betölteni a katalógust. Frissíts, és próbáld újra.',
+			'streaming.catalogFiltersRequired' => 'A katalógus böngészéséhez válaszd ki a szükséges szűrőket.',
+			'streaming.catalogRequiredLabel' => 'Kötelező',
+			'streaming.importFromStremio' => 'Importálás a Stremióból',
+			'streaming.stremioImportInstructions' => 'Olvasd be a QR-kódot, vagy nyisd meg a hivatkozást. Jelentkezz be a Stremióba, és hagyd jóvá a kérést. A PlezyNG csak a kiegészítőlistádat olvassa; nem kéri el a Stremio-jelszavadat, és nem módosítja a beállításaidat.',
+			'streaming.stremioImportOpen' => 'Stremio-hivatkozás megnyitása',
+			'streaming.stremioImportCode' => 'Összekapcsolási kód',
+			'streaming.stremioImportPreviewTitle' => 'Kiegészítők kiválasztása',
+			'streaming.stremioImportPreviewBody' => 'Válaszd ki a PlezyNG-hez csatlakoztatni kívánt kiegészítőket. Ez az importálás csak HTTPS-címeket fogad el.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Nem támogatott vagy nem biztonságos című kihagyott kiegészítők: ${count}.',
+			'streaming.stremioCatalogs' => 'Katalógusok',
+			'streaming.stremioStreams' => 'Streamek',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Kijelöltek hozzáadása (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Stremióból csatlakoztatott kiegészítők: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Csatlakoztatott kiegészítők: ${added}; sikertelen csatlakoztatás: ${failed}.',
+			'streaming.stremioImportFailed' => 'Nem sikerült importálni a kiegészítőket a Stremióból. Próbáld újra.',
+			'streaming.stremioImportTimedOut' => 'A Stremio-jóváhagyás lejárt. Indítsd újra az importálást.',
+			'streaming.stremioImportEmpty' => 'Nem található új, kompatibilis kiegészítő ebben a Stremio-fiókban.',
+			'streaming.stremioImportLimitReached' => 'Távolíts el egy kiegészítőt, mielőtt többet importálsz.',
+			'streaming.addByManifestUrl' => 'Hozzáadás manifest URL-címmel',
+			'streaming.addAddon' => 'Kiegészítő hozzáadása',
+			'streaming.manifestUrl' => 'Kiegészítő manifest URL-címe',
+			'streaming.manifestUrlHint' => 'Illeszd be a kiegészítő manifest URL-címét. Csatlakozás előtt a PlezyNG ellenőrzi a katalógusok vagy streamforrások támogatását.',
+			'streaming.allowHttp' => 'Nem titkosított HTTP-cím engedélyezése',
+			'streaming.allowHttpDescription' => 'Csak megbízható kiegészítőhöz használd a privát hálózatodon.',
+			'streaming.installAddon' => 'Kiegészítő csatlakoztatása',
+			'streaming.addonInstalled' => 'Kiegészítő csatlakoztatva',
+			'streaming.addonRemoved' => 'Kiegészítő eltávolítva',
+			'streaming.addonToggle' => 'Kiegészítő engedélyezése',
+			'streaming.addonEmpty' => 'Még nincs csatlakoztatott kiegészítő',
+			'streaming.addonError' => 'A PlezyNG nem tudott csatlakozni ehhez a kiegészítőhöz. Ellenőrizd a manifest URL-címét, és próbáld újra.',
+			'streaming.addonPrivacy' => 'Csak olyan kiegészítőket csatlakoztass, amelyekben megbízol. Kereséskor a kiegészítő megkapja a keresett címet, és harmadik féltől származó streamhivatkozásokat adhat vissza.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Támogatott torrentstreamek lejátszása a Real-Debrid-fiókoddal.',
+			'streaming.connectRealDebrid' => 'Csatlakozás QR-kóddal',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid leválasztása',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Csatlakoztatva: ${username}',
+			'streaming.realDebridInstructions' => 'Olvasd be a QR-kódot vagy nyisd meg a hivatkozást, majd add meg ezt az aktiválókódot a PlezyNG csatlakoztatásához:',
+			'streaming.realDebridActivate' => 'Real-Debrid megnyitása az aktiváláshoz',
+			'streaming.realDebridCode' => 'Aktiválókód',
+			'streaming.realDebridConnectFailed' => 'Nem sikerült csatlakozni a Real-Debridhez. Próbáld újra.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Támogatott torrentstreamek lejátszása az AllDebrid-fiókoddal.',
+			'streaming.connectAllDebrid' => 'Csatlakozás QR-kóddal',
+			'streaming.allDebridInstructions' => 'Olvasd be a QR-kódot vagy nyisd meg a hivatkozást a PlezyNG engedélyezéséhez. A csatlakozás alatt hagyd nyitva ezt a képernyőt:',
+			'streaming.allDebridActivate' => 'AllDebrid megnyitása az aktiváláshoz',
+			'streaming.allDebridCode' => 'Aktiváló PIN',
+			'streaming.allDebridConnectFailed' => 'Nem sikerült csatlakozni az AllDebridhez. Próbáld újra.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Gyorsítótárazott torrentstreamek lejátszása vagy fájlok böngészése a Premiumize-zal.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Gyorsítótárazott torrentstreamek lejátszása vagy fájlok böngészése a TorBoxszal.',
+			'streaming.connectApiKey' => 'Csatlakozás API-kulccsal',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service} csatlakoztatása',
+			'streaming.apiKey' => 'API-kulcs',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Illeszd be az API-kulcsot a ${service}-fiók beállításaiból. A PlezyNG titkosítja ezen az eszközön, és menti ebbe a profilba.',
+			'streaming.apiKeyConnectFailed' => 'Nem sikerült ellenőrizni az API-kulcsot. Ellenőrizd, és próbáld újra.',
+			'streaming.accountConnected' => ({required Object username}) => 'Csatlakoztatva: ${username}',
+			'streaming.streamNeedsProvider' => 'A torrentstream lejátszásához csatlakoztass egy Debrid-szolgáltatást.',
+			'streaming.playViaProvider' => 'Lejátszás Debriddel',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'Leválasztod a ${service} szolgáltatást?',
+			'streaming.disconnectBody' => 'A PlezyNG eltávolítja az eszköz engedélyét. A szolgáltatónál tárolt fájlok és a folyamatban lévő átvitelek változatlanok maradnak.',
+			'streaming.streamsTitle' => 'Stream kiválasztása',
+			'streaming.searchingStreams' => 'Csatlakoztatott kiegészítők ellenőrzése…',
+			'streaming.noStreams' => 'Ehhez a címhez nem található stream.',
+			'streaming.manageConnections' => 'Streamingszolgáltatások kezelése',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Feliratsávok: ${count}',
+			'streaming.chooseSubtitle' => 'Felirat kiválasztása',
+			'streaming.chooseProvider' => 'Debrid-szolgáltatás kiválasztása',
+			'streaming.subtitleOff' => 'Feliratok kikapcsolva',
+			'streaming.subtitleLoadFailed' => 'Nem sikerült betölteni ezt a feliratot. Próbálj másik sávot.',
+			'streaming.subtitleApplied' => 'Felirat kiválasztva a lejátszáshoz',
+			'streaming.streamLookupPartial' => 'Néhány kiegészítő nem érhető el.',
+			'streaming.streamLookupFailed' => 'Nem sikerült ellenőrizni a csatlakoztatott kiegészítőket.',
+			'streaming.streamOpenExternal' => 'Külső hivatkozás megnyitása',
+			'streaming.streamPrepare' => 'Előkészítés a Debrid-szolgáltatással…',
+			'streaming.streamPrepareFailed' => 'Nem sikerült előkészíteni a streamet. Ellenőrizd a csatlakoztatott fiókot, és próbálkozz másik forrással.',
+			'streaming.streamNeedsRealDebrid' => 'A torrentstream lejátszásához csatlakoztass egy Debrid-szolgáltatást.',
+			'streaming.streamUnsupported' => 'Ezt a streamformátumot nem támogatja az alkalmazáslejátszó.',
+			'streaming.remoteNeedsEpisode' => 'Stream keresése előtt válassz epizódot.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Ennél az epizódnál hiányzik az évad- vagy epizódszám.',
+			'streaming.remoteNeedsExternalId' => 'A PlezyNG nem talált IMDb- vagy TMDB-azonosítót ehhez a címhez.',
+			'streaming.watchWithServices' => 'Megtekintés csatlakoztatott szolgáltatásokkal',
+			'streaming.chooseEpisode' => 'Epizód kiválasztása',
+			'streaming.episodes' => 'Epizódok',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '${season}. évad, ${episode}. epizód',
+			'streaming.episodeStreamHint' => 'Megnyitja az epizódhoz elérhető streameket.',
+			'streaming.cloudFiles' => 'Felhőfájlok',
+			'streaming.browseCloud' => 'Fájlok böngészése',
+			'streaming.cloudEmpty' => 'Ebben a fiókban nem található lejátszható videófájl.',
+			'streaming.cloudLoadFailed' => 'Nem sikerült betölteni a felhőfájlokat. Ellenőrizd a kapcsolatot, és próbáld újra.',
+			'streaming.providers' => 'Debrid-szolgáltatók',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} szerver hozzáadása',
 			'addServer.serverUrls' => 'Szerver URL-címei',
 			'addServer.serverUrlsHelper' => 'Több URL is megadható, vesszővel elválasztva.',
@@ -7982,6 +8200,8 @@ extension on TranslationsHu {
 			'universalMedia.playlistFormatsHelp' => 'A lejátszó listája legfeljebb 1000 elemet és 2 MB-ot tartalmazhat. a HLS nyílt áramlatként jelenik meg, így a játékos kiválaszthatja a minőséget.',
 			'universalMedia.saveQueuePlaylist' => 'Sor mentése lejátszási listaként',
 			'universalMedia.queuePlaylistSaved' => 'A lejátszási lista a médiafájlok mellé lett mentve.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => 'Ez a sor nem menthető újra felhasználható helyi lejátszási listaként.',
 			'universalMedia.queuePlaylistFolderRequired' => 'A sor fájljaival azonos mappát válassz mentési helyként.',
 			'universalMedia.noFavorites' => 'Nincs mentett stream kedvencek még. Favoritek maradnak ebben a profilban.',
@@ -8086,8 +8306,6 @@ extension on TranslationsHu {
 			'universalMedia.captureAudioNone' => 'Nincs audio',
 			'universalMedia.captureDefaultAudio' => 'Audio beviteli előzetes',
 			'universalMedia.captureWaylandHelp' => 'Wayland korlátozza ezt a XWayland fogást a X display-re. A XWayland-en kívüli Windows nem jelenik meg.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Részletesebben Regisztrációs ráta',
 			'universalMedia.capturePrivacy' => 'A rögzítés csak az Ön által kiválasztott fájlra menthető. a mikrofon rögzítése opcionális. a PlezyNG nem tölti fel a rögzítést.',
 			'universalMedia.captureSaveAs' => 'A képernyő felvétele, mint',
@@ -8496,6 +8714,8 @@ extension on TranslationsHu {
 			'sourceSetup.nfsEncryptionFailure' => 'Titkosított NFS esetén ellenőrizd az RFC 9289 és a TLS 1.3 támogatását mindkét NAS-szolgáltatásnál, a tanúsítvány nevét és a megosztás UID/GID értékeit. A PlezyNG nem próbálja újra ezt a kapcsolatot titkosítás nélkül.',
 			'sourceSetup.sourceConnecting' => 'Kapcsolódás a forráshoz',
 			'sourceSetup.metadataSearchPrivacy' => 'Ez a címkeresés a Trakthoz kerül. A megadott címet küldi el, nem a videót vagy a forrás hitelesítő adatait.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Találat kiválasztása',
 			'sourceSetup.metadataMatchHelp' => 'Választás előtt ellenőrizd a címet és az évet. A Trakt a keresett címet kapja meg; a videó a forrásán marad.',
 			'sourceSetup.metadataNoMatches' => 'Nem található egyező cím online. Próbálj másik címet.',
@@ -8600,8 +8820,6 @@ extension on TranslationsHu {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

@@ -83,7 +83,8 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
 
     final targetMetadata = metadata ?? _currentMetadata;
     try {
-      final adjacentEpisodes = _offlineLibraryMode
+      final hasSourceQueue = context.read<PlaybackStateProvider>().hasExternalPlaybackSourceResolver(targetMetadata);
+      final adjacentEpisodes = _offlineLibraryMode && !hasSourceQueue
           ? _loadAdjacentEpisodesOffline(targetMetadata)
           : await _episode.navigation.loadAdjacentEpisodes(
               context: context,

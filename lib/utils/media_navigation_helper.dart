@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'package:provider/provider.dart';
+import '../sources/source_controller.dart';
+import '../media/canonical_library.dart';
 import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
@@ -174,6 +178,18 @@ Future<MediaNavigationResult> navigateToMediaItem(
     return MediaNavigationResult.unsupported;
   }
   final mi = item;
+  final sources = context.read<SourceController?>();
+  if (sources != null && sources.profileId != null && !sources.blocked) {
+    final profile = sources.profileId!, generation = sources.generation;
+    unawaited(
+      () async {
+        await sources.ready;
+        if (sources.current(generation) && sources.profileId == profile) {
+          await CanonicalLibrary(sources.repository.database).recordServerItems(profile, [mi]);
+        }
+      }().catchError((Object _) {}),
+    );
+  }
 
   // Catalog stand-ins (Explore tab) have no server id — every server-backed
   // route below would break on them. Route to the catalog flow instead.

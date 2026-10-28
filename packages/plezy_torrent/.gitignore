@@ -1,0 +1,4 @@
+**/Frameworks/
+.dart_tool/
+build/
+pubspec.lock

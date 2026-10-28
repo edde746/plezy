@@ -29,6 +29,7 @@ ButtonStyle _segmentStyle(BuildContext context) {
 /// is unset — the "no opinion" state of a multi-select page.
 class FilterClearRow extends StatelessWidget {
   final bool selected;
+  final String? title;
   final FocusNode? focusNode;
   final bool autofocus;
   final VoidCallback onPressed;
@@ -42,6 +43,7 @@ class FilterClearRow extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onPressed,
+    this.title,
     this.focusNode,
     this.autofocus = false,
     this.showRadio = false,
@@ -53,7 +55,7 @@ class FilterClearRow extends StatelessWidget {
       focusNode: focusNode,
       autofocus: autofocus,
       leading: showRadio ? AppIcon(filterRadioIcon(selected), fill: 1) : null,
-      title: Text(t.libraries.all),
+      title: Text(title ?? t.libraries.all),
       selected: selected,
       onTap: onPressed,
     );
