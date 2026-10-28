@@ -25,6 +25,7 @@ struct FrameState {
   std::mutex mutex;
   std::shared_ptr<const Frame> latest;
   std::atomic<uint64_t> serial{0};
+  std::atomic<uint64_t> preset_serial{0};
 };
 
 typedef struct _PlezyBufferTexture {
@@ -231,12 +232,12 @@ struct VisualizerSession::Impl {
     try {
       if (!Api().error.empty()) throw std::runtime_error(Api().error);
       OffscreenContext graphics; graphics.Initialize();
+      std::string load_error; // Callback target must outlive Engine destruction.
       Engine engine;
       uint64_t loaded_serial = 0;
       uint32_t generation = 0;
       PcmResampler resampler;
       std::vector<float> pcm;
-      std::string load_error;
       auto audio_at = Clock::time_point{};
       for (;;) {
         auto started = Clock::now();
@@ -313,6 +314,7 @@ struct VisualizerSession::Impl {
             std::swap_ranges(frame->pixels.begin() + y * stride, frame->pixels.begin() + (y + 1) * stride,
                              frame->pixels.begin() + (h - y - 1) * stride);
           { std::lock_guard<std::mutex> lock(frames->mutex); frames->latest = std::move(frame); }
+          frames->preset_serial.store(serial);
           frames->serial.fetch_add(1);
           State("rendering");
         } else {
@@ -370,7 +372,8 @@ FlValue* VisualizerSession::Status() const {
   const bool inactive = impl_->paused && impl_->state != "failed" && impl_->state != "unavailable";
   fl_value_set_string_take(result, "state", fl_value_new_string(inactive ? "paused" : impl_->state.c_str()));
   fl_value_set_string_take(result, "reason", fl_value_new_string(impl_->error.c_str()));
-  fl_value_set_string_take(result, "hasFrame", fl_value_new_bool(impl_->frames->serial.load() != 0));
+  fl_value_set_string_take(result, "hasFrame", fl_value_new_bool(impl_->frames->serial.load() != 0 &&
+      impl_->frames->preset_serial.load() == impl_->preset_serial));
   fl_value_set_string_take(result, "droppedFrames", fl_value_new_int(impl_->dropped));
   fl_value_set_string_take(result, "width", fl_value_new_int(impl_->width));
   fl_value_set_string_take(result, "height", fl_value_new_int(impl_->height));

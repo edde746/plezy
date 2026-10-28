@@ -6,20 +6,24 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/visualization/visualizer_pack_store.dart';
+import '../../services/visualization/visualizer_session.dart';
 import '../../theme/mono_tokens.dart';
 import '../app_icon.dart';
+import 'visualizer_preset_browser.dart';
 
 /// In-app entry point for license-cleared pack downloads and user-owned imports.
 /// Link-only historical collections are never rehosted by PlezyNG.
 class VisualizerLibrarySheet extends StatefulWidget {
-  const VisualizerLibrarySheet({super.key});
+  const VisualizerLibrarySheet({super.key, this.profileId});
+  final String? profileId;
 
   @override
   State<VisualizerLibrarySheet> createState() => _VisualizerLibrarySheetState();
 }
 
 class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
-  final VisualizerPackStore _store = VisualizerPackStore();
+  late final VisualizerPackStore _store;
+  VisualizerCapabilities _capability = const VisualizerCapabilities(available: false, reason: 'Checking native renderer…');
   List<VisualizerInstalledPack> _installed = const [];
   List<VisualizerImportedPack> _communityPacks = const [];
   List<String> _imports = const [];
@@ -37,7 +41,29 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   @override
   void initState() {
     super.initState();
+    _store = VisualizerPackStore(profileId: widget.profileId);
+    _checkRenderer();
     _refresh();
+  }
+
+  Future<void> _checkRenderer() async {
+    final capability = await VisualizerSession.capabilities();
+    if (mounted) setState(() => _capability = capability);
+  }
+
+  Future<void> _browse({String? packPath, String? importedName}) async {
+    try {
+      final presets = packPath != null ? await _store.presetsForPack(packPath)
+          : importedName != null ? [await _store.importedPreset(importedName)] : await _store.allPresets();
+      if (!mounted) return;
+      final selection = await showModalBottomSheet<VisualizerSelection>(
+        context: context, isScrollControlled: true, useSafeArea: true,
+        builder: (_) => VisualizerPresetBrowser(presets: presets, store: _store, capability: _capability),
+      );
+      if (!mounted) return;
+      if (selection != null) Navigator.pop(context, selection);
+      else await _refresh(); // Per-preset favorites may have changed.
+    } on Object catch (error) { if (mounted) setState(() => _failure = error.toString()); }
   }
 
   @override
@@ -370,6 +396,17 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                     : ListView(
                         padding: EdgeInsets.fromLTRB(16, 8, 16, 20 + bottomInset),
                         children: [
+                          FilledButton.icon(
+                            onPressed: _busy ? null : () => _browse(),
+                            icon: const Icon(Icons.grid_view_rounded),
+                            label: const Text('Browse installed presets'),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Text(_capability.available
+                                ? 'Classic .milk playback uses projectM and live music audio. Visual fidelity is not yet qualified.'
+                                : _capability.reason),
+                          ),
                           if ((_searchQuery.isNotEmpty || _favoritesOnly) && !hasMatches)
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -410,7 +447,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'The archive hash and included license notice are checked before installation. It is stored offline. MilkDrop playback is not enabled by PlezyNG yet.',
+                                      'The archive hash and included license notice are checked before installation. Presets are stored offline; playback depends on the native renderer and preset format.',
                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
                                     ),
                                     if (_workingPackId == entry.id && _progress != null) ...[
@@ -422,6 +459,13 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                       spacing: 8,
                                       runSpacing: 4,
                                       children: [
+                                        if (installedIds.contains(entry.id))
+                                          FilledButton.icon(
+                                            onPressed: _busy ? null : () => _browse(packPath:
+                                                _installed.firstWhere((pack) => pack.entry.id == entry.id).path),
+                                            icon: const Icon(Icons.grid_view_rounded, size: 18),
+                                            label: const Text('Browse presets'),
+                                          ),
                                         if (installedIds.contains(entry.id))
                                           OutlinedButton.icon(
                                             onPressed: _busy ? null : () => _remove(entry),
@@ -502,11 +546,12 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                     size: 20,
                                   ),
                                   title: Text(pack.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  onTap: _busy || pack.isDamaged ? null : () => _browse(packPath: pack.path),
                                   subtitle: Text(pack.isDamaged
                                       ? '${pack.version} · metadata unavailable\n${pack.contentNotice}'
                                       : '${pack.version} · ${pack.license} · ${pack.presetCount} presets\n'
                                             'Content notice: ${pack.contentNotice}\n'
-                                            'File hashes checked at import · rights claims are self-declared · playback pending'),
+                                            'File hashes checked at import · rights claims are self-declared · browse presets'),
                                   isThreeLine: true,
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -547,7 +592,9 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                 dense: true,
                                 leading: const AppIcon(Symbols.music_note_rounded, size: 18),
                                 title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                subtitle: const Text('Saved on this device · playback pending engine integration'),
+                                onTap: _busy ? null : () => _browse(importedName: name),
+                                subtitle: Text(name.toLowerCase().endsWith('.milk2')
+                                    ? 'Stored offline · .milk2 playback unavailable' : 'Stored offline · browse to play or view details'),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -572,7 +619,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               ),
                           const SizedBox(height: 12),
                           Text(
-                            'Current PlezyNG playback continues to use its six original scenes. Preset downloads and imports are stored separately and cannot alter those scenes.',
+                            'The six original scenes remain available. Native preset playback is optional. Imported files can contain rapid flashes and intense motion; reduced motion pauses the native renderer.',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
                           ),
                         ],

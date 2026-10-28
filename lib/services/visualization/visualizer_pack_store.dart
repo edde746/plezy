@@ -73,6 +73,17 @@ class VisualizerInstalledPack {
   final String path;
 }
 
+/// A resolved local file, never a remote URL or executable preset module.
+class VisualizerPresetFile {
+  const VisualizerPresetFile({required this.id, required this.title, required this.path,
+    required this.root, required this.libraryPath, this.packName = '', this.author = '',
+    this.tags = const [], this.license = '', this.notice = ''});
+  final String id, title, path, root, libraryPath, packName, author, license, notice;
+  final List<String> tags;
+  bool get supportsProjectM => p.extension(path).toLowerCase() == '.milk';
+  String get searchText => '$title $packName $author ${tags.join(' ')}'.toLowerCase();
+}
+
 /// A user-imported, locally verified community pack. Its archive is not
 /// app-pinned, so every expanded file is checked against the shipped index.
 class VisualizerImportedPack {
@@ -114,7 +125,7 @@ class VisualizerPackInstallCancellation {
 }
 
 class VisualizerPackStore {
-  VisualizerPackStore({http.Client? client}) : _client = client ?? http.Client();
+  VisualizerPackStore({http.Client? client, this.profileId}) : _client = client ?? http.Client();
 
   static const maxArchiveBytes = 32 * 1024 * 1024;
   static const maxExpandedBytes = 64 * 1024 * 1024;
@@ -150,7 +161,11 @@ class VisualizerPackStore {
   };
 
   final http.Client _client;
+  final String? profileId;
   Future<Directory>? _rootFuture;
+  // Serializes small preference writes across store instances. Asset install
+  // work has its own staging directories and never holds this queue.
+  static Future<void> _preferencesTail = Future<void>.value();
 
   bool get isStorageSupported => !kIsWeb;
 
@@ -166,26 +181,134 @@ class VisualizerPackStore {
     return root;
   }
 
+  Future<File> _preferenceFile(String name) async {
+    final root = await _root();
+    if (profileId == null) return File(p.join(root.path, '$name.json'));
+    final key = sha256.convert(utf8.encode(profileId!)).toString();
+    final directory = Directory(p.join(root.path, 'profiles', key));
+    await directory.create(recursive: true);
+    return File(p.join(directory.path, '$name.json'));
+  }
+
+  Future<dynamic> _readPreference(String name) async {
+    await _preferencesTail;
+    final target = await _preferenceFile(name);
+    // A crash after the old file was moved aside leaves a readable backup.
+    for (final file in [target, File('${target.path}.previous')]) {
+      if (!await file.exists() || await file.length() > 512 * 1024) continue;
+      try { return jsonDecode(await file.readAsString()); } on Object { /* Try backup. */ }
+    }
+    return null;
+  }
+
+  Future<void> _savePreference(String name, Object value) {
+    final encoded = jsonEncode(value); // Snapshot before entering the queue.
+    if (encoded.length > 512 * 1024) throw const VisualizerPackException('Visualization preferences are too large.');
+    final operation = _preferencesTail.then((_) async {
+      final target = await _preferenceFile(name);
+      final temporary = File('${target.path}.tmp');
+      final backup = File('${target.path}.previous');
+      await temporary.writeAsString(encoded, flush: true);
+      if (await target.exists()) {
+        if (await backup.exists()) await backup.delete();
+        await target.rename(backup.path);
+      }
+      try { await temporary.rename(target.path); }
+      on Object {
+        if (!await target.exists() && await backup.exists()) await backup.rename(target.path);
+        rethrow;
+      }
+    });
+    _preferencesTail = operation.catchError((Object _) {});
+    return operation;
+  }
+
   Future<Set<String>> favoriteIds() async {
-    final file = File(p.join((await _root()).path, 'favorites.json'));
-    if (!await file.exists()) return <String>{};
     try {
-      final decoded = jsonDecode(await file.readAsString());
+      final decoded = await _readPreference('favorites');
       if (decoded is! List) return <String>{};
-      return decoded.whereType<String>().where((value) => value.length <= 512).toSet();
+      return decoded.whereType<String>().where((value) => value.length <= 512).take(2500).toSet();
     } on Object {
       return <String>{};
     }
   }
 
   Future<void> saveFavoriteIds(Set<String> favorites) async {
-    final root = await _root();
-    final target = File(p.join(root.path, 'favorites.json'));
-    final temporary = File('${target.path}.tmp');
-    final values = favorites.where((value) => value.length <= 512).toList()..sort();
-    await temporary.writeAsString(jsonEncode(values), flush: true);
-    if (await target.exists()) await target.delete();
-    await temporary.rename(target.path);
+    final values = favorites.where((value) => value.length <= 512).take(2500).toList()..sort();
+    await _savePreference('favorites', values);
+  }
+
+  Future<Map<String, dynamic>> preferences() async {
+    final value = await _readPreference('display');
+    return value is Map<String, dynamic> && value['schemaVersion'] == 1 ? value : {};
+  }
+
+  Future<void> savePreferences(Map<String, dynamic> value) =>
+      _savePreference('display', {...value, 'schemaVersion': 1});
+
+  Future<List<VisualizerPresetFile>> presetsForPack(String path) async {
+    final library = await (await _root()).resolveSymbolicLinks();
+    final root = await Directory(path).resolveSymbolicLinks();
+    if (!p.isWithin(library, root)) throw const VisualizerPackException('Pack is outside the local library.');
+    final manifest = await _readPackManifest(Directory(root));
+    final assets = <String, Map>{};
+    for (final asset in (manifest['assets'] as List? ?? const [])) {
+      if (asset is Map && asset['path'] is String) assets[asset['path'] as String] = asset;
+    }
+    final presets = <VisualizerPresetFile>[];
+    for (final item in manifest['presets'] as List) {
+      if (item is! Map || item['file'] is! String) continue;
+      final relative = safeArchivePath(item['file'] as String);
+      final file = await _resolvePreset(root, relative);
+      final asset = assets[relative];
+      presets.add(VisualizerPresetFile(
+        id: 'pack:${manifest['id']}@${manifest['version']}/$relative',
+        title: item['title'] is String ? (item['title'] as String).substring(0, (item['title'] as String).length.clamp(0, 256).toInt()) : p.basenameWithoutExtension(relative),
+        path: file, root: root, libraryPath: p.relative(file, from: library),
+        packName: manifest['name'] as String,
+        author: asset?['author'] is String ? asset!['author'] as String : manifest['author'] as String? ?? '',
+        tags: item['tags'] is List ? (item['tags'] as List).whereType<String>().take(32).toList() : const [],
+        license: asset?['license'] is String ? asset!['license'] as String : manifest['license'] as String,
+        notice: manifest['contentNotice'] as String,
+      ));
+    }
+    return presets;
+  }
+
+  Future<VisualizerPresetFile> importedPreset(String name) async {
+    if (name != p.basename(name)) throw const VisualizerPackException('Invalid preset filename.');
+    final library = await (await _root()).resolveSymbolicLinks();
+    final root = await Directory(p.join(library, 'imports')).resolveSymbolicLinks();
+    final file = await _resolvePreset(root, name);
+    return VisualizerPresetFile(id: 'preset:$name', title: p.basenameWithoutExtension(name),
+      path: file, root: root, libraryPath: p.relative(file, from: library));
+  }
+
+  Future<List<VisualizerPresetFile>> allPresets() async {
+    final result = <VisualizerPresetFile>[];
+    for (final pack in await installedPacks()) {
+      try { result.addAll(await presetsForPack(pack.path)); } on Object { /* Damaged packs remain visible in manager. */ }
+    }
+    for (final pack in await importedPacks()) {
+      if (pack.isDamaged) continue;
+      try { result.addAll(await presetsForPack(pack.path)); } on Object { /* As above. */ }
+    }
+    for (final name in await importedPresets()) {
+      try { result.add(await importedPreset(name)); } on Object { /* Unreadable files cannot be selected. */ }
+    }
+    result.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    return result;
+  }
+
+  static Future<String> _resolvePreset(String root, String relative) async {
+    final safe = safeArchivePath(relative);
+    final file = File(p.join(root, ...safe.split('/')));
+    final canonical = await file.resolveSymbolicLinks();
+    if (!p.isWithin(root, canonical) || !['.milk', '.milk2'].contains(p.extension(canonical).toLowerCase()) ||
+        await file.length() == 0 || await file.length() > 2 * 1024 * 1024) {
+      throw const VisualizerPackException('The preset is missing, outside its pack, or exceeds 2 MB.');
+    }
+    return canonical;
   }
 
   Future<List<VisualizerInstalledPack>> installedPacks() async {
@@ -433,7 +556,8 @@ class VisualizerPackStore {
     if (announcedSize < 0 || announcedSize > 1024 * 1024) {
       throw const VisualizerPackException('Preset files must be smaller than 1 MB.');
     }
-    final bytes = await File(sourcePath).readAsBytes();
+    final bytes = await File(sourcePath).openRead(0, 1024 * 1024 + 1)
+        .fold<List<int>>(<int>[], (buffer, chunk) => buffer..addAll(chunk));
     if (bytes.length != announcedSize) {
       throw const VisualizerPackException('The selected preset changed while it was being imported.');
     }
@@ -684,7 +808,9 @@ class VisualizerPackStore {
   static Future<Map<String, dynamic>> _readPackManifest(Directory directory) async {
     final dynamic parsed;
     try {
-      parsed = jsonDecode(await File(p.join(directory.path, 'manifest.json')).readAsString());
+      final file = File(p.join(directory.path, 'manifest.json'));
+      if (await file.length() > maxFileBytes) throw const FormatException('Manifest exceeds its size limit.');
+      parsed = jsonDecode(await file.readAsString());
     } on Object {
       throw const VisualizerPackException('The pack manifest is unreadable.');
     }
