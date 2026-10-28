@@ -46,6 +46,7 @@ import '../profiles/profile_activation.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../sources/source_controller.dart';
 import '../providers/account_preferences_controller.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -468,6 +469,8 @@ class _MainScreenState extends State<MainScreen>
   bool _autoSwitchedToDownloads = false;
 
   OfflineModeProvider? _offlineModeProvider;
+  SourceController? _navigationSources;
+  bool _hasFileSources = false;
   MultiServerProvider? _multiServerProvider;
   CatalogSourcesProvider? _catalogSourcesProvider;
   ValueListenable<bool>? _showExploreTabListenable;
@@ -1038,6 +1041,16 @@ class _MainScreenState extends State<MainScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    final sources = context.read<SourceController?>();
+    if (!identical(sources, _navigationSources)) {
+      _navigationSources?.removeListener(_handleFileSourcesChanged);
+      _navigationSources = sources;
+      sources?.addListener(_handleFileSourcesChanged);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _handleFileSourcesChanged();
+      });
+    }
+
     // Listen for offline/online transitions to refresh navigation & screens.
     // If the provider already observed a failed bind before this listener
     // attached, mirror that missed state after build.
@@ -1177,6 +1190,7 @@ class _MainScreenState extends State<MainScreen>
       windowManager.removeListener(this);
       windowManager.setPreventClose(false);
     }
+    _navigationSources?.removeListener(_handleFileSourcesChanged);
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
@@ -1372,6 +1386,7 @@ class _MainScreenState extends State<MainScreen>
     hasLiveTv: _hasLiveTv,
     hasExplore: _lastHasExplore,
     hasGames: _hasGames,
+    hasFileSources: _hasFileSources,
     preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
   );
 
@@ -1432,6 +1447,16 @@ class _MainScreenState extends State<MainScreen>
         _onScreen<FocusableTab>(nextTab, (screen) => screen.focusActiveTabIfReady());
       });
     }
+  }
+
+  void _handleFileSourcesChanged() {
+    if (!mounted) return;
+    final sources = _navigationSources;
+    final available = sources != null && !sources.blocked && sources.sources.isNotEmpty;
+    if (_hasFileSources == available) return;
+    _hasFileSources = available;
+    _handleTabAvailabilityChanged();
+    _applyPendingStartupTab();
   }
 
   void _handleLiveTvChanged() {
@@ -1975,7 +2000,9 @@ class _MainScreenState extends State<MainScreen>
     final isOtherShortcut = !Platform.isMacOS && isControlPressed && !isMetaPressed;
 
     if (!isMacShortcut && !isOtherShortcut) return KeyEventResult.ignored;
-    if (_isOffline) return KeyEventResult.handled;
+    if (!_getVisibleTabs(_isOffline).any((tab) => tab.id == NavigationTabId.search)) {
+      return KeyEventResult.handled;
+    }
 
     _selectTab(NavigationTabId.search);
     if (_isSidebarFocused) _focusContent();
@@ -2278,6 +2305,7 @@ class _MainScreenState extends State<MainScreen>
       hasLiveTv: _hasLiveTv,
       hasExplore: _lastHasExplore,
       hasGames: _hasGames,
+      hasFileSources: _hasFileSources,
     );
   }
 

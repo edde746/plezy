@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../exceptions/media_server_exceptions.dart';
 import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
@@ -69,7 +70,14 @@ class _SearchScreenState extends State<SearchScreen>
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
-  ({String query, SearchAggregationResult? result, List<MediaItem> seerr, List<SourceEntry> files, bool partial})?
+  ({
+    String query,
+    SearchAggregationResult? result,
+    List<MediaItem> seerr,
+    List<SourceEntry> files,
+    bool partial,
+    bool fileSearchFailed,
+  })?
   _pendingSearchOutcome;
   SourceController? _sourceController;
   int? _sourceGeneration;
@@ -203,17 +211,23 @@ class _SearchScreenState extends State<SearchScreen>
       if (!mounted) return const [];
       final serverSucceeded = result?.succeededServerIds.isNotEmpty ?? false;
       if (!serverSucceeded && !files.available && seerr == null) {
+        if (result != null && result.failedServerIds.isEmpty && result.cancelledServerIds.isNotEmpty) {
+          throw MediaServerHttpException(
+            type: MediaServerHttpErrorType.cancelled,
+            message: 'Search was cancelled before any source completed',
+          );
+        }
         throw const _SearchUnavailableException();
       }
       final partial =
-          files.failed ||
-          (hadServers && (result == null || result.failedServerIds.isNotEmpty || result.cancelledServerIds.isNotEmpty));
+          hadServers && (result == null || result.failedServerIds.isNotEmpty || result.cancelledServerIds.isNotEmpty);
       _pendingSearchOutcome = (
         query: query,
         result: result,
         seerr: seerr ?? const [],
         files: files.entries,
         partial: partial,
+        fileSearchFailed: files.failed,
       );
       return [
         ...rankSearchHits(
@@ -232,14 +246,14 @@ class _SearchScreenState extends State<SearchScreen>
     SourceController? sources,
     String query,
   ) async {
-    if (sources == null) return (entries: const [], available: false, failed: false);
+    if (sources == null) return (entries: const <SourceEntry>[], available: false, failed: false);
     try {
       final entries = await sources.searchIndex(query);
       return (entries: entries, available: sources.sources.isNotEmpty, failed: false);
     } on SourceException catch (error) {
-      return (entries: const [], available: false, failed: error.reason != SourceFailure.cancelled);
+      return (entries: const <SourceEntry>[], available: false, failed: error.reason != SourceFailure.cancelled);
     } catch (_) {
-      return (entries: const [], available: false, failed: true);
+      return (entries: const <SourceEntry>[], available: false, failed: true);
     }
   }
 
@@ -354,6 +368,8 @@ class _SearchScreenState extends State<SearchScreen>
 
     if (matchedOutcome?.partial ?? false) {
       showAppSnackBar(context, t.messages.searchPartialResults);
+    } else if (matchedOutcome?.fileSearchFailed ?? false) {
+      showAppSnackBar(context, '${t.fileSources.title}: ${t.fileSources.errorUnavailable}');
     }
 
     if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;

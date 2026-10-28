@@ -13,7 +13,7 @@ import 'publication_shelf.dart';
 import 'source_models.dart';
 
 String _entrySearchText(SourceEntry entry) =>
-    '${entry.title} ${entry.author} ${entry.narrator} ${entry.series}'.toLowerCase();
+    '${entry.title} ${entry.onlineTitle ?? ''} ${entry.author} ${entry.narrator} ${entry.series}'.toLowerCase();
 
 /// Separate versioned database: installing file sources does not rewrite or
 /// reinterpret the existing server, watched-state or download schemas.
@@ -25,7 +25,7 @@ class SourceDatabase extends GeneratedDatabase {
   }
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
   @override
@@ -127,6 +127,7 @@ class SourceDatabase extends GeneratedDatabase {
         }
       }
       if (from < 9) await _createEntrySearchIndex();
+      if (from >= 5 && from < 10) await _refreshEntrySearchText();
       if (from < 8) {
         await customStatement("ALTER TABLE downloads ADD COLUMN source_id TEXT NOT NULL DEFAULT ''");
         await customStatement("ALTER TABLE downloads ADD COLUMN file_payload TEXT NOT NULL DEFAULT '{}'");
@@ -144,6 +145,30 @@ class SourceDatabase extends GeneratedDatabase {
       }
     },
   );
+
+  /// Refresh only the derived search text. Page by rowid so upgrading a large
+  /// index does not decode the entire catalogue into memory at startup.
+  Future<void> _refreshEntrySearchText() async {
+    var after = 0;
+    while (true) {
+      final rows = await customSelect(
+        'SELECT rowid AS row_id,payload FROM entries WHERE rowid>? ORDER BY rowid LIMIT 200',
+        variables: [Variable(after)],
+      ).get();
+      if (rows.isEmpty) return;
+      for (final row in rows) {
+        after = row.read<int>('row_id');
+        SourceEntry entry;
+        try {
+          entry = SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));
+        } on Object {
+          // Preserve a damaged cache row for the existing recovery path.
+          continue;
+        }
+        await customStatement('UPDATE entries SET search=? WHERE rowid=?', [_entrySearchText(entry), after]);
+      }
+    }
+  }
 
   /// FTS5's trigram tokenizer preserves substring search while avoiding a
   /// full payload decode. Some system SQLite builds omit FTS5, so indexed
