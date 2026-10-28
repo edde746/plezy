@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -69,6 +70,18 @@ class VisualizerInstalledPack {
   final String path;
 }
 
+class VisualizerPackInstallCancellation {
+  final Completer<void> _abort = Completer<void>();
+
+  bool get isCanceled => _abort.isCompleted;
+
+  Future<void> get abortTrigger => _abort.future;
+
+  void cancel() {
+    if (!_abort.isCompleted) _abort.complete();
+  }
+}
+
 class VisualizerPackStore {
   VisualizerPackStore({http.Client? client}) : _client = client ?? http.Client();
 
@@ -114,6 +127,7 @@ class VisualizerPackStore {
 
   Future<void> install(
     VisualizerPackCatalogEntry entry, {
+    VisualizerPackInstallCancellation? cancellation,
     void Function(double progress)? onProgress,
   }) async {
     final root = await _root();
@@ -131,7 +145,8 @@ class VisualizerPackStore {
       if (uri.scheme != 'https' || uri.host != 'raw.githubusercontent.com') {
         throw const VisualizerPackException('The pack catalog contains an untrusted download host.');
       }
-      final response = await _client.send(http.Request('GET', uri));
+      final request = http.AbortableRequest('GET', uri, abortTrigger: cancellation?.abortTrigger);
+      final response = await _client.send(request);
       if (response.statusCode != HttpStatus.ok) {
         throw VisualizerPackException('Pack download failed with HTTP ${response.statusCode}.');
       }
@@ -181,8 +196,9 @@ class VisualizerPackStore {
         rethrow;
       }
       onProgress?.call(1);
-    } catch (_) {
+    } catch (error) {
       if (await stage.exists()) await stage.delete(recursive: true);
+      if (error is http.RequestAbortedException) throw const VisualizerPackCanceledException();
       rethrow;
     } finally {
       if (await download.exists()) await download.delete();
@@ -482,4 +498,8 @@ class VisualizerPackException implements Exception {
 
   @override
   String toString() => message;
+}
+
+class VisualizerPackCanceledException implements Exception {
+  const VisualizerPackCanceledException();
 }

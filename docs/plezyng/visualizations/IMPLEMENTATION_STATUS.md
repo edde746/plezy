@@ -7,7 +7,7 @@ This delivery is tracked by [PlezyNG PR #55](https://github.com/snapetech-org/Pl
 ## Implemented on the PR branches
 
 - PlezyNG keeps the six existing original scenes and now exposes a theme-styled Visualizer Library sheet from their on-screen controls.
-- The sheet can download the versioned CC0 MilkRust fixture pack from an immutable commit URL and SHA-256, verify its package and per-file integrity indexes, enforce archive size/path/file-count limits, validate per-asset author/license/source/notice coverage, show the pack's content notice, and activate the completed pack atomically.
+- The sheet can download the versioned CC0 MilkRust fixture pack from an immutable commit URL and SHA-256, verify its package and per-file integrity indexes, enforce archive size/path/file-count limits, validate per-asset author/license/source/notice coverage, show the pack's content notice, cancel downloads, remove canceled partials, and activate completed packs atomically.
 - The sheet can save individual user-provided `.milk` and `.milk2` text files in a separate local-import area. Imports are size- and format-bounded.
 - The sheet exposes upstream links for historical projectM collections whose repository catalog records `NOASSERTION`; PlezyNG does not rehost those packs.
 - MilkRust's compatibility parser recognizes the classic numbered `warp_N` and `comp_N` shader keys and several community indexed-object key forms. The CLI retains files it cannot decode and reports them as unsupported.

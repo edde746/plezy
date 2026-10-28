@@ -25,6 +25,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   bool _loading = true;
   bool _busy = false;
   String? _workingPackId;
+  VisualizerPackInstallCancellation? _installCancellation;
   double? _progress;
   String? _failure;
 
@@ -36,6 +37,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
 
   @override
   void dispose() {
+    _installCancellation?.cancel();
     _store.dispose();
     super.dispose();
   }
@@ -68,23 +70,28 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   }
 
   Future<void> _install(VisualizerPackCatalogEntry entry) async {
+    final cancellation = VisualizerPackInstallCancellation();
     setState(() {
       _busy = true;
       _workingPackId = entry.id;
+      _installCancellation = cancellation;
       _progress = 0;
       _failure = null;
     });
     try {
-      await _store.install(entry, onProgress: (value) {
+      await _store.install(entry, cancellation: cancellation, onProgress: (value) {
         if (mounted) setState(() => _progress = value.clamp(0.0, 1.0).toDouble());
       });
       await _refresh();
+    } on VisualizerPackCanceledException {
+      if (mounted) setState(() => _failure = null);
     } catch (error) {
       if (mounted) setState(() => _failure = error.toString());
     } finally {
       if (mounted) setState(() {
         _busy = false;
         _workingPackId = null;
+        _installCancellation = null;
         _progress = null;
       });
     }
@@ -258,6 +265,12 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                             onPressed: _busy ? null : () => _remove(entry),
                                             icon: const AppIcon(Symbols.delete_rounded, size: 18),
                                             label: Text(t.common.delete),
+                                          )
+                                        else if (_workingPackId == entry.id)
+                                          OutlinedButton.icon(
+                                            onPressed: _installCancellation?.cancel,
+                                            icon: const AppIcon(Symbols.close_rounded, size: 18),
+                                            label: const Text('Cancel download'),
                                           )
                                         else
                                           FilledButton.icon(
