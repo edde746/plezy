@@ -380,7 +380,7 @@ struct Session : std::enable_shared_from_this<Session> {
             }
             if (self->closing) break;
             bool stereo = failure->audio && channels > 2;
-            bool h264 = failure->video && hevc && r->metrics().codec == 5;
+            bool h264 = (failure->video || result == -4) && hevc && r->metrics().codec == 5;
             bool conventional = pyrowave && (failure->video || (result != 0 && r->metrics().presentedFrames == 0));
             if (stereo || h264 || conventional) {
               if (stereo) channels = 2;

@@ -65,13 +65,17 @@ def build() -> None:
         archive = directory / "libplezy_steam_apple.a"
         libraries = [directory / name for name in (
             "libplezy_steam_runtime.a", "libplezy_ihs.a", "libplezy_protobuf_c.a", "libplezy_pyrowave_metal.a",
-            "opus/libopus.a", "mbedtls/library/libmbedcrypto.a")]
+            "opus/libopus.a", "mbedtls/library/libmbedcrypto.a",
+            # CMake's static mbedcrypto target carries these transitive archives.
+            # libtool does not follow CMake dependencies when flattening archives.
+            "mbedtls/3rdparty/everest/libeverest.a", "mbedtls/3rdparty/p256-m/libp256m.a")]
         if not all(p.is_file() for p in libraries):
             raise SystemExit("Pinned Steam build did not produce every required archive")
         run("xcrun", "libtool", "-static", "-o", str(archive), *(str(p) for p in libraries))
         archives.append(archive)
     temporary = destination / "libplezy_steam.pending.a"
     run("xcrun", "lipo", "-create", *(str(p) for p in archives), "-output", str(temporary))
+    run("xcrun", "lipo", str(temporary), "-verify_arch", *architectures)
     temporary.replace(destination / "libplezy_steam.a")
 
 

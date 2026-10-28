@@ -35,7 +35,12 @@ bool Runtime::hostInfo(const Host& host, IHS_HostInfo& out) {
   return true;
 }
 void Runtime::cancel() {
-  cancelled_ = true;
+  // Synchronize with the wait predicate; notification alone can be lost between
+  // testing an atomic flag and entering an unbounded condition-variable wait.
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    cancelled_ = true;
+  }
   condition_.notify_all();
 }
 void Runtime::finish(int result) {
@@ -48,6 +53,18 @@ int Runtime::wait(std::chrono::seconds timeout) {
   std::unique_lock<std::mutex> lock(mutex_);
   if (!condition_.wait_for(lock, timeout, [&] { return done_ || cancelled_; })) return -3;
   return cancelled_ ? -2 : result_;
+}
+int Runtime::awaitSession(std::chrono::milliseconds connectTimeout, std::chrono::milliseconds frameTimeout) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  if (!condition_.wait_for(lock, connectTimeout, [&] { return connected_ || disconnected_ || cancelled_; })) return -3;
+  if (cancelled_) return -2;
+  if (!connected_) return -1;
+  if (!condition_.wait_for(lock, frameTimeout, [&] { return firstFramePresented_ || disconnected_ || cancelled_; }))
+    return -4;
+  if (cancelled_) return -2;
+  if (!firstFramePresented_) return -1;
+  condition_.wait(lock, [&] { return disconnected_ || cancelled_; });
+  return cancelled_ ? -2 : 0;
 }
 void Runtime::closeClient(IHS_Client* client) {
   IHS_ClientStop(client);
@@ -193,19 +210,7 @@ int Runtime::run(
     std::lock_guard<std::mutex> lock(apiMutex_);
     session_ = session;
   }
-  if (IHS_SessionConnect(session)) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    bool ready =
-        condition_.wait_for(lock, std::chrono::seconds(30), [&] { return connected_ || disconnected_ || cancelled_; });
-    if (!ready)
-      result = -3;
-    else if (connected_)
-      condition_.wait(lock, [&] { return disconnected_ || cancelled_; });
-    else
-      result = -1;
-    if (cancelled_) result = -2;
-  } else
-    result = -1;
+  result = IHS_SessionConnect(session) ? awaitSession(std::chrono::seconds(30), std::chrono::seconds(12)) : -1;
   // Stop accepting input before teardown, but never hold apiMutex_ while joining
   // a callback thread: renderer completion can arrive during shutdown.
   {
@@ -253,6 +258,13 @@ PyrowaveDecodeStatus Runtime::decodePyrowave(const uint8_t* bytes, size_t length
   return pyrowave_.decode(bytes, length, argb);
 }
 void Runtime::stopPyrowave() { pyrowave_.reset(); }
+bool Runtime::configureH26x(int codec, const uint8_t* bytes, size_t length) {
+  return h26x_.configure(codec, bytes, length);
+}
+const std::array<std::vector<uint8_t>, 3>& Runtime::h26xParameters() const { return h26x_.parameters(); }
+bool Runtime::normalizeH26x(const uint8_t* bytes, size_t length, std::vector<uint8_t>& output) {
+  return h26x_.annexB(bytes, length, output);
+}
 IHS_StreamVideoSubmitResult Runtime::videoSubmit(
     IHS_Session*, const IHS_VideoEpochInfo*, uint16_t, IHS_FrameTicket* ticket, IHS_Buffer* b,
     IHS_StreamVideoFrameFlag flags, bool* taken, void* ctx) {
@@ -377,6 +389,13 @@ void Runtime::frameComplete(uint32_t id, bool displayed) {
   outcome.result = displayed ? IHS_VideoFrameResultDisplayed : IHS_VideoFrameResultDroppedDecodeSlow;
   IHS_FrameTicketComplete(ticket, &outcome);
   IHS_FrameTicketRelease(ticket);
+  if (displayed) {
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      firstFramePresented_ = true;
+    }
+    condition_.notify_all();
+  }
 }
 void Runtime::clearFrames() {
   std::lock_guard<std::mutex> lock(frameMutex_);

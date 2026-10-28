@@ -10,6 +10,8 @@
 #include <map>
 #include <thread>
 
+#include "steam_h26x.h"
+
 namespace plezy::steam {
 namespace {
 bool initialize() {
@@ -76,6 +78,7 @@ struct GStreamerSink::Impl {
   };
   std::map<GstClockTime, Pending> pending;
   GstClockTime nextPts = 1;
+  H26xParser parser;  // Decoder worker only; normalize every host framing mode.
 
   Impl(Present p, Complete c, Failed f, bool test)
       : present(std::move(p)), complete(std::move(c)), failed(std::move(f)), testAudio(test) {
@@ -102,6 +105,7 @@ struct GStreamerSink::Impl {
   }
   bool configureVideo(const Config& c) {
     resetVideo();
+    if (!parser.configure(c.codec, c.extra.data(), c.extra.size())) return false;
     const char* description =
         c.codec == 4 ? "appsrc name=input is-live=true format=time block=false max-bytes=8388608 max-buffers=4 ! "
                        "h264parse ! video/x-h264,width=(int)[1,1920],height=(int)[1,1080] ! avdec_h264 max-threads=2 ! "
@@ -127,13 +131,6 @@ struct GStreamerSink::Impl {
     gst_app_src_set_caps(GST_APP_SRC(videoSrc), caps);
     gst_caps_unref(caps);
     if (gst_element_set_state(videoPipeline, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) return false;
-    if (!c.extra.empty()) {
-      auto* buffer = gst_buffer_new_allocate(nullptr, c.extra.size(), nullptr);
-      if (!buffer) return false;
-      gst_buffer_fill(buffer, 0, c.extra.data(), c.extra.size());
-      GST_BUFFER_FLAG_SET(buffer, GST_BUFFER_FLAG_HEADER);
-      if (gst_app_src_push_buffer(GST_APP_SRC(videoSrc), buffer) != GST_FLOW_OK) return false;
-    }
     return true;
   }
   bool configureAudio(int channels) {
@@ -171,12 +168,22 @@ struct GStreamerSink::Impl {
       complete(frame.id, false);
       return;
     }
-    auto* buffer = gst_buffer_new_allocate(nullptr, frame.bytes.size(), nullptr);
+    std::vector<uint8_t> normalized;
+    if (!parser.annexB(frame.bytes.data(), frame.bytes.size(), normalized) || normalized.size() > 2 * 1024 * 1024) {
+      complete(frame.id, false);
+      failed(false);
+      return;
+    }
+    if (normalized.empty()) {
+      complete(frame.id, false);
+      return;
+    }
+    auto* buffer = gst_buffer_new_allocate(nullptr, normalized.size(), nullptr);
     if (!buffer) {
       complete(frame.id, false);
       return;
     }
-    gst_buffer_fill(buffer, 0, frame.bytes.data(), frame.bytes.size());
+    gst_buffer_fill(buffer, 0, normalized.data(), normalized.size());
     const auto pts = nextPts++ * GST_MSECOND;
     GST_BUFFER_PTS(buffer) = pts;
     if (!frame.key) GST_BUFFER_FLAG_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT);

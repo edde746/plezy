@@ -37,6 +37,23 @@ struct RuntimeTest {
     return taken;
   }
   static void clear(Runtime& runtime) { runtime.clearFrames(); }
+  static int awaitSession(Runtime& runtime, int timeoutMs) {
+    return runtime.awaitSession(std::chrono::milliseconds(timeoutMs), std::chrono::milliseconds(timeoutMs));
+  }
+  static void connected(Runtime& runtime) {
+    {
+      std::lock_guard<std::mutex> lock(runtime.mutex_);
+      runtime.connected_ = true;
+    }
+    runtime.condition_.notify_all();
+  }
+  static void disconnected(Runtime& runtime) {
+    {
+      std::lock_guard<std::mutex> lock(runtime.mutex_);
+      runtime.disconnected_ = true;
+    }
+    runtime.condition_.notify_all();
+  }
 };
 }  // namespace plezy::steam
 struct NullSink : Sink {
@@ -98,11 +115,51 @@ void frameOwnership() {
   Runtime second;
   assert(second.metrics().epoch != metrics.epoch);
 }
+void sessionStartup() {
+  Runtime missingConnection;
+  assert(RuntimeTest::awaitSession(missingConnection, 1) == -3);
+  Runtime missingVideo;
+  RuntimeTest::connected(missingVideo);
+  missingVideo.frameComplete(1, true);  // An unknown ticket is not first-frame evidence.
+  assert(RuntimeTest::awaitSession(missingVideo, 1) == -4);
+  Runtime rejected;
+  RuntimeTest::disconnected(rejected);
+  assert(RuntimeTest::awaitSession(rejected, 1) == -1);
+  // Cancellation must wake a waiter even if it races entry into either wait.
+  for (int i = 0; i < 32; ++i) {
+    Runtime cancelled;
+    if (i & 1) RuntimeTest::connected(cancelled);
+    auto waiter = std::async(std::launch::async, [&] { return RuntimeTest::awaitSession(cancelled, 1000); });
+    cancelled.cancel();
+    assert(waiter.wait_for(std::chrono::milliseconds(250)) == std::future_status::ready);
+    assert(waiter.get() == -2);
+  }
+  Runtime stream;
+  auto sink = std::make_shared<CompletingSink>();
+  sink->runtime = &stream;
+  sink->immediate = true;
+  RuntimeTest::renderer(stream, sink);
+  auto* tracker = IHS_FrameTrackerCreate(321);
+  assert(tracker && IHS_FrameTrackerOpenEpoch(tracker, 1));
+  IHS_FrameReceive receive{};
+  IHS_FrameTicket* ticket = nullptr;
+  assert(IHS_FrameTrackerBegin(tracker, 1, 1, &receive, &ticket) == IHS_FrameBeginOK);
+  assert(RuntimeTest::submit(stream, ticket));
+  IHS_FrameTicketRelease(ticket);
+  RuntimeTest::connected(stream);
+  auto waiter = std::async(std::launch::async, [&] { return RuntimeTest::awaitSession(stream, 1); });
+  assert(waiter.wait_for(std::chrono::milliseconds(20)) == std::future_status::timeout);
+  RuntimeTest::disconnected(stream);
+  assert(waiter.wait_for(std::chrono::milliseconds(250)) == std::future_status::ready);
+  assert(waiter.get() == 0);
+  IHS_FrameTrackerClose(tracker);
+}
 uint32_t le(const uint8_t* p) {
   return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24;
 }
 int main() {
   frameOwnership();
+  sessionStartup();
   {
     Runtime controllers;
     std::array<int16_t, 6> axes{12000, -4000, 0, 0, 32767, 0};

@@ -427,7 +427,7 @@ void Session::start() {
         }
         if (closing) break;
         const bool dropSurround = audioFailed && channels > 2;
-        const bool dropHevc = videoFailed && allowHevc && current->metrics().codec == 5;
+        const bool dropHevc = (videoFailed || result == -4) && allowHevc && current->metrics().codec == 5;
         if (dropSurround || dropHevc) {
           if (dropSurround) channels = 2;
           if (dropHevc) allowHevc = false;

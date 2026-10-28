@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Bound Steam startup and first-frame waits; retry unsupported HEVC with H.264, normalize Android/Linux codec framing, and wait for decoder shutdown before reconnecting. Serialize native source preparation and include transitive crypto archives in Apple builds.
+
 - Add an experimental Windows Steam receiver with Credential Manager pairing, cancellable DNS, Media Foundation video, bounded XAudio2 surround audio, retained workspace textures and shared input controls. Windows SDK and device qualification remain required; missing Media Feature Pack support keeps library browsing available.
 
 - Clarify the experimental Steam receiver coverage in Games help and give touch controls descriptive screen-reader labels; preserve existing theme, icon and controller geometry conventions.

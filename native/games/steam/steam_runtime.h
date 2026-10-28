@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "steam_audio.h"
+#include "steam_h26x.h"
 #include "steam_pyrowave.h"
 #include "steam_stream_options.h"
 extern "C" {
@@ -64,7 +65,8 @@ class Runtime {
   Runtime();
   ~Runtime();
   // One operation per Runtime. pair/run execute on a worker; cancel is immediate.
-  // Return 0 on success, -2 on cancellation, -3 on timeout, positive host error.
+  // Return 0 on success, -2 on cancellation, -3 on connection timeout,
+  // -4 if connected but no frame was presented, positive host error.
   int pair(const Host&, Credentials&, const std::string& pin);
   int run(
       const Host&, const Credentials&, uint64_t game, bool hevc, bool pyrowave, std::shared_ptr<Sink>,
@@ -72,6 +74,10 @@ class Runtime {
   bool startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength);
   PyrowaveDecodeStatus decodePyrowave(const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb);
   void stopPyrowave();
+  // Decoder worker only, just like the Pyrowave entry points.
+  bool configureH26x(int codec, const uint8_t* bytes, size_t length);
+  const std::array<std::vector<uint8_t>, 3>& h26xParameters() const;
+  bool normalizeH26x(const uint8_t* bytes, size_t length, std::vector<uint8_t>& output);
   void cancel();
   void pad(const std::array<int16_t, 6>& axes, uint32_t buttons);
   void padSeat(unsigned seat, const std::array<int16_t, 6>& axes, uint32_t buttons);
@@ -86,6 +92,7 @@ class Runtime {
   friend struct RuntimeTest;
   bool hostInfo(const Host&, IHS_HostInfo&);
   int wait(std::chrono::seconds timeout);
+  int awaitSession(std::chrono::milliseconds connectTimeout, std::chrono::milliseconds frameTimeout);
   void finish(int result);
   void closeClient(IHS_Client*);
   static int videoStart(IHS_Session*, const IHS_StreamVideoConfig*, void*);
@@ -101,7 +108,7 @@ class Runtime {
   std::atomic<bool> cancelled_{false};
   std::mutex mutex_, apiMutex_;
   std::condition_variable condition_;
-  bool done_ = false, connected_ = false, disconnected_ = false;
+  bool done_ = false, connected_ = false, disconnected_ = false, firstFramePresented_ = false;
   int result_ = -1;
   IHS_Session* session_ = nullptr;  // apiMutex_; cleared before joining/destroying
   IHS_SessionInfo info_{};
@@ -112,6 +119,7 @@ class Runtime {
   int requestedAudioChannels_ = 2;
   bool pyrowaveEnabled_ = false;
   PyrowaveDecoder pyrowave_;
+  H26xParser h26x_;
   std::mutex frameMutex_;
   uint32_t nextFrame_ = 1;
   struct PendingFrame {

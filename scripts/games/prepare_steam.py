@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import errno
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -28,7 +32,61 @@ def checkout(destination: Path, specification: dict, recursive_submodules: bool 
         run('git', 'submodule', 'update', '--init', '--recursive', '--depth=1', cwd=destination)
 
 
+@contextmanager
+def preparation_lock(destination: Path, timeout: float = 300):
+    """Serialize Xcode targets/architectures sharing the same source checkout.
+
+    Keep the lock inode after release: unlinking it can let a third process
+    acquire a different file while a waiting process still owns the first.
+    A dead builder releases its kernel lock without manual cleanup.
+    """
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with (destination.parent / f'.{destination.name}-prepare.lock').open('a+b') as lock:
+        if os.name == 'nt':
+            import msvcrt
+            if lock.seek(0, os.SEEK_END) == 0:
+                lock.write(b'\0')
+                lock.flush()
+
+            def acquire():
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+
+            def release():
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            def acquire():
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+            def release():
+                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                acquire()
+                break
+            except OSError as error:
+                if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                    raise
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Another Steam source preparation is still running') from error
+                time.sleep(0.05)
+        try:
+            yield
+        finally:
+            release()
+
+
 def prepare(destination: Path) -> None:
+    with preparation_lock(destination):
+        prepare_locked(destination)
+
+
+def prepare_locked(destination: Path) -> None:
     source_lock = json.loads((ROOT / 'games-native.lock.json').read_text())
     lock = source_lock['steamRuntime']
     pyrowave = lock['pyrowave']
