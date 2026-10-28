@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -28,6 +29,51 @@ class RemoteStreamingSettingsScreen extends StatefulWidget {
 
 class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsScreen> {
   bool _connecting = false;
+
+  Future<void> _copyAuthorizationCode(String value) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) showAppSnackBar(context, t.services.deviceCode.codeCopied);
+  }
+
+  Widget _copyableAuthorizationCode(String value, {required String copyLabel}) {
+    final theme = Theme.of(context);
+    return Center(
+      child: CopyTapRegion(
+        onCopy: () => _copyAuthorizationCode(value),
+        semanticLabel: copyLabel,
+        semanticValue: value,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppIcon(Symbols.content_copy_rounded, size: 16),
+                  const SizedBox(width: 6),
+                  Text(copyLabel, style: theme.textTheme.labelSmall),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _addAddon() async {
     final result = await showDialog<({String address, bool allowHttp})>(
@@ -69,14 +115,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
           children: [
             const SizedBox(height: 10),
             Text(t.streaming.realDebridCode, style: Theme.of(context).textTheme.labelMedium),
-            SelectableText(
-              code.userCode,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2,
-              ),
-            ),
+            _copyableAuthorizationCode(code.userCode, copyLabel: t.services.deviceCode.copyCode),
           ],
         ),
       );
@@ -126,14 +165,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
           children: [
             const SizedBox(height: 10),
             Text(t.streaming.allDebridCode, style: Theme.of(context).textTheme.labelMedium),
-            SelectableText(
-              code.pin,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2,
-              ),
-            ),
+            _copyableAuthorizationCode(code.pin, copyLabel: t.common.copy),
           ],
         ),
       );
@@ -229,10 +261,23 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
 
   Future<void> _browseCloud(RemoteStreamService service) async {
     final streaming = context.read<RemoteStreamingProvider>();
-    if (!streaming.isReady) return;
+    final account = streaming.accountFor(service);
+    final profileId = streaming.profileId;
+    if (!streaming.isReady || account == null || profileId == null) return;
+    final settingsRoute = ModalRoute.of(context);
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => RemoteCloudFilesScreen(service: service)),
+      MaterialPageRoute(
+        builder: (_) => RemoteCloudFilesScreen(
+          service: service,
+          onManageConnections: () async {
+            if (!mounted || settingsRoute == null) return;
+            Navigator.of(context).popUntil((route) => identical(route, settingsRoute));
+          },
+          expectedAccountId: account.id,
+          expectedProfileId: profileId,
+        ),
+      ),
     );
   }
 
@@ -343,7 +388,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                       FocusableListTile(
                         leading: const AppIcon(Symbols.extension_rounded),
                         title: Text(addon.name),
-                        subtitle: Text(addon.enabled ? t.streaming.addonToggle : t.services.notConnected),
+                        subtitle: Text(addon.enabled ? t.streaming.addonInstalled : t.streaming.addonToggle),
                         onTap: () => unawaited(streaming.setAddonEnabled(addon.id, !addon.enabled)),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,

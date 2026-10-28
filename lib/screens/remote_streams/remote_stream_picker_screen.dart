@@ -175,9 +175,26 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     final accounts = streaming.accounts;
     final service = accounts.length == 1 ? accounts.single.service : await _chooseProvider(accounts);
     if (!mounted || service == null || streaming.profileId != profileId || !streaming.isReady) return;
+    final account = streaming.accountFor(service);
+    if (account == null) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => RemoteCloudFilesScreen(service: service)),
+      MaterialPageRoute(
+        builder: (_) => RemoteCloudFilesScreen(
+          service: service,
+          onManageConnections: _manageRemoteStreaming,
+          expectedAccountId: account.id,
+          expectedProfileId: profileId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _manageRemoteStreaming() async {
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()),
     );
   }
 

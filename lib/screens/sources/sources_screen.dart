@@ -12,6 +12,8 @@ import '../../i18n/presentation_formats.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_library.dart';
+import '../../services/remote_streams/remote_stream_models.dart';
+import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
@@ -30,6 +32,8 @@ import '../../sources/publication_shelf.dart';
 import 'source_navigation.dart';
 import 'source_sync_screen.dart';
 import '../lending/public_libraries_screen.dart';
+import '../remote_streams/remote_cloud_files_screen.dart';
+import '../settings/remote_streaming_settings_screen.dart';
 
 String sourceTransportLabel(FileSource source) {
   final type = sourceKindName(source.kind);
@@ -237,6 +241,43 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (mounted) await _load();
   }
 
+  String _remoteServiceName(RemoteStreamService service) => switch (service) {
+    RemoteStreamService.realDebrid => t.streaming.realDebrid,
+    RemoteStreamService.allDebrid => t.streaming.allDebrid,
+    RemoteStreamService.premiumize => t.streaming.premiumize,
+    RemoteStreamService.torbox => t.streaming.torbox,
+  };
+
+  Future<void> _openRemoteCloud(RemoteStreamAccount account) async {
+    final streaming = context.read<RemoteStreamingProvider>();
+    final sources = context.read<SourceController>();
+    final profileId = streaming.profileId;
+    if (!streaming.isReady ||
+        profileId == null ||
+        sources.profileId != profileId ||
+        streaming.accountFor(account.service)?.id != account.id) {
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RemoteCloudFilesScreen(
+          service: account.service,
+          onManageConnections: _manageRemoteStreaming,
+          expectedAccountId: account.id,
+          expectedProfileId: profileId,
+        ),
+      ),
+    );
+    if (mounted) await _load();
+  }
+
+  Future<void> _manageRemoteStreaming() async {
+    if (!mounted) return;
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
+    if (mounted) await _load();
+  }
+
   String _formatBytes(int bytes) {
     return ByteFormatter.formatBytes(bytes, decimals: 1);
   }
@@ -410,6 +451,10 @@ class _SourcesScreenState extends State<SourcesScreen> {
   @override
   Widget build(BuildContext context) {
     final sources = context.watch<SourceController>();
+    final streaming = context.watch<RemoteStreamingProvider>();
+    final streamingReadyForSource = streaming.isReady && streaming.profileId == sources.profileId;
+    final remoteAccounts = streamingReadyForSource ? streaming.accounts : const <RemoteStreamAccount>[];
+    final remoteAddonCount = streamingReadyForSource ? streaming.addons.length : 0;
     final root = widget.source == null && !widget.offlineOnly && widget.shelf == null;
     final filtered = _entries
         .where(
@@ -580,6 +625,48 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     onTap: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const PublicLibrariesScreen())),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(t.streaming.title, style: Theme.of(context).textTheme.titleLarge),
+                  ),
+                  if (!streamingReadyForSource || remoteAccounts.isEmpty)
+                    SourceTile(
+                      title: t.streaming.manageConnections,
+                      subtitle: streaming.loadFailed
+                          ? t.streaming.settingsLoadFailed
+                          : remoteAddonCount == 0
+                          ? t.streaming.subtitle
+                          : t.streaming.connectionsConfigured(count: remoteAddonCount),
+                      icon: Symbols.play_circle_rounded,
+                      trailing: const AppIcon(Symbols.chevron_right_rounded),
+                      onTap: _manageRemoteStreaming,
+                    )
+                  else ...[
+                    for (var i = 0; i < remoteAccounts.length; i++)
+                      SourceTile(
+                        title: _remoteServiceName(remoteAccounts[i].service),
+                        subtitle: [
+                          t.streaming.browseCloud,
+                          t.streaming.accountConnected(username: remoteAccounts[i].displayName),
+                        ].join(' · '),
+                        icon: Symbols.cloud_rounded,
+                        trailing: const AppIcon(Symbols.chevron_right_rounded),
+                        index: i,
+                        count: remoteAccounts.length + 1,
+                        onTap: () => _openRemoteCloud(remoteAccounts[i]),
+                      ),
+                    SourceTile(
+                      title: t.streaming.manageConnections,
+                      subtitle: t.streaming.connectionsConfigured(
+                        count: remoteAccounts.length + remoteAddonCount,
+                      ),
+                      icon: Symbols.tune_rounded,
+                      trailing: const AppIcon(Symbols.chevron_right_rounded),
+                      index: remoteAccounts.length,
+                      count: remoteAccounts.length + 1,
+                      onTap: _manageRemoteStreaming,
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   for (var i = 0; i < sources.sources.length; i++)
                     SourceTile(

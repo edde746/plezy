@@ -2965,7 +2965,7 @@
   },
   "streaming": {
     "title": "Cloud & add-on streaming",
-    "subtitle": "Connect a debrid account or a Stremio-compatible add-on. Connections are private to this profile and encrypted on this device.",
+    "subtitle": "Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.",
     "connectionsConfigured": "${count} connected source(s)",
     "settingsLoadFailed": "Couldn't unlock the saved streaming settings. Unlock the device, then try again before changing connections.",
     "settingsUnreadable": "These saved connections can't be unlocked. Clear them to reconnect services.",

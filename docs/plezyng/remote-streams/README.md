@@ -13,8 +13,10 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 
 - Connect Real-Debrid or AllDebrid through a QR/code flow; connect Premiumize
   or TorBox with an API key.
-- Browse ready cloud files from each connected provider in a focused list and
-  open videos in the existing player.
+- Open each connected cloud account from the existing library selector,
+  desktop/TV side navigation, or the Files and books root. Browse ready video
+  files with the focused list, refresh, and recover from empty or unavailable
+  states without losing account setup.
 - Install a Stremio-compatible add-on by manifest URL and fetch its stream
   options for a Plex/Jellyfin/Emby movie or episode detail.
 - Play direct HTTP streams, select add-on subtitles, open explicit external
@@ -24,12 +26,16 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   profile; use the existing standalone video player and local resume journal.
   Unreadable saved settings remain intact until the user explicitly clears
   them to reconnect; a temporarily locked device uses a retry path.
+- Read the authorization QR's service label and copy the activation code with
+  assistive technology; use the same Services/settings management path from
+  the library shortcuts.
 
-Unified cloud-source rows in Libraries/Home/Search, Stremio catalogs and account
+Unified cloud-source records and poster rows in Libraries/Home/Search, Stremio catalogs and account
 import, shared server player reporting, remote job management,
 renewable/background leases and an embedded P2P engine are not part of this
-implementation. Cloud inventory is currently fetched on demand from provider
-settings and is not cached or merged into catalog surfaces.
+implementation. Cloud inventory is fetched on demand and is not cached or
+merged into catalog surfaces; the library entries open the same cloud-file
+browser.
 
 ## Target experience after full completion
 

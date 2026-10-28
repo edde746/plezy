@@ -22,6 +22,9 @@ class RemoteCloudFilesScreen extends StatefulWidget {
     required this.service,
     this.parentId,
     this.title,
+    this.titleWidget,
+    this.embedded = false,
+    this.onManageConnections,
     this.expectedAccountId,
     this.expectedProfileId,
   });
@@ -29,6 +32,9 @@ class RemoteCloudFilesScreen extends StatefulWidget {
   final RemoteStreamService service;
   final String? parentId;
   final String? title;
+  final Widget? titleWidget;
+  final bool embedded;
+  final Future<void> Function()? onManageConnections;
   final String? expectedAccountId;
   final String? expectedProfileId;
 
@@ -108,6 +114,11 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
     }
   }
 
+  Future<void> _manageConnections() async {
+    await widget.onManageConnections?.call();
+    if (mounted && (ModalRoute.of(context)?.isCurrent ?? true)) await _load();
+  }
+
   Future<void> _open(RemoteCloudItem item) async {
     if (_openingId != null) return;
     final provider = context.read<RemoteStreamingProvider>();
@@ -128,6 +139,7 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
             service: widget.service,
             parentId: parentId,
             title: item.name,
+            onManageConnections: widget.onManageConnections,
             expectedAccountId: item.accountId,
             expectedProfileId: _loadedProfileId,
           ),
@@ -182,13 +194,15 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
         return;
       }
       if (!mounted) return;
-      await Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          settings: const RouteSettings(name: 'remote-cloud-player'),
-          builder: (_) => const SourcePlayerScreen(),
-        ),
+      final playerRoute = MaterialPageRoute(
+        settings: const RouteSettings(name: 'remote-cloud-player'),
+        builder: (_) => const SourcePlayerScreen(),
       );
+      if (widget.embedded) {
+        await Navigator.push(context, playerRoute);
+      } else {
+        await Navigator.pushReplacement(context, playerRoute);
+      }
     } on RemoteProviderException catch (error) {
       if (mounted && error.reason != RemoteProviderFailure.cancelled) {
         showAppSnackBar(context, t.streaming.streamPrepareFailed);
@@ -236,7 +250,8 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
   @override
   Widget build(BuildContext context) {
     final streaming = context.watch<RemoteStreamingProvider>();
-    final accountId = streaming.accountFor(widget.service)?.id;
+    final account = streaming.accountFor(widget.service);
+    final accountId = account?.id;
     final profileId = streaming.profileId;
     final staleContext = streaming.isReady && (accountId != _loadedAccountId || profileId != _loadedProfileId);
     if (staleContext && !_loading && !_accountReloadQueued) {
@@ -248,12 +263,26 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
     }
     final ready = streaming.isReady && accountId != null;
     return FocusedScrollScaffold(
-      title: Text(widget.title ?? t.streaming.cloudFiles),
+      automaticallyImplyLeading: !widget.embedded,
+      title: widget.titleWidget ?? Text(widget.title ?? t.streaming.cloudFiles),
+      focusableAppBarActions: true,
+      actions: [
+        IconButton(
+          tooltip: t.fileSources.refresh,
+          onPressed: _loading || !ready ? null : _load,
+          icon: const AppIcon(Symbols.refresh_rounded),
+        ),
+      ],
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Text(_serviceName(widget.service), style: Theme.of(context).textTheme.bodySmall),
+            child: Text(
+              account == null
+                  ? _serviceName(widget.service)
+                  : '${_serviceName(widget.service)} · ${t.streaming.accountConnected(username: account.displayName)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
         ),
         if (_loading || streaming.loading || staleContext)
@@ -265,12 +294,20 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(t.streaming.cloudLoadFailed, textAlign: TextAlign.center),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(t.streaming.cloudLoadFailed, textAlign: TextAlign.center),
+                  ),
                   const SizedBox(height: 12),
                   TextButton.icon(
-                    onPressed: _load,
+                    onPressed: ready ? _load : null,
                     icon: const AppIcon(Symbols.refresh_rounded),
                     label: Text(t.common.retry),
+                  ),
+                  TextButton.icon(
+                    onPressed: widget.onManageConnections == null ? null : _manageConnections,
+                    icon: const AppIcon(Symbols.tune_rounded),
+                    label: Text(t.streaming.manageConnections),
                   ),
                 ],
               ),
@@ -279,7 +316,29 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
         else if (_items.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
-            child: Center(child: Text(t.streaming.cloudEmpty, textAlign: TextAlign.center)),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(
+                      Symbols.video_library_outlined,
+                      size: 40,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(t.streaming.cloudEmpty, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: widget.onManageConnections == null ? null : _manageConnections,
+                      icon: const AppIcon(Symbols.tune_rounded),
+                      label: Text(t.streaming.manageConnections),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           )
         else
           SliverList(
@@ -287,14 +346,28 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
               final item = _items[index];
               final busy = _openingId == item.id;
               final isFolder = item.kind == RemoteCloudItemKind.folder;
-              return FocusableListTile(
-                leading: AppIcon(isFolder ? Symbols.folder_rounded : Symbols.play_circle_rounded, fill: 1),
-                title: Text(item.name),
-                subtitle: isFolder || item.size == null ? null : Text(ByteFormatter.formatBytes(item.size!)),
-                trailing: busy
-                    ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                    : AppIcon(isFolder ? Symbols.chevron_right_rounded : Symbols.play_arrow_rounded),
-                onTap: busy ? null : () => _open(item),
+              return Semantics(
+                hint: busy
+                    ? t.streaming.streamPrepare
+                    : isFolder
+                    ? t.streaming.browseCloud
+                    : t.common.play,
+                child: FocusableListTile(
+                  leading: AppIcon(isFolder ? Symbols.folder_rounded : Symbols.play_circle_rounded, fill: 1),
+                  title: Text(item.name),
+                  subtitle: isFolder || item.size == null ? null : Text(ByteFormatter.formatBytes(item.size!)),
+                  trailing: busy
+                      ? Semantics(
+                          label: t.streaming.streamPrepare,
+                          liveRegion: true,
+                          child: const SizedBox.square(
+                            dimension: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : AppIcon(isFolder ? Symbols.chevron_right_rounded : Symbols.play_arrow_rounded),
+                  onTap: busy ? null : () => _open(item),
+                ),
               );
             }, childCount: _items.length),
           ),

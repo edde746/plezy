@@ -6936,7 +6936,7 @@ class Translations$streaming$en {
 	String get title => 'Cloud & add-on streaming';
 
 	/// en: 'Connect a debrid account or a Stremio-compatible add-on. Connections are private to this profile and encrypted on this device.'
-	String get subtitle => 'Connect a debrid account or a Stremio-compatible add-on. Connections are private to this profile and encrypted on this device.';
+	String get subtitle => 'Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.';
 
 	/// en: '${count} connected source(s)'
 	String connectionsConfigured({required Object count}) => '${count} connected source(s)';
@@ -15105,7 +15105,7 @@ extension on Translations {
 			'services.trackerDescriptions.simkl' => 'Sync watched movies, TV shows, and anime with Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Show MDBList ratings and lists in recommendations and Explore.',
 			'streaming.title' => 'Cloud & add-on streaming',
-			'streaming.subtitle' => 'Connect a debrid account or a Stremio-compatible add-on. Connections are private to this profile and encrypted on this device.',
+			'streaming.subtitle' => 'Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.',
 			'streaming.connectionsConfigured' => ({required Object count}) => '${count} connected source(s)',
 			'streaming.settingsLoadFailed' => 'Couldn\'t unlock the saved streaming settings. Unlock the device, then try again before changing connections.',
 			'streaming.settingsUnreadable' => 'These saved connections can\'t be unlocked. Clear them to reconnect services.',

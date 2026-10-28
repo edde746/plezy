@@ -94,6 +94,7 @@ class PendingAuthDialog extends StatelessWidget {
         child: QrImageView(data: url, size: qrSize, version: QrVersions.auto, backgroundColor: Colors.white),
       ),
     );
+    final accessibleQr = Semantics(label: '$title QR code', image: true, child: qr);
     Widget urlChip({required TextAlign textAlign}) => CopyTapRegion(
       onCopy: () => _copyUrl(context),
       semanticLabel: t.services.pendingAuth.copyUrl,
@@ -152,7 +153,7 @@ class PendingAuthDialog extends StatelessWidget {
                   mainAxisSize: .min,
                   crossAxisAlignment: .stretch,
                   children: [
-                    Column(mainAxisSize: .min, mainAxisAlignment: .center, children: [qr]),
+                    Column(mainAxisSize: .min, mainAxisAlignment: .center, children: [accessibleQr]),
                     const SizedBox(width: 28),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 320),
@@ -189,7 +190,7 @@ class PendingAuthDialog extends StatelessWidget {
                     child: Column(
                       mainAxisSize: .min,
                       children: [
-                        qr,
+                        accessibleQr,
                         const SizedBox(height: 8),
                         ConstrainedBox(
                           constraints: BoxConstraints(maxWidth: qrSize + 32),
