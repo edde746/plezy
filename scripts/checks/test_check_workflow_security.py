@@ -45,6 +45,15 @@ jobs:
 
         self.assertEqual(self.check(changed, CI_PATH), [])
 
+    def test_rejects_ci_windows_job_without_private_packer_jit_marker(self) -> None:
+        workflow = (ROOT / CI_PATH).read_text(encoding="utf-8")
+        changed = workflow.replace("  # packer-windows-jit-v1\n", "", 1)
+        self.assertNotEqual(changed, workflow, "fixture must include the Packer JIT marker")
+
+        errors = self.check(changed, CI_PATH)
+
+        self.assertTrue(any("private Packer JIT marker" in error for error in errors))
+
     def test_accepts_a_different_immutable_action_pin(self) -> None:
         workflow = f"jobs:\n  test:\n    steps:\n      - uses: actions/setup-go@{'b' * 40}\n"
         self.assertEqual(self.check(workflow), [])
