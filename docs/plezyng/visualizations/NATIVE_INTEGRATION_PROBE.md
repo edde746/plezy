@@ -25,3 +25,13 @@ V1 (native rendering) and V2 (playback PCM) remain unimplemented. The first vert
 - projectM 4.1.8 renderer header: https://github.com/projectM-visualizer/projectm/blob/v4.1.8/src/api/include/projectM-4/render_opengl.h
 - projectM current development renderer header (user-FBO API marked since 4.2.0): https://github.com/projectM-visualizer/projectm/blob/master/src/api/include/projectM-4/render_opengl.h
 - PlezyNG audio-only player: lib/mpv/player/player.dart and shared/apple/MpvPlayer/MpvAudioPlayerCore.swift
+## Source implementation follow-up
+
+`native/visualizer/` now carries commit-pinned source recipes and patches for
+both boundaries: an explicit projectM 4.1.8 framebuffer extension and an
+optional mpv 0.41.0 playback PCM tap. The latter copies post-filter frames into
+a bounded native ring with PTS, sample rate, channel layout and reset generation;
+compressed output remains untouched and reports unavailable analysis. Neither
+patch has been built or qualified, and the tap still needs composition with
+the active mpv-build platform patch series before its artifacts can replace
+app dependency pins. This closes the source-design gap, not the V1/V2 exit gates.
