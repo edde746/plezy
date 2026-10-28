@@ -914,7 +914,9 @@ class SourceController extends ChangeNotifier {
         }
       }
       final hasExactId = targetIds.any((candidate) {
-        final value = entry.identifiers[candidate.key]?.trim().toLowerCase();
+        final raw = entry.identifiers[candidate.key]?.trim().toLowerCase();
+        if (raw == null || raw.isEmpty) return false;
+        final value = raw.startsWith('${candidate.key}:') ? raw.substring(candidate.key.length + 1) : raw;
         return value == candidate.value;
       });
       if (!hasExactId) return false;
