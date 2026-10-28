@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:path/path.dart' as p;
 
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
@@ -10,6 +11,8 @@ import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
+import '../../services/subtitle_retimer.dart';
+import '../../utils/formatters.dart';
 import '../../utils/language_codes.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -154,6 +157,13 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
     });
     try {
       final file = await widget.client.download(result);
+      if (!mounted) return;
+      final shouldApply = await _previewSubtitle(result, file);
+      if (!mounted) return;
+      if (!shouldApply) {
+        setState(() => _downloading = null);
+        return;
+      }
       await widget.onApply(file);
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
@@ -164,6 +174,55 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
         });
       }
     }
+  }
+
+  Future<bool> _previewSubtitle(SubtitleSearchResult result, OpenSubtitleDownload file) async {
+    final extension = p.extension(file.fileName).toLowerCase();
+    if (!const {'.srt', '.vtt', '.ass', '.ssa'}.contains(extension)) {
+      // Bitmap subtitles have no text lines to show in a preview.
+      return true;
+    }
+    final cues = SubtitleRetimer.parseCues(sourceBytes: file.bytes, extension: extension);
+    if (!mounted) return false;
+    final previewCues = cues.take(12).toList(growable: false);
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(result.displayTitle ?? result.title ?? t.common.unknown),
+        content: SizedBox(
+          width: 560,
+          height: 420,
+          child: ListView.builder(
+            itemCount: previewCues.length,
+            itemBuilder: (context, index) {
+              final cue = previewCues[index];
+              final previewText = cue.text
+                  .replaceAll(RegExp(r'\{[^}]*\}'), '')
+                  .replaceAll(RegExp(r'\\[Nnh]', caseSensitive: false), ' ')
+                  .replaceAll(RegExp(r'<[^>]*>'), '')
+                  .replaceAll(RegExp(r'\s+'), ' ')
+                  .trim();
+              return ListTile(
+                dense: true,
+                leading: Text(sourceTime(cue.startMs)),
+                title: Text(previewText, maxLines: 2, overflow: TextOverflow.ellipsis),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(t.common.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(t.common.confirm),
+          ),
+        ],
+      ),
+    );
+    return accepted == true;
   }
 
   @override

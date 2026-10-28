@@ -31,7 +31,7 @@ final class SubtitleCue {
   final String text;
 }
 
-/// Loss-aware SRT/WebVTT retimer for export and cue inspection.
+/// Loss-aware SRT/WebVTT retimer with bounded SRT/VTT/ASS/SSA cue inspection.
 ///
 /// MPV applies subtitle timing as `sourceTime * sub-speed + sub-delay`.
 /// This exporter uses that same affine transform, preserving cue payload,
@@ -46,20 +46,28 @@ abstract final class SubtitleRetimer {
   static const double maximumRate = 1.25;
 
   static final RegExp _timingLine = RegExp(r'^([ \t]*)(\S+)([ \t]+-->[ \t]+)(\S+)(.*)$');
+  static final RegExp _assDialogueLine = RegExp(r'^\s*Dialogue\s*:', caseSensitive: false);
+  static final RegExp _assTimeExpression = RegExp(r'^(\d{1,6}):([0-5]\d):([0-5]\d)\.(\d{2})$');
 
-  /// Parses bounded SRT/WebVTT cue timing and payload for an interactive cue
+  /// Parses bounded SRT, WebVTT, ASS, or SSA timing and payload for an interactive cue
   /// picker. The source bytes remain untouched and cues retain display text.
   static List<SubtitleCue> parseCues({
     required List<int> sourceBytes,
     required String extension,
   }) {
     final format = extension.toLowerCase();
-    if (format != '.srt' && format != '.vtt') {
-      throw ArgumentError.value(extension, 'extension', 'Only SRT and WebVTT cue inspection is supported.');
+    const supportedFormats = {'.srt', '.vtt', '.ass', '.ssa'};
+    if (!supportedFormats.contains(format)) {
+      throw ArgumentError.value(
+        extension,
+        'extension',
+        'Only SRT, WebVTT, ASS, and SSA cue inspection is supported.',
+      );
     }
     if (sourceBytes.isEmpty || sourceBytes.length > maximumInputBytes) {
       throw FormatException('Subtitle input is empty or larger than the 5 MiB processing bound.');
     }
+    if (format == '.ass' || format == '.ssa') return _parseAssCues(sourceBytes);
 
     var source = utf8.decode(sourceBytes, allowMalformed: false);
     if (source.startsWith('\uFEFF')) source = source.substring(1);
@@ -229,6 +237,88 @@ abstract final class SubtitleRetimer {
       clippedCueCount: clippedCueCount,
       format: isVtt ? 'WebVTT' : 'SRT',
     );
+  }
+
+  static List<SubtitleCue> _parseAssCues(List<int> sourceBytes) {
+    var source = utf8.decode(sourceBytes, allowMalformed: false);
+    if (source.startsWith('\uFEFF')) source = source.substring(1);
+    if (source.contains('\u0000')) throw const FormatException('Subtitle contains a NUL byte.');
+
+    final cues = <SubtitleCue>[];
+    final lines = source.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
+    List<String>? formatFields;
+    var inEvents = false;
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        inEvents = trimmed.toLowerCase() == '[events]';
+        formatFields = null;
+        continue;
+      }
+      if (!inEvents) continue;
+      if (trimmed.toLowerCase().startsWith('format:')) {
+        formatFields = trimmed.substring('format:'.length).split(',').map((field) => field.trim().toLowerCase()).toList();
+        if (!formatFields.contains('start') ||
+            !formatFields.contains('end') ||
+            !formatFields.contains('text') ||
+            formatFields.last != 'text') {
+          throw const FormatException('ASS event format must end in a text field and include start and end.');
+        }
+        continue;
+      }
+      if (!_assDialogueLine.hasMatch(line)) continue;
+      final fields = formatFields;
+      if (fields == null) throw const FormatException('ASS dialogue appears before its event format.');
+      final colonIndex = line.indexOf(':');
+      final values = _splitAssFields(line.substring(colonIndex + 1), fields.length);
+      final start = _parseAssTime(values[fields.indexOf('start')].trim());
+      final end = _parseAssTime(values[fields.indexOf('end')].trim());
+      if (start == null || end == null) {
+        throw const FormatException('ASS cue contains an invalid timestamp.');
+      }
+      if (end <= start) throw const FormatException('ASS cue end must be after its start.');
+      final text = values[fields.indexOf('text')].trim();
+      if (text.isEmpty) continue;
+      if (cues.length >= maximumCueCount) {
+        throw const FormatException('Subtitle has more cues than the 50000 cue processing bound.');
+      }
+      cues.add(SubtitleCue(index: cues.length + 1, startMs: start, endMs: end, text: text));
+    }
+    if (cues.isEmpty) throw const FormatException('No text subtitle cues were found.');
+    cues.sort((a, b) {
+      final timeOrder = a.startMs.compareTo(b.startMs);
+      return timeOrder != 0 ? timeOrder : a.index.compareTo(b.index);
+    });
+    return List.unmodifiable(cues);
+  }
+
+  static List<String> _splitAssFields(String line, int fieldCount) {
+    if (fieldCount < 3) throw const FormatException('ASS event format has too few fields.');
+    final values = <String>[];
+    var start = 0;
+    for (var field = 0; field < fieldCount - 1; field++) {
+      final separator = line.indexOf(',', start);
+      if (separator < 0) throw const FormatException('ASS dialogue does not match its event format.');
+      values.add(line.substring(start, separator));
+      start = separator + 1;
+    }
+    values.add(line.substring(start));
+    return values;
+  }
+
+  static int? _parseAssTime(String value) {
+    final match = _assTimeExpression.firstMatch(value);
+    if (match == null) return null;
+    final hours = int.tryParse(match.group(1)!);
+    final minutes = int.tryParse(match.group(2)!);
+    final seconds = int.tryParse(match.group(3)!);
+    final centiseconds = int.tryParse(match.group(4)!);
+    if (hours == null || minutes == null || seconds == null || centiseconds == null) return null;
+    final timeMs = (((hours * 60 + minutes) * 60 + seconds) * 1000) + centiseconds * 10;
+    if (timeMs > maximumTimeMs) {
+      throw const FormatException('Subtitle timestamp is outside the supported range.');
+    }
+    return timeMs;
   }
 
   static int? _parseTime(String value, {required bool isVtt}) {
