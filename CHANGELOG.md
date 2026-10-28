@@ -60,6 +60,37 @@
 - Retain previous server results when a new search is cancelled, while preserving indexed Files and Seerr results.
 - Route Windows x64 native CI through the private Packer JIT workflow allowlist.
 - Lock iOS, macOS and tvOS CocoaPods dependencies for CI, and retain root dependency overrides when resolving tvOS packages.
+- Fix clean tvOS CocoaPods setup, Android 17 preview SDK provisioning, and short-path Apple native-asset builds on private JIT runners.
+- Fix the macOS native reliability target to import the `PlezyNG` app module.
+- Require Android host native-test tools to be provisioned on the private runner before CI starts.
+- Include the Steam audio labels in the explicit English fallback manifest used by strict localization checks.
+- Set ThreadSanitizer ASLR entropy through the disposable runner's authorized sysctl.
+- Prepare an ephemeral default keychain for the optional Xcode cloud-signing path for iOS App Store builds.
+
+### Localization
+
+- Keep the new Steam audio setting labels available through an explicit English fallback until reviewed translations are available.
+
+### Release automation
+
+- Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
+
+### Platform integration
+
+- Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows link forwarding for the native toolchain.
+
+### VLC feature parity
+
+- Expand the VLC feature comparison with safe local playlist references, more conversion formats, MPV audio effects, device-local playback bookmarks and temporary A/B loops in existing playback controls.
+- Add bounded desktop folder queues and named device-local bookmarks for seekable Open media audio while preserving existing bookmark data.
+- Add direct source-queue browsing, upcoming-file shuffle, repeat modes, and item selection in the existing adaptive player sheet; keep audiobook/server order and current-item progress intact.
+- Save eligible same-folder desktop file queues as reopenable M3U playlists, and select alternate video tracks through existing MPV playback controls.
+- Show direct-input MPV file details in the shared File Info sheet, and expose edition/disc-title switching only when multiple choices are available.
+- Preview discovered desktop camera and display inputs in the existing MPV player from Media tools → Capture; keep preview session-only and video-only.
+- Use optional MPV audio-analysis metadata in the existing visualizer when Plex loudness data is unavailable, and show conversion profiles only when the installed FFmpeg build supports them.
+- Fix the MPV edition selector so it refreshes when a new file loads, without passing an asynchronous value through Flutter's state update callback.
+- Keep temporary HLS sharing within its startup window for long-GOP sources by forcing keyframes at the segment cadence; verify that playlist and media segments remain token-scoped and the listener closes cleanly.
+- Translate the added video-track, playlist, edition, and capture-preview cues across supported locales, and use the converter's concise help on the existing Open media tile.
 
 ## [3.0.0] - 2026-10-27
 

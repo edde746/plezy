@@ -299,11 +299,24 @@ jobs:
           languages: cpp, java-kotlin
           build-mode: manual
 
-      - name: Install Android host native test dependencies
+      - name: Verify Android host native test toolchain
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            clang build-essential cmake ninja-build
+          python3 - <<'PY'
+          import shutil
+          import sys
+
+          required = ("clang", "clang++", "cmake", "ninja", "make", "c++")
+          missing = [tool for tool in required if shutil.which(tool) is None]
+          if missing:
+              print(
+                  "The private Android test runner is missing pre-provisioned native tools: "
+                  + ", ".join(missing),
+                  file=sys.stderr,
+              )
+              raise SystemExit(1)
+          for tool in required:
+              print(f"{tool}: {shutil.which(tool)}")
+          PY
 
       - name: Configure Android host native tests
         run: |
@@ -437,11 +450,11 @@ jobs:
       - name: Set ThreadSanitizer-compatible ASLR entropy
         if: matrix.sanitizer == 'thread'
         run: |
-          current_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          current_bits="$(sudo -n sysctl -n vm.mmap_rnd_bits)"
           if [ "$current_bits" -gt 28 ]; then
-            sudo sysctl -w vm.mmap_rnd_bits=28
+            sudo -n sysctl -w vm.mmap_rnd_bits=28
           fi
-          configured_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          configured_bits="$(sudo -n sysctl -n vm.mmap_rnd_bits)"
           if [ "$configured_bits" -gt 28 ]; then
             echo "ThreadSanitizer requires vm.mmap_rnd_bits <= 28; found $configured_bits" >&2
             exit 1

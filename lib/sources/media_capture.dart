@@ -41,6 +41,40 @@ class MediaCaptureSource {
     '-i',
     input,
   ];
+
+  MediaCapturePreviewRequest previewRequest(int frameRate) => MediaCapturePreviewRequest(
+    sourceName: name,
+    inputFormat: inputFormat,
+    input: input,
+    frameRate: frameRate,
+    captureCursor: captureCursor,
+  );
+}
+
+/// An in-memory request to route a discovered desktop capture source into the
+/// existing MPV player. The device address is never saved or exposed as a
+/// general-purpose user-entered protocol.
+class MediaCapturePreviewRequest {
+  const MediaCapturePreviewRequest({
+    required this.sourceName,
+    required this.inputFormat,
+    required this.input,
+    required this.frameRate,
+    required this.captureCursor,
+  });
+
+  final String sourceName;
+  final String inputFormat;
+  final String input;
+  final int frameRate;
+  final bool captureCursor;
+
+  String get playerAddress => 'av://$inputFormat:$input';
+
+  Map<String, String> get playerOptions => {
+    'demuxer-lavf-format': inputFormat,
+    'demuxer-lavf-o': ['framerate=$frameRate', if (captureCursor) 'draw_mouse=1'].join(','),
+  };
 }
 
 class DesktopMediaCapture {

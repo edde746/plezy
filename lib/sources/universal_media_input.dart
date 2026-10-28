@@ -1,3 +1,5 @@
+import 'package:path/path.dart' as p;
+
 import 'source_models.dart';
 
 /// A media address that exists only for the current open/play session unless
@@ -25,11 +27,17 @@ class UniversalMediaPlaylist {
 class UniversalMediaAddress {
   static const maxLength = 4096;
   static const _webSchemes = {'http', 'https'};
-  static const _mpvSchemes = {'rtsp', 'rtmp', 'rtmps', 'udp', 'rtp'};
+  static const _mpvSchemes = {'rtsp', 'rtmp', 'rtmps', 'udp', 'rtp', 'ftp'};
 
   static bool usesMpvProtocol(Uri uri) => _mpvSchemes.contains(uri.scheme.toLowerCase());
 
-  static Uri parse(String value, {required bool allowHttp, bool allowMpvProtocols = false, Uri? base}) {
+  static Uri parse(
+    String value, {
+    required bool allowHttp,
+    bool allowMpvProtocols = false,
+    bool allowFtp = false,
+    Uri? base,
+  }) {
     final input = value.trim();
     if (input.isEmpty || input.length > maxLength || input.runes.any((rune) => rune < 0x20 || rune == 0x7f)) {
       throw const SourceException(SourceFailure.invalidData);
@@ -43,7 +51,8 @@ class UniversalMediaAddress {
         uri.host.isEmpty ||
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
-        scheme == 'http' && !allowHttp) {
+        scheme == 'http' && !allowHttp ||
+        scheme == 'ftp' && !allowFtp) {
       throw const SourceException(SourceFailure.permission);
     }
     return uri;
@@ -91,6 +100,8 @@ class UniversalMediaPlaylistParser {
     Uri? base,
     required bool allowHttp,
     bool allowMpvProtocols = false,
+    bool allowFtp = false,
+    bool allowLocalRelative = false,
   }) {
     if (value.length > maxCharacters) throw const SourceException(SourceFailure.invalidData);
     final text = value.replaceFirst('\uFEFF', '').replaceAll('\r\n', '\n').replaceAll('\r', '\n');
@@ -99,8 +110,8 @@ class UniversalMediaPlaylistParser {
     if (lines.any((line) => line.length > maxLineLength)) throw const SourceException(SourceFailure.invalidData);
     final isPls = lines.any((line) => line.trim().toLowerCase() == '[playlist]');
     return isPls
-        ? _parsePls(lines, fallbackTitle, base, allowHttp, allowMpvProtocols)
-        : _parseM3u(lines, fallbackTitle, base, allowHttp, allowMpvProtocols);
+        ? _parsePls(lines, fallbackTitle, base, allowHttp, allowMpvProtocols, allowFtp, allowLocalRelative)
+        : _parseM3u(lines, fallbackTitle, base, allowHttp, allowMpvProtocols, allowFtp, allowLocalRelative);
   }
 
   static UniversalMediaPlaylist _parseM3u(
@@ -109,6 +120,8 @@ class UniversalMediaPlaylistParser {
     Uri? base,
     bool allowHttp,
     bool allowMpvProtocols,
+    bool allowFtp,
+    bool allowLocalRelative,
   ) {
     final hasHlsDirective = lines.any((line) => line.trimLeft().toUpperCase().startsWith('#EXT-X-'));
     // An HLS manifest is one playable media item. Its segments and variants
@@ -123,6 +136,7 @@ class UniversalMediaPlaylistParser {
               base.toString(),
               allowHttp: allowHttp,
               allowMpvProtocols: allowMpvProtocols,
+              allowFtp: allowFtp,
             ),
           ),
         ],
@@ -154,11 +168,13 @@ class UniversalMediaPlaylistParser {
       }
       if (line.startsWith('#')) continue;
       try {
-        final uri = UniversalMediaAddress.parse(
+        final uri = _playlistEntryUri(
           line,
+          base: base,
           allowHttp: allowHttp,
           allowMpvProtocols: allowMpvProtocols,
-          base: base,
+          allowFtp: allowFtp,
+          allowLocalRelative: allowLocalRelative,
         );
         items.add(
           UniversalMediaItem(
@@ -191,6 +207,8 @@ class UniversalMediaPlaylistParser {
     Uri? base,
     bool allowHttp,
     bool allowMpvProtocols,
+    bool allowFtp,
+    bool allowLocalRelative,
   ) {
     final files = <int, String>{};
     final titles = <int, String>{};
@@ -230,11 +248,13 @@ class UniversalMediaPlaylistParser {
     var skipped = 0;
     for (final index in files.keys.toList()..sort()) {
       try {
-        final uri = UniversalMediaAddress.parse(
+        final uri = _playlistEntryUri(
           files[index]!,
+          base: base,
           allowHttp: allowHttp,
           allowMpvProtocols: allowMpvProtocols,
-          base: base,
+          allowFtp: allowFtp,
+          allowLocalRelative: allowLocalRelative,
         );
         items.add(
           UniversalMediaItem(
@@ -259,6 +279,49 @@ class UniversalMediaPlaylistParser {
   static String? _attribute(String line, String name) {
     final match = RegExp('(?:^|\\s)${RegExp.escape(name)}="([^"]*)"', caseSensitive: false).firstMatch(line);
     return match?.group(1)?.trim();
+  }
+
+  static Uri _playlistEntryUri(
+    String value, {
+    required Uri? base,
+    required bool allowHttp,
+    required bool allowMpvProtocols,
+    required bool allowFtp,
+    required bool allowLocalRelative,
+  }) {
+    final input = value.trim();
+    final parsed = Uri.tryParse(input);
+    if (parsed == null) throw const SourceException(SourceFailure.invalidData);
+
+    // A user-selected local playlist may name sibling media files. Permit
+    // relative paths beneath that playlist's directory only; absolute paths,
+    // credentials, parent traversal, and encoded path separators are refused.
+    if (base?.scheme.toLowerCase() == 'file' && parsed.scheme.isEmpty && allowLocalRelative) {
+      if (parsed.hasAuthority ||
+          parsed.hasAbsolutePath ||
+          parsed.hasQuery ||
+          parsed.hasFragment ||
+          parsed.path.isEmpty ||
+          parsed.path.contains('\\') ||
+          RegExp(r'%(?:2e|2f|5c)', caseSensitive: false).hasMatch(input) ||
+          parsed.pathSegments.any((segment) => segment == '..')) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      final root = p.normalize(base!.toFilePath());
+      final resolved = p.normalize(base.resolveUri(parsed).toFilePath());
+      if (resolved == root || !p.isWithin(root, resolved)) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      return Uri.file(resolved);
+    }
+
+    return UniversalMediaAddress.parse(
+      input,
+      allowHttp: allowHttp,
+      allowMpvProtocols: allowMpvProtocols,
+      allowFtp: allowFtp,
+      base: base,
+    );
   }
 
   static String _safeTitle(String candidate, Uri uri) {

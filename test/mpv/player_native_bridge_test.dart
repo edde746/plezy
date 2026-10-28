@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/mpv/models.dart';
+import 'package:plezy/mpv/player/audio_spectrum.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_base.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -179,6 +180,73 @@ void main() {
           expect(calls.where((call) => call.method == 'command'), hasLength(1));
         } finally {
           if (!initialize.isCompleted) initialize.complete(true);
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('audio visualizer filter is optional, derived-only, and yields to passthrough', () async {
+    final calls = <(String name, String value)>[];
+    final observed = <String>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_audio_player',
+      eventChannelName: 'com.plezy/mpv_audio_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final args = call.arguments as Map;
+          calls.add((args['name'] as String, args['value']?.toString() ?? ''));
+        }
+        if (call.method == 'observeProperty') observed.add((call.arguments as Map)['name'] as String);
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative.audio();
+        final samples = <AudioSpectrumSample?>[];
+        final subscription = player.audioSpectrumStream.listen(samples.add);
+        try {
+          expect(await player.setAudioSpectrumAnalysisEnabled(true), isTrue);
+          expect(observed, contains('af-metadata/plezy_spectrum'));
+          expect(calls.last.$1, 'af');
+          expect(calls.last.$2, contains('@plezy_spectrum'));
+
+          player.handlePropertyChange('af-metadata/plezy_spectrum', {
+            'lavfi.aspectralstats.1.centroid': 7200,
+            'lavfi.aspectralstats.1.flatness': 0.37,
+          });
+          expect(samples, hasLength(1));
+          expect(samples.single?.centroidHz, 7200);
+          player.handlePropertyChange('af-metadata/plezy_spectrum', {
+            'lavfi.aspectralstats.1.centroid': 9000,
+            'lavfi.aspectralstats.1.flatness': 0.55,
+          });
+          expect(samples, hasLength(1), reason: 'MPV updates are throttled below display refresh');
+          await Future<void>.delayed(const Duration(milliseconds: 55));
+          player.handlePropertyChange('af-metadata/plezy_spectrum', {
+            'lavfi.aspectralstats.1.centroid': 9000,
+            'lavfi.aspectralstats.1.flatness': 0.55,
+          });
+          expect(samples, hasLength(2));
+          expect(samples.last?.centroidHz, 9000);
+
+          await player.setAudioPassthrough(true);
+          expect(player.audioPassthroughActive, isTrue);
+          final disabledFilter = calls.lastIndexWhere((call) => call.$1 == 'af');
+          final enabledPassthrough = calls.lastIndexWhere((call) => call.$1 == 'audio-spdif');
+          expect(calls[disabledFilter].$2, isEmpty);
+          expect(calls[disabledFilter].$1, 'af');
+          expect(enabledPassthrough, greaterThan(disabledFilter));
+          expect(calls[enabledPassthrough].$2, isNotEmpty);
+
+          await player.setAudioPassthrough(false);
+          expect(player.audioPassthroughActive, isFalse);
+          final disabledPassthrough = calls.lastIndexWhere((call) => call.$1 == 'audio-spdif');
+          final restoredFilter = calls.lastIndexWhere((call) => call.$1 == 'af');
+          expect(disabledPassthrough, lessThan(restoredFilter));
+          expect(calls[restoredFilter].$2, contains('@plezy_spectrum'));
+        } finally {
+          await subscription.cancel();
           await player.dispose();
         }
       },
@@ -1414,6 +1482,42 @@ void main() {
             'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp',
           ]);
           expect(player.audioPassthroughActive, isFalse);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('ten-band equalizer and MPV audio effects produce a bounded filter chain', () async {
+    final filters = <String>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty' && (call.arguments as Map)['name'] == 'af') {
+          filters.add((call.arguments as Map)['value'] as String);
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioEqualizer([0, 20, 0, 0, 0, 0, 0, 0, 0, 0]);
+          await player.setAudioEffects((stereoWidth: 1.5, spatializer: true, pitchSemitones: -20));
+
+          expect(filters, [
+            'equalizer=f=125:t=q:w=1:g=12.0',
+            'equalizer=f=125:t=q:w=1:g=12.0,'
+                'stereowiden=delay=20:feedback=0.250:crossfeed=0.300:drymix=0.8,'
+                'aecho=0.8:0.9:35|55:0.18|0.12,'
+                'rubberband=pitch=0.50000:tempo=1:formant=preserved',
+          ]);
+
+          final writeCount = filters.length;
+          await player.setAudioEqualizer([6]);
+          expect(filters, hasLength(writeCount), reason: 'incomplete bands are ignored');
         } finally {
           await player.dispose();
         }
