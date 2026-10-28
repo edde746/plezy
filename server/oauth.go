@@ -54,14 +54,15 @@ type oauthServiceConfig struct {
 }
 
 type oauthTokenResult struct {
-	AccessToken           string            `json:"accessToken,omitempty"`
-	RefreshToken          string            `json:"refreshToken,omitempty"`
-	ExpiresIn             int               `json:"expiresIn,omitempty"`
-	SteamID               string            `json:"steamId,omitempty"`
-	SteamLibraryAvailable bool              `json:"steamLibraryAvailable,omitempty"`
-	SteamGames            []steamOwnedGame  `json:"steamGames,omitempty"`
-	SteamCatalogTruncated bool              `json:"steamCatalogTruncated,omitempty"`
-	Error                 string            `json:"error,omitempty"`
+	SteamCatalogToken     string           `json:"steamCatalogToken,omitempty"`
+	AccessToken           string           `json:"accessToken,omitempty"`
+	RefreshToken          string           `json:"refreshToken,omitempty"`
+	ExpiresIn             int              `json:"expiresIn,omitempty"`
+	SteamID               string           `json:"steamId,omitempty"`
+	SteamLibraryAvailable bool             `json:"steamLibraryAvailable,omitempty"`
+	SteamGames            []steamOwnedGame `json:"steamGames,omitempty"`
+	SteamCatalogTruncated bool             `json:"steamCatalogTruncated,omitempty"`
+	Error                 string           `json:"error,omitempty"`
 }
 
 // oauthSession links browser state to a device-only poll capability. Only the
@@ -119,10 +120,11 @@ func (s *oauthSession) pkceVerifier() string {
 }
 
 type oauthProxy struct {
-	baseURL   string
-	services  map[string]oauthServiceConfig
-	client    *http.Client
-	clientIPs clientIPResolver
+	steamCatalogGrants map[[32]byte]*steamCatalogGrant
+	baseURL            string
+	services           map[string]oauthServiceConfig
+	client             *http.Client
+	clientIPs          clientIPResolver
 
 	steamWebAPIKey          string
 	steamOpenIDEndpoint     string
@@ -140,9 +142,9 @@ type oauthProxy struct {
 
 func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clientIPs clientIPResolver) *oauthProxy {
 	return &oauthProxy{
-		baseURL:       strings.TrimRight(baseURL, "/"),
-		services:      services,
-		client: &http.Client{Timeout: oauthUpstreamTimeout},
+		baseURL:  strings.TrimRight(baseURL, "/"),
+		services: services,
+		client:   &http.Client{Timeout: oauthUpstreamTimeout},
 		steamClient: &http.Client{
 			Timeout: oauthUpstreamTimeout,
 			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
@@ -153,9 +155,9 @@ func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clien
 		steamOwnedGamesEndpoint: steamOwnedGamesEndpoint,
 		clientIPs:               clientIPs,
 		browserStates:           make(map[string]*oauthSession),
-		pollDigests:   make(map[[sha256.Size]byte]*oauthSession),
-		ipRate:        make(map[string]*rateLimiter),
-		pollRate:      make(map[string]*rateLimiter),
+		pollDigests:             make(map[[sha256.Size]byte]*oauthSession),
+		ipRate:                  make(map[string]*rateLimiter),
+		pollRate:                make(map[string]*rateLimiter),
 	}
 }
 
@@ -199,6 +201,7 @@ func registerOAuthRoutes(mux *http.ServeMux, p *oauthProxy) {
 		})
 		return
 	}
+	mux.HandleFunc("/auth/steam/library", p.handleSteamCatalog)
 	mux.HandleFunc("/auth/start", p.handleStart)
 	mux.HandleFunc("/auth/result", p.handleResult)
 	mux.HandleFunc("/auth/done", p.handleDone)

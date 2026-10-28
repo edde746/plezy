@@ -102,11 +102,13 @@ class GameLibraryController extends ChangeNotifier {
       recent: state.recent,
       favorites: state.favorites,
       steamAccountId: state.steamAccountId,
+      steamCatalogCredential: state.steamCatalogCredential,
       steamCatalogAvailable: state.steamCatalogAvailable,
       steamCatalogStale: state.steamCatalogStale,
       steamCatalogTruncated: state.steamCatalogTruncated,
       steamCatalog: state.steamCatalog,
       preferredRoutes: state.preferredRoutes,
+      inventories: state.inventories,
     );
   });
   Future<void> removeHost(GameHost host) => _change(
@@ -114,14 +116,16 @@ class GameLibraryController extends ChangeNotifier {
       GameLibrary(
         hosts: state.hosts.where((v) => v.key != host.key).toList(),
         games: state.games,
-        recent: state.recent,
-        favorites: state.favorites,
+        recent: state.recentKeys,
+        favorites: state.favoriteKeys,
         steamAccountId: state.steamAccountId,
+        steamCatalogCredential: state.steamCatalogCredential,
         steamCatalogAvailable: state.steamCatalogAvailable,
         steamCatalogStale: state.steamCatalogStale,
         steamCatalogTruncated: state.steamCatalogTruncated,
         steamCatalog: state.steamCatalog,
         preferredRoutes: state.preferredRoutes,
+        inventories: state.inventories,
       ).toJson(),
     ),
   );
@@ -146,11 +150,13 @@ class GameLibraryController extends ChangeNotifier {
           recent: state.recent,
           favorites: state.favorites,
           steamAccountId: state.steamAccountId,
+          steamCatalogCredential: state.steamCatalogCredential,
           steamCatalogAvailable: state.steamCatalogAvailable,
           steamCatalogStale: state.steamCatalogStale,
           steamCatalogTruncated: state.steamCatalogTruncated,
           steamCatalog: state.steamCatalog,
           preferredRoutes: state.preferredRoutes,
+          inventories: state.inventories,
         ).toJson(),
       ),
     );
@@ -164,11 +170,13 @@ class GameLibraryController extends ChangeNotifier {
         recent: state.recent,
         favorites: state.favorites,
         steamAccountId: state.steamAccountId,
+        steamCatalogCredential: state.steamCatalogCredential,
         steamCatalogAvailable: state.steamCatalogAvailable,
         steamCatalogStale: state.steamCatalogStale,
         steamCatalogTruncated: state.steamCatalogTruncated,
         steamCatalog: state.steamCatalog,
         preferredRoutes: state.preferredRoutes,
+        inventories: state.inventories,
       ).toJson(),
     ),
   );
@@ -181,11 +189,13 @@ class GameLibraryController extends ChangeNotifier {
       recent: state.recent,
       favorites: favorites,
       steamAccountId: state.steamAccountId,
+      steamCatalogCredential: state.steamCatalogCredential,
       steamCatalogAvailable: state.steamCatalogAvailable,
       steamCatalogStale: state.steamCatalogStale,
       steamCatalogTruncated: state.steamCatalogTruncated,
       steamCatalog: state.steamCatalog,
       preferredRoutes: state.preferredRoutes,
+      inventories: state.inventories,
     );
   });
   Future<void> opened(StreamGame game) => _change(
@@ -195,11 +205,13 @@ class GameLibraryController extends ChangeNotifier {
       recent: [game.key, ...state.recent.where((v) => v != game.key)].take(30).toList(),
       favorites: state.favorites,
       steamAccountId: state.steamAccountId,
+      steamCatalogCredential: state.steamCatalogCredential,
       steamCatalogAvailable: state.steamCatalogAvailable,
       steamCatalogStale: state.steamCatalogStale,
       steamCatalogTruncated: state.steamCatalogTruncated,
       steamCatalog: state.steamCatalog,
       preferredRoutes: state.preferredRoutes,
+      inventories: state.inventories,
     ),
   );
 
@@ -222,11 +234,38 @@ class GameLibraryController extends ChangeNotifier {
     );
   });
 
+  Future<void> saveInventory(SteamHostInventory snapshot) => _change((state) {
+    if (!state.hosts.any((h) => h.key == snapshot.hostKey && h.protocol == GameProtocol.steam)) {
+      throw const GameClientException(GameClientFailure.cancelled);
+    }
+    final previous = state.inventories.where((i) => i.hostKey == snapshot.hostKey).firstOrNull;
+    if (previous != null && previous.peerId != snapshot.peerId) {
+      throw const GameClientException(GameClientFailure.pairingRequired);
+    }
+    // An incomplete scan must not assert that unseen games were uninstalled.
+    final merged = <int, SteamInstalledGame>{
+      if (!snapshot.complete && previous != null)
+        for (final game in previous.games) game.appId: game,
+      for (final game in snapshot.games) game.appId: game,
+    };
+    final value = SteamHostInventory(
+      hostKey: snapshot.hostKey,
+      peerId: snapshot.peerId,
+      observedAt: snapshot.complete ? snapshot.observedAt : (previous?.observedAt ?? snapshot.observedAt),
+      games: merged.values.take(2000).toList(),
+      complete: snapshot.complete && merged.length <= 2000,
+    );
+    return GameLibrary.fromJson(
+      state.copyWith(inventories: [value, ...state.inventories.where((i) => i.hostKey != snapshot.hostKey)]).toJson(),
+    );
+  });
+
   Future<void> saveSteamCatalog({
     required String steamId,
     required List<SteamCatalogGame> games,
     required bool catalogAvailable,
     required bool catalogTruncated,
+    String? protectedCredential,
   }) => _change((state) {
     if (!RegExp(r'^\d{17}$').hasMatch(steamId)) {
       throw const GameClientException(GameClientFailure.unavailable);
@@ -238,7 +277,9 @@ class GameLibraryController extends ChangeNotifier {
       recent: state.recent,
       favorites: state.favorites,
       preferredRoutes: sameAccount ? state.preferredRoutes : const {},
+      inventories: state.inventories,
       steamAccountId: steamId,
+      steamCatalogCredential: protectedCredential ?? (sameAccount ? state.steamCatalogCredential : null),
       steamCatalogAvailable: catalogAvailable || (sameAccount && state.steamCatalogAvailable),
       steamCatalogStale: !catalogAvailable && sameAccount && state.steamCatalogAvailable,
       steamCatalogTruncated: catalogAvailable
@@ -260,6 +301,7 @@ class GameLibraryController extends ChangeNotifier {
         recent: state.recent,
         favorites: state.favorites,
         preferredRoutes: state.preferredRoutes,
+        inventories: state.inventories,
       ).toJson(),
     ),
   );

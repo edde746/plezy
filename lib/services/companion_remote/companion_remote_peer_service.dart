@@ -1379,7 +1379,13 @@ class CompanionRemotePeerService with KeepaliveMixin {
     sendCommand(
       RemoteCommand(
         type: RemoteCommandType.deviceInfo,
-        data: {'id': _myPeerId, 'name': deviceName, 'platform': platform, 'role': _role?.name},
+        data: {
+          'id': _myPeerId,
+          'name': deviceName,
+          'platform': platform,
+          'role': _role?.name,
+          'gameInventoryVersion': 1,
+        },
       ),
     );
   }

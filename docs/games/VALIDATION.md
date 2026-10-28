@@ -51,3 +51,20 @@ New Games messages are seeded with reviewed English fallback copy in non-English
 - **Platform ports:** only Android has native playback adapters in this change. The shared Games UI and Linux-tested portable Steam core do not provide desktop/Apple/webOS playback. See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 No external streaming-app handoff is used.
+
+
+## Connected experience PR #46 — 2026-10-28
+
+- Dart analysis of Games, Games screens, companion provider and OAuth client:
+  no issues.
+- Focused Flutter Games, all Multiview, companion provider/receiver/peer and
+  OAuth poll regression suite: **158 tests passed**.
+- `go test -race ./...` in `server`: both packages passed, including catalog
+  identity binding, credential rejection, rate limiting, expiry, revocation
+  and concurrent revocation during an upstream fetch.
+- New inventory fixtures cover multiple Steam drives, three different gaming
+  computers in one grid, malformed manifests, cancellation, opt-in sharing,
+  multi-page transfer and out-of-order response rejection.
+- No native Android build or attached-device qualification has yet been run
+  for the new Java/Kotlin first-frame callback. Desktop browsing/inventory
+  support does not mean a desktop streaming receiver is available.

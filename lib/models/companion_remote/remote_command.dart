@@ -52,6 +52,10 @@ enum RemoteCommandType {
   disconnect,
   ack,
   syncState,
+
+  // Append only: older peers encode this enum by index. Version negotiated
+  // through deviceInfo before this read-only extension is requested.
+  gameInventory,
 }
 
 class _RemoteCommandTypeConverter extends IndexedEnumConverter<RemoteCommandType> {

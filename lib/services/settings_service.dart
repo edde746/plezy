@@ -745,6 +745,10 @@ class SettingsService extends BaseSharedPreferencesService {
       BoolPref(profileScopedPrefsKey(profileId, 'show_games_tab'), defaultValue: false);
   static BoolPref gameTouchControlsForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_touch_controls'), defaultValue: true);
+  static BoolPref shareSteamInventoryForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'share_steam_inventory'), defaultValue: false);
+  static StringPref steamInstallRootForProfile(String profileId) =>
+      StringPref(profileScopedPrefsKey(profileId, 'steam_install_root'));
   static BoolPref gamePyrowaveForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_pyrowave'), defaultValue: false);
   static StringPref preferredServerForProfile(String profileId) =>

@@ -3898,7 +3898,21 @@
     "connectToPlay": "Connect a gaming computer to play this game inside PlezyNG.",
     "availabilityHint": "Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.",
     "steamSource": "From Steam",
-    "disconnected": "Disconnected"
+    "disconnected": "Disconnected",
+    "installed": "Installed",
+    "installationIncomplete": "Installation incomplete",
+    "notInstalled": "Not in the last inventory",
+    "installationUnknown": "Installation not checked",
+    "allComputers": "All computers",
+    "importInstalledGames": "Import installed games",
+    "inventoryConnectHelp": "Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.",
+    "inventoryConfirm": "Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.",
+    "inventoryImported": "Installed games updated.",
+    "inventoryChecked": "Last checked ${date}",
+    "shareLibrary": "Share installed Steam games",
+    "shareLibraryHelp": "Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.",
+    "steamInstallFolder": "Steam installation folder",
+    "automaticFolder": "Find automatically"
   },
   "deepLinks": {
     "invalid": "This Plezy link isn't valid.",

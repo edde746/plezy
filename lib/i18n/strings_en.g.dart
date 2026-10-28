@@ -9756,6 +9756,48 @@ class Translations$games$en {
 
 	/// en: 'Disconnected'
 	String get disconnected => 'Disconnected';
+
+	/// en: 'Installed'
+	String get installed => 'Installed';
+
+	/// en: 'Installation incomplete'
+	String get installationIncomplete => 'Installation incomplete';
+
+	/// en: 'Not in the last inventory'
+	String get notInstalled => 'Not in the last inventory';
+
+	/// en: 'Installation not checked'
+	String get installationUnknown => 'Installation not checked';
+
+	/// en: 'All computers'
+	String get allComputers => 'All computers';
+
+	/// en: 'Import installed games'
+	String get importInstalledGames => 'Import installed games';
+
+	/// en: 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.'
+	String get inventoryConnectHelp => 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.';
+
+	/// en: 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.'
+	String inventoryConfirm({required Object peer, required Object computer}) => 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.';
+
+	/// en: 'Installed games updated.'
+	String get inventoryImported => 'Installed games updated.';
+
+	/// en: 'Last checked ${date}'
+	String inventoryChecked({required Object date}) => 'Last checked ${date}';
+
+	/// en: 'Share installed Steam games'
+	String get shareLibrary => 'Share installed Steam games';
+
+	/// en: 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.'
+	String get shareLibraryHelp => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.';
+
+	/// en: 'Steam installation folder'
+	String get steamInstallFolder => 'Steam installation folder';
+
+	/// en: 'Find automatically'
+	String get automaticFolder => 'Find automatically';
 }
 
 // Path: deepLinks
@@ -15770,9 +15812,23 @@ extension on Translations {
 			'games.availabilityHint' => 'Steam on your computer checks installation, access and cloud saves when you connect. A saved game or computer does not mean it is available now.',
 			'games.steamSource' => 'From Steam',
 			'games.disconnected' => 'Disconnected',
-			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
+			'games.installed' => 'Installed',
 			_ => null,
 		} ?? switch (path) {
+			'games.installationIncomplete' => 'Installation incomplete',
+			'games.notInstalled' => 'Not in the last inventory',
+			'games.installationUnknown' => 'Installation not checked',
+			'games.allComputers' => 'All computers',
+			'games.importInstalledGames' => 'Import installed games',
+			'games.inventoryConnectHelp' => 'Connect to this computer with Companion Remote, and enable “Share installed Steam games” in its Games settings. Both devices need a version that supports library sharing.',
+			'games.inventoryConfirm' => ({required Object peer, required Object computer}) => 'Use the installed games reported by ${peer} for ${computer}? Only link them if they are the same computer.',
+			'games.inventoryImported' => 'Installed games updated.',
+			'games.inventoryChecked' => ({required Object date}) => 'Last checked ${date}',
+			'games.shareLibrary' => 'Share installed Steam games',
+			'games.shareLibraryHelp' => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.',
+			'games.steamInstallFolder' => 'Steam installation folder',
+			'games.automaticFolder' => 'Find automatically',
+			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',
 			'deepLinks.notFound' => 'Couldn\'t find this title in your libraries.',

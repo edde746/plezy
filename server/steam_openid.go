@@ -126,6 +126,7 @@ func (p *oauthProxy) handleSteamCallback(w http.ResponseWriter, r *http.Request)
 		SteamGames:            games,
 		SteamCatalogTruncated: truncated,
 	}
+	result.SteamCatalogToken = p.issueSteamCatalogGrant(steamID)
 	if !p.completeSession(sess, result) {
 		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from PlezyNG.")
 		return
@@ -313,7 +314,7 @@ func (p *oauthProxy) fetchSteamOwnedGames(ctx context.Context, steamID string) (
 	query.Set("key", p.steamWebAPIKey)
 	query.Set("steamid", steamID)
 	query.Set("include_appinfo", "true")
-	query.Set("include_played_free_games", "false")
+	query.Set("include_played_free_games", "true")
 	target.RawQuery = query.Encode()
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)

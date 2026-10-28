@@ -150,3 +150,20 @@ The Steambox, desktop and BC250 contribute separate installation snapshots to
 one game catalog. Installed, reachable, paired, entitled and actively streaming
 are independent states. Snapshot source and freshness must remain visible;
 removing one computer must not erase a favorite still represented elsewhere.
+
+### Stage 2 — installed libraries and scoped catalog refresh
+
+Added the read-only multi-computer inventory flow documented in
+[HOST_INVENTORY.md](HOST_INVENTORY.md), desktop Steam folder discovery, bounded
+KeyValues parsing, encrypted companion paging, permission checks, computer and
+installed filters, snapshot dates and preservation of partial inventories.
+Older companion command indices remain unchanged; the extension negotiates
+version 1. No helper daemon, new open port or Steam account credential is used.
+
+Added independent public-catalog refresh and revocation, digest-only relay
+grants, encrypted client persistence, expiry/restart fallback, in-flight
+revocation and played free games. This endpoint needs a relay deployment.
+
+Validation: focused Games/Multiview/companion and Go race tests are run for this
+commit; exact results are recorded in VALIDATION.md. Native OS/hardware support
+is not inferred from these shared-library tests.

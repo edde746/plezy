@@ -144,6 +144,7 @@ class CompanionRemoteReceiver {
       case RemoteCommandType.deviceInfo:
       case RemoteCommandType.disconnect:
       case RemoteCommandType.syncState:
+      case RemoteCommandType.gameInventory:
         break;
 
       default:
@@ -172,7 +173,8 @@ bool _isViewerInput(RemoteCommandType type) => switch (type) {
   RemoteCommandType.ack ||
   RemoteCommandType.deviceInfo ||
   RemoteCommandType.disconnect ||
-  RemoteCommandType.syncState => false,
+  RemoteCommandType.syncState ||
+  RemoteCommandType.gameInventory => false,
   RemoteCommandType.dpadUp ||
   RemoteCommandType.dpadDown ||
   RemoteCommandType.dpadLeft ||

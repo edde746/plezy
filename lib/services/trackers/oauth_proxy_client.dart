@@ -47,6 +47,45 @@ class OAuthProxyClient {
     return OAuthProxyStart(session: body['session'] as String, url: body['url'] as String);
   }
 
+  /// Read-only refresh capability issued after verified Steam OpenID. It is
+  /// sent in a header, never a URL, and cannot choose a different SteamID.
+  Future<OAuthProxyResult> refreshSteamCatalog(String credential) async {
+    final response = await sendAbortableHttpRequest(
+      _http,
+      'POST',
+      Uri.parse('$baseUrl/auth/steam/library'),
+      headers: {'Authorization': 'Bearer $credential'},
+      timeout: TrackerConstants.authRequestTimeout,
+      operation: 'Steam catalog refresh',
+    );
+    if (response.statusCode == 401 || response.statusCode == 404) throw const SteamCatalogRelinkRequired();
+    if (response.statusCode != 200 || response.bodyBytes.length > 2 * 1024 * 1024) {
+      throw const OAuthProxyException('Steam catalog refresh unavailable');
+    }
+    final body = json.decode(response.body) as Map<String, dynamic>;
+    final rawGames = body['steamGames'];
+    return OAuthProxyResult(
+      accessToken: '',
+      steamId: body['steamId'] as String?,
+      steamLibraryAvailable: body['steamLibraryAvailable'] == true,
+      steamCatalogTruncated: body['steamCatalogTruncated'] == true,
+      steamGames: rawGames is List
+          ? rawGames.take(2000).whereType<Map>().map((g) => Map<String, dynamic>.from(g)).toList()
+          : const [],
+    );
+  }
+
+  Future<void> revokeSteamCatalog(String credential) async {
+    await sendAbortableHttpRequest(
+      _http,
+      'DELETE',
+      Uri.parse('$baseUrl/auth/steam/library'),
+      headers: {'Authorization': 'Bearer $credential'},
+      timeout: const Duration(seconds: 5),
+      operation: 'Steam catalog unlink',
+    );
+  }
+
   /// Long-poll /auth/result?session=X until a completion event arrives.
   ///
   /// Returns null if [shouldCancel] flips true between iterations or [onCancel]
@@ -131,6 +170,11 @@ class OAuthProxyClient {
         refreshToken: body['refreshToken'] as String?,
         expiresIn: (body['expiresIn'] as num?)?.toInt(),
         steamId: steamId,
+        steamCatalogToken:
+            body['steamCatalogToken'] is String &&
+                RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(body['steamCatalogToken'] as String)
+            ? body['steamCatalogToken'] as String
+            : null,
         steamLibraryAvailable: body['steamLibraryAvailable'] == true,
         steamCatalogTruncated: body['steamCatalogTruncated'] == true,
         steamGames: steamGames,
@@ -155,6 +199,7 @@ class OAuthProxyResult {
   final String? refreshToken;
   final int? expiresIn;
   final String? steamId;
+  final String? steamCatalogToken;
   final bool steamLibraryAvailable;
   final bool steamCatalogTruncated;
   final List<Map<String, dynamic>> steamGames;
@@ -164,6 +209,7 @@ class OAuthProxyResult {
     this.refreshToken,
     this.expiresIn,
     this.steamId,
+    this.steamCatalogToken,
     this.steamLibraryAvailable = false,
     this.steamCatalogTruncated = false,
     this.steamGames = const [],
@@ -175,4 +221,8 @@ class OAuthProxyException implements Exception {
   const OAuthProxyException(this.message);
   @override
   String toString() => 'OAuthProxyException: $message';
+}
+
+class SteamCatalogRelinkRequired implements Exception {
+  const SteamCatalogRelinkRequired();
 }
