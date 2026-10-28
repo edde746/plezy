@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Show SDH/closed-caption role markers in playback track labels when explicit title metadata provides them.
+
 - Explain when burned-in captions remain part of the video image and when the active player cannot receive generated SRT subtitles.
 
 - Automatic preferred subtitle downloads now check the first three ordered languages concurrently and use the highest-priority language with an eligible provider result.

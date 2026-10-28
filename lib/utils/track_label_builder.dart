@@ -57,6 +57,18 @@ final _languageCodePattern = RegExp(r'^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})?$');
 
 bool _looksLikeLanguageCode(String value) => _languageCodePattern.hasMatch(value);
 
+/// Detect SDH/closed-caption role markers when a backend only supplies a
+/// subtitle title. Exact tokens avoid treating ordinary words containing "cc"
+/// as accessibility metadata.
+bool titleSaysHearingImpaired(String? value) {
+  final text = value?.trim();
+  if (text == null || text.isEmpty) return false;
+  return RegExp(
+    r'\b(?:sdh|cc|hoh)\b|hearing[ _-]*impaired|closed[ _-]*caption',
+    caseSensitive: false,
+  ).hasMatch(text);
+}
+
 String? cleanTrackMetadataValue(String? value) {
   if (value == null) return null;
   var cleaned = value.trim();
@@ -163,12 +175,18 @@ class TrackLabelBuilder {
     required int index,
   }) {
     final cleanedTitle = cleanSubtitleTitle(title, codec: codec);
+    final cleanedDisplayTitle = cleanSubtitleTitle(displayTitle, codec: codec);
+    final hearingImpaired =
+        titleSaysHearingImpaired(cleanedTitle) || titleSaysHearingImpaired(cleanedDisplayTitle);
     return _compose(
       languageDisplay: resolveTrackLanguageDisplay(language: language, languageCode: languageCode),
       title: cleanedTitle,
-      displayTitle: cleanSubtitleTitle(displayTitle, codec: codec),
+      displayTitle: cleanedDisplayTitle,
       rawLanguageValues: [language, languageCode],
-      techParts: [if (codec != null && codec.isNotEmpty) CodecUtils.formatSubtitleCodec(codec)],
+      techParts: [
+        if (codec != null && codec.isNotEmpty) CodecUtils.formatSubtitleCodec(codec),
+        if (hearingImpaired) t.fileInfo.flagHearingImpaired,
+      ],
       fallbackLabel: (n) => t.videoControls.subtitleTrack(n: n),
       index: index,
       forced: forced || titleSaysForced(cleanedTitle),
