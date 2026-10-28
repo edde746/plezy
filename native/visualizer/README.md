@@ -180,3 +180,13 @@ backgrounding, surface/context loss, seek generation reset, pixel leases during
 unregister, repeated create/dispose, multichannel audio and passthrough. Process
 isolation or platform-specific recovery remains a release gate for untrusted
 community shaders; this source does not claim that containment is solved.
+
+
+Desktop CMake has an explicit artifact path: set
+`PLEZY_VISUALIZER_MILKRUST_LIBRARY`, `PLEZY_VISUALIZER_MILKRUST_SHA256`,
+`PLEZY_VISUALIZER_MILKRUST_SOURCE_ARCHIVE` and
+`PLEZY_VISUALIZER_MILKRUST_SOURCE_SHA256`. Both digests are checked at configure
+time. Installation includes the runtime library, corresponding-source archive,
+source lock and notices. With no library configured, nothing is downloaded or
+installed and the runtime capability reports unavailable. This wiring has not
+been exercised; it is not an artifact qualification record.

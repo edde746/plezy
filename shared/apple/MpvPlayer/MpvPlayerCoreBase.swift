@@ -192,7 +192,9 @@ class MpvPlayerCoreBase: NSObject {
   private static let internalVideoColorMatrixObserverId: UInt64 = UInt64.max - 9
   private static let internalDeinterlaceActiveObserverId: UInt64 = UInt64.max - 10
   private static let internalIvtcActiveObserverId: UInt64 = UInt64.max - 11
+  private static let internalVisualizationObserverId: UInt64 = UInt64.max - 12
   private static let internalObserverIds: Set<UInt64> = [
+    internalVisualizationObserverId,
     internalSigPeakObserverId,
     internalWidthObserverId,
     internalHeightObserverId,
@@ -579,7 +581,7 @@ class MpvPlayerCoreBase: NSObject {
       return false
     }
 
-    mpv_observe_property(mpv, UInt64.max - 2, "time-pos", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalVisualizationObserverId, "time-pos", MPV_FORMAT_DOUBLE)
 
     // mpv stores this context without retaining it. The core owns the context,
     // while the context keeps only a weak callback target; disposal atomically
@@ -1380,7 +1382,7 @@ class MpvPlayerCoreBase: NSObject {
     case MPV_EVENT_PROPERTY_CHANGE:
       guard let data = event.data else { break }
       let property = data.assumingMemoryBound(to: mpv_event_property.self).pointee
-      if event.reply_userdata == UInt64.max - 2 {
+      if event.reply_userdata == Self.internalVisualizationObserverId {
         lifecycleLock.lock()
         lifecycleState.visualizationPTS = property.format == MPV_FORMAT_DOUBLE
           ? (property.data?.assumingMemoryBound(to: Double.self).pointee ?? .nan) : .nan

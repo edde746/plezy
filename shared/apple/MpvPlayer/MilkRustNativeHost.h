@@ -2,9 +2,15 @@
 #import <Foundation/Foundation.h>
 #import <CoreVideo/CoreVideo.h>
 NS_ASSUME_NONNULL_BEGIN
+#ifdef __cplusplus
+extern "C" {
+#endif
 BOOL PlezyVisualizationTapAvailable(void);
 int PlezyVisualizationTapEnable(void* player, BOOL enabled);
 int PlezyVisualizationTapRead(void* player, double pts, void* output, size_t size);
+#ifdef __cplusplus
+}
+#endif
 
 @interface PlezyMilkRustHost : NSObject
 + (NSString*)dependencyError;

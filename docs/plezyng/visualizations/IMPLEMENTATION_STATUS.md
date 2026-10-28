@@ -1,6 +1,6 @@
 # Visualizer implementation status
 
-Updated: 2026-10-28. The original plan and signed-catalog source were merged via PlezyNG PRs #55 and #57. Native host source now covers Linux, Windows, Apple and Android; compiled engines are not in current releases and platform behavior remains unqualified. See the upstream [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The [original plan](COMPLETION_PLAN.md) and its completion gates remain authoritative. **The end-to-end plan is not complete and the implementation is not release-qualified.**
+Updated: 2026-10-28. The original plan and signed-catalog source were merged via PlezyNG PRs #55 and #57. Native host source now covers Linux, Windows, Apple and Android and is integrated in [PlezyNG PR #61](https://github.com/snapetech-org/PlezyNG/pull/61); compiled engines are not in current releases and platform behavior remains unqualified. See the upstream [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The [original plan](COMPLETION_PLAN.md) and its completion gates remain authoritative. **The end-to-end plan is not complete and the implementation is not release-qualified.**
 
 ## Implemented source
 
@@ -70,7 +70,7 @@ The library performs remote refresh only on explicit user action. An expired, re
 
 ### Native MilkRust increment
 
-MilkRust commit `46043e55e2b7d43edb1971d8a518bd0255d9e391` adds the GL/GLES renderer,
+MilkRust commit `0d72d71e87276da0e659a094b6c767a1cd56be0f` adds the GL/GLES renderer,
 thread-affine integer C handles, bounded PCM analysis, independent feedback for
 two layers, separate shader passes, named image upload and RGBA capture. The app
 pins that source and supplies five platform host families. A shared worker owns
@@ -82,3 +82,19 @@ These are implementation claims from source inspection, with moderate confidence
 Compiled behavior, driver compatibility, visual/audio parity and performance are
 unknown. Production artifacts and Apple export/link flags are not provisioned.
 The recorded no-execution constraint is unchanged: no tests/builds/CI/captures ran.
+
+
+The final source pin also removes synthetic feedback artwork from the WebGL
+path, preserves source-driven decay endpoints and motion values, uses prior
+feedback for unnamed textured shapes, and aligns stateless saved-pair blending.
+No new frame-fidelity result is inferred. Desktop packaging now accepts explicit
+library/source archives only when their reviewed SHA-256 pins match; it does not
+download or fabricate production artifacts.
+
+
+The Tizen and webOS runners currently delegate audio to their Samsung/LG media
+backends rather than the mpv core used by the new hosts. A decoded-PCM callback
+and texture/lifecycle bridge in those backends is still required; copying the
+Linux mpv host would not attach it to those playback streams. Native-engine
+acknowledgements are now also bundled in Flutter's license registry, independently
+of per-pack rights and content notices.
