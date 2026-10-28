@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
+
 import '../sources/source_database.dart';
 import '../sources/source_models.dart';
 import '../sources/source_transport.dart';
@@ -9,12 +11,7 @@ import 'discovery_choice.dart';
 /// Optional OpenAI-compatible reranker. It receives an ephemeral, restricted
 /// view of already-authorized choices and can only reorder opaque local IDs.
 class DiscoveryAiConfig {
-  const DiscoveryAiConfig({
-    required this.endpoint,
-    required this.model,
-    required this.apiKey,
-    required this.enabled,
-  });
+  const DiscoveryAiConfig({required this.endpoint, required this.model, required this.apiKey, required this.enabled});
 
   final String endpoint;
   final String model;
@@ -54,13 +51,16 @@ class DiscoveryAiConfig {
 }
 
 class DiscoveryReranker {
-  DiscoveryReranker(this._repository);
+  DiscoveryReranker(this._repository, {this.clientFactory});
 
   static const preferenceKey = 'discovery.ai-reranker.v1';
   static const maxCandidates = 24;
   static const _deadline = Duration(seconds: 8);
   static const _maxResponseBytes = 48 * 1024;
   final SourceRepository _repository;
+
+  /// Optional transport seam for tests and custom HTTP client policies.
+  final http.Client Function()? clientFactory;
 
   Future<DiscoveryAiConfig> load(String profileId) async =>
       DiscoveryAiConfig.fromJson(await _repository.privatePreference(profileId, preferenceKey));
@@ -75,7 +75,12 @@ class DiscoveryReranker {
     await _repository.savePrivatePreference(
       profileId,
       preferenceKey,
-      DiscoveryAiConfig(endpoint: current.endpoint, model: current.model, apiKey: current.apiKey, enabled: false).toJson(),
+      DiscoveryAiConfig(
+        endpoint: current.endpoint,
+        model: current.model,
+        apiKey: current.apiKey,
+        enabled: false,
+      ).toJson(),
     );
   }
 
@@ -123,7 +128,7 @@ class DiscoveryReranker {
           },
       ];
       final endpoint = _chatEndpoint(config.endpoint);
-      transport = SourceTransport(allowHttp: true);
+      transport = SourceTransport(client: clientFactory?.call(), allowHttp: true);
       abort = Completer<void>();
       deadline = Timer(_deadline, () {
         if (!abort!.isCompleted) abort.complete();

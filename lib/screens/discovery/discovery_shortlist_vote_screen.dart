@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../discovery/discovery_choice.dart';
+import '../../discovery/discovery_vote.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -71,30 +72,11 @@ class _DiscoveryShortlistVoteScreenState extends State<DiscoveryShortlistVoteScr
     _ballots.add(Map.unmodifiable(_currentBallot));
     _currentBallot.clear();
     if (_guest + 1 >= _guestCount) {
-      _winner = _chooseWinner(widget.choices, _ballots);
+      _winner = DiscoveryShortlistConsensus.chooseWinner(choices: widget.choices, ballots: _ballots);
       setState(() => _stage = _VoteStage.result);
     } else {
       setState(() => _stage = _VoteStage.handoff);
     }
-  }
-
-  DiscoveryChoice? _chooseWinner(List<DiscoveryChoice> choices, List<Map<String, int>> ballots) {
-    DiscoveryChoice? best;
-    var bestMinimum = -1;
-    var bestTotal = -1;
-    for (final candidate in choices) {
-      final ratings = ballots.map((ballot) => ballot[candidate.id] ?? 0).toList(growable: false);
-      if (ratings.isEmpty || ratings.any((rating) => rating == 0)) continue;
-      final minimum = ratings.reduce((a, b) => a < b ? a : b);
-      final total = ratings.fold<int>(0, (sum, rating) => sum + rating);
-      if (minimum > bestMinimum || (minimum == bestMinimum && total > bestTotal)) {
-        best = candidate;
-        bestMinimum = minimum;
-        bestTotal = total;
-      }
-    }
-    // The source shortlist order is the deterministic tie break.
-    return best;
   }
 
   void _nextGuest() {
@@ -264,7 +246,11 @@ class _DiscoveryShortlistVoteScreenState extends State<DiscoveryShortlistVoteScr
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(winner == null ? Symbols.groups_rounded : Symbols.celebration_rounded, size: 42, color: theme.colorScheme.primary),
+        Icon(
+          winner == null ? Symbols.groups_rounded : Symbols.celebration_rounded,
+          size: 42,
+          color: theme.colorScheme.primary,
+        ),
         const SizedBox(height: 18),
         Text(
           winner == null ? t.discover.findNext.noSharedPick : t.discover.findNext.sharedPick,

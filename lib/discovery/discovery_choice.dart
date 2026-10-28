@@ -77,10 +77,12 @@ class DiscoveryChoice {
   /// again before opening a saved pick.
   final String? catalogSourceId;
   final String? catalogEntryKey;
+
   /// Open Library work identity. Presence always means catalog-only: it is
   /// never an owned item or a verified local-library offer.
   final String? publicCatalogWorkId;
   final String publicCatalogAuthor;
+
   /// Local-only lender identity. It is never a portable/public catalog ID.
   final String? lendingLibraryId;
   final String? lendingBookId;
@@ -131,6 +133,20 @@ class DiscoveryChoice {
   String? get portableKey {
     final reference = portableReference;
     return reference == null ? null : sourceDigest(reference);
+  }
+
+  /// Verifies a restored/catalog pick against exact public identifiers.
+  /// Titles alone never establish that two editions represent the same work.
+  bool isSamePortableWorkAs(DiscoveryChoice other) {
+    if (portableReference == null ||
+        other.portableReference == null ||
+        type != other.type ||
+        mediaKind != other.mediaKind) {
+      return false;
+    }
+    final left = sanitizeDiscoveryPortableIds(portableIds);
+    final right = sanitizeDiscoveryPortableIds(other.portableIds);
+    return left.entries.any((entry) => right[entry.key] == entry.value);
   }
 
   String get typeLabel => switch (type) {
@@ -294,7 +310,10 @@ class DiscoveryChoice {
       catalogSourceId: _nonEmpty(json['catalogSourceId']),
       catalogEntryKey: _nonEmpty(json['catalogEntryKey']),
       publicCatalogWorkId: _validPublicWorkId(json['publicCatalogWorkId']),
-      publicCatalogAuthor: _bounded(json['publicCatalogAuthor'] is String ? json['publicCatalogAuthor'] as String : '', 160),
+      publicCatalogAuthor: _bounded(
+        json['publicCatalogAuthor'] is String ? json['publicCatalogAuthor'] as String : '',
+        160,
+      ),
       lendingLibraryId: _validLocalLendingId(json['lendingLibraryId'], 128),
       lendingBookId: _validLocalLendingId(json['lendingBookId'], 256),
       year: json['year'] is num ? (json['year'] as num).toInt() : null,
@@ -337,7 +356,10 @@ class DiscoveryChoice {
   }
 
   static String? _validLocalLendingId(Object? value, int maxLength) {
-    if (value is! String || value.trim().isEmpty || value.length > maxLength || value.contains(RegExp(r'[\r\n\u0000]'))) {
+    if (value is! String ||
+        value.trim().isEmpty ||
+        value.length > maxLength ||
+        value.contains(RegExp(r'[\r\n\u0000]'))) {
       return null;
     }
     return value;

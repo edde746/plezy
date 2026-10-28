@@ -70,7 +70,7 @@ class DiscoveryHiddenPick {
     if (id is! String || id.isEmpty || id.length > 512 || title is! String || title.trim().isEmpty || type is! String) {
       throw const FormatException('Invalid hidden discovery pick');
     }
-    final normalizedTitle = title.trim();
+    final normalizedTitle = title.trim().replaceAll(RegExp(r'\s+'), ' ');
     return DiscoveryHiddenPick(
       id: id,
       title: normalizedTitle.substring(0, normalizedTitle.length > 160 ? 160 : normalizedTitle.length),
