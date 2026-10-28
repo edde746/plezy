@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -12,6 +14,7 @@ import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../utils/formatters.dart';
 import '../../lending/lending_service.dart';
+import '../../services/external_access_directory.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../theme/mono_tokens.dart';
@@ -20,10 +23,13 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/provider_mark.dart';
+
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
+import '../external_access_screen.dart';
 import '../sources/source_widgets.dart';
 
 Widget _focusedLendingButton({
@@ -265,8 +271,14 @@ Future<void> _signIn(BuildContext context, LendingService service, LendingLibrar
     builder: (dialogContext) => _SignInDialog(service: service, finished: finished.future),
   );
   service.cancelAuthorization();
-  if (failure != null && context.mounted) showErrorSnackBar(context, sourceFailureText(failure!));
+  if (failure != null && context.mounted) {
+    showErrorSnackBar(context, sourceFailureText(failure!));
+  }
 }
+
+/// Reuses the explicit borrower authorization flow from discovery.
+Future<void> signInToLendingLibrary(BuildContext context, LendingService service, LendingLibrary library) =>
+    _signIn(context, service, library);
 
 class _SignInDialog extends StatefulWidget {
   const _SignInDialog({required this.service, required this.finished});
@@ -341,7 +353,9 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
         integration: native?['integration'] == true,
         circulation: native?['circulation'] == true,
       );
-      if (library.name.isEmpty) throw const SourceException(SourceFailure.invalidData);
+      if (library.name.isEmpty) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
       await widget.service.save(library);
       if (!mounted) return;
       if (library.native) await _signIn(context, widget.service, library);
@@ -441,7 +455,9 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                                   setState(() => _busy = true);
                                   try {
                                     final choices = await widget.service.gatewayLibraries(_gateway.text.trim());
-                                    if (mounted) setState(() => _available = choices);
+                                    if (mounted) {
+                                      setState(() => _available = choices);
+                                    }
                                   } finally {
                                     if (mounted) setState(() => _busy = false);
                                   }
@@ -482,9 +498,19 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
 }
 
 class LibraryCatalogueScreen extends StatefulWidget {
-  const LibraryCatalogueScreen({super.key, required this.service, this.library});
+  const LibraryCatalogueScreen({
+    super.key,
+    required this.service,
+    this.library,
+    this.initialQuery,
+    this.initialBookId,
+    this.selectOnly = false,
+  });
   final LendingService service;
   final LendingLibrary? library;
+  final String? initialQuery;
+  final String? initialBookId;
+  final bool selectOnly;
   @override
   State<LibraryCatalogueScreen> createState() => _LibraryCatalogueScreenState();
 }
@@ -493,9 +519,21 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   final _search = TextEditingController();
   List<LendingBook> _books = [];
   String _shelf = 'catalogue';
+  String _catalogProvider = 'openLibrary';
   int _page = 1, _request = 0;
   bool _busy = false, _more = false;
+  bool _openedInitialBook = false;
   Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _search.text = widget.initialQuery?.trim() ?? '';
+    if (_search.text.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    }
+  }
+
   Future<void> _load({bool more = false}) async {
     if (_shelf == 'catalogue' && _search.text.trim().isEmpty) return;
     final request = ++_request;
@@ -506,7 +544,13 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
     try {
       final page = more ? _page + 1 : 1, service = widget.service, library = widget.library;
       final result = library == null
-          ? await service.openLibrarySearch(_search.text.trim(), page: page)
+          ? _catalogProvider == 'googleBooks'
+                ? await service.googleBooksSearch(
+                    _search.text.trim(),
+                    page: page,
+                    country: Localizations.localeOf(context).countryCode ?? 'CA',
+                  )
+                : await service.openLibrarySearch(_search.text.trim(), page: page)
           : _shelf == 'catalogue'
           ? await service.search(library, _search.text.trim(), page: page)
           : await service.shelf(library, holds: _shelf == 'holds');
@@ -516,6 +560,19 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
           _page = page;
           _more = result.more;
         });
+      }
+      final initialBookId = widget.initialBookId;
+      if (!more && initialBookId != null && !_openedInitialBook && mounted && request == _request) {
+        final exactBook = result.books.where((book) => book.id == initialBookId).firstOrNull;
+        if (exactBook == null) {
+          setState(() {
+            _books = [];
+            _error = const SourceException(SourceFailure.unavailable);
+          });
+        } else {
+          _openedInitialBook = true;
+          await _open(exactBook);
+        }
       }
     } catch (error) {
       if (mounted && request == _request) setState(() => _error = error);
@@ -531,6 +588,10 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   }
 
   Future<void> _open(LendingBook book) async {
+    if (widget.selectOnly) {
+      Navigator.of(context).pop(book);
+      return;
+    }
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -542,7 +603,7 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
 
   @override
   Widget build(BuildContext context) => FocusedScrollScaffold(
-    title: Text(widget.library?.name ?? 'Open Library'),
+    title: Text(widget.library?.name ?? (_catalogProvider == 'googleBooks' ? 'Google Books' : 'Open Library')),
     focusableAppBarActions: true,
     actions: [
       if (widget.library != null)
@@ -587,6 +648,32 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                     ],
                   ),
                 ),
+              if (widget.library == null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final source in const [('openLibrary', 'Open Library'), ('googleBooks', 'Google Books')])
+                        ChoiceChip(
+                          label: Text(source.$2),
+                          selected: _catalogProvider == source.$1,
+                          onSelected: _busy
+                              ? null
+                              : (_) {
+                                  setState(() {
+                                    _catalogProvider = source.$1;
+                                    _books = [];
+                                    _more = false;
+                                  });
+                                  if (_search.text.trim().isNotEmpty) {
+                                    unawaited(_load());
+                                  }
+                                },
+                        ),
+                    ],
+                  ),
+                ),
               if (_shelf == 'catalogue')
                 FocusableTextField(
                   controller: _search,
@@ -598,12 +685,17 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                     suffixIcon: IconButton(
                       onPressed: _busy ? null : () => _load(),
                       icon: AppIcon(
-                        Directionality.of(context) == TextDirection.rtl
+                        Directionality.of(context) == ui.TextDirection.rtl
                             ? Symbols.arrow_back_rounded
                             : Symbols.arrow_forward_rounded,
                       ),
                     ),
                   ),
+                ),
+              if (widget.selectOnly)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(t.discover.findNext.libraryCatalogHint, style: Theme.of(context).textTheme.bodySmall),
                 ),
               if (_busy) const Padding(padding: EdgeInsets.only(top: 20), child: LinearProgressIndicator()),
               if (_error != null && _books.isEmpty)
@@ -666,6 +758,15 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
                     ),
+                    if (book.price != null && book.currency != null)
+                      Text(
+                        NumberFormat.simpleCurrency(name: book.currency).format(book.price),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+                      ),
                     if (book.due != null)
                       Text(
                         t.lending.due(date: formatAbbreviatedDate(book.due!.toLocal().toIso8601String())),
@@ -752,7 +853,9 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
         context: context,
         builder: (ctx) {
           void submit() {
-            if (controller.text.contains('@')) Navigator.pop(ctx, controller.text.trim());
+            if (controller.text.contains('@')) {
+              Navigator.pop(ctx, controller.text.trim());
+            }
           }
 
           return AlertDialog(
@@ -793,7 +896,7 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
     final expired = book.due?.isBefore(DateTime.now()) ?? false;
     final available = _availability?['available'] == true;
     return FocusedScrollScaffold(
-      title: Text(library?.name ?? 'Open Library'),
+      title: Text(library?.name ?? (book.data['source'] == 'googleBooks' ? 'Google Books' : 'Open Library')),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(24),
@@ -813,6 +916,10 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(color: tokens(context).textMuted),
                     ),
+                    if (book.price != null && book.currency != null) ...[
+                      const SizedBox(height: 8),
+                      Text(NumberFormat.simpleCurrency(name: book.currency).format(book.price)),
+                    ],
                     const SizedBox(height: 24),
                     if (book.due != null)
                       Text(
@@ -884,7 +991,9 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                         context: context,
                                         builder: (ctx) {
                                           void submit() {
-                                            if (input.text.contains('@')) Navigator.pop(ctx, input.text.trim());
+                                            if (input.text.contains('@')) {
+                                              Navigator.pop(ctx, input.text.trim());
+                                            }
                                           }
 
                                           return AlertDialog(
@@ -932,6 +1041,36 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                               label: Text(t.lending.continueService),
                             ),
                           ),
+                        if (book.purchaseLink != null)
+                          _focusedLendingButton(
+                            onPressed: _busy
+                                ? null
+                                : () => sourceAction(context, () => widget.service.openPage(book.purchaseLink!)),
+                            buildButton: (onPressed) => OutlinedButton.icon(
+                              onPressed: onPressed,
+                              icon: const AppIcon(Symbols.shopping_bag_rounded),
+                              label: Text(t.explore.detail.openOn(site: 'Google Books')),
+                            ),
+                          ),
+                        if (library == null)
+                          _focusedLendingButton(
+                            onPressed: () => Navigator.push<void>(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => ExternalAccessScreen(
+                                  title: book.title,
+                                  creator: book.author,
+                                  identifiers: book.identifiers,
+                                  categories: const [ExternalAccessCategory.books],
+                                ),
+                              ),
+                            ),
+                            buildButton: (onPressed) => OutlinedButton.icon(
+                              onPressed: onPressed,
+                              icon: const AppIcon(Symbols.storefront_rounded),
+                              label: Text(t.explore.detail.links),
+                            ),
+                          ),
                         if (library != null && !book.loan && !book.hold && !_changed) ...[
                           if (_availability == null)
                             _focusedLendingButton(
@@ -941,9 +1080,13 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                       setState(() => _busy = true);
                                       try {
                                         final value = await widget.service.availability(library, book);
-                                        if (mounted) setState(() => _availability = value);
+                                        if (mounted) {
+                                          setState(() => _availability = value);
+                                        }
                                       } finally {
-                                        if (mounted) setState(() => _busy = false);
+                                        if (mounted) {
+                                          setState(() => _busy = false);
+                                        }
                                       }
                                     }),
                               primary: true,

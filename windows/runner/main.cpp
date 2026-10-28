@@ -20,7 +20,8 @@ bool IsOpenMediaLink(const std::string& value) {
              return expected == static_cast<char>(std::tolower(static_cast<unsigned char>(actual)));
            });
   };
-  return starts_with("plezy://open-media?") || starts_with("plezxyng://open-media?");
+  return starts_with("plezy://open-media?") || starts_with("plezyng://open-media?") ||
+         starts_with("plezxyng://open-media?");
 }
 
 }  // namespace

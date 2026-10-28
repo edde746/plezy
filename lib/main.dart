@@ -1,4 +1,3 @@
-import 'services/remote_streams/remote_preparation_worker.dart';
 import 'dart:async';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
@@ -14,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:plezy/widgets/app_brand.dart';
 import 'connection/connection.dart';
 import 'connection/connection_bootstrap.dart';
 import 'connection/connection_registry.dart';
@@ -39,6 +39,7 @@ import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
 import 'services/storage_service.dart';
+import 'services/remote_streams/remote_preparation_worker.dart';
 import 'services/assistive_technology_service.dart';
 import 'services/device_performance.dart';
 import 'services/cast_media_service.dart';
@@ -88,6 +89,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
+import 'iptv/iptv_source_repository.dart';
+import 'iptv/iptv_recording_scheduler.dart';
 import 'database/download_operations.dart';
 import 'database/tvos_database_recovery_store.dart';
 import 'screens/video_player_screen.dart';
@@ -1235,6 +1238,9 @@ void _registerAppLicenses() {
       'Jellyfin Web translations',
     ], await rootBundle.loadString('assets/licenses/JellyfinWebTranslations.txt'));
     yield LicenseEntryWithLineBreaks(const [
+      'MilkRust sample presets (CC0)',
+    ], await rootBundle.loadString('assets/licenses/MilkRust_Sample_Pack.txt'));
+    yield LicenseEntryWithLineBreaks(const [
       'Foliate JS',
     ], await rootBundle.loadString('assets/reader/foliate/LICENSE'));
     yield LicenseEntryWithLineBreaks(const [
@@ -1831,6 +1837,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         Provider<SettingsService>.value(value: widget.settings),
         Provider<StorageService>.value(value: widget.storage),
         Provider<AppDatabase>.value(value: _appDatabase),
+        Provider<IptvSourceRepository>(create: (context) => IptvSourceRepository(context.read<AppDatabase>())),
+        Provider<IptvRecordingScheduler>(
+          lazy: false,
+          create: (context) => IptvRecordingScheduler(context.read<IptvSourceRepository>()),
+          dispose: (_, scheduler) => unawaited(scheduler.dispose()),
+        ),
         Provider<ConnectionRegistry>.value(value: _connections),
         Provider<ProfileRegistry>(create: (_) => ProfileRegistry(_appDatabase)),
         Provider<ProfileConnectionRegistry>.value(value: _profileConnections),
@@ -2626,7 +2638,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    const coralColor = Color(0xFFE5A00D);
+    const coralColor = Color(0xFFFF6847);
     final height = MediaQuery.sizeOf(context).height;
     // The stacked layout below hangs its two rows off fixed ±170/180 offsets from the middle, which
     // needs roughly 700 logical pixels of height. A car at a large interface scale — and a phone in
@@ -2641,7 +2653,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset('assets/plezy.png', width: 160, height: 160, fit: BoxFit.contain),
+                  const AppBrandMark(size: 160),
                   _buildStatusText(context),
                   const SizedBox(height: 16),
                   Center(
@@ -2664,7 +2676,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
         children: [
-          Center(child: Image.asset('assets/plezy.png', width: 288, height: 288, fit: BoxFit.contain)),
+          Center(child: const AppBrandMark(size: 288)),
           Positioned(left: 0, right: 0, bottom: height * 0.5 - 170, child: _buildStatusText(context)),
           Positioned(
             left: 0,

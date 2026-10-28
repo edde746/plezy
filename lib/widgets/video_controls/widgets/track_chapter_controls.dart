@@ -1,9 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../../focus/dpad_navigator.dart';
 import '../../../mpv/mpv.dart';
+import '../../../models/motion_clarity.dart';
+import '../../../models/player_setting_scope.dart';
+import '../../../services/motion_clarity_service.dart';
+import '../../../services/scoped_player_prefs.dart';
+import '../../../services/settings_service.dart';
 import '../../../media/media_source_info.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
@@ -20,6 +27,7 @@ import '../video_control_button.dart';
 
 /// Row of track and chapter control buttons for the video player
 class TrackChapterControls extends StatelessWidget {
+  static final Expando<bool> _motionToggleInFlight = Expando<bool>('motion-clarity-toggle');
   final Player player;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
@@ -112,6 +120,7 @@ class TrackChapterControls extends StatelessWidget {
     String? semanticValue,
     bool? checked,
     bool isActive = false,
+    VoidCallback? onLongPress,
   }) {
     return VideoControlButton(
       icon: icon,
@@ -126,88 +135,199 @@ class TrackChapterControls extends StatelessWidget {
           : null,
       onFocusChange: onFocusChange,
       onPressed: onPressed,
+      onLongPress: onLongPress,
     );
+  }
+
+
+  void _openMotionClaritySheet(BuildContext context) {
+    final state = trackControlsState;
+    state.onCancelAutoHide?.call();
+    OverlaySheetController.of(context)
+        .show(
+          builder: (_) => VideoSettingsSheet(
+            player: player,
+            trackControlsState: state,
+            openMotionClarity: true,
+          ),
+        )
+        .whenComplete(() => state.onStartAutoHide?.call());
+  }
+
+  Future<void> _toggleMotionClarity(BuildContext context) async {
+    final state = trackControlsState;
+    final service = MotionClarityService.forPlayer(player);
+    final metadata = state.metadata;
+    if (_motionToggleInFlight[player] == true) return;
+    _motionToggleInFlight[player] = true;
+
+    try {
+      final status = await service.inspect();
+      if (!context.mounted) return;
+      if (!status.isSupported) {
+        _openMotionClaritySheet(context);
+        return;
+      }
+
+      final currentPreset = service.currentPreset;
+      if (currentPreset.interpolationEnabled && status.isComparisonBypass) {
+        final result = await service.setComparisonBypass(false);
+        if (context.mounted && result.isComparisonBypass) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t.videoSettings.motionClarityCompareFailed)),
+          );
+        }
+        return;
+      }
+
+      final scope = SettingsService.instance.read(SettingsService.motionClarityScope);
+      final sessionOnly = scope == PlayerSettingScope.off;
+      final manualKernel = sessionOnly
+          ? service.currentKernel
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, metadata);
+      final manualThreshold = sessionOnly
+          ? service.currentThresholdPercent
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, metadata);
+      final engine = sessionOnly
+          ? service.currentEngine
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, metadata);
+      final outputRate = sessionOnly
+          ? service.currentOutputRate
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, metadata);
+      final quality = sessionOnly
+          ? service.currentMciQuality
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, metadata);
+      final lastPreset = sessionOnly
+          ? service.lastEnabledPreset
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityLastPreset, metadata);
+      final targetPreset = currentPreset.interpolationEnabled
+          ? MotionClarityPreset.original
+          : lastPreset.interpolationEnabled
+              ? lastPreset
+              : MotionClarityPreset.balanced;
+      final keepManualControls =
+          targetPreset == MotionClarityPreset.custom || targetPreset == MotionClarityPreset.original;
+      final kernel = keepManualControls ? manualKernel : targetPreset.defaultKernel;
+      final threshold = keepManualControls ? manualThreshold : targetPreset.defaultThresholdPercent;
+
+      final result = await service.configure(
+        preset: targetPreset,
+        kernel: kernel,
+        thresholdPercent: threshold,
+        beforeSourceOpen: false,
+        engine: engine,
+        outputRate: outputRate,
+        mciQuality: quality,
+      );
+      if (!context.mounted) return;
+      if (!result.isSupported || (targetPreset.interpolationEnabled && !result.isConfigured)) {
+        _openMotionClaritySheet(context);
+        return;
+      }
+
+      try {
+        if (currentPreset.interpolationEnabled) {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityLastPreset, metadata, currentPreset);
+        } else if (targetPreset.interpolationEnabled) {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityLastPreset, metadata, targetPreset);
+        }
+        await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityPreset, metadata, targetPreset);
+      } catch (_) {
+        final restoreKernel =
+            currentPreset == MotionClarityPreset.custom ? manualKernel : currentPreset.defaultKernel;
+        final restoreThreshold = currentPreset == MotionClarityPreset.custom
+            ? manualThreshold
+            : currentPreset.defaultThresholdPercent;
+        await service.configure(
+          preset: currentPreset,
+          kernel: restoreKernel,
+          thresholdPercent: restoreThreshold,
+          beforeSourceOpen: false,
+          engine: engine,
+          outputRate: outputRate,
+          mciQuality: quality,
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t.videoSettings.motionClaritySaveFailed)),
+          );
+        }
+        return;
+      }
+
+      if (result.requiresSourceReload && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.videoSettings.motionClarityRestartRequired)),
+        );
+      } else if (targetPreset.interpolationEnabled &&
+          (targetPreset == MotionClarityPreset.oled || engine == MotionClarityEngine.motionCompensated) &&
+          result.effectiveEngine != MotionClarityEngine.motionCompensated) {
+        _openMotionClaritySheet(context);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.videoSettings.motionClaritySaveFailed)),
+        );
+      }
+    } finally {
+      _motionToggleInFlight[player] = false;
+      if (context.mounted) state.onMotionClarityChanged?.call();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Tracks>(
-      stream: player.streams.tracks,
-      initialData: player.state.tracks,
-      builder: (context, snapshot) {
-        final tracks = snapshot.data;
-        final state = trackControlsState;
-        final isMobile = PlatformDetector.isMobile(context);
-        final isDesktop = PlatformDetector.isDesktopOS();
+    return StreamBuilder<bool>(
+      stream: player.streams.seekable,
+      initialData: player.state.seekable,
+      builder: (context, seekableSnapshot) => StreamBuilder<Tracks>(
+        stream: player.streams.tracks,
+        initialData: player.state.tracks,
+        builder: (context, snapshot) {
+          final tracks = snapshot.data;
+          final state = trackControlsState;
+          final seekable = seekableSnapshot.data ?? player.state.seekable;
+          final isMobile = PlatformDetector.isMobile(context);
+          final isDesktop = PlatformDetector.isDesktopOS();
 
-        final buttons = <Widget>[];
-        int buttonIndex = 0;
+          final buttons = <Widget>[];
+          int buttonIndex = 0;
 
-        buttons.add(
-          ListenableBuilder(
-            listenable: SleepTimerService(),
-            builder: (context, _) {
-              final sleepTimer = SleepTimerService();
-              final shaderService = state.shaderService;
-              final isShaderActive =
-                  shaderService != null && shaderService.isSupported && shaderService.currentPreset.isEnabled;
-              final isZoomActive = (state.videoZoomScale - 1.0).abs() > 0.0001;
-              final isActive =
-                  sleepTimer.isActive ||
-                  state.audioSyncOffset != 0 ||
-                  state.subtitleSyncOffset != 0 ||
-                  isShaderActive ||
-                  isZoomActive;
-              return _buildTrackButton(
-                buttonIndex: 0,
-                icon: Symbols.tune_rounded,
-                isActive: isActive,
-                checked: isActive,
-                tooltip: t.videoControls.settingsButton,
-                semanticValue: _versionQualitySemanticValue(),
-                semanticLabel: t.videoControls.settingsButton,
-                buttons: buttons,
-                onPressed: () {
-                  state.onCancelAutoHide?.call();
-                  OverlaySheetController.of(context)
-                      .show(
-                        builder: (_) => VideoSettingsSheet(player: player, trackControlsState: state),
-                      )
-                      .whenComplete(() => state.onStartAutoHide?.call());
-                },
-              );
-            },
-          ),
-        );
-        buttonIndex++;
-
-        {
-          final currentIndex = buttonIndex;
           buttons.add(
-            StreamBuilder<TrackSelection>(
-              stream: player.streams.track,
-              initialData: player.state.track,
-              builder: (context, selectionSnapshot) {
-                final selection = selectionSnapshot.data ?? player.state.track;
-                final hasSubtitleControls = state.hasSubtitleControls(tracks);
-                final selectedSub = selection.subtitle;
-                final hasActiveSubtitle = selectedSub != null && selectedSub.id != SubtitleTrack.off.id;
-                final isHidden = hasSubtitleControls && hasActiveSubtitle && !state.subtitlesVisible;
-                final icon = hasSubtitleControls
-                    ? (isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded)
-                    : Symbols.audiotrack_rounded;
+            ListenableBuilder(
+              listenable: SleepTimerService(),
+              builder: (context, _) {
+                final sleepTimer = SleepTimerService();
+                final shaderService = state.shaderService;
+                final isShaderActive =
+                    shaderService != null && shaderService.isSupported && shaderService.currentPreset.isEnabled;
+                final isZoomActive = (state.videoZoomScale - 1.0).abs() > 0.0001;
+                final isMotionConfigured =
+                    player.playerType == 'mpv' &&
+                    ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, state.metadata) !=
+                        MotionClarityPreset.original;
+                final isActive =
+                    sleepTimer.isActive ||
+                    state.audioSyncOffset != 0 ||
+                    state.subtitleSyncOffset != 0 ||
+                    isShaderActive ||
+                    isZoomActive ||
+                    isMotionConfigured;
                 return _buildTrackButton(
-                  buttonIndex: currentIndex,
-                  icon: icon,
-                  tooltip: t.videoControls.tracksButton,
-                  semanticLabel: t.videoControls.tracksButton,
-                  semanticValue: _selectionSemanticValue(tracks, selection),
+                  buttonIndex: 0,
+                  icon: Symbols.tune_rounded,
+                  isActive: isActive,
+                  checked: isActive,
+                  tooltip: t.videoControls.settingsButton,
+                  semanticValue: _versionQualitySemanticValue(),
+                  semanticLabel: t.videoControls.settingsButton,
                   buttons: buttons,
                   onPressed: () {
                     state.onCancelAutoHide?.call();
                     OverlaySheetController.of(context)
                         .show(
-                          builder: (_) => TrackSheet(player: player, trackControlsState: state),
+                          builder: (_) => VideoSettingsSheet(player: player, trackControlsState: state),
                         )
                         .whenComplete(() => state.onStartAutoHide?.call());
                   },
@@ -216,163 +336,230 @@ class TrackChapterControls extends StatelessWidget {
             ),
           );
           buttonIndex++;
-        }
 
-        if (chapters.isNotEmpty && !hideChaptersAndQueue) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: Symbols.bookmarks_rounded,
-              tooltip: t.videoControls.chaptersButton,
-              semanticLabel: t.videoControls.chaptersButton,
-              buttons: buttons,
-              onPressed: () {
-                state.onCancelAutoHide?.call();
-                OverlaySheetController.of(context)
-                    .show(
-                      builder: (_) => ChapterSheet(
-                        player: player,
-                        chapters: chapters,
-                        chaptersLoaded: chaptersLoaded,
-                        canControl: state.canControl,
-                        serverId: state.serverId,
-                        onSeekRequested: onSeekRequested,
-                        onSeekCompleted: onSeekCompleted,
-                      ),
-                    )
-                    .whenComplete(() => state.onStartAutoHide?.call());
-              },
-            ),
+          if (player.playerType == 'mpv' && !isMobile) {
+            final currentIndex = buttonIndex;
+            final motionService = MotionClarityService.forPlayer(player);
+            final isMotionActive = motionService.isMotionProcessingActive;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: Symbols.blur_on_rounded,
+                isActive: isMotionActive,
+                checked: isMotionActive,
+                tooltip: isMotionActive
+                    ? t.videoSettings.motionClarityQuickToggleOn
+                    : t.videoSettings.motionClarityQuickToggleOff,
+                semanticLabel: t.videoSettings.motionClarityQuickToggle,
+                buttons: buttons,
+                onPressed: () => unawaited(_toggleMotionClarity(context)),
+                onLongPress: () => _openMotionClaritySheet(context),
+              ),
+            );
+            buttonIndex++;
+          }
+
+          {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              StreamBuilder<TrackSelection>(
+                stream: player.streams.track,
+                initialData: player.state.track,
+                builder: (context, selectionSnapshot) {
+                  final selection = selectionSnapshot.data ?? player.state.track;
+                  final hasSubtitleControls = state.hasSubtitleControls(tracks);
+                  final selectedSub = selection.subtitle;
+                  final hasActiveSubtitle = selectedSub != null && selectedSub.id != SubtitleTrack.off.id;
+                  final isHidden = hasSubtitleControls && hasActiveSubtitle && !state.subtitlesVisible;
+                  final icon = hasSubtitleControls
+                      ? (isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded)
+                      : Symbols.audiotrack_rounded;
+                  return _buildTrackButton(
+                    buttonIndex: currentIndex,
+                    icon: icon,
+                    tooltip: t.videoControls.tracksButton,
+                    semanticLabel: t.videoControls.tracksButton,
+                    semanticValue: _selectionSemanticValue(tracks, selection),
+                    buttons: buttons,
+                    onPressed: () {
+                      state.onCancelAutoHide?.call();
+                      OverlaySheetController.of(context)
+                          .show(
+                            builder: (_) => TrackSheet(player: player, trackControlsState: state),
+                          )
+                          .whenComplete(() => state.onStartAutoHide?.call());
+                    },
+                  );
+                },
+              ),
+            );
+            buttonIndex++;
+          }
+
+          final bookmarkMediaKey = state.isLive ? null : state.metadata?.globalKey;
+          final hasBookmarkMediaKey = bookmarkMediaKey != null && bookmarkMediaKey.isNotEmpty;
+          final showChaptersButton =
+              (chapters.isNotEmpty || (player.playerType == 'mpv' && seekable) || (hasBookmarkMediaKey && seekable)) &&
+              !hideChaptersAndQueue;
+          final showBookmarksButton = hideChaptersAndQueue && seekable && hasBookmarkMediaKey;
+          if (showChaptersButton || showBookmarksButton) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: showBookmarksButton ? Symbols.bookmark_rounded : Symbols.bookmarks_rounded,
+                tooltip: showBookmarksButton ? t.videoControls.bookmarksButton : t.videoControls.chaptersButton,
+                semanticLabel: showBookmarksButton ? t.videoControls.bookmarksButton : t.videoControls.chaptersButton,
+                buttons: buttons,
+                onPressed: () {
+                  state.onCancelAutoHide?.call();
+                  OverlaySheetController.of(context)
+                      .show(
+                        builder: (_) => ChapterSheet(
+                          player: player,
+                          chapters: chapters,
+                          chaptersLoaded: chaptersLoaded,
+                          canControl: state.canControl,
+                          serverId: state.serverId,
+                          isLive: state.isLive,
+                          bookmarkMediaKey: bookmarkMediaKey,
+                          onSeekRequested: onSeekRequested,
+                          onSeekCompleted: onSeekCompleted,
+                        ),
+                      )
+                      .whenComplete(() => state.onStartAutoHide?.call());
+                },
+              ),
+            );
+            buttonIndex++;
+          }
+
+          if (state.showQueueButton && state.onQueueItemSelected != null && !hideChaptersAndQueue) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: Symbols.queue_rounded,
+                tooltip: t.videoControls.queue,
+                semanticLabel: t.videoControls.queue,
+                buttons: buttons,
+                onPressed: () {
+                  state.onCancelAutoHide?.call();
+                  OverlaySheetController.of(context)
+                      .show(builder: (_) => QueueSheet(onItemSelected: state.onQueueItemSelected!))
+                      .whenComplete(() => state.onStartAutoHide?.call());
+                },
+              ),
+            );
+            buttonIndex++;
+          }
+
+          if (state.onTogglePIPMode != null) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: Symbols.picture_in_picture_alt_rounded,
+                tooltip: state.pipActionLabel ?? t.videoControls.openMiniPlayer,
+                semanticLabel: state.pipActionLabel ?? t.videoControls.openMiniPlayer,
+                buttons: buttons,
+                onPressed: state.onTogglePIPMode,
+              ),
+            );
+            buttonIndex++;
+          }
+
+          // BoxFit mode button
+          if (state.onCycleBoxFitMode != null) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: _getBoxFitIcon(state.boxFitMode),
+                tooltip: _getBoxFitTooltip(state.boxFitMode),
+                semanticLabel: t.videoControls.aspectRatioButton,
+                semanticValue: _getBoxFitTooltip(state.boxFitMode),
+                buttons: buttons,
+                onPressed: state.onCycleBoxFitMode,
+              ),
+            );
+            buttonIndex++;
+          }
+
+          // Rotation lock button (mobile only, not on TV since screens don't rotate)
+          if (isMobile && !PlatformDetector.isTV()) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: state.isRotationLocked ? Symbols.screen_lock_rotation_rounded : Symbols.screen_rotation_rounded,
+                tooltip: state.isRotationLocked ? t.videoControls.unlockRotation : t.videoControls.lockRotation,
+                semanticLabel: t.videoControls.rotationLockButton,
+                checked: state.isRotationLocked,
+                buttons: buttons,
+                onPressed: state.onToggleRotationLock,
+              ),
+            );
+            buttonIndex++;
+          }
+
+          // Screen lock button (mobile only, not on TV)
+          if (isMobile && !PlatformDetector.isTV()) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: Symbols.lock_rounded,
+                tooltip: t.videoControls.lockScreen,
+                semanticLabel: t.videoControls.screenLockButton,
+                buttons: buttons,
+                onPressed: state.onToggleScreenLock,
+              ),
+            );
+            buttonIndex++;
+          }
+
+          // Always on top button (desktop only, not TV)
+          if (isDesktop && state.onToggleAlwaysOnTop != null) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: Symbols.layers_rounded,
+                tooltip: t.videoControls.alwaysOnTopButton,
+                semanticLabel: t.videoControls.alwaysOnTopButton,
+                isActive: state.isAlwaysOnTop,
+                checked: state.isAlwaysOnTop,
+                buttons: buttons,
+                onPressed: state.onToggleAlwaysOnTop,
+              ),
+            );
+            buttonIndex++;
+          }
+
+          // Fullscreen button (desktop only)
+          if (isDesktop) {
+            final currentIndex = buttonIndex;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: state.isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
+                tooltip: state.isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
+                semanticLabel: state.isFullscreen
+                    ? t.videoControls.exitFullscreenButton
+                    : t.videoControls.fullscreenButton,
+                checked: state.isFullscreen,
+                buttons: buttons,
+                onPressed: state.onToggleFullscreen,
+              ),
+            );
+          }
+
+          return IntrinsicHeight(
+            child: Row(mainAxisSize: .min, crossAxisAlignment: .stretch, children: buttons),
           );
-          buttonIndex++;
-        }
-
-        if (state.showQueueButton && state.onQueueItemSelected != null && !hideChaptersAndQueue) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: Symbols.queue_rounded,
-              tooltip: t.videoControls.queue,
-              semanticLabel: t.videoControls.queue,
-              buttons: buttons,
-              onPressed: () {
-                state.onCancelAutoHide?.call();
-                OverlaySheetController.of(context)
-                    .show(builder: (_) => QueueSheet(onItemSelected: state.onQueueItemSelected!))
-                    .whenComplete(() => state.onStartAutoHide?.call());
-              },
-            ),
-          );
-          buttonIndex++;
-        }
-
-        if (state.onTogglePIPMode != null) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: Symbols.picture_in_picture_alt_rounded,
-              tooltip: state.pipActionLabel ?? t.videoControls.openMiniPlayer,
-              semanticLabel: state.pipActionLabel ?? t.videoControls.openMiniPlayer,
-              buttons: buttons,
-              onPressed: state.onTogglePIPMode,
-            ),
-          );
-          buttonIndex++;
-        }
-
-        // BoxFit mode button
-        if (state.onCycleBoxFitMode != null) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: _getBoxFitIcon(state.boxFitMode),
-              tooltip: _getBoxFitTooltip(state.boxFitMode),
-              semanticLabel: t.videoControls.aspectRatioButton,
-              semanticValue: _getBoxFitTooltip(state.boxFitMode),
-              buttons: buttons,
-              onPressed: state.onCycleBoxFitMode,
-            ),
-          );
-          buttonIndex++;
-        }
-
-        // Rotation lock button (mobile only, not on TV since screens don't rotate)
-        if (isMobile && !PlatformDetector.isTV()) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: state.isRotationLocked ? Symbols.screen_lock_rotation_rounded : Symbols.screen_rotation_rounded,
-              tooltip: state.isRotationLocked ? t.videoControls.unlockRotation : t.videoControls.lockRotation,
-              semanticLabel: t.videoControls.rotationLockButton,
-              checked: state.isRotationLocked,
-              buttons: buttons,
-              onPressed: state.onToggleRotationLock,
-            ),
-          );
-          buttonIndex++;
-        }
-
-        // Screen lock button (mobile only, not on TV)
-        if (isMobile && !PlatformDetector.isTV()) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: Symbols.lock_rounded,
-              tooltip: t.videoControls.lockScreen,
-              semanticLabel: t.videoControls.screenLockButton,
-              buttons: buttons,
-              onPressed: state.onToggleScreenLock,
-            ),
-          );
-          buttonIndex++;
-        }
-
-        // Always on top button (desktop only, not TV)
-        if (isDesktop && state.onToggleAlwaysOnTop != null) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: Symbols.layers_rounded,
-              tooltip: t.videoControls.alwaysOnTopButton,
-              semanticLabel: t.videoControls.alwaysOnTopButton,
-              isActive: state.isAlwaysOnTop,
-              checked: state.isAlwaysOnTop,
-              buttons: buttons,
-              onPressed: state.onToggleAlwaysOnTop,
-            ),
-          );
-          buttonIndex++;
-        }
-
-        // Fullscreen button (desktop only)
-        if (isDesktop) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: state.isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
-              tooltip: state.isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
-              semanticLabel: state.isFullscreen
-                  ? t.videoControls.exitFullscreenButton
-                  : t.videoControls.fullscreenButton,
-              checked: state.isFullscreen,
-              buttons: buttons,
-              onPressed: state.onToggleFullscreen,
-            ),
-          );
-        }
-
-        return IntrinsicHeight(
-          child: Row(mainAxisSize: .min, crossAxisAlignment: .stretch, children: buttons),
-        );
-      },
+        },
+      ),
     );
   }
 

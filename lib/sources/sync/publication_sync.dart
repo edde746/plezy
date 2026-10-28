@@ -5,19 +5,32 @@ import 'package:uuid/uuid.dart';
 
 import '../source_database.dart';
 import '../source_models.dart';
+import '../../discovery/discovery_sync.dart';
 import 'sync_document.dart';
 import 'sync_store.dart';
 
 class PublicationSyncConfig {
-  const PublicationSyncConfig({required this.sourceId, required this.code, this.folder = ''});
+  const PublicationSyncConfig({
+    required this.sourceId,
+    required this.code,
+    this.folder = '',
+    this.includeDiscovery = false,
+  });
   final String sourceId;
   final String code;
   final String folder;
-  Map<String, dynamic> toJson() => {'sourceId': sourceId, 'code': code, 'folder': folder};
+  final bool includeDiscovery;
+  Map<String, dynamic> toJson() => {
+    'sourceId': sourceId,
+    'code': code,
+    'folder': folder,
+    'includeDiscovery': includeDiscovery,
+  };
   factory PublicationSyncConfig.fromJson(Map<String, dynamic> j) => PublicationSyncConfig(
     sourceId: j['sourceId'] as String,
     code: j['code'] as String,
     folder: j['folder'] as String? ?? '',
+    includeDiscovery: j['includeDiscovery'] == true,
   );
 }
 
@@ -98,7 +111,7 @@ class PublicationSync {
 
   /// Exports only the encrypted sync document. The user must retain the
   /// private sync code separately; no source account or media data is bundled.
-  Future<String> exportRecovery(String profile) async {
+  Future<String> exportRecovery(String profile, {DiscoverySync? discoverySync}) async {
     final config = await this.config(profile);
     if (config == null) throw const SourceException(SourceFailure.unsupported);
     final cipher = SyncCipher(config.code);
@@ -107,7 +120,16 @@ class PublicationSync {
     cache.document.compactSafe(actor: device);
     final name = recoveryName(cipher.namespace);
     final encrypted = await cipher.seal(cache.document, name);
-    return canonicalSyncJson({'format': 'plezyng-encrypted-recovery-v1', 'name': name, 'encrypted': encrypted});
+    final bundle = <String, dynamic>{'format': 'plezyng-encrypted-recovery-v2', 'name': name, 'encrypted': encrypted};
+    if (config.includeDiscovery) {
+      if (discoverySync == null) throw const SourceException(SourceFailure.unsupported);
+      final discoveryNamespace = DiscoverySync.namespaceFor(config.code);
+      final discoveryName = DiscoverySync.recoveryName(discoveryNamespace);
+      final discoveryDocument = await discoverySync.recoveryDocument(profile, config.code);
+      bundle['discoveryName'] = discoveryName;
+      bundle['discoveryEncrypted'] = await cipher.seal(discoveryDocument, discoveryName);
+    }
+    return canonicalSyncJson(bundle);
   }
 
   /// Imports are additive. The recovery file is authenticated with the
@@ -117,6 +139,7 @@ class PublicationSync {
     required String text,
     required List<FileSource> sources,
     required Set<String> activeKeys,
+    DiscoverySync? discoverySync,
   }) async {
     final config = await this.config(profile);
     if (config == null) throw const SourceException(SourceFailure.unsupported);
@@ -127,12 +150,25 @@ class PublicationSync {
       final envelope = sourceMap(jsonDecode(text));
       final cipher = SyncCipher(config.code);
       final name = envelope['name'];
-      if (envelope['format'] != 'plezyng-encrypted-recovery-v1' ||
+      final format = envelope['format'];
+      if (!const {'plezyng-encrypted-recovery-v1', 'plezyng-encrypted-recovery-v2'}.contains(format) ||
           name != recoveryName(cipher.namespace) ||
           envelope['encrypted'] is! String) {
         throw const SourceException(SourceFailure.invalidData);
       }
       final incoming = await cipher.open(envelope['encrypted'] as String, name as String);
+      SyncDocument? discoveryIncoming;
+      if (config.includeDiscovery && format == 'plezyng-encrypted-recovery-v2') {
+        if (discoverySync == null ||
+            envelope['discoveryEncrypted'] is! String ||
+            envelope['discoveryName'] is! String) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        final discoveryNamespace = DiscoverySync.namespaceFor(config.code);
+        final discoveryName = DiscoverySync.recoveryName(discoveryNamespace);
+        if (envelope['discoveryName'] != discoveryName) throw const SourceException(SourceFailure.invalidData);
+        discoveryIncoming = await cipher.open(envelope['discoveryEncrypted'] as String, discoveryName);
+      }
       final entries = await repository.entries(profile);
       final device = (await repository.preference(profile, 'publication-sync-device-v1'))['id'] as String?;
       final entryMappings = await sharedEntryMappings(profile);
@@ -145,6 +181,9 @@ class PublicationSync {
         await _apply(profile, cache, _identities(sources, entries, entryMappings), entryMappings, activeKeys);
         await repository.savePreference(profile, cacheKey, cache.toJson());
       });
+      if (discoveryIncoming != null && discoverySync != null) {
+        await discoverySync.importRecovery(profile: profile, code: config.code, incoming: discoveryIncoming);
+      }
     } on SourceException {
       rethrow;
     } on Object {
@@ -250,14 +289,15 @@ class PublicationSync {
 
   static List<_EditionCandidate> _editionCandidates(SourceEntry entry, PublicationMode mode) {
     final byEdition = <String, List<dynamic>>{};
+    final ordinaryFiles = entry.files.where((file) => !file.sampleOnly).toList(growable: false);
     void add(List<PublicationFile> files, String edition) {
       byEdition.putIfAbsent(
         edition,
         () => [
           'catalog',
-          for (final file in entry.files) [file.kind.name, file.mimeType.trim().toLowerCase(), file.size],
+          for (final file in ordinaryFiles) [file.kind.name, file.mimeType.trim().toLowerCase(), file.size],
           'selection',
-          for (final file in files) entry.files.indexWhere((candidate) => candidate.fingerprint == file.fingerprint),
+          for (final file in files) ordinaryFiles.indexWhere((candidate) => candidate.fingerprint == file.fingerprint),
           for (final file in files) [file.kind.name, file.mimeType.trim().toLowerCase(), file.size],
         ],
       );
@@ -271,14 +311,14 @@ class PublicationSync {
       if (entry.audio.isNotEmpty) {
         add(entry.audio, sourceDigest(jsonEncode(entry.audio.map((f) => f.fingerprint).toList())));
       }
-      for (final file in entry.files) {
+      for (final file in ordinaryFiles) {
         add([file], sourceDigest(jsonEncode([file.fingerprint])));
       }
     } else {
-      if (entry.files.isNotEmpty) {
-        add(entry.files, sourceDigest(jsonEncode(entry.files.map((f) => f.fingerprint).toList())));
+      if (ordinaryFiles.isNotEmpty) {
+        add(ordinaryFiles, sourceDigest(jsonEncode(ordinaryFiles.map((f) => f.fingerprint).toList())));
       }
-      for (final file in entry.files) {
+      for (final file in ordinaryFiles) {
         add([file], sourceDigest(jsonEncode([file.fingerprint])));
       }
     }

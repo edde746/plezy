@@ -110,6 +110,8 @@ class TranslationsPt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$comics$pt comics = Translations$comics$pt.internal(_root);
 	@override late final Translations$games$pt games = Translations$games$pt.internal(_root);
 	@override late final Translations$deepLinks$pt deepLinks = Translations$deepLinks$pt.internal(_root);
+	@override late final Translations$householdSetup$pt householdSetup = Translations$householdSetup$pt.internal(_root);
+	@override late final Translations$issueReport$pt issueReport = Translations$issueReport$pt.internal(_root);
 }
 
 // Path: app
@@ -1203,6 +1205,30 @@ class Translations$videoControls$pt extends Translations$videoControls$en {
 	@override String get settingsButton => 'Configurações de reprodução';
 	@override String get tracksButton => 'Áudio e legendas';
 	@override String get chaptersButton => 'Capítulos';
+	@override String get segmentLoopHelp => 'Faça uma seção durante este playback. Configura A, depois confira B mais tarde na linha de tempo.';
+	@override String get setLoopStart => 'Começando com o gênero (A)';
+	@override String get setLoopEnd => 'Coloque o fim do loop (B)';
+	@override String get clearSegmentLoop => 'Clareamento de segmento';
+	@override String get setLoopStartFirst => 'Coloque o início (A) antes do fim (B).';
+	@override String get loopEndAfterStart => 'O final da curva deve ser mais tarde do que o início.';
+	@override String get segmentLoopUnavailable => 'Segment looping não está disponível para este playback.';
+	@override String get loopPointNotSet => 'Não estabelece';
+	@override String get bookmarksHelp => 'As notas são salvas neste dispositivo. selecione uma para ir a esse tempo.';
+	@override String get bookmarksButton => 'Bookmarcação';
+	@override String get chaptersAndBookmarks => 'Capítulos e Bookmarks';
+	@override String get segmentLoop => 'Segmentação Loop';
+	@override String get addBookmark => 'Adicionar Bookmark';
+	@override String get bookmarkName => 'Nome do Bookmark';
+	@override String get bookmarkNameHint => 'Por exemplo, a cena de abertura';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmarcação ${n}';
+	@override String get bookmarkNameRequired => 'Digite um nome para este livro.';
+	@override String get deleteBookmark => 'Eliminar o Bookmark';
+	@override String get bookmarkLimitReached => 'Este item já tem 100 bookmarks.';
+	@override String get bookmarkUnavailable => 'Não podia salvar ou remover este bookmark.';
+	@override String get bookmarkSaved => 'Bookmark foi salvo.';
+	@override String get bookmarkDeleted => 'Bookmark foi apagado.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Ponto de Loop ${point} Estabelecendo em ${time}.';
+	@override String get noChaptersOrBookmarks => 'Não há capítulos ou livros disponíveis.';
 	@override String get versionQualityButton => 'Versão e qualidade';
 	@override String get versionColumnHeader => 'Versão';
 	@override String get qualityColumnHeader => 'Qualidade';
@@ -2073,6 +2099,7 @@ class Translations$music$pt extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Leia a análise de traços...';
 	@override String get visualizerAmbientMotion => 'MOVIMENTO Ambiental';
 	@override String get visualizerPlexLoudness => 'Plex ruído';
+	@override String get visualizerLiveAudio => 'Análise de áudio em direto';
 	@override String get visualizerPreviousPreset => 'Estilo visual anterior';
 	@override String get visualizerNextPreset => 'Próximo Estilo Visual';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2427,6 +2454,12 @@ class Translations$videoSettings$pt extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Mapear para o brilho máximo da tela no reprodutor e informar o resultado ao compositor.';
 	@override String get hdrToneMappingFailed => 'Não foi possível alterar o mapeamento de tons HDR — o modo anterior continua ativo.';
 	@override String get audioOutput => 'Saída de áudio';
+	@override String get videoTrack => 'Faixa de vídeo';
+	@override String get videoTrackDescription => 'Escolha qual fluxo de vídeo apresentar. Disponível na reprodução com MPV quando o ficheiro contém faixas de vídeo alternativas.';
+	@override String get videoTrackDefault => 'Predefinida';
+	@override String get videoTrackUnavailable => 'Não existem faixas de vídeo alternativas disponíveis.';
+	@override String get videoTrackFailed => 'Não foi possível alterar a faixa de vídeo.';
+	@override String videoTrackNumber({required Object id}) => 'Faixa ${id}';
 	@override String get performanceOverlay => 'Painel de desempenho';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2434,10 +2467,17 @@ class Translations$videoSettings$pt extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Áudio espacial';
 	@override String get audioOutputStereo => 'Estéreo';
 	@override String get audioEqualizer => 'Avaliação de áudio';
-	@override String get audioEqualizerDescription => 'Ajuste cinco bandas de frequência para este dispositivo. Disponível em mpv; um EQ ativo decode o áudio e desabilita o ajuste.';
+	@override String get audioEqualizerDescription => 'Equalizador de 10 bandas para MPVOs filtros de áudio usam áudio decodado e desligam passthrough.';
 	@override String get audioEqualizerFlat => 'Neutro';
 	@override String get audioEqualizerActive => 'Personalizado';
 	@override String get audioEqualizerSaveFailed => 'Não poderia salvar as configurações do equalizador de áudio.';
+	@override String get audioEffectsDescription => 'Os efeitos usam áudio descodificado, por isso o ajuste se desvia. ambiente de quarto e estereó ampliação dependem do MPV Construir e rastrear.';
+	@override String get audioStereoWidth => 'Extensão Stereo';
+	@override String get audioSpatializer => 'ambiente de quarto';
+	@override String get audioSpatializerDescription => 'Adicione reflexões de sala tranquila.';
+	@override String get audioPitch => 'Mudança de Pitch';
+	@override String get audioPitchDescription => 'Mude a velocidade sem mudança de velocidade. MPV A construção deve incluir Rubber Band.';
+	@override String get audioEffectUnavailable => 'Este efeito não está disponível para esta pista ou MPV Construção .';
 	@override String get backgroundVideoAudio => 'Audio de vídeo de fundo';
 	@override String get backgroundVideoAudioDescription => 'Mantenha o vídeo a tocar quando você sair do jogador; a imagem está escondida até que você retornar. Android usa uma notificação de reprodução de mídia.';
 	@override String get audioNormalization => 'Normalizar intensidade sonora';
@@ -3204,6 +3244,10 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Escolha o arquivo de playlist';
 	@override String get openPlaylist => 'Playlist aberta';
 	@override String get playlistFormatsHelp => 'Uma lista de reprodução pode conter até 1.000 itens e 2 MB. HLS manifesta-se aberta como fluxos para que o jogador possa escolher uma qualidade.';
+	@override String get saveQueuePlaylist => 'Guardar fila como lista de reprodução';
+	@override String get queuePlaylistSaved => 'A lista de reprodução foi guardada junto aos ficheiros multimédia.';
+	@override String get queuePlaylistUnavailable => 'Esta fila não pode ser guardada como uma lista local reutilizável.';
+	@override String get queuePlaylistFolderRequired => 'Escolha uma localização na mesma pasta dos ficheiros da fila.';
 	@override String get noFavorites => 'Não foram salvos favoritos ainda. favoritos permanecem neste perfil.';
 	@override String get removeFavorite => 'Remover streaming favorito';
 	@override String get filesHelp => 'Escolha arquivos de áudio, vídeo ou ISO para uma quebra temporária. arquivos e URLs não são adicionados ao histórico da biblioteca.';
@@ -3270,12 +3314,13 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Substituição de arquivo';
 	@override String get discHelp => 'Abra um disco no disco óptico deste computador. Você também pode abrir uma imagem ISO dos arquivos de dispositivo.';
 	@override String get discs => 'Discos ópticos';
+	@override String get editionOrTitle => 'Edição ou título do disco';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray em';
 	@override String get audioCd => 'CD de áudio';
 	@override String get discAvailability => 'A reprodução de discos precisa de um edifício MPV compatível, disco suportado e permissão do sistema operacional.';
 	@override String get converterTitle => 'Converter um arquivo de mídia local';
-	@override String get converterHelp => 'Use FFmpeg para fazer uma cópia MP4, M4A ou MP3.';
+	@override String get converterHelp => 'Converter um arquivo local ou remuque-o com FFmpeg.';
 	@override String get converterIntro => 'Converter um arquivo de áudio ou vídeo local para um formato que funciona em vários dispositivos.';
 	@override String get converterPrivacy => 'FFmpeg deve ser instalado neste computador. conversão lê apenas arquivos locais. não descarga fluxos ou remove DRM.';
 	@override String get converterChooseInput => 'Escolha um arquivo de mídia local';
@@ -3283,6 +3328,8 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 e AAC';
 	@override String get converterM4a => 'M4A - Áudio AAC';
 	@override String get converterMp3 => 'MP3 - Áudio';
+	@override String get allowFtp => 'Permitir FTP';
+	@override String get allowFtpHelp => 'FTP envia mídias sem criptografia. Use apenas em redes confiáveis.';
 	@override String get converterSaveAs => 'Mídia convertida como';
 	@override String get converterExtensionMismatch => 'Escolha um nome de arquivo com a extensão de saída selecionada.';
 	@override String get converterUnsupportedInput => 'Escolha um arquivo de áudio ou vídeo.';
@@ -3292,7 +3339,7 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Começando com FFmpeg...';
 	@override String get converterProgress => 'Converter para esse computador...';
 	@override String get converterComplete => 'Conversão completa. o novo arquivo está pronto.';
-	@override String get converterFfmpegMissing => 'Instale FFmpeg com suporte H.264, AAC e MP3, então tente novamente.';
+	@override String get converterFfmpegMissing => 'FFmpeg está faltando ou não suporta este formato.';
 	@override String get converterFailed => 'Verifique se o arquivo fonte pode ser lido e o destino tem espaço livre suficiente.';
 	@override String get converterCancelled => 'A conversão foi cancelada. a saída incompleta foi removida.';
 	@override String get converterDesktopOnly => 'A conversão local está disponível em computadores de desktop com FFmpeg instalado.';
@@ -3320,6 +3367,9 @@ class Translations$universalMedia$pt extends Translations$universalMedia$en {
 	@override String get captureSaved => 'A gravação de tela foi salvida.';
 	@override String get captureElapsedLabel => 'Tempo de gravação';
 	@override String get captureStart => 'Começa a gravação';
+	@override String get capturePreview => 'Pré-visualizar no leitor';
+	@override String get capturePreviewHelp => 'Pré-visualize a origem selecionada no leitor padrão. A pré-visualização só dura nesta sessão e não guarda uma gravação. O suporte dos dispositivos e as permissões dependem do MPV e do sistema operativo. A pré-visualização usa apenas vídeo; as gravações guardadas podem incluir áudio opcional.';
+	@override String get capturePreviewActive => 'Pré-visualização em direto · sem gravação';
 	@override String get captureStop => 'Parar e salvar';
 	@override String get captureMode => 'captura';
 	@override String get shareMode => 'Compartilhar';
@@ -3640,7 +3690,6 @@ class Translations$audiobook$pt extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Adicione o Google Drive, o OneDrive, o Dropbox, o WebDAV ou o S3 em Arquivos e Livros primeiro.';
 	@override String get syncDestination => 'Conta de armazenamento de sincronização';
 	@override String get syncFolder => 'Sincronização de folha ou prefixo';
-	@override String get syncFolderHelp => 'Use uma pasta existente separada dentro da sua fonte WebDAV, ou um prefixo dedicado S3.';
 	@override String get syncCode => 'Código de sincronização';
 	@override String get syncCodeHelp => 'Crie um código em seu primeiro dispositivo e, em seguida, introduza esse código em seus outros dispositivos.Mantenha uma cópia privada: é a chave para o seu estado criptografado.Utiliza um código diferente para cada pessoa.';
 	@override String get showCode => 'Mostrar ou esconder o código de sincronização';
@@ -3650,7 +3699,6 @@ class Translations$audiobook$pt extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Remover esta fonte irá desativar a leitura e a escuta de sincronização aqui. arquivos de sincronização criptografados permanecerão no provedor.';
 	@override String get syncReconnect => 'Reconectar a conta de armazenamento';
 	@override String lastSynced({required Object time}) => 'Última sincronização em ${time}';
-	@override String get syncPrivacy => 'Somente progressos e notas criptografados são armazenados. arquivos de áudio e ebook, tokens de conta e senhas não são carregados. Google Drive e OneDrive usa armazenamento de aplicativos; Dropbox usa PlezyNG Sync. A habilitação de sincronização pode solicitar acesso adicional de escrita. Enquanto ativado, este destino possui sincronização de progresso; o progresso do servidor permanece separado.';
 	@override String get syncConflicts => 'Escolha onde reencontrar';
 	@override String get conflictHelp => 'Essas alterações foram feitas de forma independente. escolha a posição ou a versão de marcador para manter. Um tempo mais tarde ou uma porcentagem mais alta não ganha automaticamente.';
 	@override String syncDevice({required Object device}) => 'Atividade ${device}';
@@ -3844,7 +3892,6 @@ class Translations$games$pt extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3869,7 +3916,6 @@ class Translations$games$pt extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3901,8 +3947,6 @@ class Translations$games$pt extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3910,14 +3954,12 @@ class Translations$games$pt extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -3944,6 +3986,30 @@ class Translations$deepLinks$pt extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Abra como ${name}';
 	@override String get copy => 'Copia';
 	@override String get copied => 'Link copiado';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$pt extends Translations$householdSetup$en {
+	Translations$householdSetup$pt.internal(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuração da casa';
+}
+
+// Path: issueReport
+class Translations$issueReport$pt extends Translations$issueReport$en {
+	Translations$issueReport$pt.internal(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Comunicar um problema';
+	@override String get instructions => 'Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.';
+	@override String get privacy => 'O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.';
+	@override String get logPrivacy => 'Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.';
+	@override String get openDraft => 'Abrir rascunho do GitHub';
 }
 
 // Path: appIcon.names
@@ -6071,6 +6137,32 @@ extension on TranslationsPt {
 			'videoControls.settingsButton' => 'Configurações de reprodução',
 			'videoControls.tracksButton' => 'Áudio e legendas',
 			'videoControls.chaptersButton' => 'Capítulos',
+			'videoControls.segmentLoopHelp' => 'Faça uma seção durante este playback. Configura A, depois confira B mais tarde na linha de tempo.',
+			'videoControls.setLoopStart' => 'Começando com o gênero (A)',
+			'videoControls.setLoopEnd' => 'Coloque o fim do loop (B)',
+			'videoControls.clearSegmentLoop' => 'Clareamento de segmento',
+			'videoControls.setLoopStartFirst' => 'Coloque o início (A) antes do fim (B).',
+			'videoControls.loopEndAfterStart' => 'O final da curva deve ser mais tarde do que o início.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping não está disponível para este playback.',
+			'videoControls.loopPointNotSet' => 'Não estabelece',
+			'videoControls.bookmarksHelp' => 'As notas são salvas neste dispositivo. selecione uma para ir a esse tempo.',
+			'videoControls.bookmarksButton' => 'Bookmarcação',
+			'videoControls.chaptersAndBookmarks' => 'Capítulos e Bookmarks',
+			'videoControls.segmentLoop' => 'Segmentação Loop',
+			'videoControls.addBookmark' => 'Adicionar Bookmark',
+			'videoControls.bookmarkName' => 'Nome do Bookmark',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Por exemplo, a cena de abertura',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmarcação ${n}',
+			'videoControls.bookmarkNameRequired' => 'Digite um nome para este livro.',
+			'videoControls.deleteBookmark' => 'Eliminar o Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Este item já tem 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Não podia salvar ou remover este bookmark.',
+			'videoControls.bookmarkSaved' => 'Bookmark foi salvo.',
+			'videoControls.bookmarkDeleted' => 'Bookmark foi apagado.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Ponto de Loop ${point} Estabelecendo em ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Não há capítulos ou livros disponíveis.',
 			'videoControls.versionQualityButton' => 'Versão e qualidade',
 			'videoControls.versionColumnHeader' => 'Versão',
 			'videoControls.qualityColumnHeader' => 'Qualidade',
@@ -6085,8 +6177,6 @@ extension on TranslationsPt {
 			'videoControls.exitFullscreenButton' => 'Sair da tela cheia',
 			'videoControls.alwaysOnTopButton' => 'Sempre no topo',
 			'videoControls.rotationLockButton' => 'Travar rotação',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Travar tela',
 			'videoControls.screenLockButton' => 'Travar tela',
 			'videoControls.timelineSlider' => 'Linha do tempo do vídeo',
@@ -6575,6 +6665,8 @@ extension on TranslationsPt {
 			'libraries.hideLibrary' => 'Ocultar biblioteca',
 			'libraries.libraryOptions' => 'Opções da biblioteca',
 			'libraries.content' => 'conteúdo da biblioteca',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Selecionar biblioteca',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtros (${count})',
 			'libraries.noRecommendations' => 'Nenhuma recomendação disponível',
@@ -6599,8 +6691,6 @@ extension on TranslationsPt {
 			'libraries.filterCategories.year' => 'Ano',
 			'libraries.filterCategories.contentRating' => 'Classificação indicativa',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Não assistidos',
 			'libraries.filterCategories.unplayed' => 'Não reproduzidos',
 			'libraries.filterCategories.favorites' => 'Favoritos',
@@ -7042,6 +7132,7 @@ extension on TranslationsPt {
 			'music.visualizerProfileLoading' => 'Leia a análise de traços...',
 			'music.visualizerAmbientMotion' => 'MOVIMENTO Ambiental',
 			'music.visualizerPlexLoudness' => 'Plex ruído',
+			'music.visualizerLiveAudio' => 'Análise de áudio em direto',
 			'music.visualizerPreviousPreset' => 'Estilo visual anterior',
 			'music.visualizerNextPreset' => 'Próximo Estilo Visual',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7088,6 +7179,8 @@ extension on TranslationsPt {
 			'watchTogether.codeCopied' => 'Código da sala copiado',
 			'watchTogether.shareInvite' => 'Compartilhar convite',
 			'watchTogether.inviteCopied' => 'Convite copiado. Cole-o em uma mensagem.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Entre na minha sala do Assistir Juntos no PlezyNG: abra "Assistir Juntos", escolha "Entrar na sala" e insira ${code}.',
 			'watchTogether.openSessionControls' => 'Abrir os controles da sessão Assistir Juntos',
 			'watchTogether.reconnecting' => 'Reconectando...',
@@ -7113,8 +7206,6 @@ extension on TranslationsPt {
 			'watchTogether.playAnyway' => 'Reproduzir mesmo assim',
 			'watchTogether.chooseAnotherCopy' => 'Escolher outra cópia',
 			'watchTogether.dontPlay' => 'Não reproduzir',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Você não tem este vídeo',
 			'watchTogether.unavailableDescription' => 'O PlezyNG não o encontrou nas suas bibliotecas. Escolha uma cópia manualmente ou busque novamente.',
 			'watchTogether.chooseCopy' => 'Escolher uma cópia',
@@ -7468,6 +7559,12 @@ extension on TranslationsPt {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Mapear para o brilho máximo da tela no reprodutor e informar o resultado ao compositor.',
 			'videoSettings.hdrToneMappingFailed' => 'Não foi possível alterar o mapeamento de tons HDR — o modo anterior continua ativo.',
 			'videoSettings.audioOutput' => 'Saída de áudio',
+			'videoSettings.videoTrack' => 'Faixa de vídeo',
+			'videoSettings.videoTrackDescription' => 'Escolha qual fluxo de vídeo apresentar. Disponível na reprodução com MPV quando o ficheiro contém faixas de vídeo alternativas.',
+			'videoSettings.videoTrackDefault' => 'Predefinida',
+			'videoSettings.videoTrackUnavailable' => 'Não existem faixas de vídeo alternativas disponíveis.',
+			'videoSettings.videoTrackFailed' => 'Não foi possível alterar a faixa de vídeo.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Faixa ${id}',
 			'videoSettings.performanceOverlay' => 'Painel de desempenho',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7475,10 +7572,17 @@ extension on TranslationsPt {
 			'videoSettings.audioOutputSpatial' => 'Áudio espacial',
 			'videoSettings.audioOutputStereo' => 'Estéreo',
 			'videoSettings.audioEqualizer' => 'Avaliação de áudio',
-			'videoSettings.audioEqualizerDescription' => 'Ajuste cinco bandas de frequência para este dispositivo. Disponível em mpv; um EQ ativo decode o áudio e desabilita o ajuste.',
+			'videoSettings.audioEqualizerDescription' => 'Equalizador de 10 bandas para MPVOs filtros de áudio usam áudio decodado e desligam passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Neutro',
 			'videoSettings.audioEqualizerActive' => 'Personalizado',
 			'videoSettings.audioEqualizerSaveFailed' => 'Não poderia salvar as configurações do equalizador de áudio.',
+			'videoSettings.audioEffectsDescription' => 'Os efeitos usam áudio descodificado, por isso o ajuste se desvia. ambiente de quarto e estereó ampliação dependem do MPV Construir e rastrear.',
+			'videoSettings.audioStereoWidth' => 'Extensão Stereo',
+			'videoSettings.audioSpatializer' => 'ambiente de quarto',
+			'videoSettings.audioSpatializerDescription' => 'Adicione reflexões de sala tranquila.',
+			'videoSettings.audioPitch' => 'Mudança de Pitch',
+			'videoSettings.audioPitchDescription' => 'Mude a velocidade sem mudança de velocidade. MPV A construção deve incluir Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Este efeito não está disponível para esta pista ou MPV Construção .',
 			'videoSettings.backgroundVideoAudio' => 'Audio de vídeo de fundo',
 			'videoSettings.backgroundVideoAudioDescription' => 'Mantenha o vídeo a tocar quando você sair do jogador; a imagem está escondida até que você retornar. Android usa uma notificação de reprodução de mídia.',
 			'videoSettings.audioNormalization' => 'Normalizar intensidade sonora',
@@ -7589,6 +7693,8 @@ extension on TranslationsPt {
 			'metadataEdit.metadataUpdated' => 'Metadados atualizados',
 			'metadataEdit.metadataUpdateFailed' => 'Falha ao atualizar metadados',
 			'metadataEdit.artworkUpdated' => 'Arte atualizada',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Falha ao atualizar arte',
 			'metadataEdit.noArtworkAvailable' => 'Nenhuma arte disponível',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Opção de arte ${index}',
@@ -7627,8 +7733,6 @@ extension on TranslationsPt {
 			'metadataEdit.shownWithForeignAudio' => 'Exibir com áudio estrangeiro',
 			'metadataEdit.alwaysEnabled' => 'Sempre ativado',
 			'metadataEdit.tags' => 'Tags',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Adicionar tag',
 			'metadataEdit.genre' => 'Gênero',
 			'metadataEdit.director' => 'Diretor',
@@ -8101,6 +8205,12 @@ extension on TranslationsPt {
 			'universalMedia.choosePlaylist' => 'Escolha o arquivo de playlist',
 			'universalMedia.openPlaylist' => 'Playlist aberta',
 			'universalMedia.playlistFormatsHelp' => 'Uma lista de reprodução pode conter até 1.000 itens e 2 MB. HLS manifesta-se aberta como fluxos para que o jogador possa escolher uma qualidade.',
+			'universalMedia.saveQueuePlaylist' => 'Guardar fila como lista de reprodução',
+			'universalMedia.queuePlaylistSaved' => 'A lista de reprodução foi guardada junto aos ficheiros multimédia.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.queuePlaylistUnavailable' => 'Esta fila não pode ser guardada como uma lista local reutilizável.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Escolha uma localização na mesma pasta dos ficheiros da fila.',
 			'universalMedia.noFavorites' => 'Não foram salvos favoritos ainda. favoritos permanecem neste perfil.',
 			'universalMedia.removeFavorite' => 'Remover streaming favorito',
 			'universalMedia.filesHelp' => 'Escolha arquivos de áudio, vídeo ou ISO para uma quebra temporária. arquivos e URLs não são adicionados ao histórico da biblioteca.',
@@ -8141,8 +8251,6 @@ extension on TranslationsPt {
 			'universalMedia.contrast' => 'Contraste',
 			'universalMedia.gamma' => 'Gama',
 			'universalMedia.hue' => 'Hue',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturno',
 			'universalMedia.view360' => 'Vista plana para 360° de vídeo',
 			'universalMedia.view360Help' => 'Use isso para o vídeo 360° equirectangular. MPV precisa do filtro v360 da FFmpeg para esta visualização.',
@@ -8161,12 +8269,13 @@ extension on TranslationsPt {
 			'universalMedia.replaceRecording' => 'Substituição de arquivo',
 			'universalMedia.discHelp' => 'Abra um disco no disco óptico deste computador. Você também pode abrir uma imagem ISO dos arquivos de dispositivo.',
 			'universalMedia.discs' => 'Discos ópticos',
+			'universalMedia.editionOrTitle' => 'Edição ou título do disco',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray em',
 			'universalMedia.audioCd' => 'CD de áudio',
 			'universalMedia.discAvailability' => 'A reprodução de discos precisa de um edifício MPV compatível, disco suportado e permissão do sistema operacional.',
 			'universalMedia.converterTitle' => 'Converter um arquivo de mídia local',
-			'universalMedia.converterHelp' => 'Use FFmpeg para fazer uma cópia MP4, M4A ou MP3.',
+			'universalMedia.converterHelp' => 'Converter um arquivo local ou remuque-o com FFmpeg.',
 			'universalMedia.converterIntro' => 'Converter um arquivo de áudio ou vídeo local para um formato que funciona em vários dispositivos.',
 			'universalMedia.converterPrivacy' => 'FFmpeg deve ser instalado neste computador. conversão lê apenas arquivos locais. não descarga fluxos ou remove DRM.',
 			'universalMedia.converterChooseInput' => 'Escolha um arquivo de mídia local',
@@ -8174,6 +8283,8 @@ extension on TranslationsPt {
 			'universalMedia.converterMp4' => 'MP4 · H.264 e AAC',
 			'universalMedia.converterM4a' => 'M4A - Áudio AAC',
 			'universalMedia.converterMp3' => 'MP3 - Áudio',
+			'universalMedia.allowFtp' => 'Permitir FTP',
+			'universalMedia.allowFtpHelp' => 'FTP envia mídias sem criptografia. Use apenas em redes confiáveis.',
 			'universalMedia.converterSaveAs' => 'Mídia convertida como',
 			'universalMedia.converterExtensionMismatch' => 'Escolha um nome de arquivo com a extensão de saída selecionada.',
 			'universalMedia.converterUnsupportedInput' => 'Escolha um arquivo de áudio ou vídeo.',
@@ -8183,7 +8294,7 @@ extension on TranslationsPt {
 			'universalMedia.converterStarting' => 'Começando com FFmpeg...',
 			'universalMedia.converterProgress' => 'Converter para esse computador...',
 			'universalMedia.converterComplete' => 'Conversão completa. o novo arquivo está pronto.',
-			'universalMedia.converterFfmpegMissing' => 'Instale FFmpeg com suporte H.264, AAC e MP3, então tente novamente.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg está faltando ou não suporta este formato.',
 			'universalMedia.converterFailed' => 'Verifique se o arquivo fonte pode ser lido e o destino tem espaço livre suficiente.',
 			'universalMedia.converterCancelled' => 'A conversão foi cancelada. a saída incompleta foi removida.',
 			'universalMedia.converterDesktopOnly' => 'A conversão local está disponível em computadores de desktop com FFmpeg instalado.',
@@ -8211,6 +8322,9 @@ extension on TranslationsPt {
 			'universalMedia.captureSaved' => 'A gravação de tela foi salvida.',
 			'universalMedia.captureElapsedLabel' => 'Tempo de gravação',
 			'universalMedia.captureStart' => 'Começa a gravação',
+			'universalMedia.capturePreview' => 'Pré-visualizar no leitor',
+			'universalMedia.capturePreviewHelp' => 'Pré-visualize a origem selecionada no leitor padrão. A pré-visualização só dura nesta sessão e não guarda uma gravação. O suporte dos dispositivos e as permissões dependem do MPV e do sistema operativo. A pré-visualização usa apenas vídeo; as gravações guardadas podem incluir áudio opcional.',
+			'universalMedia.capturePreviewActive' => 'Pré-visualização em direto · sem gravação',
 			'universalMedia.captureStop' => 'Parar e salvar',
 			'universalMedia.captureMode' => 'captura',
 			'universalMedia.shareMode' => 'Compartilhar',
@@ -8500,7 +8614,6 @@ extension on TranslationsPt {
 			'audiobook.addSyncSource' => 'Adicione o Google Drive, o OneDrive, o Dropbox, o WebDAV ou o S3 em Arquivos e Livros primeiro.',
 			'audiobook.syncDestination' => 'Conta de armazenamento de sincronização',
 			'audiobook.syncFolder' => 'Sincronização de folha ou prefixo',
-			'audiobook.syncFolderHelp' => 'Use uma pasta existente separada dentro da sua fonte WebDAV, ou um prefixo dedicado S3.',
 			'audiobook.syncCode' => 'Código de sincronização',
 			'audiobook.syncCodeHelp' => 'Crie um código em seu primeiro dispositivo e, em seguida, introduza esse código em seus outros dispositivos.Mantenha uma cópia privada: é a chave para o seu estado criptografado.Utiliza um código diferente para cada pessoa.',
 			'audiobook.showCode' => 'Mostrar ou esconder o código de sincronização',
@@ -8510,7 +8623,6 @@ extension on TranslationsPt {
 			'audiobook.syncSourceDisconnect' => 'Remover esta fonte irá desativar a leitura e a escuta de sincronização aqui. arquivos de sincronização criptografados permanecerão no provedor.',
 			'audiobook.syncReconnect' => 'Reconectar a conta de armazenamento',
 			'audiobook.lastSynced' => ({required Object time}) => 'Última sincronização em ${time}',
-			'audiobook.syncPrivacy' => 'Somente progressos e notas criptografados são armazenados. arquivos de áudio e ebook, tokens de conta e senhas não são carregados. Google Drive e OneDrive usa armazenamento de aplicativos; Dropbox usa PlezyNG Sync. A habilitação de sincronização pode solicitar acesso adicional de escrita. Enquanto ativado, este destino possui sincronização de progresso; o progresso do servidor permanece separado.',
 			'audiobook.syncConflicts' => 'Escolha onde reencontrar',
 			'audiobook.conflictHelp' => 'Essas alterações foram feitas de forma independente. escolha a posição ou a versão de marcador para manter. Um tempo mais tarde ou uma porcentagem mais alta não ganha automaticamente.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Atividade ${device}',
@@ -8609,6 +8721,8 @@ extension on TranslationsPt {
 			'sourceSetup.nfsEncryptionFailure' => 'Para NFS criptografado, verifique o suporte a RFC 9289 e TLS 1.3 nos dois serviços do NAS, o nome no certificado e os UID/GID do compartilhamento. PlezyNG não tentará esta conexão novamente sem criptografia.',
 			'sourceSetup.sourceConnecting' => 'Conectando à fonte',
 			'sourceSetup.metadataSearchPrivacy' => 'Esta busca de títulos é enviada ao Trakt. Ela envia o título digitado, não o vídeo nem as credenciais da fonte.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Escolher uma correspondência',
 			'sourceSetup.metadataMatchHelp' => 'Confira o título e o ano antes de escolher. O Trakt recebe o título pesquisado; o vídeo permanece na fonte.',
 			'sourceSetup.metadataNoMatches' => 'Nenhum título correspondente encontrado online. Tente outro título.',
@@ -8655,8 +8769,6 @@ extension on TranslationsPt {
 			'sourceSetup.sharedLibraryInvalid' => 'Use 8 a 100 letras, números, pontos, subscores ou hyphens.',
 			'sourceSetup.generateSharedLibraryId' => 'Crie um ID de biblioteca compartilhado',
 			'sourceSetup.nfsReadAhead' => 'Requisitos de read-ahead da NFS',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Mais leituras paralelas podem melhorar a passagem em uma NAS rápida ou rede. Use 1 se o servidor limitar pedidos concorrentes.',
 			'sourceSetup.nfsReadTest' => 'Medir o desempenho da leitura NFS',
 			'sourceSetup.nfsReadTestHelp' => 'Leia até 64 MiB do maior arquivo para medir esta conexão NAS. Isso usa a largura de banda da rede.',
@@ -8679,7 +8791,6 @@ extension on TranslationsPt {
 			'comics.collections' => 'Coleções',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8704,7 +8815,6 @@ extension on TranslationsPt {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8736,8 +8846,6 @@ extension on TranslationsPt {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8745,14 +8853,12 @@ extension on TranslationsPt {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'Este link Plezy não é válido.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'Nenhum perfil corresponde a "${profile}".',
 			'deepLinks.serverUnavailable' => 'Não podia chegar ao servidor para este link.',
@@ -8770,6 +8876,12 @@ extension on TranslationsPt {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Abra como ${name}',
 			'deepLinks.copy' => 'Copia',
 			'deepLinks.copied' => 'Link copiado',
+			'householdSetup.title' => 'Configuração da casa',
+			'issueReport.title' => 'Comunicar um problema',
+			'issueReport.instructions' => 'Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.',
+			'issueReport.privacy' => 'O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.',
+			'issueReport.logPrivacy' => 'Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.',
+			'issueReport.openDraft' => 'Abrir rascunho do GitHub',
 			_ => null,
 		};
 	}

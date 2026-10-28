@@ -60,6 +60,17 @@ void main() {
   });
 
   group('NavigationTab.getVisibleTabs', () {
+    test('Search remains reachable offline when Files has configured sources', () {
+      expect(
+        NavigationTab.getVisibleTabs(isOffline: true).map((tab) => tab.id),
+        isNot(contains(NavigationTabId.search)),
+      );
+      expect(
+        NavigationTab.getVisibleTabs(isOffline: true, hasFileSources: true).map((tab) => tab.id),
+        contains(NavigationTabId.search),
+      );
+    });
+
     test('Games is opt-in and works without a media-server connection', () {
       expect(NavigationTab.getVisibleTabs(isOffline: false).map((t) => t.id), isNot(contains(NavigationTabId.games)));
       expect(

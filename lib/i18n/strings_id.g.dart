@@ -110,6 +110,8 @@ class TranslationsId extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$id comics = _Translations$comics$id._(_root);
 	@override late final _Translations$games$id games = _Translations$games$id._(_root);
 	@override late final _Translations$deepLinks$id deepLinks = _Translations$deepLinks$id._(_root);
+	@override late final _Translations$householdSetup$id householdSetup = _Translations$householdSetup$id._(_root);
+	@override late final _Translations$issueReport$id issueReport = _Translations$issueReport$id._(_root);
 }
 
 // Path: app
@@ -1196,6 +1198,30 @@ class _Translations$videoControls$id extends Translations$videoControls$en {
 	@override String get settingsButton => 'Pengaturan Playback';
 	@override String get tracksButton => 'Audio dan Subtitle';
 	@override String get chaptersButton => 'bab yang';
+	@override String get segmentLoopHelp => 'Set A, kemudian set B nanti dalam timeline.';
+	@override String get setLoopStart => 'Atur awal pengulangan (A)';
+	@override String get setLoopEnd => 'Set loop akhir (B)';
+	@override String get clearSegmentLoop => 'Selengkapnya Segment Loop';
+	@override String get setLoopStartFirst => 'Set loop start (A) sebelum akhir (B).';
+	@override String get loopEndAfterStart => 'Akhir lingkaran harus lebih lambat dari awal.';
+	@override String get segmentLoopUnavailable => 'Segment looping tidak tersedia untuk playback ini.';
+	@override String get loopPointNotSet => 'Tidak menetapkan';
+	@override String get bookmarksHelp => 'Tanda-tanda buku disimpan pada perangkat ini. pilih satu untuk pergi ke waktu itu.';
+	@override String get bookmarksButton => 'Bookmark yang';
+	@override String get chaptersAndBookmarks => 'Bab dan Bookmark';
+	@override String get segmentLoop => 'Segmen Lingkungan';
+	@override String get addBookmark => 'Tambahkan Bookmark';
+	@override String get bookmarkName => 'Nama Bookmark';
+	@override String get bookmarkNameHint => 'Misalnya, adegan pembukaan';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark yang ${n}';
+	@override String get bookmarkNameRequired => 'Masukkan nama untuk buku ini.';
+	@override String get deleteBookmark => 'Menghapus Bookmark';
+	@override String get bookmarkLimitReached => 'Item ini sudah memiliki 100 buku.';
+	@override String get bookmarkUnavailable => 'Saya tidak bisa menyimpan atau menghapus buku ini.';
+	@override String get bookmarkSaved => 'Buku yang diselamatkan.';
+	@override String get bookmarkDeleted => 'Bookmark sudah dihapus.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Laporan titik ${point} Tetapkan pada ${time}.';
+	@override String get noChaptersOrBookmarks => 'Tidak ada bab atau buku yang tersedia.';
 	@override String get versionQualityButton => 'Versi & Kualitas';
 	@override String get versionColumnHeader => 'Versi';
 	@override String get qualityColumnHeader => 'Kualitas';
@@ -2058,6 +2084,7 @@ class _Translations$music$id extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Membaca Track Analysis';
 	@override String get visualizerAmbientMotion => 'Pergerakan Lingkungan';
 	@override String get visualizerPlexLoudness => 'Plex suara';
+	@override String get visualizerLiveAudio => 'Analisis audio langsung';
 	@override String get visualizerPreviousPreset => 'Gaya visual sebelumnya';
 	@override String get visualizerNextPreset => 'Seterusnya Visual Style';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2405,6 +2432,12 @@ class _Translations$videoSettings$id extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Peta ke puncak kecerahan layar di pemain, kemudian memberitahu komposer hasilnya.';
 	@override String get hdrToneMappingFailed => 'Tidak bisa mengubah pemetaan nada HDR - mode sebelumnya masih aktif.';
 	@override String get audioOutput => 'Audio output';
+	@override String get videoTrack => 'Trek video';
+	@override String get videoTrackDescription => 'Pilih aliran video yang akan ditampilkan. Tersedia pada pemutaran MPV jika file memiliki trek video alternatif.';
+	@override String get videoTrackDefault => 'Bawaan';
+	@override String get videoTrackUnavailable => 'Tidak ada trek video alternatif.';
+	@override String get videoTrackFailed => 'Trek video tidak dapat diubah.';
+	@override String videoTrackNumber({required Object id}) => 'Trek ${id}';
 	@override String get performanceOverlay => 'Perkembangan Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2412,10 +2445,17 @@ class _Translations$videoSettings$id extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Ruang Audio';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Ekualiser audio';
-	@override String get audioEqualizerDescription => 'Tersedia pada mpv; EQ aktif mendekodkan audio dan menghentikan matchhrough.';
+	@override String get audioEqualizerDescription => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.';
 	@override String get audioEqualizerFlat => 'Lantai';
 	@override String get audioEqualizerActive => 'Kustom';
 	@override String get audioEqualizerSaveFailed => 'Tidak bisa menyimpan seting audio equalizer.';
+	@override String get audioEffectsDescription => 'Efek menggunakan audio yang dikodkan, sehingga passthrough berbalik. ruang dan pembesaran stereo tergantung pada MPV Bangun dan track.';
+	@override String get audioStereoWidth => 'Pengembangan Stereo';
+	@override String get audioSpatializer => 'Lingkungan ruangan';
+	@override String get audioSpatializerDescription => 'Tambahkan refleksi ruang yang tenang.';
+	@override String get audioPitch => 'Pertukaran Pitch';
+	@override String get audioPitchDescription => 'Perubahan jalur tanpa perubahan kecepatan. MPV konstruksi harus termasuk Rubber Band.';
+	@override String get audioEffectUnavailable => 'Efek ini tidak tersedia untuk jalur ini atau MPV dan membangun.';
 	@override String get backgroundVideoAudio => 'Video audio latar belakang';
 	@override String get backgroundVideoAudioDescription => 'Tetap bermain audio video ketika Anda meninggalkan pemain; gambar itu tersembunyi sampai Anda kembali. Android menggunakan pemberitahuan pemutaran media.';
 	@override String get audioNormalization => 'Normalisasi bunyi';
@@ -3180,6 +3220,10 @@ class _Translations$universalMedia$id extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Pilih file playlist';
 	@override String get openPlaylist => 'Pembukaan playlist';
 	@override String get playlistFormatsHelp => 'Daftar main dapat berisi lebih dari 1.000 item dan 2 MB. HLS terbuka sebagai arus sehingga pemain dapat memilih kualitas.';
+	@override String get saveQueuePlaylist => 'Simpan antrean sebagai daftar putar';
+	@override String get queuePlaylistSaved => 'Daftar putar disimpan di samping file media.';
+	@override String get queuePlaylistUnavailable => 'Antrean ini tidak dapat disimpan sebagai daftar putar lokal yang dapat digunakan kembali.';
+	@override String get queuePlaylistFolderRequired => 'Pilih lokasi penyimpanan di folder yang sama dengan file dalam antrean.';
 	@override String get noFavorites => 'Belum disimpan streaming favorit sampai sekarang. favorit tetap di profil ini.';
 	@override String get removeFavorite => 'Menghapus Stream Favorit';
 	@override String get filesHelp => 'Pilih file audio, video, atau ISO untuk catatan sementara.File dan URL tidak ditambahkan ke sejarah perpustakaan.';
@@ -3242,12 +3286,13 @@ class _Translations$universalMedia$id extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Mengganti file';
 	@override String get discHelp => 'Buka cakera di drive optik komputer ini.Anda juga dapat membuka gambar ISO dari file perangkat.';
 	@override String get discs => 'Disk optik';
+	@override String get editionOrTitle => 'Edisi atau judul cakram';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'dan Blu-ray';
 	@override String get audioCd => 'Audio CD';
 	@override String get discAvailability => 'Disk playback membutuhkan konfigurasi MPV yang kompatibel, drive yang didukung, dan izin sistem operasi.';
 	@override String get converterTitle => 'Konversi file media lokal';
-	@override String get converterHelp => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.';
+	@override String get converterHelp => 'Konversi file lokal atau remux dengan FFmpeg.';
 	@override String get converterIntro => 'Konversi file audio atau video lokal ke format yang bekerja pada lebih banyak perangkat.';
 	@override String get converterPrivacy => 'FFmpeg harus dipasang pada komputer ini.Conversion hanya membaca file lokal.Ia tidak mengunduh aliran atau menghapus DRM.';
 	@override String get converterChooseInput => 'Pilih file media lokal';
@@ -3255,6 +3300,8 @@ class _Translations$universalMedia$id extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 H.264 dan AAC';
 	@override String get converterM4a => 'M4A · AAC audio';
 	@override String get converterMp3 => 'MP3 dan Audio';
+	@override String get allowFtp => 'Memberi izin FTP';
+	@override String get allowFtpHelp => 'FTP mengirim media tanpa enkripsi. gunakan hanya pada jaringan yang dipercaya.';
 	@override String get converterSaveAs => 'Menyimpan media yang terkonversi sebagai';
 	@override String get converterExtensionMismatch => 'Pilih nama file dengan ekstensi output yang dipilih.';
 	@override String get converterUnsupportedInput => 'Pilih file audio atau video.';
@@ -3264,7 +3311,7 @@ class _Translations$universalMedia$id extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Mulai dari FFmpeg...';
 	@override String get converterProgress => 'Beralih ke komputer ini...';
 	@override String get converterComplete => 'Konversi selesai. file baru sudah siap.';
-	@override String get converterFfmpegMissing => 'Instal FFmpeg dengan dukungan H.264, AAC, dan MP3, kemudian coba lagi.';
+	@override String get converterFfmpegMissing => 'FFmpeg yang hilang atau tidak mendukung format ini.';
 	@override String get converterFailed => 'Periksa bahwa file sumber dapat dibaca dan tujuan memiliki cukup ruang gratis.';
 	@override String get converterCancelled => 'Konversi dibatalkan. hasil yang tidak lengkap dihapus.';
 	@override String get converterDesktopOnly => 'Konversi lokal tersedia pada komputer desktop dengan FFmpeg terinstal.';
@@ -3292,6 +3339,9 @@ class _Translations$universalMedia$id extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Rekaman layar disimpan.';
 	@override String get captureElapsedLabel => 'Waktu Rekaman';
 	@override String get captureStart => 'Mulai Rekaman';
+	@override String get capturePreview => 'Pratinjau di pemutar';
+	@override String get capturePreviewHelp => 'Pratinjau sumber yang dipilih di pemutar standar. Pratinjau hanya berlaku untuk sesi ini dan tidak menyimpan rekaman. Dukungan perangkat dan izin bergantung pada MPV dan sistem operasi. Pratinjau hanya menggunakan video; rekaman yang disimpan dapat menyertakan audio opsional.';
+	@override String get capturePreviewActive => 'Pratinjau langsung · tidak merekam';
 	@override String get captureStop => 'berhenti dan menyelamatkan';
 	@override String get captureMode => 'penangkapan';
 	@override String get shareMode => 'Berkongsi';
@@ -3610,7 +3660,6 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 ke File & Buku terlebih dahulu.';
 	@override String get syncDestination => 'Sinkronisasi akun penyimpanan';
 	@override String get syncFolder => 'Sinkron folder atau prefix';
-	@override String get syncFolderHelp => 'Gunakan folder terpisah yang ada di dalam sumber WebDAV Anda, atau prefix S3 khusus. file buku tidak pernah diubah.';
 	@override String get syncCode => 'Kode Sinkronisasi';
 	@override String get syncCodeHelp => 'Buat kode pada perangkat pertama Anda, kemudian masukkan kode itu pada perangkat lain Anda. simpan salinan pribadi: itu adalah kunci untuk status enkripsi Anda. Gunakan kode yang berbeda untuk setiap orang.';
 	@override String get showCode => 'Menampilkan atau menyembunyikan kode sink';
@@ -3620,7 +3669,6 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Menghapus sumber ini akan mematikan membaca dan mendengarkan sync di sini. file sync tersulit akan tetap di penyedia.';
 	@override String get syncReconnect => 'Menghubungkan kembali akun penyimpanan';
 	@override String lastSynced({required Object time}) => 'Terakhir disinkronkan di ${time}';
-	@override String get syncPrivacy => 'Hanya kemajuan dan catatan yang disulitkan disimpan. file audio dan ebook, token akun dan kata sandi tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan dapat meminta akses penulisan tambahan. Sementara diaktifkan, tujuan ini memiliki penyegerakan kemajuan; kemajuan server tetap terpisah. Mengalihkan penyegerakan mengekalkan sejarah lokal dan keadaan remote.';
 	@override String get syncConflicts => 'Pilih tempat untuk kembali';
 	@override String get conflictHelp => 'Perubahan-perubahan ini dilakukan secara independen. pilih posisi atau bookmark versi untuk tetap. timestamp kemudian atau peratusan yang lebih tinggi tidak secara otomatis menang.';
 	@override String syncDevice({required Object device}) => 'Perangkat ${device}';
@@ -3814,7 +3862,6 @@ class _Translations$games$id extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3839,7 +3886,6 @@ class _Translations$games$id extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3871,8 +3917,6 @@ class _Translations$games$id extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3880,14 +3924,12 @@ class _Translations$games$id extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -3914,6 +3956,30 @@ class _Translations$deepLinks$id extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Buka sebagai ${name}';
 	@override String get copy => 'Kopi';
 	@override String get copied => 'Link yang disalin';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$id extends Translations$householdSetup$en {
+	_Translations$householdSetup$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Penyiapan rumah tangga';
+}
+
+// Path: issueReport
+class _Translations$issueReport$id extends Translations$issueReport$en {
+	_Translations$issueReport$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Laporkan masalah';
+	@override String get instructions => 'Pindai kode QR untuk membuka draf GitHub yang sudah terisi. Tinjau dan kirim hanya jika Anda siap.';
+	@override String get privacy => 'Draf memuat versi aplikasi, platform, dan jumlah koneksi. Alamat server, nama akun dan profil, judul media, serta lokasi berkas tidak disertakan.';
+	@override String get logPrivacy => 'Log bersifat opsional. Tinjau sebelum mengunggah. ID log ditambahkan ke draf, yang mungkin bersifat publik.';
+	@override String get openDraft => 'Buka draf GitHub';
 }
 
 // Path: appIcon.names
@@ -6039,6 +6105,32 @@ extension on TranslationsId {
 			'videoControls.settingsButton' => 'Pengaturan Playback',
 			'videoControls.tracksButton' => 'Audio dan Subtitle',
 			'videoControls.chaptersButton' => 'bab yang',
+			'videoControls.segmentLoopHelp' => 'Set A, kemudian set B nanti dalam timeline.',
+			'videoControls.setLoopStart' => 'Atur awal pengulangan (A)',
+			'videoControls.setLoopEnd' => 'Set loop akhir (B)',
+			'videoControls.clearSegmentLoop' => 'Selengkapnya Segment Loop',
+			'videoControls.setLoopStartFirst' => 'Set loop start (A) sebelum akhir (B).',
+			'videoControls.loopEndAfterStart' => 'Akhir lingkaran harus lebih lambat dari awal.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping tidak tersedia untuk playback ini.',
+			'videoControls.loopPointNotSet' => 'Tidak menetapkan',
+			'videoControls.bookmarksHelp' => 'Tanda-tanda buku disimpan pada perangkat ini. pilih satu untuk pergi ke waktu itu.',
+			'videoControls.bookmarksButton' => 'Bookmark yang',
+			'videoControls.chaptersAndBookmarks' => 'Bab dan Bookmark',
+			'videoControls.segmentLoop' => 'Segmen Lingkungan',
+			'videoControls.addBookmark' => 'Tambahkan Bookmark',
+			'videoControls.bookmarkName' => 'Nama Bookmark',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Misalnya, adegan pembukaan',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark yang ${n}',
+			'videoControls.bookmarkNameRequired' => 'Masukkan nama untuk buku ini.',
+			'videoControls.deleteBookmark' => 'Menghapus Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Item ini sudah memiliki 100 buku.',
+			'videoControls.bookmarkUnavailable' => 'Saya tidak bisa menyimpan atau menghapus buku ini.',
+			'videoControls.bookmarkSaved' => 'Buku yang diselamatkan.',
+			'videoControls.bookmarkDeleted' => 'Bookmark sudah dihapus.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Laporan titik ${point} Tetapkan pada ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Tidak ada bab atau buku yang tersedia.',
 			'videoControls.versionQualityButton' => 'Versi & Kualitas',
 			'videoControls.versionColumnHeader' => 'Versi',
 			'videoControls.qualityColumnHeader' => 'Kualitas',
@@ -6053,8 +6145,6 @@ extension on TranslationsId {
 			'videoControls.exitFullscreenButton' => 'Penampilan Full Screen',
 			'videoControls.alwaysOnTopButton' => 'Selalu di atas',
 			'videoControls.rotationLockButton' => 'Lock rotasi',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Lock layar',
 			'videoControls.screenLockButton' => 'layar lock',
 			'videoControls.timelineSlider' => 'Video Timeline',
@@ -6543,6 +6633,8 @@ extension on TranslationsId {
 			'libraries.hideLibrary' => 'Perpustakaan tersembunyi',
 			'libraries.libraryOptions' => 'Pilihan perpustakaan',
 			'libraries.content' => 'Perpustakaan konten',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Pilih perpustakaan',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filter (${count})',
 			'libraries.noRecommendations' => 'Tidak ada rekomendasi tersedia',
@@ -6567,8 +6659,6 @@ extension on TranslationsId {
 			'libraries.filterCategories.year' => 'Tahun',
 			'libraries.filterCategories.contentRating' => 'Penilaian konten',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'tidak diperhatikan',
 			'libraries.filterCategories.unplayed' => 'Belum dimainkan',
 			'libraries.filterCategories.favorites' => 'Favorit',
@@ -7010,6 +7100,7 @@ extension on TranslationsId {
 			'music.visualizerProfileLoading' => 'Membaca Track Analysis',
 			'music.visualizerAmbientMotion' => 'Pergerakan Lingkungan',
 			'music.visualizerPlexLoudness' => 'Plex suara',
+			'music.visualizerLiveAudio' => 'Analisis audio langsung',
 			'music.visualizerPreviousPreset' => 'Gaya visual sebelumnya',
 			'music.visualizerNextPreset' => 'Seterusnya Visual Style',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7056,6 +7147,8 @@ extension on TranslationsId {
 			'watchTogether.codeCopied' => 'Kode kamar disalin',
 			'watchTogether.shareInvite' => 'Membagi Jemputan',
 			'watchTogether.inviteCopied' => 'Tuliskan pesan, masukkan ke dalam pesan.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Bergabunglah dengan Watch bersama saya di PlezyNG: buka Watch bersama, pilih Join Room dan masukkan ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Bersama-sama kontrol sesi',
 			'watchTogether.reconnecting' => 'Menghubungkan kembali...',
@@ -7081,8 +7174,6 @@ extension on TranslationsId {
 			'watchTogether.playAnyway' => 'bermain apa pun',
 			'watchTogether.chooseAnotherCopy' => 'Pilih salinan lain',
 			'watchTogether.dontPlay' => 'Jangan Bermain',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Anda tidak memiliki video ini',
 			'watchTogether.unavailableDescription' => 'PlezyNG tidak dapat menemukannya di perpustakaan Anda. pilih salinan sendiri atau cari lagi.',
 			'watchTogether.chooseCopy' => 'Pilih salinan',
@@ -7436,6 +7527,12 @@ extension on TranslationsId {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Peta ke puncak kecerahan layar di pemain, kemudian memberitahu komposer hasilnya.',
 			'videoSettings.hdrToneMappingFailed' => 'Tidak bisa mengubah pemetaan nada HDR - mode sebelumnya masih aktif.',
 			'videoSettings.audioOutput' => 'Audio output',
+			'videoSettings.videoTrack' => 'Trek video',
+			'videoSettings.videoTrackDescription' => 'Pilih aliran video yang akan ditampilkan. Tersedia pada pemutaran MPV jika file memiliki trek video alternatif.',
+			'videoSettings.videoTrackDefault' => 'Bawaan',
+			'videoSettings.videoTrackUnavailable' => 'Tidak ada trek video alternatif.',
+			'videoSettings.videoTrackFailed' => 'Trek video tidak dapat diubah.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Trek ${id}',
 			'videoSettings.performanceOverlay' => 'Perkembangan Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7443,10 +7540,17 @@ extension on TranslationsId {
 			'videoSettings.audioOutputSpatial' => 'Ruang Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Ekualiser audio',
-			'videoSettings.audioEqualizerDescription' => 'Tersedia pada mpv; EQ aktif mendekodkan audio dan menghentikan matchhrough.',
+			'videoSettings.audioEqualizerDescription' => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Lantai',
 			'videoSettings.audioEqualizerActive' => 'Kustom',
 			'videoSettings.audioEqualizerSaveFailed' => 'Tidak bisa menyimpan seting audio equalizer.',
+			'videoSettings.audioEffectsDescription' => 'Efek menggunakan audio yang dikodkan, sehingga passthrough berbalik. ruang dan pembesaran stereo tergantung pada MPV Bangun dan track.',
+			'videoSettings.audioStereoWidth' => 'Pengembangan Stereo',
+			'videoSettings.audioSpatializer' => 'Lingkungan ruangan',
+			'videoSettings.audioSpatializerDescription' => 'Tambahkan refleksi ruang yang tenang.',
+			'videoSettings.audioPitch' => 'Pertukaran Pitch',
+			'videoSettings.audioPitchDescription' => 'Perubahan jalur tanpa perubahan kecepatan. MPV konstruksi harus termasuk Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Efek ini tidak tersedia untuk jalur ini atau MPV dan membangun.',
 			'videoSettings.backgroundVideoAudio' => 'Video audio latar belakang',
 			'videoSettings.backgroundVideoAudioDescription' => 'Tetap bermain audio video ketika Anda meninggalkan pemain; gambar itu tersembunyi sampai Anda kembali. Android menggunakan pemberitahuan pemutaran media.',
 			'videoSettings.audioNormalization' => 'Normalisasi bunyi',
@@ -7557,6 +7661,8 @@ extension on TranslationsId {
 			'metadataEdit.metadataUpdated' => 'Metadata yang diperbarui',
 			'metadataEdit.metadataUpdateFailed' => 'Tidak dapat mengemas kini metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork dikemas kini',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'gagal memperbarui karya seni',
 			'metadataEdit.noArtworkAvailable' => 'Tidak ada seni yang tersedia',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Opsi seni ${index}',
@@ -7595,8 +7701,6 @@ extension on TranslationsId {
 			'metadataEdit.shownWithForeignAudio' => 'Menampilkan Audio Asing',
 			'metadataEdit.alwaysEnabled' => 'Selalu diizinkan',
 			'metadataEdit.tags' => 'Label',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Tambahkan tag',
 			'metadataEdit.genre' => 'Aliran',
 			'metadataEdit.director' => 'Direktur',
@@ -8069,6 +8173,12 @@ extension on TranslationsId {
 			'universalMedia.choosePlaylist' => 'Pilih file playlist',
 			'universalMedia.openPlaylist' => 'Pembukaan playlist',
 			'universalMedia.playlistFormatsHelp' => 'Daftar main dapat berisi lebih dari 1.000 item dan 2 MB. HLS terbuka sebagai arus sehingga pemain dapat memilih kualitas.',
+			'universalMedia.saveQueuePlaylist' => 'Simpan antrean sebagai daftar putar',
+			'universalMedia.queuePlaylistSaved' => 'Daftar putar disimpan di samping file media.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.queuePlaylistUnavailable' => 'Antrean ini tidak dapat disimpan sebagai daftar putar lokal yang dapat digunakan kembali.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Pilih lokasi penyimpanan di folder yang sama dengan file dalam antrean.',
 			'universalMedia.noFavorites' => 'Belum disimpan streaming favorit sampai sekarang. favorit tetap di profil ini.',
 			'universalMedia.removeFavorite' => 'Menghapus Stream Favorit',
 			'universalMedia.filesHelp' => 'Pilih file audio, video, atau ISO untuk catatan sementara.File dan URL tidak ditambahkan ke sejarah perpustakaan.',
@@ -8109,8 +8219,6 @@ extension on TranslationsId {
 			'universalMedia.contrast' => 'kontras',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturasi',
 			'universalMedia.view360' => 'Pemandangan rata untuk video 360 derajat',
 			'universalMedia.view360Help' => 'Gunakan ini untuk video 360° equirectangular. MPV membutuhkan filter v360 FFmpeg untuk pandangan ini.',
@@ -8129,12 +8237,13 @@ extension on TranslationsId {
 			'universalMedia.replaceRecording' => 'Mengganti file',
 			'universalMedia.discHelp' => 'Buka cakera di drive optik komputer ini.Anda juga dapat membuka gambar ISO dari file perangkat.',
 			'universalMedia.discs' => 'Disk optik',
+			'universalMedia.editionOrTitle' => 'Edisi atau judul cakram',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'dan Blu-ray',
 			'universalMedia.audioCd' => 'Audio CD',
 			'universalMedia.discAvailability' => 'Disk playback membutuhkan konfigurasi MPV yang kompatibel, drive yang didukung, dan izin sistem operasi.',
 			'universalMedia.converterTitle' => 'Konversi file media lokal',
-			'universalMedia.converterHelp' => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.',
+			'universalMedia.converterHelp' => 'Konversi file lokal atau remux dengan FFmpeg.',
 			'universalMedia.converterIntro' => 'Konversi file audio atau video lokal ke format yang bekerja pada lebih banyak perangkat.',
 			'universalMedia.converterPrivacy' => 'FFmpeg harus dipasang pada komputer ini.Conversion hanya membaca file lokal.Ia tidak mengunduh aliran atau menghapus DRM.',
 			'universalMedia.converterChooseInput' => 'Pilih file media lokal',
@@ -8142,6 +8251,8 @@ extension on TranslationsId {
 			'universalMedia.converterMp4' => 'MP4 H.264 dan AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC audio',
 			'universalMedia.converterMp3' => 'MP3 dan Audio',
+			'universalMedia.allowFtp' => 'Memberi izin FTP',
+			'universalMedia.allowFtpHelp' => 'FTP mengirim media tanpa enkripsi. gunakan hanya pada jaringan yang dipercaya.',
 			'universalMedia.converterSaveAs' => 'Menyimpan media yang terkonversi sebagai',
 			'universalMedia.converterExtensionMismatch' => 'Pilih nama file dengan ekstensi output yang dipilih.',
 			'universalMedia.converterUnsupportedInput' => 'Pilih file audio atau video.',
@@ -8151,7 +8262,7 @@ extension on TranslationsId {
 			'universalMedia.converterStarting' => 'Mulai dari FFmpeg...',
 			'universalMedia.converterProgress' => 'Beralih ke komputer ini...',
 			'universalMedia.converterComplete' => 'Konversi selesai. file baru sudah siap.',
-			'universalMedia.converterFfmpegMissing' => 'Instal FFmpeg dengan dukungan H.264, AAC, dan MP3, kemudian coba lagi.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg yang hilang atau tidak mendukung format ini.',
 			'universalMedia.converterFailed' => 'Periksa bahwa file sumber dapat dibaca dan tujuan memiliki cukup ruang gratis.',
 			'universalMedia.converterCancelled' => 'Konversi dibatalkan. hasil yang tidak lengkap dihapus.',
 			'universalMedia.converterDesktopOnly' => 'Konversi lokal tersedia pada komputer desktop dengan FFmpeg terinstal.',
@@ -8179,6 +8290,9 @@ extension on TranslationsId {
 			'universalMedia.captureSaved' => 'Rekaman layar disimpan.',
 			'universalMedia.captureElapsedLabel' => 'Waktu Rekaman',
 			'universalMedia.captureStart' => 'Mulai Rekaman',
+			'universalMedia.capturePreview' => 'Pratinjau di pemutar',
+			'universalMedia.capturePreviewHelp' => 'Pratinjau sumber yang dipilih di pemutar standar. Pratinjau hanya berlaku untuk sesi ini dan tidak menyimpan rekaman. Dukungan perangkat dan izin bergantung pada MPV dan sistem operasi. Pratinjau hanya menggunakan video; rekaman yang disimpan dapat menyertakan audio opsional.',
+			'universalMedia.capturePreviewActive' => 'Pratinjau langsung · tidak merekam',
 			'universalMedia.captureStop' => 'berhenti dan menyelamatkan',
 			'universalMedia.captureMode' => 'penangkapan',
 			'universalMedia.shareMode' => 'Berkongsi',
@@ -8468,7 +8582,6 @@ extension on TranslationsId {
 			'audiobook.addSyncSource' => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 ke File & Buku terlebih dahulu.',
 			'audiobook.syncDestination' => 'Sinkronisasi akun penyimpanan',
 			'audiobook.syncFolder' => 'Sinkron folder atau prefix',
-			'audiobook.syncFolderHelp' => 'Gunakan folder terpisah yang ada di dalam sumber WebDAV Anda, atau prefix S3 khusus. file buku tidak pernah diubah.',
 			'audiobook.syncCode' => 'Kode Sinkronisasi',
 			'audiobook.syncCodeHelp' => 'Buat kode pada perangkat pertama Anda, kemudian masukkan kode itu pada perangkat lain Anda. simpan salinan pribadi: itu adalah kunci untuk status enkripsi Anda. Gunakan kode yang berbeda untuk setiap orang.',
 			'audiobook.showCode' => 'Menampilkan atau menyembunyikan kode sink',
@@ -8478,7 +8591,6 @@ extension on TranslationsId {
 			'audiobook.syncSourceDisconnect' => 'Menghapus sumber ini akan mematikan membaca dan mendengarkan sync di sini. file sync tersulit akan tetap di penyedia.',
 			'audiobook.syncReconnect' => 'Menghubungkan kembali akun penyimpanan',
 			'audiobook.lastSynced' => ({required Object time}) => 'Terakhir disinkronkan di ${time}',
-			'audiobook.syncPrivacy' => 'Hanya kemajuan dan catatan yang disulitkan disimpan. file audio dan ebook, token akun dan kata sandi tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan dapat meminta akses penulisan tambahan. Sementara diaktifkan, tujuan ini memiliki penyegerakan kemajuan; kemajuan server tetap terpisah. Mengalihkan penyegerakan mengekalkan sejarah lokal dan keadaan remote.',
 			'audiobook.syncConflicts' => 'Pilih tempat untuk kembali',
 			'audiobook.conflictHelp' => 'Perubahan-perubahan ini dilakukan secara independen. pilih posisi atau bookmark versi untuk tetap. timestamp kemudian atau peratusan yang lebih tinggi tidak secara otomatis menang.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Perangkat ${device}',
@@ -8577,6 +8689,8 @@ extension on TranslationsId {
 			'sourceSetup.nfsEncryptionFailure' => 'Untuk NFS terenkripsi, periksa dukungan RFC 9289 dan TLS 1.3 pada kedua layanan NAS, nama sertifikat, serta UID/GID ekspor. PlezyNG tidak akan mencoba ulang koneksi ini tanpa enkripsi.',
 			'sourceSetup.sourceConnecting' => 'Menghubungkan ke sumber',
 			'sourceSetup.metadataSearchPrivacy' => 'Pencarian judul ini dikirim ke Trakt. Yang dikirim adalah judul yang Anda masukkan, bukan video atau kredensial sumber.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Pilih kecocokan',
 			'sourceSetup.metadataMatchHelp' => 'Periksa judul dan tahun sebelum memilih. Trakt menerima judul pencarian; video tetap berada di sumbernya.',
 			'sourceSetup.metadataNoMatches' => 'Tidak ditemukan judul yang cocok secara daring. Coba judul lain.',
@@ -8623,8 +8737,6 @@ extension on TranslationsId {
 			'sourceSetup.sharedLibraryInvalid' => 'Gunakan 8-100 huruf, angka, titik, subscores atau hyphens.',
 			'sourceSetup.generateSharedLibraryId' => 'Menghasilkan ID perpustakaan yang dikongsi',
 			'sourceSetup.nfsReadAhead' => 'NFS Read-ahead Permintaan',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Lebih banyak pembaca paralel dapat meningkatkan lalu lintas pada NAS atau jaringan yang cepat. gunakan 1 jika server membatasi permintaan serentak.',
 			'sourceSetup.nfsReadTest' => 'Mengukur prestasi baca NFS',
 			'sourceSetup.nfsReadTestHelp' => 'Membaca hingga 64 MiB dari file terbesar untuk mengukur koneksi NAS ini.',
@@ -8647,7 +8759,6 @@ extension on TranslationsId {
 			'comics.collections' => 'Koleksi',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8672,7 +8783,6 @@ extension on TranslationsId {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8704,8 +8814,6 @@ extension on TranslationsId {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8713,14 +8821,12 @@ extension on TranslationsId {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'Link Plezy ini tidak sah.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'Tidak ada profil yang sepadan dengan "${profile}".',
 			'deepLinks.serverUnavailable' => 'Saya tidak bisa mencapai server untuk link ini.',
@@ -8738,6 +8844,12 @@ extension on TranslationsId {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Buka sebagai ${name}',
 			'deepLinks.copy' => 'Kopi',
 			'deepLinks.copied' => 'Link yang disalin',
+			'householdSetup.title' => 'Penyiapan rumah tangga',
+			'issueReport.title' => 'Laporkan masalah',
+			'issueReport.instructions' => 'Pindai kode QR untuk membuka draf GitHub yang sudah terisi. Tinjau dan kirim hanya jika Anda siap.',
+			'issueReport.privacy' => 'Draf memuat versi aplikasi, platform, dan jumlah koneksi. Alamat server, nama akun dan profil, judul media, serta lokasi berkas tidak disertakan.',
+			'issueReport.logPrivacy' => 'Log bersifat opsional. Tinjau sebelum mengunggah. ID log ditambahkan ke draf, yang mungkin bersifat publik.',
+			'issueReport.openDraft' => 'Buka draf GitHub',
 			_ => null,
 		};
 	}

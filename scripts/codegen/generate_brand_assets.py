@@ -3,8 +3,8 @@
 
 Install scripts/codegen/requirements-branding.txt, then run this script from
 any directory. --check renders in memory and reports stale / missing exports.
-Permanent alternate launcher ids stay intact; their backplates may vary, but
-the selected coral nested-play mark and its NG badge are always unchanged.
+Permanent alternate launcher ids stay intact. Large marks retain the ribbon
+and NG; compact and monochrome exports use the approved simplified ribbon.
 """
 
 from __future__ import annotations
@@ -60,34 +60,37 @@ class BrandRenderer:
         self.source_bytes = (ROOT / config["source"]).read_bytes()
         if sha256(self.source_bytes) != config["source_sha256"]:
             raise ValueError("Approved source checksum changed; update brand.json only after design approval")
-        self.source = Image.open(io.BytesIO(self.source_bytes)).convert("RGBA")
-        # The supplied PNG has near-zero-alpha matte residue. Keep its original
-        # bytes intact; suppress only <= 4/255 alpha in platform exports.
-        self.source.putalpha(self.source.getchannel("A").point(lambda a: 0 if a <= 4 else a))
+        self.source = self.load_image(self.source_bytes)
+        self.sources = {"mark_dark": self.source}
+        for name, source in config["sources"].items():
+            data = (ROOT / source["path"]).read_bytes()
+            if sha256(data) != source["sha256"]:
+                raise ValueError(f"Approved source checksum changed: {name}")
+            self.sources[name] = self.load_image(data)
         self.mono = self.monochrome()
-        self.adaptive_fit = self.safe_fit()
+        self.adaptive_fit = min(self.safe_fit(image) for image in
+                                (self.source, self.sources["mark_light"], self.sources["compact"]))
         self.cache: dict[str, bytes] = {}
 
-    def monochrome(self) -> Image.Image:
-        """Keep the rings, badge outline and NG; navy becomes transparent.
-
-        Extracting alpha alone would turn the entire filled navy centre into a
-        solid white triangle, losing the approved nested-play motif.
-        """
-        pixels = self.source.tobytes()
-        alpha = bytearray(self.source.width * self.source.height)
-        for i, (r, g, b, a) in enumerate(zip(pixels[::4], pixels[1::4], pixels[2::4], pixels[3::4])):
-            coral = r > g + 30 and r > b + 45
-            lettering_or_border = min(r, g, b) > 55 and max(r, g, b) - min(r, g, b) < 50
-            alpha[i] = a if coral or lettering_or_border else 0
-        image = Image.new("RGBA", self.source.size, "white")
-        image.putalpha(Image.frombytes("L", self.source.size, bytes(alpha)))
+    @staticmethod
+    def load_image(data: bytes) -> Image.Image:
+        image = Image.open(io.BytesIO(data)).convert("RGBA")
+        # Preserve the approved masters; suppress only near-zero-alpha matte
+        # residue in the derived exports, as the previous exporter did.
+        image.putalpha(image.getchannel("A").point(lambda a: 0 if a <= 4 else a))
         return image
 
-    def safe_fit(self) -> float:
+    def monochrome(self) -> Image.Image:
+        """Use the compact ribbon's open silhouette for system-tinted icons."""
+        compact = self.sources["compact"]
+        image = Image.new("RGBA", compact.size, "white")
+        image.putalpha(compact.getchannel("A"))
+        return image
+
+    def safe_fit(self, image: Image.Image) -> float:
         """Fit every visible pixel, including NG, inside Android's safe circle."""
-        width, height = self.source.size
-        alpha = self.source.getchannel("A").point(lambda a: 255 if a > 16 else 0).tobytes()
+        width, height = image.size
+        alpha = image.getchannel("A").point(lambda a: 255 if a > 16 else 0).tobytes()
         radius = 0.0
         for y in range(height):
             row = alpha[y * width : (y + 1) * width]
@@ -100,10 +103,13 @@ class BrandRenderer:
         return .29 * max(width, height) / radius
 
     def frame(self, size: tuple[int, int], fit: float, *, mono: bool = False,
-              background: str | None = None) -> Image.Image:
+              background: str | None = None, appearance: str = "dark",
+              compact: bool | None = None) -> Image.Image:
         canvas = Image.new("RGBA", size, background or (0, 0, 0, 0))
         edge = max(1, round(min(size) * fit))
-        logo = ImageOps.contain(self.mono if mono else self.source, (edge, edge), Image.Resampling.LANCZOS)
+        use_compact = min(size) <= 64 if compact is None else compact
+        source = self.mono if mono else self.sources["compact" if use_compact else f"mark_{appearance}"]
+        logo = ImageOps.contain(source, (edge, edge), Image.Resampling.LANCZOS)
         canvas.alpha_composite(logo, ((size[0] - logo.width) // 2, (size[1] - logo.height) // 2))
         return canvas
 
@@ -115,16 +121,26 @@ class BrandRenderer:
         if key in self.cache:
             return self.cache[key]
         fit = target.get("fit", .76)
+        rgb = tuple(int(background.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+        appearance = target.get("appearance", "light" if sum(c * w for c, w in zip(rgb, (.2126, .7152, .0722))) > 160 else "dark")
         if role == "empty":
             image = Image.new("RGBA", size)
         elif role == "background":
             image = Image.new("RGB", size, background)
         elif role in ("plate", "banner"):
-            image = self.frame(size, fit, background=background).convert("RGB")
+            image = self.frame(size, fit, background=background, appearance=appearance).convert("RGB")
         elif role in ("adaptive", "adaptive_mono"):
-            image = self.frame(size, self.adaptive_fit, mono=role == "adaptive_mono")
+            image = self.frame(size, self.adaptive_fit, mono=role == "adaptive_mono", appearance=appearance)
         elif role in ("logo", "monochrome", "ico"):
-            image = self.frame(size, fit, mono=role == "monochrome")
+            image = self.frame(size, fit, mono=role == "monochrome", appearance=appearance, compact=target.get("compact"))
+        elif role == "wordmark":
+            source = self.sources[f"wordmark_{appearance}"]
+            bounds = source.getchannel("A").point(lambda a: 255 if a > 16 else 0).getbbox()
+            wordmark = ImageOps.contain(source.crop(bounds), size, Image.Resampling.LANCZOS)
+            image = Image.new("RGBA", size)
+            image.alpha_composite(wordmark, ((size[0] - wordmark.width) // 2, (size[1] - wordmark.height) // 2))
+        elif role == "artwork":
+            image = ImageOps.fit(self.sources[f"artwork_{appearance}"], size, Image.Resampling.LANCZOS).convert("RGB")
         elif role == "feature":
             image = Image.open(ROOT / "assets/branding/feature-graphic-base.png").convert("RGBA")
             image.alpha_composite(self.frame((128, 128), 1), (62, 47))
@@ -149,7 +165,9 @@ class BrandRenderer:
             if suffix == ".webp":
                 image.save(out, format="WEBP", lossless=True, method=6, exact=True)
             elif suffix == ".ico":
-                image.save(out, format="ICO", sizes=[(n, n) for n in (16, 24, 32, 48, 64, 128, 256)])
+                sizes = [(n, n) for n in (16, 24, 32, 48, 64, 128, 256)]
+                frames = [self.frame(s, fit, appearance=appearance, compact=target.get("compact")) for s in sizes]
+                frames[-1].save(out, format="ICO", sizes=sizes, append_images=frames[:-1])
             else:
                 raise ValueError(f"Unsupported export: {suffix}")
             data = out.getvalue()
@@ -179,7 +197,8 @@ class BrandRenderer:
         for theme in ICONS:
             prefix = f"assets/app_icons/source/{theme}"
             color = self.config["themes"][theme]
-            href = "../../../branding/plezyng-approved.png"
+            light = sum(int(color.lstrip("#")[i:i + 2], 16) * w for i, w in zip((0, 2, 4), (.2126, .7152, .0722))) > 160
+            href = "../../../branding/source/mark-light.png" if light else "../../../branding/plezyng-approved.png"
             result[f"{prefix}/icon.svg"] = self.svg(href, fit=.76, background=color)
             result[f"{prefix}/foreground.svg"] = self.svg(href, fit=self.adaptive_fit)
             result[f"{prefix}/monochrome.svg"] = self.svg("../../../branding/plezyng-monochrome.png", fit=self.adaptive_fit)
@@ -217,6 +236,7 @@ def generate(*, check: bool = False) -> list[str]:
         "schema": 1,
         "source": config["source"],
         "source_sha256": config["source_sha256"],
+        "sources": config["sources"],
         "config_sha256": sha256(CONFIG.read_bytes()),
         "generator_sha256": sha256(Path(__file__).read_bytes()),
         "exports": {path: sha256(data) for path, data in sorted(exports.items())},

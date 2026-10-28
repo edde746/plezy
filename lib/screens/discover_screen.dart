@@ -988,7 +988,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                   // User menu — profiles + sign out
                   _buildUserMenuAction(context),
-                  // Append this destination to preserve existing TV and keyboard focus positions.
+                  // Append discovery destinations to preserve existing TV and keyboard focus positions.
                   FocusableAction(
                     icon: Symbols.auto_awesome_rounded,
                     iconColor: foregroundColor,
@@ -996,6 +996,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     onPressed: () => Navigator.of(
                       context,
                     ).push<void>(MaterialPageRoute<void>(builder: (_) => const FindNextScreen())),
+                  ),
+                  FocusableAction(
+                    icon: Symbols.bookmarks_rounded,
+                    iconColor: foregroundColor,
+                    tooltip: t.discover.findNext.saved,
+                    onPressed: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(builder: (_) => const FindNextScreen(openSavedPicksOnStart: true)),
+                    ),
                   ),
                 ],
               );

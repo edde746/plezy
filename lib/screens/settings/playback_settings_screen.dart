@@ -16,6 +16,7 @@ import '../../models/audio_channel_limit.dart';
 import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
+import '../../models/motion_clarity.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
@@ -79,6 +80,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         SettingsService.matchDynamicRange,
         SettingsService.matchContentFrameRate,
         SettingsService.matchContentResolution,
+        SettingsService.motionClarityPreset,
+        SettingsService.motionClarityKernel,
+        SettingsService.motionClarityThreshold,
         SettingsService.audioChannelLimit,
         SettingsService.disableDolbyVision,
         SettingsService.experimentalDolbyVision,
@@ -173,6 +177,43 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 // mpv-only (#2149): ExoPlayer has no filter chain, so the
                 // tile disappears while the ExoPlayer backend is active.
                 if (!exoActive && !PlatformDetector.isTizenBuild()) _deinterlaceTile(),
+                SettingSelectionTile<MotionClarityPreset>(
+                  pref: SettingsService.motionClarityPreset,
+                  icon: Symbols.blur_on_rounded,
+                  title: t.videoSettings.motionClarity,
+                  description: t.videoSettings.motionClarityDescription,
+                  subtitleBuilder: (preset) => '${_motionClarityPresetTitle(preset)} · ${_motionClarityPresetDescription(preset)}',
+                  options: MotionClarityPreset.values
+                      .map(
+                        (preset) => DialogOption(
+                          value: preset,
+                          title: _motionClarityPresetTitle(preset),
+                          subtitle: _motionClarityPresetDescription(preset),
+                        ),
+                      )
+                      .toList(),
+                ),
+                if (svc.read(SettingsService.motionClarityPreset) == MotionClarityPreset.custom) ...[
+                  SettingSelectionTile<MotionTemporalKernel>(
+                    pref: SettingsService.motionClarityKernel,
+                    icon: Symbols.tune_rounded,
+                    title: t.videoSettings.motionClarityKernel,
+                    description: t.videoSettings.motionClarityDescription,
+                    subtitleBuilder: _motionTemporalKernelTitle,
+                    options: MotionTemporalKernel.values
+                        .map((kernel) => DialogOption(value: kernel, title: _motionTemporalKernelTitle(kernel)))
+                        .toList(),
+                  ),
+                  SettingNumberTile(
+                    pref: SettingsService.motionClarityThreshold,
+                    icon: Symbols.speed_rounded,
+                    title: t.videoSettings.motionClarityThreshold,
+                    description: t.videoSettings.motionClarityThresholdDescription,
+                    subtitleBuilder: (value) => '$value%',
+                    labelText: t.videoSettings.motionClarityThreshold,
+                    suffixText: '%',
+                  ),
+                ],
                 if (Platform.isAndroid && !PlatformDetector.isTV())
                   SettingSwitchTile(
                     pref: SettingsService.extendVideoIntoDisplayCutout,
@@ -307,6 +348,11 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         title: t.settings.scopeShaderPreset,
       ),
       _playerScopeTile(
+        pref: SettingsService.motionClarityScope,
+        icon: Symbols.blur_on_rounded,
+        title: t.videoSettings.motionClarity,
+      ),
+      _playerScopeTile(
         pref: SettingsService.boxFitScope,
         icon: Symbols.aspect_ratio_rounded,
         title: t.settings.scopeAspectRatio,
@@ -400,13 +446,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             )
             .toList(),
       ),
-      if (!isMobile)
-        SettingSwitchTile(
-          pref: SettingsService.clickVideoTogglesPlayback,
-          icon: Symbols.play_pause_rounded,
-          title: t.settings.clickVideoTogglesPlayback,
-          subtitle: t.settings.clickVideoTogglesPlaybackDescription,
-        ),
+      SettingSwitchTile(
+        pref: SettingsService.clickVideoTogglesPlayback,
+        icon: Symbols.play_pause_rounded,
+        title: t.settings.clickVideoTogglesPlayback,
+        subtitle: t.settings.clickVideoTogglesPlaybackDescription,
+      ),
       if (PlatformDetector.isDesktopOS()) ...[
         SettingSwitchTile(
           pref: SettingsService.enterFullscreenOnPlaybackStart,
@@ -423,6 +468,37 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       ],
     ],
   );
+
+  String _motionClarityPresetTitle(MotionClarityPreset preset) => switch (preset) {
+    MotionClarityPreset.original => t.videoSettings.motionClarityOriginal,
+    MotionClarityPreset.cinema => t.videoSettings.motionClarityCinema,
+    MotionClarityPreset.balanced => t.videoSettings.motionClarityBalanced,
+    MotionClarityPreset.smooth => t.videoSettings.motionClaritySmooth,
+    MotionClarityPreset.animation => t.videoSettings.motionClarityAnimation,
+    MotionClarityPreset.sports => t.videoSettings.motionClaritySports,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOled,
+    MotionClarityPreset.custom => t.videoSettings.motionClarityCustom,
+  };
+
+  String _motionClarityPresetDescription(MotionClarityPreset preset) => switch (preset) {
+    MotionClarityPreset.original => t.videoSettings.motionClarityOriginalDescription,
+    MotionClarityPreset.cinema => t.videoSettings.motionClarityCinemaDescription,
+    MotionClarityPreset.balanced => t.videoSettings.motionClarityBalancedDescription,
+    MotionClarityPreset.smooth => t.videoSettings.motionClaritySmoothDescription,
+    MotionClarityPreset.animation => t.videoSettings.motionClarityAnimationDescription,
+    MotionClarityPreset.sports => t.videoSettings.motionClaritySportsDescription,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOledDescription,
+    MotionClarityPreset.custom => t.videoSettings.motionClarityCustomDescription,
+  };
+
+  String _motionTemporalKernelTitle(MotionTemporalKernel kernel) => switch (kernel) {
+    MotionTemporalKernel.oversample => t.videoSettings.motionClarityKernelOversample,
+    MotionTemporalKernel.linear => t.videoSettings.motionClarityKernelLinear,
+    MotionTemporalKernel.catmullRom => t.videoSettings.motionClarityKernelCatmullRom,
+    MotionTemporalKernel.mitchell => t.videoSettings.motionClarityKernelMitchell,
+    MotionTemporalKernel.gaussian => t.videoSettings.motionClarityKernelGaussian,
+    MotionTemporalKernel.bicubic => t.videoSettings.motionClarityKernelBicubic,
+  };
 
   String _specialsOrderingLabel(SpecialsOrdering mode) => switch (mode) {
     SpecialsOrdering.respectServer => t.settings.specialsOrderingServer,

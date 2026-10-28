@@ -104,6 +104,7 @@ dependencies:
   universal_gamepad: ^1.5.7
   drift: ^2.31.0
   crypto: ^3.0.7
+  pointycastle: ^4.0.0
   dartssh2: ^4.1.0
   cryptography: ^2.9.0
   # 10.x retains the win32 5.x API used by the vendored wakelock plugin.
@@ -257,9 +258,17 @@ flutter:
     - assets/licenses/Libtorrent.txt
     - assets/licenses/Boost.txt
     - assets/licenses/JellyfinWebTranslations.txt
+    - assets/licenses/MilkRust_Sample_Pack.txt
+    - assets/visualizer/milkrust-sample-pack-0.1.0.rmpack
     - assets/plezy.png
+    - assets/branding/plezyng-compact.png
+    - assets/branding/plezyng-mark-light.png
+    - assets/branding/plezyng-mark-dark.png
+    - assets/branding/plezyng-wordmark-light.png
+    - assets/branding/plezyng-wordmark-dark.png
     - assets/branding/plezyng-product-illustration.webp
     - assets/branding/plezyng-product-illustration-4k.png
+    - assets/branding/plezyng-adaptive-light.png
     - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg

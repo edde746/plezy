@@ -110,6 +110,8 @@ class TranslationsFa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$fa comics = _Translations$comics$fa._(_root);
 	@override late final _Translations$games$fa games = _Translations$games$fa._(_root);
 	@override late final _Translations$deepLinks$fa deepLinks = _Translations$deepLinks$fa._(_root);
+	@override late final _Translations$householdSetup$fa householdSetup = _Translations$householdSetup$fa._(_root);
+	@override late final _Translations$issueReport$fa issueReport = _Translations$issueReport$fa._(_root);
 }
 
 // Path: app
@@ -1201,6 +1203,30 @@ class _Translations$videoControls$fa extends Translations$videoControls$en {
 	@override String get settingsButton => 'تنظیمات Playback';
 	@override String get tracksButton => 'صدا و زیرنویس';
 	@override String get chaptersButton => 'فصل ها';
+	@override String get segmentLoopHelp => 'یک بخش را در طول این بازی باز کنید: A را تنظیم کنید، سپس B را بعداً در خط زمانی قرار دهید.';
+	@override String get setLoopStart => 'راهکارهایی برای شروع (A)';
+	@override String get setLoopEnd => 'تنظیم لوله پایان (ب)';
+	@override String get clearSegmentLoop => 'مشخصات segment loop';
+	@override String get setLoopStartFirst => 'شروع (A) را قبل از پایان (B) تنظیم کنید.';
+	@override String get loopEndAfterStart => 'پایان حلقه باید بعد از شروع باشد.';
+	@override String get segmentLoopUnavailable => 'لوله بندی بخش برای این بازی در دسترس نیست.';
+	@override String get loopPointNotSet => 'نه تنظیم';
+	@override String get bookmarksHelp => 'برچسب ها در این دستگاه ذخیره می شوند. یکی را انتخاب کنید تا به آن زمان بروید.';
+	@override String get bookmarksButton => 'برچسب ها Bookmark';
+	@override String get chaptersAndBookmarks => 'فصل ها و کتاب نشانه ها';
+	@override String get segmentLoop => 'بخش لوله';
+	@override String get addBookmark => 'اضافه کردن Bookmark';
+	@override String get bookmarkName => 'Bookmark نام';
+	@override String get bookmarkNameHint => 'به عنوان مثال، صحنه باز';
+	@override String bookmarkDefaultName({required Object n}) => 'برچسب ها ${n}';
+	@override String get bookmarkNameRequired => 'نام این کتاب را وارد کنید.';
+	@override String get deleteBookmark => 'حذف Bookmark';
+	@override String get bookmarkLimitReached => 'این مقاله در حال حاضر دارای 100 دفترچه یادداشت است.';
+	@override String get bookmarkUnavailable => 'نمی توانم این کتاب را ذخیره یا حذف کنم.';
+	@override String get bookmarkSaved => 'کتاب را نجات داد.';
+	@override String get bookmarkDeleted => 'برچسب حذف شده است.';
+	@override String loopPointSet({required Object point, required Object time}) => 'نقطه عطف ${point} تنظیم در ${time}.';
+	@override String get noChaptersOrBookmarks => 'هیچ فصل و کتابی در دسترس نیست.';
 	@override String get versionQualityButton => 'نسخه و کیفیت';
 	@override String get versionColumnHeader => 'نسخه';
 	@override String get qualityColumnHeader => 'کیفیت';
@@ -2071,6 +2097,7 @@ class _Translations$music$fa extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'در ادامه به بررسی تراکتور...';
 	@override String get visualizerAmbientMotion => 'حرکات محیطی';
 	@override String get visualizerPlexLoudness => 'Plex صدا';
+	@override String get visualizerLiveAudio => 'تحلیل زندهٔ صدا';
 	@override String get visualizerPreviousPreset => 'قبلی سبک بصری';
 	@override String get visualizerNextPreset => 'بعدی سبک بصری';
 	@override String get visualizerPresetAurora => 'آوریا';
@@ -2424,6 +2451,12 @@ class _Translations$videoSettings$fa extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'نقشه تا درخشش بالای صفحه نمایش در بازیکن، سپس به آهنگساز نتیجه را بگویید.';
 	@override String get hdrToneMappingFailed => 'نمی توانم نقشه برداری رنگ HDR را تغییر دهم - حالت قبلی هنوز فعال است.';
 	@override String get audioOutput => 'صدا خروجی';
+	@override String get videoTrack => 'مسیر ویدیو';
+	@override String get videoTrackDescription => 'انتخاب کنید کدام جریان ویدیو نمایش داده شود. هنگام پخش با MPV، اگر فایل مسیرهای ویدیوی جایگزین داشته باشد، در دسترس است.';
+	@override String get videoTrackDefault => 'پیش‌فرض';
+	@override String get videoTrackUnavailable => 'مسیر ویدیوی جایگزینی در دسترس نیست.';
+	@override String get videoTrackFailed => 'تغییر مسیر ویدیو ممکن نشد.';
+	@override String videoTrackNumber({required Object id}) => 'مسیر ${id}';
 	@override String get performanceOverlay => 'عملکرد Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2431,10 +2464,17 @@ class _Translations$videoSettings$fa extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'فضای صوتی';
 	@override String get audioOutputStereo => 'استریو';
 	@override String get audioEqualizer => 'صدا معادل';
-	@override String get audioEqualizerDescription => 'تنظیم پنج نوار فرکانس برای این دستگاه در دسترس در mpv؛ یک EQ فعال صدا را از بین می برد و به سختی می تواند از بین برود.';
+	@override String get audioEqualizerDescription => 'معادل 10 باند برای MPVفیلترهای صوتی از صدا های رمزگذاری شده استفاده می کنند و به طور مناسب خاموش می شوند.';
 	@override String get audioEqualizerFlat => 'مسطح';
 	@override String get audioEqualizerActive => 'سفارشی';
 	@override String get audioEqualizerSaveFailed => 'نمی توانم تنظیمات معادل صوتی را ذخیره کنم.';
+	@override String get audioEffectsDescription => 'اثرات از صدا رمزگذاری شده استفاده می کنند، بنابراین passthrough از بین می رود. فضای اتاق و گسترش استریو بستگی به MPV ساخت و ردیابی';
+	@override String get audioStereoWidth => 'استریو گسترش';
+	@override String get audioSpatializer => 'فضای اتاق';
+	@override String get audioSpatializerDescription => 'بازخورد اتاق آرام را اضافه کنید.';
+	@override String get audioPitch => 'پیتزا تغییر';
+	@override String get audioPitchDescription => 'تغییر مسیر بدون تغییر سرعت MPV ساخت باید شامل Rubber Band.';
+	@override String get audioEffectUnavailable => 'این اثر برای این مسیر در دسترس نیست یا MPV ساختن .';
 	@override String get backgroundVideoAudio => 'ویدئو ویدئو صدا';
 	@override String get backgroundVideoAudioDescription => 'بازی ویدئویی را در هنگام ترک پخش کننده نگه دارید؛ تصویر تا زمانی که بازگردید پنهان است. Android از یک اطلاعیه پخش رسانه استفاده می کند.';
 	@override String get audioNormalization => 'صدا را عادی کنید';
@@ -3200,6 +3240,10 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'انتخاب فایل playlist';
 	@override String get openPlaylist => 'باز کردن playlist';
 	@override String get playlistFormatsHelp => 'یک لیست پخش می تواند حاوی حداکثر 1000 آیتم و 2 مگابایت باشد.HLS به عنوان جریان ها باز می شود تا بازیکن بتواند کیفیت را انتخاب کند.';
+	@override String get saveQueuePlaylist => 'ذخیره صف به‌صورت فهرست پخش';
+	@override String get queuePlaylistSaved => 'فهرست پخش کنار فایل‌های رسانه ذخیره شد.';
+	@override String get queuePlaylistUnavailable => 'این صف را نمی‌توان به‌صورت فهرست پخش محلی و قابل استفادهٔ دوباره ذخیره کرد.';
+	@override String get queuePlaylistFolderRequired => 'محلی برای ذخیره در همان پوشهٔ فایل‌های صف انتخاب کنید.';
 	@override String get noFavorites => 'در حال حاضر هیچ مورد علاقه ذخیره نشده است.Favorites در این پروفایل باقی بماند.';
 	@override String get removeFavorite => 'حذف جریان مورد علاقه';
 	@override String get filesHelp => 'فایل های صوتی، ویدئویی یا ISO را برای یک دوره موقت انتخاب کنید.فایلهای و URL ها به تاریخچه کتابخانه اضافه نمی شوند.';
@@ -3264,12 +3308,13 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'جایگزین فایل';
 	@override String get discHelp => 'یک دیسک را در درایو نوری این کامپیوتر باز کنید شما همچنین می توانید یک تصویر ISO از فایل های دستگاه را باز کنید.';
 	@override String get discs => 'دیسک های نوری';
+	@override String get editionOrTitle => 'نسخه یا عنوان دیسک';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'دانلود Blu-ray';
 	@override String get audioCd => 'CD صوتی';
 	@override String get discAvailability => 'پخش دیسک نیاز به ساخت MPV سازگار، درایو پشتیبانی شده و مجوز سیستم عامل دارد.';
 	@override String get converterTitle => 'تبدیل یک فایل رسانه محلی';
-	@override String get converterHelp => 'از FFmpeg برای ایجاد یک کپی MP4، M4A یا MP3 استفاده کنید.';
+	@override String get converterHelp => 'یک فایل محلی را تبدیل کنید یا آن را با FFmpeg.';
 	@override String get converterIntro => 'تبدیل یک فایل صوتی یا ویدئویی محلی به فرمتی که بر روی دستگاه های مختلف کار می کند.';
 	@override String get converterPrivacy => 'FFmpeg باید بر روی این کامپیوتر نصب شود.Conversion فقط فایل های محلی را می خواند.این جریان ها را دانلود نمی کند یا DRM را حذف نمی کند.';
 	@override String get converterChooseInput => 'انتخاب فایل رسانه ای محلی';
@@ -3277,6 +3322,8 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 و AAC';
 	@override String get converterM4a => 'M4A · AAC صدا';
 	@override String get converterMp3 => 'MP3 - صدا';
+	@override String get allowFtp => 'اجازه FTP';
+	@override String get allowFtpHelp => 'FTP رسانه ها را بدون رمزگذاری ارسال می کند.فقط در شبکه های قابل اعتماد استفاده کنید.';
 	@override String get converterSaveAs => 'حفظ رسانه های تبدیل شده به عنوان';
 	@override String get converterExtensionMismatch => 'یک فیل نام با افزونه خروجی انتخاب شده را انتخاب کنید.';
 	@override String get converterUnsupportedInput => 'یک فایل صوتی یا ویدئویی را انتخاب کنید.';
@@ -3286,7 +3333,7 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get converterStarting => 'شروع به استفاده از FFmpeg...';
 	@override String get converterProgress => 'با استفاده از این کامپیوتر...';
 	@override String get converterComplete => 'فایلهای جدید آماده است.';
-	@override String get converterFfmpegMissing => 'نصب FFmpeg با پشتیبانی از H.264، AAC و MP3، سپس دوباره آن را امتحان کنید.';
+	@override String get converterFfmpegMissing => 'FFmpeg از دست رفته است یا از این فرمت پشتیبانی نمی کند.';
 	@override String get converterFailed => 'بررسی کنید که فایل منبع قابل خواندن است و مقصد به اندازه کافی فضای رایگان دارد.';
 	@override String get converterCancelled => 'تبدیل لغو شد خروجی نامناسب حذف شد.';
 	@override String get converterDesktopOnly => 'تبدیل محلی در کامپیوترهای دسکتاپ با نصب FFmpeg در دسترس است.';
@@ -3314,6 +3361,9 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get captureSaved => 'ضبط صفحه نمایش نجات یافت';
 	@override String get captureElapsedLabel => 'زمان ضبط';
 	@override String get captureStart => 'شروع ضبط';
+	@override String get capturePreview => 'پیش‌نمایش در پخش‌کننده';
+	@override String get capturePreviewHelp => 'منبع انتخاب‌شده را در پخش‌کنندهٔ استاندارد پیش‌نمایش کنید. این پیش‌نمایش فقط برای همین نشست است و ضبطی ذخیره نمی‌کند. پشتیبانی دستگاه و مجوزها به MPV و سیستم‌عامل بستگی دارد. پیش‌نمایش فقط از ویدیو استفاده می‌کند؛ ضبط‌های ذخیره‌شده می‌توانند صدای اختیاری داشته باشند.';
+	@override String get capturePreviewActive => 'پیش‌نمایش زنده · بدون ضبط';
 	@override String get captureStop => 'توقف و نجات';
 	@override String get captureMode => 'دستگیری';
 	@override String get shareMode => 'به اشتراک گذاری';
@@ -3633,7 +3683,6 @@ class _Translations$audiobook$fa extends Translations$audiobook$en {
 	@override String get addSyncSource => 'در ابتدا Google Drive، OneDrive، Dropbox، WebDAV یا S3 را به فایل ها و کتاب ها اضافه کنید.';
 	@override String get syncDestination => 'حساب ذخیره سازی Sync';
 	@override String get syncFolder => 'فاکتور یا پیش فرض';
-	@override String get syncFolderHelp => 'از یک پوشه جداگانه موجود در منبع WebDAV یا یک پیش فرض اختصاص داده شده S3 استفاده کنید.';
 	@override String get syncCode => 'کد همگام خصوصی';
 	@override String get syncCodeHelp => 'یک کد را در دستگاه اول خود ایجاد کنید، سپس آن کد را در دستگاه های دیگر خود وارد کنید. یک کپی خصوصی نگه دارید: این کلید وضعیت رمزگذاری شده شماست.';
 	@override String get showCode => 'نمایش یا پنهان کردن کد همگام سازی';
@@ -3643,7 +3692,6 @@ class _Translations$audiobook$fa extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'حذف این منبع در اینجا خواندن و گوش دادن به همگام سازی را خاموش می کند.فایلهای همگام سازی رمزگذاری شده در ارائه دهنده باقی می ماند.';
 	@override String get syncReconnect => 'بازگرداندن حساب ذخیره سازی';
 	@override String lastSynced({required Object time}) => 'آخرین ارسال شده در ${time}';
-	@override String get syncPrivacy => 'فقط پیشرفت های رمزگذاری شده و یادداشت ها ذخیره می شود. فایل های صوتی و کتاب الکترونیکی، توکن های حساب و رمز عبور بارگذاری نمی شود. Google Drive و OneDrive از ذخیره سازی برنامه استفاده می کنند؛ Dropbox از PlezyNG Sync استفاده می کند. اجازه دادن به همگام سازی ممکن است دسترسی نوشتاری اضافی را درخواست کند. در حالی که فعال است، این مقصد دارای همگام سازی پیشرفت است؛ پیشرفت سرور جداگانه باقی می ماند.';
 	@override String get syncConflicts => 'انتخاب کنید که کجا بازگردانید';
 	@override String get conflictHelp => 'این تغییرات به صورت مستقل انجام شده است. گزینه ای را انتخاب کنید که موقعیت یا نسخه برچسب را برای نگه داشتن داشته باشید. یک زمان بندی بعدی یا درصد بالاتر به طور خودکار برنده نمی شود.';
 	@override String syncDevice({required Object device}) => 'تجهیزات ${device}';
@@ -3837,7 +3885,6 @@ class _Translations$games$fa extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3862,7 +3909,6 @@ class _Translations$games$fa extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3894,8 +3940,6 @@ class _Translations$games$fa extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3903,14 +3947,12 @@ class _Translations$games$fa extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -3937,6 +3979,30 @@ class _Translations$deepLinks$fa extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'باز کردن به عنوان ${name}';
 	@override String get copy => 'کپی';
 	@override String get copied => 'لینک کپی شده';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$fa extends Translations$householdSetup$en {
+	_Translations$householdSetup$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'راه‌اندازی خانه';
+}
+
+// Path: issueReport
+class _Translations$issueReport$fa extends Translations$issueReport$en {
+	_Translations$issueReport$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'گزارش مشکل';
+	@override String get instructions => 'برای باز کردن پیش‌نویس ازپیش‌پرشده GitHub، کد QR را اسکن کنید. آن را بررسی کنید و فقط وقتی آماده‌اید ارسال کنید.';
+	@override String get privacy => 'پیش‌نویس نسخه برنامه، پلتفرم و تعداد اتصال‌ها را دارد. نشانی سرورها، نام حساب‌ها و پروفایل‌ها، عنوان رسانه‌ها و مسیر فایل‌ها در آن نیست.';
+	@override String get logPrivacy => 'گزارش‌ها اختیاری‌اند. پیش از بارگذاری آن‌ها را بررسی کنید. شناسه گزارش به پیش‌نویس اضافه می‌شود و ممکن است عمومی باشد.';
+	@override String get openDraft => 'باز کردن پیش‌نویس GitHub';
 }
 
 // Path: appIcon.names
@@ -6064,6 +6130,32 @@ extension on TranslationsFa {
 			'videoControls.settingsButton' => 'تنظیمات Playback',
 			'videoControls.tracksButton' => 'صدا و زیرنویس',
 			'videoControls.chaptersButton' => 'فصل ها',
+			'videoControls.segmentLoopHelp' => 'یک بخش را در طول این بازی باز کنید: A را تنظیم کنید، سپس B را بعداً در خط زمانی قرار دهید.',
+			'videoControls.setLoopStart' => 'راهکارهایی برای شروع (A)',
+			'videoControls.setLoopEnd' => 'تنظیم لوله پایان (ب)',
+			'videoControls.clearSegmentLoop' => 'مشخصات segment loop',
+			'videoControls.setLoopStartFirst' => 'شروع (A) را قبل از پایان (B) تنظیم کنید.',
+			'videoControls.loopEndAfterStart' => 'پایان حلقه باید بعد از شروع باشد.',
+			'videoControls.segmentLoopUnavailable' => 'لوله بندی بخش برای این بازی در دسترس نیست.',
+			'videoControls.loopPointNotSet' => 'نه تنظیم',
+			'videoControls.bookmarksHelp' => 'برچسب ها در این دستگاه ذخیره می شوند. یکی را انتخاب کنید تا به آن زمان بروید.',
+			'videoControls.bookmarksButton' => 'برچسب ها Bookmark',
+			'videoControls.chaptersAndBookmarks' => 'فصل ها و کتاب نشانه ها',
+			'videoControls.segmentLoop' => 'بخش لوله',
+			'videoControls.addBookmark' => 'اضافه کردن Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark نام',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'به عنوان مثال، صحنه باز',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'برچسب ها ${n}',
+			'videoControls.bookmarkNameRequired' => 'نام این کتاب را وارد کنید.',
+			'videoControls.deleteBookmark' => 'حذف Bookmark',
+			'videoControls.bookmarkLimitReached' => 'این مقاله در حال حاضر دارای 100 دفترچه یادداشت است.',
+			'videoControls.bookmarkUnavailable' => 'نمی توانم این کتاب را ذخیره یا حذف کنم.',
+			'videoControls.bookmarkSaved' => 'کتاب را نجات داد.',
+			'videoControls.bookmarkDeleted' => 'برچسب حذف شده است.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'نقطه عطف ${point} تنظیم در ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'هیچ فصل و کتابی در دسترس نیست.',
 			'videoControls.versionQualityButton' => 'نسخه و کیفیت',
 			'videoControls.versionColumnHeader' => 'نسخه',
 			'videoControls.qualityColumnHeader' => 'کیفیت',
@@ -6078,8 +6170,6 @@ extension on TranslationsFa {
 			'videoControls.exitFullscreenButton' => 'خروجی صفحه نمایش کامل',
 			'videoControls.alwaysOnTopButton' => 'همیشه در بالای',
 			'videoControls.rotationLockButton' => 'قفل چرخشی',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'صفحه نمایش قفل',
 			'videoControls.screenLockButton' => 'صفحه نمایش قفل',
 			'videoControls.timelineSlider' => 'ویدئو زمان بندی',
@@ -6568,6 +6658,8 @@ extension on TranslationsFa {
 			'libraries.hideLibrary' => 'کتابخانه پنهان',
 			'libraries.libraryOptions' => 'گزینه های کتابخانه',
 			'libraries.content' => 'محتوای کتابخانه',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'انتخاب کتابخانه',
 			'libraries.filtersWithCount' => ({required Object count}) => 'فیلترها (${count})',
 			'libraries.noRecommendations' => 'بدون توصیه در دسترس',
@@ -6592,8 +6684,6 @@ extension on TranslationsFa {
 			'libraries.filterCategories.year' => 'سال',
 			'libraries.filterCategories.contentRating' => 'محتوای رتبه بندی',
 			'libraries.filterCategories.tag' => 'برچسب',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'ناشناخته',
 			'libraries.filterCategories.unplayed' => 'پخش نشده',
 			'libraries.filterCategories.favorites' => 'مورد علاقه‌ها',
@@ -7035,6 +7125,7 @@ extension on TranslationsFa {
 			'music.visualizerProfileLoading' => 'در ادامه به بررسی تراکتور...',
 			'music.visualizerAmbientMotion' => 'حرکات محیطی',
 			'music.visualizerPlexLoudness' => 'Plex صدا',
+			'music.visualizerLiveAudio' => 'تحلیل زندهٔ صدا',
 			'music.visualizerPreviousPreset' => 'قبلی سبک بصری',
 			'music.visualizerNextPreset' => 'بعدی سبک بصری',
 			'music.visualizerPresetAurora' => 'آوریا',
@@ -7081,6 +7172,8 @@ extension on TranslationsFa {
 			'watchTogether.codeCopied' => 'کد اتاق کپی شده',
 			'watchTogether.shareInvite' => 'دعوت به اشتراک گذاری',
 			'watchTogether.inviteCopied' => 'کپی کنید، آن را در یک پیام قرار دهید.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'به اتاق Watch Together من در PlezyNG بپیوندید، اتاق Watch Together را انتخاب کنید و به اتاق Watch Together ${code} وارد شوید.',
 			'watchTogether.openSessionControls' => 'Open Watch با هم کنترل جلسه',
 			'watchTogether.reconnecting' => 'دوباره اتصال...',
@@ -7106,8 +7199,6 @@ extension on TranslationsFa {
 			'watchTogether.playAnyway' => 'بازی به هر حال',
 			'watchTogether.chooseAnotherCopy' => 'انتخاب کپی دیگر',
 			'watchTogether.dontPlay' => 'بازی نکنید',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'شما این ویدئو را ندارید',
 			'watchTogether.unavailableDescription' => 'PlezyNG نمی توانست آن را در کتابخانه های شما پیدا کند. یک کپی را خودتان انتخاب کنید یا دوباره جستجو کنید.',
 			'watchTogether.chooseCopy' => 'انتخاب کپی',
@@ -7461,6 +7552,12 @@ extension on TranslationsFa {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'نقشه تا درخشش بالای صفحه نمایش در بازیکن، سپس به آهنگساز نتیجه را بگویید.',
 			'videoSettings.hdrToneMappingFailed' => 'نمی توانم نقشه برداری رنگ HDR را تغییر دهم - حالت قبلی هنوز فعال است.',
 			'videoSettings.audioOutput' => 'صدا خروجی',
+			'videoSettings.videoTrack' => 'مسیر ویدیو',
+			'videoSettings.videoTrackDescription' => 'انتخاب کنید کدام جریان ویدیو نمایش داده شود. هنگام پخش با MPV، اگر فایل مسیرهای ویدیوی جایگزین داشته باشد، در دسترس است.',
+			'videoSettings.videoTrackDefault' => 'پیش‌فرض',
+			'videoSettings.videoTrackUnavailable' => 'مسیر ویدیوی جایگزینی در دسترس نیست.',
+			'videoSettings.videoTrackFailed' => 'تغییر مسیر ویدیو ممکن نشد.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'مسیر ${id}',
 			'videoSettings.performanceOverlay' => 'عملکرد Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7468,10 +7565,17 @@ extension on TranslationsFa {
 			'videoSettings.audioOutputSpatial' => 'فضای صوتی',
 			'videoSettings.audioOutputStereo' => 'استریو',
 			'videoSettings.audioEqualizer' => 'صدا معادل',
-			'videoSettings.audioEqualizerDescription' => 'تنظیم پنج نوار فرکانس برای این دستگاه در دسترس در mpv؛ یک EQ فعال صدا را از بین می برد و به سختی می تواند از بین برود.',
+			'videoSettings.audioEqualizerDescription' => 'معادل 10 باند برای MPVفیلترهای صوتی از صدا های رمزگذاری شده استفاده می کنند و به طور مناسب خاموش می شوند.',
 			'videoSettings.audioEqualizerFlat' => 'مسطح',
 			'videoSettings.audioEqualizerActive' => 'سفارشی',
 			'videoSettings.audioEqualizerSaveFailed' => 'نمی توانم تنظیمات معادل صوتی را ذخیره کنم.',
+			'videoSettings.audioEffectsDescription' => 'اثرات از صدا رمزگذاری شده استفاده می کنند، بنابراین passthrough از بین می رود. فضای اتاق و گسترش استریو بستگی به MPV ساخت و ردیابی',
+			'videoSettings.audioStereoWidth' => 'استریو گسترش',
+			'videoSettings.audioSpatializer' => 'فضای اتاق',
+			'videoSettings.audioSpatializerDescription' => 'بازخورد اتاق آرام را اضافه کنید.',
+			'videoSettings.audioPitch' => 'پیتزا تغییر',
+			'videoSettings.audioPitchDescription' => 'تغییر مسیر بدون تغییر سرعت MPV ساخت باید شامل Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'این اثر برای این مسیر در دسترس نیست یا MPV ساختن .',
 			'videoSettings.backgroundVideoAudio' => 'ویدئو ویدئو صدا',
 			'videoSettings.backgroundVideoAudioDescription' => 'بازی ویدئویی را در هنگام ترک پخش کننده نگه دارید؛ تصویر تا زمانی که بازگردید پنهان است. Android از یک اطلاعیه پخش رسانه استفاده می کند.',
 			'videoSettings.audioNormalization' => 'صدا را عادی کنید',
@@ -7582,6 +7686,8 @@ extension on TranslationsFa {
 			'metadataEdit.metadataUpdated' => 'Metadata به روز شده',
 			'metadataEdit.metadataUpdateFailed' => 'عدم به روز رسانی متا',
 			'metadataEdit.artworkUpdated' => 'هنر به روز شده',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'به روز رسانی هنرهای هنری',
 			'metadataEdit.noArtworkAvailable' => 'هیچ هنری در دسترس نیست',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'گزینه هنری ${index}',
@@ -7620,8 +7726,6 @@ extension on TranslationsFa {
 			'metadataEdit.shownWithForeignAudio' => 'نمایش با صدا خارجی',
 			'metadataEdit.alwaysEnabled' => 'همیشه امکان پذیر',
 			'metadataEdit.tags' => 'برچسب‌ها',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'اضافه کردن Tag',
 			'metadataEdit.genre' => 'ژانر',
 			'metadataEdit.director' => 'کارگردان',
@@ -8094,6 +8198,12 @@ extension on TranslationsFa {
 			'universalMedia.choosePlaylist' => 'انتخاب فایل playlist',
 			'universalMedia.openPlaylist' => 'باز کردن playlist',
 			'universalMedia.playlistFormatsHelp' => 'یک لیست پخش می تواند حاوی حداکثر 1000 آیتم و 2 مگابایت باشد.HLS به عنوان جریان ها باز می شود تا بازیکن بتواند کیفیت را انتخاب کند.',
+			'universalMedia.saveQueuePlaylist' => 'ذخیره صف به‌صورت فهرست پخش',
+			'universalMedia.queuePlaylistSaved' => 'فهرست پخش کنار فایل‌های رسانه ذخیره شد.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.queuePlaylistUnavailable' => 'این صف را نمی‌توان به‌صورت فهرست پخش محلی و قابل استفادهٔ دوباره ذخیره کرد.',
+			'universalMedia.queuePlaylistFolderRequired' => 'محلی برای ذخیره در همان پوشهٔ فایل‌های صف انتخاب کنید.',
 			'universalMedia.noFavorites' => 'در حال حاضر هیچ مورد علاقه ذخیره نشده است.Favorites در این پروفایل باقی بماند.',
 			'universalMedia.removeFavorite' => 'حذف جریان مورد علاقه',
 			'universalMedia.filesHelp' => 'فایل های صوتی، ویدئویی یا ISO را برای یک دوره موقت انتخاب کنید.فایلهای و URL ها به تاریخچه کتابخانه اضافه نمی شوند.',
@@ -8134,8 +8244,6 @@ extension on TranslationsFa {
 			'universalMedia.contrast' => 'تناقض',
 			'universalMedia.gamma' => 'گاما',
 			'universalMedia.hue' => 'هوی',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturation',
 			'universalMedia.view360' => 'صفحه نمایش برای ویدئو 360 درجه',
 			'universalMedia.view360Help' => 'استفاده از این برای ویدئو 360 درجه مساوی. MPV نیاز به فیلتر v360 FFmpeg برای این نمایش دارد.',
@@ -8154,12 +8262,13 @@ extension on TranslationsFa {
 			'universalMedia.replaceRecording' => 'جایگزین فایل',
 			'universalMedia.discHelp' => 'یک دیسک را در درایو نوری این کامپیوتر باز کنید شما همچنین می توانید یک تصویر ISO از فایل های دستگاه را باز کنید.',
 			'universalMedia.discs' => 'دیسک های نوری',
+			'universalMedia.editionOrTitle' => 'نسخه یا عنوان دیسک',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'دانلود Blu-ray',
 			'universalMedia.audioCd' => 'CD صوتی',
 			'universalMedia.discAvailability' => 'پخش دیسک نیاز به ساخت MPV سازگار، درایو پشتیبانی شده و مجوز سیستم عامل دارد.',
 			'universalMedia.converterTitle' => 'تبدیل یک فایل رسانه محلی',
-			'universalMedia.converterHelp' => 'از FFmpeg برای ایجاد یک کپی MP4، M4A یا MP3 استفاده کنید.',
+			'universalMedia.converterHelp' => 'یک فایل محلی را تبدیل کنید یا آن را با FFmpeg.',
 			'universalMedia.converterIntro' => 'تبدیل یک فایل صوتی یا ویدئویی محلی به فرمتی که بر روی دستگاه های مختلف کار می کند.',
 			'universalMedia.converterPrivacy' => 'FFmpeg باید بر روی این کامپیوتر نصب شود.Conversion فقط فایل های محلی را می خواند.این جریان ها را دانلود نمی کند یا DRM را حذف نمی کند.',
 			'universalMedia.converterChooseInput' => 'انتخاب فایل رسانه ای محلی',
@@ -8167,6 +8276,8 @@ extension on TranslationsFa {
 			'universalMedia.converterMp4' => 'MP4 · H.264 و AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC صدا',
 			'universalMedia.converterMp3' => 'MP3 - صدا',
+			'universalMedia.allowFtp' => 'اجازه FTP',
+			'universalMedia.allowFtpHelp' => 'FTP رسانه ها را بدون رمزگذاری ارسال می کند.فقط در شبکه های قابل اعتماد استفاده کنید.',
 			'universalMedia.converterSaveAs' => 'حفظ رسانه های تبدیل شده به عنوان',
 			'universalMedia.converterExtensionMismatch' => 'یک فیل نام با افزونه خروجی انتخاب شده را انتخاب کنید.',
 			'universalMedia.converterUnsupportedInput' => 'یک فایل صوتی یا ویدئویی را انتخاب کنید.',
@@ -8176,7 +8287,7 @@ extension on TranslationsFa {
 			'universalMedia.converterStarting' => 'شروع به استفاده از FFmpeg...',
 			'universalMedia.converterProgress' => 'با استفاده از این کامپیوتر...',
 			'universalMedia.converterComplete' => 'فایلهای جدید آماده است.',
-			'universalMedia.converterFfmpegMissing' => 'نصب FFmpeg با پشتیبانی از H.264، AAC و MP3، سپس دوباره آن را امتحان کنید.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg از دست رفته است یا از این فرمت پشتیبانی نمی کند.',
 			'universalMedia.converterFailed' => 'بررسی کنید که فایل منبع قابل خواندن است و مقصد به اندازه کافی فضای رایگان دارد.',
 			'universalMedia.converterCancelled' => 'تبدیل لغو شد خروجی نامناسب حذف شد.',
 			'universalMedia.converterDesktopOnly' => 'تبدیل محلی در کامپیوترهای دسکتاپ با نصب FFmpeg در دسترس است.',
@@ -8204,6 +8315,9 @@ extension on TranslationsFa {
 			'universalMedia.captureSaved' => 'ضبط صفحه نمایش نجات یافت',
 			'universalMedia.captureElapsedLabel' => 'زمان ضبط',
 			'universalMedia.captureStart' => 'شروع ضبط',
+			'universalMedia.capturePreview' => 'پیش‌نمایش در پخش‌کننده',
+			'universalMedia.capturePreviewHelp' => 'منبع انتخاب‌شده را در پخش‌کنندهٔ استاندارد پیش‌نمایش کنید. این پیش‌نمایش فقط برای همین نشست است و ضبطی ذخیره نمی‌کند. پشتیبانی دستگاه و مجوزها به MPV و سیستم‌عامل بستگی دارد. پیش‌نمایش فقط از ویدیو استفاده می‌کند؛ ضبط‌های ذخیره‌شده می‌توانند صدای اختیاری داشته باشند.',
+			'universalMedia.capturePreviewActive' => 'پیش‌نمایش زنده · بدون ضبط',
 			'universalMedia.captureStop' => 'توقف و نجات',
 			'universalMedia.captureMode' => 'دستگیری',
 			'universalMedia.shareMode' => 'به اشتراک گذاری',
@@ -8493,7 +8607,6 @@ extension on TranslationsFa {
 			'audiobook.addSyncSource' => 'در ابتدا Google Drive، OneDrive، Dropbox، WebDAV یا S3 را به فایل ها و کتاب ها اضافه کنید.',
 			'audiobook.syncDestination' => 'حساب ذخیره سازی Sync',
 			'audiobook.syncFolder' => 'فاکتور یا پیش فرض',
-			'audiobook.syncFolderHelp' => 'از یک پوشه جداگانه موجود در منبع WebDAV یا یک پیش فرض اختصاص داده شده S3 استفاده کنید.',
 			'audiobook.syncCode' => 'کد همگام خصوصی',
 			'audiobook.syncCodeHelp' => 'یک کد را در دستگاه اول خود ایجاد کنید، سپس آن کد را در دستگاه های دیگر خود وارد کنید. یک کپی خصوصی نگه دارید: این کلید وضعیت رمزگذاری شده شماست.',
 			'audiobook.showCode' => 'نمایش یا پنهان کردن کد همگام سازی',
@@ -8503,7 +8616,6 @@ extension on TranslationsFa {
 			'audiobook.syncSourceDisconnect' => 'حذف این منبع در اینجا خواندن و گوش دادن به همگام سازی را خاموش می کند.فایلهای همگام سازی رمزگذاری شده در ارائه دهنده باقی می ماند.',
 			'audiobook.syncReconnect' => 'بازگرداندن حساب ذخیره سازی',
 			'audiobook.lastSynced' => ({required Object time}) => 'آخرین ارسال شده در ${time}',
-			'audiobook.syncPrivacy' => 'فقط پیشرفت های رمزگذاری شده و یادداشت ها ذخیره می شود. فایل های صوتی و کتاب الکترونیکی، توکن های حساب و رمز عبور بارگذاری نمی شود. Google Drive و OneDrive از ذخیره سازی برنامه استفاده می کنند؛ Dropbox از PlezyNG Sync استفاده می کند. اجازه دادن به همگام سازی ممکن است دسترسی نوشتاری اضافی را درخواست کند. در حالی که فعال است، این مقصد دارای همگام سازی پیشرفت است؛ پیشرفت سرور جداگانه باقی می ماند.',
 			'audiobook.syncConflicts' => 'انتخاب کنید که کجا بازگردانید',
 			'audiobook.conflictHelp' => 'این تغییرات به صورت مستقل انجام شده است. گزینه ای را انتخاب کنید که موقعیت یا نسخه برچسب را برای نگه داشتن داشته باشید. یک زمان بندی بعدی یا درصد بالاتر به طور خودکار برنده نمی شود.',
 			'audiobook.syncDevice' => ({required Object device}) => 'تجهیزات ${device}',
@@ -8602,6 +8714,8 @@ extension on TranslationsFa {
 			'sourceSetup.nfsEncryptionFailure' => 'برای NFS رمزگذاری‌شده، پشتیبانی هر دو سرویس NAS از RFC 9289 و TLS 1.3، نام گواهی و UID/GID اشتراک را بررسی کنید. PlezyNG این اتصال را بدون رمزگذاری دوباره امتحان نمی‌کند.',
 			'sourceSetup.sourceConnecting' => 'در حال اتصال به منبع',
 			'sourceSetup.metadataSearchPrivacy' => 'این جست‌وجوی عنوان به Trakt فرستاده می‌شود. فقط عنوانی که وارد می‌کنید ارسال می‌شود، نه ویدیو یا اطلاعات ورود منبع.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'انتخاب نتیجهٔ مطابق',
 			'sourceSetup.metadataMatchHelp' => 'پیش از انتخاب، عنوان و سال را بررسی کنید. Trakt عنوان جست‌وجو را دریافت می‌کند؛ ویدیو در منبع خود باقی می‌ماند.',
 			'sourceSetup.metadataNoMatches' => 'عنوان مطابقی در اینترنت پیدا نشد. عنوان دیگری را امتحان کنید.',
@@ -8648,8 +8762,6 @@ extension on TranslationsFa {
 			'sourceSetup.sharedLibraryInvalid' => 'از 8 تا 100 حروف، اعداد، نقطه ها، زیرنویس ها یا هیفن استفاده کنید.',
 			'sourceSetup.generateSharedLibraryId' => 'ایجاد یک ID کتابخانه مشترک',
 			'sourceSetup.nfsReadAhead' => 'درخواست های NFS Read-ahead',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'بیشتر خواندن موازی می تواند پهنای باند را در یک NAS یا شبکه سریع بهبود بخشد.استفاده از 1 اگر سرور تقاضای همزمان را محدود می کند.',
 			'sourceSetup.nfsReadTest' => 'اندازه گیری عملکرد NFS خواندن',
 			'sourceSetup.nfsReadTestHelp' => 'خواندن تا 64 مگابایت از بزرگترین فایل برای اندازه گیری این اتصال NAS.',
@@ -8672,7 +8784,6 @@ extension on TranslationsFa {
 			'comics.collections' => 'مجموعه‌ها',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8697,7 +8808,6 @@ extension on TranslationsFa {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8729,8 +8839,6 @@ extension on TranslationsFa {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8738,14 +8846,12 @@ extension on TranslationsFa {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'این لینک Plezy معتبر نیست.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'هیچ پروفایل با "${profile}" مطابقت ندارد.',
 			'deepLinks.serverUnavailable' => 'من نمی توانستم به سرور برای این لینک دسترسی داشته باشم.',
@@ -8763,6 +8869,12 @@ extension on TranslationsFa {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'باز کردن به عنوان ${name}',
 			'deepLinks.copy' => 'کپی',
 			'deepLinks.copied' => 'لینک کپی شده',
+			'householdSetup.title' => 'راه‌اندازی خانه',
+			'issueReport.title' => 'گزارش مشکل',
+			'issueReport.instructions' => 'برای باز کردن پیش‌نویس ازپیش‌پرشده GitHub، کد QR را اسکن کنید. آن را بررسی کنید و فقط وقتی آماده‌اید ارسال کنید.',
+			'issueReport.privacy' => 'پیش‌نویس نسخه برنامه، پلتفرم و تعداد اتصال‌ها را دارد. نشانی سرورها، نام حساب‌ها و پروفایل‌ها، عنوان رسانه‌ها و مسیر فایل‌ها در آن نیست.',
+			'issueReport.logPrivacy' => 'گزارش‌ها اختیاری‌اند. پیش از بارگذاری آن‌ها را بررسی کنید. شناسه گزارش به پیش‌نویس اضافه می‌شود و ممکن است عمومی باشد.',
+			'issueReport.openDraft' => 'باز کردن پیش‌نویس GitHub',
 			_ => null,
 		};
 	}

@@ -33,7 +33,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Start the session inside the player for both backends (loading
         // spinner covers Plex's tune / Jellyfin's stream negotiation).
         final channel = widget.live!.channel;
-        final session = await _startLiveSession(channel);
+        final session = await _startLiveSession(channel, program: widget.live!.initialProgram);
         if (session == null) {
           throw PlaybackException(t.liveTv.failedToStartChannel, reason: PlaybackFailureReason.serverUnavailable);
         }
@@ -91,15 +91,37 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         frameRatePlan = _armLiveDisplayNegotiation(currentPlayer, attempt.outcome);
         final holdPlaybackStart = frameRatePlan?.holdPlaybackStart ?? false;
+        if (currentPlayer.playerType == 'mpv') {
+          final motionResult = await MotionClarityService.forPlayer(currentPlayer).configure(
+            preset: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _currentMetadata),
+            kernel: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _currentMetadata),
+            thresholdPercent: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _currentMetadata),
+            beforeSourceOpen: true,
+            engine: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, _currentMetadata),
+            outputRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, _currentMetadata),
+            mciQuality: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, _currentMetadata),
+          );
+          if (!motionResult.isSupported && motionResult.reason != null) {
+            appLogger.d('PlaybackStart: motion clarity unavailable for live output: ${motionResult.reason}');
+          }
+          if (!attempt.isCurrent) return;
+        }
         final opened = await _openLiveStream(
           currentPlayer,
           streamUrl,
           targetEpoch: targetEpoch,
+          iptvSession: session is IptvLiveTvPlaybackSession ? session : null,
+          enableLocalTimeShift: session is IptvLiveTvPlaybackSession ? session.localTimeShiftEnabled : false,
           play: !holdPlaybackStart && !PlatformDetector.isAutomotive(),
           isCurrent: () => attempt.isCurrent && identical(_live.session, session),
           timeShifted: requestedEpoch != null,
         );
-        if (opened) openedStream = _live.streamGeneration;
+        if (opened) {
+          openedStream = _live.streamGeneration;
+          if (currentPlayer.playerType == 'mpv') {
+            MotionClarityService.forPlayer(currentPlayer).markSourceOpened();
+          }
+        }
         if (!attempt.isCurrent) return;
 
         await _initVideoFilterAndPip();
@@ -124,6 +146,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           await _playWithPlaybackIntent(currentPlayer);
         }
         committed = attempt.isCurrent;
+        if (committed && openedStream != null) unawaited(_recordIptvRecentChannel(channel));
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));
@@ -356,6 +379,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
           await _initVideoFilterAndPip();
           if (!attempt.isCurrent) return false;
+
+          if (currentPlayer.playerType == 'mpv') {
+            // Mark only after the open. The shared open path applies the
+            // media-scoped profile before player.open(), while decoder surfaces
+            // can still be sized for this source.
+            MotionClarityService.forPlayer(currentPlayer).markSourceOpened();
+          }
 
           if (player == currentPlayer) {
             // Auto-PiP: set up callback for API 26-30 path and initial state

@@ -20,6 +20,10 @@ on:
         required: true
         type: string
 
+# Publication gates also run before a repository has been checked out.
+env:
+  GH_REPO: ${{ github.repository }}
+
 concurrency:
   group: update-release-packages
   cancel-in-progress: false

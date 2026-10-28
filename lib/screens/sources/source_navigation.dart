@@ -10,12 +10,14 @@ import '../../widgets/app_menu.dart';
 String shelfLabel(PublicationShelf shelf) => switch (shelf) {
   PublicationShelf.ebooks => t.fileSources.ebooks,
   PublicationShelf.audiobooks => t.fileSources.audiobooks,
+  PublicationShelf.music => t.downloads.music,
   PublicationShelf.comics => t.fileSources.comics,
   PublicationShelf.videos => t.fileSources.video,
 };
 IconData shelfIcon(PublicationShelf shelf) => switch (shelf) {
   PublicationShelf.ebooks => Symbols.menu_book_rounded,
   PublicationShelf.audiobooks => Symbols.headphones_rounded,
+  PublicationShelf.music => Symbols.library_music_rounded,
   PublicationShelf.comics => Symbols.auto_stories_rounded,
   PublicationShelf.videos => Symbols.movie_rounded,
 };

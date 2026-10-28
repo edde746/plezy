@@ -84,6 +84,8 @@ class TranslationsFrCa extends TranslationsFr with BaseTranslations<AppLocale, T
 	@override late final _Translations$homeLayout$fr_CA homeLayout = _Translations$homeLayout$fr_CA._(_root);
 	@override late final _Translations$fileSources$fr_CA fileSources = _Translations$fileSources$fr_CA._(_root);
 	@override late final _Translations$lending$fr_CA lending = _Translations$lending$fr_CA._(_root);
+	@override late final _Translations$householdSetup$fr_CA householdSetup = _Translations$householdSetup$fr_CA._(_root);
+	@override late final _Translations$issueReport$fr_CA issueReport = _Translations$issueReport$fr_CA._(_root);
 }
 
 // Path: cast
@@ -785,6 +787,30 @@ class _Translations$lending$fr_CA extends Translations$lending$fr {
 	@override String get cancel => 'Annuler';
 }
 
+// Path: householdSetup
+class _Translations$householdSetup$fr_CA extends Translations$householdSetup$fr {
+	_Translations$householdSetup$fr_CA._(TranslationsFrCa root) : this._root = root, super.internal(root);
+
+	final TranslationsFrCa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuration du foyer';
+}
+
+// Path: issueReport
+class _Translations$issueReport$fr_CA extends Translations$issueReport$fr {
+	_Translations$issueReport$fr_CA._(TranslationsFrCa root) : this._root = root, super.internal(root);
+
+	final TranslationsFrCa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Signaler un problème';
+	@override String get instructions => 'Balayez le code QR pour ouvrir un brouillon GitHub prérempli. Vérifiez-le et envoyez-le quand vous êtes prêt.';
+	@override String get privacy => 'Le brouillon contient la version de l’application, la plateforme et le nombre de connexions. Il exclut les adresses des serveurs, les noms de comptes et de profils, les titres et les chemins de fichiers.';
+	@override String get logPrivacy => 'Les journaux sont facultatifs. Vérifiez-les avant l’envoi. Leur identifiant est ajouté au brouillon, qui peut être public.';
+	@override String get openDraft => 'Ouvrir le brouillon GitHub';
+}
+
 // Path: common.mediaKind
 class _Translations$common$mediaKind$fr_CA extends Translations$common$mediaKind$fr {
 	_Translations$common$mediaKind$fr_CA._(TranslationsFrCa root) : this._root = root, super.internal(root);
@@ -1419,6 +1445,12 @@ extension on TranslationsFrCa {
 			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(count, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minute', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutes', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutes', ), 
 			'fileSources.googleDrive' => 'Google Drive',
 			'lending.cancel' => 'Annuler',
+			'householdSetup.title' => 'Configuration du foyer',
+			'issueReport.title' => 'Signaler un problème',
+			'issueReport.instructions' => 'Balayez le code QR pour ouvrir un brouillon GitHub prérempli. Vérifiez-le et envoyez-le quand vous êtes prêt.',
+			'issueReport.privacy' => 'Le brouillon contient la version de l’application, la plateforme et le nombre de connexions. Il exclut les adresses des serveurs, les noms de comptes et de profils, les titres et les chemins de fichiers.',
+			'issueReport.logPrivacy' => 'Les journaux sont facultatifs. Vérifiez-les avant l’envoi. Leur identifiant est ajouté au brouillon, qui peut être public.',
+			'issueReport.openDraft' => 'Ouvrir le brouillon GitHub',
 			_ => null,
 		};
 	}

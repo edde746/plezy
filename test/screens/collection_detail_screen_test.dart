@@ -150,7 +150,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('4 items'), findsOneWidget);
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.textContaining('Movie 1'), findsOneWidget);
     expect(find.text('Movie 3'), findsNothing);
     expect(find.textContaining('2000–2003'), findsNothing);
   });

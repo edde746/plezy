@@ -1,7 +1,7 @@
 # ng-runner-policy: private-jit-only-v1
 # packer-windows-jit-v1
 name: PlezyNG Release
-run-name: ${{ inputs.action == 'release' && format('action:{0}:pool:{1}:tag:{2}', inputs.action, inputs.runner_pool, github.ref_name) || format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
+run-name: ${{ inputs.action == 'release' && format('action:{0}:pool:{1}:tag:v{2}', inputs.action, inputs.runner_pool, inputs.build_version) || format('action:{0}:pool:{1}', inputs.action, inputs.runner_pool) }}
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ on:
           - macos-validation
         default: release
       build_version:
-        description: Semantic version for artifact names; leave blank to use pubspec.yaml (release action uses the selected v* tag)
+        description: Semantic version for artifact names; release requires the existing v* tag to point to this exact main commit
         required: false
         type: string
       include_webos_build:
@@ -138,12 +138,16 @@ jobs:
             exit 1
           fi
           if [[ "$ACTION" == "release" ]]; then
-            RELEASE_TAG="$REF_NAME"
-            if [[ "$REF_TYPE" != "tag" || ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "The release action must dispatch against a vMAJOR.MINOR.PATCH tag." >&2
+            if [[ "$REF_TYPE" != "branch" || "$REF_NAME" != "main" ]]; then
+              echo "The release action must dispatch from refs/heads/main so the private main-ref runner policy applies." >&2
               exit 1
             fi
-            VERSION="${RELEASE_TAG#v}"
+            VERSION="$BUILD_VERSION_INPUT"
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "The release action requires build_version=MAJOR.MINOR.PATCH." >&2
+              exit 1
+            fi
+            RELEASE_TAG="v$VERSION"
           else
             RELEASE_TAG="$BUILD_VERSION_INPUT"
             if [[ -z "$RELEASE_TAG" && ( "$MODE" == "release" || "$MODE" == "macos-validation" ) ]]; then
@@ -207,13 +211,25 @@ jobs:
             exit 1
           fi
 
-      - name: Require the release tag to point to main
+      - name: Require the release tag to match the trusted main commit
         if: ${{ inputs.action == 'release' }}
         shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.request.outputs.release_tag }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF_TYPE" != tag || ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Release actions must select an exact vMAJOR.MINOR.PATCH tag." >&2
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Release actions must run from refs/heads/main." >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release actions require an exact vMAJOR.MINOR.PATCH tag." >&2
+            exit 1
+          fi
+          git fetch --no-tags origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          release_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
+          if [[ "$release_commit" != "$GITHUB_SHA" ]]; then
+            echo "Release tag $RELEASE_TAG resolves to $release_commit, not dispatched main commit $GITHUB_SHA." >&2
             exit 1
           fi
           git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
@@ -293,18 +309,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           COMMIT_SHA: ${{ github.sha }}
           REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          response=$(curl --fail --silent --show-error \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/$REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$COMMIT_SHA&event=workflow_dispatch&per_page=20")
-          result=$(python3 -c 'import json,sys; sha=sys.argv[1]; data=json.load(sys.stdin); runs=[r for r in data.get("workflow_runs",[]) if r.get("head_sha")==sha and r.get("head_branch")=="main" and r.get("event")=="workflow_dispatch"]; runs.sort(key=lambda r:(r.get("run_number",0),r.get("run_attempt",0)),reverse=True); r=runs[0] if runs else {}; print((r.get("status") or "missing")+" "+(r.get("conclusion") or "missing"))' "$COMMIT_SHA" <<< "$response")
-          if [[ "$result" != "completed success" ]]; then
-            echo "The exact release commit must have a completed successful manually dispatched CI - Sanity Checks run on main. Found: $result" >&2
-            exit 1
-          fi
+        run: python3 scripts/verify_release_ci.py
 
       - name: Require approval for the exact webOS release artifact
         if: ${{ steps.request.outputs.mode == 'release' && steps.request.outputs.include_webos_release == 'true' }}
@@ -350,95 +355,18 @@ jobs:
 
       - name: Configure Java downloads for the private JIT proxy
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
-          if [[ -z "$proxy" ]]; then
-            echo "The private JIT HTTPS proxy is required for Android toolchain downloads." >&2
-            exit 1
-          fi
-          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
-          import sys
-          from urllib.parse import urlsplit
-
-          raw = sys.argv[1]
-          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT proxy URL is invalid for Android toolchain downloads.")
-          print(parsed.hostname)
-          print(parsed.port)
-          PY
-          )
-          if (( ${#proxy_parts[@]} != 2 )); then
-            echo "Could not parse the private JIT proxy for Java downloads." >&2
-            exit 1
-          fi
-          proxy_options=(
-            "-Dhttp.proxyHost=${proxy_parts[0]}"
-            "-Dhttp.proxyPort=${proxy_parts[1]}"
-            "-Dhttps.proxyHost=${proxy_parts[0]}"
-            "-Dhttps.proxyPort=${proxy_parts[1]}"
-            "-Dhttp.nonProxyHosts=localhost|127.*|[::1]"
-          )
-          if [[ -n "${JAVA_TOOL_OPTIONS:-}" ]]; then
-            proxy_options+=("$JAVA_TOOL_OPTIONS")
-          fi
-          printf 'JAVA_TOOL_OPTIONS=%s\n' "${proxy_options[*]}" >> "$GITHUB_ENV"
+        run: python3 scripts/prepare_android_sdk.py proxy
 
       - name: Setup Android SDK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: '15859902'
+          log-accepted-android-sdk-licenses: false
 
       - name: Install the pinned Android SDK, NDK, and CMake
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
-          if [[ -z "$sdk_root" || ! -d "$sdk_root/cmdline-tools" ]]; then
-            echo "Android command-line tools were not provisioned by setup-android." >&2
-            exit 1
-          fi
-          sdkmanager="$(find "$sdk_root/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          if [[ -z "$sdkmanager" ]]; then
-            echo "Could not locate sdkmanager under $sdk_root/cmdline-tools." >&2
-            exit 1
-          fi
-          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
-          if [[ -z "$proxy" ]]; then
-            echo "The private JIT HTTPS proxy is required for Android SDK downloads." >&2
-            exit 1
-          fi
-          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
-          import sys
-          from urllib.parse import urlsplit
-
-          raw = sys.argv[1]
-          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT proxy URL is invalid for Android SDK downloads.")
-          print(parsed.hostname)
-          print(parsed.port)
-          PY
-          )
-          if (( ${#proxy_parts[@]} != 2 )); then
-            echo "Could not parse the private JIT proxy for Android SDK downloads." >&2
-            exit 1
-          fi
-          proxy_args=(--proxy=http --proxy_host="${proxy_parts[0]}" --proxy_port="${proxy_parts[1]}")
-          packages=("platform-tools" "platforms;android-37" "build-tools;36.1.0" "ndk;29.0.14206865" "cmake;4.1.2")
-          set +o pipefail
-          yes | "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --licenses
-          license_status="${PIPESTATUS[1]}"
-          set -o pipefail
-          if (( license_status != 0 )); then exit "$license_status"; fi
-          "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --install "${packages[@]}"
-          test -f "$sdk_root/platforms/android-37/android.jar"
-          test -x "$sdk_root/build-tools/36.1.0/aapt2"
-          test -f "$sdk_root/ndk/29.0.14206865/source.properties"
-          test -x "$sdk_root/cmake/4.1.2/bin/cmake"
-          java -version
+        run: python3 scripts/prepare_android_sdk.py install
 
       - name: Setup Flutter
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
@@ -608,6 +536,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify private WebOS output storage
+        run: python3 tools/webos/retain_private_candidate.py --preflight
+
       - name: Test WebOS packaging and release gates
         env:
           PLEZY_WEBOS_TEST_TMP: ${{ runner.temp }}/plezy-webos-tests
@@ -674,6 +605,16 @@ jobs:
         env:
           PLEZYNG_WEBOS_TASK_ROOT: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}
           PLEZY_WEBOS_RELEASE_BUILD: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
+
+      - name: Retain verified WebOS candidate for private device testing
+        env:
+          OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/webos/retain_private_candidate.py \
+            --source-dir "$OUTPUT_DIR" \
+            --version "$(python3 scripts/pubspec_version.py pubspec.yaml)"
 
       - name: Verify the exact approved WebOS IPK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
@@ -824,10 +765,33 @@ jobs:
           export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
           pod --version
 
+      - name: Prepare short iOS build workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-ios"
+          if [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to reuse existing Apple build path: $short_root" >&2
+            exit 1
+          fi
+          mkdir -m 700 "$short_root"
+          ditto "$GITHUB_WORKSPACE/." "$short_root/"
+          chmod 700 "$short_root"
+          [[ "$(git -C "$short_root" rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          [[ ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]
+          if (( ${#short_root} > 64 )); then
+            echo "Short iOS workspace path is unexpectedly long: $short_root" >&2
+            exit 1
+          fi
+          echo "PLEZYNG_APPLE_WORKSPACE=$short_root" >> "$GITHUB_ENV"
+          echo "Prepared real local build workspace: $short_root (${#short_root} characters)"
+
       - name: Install dependencies
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Refresh pinned mpv Swift packages
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: scripts/refresh_apple_spm.sh ios
 
       - name: Configure optional iOS App Store signing
@@ -880,13 +844,32 @@ jobs:
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Build iOS (no codesign)
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --split-debug-info=debug-info/ios
 
       - name: Create unsigned developer IPA
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Plezy.app Payload/
           zip -r plezy-ios-unsigned.ipa Payload
+
+      - name: Prepare a default keychain for Xcode cloud signing
+        if: steps.ios-signing.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/plezyng-ios-cloud-signing.keychain-db"
+          if [[ -e "$keychain_path" || -L "$keychain_path" ]]; then
+            echo "Refusing to reuse an existing iOS signing keychain: $keychain_path" >&2
+            exit 1
+          fi
+          keychain_password="$(/usr/bin/uuidgen)"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          security default-keychain -d user -s "$keychain_path"
 
       - name: Build signed iOS App Store IPA
         if: steps.ios-signing.outputs.configured == 'true'
@@ -896,6 +879,7 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           EXPORT_OPTIONS_PATH: ${{ steps.ios-signing.outputs.export_options_path }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           flutter build ios --release --no-codesign \
@@ -937,6 +921,25 @@ jobs:
           fi
           cp "$ipa_path" plezyng-ios-appstore.ipa
 
+      - name: Remove the temporary iOS signing keychain
+        if: always() && steps.ios-signing.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/plezyng-ios-cloud-signing.keychain-db"
+          if [[ -e "$keychain_path" || -L "$keychain_path" ]]; then
+            security delete-keychain "$keychain_path"
+          fi
+
+      - name: Copy iOS packages to the workflow workspace
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          set -euo pipefail
+          cp -f plezy-ios-unsigned.ipa "$GITHUB_WORKSPACE/"
+          if [[ -f plezyng-ios-appstore.ipa ]]; then
+            cp -f plezyng-ios-appstore.ipa "$GITHUB_WORKSPACE/"
+          fi
+
       - name: Attest unsigned developer IPA
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
@@ -967,6 +970,23 @@ jobs:
             plezy-ios-unsigned.ipa
             plezyng-ios-appstore.ipa
           if-no-files-found: error
+
+      - name: Remove short iOS build workspace
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-ios"
+          if [[ -d "$short_root" && ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]; then
+            if [[ -d "$short_root/ios/Pods" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/ios"
+              ditto "$short_root/ios/Pods" "$GITHUB_WORKSPACE/ios/Pods"
+            fi
+            rm -rf -- "$short_root"
+          elif [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to remove unexpected Apple build path: $short_root" >&2
+            exit 1
+          fi
 
   build-tvos:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
@@ -1240,10 +1260,33 @@ jobs:
           export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
           pod --version
 
+      - name: Prepare short macOS build workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-macos"
+          if [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to reuse existing Apple build path: $short_root" >&2
+            exit 1
+          fi
+          mkdir -m 700 "$short_root"
+          ditto "$GITHUB_WORKSPACE/." "$short_root/"
+          chmod 700 "$short_root"
+          [[ "$(git -C "$short_root" rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          [[ ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]
+          if (( ${#short_root} > 64 )); then
+            echo "Short macOS workspace path is unexpectedly long: $short_root" >&2
+            exit 1
+          fi
+          echo "PLEZYNG_APPLE_WORKSPACE=$short_root" >> "$GITHUB_ENV"
+          echo "Prepared real local build workspace: $short_root (${#short_root} characters)"
+
       - name: Install dependencies
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Refresh pinned mpv Swift packages
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: scripts/refresh_apple_spm.sh macos
 
       - name: Configure repository updater trust root
@@ -1251,12 +1294,15 @@ jobs:
         env:
           SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: dart run scripts/configure_updater.dart
 
       - name: Build macOS
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} ${{ env.NATIVE_UPDATER_DEFINE }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
 
       - name: Verify universal macOS executable
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
@@ -1279,6 +1325,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           REQUIRE_HOMEBREW_CASK: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           signing_values=("$MACOS_CERTIFICATE_BASE64" "$MACOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PASSWORD")
@@ -1346,6 +1393,7 @@ jobs:
         if: steps.macos-signing.outputs.codesign == 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           # Find the identity
           IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '".*"' | tr -d '"')
@@ -1373,6 +1421,7 @@ jobs:
 
       - name: Verify Signature
         if: steps.macos-signing.outputs.codesign == 'true'
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
           echo "Verifying signature..."
@@ -1390,6 +1439,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
 
@@ -1415,9 +1465,11 @@ jobs:
 
       - name: Verify Gatekeeper acceptance for Homebrew Cask
         if: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask == 'true' }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: spctl --assess --type execute --verbose=4 build/macos/Build/Products/Release/PlezyNG.app
 
       - name: Create DMG
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           mkdir -p dmg-staging
           cp -R build/macos/Build/Products/Release/PlezyNG.app dmg-staging/
@@ -1428,6 +1480,7 @@ jobs:
         id: sparkle-signing
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           if [[ -n "$SPARKLE_PRIVATE_KEY" ]]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
@@ -1439,6 +1492,7 @@ jobs:
         if: steps.sparkle-signing.outputs.available == 'true'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           printf -- "-----BEGIN ED25519 PRIVATE KEY-----\n%s\n-----END ED25519 PRIVATE KEY-----\n" "$SPARKLE_PRIVATE_KEY" > ed25519_key.pem
           OUTPUT=$(dart run auto_updater:sign_update plezyng-macos.dmg ed25519_key.pem)
@@ -1448,15 +1502,22 @@ jobs:
           echo "MACOS_ED_SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
           echo "MACOS_DMG_SIZE=$(stat -f%z plezyng-macos.dmg)" >> $GITHUB_ENV
 
+      - name: Write macOS signature metadata
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
+          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
+
+      - name: Copy macOS deliverables to the workflow workspace
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          set -euo pipefail
+          cp -f plezyng-macos.dmg macos-ed-signature.txt macos-dmg-size.txt "$GITHUB_WORKSPACE/"
+
       - name: Attest macOS DMG
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: plezyng-macos.dmg
-
-      - name: Write macOS signature metadata
-        run: |
-          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
-          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -1467,11 +1528,28 @@ jobs:
             macos-ed-signature.txt
             macos-dmg-size.txt
 
+      - name: Remove short macOS build workspace
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-macos"
+          if [[ -d "$short_root" && ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]; then
+            if [[ -d "$short_root/macos/Pods" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/macos"
+              ditto "$short_root/macos/Pods" "$GITHUB_WORKSPACE/macos/Pods"
+            fi
+            rm -rf -- "$short_root"
+          elif [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to remove unexpected Apple build path: $short_root" >&2
+            exit 1
+          fi
+
   build-windows:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -1488,6 +1566,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1
+          .\windows\tool\prepare-build-toolchain.ps1 -VerifyOnly
 
       - name: Cache Windows native dependencies
         id: windows-native-cache
@@ -1624,6 +1708,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1 -IncludeInstaller
+          .\windows\tool\prepare-build-toolchain.ps1 -IncludeInstaller -VerifyOnly
+
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -1703,7 +1793,7 @@ jobs:
               if ($null -ne $signtoolFile) { $signtoolPath = $signtoolFile.FullName }
             }
             if ($null -eq $signtoolPath) { throw 'Could not find signtool.exe on the Windows runner.' }
-            & $signtoolPath sign /fd SHA256 /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD /tr https://timestamp.digicert.com /td SHA256 plezy-windows-installer.exe
+            & $signtoolPath sign /fd SHA256 /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td SHA256 plezy-windows-installer.exe
             if ($LASTEXITCODE -ne 0) { throw "Authenticode signing failed with exit code $LASTEXITCODE" }
             & $signtoolPath verify /pa /all plezy-windows-installer.exe
             if ($LASTEXITCODE -ne 0) { throw "Authenticode signature verification failed with exit code $LASTEXITCODE" }
@@ -2030,8 +2120,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+          python3 scripts/retry_flatpak.py remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          python3 scripts/retry_flatpak.py install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
 
       - name: Build Flatpak bundle
         shell: bash
@@ -2054,10 +2144,8 @@ jobs:
 
       - name: Build Snap package
         id: snap
-        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1
-        with:
-          path: linux/packaging/snap
-          snapcraft-args: --build-for=${{ matrix.snap_arch }}
+        shell: bash
+        run: bash scripts/build_private_snap.sh '${{ matrix.snap_arch }}'
 
       - name: Name Snap artifact
         env:
@@ -2197,6 +2285,64 @@ jobs:
         if: ${{ needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
         run: mv artifacts/webos/SHA256SUMS.txt artifacts/webos/webos-SHA256SUMS.txt
 
+      - name: Download Tizen ARM tester handoff
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: plezyng-tizen-arm-experimental
+          path: artifacts/tizen
+
+      - name: Verify and archive Tizen tester handoff
+        env:
+          EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          package_dir=artifacts/tizen
+          package_name=PlezyNG-tizen-arm-tester.tpk
+          (
+            cd "$package_dir"
+            sha256sum --check "$package_name.sha256"
+          )
+          python3 - "$package_dir" "$EXPECTED_SOURCE_COMMIT" <<'PY'
+          import json
+          import pathlib
+          import sys
+          import zipfile
+
+          package_dir = pathlib.Path(sys.argv[1])
+          expected_commit = sys.argv[2]
+          package_name = "PlezyNG-tizen-arm-tester.tpk"
+          required = [
+              package_name,
+              package_name + ".sha256",
+              package_name + ".json",
+              "pubspec-tizen.lock",
+              "native-build.json",
+              "PlezyNG-tizen-arm-native-sources.tar.gz",
+              "package.py",
+              "toolchain.json",
+              "tizen-tester.md",
+          ]
+          missing = [name for name in required if not (package_dir / name).is_file()]
+          if missing:
+              raise SystemExit(f"Tizen tester handoff is missing: {missing}")
+
+          report = json.loads((package_dir / (package_name + ".json")).read_text())
+          if report.get("source_commit") != expected_commit:
+              raise SystemExit("Tizen tester package was built from a different source commit")
+          if report.get("source_dirty") is not False:
+              raise SystemExit("Tizen tester package source tree was not clean")
+          if report.get("signing") != "development-only-requires-tv-resigning":
+              raise SystemExit("Tizen tester package has unexpected signing status")
+          if report.get("tv_install_verified") is not False:
+              raise SystemExit("Tizen tester package must remain explicitly unqualified")
+
+          destination = package_dir / "PlezyNG-tizen-arm-tester-handoff.zip"
+          with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+              for name in required:
+                  archive.write(package_dir / name, arcname=name)
+          print(f"Verified Tizen tester package source and created {destination}")
+          PY
+
       - name: Download iOS artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
@@ -2263,6 +2409,9 @@ jobs:
         with:
           name: linux-x64-appimage
           path: artifacts/linux-x64
+
+      - name: Verify Tizen handoff before publication
+        run: test -s artifacts/tizen/PlezyNG-tizen-arm-tester-handoff.zip
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
@@ -2408,6 +2557,7 @@ jobs:
             fi
             echo artifacts/windows-chocolatey/plezyng.*.nupkg
             echo "artifacts/plezyng-winget-manifests-${RELEASE_VERSION}.zip"
+            echo artifacts/tizen/PlezyNG-tizen-arm-tester-handoff.zip
             if [ -f artifacts/android-apk/plezyng-android-play.aab ]; then
               echo artifacts/android-apk/plezyng-android-play.aab
             fi

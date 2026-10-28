@@ -72,7 +72,14 @@ class MediaVersion {
 
   /// Defaults to true when file-access fields are absent. Plex only populates
   /// them when metadata is fetched with `checkFiles=1`.
-  bool get isPlayable => parts.isEmpty || parts.any((part) => part.isPlayable);
+  bool get isPlayable => parts.every((part) => part.isPlayable);
+
+  /// Whether playback can start or resume in at least one known part.
+  ///
+  /// This is useful when a multipart item has a missing segment but still has
+  /// playable content after it. [isPlayable] stays stricter for copy ranking:
+  /// every known part must be available before a copy is considered complete.
+  bool get hasPlayablePart => parts.any((part) => part.isPlayable);
 
   /// Approximate vertical resolution, for ordering versions best-first.
   ///

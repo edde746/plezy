@@ -318,6 +318,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ChangeNotifierProvider(
                 create: (context) {
                   final provider = CompanionRemoteProvider();
+                  provider.bindGameWorkspace(context.read<MultiviewWorkspaceController>());
                   // Keep a running host's crypto identity live: a home user
                   // removed or a borrowed connection revoked mid-session must
                   // stop controlling the broadcast.

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'game_models.dart';
 
@@ -16,6 +18,18 @@ class GameArtworkLoader {
   Future<Uint8List?> load(GameHost host, StreamGame game) {
     if (_disposed || game.hostKey != host.key) return Future.value();
     final key = '${game.key}@${host.address}:${host.port}';
+    return _load(key, () => _fetch(host, game));
+  }
+
+  /// Only a numeric AppID can select a public Steam cover; no caller URLs,
+  /// credentials, redirects, disk cache or unbounded response buffers.
+  Future<Uint8List?> loadSteam(int appId) {
+    if (!validSteamAppId(appId)) return Future.value();
+    return _load('steam:$appId', () => _steamCover(appId));
+  }
+
+  Future<Uint8List?> _load(String key, Future<Uint8List?> Function() fetch) {
+    if (_disposed) return Future.value();
     final existing = _cache.remove(key);
     if (existing != null) {
       _cache[key] = existing;
@@ -23,7 +37,7 @@ class GameArtworkLoader {
     }
     if (_pending.containsKey(key)) return _pending[key]!;
     if (_queue.length >= 62) return Future.value();
-    final request = _CoverRequest(host, game, key, _generation);
+    final request = _CoverRequest(fetch, key, _generation);
     _pending[key] = request.result.future;
     _queue.add(request);
     _pump();
@@ -41,7 +55,7 @@ class GameArtworkLoader {
   Future<void> _complete(_CoverRequest request) async {
     Uint8List? result;
     try {
-      final bytes = await _fetch(request.host, request.game).timeout(const Duration(seconds: 12));
+      final bytes = await request.fetch().timeout(const Duration(seconds: 12));
       if (!_disposed && request.generation == _generation && bytes != null && bytes.length <= 512 * 1024) {
         result = bytes;
       }
@@ -69,6 +83,33 @@ class GameArtworkLoader {
         'appId': game.id,
       });
 
+  static Future<Uint8List?> _steamCover(int appId) async {
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+    Future<Uint8List?> fetch() async {
+      final uri = Uri.https('cdn.akamai.steamstatic.com', '/steam/apps/$appId/library_600x900.jpg');
+      final request = await client.getUrl(uri);
+      request.followRedirects = false;
+      final response = await request.close();
+      if (response.statusCode != HttpStatus.ok ||
+          response.contentLength > 512 * 1024 ||
+          !{'image/jpeg', 'image/png', 'image/webp'}.contains(response.headers.contentType?.mimeType)) {
+        return null;
+      }
+      final bytes = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        if (bytes.length + chunk.length > 512 * 1024) return null;
+        bytes.add(chunk);
+      }
+      return bytes.takeBytes();
+    }
+
+    try {
+      return await fetch().timeout(const Duration(seconds: 10));
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   void dispose() {
     _disposed = true;
     _generation++;
@@ -82,9 +123,8 @@ class GameArtworkLoader {
 }
 
 class _CoverRequest {
-  _CoverRequest(this.host, this.game, this.key, this.generation);
-  final GameHost host;
-  final StreamGame game;
+  _CoverRequest(this.fetch, this.key, this.generation);
+  final Future<Uint8List?> Function() fetch;
   final String key;
   final int generation;
   final result = Completer<Uint8List?>();

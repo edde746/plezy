@@ -33,6 +33,9 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/actor_media_screen.dart';
 import 'package:plezy/screens/search_screen.dart';
+import 'package:plezy/screens/sources/source_widgets.dart';
+import 'package:plezy/sources/source_controller.dart';
+import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
@@ -76,6 +79,57 @@ void main() {
   });
 
   tearDown(_resetGlobalTestState);
+
+  testWidgets('indexed files remain searchable without a media server', (tester) async {
+    final sources = _SearchSources();
+    addTearDown(sources.dispose);
+    final (_, key) = await _pumpTvSearchScreen(tester, registerClient: false, sources: sources);
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('Dune');
+    await tester.pumpAndSettle();
+    expect(find.byType(SourceTile), findsOneWidget);
+    expect(find.byIcon(Symbols.error_rounded), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+  });
+
+  testWidgets('source results survive a failed server and clear on profile change', (tester) async {
+    final sources = _SearchSources();
+    addTearDown(sources.dispose);
+    final (_, key) = await _pumpTvSearchScreen(tester, sources: sources, searchError: StateError('offline'));
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('Dune');
+    await tester.pumpAndSettle();
+    expect(find.byType(SourceTile), findsOneWidget);
+    sources.changeProfile();
+    await tester.pumpAndSettle();
+    expect(find.byType(SourceTile), findsNothing);
+    expect(_searchController(tester).text, isEmpty);
+  });
+
+  testWidgets('Files kind filter retains source identities next to server results', (tester) async {
+    final sources = _SearchSources();
+    addTearDown(sources.dispose);
+    final (_, key) = await _pumpTvSearchScreen(tester, sources: sources, tv: false);
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('Dune');
+    await tester.pumpAndSettle();
+    expect(find.byType(SourceTile), findsOneWidget);
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    await tester.tap(find.text('Ebooks'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SourceTile), findsOneWidget);
+    expect(find.byType(FocusableMediaCard), findsNothing);
+  });
+
+  testWidgets('late Files response cannot reappear after a profile change', (tester) async {
+    final sources = _SearchSources()..gate = Completer<List<SourceEntry>>();
+    addTearDown(sources.dispose);
+    final (_, key) = await _pumpTvSearchScreen(tester, sources: sources, registerClient: false);
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('Dune');
+    await tester.pump();
+    sources.changeProfile();
+    sources.gate!.complete([_searchBook]);
+    await tester.pumpAndSettle();
+    expect(find.byType(SourceTile), findsNothing);
+    expect(_searchController(tester).text, isEmpty);
+  });
 
   testWidgets('stale callbacks are no-ops after SearchScreen is disposed', (tester) async {
     final key = GlobalKey<State<SearchScreen>>();
@@ -895,7 +949,13 @@ void main() {
       // second, requestable copy.
       expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
       expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
-      expect(findDisplayText(t.seerr.title), findsOneWidget);
+      final sourceHeadingStyle = Theme.of(tester.element(find.byType(SearchScreen))).textTheme.titleSmall;
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Text && widget.data == t.seerr.title && widget.style == sourceHeadingStyle,
+        ),
+        findsOneWidget,
+      );
       expect(find.byTooltip(t.seerr.request), findsOneWidget);
       expect(
         tester.getTopLeft(findDisplayText('Movie 1 Sequel')).dy,
@@ -1003,6 +1063,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   // A connected Seerr instance; null pumps without one, as most users run.
   SeerrCatalogSource? seerr,
   SourceController? sourceController,
+  SourceController? sources,
 }) async {
   TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1.0;
@@ -1052,9 +1113,10 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
       child: MultiProvider(
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+          if (sources != null || sourceController != null)
+            ChangeNotifierProvider<SourceController>.value(value: sources ?? sourceController!),
           ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hidden),
           ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
-          if (sourceController != null) ChangeNotifierProvider<SourceController>.value(value: sourceController),
           if (catalogSources != null) ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
         ],
         child: MaterialApp(
@@ -1329,6 +1391,31 @@ class _FakeMediaServerClient implements MediaServerClient {
   }) async {
     fetchedPersonIds.add(personId);
     return const LibraryPage<MediaItem>(items: [], totalCount: 0);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+const _searchBook = SourceEntry(sourceId: 'books', id: 'dune', title: 'Dune', kind: SourceItemKind.ebook);
+
+class _SearchSources extends ChangeNotifier implements SourceController {
+  @override
+  int generation = 1;
+  Completer<List<SourceEntry>>? gate;
+
+  @override
+  List<FileSource> get sources => const [
+    FileSource(id: 'books', profileId: 'alice', kind: FileSourceKind.local, name: 'Books'),
+  ];
+
+  @override
+  Future<List<SourceEntry>> searchIndex(String query, {int limit = 500}) async =>
+      gate == null ? [_searchBook] : await gate!.future;
+
+  void changeProfile() {
+    generation++;
+    notifyListeners();
   }
 
   @override

@@ -111,6 +111,16 @@ function New-AppxManifest {
             <uap:DisplayName>PlezyNG media links</uap:DisplayName>
           </uap:Protocol>
         </uap:Extension>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="plezyng">
+            <uap:DisplayName>PlezyNG media links</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="plezxyng">
+            <uap:DisplayName>PlezyNG media links</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
       </Extensions>
     </Application>
   </Applications>

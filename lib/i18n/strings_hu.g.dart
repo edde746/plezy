@@ -110,6 +110,8 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$hu comics = _Translations$comics$hu._(_root);
 	@override late final _Translations$games$hu games = _Translations$games$hu._(_root);
 	@override late final _Translations$deepLinks$hu deepLinks = _Translations$deepLinks$hu._(_root);
+	@override late final _Translations$householdSetup$hu householdSetup = _Translations$householdSetup$hu._(_root);
+	@override late final _Translations$issueReport$hu issueReport = _Translations$issueReport$hu._(_root);
 }
 
 // Path: app
@@ -1201,6 +1203,30 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get settingsButton => 'Lejátszási beállítások';
 	@override String get tracksButton => 'Hang és feliratok';
 	@override String get chaptersButton => 'Fejezetek';
+	@override String get segmentLoopHelp => 'Az A beállítása, majd a B későbbi beállítás az idővonalon.';
+	@override String get setLoopStart => 'Kezdőlap Hírek A (A)';
+	@override String get setLoopEnd => 'A csúszás vége (B)';
+	@override String get clearSegmentLoop => 'Tiszta szegmens';
+	@override String get setLoopStartFirst => 'Állítsa be a pályát kezdődik (A) előtt a véget (B).';
+	@override String get loopEndAfterStart => 'A befejezésnek későn kell lennie, mint a kezdet.';
+	@override String get segmentLoopUnavailable => 'A Segment Looping nem érhető el ebben a playbackben.';
+	@override String get loopPointNotSet => 'Nem állít';
+	@override String get bookmarksHelp => 'A könyvjelzők ebben a készülékben kerülnek mentésre. Válassza ki az egyiket, hogy menjen erre az időre.';
+	@override String get bookmarksButton => 'könyvjelzők';
+	@override String get chaptersAndBookmarks => 'fejezetek és könyvjelzők';
+	@override String get segmentLoop => 'Segmentális lejátszás';
+	@override String get addBookmark => 'Hozzáadása Bookmark';
+	@override String get bookmarkName => 'Bookmark név';
+	@override String get bookmarkNameHint => 'Például a színpad megnyitása';
+	@override String bookmarkDefaultName({required Object n}) => 'könyvjelző ${n}';
+	@override String get bookmarkNameRequired => 'Írjon be egy nevet erre a könyvjelzőre.';
+	@override String get deleteBookmark => 'Távolítsa el a Bookmark';
+	@override String get bookmarkLimitReached => 'Ez a cikk már 100 könyvjelzővel rendelkezik.';
+	@override String get bookmarkUnavailable => 'Nem tudtam menteni vagy eltávolítani ezt a könyvjelzőt.';
+	@override String get bookmarkSaved => 'A könyv megmentett.';
+	@override String get bookmarkDeleted => 'Bookmark törlésre került.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop pont ${point} beállítása a ${time}A';
+	@override String get noChaptersOrBookmarks => 'Nincs rendelkezésre álló fejezetek vagy könyvjelzők.';
 	@override String get versionQualityButton => 'Verzió és minőség';
 	@override String get versionColumnHeader => 'Verzió';
 	@override String get qualityColumnHeader => 'Minőség';
@@ -2071,6 +2097,7 @@ class _Translations$music$hu extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'A track analízis...';
 	@override String get visualizerAmbientMotion => 'Környezetmoció';
 	@override String get visualizerPlexLoudness => 'Plex hangzás';
+	@override String get visualizerLiveAudio => 'Élő hangelemzés';
 	@override String get visualizerPreviousPreset => 'Előző vizuális stílus';
 	@override String get visualizerNextPreset => 'Következő vizuális stílus';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2424,6 +2451,12 @@ class _Translations$videoSettings$hu extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'A lejátszóban a kijelző maximális fényerejéhez igazítja a képet, majd közli az eredményt a kompozitorral.';
 	@override String get hdrToneMappingFailed => 'Nem sikerült módosítani a HDR-tónusleképezést – továbbra is az előző mód aktív.';
 	@override String get audioOutput => 'Hangkimenet';
+	@override String get videoTrack => 'Videósáv';
+	@override String get videoTrackDescription => 'Válaszd ki a megjelenítendő videofolyamot. MPV-lejátszáskor érhető el, ha a fájl több videósávot tartalmaz.';
+	@override String get videoTrackDefault => 'Alapértelmezett';
+	@override String get videoTrackUnavailable => 'Nincsenek elérhető alternatív videósávok.';
+	@override String get videoTrackFailed => 'Nem sikerült megváltoztatni a videósávot.';
+	@override String videoTrackNumber({required Object id}) => '${id}. sáv';
 	@override String get performanceOverlay => 'Teljesítményadatok';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2431,10 +2464,17 @@ class _Translations$videoSettings$hu extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Térbeli hang';
 	@override String get audioOutputStereo => 'Sztereó';
 	@override String get audioEqualizer => 'Audio egyenlet';
-	@override String get audioEqualizerDescription => 'Ez a készülék öt frekvenciájú sávját állítja be. elérhető a mpv-en; egy aktív EQ hangtávolít és megakadályozza a hangszórót.';
+	@override String get audioEqualizerDescription => '10 Band Equalizer MPV. A hangszűrők dekódolt audio használatát használják, és kapcsolja ki a passthrough-t.';
 	@override String get audioEqualizerFlat => 'Sík';
 	@override String get audioEqualizerActive => 'Egyéni';
 	@override String get audioEqualizerSaveFailed => 'Nem menthetek meg a hang egyenletítő beállításokat.';
+	@override String get audioEffectsDescription => 'A hatások dekódolt hangot használnak, így a passthrough elfordul. szoba környezete és sztereó kiterjesztése függ a MPV Építsen és nyomon kövesse.';
+	@override String get audioStereoWidth => 'Stereó bővítés';
+	@override String get audioSpatializer => 'Szoba környezete';
+	@override String get audioSpatializerDescription => 'Adjunk nyugodt helyiség reflexiókat.';
+	@override String get audioPitch => 'Pécsi változás';
+	@override String get audioPitchDescription => 'Változtassa meg a pályát, nem változtatja meg a sebességet MPV Az építkezésnek tartalmaznia kell Rubber BandA';
+	@override String get audioEffectUnavailable => 'Ez a hatás nem áll rendelkezésre ezen a pályán, vagy MPV Az építkezés.';
 	@override String get backgroundVideoAudio => 'Videó audio háttér';
 	@override String get backgroundVideoAudioDescription => 'A videó hangjátékot a lejátszó elhagyása után tartsa; a kép elrejtve van, amíg visszatér. Android médiaszámlálási értesítést használ.';
 	@override String get audioNormalization => 'Hangerő normalizálása';
@@ -3200,6 +3240,10 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Válassza ki a Playlist fájlt';
 	@override String get openPlaylist => 'Nyílt Playlist';
 	@override String get playlistFormatsHelp => 'A lejátszó listája legfeljebb 1000 elemet és 2 MB-ot tartalmazhat. a HLS nyílt áramlatként jelenik meg, így a játékos kiválaszthatja a minőséget.';
+	@override String get saveQueuePlaylist => 'Sor mentése lejátszási listaként';
+	@override String get queuePlaylistSaved => 'A lejátszási lista a médiafájlok mellé lett mentve.';
+	@override String get queuePlaylistUnavailable => 'Ez a sor nem menthető újra felhasználható helyi lejátszási listaként.';
+	@override String get queuePlaylistFolderRequired => 'A sor fájljaival azonos mappát válassz mentési helyként.';
 	@override String get noFavorites => 'Nincs mentett stream kedvencek még. Favoritek maradnak ebben a profilban.';
 	@override String get removeFavorite => 'Távolítsa el a kedvenc stream';
 	@override String get filesHelp => 'Válassza ki az audio, a videó vagy az ISO fájlokat egy ideiglenes tartományhoz. A fájlok és URL-ek nem kerülnek hozzáadásra a könyvtár történetéhez.';
@@ -3264,12 +3308,13 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Fájl cseréje';
 	@override String get discHelp => 'Nyissa meg a lemezt ebben a számítógép optikai lemezében.Az ISO-képet is megnyithatja a Device fájlokból.';
 	@override String get discs => 'Optikai lemez';
+	@override String get editionOrTitle => 'Kiadás vagy lemezcím';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray';
 	@override String get audioCd => 'Audió CD';
 	@override String get discAvailability => 'A lemezlejátszásnak kompatibilis MPV szerkezetre, támogatott lemezre és operációs rendszer engedélyére van szüksége.';
 	@override String get converterTitle => 'A helyi média fájl átalakítása';
-	@override String get converterHelp => 'Az FFmpeg segítségével MP4, M4A vagy MP3 másolatot készíthet.';
+	@override String get converterHelp => 'Konvertáljon egy helyi fájlt, vagy helyreállítsa a FFmpegA';
 	@override String get converterIntro => 'Konvertáljon egy helyi audio vagy videó fájlt olyan formátumra, amely több eszközön működik.';
 	@override String get converterPrivacy => 'FFmpeg kell telepíteni ezen a számítógépen. konverzió csak helyi fájlokat olvasható. nem tölt le áramlatok vagy eltávolítja DRM-t.';
 	@override String get converterChooseInput => 'Válasszon egy helyi média fájlt';
@@ -3277,6 +3322,8 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 és AAC';
 	@override String get converterM4a => 'M4A · AAC audio';
 	@override String get converterMp3 => 'MP3 hangszóró';
+	@override String get allowFtp => 'FTP engedélyezése';
+	@override String get allowFtpHelp => 'Az FTP titkosítás nélküli médiát küld, csak megbízható hálózatokon használja.';
 	@override String get converterSaveAs => 'Az átalakított média mentése';
 	@override String get converterExtensionMismatch => 'Válasszon egy fájlnevet a kiválasztott kimeneti kiterjesztéssel.';
 	@override String get converterUnsupportedInput => 'Válasszon egy audio vagy videó fájlt.';
@@ -3286,7 +3333,7 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Megkezdődött az FFmpeg...';
 	@override String get converterProgress => 'Ezzel a számítógéppel átalakítva...';
 	@override String get converterComplete => 'Az új fájl készen áll.';
-	@override String get converterFfmpegMissing => 'FFmpeg nem tudta megtalálni a szükséges kódot. telepítse az FFmpeget H.264, AAC és MP3 támogatással, majd próbálja meg újra.';
+	@override String get converterFfmpegMissing => 'FFmpeg hiányzik, vagy nem támogatja ezt a formátumot.';
 	@override String get converterFailed => 'Ellenőrizze, hogy a forráskód fájl olvasható és a rendeltetési hely elegendő szabad hely.';
 	@override String get converterCancelled => 'Az átalakítás törlésre került, a hiányos eredményt eltávolították.';
 	@override String get converterDesktopOnly => 'Helyi átalakítás elérhető asztali számítógépeken FFmpeg telepítve.';
@@ -3314,6 +3361,9 @@ class _Translations$universalMedia$hu extends Translations$universalMedia$en {
 	@override String get captureSaved => 'A képernyő felvétele mentett.';
 	@override String get captureElapsedLabel => 'Rekordidő';
 	@override String get captureStart => 'Kezdődik a felvétel';
+	@override String get capturePreview => 'Előnézet a lejátszóban';
+	@override String get capturePreviewHelp => 'A kiválasztott forrás előnézete a szokásos lejátszóban. Csak erre a munkamenetre szól, és nem ment felvételt. Az eszköztámogatás és az engedélyek az MPV-től és az operációs rendszertől függenek. Az előnézet csak videót használ; a mentett felvételekhez opcionális hang is tartozhat.';
+	@override String get capturePreviewActive => 'Élő előnézet · nincs felvétel';
 	@override String get captureStop => 'Állj meg és mentse meg';
 	@override String get captureMode => 'fogság';
 	@override String get shareMode => 'megosztás';
@@ -3633,7 +3683,6 @@ class _Translations$audiobook$hu extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Add hozzá a Google Drive, OneDrive, Dropbox, WebDAV vagy S3 a Fájlok és könyvek először.';
 	@override String get syncDestination => 'Sync tárolási számla';
 	@override String get syncFolder => 'Szinkronizálódás vagy prefix';
-	@override String get syncFolderHelp => 'Használjon egy külön meglévő mappát a WebDAV forráson belül, vagy egy dedikált S3 előfizetést.';
 	@override String get syncCode => 'Magánszinkron kód';
 	@override String get syncCodeHelp => 'Hozzon létre egy kódot az első eszközön, majd adja meg azt a kódot a többi eszközön. tartsa magán másolatot: ez a kulcs a titkosított állapot. Használjon egy másik kódot minden egyes személy számára.';
 	@override String get showCode => 'Megmutatja vagy elrejti a szinkron kódot';
@@ -3643,7 +3692,6 @@ class _Translations$audiobook$hu extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Ez a forrás eltávolítása kikapcsolja az olvasást és a hallgatást a szinkronizálás itt. titkosított szinkronizált fájlok maradnak a szolgáltató.';
 	@override String get syncReconnect => 'Újra összekapcsolja a tárolási fiókot';
 	@override String lastSynced({required Object time}) => 'Legutóbb szinkronizált a ${time}';
-	@override String get syncPrivacy => 'Csak titkosított előrehaladást és jegyzeteket tárolnak. Audio és ebook fájlokat, fiók tokeneket és jelszavakat nem töltik fel. A Google Drive és a OneDrive alkalmazás tárolását használja; a Dropbox PlezyNG Szinkronizálást használ. A szinkronizálás lehetővé tétele további írásos hozzáférést igényelhet. Amíg aktiválódik, ez a cél a progress szinkronizálást birtokolja; a szerver előrehaladása elválasztva marad. A szinkronizálást törölve tartja a helyi történetet és a távoli állapotot.';
 	@override String get syncConflicts => 'Válassza ki, hol kell újra';
 	@override String get conflictHelp => 'Ezek a változások önállóan történtek. Válassza ki a pozíciót vagy a betűtípus verzióját, hogy tartsa. A későbbi időzítés vagy a magasabb arány automatikusan nem nyer.';
 	@override String syncDevice({required Object device}) => 'készülék ${device}';
@@ -3837,7 +3885,6 @@ class _Translations$games$hu extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3862,7 +3909,6 @@ class _Translations$games$hu extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3894,8 +3940,6 @@ class _Translations$games$hu extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3903,14 +3947,12 @@ class _Translations$games$hu extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -3937,6 +3979,30 @@ class _Translations$deepLinks$hu extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Nyissa meg, mint ${name}';
 	@override String get copy => 'másolás';
 	@override String get copied => 'Link másolat';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$hu extends Translations$householdSetup$en {
+	_Translations$householdSetup$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Háztartás beállítása';
+}
+
+// Path: issueReport
+class _Translations$issueReport$hu extends Translations$issueReport$en {
+	_Translations$issueReport$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Hiba jelentése';
+	@override String get instructions => 'Olvasd be a QR-kódot az előre kitöltött GitHub-vázlat megnyitásához. Ellenőrizd, és csak akkor küldd el, ha készen állsz.';
+	@override String get privacy => 'A vázlat az alkalmazás verzióját, a platformot és a kapcsolatok számát tartalmazza. Nem tartalmaz szervercímeket, fiók- vagy profilneveket, médiacímeket és fájlútvonalakat.';
+	@override String get logPrivacy => 'A naplók megadása nem kötelező. Feltöltés előtt nézd át őket. Az azonosítójuk bekerülhet a nyilvános vázlatba.';
+	@override String get openDraft => 'GitHub-vázlat megnyitása';
 }
 
 // Path: appIcon.names
@@ -6064,6 +6130,32 @@ extension on TranslationsHu {
 			'videoControls.settingsButton' => 'Lejátszási beállítások',
 			'videoControls.tracksButton' => 'Hang és feliratok',
 			'videoControls.chaptersButton' => 'Fejezetek',
+			'videoControls.segmentLoopHelp' => 'Az A beállítása, majd a B későbbi beállítás az idővonalon.',
+			'videoControls.setLoopStart' => 'Kezdőlap Hírek A (A)',
+			'videoControls.setLoopEnd' => 'A csúszás vége (B)',
+			'videoControls.clearSegmentLoop' => 'Tiszta szegmens',
+			'videoControls.setLoopStartFirst' => 'Állítsa be a pályát kezdődik (A) előtt a véget (B).',
+			'videoControls.loopEndAfterStart' => 'A befejezésnek későn kell lennie, mint a kezdet.',
+			'videoControls.segmentLoopUnavailable' => 'A Segment Looping nem érhető el ebben a playbackben.',
+			'videoControls.loopPointNotSet' => 'Nem állít',
+			'videoControls.bookmarksHelp' => 'A könyvjelzők ebben a készülékben kerülnek mentésre. Válassza ki az egyiket, hogy menjen erre az időre.',
+			'videoControls.bookmarksButton' => 'könyvjelzők',
+			'videoControls.chaptersAndBookmarks' => 'fejezetek és könyvjelzők',
+			'videoControls.segmentLoop' => 'Segmentális lejátszás',
+			'videoControls.addBookmark' => 'Hozzáadása Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark név',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Például a színpad megnyitása',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'könyvjelző ${n}',
+			'videoControls.bookmarkNameRequired' => 'Írjon be egy nevet erre a könyvjelzőre.',
+			'videoControls.deleteBookmark' => 'Távolítsa el a Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Ez a cikk már 100 könyvjelzővel rendelkezik.',
+			'videoControls.bookmarkUnavailable' => 'Nem tudtam menteni vagy eltávolítani ezt a könyvjelzőt.',
+			'videoControls.bookmarkSaved' => 'A könyv megmentett.',
+			'videoControls.bookmarkDeleted' => 'Bookmark törlésre került.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop pont ${point} beállítása a ${time}A',
+			'videoControls.noChaptersOrBookmarks' => 'Nincs rendelkezésre álló fejezetek vagy könyvjelzők.',
 			'videoControls.versionQualityButton' => 'Verzió és minőség',
 			'videoControls.versionColumnHeader' => 'Verzió',
 			'videoControls.qualityColumnHeader' => 'Minőség',
@@ -6078,8 +6170,6 @@ extension on TranslationsHu {
 			'videoControls.exitFullscreenButton' => 'Teljes képernyős mód kikapcsolása',
 			'videoControls.alwaysOnTopButton' => 'Mindig legfelül',
 			'videoControls.rotationLockButton' => 'Elforgatás zárolása',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Képernyő zárolása',
 			'videoControls.screenLockButton' => 'Képernyőzár',
 			'videoControls.timelineSlider' => 'Videó idősáv',
@@ -6568,6 +6658,8 @@ extension on TranslationsHu {
 			'libraries.hideLibrary' => 'Könyvtár elrejtése',
 			'libraries.libraryOptions' => 'Könyvtár beállításai',
 			'libraries.content' => 'könyvtár tartalma',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Könyvtár kiválasztása',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Szűrők (${count})',
 			'libraries.noRecommendations' => 'Nincsenek elérhető ajánlások',
@@ -6592,8 +6684,6 @@ extension on TranslationsHu {
 			'libraries.filterCategories.year' => 'Év',
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
 			'libraries.filterCategories.tag' => 'Címke',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Nem látott',
 			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			'libraries.filterCategories.favorites' => 'Kedvencek',
@@ -7035,6 +7125,7 @@ extension on TranslationsHu {
 			'music.visualizerProfileLoading' => 'A track analízis...',
 			'music.visualizerAmbientMotion' => 'Környezetmoció',
 			'music.visualizerPlexLoudness' => 'Plex hangzás',
+			'music.visualizerLiveAudio' => 'Élő hangelemzés',
 			'music.visualizerPreviousPreset' => 'Előző vizuális stílus',
 			'music.visualizerNextPreset' => 'Következő vizuális stílus',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7081,6 +7172,8 @@ extension on TranslationsHu {
 			'watchTogether.codeCopied' => 'Szobakód másolva',
 			'watchTogether.shareInvite' => 'Meghívó megosztása',
 			'watchTogether.inviteCopied' => 'Meghívó másolva. Illeszd be egy üzenetbe.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Csatlakozz a Watch Together-szobámhoz a Plezyben: nyisd meg a Watch Together (Közös nézés) menüt, válaszd a Csatlakozás szobához lehetőséget, és írd be ezt a kódot: ${code}.',
 			'watchTogether.openSessionControls' => 'Watch Together munkamenet-vezérlők megnyitása',
 			'watchTogether.reconnecting' => 'Újracsatlakozás...',
@@ -7106,8 +7199,6 @@ extension on TranslationsHu {
 			'watchTogether.playAnyway' => 'Lejátszás mégis',
 			'watchTogether.chooseAnotherCopy' => 'Másik példány választása',
 			'watchTogether.dontPlay' => 'Ne játszd le',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Ez a videó nincs meg neked',
 			'watchTogether.unavailableDescription' => 'A PlezyNG nem találta meg a könyvtáraidban. Válassz ki magad egy példányt, vagy keress újra.',
 			'watchTogether.chooseCopy' => 'Példány választása',
@@ -7461,6 +7552,12 @@ extension on TranslationsHu {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'A lejátszóban a kijelző maximális fényerejéhez igazítja a képet, majd közli az eredményt a kompozitorral.',
 			'videoSettings.hdrToneMappingFailed' => 'Nem sikerült módosítani a HDR-tónusleképezést – továbbra is az előző mód aktív.',
 			'videoSettings.audioOutput' => 'Hangkimenet',
+			'videoSettings.videoTrack' => 'Videósáv',
+			'videoSettings.videoTrackDescription' => 'Válaszd ki a megjelenítendő videofolyamot. MPV-lejátszáskor érhető el, ha a fájl több videósávot tartalmaz.',
+			'videoSettings.videoTrackDefault' => 'Alapértelmezett',
+			'videoSettings.videoTrackUnavailable' => 'Nincsenek elérhető alternatív videósávok.',
+			'videoSettings.videoTrackFailed' => 'Nem sikerült megváltoztatni a videósávot.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => '${id}. sáv',
 			'videoSettings.performanceOverlay' => 'Teljesítményadatok',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7468,10 +7565,17 @@ extension on TranslationsHu {
 			'videoSettings.audioOutputSpatial' => 'Térbeli hang',
 			'videoSettings.audioOutputStereo' => 'Sztereó',
 			'videoSettings.audioEqualizer' => 'Audio egyenlet',
-			'videoSettings.audioEqualizerDescription' => 'Ez a készülék öt frekvenciájú sávját állítja be. elérhető a mpv-en; egy aktív EQ hangtávolít és megakadályozza a hangszórót.',
+			'videoSettings.audioEqualizerDescription' => '10 Band Equalizer MPV. A hangszűrők dekódolt audio használatát használják, és kapcsolja ki a passthrough-t.',
 			'videoSettings.audioEqualizerFlat' => 'Sík',
 			'videoSettings.audioEqualizerActive' => 'Egyéni',
 			'videoSettings.audioEqualizerSaveFailed' => 'Nem menthetek meg a hang egyenletítő beállításokat.',
+			'videoSettings.audioEffectsDescription' => 'A hatások dekódolt hangot használnak, így a passthrough elfordul. szoba környezete és sztereó kiterjesztése függ a MPV Építsen és nyomon kövesse.',
+			'videoSettings.audioStereoWidth' => 'Stereó bővítés',
+			'videoSettings.audioSpatializer' => 'Szoba környezete',
+			'videoSettings.audioSpatializerDescription' => 'Adjunk nyugodt helyiség reflexiókat.',
+			'videoSettings.audioPitch' => 'Pécsi változás',
+			'videoSettings.audioPitchDescription' => 'Változtassa meg a pályát, nem változtatja meg a sebességet MPV Az építkezésnek tartalmaznia kell Rubber BandA',
+			'videoSettings.audioEffectUnavailable' => 'Ez a hatás nem áll rendelkezésre ezen a pályán, vagy MPV Az építkezés.',
 			'videoSettings.backgroundVideoAudio' => 'Videó audio háttér',
 			'videoSettings.backgroundVideoAudioDescription' => 'A videó hangjátékot a lejátszó elhagyása után tartsa; a kép elrejtve van, amíg visszatér. Android médiaszámlálási értesítést használ.',
 			'videoSettings.audioNormalization' => 'Hangerő normalizálása',
@@ -7582,6 +7686,8 @@ extension on TranslationsHu {
 			'metadataEdit.metadataUpdated' => 'Metaadatok frissítve',
 			'metadataEdit.metadataUpdateFailed' => 'Nem sikerült a metaadatok frissítése',
 			'metadataEdit.artworkUpdated' => 'Képek frissítve',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Nem sikerült a képek frissítése',
 			'metadataEdit.noArtworkAvailable' => 'Nincsenek elérhető képek',
 			'metadataEdit.artworkOption' => ({required Object index}) => '${index}. képváltozat',
@@ -7620,8 +7726,6 @@ extension on TranslationsHu {
 			'metadataEdit.shownWithForeignAudio' => 'Idegen nyelvű hang esetén megjelenítve',
 			'metadataEdit.alwaysEnabled' => 'Mindig engedélyezve',
 			'metadataEdit.tags' => 'Címkék',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Címke hozzáadása',
 			'metadataEdit.genre' => 'Műfaj',
 			'metadataEdit.director' => 'Rendező',
@@ -8094,6 +8198,12 @@ extension on TranslationsHu {
 			'universalMedia.choosePlaylist' => 'Válassza ki a Playlist fájlt',
 			'universalMedia.openPlaylist' => 'Nyílt Playlist',
 			'universalMedia.playlistFormatsHelp' => 'A lejátszó listája legfeljebb 1000 elemet és 2 MB-ot tartalmazhat. a HLS nyílt áramlatként jelenik meg, így a játékos kiválaszthatja a minőséget.',
+			'universalMedia.saveQueuePlaylist' => 'Sor mentése lejátszási listaként',
+			'universalMedia.queuePlaylistSaved' => 'A lejátszási lista a médiafájlok mellé lett mentve.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.queuePlaylistUnavailable' => 'Ez a sor nem menthető újra felhasználható helyi lejátszási listaként.',
+			'universalMedia.queuePlaylistFolderRequired' => 'A sor fájljaival azonos mappát válassz mentési helyként.',
 			'universalMedia.noFavorites' => 'Nincs mentett stream kedvencek még. Favoritek maradnak ebben a profilban.',
 			'universalMedia.removeFavorite' => 'Távolítsa el a kedvenc stream',
 			'universalMedia.filesHelp' => 'Válassza ki az audio, a videó vagy az ISO fájlokat egy ideiglenes tartományhoz. A fájlok és URL-ek nem kerülnek hozzáadásra a könyvtár történetéhez.',
@@ -8134,8 +8244,6 @@ extension on TranslationsHu {
 			'universalMedia.contrast' => 'kontraszt',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.saturation' => 'szaturáció',
 			'universalMedia.view360' => 'A 360 fokos videó megjelenítése',
 			'universalMedia.view360Help' => 'Használja ezt az egyenes 360°-os videóhoz. MPV-nek szüksége van a FFmpeg v360 szűrőjére erre a nézőpontra.',
@@ -8154,12 +8262,13 @@ extension on TranslationsHu {
 			'universalMedia.replaceRecording' => 'Fájl cseréje',
 			'universalMedia.discHelp' => 'Nyissa meg a lemezt ebben a számítógép optikai lemezében.Az ISO-képet is megnyithatja a Device fájlokból.',
 			'universalMedia.discs' => 'Optikai lemez',
+			'universalMedia.editionOrTitle' => 'Kiadás vagy lemezcím',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'Audió CD',
 			'universalMedia.discAvailability' => 'A lemezlejátszásnak kompatibilis MPV szerkezetre, támogatott lemezre és operációs rendszer engedélyére van szüksége.',
 			'universalMedia.converterTitle' => 'A helyi média fájl átalakítása',
-			'universalMedia.converterHelp' => 'Az FFmpeg segítségével MP4, M4A vagy MP3 másolatot készíthet.',
+			'universalMedia.converterHelp' => 'Konvertáljon egy helyi fájlt, vagy helyreállítsa a FFmpegA',
 			'universalMedia.converterIntro' => 'Konvertáljon egy helyi audio vagy videó fájlt olyan formátumra, amely több eszközön működik.',
 			'universalMedia.converterPrivacy' => 'FFmpeg kell telepíteni ezen a számítógépen. konverzió csak helyi fájlokat olvasható. nem tölt le áramlatok vagy eltávolítja DRM-t.',
 			'universalMedia.converterChooseInput' => 'Válasszon egy helyi média fájlt',
@@ -8167,6 +8276,8 @@ extension on TranslationsHu {
 			'universalMedia.converterMp4' => 'MP4 · H.264 és AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC audio',
 			'universalMedia.converterMp3' => 'MP3 hangszóró',
+			'universalMedia.allowFtp' => 'FTP engedélyezése',
+			'universalMedia.allowFtpHelp' => 'Az FTP titkosítás nélküli médiát küld, csak megbízható hálózatokon használja.',
 			'universalMedia.converterSaveAs' => 'Az átalakított média mentése',
 			'universalMedia.converterExtensionMismatch' => 'Válasszon egy fájlnevet a kiválasztott kimeneti kiterjesztéssel.',
 			'universalMedia.converterUnsupportedInput' => 'Válasszon egy audio vagy videó fájlt.',
@@ -8176,7 +8287,7 @@ extension on TranslationsHu {
 			'universalMedia.converterStarting' => 'Megkezdődött az FFmpeg...',
 			'universalMedia.converterProgress' => 'Ezzel a számítógéppel átalakítva...',
 			'universalMedia.converterComplete' => 'Az új fájl készen áll.',
-			'universalMedia.converterFfmpegMissing' => 'FFmpeg nem tudta megtalálni a szükséges kódot. telepítse az FFmpeget H.264, AAC és MP3 támogatással, majd próbálja meg újra.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg hiányzik, vagy nem támogatja ezt a formátumot.',
 			'universalMedia.converterFailed' => 'Ellenőrizze, hogy a forráskód fájl olvasható és a rendeltetési hely elegendő szabad hely.',
 			'universalMedia.converterCancelled' => 'Az átalakítás törlésre került, a hiányos eredményt eltávolították.',
 			'universalMedia.converterDesktopOnly' => 'Helyi átalakítás elérhető asztali számítógépeken FFmpeg telepítve.',
@@ -8204,6 +8315,9 @@ extension on TranslationsHu {
 			'universalMedia.captureSaved' => 'A képernyő felvétele mentett.',
 			'universalMedia.captureElapsedLabel' => 'Rekordidő',
 			'universalMedia.captureStart' => 'Kezdődik a felvétel',
+			'universalMedia.capturePreview' => 'Előnézet a lejátszóban',
+			'universalMedia.capturePreviewHelp' => 'A kiválasztott forrás előnézete a szokásos lejátszóban. Csak erre a munkamenetre szól, és nem ment felvételt. Az eszköztámogatás és az engedélyek az MPV-től és az operációs rendszertől függenek. Az előnézet csak videót használ; a mentett felvételekhez opcionális hang is tartozhat.',
+			'universalMedia.capturePreviewActive' => 'Élő előnézet · nincs felvétel',
 			'universalMedia.captureStop' => 'Állj meg és mentse meg',
 			'universalMedia.captureMode' => 'fogság',
 			'universalMedia.shareMode' => 'megosztás',
@@ -8493,7 +8607,6 @@ extension on TranslationsHu {
 			'audiobook.addSyncSource' => 'Add hozzá a Google Drive, OneDrive, Dropbox, WebDAV vagy S3 a Fájlok és könyvek először.',
 			'audiobook.syncDestination' => 'Sync tárolási számla',
 			'audiobook.syncFolder' => 'Szinkronizálódás vagy prefix',
-			'audiobook.syncFolderHelp' => 'Használjon egy külön meglévő mappát a WebDAV forráson belül, vagy egy dedikált S3 előfizetést.',
 			'audiobook.syncCode' => 'Magánszinkron kód',
 			'audiobook.syncCodeHelp' => 'Hozzon létre egy kódot az első eszközön, majd adja meg azt a kódot a többi eszközön. tartsa magán másolatot: ez a kulcs a titkosított állapot. Használjon egy másik kódot minden egyes személy számára.',
 			'audiobook.showCode' => 'Megmutatja vagy elrejti a szinkron kódot',
@@ -8503,7 +8616,6 @@ extension on TranslationsHu {
 			'audiobook.syncSourceDisconnect' => 'Ez a forrás eltávolítása kikapcsolja az olvasást és a hallgatást a szinkronizálás itt. titkosított szinkronizált fájlok maradnak a szolgáltató.',
 			'audiobook.syncReconnect' => 'Újra összekapcsolja a tárolási fiókot',
 			'audiobook.lastSynced' => ({required Object time}) => 'Legutóbb szinkronizált a ${time}',
-			'audiobook.syncPrivacy' => 'Csak titkosított előrehaladást és jegyzeteket tárolnak. Audio és ebook fájlokat, fiók tokeneket és jelszavakat nem töltik fel. A Google Drive és a OneDrive alkalmazás tárolását használja; a Dropbox PlezyNG Szinkronizálást használ. A szinkronizálás lehetővé tétele további írásos hozzáférést igényelhet. Amíg aktiválódik, ez a cél a progress szinkronizálást birtokolja; a szerver előrehaladása elválasztva marad. A szinkronizálást törölve tartja a helyi történetet és a távoli állapotot.',
 			'audiobook.syncConflicts' => 'Válassza ki, hol kell újra',
 			'audiobook.conflictHelp' => 'Ezek a változások önállóan történtek. Válassza ki a pozíciót vagy a betűtípus verzióját, hogy tartsa. A későbbi időzítés vagy a magasabb arány automatikusan nem nyer.',
 			'audiobook.syncDevice' => ({required Object device}) => 'készülék ${device}',
@@ -8602,6 +8714,8 @@ extension on TranslationsHu {
 			'sourceSetup.nfsEncryptionFailure' => 'Titkosított NFS esetén ellenőrizd az RFC 9289 és a TLS 1.3 támogatását mindkét NAS-szolgáltatásnál, a tanúsítvány nevét és a megosztás UID/GID értékeit. A PlezyNG nem próbálja újra ezt a kapcsolatot titkosítás nélkül.',
 			'sourceSetup.sourceConnecting' => 'Kapcsolódás a forráshoz',
 			'sourceSetup.metadataSearchPrivacy' => 'Ez a címkeresés a Trakthoz kerül. A megadott címet küldi el, nem a videót vagy a forrás hitelesítő adatait.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Találat kiválasztása',
 			'sourceSetup.metadataMatchHelp' => 'Választás előtt ellenőrizd a címet és az évet. A Trakt a keresett címet kapja meg; a videó a forrásán marad.',
 			'sourceSetup.metadataNoMatches' => 'Nem található egyező cím online. Próbálj másik címet.',
@@ -8648,8 +8762,6 @@ extension on TranslationsHu {
 			'sourceSetup.sharedLibraryInvalid' => 'Használjon 8–100 betűt, számot, pontokat, alszámokat vagy hyphenseket.',
 			'sourceSetup.generateSharedLibraryId' => 'Egy megosztott könyvtár azonosító létrehozása',
 			'sourceSetup.nfsReadAhead' => 'NFS olvasási kérelmek',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Több párhuzamos olvasás javíthatja a gyors NAS vagy hálózati átjárót. Használjon 1 ha a szerver korlátozza az egymást követő kéréseket.',
 			'sourceSetup.nfsReadTest' => 'NFS olvasási teljesítmény mérése',
 			'sourceSetup.nfsReadTestHelp' => 'A legnagyobb fájltól 64 MiB-ig olvasható, hogy mérje ezt a NAS kapcsolatot.',
@@ -8672,7 +8784,6 @@ extension on TranslationsHu {
 			'comics.collections' => 'Gyűjtemények',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8697,7 +8808,6 @@ extension on TranslationsHu {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8729,8 +8839,6 @@ extension on TranslationsHu {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8738,14 +8846,12 @@ extension on TranslationsHu {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'Ez a Plezy link nem érvényes.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'Nincs profil a "${profile}" címmel.',
 			'deepLinks.serverUnavailable' => 'Nem tudtam elérni a szervert erre a linkre.',
@@ -8763,6 +8869,12 @@ extension on TranslationsHu {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Nyissa meg, mint ${name}',
 			'deepLinks.copy' => 'másolás',
 			'deepLinks.copied' => 'Link másolat',
+			'householdSetup.title' => 'Háztartás beállítása',
+			'issueReport.title' => 'Hiba jelentése',
+			'issueReport.instructions' => 'Olvasd be a QR-kódot az előre kitöltött GitHub-vázlat megnyitásához. Ellenőrizd, és csak akkor küldd el, ha készen állsz.',
+			'issueReport.privacy' => 'A vázlat az alkalmazás verzióját, a platformot és a kapcsolatok számát tartalmazza. Nem tartalmaz szervercímeket, fiók- vagy profilneveket, médiacímeket és fájlútvonalakat.',
+			'issueReport.logPrivacy' => 'A naplók megadása nem kötelező. Feltöltés előtt nézd át őket. Az azonosítójuk bekerülhet a nyilvános vázlatba.',
+			'issueReport.openDraft' => 'GitHub-vázlat megnyitása',
 			_ => null,
 		};
 	}

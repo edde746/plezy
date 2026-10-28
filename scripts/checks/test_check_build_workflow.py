@@ -198,7 +198,20 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("selected release tags must match pubspec", result.stderr)
+        self.assertIn("release mode must validate the requested version", result.stderr)
+
+    def test_release_tag_must_match_the_exact_main_commit(self) -> None:
+        workflow = self._workflow().replace(
+            'if [[ "$release_commit" != "$GITHUB_SHA" ]]; then',
+            "if false; then",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("release tags must match pubspec and the exact trusted main commit", result.stderr)
 
     def test_release_run_without_tagged_name_is_rejected(self) -> None:
         workflow = self._workflow().replace(
@@ -277,6 +290,30 @@ class BuildWorkflowGuardTest(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ARM Tizen tester workflow without store handoff", result.stderr)
+
+    def test_webos_private_retention_requires_mounted_storage_preflight(self) -> None:
+        workflow = self._workflow().replace(
+            "python3 tools/webos/retain_private_candidate.py --preflight",
+            "echo missing private output check",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow())
+        result = self._run(workflow)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("webOS candidates must survive guest cleanup", result.stderr)
+
+    def test_release_must_attach_the_verified_tizen_tester_handoff(self) -> None:
+        workflow = self._workflow().replace(
+            "            echo artifacts/tizen/PlezyNG-tizen-arm-tester-handoff.zip\n",
+            "",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches Tizen release asset")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("verified ARM Tizen tester handoff must be attached", result.stderr)
 
     def test_release_tag_without_exact_target_is_rejected(self) -> None:
         workflow = self._workflow().replace(

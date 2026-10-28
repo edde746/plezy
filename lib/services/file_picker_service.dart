@@ -8,6 +8,7 @@ abstract interface class FilePickerDelegate {
   Future<FilePickerResult?> pickFiles({
     FileType type = FileType.any,
     List<String>? allowedExtensions,
+    bool allowMultiple = false,
     bool withData = false,
   });
 
@@ -29,9 +30,15 @@ class _PluginFilePickerDelegate implements FilePickerDelegate {
   Future<FilePickerResult?> pickFiles({
     FileType type = FileType.any,
     List<String>? allowedExtensions,
+    bool allowMultiple = false,
     bool withData = false,
   }) {
-    return FilePicker.pickFiles(type: type, allowedExtensions: allowedExtensions, withData: withData);
+    return FilePicker.pickFiles(
+      type: type,
+      allowedExtensions: allowedExtensions,
+      allowMultiple: allowMultiple,
+      withData: withData,
+    );
   }
 
   @override
@@ -91,11 +98,17 @@ class FilePickerService {
   Future<FilePickerResult?> pickFiles({
     FileType type = FileType.any,
     List<String>? allowedExtensions,
+    bool allowMultiple = false,
     bool withData = false,
   }) {
     return _guard(
       'pickFiles',
-      () => _delegate.pickFiles(type: type, allowedExtensions: allowedExtensions, withData: withData),
+      () => _delegate.pickFiles(
+        type: type,
+        allowedExtensions: allowedExtensions,
+        allowMultiple: allowMultiple,
+        withData: withData,
+      ),
     );
   }
 

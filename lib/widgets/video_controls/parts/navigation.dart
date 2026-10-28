@@ -40,6 +40,8 @@ extension _VideoControlsNavigationMethods on _PlexVideoControlsState {
         hasFirstFrame: widget.hasFirstFrame,
         thumbnailDataBuilder: widget.thumbnailDataBuilder,
         liveChannelName: widget.liveChannelName,
+        liveRecordingControl: _liveRecordingControl,
+        liveChannelPickerControl: _liveChannelPickerControl,
         liveTimelineForPosition: widget.liveTimelineForPosition,
 
         onLiveSeek: _liveSeekAbandoningBurst(widget.onLiveSeek),

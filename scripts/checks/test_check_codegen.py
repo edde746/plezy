@@ -183,6 +183,20 @@ esac
         self.assertIn("lib/models/model.g.dart", result.stderr)
         self.assertIn(b"\r\n", drifted.read_bytes())
 
+    def test_freezed_blank_line_whitespace_does_not_make_generated_output_stale(self) -> None:
+        freezed = self.root / "lib/models/model.freezed.dart"
+        freezed.write_bytes(b"version one  \n")
+        subprocess.run(["git", "add", "lib/models/model.freezed.dart"], cwd=self.root, check=True)
+        subprocess.run(["git", "commit", "-qm", "Freezed output with blank-line padding"], cwd=self.root, check=True)
+        status_before = self.git_status()
+
+        result = self.run_codegen("--check")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(freezed.read_bytes(), b"version one  \n")
+        self.assertEqual(self.git_status(), status_before)
+        self.assert_isolation_cleaned_up()
+
     def test_stale_check_reports_sorted_paths_without_changing_caller(self) -> None:
         (self.root / "source.txt").write_text("version two\n", encoding="utf-8")
         before = self.generated_state()

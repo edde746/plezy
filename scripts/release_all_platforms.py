@@ -23,6 +23,7 @@ import tempfile
 import time
 import urllib.parse
 import urllib.request
+import zipfile
 from pathlib import Path
 
 
@@ -80,9 +81,21 @@ def workflow_runs(repo: str, workflow: str, *, ref: str | None = None) -> list[d
         raise ReleaseError(f"Could not read workflow runs for {repo}/{workflow}") from error
 
 
-def matching_run(repo: str, workflow: str, sha: str, *, ref: str | None = None) -> dict | None:
+def matching_run(
+    repo: str,
+    workflow: str,
+    sha: str,
+    *,
+    ref: str | None = None,
+    expected_title: str | None = None,
+) -> dict | None:
     runs = workflow_runs(repo, workflow, ref=ref)
-    matches = [run for run in runs if run.get("headSha") == sha and run.get("event") == "workflow_dispatch"]
+    matches = [
+        run for run in runs
+        if run.get("headSha") == sha
+        and run.get("event") == "workflow_dispatch"
+        and (expected_title is None or run.get("displayTitle") == expected_title)
+    ]
     matches.sort(key=lambda run: run.get("createdAt", ""), reverse=True)
     return matches[0] if matches else None
 
@@ -99,7 +112,7 @@ def wait_for_run(repo: str, run: dict, purpose: str) -> dict:
 
 
 def dispatch(repo: str, workflow: str, ref: str, fields: dict[str, str], purpose: str,
-             *, expected_title: str | None = None) -> dict:
+             *, expected_title: str | None = None, expected_sha: str | None = None) -> dict:
     before = dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=10)
     args = ["gh", "workflow", "run", workflow, "--repo", repo, "--ref", ref]
     for key, value in fields.items():
@@ -114,6 +127,12 @@ def dispatch(repo: str, workflow: str, ref: str, fields: dict[str, str], purpose
                 continue
             if expected_title and run.get("displayTitle") != expected_title:
                 continue
+            if expected_sha and run.get("headSha") != expected_sha:
+                raise ReleaseError(
+                    f"{purpose} was dispatched on {ref}, but GitHub resolved it to "
+                    f"{run.get('headSha') or 'an unknown commit'} instead of expected "
+                    f"{expected_sha}. The branch moved during dispatch; no other run was reused."
+                )
             return wait_for_run(repo, run, purpose)
         time.sleep(5)
     raise ReleaseError(f"Workflow dispatch succeeded, but its run was not visible: {repo}/{workflow} on {ref}")
@@ -207,21 +226,37 @@ def prepare_native_checkout(scratch: Path) -> tuple[Path, str]:
     running = active_run(MPV_REPO, MPV_WORKFLOW, ref="main")
     if running:
         print(f"Reusing active native build {running['databaseId']} instead of starting a duplicate.")
-        wait_for_run(MPV_REPO, running, "Native mpv/FFmpeg build")
+        try:
+            wait_for_run(MPV_REPO, running, "Native mpv/FFmpeg build")
+        except ReleaseError:
+            # A terminal platform failure can leave other groups fully published.
+            # Recover them below only after checking their current content keys.
+            state = gh_json("run", "view", str(running["databaseId"]), "--repo", MPV_REPO,
+                            "--json", "status,conclusion")
+            if state.get("status") != "completed":
+                raise
+            print(f"Native run ended {state.get('conclusion')}; checking reusable published groups.")
     command(["git", "fetch", "origin", "main"], cwd=checkout)
     command(["git", "checkout", "--detach", "origin/main"], cwd=checkout)
 
-    if verify_native_groups(checkout):
-        # Correct URLs only after the manifest's binaries already verify. A
-        # stale native pin must be rebuilt before any manifest is published.
-        sync_native_asset_bases(checkout)
+    recover_native_groups(checkout, scratch / "native-recovery")
+
+    native_head = command(["git", "rev-parse", "HEAD"], cwd=checkout, capture=True).stdout.strip()
+    native_title = "action:build:pool:private"
+    existing = matching_run(
+        MPV_REPO,
+        MPV_WORKFLOW,
+        native_head,
+        ref="main",
+        expected_title=native_title,
+    )
+    if existing and existing.get("status") == "completed" and existing.get("conclusion") == "success":
+        print(f"Reusing successful native build {existing['databaseId']} for current source {native_head[:12]}.")
     else:
-        native_head = command(["git", "rev-parse", "origin/main"], cwd=checkout, capture=True).stdout.strip()
-        existing = matching_run(MPV_REPO, MPV_WORKFLOW, native_head, ref="main")
-        if existing and existing.get("status") == "completed":
-            raise ReleaseError(
-                f"Native manifest verification failed for {native_head[:12]}, whose latest build "
-                f"concluded {existing.get('conclusion')}; refusing to publish unverified artifacts."
+        if existing:
+            print(
+                f"Current-source native build {existing['databaseId']} concluded "
+                f"{existing.get('conclusion') or existing.get('status')}; starting a fresh explicit build."
             )
         dispatch(
             MPV_REPO,
@@ -229,10 +264,14 @@ def prepare_native_checkout(scratch: Path) -> tuple[Path, str]:
             "main",
             {"action_tag": "build", "runner_pool_tag": "private"},
             "Native mpv/FFmpeg build",
+            expected_title=native_title,
+            expected_sha=native_head,
         )
-        command(["git", "fetch", "origin", "main"], cwd=checkout)
-        command(["git", "checkout", "--detach", "origin/main"], cwd=checkout)
-        sync_native_asset_bases(checkout)
+
+    command(["git", "fetch", "origin", "main"], cwd=checkout)
+    command(["git", "checkout", "--detach", "origin/main"], cwd=checkout)
+    # A valid older manifest alone does not prove that current main ran.
+    sync_native_asset_bases(checkout)
 
     native_sha = command(["git", "rev-parse", "HEAD"], cwd=checkout, capture=True).stdout.strip()
     if not verify_native_groups(checkout):
@@ -309,7 +348,8 @@ def manifest_assets(section: dict) -> dict[str, str | None]:
                 assets[value["asset"]] = checksum
 
     for entry in section.get("libraries", {}).values():
-        add(entry.get("asset"))
+        # AAR and framework checksum lives beside asset, not inside its name.
+        add(entry)
         for value in (entry.get("prebuilt") or {}).values():
             add(value)
         for collection in ("frameworks", "symbols"):
@@ -318,9 +358,9 @@ def manifest_assets(section: dict) -> dict[str, str | None]:
     return assets
 
 
-def verify_native_release_assets(checkout: Path) -> None:
+def verify_native_release_assets(checkout: Path, *, groups=NATIVE_GROUPS) -> None:
     manifest = json.loads((checkout / "artifacts.json").read_text(encoding="utf-8"))
-    for group in NATIVE_GROUPS:
+    for group in groups:
         section = manifest["platforms"][group]
         expected_base = f"https://github.com/{MPV_REPO}/releases/download/binaries-{group}"
         if section.get("assetBase") != expected_base:
@@ -344,6 +384,136 @@ def verify_native_release_assets(checkout: Path) -> None:
                     f"Published {group}/{name} digest {remote_digest} does not match manifest {checksum}."
                 )
         print(f"Verified {len(available)} assets in the {group} private-builder release.")
+
+
+def native_recovery_run_is_trusted(run: dict) -> bool:
+    return (
+        run.get("status") == "completed"
+        and run.get("event") == "workflow_dispatch"
+        and run.get("head_branch") == "main"
+        and run.get("path") == ".github/workflows/publish.yml"
+        and run.get("display_title") == "action:build:pool:private"
+        and (run.get("head_repository") or {}).get("full_name") == MPV_REPO
+        and re.fullmatch(r"[0-9a-f]{40}", run.get("head_sha", "")) is not None
+    )
+
+
+def read_native_manifest_archive(archive: Path, digest: str) -> dict:
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest or ""):
+        raise ReleaseError("Native manifest artifact has no GitHub SHA-256 digest.")
+    if archive.stat().st_size > 2 * 1024 * 1024:
+        raise ReleaseError("Native manifest artifact exceeds its size limit.")
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != digest.removeprefix("sha256:"):
+        raise ReleaseError("Native manifest artifact does not match its GitHub digest.")
+    with zipfile.ZipFile(archive) as package:
+        entries = package.infolist()
+        names = [item.filename for item in entries]
+        if (names.count("artifacts.json") != 1 or len(names) != len(set(names))
+                or set(names) - {"artifacts.json", "Package.swift"}
+                or sum(item.file_size for item in entries) > 2 * 1024 * 1024):
+            raise ReleaseError("Native manifest artifact has unexpected archive entries.")
+        # Read data only. Package.swift is regenerated by the current source.
+        return json.loads(package.read("artifacts.json"))
+
+
+def recover_native_groups(checkout: Path, scratch: Path) -> list[str]:
+    """Keep complete published groups when another platform failed in a prior run.
+
+    This never pins Plezy to a partial set. Each recovered group must match the
+    current builder's source key and every recorded asset digest; the normal
+    all-platform build and final verification still run afterwards.
+    """
+    if active_run(MPV_REPO, MPV_WORKFLOW, ref="main"):
+        raise ReleaseError("A native build is active; refusing to change its manifest baseline.")
+    pending = {
+        group for group in NATIVE_GROUPS
+        if command(["python3", "scripts/keys.py", "verify", "--platform-group", group],
+                   cwd=checkout, capture=True, check=False, quiet=True).returncode
+    }
+    if not pending:
+        return []
+    manifest_path = checkout / "artifacts.json"
+    package_path = checkout / "Package.swift"
+    recovered = []
+    runs = workflow_runs(MPV_REPO, MPV_WORKFLOW, ref="main")
+    for summary in runs[:12]:
+        if (summary.get("status") != "completed"
+                or summary.get("event") != "workflow_dispatch"
+                or summary.get("displayTitle") != "action:build:pool:private"):
+            continue
+        run_id = summary["databaseId"]
+        run = gh_json("api", f"repos/{MPV_REPO}/actions/runs/{run_id}")
+        if not native_recovery_run_is_trusted(run):
+            continue
+        if command(["git", "merge-base", "--is-ancestor", run["head_sha"], "HEAD"],
+                   cwd=checkout, capture=True, check=False, quiet=True).returncode:
+            continue
+        jobs = gh_json("api", f"repos/{MPV_REPO}/actions/runs/{run_id}/jobs?per_page=100")
+        successful = {
+            job["name"] for job in jobs.get("jobs", [])
+            if job.get("status") == "completed" and job.get("conclusion") == "success"
+        }
+        candidates = [group for group in sorted(pending) if f"Publish {group}" in successful]
+        if not candidates:
+            continue
+        artifacts = gh_json("api", f"repos/{MPV_REPO}/actions/runs/{run_id}/artifacts?per_page=100")
+        for group in candidates:
+            matches = [item for item in artifacts.get("artifacts", [])
+                       if item.get("name") == f"manifest-{group}" and not item.get("expired")]
+            if len(matches) != 1:
+                continue
+            artifact = matches[0]
+            if not 0 < artifact.get("size_in_bytes", 0) <= 2 * 1024 * 1024:
+                raise ReleaseError(f"Unexpected manifest-{group} artifact size.")
+            scratch.mkdir(parents=True, exist_ok=True)
+            archive = scratch / f"{run_id}-manifest-{group}.zip"
+            with archive.open("wb") as output:
+                result = subprocess.run(
+                    ["gh", "api", f"repos/{MPV_REPO}/actions/artifacts/{artifact['id']}/zip"],
+                    stdout=output, stderr=subprocess.PIPE, check=False,
+                )
+            if result.returncode:
+                raise ReleaseError(f"Could not download published {group} manifest from run {run_id}.")
+            partial = read_native_manifest_archive(archive, artifact.get("digest"))
+            section = (partial.get("platforms") or {}).get(group)
+            if not isinstance(section, dict):
+                raise ReleaseError(f"Published manifest artifact lacks platform {group}.")
+            original_manifest = manifest_path.read_bytes()
+            original_package = package_path.read_bytes()
+            accepted = False
+            try:
+                manifest = json.loads(original_manifest)
+                manifest["platforms"][group] = section
+                manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+                if group == "apple":
+                    command(["python3", "scripts/keys.py", "render"], cwd=checkout, capture=True)
+                verified = command(
+                    ["python3", "scripts/keys.py", "verify", "--platform-group", group],
+                    cwd=checkout, capture=True, check=False,
+                )
+                if verified.returncode:
+                    print(f"Run {run_id}'s {group} artifacts do not match current source; rebuilding.")
+                    continue
+                verify_native_release_assets(checkout, groups=(group,))
+                accepted = True
+                recovered.append(group)
+                pending.remove(group)
+                print(f"Recovered verified {group} artifacts published by run {run_id}.")
+            finally:
+                if not accepted:
+                    manifest_path.write_bytes(original_manifest)
+                    package_path.write_bytes(original_package)
+        if not pending:
+            break
+    if recovered:
+        if active_run(MPV_REPO, MPV_WORKFLOW, ref="main"):
+            raise ReleaseError("A native build started during recovery; no manifest was pushed.")
+        command(["git", "add", "artifacts.json", "Package.swift"], cwd=checkout)
+        git_commit_as_current_user(checkout, "chore: recover verified native groups from completed builds")
+        # A changed main rejects this ordinary push. Never rebase a manifest
+        # that was verified against different source inputs.
+        command(["git", "push", "origin", "HEAD:refs/heads/main"], cwd=checkout)
+    return recovered
 
 
 def create_plezy_worktree(scratch: Path) -> Path:
@@ -393,6 +563,8 @@ def ensure_ci(commit_sha: str) -> dict:
         "main",
         {"action": "ci", "runner_pool": "private", "build_linux_packages": "false"},
         "PlezyNG CI",
+        expected_title="action:ci:pool:private",
+        expected_sha=commit_sha,
     )
 
 
@@ -419,7 +591,14 @@ def ensure_tag(worktree: Path, version: str, commit_sha: str) -> str:
 
 
 def ensure_release(tag: str, commit_sha: str, *, include_webos_release: bool) -> dict:
-    existing = matching_run(PLEZY_REPO, RELEASE_WORKFLOW, commit_sha, ref=tag)
+    run_title = f"action:release:pool:private:tag:{tag}"
+    existing = matching_run(
+        PLEZY_REPO,
+        RELEASE_WORKFLOW,
+        commit_sha,
+        ref="main",
+        expected_title=run_title,
+    )
     if existing:
         if existing.get("status") == "completed" and existing.get("conclusion") != "success":
             raise ReleaseError(
@@ -430,20 +609,34 @@ def ensure_release(tag: str, commit_sha: str, *, include_webos_release: bool) ->
             print(f"Reusing successful release build run {existing['databaseId']} for {tag}.")
             return existing
         return wait_for_run(PLEZY_REPO, existing, f"PlezyNG {tag} all-platform release build")
+    ensure_remote_main_sha(commit_sha, f"dispatching the {tag} release build")
     return dispatch(
         PLEZY_REPO,
         RELEASE_WORKFLOW,
-        tag,
+        "main",
         {
             "action": "release",
             "runner_pool": "private",
             "mode": "release",
+            "build_version": tag.removeprefix("v"),
             "include_webos_build": "true",
             "include_webos_release": "true" if include_webos_release else "false",
             "include_tizen_build": "true",
         },
         f"PlezyNG {tag} all-platform release build",
+        expected_title=run_title,
+        expected_sha=commit_sha,
     )
+
+
+def ensure_remote_main_sha(expected_sha: str, purpose: str) -> None:
+    branch = gh_json("api", f"repos/{PLEZY_REPO}/branches/main")
+    actual_sha = branch.get("commit", {}).get("sha") if isinstance(branch, dict) else None
+    if actual_sha != expected_sha:
+        raise ReleaseError(
+            f"Cannot continue with {purpose}: PlezyNG main is {actual_sha or 'unavailable'}, "
+            f"but release tag source is {expected_sha}. Reconcile main before publishing."
+        )
 
 
 def release_metadata(tag: str) -> dict:
@@ -497,6 +690,7 @@ def validate_release_outputs(tag: str, version: str, *, include_webos_release: b
         "plezy-linux-arm64.tar.gz", "plezy-linux-arm64.deb", "plezy-linux-arm64.rpm",
         "plezy-linux-arm64.pkg.tar.zst", "plezy-linux-arm64.flatpak", "plezyng-linux-arm64.snap",
         "plezyng-linux-x86_64.AppImage",
+        "PlezyNG-tizen-arm-tester-handoff.zip",
     }
     if include_webos_release:
         required.update({
@@ -533,10 +727,22 @@ def configured_repo_names(kind: str) -> set[str]:
     return {row["name"] for row in rows if isinstance(row, dict) and isinstance(row.get("name"), str)}
 
 
-def ensure_channel_run(workflow: str, title: str, fields: dict[str, str], purpose: str) -> dict:
+def ensure_channel_run(
+    workflow: str,
+    title: str,
+    fields: dict[str, str],
+    purpose: str,
+    *,
+    release_sha: str,
+) -> dict:
     for run in workflow_runs(PLEZY_REPO, workflow, ref="main"):
         if run.get("event") != "workflow_dispatch" or run.get("displayTitle") != title:
             continue
+        if run.get("headSha") != release_sha:
+            raise ReleaseError(
+                f"Previous {purpose} run {run['databaseId']} used source "
+                f"{run.get('headSha') or 'unknown'}, not the exact release commit {release_sha}."
+            )
         if run.get("status") == "completed":
             if run.get("conclusion") != "success":
                 raise ReleaseError(
@@ -546,6 +752,7 @@ def ensure_channel_run(workflow: str, title: str, fields: dict[str, str], purpos
             print(f"Reusing successful {purpose} run {run['databaseId']}.")
             return run
         return wait_for_run(PLEZY_REPO, run, purpose)
+    ensure_remote_main_sha(release_sha, f"dispatching {purpose}")
     return dispatch(
         PLEZY_REPO,
         workflow,
@@ -553,6 +760,7 @@ def ensure_channel_run(workflow: str, title: str, fields: dict[str, str], purpos
         fields,
         purpose,
         expected_title=title,
+        expected_sha=release_sha,
     )
 
 
@@ -560,6 +768,7 @@ def publish_configured_channels(
     tag: str,
     version: str,
     *,
+    release_sha: str,
     include_webos_release: bool,
 ) -> tuple[list[dict], list[dict], list[str]]:
     release = release_metadata(tag)
@@ -733,7 +942,13 @@ def publish_configured_channels(
             failures.append(f"{spec['name']} lacks release assets: {missing_assets}")
             continue
         try:
-            result = ensure_channel_run(spec["workflow"], spec["title"], spec["fields"], spec["name"])
+            result = ensure_channel_run(
+                spec["workflow"],
+                spec["title"],
+                spec["fields"],
+                spec["name"],
+                release_sha=release_sha,
+            )
             completed.append({"channel": spec["name"], "run_id": result["databaseId"], "url": result.get("url")})
         except ReleaseError as error:
             failures.append(f"{spec['name']}: {error}")
@@ -843,6 +1058,7 @@ def main() -> int:
         channel_failures: list[str] = []
         release_published = False
         if args.publish:
+            ensure_remote_main_sha(pin_sha, f"publishing PlezyNG {tag}")
             stage = "publish GitHub release"
             progress["stage"] = stage
             save_progress()
@@ -855,6 +1071,7 @@ def main() -> int:
             published_channels, skipped_channels, channel_failures = publish_configured_channels(
                 tag,
                 args.version,
+                release_sha=pin_sha,
                 include_webos_release=args.include_webos_release,
             )
             progress["published_channels"] = published_channels

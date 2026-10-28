@@ -13,10 +13,16 @@
 extern "C" {
 #include "protobuf/discovery.pb-c.h"
 #include "session/frame_tracker.h"
+#include "hid/provider.h"
 }
 using namespace plezy::steam;
 namespace plezy::steam {
 struct RuntimeTest {
+  static void target(Runtime& runtime, uint32_t numerator, uint32_t denominator, uint32_t reasons, int32_t bitrate) {
+    Runtime::videoFramerate(nullptr, numerator, denominator, reasons, &runtime);
+    Runtime::videoBitrate(nullptr, bitrate, &runtime);
+  }
+  static std::shared_ptr<PadState> pad(Runtime& runtime, unsigned seat) { return runtime.pads_[seat]; }
   static void renderer(Runtime& runtime, std::shared_ptr<Sink> sink) { runtime.sink_ = std::move(sink); }
   static bool submit(Runtime& runtime, IHS_FrameTicket* ticket) {
     uint8_t bytes[] = {0, 0, 1, 0x65};
@@ -75,17 +81,67 @@ void frameOwnership() {
     runtime.frameComplete(sink->last, true);  // Duplicate/late callbacks are ignored.
   }
   IHS_FrameTrackerClose(tracker);
+  const auto metrics = runtime.metrics();
+  assert(metrics.epoch != 0 && metrics.sampledAtUs != 0);
+  assert(metrics.receivedFrames == 3 && metrics.presentedFrames == 2);
+  assert(metrics.completedFrames == 2 && metrics.resetFrames == 1 && metrics.droppedFrames == 0);
+  assert(metrics.videoBytes == 12); // Duplicate completions must not inflate feedback.
+  RuntimeTest::target(runtime, 30000, 1001, 0xffffffff, 12000000);
+  auto target = runtime.metrics();
+  assert(target.fpsNumerator == 30000 && target.fpsDenominator == 1001 && target.fpsReasons == 0x5f);
+  assert(target.targetBitrate == 12000000);
+  RuntimeTest::target(runtime, 60, 0, 0, -1);
+  RuntimeTest::target(runtime, UINT32_MAX, 1, 0, 1000000001);
+  target = runtime.metrics();
+  assert(target.fpsDenominator == 1001 && target.targetBitrate == 12000000);
+  Runtime second;
+  assert(second.metrics().epoch != metrics.epoch);
 }
 uint32_t le(const uint8_t* p) {
   return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24;
 }
 int main() {
   frameOwnership();
+  {
+    Runtime controllers;
+    std::array<int16_t, 6> axes{12000, -4000, 0, 0, 32767, 0};
+    controllers.pad(axes, 0xffffffff);
+    controllers.padSeat(3, {}, 4);
+    controllers.padSeat(4, axes, 8); // Rejected without writing outside the array.
+    assert(RuntimeTest::pad(controllers, 0)->axes == axes);
+    assert(RuntimeTest::pad(controllers, 0)->buttons == 0x7fff);
+    assert(RuntimeTest::pad(controllers, 1)->buttons == 0);
+    assert(RuntimeTest::pad(controllers, 3)->buttons == 4);
+    controllers.padSeat(0, {}, 0);
+    assert(RuntimeTest::pad(controllers, 3)->buttons == 4);
+    for (unsigned seat = 0; seat < 4; ++seat) {
+      auto* provider = makeController(RuntimeTest::pad(controllers, seat), seat);
+      assert(provider);
+      IHS_HIDDeviceInfo info{};
+      IHS_HIDProviderDeviceInfo(provider, nullptr, &info);
+      const std::string path = "plezy://controller/" + std::to_string(seat);
+      const std::string serial = seat == 0 ? "02504C455A59" : "02504C455A5" + std::to_string(seat);
+      assert(path == info.path && serial == info.serial_number);
+      assert(IHS_HIDProviderSupportsDevice(provider, path.c_str()));
+      const std::string other = "plezy://controller/" + std::to_string((seat + 1) % 4);
+      assert(!IHS_HIDProviderSupportsDevice(provider, other.c_str()));
+      assert(IHS_HIDProviderOpenDevice(provider, other.c_str()) == nullptr);
+      IHS_SessionHIDProviderDestroy(provider);
+    }
+    assert(makeController(RuntimeTest::pad(controllers, 0), 4) == nullptr);
+  }
   Credentials c{};
   c.device = 123;
   c.user = 456;
   c.key.fill(42);
   Runtime invalid;
+  for (const auto& options : {StreamOptions{0, 1080, 60, 30000}, {1920, 1081, 60, 30000},
+                              {1920, 1080, 120, 30000}, {1920, 1080, 60, 50001},
+                              {1920, 1080, 60, 30000, 0}, {1920, 1080, 60, 30000, 5},
+                              {1920, 1080, 60, 30000, 1, 3}}) {
+    assert(invalid.run({"127.0.0.1", 27036, 1}, c, 620, false, false,
+                       std::make_shared<NullSink>(), options) == -1);
+  }
   assert(invalid.pair({"127.0.0.1", 0, 1}, c, "1234") == -1);
   assert(invalid.pair({"127.0.0.1", 27036, 1}, c, "xx12") == -1);
   Runtime pairing;
@@ -107,7 +163,8 @@ int main() {
   setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
   Runtime stream;
   auto run = std::async(std::launch::async, [&] {
-    return stream.run({"127.0.0.1", ntohs(addr.sin_port), 9}, c, 620, false, false, std::make_shared<NullSink>());
+    return stream.run({"127.0.0.1", ntohs(addr.sin_port), 9}, c, 620, false, false,
+                      std::make_shared<NullSink>(), {1280, 720, 30, 12000, 4, 6});
   });
   uint8_t bytes[4096];
   ssize_t length = recv(fd, bytes, sizeof(bytes), 0);
@@ -118,7 +175,9 @@ int main() {
   assert(16 + hs + ps == static_cast<size_t>(length));
   auto* request = cmsg_remote_device_streaming_request__unpack(nullptr, ps, bytes + 16 + hs);
   assert(request && request->has_gameid && request->gameid == 620);
-  assert(!request->stream_desktop && request->audio_channel_count == 2);
+  assert(!request->stream_desktop && request->audio_channel_count == 6);
+  assert(request->gamepad_count == 4);
+  assert(request->maximum_resolution_x == 1280 && request->maximum_resolution_y == 720);
   cmsg_remote_device_streaming_request__free_unpacked(request, nullptr);
   stream.cancel();
   assert(run.wait_for(std::chrono::seconds(2)) == std::future_status::ready);

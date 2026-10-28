@@ -1,9 +1,11 @@
 # Acceptance, qualification and regression plan
 
-This file remains the acceptance plan for the broader design. The current PR
-branch has not been validated against live provider accounts or packaged
-devices. No app build or automated tests were run for this branch; source
-inspection and `git diff --check` are the local review evidence only.
+This file remains the acceptance plan for the broader design. The local checks
+recorded in [COMPLETION.md](COMPLETION.md) were run on the integration branch
+before it was merged with current `main`; they include 109 focused Flutter
+tests, native transfer tests, Tizen and webOS package tests, and targeted Dart
+analysis. This merge review has not run an app build or automated tests. Live
+provider accounts and packaged-device behavior remain unqualified.
 
 ## Definition of done
 

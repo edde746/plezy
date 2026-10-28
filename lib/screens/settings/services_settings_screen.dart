@@ -9,6 +9,7 @@ import '../../models/catalog/catalog_item.dart';
 import '../../providers/seerr_account_provider.dart';
 import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../services/discord_rpc_service.dart';
+import '../../services/external_access_directory.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/catalog_source_logo.dart';
@@ -16,14 +17,16 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_section.dart';
+import 'hardcover_settings_screen.dart';
+import 'integration_matches_screen.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
 import 'remote_streaming_settings_screen.dart';
 import 'tracker_service_info.dart';
+import '../external_access_screen.dart';
 
-/// Unified hub for all connected services: the watch-progress trackers
-/// (Trakt, MyAnimeList, AniList, Simkl) and the Seerr request server. Each
-/// row opens its service-specific settings screen.
+/// Unified hub for connected trackers, reading history, requests, and
+/// external-access integrations.
 class ServicesSettingsScreen extends StatelessWidget {
   const ServicesSettingsScreen({super.key});
 
@@ -40,10 +43,43 @@ class ServicesSettingsScreen extends StatelessWidget {
               child: SettingsHelpHint(text: t.services.hubSubtitle),
             ),
             SettingsGroup(
+              children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr(), _remoteStreaming()],
+            ),
+            SettingsGroup(
+              title: t.services.integrations,
               children: [
-                for (final info in TrackerServiceInfo.all) _TrackerHubRow(info),
-                _seerr(),
-                _remoteStreaming(),
+                FocusableListTile(
+                  leading: const AppIcon(Symbols.menu_book_rounded, fill: 1),
+                  title: Text(t.services.hardcover),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: profileId == null
+                      ? null
+                      : () => Navigator.push<void>(
+                          context,
+                          MaterialPageRoute<void>(builder: (_) => HardcoverSettingsScreen(profileId: profileId)),
+                        ),
+                ),
+                if (profileId != null)
+                  FocusableListTile(
+                    leading: const AppIcon(Symbols.link_rounded),
+                    title: Text(t.services.linkedCatalogTitles),
+                    trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(builder: (_) => IntegrationMatchesScreen(profileId: profileId)),
+                    ),
+                  ),
+                FocusableListTile(
+                  leading: const AppIcon(Symbols.open_in_new_rounded),
+                  title: Text(t.explore.detail.links),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ExternalAccessScreen(title: '', categories: ExternalAccessCategory.values),
+                    ),
+                  ),
+                ),
               ],
             ),
             if (profileId != null && PlatformDetector.supportsEmbeddedGameStreaming())
@@ -108,10 +144,7 @@ class ServicesSettingsScreen extends StatelessWidget {
               : t.streaming.connectionsConfigured(count: configured),
         ),
         trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()),
-        ),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen())),
       );
     },
   );

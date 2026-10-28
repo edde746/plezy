@@ -235,30 +235,16 @@ jobs:
           java-version: "21"
 
       - name: Configure Gradle to use the private JIT proxy
-        shell: bash
-        run: |
-          python3 - <<'PY' >> "$GITHUB_ENV"
-          import os
-          from urllib.parse import urlsplit
-
-          proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
-          if not proxy:
-              raise SystemExit("The private JIT HTTPS proxy is required for Gradle downloads.")
-          parsed = urlsplit(proxy if "://" in proxy else f"http://{proxy}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT HTTPS proxy URL is invalid for Gradle.")
-          options = [
-              f"-Dhttp.proxyHost={parsed.hostname}",
-              f"-Dhttp.proxyPort={parsed.port}",
-              f"-Dhttps.proxyHost={parsed.hostname}",
-              f"-Dhttps.proxyPort={parsed.port}",
-          ]
-          existing = os.environ.get("GRADLE_OPTS", "").strip()
-          print("GRADLE_OPTS=" + " ".join(([existing] if existing else []) + options))
-          PY
+        run: python3 scripts/prepare_android_sdk.py proxy
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: '15859902'
+          log-accepted-android-sdk-licenses: false
+
+      - name: Install all pinned Android module toolchains
+        run: python3 scripts/prepare_android_sdk.py install
 
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -299,6 +285,28 @@ jobs:
           languages: cpp, java-kotlin
           build-mode: manual
 
+      - name: Verify Android host native test toolchain
+        run: |
+          sudo apt-get update -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+            build-essential clang cmake ninja-build pkg-config
+          python3 - <<'PY'
+          import shutil
+          import sys
+
+          required = ("clang", "clang++", "cmake", "ninja", "make", "c++")
+          missing = [tool for tool in required if shutil.which(tool) is None]
+          if missing:
+              print(
+                  "The private Android test runner is missing pre-provisioned native tools: "
+                  + ", ".join(missing),
+                  file=sys.stderr,
+              )
+              raise SystemExit(1)
+          for tool in required:
+              print(f"{tool}: {shutil.which(tool)}")
+          PY
+
       - name: Configure Android host native tests
         run: |
           cmake -S android/app/src/test/cpp -B build/android-host-tests \
@@ -335,7 +343,7 @@ jobs:
   native-format:
     name: Native Formatting
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"private-apple-builds","labels":["self-hosted","macOS","ARM64","private-apple","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -425,6 +433,21 @@ jobs:
             video_params_test \
             experimental_render_api_test \
             plane_render_executor_test
+
+      # Older TSan runtimes reject randomized mappings when Linux uses more
+      # than 28 bits of mmap entropy. This only changes the disposable JIT VM.
+      - name: Set ThreadSanitizer-compatible ASLR entropy
+        if: matrix.sanitizer == 'thread'
+        run: |
+          current_bits="$(sudo -n sysctl -n vm.mmap_rnd_bits)"
+          if [ "$current_bits" -gt 28 ]; then
+            sudo -n sysctl -w vm.mmap_rnd_bits=28
+          fi
+          configured_bits="$(sudo -n sysctl -n vm.mmap_rnd_bits)"
+          if [ "$configured_bits" -gt 28 ]; then
+            echo "ThreadSanitizer requires vm.mmap_rnd_bits <= 28; found $configured_bits" >&2
+            exit 1
+          fi
 
       - name: Run Linux native reliability tests
         run: |
@@ -537,9 +560,17 @@ jobs:
         if: matrix.platform == 'iOS'
         run: flutter build ios --config-only --simulator --debug --no-pub
 
+      - name: Refresh pinned iOS Swift packages
+        if: matrix.platform == 'iOS'
+        run: scripts/refresh_apple_spm.sh ios
+
       - name: Prepare macOS Flutter build settings
         if: matrix.platform == 'macOS'
         run: flutter build macos --config-only --debug --no-pub
+
+      - name: Refresh pinned macOS Swift packages
+        if: matrix.platform == 'macOS'
+        run: scripts/refresh_apple_spm.sh macos
 
       - name: Prepare tvOS Flutter engine
         if: matrix.platform == 'tvOS'
@@ -567,6 +598,9 @@ jobs:
         run: |
           ruby tvos/scripts/test_wire_mpv.rb
           ruby tvos/scripts/test_wire_top_shelf.rb
+
+      - name: Resolve pinned Apple Swift packages for native tests
+        run: xcodebuild -resolvePackageDependencies -workspace "${{ matrix.workspace }}" -scheme Runner
 
       - name: Select Apple test destination
         env:
@@ -625,10 +659,11 @@ jobs:
           fi
           exit "$test_status"
 
+  # packer-windows-jit-v1
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -645,10 +680,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install 7-Zip
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1
+          .\windows\tool\prepare-build-toolchain.ps1 -VerifyOnly
+
+      - name: Verify provisioned ARM64 7-Zip
         if: matrix.arch == 'arm64'
         shell: pwsh
-        run: choco install 7zip -y
+        run: |
+          $sevenZip = Get-Command 7z -CommandType Application -ErrorAction Stop
+          & $sevenZip.Source i
+          if ($LASTEXITCODE -ne 0) { throw 'The pinned private image 7-Zip is not usable' }
 
       - name: Setup Flutter
         if: matrix.flutter_setup == 'action'

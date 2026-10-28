@@ -16,6 +16,8 @@ BAMCAQYwCgYIKoZIzj0EAwIDRwAwRAIgZ05Qu7LVaJYl3CabUJ0FvJVe6lHTsbNk
 -----END CERTIFICATE-----
 ''';
 
+const localTlsAuthorityPem = _privateAuthorityPem;
+
 // Leaf for localhost / 127.0.0.1 issued by the authority above.
 const _serverLeafPem = '''
 -----BEGIN CERTIFICATE-----
@@ -44,9 +46,10 @@ JS8seSTHEf5c0SbWphL3bkaJkJrmwkG2zLeztPkpcShdhF9NhmFDuFiV
 // enabled; no production/private authority is trusted by this client.
 class _RealHttp extends HttpOverrides {}
 
-HttpClient localTlsClient() => _RealHttp().createHttpClient(
-  SecurityContext(withTrustedRoots: false)..setTrustedCertificatesBytes(utf8.encode(_privateAuthorityPem)),
-)..findProxy = (_) => 'DIRECT';
+SecurityContext localTlsAuthorityContext() =>
+    SecurityContext(withTrustedRoots: false)..setTrustedCertificatesBytes(utf8.encode(localTlsAuthorityPem));
+
+HttpClient localTlsClient() => _RealHttp().createHttpClient(localTlsAuthorityContext())..findProxy = (_) => 'DIRECT';
 
 SecurityContext localTlsServer() => SecurityContext()
   ..useCertificateChainBytes(utf8.encode('$_serverLeafPem$_privateAuthorityPem'))

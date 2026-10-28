@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import '../services/credential_vault.dart';
 import 'source_database.dart';
 import 'source_models.dart';
+import 'offline_readiness.dart';
 import 'adapters/s3_source.dart';
 import 'source_oauth.dart';
 import 'source_transport.dart';
@@ -166,12 +167,8 @@ Future<Map<String, dynamic>> _remoteCloudApi(
   String method = 'GET',
   Map<String, String>? query,
   Map<String, String>? form,
-}) => _renewalJson(
-  Uri.https(host, path, query),
-  method: method,
-  headers: {'Authorization': 'Bearer $token'},
-  form: form,
-);
+}) =>
+    _renewalJson(Uri.https(host, path, query), method: method, headers: {'Authorization': 'Bearer $token'}, form: form);
 
 String? _remoteCloudId(Map<String, dynamic> descriptor, String key, {int maxLength = 128}) {
   final value = _renewalText(descriptor, key, maxLength: maxLength);
@@ -249,7 +246,8 @@ Future<_RenewedBackgroundLease> _renewRemoteCloudBackgroundLease(Map<String, dyn
     final allFiles = (info['files'] as List).whereType<Map>().map((row) => Map<String, dynamic>.from(row)).toList();
     final selectedFiles = allFiles.where((row) => row['selected'] == 1).toList(growable: false);
     final fileIndex = selectedFiles.indexWhere((row) => '${row['id']}' == fileId);
-    if (fileIndex < 0 || fileIndex >= (info['links'] as List).length) throw const SourceException(SourceFailure.conflict);
+    if (fileIndex < 0 || fileIndex >= (info['links'] as List).length)
+      throw const SourceException(SourceFailure.conflict);
     final selected = selectedFiles[fileIndex];
     final size = _renewalNumber(selected, 'bytes');
     final stableRevision = 'realDebrid:$providerId:$fileId:$size';
@@ -322,9 +320,7 @@ Future<_RenewedBackgroundLease> _renewRemoteCloudBackgroundLease(Map<String, dyn
     if (!RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(fileId)) {
       throw const SourceException(SourceFailure.permission);
     }
-    final parentId = descriptor['parentProviderId'] == null
-        ? null
-        : _remoteCloudId(descriptor, 'parentProviderId');
+    final parentId = descriptor['parentProviderId'] == null ? null : _remoteCloudId(descriptor, 'parentProviderId');
     if (descriptor['parentProviderId'] != null && parentId == null) {
       throw const SourceException(SourceFailure.permission);
     }
@@ -367,7 +363,8 @@ Future<_RenewedBackgroundLease> _renewRemoteCloudBackgroundLease(Map<String, dyn
         : rawData is List && rawData.isNotEmpty && rawData.first is Map
         ? Map<String, dynamic>.from(rawData.first as Map)
         : null;
-    if (torrent == null || !(torrent['cached'] == true || torrent['download_finished'] == true || torrent['status'] == 'cached')) {
+    if (torrent == null ||
+        !(torrent['cached'] == true || torrent['download_finished'] == true || torrent['status'] == 'cached')) {
       throw const SourceException(SourceFailure.conflict);
     }
     final rawFiles = torrent['files'];
@@ -1000,14 +997,49 @@ class PublicationDownloads {
     );
   }
 
-  Future<File?> local(String profile, String sourceId, PublicationFile file) async {
-    final record = await repository.download(profile, key(sourceId, file));
-    if (record == null || record['complete'] != 1 || record['fingerprint'] != file.fingerprint) return null;
+  Future<File?> local(String profile, String sourceId, PublicationFile file) async =>
+      file.sampleOnly ? null : _verifiedLocal(profile, file, await repository.download(profile, key(sourceId, file)));
+
+  Future<File?> _verifiedLocal(String profile, PublicationFile file, Map<String, dynamic>? record) async {
+    if (file.sampleOnly || record == null || record['complete'] != 1 || record['fingerprint'] != file.fingerprint) {
+      return null;
+    }
     final value = File(record['path'] as String);
     final expected = p.join(directory.path, sourceDigest(profile));
     if (!p.isWithin(expected, value.path)) throw const SourceException(SourceFailure.permission);
-    if (!await value.exists() || await value.length() != record['bytes']) return null;
-    return value;
+    try {
+      // A disappearing file is an availability change, not a screen failure.
+      final stat = await value.stat();
+      if (stat.type != FileSystemEntityType.file || stat.size != record['bytes']) return null;
+      return value;
+    } on FileSystemException {
+      return null;
+    }
+  }
+
+  /// One ledger read and one filesystem check per distinct representation,
+  /// bounded to the entries on screen. No leases or network access are needed.
+  Future<Set<String>> verifiedFiles(
+    String profile,
+    Iterable<SourceEntry> entries, {
+    List<Map<String, dynamic>>? records,
+  }) async {
+    final byKey = {for (final row in records ?? await repository.downloads(profile)) row['key']: row};
+    final checked = <String>{};
+    final verified = <String>{};
+    for (final entry in entries) {
+      for (final file in entry.files) {
+        final identity = offlineFileIdentity(entry.sourceId, file);
+        if (!checked.add(identity)) continue;
+        final record = byKey[key(entry.sourceId, file)];
+        try {
+          if (await _verifiedLocal(profile, file, record) != null) verified.add(identity);
+        } on SourceException {
+          // An invalid ledger path must never make a publication look ready.
+        }
+      }
+    }
+    return verified;
   }
 
   Future<void> reconcileProfile(String profile) async {
@@ -1133,6 +1165,7 @@ class PublicationDownloads {
     String label = '',
     void Function(int, int?)? onProgress,
   }) async {
+    if (file.sampleOnly) throw const SourceException(SourceFailure.permission);
     final transferKey = sourceKey(profile, key(adapter.source.id, file));
     final existing = _pending[transferKey];
     if (existing != null) return existing;
@@ -1198,6 +1231,10 @@ class PublicationDownloads {
         } on Object {
           // Keep malformed rows removable; never derive a path from bad data.
         }
+        if (pendingFile?.sampleOnly == true) {
+          await _discardSampleDownload(profile, row, pendingFile!);
+          continue;
+        }
         final isContainedPartial =
             path.isNotEmpty &&
             p.isWithin(expectedRoot, path) &&
@@ -1240,6 +1277,15 @@ class PublicationDownloads {
         await repository.setDownloadState(profile, row['key'] as String, 'orphaned');
         continue;
       }
+      try {
+        final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
+        if (file.sampleOnly) {
+          await _discardSampleDownload(profile, row, file);
+          continue;
+        }
+      } on Object {
+        // Malformed legacy rows remain subject to the normal recovery checks.
+      }
       if (row['state'] != 'queued' && row['state'] != 'running') continue;
       try {
         final sourceId = row['source_id'] as String;
@@ -1266,6 +1312,50 @@ class PublicationDownloads {
       } on Object {
         await repository.setDownloadState(profile, row['key'] as String, 'failed');
       }
+    }
+  }
+
+  Future<void> _discardSampleDownload(String profile, Map<String, dynamic> row, PublicationFile file) async {
+    final sourceId = row['source_id'] as String? ?? '';
+    final rowKey = row['key'] as String? ?? '';
+    final complete = row['complete'] == 1;
+    if (sourceId.isEmpty || rowKey != key(sourceId, file) || row['fingerprint'] != file.fingerprint) {
+      if (complete) {
+        await repository.forgetDownload(profile, rowKey);
+      } else {
+        await repository.setDownloadState(profile, rowKey, 'failed');
+      }
+      return;
+    }
+
+    try {
+      await _removeNativeTask(_nativeTaskId(profile, sourceId, file));
+    } on Object {
+      await _pauseNativeTask(_nativeTaskId(profile, sourceId, file));
+      if (!complete) await repository.setDownloadState(profile, rowKey, 'failed');
+      return;
+    }
+    final profileRoot = p.join(directory.path, sourceDigest(profile));
+    final paths = <String>{row['path'] as String? ?? '', _target(profile, sourceId, file).path};
+    for (final path in paths) {
+      if (path.isEmpty || !p.isWithin(profileRoot, path)) continue;
+      try {
+        final target = File(path);
+        if (await target.exists() && (await target.stat()).type == FileSystemEntityType.file) {
+          await target.delete();
+        }
+      } on FileSystemException {
+        // A missing or locked cache file must not make the sample resumable.
+      }
+      if (path.endsWith('.partial')) {
+        final validator = File('${p.withoutExtension(path)}.validator');
+        if (p.isWithin(profileRoot, validator.path) && await validator.exists()) await validator.delete();
+      }
+    }
+    if (complete) {
+      await repository.forgetDownload(profile, rowKey);
+    } else {
+      await repository.setDownloadState(profile, rowKey, 'failed');
     }
   }
 
@@ -1354,6 +1444,7 @@ class PublicationDownloads {
     String label,
     void Function(int, int?)? onProgress,
   ) async {
+    if (file.sampleOnly) throw const SourceException(SourceFailure.permission);
     final recordKey = key(adapter.source.id, file);
     await repository.setDownloadState(profile, recordKey, 'running');
     final cached = await local(profile, adapter.source.id, file);
@@ -1938,8 +2029,8 @@ class SourceStreamGateway {
   final _secret = SourceOAuthService.randomSecret();
   final Map<String, ({SourceAdapter adapter, PublicationFile file})> _files = {};
   final Map<String, ContentLease> _leases = {};
-  final LinkedHashMap<String, ({Uri uri, Map<String, String> headers, SourceUriRenewal? renew})> _directUris =
-      LinkedHashMap();
+  final LinkedHashMap<String, ({Uri uri, Map<String, String> headers, String cacheKey, SourceUriRenewal? renew})>
+  _directUris = LinkedHashMap();
   final Map<String, String> _directIdsByUri = {};
   final Set<String> _nonDeduplicatedDirectIds = {};
   final Map<String, Future<({Uri uri, Map<String, String> headers})>> _directRenewals = {};
@@ -1977,22 +2068,22 @@ class SourceStreamGateway {
     final safeHeaders = _validateDirectHeaders(headers);
     SourceTransport(allowHttp: uri.scheme == 'http').validate(uri);
     await _ensureServer();
-    final uriText = sourceDigest(
-      jsonEncode([
-        uri.toString(),
-        safeHeaders.entries.map((entry) => [entry.key.toLowerCase(), entry.value]).toList(),
-      ]),
-    );
+    final uriText = _directCacheKey(uri, safeHeaders);
     final existing = deduplicate ? _directIdsByUri[uriText] : null;
     if (existing != null) {
       final registered = _directUris[existing];
       if (registered != null && registered.renew == null && renew != null) {
-        _directUris[existing] = (uri: registered.uri, headers: registered.headers, renew: renew);
+        _directUris[existing] = (
+          uri: registered.uri,
+          headers: registered.headers,
+          cacheKey: registered.cacheKey,
+          renew: renew,
+        );
       }
       return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$existing');
     }
     final id = sourceDigest('direct:$_secret:${_directCounter++}');
-    _directUris[id] = (uri: uri, headers: safeHeaders, renew: renew);
+    _directUris[id] = (uri: uri, headers: safeHeaders, cacheKey: uriText, renew: renew);
     if (deduplicate) {
       _directIdsByUri[uriText] = id;
     } else {
@@ -2000,9 +2091,11 @@ class SourceStreamGateway {
     }
     while (_directUris.length > 4096) {
       final oldest = _directUris.keys.first;
-      _directUris.remove(oldest);
+      final removed = _directUris.remove(oldest);
       _nonDeduplicatedDirectIds.remove(oldest);
-      _directIdsByUri.removeWhere((_, value) => value == oldest);
+      if (removed != null && _directIdsByUri[removed.cacheKey] == oldest) {
+        _directIdsByUri.remove(removed.cacheKey);
+      }
     }
     return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$id');
   }
@@ -2038,10 +2131,20 @@ class SourceStreamGateway {
     return Map.unmodifiable(safe);
   }
 
+  String _directCacheKey(Uri uri, Map<String, String> headers) {
+    final sortedHeaders = headers.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    return sourceDigest(
+      jsonEncode([
+        uri.toString(),
+        sortedHeaders.map((entry) => [entry.key, entry.value]).toList(),
+      ]),
+    );
+  }
+
   bool _sameDirectHeaders(Map<String, String> a, Map<String, String> b) =>
       a.length == b.length && a.entries.every((entry) => b[entry.key] == entry.value);
 
-  Future<({Uri uri, Map<String, String> headers, SourceUriRenewal? renew})> _renewDirectUri(
+  Future<({Uri uri, Map<String, String> headers, String cacheKey, SourceUriRenewal? renew})> _renewDirectUri(
     String id, {
     required Uri expiredUri,
     required Map<String, String> expiredHeaders,
@@ -2074,19 +2177,9 @@ class SourceStreamGateway {
       // A newer concurrent renewal owns the slot; do not overwrite it with an
       // older callback result that happened to complete later.
       if (latest.uri != expiredUri || !_sameDirectHeaders(latest.headers, expiredHeaders)) return latest;
-      final key = sourceDigest(
-        jsonEncode([
-          refreshed.uri.toString(),
-          safeHeaders.entries.map((entry) => [entry.key.toLowerCase(), entry.value]).toList(),
-        ]),
-      );
-      final expiredKey = sourceDigest(
-        jsonEncode([
-          expiredUri.toString(),
-          expiredHeaders.entries.map((entry) => [entry.key.toLowerCase(), entry.value]).toList(),
-        ]),
-      );
-      final next = (uri: refreshed.uri, headers: safeHeaders, renew: renew);
+      final key = _directCacheKey(refreshed.uri, safeHeaders);
+      final expiredKey = current.cacheKey;
+      final next = (uri: refreshed.uri, headers: safeHeaders, cacheKey: key, renew: renew);
       _directUris[id] = next;
       if (_directIdsByUri[expiredKey] == id) _directIdsByUri.remove(expiredKey);
       if (!_nonDeduplicatedDirectIds.contains(id)) _directIdsByUri.putIfAbsent(key, () => id);
@@ -2495,13 +2588,7 @@ class SourceStreamGateway {
       final manifestBase = upstream.request?.url ?? currentUri;
       final manifestHeaders = sameSourceOrigin(currentUri, manifestBase) ? currentHeaders : const <String, String>{};
       final rewritten = utf8.encode(
-        await _rewriteHlsManifest(
-          manifest,
-          manifestBase,
-          manifestHeaders,
-          parentId: id,
-          parentRenew: renew,
-        ),
+        await _rewriteHlsManifest(manifest, manifestBase, manifestHeaders, parentId: id, parentRenew: renew),
       );
       request.response.headers.set(HttpHeaders.contentLengthHeader, rewritten.length);
       await request.response.addStream(Stream<List<int>>.value(rewritten));

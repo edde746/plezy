@@ -125,8 +125,7 @@ require(
 )
 require(
     '"group":"packer-windows"' in windows
-    and '"Windows","ARM64"' in windows
-    and '"ng-shared-main-plezyng"' in windows
+    and '"Windows","ARM64","on-demand","packer-windows","PlezyNG"' in windows
     and "matrix.arch == 'x64'" in windows,
     "Windows ARM64 must use its private JIT route",
 )
@@ -270,6 +269,14 @@ require(
     "Linux build attestation permissions changed",
 )
 require_explicit_shells("build-linux", linux, "bash")
+flatpak_setup = named_step(linux, "Install Flatpak packaging dependencies")
+require(
+    "scripts/retry_flatpak.py remote-add" in flatpak_setup
+    and "scripts/retry_flatpak.py install" in flatpak_setup
+    and "flatpak remote-add" not in flatpak_setup
+    and "flatpak install" not in flatpak_setup,
+    "Flathub remote and runtime downloads must use the bounded retry helper",
+)
 libmpv_cache = named_step(linux, "Cache libmpv prefix")
 require(
     "hashFiles('mpv-build.lock.json')" in libmpv_cache,
@@ -337,9 +344,11 @@ request_resolver = named_step(job("validate-trusted-ref"), "Resolve release requ
 require(
     'INCLUDE_WEBOS_BUILD="$INCLUDE_WEBOS_BUILD_INPUT"' in request_resolver
     and 'INCLUDE_TIZEN_BUILD="$INCLUDE_TIZEN_BUILD_INPUT"' in request_resolver
-    and '"$REF_TYPE" != "tag"' in request_resolver
-    and '"$RELEASE_TAG" =~ ^v[0-9]+' in request_resolver,
-    "manual release actions must preserve default platform choices and require a v-tag ref",
+    and '"$REF_TYPE" != "branch" || "$REF_NAME" != "main"' in request_resolver
+    and 'VERSION="$BUILD_VERSION_INPUT"' in request_resolver
+    and '"$VERSION" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$' in request_resolver
+    and 'RELEASE_TAG="v$VERSION"' in request_resolver,
+    "manual release actions must preserve default platform choices and require an explicit version on main",
 )
 require(
     "Validate release tag before building" in job("validate-trusted-ref")
@@ -411,7 +420,19 @@ require(
 )
 require(
     "Upload experimental WebOS candidate for this build" not in build_webos,
-    "unapproved WebOS candidates must stay inside the ephemeral private-JIT workspace",
+    "unapproved WebOS candidates must stay inside private runner storage",
+)
+require(
+    "retain_private_candidate.py --preflight" in named_step(
+        build_webos, "Verify private WebOS output storage"
+    )
+    and "retain_private_candidate.py" in named_step(
+        build_webos, "Retain verified WebOS candidate for private device testing"
+    )
+    and build_webos.index("Verify private WebOS output storage")
+    < build_webos.index("Build and verify the WebOS ARM package")
+    < build_webos.index("Retain verified WebOS candidate for private device testing"),
+    "webOS candidates must survive guest cleanup in preflight-checked private storage",
 )
 require(
     "Public webOS inclusion requires action=release." in job("validate-trusted-ref")
@@ -486,11 +507,20 @@ require(
     "the optional Linux package smoke build must not run on pushes",
 )
 
+apple_native = job_block(ci_text, "apple-native-test")
+require(
+    "scripts/refresh_apple_spm.sh ios" in apple_native
+    and "scripts/refresh_apple_spm.sh macos" in apple_native
+    and "xcodebuild -resolvePackageDependencies -workspace" in apple_native
+    and "-disableAutomaticPackageResolution" in apple_native,
+    "Apple CI must refresh pinned SwiftPM mirrors and resolve exact locked packages before Xcode tests",
+)
+
 
 run_name = re.search(r"(?m)^run-name: (.*)$", text)
 run_name_expression = run_name.group(1) if run_name else ""
 require(
-    all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "github.ref_name"))
+    all(field in run_name_expression for field in ("inputs.action", "inputs.runner_pool", "inputs.build_version"))
     and all(marker in run_name_expression for marker in ("action:", "pool:", "tag:"))
     and "inputs.action == 'release'" in run_name_expression,
     "run names must expose the manual action and pool, plus the selected ref for releases",
@@ -530,6 +560,7 @@ require(
 )
 for artifact in (
     "android-apk",
+    "plezyng-tizen-arm-experimental",
     "ios-ipa",
     "tvos-ipa",
     "macos-dmg",
@@ -541,6 +572,29 @@ for artifact in (
     "linux-arm64",
 ):
     require(f"name: {artifact}" in release, f"release download lost {artifact}")
+
+tizen_download = named_step(release, "Download Tizen ARM tester handoff")
+require(
+    "name: plezyng-tizen-arm-experimental" in tizen_download
+    and "path: artifacts/tizen" in tizen_download,
+    "the release must consume the Tizen ARM tester artifact from this exact workflow run",
+)
+tizen_handoff = named_step(release, "Verify and archive Tizen tester handoff")
+require(
+    "sha256sum --check" in tizen_handoff
+    and "EXPECTED_SOURCE_COMMIT" in tizen_handoff
+    and "source_commit" in tizen_handoff
+    and "PlezyNG-tizen-arm-tester-handoff.zip" in tizen_handoff
+    and "development-only-requires-tv-resigning" in tizen_handoff
+    and "tv_install_verified" in tizen_handoff,
+    "the release must verify Tizen package checksum/source and label the tester signing gate",
+)
+require(
+    "artifacts/tizen/PlezyNG-tizen-arm-tester-handoff.zip" in named_step(
+        release, "Collect release files"
+    ),
+    "the verified ARM Tizen tester handoff must be attached to the versioned release",
+)
 
 webos_download = named_step(release, "Download WebOS artifact")
 require(
@@ -622,8 +676,11 @@ require(
     and '"$ACTION" == "release" && "$RELEASE_TAG" != "v$PACKAGE_VERSION"' in trusted_ref
     and '"$RUNNER_POOL" != "private"' in trusted_ref
     and '"$ACTION" != "build" && "$ACTION" != "release"' in trusted_ref
-    and '"$REF_TYPE" != "tag"' in request_resolver,
-    "selected release tags must match pubspec, and action/pool/ref must be validated before builds",
+    and '"$REF_TYPE" != "branch" || "$REF_NAME" != "main"' in request_resolver
+    and 'git fetch --no-tags origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"' in trusted_ref
+    and 'git rev-parse "refs/tags/$RELEASE_TAG^{commit}"' in trusted_ref
+    and '"$release_commit" != "$GITHUB_SHA"' in trusted_ref,
+    "release tags must match pubspec and the exact trusted main commit before builds",
 )
 for protected_job in (
     "build-android",

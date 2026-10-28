@@ -264,10 +264,10 @@ void main() {
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
         await tester.pump();
         expect(FocusManager.instance.primaryFocus?.debugLabel, 'ExploreSourceSwitcher');
-        for (var step = 0; step < 4; step++) {
+        for (var i = 0; i < 4; i++) {
           await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+          await tester.pump();
         }
-        await tester.pump();
         expect(FocusManager.instance.primaryFocus?.debugLabel, 'ManageMdblistShelves');
       }
     });

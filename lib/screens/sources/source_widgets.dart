@@ -71,6 +71,8 @@ String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.komga => 'Komga',
   FileSourceKind.audiobookshelf => 'Audiobookshelf',
   FileSourceKind.remoteCloud => t.streaming.cloudFiles,
+  FileSourceKind.openSubsonic => 'OpenSubsonic',
+  FileSourceKind.podcastRss => 'Podcasts (RSS / Atom)',
 };
 IconData sourceItemIcon(SourceItemKind kind) => switch (kind) {
   SourceItemKind.comic => Symbols.auto_stories_rounded,
@@ -127,11 +129,11 @@ class SourceTile extends StatelessWidget {
         borderRadius: shape,
         clipBehavior: Clip.antiAlias,
         child: FocusableWrapper(
+          focusNode: focusNode,
+          onNavigateLeft: onNavigateLeft,
+          onNavigateUp: onNavigateUp,
           disableScale: true,
           useBackgroundFocus: true,
-          focusNode: focusNode,
-          onNavigateUp: onNavigateUp,
-          onNavigateLeft: onNavigateLeft,
           borderRadii: shape,
           onSelect: onTap,
           descendantsAreFocusable: trailing != null,
@@ -277,10 +279,8 @@ class _SourcePosterCardState extends State<SourcePosterCard> {
     _scheduleMetadataLookup();
   }
 
-  String? get _currentMetadataSetting => _sources?.sources
-      .where((item) => item.id == _entry.sourceId)
-      .firstOrNull
-      ?.options['onlineMetadata'];
+  String? get _currentMetadataSetting =>
+      _sources?.sources.where((item) => item.id == _entry.sourceId).firstOrNull?.options['onlineMetadata'];
 
   void _onSourcesChanged() {
     final profile = _sources?.profileId;

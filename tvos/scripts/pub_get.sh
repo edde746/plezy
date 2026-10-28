@@ -12,6 +12,16 @@ if [[ -e pubspec_overrides.yaml ]]; then
   exit 1
 fi
 
-cp pubspec_overrides_tvos.yaml pubspec_overrides.yaml
+# pubspec_overrides.yaml replaces the dependency_overrides map as a whole.
+# Merge the root overrides first so tvOS keeps the pinned connectivity_plus
+# Git source required by the vendored background_downloader package.
+ruby -ryaml -e '
+root = YAML.load_file("pubspec.yaml")
+overlay = YAML.load_file("pubspec_overrides_tvos.yaml")
+root_overrides = root.fetch("dependency_overrides", {})
+tvos_overrides = overlay.fetch("dependency_overrides", {})
+overlay["dependency_overrides"] = root_overrides.merge(tvos_overrides)
+File.write("pubspec_overrides.yaml", YAML.dump(overlay))
+'
 trap 'rm -f pubspec_overrides.yaml' EXIT
 flutter pub get --no-example

@@ -270,6 +270,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           appLogger.w('Live player timestamp moved backwards; broadcast mapping is now unknown');
           _setPlayerState(() {});
         }
+        if (widget.isLive && _live.session is IptvLiveTvPlaybackSession) {
+          _updateIptvLocalTimeShift(currentPlayer, position);
+        }
 
         // Fallback for MPV backends whose playbackRestart event is unavailable.
         // Android ExoPlayer position can advance on its standalone clock without

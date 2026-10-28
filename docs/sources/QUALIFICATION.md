@@ -10,7 +10,7 @@ The per-profile cap defaults to 10 GiB and can be changed from the Files & books
 
 ## Combined sync destinations
 
-Encrypted cloud sync and compatible provider-native progress/bookmark sync can run in the same cycle. The cloud document tracks its own observed values and published generation; provider events remain pending until the corresponding provider accepts them. Cloud-imported progress and annotations are also queued for compatible provider targets. A cloud error does not prevent the provider queue from running, and each target keeps its own conflict and retry state. Sync reports the first target error after attempting both. Native background-transfer guarantees are not provided by the foreground queue.
+Encrypted cloud sync and compatible provider-native progress/bookmark sync can run in the same cycle. Cloud sync writes only encrypted, app-owned state documents; provider sync writes only dedicated progress/bookmark state files or supported provider progress APIs. Neither path writes, replaces, renames, or deletes playback media files. The cloud document tracks its own observed values and published generation; provider events remain pending until the corresponding provider accepts them. Cloud-imported progress and annotations are also queued for compatible provider targets. A cloud error does not prevent the provider queue from running, and each target keeps its own conflict and retry state. Sync reports the first target error after attempting both. Native background-transfer guarantees are not provided by the foreground queue.
 
 ## Large local directory paging
 

@@ -110,6 +110,8 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$tr comics = _Translations$comics$tr._(_root);
 	@override late final _Translations$games$tr games = _Translations$games$tr._(_root);
 	@override late final _Translations$deepLinks$tr deepLinks = _Translations$deepLinks$tr._(_root);
+	@override late final _Translations$householdSetup$tr householdSetup = _Translations$householdSetup$tr._(_root);
+	@override late final _Translations$issueReport$tr issueReport = _Translations$issueReport$tr._(_root);
 }
 
 // Path: app
@@ -1201,6 +1203,30 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get settingsButton => 'Oynatma Ayarları';
 	@override String get tracksButton => 'Ses ve Altyazı';
 	@override String get chaptersButton => 'Kısımlar';
+	@override String get segmentLoopHelp => 'Bu oynatma sırasında bir bölüm atın. A\'yı ayarlayın, daha sonra B\'yi zaman çizgisinde ayarlarsınız.';
+	@override String get setLoopStart => 'Yürüyüş başlangıç (A)';
+	@override String get setLoopEnd => 'Sıfır Sonu (B)';
+	@override String get clearSegmentLoop => 'Temiz segment yuvarlak';
+	@override String get setLoopStartFirst => 'Başlangıç (A) bitmeden önce bir yuva ayarlayın (B).';
+	@override String get loopEndAfterStart => 'Başlangıçtan daha geç olması gerekir.';
+	@override String get segmentLoopUnavailable => 'Segment looping bu playback için mevcut değildir.';
+	@override String get loopPointNotSet => 'ayarlanmıyor';
+	@override String get bookmarksHelp => 'Bookmarks bu cihazda kaydedilir. o zamana gitmek için birini seçin.';
+	@override String get bookmarksButton => 'Bookmarkası';
+	@override String get chaptersAndBookmarks => 'Bölümler ve Bookmarks';
+	@override String get segmentLoop => 'Segment Yürüyüşü';
+	@override String get addBookmark => 'Bookmark ekleyin';
+	@override String get bookmarkName => 'Bookmark Adı';
+	@override String get bookmarkNameHint => 'Örneğin, açılan sahne';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark Hakkında ${n}';
+	@override String get bookmarkNameRequired => 'Bu kitaplık için bir isim girin.';
+	@override String get deleteBookmark => 'Bookmark Kaldır';
+	@override String get bookmarkLimitReached => 'Bu bölümde zaten 100 kitaplık var.';
+	@override String get bookmarkUnavailable => 'Bu yazıyı kaydetmek ya da kaldırmak mümkün değil.';
+	@override String get bookmarkSaved => 'Bookmark kurtarıldı';
+	@override String get bookmarkDeleted => 'Bookmark kaldırıldı';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop Noktası ${point} ayarlayın ${time}.';
+	@override String get noChaptersOrBookmarks => 'Hiçbir bölüm veya kitaplık mevcut değildir.';
 	@override String get versionQualityButton => 'Sürüm ve Kalite';
 	@override String get versionColumnHeader => 'Sürüm';
 	@override String get qualityColumnHeader => 'Kalite';
@@ -2071,6 +2097,7 @@ class _Translations$music$tr extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Track Analysis ile ilgili...';
 	@override String get visualizerAmbientMotion => 'Ambient hareketleri';
 	@override String get visualizerPlexLoudness => 'Plex sesli';
+	@override String get visualizerLiveAudio => 'Canlı ses analizi';
 	@override String get visualizerPreviousPreset => 'Önceki Görsel Stil';
 	@override String get visualizerNextPreset => 'Next Görsel Stil';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2424,6 +2451,12 @@ class _Translations$videoSettings$tr extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Oynatıcıda ekranın en yüksek parlaklığına göre eşleyin, ardından sonucu birleştiriciye bildirin.';
 	@override String get hdrToneMappingFailed => 'HDR ton eşleme değiştirilemedi — önceki mod hâlâ etkin.';
 	@override String get audioOutput => 'Ses Çıkışı';
+	@override String get videoTrack => 'Video parçası';
+	@override String get videoTrackDescription => 'Görüntülenecek video akışını seçin. Dosyada alternatif video parçaları varsa MPV oynatımında kullanılabilir.';
+	@override String get videoTrackDefault => 'Varsayılan';
+	@override String get videoTrackUnavailable => 'Kullanılabilir alternatif video parçası yok.';
+	@override String get videoTrackFailed => 'Video parçası değiştirilemedi.';
+	@override String videoTrackNumber({required Object id}) => 'Parça ${id}';
 	@override String get performanceOverlay => 'Performans Katmanı';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2431,10 +2464,17 @@ class _Translations$videoSettings$tr extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Uzamsal Ses';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio Eşitleme';
-	@override String get audioEqualizerDescription => 'Bu cihaz için beş frekans bantını ayarlayın. mpv\'de mevcut; aktif bir EQ sesini dekore eder ve uyumlu durdurur.';
+	@override String get audioEqualizerDescription => '10 Band Equalizer için MPVSes filtreleri dekodlu ses kullanır ve passthrough devre dışı bırakır.';
 	@override String get audioEqualizerFlat => 'Yumuşak';
 	@override String get audioEqualizerActive => 'Özel';
 	@override String get audioEqualizerSaveFailed => 'Ses ekvator ayarlarını kaydetemez.';
+	@override String get audioEffectsDescription => 'Effects decoded audio kullanır, bu yüzden passthrough devre dışı bırakılır. oda ortamı ve stereo genişlemesi MPV İnşaat ve Track.';
+	@override String get audioStereoWidth => 'Stereo Genişletme';
+	@override String get audioSpatializer => 'Oda Atmosfer';
+	@override String get audioSpatializerDescription => 'Sessiz oda yansıtıcıları ekleyin.';
+	@override String get audioPitch => 'Pitch Değişimi';
+	@override String get audioPitchDescription => 'Hız değişikliği olmadan topu değiştirin. MPV İnşaat dahil edilmelidir Rubber Band.';
+	@override String get audioEffectUnavailable => 'Bu etki bu yol için mevcut değildir veya MPV İnşaat için.';
 	@override String get backgroundVideoAudio => 'Video Audio Altyazıları';
 	@override String get backgroundVideoAudioDescription => 'Oynayı bıraktığınızda video sesini oynatmaya devam edin; resim geri dönene kadar gizlenir. Android bir medya oynatma bildirimi kullanır.';
 	@override String get audioNormalization => 'Ses Yüksekliğini Normalleştir';
@@ -3200,6 +3240,10 @@ class _Translations$universalMedia$tr extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Playlist dosyasını seçin';
 	@override String get openPlaylist => 'Açık Playlist';
 	@override String get playlistFormatsHelp => 'Bir oynatma listesi en fazla 1000 öğe ve 2 MB içerebilir. HLS akışlar olarak açıktır, böylece oyuncu bir kaliteyi seçebilir.';
+	@override String get saveQueuePlaylist => 'Sırayı çalma listesi olarak kaydet';
+	@override String get queuePlaylistSaved => 'Çalma listesi medya dosyalarının yanına kaydedildi.';
+	@override String get queuePlaylistUnavailable => 'Bu sıra yeniden kullanılabilir bir yerel çalma listesi olarak kaydedilemiyor.';
+	@override String get queuePlaylistFolderRequired => 'Sıradaki dosyalarla aynı klasörde bir kayıt konumu seçin.';
 	@override String get noFavorites => 'Hiç kaydedilmemiş akış favori henüz. Favoriler bu profilde kalır.';
 	@override String get removeFavorite => 'En sevdiğiniz akışları kaldırın';
 	@override String get filesHelp => 'Ses, video veya ISO dosyalarını geçici bir çerçeve için seçin. Dosyalar ve URL\'ler kütüphane geçmişine eklenmez.';
@@ -3264,12 +3308,13 @@ class _Translations$universalMedia$tr extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Dosya değiştirme';
 	@override String get discHelp => 'Bu bilgisayarın optik sürücüsünde bir disk açın.Ayrıca cihaz dosyalarından bir ISO görüntüsü de açabilirsiniz.';
 	@override String get discs => 'optik disk';
+	@override String get editionOrTitle => 'Sürüm veya disk başlığı';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray için';
 	@override String get audioCd => 'Sesli CD';
 	@override String get discAvailability => 'Disk oynatma, uyumlu bir MPV yapılandırması, desteklenen sürücü ve işletim sistemi izni gerektirir. ticari disk koruması aşamaz.';
 	@override String get converterTitle => 'Yerel bir medya dosyasını dönüştürmek';
-	@override String get converterHelp => 'Bir MP4, M4A veya MP3 kopyasını yapmak için FFmpeg kullanın.';
+	@override String get converterHelp => 'Yerel bir dosyayı dönüştürün veya yeniden yapıştırın FFmpeg.';
 	@override String get converterIntro => 'Yerel bir ses veya video dosyasını daha fazla cihazda çalışan bir biçime dönüştürün.';
 	@override String get converterPrivacy => 'FFmpeg bu bilgisayara yüklenmelidir. dönüşüm yalnızca yerel dosyaları okuyor. akışları indirmez veya DRM kaldırmaz.';
 	@override String get converterChooseInput => 'Yerel bir medya dosyasını seçin';
@@ -3277,6 +3322,8 @@ class _Translations$universalMedia$tr extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 H.264 ve AAC';
 	@override String get converterM4a => 'M4A · AAC ses';
 	@override String get converterMp3 => 'MP3 · Sesli';
+	@override String get allowFtp => 'FTP izin verin';
+	@override String get allowFtpHelp => 'FTP şifreleme olmadan medyayı gönderir. yalnızca güvenilir ağlarda kullanın.';
 	@override String get converterSaveAs => 'Dönüştürülmüş medyayı kaydetmek';
 	@override String get converterExtensionMismatch => 'Seçilen çıkış uzantısı ile bir fil adı seçin.';
 	@override String get converterUnsupportedInput => 'Bir ses veya video dosyasını seçin.';
@@ -3286,7 +3333,7 @@ class _Translations$universalMedia$tr extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Başlangıç FFmpeg...';
 	@override String get converterProgress => 'Bu bilgisayara dönüştürmek...';
 	@override String get converterComplete => 'Dönüşüm tamamlandı. yeni dosya hazır.';
-	@override String get converterFfmpegMissing => 'H.264, AAC ve MP3 desteği ile FFmpeg\'i kurun, sonra tekrar deneyin.';
+	@override String get converterFfmpegMissing => 'FFmpeg eksik veya bu formatı desteklemiyor.';
 	@override String get converterFailed => 'Dönüşüm başarısız oldu. kaynak dosyasının okunabileceğini ve varış noktası yeterli ücretsiz alanı olduğunu kontrol edin.';
 	@override String get converterCancelled => 'Dönüşüm iptal edildi. eksik çıkış kaldırıldı.';
 	@override String get converterDesktopOnly => 'Yerel dönüşüm FFmpeg yüklü masaüstü bilgisayarlarda mevcuttur.';
@@ -3314,6 +3361,9 @@ class _Translations$universalMedia$tr extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Ekran kaydı kurtarıldı.';
 	@override String get captureElapsedLabel => 'Kayıt Zamanı';
 	@override String get captureStart => 'Başlangıç kaydı';
+	@override String get capturePreview => 'Oynatıcıda önizle';
+	@override String get capturePreviewHelp => 'Seçilen kaynağı standart oynatıcıda önizleyin. Bu yalnızca geçerli oturum için kullanılır ve kayıt oluşturmaz. Cihaz desteği ve izinler MPV ile işletim sistemine bağlıdır. Önizleme yalnızca video kullanır; kaydedilen kayıtlara isteğe bağlı ses eklenebilir.';
+	@override String get capturePreviewActive => 'Canlı önizleme · kayıt yapılmıyor';
 	@override String get captureStop => 'durup kurtar';
 	@override String get captureMode => 'tutuklama';
 	@override String get shareMode => 'Paylaşım';
@@ -3633,7 +3683,6 @@ class _Translations$audiobook$tr extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Öncelikle Google Drive, OneDrive, Dropbox, WebDAV veya S3\'ü Dosyalar ve kitaplar\'a ekleyin.';
 	@override String get syncDestination => 'Sync Depolama Hesabı';
 	@override String get syncFolder => 'Sink dosyası veya prefix';
-	@override String get syncFolderHelp => 'WebDAV kaynağınızın içinde ayrı bir mevcut klasör veya özel bir S3 önizlemesi kullanın. kitap dosyaları asla değişmez.';
 	@override String get syncCode => 'Özel Sync Kodu';
 	@override String get syncCodeHelp => 'İlk cihazınızda bir kod oluşturun, sonra diğer cihazlarınızda o kodu girin. özel bir kopya tutun: şifreli durumunuzun anahtarıdır. her kişi için farklı bir kod kullanın.';
 	@override String get showCode => 'Görüntüleme veya gizleme Sink kodu';
@@ -3643,7 +3692,6 @@ class _Translations$audiobook$tr extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Bu kaynağı kaldırmak burada okuma ve dinleme senkronizasyonu devre dışı bırakacaktır. şifreli senkronizasyon dosyaları sağlayıcının içinde kalacaktır.';
 	@override String get syncReconnect => 'Depolama Hesabını Yeniden Bağlayın';
 	@override String lastSynced({required Object time}) => '${time} tarafından son olarak senkronize edildi';
-	@override String get syncPrivacy => 'Sadece şifreli ilerleme ve notlar kaydedilir. Ses ve e-kitap dosyaları, hesap tokenleri ve şifreleri yüklenmez. Google Drive ve OneDrive uygulama depolama kullanır; Dropbox PlezyNG Sync kullanır. Sync etkinleştirmek ek yazma erişimi isteyebilir. etkinleştirildiğinde, bu varış noktası ilerleme senkronize sahiptir; sunucunun ilerlemesi ayrı kalır.';
 	@override String get syncConflicts => 'Nereye geri dönmek istediğinizi seçin';
 	@override String get conflictHelp => 'Bu değişiklikler bağımsız olarak yapıldı. tutmak için pozisyon veya not versiyonunu seçin. daha sonraki bir zaman çizgisi veya daha yüksek bir yüzde otomatik olarak kazanmaz.';
 	@override String syncDevice({required Object device}) => 'Sürücü ${device}';
@@ -3837,7 +3885,6 @@ class _Translations$games$tr extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3862,7 +3909,6 @@ class _Translations$games$tr extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3894,8 +3940,6 @@ class _Translations$games$tr extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3903,14 +3947,12 @@ class _Translations$games$tr extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -3937,6 +3979,30 @@ class _Translations$deepLinks$tr extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name} olarak açılır';
 	@override String get copy => 'kopyası';
 	@override String get copied => 'Link kopyalanmış';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$tr extends Translations$householdSetup$en {
+	_Translations$householdSetup$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Ev kurulumu';
+}
+
+// Path: issueReport
+class _Translations$issueReport$tr extends Translations$issueReport$en {
+	_Translations$issueReport$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Sorun bildir';
+	@override String get instructions => 'Önceden doldurulmuş bir GitHub taslağını açmak için QR kodunu tarayın. İnceleyin ve hazır olduğunuzda gönderin.';
+	@override String get privacy => 'Taslakta uygulama sürümü, platform ve bağlantı sayısı bulunur. Sunucu adresleri, hesap ve profil adları, medya başlıkları ve dosya yolları eklenmez.';
+	@override String get logPrivacy => 'Günlükler isteğe bağlıdır. Yüklemeden önce inceleyin. Günlük kimliği herkese açık olabilecek taslağa eklenir.';
+	@override String get openDraft => 'GitHub taslağını aç';
 }
 
 // Path: appIcon.names
@@ -6064,6 +6130,32 @@ extension on TranslationsTr {
 			'videoControls.settingsButton' => 'Oynatma Ayarları',
 			'videoControls.tracksButton' => 'Ses ve Altyazı',
 			'videoControls.chaptersButton' => 'Kısımlar',
+			'videoControls.segmentLoopHelp' => 'Bu oynatma sırasında bir bölüm atın. A\'yı ayarlayın, daha sonra B\'yi zaman çizgisinde ayarlarsınız.',
+			'videoControls.setLoopStart' => 'Yürüyüş başlangıç (A)',
+			'videoControls.setLoopEnd' => 'Sıfır Sonu (B)',
+			'videoControls.clearSegmentLoop' => 'Temiz segment yuvarlak',
+			'videoControls.setLoopStartFirst' => 'Başlangıç (A) bitmeden önce bir yuva ayarlayın (B).',
+			'videoControls.loopEndAfterStart' => 'Başlangıçtan daha geç olması gerekir.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping bu playback için mevcut değildir.',
+			'videoControls.loopPointNotSet' => 'ayarlanmıyor',
+			'videoControls.bookmarksHelp' => 'Bookmarks bu cihazda kaydedilir. o zamana gitmek için birini seçin.',
+			'videoControls.bookmarksButton' => 'Bookmarkası',
+			'videoControls.chaptersAndBookmarks' => 'Bölümler ve Bookmarks',
+			'videoControls.segmentLoop' => 'Segment Yürüyüşü',
+			'videoControls.addBookmark' => 'Bookmark ekleyin',
+			'videoControls.bookmarkName' => 'Bookmark Adı',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Örneğin, açılan sahne',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark Hakkında ${n}',
+			'videoControls.bookmarkNameRequired' => 'Bu kitaplık için bir isim girin.',
+			'videoControls.deleteBookmark' => 'Bookmark Kaldır',
+			'videoControls.bookmarkLimitReached' => 'Bu bölümde zaten 100 kitaplık var.',
+			'videoControls.bookmarkUnavailable' => 'Bu yazıyı kaydetmek ya da kaldırmak mümkün değil.',
+			'videoControls.bookmarkSaved' => 'Bookmark kurtarıldı',
+			'videoControls.bookmarkDeleted' => 'Bookmark kaldırıldı',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop Noktası ${point} ayarlayın ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Hiçbir bölüm veya kitaplık mevcut değildir.',
 			'videoControls.versionQualityButton' => 'Sürüm ve Kalite',
 			'videoControls.versionColumnHeader' => 'Sürüm',
 			'videoControls.qualityColumnHeader' => 'Kalite',
@@ -6078,8 +6170,6 @@ extension on TranslationsTr {
 			'videoControls.exitFullscreenButton' => 'Tam ekrandan çık',
 			'videoControls.alwaysOnTopButton' => 'Her zaman üstte',
 			'videoControls.rotationLockButton' => 'Döndürme kilidi',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Ekranı kilitle',
 			'videoControls.screenLockButton' => 'Ekran kilidi',
 			'videoControls.timelineSlider' => 'Video zaman çubuğu',
@@ -6568,6 +6658,8 @@ extension on TranslationsTr {
 			'libraries.hideLibrary' => 'Kitaplığı gizle',
 			'libraries.libraryOptions' => 'Kitaplık seçenekleri',
 			'libraries.content' => 'kitaplık içeriği',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Kitaplık seç',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtreler (${count})',
 			'libraries.noRecommendations' => 'Öneri bulunmuyor',
@@ -6592,8 +6684,6 @@ extension on TranslationsTr {
 			'libraries.filterCategories.year' => 'Yıl',
 			'libraries.filterCategories.contentRating' => 'İçerik Derecelendirmesi',
 			'libraries.filterCategories.tag' => 'Etiket',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'İzlenmemiş',
 			'libraries.filterCategories.unplayed' => 'Oynatılmamış',
 			'libraries.filterCategories.favorites' => 'Favoriler',
@@ -7035,6 +7125,7 @@ extension on TranslationsTr {
 			'music.visualizerProfileLoading' => 'Track Analysis ile ilgili...',
 			'music.visualizerAmbientMotion' => 'Ambient hareketleri',
 			'music.visualizerPlexLoudness' => 'Plex sesli',
+			'music.visualizerLiveAudio' => 'Canlı ses analizi',
 			'music.visualizerPreviousPreset' => 'Önceki Görsel Stil',
 			'music.visualizerNextPreset' => 'Next Görsel Stil',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7081,6 +7172,8 @@ extension on TranslationsTr {
 			'watchTogether.codeCopied' => 'Oda kodu kopyalandı',
 			'watchTogether.shareInvite' => 'Daveti Paylaş',
 			'watchTogether.inviteCopied' => 'Davet kopyalandı. Bir mesaja yapıştırın.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG\'de Birlikte İzle odama katıl: Birlikte İzle\'yi aç, Odaya Katıl seçeneğini seç ve ${code} kodunu gir.',
 			'watchTogether.openSessionControls' => 'Birlikte İzle oturum kontrollerini aç',
 			'watchTogether.reconnecting' => 'Yeniden bağlanılıyor...',
@@ -7106,8 +7199,6 @@ extension on TranslationsTr {
 			'watchTogether.playAnyway' => 'Yine de Oynat',
 			'watchTogether.chooseAnotherCopy' => 'Başka Kopya Seç',
 			'watchTogether.dontPlay' => 'Oynatma',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Bu video sizde yok',
 			'watchTogether.unavailableDescription' => 'PlezyNG bunu kitaplıklarınızda bulamadı. Kendiniz bir kopya seçin veya tekrar arayın.',
 			'watchTogether.chooseCopy' => 'Kopya Seç',
@@ -7461,6 +7552,12 @@ extension on TranslationsTr {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Oynatıcıda ekranın en yüksek parlaklığına göre eşleyin, ardından sonucu birleştiriciye bildirin.',
 			'videoSettings.hdrToneMappingFailed' => 'HDR ton eşleme değiştirilemedi — önceki mod hâlâ etkin.',
 			'videoSettings.audioOutput' => 'Ses Çıkışı',
+			'videoSettings.videoTrack' => 'Video parçası',
+			'videoSettings.videoTrackDescription' => 'Görüntülenecek video akışını seçin. Dosyada alternatif video parçaları varsa MPV oynatımında kullanılabilir.',
+			'videoSettings.videoTrackDefault' => 'Varsayılan',
+			'videoSettings.videoTrackUnavailable' => 'Kullanılabilir alternatif video parçası yok.',
+			'videoSettings.videoTrackFailed' => 'Video parçası değiştirilemedi.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Parça ${id}',
 			'videoSettings.performanceOverlay' => 'Performans Katmanı',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7468,10 +7565,17 @@ extension on TranslationsTr {
 			'videoSettings.audioOutputSpatial' => 'Uzamsal Ses',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Eşitleme',
-			'videoSettings.audioEqualizerDescription' => 'Bu cihaz için beş frekans bantını ayarlayın. mpv\'de mevcut; aktif bir EQ sesini dekore eder ve uyumlu durdurur.',
+			'videoSettings.audioEqualizerDescription' => '10 Band Equalizer için MPVSes filtreleri dekodlu ses kullanır ve passthrough devre dışı bırakır.',
 			'videoSettings.audioEqualizerFlat' => 'Yumuşak',
 			'videoSettings.audioEqualizerActive' => 'Özel',
 			'videoSettings.audioEqualizerSaveFailed' => 'Ses ekvator ayarlarını kaydetemez.',
+			'videoSettings.audioEffectsDescription' => 'Effects decoded audio kullanır, bu yüzden passthrough devre dışı bırakılır. oda ortamı ve stereo genişlemesi MPV İnşaat ve Track.',
+			'videoSettings.audioStereoWidth' => 'Stereo Genişletme',
+			'videoSettings.audioSpatializer' => 'Oda Atmosfer',
+			'videoSettings.audioSpatializerDescription' => 'Sessiz oda yansıtıcıları ekleyin.',
+			'videoSettings.audioPitch' => 'Pitch Değişimi',
+			'videoSettings.audioPitchDescription' => 'Hız değişikliği olmadan topu değiştirin. MPV İnşaat dahil edilmelidir Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Bu etki bu yol için mevcut değildir veya MPV İnşaat için.',
 			'videoSettings.backgroundVideoAudio' => 'Video Audio Altyazıları',
 			'videoSettings.backgroundVideoAudioDescription' => 'Oynayı bıraktığınızda video sesini oynatmaya devam edin; resim geri dönene kadar gizlenir. Android bir medya oynatma bildirimi kullanır.',
 			'videoSettings.audioNormalization' => 'Ses Yüksekliğini Normalleştir',
@@ -7582,6 +7686,8 @@ extension on TranslationsTr {
 			'metadataEdit.metadataUpdated' => 'Meta veriler güncellendi',
 			'metadataEdit.metadataUpdateFailed' => 'Meta veriler güncellenemedi',
 			'metadataEdit.artworkUpdated' => 'Görseller güncellendi',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Görseller güncellenemedi',
 			'metadataEdit.noArtworkAvailable' => 'Görsel bulunmuyor',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Görsel seçeneği ${index}',
@@ -7620,8 +7726,6 @@ extension on TranslationsTr {
 			'metadataEdit.shownWithForeignAudio' => 'Yabancı sesle gösterilen',
 			'metadataEdit.alwaysEnabled' => 'Her zaman etkin',
 			'metadataEdit.tags' => 'Etiketler',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Etiket ekle',
 			'metadataEdit.genre' => 'Tür',
 			'metadataEdit.director' => 'Yönetmen',
@@ -8094,6 +8198,12 @@ extension on TranslationsTr {
 			'universalMedia.choosePlaylist' => 'Playlist dosyasını seçin',
 			'universalMedia.openPlaylist' => 'Açık Playlist',
 			'universalMedia.playlistFormatsHelp' => 'Bir oynatma listesi en fazla 1000 öğe ve 2 MB içerebilir. HLS akışlar olarak açıktır, böylece oyuncu bir kaliteyi seçebilir.',
+			'universalMedia.saveQueuePlaylist' => 'Sırayı çalma listesi olarak kaydet',
+			'universalMedia.queuePlaylistSaved' => 'Çalma listesi medya dosyalarının yanına kaydedildi.',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.queuePlaylistUnavailable' => 'Bu sıra yeniden kullanılabilir bir yerel çalma listesi olarak kaydedilemiyor.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Sıradaki dosyalarla aynı klasörde bir kayıt konumu seçin.',
 			'universalMedia.noFavorites' => 'Hiç kaydedilmemiş akış favori henüz. Favoriler bu profilde kalır.',
 			'universalMedia.removeFavorite' => 'En sevdiğiniz akışları kaldırın',
 			'universalMedia.filesHelp' => 'Ses, video veya ISO dosyalarını geçici bir çerçeve için seçin. Dosyalar ve URL\'ler kütüphane geçmişine eklenmez.',
@@ -8134,8 +8244,6 @@ extension on TranslationsTr {
 			'universalMedia.contrast' => 'kontrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.saturation' => 'Satürbasyon',
 			'universalMedia.view360' => '360 derecelik video için düz görünüm',
 			'universalMedia.view360Help' => 'MPV\'nin bu görünüm için FFmpeg\'in v360 filtresine ihtiyacı var.',
@@ -8154,12 +8262,13 @@ extension on TranslationsTr {
 			'universalMedia.replaceRecording' => 'Dosya değiştirme',
 			'universalMedia.discHelp' => 'Bu bilgisayarın optik sürücüsünde bir disk açın.Ayrıca cihaz dosyalarından bir ISO görüntüsü de açabilirsiniz.',
 			'universalMedia.discs' => 'optik disk',
+			'universalMedia.editionOrTitle' => 'Sürüm veya disk başlığı',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray için',
 			'universalMedia.audioCd' => 'Sesli CD',
 			'universalMedia.discAvailability' => 'Disk oynatma, uyumlu bir MPV yapılandırması, desteklenen sürücü ve işletim sistemi izni gerektirir. ticari disk koruması aşamaz.',
 			'universalMedia.converterTitle' => 'Yerel bir medya dosyasını dönüştürmek',
-			'universalMedia.converterHelp' => 'Bir MP4, M4A veya MP3 kopyasını yapmak için FFmpeg kullanın.',
+			'universalMedia.converterHelp' => 'Yerel bir dosyayı dönüştürün veya yeniden yapıştırın FFmpeg.',
 			'universalMedia.converterIntro' => 'Yerel bir ses veya video dosyasını daha fazla cihazda çalışan bir biçime dönüştürün.',
 			'universalMedia.converterPrivacy' => 'FFmpeg bu bilgisayara yüklenmelidir. dönüşüm yalnızca yerel dosyaları okuyor. akışları indirmez veya DRM kaldırmaz.',
 			'universalMedia.converterChooseInput' => 'Yerel bir medya dosyasını seçin',
@@ -8167,6 +8276,8 @@ extension on TranslationsTr {
 			'universalMedia.converterMp4' => 'MP4 H.264 ve AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC ses',
 			'universalMedia.converterMp3' => 'MP3 · Sesli',
+			'universalMedia.allowFtp' => 'FTP izin verin',
+			'universalMedia.allowFtpHelp' => 'FTP şifreleme olmadan medyayı gönderir. yalnızca güvenilir ağlarda kullanın.',
 			'universalMedia.converterSaveAs' => 'Dönüştürülmüş medyayı kaydetmek',
 			'universalMedia.converterExtensionMismatch' => 'Seçilen çıkış uzantısı ile bir fil adı seçin.',
 			'universalMedia.converterUnsupportedInput' => 'Bir ses veya video dosyasını seçin.',
@@ -8176,7 +8287,7 @@ extension on TranslationsTr {
 			'universalMedia.converterStarting' => 'Başlangıç FFmpeg...',
 			'universalMedia.converterProgress' => 'Bu bilgisayara dönüştürmek...',
 			'universalMedia.converterComplete' => 'Dönüşüm tamamlandı. yeni dosya hazır.',
-			'universalMedia.converterFfmpegMissing' => 'H.264, AAC ve MP3 desteği ile FFmpeg\'i kurun, sonra tekrar deneyin.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg eksik veya bu formatı desteklemiyor.',
 			'universalMedia.converterFailed' => 'Dönüşüm başarısız oldu. kaynak dosyasının okunabileceğini ve varış noktası yeterli ücretsiz alanı olduğunu kontrol edin.',
 			'universalMedia.converterCancelled' => 'Dönüşüm iptal edildi. eksik çıkış kaldırıldı.',
 			'universalMedia.converterDesktopOnly' => 'Yerel dönüşüm FFmpeg yüklü masaüstü bilgisayarlarda mevcuttur.',
@@ -8204,6 +8315,9 @@ extension on TranslationsTr {
 			'universalMedia.captureSaved' => 'Ekran kaydı kurtarıldı.',
 			'universalMedia.captureElapsedLabel' => 'Kayıt Zamanı',
 			'universalMedia.captureStart' => 'Başlangıç kaydı',
+			'universalMedia.capturePreview' => 'Oynatıcıda önizle',
+			'universalMedia.capturePreviewHelp' => 'Seçilen kaynağı standart oynatıcıda önizleyin. Bu yalnızca geçerli oturum için kullanılır ve kayıt oluşturmaz. Cihaz desteği ve izinler MPV ile işletim sistemine bağlıdır. Önizleme yalnızca video kullanır; kaydedilen kayıtlara isteğe bağlı ses eklenebilir.',
+			'universalMedia.capturePreviewActive' => 'Canlı önizleme · kayıt yapılmıyor',
 			'universalMedia.captureStop' => 'durup kurtar',
 			'universalMedia.captureMode' => 'tutuklama',
 			'universalMedia.shareMode' => 'Paylaşım',
@@ -8493,7 +8607,6 @@ extension on TranslationsTr {
 			'audiobook.addSyncSource' => 'Öncelikle Google Drive, OneDrive, Dropbox, WebDAV veya S3\'ü Dosyalar ve kitaplar\'a ekleyin.',
 			'audiobook.syncDestination' => 'Sync Depolama Hesabı',
 			'audiobook.syncFolder' => 'Sink dosyası veya prefix',
-			'audiobook.syncFolderHelp' => 'WebDAV kaynağınızın içinde ayrı bir mevcut klasör veya özel bir S3 önizlemesi kullanın. kitap dosyaları asla değişmez.',
 			'audiobook.syncCode' => 'Özel Sync Kodu',
 			'audiobook.syncCodeHelp' => 'İlk cihazınızda bir kod oluşturun, sonra diğer cihazlarınızda o kodu girin. özel bir kopya tutun: şifreli durumunuzun anahtarıdır. her kişi için farklı bir kod kullanın.',
 			'audiobook.showCode' => 'Görüntüleme veya gizleme Sink kodu',
@@ -8503,7 +8616,6 @@ extension on TranslationsTr {
 			'audiobook.syncSourceDisconnect' => 'Bu kaynağı kaldırmak burada okuma ve dinleme senkronizasyonu devre dışı bırakacaktır. şifreli senkronizasyon dosyaları sağlayıcının içinde kalacaktır.',
 			'audiobook.syncReconnect' => 'Depolama Hesabını Yeniden Bağlayın',
 			'audiobook.lastSynced' => ({required Object time}) => '${time} tarafından son olarak senkronize edildi',
-			'audiobook.syncPrivacy' => 'Sadece şifreli ilerleme ve notlar kaydedilir. Ses ve e-kitap dosyaları, hesap tokenleri ve şifreleri yüklenmez. Google Drive ve OneDrive uygulama depolama kullanır; Dropbox PlezyNG Sync kullanır. Sync etkinleştirmek ek yazma erişimi isteyebilir. etkinleştirildiğinde, bu varış noktası ilerleme senkronize sahiptir; sunucunun ilerlemesi ayrı kalır.',
 			'audiobook.syncConflicts' => 'Nereye geri dönmek istediğinizi seçin',
 			'audiobook.conflictHelp' => 'Bu değişiklikler bağımsız olarak yapıldı. tutmak için pozisyon veya not versiyonunu seçin. daha sonraki bir zaman çizgisi veya daha yüksek bir yüzde otomatik olarak kazanmaz.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Sürücü ${device}',
@@ -8602,6 +8714,8 @@ extension on TranslationsTr {
 			'sourceSetup.nfsEncryptionFailure' => 'Şifreli NFS için her iki NAS hizmetinde RFC 9289 ve TLS 1.3 desteğini, sertifika adını ve paylaşımın UID/GID değerlerini kontrol edin. PlezyNG bu bağlantıyı şifreleme olmadan yeniden denemeyecek.',
 			'sourceSetup.sourceConnecting' => 'Kaynağa bağlanılıyor',
 			'sourceSetup.metadataSearchPrivacy' => 'Bu başlık araması Trakt’a gönderilir. Girdiğiniz başlığı gönderir; videoyu veya kaynak kimlik bilgilerini göndermez.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Bir eşleşme seç',
 			'sourceSetup.metadataMatchHelp' => 'Seçmeden önce başlığı ve yılı kontrol edin. Trakt aranan başlığı alır; video kendi kaynağında kalır.',
 			'sourceSetup.metadataNoMatches' => 'Çevrimiçi eşleşen başlık bulunamadı. Başka bir başlık deneyin.',
@@ -8648,8 +8762,6 @@ extension on TranslationsTr {
 			'sourceSetup.sharedLibraryInvalid' => '8-100 harf, sayılar, noktalar, alt puanlar veya hyphens kullanın.',
 			'sourceSetup.generateSharedLibraryId' => 'Paylaşılan bir kütüphane kimliği oluşturun',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead talepleri',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Daha fazla paralel okuma hızlı bir NAS veya ağ üzerindeki geçiş kapasitesini geliştirebilir. 1 kullanın, eğer sunucu eşzamanlı talepleri sınırlarsa.',
 			'sourceSetup.nfsReadTest' => 'NFS performansını ölçmek',
 			'sourceSetup.nfsReadTestHelp' => 'Bu NAS bağlantısını ölçmek için en büyük dosyadan 64 MiB\'ye kadar okur. bu ağ bant genişliği kullanır.',
@@ -8672,7 +8784,6 @@ extension on TranslationsTr {
 			'comics.collections' => 'Koleksiyonlar',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8697,7 +8808,6 @@ extension on TranslationsTr {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8729,8 +8839,6 @@ extension on TranslationsTr {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8738,14 +8846,12 @@ extension on TranslationsTr {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'Bu Plezy bağlantısı geçerli değildir.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'Hiçbir profil "${profile}" ile eşleşmiyor.',
 			'deepLinks.serverUnavailable' => 'Bu bağlantı için sunucuya ulaşamadım.',
@@ -8763,6 +8869,12 @@ extension on TranslationsTr {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} olarak açılır',
 			'deepLinks.copy' => 'kopyası',
 			'deepLinks.copied' => 'Link kopyalanmış',
+			'householdSetup.title' => 'Ev kurulumu',
+			'issueReport.title' => 'Sorun bildir',
+			'issueReport.instructions' => 'Önceden doldurulmuş bir GitHub taslağını açmak için QR kodunu tarayın. İnceleyin ve hazır olduğunuzda gönderin.',
+			'issueReport.privacy' => 'Taslakta uygulama sürümü, platform ve bağlantı sayısı bulunur. Sunucu adresleri, hesap ve profil adları, medya başlıkları ve dosya yolları eklenmez.',
+			'issueReport.logPrivacy' => 'Günlükler isteğe bağlıdır. Yüklemeden önce inceleyin. Günlük kimliği herkese açık olabilecek taslağa eklenir.',
+			'issueReport.openDraft' => 'GitHub taslağını aç',
 			_ => null,
 		};
 	}

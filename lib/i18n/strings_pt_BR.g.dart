@@ -84,6 +84,8 @@ class TranslationsPtBr extends TranslationsPt with BaseTranslations<AppLocale, T
 	@override late final Translations$homeLayout$pt_BR homeLayout = Translations$homeLayout$pt_BR.internal(_root);
 	@override late final Translations$fileSources$pt_BR fileSources = Translations$fileSources$pt_BR.internal(_root);
 	@override late final Translations$lending$pt_BR lending = Translations$lending$pt_BR.internal(_root);
+	@override late final Translations$householdSetup$pt_BR householdSetup = Translations$householdSetup$pt_BR.internal(_root);
+	@override late final Translations$issueReport$pt_BR issueReport = Translations$issueReport$pt_BR.internal(_root);
 }
 
 // Path: cast
@@ -804,6 +806,30 @@ class Translations$lending$pt_BR extends Translations$lending$pt {
 	@override String get cancel => 'Cancelar';
 }
 
+// Path: householdSetup
+class Translations$householdSetup$pt_BR extends Translations$householdSetup$pt {
+	Translations$householdSetup$pt_BR.internal(TranslationsPtBr root) : this._root = root, super.internal(root);
+
+	final TranslationsPtBr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuração da casa';
+}
+
+// Path: issueReport
+class Translations$issueReport$pt_BR extends Translations$issueReport$pt {
+	Translations$issueReport$pt_BR.internal(TranslationsPtBr root) : this._root = root, super.internal(root);
+
+	final TranslationsPtBr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Relatar um problema';
+	@override String get instructions => 'Leia o QR code para abrir um rascunho do GitHub já preenchido. Revise e envie quando estiver pronto.';
+	@override String get privacy => 'O rascunho inclui a versão do app, a plataforma e o número de conexões. Não inclui endereços de servidores, nomes de contas e perfis, títulos de mídia ou caminhos de arquivos.';
+	@override String get logPrivacy => 'Os registros são opcionais. Revise antes de enviar. O ID do registro será incluído no rascunho, que pode ser público.';
+	@override String get openDraft => 'Abrir rascunho do GitHub';
+}
+
 // Path: common.mediaKind
 class Translations$common$mediaKind$pt_BR extends Translations$common$mediaKind$pt {
 	Translations$common$mediaKind$pt_BR.internal(TranslationsPtBr root) : this._root = root, super.internal(root);
@@ -1485,6 +1511,12 @@ extension on TranslationsPtBr {
 			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(count, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuto', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutos', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutos', ), 
 			'fileSources.googleDrive' => 'Google Drive',
 			'lending.cancel' => 'Cancelar',
+			'householdSetup.title' => 'Configuração da casa',
+			'issueReport.title' => 'Relatar um problema',
+			'issueReport.instructions' => 'Leia o QR code para abrir um rascunho do GitHub já preenchido. Revise e envie quando estiver pronto.',
+			'issueReport.privacy' => 'O rascunho inclui a versão do app, a plataforma e o número de conexões. Não inclui endereços de servidores, nomes de contas e perfis, títulos de mídia ou caminhos de arquivos.',
+			'issueReport.logPrivacy' => 'Os registros são opcionais. Revise antes de enviar. O ID do registro será incluído no rascunho, que pode ser público.',
+			'issueReport.openDraft' => 'Abrir rascunho do GitHub',
 			_ => null,
 		};
 	}

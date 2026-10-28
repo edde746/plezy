@@ -319,8 +319,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     Future<void> onWatchWithServicesPressed() async {
       if (!_canUseDetail || !context.mounted) return;
       final streaming = context.read<RemoteStreamingProvider>();
-      bool hasConnectedOption() =>
-          streaming.addons.any((addon) => addon.enabled) || streaming.accounts.isNotEmpty;
+      bool hasConnectedOption() => streaming.addons.any((addon) => addon.enabled) || streaming.accounts.isNotEmpty;
       if (!hasConnectedOption()) {
         await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
         if (!context.mounted || !hasConnectedOption()) return;
@@ -415,8 +414,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           )
         : null;
 
-    final remoteStreamAction = !widget.isOffline &&
-            (metadata.isMovie || metadata.isEpisode || metadata.isShow || metadata.isSeason)
+    final remoteStreamAction =
+        !widget.isOffline && (metadata.isMovie || metadata.isEpisode || metadata.isShow || metadata.isSeason)
         ? FocusableAction(
             debugLabel: 'detail_watch_with_services',
             onPressed: onWatchWithServicesPressed,
@@ -729,15 +728,52 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       item: metadata,
       onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
       onPlayTrailer: onPlayTrailer,
-      extraEntries: onWatchWithServices == null
-          ? const []
-          : [
-              MediaMenuExtraEntry(
-                icon: Symbols.cloud_rounded,
-                label: t.streaming.watchWithServices,
-                onSelected: onWatchWithServices,
+      extraEntries: [
+        if (onWatchWithServices != null)
+          MediaMenuExtraEntry(
+            icon: Symbols.cloud_rounded,
+            label: t.streaming.watchWithServices,
+            onSelected: onWatchWithServices,
+          ),
+        ...switch (ExternalAccessDirectory.forMediaKind(metadata.kind)) {
+          ExternalAccessCategory.video => [
+            MediaMenuExtraEntry(
+              icon: Symbols.open_in_new_rounded,
+              label: t.explore.detail.links,
+              onSelected: () => unawaited(
+                Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => ExternalAccessScreen(
+                      title: metadata.displayTitle,
+                      categories: const [ExternalAccessCategory.video, ExternalAccessCategory.rentals],
+                    ),
+                  ),
+                ),
               ),
-            ],
+            ),
+          ],
+          ExternalAccessCategory.music => [
+            MediaMenuExtraEntry(
+              icon: Symbols.open_in_new_rounded,
+              label: t.explore.detail.links,
+              onSelected: () => unawaited(
+                Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => ExternalAccessScreen(
+                      title: metadata.displayTitle,
+                      creator: metadata.trackArtistTitle ?? metadata.albumArtistTitle ?? '',
+                      categories: const [ExternalAccessCategory.music],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          _ => const [],
+        },
+      ],
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
           onPressed: () {

@@ -1,4 +1,5 @@
 import '../../models/livetv_channel.dart';
+import '../../models/livetv_program.dart';
 
 /// Launch parameters for a live TV session — pure UX data. A
 /// [VideoPlayerScreen] plays live TV iff it was constructed with one of
@@ -35,10 +36,15 @@ class LiveTvSessionArgs {
   /// the player always ask.
   final LiveTvStartPosition startPosition;
 
+  /// Optional EPG airing to launch through a playlist catch-up template.
+  /// Server-backed live channels and ordinary channel launches leave it null.
+  final LiveTvProgram? initialProgram;
+
   const LiveTvSessionArgs({
     required this.channel,
     this.channels,
     this.currentChannelIndex,
     this.startPosition = LiveTvStartPosition.ask,
+    this.initialProgram,
   });
 }

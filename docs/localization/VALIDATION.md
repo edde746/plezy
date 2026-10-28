@@ -6,6 +6,16 @@ The initial follow-up used main `027059a836f62dc6aab7212eef9d1935273188e8`.
 Required PR merge-conflict resolution preserves the later main snapshot
 `9a17bbd0bff73071079c8b1bc4d85b77557b42fe`, including its 19 additional source paths.
 
+## Explicit English fallback entries
+
+`lib/i18n/english_fallbacks.json` lists the Steam connected-experience messages
+that intentionally remain empty in non-English catalogs until their translations
+are reviewed. `slang.yaml` uses `base_locale_empty_string`, so those entries
+resolve to the English source text at runtime. `check_localizations.py` reports
+the fallback count and allows only listed keys; any other missing or empty
+translation, placeholder mismatch, or stale fallback entry still fails the gate.
+Remove a key from the list when its reviewed translations replace the fallback.
+
 ## Merge-resolution verification
 
 - Full Flutter analysis: no issues. Structural coverage, placeholders, source

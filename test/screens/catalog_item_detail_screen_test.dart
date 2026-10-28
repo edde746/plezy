@@ -1,3 +1,5 @@
+import '../utils/display_text_finder.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -1158,7 +1160,7 @@ void main() {
     // each.
     expect(find.byType(HubSection), findsOneWidget);
     expect(find.text(t.discover.moreLikeThis), findsOneWidget);
-    expect(find.textContaining('A Similar Movie'), findsOneWidget);
+    expect(findDisplayText('A Similar Movie'), findsOneWidget);
 
     expect(find.text(t.explore.detail.relatedTitles), findsOneWidget);
     expect(find.text(t.explore.relation.sequel), findsOneWidget);
@@ -1522,7 +1524,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
   });
 
-  testWidgets('a movie with an external id offers contextual service streams', (tester) async {
+  testWidgets('service streams are available and copy navigation returns to the overview', (tester) async {
     final source = _FakeCatalogSource(supportsWatchlist: false);
     await _pumpDetail(
       tester,
@@ -1538,6 +1540,16 @@ void main() {
     );
     expect(find.byType(FocusableActionBar), findsOneWidget);
     expect(find.byTooltip(t.streaming.watchWithServices), findsOneWidget);
+
+    final tile = tester.widget<FocusableListTile>(
+      find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),
+    );
+    tile.focusNode!.requestFocus();
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
   });
 
   testWidgets('pending watchlist action keeps initial focus and its press retries the snapshot', (tester) async {

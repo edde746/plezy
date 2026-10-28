@@ -15,14 +15,57 @@ native manifest and dispatches `snapetech-org/mpv-build` if the published
 artifacts are stale or incomplete. It verifies Apple, Android, Linux, and
 Windows native groups before touching PlezyNG.
 
+When a completed native run has failed platforms, the orchestrator can recover
+other groups whose publishing jobs succeeded. It checks the manifest artifact's
+GitHub digest, the current source content keys, and every published asset's
+checksum before recording that group on native `main`. Only manifests from an
+explicit private build of an ancestor of current `main` are eligible. The next
+native build then rebuilds only the groups still stale. A partial recovery never
+updates PlezyNG's pins or bypasses the final all-platform verification.
+
+Android CI, release, and embedded-engine workflows share
+`scripts/prepare_android_sdk.py`. It configures Java and Gradle proxy settings
+before SDK setup, reads every checked-in Android module's SDK/NDK/CMake pins,
+installs those exact packages, and checks the installed tools. This includes
+Steam's CMake 3.22.1 alongside the app/libass CMake 4.1.2. A fresh runner must
+not depend on Gradle silently downloading missing toolchains during compilation.
+
+Windows CI and release jobs provision NuGet from `windows/tool/build-toolchain.lock.json`
+before Flutter configures its plugins. The installer job also provisions Inno Setup
+from that lock; both downloads require matching hashes and publisher signatures.
+`-VerifyOnly` checks the installed tools before compilation or packaging. Windows
+x64 and ARM64 use the private PC pool; the Mac is reserved for Apple and Linux ARM
+work. See [the Windows toolchain runbook](../../windows/tool/build-toolchain.md).
+
+Release-channel workflows set `GH_REPO` before checkout, so their release gates
+and downloads do not depend on a previous workspace. The runner bootstrap installs
+native gem compilation and distribution package tools before accepting publication
+jobs; Fastlane, COPR and PPA jobs verify them without sudo before use. Relay container publication
+passes the private proxy into both the BuildKit daemon and Docker's predefined
+proxy build arguments; the Dockerfile does not persist those settings in the
+runtime image. See [Docker's proxy arguments](https://docs.docker.com/build/building/variables/#proxy-arguments).
+
+Snap packaging uses Canonical's digest-pinned multi-platform core24 OCI image
+from `linux/packaging/snap/toolchain.lock.json`. The native Linux JIT guest runs
+it with Podman and explicit proxy settings, without a nested LXD build or a
+snapd daemon. `scripts/build_private_snap.sh` rejects an architecture mismatch,
+verifies the image architecture and completed SquashFS, and removes its own
+container after completion or failure. The container supplies Ubuntu 24.04
+regardless of the guest's distribution; only the job's packaging directory is
+mounted into it. See [Canonical's Snapcraft images](https://github.com/canonical/snapcraft-rocks).
+
 After native artifacts verify, the command verifies the FFmpeg source archive
 signature against FFmpeg's pinned release-key fingerprint, records its exact
 SHA-256 in the Android header build, and runs
 `scripts/set_native_revision.sh` for the published artifact-manifest commit.
 It pushes that focused pin update to PlezyNG `main`, waits for CI on that exact
 commit, creates the matching `v<version>` tag, and dispatches the all-platform
-release build. The release build includes the webOS and Tizen ARM candidates by
-default. Apple jobs refresh their SwiftPM mirror after the native pin changes.
+release build. The release build compiles the webOS and Tizen ARM candidates by
+default. The validated Tizen tester package and its re-signing handoff are
+attached to the versioned release. The webOS IPK remains excluded from public
+release assets until the existing artifact eligibility gate passes and the
+operator opts in. Apple jobs refresh their SwiftPM mirror after the native pin
+changes.
 Before publication, the orchestrator checks that every required release asset
 exists. `--publish` then promotes the GitHub draft and sequentially dispatches
 the configured store, package, container, appcast, and Discord workflows. It

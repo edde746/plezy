@@ -15,6 +15,8 @@ import 'package:provider/provider.dart';
 import '../../../focus/focusable_slider.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../models/shader_preset.dart';
+import '../../../models/motion_clarity.dart';
+import '../../../models/player_setting_scope.dart';
 import '../../../media/ids.dart';
 import '../../../media/media_file_info.dart';
 import '../../../media/media_item.dart';
@@ -25,6 +27,7 @@ import '../../../mpv/player/player_native.dart';
 import '../../../providers/shader_provider.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/scoped_player_prefs.dart';
+import '../../../services/motion_clarity_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../services/video_filter_manager.dart';
@@ -64,6 +67,8 @@ enum _SettingsView {
   hdrToneMapping,
   audioChannelLimit,
   audioEqualizer,
+  motionClarity,
+  videoTrack,
 }
 
 class _SettingsMenuItem extends StatelessWidget {
@@ -352,11 +357,15 @@ class VideoSettingsSheet extends StatefulWidget {
   /// auto-hide) is read straight off it.
   final TrackControlsState trackControlsState;
 
+  /// Opens directly to motion controls when launched from the player quick action.
+  final bool openMotionClarity;
+
   const VideoSettingsSheet({
     super.key,
     required this.player,
     this.supportsHdrControl,
     required this.trackControlsState,
+    this.openMotionClarity = false,
   });
 
   @override
@@ -383,6 +392,19 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late HdrToneMapping _hdrToneMapping;
   late AudioChannelLimit _audioChannelLimit;
   late List<double> _audioEqualizerGains;
+  late MotionClarityPreset _motionPreset;
+  late MotionTemporalKernel _motionKernel;
+  late int _motionThresholdPercent;
+  late MotionClarityEngine _motionEngine;
+  late MotionClarityOutputRate _motionOutputRate;
+  late MotionClarityMciQuality _motionMciQuality;
+  MotionClarityApplyResult? _motionStatus;
+  double? _motionSourceFps;
+  bool _motionComparisonBypass = false;
+  late PlayerAudioEffects _audioEffects;
+  late PlayerAudioEffects _acceptedAudioEffects;
+  Future<void> _audioEffectsWrite = Future<void>.value();
+  int _audioEffectsWriteGeneration = 0;
 
   TrackControlsState get _state => widget.trackControlsState;
 
@@ -408,6 +430,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   @override
   void initState() {
     super.initState();
+    if (widget.openMotionClarity) _currentView = _SettingsView.motionClarity;
     _audioSyncOffset = _state.audioSyncOffset;
     _subtitleSyncOffset = _state.subtitleSyncOffset;
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
@@ -416,6 +439,34 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _audioEqualizerGains = SettingsService.audioEqualizerBandPrefs
         .map((pref) => SettingsService.instance.read(pref))
         .toList(growable: false);
+    final motionSessionOnly =
+        SettingsService.instance.read(SettingsService.motionClarityScope) == PlayerSettingScope.off;
+    final motionService = MotionClarityService.forPlayer(widget.player);
+    _motionPreset = motionSessionOnly
+        ? motionService.currentPreset
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _state.metadata);
+    _motionKernel = motionSessionOnly
+        ? motionService.currentKernel
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _state.metadata);
+    _motionThresholdPercent = motionSessionOnly
+        ? motionService.currentThresholdPercent
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _state.metadata);
+    _motionEngine = motionSessionOnly
+        ? motionService.currentEngine
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, _state.metadata);
+    _motionOutputRate = motionSessionOnly
+        ? motionService.currentOutputRate
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, _state.metadata);
+    _motionMciQuality = motionSessionOnly
+        ? motionService.currentMciQuality
+        : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, _state.metadata);
+    unawaited(_refreshMotionClarityStatus());
+    _audioEffects = (
+      stereoWidth: SettingsService.instance.read(SettingsService.audioStereoWidth),
+      spatializer: SettingsService.instance.read(SettingsService.audioSpatializer),
+      pitchSemitones: SettingsService.instance.read(SettingsService.audioPitchShiftSemitones),
+    );
+    _acceptedAudioEffects = _audioEffects;
     _loadDebugDvConversionMode();
     if (_probesHdrSupport) {
       _hdrSupportLifecycle = AppLifecycleListener(onResume: _refreshLinuxHdrSupport, onShow: _refreshLinuxHdrSupport);
@@ -686,6 +737,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.settings.audioChannelLimit;
       case _SettingsView.audioEqualizer:
         return t.videoSettings.audioEqualizer;
+      case _SettingsView.motionClarity:
+        return t.videoSettings.motionClarity;
+      case _SettingsView.videoTrack:
+        return t.videoSettings.videoTrack;
     }
   }
 
@@ -713,6 +768,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.speaker_group_rounded;
       case _SettingsView.audioEqualizer:
         return Symbols.graphic_eq_rounded;
+      case _SettingsView.motionClarity:
+        return Symbols.blur_on_rounded;
+      case _SettingsView.videoTrack:
+        return Symbols.video_library_rounded;
     }
   }
 
@@ -828,6 +887,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return ListView(
       shrinkWrap: true,
       children: [
+        StreamBuilder<Tracks>(
+          stream: widget.player.streams.tracks,
+          initialData: widget.player.state.tracks,
+          builder: (context, snapshot) {
+            final tracks = snapshot.data?.video ?? const <VideoTrack>[];
+            if (widget.player.playerType != 'mpv' || tracks.length < 2) return const SizedBox.shrink();
+            VideoTrack? selected;
+            for (final track in tracks) {
+              if (track.isSelected) {
+                selected = track;
+                break;
+              }
+            }
+            return _SettingsMenuItem(
+              icon: Symbols.video_library_rounded,
+              title: t.videoSettings.videoTrack,
+              valueText: selected == null ? t.videoSettings.videoTrackDefault : _videoTrackLabel(selected),
+              onTap: () => _navigateTo(_SettingsView.videoTrack),
+            );
+          },
+        ),
         // Playback Speed - hidden for live TV and when user cannot control playback
         if (_state.canControl && !_state.isLive)
           StreamBuilder<double>(
@@ -972,10 +1052,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _SettingsMenuItem(
             icon: Symbols.graphic_eq_rounded,
             title: t.videoSettings.audioEqualizer,
-            valueText: _audioEqualizerGains.every((gain) => gain.abs() < 0.05)
+            valueText:
+                _audioEqualizerGains.every((gain) => gain.abs() < 0.05) &&
+                    _audioEffects.stereoWidth < 0.01 &&
+                    !_audioEffects.spatializer &&
+                    _audioEffects.pitchSemitones.abs() < 0.05
                 ? t.videoSettings.audioEqualizerFlat
                 : t.videoSettings.audioEqualizerActive,
-            isHighlighted: _audioEqualizerGains.any((gain) => gain.abs() >= 0.05),
+            isHighlighted:
+                _audioEqualizerGains.any((gain) => gain.abs() >= 0.05) ||
+                _audioEffects.stereoWidth >= 0.01 ||
+                _audioEffects.spatializer ||
+                _audioEffects.pitchSemitones.abs() >= 0.05,
             onTap: () => _navigateTo(_SettingsView.audioEqualizer),
           ),
 
@@ -987,6 +1075,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             valueText: _shaderPresetTitle(_state.shaderService!.currentPreset),
             isHighlighted: _state.shaderService!.currentPreset.isEnabled,
             onTap: () => _navigateTo(_SettingsView.shader),
+          ),
+
+        // Motion & clarity uses mpv's display-synchronous temporal filter.
+        if (widget.player.playerType == 'mpv')
+          _SettingsMenuItem(
+            icon: Symbols.blur_on_rounded,
+            title: t.videoSettings.motionClarity,
+            valueText: _motionPresetTitle(_motionPreset),
+            isHighlighted: _motionPreset != MotionClarityPreset.original,
+            onTap: () => _navigateTo(_SettingsView.motionClarity),
           ),
 
         // Ambient Lighting (MPV only)
@@ -1151,8 +1249,562 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
+  MotionClarityService get _motionService => MotionClarityService.forPlayer(widget.player);
+
+  String _motionPresetTitle(MotionClarityPreset preset) => switch (preset) {
+    MotionClarityPreset.original => t.videoSettings.motionClarityOriginal,
+    MotionClarityPreset.cinema => t.videoSettings.motionClarityCinema,
+    MotionClarityPreset.balanced => t.videoSettings.motionClarityBalanced,
+    MotionClarityPreset.smooth => t.videoSettings.motionClaritySmooth,
+    MotionClarityPreset.animation => t.videoSettings.motionClarityAnimation,
+    MotionClarityPreset.sports => t.videoSettings.motionClaritySports,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOled,
+    MotionClarityPreset.custom => t.videoSettings.motionClarityCustom,
+  };
+
+  String _motionPresetDescription(MotionClarityPreset preset) => switch (preset) {
+    MotionClarityPreset.original => t.videoSettings.motionClarityOriginalDescription,
+    MotionClarityPreset.cinema => t.videoSettings.motionClarityCinemaDescription,
+    MotionClarityPreset.balanced => t.videoSettings.motionClarityBalancedDescription,
+    MotionClarityPreset.smooth => t.videoSettings.motionClaritySmoothDescription,
+    MotionClarityPreset.animation => t.videoSettings.motionClarityAnimationDescription,
+    MotionClarityPreset.sports => t.videoSettings.motionClaritySportsDescription,
+    MotionClarityPreset.oled => t.videoSettings.motionClarityOledDescription,
+    MotionClarityPreset.custom => t.videoSettings.motionClarityCustomDescription,
+  };
+
+  String _motionKernelTitle(MotionTemporalKernel kernel) => switch (kernel) {
+    MotionTemporalKernel.oversample => t.videoSettings.motionClarityKernelOversample,
+    MotionTemporalKernel.linear => t.videoSettings.motionClarityKernelLinear,
+    MotionTemporalKernel.catmullRom => t.videoSettings.motionClarityKernelCatmullRom,
+    MotionTemporalKernel.mitchell => t.videoSettings.motionClarityKernelMitchell,
+    MotionTemporalKernel.gaussian => t.videoSettings.motionClarityKernelGaussian,
+    MotionTemporalKernel.bicubic => t.videoSettings.motionClarityKernelBicubic,
+  };
+
+  String _motionEngineTitle(MotionClarityEngine engine) => switch (engine) {
+    MotionClarityEngine.temporalBlend => t.videoSettings.motionClarityTemporalBlend,
+    MotionClarityEngine.motionCompensated => t.videoSettings.motionClarityMotionCompensated,
+  };
+
+  String _motionMciQualityTitle(MotionClarityMciQuality quality) => switch (quality) {
+    MotionClarityMciQuality.fast => t.videoSettings.motionClarityMciFast,
+    MotionClarityMciQuality.balanced => t.videoSettings.motionClarityMciBalanced,
+    MotionClarityMciQuality.high => t.videoSettings.motionClarityMciHigh,
+  };
+
+  String _motionOutputRateTitle(MotionClarityOutputRate rate) => switch (rate) {
+    MotionClarityOutputRate.currentDisplay => t.videoSettings.motionClarityOutputCurrentDisplay,
+    MotionClarityOutputRate.fps48 => t.videoSettings.motionClarityOutput48,
+    MotionClarityOutputRate.fps50 => t.videoSettings.motionClarityOutput50,
+    MotionClarityOutputRate.fps60 => t.videoSettings.motionClarityOutput60,
+    MotionClarityOutputRate.fps72 => t.videoSettings.motionClarityOutput72,
+    MotionClarityOutputRate.fps90 => t.videoSettings.motionClarityOutput90,
+    MotionClarityOutputRate.fps100 => t.videoSettings.motionClarityOutput100,
+    MotionClarityOutputRate.fps120 => t.videoSettings.motionClarityOutput120,
+    MotionClarityOutputRate.fps144 => t.videoSettings.motionClarityOutput144,
+  };
+
+  Future<void> _selectMotionClarityEngine(MotionClarityEngine engine) async {
+    final token = _prefWrites.begin(ScopedPlayerPrefs.motionClarityEngine.id);
+    final oldEngine = _motionEngine;
+    try {
+      await _prefWrites.commitIfLatest(ScopedPlayerPrefs.motionClarityEngine.id, token, () async {
+        final result = await _motionService.configure(
+          preset: _motionPreset,
+          kernel: _motionKernel,
+          thresholdPercent: _motionThresholdPercent,
+          beforeSourceOpen: false,
+          engine: engine,
+          outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+        );
+        try {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityEngine, _state.metadata, engine);
+        } catch (_) {
+          await _motionService.configure(
+            preset: _motionPreset,
+            kernel: _motionKernel,
+            thresholdPercent: _motionThresholdPercent,
+            beforeSourceOpen: false,
+            engine: oldEngine,
+            outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+          );
+          rethrow;
+        }
+        if (!mounted) return;
+        setState(() {
+          _motionEngine = engine;
+          _motionStatus = result;
+          _motionComparisonBypass = false;
+        });
+        _state.onMotionClarityChanged?.call();
+      });
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to change motion clarity engine', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _selectMotionClarityOutputRate(MotionClarityOutputRate outputRate) async {
+    final token = _prefWrites.begin(ScopedPlayerPrefs.motionClarityOutputRate.id);
+    final oldOutputRate = _motionOutputRate;
+    try {
+      await _prefWrites.commitIfLatest(ScopedPlayerPrefs.motionClarityOutputRate.id, token, () async {
+        final result = await _motionService.configure(
+          preset: _motionPreset,
+          kernel: _motionKernel,
+          thresholdPercent: _motionThresholdPercent,
+          beforeSourceOpen: false,
+          engine: _motionEngine,
+          outputRate: outputRate,
+        );
+        try {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityOutputRate, _state.metadata, outputRate);
+        } catch (_) {
+          await _motionService.configure(
+            preset: _motionPreset,
+            kernel: _motionKernel,
+            thresholdPercent: _motionThresholdPercent,
+            beforeSourceOpen: false,
+            engine: _motionEngine,
+            outputRate: oldOutputRate,
+          );
+          rethrow;
+        }
+        if (!mounted) return;
+        setState(() {
+          _motionOutputRate = outputRate;
+          _motionStatus = result;
+          _motionComparisonBypass = false;
+        });
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
+      appLogger.w('Failed to change motion clarity output rate', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _selectMotionClarityMciQuality(MotionClarityMciQuality quality) async {
+    final token = _prefWrites.begin(ScopedPlayerPrefs.motionClarityMciQuality.id);
+    final oldQuality = _motionMciQuality;
+    try {
+      await _prefWrites.commitIfLatest(ScopedPlayerPrefs.motionClarityMciQuality.id, token, () async {
+        final result = await _motionService.configure(
+          preset: _motionPreset,
+          kernel: _motionKernel,
+          thresholdPercent: _motionThresholdPercent,
+          beforeSourceOpen: false,
+          engine: _motionEngine,
+          outputRate: _motionOutputRate,
+          mciQuality: quality,
+        );
+        try {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityMciQuality, _state.metadata, quality);
+        } catch (_) {
+          await _motionService.configure(
+            preset: _motionPreset,
+            kernel: _motionKernel,
+            thresholdPercent: _motionThresholdPercent,
+            beforeSourceOpen: false,
+            engine: _motionEngine,
+            outputRate: _motionOutputRate,
+            mciQuality: oldQuality,
+          );
+          rethrow;
+        }
+        if (!mounted) return;
+        setState(() {
+          _motionMciQuality = quality;
+          _motionStatus = result;
+          _motionComparisonBypass = false;
+        });
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
+      appLogger.w('Failed to change motion-compensation quality', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _refreshMotionClarityStatus() async {
+    final status = await _motionService.inspect();
+    double? sourceFps;
+    try {
+      final reportedRate = await widget.player.getProperty('container-fps');
+      final parsedRate = double.tryParse(reportedRate?.toString() ?? '');
+      if (parsedRate != null && parsedRate.isFinite && parsedRate > 0) {
+        sourceFps = parsedRate;
+      }
+    } catch (_) {
+      // Container frame-rate metadata is optional and unavailable on some streams.
+    }
+    if (mounted) {
+      setState(() {
+        _motionStatus = status;
+        _motionSourceFps = sourceFps;
+        _motionComparisonBypass = status.isComparisonBypass;
+      });
+    }
+  }
+
+  Future<void> _selectMotionClarityPreset(MotionClarityPreset preset) async {
+    final token = _prefWrites.begin('motion_clarity_preset');
+    try {
+      await _prefWrites.commitIfLatest('motion_clarity_preset', token, () async {
+        final manualKernel = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _state.metadata);
+        final manualThreshold = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _state.metadata);
+        final kernel = preset == MotionClarityPreset.custom ? manualKernel : preset.defaultKernel;
+        final threshold = preset == MotionClarityPreset.custom ? manualThreshold : preset.defaultThresholdPercent;
+        final oldPreset = _motionPreset;
+        final oldKernel = _motionKernel;
+        final oldThreshold = _motionThresholdPercent;
+        final result = await _motionService.configure(
+          preset: preset,
+          kernel: kernel,
+          thresholdPercent: threshold,
+          beforeSourceOpen: false,
+          engine: _motionEngine,
+          outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+        );
+        try {
+          if (preset.interpolationEnabled) {
+            await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityLastPreset, _state.metadata, preset);
+          }
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityPreset, _state.metadata, preset);
+        } catch (_) {
+          await _motionService.configure(
+            preset: oldPreset,
+            kernel: oldKernel,
+            thresholdPercent: oldThreshold,
+            beforeSourceOpen: false,
+            engine: _motionEngine,
+            outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+          );
+          rethrow;
+        }
+        if (!mounted) return;
+        setState(() {
+          _motionPreset = preset;
+          _motionKernel = manualKernel;
+          _motionThresholdPercent = manualThreshold;
+          _motionStatus = result;
+          _motionComparisonBypass = false;
+        });
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
+      appLogger.w('Failed to change motion clarity preset', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _selectMotionTemporalKernel(MotionTemporalKernel kernel) async {
+    final token = _prefWrites.begin(ScopedPlayerPrefs.motionClarityKernel.id);
+    final oldKernel = _motionKernel;
+    final oldPreset = _motionPreset;
+    final oldThreshold = _motionThresholdPercent;
+    try {
+      await _prefWrites.commitIfLatest(ScopedPlayerPrefs.motionClarityKernel.id, token, () async {
+        final result = await _motionService.configure(
+          preset: MotionClarityPreset.custom,
+          kernel: kernel,
+          thresholdPercent: _motionThresholdPercent,
+          beforeSourceOpen: false,
+          engine: _motionEngine,
+          outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+        );
+        try {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityKernel, _state.metadata, kernel);
+          await ScopedPlayerPrefs.write(
+            ScopedPlayerPrefs.motionClarityPreset,
+            _state.metadata,
+            MotionClarityPreset.custom,
+          );
+        } catch (_) {
+          try {
+            await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityKernel, _state.metadata, oldKernel);
+          } catch (_) {}
+          await _motionService.configure(
+            preset: oldPreset,
+            kernel: oldKernel,
+            thresholdPercent: oldThreshold,
+            beforeSourceOpen: false,
+            engine: _motionEngine,
+            outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+          );
+          rethrow;
+        }
+        if (!mounted) return;
+        setState(() {
+          _motionPreset = MotionClarityPreset.custom;
+          _motionKernel = kernel;
+          _motionStatus = result;
+          _motionComparisonBypass = false;
+        });
+        _state.onMotionClarityChanged?.call();
+      });    } catch (error, stackTrace) {
+      appLogger.w('Failed to change motion clarity kernel', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _setMotionThreshold(int value) async {
+    final threshold = value.clamp(0, 10).toInt();
+    final oldThreshold = _motionThresholdPercent;
+    final oldPreset = _motionPreset;
+    final oldKernel = _motionKernel;
+    final result = await _motionService.configure(
+      preset: MotionClarityPreset.custom,
+      kernel: _motionKernel,
+      thresholdPercent: threshold,
+      beforeSourceOpen: false,
+      engine: _motionEngine,
+      outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+    );
+    try {
+      await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityThreshold, _state.metadata, threshold);
+      await ScopedPlayerPrefs.write(
+        ScopedPlayerPrefs.motionClarityPreset,
+        _state.metadata,
+        MotionClarityPreset.custom,
+      );
+      if (mounted) {
+        setState(() {
+          _motionPreset = MotionClarityPreset.custom;
+          _motionThresholdPercent = threshold;
+          _motionStatus = result;
+          _motionComparisonBypass = false;
+        });
+        _state.onMotionClarityChanged?.call();
+      }
+    } catch (error, stackTrace) {
+      try {
+        await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityThreshold, _state.metadata, oldThreshold);
+      } catch (_) {}
+      await _motionService.configure(
+        preset: oldPreset,
+        kernel: oldKernel,
+        thresholdPercent: oldThreshold,
+        beforeSourceOpen: false,
+        engine: _motionEngine,
+        outputRate: _motionOutputRate,
+          mciQuality: _motionMciQuality,
+      );
+      appLogger.w('Failed to save motion clarity threshold', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.motionClaritySaveFailed);
+    }
+  }
+
+  Future<void> _toggleMotionClarityCompare() async {
+    final bypass = !_motionComparisonBypass;
+    final result = await _motionService.setComparisonBypass(bypass);
+    if (!mounted) return;
+    setState(() {
+      _motionStatus = result;
+      _motionComparisonBypass = result.isComparisonBypass;
+    });
+    _state.onMotionClarityChanged?.call();
+    if (result.isComparisonBypass != bypass) {
+      showErrorSnackBar(context, t.videoSettings.motionClarityCompareFailed);
+    }
+  }
+
+  Widget _buildMotionClarityView() {
+    final primary = Theme.of(context).colorScheme.primary;
+    final status = _motionStatus;
+    final statusText = status == null
+        ? t.common.loading
+        : !status.isSupported
+            ? t.videoSettings.motionClarityOutputUnsupported
+            : status.isConfigured && status.effectiveEngine == MotionClarityEngine.motionCompensated
+                ? t.videoSettings.motionClarityMciConfigured
+                : status.requiresSourceReload
+                    ? t.videoSettings.motionClarityRestartRequired
+                    : status.isConfigured
+                        ? t.videoSettings.motionClarityConfigured
+                        : t.videoSettings.motionClarityOriginalDescription;
+    final outputDetail = [
+      if (status != null && status.outputDriver != null && status.outputDriver!.isNotEmpty) status.outputDriver!,
+      if (_motionSourceFps != null)
+        '${t.videoSettings.motionClaritySourceRate}: ${_motionSourceFps!.toStringAsFixed(3)} fps',
+      if (status != null && status.displayFps != null)
+        '${t.videoSettings.motionClarityReportedDisplayRate}: ${status.displayFps!.toStringAsFixed(2)} Hz',
+      if (status?.targetFps != null)
+        '${t.videoSettings.motionClarityOutputRate}: ${status!.targetFps!.toStringAsFixed(2)} Hz',
+      if (status?.isConfigured == true) _motionEngineTitle(status!.effectiveEngine),
+      if (status?.isConfigured == true && status?.effectiveEngine == MotionClarityEngine.motionCompensated)
+        _motionMciQualityTitle(status!.effectiveMciQuality),
+      if (status?.requiresSourceReload == true) t.videoSettings.motionClarityRestartRequired,
+    ].join(' · ');
+    final showPassthroughWarning = status?.isConfigured == true && status?.audioPassthroughActive == true;
+    final showEngineReason = status?.reason != null && status!.reason!.isNotEmpty;
+
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text(t.videoSettings.motionClarityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text(
+            t.videoSettings.motionClarityControlsHint,
+            style: TextStyle(color: tokens(context).textMuted, fontSize: 11),
+          ),
+        ),
+        ListTile(
+          leading: AppIcon(
+            status?.isSupported == false ? Symbols.info_rounded : Symbols.blur_on_rounded,
+            fill: 1,
+            color: status?.isSupported == false ? tokens(context).textMuted : primary,
+          ),
+          title: Text(statusText),
+          subtitle: outputDetail.isEmpty && !showPassthroughWarning && !showEngineReason
+              ? null
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (outputDetail.isNotEmpty) Text(outputDetail),
+                    if (showEngineReason)
+                      Text(
+                        status!.reason!,
+                        style: TextStyle(color: tokens(context).textMuted, fontSize: 11),
+                      ),
+                    if (status?.isConfigured == true && status?.audioPassthroughActive == true)
+                      Text(
+                        t.videoSettings.motionClarityPassthroughWarning,
+                        style: TextStyle(color: tokens(context).textMuted, fontSize: 11),
+                      ),
+                  ],
+                ),
+        ),
+        if (_motionPreset == MotionClarityPreset.oled)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(
+              t.videoSettings.motionClarityOledEngineDescription,
+              style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+            ),
+          )
+        else ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(t.videoSettings.motionClarityEngine, style: Theme.of(context).textTheme.titleSmall),
+          ),
+          for (final engine in MotionClarityEngine.values)
+            FocusableListTile(
+              title: Text(_motionEngineTitle(engine), style: TextStyle(color: _motionEngine == engine ? primary : null)),
+              subtitle: Text(
+                engine == MotionClarityEngine.motionCompensated
+                    ? t.videoSettings.motionClarityMotionCompensatedDescription
+                    : t.videoSettings.motionClarityTemporalBlendDescription,
+                style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+              ),
+              trailing: _motionEngine == engine ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+              onTap: () => _selectMotionClarityEngine(engine),
+            ),
+          if (_motionEngine == MotionClarityEngine.motionCompensated) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(t.videoSettings.motionClarityMciQuality, style: Theme.of(context).textTheme.titleSmall),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(t.videoSettings.motionClarityMciQualityDescription, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+            ),
+            for (final quality in MotionClarityMciQuality.values)
+              FocusableListTile(
+                title: Text(_motionMciQualityTitle(quality), style: TextStyle(color: _motionMciQuality == quality ? primary : null)),
+                trailing: _motionMciQuality == quality ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+                onTap: () => _selectMotionClarityMciQuality(quality),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(t.videoSettings.motionClarityOutputRate, style: Theme.of(context).textTheme.titleSmall),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                t.videoSettings.motionClarityOutputRateDescription,
+                style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+              ),
+            ),
+            for (final rate in MotionClarityOutputRate.values)
+              FocusableListTile(
+                title: Text(_motionOutputRateTitle(rate), style: TextStyle(color: _motionOutputRate == rate ? primary : null)),
+                trailing: _motionOutputRate == rate ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+                onTap: () => _selectMotionClarityOutputRate(rate),
+              ),
+          ],
+        ],
+        if (status?.isConfigured == true)
+          FocusableListTile(
+            title: Text(
+              _motionComparisonBypass
+                  ? t.videoSettings.motionClarityReturnToProcessing
+                  : t.videoSettings.motionClarityCompareWithoutProcessing,
+            ),
+            subtitle: Text(t.videoSettings.motionClarityCompareProcessingDescription),
+            trailing: AppIcon(
+              _motionComparisonBypass ? Symbols.play_arrow_rounded : Symbols.compare_rounded,
+              fill: 1,
+              color: primary,
+            ),
+            onTap: _toggleMotionClarityCompare,
+          ),
+        for (final preset in MotionClarityPreset.values)
+          FocusableListTile(
+            title: Text(_motionPresetTitle(preset), style: TextStyle(color: _motionPreset == preset ? primary : null)),
+            subtitle: Text(
+              _motionEngine == MotionClarityEngine.motionCompensated &&
+                      preset != MotionClarityPreset.original &&
+                      preset != MotionClarityPreset.oled
+                  ? t.videoSettings.motionClarityMciProfileDescription
+                  : _motionPresetDescription(preset),
+              style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+            ),
+            trailing: _motionPreset == preset ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+            onTap: () => _selectMotionClarityPreset(preset),
+          ),
+        if (_motionPreset == MotionClarityPreset.custom &&
+            _motionEngine == MotionClarityEngine.temporalBlend) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(t.videoSettings.motionClarityKernel, style: Theme.of(context).textTheme.titleSmall),
+          ),
+          for (final kernel in MotionTemporalKernel.values)
+            FocusableListTile(
+              title: Text(_motionKernelTitle(kernel), style: TextStyle(color: _motionKernel == kernel ? primary : null)),
+              trailing: _motionKernel == kernel ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+              onTap: () => _selectMotionTemporalKernel(kernel),
+            ),
+          ListTile(
+            title: Text(t.videoSettings.motionClarityThreshold),
+            subtitle: FocusableSlider(
+              value: _motionThresholdPercent.toDouble(),
+              min: 0,
+              max: 10,
+              divisions: 10,
+              semanticLabel: t.videoSettings.motionClarityThreshold,
+              semanticFormatterCallback: (value) => '${value.round()}%',
+              onChanged: (value) => setState(() => _motionThresholdPercent = value.round()),
+              onChangeEnd: (value) => _setMotionThreshold(value.round()),
+            ),
+            trailing: Text('$_motionThresholdPercent%'),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildAudioEqualizerView() {
-    final frequencies = [60, 250, 1000, 4000, 12000];
+    final frequencies = [60, 125, 250, 500, 1000, 2000, 4000, 8000, 12000, 16000];
     final prefs = SettingsService.audioEqualizerBandPrefs;
     return ListView(
       children: [
@@ -1187,9 +1839,115 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               _setAudioEqualizerBand(index, 0);
               unawaited(_persistAudioEqualizerBand(prefs[index], 0));
             }
+            _setAudioEffects(stereoWidth: 0, spatializer: false, pitchSemitones: 0);
+            unawaited(_persistAudioEffects());
           },
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            t.videoSettings.audioEffectsDescription,
+            style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+          ),
+        ),
+        ListTile(
+          title: Text(t.videoSettings.audioStereoWidth),
+          subtitle: FocusableSlider(
+            value: (_audioEffects.stereoWidth * 100).clamp(0.0, 100.0),
+            min: 0,
+            max: 100,
+            divisions: 20,
+            semanticLabel: t.videoSettings.audioStereoWidth,
+            semanticFormatterCallback: (value) => '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)}%',
+            onChanged: (value) => _setAudioEffects(stereoWidth: value / 100),
+            onChangeEnd: (_) => unawaited(_persistAudioEffects()),
+          ),
+          trailing: Text('${formatDecimal(_audioEffects.stereoWidth * 100, minimumDecimals: 0, maximumDecimals: 0)}%'),
+        ),
+        SwitchListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          title: Text(t.videoSettings.audioSpatializer),
+          subtitle: Text(t.videoSettings.audioSpatializerDescription),
+          value: _audioEffects.spatializer,
+          onChanged: (enabled) {
+            _setAudioEffects(spatializer: enabled);
+            unawaited(_persistAudioEffects());
+          },
+        ),
+        ListTile(
+          title: Text(t.videoSettings.audioPitch),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.videoSettings.audioPitchDescription, style: TextStyle(color: tokens(context).textMuted)),
+              FocusableSlider(
+                value: _audioEffects.pitchSemitones.clamp(-12.0, 12.0),
+                min: -12,
+                max: 12,
+                divisions: 24,
+                semanticLabel: t.videoSettings.audioPitch,
+                semanticFormatterCallback: (value) =>
+                    '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)} semitones',
+                onChanged: (value) => _setAudioEffects(pitchSemitones: value),
+                onChangeEnd: (_) => unawaited(_persistAudioEffects()),
+              ),
+            ],
+          ),
+          trailing: Text('${formatDecimal(_audioEffects.pitchSemitones, minimumDecimals: 0, maximumDecimals: 0)} st'),
+        ),
       ],
+    );
+  }
+
+  String _videoTrackLabel(VideoTrack track) {
+    final title = track.title?.trim();
+    final dimensions = track.width != null && track.height != null ? '${track.width} × ${track.height}' : null;
+    final language = track.language?.trim();
+    return [
+      if (title case final title? when title.isNotEmpty) title,
+      ?dimensions,
+      if (language case final language? when language.isNotEmpty && language != 'und') language.toUpperCase(),
+      if (track.codec case final codec? when codec.isNotEmpty) codec.toUpperCase(),
+    ].join(' · ');
+  }
+
+  Widget _buildVideoTrackView() {
+    final primary = Theme.of(context).colorScheme.primary;
+    return StreamBuilder<Tracks>(
+      stream: widget.player.streams.tracks,
+      initialData: widget.player.state.tracks,
+      builder: (context, snapshot) {
+        final tracks = snapshot.data?.video ?? const <VideoTrack>[];
+        if (tracks.length < 2) return Center(child: Text(t.videoSettings.videoTrackUnavailable));
+        return ListView(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Text(t.videoSettings.videoTrackDescription, style: Theme.of(context).textTheme.bodySmall),
+            ),
+            for (final track in tracks)
+              FocusableListTile(
+                title: Text(
+                  _videoTrackLabel(track).isEmpty
+                      ? t.videoSettings.videoTrackNumber(id: track.id)
+                      : _videoTrackLabel(track),
+                  style: TextStyle(color: track.isSelected ? primary : null),
+                ),
+                subtitle: track.isDefault ? Text(t.videoSettings.videoTrackDefault) : null,
+                trailing: track.isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+                onTap: () async {
+                  try {
+                    await widget.player.setProperty('vid', track.id);
+                    if (mounted) _navigateBack();
+                  } on Object catch (error, stackTrace) {
+                    appLogger.w('Failed to select video track', error: error, stackTrace: stackTrace);
+                    if (mounted) showErrorSnackBar(this.context, t.videoSettings.videoTrackFailed);
+                  }
+                },
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -1204,6 +1962,47 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       await (widget.player as AudioEqualizerCapable).setAudioEqualizer(gains);
     } catch (error, stackTrace) {
       appLogger.w('Failed to apply audio equalizer', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.audioEqualizerSaveFailed);
+    }
+  }
+
+  void _setAudioEffects({double? stereoWidth, bool? spatializer, double? pitchSemitones}) {
+    final next = (
+      stereoWidth: stereoWidth ?? _audioEffects.stereoWidth,
+      spatializer: spatializer ?? _audioEffects.spatializer,
+      pitchSemitones: pitchSemitones ?? _audioEffects.pitchSemitones,
+    );
+    setState(() => _audioEffects = next);
+    final generation = ++_audioEffectsWriteGeneration;
+    _audioEffectsWrite = _applyAudioEffects(next, generation);
+  }
+
+  Future<void> _applyAudioEffects(PlayerAudioEffects effects, int generation) async {
+    try {
+      await (widget.player as AudioEffectsCapable).setAudioEffects(effects);
+      if (mounted && generation == _audioEffectsWriteGeneration) {
+        setState(() => _acceptedAudioEffects = effects);
+      }
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to apply MPV audio effects', error: error, stackTrace: stackTrace);
+      if (mounted && generation == _audioEffectsWriteGeneration) {
+        setState(() => _audioEffects = _acceptedAudioEffects);
+        showErrorSnackBar(context, t.videoSettings.audioEffectUnavailable);
+      }
+    }
+  }
+
+  Future<void> _persistAudioEffects() async {
+    await _audioEffectsWrite;
+    final accepted = _acceptedAudioEffects;
+    try {
+      await Future.wait([
+        SettingsService.instance.write(SettingsService.audioStereoWidth, accepted.stereoWidth),
+        SettingsService.instance.write(SettingsService.audioSpatializer, accepted.spatializer),
+        SettingsService.instance.write(SettingsService.audioPitchShiftSemitones, accepted.pitchSemitones),
+      ]);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to save MPV audio effects', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoSettings.audioEqualizerSaveFailed);
     }
   }
@@ -1612,10 +2411,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget build(BuildContext context) {
     final sleepTimer = SleepTimerService();
     final isShaderActive = _state.shaderService != null && _state.shaderService!.currentPreset.isEnabled;
+    final isMotionActive = _motionPreset != MotionClarityPreset.original;
     final isZoomActive = (_zoomScale - 1.0).abs() > 0.0001;
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive || isZoomActive);
+        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive || isMotionActive || isZoomActive);
 
     return BaseVideoControlSheet(
       title: _getTitle(),
@@ -1650,6 +2450,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildAudioChannelLimitView();
           case _SettingsView.audioEqualizer:
             return _buildAudioEqualizerView();
+          case _SettingsView.motionClarity:
+            return _buildMotionClarityView();
+          case _SettingsView.videoTrack:
+            return _buildVideoTrackView();
         }
       }(),
     );

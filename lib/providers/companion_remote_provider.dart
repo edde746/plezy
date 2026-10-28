@@ -1,4 +1,14 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+
+import '../games/steam_inventory_exchange.dart';
+import '../games/steam_host_actions.dart';
+import '../games/game_session_exchange.dart';
+import '../games/workspace_game_session_controls.dart';
+import '../multiview/workspace_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../games/steam_local_inventory.dart';
+import '../services/settings_service.dart';
 
 import 'package:flutter/widgets.dart';
 
@@ -124,6 +134,40 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   StreamSubscription<void>? _deviceDisconnectedSubscription;
   StreamSubscription<RemotePeerError>? _errorSubscription;
   StreamSubscription<RemoteSessionStatus>? _statusSubscription;
+
+  SteamInventoryExchange? _gameInventory;
+  SteamHostActionExchange? _gameActions;
+  GameSessionExchange? _gameSessions;
+  MultiviewWorkspaceController? _gameWorkspace;
+  void bindGameWorkspace(MultiviewWorkspaceController workspace) {
+    _gameWorkspace = workspace;
+  }
+
+  int _gameSessionVersion = 0;
+  bool get supportsGameSessions => isRemote && isConnected && _gameSessionVersion == 1;
+  Object? get gameSessionConnection => supportsGameSessions ? _gameSessions : null;
+  Future<GameSessionControlReply> requestGameSession(GameSessionAction action, {String? target}) {
+    if (!supportsGameSessions || _gameSessions == null) {
+      return Future.value(const GameSessionControlReply(GameSessionControlStatus.unavailable));
+    }
+    return _gameSessions!.request(action, target: target);
+  }
+
+  int _gameActionVersion = 0;
+  bool get supportsGameActions => isRemote && isConnected && _gameActionVersion == 1;
+  String? get gameActionPeerId => supportsGameActions ? _peerService?.selectedHostClientId : null;
+  Future<SteamHostActionResult> requestGameAction(SteamHostAction action, {int? appId}) {
+    if (!supportsGameActions || _gameActions == null) return Future.value(SteamHostActionResult.unavailable);
+    return _gameActions!.request(action, appId: appId);
+  }
+
+  int _gameInventoryVersion = 0;
+  bool get supportsGameInventory => isRemote && isConnected && _gameInventoryVersion == 1;
+  String? get gameInventoryPeerId => supportsGameInventory ? _peerService?.selectedHostClientId : null;
+  Future<SteamInventoryScan> requestGameInventory() {
+    if (!supportsGameInventory || _gameInventory == null) return Future.error(const SteamInventoryUnavailable());
+    return _gameInventory!.request();
+  }
 
   CommandReceivedCallback? onCommandReceived;
 
@@ -490,6 +534,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   /// Rotating the capability revokes all remembered remotes for this profile.
   Future<void> resetHostPairing() => _serializeLifecycle(() async {
     final profileId = _cryptoProfileId;
+
     if (profileId == null) return;
     final wasRunning = isHostServerRunning;
     await _stopHostServerLocked();
@@ -640,7 +685,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     appLogger.d('CompanionRemote: Starting host server');
 
     final peer = _peerService ??= _peerServiceFactory();
-    _setupPeerServiceListeners(peer, _remoteGeneration);
+    _setupPeerServiceListeners(peer, _remoteGeneration, host: true);
 
     try {
       final profileId = _cryptoProfileId;
@@ -896,7 +941,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         createdAt: DateTime.now(),
       );
     }
-    _setupPeerServiceListeners(candidate, generation);
+    _setupPeerServiceListeners(candidate, generation, host: false);
     if (seedConnectingSession) safeNotifyListeners();
 
     try {
@@ -930,17 +975,90 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     }
   }
 
-  void _setupPeerServiceListeners(CompanionRemotePeerService peer, int generation) {
+  void _setupPeerServiceListeners(CompanionRemotePeerService peer, int generation, {required bool host}) {
     // Only one peer owns the provider's listener set at a time. The identity
     // and generation checks also reject events already queued when teardown
     // synchronously cancels these subscriptions.
     _cleanupSubscriptions();
+    final profileId = _cryptoProfileId;
+    _gameSessions = GameSessionExchange(
+      isHost: host,
+      allowed: () =>
+          _ownsPeer(peer, generation) &&
+          profileId != null &&
+          profileId == _cryptoProfileId &&
+          SettingsService.instance.read(SettingsService.showGamesTabForProfile(profileId)) &&
+          SettingsService.instance.read(SettingsService.allowGameSessionControlForProfile(profileId)),
+      targets: () => workspaceGameSessionTargets(_gameWorkspace),
+      send: (data) {
+        if (_ownsPeer(peer, generation)) {
+          peer.sendCommand(RemoteCommand(type: RemoteCommandType.gameSession, data: data));
+        }
+      },
+    );
+    _gameActions = SteamHostActionExchange(
+      isHost: host,
+      allowed: (action) =>
+          _ownsPeer(peer, generation) &&
+          profileId != null &&
+          profileId == _cryptoProfileId &&
+          (Platform.isLinux || Platform.isWindows || Platform.isMacOS) &&
+          SettingsService.instance.read(SettingsService.showGamesTabForProfile(profileId)) &&
+          SettingsService.instance.read(SettingsService.allowSteamActionsForProfile(profileId)) &&
+          (action != SteamHostAction.install ||
+              SettingsService.instance.read(SettingsService.allowSteamInstallForProfile(profileId))),
+      execute: (action, appId, current) async {
+        if (!current()) return false;
+        if (action == SteamHostAction.launch) {
+          final inventory = await SteamLocalInventory().scan(
+            root: profileId == null
+                ? null
+                : SettingsService.instance.read(SettingsService.steamInstallRootForProfile(profileId)),
+            isCurrent: current,
+          );
+          if (!inventory.games.any((game) => game.appId == appId && game.installed)) return false;
+        }
+        if (!current()) return false;
+        return launchUrl(steamHostActionUri(action, appId), mode: LaunchMode.externalApplication);
+      },
+      send: (data) {
+        if (_ownsPeer(peer, generation)) {
+          peer.sendCommand(RemoteCommand(type: RemoteCommandType.gameAction, data: data));
+        }
+      },
+    );
+    _gameInventory = SteamInventoryExchange(
+      isHost: host,
+      canShare: () =>
+          _ownsPeer(peer, generation) &&
+          profileId != null &&
+          profileId == _cryptoProfileId &&
+          (Platform.isLinux || Platform.isWindows || Platform.isMacOS) &&
+          SettingsService.instance.read(SettingsService.shareSteamInventoryForProfile(profileId)),
+      readInventory: (current) => SteamLocalInventory().scan(
+        root: profileId == null
+            ? null
+            : SettingsService.instance.read(SettingsService.steamInstallRootForProfile(profileId)),
+        isCurrent: current,
+      ),
+      send: (data) {
+        if (_ownsPeer(peer, generation)) {
+          peer.sendCommand(RemoteCommand(type: RemoteCommandType.gameInventory, data: data));
+        }
+      },
+    );
     _commandSubscription = peer.onCommandReceived.listen(
       (command) {
         if (!_ownsPeer(peer, generation)) return;
         appLogger.d('CompanionRemote: Command received: ${command.type}');
 
-        if (command.type == RemoteCommandType.deviceInfo) {
+        if (command.type == RemoteCommandType.gameSession) {
+          _gameSessions?.receive(command.data);
+        } else if (command.type == RemoteCommandType.gameAction) {
+          _gameActions?.receive(command.data);
+        } else if (command.type == RemoteCommandType.gameInventory) {
+          _gameInventory?.receive(command.data);
+        } else if (command.type == RemoteCommandType.deviceInfo) {
           _handleDeviceInfo(command);
         } else if (command.type == RemoteCommandType.syncState) {
           _handleSyncState(command);
@@ -972,6 +1090,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
     _deviceDisconnectedSubscription = peer.onDeviceDisconnected.listen((_) {
       if (!_ownsPeer(peer, generation)) return;
+      _gameInventory?.reset();
+      _gameActions?.reset();
+      _gameSessions?.reset();
       final intentional = _isIntentionalDisconnect(peer, generation);
       appLogger.d('CompanionRemote: Device disconnected (intentional: $intentional)');
       if (intentional) {
@@ -1027,6 +1148,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   void _handleDeviceInfo(RemoteCommand command) {
+    _gameSessionVersion = command.data?['gameSessionVersion'] == 1 ? 1 : 0;
+    _gameActionVersion = command.data?['gameActionVersion'] == 1 ? 1 : 0;
+    _gameInventoryVersion = command.data?['gameInventoryVersion'] == 1 ? 1 : 0;
     if (command.data != null) {
       final id = command.data!['id'] as String? ?? 'unknown';
       final name = command.data!['name'] as String? ?? t.companionRemote.unknownDevice;
@@ -1051,6 +1175,15 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   void _cleanupSubscriptions() {
+    _gameSessions?.close();
+    _gameSessions = null;
+    _gameSessionVersion = 0;
+    _gameActions?.close();
+    _gameActions = null;
+    _gameActionVersion = 0;
+    _gameInventory?.close();
+    _gameInventory = null;
+    _gameInventoryVersion = 0;
     _commandSubscription?.cancel();
     _commandSubscription = null;
     _deviceConnectedSubscription?.cancel();

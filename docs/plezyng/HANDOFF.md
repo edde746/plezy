@@ -1,6 +1,10 @@
 # PlezyNG feature build-out handoff
 
-Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry requested features that upstream declined or has not shipped, while keeping parity across Plex, Jellyfin, and Emby where the APIs allow it. The fork should retire as the corresponding capabilities converge upstream.
+Status: 2026-10-28. PlezyNG is a fork of `edde746/plezy` intended to carry requested features that upstream declined or has not shipped, while keeping parity across Plex, Jellyfin, and Emby where the APIs allow it. The fork should retire as the corresponding capabilities converge upstream.
+
+## Current audit remediation status
+
+The 26 October engineering audit is pinned to main commit `c781dd83d69025c8596ace69f40352d982dc4ba7`, not this work branch. Its F01–F16 findings have been rechecked against current source and are tracked in the [capability and qualification ledger](../maintainers/capability-manifest.json). That ledger separates code present from CI, provider, native-device and public-release evidence. This work slice has not run tests, analysis, native builds or GitHub Actions.
 
 ## Implemented in this work branch
 
@@ -45,7 +49,9 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 | Settings | HTTPS WebDAV backup of the portable settings export is implemented. Configure a file URL ending in `.json`, optionally with WebDAV credentials; local server connections, tokens, download locations, and history are excluded. |
 | webOS TV | An experimental ARM IPK was installed and launched on one LG C6; its app and native library hashes match the package. Plex login, artwork/cards, and playback were confirmed on an earlier build, and secure-store write/read/delete passed. The latest package's current UI frame, token persistence, Jellyfin/Emby, broader device coverage, and release packaging remain unverified; see [webOS port status](../maintainers/webos-tv.md). |
 
-## Validation and cautions
+## Historical validation and cautions
+
+The results below belong to an earlier feature checkout and do not qualify the current branch or PR #47.
 
 - The focused download, storage, manager, provider, Downloads focus, appearance, and orphan-cleanup test set passes all 284 tests. Analyzer and translation hygiene pass, and an Android arm64 debug APK builds against the merged SDK 37 configuration.
 - The latest full `scripts/ci_checks.sh` run still reports repository-wide issues: formatting drift in two legacy screens, the example WebDAV URL flagged as a hard-coded UI string, an iOS SwiftPM lock mismatch for Google Cast, 22 existing icon consistency findings, and the unused `hubIdentifierMatches` helper. Translation and native-format checks pass; the screensaver description key is restored and analyzer passes independently.
@@ -54,10 +60,14 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 - Google Cast needs validation against physical receivers on both platforms. The generic receiver does not use Plex's private receiver app and cannot add custom authorization headers; server adapters therefore provide self-contained HTTP(S) URLs, and playback is limited to formats supported by the receiver.
 - The live TV time-shift, local transcoding, and device-specific UI paths require real-device or server validation before release.
 
-## Planned cross-media swipe discovery
+## Cross-media swipe discovery
 
-The [Find your next handoff](swipe/README.md) specifies an artwork-led discovery route for all supported media, with moment-based choices, reversible saves/skips, isolated samples, exact editions, a useful shortlist and native touch/desktop/TV interaction. It includes 16 ordered implementation packages and 38 acceptance scenarios. This is a plan for Luna, not a completed feature. Follow its current dependency audit, existing DESIGN/UX contracts and capability-specific release gates.
+The current [Find your next runtime slice](swipe/README.md) includes a bounded mixed-media deck, searchable profile-local Saved picks/history, time/medium/source/genre/mood/familiarity filters, explicit taste preferences, per-pick hide/restore/reset, capped disposable OPDS samples, exact-public-ID adaptation matching, two/three-pick comparison, private co-present voting, opt-in encrypted Saved-pick sync, optional bounded AI reranking, Open Library catalog-only candidates, and local borrower-catalog candidates when the existing OverDrive gate is enabled. Open Library does not prove local ownership or availability; borrower picks keep exact library/book identities on-device and revalidate before opening. OverDrive remains disabled by default. Feature acceptance and physical-device qualification have not run for this slice. Use the [delivery status](swipe/DELIVERY.md) as the source of truth; do not claim full device or provider qualification until real evidence is recorded.
 
 ## Planned cross-media Multiview and app-owned PiP
 
 The [Multiview implementation handoff](multiview/README.md) makes Plezy-owned floating PiP and split views the primary cross-platform experience, with native OS PiP as an optional outside-app extension. It specifies persistent video/music/reader/game sessions, quick swaps, audio and input ownership, native/GPU/software rendering paths, portable TV readers, desktop pop-outs, accessibility and recovery. The handoff includes 22 ordered implementation packages, 64 verification scenarios, a pinned source audit and theme-based layout wireframes. This is a documentation-only plan for Luna; application implementation and device qualification remain outstanding.
+
+## Planned service integrations and commerce
+
+The [service integration audit and Luna handoff](service-integrations/README.md) evaluates streaming and rental services, book and audiobook stores, public libraries, music and podcasts, self-hosted sources, games, tracking and device connections. Its code now includes official storefront handoffs, Google Books public search, OpenSubsonic/Subsonic music sources and podcast RSS/Atom with OPML. The remaining account, licensed availability, DRM, affiliate and partner flows stay gated on the approvals in the work packages. Reconcile the current debrid/Stremio work and preserve those boundaries.
