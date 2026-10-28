@@ -88,6 +88,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
+import 'iptv/iptv_source_repository.dart';
+import 'iptv/iptv_recording_scheduler.dart';
 import 'database/download_operations.dart';
 import 'database/tvos_database_recovery_store.dart';
 import 'screens/video_player_screen.dart';
@@ -1232,6 +1234,9 @@ void _registerAppLicenses() {
       'Jellyfin Web translations',
     ], await rootBundle.loadString('assets/licenses/JellyfinWebTranslations.txt'));
     yield LicenseEntryWithLineBreaks(const [
+      'MilkRust sample presets (CC0)',
+    ], await rootBundle.loadString('assets/licenses/MilkRust_Sample_Pack.txt'));
+    yield LicenseEntryWithLineBreaks(const [
       'Foliate JS',
     ], await rootBundle.loadString('assets/reader/foliate/LICENSE'));
     yield LicenseEntryWithLineBreaks(const [
@@ -1824,6 +1829,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         Provider<SettingsService>.value(value: widget.settings),
         Provider<StorageService>.value(value: widget.storage),
         Provider<AppDatabase>.value(value: _appDatabase),
+        Provider<IptvSourceRepository>(create: (context) => IptvSourceRepository(context.read<AppDatabase>())),
+        Provider<IptvRecordingScheduler>(
+          lazy: false,
+          create: (context) => IptvRecordingScheduler(context.read<IptvSourceRepository>()),
+          dispose: (_, scheduler) => unawaited(scheduler.dispose()),
+        ),
         Provider<ConnectionRegistry>.value(value: _connections),
         Provider<ProfileRegistry>(create: (_) => ProfileRegistry(_appDatabase)),
         Provider<ProfileConnectionRegistry>.value(value: _profileConnections),

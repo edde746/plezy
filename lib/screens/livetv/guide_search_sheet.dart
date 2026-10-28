@@ -11,7 +11,9 @@ import '../../media/ids.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
+import '../../iptv/iptv_source_repository.dart';
 import '../../providers/multi_server_provider.dart';
+import '../../profiles/active_profile_provider.dart';
 import '../../services/companion_remote/companion_remote_receiver.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
@@ -111,6 +113,18 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
         );
       },
     );
+
+    // IPTV guide data is imported locally and has no MediaServerClient. Add
+    // the same schedule window here so programme search covers the channels
+    // shown in the shared guide, not only Plex/Jellyfin/Emby lineups.
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    if (profileId != null && widget.channels.any((channel) => channel.iptvSourceId != null)) {
+      try {
+        fetched.addAll(await context.read<IptvSourceRepository>().schedule(profileId, from, to));
+      } on Object catch (error, stackTrace) {
+        appLogger.e('Guide search: failed to load IPTV programmes', error: error, stackTrace: stackTrace);
+      }
+    }
 
     if (!mounted) return;
 
@@ -294,7 +308,7 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
       leading: SizedBox(
         width: 40,
         height: 40,
-        child: channel.thumb != null && client != null
+        child: channel.thumb != null && (client != null || channel.thumb!.startsWith('http'))
             ? OptimizedMediaImage.thumb(
                 client: client,
                 imagePath: channel.thumb,

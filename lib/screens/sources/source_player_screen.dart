@@ -89,7 +89,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       allowedExtensions: playback.video ? const ['mkv', 'ts'] : const ['mka', 'mkv'],
     );
     if (path == null || !mounted) return;
-    if (p.extension(path).isEmpty) path  = '.$extension';
+    if (p.extension(path).isEmpty) path += '.$extension';
     if (!playback.video && !const {'.mka', '.mkv'}.contains(p.extension(path).toLowerCase()) ||
         playback.video && !const {'.mkv', '.ts'}.contains(p.extension(path).toLowerCase())) {
       showErrorSnackBar(context, t.universalMedia.recordingFormatHelp);
@@ -257,6 +257,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   }
 
   void _attachToExistingWorkspaceSession(SourcePlayback playback, MultiviewWorkspaceController workspace) {
+    if (playback.isSamplePreview) return;
     final id = _stableWorkspaceSessionId(playback);
     if (id == null || _workspaceSessionId != null || workspace.session(id) == null) return;
     _workspace = workspace;
@@ -271,6 +272,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     if (!mounted ||
         _autoJoinScheduled ||
         playback == null ||
+        playback.isSamplePreview ||
         !playback.active ||
         _workspaceSessionId != null ||
         workspace == null ||
@@ -320,7 +322,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
 
   void _toggleSourceWorkspace() {
     final playback = _session;
-    if (playback == null || !playback.active) return;
+    if (playback == null || !playback.active || playback.isSamplePreview) return;
     final controller = _workspace ?? context.read<MultiviewWorkspaceController>();
     final existingId = _workspaceSessionId;
     if (existingId != null) {
@@ -526,13 +528,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         if (!mounted || playback.player != targetPlayer || playback.activeExternalSubtitleIdentity != identity) {
           return const <SubtitleCue>[];
         }
-        final cues = SubtitleRetimer.parseCues(
-          sourceBytes: bytes,
-          extension: p.extension(file.path).toLowerCase(),
-        )..sort((a, b) => a.startMs.compareTo(b.startMs));
+        final cues = SubtitleRetimer.parseCues(sourceBytes: bytes, extension: p.extension(file.path).toLowerCase())
+          ..sort((a, b) => a.startMs.compareTo(b.startMs));
         return cues;
       })();
     }
+
     var closeScheduled = false;
 
     await showModalBottomSheet<void>(
@@ -557,10 +558,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          t.videoSettings.subtitleSync,
-                          style: Theme.of(sheetContext).textTheme.titleMedium,
-                        ),
+                        child: Text(t.videoSettings.subtitleSync, style: Theme.of(sheetContext).textTheme.titleMedium),
                       ),
                       IconButton(
                         tooltip: t.common.close,
@@ -592,12 +590,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                     TextButton.icon(
                       onPressed: () => sourceAction(
                         context,
-                        () => _alignExternalSubtitleCueNow(
-                          playback,
-                          targetPlayer,
-                          identity,
-                          sheetContext,
-                        ),
+                        () => _alignExternalSubtitleCueNow(playback, targetPlayer, identity, sheetContext),
                       ),
                       icon: const AppIcon(Symbols.vertical_align_bottom_rounded),
                       label: Text(t.videoSettings.subtitleUsePlaybackTime),
@@ -617,9 +610,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                           ),
                           Row(
                             children: [
-                              Expanded(
-                                child: Text(t['videoSettings.subtitleReplayPreroll'] as String),
-                              ),
+                              Expanded(child: Text(t['videoSettings.subtitleReplayPreroll'] as String)),
                               Text('$replayPrerollMs ms'),
                             ],
                           ),
@@ -800,7 +791,6 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     );
   }
 
-
   Future<void> _seekExternalSubtitleCue(
     SourcePlayback playback,
     Player targetPlayer,
@@ -921,9 +911,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       }
 
       final rawTitle = playback.entry?.displayTitle ?? '';
-      var baseName = rawTitle
-          .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
-          .trim();
+      var baseName = rawTitle.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
       while (baseName.endsWith('.')) {
         baseName = baseName.substring(0, baseName.length - 1);
       }
@@ -931,12 +919,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       baseName = baseName.substring(0, math.min(120, baseName.length));
       var path = await FilePicker.saveFile(
         dialogTitle: t['videoSettings.subtitleExport'] as String,
-        fileName: baseName   '.synced'   extension,
+        fileName: baseName + '.synced' + extension,
         type: FileType.custom,
         allowedExtensions: [extension.substring(1)],
       );
       if (path == null || !mounted) return;
-      if (p.extension(path).isEmpty) path  = extension;
+      if (p.extension(path).isEmpty) path += extension;
       if (p.extension(path).toLowerCase() != extension ||
           p.equals(p.normalize(p.absolute(path)), p.normalize(sourceFile.absolute.path))) {
         showErrorSnackBar(context, t['videoSettings.subtitleExportFailed'] as String);
@@ -963,8 +951,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
 
   Future<void> _writeSubtitleExport(File target, List<int> bytes) async {
     final nonce = DateTime.now().microsecondsSinceEpoch.toString();
-    final staged = File(target.path   '.plezyng.'   nonce   '.pending');
-    final backup = File(target.path   '.plezyng.'   nonce   '.backup');
+    final staged = File(target.path + '.plezyng.' + nonce + '.pending');
+    final backup = File(target.path + '.plezyng.' + nonce + '.backup');
     var backedUp = false;
     try {
       await staged.writeAsBytes(bytes, flush: true);
@@ -999,7 +987,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       title: t.videoControls.addBookmark,
       labelText: t.videoControls.bookmarkName,
       hintText: t.videoControls.bookmarkNameHint,
-      initialValue: t.videoControls.bookmarkDefaultName(n: current.length   1),
+      initialValue: t.videoControls.bookmarkDefaultName(n: current.length + 1),
       validator: (value) => value.trim().isEmpty ? t.videoControls.bookmarkNameRequired : null,
     );
     if (!mounted || label == null || s.localMediaBookmarkKey != mediaKey) return;
@@ -1037,7 +1025,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   Future<void> _seekTransientMediaBookmark(SourcePlayback playback, String mediaKey, MediaBookmark bookmark) async {
     if (playback.localMediaBookmarkKey != mediaKey) return;
     final offset = playback.positionMs - playback.currentFilePositionMs;
-    await playback.seek(offset   bookmark.positionMs);
+    await playback.seek(offset + bookmark.positionMs);
   }
 
   Future<void> _setSourceSegmentLoop(SourcePlayback playback, int action) async {
@@ -1114,10 +1102,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
           child: FocusableSlider(
             value: (_dragPosition ?? s.positionMs.toDouble()).clamp(
               s.timelineStartMs.toDouble(),
-              s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs   1.0,
+              s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
             ),
             min: s.timelineStartMs.toDouble(),
-            max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs   1.0,
+            max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
             semanticLabel: t.fileSources.timePosition,
             semanticFormatterCallback: (v) => formatDurationTextual(v.round(), abbreviated: false),
             onChanged: s.timelineEndMs > s.timelineStartMs ? (v) => setState(() => _dragPosition = v) : null,
@@ -1351,7 +1339,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                   valid: (v) => parseListeningTime(v) != null,
                 );
                 if (value != null) {
-                  await s.seek(parseListeningTime(value)!   (s.hasCompleteTimeline ? 0 : s.timelineStartMs));
+                  await s.seek(parseListeningTime(value)!(s.hasCompleteTimeline ? 0 : s.timelineStartMs));
                 }
               }),
             ),
@@ -1445,7 +1433,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               onPressed: () => sourceAction(context, () => _toggleStreamRecording(s)),
               icon: AppIcon(s.isRecordingStream ? Symbols.stop_circle_rounded : Symbols.radio_button_checked_rounded),
             ),
-          if (s.video && _full)
+          if (s.video && _full && !s.isSamplePreview)
             FocusableButton(
               autoScroll: false,
               onPressed: _toggleSourceWorkspace,
@@ -1590,41 +1578,43 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
               focusableAppBarActions: true,
               actions: [
-                if (!s.video && core is AudioSpectrumAnalyzer)
+                if (!s.isSamplePreview) ...[
+                  if (!s.video && core is AudioSpectrumAnalyzer)
+                    FocusableButton(
+                      autoScroll: false,
+                      onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                      child: IconButton(
+                        tooltip: t.music.visualizer,
+                        isSelected: _sourceVisualizerVisible,
+                        onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                        selectedIcon: const AppIcon(Symbols.graphic_eq_rounded, fill: 1),
+                        icon: const AppIcon(Symbols.graphic_eq_rounded),
+                      ),
+                    ),
+                  if (s.canUseDirectQueueControls)
+                    IconButton(
+                      tooltip: t.music.queue,
+                      onPressed: () => unawaited(showSourceQueueSheet(context, s)),
+                      icon: const AppIcon(Symbols.queue_music_rounded),
+                    ),
+                  if (s.canExportLocalPlaylist)
+                    IconButton(
+                      tooltip: t.universalMedia.saveQueuePlaylist,
+                      onPressed: () => unawaited(_saveLocalPlaylist(s)),
+                      icon: const AppIcon(Symbols.playlist_add_check_rounded),
+                    ),
                   FocusableButton(
                     autoScroll: false,
-                    onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                    onPressed: _toggleSourceWorkspace,
                     child: IconButton(
-                      tooltip: t.music.visualizer,
-                      isSelected: _sourceVisualizerVisible,
-                      onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
-                      selectedIcon: const AppIcon(Symbols.graphic_eq_rounded, fill: 1),
-                      icon: const AppIcon(Symbols.graphic_eq_rounded),
+                      tooltip: _workspaceDetached
+                          ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
+                          : t.videoControls.openMiniPlayer,
+                      onPressed: _toggleSourceWorkspace,
+                      icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
                     ),
                   ),
-                if (s.canUseDirectQueueControls)
-                  IconButton(
-                    tooltip: t.music.queue,
-                    onPressed: () => unawaited(showSourceQueueSheet(context, s)),
-                    icon: const AppIcon(Symbols.queue_music_rounded),
-                  ),
-                if (s.canExportLocalPlaylist)
-                  IconButton(
-                    tooltip: t.universalMedia.saveQueuePlaylist,
-                    onPressed: () => unawaited(_saveLocalPlaylist(s)),
-                    icon: const AppIcon(Symbols.playlist_add_check_rounded),
-                  ),
-                FocusableButton(
-                  autoScroll: false,
-                  onPressed: _toggleSourceWorkspace,
-                  child: IconButton(
-                    tooltip: _workspaceDetached
-                        ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
-                        : t.videoControls.openMiniPlayer,
-                    onPressed: _toggleSourceWorkspace,
-                    icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
-                  ),
-                ),
+                ],
                 IconButton(
                   tooltip: t.fileSources.stop,
                   onPressed: () => sourceAction(context, () async {
@@ -1771,15 +1761,15 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                     style: Theme.of(context).textTheme.titleLarge,
                                   ),
                                   const SizedBox(height: 12),
-                                  for (var i = 0; i < s.chapters.length; i  )
+                                  for (var i = 0; i < s.chapters.length; i++)
                                     SourceTile(
                                       title: isolateDisplayText(s.chapters[i].title),
                                       subtitle: sourceTime(s.chapters[i].startMs),
                                       icon: Symbols.format_list_numbered_rounded,
                                       index: i,
                                       count:
-                                          s.chapters.length  
-                                          localMediaBookmarks.length  
+                                          s.chapters.length +
+                                          localMediaBookmarks.length +
                                           (localMediaBookmarkKey == null ? 0 : 1),
                                       onTap: () => sourceAction(context, () => s.seekChapter(i)),
                                     ),
@@ -1788,7 +1778,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                       title: t.videoControls.addBookmark,
                                       icon: Symbols.bookmark_add_rounded,
                                       index: s.chapters.length,
-                                      count: s.chapters.length   localMediaBookmarks.length   1,
+                                      count: s.chapters.length + localMediaBookmarks.length + 1,
                                       onTap: _bookmarkBusy ? null : () => unawaited(_addTransientMediaBookmark(s)),
                                     ),
                                   if (localMediaBookmarkKey != null && localMediaBookmarks.isEmpty)
@@ -1797,14 +1787,14 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                       child: Text(t.videoControls.bookmarksHelp),
                                     )
                                   else if (localMediaBookmarkKey != null)
-                                    for (var i = 0; i < localMediaBookmarks.length; i  )
+                                    for (var i = 0; i < localMediaBookmarks.length; i++)
                                       SourceTile(
                                         key: ValueKey('local-media-bookmark-${localMediaBookmarks[i].id}'),
                                         title: localMediaBookmarks[i].label,
                                         subtitle: sourceTime(localMediaBookmarks[i].positionMs),
                                         icon: Symbols.bookmark_rounded,
-                                        index: s.chapters.length   i   1,
-                                        count: s.chapters.length   localMediaBookmarks.length   1,
+                                        index: s.chapters.length + i + 1,
+                                        count: s.chapters.length + localMediaBookmarks.length + 1,
                                         onTap: () => sourceAction(
                                           context,
                                           () => _seekTransientMediaBookmark(
@@ -1925,7 +1915,7 @@ class SourceMiniPlayer extends StatelessWidget {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
-        padding: EdgeInsetsDirectional.fromSTEB((inset?.startInset ?? 0)   16, 0, 16, (inset?.bottomInset ?? 0)   16),
+        padding: EdgeInsetsDirectional.fromSTEB((inset?.startInset ?? 0) + 16, 0, 16, (inset?.bottomInset ?? 0) + 16),
         child: SafeArea(
           top: false,
           child: ConstrainedBox(
@@ -1982,8 +1972,6 @@ class SourceMiniPlayer extends StatelessWidget {
   }
 }
 
-
-
 String _plainSubtitleCueText(String value) => value
     .replaceAll(RegExp(r'\{[^}]*\}'), '')
     .replaceAll(RegExp(r'<[^>]*>'), '')
@@ -2017,9 +2005,9 @@ class _SubtitleCuePickerSheetState extends State<_SubtitleCuePickerSheet> {
   int _closestCueIndex() {
     var nearestIndex = 0;
     var nearestDistance = 1 << 62;
-    for (var index = 0; index < widget.cues.length; index  ) {
+    for (var index = 0; index < widget.cues.length; index++) {
       final cue = widget.cues[index];
-      final visibleStartMs = (cue.startMs * widget.initialRate).round()   widget.initialDelayMs;
+      final visibleStartMs = (cue.startMs * widget.initialRate).round() + widget.initialDelayMs;
       final distance = (visibleStartMs - widget.initialPlaybackPositionMs).abs();
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -2036,7 +2024,9 @@ class _SubtitleCuePickerSheetState extends State<_SubtitleCuePickerSheet> {
     final nearestIndex = _closestCueIndex();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scrollController.hasClients) {
-        _scrollController.jumpTo((nearestIndex * 76.0).clamp(0.0, _scrollController.position.maxScrollExtent).toDouble());
+        _scrollController.jumpTo(
+          (nearestIndex * 76.0).clamp(0.0, _scrollController.position.maxScrollExtent).toDouble(),
+        );
       }
     });
   }
@@ -2060,10 +2050,7 @@ class _SubtitleCuePickerSheetState extends State<_SubtitleCuePickerSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      t.videoSettings.subtitleCueTimeAnchor1,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                    child: Text(t.videoSettings.subtitleCueTimeAnchor1, style: Theme.of(context).textTheme.titleMedium),
                   ),
                   IconButton(
                     tooltip: t.common.close,
@@ -2107,12 +2094,9 @@ class _SubtitleCuePickerSheetState extends State<_SubtitleCuePickerSheet> {
                         ),
                       ),
                       title: Text(plainText, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      onTap: () => Navigator.of(context).pop(
-                        (
-                          cue: cue,
-                          playbackPositionMs: widget.playback.currentFilePositionMs,
-                        ),
-                      ),
+                      onTap: () => Navigator.of(
+                        context,
+                      ).pop((cue: cue, playbackPositionMs: widget.playback.currentFilePositionMs)),
                     );
                   },
                 ),

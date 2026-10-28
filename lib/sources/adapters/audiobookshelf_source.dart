@@ -5,21 +5,186 @@ import '../source_transport.dart';
 import 'webdav_source.dart';
 
 class AudiobookshelfSourceAdapter extends SourceAdapter {
-  AudiobookshelfSourceAdapter(super.source, super.transport, this.credentials);
+  AudiobookshelfSourceAdapter(super.source, super.transport, this.credentials, {this.persistCredentials});
   final SourceCredentials credentials;
+  final Future<void> Function(Map<String, String> credentials)? persistCredentials;
+  Map<String, String>? _memoryCredentials;
+  Future<Map<String, String>>? _loginInFlight;
+  Future<Map<String, String>>? _refreshInFlight;
+
   Uri url(String path, [Map<String, String>? query]) {
     final base = Uri.parse(source.endpoint.endsWith('/') ? source.endpoint : '${source.endpoint}/');
     return base.resolve(path.replaceFirst(RegExp(r'^/'), '')).replace(queryParameters: query);
   }
 
-  Future<Map<String, String>> headers() async => {'Authorization': 'Bearer ${(await credentials())['token'] ?? ''}'};
-  Future<Map<String, dynamic>> api(String method, String path, {Map<String, String>? query, Object? body}) async =>
-      transport.json(
-        method,
-        url(path, query),
-        headers: {...await headers(), if (body != null) 'Content-Type': 'application/json'},
-        body: body == null ? null : jsonEncode(body),
-      );
+  Uri _authUrl(String path) => url(path);
+
+  Future<Map<String, String>> _savedCredentials() async => _memoryCredentials ?? await credentials();
+
+  String? _accessToken(Map<String, String> saved) {
+    final access = saved['accessToken']?.trim();
+    if (access?.isNotEmpty == true) return access;
+    final legacy = saved['token']?.trim();
+    return legacy?.isNotEmpty == true ? legacy : null;
+  }
+
+  bool _hasLoginCredentials(Map<String, String> saved) =>
+      saved['username']?.trim().isNotEmpty == true && saved['password']?.isNotEmpty == true;
+
+  bool _expiresSoon(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      final payload = sourceMap(jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1])))));
+      final expiry = sourceInt(payload['exp']);
+      return expiry != null && expiry * 1000 <= DateTime.now().add(const Duration(minutes: 1)).millisecondsSinceEpoch;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<Map<String, String>> _saveSession(Map<String, String> saved, Map<String, dynamic> response) async {
+    final user = sourceMap(response['user']);
+    final access = '${user['accessToken'] ?? response['accessToken'] ?? user['token'] ?? response['token'] ?? ''}'
+        .trim();
+    final refresh = '${user['refreshToken'] ?? response['refreshToken'] ?? ''}'.trim();
+    if (access.isEmpty) throw const SourceException(SourceFailure.authentication);
+    final next = Map<String, String>.from(saved);
+    if (user['accessToken'] != null || response['accessToken'] != null) {
+      next['accessToken'] = access;
+      next['authMode'] = 'jwt';
+      next.remove('token');
+    } else {
+      // Audiobookshelf <2.26 returns a single long-lived bearer token.
+      next['token'] = access;
+      next['authMode'] = 'legacyLogin';
+      next.remove('accessToken');
+    }
+    if (refresh.isEmpty) {
+      next.remove('refreshToken');
+    } else {
+      next['refreshToken'] = refresh;
+    }
+    if (persistCredentials != null) await persistCredentials!(next);
+    _memoryCredentials = next;
+    return next;
+  }
+
+  Future<Map<String, String>> _login(Map<String, String> saved) {
+    final pending = _loginInFlight;
+    if (pending != null) return pending;
+    late final Future<Map<String, String>> request;
+    request = _performLogin(saved).whenComplete(() {
+      if (identical(_loginInFlight, request)) _loginInFlight = null;
+    });
+    _loginInFlight = request;
+    return request;
+  }
+
+  Future<Map<String, String>> _performLogin(Map<String, String> saved) async {
+    final username = saved['username']?.trim() ?? '';
+    final password = saved['password'] ?? '';
+    if (username.isEmpty || password.isEmpty) throw const SourceException(SourceFailure.authentication);
+    final response = await transport.json(
+      'POST',
+      _authUrl('login'),
+      headers: const {'Content-Type': 'application/json', 'x-return-tokens': 'true'},
+      body: jsonEncode({'username': username, 'password': password}),
+    );
+    return _saveSession(saved, response);
+  }
+
+  Future<Map<String, String>> _refresh(Map<String, String> saved) {
+    final current = _memoryCredentials;
+    if (current != null && current['refreshToken'] != saved['refreshToken']) return Future.value(current);
+    final pending = _refreshInFlight;
+    if (pending != null) return pending;
+    late final Future<Map<String, String>> request;
+    request = _performRefresh(saved).whenComplete(() {
+      if (identical(_refreshInFlight, request)) _refreshInFlight = null;
+    });
+    _refreshInFlight = request;
+    return request;
+  }
+
+  Future<Map<String, String>> _performRefresh(Map<String, String> saved) async {
+    final refreshToken = saved['refreshToken']?.trim() ?? '';
+    if (refreshToken.isEmpty) return _login(saved);
+    final response = await transport.json('POST', _authUrl('auth/refresh'), headers: {'x-refresh-token': refreshToken});
+    return _saveSession(saved, response);
+  }
+
+  Future<Map<String, String>> _renew(Map<String, String> saved) async {
+    if (saved['refreshToken']?.isNotEmpty == true) {
+      try {
+        return await _refresh(saved);
+      } on SourceException catch (error) {
+        if (error.status != 401 || !_hasLoginCredentials(saved)) rethrow;
+      }
+    }
+    if (_hasLoginCredentials(saved)) return _login(saved);
+    throw const SourceException(SourceFailure.authentication);
+  }
+
+  Future<Map<String, String>> _authorizedCredentials({bool forceRefresh = false}) async {
+    var saved = await _savedCredentials();
+    final access = _accessToken(saved);
+    if (forceRefresh) return _renew(saved);
+    if (_hasLoginCredentials(saved) && saved['authMode'] == null && saved['refreshToken'] == null) {
+      return _login(saved);
+    }
+    if (access == null) {
+      if (_hasLoginCredentials(saved) && saved['authMode'] != 'legacyLogin') return _login(saved);
+      return _renew(saved);
+    }
+    if (saved['refreshToken']?.isNotEmpty == true && _expiresSoon(access)) {
+      saved = await _renew(saved);
+    }
+    return saved;
+  }
+
+  Future<Map<String, String>> headers() async {
+    final saved = await _authorizedCredentials();
+    final access = _accessToken(saved);
+    if (access == null) throw const SourceException(SourceFailure.authentication);
+    return {'Authorization': 'Bearer $access'};
+  }
+
+  Future<String> _requestText(String method, Uri uri, {Map<String, String> headers = const {}, Object? body}) async {
+    var saved = await _authorizedCredentials();
+    Future<String> request(Map<String, String> auth) =>
+        transport.text(method, uri, headers: {...auth, ...headers}, body: body);
+    try {
+      return await request(await headersFor(saved));
+    } on SourceException catch (error) {
+      if (error.status != 401) rethrow;
+      saved = await _renew(saved);
+      return request(await headersFor(saved));
+    }
+  }
+
+  Future<Map<String, String>> headersFor(Map<String, String> saved) async {
+    final access = _accessToken(saved);
+    if (access == null) throw const SourceException(SourceFailure.authentication);
+    return {'Authorization': 'Bearer $access'};
+  }
+
+  Future<Map<String, dynamic>> api(String method, String path, {Map<String, String>? query, Object? body}) async {
+    final raw = await _requestText(
+      method,
+      url(path, query),
+      headers: body != null ? const {'Content-Type': 'application/json'} : const {},
+      body: body == null ? null : jsonEncode(body),
+    );
+    return sourceMap(jsonDecode(raw));
+  }
+
+  @override
+  Future<void> refreshAuthorization() async {
+    final saved = await _savedCredentials();
+    if (saved['refreshToken']?.isNotEmpty == true || _accessToken(saved) == null) await _renew(saved);
+  }
+
   @override
   SourceCapabilities get capabilities =>
       const SourceCapabilities(audioProgress: true, readingProgress: true, annotations: true);
@@ -176,10 +341,10 @@ class AudiobookshelfSourceAdapter extends SourceAdapter {
         'isFinished': progress.finished,
       },
     };
-    await transport.text(
+    await _requestText(
       'PATCH',
       url('api/me/progress/${entry.id}'),
-      headers: {...await headers(), 'Content-Type': 'application/json'},
+      headers: const {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
   }
@@ -196,10 +361,10 @@ class AudiobookshelfSourceAdapter extends SourceAdapter {
       if (sourceList(existing['bookmarks']).any((b) => sourceInt(sourceMap(b)['time']) == time)) method = 'PATCH';
     }
     try {
-      await transport.text(
+      await _requestText(
         method,
         url('api/me/item/${entry.id}/bookmark${annotation.deleted ? '/$time' : ''}'),
-        headers: {...await headers(), 'Content-Type': 'application/json'},
+        headers: const {'Content-Type': 'application/json'},
         body: annotation.deleted ? null : jsonEncode({'time': time, 'title': annotation.note}),
       );
     } on SourceException catch (e) {

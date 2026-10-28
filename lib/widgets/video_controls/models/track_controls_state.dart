@@ -64,6 +64,9 @@ class TrackControlsState {
   final String? serverId;
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
+
+  /// Refreshes player chrome cues after a motion profile is changed in the settings sheet.
+  final VoidCallback? onMotionClarityChanged;
   final bool isAmbientLightingEnabled;
   final VoidCallback? onToggleAmbientLighting;
   final bool canControl;
@@ -135,6 +138,7 @@ class TrackControlsState {
     this.metadata,
     this.shaderService,
     this.onShaderChanged,
+    this.onMotionClarityChanged,
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,
     this.canControl = true,

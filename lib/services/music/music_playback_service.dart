@@ -24,6 +24,12 @@ abstract interface class MusicLoudnessProfileService {
   Future<AudioLoudnessProfile?> loadCurrentTrackLoudnessProfile();
 }
 
+/// Identifies the playback-owned native music core. Native dependency/format
+/// availability is negotiated separately; this never promises live FFT data.
+abstract interface class MusicVisualizationAudioService {
+  bool get hasNativeVisualizationAudio;
+}
+
 /// Optional live analysis capability for the existing Now Playing visualizer.
 /// Backends without derived audio metadata keep using Plex loudness or ambient motion.
 abstract interface class MusicAudioSpectrumService {

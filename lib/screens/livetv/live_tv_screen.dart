@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../exceptions/media_server_exceptions.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/iptv_copy.dart';
 import '../../media/live_tv_support.dart';
 import '../../media/media_server_client.dart';
 import '../../models/livetv_channel.dart';
@@ -17,6 +18,9 @@ import '../../models/livetv_program.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
+import '../../profiles/active_profile_provider.dart';
+import '../../iptv/iptv_models.dart';
+import '../../iptv/iptv_source_repository.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
@@ -35,6 +39,7 @@ import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/recordings_tab.dart';
 import 'tabs/whats_on_tab.dart';
+import '../iptv/iptv_vod_screen.dart';
 
 typedef _FavoriteScope = ({String source, String storeKey, FavoriteChannelPersistenceMode mode});
 
@@ -76,6 +81,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   List<LiveTvChannel> _channels = [];
   bool _isLoading = true;
   String? _error;
+  bool _hasIptvSources = false;
+  bool _hasIptvVodSources = false;
 
   // Favorites
   bool _showFavoritesOnly = false;
@@ -209,7 +216,33 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       failureMessage: t.liveTv.guideReloadFailed,
       action: (dvr, serverInfo) => dvr.reloadGuide(serverInfo.dvrKey),
     );
+    await _refreshIptvSources();
     await _loadChannels();
+  }
+
+  Future<void> _refreshIptvSources() async {
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    if (profileId == null) return;
+    final repository = context.read<IptvSourceRepository>();
+    final sources = await repository.sources(profileId);
+    if (sources.isEmpty) return;
+    var failed = 0;
+    await Future.wait(
+      sources.map((source) async {
+        try {
+          await repository.refresh(profileId, source.id);
+        } on Object catch (error, stackTrace) {
+          failed++;
+          appLogger.e('IPTV source refresh failed for ${source.id}', error: error, stackTrace: stackTrace);
+        }
+      }),
+    );
+    if (!mounted) return;
+    showSnackBar(
+      context,
+      failed == 0 ? t.iptv.refreshComplete : t.iptv.refreshFailed(count: failed),
+      type: failed == 0 ? SnackBarType.success : SnackBarType.error,
+    );
   }
 
   /// Runs [action] on every DVR-capable Live TV server in parallel, then
@@ -283,7 +316,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       canProcessRules = canProcessRules || dvr.supportsRuleProcessing;
     }
     return (
-      tabs: [LiveTvTab.guide, if (hasPlexServer) LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings],
+      tabs: [
+        LiveTvTab.guide,
+        if (hasPlexServer) LiveTvTab.whatsOn,
+        if (hasDvr || _hasIptvSources) LiveTvTab.recordings,
+      ],
       canProcessRules: canProcessRules,
     );
   }
@@ -356,10 +393,45 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     });
 
     try {
+      final activeProfileId = context.read<ActiveProfileProvider>().activeId;
       final multiServer = context.read<MultiServerProvider>();
       final liveTvServers = multiServer.liveTvServers;
+      final iptvRepository = context.read<IptvSourceRepository>();
+      var iptvChannels = <LiveTvChannel>[];
+      var iptvSources = <IptvSourceSummary>[];
+      var iptvVodSources = <IptvSourceSummary>[];
+      if (activeProfileId != null) {
+        try {
+          // tvOS can restore the protected source configuration after a
+          // system storage purge. Channel and guide snapshots are
+          // rebuildable, so reload a previously successful but empty catalog
+          // the first time Live TV opens after recovery.
+          iptvSources = await iptvRepository.sources(activeProfileId);
+          try {
+            iptvVodSources = await iptvRepository.vodSources(activeProfileId);
+          } on Object catch (error, stackTrace) {
+            appLogger.w('Could not inspect IPTV VOD sources', error: error, stackTrace: stackTrace);
+          }
+          await Future.wait([
+            for (final source in iptvSources)
+              if (source.channelCount == 0 && source.lastSuccessAt != null)
+                iptvRepository.refresh(activeProfileId, source.id).catchError((Object error) {
+                  appLogger.w('Could not rebuild IPTV catalog ${source.id}', error: error);
+                  return 0;
+                }),
+          ]);
+          iptvChannels = await iptvRepository.channels(activeProfileId);
+        } on Object catch (error, stackTrace) {
+          appLogger.e('Failed to load IPTV channels', error: error, stackTrace: stackTrace);
+        }
+      }
+      if (!mounted || context.read<ActiveProfileProvider>().activeId != activeProfileId) return;
 
-      if (liveTvServers.isEmpty) {
+      _hasIptvSources = iptvSources.isNotEmpty;
+      _hasIptvVodSources = iptvVodSources.isNotEmpty;
+      _refreshVisibleTabs(multiServer);
+
+      if (liveTvServers.isEmpty && iptvChannels.isEmpty && iptvSources.isEmpty) {
         setState(() {
           _isLoading = false;
           _error = t.liveTv.noDvr;
@@ -367,8 +439,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         return;
       }
 
-      final allChannels = <LiveTvChannel>[];
-      final seenChannels = <String>{};
+      final allChannels = <LiveTvChannel>[...iptvChannels];
+      final seenChannels = <String>{for (final channel in iptvChannels) liveTvChannelScopeKey(channel)};
       final favoriteScopeByLiveServer = <String, _FavoriteScope>{};
       final liveServerKeyByChannel = <String, String>{};
       final favoriteStoreBySource = <String, String>{};
@@ -439,7 +511,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       );
 
       final failure = firstFailure;
-      if (failure != null && serversFailed == serversTried) {
+      if (failure != null && serversFailed == serversTried && iptvChannels.isEmpty) {
         if (!mounted) return;
         // Every server failed, so there is nothing to replace the loaded
         // channels with: keep them and report the failure, or show the error
@@ -453,6 +525,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         if (keepChannels) showErrorSnackBar(context, message);
         return;
       }
+      if (failure != null && serversTried > 0 && serversFailed == serversTried && iptvChannels.isNotEmpty && mounted) {
+        showErrorSnackBar(context, localizedLoadErrorText(failure, context: t.liveTv.title));
+      }
 
       allChannels.sort((a, b) {
         final aNum = double.tryParse(a.number ?? '') ?? 999999;
@@ -460,7 +535,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         return aNum.compareTo(bNum);
       });
 
-      if (!mounted) return;
+      if (!mounted || context.read<ActiveProfileProvider>().activeId != activeProfileId) return;
 
       appLogger.d('Live TV: loaded ${allChannels.length} channels');
 
@@ -509,6 +584,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   Future<void> _loadFavorites(MultiServerProvider multiServer) async {
     final loadGeneration = ++_favoritesLoadGeneration;
+    final profileId = context.read<ActiveProfileProvider>().activeId;
     _favoritesWritable = false;
     final previousStoreBySource = Map<String, String>.of(_favoriteStoreBySource);
     final scopeByLiveServer = Map<String, _FavoriteScope>.of(_favoriteScopeByLiveServer);
@@ -517,6 +593,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final successfulStores = <String>{};
     final failedStores = <String>{};
     final seenFavorites = <String>{};
+    var iptvFavoritesFailed = false;
 
     // One liveTvServers entry per DVR: register every favorite scope, but
     // fetch each favorite store only once.
@@ -549,6 +626,18 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       },
     );
 
+    if (profileId != null) {
+      try {
+        for (final favorite in await context.read<IptvSourceRepository>().favorites(profileId)) {
+          storeBySource.putIfAbsent(favorite.source, () => 'iptv:$profileId');
+          if (seenFavorites.add(favorite.stableKey)) merged.add(favorite);
+        }
+      } on Object catch (error, stackTrace) {
+        iptvFavoritesFailed = true;
+        appLogger.e('Failed to load IPTV favorites', error: error, stackTrace: stackTrace);
+      }
+    }
+
     // A failed store keeps its last committed in-memory slice. Healthy stores
     // still refresh, but mutations stay disabled until every store has loaded
     // so a later persist cannot replace the failed store with an empty list.
@@ -559,7 +648,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       }
     }
 
-    if (!mounted || loadGeneration != _favoritesLoadGeneration) return;
+    if (!mounted || loadGeneration != _favoritesLoadGeneration ||
+        context.read<ActiveProfileProvider>().activeId != profileId) return;
     setState(() {
       _favoriteScopeByLiveServer
         ..clear()
@@ -569,8 +659,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         ..addAll(storeBySource);
       _favoriteChannels = merged;
       _refreshFavoriteKeys();
-      _favoritesLoaded = failedStores.isEmpty || successfulStores.isNotEmpty || merged.isNotEmpty;
-      _favoritesWritable = failedStores.isEmpty;
+      _favoritesLoaded = (failedStores.isEmpty && !iptvFavoritesFailed) || successfulStores.isNotEmpty || merged.isNotEmpty;
+      _favoritesWritable = failedStores.isEmpty && !iptvFavoritesFailed;
     });
     appLogger.d(
       'Live TV: loaded ${merged.length} favorite channels'
@@ -726,6 +816,23 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       };
       writes.add(client.liveTv.setFavoriteChannels(channels));
     }
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    if (profileId != null) {
+      final iptvSourceIds = _channels.map((channel) => channel.iptvSourceId).whereType<String>().toSet();
+      for (final sourceId in iptvSourceIds) {
+        final source = iptvFavoriteSource(sourceId);
+        final orderedChannelIds = <String>[];
+        for (final favorite in _favoriteChannels.where((favorite) => favorite.source == source)) {
+          for (final channel in _channels) {
+            if (channel.iptvSourceId != sourceId || channel.key != favorite.id) continue;
+            final channelId = channel.iptvChannelId;
+            if (channelId != null) orderedChannelIds.add(channelId);
+            break;
+          }
+        }
+        writes.add(context.read<IptvSourceRepository>().saveFavoriteOrder(profileId, sourceId, orderedChannelIds));
+      }
+    }
     await Future.wait(writes);
   }
 
@@ -795,6 +902,18 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               // guide-only action would be unmounted before focus could ever
               // reach it. Selecting a result switches back to the guide tab.
               FocusableAction(icon: Symbols.search_rounded, tooltip: t.liveTv.searchGuide, onPressed: _showGuideSearch),
+              if (_hasIptvVodSources)
+                FocusableAction(
+                  icon: Symbols.movie_rounded,
+                  tooltip: t.iptv.vodTitle,
+                  onPressed: () {
+                    final profileId = context.read<ActiveProfileProvider>().activeId;
+                    if (profileId == null) return;
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => IptvVodScreen(profileId: profileId)),
+                    );
+                  },
+                ),
               if (!isRecordings)
                 FocusableAction(
                   icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,
@@ -834,7 +953,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   Widget _buildTabContent(LiveTvTab tab, List<LiveTvChannel> guideChannels) {
     return switch (tab) {
       LiveTvTab.guide =>
-        guideChannels.isEmpty && _channels.isNotEmpty
+        _channels.isEmpty
+            ? EmptyStateWidget(
+                icon: Symbols.live_tv_rounded,
+                message: _hasIptvSources ? t.iptv.noChannels : t.liveTv.noChannels,
+              )
+            : guideChannels.isEmpty
             ? EmptyStateWidget(
                 icon: Symbols.star_outline_rounded,
                 message: t.liveTv.noFavoriteChannels,

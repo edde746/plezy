@@ -9,10 +9,12 @@
 #include <app_links/app_links_plugin_c_api.h>
 #include <auto_updater_windows/auto_updater_windows_plugin_c_api.h>
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
+#include <desktop_drop/desktop_drop_plugin.h>
 #include <disk_usage/disk_usage_plugin_c_api.h>
 #include <flutter_inappwebview_windows/flutter_inappwebview_windows_plugin_c_api.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <flutter_tts/flutter_tts_plugin.h>
+#include <flutter_whisper_ggml/flutter_whisper_plugin_c_api.h>
 #include <os_media_controls/os_media_controls_plugin_c_api.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
 #include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
@@ -28,6 +30,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("AutoUpdaterWindowsPluginCApi"));
   ConnectivityPlusWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
+  DesktopDropPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("DesktopDropPlugin"));
   DiskUsagePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DiskUsagePluginCApi"));
   FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar(
@@ -36,6 +40,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   FlutterTtsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterTtsPlugin"));
+  FlutterWhisperPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FlutterWhisperPluginCApi"));
   OsMediaControlsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("OsMediaControlsPluginCApi"));
   PermissionHandlerWindowsPluginRegisterWithRegistrar(

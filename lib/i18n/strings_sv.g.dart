@@ -3569,7 +3569,6 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Lägg till Google Drive, OneDrive, Dropbox, WebDAV eller S3 i Filer och böcker först.';
 	@override String get syncDestination => 'Sync lagringskonto';
 	@override String get syncFolder => 'Synkronisera mappen eller prefixet';
-	@override String get syncFolderHelp => 'Använd en separat befintlig mapp inom din WebDAV-källa, eller en dedikerad S3-prefix. bokfiler ändras aldrig.';
 	@override String get syncCode => 'Privat synkroniseringskod';
 	@override String get syncCodeHelp => 'Skapa en kod på din första enhet, skriv sedan den koden på dina andra enheter. Håll en privat kopia: det är nyckeln till din krypterade status. Använd en annan kod för varje person.';
 	@override String get showCode => 'Visa eller dölja synkroniseringskoden';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Ta bort denna källa kommer att avaktivera läsning och lyssnande synkroniseras här. krypterade synkroniserade filer kommer att förbli i leverantören.';
 	@override String get syncReconnect => 'Återkoppling av lagringskonto';
 	@override String lastSynced({required Object time}) => 'Senast synkroniserad på ${time}';
-	@override String get syncPrivacy => 'Endast krypterade framsteg och anteckningar lagras. ljud- och e-bokfiler, konto tokens och lösenord laddas inte. Google Drive och OneDrive använder app lagring; Dropbox använder PlezyNG Sync. Tillåter synkronisering kan begära ytterligare skriftlig åtkomst. Medan aktiverad, denna destination äger framsteg synkronisering; server framsteg förblir separat. Turn synkronisering av håller lokal historia och fjärrstatus.';
 	@override String get syncConflicts => 'Välj var du ska återställa';
 	@override String get conflictHelp => 'Dessa ändringar gjordes oberoende. Välj positionen eller bokmärkesversionen att hålla. En senare timestamp eller en högre procentsats vinner inte automatiskt.';
 	@override String syncDevice({required Object device}) => 'Anläggning ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsSv {
 			'audiobook.addSyncSource' => 'Lägg till Google Drive, OneDrive, Dropbox, WebDAV eller S3 i Filer och böcker först.',
 			'audiobook.syncDestination' => 'Sync lagringskonto',
 			'audiobook.syncFolder' => 'Synkronisera mappen eller prefixet',
-			'audiobook.syncFolderHelp' => 'Använd en separat befintlig mapp inom din WebDAV-källa, eller en dedikerad S3-prefix. bokfiler ändras aldrig.',
 			'audiobook.syncCode' => 'Privat synkroniseringskod',
 			'audiobook.syncCodeHelp' => 'Skapa en kod på din första enhet, skriv sedan den koden på dina andra enheter. Håll en privat kopia: det är nyckeln till din krypterade status. Använd en annan kod för varje person.',
 			'audiobook.showCode' => 'Visa eller dölja synkroniseringskoden',
@@ -8401,7 +8398,6 @@ extension on TranslationsSv {
 			'audiobook.syncSourceDisconnect' => 'Ta bort denna källa kommer att avaktivera läsning och lyssnande synkroniseras här. krypterade synkroniserade filer kommer att förbli i leverantören.',
 			'audiobook.syncReconnect' => 'Återkoppling av lagringskonto',
 			'audiobook.lastSynced' => ({required Object time}) => 'Senast synkroniserad på ${time}',
-			'audiobook.syncPrivacy' => 'Endast krypterade framsteg och anteckningar lagras. ljud- och e-bokfiler, konto tokens och lösenord laddas inte. Google Drive och OneDrive använder app lagring; Dropbox använder PlezyNG Sync. Tillåter synkronisering kan begära ytterligare skriftlig åtkomst. Medan aktiverad, denna destination äger framsteg synkronisering; server framsteg förblir separat. Turn synkronisering av håller lokal historia och fjärrstatus.',
 			'audiobook.syncConflicts' => 'Välj var du ska återställa',
 			'audiobook.conflictHelp' => 'Dessa ändringar gjordes oberoende. Välj positionen eller bokmärkesversionen att hålla. En senare timestamp eller en högre procentsats vinner inte automatiskt.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Anläggning ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsSv {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

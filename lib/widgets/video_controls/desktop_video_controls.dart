@@ -75,6 +75,8 @@ class DesktopVideoControls extends StatefulWidget {
   final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
   final String? liveChannelName;
+  final Widget? liveRecordingControl;
+  final Widget? liveChannelPickerControl;
 
   // Live TV time-shift
   final LiveTvTimeline Function(Duration position)? liveTimelineForPosition;
@@ -141,6 +143,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.hasFirstFrame,
     this.thumbnailDataBuilder,
     this.liveChannelName,
+    this.liveRecordingControl,
+    this.liveChannelPickerControl,
     this.liveTimelineForPosition,
     this.onLiveSeek,
     this.onLiveSeekBy,
@@ -703,6 +707,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               onStartAutoHide: widget.onStartAutoHide,
             ),
           ),
+          if (widget.liveChannelPickerControl != null) widget.liveChannelPickerControl!,
+          if (widget.liveRecordingControl != null) widget.liveRecordingControl!,
           if (_isLive &&
               (widget.liveTimelineForPosition == null ||
                   (widget.liveTimelineForPosition?.call(widget.player.state.position).isAtLive ?? true))) ...[

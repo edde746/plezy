@@ -125,8 +125,7 @@ require(
 )
 require(
     '"group":"packer-windows"' in windows
-    and '"Windows","ARM64"' in windows
-    and '"ng-shared-main-plezyng"' in windows
+    and '"Windows","ARM64","on-demand","packer-windows","PlezyNG"' in windows
     and "matrix.arch == 'x64'" in windows,
     "Windows ARM64 must use its private JIT route",
 )
@@ -421,7 +420,19 @@ require(
 )
 require(
     "Upload experimental WebOS candidate for this build" not in build_webos,
-    "unapproved WebOS candidates must stay inside the ephemeral private-JIT workspace",
+    "unapproved WebOS candidates must stay inside private runner storage",
+)
+require(
+    "retain_private_candidate.py --preflight" in named_step(
+        build_webos, "Verify private WebOS output storage"
+    )
+    and "retain_private_candidate.py" in named_step(
+        build_webos, "Retain verified WebOS candidate for private device testing"
+    )
+    and build_webos.index("Verify private WebOS output storage")
+    < build_webos.index("Build and verify the WebOS ARM package")
+    < build_webos.index("Retain verified WebOS candidate for private device testing"),
+    "webOS candidates must survive guest cleanup in preflight-checked private storage",
 )
 require(
     "Public webOS inclusion requires action=release." in job("validate-trusted-ref")

@@ -95,6 +95,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
       // Start the server cleanup before releasing the native stream. tvOS may
       // suspend the process shortly after this lifecycle callback returns.
+      await _finishIptvRecording(currentPlayer, notify: false);
       final stoppedReport = _sendStoppedProgressOnce();
       try {
         await currentPlayer.stop();
@@ -111,6 +112,9 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // Pause first so Android MPV does not keep decoding against a transient
     // background surface while the app is locking or hiding.
     if (shouldPauseForBackground) {
+      // Local MPV capture cannot continue reliably after this screen pauses.
+      // Finalize the bytes already received before the OS backgrounds player.
+      if (_isRecordingIptv) await _finishIptvRecording(currentPlayer, notify: false);
       // Sticky latch: a car with the Automotive compatibility mode delivers
       // onPause *and* onStop, so this runs twice, and the second pass must not
       // overwrite the latch with the already-paused state. Cleared on resume.

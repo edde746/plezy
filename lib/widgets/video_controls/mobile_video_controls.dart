@@ -63,6 +63,8 @@ class MobileVideoControls extends StatefulWidget {
   final bool isLive;
 
   final String? liveChannelName;
+  final Widget? liveRecordingControl;
+  final Widget? liveChannelPickerControl;
 
   // Live TV time-shift
   final LiveTvTimeline Function(Duration position)? liveTimelineForPosition;
@@ -112,6 +114,8 @@ class MobileVideoControls extends StatefulWidget {
     this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
+    this.liveRecordingControl,
+    this.liveChannelPickerControl,
     this.liveTimelineForPosition,
     this.onLiveSeek,
     this.onLiveSeekBy,
@@ -327,7 +331,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           style: VideoHeaderStyle.multiLine,
           onCancelAutoHide: widget.onCancelAutoHide,
           onStartAutoHide: widget.onStartAutoHide,
-          trailing: widget.trackChapterControls,
+          trailing: _topBarActions,
           onBack: widget.onBack,
           showClock: !isPortraitPhone,
         ),
@@ -335,6 +339,16 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
     );
 
     return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
+  }
+
+  Widget get _topBarActions {
+    final actions = [
+      if (widget.liveChannelPickerControl != null) widget.liveChannelPickerControl!,
+      widget.trackChapterControls,
+      if (widget.liveRecordingControl != null) widget.liveRecordingControl!,
+    ];
+    if (actions.length == 1) return actions.single;
+    return Row(mainAxisSize: MainAxisSize.min, children: actions);
   }
 
   Widget _buildPlaybackControls(BuildContext _) {

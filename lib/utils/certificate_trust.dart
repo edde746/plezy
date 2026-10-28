@@ -97,4 +97,7 @@ abstract final class CertificateTrust {
 
   @visibleForTesting
   static void debugReset() => _userAuthorities = null;
+
+  @visibleForTesting
+  static void debugSetUserAuthoritiesForTesting(SecurityContext context) => _userAuthorities = context;
 }

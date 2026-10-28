@@ -165,7 +165,7 @@ abstract class PlayerBase
   /// destination cannot be read back, and then to [publishPlayheadRelocation]
   /// when there is a destination to report.
   @protected
-  int beginPlayheadRelocation() =>   _playheadOperations;
+  int beginPlayheadRelocation() => _playheadOperations;
 
   /// Record that a claimed relocation actually moved the playhead, even though
   /// its destination could not be read back.
@@ -236,7 +236,7 @@ abstract class PlayerBase
   /// to leave a hung predecessor's release chained forever (the permanent
   /// "Playback could not be started" wedge).
   static int _nativeInstanceCounter = 0;
-  final int nativeInstanceId =   _nativeInstanceCounter;
+  final int nativeInstanceId = _nativeInstanceCounter;
 
   static const _maximumDurationMilliseconds = 9223372036854775;
 
@@ -262,7 +262,7 @@ abstract class PlayerBase
   /// in milliseconds; see [configureTimeline].
   int? _timelineMsFromSourceSeconds(Object? value, {bool round = false}) {
     final sourceMs = _millisecondsFromSeconds(value, round: round);
-    return sourceMs == null ? null : sourceMs   _timelineOffsetMs;
+    return sourceMs == null ? null : sourceMs + _timelineOffsetMs;
   }
 
   /// [timelinePosition] in the open source's own time, for commands the
@@ -368,7 +368,7 @@ abstract class PlayerBase
 
   @protected
   Future<void> observeProperty(String name, String format) async {
-    final propId = _nextPropId  ;
+    final propId = _nextPropId++;
     _propIdToName[propId] = name;
     await invoke('observeProperty', {'name': name, 'format': format, 'id': propId});
   }
@@ -891,7 +891,7 @@ abstract class PlayerBase
         if (externalMetadata != null && externalMetadata.isNotEmpty) {
           if (isContainer && externalFilename != null) {
             final metadataIndex = containerMetadataIndexes[externalFilename] ?? 0;
-            containerMetadataIndexes[externalFilename] = metadataIndex   1;
+            containerMetadataIndexes[externalFilename] = metadataIndex + 1;
             if (metadataIndex < externalMetadata.length && externalMetadata[metadataIndex].isContainer) {
               matchedMetadata = externalMetadata[metadataIndex];
             }
@@ -1094,7 +1094,7 @@ abstract class PlayerBase
       _deferredRelocation = (token: token, position: position);
       return;
     }
-    final writer = token ??   _playheadOperations;
+    final writer = token ?? _playheadOperations;
     _takeOperationOwnership(writer);
     _lastPositionWriter = writer;
     _activeSeekGroup = null;
@@ -1122,7 +1122,7 @@ abstract class PlayerBase
     final rate = _state.rate.isFinite && _state.rate > 0 ? _state.rate : 1.0;
     final elapsed = since?.elapsedMicroseconds ?? 0;
     final covered = _state.playing
-        ? Duration(microseconds: ((elapsed   _landedProgressSlack.inMicroseconds) * rate).round())
+        ? Duration(microseconds: ((elapsed + _landedProgressSlack.inMicroseconds) * rate).round())
         : Duration.zero;
     return drift <= covered ? observed : target;
   }
@@ -1196,7 +1196,7 @@ abstract class PlayerBase
     _outgoingSourcePosition = Duration(milliseconds: _frozenOutgoingPositionMs ?? _lastReportedPositionMs);
     _frozenOutgoingPositionMs = null;
     _lastReportedPositionMs = 0;
-    _takeOperationOwnership(  _playheadOperations);
+    _takeOperationOwnership(_playheadOperations);
     _activeSeekGroup = null;
     // A gapless advance starts the new source at its beginning, which is known
     // rather than guessed. Published unconditionally: the alternative is to
@@ -1274,7 +1274,7 @@ abstract class PlayerBase
       bufferRanges: const [],
       hasRenderedFrame: false,
     );
-    _takeOperationOwnership(  _playheadOperations);
+    _takeOperationOwnership(_playheadOperations);
     _lastPositionWriter = _playheadOperations;
     _activeSeekGroup = null;
     completedController.add(false);
@@ -1316,7 +1316,7 @@ abstract class PlayerBase
       bufferRanges: snapshot.bufferRanges,
       hasRenderedFrame: snapshot.hasRenderedFrame,
     );
-    _takeOperationOwnership(  _playheadOperations);
+    _takeOperationOwnership(_playheadOperations);
     _lastPositionWriter = _playheadOperations;
     _activeSeekGroup = null;
     completedController.add(snapshot.completed);
@@ -1549,7 +1549,7 @@ abstract class PlayerBase
   Future<void> _applyAudioFilters() async {
     if (Platform.isAndroid && playerType != 'mpv') return;
     final filters = <String>[];
-    for (var index = 0; index < _audioEqualizerFrequencies.length; index  ) {
+    for (var index = 0; index < _audioEqualizerFrequencies.length; index++) {
       final gain = _audioEqualizerBandGains[index];
       if (gain.abs() < 0.05) continue;
       filters.add('equalizer=f=${_audioEqualizerFrequencies[index]}:t=q:w=1:g=${gain.toStringAsFixed(1)}');
@@ -1604,7 +1604,7 @@ abstract class PlayerBase
     // surround (-3 dB) and LFE (dropped) swresample defaults already match.
     // Only a stereo fold mixes the center away, so only it takes the boost.
     final centerMixLevel = limit == AudioChannelLimit.stereo
-        ? 'center_mix_level=${math.pow(10, (-3   centerBoostDb.clamp(0, 12)) / 20).toStringAsFixed(4)}'
+        ? 'center_mix_level=${math.pow(10, (-3 + centerBoostDb.clamp(0, 12)) / 20).toStringAsFixed(4)}'
         : '';
     // Swresample AVOptions are read once at audio-filter creation, so they
     // must land before audio-channels triggers the chain (re)build.
@@ -1656,7 +1656,7 @@ abstract class PlayerBase
   Future<void> runSeek(Duration position, Future<void> Function() seekFn) async {
     if (_disposed) return;
 
-    final request =   _playheadOperations;
+    final request = _playheadOperations;
     // Measures how much media time playback could legitimately have covered
     // while the command was in flight; a fixed media-time window cannot tell a
     // fast-rate advance from a stale pre-seek tick.

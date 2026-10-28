@@ -138,6 +138,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// routinely return a single sequel or spin-off per label, and a shelf per
   /// label spent a whole hub row — header, scroll row, one card — on it.
   List<({CatalogRelationType type, CatalogItem item})> _relationEntries = const [];
+  final Set<String> _checkingRelationCopies = {};
 
   @override
   void initState() {
@@ -1303,6 +1304,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final entry = _relationEntries[index];
     final item = entry.item;
     final label = relationLabel(entry.type);
+    final canCheckCopies =
+        const {CatalogRelationType.adaptation, CatalogRelationType.alternativeVersion}.contains(entry.type) &&
+        item.ids.toExternalIds().hasCatalogIds;
+    final checkingCopies = _checkingRelationCopies.contains(item.entryIdentityKey);
     final year = item.year;
     void open() => unawaited(navigateToCatalogItem(context, item));
     return FocusableWrapper(
@@ -1354,6 +1359,14 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                   ],
                 ),
               ),
+              if (canCheckCopies)
+                IconButton(
+                  tooltip: t.explore.inTheseLibraries,
+                  onPressed: checkingCopies ? null : () => _showVerifiedRelationCopies(item),
+                  icon: checkingCopies
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const AppIcon(Symbols.video_library_rounded, size: 20),
+                ),
               AppIcon(
                 Directionality.of(context) == ui.TextDirection.rtl
                     ? Symbols.chevron_left_rounded
@@ -1367,6 +1380,79 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         ),
       ),
     );
+  }
+
+  /// Resolves only provider-declared adaptations and alternative versions.
+  /// CatalogLibraryMatcher verifies every result against shared public ids;
+  /// title similarity by itself can never produce an offered library copy.
+  Future<void> _showVerifiedRelationCopies(CatalogItem item) async {
+    final key = item.entryIdentityKey;
+    if (key.isEmpty || !item.ids.toExternalIds().hasCatalogIds || !_checkingRelationCopies.add(key)) return;
+    setState(() {});
+    try {
+      final result = await context.read<CatalogLibraryMatcher>().match(item);
+      if (!mounted) return;
+      final heading = result.items.isNotEmpty
+          ? t.explore.inTheseLibraries
+          : result.succeededServerIds.isEmpty &&
+                result.failedServerIds.isEmpty &&
+                result.cancelledServerIds.isEmpty &&
+                result.unqueriedServerIds.isEmpty
+          ? t.messages.serverUnavailableForProfile
+          : result.succeededServerIds.isNotEmpty &&
+                result.failedServerIds.isEmpty &&
+                result.cancelledServerIds.isEmpty &&
+                result.unqueriedServerIds.isEmpty
+          ? t.explore.notInLibrary
+          : t.explore.libraryCheckFailed(
+              n: result.failedServerIds.length + result.cancelledServerIds.length + result.unqueriedServerIds.length,
+            );
+      await OverlaySheetController.showAdaptive<void>(
+        context,
+        showDragHandle: true,
+        builder: (sheetContext) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(isolateDisplayText(item.title), style: Theme.of(sheetContext).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(heading, style: Theme.of(sheetContext).textTheme.bodyMedium),
+                if (result.items.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: result.items.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final match = result.items[index];
+                        return FocusableListTile(
+                          leading: BackendBadge(backend: match.backend, size: 24),
+                          title: Text(match.libraryTitle ?? match.serverName ?? match.title ?? item.title),
+                          subtitle: Text(match.serverName ?? match.backend.dialect?.productName ?? ''),
+                          onTap: () {
+                            Navigator.of(sheetContext).pop();
+                            unawaited(navigateToMediaItemDetails(this.context, match));
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.discover.findNext.openFailed);
+    } finally {
+      if (mounted) setState(() => _checkingRelationCopies.remove(key));
+    }
   }
 
   /// Taste-based recommendations stay separate from labelled franchise facts.

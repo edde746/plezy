@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links_linux
+  desktop_drop
   disk_usage
   flutter_secure_storage_linux
   os_media_controls
@@ -15,7 +16,9 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  flutter_whisper_ggml
   jni
+  sherpa_onnx_linux
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

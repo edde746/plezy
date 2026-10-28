@@ -687,5 +687,3 @@ Repository links below are pinned to the audited commit except PRs and upstream 
 [W36]: https://ryzenai.docs.amd.com/en/latest/whisper_cpp.html
 [W37]: https://github.com/PaddlePaddle/PaddleOCR
 [W38]: https://pub.dev/packages/flutter_whisper_ggml
-
-

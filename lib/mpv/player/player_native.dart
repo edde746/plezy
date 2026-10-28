@@ -109,9 +109,8 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
       _hardwareDecoding = true;
 
   @override
-  Set<String> get supportedLocalSubtitleExtensions => audioOnly
-      ? const <String>{}
-      : const <String>{'srt', 'ass', 'ssa', 'vtt', 'sub', 'idx', 'sup'};
+  Set<String> get supportedLocalSubtitleExtensions =>
+      audioOnly ? const <String>{} : const <String>{'srt', 'ass', 'ssa', 'vtt', 'sub', 'idx', 'sup'};
 
   @override
   bool get supportsSubtitleStyleControls => !audioOnly;
@@ -206,6 +205,10 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   /// Whether this instance drives the audio-only core.
   final bool audioOnly;
+
+  /// The dedicated music core exists; optional PCM APIs are negotiated by
+  /// the visualization controller, independently of this ownership signal.
+  bool get isAudioCoreReady => audioOnly && initialized && !disposed;
 
   @override
   final MethodChannel methodChannel;
@@ -1114,7 +1117,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     // and the backend's next tick supplies the real position.
     final seconds = double.tryParse(await invoke<String>('getProperty', {'name': 'time-pos'}) ?? '');
     if (seconds != null && seconds.isFinite && !seconds.isNegative) {
-      publishPlayheadRelocation(Duration(milliseconds: (seconds * 1000).round())   timelineOffset, token: token);
+      publishPlayheadRelocation(Duration(milliseconds: (seconds * 1000).round()) + timelineOffset, token: token);
     }
   }
 
@@ -1271,12 +1274,12 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   Future<void> _enqueueAudioStateReconciliation(int fields) {
     final requested = _requestedAudioState;
-    if (fields & _passthroughAudioField != 0)   _passthroughGeneration;
-    if (fields & _normalizationAudioField != 0)   _normalizationGeneration;
-    if (fields & _downmixAudioField != 0)   _downmixGeneration;
-    if (fields & _equalizerAudioField != 0)   _equalizerGeneration;
-    if (fields & _effectsAudioField != 0)   _effectsGeneration;
-    if (fields & _rateAudioField != 0)   _rateGeneration;
+    if (fields & _passthroughAudioField != 0) _passthroughGeneration++;
+    if (fields & _normalizationAudioField != 0) _normalizationGeneration++;
+    if (fields & _downmixAudioField != 0) _downmixGeneration++;
+    if (fields & _equalizerAudioField != 0) _equalizerGeneration++;
+    if (fields & _effectsAudioField != 0) _effectsGeneration++;
+    if (fields & _rateAudioField != 0) _rateGeneration++;
     final generations = (
       passthrough: _passthroughGeneration,
       normalization: _normalizationGeneration,

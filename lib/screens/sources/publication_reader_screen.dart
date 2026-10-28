@@ -52,6 +52,7 @@ class PublicationReaderScreen extends StatefulWidget {
 
 class _PublicationReaderScreenState extends State<PublicationReaderScreen> with WidgetsBindingObserver {
   SourceController? _sources;
+  SourcePreviewSession? _previewSession;
   SourcePlayback? _playback;
   String? _profile;
   int _generation = 0;
@@ -97,6 +98,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   Future<void> _writes = Future.value();
   FlutterTts? _tts;
   bool get pdf => !_streamingComic && p.extension(widget.file.name).toLowerCase() == '.pdf';
+  bool get _previewOnly => widget.file.sampleOnly;
   bool get valid =>
       !_disposed &&
       _sources?.current(_generation) == true &&
@@ -136,6 +138,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         !_ready ||
         _autoJoinScheduled ||
         _workspaceSessionId != null ||
+        _previewOnly ||
         workspace == null ||
         workspace.sessionCount == 0) {
       return;
@@ -158,6 +161,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   }
 
   void _toggleReaderWorkspace() {
+    if (_previewOnly) return;
     final controller = _workspaceController ?? context.read<MultiviewWorkspaceController>();
     final existingId = _workspaceSessionId;
     if (existingId != null) {
@@ -253,34 +257,38 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       _generation = sources.generation;
       sources.addListener(_profileChanged);
       PlaybackCoordinator.instance.registerNarrationSession(_stopSpeech);
-      final initial = PublicationProgress(
-        entryKey: widget.entry.key,
-        edition: widget.file.fingerprint,
-        mode: PublicationMode.reading,
-        session: const Uuid().v4(),
-      );
-      _progress = await sources.openProgress(widget.entry, initial);
-      if (sources.cloudConflict(initial.key)) {
-        _cloudConflict = true;
-        throw const SourceException(SourceFailure.conflict);
-      }
-      sources.holdProgress(initial.key);
-      if (await sources.repository.remoteConflict(_profile!, initial.key) != null) {
-        throw const SourceException(SourceFailure.conflict);
+      if (!_previewOnly) {
+        final initial = PublicationProgress(
+          entryKey: widget.entry.key,
+          edition: widget.file.fingerprint,
+          mode: PublicationMode.reading,
+          session: const Uuid().v4(),
+        );
+        _progress = await sources.openProgress(widget.entry, initial);
+        if (sources.cloudConflict(initial.key)) {
+          _cloudConflict = true;
+          throw const SourceException(SourceFailure.conflict);
+        }
+        sources.holdProgress(initial.key);
+        if (await sources.repository.remoteConflict(_profile!, initial.key) != null) {
+          throw const SourceException(SourceFailure.conflict);
+        }
       }
       final defaults = await sources.repository.preference(_profile!, 'reader');
       _settings = normalizeReaderPreferences({
         ...defaults,
         if (_preferenceKey != 'reader') ...await sources.repository.preference(_profile!, _preferenceKey),
       });
-      _annotations = (await sources.repository.annotations(
-        _profile!,
-        widget.entry.key,
-      )).where((a) => a.edition == widget.file.fingerprint && a.mode == PublicationMode.reading).toList();
+      _annotations = _previewOnly
+          ? []
+          : (await sources.repository.annotations(
+              _profile!,
+              widget.entry.key,
+            )).where((a) => a.edition == widget.file.fingerprint && a.mode == PublicationMode.reading).toList();
       final temp = await getTemporaryDirectory();
-      final cached = await sources.downloads.local(_profile!, widget.entry.sourceId, widget.file);
+      final cached = _previewOnly ? null : await sources.downloads.local(_profile!, widget.entry.sourceId, widget.file);
       ComicPageSource? pages;
-      if (cached == null && sources.sources.any((s) => s.id == widget.entry.sourceId)) {
+      if (cached == null && !_previewOnly && sources.sources.any((s) => s.id == widget.entry.sourceId)) {
         try {
           pages = await sources.adapter(widget.entry.sourceId).comicPages(widget.file);
         } on SourceException catch (error) {
@@ -293,7 +301,14 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         }
       }
       if (!valid) return;
-      if (pages == null) _file = await sources.content(widget.entry, widget.file);
+      if (pages == null) {
+        if (_previewOnly && cached == null) {
+          _previewSession = sources.beginPreview(widget.entry, widget.file);
+          _file = await _previewSession!.open();
+        } else {
+          _file = cached ?? await sources.content(widget.entry, widget.file);
+        }
+      }
       if (!valid) return;
       _streamingComic = pages != null;
       if (!pdf || pages != null) {
@@ -313,6 +328,9 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       }
       if (valid && mounted) setState(() => _loading = false);
     } catch (e) {
+      final preview = _previewSession;
+      _previewSession = null;
+      if (preview != null) await preview.dispose();
       if (mounted) {
         setState(() {
           _error = e;
@@ -326,6 +344,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     if (!valid) {
       unawaited(_stopSpeech());
       unawaited(_server?.close());
+      unawaited(_previewSession?.dispose());
       if (mounted) setState(() => _error = const SourceException(SourceFailure.cancelled));
     }
   }
@@ -378,6 +397,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           'interfaceLocale': LocaleSettings.currentLocale.languageTag,
           'formattingLocale': LocalePreferences.formattingLocaleName.replaceAll('_', '-'),
           'interfaceDirection': Directionality.of(context) == TextDirection.rtl ? 'rtl' : 'ltr',
+          'previewOnly': _previewOnly,
           'cfi': _progress?.locator?.cfi,
           'page': _progress?.locator?.page,
           'settings': readerSettings(),
@@ -516,12 +536,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
             _settings['$key'] = value.clamp(key == 'zoom' ? .25 : 12, key == 'zoom' ? 6 : 72);
           }
           if (key == 'zoom' && const ['fit-page', 'fit-width', 'fit-height'].contains(value)) _settings['zoom'] = value;
-          await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
+          if (!_previewOnly) await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
         }
       case 'browserSettings':
         final value = sourceMap(message['settings']);
         _settings = normalizeReaderPreferences(message['reset'] == true ? {} : {..._settings, ...value});
-        await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
+        if (!_previewOnly) await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
         await _js('settings', readerSettings());
       case 'browserSpeech':
         if (Platform.isLinux) {
@@ -534,6 +554,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           if (valid) await _js('toggleSpeech');
         }
       case 'saveNote':
+        if (_previewOnly) return;
         final cfi = message['cfi'] as String? ?? _progress?.locator?.cfi;
         if (cfi == null || cfi.length > 8192) return;
         final annotation = BookAnnotation(
@@ -596,7 +617,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   }
 
   Future<void> _addNote({BookAnnotation? existing, String? quote}) async {
-    if (!valid || _progress == null) return;
+    if (!valid || _progress == null || _previewOnly) return;
     final selected = quote ?? _selectedText ?? existing?.quote ?? '';
     final note = await editSourceNote(context, initial: existing?.note ?? '', quote: selected);
     if (note == null || !valid) return;
@@ -786,7 +807,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           onChanged: (value) async {
             if (!valid) return;
             _settings = normalizeReaderPreferences(value);
-            await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
+            if (!_previewOnly) await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
             await _js('settings', readerSettings());
           },
         ),
@@ -844,6 +865,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   }
 
   Future<void> _startReadAlong() async {
+    if (_previewOnly) return;
     if (_readAlong) {
       await _playback!.pause();
       _playback!.removeListener(_followAudio);
@@ -948,6 +970,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     _playback?.removeListener(_followAudio);
     PlaybackCoordinator.instance.unregisterNarrationSession(_stopSpeech);
     _saveTimer?.cancel();
+    unawaited(_previewSession?.dispose());
     unawaited(_stopSpeech());
     _pdfSearch?.dispose();
     final session = _playback, server = _server;
@@ -1124,15 +1147,16 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       appBar: AppBar(
         title: Text(isolateDisplayText(_readerTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
-          FocusableButton(
-            autoScroll: false,
-            onPressed: _ready ? _toggleReaderWorkspace : null,
-            child: IconButton(
-              tooltip: _workspaceDetached ? t.common.returnToFullView : t.videoControls.openMiniPlayer,
+          if (!_previewOnly)
+            FocusableButton(
+              autoScroll: false,
               onPressed: _ready ? _toggleReaderWorkspace : null,
-              icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+              child: IconButton(
+                tooltip: _workspaceDetached ? t.common.returnToFullView : t.videoControls.openMiniPlayer,
+                onPressed: _ready ? _toggleReaderWorkspace : null,
+                icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+              ),
             ),
-          ),
           IconButton(
             tooltip: _comic ? t.comics.thumbnails : t.fileSources.contents,
             onPressed: _ready ? () => sourceAction(context, _contents) : null,
@@ -1150,12 +1174,14 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
             adaptiveSheet: true,
             enabled: _ready,
             entriesBuilder: (_) => [
-              AppMenuItem(
-                value: 'note',
-                label: _selectedCFI == null ? t.fileSources.bookmark : t.fileSources.highlight,
-                icon: Symbols.bookmark_add_rounded,
-              ),
-              AppMenuItem(value: 'notes', label: t.fileSources.bookmarks, icon: Symbols.bookmarks_rounded),
+              if (!_previewOnly)
+                AppMenuItem(
+                  value: 'note',
+                  label: _selectedCFI == null ? t.fileSources.bookmark : t.fileSources.highlight,
+                  icon: Symbols.bookmark_add_rounded,
+                ),
+              if (!_previewOnly)
+                AppMenuItem(value: 'notes', label: t.fileSources.bookmarks, icon: Symbols.bookmarks_rounded),
               AppMenuItem(
                 value: 'jump',
                 label: pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection,
@@ -1175,13 +1201,14 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
                   label: _speaking ? t.fileSources.stopReading : t.fileSources.readAloud,
                   icon: Symbols.record_voice_over_rounded,
                 ),
-              if (_overlays.isNotEmpty)
+              if (!_previewOnly && _overlays.isNotEmpty)
                 AppMenuItem(
                   value: 'along',
                   label: _readAlong ? t.fileSources.pause : t.fileSources.readAlong,
                   icon: Symbols.headphones_rounded,
                 ),
-              AppMenuItem(value: 'finished', label: t.fileSources.markFinished, icon: Symbols.done_rounded),
+              if (!_previewOnly)
+                AppMenuItem(value: 'finished', label: t.fileSources.markFinished, icon: Symbols.done_rounded),
             ],
             onSelected: (action) => sourceAction(context, () async {
               switch (action) {

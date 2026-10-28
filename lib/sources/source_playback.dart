@@ -77,11 +77,14 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool opening = false;
   bool fullPlayerVisible = false;
   Map<String, Uri> _localOverrides = const {};
+  Map<String, Map<String, String>> _localOverrideHeaders = const {};
   Map<String, String> _directPlayerAddresses = const {};
   Map<String, String> _localPlayerOptions = const {};
   bool _persistProgress = true;
+  Future<void> Function(PublicationProgress progress)? _onTransientProgress;
   bool _liveInput = false;
   List<File> _temporaryMediaFiles = const [];
+  SourcePreviewSession? _previewSession;
   File? _streamRecordingTarget;
   File? _streamRecordingPartial;
   File? _streamRecordingBackup;
@@ -151,7 +154,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       ? currentChapter!.endMs
       : hasCompleteTimeline
       ? durationMs
-      : _offset   currentFileDurationMs;
+      : _offset + currentFileDurationMs;
   int? get bookRemainingMs =>
       hasCompleteTimeline ? ((durationMs - positionMs).clamp(0, durationMs) / speed).round() : null;
   int? get chapterRemainingMs => currentChapter != null && currentChapter!.endMs > positionMs
@@ -160,31 +163,44 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool get active => entry != null;
   bool get video => mode == PublicationMode.watching;
   bool get isTransientInput => !_persistProgress;
+  bool get isSamplePreview => files.isNotEmpty && files.every((file) => file.sampleOnly);
   bool get isLiveInput => _liveInput;
   bool get isCapturePreview =>
       _fileIndex >= 0 && _fileIndex < files.length && _directPlayerAddresses.containsKey(files[_fileIndex].id);
   bool get isRecordingStream => _streamRecordingPartial != null;
-  bool get hasSelectedPersistentExternalSubtitle => _isSelectedExternalSubtitlePath(
-    player?.state.track.subtitle,
-    _selectedExternalSubtitlePath,
-  );
+  bool get hasSelectedPersistentExternalSubtitle =>
+      _isSelectedExternalSubtitlePath(player?.state.track.subtitle, _selectedExternalSubtitlePath);
   File? get activePersistentExternalSubtitleFile {
     final path = _selectedExternalSubtitlePath;
     return hasSelectedPersistentExternalSubtitle && path != null ? File(path) : null;
   }
+
   bool get canExportActiveExternalSubtitle {
     final file = activePersistentExternalSubtitleFile;
     return file != null && const {'.srt', '.vtt', '.ass', '.ssa'}.contains(p.extension(file.path).toLowerCase());
   }
+
   String? get activeExternalSubtitleIdentity {
     final native = player;
     final selectedPath = _selectedExternalSubtitlePath;
     final item = entry;
-    if (native == null || selectedPath == null || item == null || files.isEmpty || _fileIndex < 0 || _fileIndex >= files.length) {
+    if (native == null ||
+        selectedPath == null ||
+        item == null ||
+        files.isEmpty ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length) {
       return null;
     }
-    return [item.key, progress?.edition ?? '', files[_fileIndex].fingerprint, selectedPath, _subtitleAudioIdentity(native)].join('|');
+    return [
+      item.key,
+      progress?.edition ?? '',
+      files[_fileIndex].fingerprint,
+      selectedPath,
+      _subtitleAudioIdentity(native),
+    ].join('|');
   }
+
   bool get playing => player?.state.isActive ?? false;
   bool get canUseDirectQueueControls =>
       isTransientInput &&
@@ -388,11 +404,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _notify();
   }
 
-  Future<void> _selectSubtitleForMute(
-    Player native,
-    int generation, {
-    List<SubtitleTrack>? availableTracks,
-  }) async {
+  Future<void> _selectSubtitleForMute(Player native, int generation, {List<SubtitleTrack>? availableTracks}) async {
     if (!_userMuted ||
         _disposed ||
         !video ||
@@ -493,20 +505,20 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     var offset = 0;
     for (final index in _queueOrder) {
       if (index == fileIndex) return offset;
-      offset  = _durations[index] ?? 0;
+      offset += _durations[index] ?? 0;
     }
     return offset;
   }
 
   bool get hasCompleteTimeline => List.generate(files.length, (i) => _durations[i] ?? 0).every((d) => d > 0);
-  int get durationMs => List.generate(files.length, (i) => _durations[i] ?? 0).fold(0, (a, b) => a   b);
-  int get positionMs => _offset   currentFilePositionMs;
+  int get durationMs => List.generate(files.length, (i) => _durations[i] ?? 0).fold(0, (a, b) => a + b);
+  int get positionMs => _offset + currentFilePositionMs;
 
   Future<void> toggleQueueShuffle() => _serialize(() async {
     if (!canUseDirectQueueControls || _queueOrder.length < 2) return;
     final currentPosition = _queuePosition;
-    final playedPrefix = _queueOrder.take(currentPosition   1).toList();
-    final remaining = _queueOrder.skip(currentPosition   1).toList();
+    final playedPrefix = _queueOrder.take(currentPosition + 1).toList();
+    final remaining = _queueOrder.skip(currentPosition + 1).toList();
     if (_queueShuffled) {
       remaining.sort();
     } else {
@@ -516,7 +528,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _queueShuffled = !_queueShuffled;
     _rebuildChapters();
     if (_sleepChapterFile != null && _sleepChapterFilePosition != null) {
-      _sleepAtMs = _offsetBefore(_sleepChapterFile!)   _sleepChapterFilePosition!;
+      _sleepAtMs = _offsetBefore(_sleepChapterFile!) + _sleepChapterFilePosition!;
     }
     _notify();
   });
@@ -536,12 +548,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   int? _nextPlaybackFileIndex() {
     if (canUseDirectQueueControls) {
-      final nextPosition = _queuePosition   1;
+      final nextPosition = _queuePosition + 1;
       if (nextPosition < _queueOrder.length) return _queueOrder[nextPosition];
       if (_queueRepeatMode == MusicRepeatMode.all) return _queueOrder.first;
       return null;
     }
-    return _fileIndex   1 < files.length ? _fileIndex   1 : null;
+    return _fileIndex + 1 < files.length ? _fileIndex + 1 : null;
   }
 
   int? _previousPlaybackFileIndex() {
@@ -593,9 +605,13 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     List<PublicationFile> selected, {
     PublicationMode? playbackMode,
     Map<String, Uri> localOverrides = const {},
+    Map<String, Map<String, String>> localOverrideHeaders = const {},
     bool persistProgress = true,
+    int initialPositionMs = 0,
+    Future<void> Function(PublicationProgress progress)? onTransientProgress,
     bool liveInput = false,
     List<File> temporaryMediaFiles = const [],
+    SourcePreviewSession? samplePreview,
     Map<String, String> directPlayerAddresses = const {},
     Map<String, String> localPlayerOptions = const {},
   }) => _serialize(() async {
@@ -603,6 +619,24 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     try {
       sources.requireSession();
       if (selected.isEmpty) throw const SourceException(SourceFailure.unsupported);
+      final containsSample = selected.any((file) => file.sampleOnly);
+      if (containsSample &&
+          (!selected.every((file) => file.sampleOnly) ||
+              selected.length != 1 ||
+              persistProgress ||
+              samplePreview == null ||
+              samplePreview.file.fingerprint != selected.single.fingerprint)) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      if (containsSample && (directPlayerAddresses.isNotEmpty || localPlayerOptions.isNotEmpty)) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      if (containsSample) _previewSession = samplePreview;
+      final effectiveOverrides = Map<String, Uri>.from(localOverrides);
+      if (containsSample) {
+        final previewFile = await samplePreview!.open();
+        effectiveOverrides[selected.single.id] = previewFile.uri;
+      }
       if (PlatformDetector.isAutomotive()) await CarUxRestrictionsService.instance.ensureResolved();
       final requestedMode =
           playbackMode ?? (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
@@ -654,13 +688,17 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _profileGeneration = sources.generation;
       entry = item;
       files = List.unmodifiable(selected);
+      _localOverrides = Map.unmodifiable(effectiveOverrides);
+      _localOverrideHeaders = Map.unmodifiable({
+        for (final entry in localOverrideHeaders.entries) entry.key: Map.unmodifiable(entry.value),
+      });
       _queueOrder = List<int>.generate(files.length, (index) => index);
       _queueShuffled = false;
       _queueRepeatMode = MusicRepeatMode.off;
-      _localOverrides = Map.unmodifiable(localOverrides);
       _directPlayerAddresses = Map.unmodifiable(directPlayerAddresses);
       _localPlayerOptions = Map.unmodifiable(localPlayerOptions);
       _persistProgress = persistProgress;
+      _onTransientProgress = onTransientProgress;
       _liveInput = liveInput;
       _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
       mode = requestedMode;
@@ -677,7 +715,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       failure = null;
       _durations.clear();
       _fileChapters.clear();
-      for (var i = 0; i < files.length; i  ) {
+      for (var i = 0; i < files.length; i++) {
         if ((files[i].durationMs ?? 0) > 0) _durations[i] = files[i].durationMs!;
       }
       final edition = sourceDigest(jsonEncode(files.map((f) => f.fingerprint).toList()));
@@ -690,7 +728,13 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         }
         sources.holdProgress(initial.key);
       } else {
-        progress = initial;
+        final duration = _durations[0] ?? 0;
+        final position = initialPositionMs.clamp(0, duration > 0 ? duration : 14 * 24 * 60 * 60 * 1000).toInt();
+        progress = initial.copyWith(
+          positionMs: position,
+          filePositionMs: position,
+          fraction: duration > 0 ? (position / duration).clamp(0.0, 1.0) : 0,
+        );
       }
       _undoSeek = null;
       if (persistProgress && progress!.finished) {
@@ -769,7 +813,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         preferSkipOverTrackButtons: true,
         skipInterval: Duration(seconds: backwardSeconds),
       );
-      final generation =   _generation;
+      final generation = _generation;
       bool current() => _valid && generation == _generation && player == native;
       _subscriptions.add(
         native.streams.position.listen((_) {
@@ -859,7 +903,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
             _serialize(() async {
               if (!current() || _fileEpoch != epoch) return;
               if (_sleepBoundaryFile == _fileIndex ||
-                  (_sleepAtMs != null && _offset   (_durations[_fileIndex] ?? 0) >= _sleepAtMs!) ||
+                  (_sleepAtMs != null && _offset + (_durations[_fileIndex] ?? 0) >= _sleepAtMs!) ||
                   (_sleepUntilQueuePosition != null && _queuePosition >= _sleepUntilQueuePosition!)) {
                 _sleepBoundaryFile = _fileIndex;
                 clearSleep();
@@ -995,9 +1039,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       publicationFile: publicationFile,
     );
     final oldAssets = (previousManifest?['assets'] as List<Map<String, dynamic>>?) ?? const [];
-    final slot = sha256
-        .convert(utf8.encode(jsonEncode([normalizedLanguage, forced, hearingImpaired])))
-        .toString();
+    final slot = sha256.convert(utf8.encode(jsonEncode([normalizedLanguage, forced, hearingImpaired]))).toString();
     final checksum = sha256.convert(bytes).toString();
     Map<String, dynamic>? previousSlotAsset;
     for (final asset in oldAssets) {
@@ -1029,7 +1071,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final uniqueFiles = nextAssets.map((asset) => asset['file'] as String).toSet();
     final totalBytes = uniqueFiles.fold<int>(
       0,
-      (total, fileName) => total   (nextAssets.firstWhere((asset) => asset['file'] == fileName)['size'] as int),
+      (total, fileName) => total + (nextAssets.firstWhere((asset) => asset['file'] == fileName)['size'] as int),
     );
     if (nextAssets.length > 8 || totalBytes > 20 * 1024 * 1024) {
       throw const SourceException(SourceFailure.quotaExceeded);
@@ -1070,7 +1112,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         try {
           await _applyExternalSubtitleSync(native, delayMs: previousDelayMs, rate: previousRate);
         } on Object catch (error, stackTrace) {
-          appLogger.w('Could not restore subtitle timing after subtitle import failed', error: error, stackTrace: stackTrace);
+          appLogger.w(
+            'Could not restore subtitle timing after subtitle import failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
         }
         if (previousManifest == null) {
           if (await manifestFile.exists()) await manifestFile.delete();
@@ -1186,8 +1232,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       throw const SourceException(SourceFailure.cancelled);
     }
     final nextDelayMs = playbackPositionMs - (cueStartMs * previous.rate).round();
-    if (nextDelayMs < ScopedPlayerPrefs.minimumSyncOffsetMs ||
-        nextDelayMs > ScopedPlayerPrefs.maximumSyncOffsetMs) {
+    if (nextDelayMs < ScopedPlayerPrefs.minimumSyncOffsetMs || nextDelayMs > ScopedPlayerPrefs.maximumSyncOffsetMs) {
       throw RangeError.range(
         nextDelayMs,
         ScopedPlayerPrefs.minimumSyncOffsetMs,
@@ -1221,7 +1266,6 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     }
     return nextDelayMs;
   }
-
 
   /// Seeks to a cue's corrected display time while the same external subtitle,
   /// audio track, file, and playback generation remain active.
@@ -1352,10 +1396,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       final syncByAudio = Map<String, dynamic>.from(updated['syncByAudio'] as Map<String, dynamic>);
       final audioIdentity = _subtitleAudioIdentity(native);
       final currentSync = _subtitleSyncForAudio(syncByAudio, audioIdentity);
-      final nextSync = <String, dynamic>{
-        'delayMs': delayMs ?? currentSync.delayMs,
-        'rate': rate ?? currentSync.rate,
-      };
+      final nextSync = <String, dynamic>{'delayMs': delayMs ?? currentSync.delayMs, 'rate': rate ?? currentSync.rate};
       syncByAudio.remove('legacy');
       syncByAudio.remove(audioIdentity);
       syncByAudio[audioIdentity] = nextSync;
@@ -1414,7 +1455,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   String _externalSubtitleSyncBinding(Player native, String path) =>
-      _subtitleAudioIdentity(native)   '|'   (native.state.track.subtitle?.id ?? 'off')   '|'   path;
+      _subtitleAudioIdentity(native) + '|' + (native.state.track.subtitle?.id ?? 'off') + '|' + path;
 
   Future<void> _reapplySelectedExternalSubtitleSyncForCurrentTrack() async {
     await _commands;
@@ -1485,20 +1526,17 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final selected = manifest['selected'];
     for (final asset in manifest['assets'] as List<Map<String, dynamic>>) {
       if (asset['slot'] != selected || asset['file'] != p.basename(path)) continue;
-      final sync = _subtitleSyncForAudio(
-        asset['syncByAudio'] as Map<String, dynamic>,
-        _subtitleAudioIdentity(native),
-      );
+      final sync = _subtitleSyncForAudio(asset['syncByAudio'] as Map<String, dynamic>, _subtitleAudioIdentity(native));
       if (!_isCurrentExternalSubtitleScope(
-        native: native,
-        item: item,
-        publicationFile: publicationFile,
-        fileIndex: fileIndex,
-        profile: profile,
-        edition: edition,
-        generation: generation,
-        fileEpoch: fileEpoch,
-      ) ||
+            native: native,
+            item: item,
+            publicationFile: publicationFile,
+            fileIndex: fileIndex,
+            profile: profile,
+            edition: edition,
+            generation: generation,
+            fileEpoch: fileEpoch,
+          ) ||
           !_isSelectedExternalSubtitlePath(native.state.track.subtitle, path)) {
         return;
       }
@@ -1507,7 +1545,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         _activeExternalSubtitleSyncBinding = binding;
         _notify();
       } on Object catch (error, stackTrace) {
-        appLogger.w('Could not apply saved subtitle timing for the selected audio', error: error, stackTrace: stackTrace);
+        appLogger.w(
+          'Could not apply saved subtitle timing for the selected audio',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
       return;
     }
@@ -1532,12 +1574,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     }
     await native.setProperty(PlayerSyncOffsets.subtitleRateProperty, rate.toStringAsFixed(6));
     await native.setProperty(PlayerSyncOffsets.subtitleProperty, (delayMs / 1000.0).toString());
-    final appliedRate = double.tryParse(
-      await native.getProperty(PlayerSyncOffsets.subtitleRateProperty) ?? '',
-    );
-    final appliedDelay = double.tryParse(
-      await native.getProperty(PlayerSyncOffsets.subtitleProperty) ?? '',
-    );
+    final appliedRate = double.tryParse(await native.getProperty(PlayerSyncOffsets.subtitleRateProperty) ?? '');
+    final appliedDelay = double.tryParse(await native.getProperty(PlayerSyncOffsets.subtitleProperty) ?? '');
     if (appliedRate == null ||
         !appliedRate.isFinite ||
         appliedDelay == null ||
@@ -1606,11 +1644,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     required bool forced,
     required bool hearingImpaired,
   }) {
-    final flags = [
-      'select',
-      if (forced) 'forced',
-      if (hearingImpaired) 'hearing-impaired',
-    ].join(' ');
+    final flags = ['select', if (forced) 'forced', if (hearingImpaired) 'hearing-impaired'].join(' ');
     final title = language.isEmpty ? 'External subtitle' : language;
     return ['sub-add', path, flags, title, if (language.isNotEmpty) language];
   }
@@ -1629,7 +1663,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final rawSyncByAudioMap = rawSyncByAudio is Map ? Map<String, dynamic>.from(rawSyncByAudio) : null;
     final legacyDelay = asset['syncDelayMs'] ?? 0;
     final legacyRate = asset['syncRate'] ?? 1.0;
-    final syncByAudio = rawSyncByAudioMap ??
+    final syncByAudio =
+        rawSyncByAudioMap ??
         <String, dynamic>{
           'legacy': {'delayMs': legacyDelay, 'rate': legacyRate},
         };
@@ -1670,10 +1705,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     final extension = p.extension(fileName).toLowerCase();
     if (!const {'.srt', '.ass', '.ssa', '.vtt', '.sub'}.contains(extension) ||
         fileName != '$checksum$extension' ||
-        slot !=
-            sha256
-                .convert(utf8.encode(jsonEncode([language, forced, hearingImpaired])))
-                .toString()) {
+        slot != sha256.convert(utf8.encode(jsonEncode([language, forced, hearingImpaired]))).toString()) {
       return null;
     }
     return {
@@ -1757,10 +1789,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _pruneExternalSubtitleAssets(
-    Directory directory,
-    List<Map<String, dynamic>> assets,
-  ) async {
+  Future<void> _pruneExternalSubtitleAssets(Directory directory, List<Map<String, dynamic>> assets) async {
     final keep = assets.map((asset) => asset['file'] as String).toSet();
     final ownedAsset = RegExp(r'^[0-9a-f]{64}\.(?:srt|ass|ssa|vtt|sub)$');
     for (final entity in await directory.list(followLinks: false).toList()) {
@@ -1808,9 +1837,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (manifest == null) return;
     final assets = (manifest['assets'] as List<Map<String, dynamic>>)
         .where(
-          (asset) => native.supportedLocalSubtitleExtensions.contains(
-            p.extension(asset['file'] as String).substring(1),
-          ),
+          (asset) =>
+              native.supportedLocalSubtitleExtensions.contains(p.extension(asset['file'] as String).substring(1)),
         )
         .toList();
     final selected = manifest['selected'];
@@ -1927,12 +1955,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
           await input.setPosition(offset);
           final bytes = await input.read(chunkSize);
           if (bytes.length != chunkSize) return null;
-          for (var wordOffset = 0; wordOffset < chunkSize; wordOffset  = 8) {
+          for (var wordOffset = 0; wordOffset < chunkSize; wordOffset += 8) {
             var word = BigInt.zero;
             for (var byteOffset = 7; byteOffset >= 0; byteOffset--) {
-              word = (word << 8) | BigInt.from(bytes[wordOffset   byteOffset]);
+              word = (word << 8) | BigInt.from(bytes[wordOffset + byteOffset]);
             }
-            hash = (hash   word) & mask;
+            hash = (hash + word) & mask;
           }
         }
         if (!current()) return null;
@@ -1950,7 +1978,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   int _indexAt(int absolute) {
     var total = 0;
     for (final index in _queueOrder) {
-      total  = _durations[index] ?? 0;
+      total += _durations[index] ?? 0;
       if (absolute < total) return index;
     }
     return _queueOrder.isEmpty ? 0 : _queueOrder.last;
@@ -1994,7 +2022,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       if (_localOverrides[file.id] != null) {
         final override = _localOverrides[file.id]!;
         resolvedUri = const {'http', 'https'}.contains(override.scheme)
-            ? await _gateway!.registerUri(override)
+            ? await _gateway!.registerUri(override, headers: _localOverrideHeaders[file.id] ?? const {})
             : override;
       } else if (cached != null) {
         resolvedUri = cached.uri;
@@ -2068,9 +2096,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _fileChapters[index] = List.generate(
         rows.length,
         (i) => BookChapter(
-          title: rows[i]['title'] as String? ?? '${i   1}',
+          title: rows[i]['title'] as String? ?? '${i + 1}',
           startMs: ((rows[i]['time'] as num? ?? 0) * 1000).round(),
-          endMs: i   1 < rows.length ? ((rows[i   1]['time'] as num? ?? 0) * 1000).round() : (_durations[index] ?? 0),
+          endMs: i + 1 < rows.length ? ((rows[i + 1]['time'] as num? ?? 0) * 1000).round() : (_durations[index] ?? 0),
         ),
       );
       _rebuildChapters();
@@ -2088,36 +2116,52 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       final embedded = _fileChapters[index];
       if (embedded?.isNotEmpty == true) {
         for (final c in embedded!) {
-          result.add(BookChapter(title: c.title, startMs: offset   c.startMs, endMs: offset   c.endMs));
+          result.add(BookChapter(title: c.title, startMs: offset + c.startMs, endMs: offset + c.endMs));
         }
       } else {
-        result.add(BookChapter(title: files[index].name, startMs: offset, endMs: offset   (_durations[index] ?? 0)));
+        result.add(BookChapter(title: files[index].name, startMs: offset, endMs: offset + (_durations[index] ?? 0)));
       }
-      offset  = _durations[index] ?? 0;
+      offset += _durations[index] ?? 0;
     }
     chapters = result;
   }
 
   Future<void> _persist({bool? finished}) {
-    if (!_persistProgress || opening) return Future.value();
-    final item = entry, profile = _profile, current = progress, native = player;
-    if (item == null || profile == null || current == null || native == null) return Future.value();
+    if (opening) return Future.value();
+    final profile = _profile, current = progress, native = player;
+    if (profile == null || current == null || native == null) return Future.value();
     final index = _fileIndex, position = positionMs, filePosition = currentFilePositionMs;
     final fraction = hasCompleteTimeline && durationMs > 0
         ? (positionMs / durationMs).clamp(0.0, 1.0)
         : current.fraction;
+    final snapshot = current.copyWith(
+      positionMs: position,
+      filePositionMs: filePosition,
+      fileIndex: index,
+      fraction: fraction,
+      finished: finished,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    if (!_persistProgress) {
+      final persist = _onTransientProgress;
+      if (persist == null) return Future.value();
+      final future = _writes.then((_) async {
+        final latest = progress;
+        if (latest == null || latest.key != current.key || persist != _onTransientProgress) return;
+        await persist(snapshot);
+        progress = snapshot;
+      });
+      _writes = future.catchError((Object error) {
+        appLogger.w('Transient source playback progress could not be saved', error: error);
+      });
+      return _writes;
+    }
     final future = _writes.then((_) async {
       final latest = progress;
       if (latest == null || latest.key != current.key) return;
       progress = await sources.repository.saveProgress(
         profile,
-        latest.copyWith(
-          positionMs: position,
-          filePositionMs: filePosition,
-          fileIndex: index,
-          fraction: fraction,
-          finished: finished,
-        ),
+        snapshot,
         kind: finished == true ? 'finished' : 'position',
       );
     });
@@ -2251,7 +2295,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (!_valid || player == null || _liveInput) return;
     final maximum = hasCompleteTimeline
         ? durationMs
-        : (_durations[_fileIndex] ?? player!.state.duration.inMilliseconds)   _offset;
+        : (_durations[_fileIndex] ?? player!.state.duration.inMilliseconds) + _offset;
     final target = milliseconds.clamp(0, math.max(0, maximum)).toInt();
     final index = hasCompleteTimeline ? _indexAt(target) : _fileIndex;
     final shouldPlay = playing;
@@ -2281,10 +2325,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> skip(int seconds) => _liveInput ? Future.value() : seek(positionMs   seconds * 1000);
+  Future<void> skip(int seconds) => _liveInput ? Future.value() : seek(positionMs + seconds * 1000);
   Future<void> nextChapter() async {
     if (!hasCompleteTimeline && chapters.length == files.length) {
-      final nextPosition = _queuePosition   1;
+      final nextPosition = _queuePosition + 1;
       if (nextPosition < _queueOrder.length) {
         await seekChapter(nextPosition);
       } else if (canUseDirectQueueControls && _queueRepeatMode == MusicRepeatMode.all) {
@@ -2292,7 +2336,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       }
       return;
     }
-    final next = chapters.where((c) => c.startMs > positionMs   500).firstOrNull;
+    final next = chapters.where((c) => c.startMs > positionMs + 500).firstOrNull;
     if (next != null) {
       await seek(next.startMs);
     } else if (_nextPlaybackFileIndex() case final nextIndex?) {
@@ -2377,7 +2421,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   void extendSleep(Duration duration) {
     final left = sleepDeadline?.difference(DateTime.now()) ?? Duration.zero;
-    sleepFor((left.isNegative ? Duration.zero : left)   duration);
+    sleepFor((left.isNegative ? Duration.zero : left) + duration);
   }
 
   void sleepAfterChapter({int count = 1}) {
@@ -2385,7 +2429,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     clearSleep();
     if (hasCompleteTimeline && chapters.isNotEmpty) {
       final current = chapters.indexOf(currentChapter ?? chapters.first);
-      final index = (current   count - 1).clamp(0, chapters.length - 1);
+      final index = (current + count - 1).clamp(0, chapters.length - 1);
       final endMs = chapters[index].endMs > 0 ? chapters[index].endMs : durationMs;
       _sleepAtMs = endMs;
       if (canUseDirectQueueControls) {
@@ -2397,7 +2441,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       }
     } else {
       if (_queueOrder.isEmpty) return;
-      _sleepUntilQueuePosition = (_queuePosition   count - 1).clamp(0, _queueOrder.length - 1);
+      _sleepUntilQueuePosition = (_queuePosition + count - 1).clamp(0, _queueOrder.length - 1);
     }
     _notify();
   }
@@ -2552,6 +2596,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _controls = null;
     await release(() async => _gateway?.close());
     _gateway = null;
+    final preview = _previewSession;
+    _previewSession = null;
+    if (preview != null) await release(preview.dispose);
     entry = null;
     files = const [];
     chapters = const [];
@@ -2559,9 +2606,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _queueShuffled = false;
     _queueRepeatMode = MusicRepeatMode.off;
     _localOverrides = const {};
+    _localOverrideHeaders = const {};
     _directPlayerAddresses = const {};
     _localPlayerOptions = const {};
     _persistProgress = true;
+    _onTransientProgress = null;
     _liveInput = false;
     progress = null;
     _lastKnownFilePositionMs = 0;

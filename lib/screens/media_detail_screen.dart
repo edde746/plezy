@@ -4259,6 +4259,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       parts.add(value);
     }
 
+    String accessibleMetadataText(String value) =>
+        value.replaceAllMapped(RegExp(r'\bS(\d+)E(\d+)\b'), (match) => 'S${match[1]} E${match[2]}');
+
     add(metadata.displayTitle);
     if (!identical(lineMetadata, metadata)) {
       add(lineMetadata.displayTitle);
@@ -4267,7 +4270,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     for (final part in _tvDetailMetadataParts(metadata)) {
       add(switch (part) {
-        MetadataLineText(:final text) || MetadataLineIconText(:final text) => text,
+        MetadataLineText(:final text) || MetadataLineIconText(:final text) => accessibleMetadataText(text),
         MetadataLineRatings(:final ratings) => ratingsSemanticLabel(ratings),
       });
     }

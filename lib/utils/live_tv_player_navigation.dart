@@ -8,6 +8,8 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../models/livetv_channel.dart';
+import '../models/livetv_program.dart';
+import '../iptv/iptv_parental_access_service.dart';
 import '../providers/multi_server_provider.dart';
 import '../screens/video_player/live_tv_session_args.dart';
 import '../screens/video_player_screen.dart';
@@ -33,17 +35,24 @@ Future<void> navigateToLiveTv(
   PlaybackLaunchObserver? launchObserver,
   bool Function()? isLaunchCurrent,
   LiveTvStartPosition startPosition = LiveTvStartPosition.ask,
+  LiveTvProgram? program,
 }) async {
   if (!(isLaunchCurrent?.call() ?? true) || !(launchObserver?.isCurrent ?? true)) return;
-  final serverInfo = liveTvServerInfoForChannel(multiServer, channel);
-  if (serverInfo == null) {
+  if (!await IptvParentalAccessService.ensureAllowed(context, channel)) {
+    launchObserver?.mark('blocked', blocker: 'parentalLock');
+    return;
+  }
+  if (!context.mounted || !(isLaunchCurrent?.call() ?? true) || !(launchObserver?.isCurrent ?? true)) return;
+  final directIptv = channel.iptvSourceId != null && channel.iptvChannelId != null;
+  final serverInfo = directIptv ? null : liveTvServerInfoForChannel(multiServer, channel);
+  if (!directIptv && serverInfo == null) {
     launchObserver?.mark('blocked', blocker: 'serverUnavailable');
     showErrorSnackBar(context, Translations.of(context).liveTv.serverUnavailable);
     return;
   }
 
-  final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-  if (client == null) {
+  final client = serverInfo == null ? null : multiServer.getClientForServer(ServerId(serverInfo.serverId));
+  if (!directIptv && client == null) {
     launchObserver?.mark('blocked', blocker: 'serverUnavailable');
     showErrorSnackBar(context, Translations.of(context).liveTv.serverNotConnected);
     return;
@@ -55,7 +64,15 @@ Future<void> navigateToLiveTv(
   // The placeholder carries the actual backend through so any in-player
   // `metadata.backend` branch (transcoder hints, watch-state surfaces) sees
   // the right kind.
-  final placeholder = liveTvChannelItem(channel, backend: client.backend, serverId: serverInfo.serverId);
+  // VideoPlayerScreen currently requires a MediaItem for artwork, controls
+  // and platform media-session metadata. Direct IPTV uses this channel-only
+  // presentation shape with no server ID; all live transport comes from the
+  // typed source ID on LiveTvSessionArgs.channel.
+  final placeholder = liveTvChannelItem(
+    channel,
+    backend: client?.backend ?? MediaBackend.plex,
+    serverId: directIptv ? null : serverInfo!.serverId,
+  );
 
   final normalizedChannels = List<LiveTvChannel>.of(channels);
   var currentChannelIndex = normalizedChannels.indexWhere(
@@ -75,6 +92,7 @@ Future<void> navigateToLiveTv(
         channels: normalizedChannels,
         currentChannelIndex: currentChannelIndex,
         startPosition: startPosition,
+        initialProgram: program,
       ),
       launchObserver: launchObserver,
       isLaunchCurrent: isLaunchCurrent,
@@ -101,7 +119,7 @@ MediaItem liveTvChannelItem(LiveTvChannel channel, {required MediaBackend backen
   return MediaItem(
     id: channel.key,
     backend: backend,
-    kind: MediaKind.clip,
+    kind: channel.iptvRadio ? MediaKind.track : MediaKind.clip,
     title: channel.displayName,
     serverId: serverId ?? channel.serverId,
     serverName: channel.serverName,

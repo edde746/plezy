@@ -38,7 +38,7 @@ void main() {
 
     test('resolves region-qualified codes', () {
       expect(resolveTrackLanguageDisplay(language: 'en-AU'), 'English (Australia)');
-      expect(resolveTrackLanguageDisplay(language: 'en-US'), 'English');
+      expect(resolveTrackLanguageDisplay(language: 'en-US'), 'English (United States)');
       expect(resolveTrackLanguageDisplay(language: 'pt_BR'), 'Portuguese (Brazil)');
     });
 

@@ -63,7 +63,7 @@ env:
   TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
   LINUX_APT_PACKAGES: >
     clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libsecret-1-dev libevdev-dev liblzma-dev
-    libstdc  -12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
+    libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
     libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
     libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
     libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev
@@ -143,7 +143,7 @@ jobs:
               exit 1
             fi
             VERSION="$BUILD_VERSION_INPUT"
-            if [[ ! "$VERSION" =~ ^[0-9] \.[0-9] \.[0-9] $ ]]; then
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "The release action requires build_version=MAJOR.MINOR.PATCH." >&2
               exit 1
             fi
@@ -152,7 +152,7 @@ jobs:
             RELEASE_TAG="$BUILD_VERSION_INPUT"
             if [[ -z "$RELEASE_TAG" && ( "$MODE" == "release" || "$MODE" == "macos-validation" ) ]]; then
               RELEASE_TAG=$(python3 scripts/pubspec_version.py pubspec.yaml)
-              RELEASE_TAG=${RELEASE_TAG%% *}
+              RELEASE_TAG=${RELEASE_TAG%%+*}
             fi
             VERSION="$RELEASE_TAG"
           fi
@@ -222,7 +222,7 @@ jobs:
             echo "Release actions must run from refs/heads/main." >&2
             exit 1
           fi
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9] \.[0-9] \.[0-9] $ ]]; then
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release actions require an exact vMAJOR.MINOR.PATCH tag." >&2
             exit 1
           fi
@@ -284,8 +284,8 @@ jobs:
         run: |
           set -euo pipefail
           PACKAGE_VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
-          PACKAGE_VERSION=${PACKAGE_VERSION%% *}
-          if [[ ! "$VERSION" =~ ^[0-9] \.[0-9] \.[0-9] $ ]]; then
+          PACKAGE_VERSION=${PACKAGE_VERSION%%+*}
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release version must use semantic versioning: $VERSION" >&2
             exit 1
           fi
@@ -355,95 +355,18 @@ jobs:
 
       - name: Configure Java downloads for the private JIT proxy
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
-          if [[ -z "$proxy" ]]; then
-            echo "The private JIT HTTPS proxy is required for Android toolchain downloads." >&2
-            exit 1
-          fi
-          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
-          import sys
-          from urllib.parse import urlsplit
-
-          raw = sys.argv[1]
-          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT proxy URL is invalid for Android toolchain downloads.")
-          print(parsed.hostname)
-          print(parsed.port)
-          PY
-          )
-          if (( ${#proxy_parts[@]} != 2 )); then
-            echo "Could not parse the private JIT proxy for Java downloads." >&2
-            exit 1
-          fi
-          proxy_options=(
-            "-Dhttp.proxyHost=${proxy_parts[0]}"
-            "-Dhttp.proxyPort=${proxy_parts[1]}"
-            "-Dhttps.proxyHost=${proxy_parts[0]}"
-            "-Dhttps.proxyPort=${proxy_parts[1]}"
-            "-Dhttp.nonProxyHosts=localhost|127.*|[::1]"
-          )
-          if [[ -n "${JAVA_TOOL_OPTIONS:-}" ]]; then
-            proxy_options =("$JAVA_TOOL_OPTIONS")
-          fi
-          printf 'JAVA_TOOL_OPTIONS=%s\n' "${proxy_options[*]}" >> "$GITHUB_ENV"
+        run: python3 scripts/prepare_android_sdk.py proxy
 
       - name: Setup Android SDK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: '15859902'
+          log-accepted-android-sdk-licenses: false
 
       - name: Install the pinned Android SDK, NDK, and CMake
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
-          if [[ -z "$sdk_root" || ! -d "$sdk_root/cmdline-tools" ]]; then
-            echo "Android command-line tools were not provisioned by setup-android." >&2
-            exit 1
-          fi
-          sdkmanager="$(find "$sdk_root/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          if [[ -z "$sdkmanager" ]]; then
-            echo "Could not locate sdkmanager under $sdk_root/cmdline-tools." >&2
-            exit 1
-          fi
-          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
-          if [[ -z "$proxy" ]]; then
-            echo "The private JIT HTTPS proxy is required for Android SDK downloads." >&2
-            exit 1
-          fi
-          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
-          import sys
-          from urllib.parse import urlsplit
-
-          raw = sys.argv[1]
-          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT proxy URL is invalid for Android SDK downloads.")
-          print(parsed.hostname)
-          print(parsed.port)
-          PY
-          )
-          if (( ${#proxy_parts[@]} != 2 )); then
-            echo "Could not parse the private JIT proxy for Android SDK downloads." >&2
-            exit 1
-          fi
-          proxy_args=(--proxy=http --proxy_host="${proxy_parts[0]}" --proxy_port="${proxy_parts[1]}")
-          packages=("platform-tools" "platforms;android-37" "build-tools;36.1.0" "ndk;29.0.14206865" "cmake;4.1.2")
-          set  o pipefail
-          yes | "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --licenses
-          license_status="${PIPESTATUS[1]}"
-          set -o pipefail
-          if (( license_status != 0 )); then exit "$license_status"; fi
-          "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --install "${packages[@]}"
-          test -f "$sdk_root/platforms/android-37/android.jar"
-          test -x "$sdk_root/build-tools/36.1.0/aapt2"
-          test -f "$sdk_root/ndk/29.0.14206865/source.properties"
-          test -x "$sdk_root/cmake/4.1.2/bin/cmake"
-          java -version
+        run: python3 scripts/prepare_android_sdk.py install
 
       - name: Setup Flutter
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
@@ -490,7 +413,7 @@ jobs:
           configured=0
           missing=0
           for value in "${values[@]}"; do
-            if [[ -n "$value" ]]; then configured=$((configured   1)); else missing=$((missing   1)); fi
+            if [[ -n "$value" ]]; then configured=$((configured + 1)); else missing=$((missing + 1)); fi
           done
           if (( configured == 0 )); then
             echo "Android signing secrets are not configured; this release APK will use the CI debug key."
@@ -530,7 +453,7 @@ jobs:
               f"-Dhttps.proxyPort={parsed.port}",
           ]
           existing = os.environ.get("GRADLE_OPTS", "").strip()
-          print("GRADLE_OPTS="   " ".join(([existing] if existing else [])   options))
+          print("GRADLE_OPTS=" + " ".join(([existing] if existing else []) + options))
           PY
 
       - name: Build APKs
@@ -613,6 +536,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify private WebOS output storage
+        run: python3 tools/webos/retain_private_candidate.py --preflight
+
       - name: Test WebOS packaging and release gates
         env:
           PLEZY_WEBOS_TEST_TMP: ${{ runner.temp }}/plezy-webos-tests
@@ -626,7 +552,7 @@ jobs:
           set -euo pipefail
           free_kib="$(df -Pk "$RUNNER_TEMP" | awk 'NR == 2 { print $4 }')"
           minimum_free_kib=$((60 * 1024 * 1024))
-          if [[ ! "$free_kib" =~ ^[0-9] $ ]] || (( free_kib < minimum_free_kib )); then
+          if [[ ! "$free_kib" =~ ^[0-9]+$ ]] || (( free_kib < minimum_free_kib )); then
             echo "The WebOS engine build needs 60 GiB free under RUNNER_TEMP before toolchain installation." >&2
             df -h "$RUNNER_TEMP" >&2
             exit 1
@@ -644,7 +570,7 @@ jobs:
           done
           git lfs version
           cmake --version
-          pkg-config --modversion gtk -3.0
+          pkg-config --modversion gtk+-3.0
           clang --version
 
       - name: Setup pinned WebOS Python
@@ -679,6 +605,16 @@ jobs:
         env:
           PLEZYNG_WEBOS_TASK_ROOT: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}
           PLEZY_WEBOS_RELEASE_BUILD: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
+
+      - name: Retain verified WebOS candidate for private device testing
+        env:
+          OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/webos/retain_private_candidate.py \
+            --source-dir "$OUTPUT_DIR" \
+            --version "$(python3 scripts/pubspec_version.py pubspec.yaml)"
 
       - name: Verify the exact approved WebOS IPK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
@@ -829,10 +765,33 @@ jobs:
           export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
           pod --version
 
+      - name: Prepare short iOS build workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-ios"
+          if [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to reuse existing Apple build path: $short_root" >&2
+            exit 1
+          fi
+          mkdir -m 700 "$short_root"
+          ditto "$GITHUB_WORKSPACE/." "$short_root/"
+          chmod 700 "$short_root"
+          [[ "$(git -C "$short_root" rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          [[ ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]
+          if (( ${#short_root} > 64 )); then
+            echo "Short iOS workspace path is unexpectedly long: $short_root" >&2
+            exit 1
+          fi
+          echo "PLEZYNG_APPLE_WORKSPACE=$short_root" >> "$GITHUB_ENV"
+          echo "Prepared real local build workspace: $short_root (${#short_root} characters)"
+
       - name: Install dependencies
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Refresh pinned mpv Swift packages
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: scripts/refresh_apple_spm.sh ios
 
       - name: Configure optional iOS App Store signing
@@ -848,7 +807,7 @@ jobs:
           configured=0
           missing=0
           for value in "${values[@]}"; do
-            if [[ -n "$value" ]]; then configured=$((configured   1)); else missing=$((missing   1)); fi
+            if [[ -n "$value" ]]; then configured=$((configured + 1)); else missing=$((missing + 1)); fi
           done
           if (( configured == 0 )); then
             echo "configured=false" >> "$GITHUB_OUTPUT"
@@ -885,9 +844,11 @@ jobs:
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Build iOS (no codesign)
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --split-debug-info=debug-info/ios
 
       - name: Create unsigned developer IPA
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Plezy.app Payload/
@@ -918,6 +879,7 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           EXPORT_OPTIONS_PATH: ${{ steps.ios-signing.outputs.export_options_path }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           flutter build ios --release --no-codesign \
@@ -1009,6 +971,23 @@ jobs:
             plezyng-ios-appstore.ipa
           if-no-files-found: error
 
+      - name: Remove short iOS build workspace
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-ios"
+          if [[ -d "$short_root" && ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]; then
+            if [[ -d "$short_root/ios/Pods" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/ios"
+              ditto "$short_root/ios/Pods" "$GITHUB_WORKSPACE/ios/Pods"
+            fi
+            rm -rf -- "$short_root"
+          elif [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to remove unexpected Apple build path: $short_root" >&2
+            exit 1
+          fi
+
   build-tvos:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
@@ -1086,7 +1065,7 @@ jobs:
           configured=0
           missing=0
           for value in "${values[@]}"; do
-            if [[ -n "$value" ]]; then configured=$((configured   1)); else missing=$((missing   1)); fi
+            if [[ -n "$value" ]]; then configured=$((configured + 1)); else missing=$((missing + 1)); fi
           done
           if (( configured == 0 )); then
             echo "configured=false" >> "$GITHUB_OUTPUT"
@@ -1281,10 +1260,33 @@ jobs:
           export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
           pod --version
 
+      - name: Prepare short macOS build workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-macos"
+          if [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to reuse existing Apple build path: $short_root" >&2
+            exit 1
+          fi
+          mkdir -m 700 "$short_root"
+          ditto "$GITHUB_WORKSPACE/." "$short_root/"
+          chmod 700 "$short_root"
+          [[ "$(git -C "$short_root" rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          [[ ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]
+          if (( ${#short_root} > 64 )); then
+            echo "Short macOS workspace path is unexpectedly long: $short_root" >&2
+            exit 1
+          fi
+          echo "PLEZYNG_APPLE_WORKSPACE=$short_root" >> "$GITHUB_ENV"
+          echo "Prepared real local build workspace: $short_root (${#short_root} characters)"
+
       - name: Install dependencies
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Refresh pinned mpv Swift packages
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: scripts/refresh_apple_spm.sh macos
 
       - name: Configure repository updater trust root
@@ -1292,12 +1294,15 @@ jobs:
         env:
           SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: dart run scripts/configure_updater.dart
 
       - name: Build macOS
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} ${{ env.NATIVE_UPDATER_DEFINE }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
 
       - name: Verify universal macOS executable
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
@@ -1320,13 +1325,14 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           REQUIRE_HOMEBREW_CASK: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           signing_values=("$MACOS_CERTIFICATE_BASE64" "$MACOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PASSWORD")
           signing_set=0
           signing_missing=0
           for value in "${signing_values[@]}"; do
-            if [[ -n "$value" ]]; then signing_set=$((signing_set   1)); else signing_missing=$((signing_missing   1)); fi
+            if [[ -n "$value" ]]; then signing_set=$((signing_set + 1)); else signing_missing=$((signing_missing + 1)); fi
           done
           if (( signing_set == 0 )); then
             echo "codesign=false" >> "$GITHUB_OUTPUT"
@@ -1345,7 +1351,7 @@ jobs:
           notary_set=0
           notary_missing=0
           for value in "${notary_values[@]}"; do
-            if [[ -n "$value" ]]; then notary_set=$((notary_set   1)); else notary_missing=$((notary_missing   1)); fi
+            if [[ -n "$value" ]]; then notary_set=$((notary_set + 1)); else notary_missing=$((notary_missing + 1)); fi
           done
           if (( notary_set == 0 )); then
             echo "notarize=false" >> "$GITHUB_OUTPUT"
@@ -1387,6 +1393,7 @@ jobs:
         if: steps.macos-signing.outputs.codesign == 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           # Find the identity
           IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '".*"' | tr -d '"')
@@ -1403,7 +1410,7 @@ jobs:
             done
 
           # Sign any remaining bare executables (e.g. Sparkle's Autoupdate)
-          find "$APP_PATH/Contents/Frameworks" -type f -perm  111 ! -name "*.dylib" ! -path "*/Headers/*" ! -path "*/Modules/*" -print0 \
+          find "$APP_PATH/Contents/Frameworks" -type f -perm +111 ! -name "*.dylib" ! -path "*/Headers/*" ! -path "*/Modules/*" -print0 \
             | while IFS= read -r -d '' exe; do
               codesign --force --sign "$IDENTITY" --timestamp --options runtime "$exe" 2>/dev/null || true
             done
@@ -1414,6 +1421,7 @@ jobs:
 
       - name: Verify Signature
         if: steps.macos-signing.outputs.codesign == 'true'
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
           echo "Verifying signature..."
@@ -1431,6 +1439,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
 
@@ -1456,9 +1465,11 @@ jobs:
 
       - name: Verify Gatekeeper acceptance for Homebrew Cask
         if: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask == 'true' }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: spctl --assess --type execute --verbose=4 build/macos/Build/Products/Release/PlezyNG.app
 
       - name: Create DMG
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           mkdir -p dmg-staging
           cp -R build/macos/Build/Products/Release/PlezyNG.app dmg-staging/
@@ -1469,6 +1480,7 @@ jobs:
         id: sparkle-signing
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           if [[ -n "$SPARKLE_PRIVATE_KEY" ]]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
@@ -1480,6 +1492,7 @@ jobs:
         if: steps.sparkle-signing.outputs.available == 'true'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           printf -- "-----BEGIN ED25519 PRIVATE KEY-----\n%s\n-----END ED25519 PRIVATE KEY-----\n" "$SPARKLE_PRIVATE_KEY" > ed25519_key.pem
           OUTPUT=$(dart run auto_updater:sign_update plezyng-macos.dmg ed25519_key.pem)
@@ -1489,15 +1502,22 @@ jobs:
           echo "MACOS_ED_SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
           echo "MACOS_DMG_SIZE=$(stat -f%z plezyng-macos.dmg)" >> $GITHUB_ENV
 
+      - name: Write macOS signature metadata
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
+          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
+
+      - name: Copy macOS deliverables to the workflow workspace
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          set -euo pipefail
+          cp -f plezyng-macos.dmg macos-ed-signature.txt macos-dmg-size.txt "$GITHUB_WORKSPACE/"
+
       - name: Attest macOS DMG
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: plezyng-macos.dmg
-
-      - name: Write macOS signature metadata
-        run: |
-          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
-          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -1508,11 +1528,28 @@ jobs:
             macos-ed-signature.txt
             macos-dmg-size.txt
 
+      - name: Remove short macOS build workspace
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-macos"
+          if [[ -d "$short_root" && ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]; then
+            if [[ -d "$short_root/macos/Pods" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/macos"
+              ditto "$short_root/macos/Pods" "$GITHUB_WORKSPACE/macos/Pods"
+            fi
+            rm -rf -- "$short_root"
+          elif [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to remove unexpected Apple build path: $short_root" >&2
+            exit 1
+          fi
+
   build-windows:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -1529,6 +1566,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1
+          .\windows\tool\prepare-build-toolchain.ps1 -VerifyOnly
 
       - name: Cache Windows native dependencies
         id: windows-native-cache
@@ -1591,7 +1634,7 @@ jobs:
           $foundFiles = @(
             Get-ChildItem -LiteralPath $bundlePath -File -Recurse |
               ForEach-Object {
-                $_.FullName.Substring($bundlePath.Length   1).Replace('\', '/')
+                $_.FullName.Substring($bundlePath.Length + 1).Replace('\', '/')
               } |
               Sort-Object
           )
@@ -1623,19 +1666,19 @@ jobs:
           foreach ($file in $requiredFiles) {
             if ($foundFiles -notcontains $file) {
               Write-Output "::error::Required Windows bundle file is missing: $file"
-              $bundleErrors  = "missing $file"
+              $bundleErrors += "missing $file"
             }
           }
           foreach ($file in $forbiddenFiles) {
             if ($foundFiles -contains $file) {
               Write-Output "::error::Forbidden link by-product is present in the Windows bundle: $file"
-              $bundleErrors  = "present $file"
+              $bundleErrors += "present $file"
             }
           }
           # Release links emit PDBs for diagnostics; none may ship in the bundle.
           foreach ($file in @($foundFiles | Where-Object { $_ -like '*.pdb' })) {
             Write-Output "::error::Forbidden debug file is present in the Windows bundle: $file"
-            $bundleErrors  = "present $file"
+            $bundleErrors += "present $file"
           }
 
           # sentry.dll is the inproc-backend native SDK; crashpad_handler.exe is
@@ -1664,6 +1707,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1 -IncludeInstaller
+          .\windows\tool\prepare-build-toolchain.ps1 -IncludeInstaller -VerifyOnly
 
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -1695,7 +1744,7 @@ jobs:
         shell: bash
         run: |
           VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
-          echo "version=${VERSION%% *}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION%%+*}" >> "$GITHUB_OUTPUT"
 
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
@@ -1744,7 +1793,7 @@ jobs:
               if ($null -ne $signtoolFile) { $signtoolPath = $signtoolFile.FullName }
             }
             if ($null -eq $signtoolPath) { throw 'Could not find signtool.exe on the Windows runner.' }
-            & $signtoolPath sign /fd SHA256 /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD /tr https://timestamp.digicert.com /td SHA256 plezy-windows-installer.exe
+            & $signtoolPath sign /fd SHA256 /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td SHA256 plezy-windows-installer.exe
             if ($LASTEXITCODE -ne 0) { throw "Authenticode signing failed with exit code $LASTEXITCODE" }
             & $signtoolPath verify /pa /all plezy-windows-installer.exe
             if ($LASTEXITCODE -ne 0) { throw "Authenticode signature verification failed with exit code $LASTEXITCODE" }
@@ -1774,7 +1823,7 @@ jobs:
           Set-Content -Path $installPath -Value $installScript -Encoding utf8
           $nuspecPath = 'packaging\chocolatey\plezyng.nuspec'
           $nuspec = Get-Content $nuspecPath -Raw
-          $nuspec = $nuspec -replace '<version>[^<] </version>', "<version>$env:PACKAGE_VERSION</version>"
+          $nuspec = $nuspec -replace '<version>[^<]+</version>', "<version>$env:PACKAGE_VERSION</version>"
           Set-Content -Path $nuspecPath -Value $nuspec -Encoding utf8
           New-Item -ItemType Directory -Force 'release-packages' | Out-Null
           choco pack $nuspecPath --outputdirectory release-packages
@@ -2095,10 +2144,8 @@ jobs:
 
       - name: Build Snap package
         id: snap
-        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1
-        with:
-          path: linux/packaging/snap
-          snapcraft-args: --build-for=${{ matrix.snap_arch }}
+        shell: bash
+        run: bash scripts/build_private_snap.sh '${{ matrix.snap_arch }}'
 
       - name: Name Snap artifact
         env:
@@ -2128,7 +2175,7 @@ jobs:
             https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage \
             -o "$appimagetool"
           echo 'ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  '"$appimagetool" | sha256sum --check --status
-          chmod  x "$appimagetool"
+          chmod +x "$appimagetool"
           APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 VERSION="$RELEASE_TAG" \
             "$appimagetool" "$app_dir" "$GITHUB_WORKSPACE/plezyng-linux-x86_64.AppImage"
 
@@ -2211,8 +2258,8 @@ jobs:
         id: version
         run: |
           VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
-          BUILD_NUMBER=${VERSION#* }
-          VERSION=${VERSION%% *}
+          BUILD_NUMBER=${VERSION#*+}
+          VERSION=${VERSION%%+*}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
@@ -2266,8 +2313,8 @@ jobs:
           package_name = "PlezyNG-tizen-arm-tester.tpk"
           required = [
               package_name,
-              package_name   ".sha256",
-              package_name   ".json",
+              package_name + ".sha256",
+              package_name + ".json",
               "pubspec-tizen.lock",
               "native-build.json",
               "PlezyNG-tizen-arm-native-sources.tar.gz",
@@ -2279,7 +2326,7 @@ jobs:
           if missing:
               raise SystemExit(f"Tizen tester handoff is missing: {missing}")
 
-          report = json.loads((package_dir / (package_name   ".json")).read_text())
+          report = json.loads((package_dir / (package_name + ".json")).read_text())
           if report.get("source_commit") != expected_commit:
               raise SystemExit("Tizen tester package was built from a different source commit")
           if report.get("source_dirty") is not False:

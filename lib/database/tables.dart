@@ -288,6 +288,90 @@ class ProfileConnections extends Table {
   Set<Column> get primaryKey => {profileId, connectionId};
 }
 
+/// Profile-owned IPTV inputs. The complete endpoint configuration is stored
+/// in an OS-vault protected envelope; playlist and guide credentials never
+/// appear in these user-visible columns.
+@DataClassName('IptvSourceRow')
+@TableIndex(name: 'idx_iptv_sources_profile', columns: {#profileId, #createdAt})
+class IptvSources extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId => text()();
+  TextColumn get displayName => text()();
+  TextColumn get kind => text()();
+  TextColumn get configCiphertext => text()();
+  IntColumn get revision => integer().withDefault(const Constant(1))();
+  IntColumn get generation => integer().withDefault(const Constant(0))();
+  IntColumn get createdAt => integer()();
+  IntColumn get lastSuccessAt => integer().nullable()();
+  TextColumn get lastErrorCode => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Imported provider channels. Every stream address is independently
+/// encrypted because signed URLs commonly carry provider credentials.
+@DataClassName('IptvChannelRow')
+@TableIndex(name: 'idx_iptv_channels_source_number', columns: {#sourceId, #number})
+@TableIndex(name: 'idx_iptv_channels_source_tvg', columns: {#sourceId, #tvgId})
+class IptvChannels extends Table {
+  TextColumn get sourceId => text().references(IptvSources, #id, onDelete: KeyAction.cascade)();
+  TextColumn get channelId => text()();
+  TextColumn get title => text()();
+  TextColumn get tvgId => text().nullable()();
+  TextColumn get number => text().nullable()();
+  TextColumn get groupTitle => text().nullable()();
+  TextColumn get logoUrl => text().nullable()();
+  TextColumn get catchupSourceCiphertext => text().nullable()();
+  IntColumn get catchupDays => integer().nullable()();
+  TextColumn get streamUrlCiphertext => text()();
+  BoolColumn get isRadio => boolean().withDefault(const Constant(false))();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {sourceId, channelId};
+}
+
+/// Bounded XMLTV programme cache for the guide window. Programme metadata is
+/// ordinary catalog data; only its source's transport credentials are secret.
+@DataClassName('IptvProgrammeRow')
+@TableIndex(name: 'idx_iptv_programmes_channel_time', columns: {#sourceId, #channelId, #beginsAt})
+@TableIndex(name: 'idx_iptv_programmes_time', columns: {#sourceId, #beginsAt, #endsAt})
+class IptvProgrammes extends Table {
+  TextColumn get sourceId => text().references(IptvSources, #id, onDelete: KeyAction.cascade)();
+  TextColumn get channelId => text()();
+  IntColumn get beginsAt => integer()();
+  IntColumn get endsAt => integer()();
+  TextColumn get title => text()();
+  TextColumn get summary => text().nullable()();
+  TextColumn get category => text().nullable()();
+  TextColumn get episodeId => text().nullable()();
+  TextColumn get thumbUrl => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {sourceId, channelId, beginsAt, title};
+}
+
+/// Durable user edits are kept apart from provider snapshots, so a playlist
+/// refresh can update metadata without resetting favorites or visibility.
+@DataClassName('IptvChannelOverrideRow')
+@TableIndex(name: 'idx_iptv_overrides_favorites', columns: {#profileId, #favorite, #favoriteOrder})
+class IptvChannelOverrides extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get sourceId => text().references(IptvSources, #id, onDelete: KeyAction.cascade)();
+  TextColumn get channelId => text()();
+  BoolColumn get favorite => boolean().withDefault(const Constant(false))();
+  IntColumn get favoriteOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get hidden => boolean().withDefault(const Constant(false))();
+  TextColumn get customTitle => text().nullable()();
+  TextColumn get groupOverride => text().nullable()();
+  TextColumn get guideIdOverride => text().nullable()();
+  BoolColumn get parentalLocked => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {profileId, sourceId, channelId};
+}
+
 /// Queue for offline watch progress and manual watch actions.
 ///
 /// Stores watch progress updates and manual watch/unwatch actions

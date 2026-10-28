@@ -291,6 +291,17 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("ARM Tizen tester workflow without store handoff", result.stderr)
 
+    def test_webos_private_retention_requires_mounted_storage_preflight(self) -> None:
+        workflow = self._workflow().replace(
+            "python3 tools/webos/retain_private_candidate.py --preflight",
+            "echo missing private output check",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow())
+        result = self._run(workflow)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("webOS candidates must survive guest cleanup", result.stderr)
+
     def test_release_must_attach_the_verified_tizen_tester_handoff(self) -> None:
         workflow = self._workflow().replace(
             "            echo artifacts/tizen/PlezyNG-tizen-arm-tester-handoff.zip\n",
