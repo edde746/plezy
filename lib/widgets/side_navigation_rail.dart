@@ -24,8 +24,6 @@ import '../profiles/active_profile_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../services/device_performance.dart';
-import '../services/remote_streams/remote_stream_models.dart';
-import '../services/remote_streams/remote_streaming_provider.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/settings_service.dart';
 import '../utils/music_navigation.dart';
@@ -39,7 +37,6 @@ import '../services/fullscreen_state_manager.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/backend_badge.dart';
 import '../i18n/strings.g.dart';
-import '../i18n/presentation_formats.dart';
 
 enum _LibraryNavSection { visible, hidden }
 
@@ -684,22 +681,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   Iterable<String> _focusKeysForLibraryRows(List<_LibraryNavRow> rows) => rows.map(_focusKeyForLibraryRow);
 
-  Iterable<String> _sourceLibraryFocusKeys() sync* {
-    yield 'source:files';
-    final sourceController = context.read<SourceController?>();
-    if (!context.read<LibrariesProvider>().isLoading) {
-      for (final shelf in sourceController?.shelves ?? <PublicationShelf>{}) {
-        yield 'source:${shelf.name}';
-      }
-    }
-    final streaming = context.read<RemoteStreamingProvider?>();
-    if (streaming?.isReady == true && streaming?.profileId == sourceController?.profileId) {
-      for (final account in streaming!.accounts) {
-        yield 'remote:${account.service.name}';
-      }
-    }
-  }
-
   /// Build the set of valid focus keys (main nav + currently rendered library rows).
   Set<String> _buildValidFocusKeys({
     required List<_LibraryNavRow> visibleRows,
@@ -724,7 +705,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       if (_showFullscreenToggle) _kFullscreen,
       if (hasLiveTv) 'liveTv',
       ..._focusKeysForLibraryRows(visibleRows),
-      ..._sourceLibraryFocusKeys(),
       if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
     };
   }
@@ -806,7 +786,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         // condition so a collapsed rail never targets a focus-excluded row.
         if (_librariesExpanded && !isCollapsed) ...[
           ..._focusKeysForLibraryRows(visibleRows),
-          ..._sourceLibraryFocusKeys(),
+          for (final shelf in context.read<SourceController?>()?.shelves ?? <PublicationShelf>{})
+            'source:${shelf.name}',
           if (hasHiddenLibraries) ...[
             _kHiddenLibraries,
             if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
@@ -1341,14 +1322,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
     final isLibrariesTabSelected = widget.selectedTab == NavigationTabId.libraries;
-    final sources = context.watch<SourceController?>();
-    final streaming = context.watch<RemoteStreamingProvider?>();
-    final sourceShelves = sources?.shelves ?? <PublicationShelf>{};
-    final remoteAccounts =
-        streaming?.isReady == true && streaming?.profileId == sources?.profileId
-            ? streaming!.accounts
-            : const <RemoteStreamAccount>[];
-    final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0 && sourceShelves.isEmpty && remoteAccounts.isEmpty;
+    final sourceShelves = context.watch<SourceController?>()?.shelves ?? <PublicationShelf>{};
+    final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0 && sourceShelves.isEmpty;
     final headerLabelColor = isLibrariesTabSelected ? t.text : t.textMuted;
 
     Widget buildChevron(double opacity) {
@@ -1359,72 +1334,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         color: t.textMuted.withValues(alpha: t.textMuted.a * opacity),
       );
     }
-
-    Widget filesLibraryItem() {
-      final selected = isLibrariesTabSelected && widget.selectedLibraryKey == 'source:files';
-      return NavigationRailItem(
-        icon: Symbols.folder_open_rounded,
-        selectedIcon: Symbols.folder_open_rounded,
-        label: Text(
-          Translations.of(context).fileSources.title,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? t.text : t.textMuted,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        isSelected: selected,
-        iconSize: 18,
-        expandedHeight: 40,
-        focusNode: _focusTracker.get('source:files'),
-        onTap: () => widget.onLibrarySelected('source:files'),
-        onNavigateRight: widget.onNavigateToContent,
-      );
-    }
-
-    List<Widget> cloudLibraryItems() => [
-      if (remoteAccounts.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 4),
-          child: Text(
-            Translations.of(context).streaming.title,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: t.textMuted),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      for (final account in remoteAccounts)
-        Builder(
-          builder: (context) {
-            final key = 'remote:${account.service.name}';
-            final selected = isLibrariesTabSelected && widget.selectedLibraryKey == key;
-            final label = account.displayName.isEmpty
-                ? remoteServiceName(account.service)
-                : '${remoteServiceName(account.service)} · ${isolateDisplayText(account.displayName)}';
-            return NavigationRailItem(
-              icon: Symbols.cloud_rounded,
-              selectedIcon: Symbols.cloud_rounded,
-              label: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? t.text : t.textMuted,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              isSelected: selected,
-              iconSize: 18,
-              expandedHeight: 40,
-              focusNode: _focusTracker.get(key),
-              onTap: () => widget.onLibrarySelected(key),
-              onNavigateRight: widget.onNavigateToContent,
-            );
-          },
-        ),
-    ];
 
     return Column(
       crossAxisAlignment: .start,
@@ -1474,31 +1383,26 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               children: [
                 const SizedBox(height: 4),
                 if (isLoading)
-                  ...[
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
-                        ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
                       ),
                     ),
-                    filesLibraryItem(),
-                    ...cloudLibraryItems(),
-                  ]
+                  )
+                else if (allEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      Translations.of(context).libraries.noLibrariesFound,
+                      style: TextStyle(fontSize: 12, color: t.textMuted),
+                    ),
+                  )
                 else ...[
-                  if (allEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        Translations.of(context).libraries.noLibrariesFound,
-                        style: TextStyle(fontSize: 12, color: t.textMuted),
-                      ),
-                    ),
                   if (visibleRows.isNotEmpty) _buildLibraryGroupedColumn(visibleRows, t),
-                  filesLibraryItem(),
                   for (final shelf in sourceShelves)
                     Builder(
                       builder: (context) {
@@ -1526,7 +1430,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                         );
                       },
                     ),
-                  ...cloudLibraryItems(),
                   if (hiddenLibraryCount > 0) ...[
                     _buildHiddenLibrariesHeader(hiddenLibraryCount, t),
                     if (_hiddenLibrariesExpanded) _buildLibraryGroupedColumn(hiddenRows, t),

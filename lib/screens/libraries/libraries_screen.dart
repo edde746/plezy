@@ -19,8 +19,6 @@ import '../../media/media_kind.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
-import '../../services/remote_streams/remote_stream_models.dart';
-import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../services/settings_service.dart';
 import '../../services/jellyfin_sequential_launcher.dart';
 import '../../services/media_list_playback_launcher.dart';
@@ -41,8 +39,6 @@ import 'library_server_label.dart';
 import 'state_messages.dart';
 import '../sources/sources_screen.dart';
 import '../sources/source_navigation.dart';
-import '../remote_streams/remote_cloud_files_screen.dart';
-import '../settings/remote_streaming_settings_screen.dart';
 import '../discovery/find_next_screen.dart';
 import '../../sources/publication_shelf.dart';
 import '../../sources/source_controller.dart';
@@ -441,7 +437,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void focusActiveTabIfReady() {
     if (_selectedLibraryGlobalKey == null) return;
-    if (_selectedLibraryGlobalKey!.startsWith('source:') || _selectedLibraryGlobalKey!.startsWith('remote:')) {
+    if (_selectedLibraryGlobalKey!.startsWith('source:')) {
       _sourceFocus.requestFocus();
       if (_sourceFocus.focusedChild == null) _sourceFocus.nextFocus();
       return;
@@ -557,7 +553,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _loadLibraryContent(String libraryGlobalKey) async {
-    if (libraryGlobalKey.startsWith('source:') || libraryGlobalKey.startsWith('remote:')) {
+    if (libraryGlobalKey.startsWith('source:')) {
       _updateState(() => _selectedLibraryGlobalKey = libraryGlobalKey);
       widget.onLibrarySelected?.call(libraryGlobalKey);
       return;
@@ -620,11 +616,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         _focusCurrentTab();
       }
     });
-  }
-
-  Future<void> _manageRemoteStreaming() async {
-    if (!mounted) return;
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
   }
 
   /// Refetch content in place (stale-resume sweep from MainScreen, #2043).
@@ -890,7 +881,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = visibleMediaLibraries(allLibraries, hiddenKeys: hiddenKeys, hideEmpty: hideEmptyLibraries);
     context.watch<SourceController?>();
-    context.watch<RemoteStreamingProvider?>();
     if (_selectedLibraryGlobalKey?.startsWith('source:') == true) {
       final shelf = PublicationShelf.values.where((s) => 'source:${s.name}' == _selectedLibraryGlobalKey).firstOrNull;
       return FocusScope(
@@ -916,40 +906,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ),
       );
     }
-    final remoteService = RemoteStreamService.values
-        .where((service) => 'remote:${service.name}' == _selectedLibraryGlobalKey)
-        .firstOrNull;
-    if (remoteService != null) {
-      final streaming = context.watch<RemoteStreamingProvider?>();
-      final sources = context.watch<SourceController?>();
-      final account = streaming?.accountFor(remoteService);
-      return FocusScope(
-        node: _sourceFocus,
-        child: RemoteCloudFilesScreen(
-          key: ValueKey(_selectedLibraryGlobalKey),
-          service: remoteService,
-          expectedAccountId: account?.id,
-          expectedProfileId: sources?.profileId,
-          embedded: true,
-          onManageConnections: _manageRemoteStreaming,
-          titleWidget: AppMenuButton<String>(
-            tooltip: t.libraries.selectLibrary,
-            adaptiveSheet: true,
-            entriesBuilder: (_) => _buildGroupedLibraryMenuItems(visibleLibraries, groupByServer: groupByServerSetting),
-            onSelected: _loadLibraryContent,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(remoteServiceName(remoteService)),
-                const SizedBox(width: 8),
-                const AppIcon(Symbols.expand_more_rounded),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     // Explicit navigation can select a hidden library; visibility filters
     // choose defaults, not the content of an already selected library.
     // The server may temporarily disappear during refresh.

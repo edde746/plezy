@@ -22,8 +22,6 @@ class RemoteCloudFilesScreen extends StatefulWidget {
     required this.service,
     this.parentId,
     this.title,
-    this.titleWidget,
-    this.embedded = false,
     this.onManageConnections,
     this.expectedAccountId,
     this.expectedProfileId,
@@ -32,8 +30,6 @@ class RemoteCloudFilesScreen extends StatefulWidget {
   final RemoteStreamService service;
   final String? parentId;
   final String? title;
-  final Widget? titleWidget;
-  final bool embedded;
   final Future<void> Function()? onManageConnections;
   final String? expectedAccountId;
   final String? expectedProfileId;
@@ -194,15 +190,13 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
         return;
       }
       if (!mounted) return;
-      final playerRoute = MaterialPageRoute(
-        settings: const RouteSettings(name: 'remote-cloud-player'),
-        builder: (_) => const SourcePlayerScreen(),
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'remote-cloud-player'),
+          builder: (_) => const SourcePlayerScreen(),
+        ),
       );
-      if (widget.embedded) {
-        await Navigator.push(context, playerRoute);
-      } else {
-        await Navigator.pushReplacement(context, playerRoute);
-      }
     } on RemoteProviderException catch (error) {
       if (mounted && error.reason != RemoteProviderFailure.cancelled) {
         showAppSnackBar(context, t.streaming.streamPrepareFailed);
@@ -263,8 +257,7 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
     }
     final ready = streaming.isReady && accountId != null;
     return FocusedScrollScaffold(
-      automaticallyImplyLeading: !widget.embedded,
-      title: widget.titleWidget ?? Text(widget.title ?? t.streaming.cloudFiles),
+      title: Text(widget.title ?? t.streaming.cloudFiles),
       focusableAppBarActions: true,
       actions: [
         IconButton(

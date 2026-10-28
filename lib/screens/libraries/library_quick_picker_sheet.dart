@@ -3,7 +3,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../media/media_library.dart';
-import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../utils/content_utils.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -102,7 +101,6 @@ class LibraryQuickPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    context.watch<RemoteStreamingProvider?>();
 
     return Column(
       mainAxisSize: .min,

@@ -1,6 +1,6 @@
 # Debrid, Stremio and remote streaming
 
-Status: initial stream playback implementation is on
+Status: initial remote-streaming implementation is on
 `codex/debrid-stremio-integration-20261028`; the broader design below remains
 the target. This implementation is not full native P2P or a merged cloud
 library. See [IMPLEMENTATION.md](IMPLEMENTATION.md) for completed behavior and
@@ -13,10 +13,10 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 
 - Connect Real-Debrid or AllDebrid through a QR/code flow; connect Premiumize
   or TorBox with an API key.
-- Open each connected cloud account from the existing library selector,
-  desktop/TV side navigation, or the Files and books root. Browse ready video
-  files with the focused list, refresh, and recover from empty or unavailable
-  states without losing account setup.
+- Open connected cloud accounts from the existing Files and books screen, in
+  one nested Cloud & add-on streaming group. Browse ready video files with the
+  focused list, refresh, and recover from empty or unavailable states without
+  losing account setup.
 - Install a Stremio-compatible add-on by manifest URL and fetch its stream
   options for a Plex/Jellyfin/Emby movie or episode detail.
 - Play direct HTTP streams, select add-on subtitles, open explicit external
@@ -27,15 +27,14 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   Unreadable saved settings remain intact until the user explicitly clears
   them to reconnect; a temporarily locked device uses a retry path.
 - Read the authorization QR's service label and copy the activation code with
-  assistive technology; use the same Services/settings management path from
-  the library shortcuts.
+  assistive technology; use the Services/settings hub to manage connections.
 
 Unified cloud-source records and poster rows in Libraries/Home/Search, Stremio catalogs and account
 import, shared server player reporting, remote job management,
 renewable/background leases and an embedded P2P engine are not part of this
 implementation. Cloud inventory is fetched on demand and is not cached or
-merged into catalog surfaces; the library entries open the same cloud-file
-browser.
+merged into catalog surfaces; Files and books shortcuts open the same
+cloud-file browser.
 
 ## Target experience after full completion
 
@@ -70,8 +69,8 @@ help sentence at setup, rather than requiring users to learn the architecture.
 
 1. Implement Real-Debrid, AllDebrid, Premiumize and TorBox as native account,
    cloud-library and resolution adapters. Use each service's actual auth flow.
-   The current branch has account and supported stream-resolution paths, but
-   not cloud-library inventory.
+   The current branch has account, supported stream-resolution paths, and
+   on-demand video-file browsing, but not a unified cloud catalog.
 2. Implement the Stremio HTTP add-on protocol as a data adapter. The current
    branch supports manifest and stream lookup only. Run no add-on
    JavaScript, Node server, downloaded executable or arbitrary script in the app.
