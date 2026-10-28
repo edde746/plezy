@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../services/credential_vault.dart';
+import '../media/canonical_library.dart';
 import 'publication_shelf.dart';
 import 'source_models.dart';
 
@@ -28,11 +29,19 @@ class SourceDatabase extends GeneratedDatabase {
   SourceDatabase(super.executor);
   static Future<SourceDatabase> open() async {
     final directory = await getApplicationSupportDirectory();
-    return SourceDatabase(NativeDatabase.createInBackground(File(p.join(directory.path, 'publications.sqlite'))));
+    return SourceDatabase(
+      NativeDatabase.createInBackground(
+        File(p.join(directory.path, 'publications.sqlite')),
+        setup: (db) {
+          db.execute('PRAGMA busy_timeout=10000');
+          db.execute('PRAGMA journal_mode=WAL');
+        },
+      ),
+    );
   }
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
   @override
@@ -58,9 +67,29 @@ class SourceDatabase extends GeneratedDatabase {
       ]) {
         await customStatement(sql);
       }
+      for (final sql in canonicalLibrarySchema) {
+        await customStatement(sql);
+      }
+      await _createRemoteWorkerSchema();
       await _createEntrySearchIndex();
     },
     onUpgrade: (migrator, from, to) async {
+      if (from < 11) {
+        for (final sql in canonicalLibrarySchema) {
+          await customStatement(sql);
+        }
+        await _createRemoteWorkerSchema();
+        final identity = CanonicalLibrary(this);
+        final rows = await customSelect('SELECT profile,payload FROM entries').get();
+        for (final row in rows) {
+          try {
+            final entry = SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));
+            if (entry.kind == SourceItemKind.video) await identity.recordSource(row.read<String>('profile'), entry);
+          } on FormatException {
+            /* keep corrupt cached rows recoverable */
+          }
+        }
+      }
       if (from < 2) {
         await customStatement('CREATE INDEX entries_profile_source_parent ON entries(profile,source,parent)');
       }
@@ -172,6 +201,16 @@ class SourceDatabase extends GeneratedDatabase {
     },
   );
 
+  Future<void> _createRemoteWorkerSchema() async {
+    await customStatement('CREATE TABLE remote_deleted_profiles (profile TEXT PRIMARY KEY NOT NULL)');
+    await customStatement(
+      'CREATE TABLE remote_stream_state (profile TEXT PRIMARY KEY NOT NULL, payload TEXT NOT NULL)',
+    );
+    await customStatement(
+      'CREATE TABLE remote_preparation_claims (profile TEXT NOT NULL, job TEXT NOT NULL, owner TEXT NOT NULL, expires INTEGER NOT NULL, PRIMARY KEY(profile,job))',
+    );
+  }
+
   /// FTS5's trigram tokenizer preserves substring search while avoiding a
   /// full payload decode. Some system SQLite builds omit FTS5, so indexed
   /// search is optional and callers retain the SQL substring fallback.
@@ -227,6 +266,7 @@ class SourceRepository {
   Future<void> forgetProfile(String profile) async {
     _removedProfiles.add(profile);
     await database.transaction(() async {
+      await database.customStatement('INSERT OR IGNORE INTO remote_deleted_profiles VALUES (?)', [profile]);
       for (final table in [
         'sources',
         'entries',
@@ -237,6 +277,12 @@ class SourceRepository {
         'annotations',
         'downloads',
         'preferences',
+        'canonical_cards',
+        'canonical_aliases',
+        'canonical_copies',
+        'canonical_redirects',
+        'remote_stream_state',
+        'remote_preparation_claims',
       ]) {
         await database.customStatement('DELETE FROM $table WHERE profile=?', [profile]);
       }
@@ -320,6 +366,7 @@ class SourceRepository {
   Future<void> cacheEntries(String profile, List<SourceEntry> entries) => database.transaction(() async {
     _writable(profile);
     for (final entry in entries) {
+      if (entry.kind == SourceItemKind.video) await CanonicalLibrary(database).recordSource(profile, entry);
       await database.customStatement(
         'INSERT INTO entries (profile,source,id,parent,payload,search,entry_key) VALUES (?,?,?,?,?,?,?) '
         'ON CONFLICT(profile,source,id) DO UPDATE SET parent=excluded.parent,payload=excluded.payload,search=excluded.search,entry_key=excluded.entry_key',

@@ -1,3 +1,16 @@
+import '../../providers/hidden_libraries_provider.dart';
+import '../../media/media_library.dart';
+import '../../utils/global_key_utils.dart';
+import '../../media/canonical_video_identity.dart';
+import '../../utils/external_ids.dart';
+import '../../media/canonical_library.dart';
+import '../../media/ids.dart';
+import '../../media/library_query.dart';
+import '../../media/media_kind.dart';
+import '../../providers/libraries_provider.dart';
+import '../../providers/multi_server_provider.dart';
+import '../../widgets/media_card.dart';
+import 'canonical_library_navigation.dart';
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
@@ -85,6 +98,119 @@ class SourcesScreen extends StatefulWidget {
 
 class _SourcesScreenState extends State<SourcesScreen> {
   List<SourceEntry> _entries = [];
+  final Map<String, CanonicalLibraryCard> _canonicalCards = {};
+  int _canonicalLimit = 120;
+  bool _canonicalIndexing = false;
+  String? _canonicalIndexedProfile;
+  bool get _mergedVideos => widget.shelf == PublicationShelf.videos && widget.source == null && !widget.offlineOnly;
+
+  Future<void> _indexCanonicalServers(SourceController sources) async {
+    if (!_mergedVideos || _canonicalIndexing || !mounted) return;
+    final profile = sources.profileId, epoch = sources.generation;
+    if (profile == null || _canonicalIndexedProfile == profile) return;
+    final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+    final libraries = visibleMediaLibraries(
+      context.read<LibrariesProvider>().libraries,
+      hiddenKeys: hidden,
+      hideEmpty: false,
+    );
+    if (libraries.isEmpty) return;
+    final servers = context.read<MultiServerProvider>();
+    final identity = CanonicalLibrary(sources.repository.database);
+    final seriesIds = <String, ExternalIds>{};
+    setState(() => _canonicalIndexing = true);
+    var succeeded = true;
+    try {
+      for (final library in libraries) {
+        if (library.serverId == null || (library.kind != MediaKind.movie && library.kind != MediaKind.show)) continue;
+        final client = servers.getClientForServer(ServerId(library.serverId!));
+        if (client == null) continue;
+        var offset = 0;
+        String? previousPage;
+        try {
+          while (mounted && sources.current(epoch) && sources.profileId == profile) {
+            final page = await client.fetchLibraryPagedContent(
+              library.id,
+              query: LibraryQuery(
+                kind: library.kind == MediaKind.show ? MediaKind.episode : MediaKind.movie,
+                offset: offset,
+                limit: 100,
+              ),
+              libraryKind: library.kind,
+            );
+            if (!mounted || !sources.current(epoch) || sources.profileId != profile) return;
+            if (page.items.isEmpty) break;
+            final pageIdentity = page.items.map((item) => item.id).join('|');
+            if (pageIdentity == previousPage) break;
+            previousPage = pageIdentity;
+            final aliases = <String, Set<String>>{};
+            for (final item in page.items) {
+              if (item.kind != MediaKind.episode || item.grandparentId == null) continue;
+              final showKey = '${library.serverId}:${item.grandparentId}';
+              final ids = seriesIds[showKey] ??= await client.fetchExternalIds(item.grandparentId!);
+              if (!mounted || !sources.current(epoch) || sources.profileId != profile) return;
+              aliases[item.globalKey] = canonicalVideoIdentitiesForExternalIds(
+                identifiers: {
+                  if (ids.imdb != null) 'imdb': ids.imdb!,
+                  if (ids.tmdb != null) 'tmdb': '${ids.tmdb}',
+                  if (ids.tvdb != null) 'tvdb': '${ids.tvdb}',
+                },
+                mediaType: 'show',
+                season: item.parentIndex,
+                episode: item.index,
+              );
+            }
+            await identity.recordServerItems(profile, page.items, identities: aliases);
+            offset += page.items.length;
+            if (offset >= page.totalCount) break;
+          }
+        } on Object {
+          succeeded = false;
+        }
+      }
+      if (succeeded && sources.profileId == profile) _canonicalIndexedProfile = profile;
+    } finally {
+      if (mounted) {
+        setState(() => _canonicalIndexing = false);
+        if (sources.current(epoch) && sources.profileId == profile) await _load(reindex: false);
+      }
+    }
+  }
+
+  Widget _poster(SourceEntry entry) {
+    final card = _canonicalCards[entry.key];
+    final count = card?.copies.length ?? 1;
+    final poster = card?.serverItem == null
+        ? SourcePosterCard(
+            key: ValueKey(card?.id ?? entry.key),
+            entry: entry,
+            onTap: () => _open(entry),
+            progress: _progress.where((p) => p.entryKey == entry.key && !p.finished).firstOrNull?.fraction,
+          )
+        : MediaCard(
+            key: ValueKey(card!.id),
+            item: card.serverItem!,
+            onTap: () => _open(entry),
+            semanticValue: t.streaming.availableCopiesCount(count: count),
+          );
+    if (count < 2) return poster;
+    return Stack(
+      children: [
+        Positioned.fill(child: poster),
+        PositionedDirectional(
+          top: 10,
+          end: 10,
+          child: IgnorePointer(
+            child: Tooltip(
+              message: t.streaming.availableCopiesCount(count: count),
+              child: Chip(avatar: const AppIcon(Symbols.layers_rounded, size: 16), label: Text('$count')),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   List<PublicationProgress> _progress = [];
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _offline = {};
@@ -118,9 +244,10 @@ class _SourcesScreenState extends State<SourcesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  Future<void> _load({bool more = false}) async {
+  Future<void> _load({bool more = false, bool reindex = true}) async {
     if (!mounted) return;
     final controller = context.read<SourceController>(), request = ++_request;
+    final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
     if (!more && widget.source != null) _usingIndexFallback = false;
     setState(() {
       _loading = true;
@@ -131,6 +258,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
       controller.requireSession();
       final epoch = controller.generation, profile = controller.profileId!;
       if (_preferenceProfile != profile) {
+        _canonicalCards.clear();
+        _canonicalIndexedProfile = null;
         final prefs = await controller.repository.preference(profile, _browsePreference);
         controller.requireSession(epoch);
         _sort = PublicationSort.values.where((v) => v.name == prefs['sort']).firstOrNull ?? PublicationSort.title;
@@ -138,7 +267,39 @@ class _SourcesScreenState extends State<SourcesScreen> {
         _preferenceProfile = profile;
       }
       List<SourceEntry> items;
-      if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
+      if (_mergedVideos) {
+        _canonicalLimit = more ? _canonicalLimit + 120 : 120;
+        final cards = await CanonicalLibrary(controller.repository.database).cards(profile, limit: _canonicalLimit + 1);
+        _next = cards.length > _canonicalLimit ? 'canonical' : null;
+        _canonicalCards.clear();
+        items = [];
+        for (final card in cards.take(_canonicalLimit)) {
+          final visible = CanonicalLibraryCard(
+            card.id,
+            card.copies.where((copy) {
+              final library = copy.serverItem?.libraryId;
+              return library == null || !hidden.contains(buildGlobalKey(ServerId(copy.source), library));
+            }).toList(),
+            profile: card.profile,
+          );
+          final media = visible.serverItem;
+          final entry =
+              visible.entry ??
+              (media == null
+                  ? null
+                  : SourceEntry(
+                      sourceId: 'canonical',
+                      id: card.id,
+                      title: media.displayTitle,
+                      kind: SourceItemKind.video,
+                      releaseYear: media.year,
+                    ));
+          if (entry == null) continue;
+          items.add(entry);
+          _canonicalCards[entry.key] = visible;
+        }
+        if (reindex) unawaited(_indexCanonicalServers(controller));
+      } else if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
         final page = await controller.repository.entriesPage(
           profile,
           source: widget.source?.id,
@@ -218,6 +379,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   Future<void> _open(SourceEntry entry) async {
+    final card = _canonicalCards[entry.key];
+    if (card != null) {
+      await openCanonicalCard(context, card);
+      if (mounted) await _load();
+      return;
+    }
     if (entry.isFolder) {
       final source = context.read<SourceController>().sources.where((s) => s.id == entry.sourceId).firstOrNull;
       if (source == null) return;
@@ -791,6 +958,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: SourceErrorMessage(message: sourceFailureText(_error!)),
                   ),
+                if (_canonicalIndexing)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: LinearProgressIndicator(semanticsLabel: t.streaming.canonicalIndexing),
+                  ),
                 if (_loading)
                   const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
                 if (entries.isEmpty && !_loading)
@@ -820,14 +992,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                         mainAxisExtent: width * 1.5 + scaler.scale(14) * 2.8 + scaler.scale(12) * 1.5 + 10,
                       ),
                       itemCount: entries.length,
-                      itemBuilder: (context, i) => SourcePosterCard(
-                        entry: entries[i],
-                        onTap: () => _open(entries[i]),
-                        progress: _progress
-                            .where((p) => p.entryKey == entries[i].key && !p.finished)
-                            .firstOrNull
-                            ?.fraction,
-                      ),
+                      itemBuilder: (context, i) => _poster(entries[i]),
                     );
                   },
                 )

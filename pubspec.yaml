@@ -15,6 +15,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   clock: ^1.1.2
+  plezy_torrent:
+    path: packages/plezy_torrent
+  plezy_preparation:
+    path: packages/plezy_preparation
   intl: ^0.20.2
   json_annotation: ^4.12.0
   shared_preferences: ^2.5.4
@@ -250,6 +254,8 @@ flutter:
     - assets/licenses/AMSMB2_MIT_LICENSE.txt
     - assets/licenses/libsmb2-LGPL-2.1.txt
     - assets/licenses/Unicode.txt
+    - assets/licenses/Libtorrent.txt
+    - assets/licenses/Boost.txt
     - assets/licenses/JellyfinWebTranslations.txt
     - assets/plezy.png
     - assets/branding/plezyng-product-illustration.webp

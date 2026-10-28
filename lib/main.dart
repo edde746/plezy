@@ -1,3 +1,4 @@
+import 'services/remote_streams/remote_preparation_worker.dart';
 import 'dart:async';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
@@ -157,6 +158,10 @@ void _registerTvosPlatformPlugins() {
 
 void main([List<String> args = const <String>[]]) {
   final binding = PlezyWidgetsBinding.ensureInitialized();
+  if (args.contains('--plezy-preparation-worker')) {
+    unawaited(runDesktopPreparationWorker());
+    return;
+  }
   for (final argument in args) {
     final normalized = argument.toLowerCase();
     if (normalized.startsWith('plezy://') || normalized.startsWith('plezxyng://')) {
@@ -1232,6 +1237,10 @@ void _registerAppLicenses() {
     yield LicenseEntryWithLineBreaks(const [
       'Foliate JS',
     ], await rootBundle.loadString('assets/reader/foliate/LICENSE'));
+    yield LicenseEntryWithLineBreaks(const [
+      'libtorrent-rasterbar 2.0.11',
+    ], await rootBundle.loadString('assets/licenses/Libtorrent.txt'));
+    yield LicenseEntryWithLineBreaks(const ['Boost 1.86.0'], await rootBundle.loadString('assets/licenses/Boost.txt'));
     yield LicenseEntryWithLineBreaks(const [
       'Provider artwork',
     ], await rootBundle.loadString('assets/provider_marks/NOTICE.txt'));

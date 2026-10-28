@@ -62,7 +62,6 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<!-- Return links for x-callback-url external players (plezy://external-player/...). -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -85,14 +84,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<!-- plezy:// and plezxyng:// links reach Dart through DeepLinkPlugin (com.plezy/deep_link);
-	     Flutter's router must not also push them as named routes. -->
 	<key>FlutterDeepLinkingEnabled</key>
 	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<!-- canOpenURL returns false for undeclared schemes, which both blocks the
-	     external-player handoff and hides the players from Settings. -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>vlc</string>
@@ -133,6 +128,7 @@
 	<array>
 		<string>audio</string>
 		<string>fetch</string>
+		<string>processing</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
@@ -190,5 +186,9 @@
 			</array>
 		</dict>
 	</dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>org.plezy.preparation</string>
+	</array>
 </dict>
 </plist>

@@ -550,8 +550,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
         final torbox = streaming.accountFor(RemoteStreamService.torbox);
         final pendingPreparations = streaming.preparationJobs
             .where(
-              (job) =>
-                  job.state == RemotePreparationState.preparing || job.state == RemotePreparationState.interrupted,
+              (job) => job.state == RemotePreparationState.preparing || job.state == RemotePreparationState.interrupted,
             )
             .toList(growable: false);
         return FocusedScrollScaffold(
@@ -683,10 +682,24 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                           value: snapshot.data ?? false,
                           onChanged: !snapshot.hasData || _cloudMetadataSaving
                               ? null
-                              : (enabled) => unawaited(
-                                  _setCloudMetadata(sourceController, currentProfile!, enabled),
-                                ),
+                              : (enabled) => unawaited(_setCloudMetadata(sourceController, currentProfile, enabled)),
                         ),
+                      ),
+                    if (streaming.nativePeerAvailable)
+                      FocusableSwitchListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        title: Text(t.streaming.nativePeerTitle),
+                        subtitle: Text(t.streaming.nativePeerHelp),
+                        value: streaming.nativePeerEnabled,
+                        onChanged: streaming.isReady
+                            ? (value) async {
+                                try {
+                                  await streaming.setNativePeerEnabled(value);
+                                } on Object {
+                                  if (context.mounted) showAppSnackBar(context, t.streaming.streamPrepareFailed);
+                                }
+                              }
+                            : null,
                       ),
                     _providerTile(
                       service: RemoteStreamService.realDebrid,
@@ -728,15 +741,20 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                 ),
                 if (pendingPreparations.isNotEmpty)
                   SettingsGroup(
-                    title: t.common.queue,
+                    title: t.streaming.preparationQueue,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          streaming.scheduledPreparationAvailable == true
+                              ? t.streaming.preparationBackground
+                              : t.streaming.preparationForeground,
+                        ),
+                      ),
                       for (final job in pendingPreparations)
                         FocusableListTile(
                           leading: job.state == RemotePreparationState.preparing
-                              ? const SizedBox.square(
-                                  dimension: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
+                              ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
                               : const AppIcon(Symbols.error_outline_rounded),
                           title: Text(job.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                           subtitle: Text(
@@ -750,8 +768,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                               if (job.state == RemotePreparationState.interrupted && job.providerJobId != null)
                                 IconButton(
                                   tooltip: t.common.retry,
-                                  onPressed: streaming.isReady &&
-                                          !streaming.isPreparationRecoveryScheduled(job.id)
+                                  onPressed: streaming.isReady && !streaming.isPreparationRecoveryScheduled(job.id)
                                       ? () => unawaited(_retryPreparation(job.id))
                                       : null,
                                   icon: const AppIcon(Symbols.refresh_rounded),

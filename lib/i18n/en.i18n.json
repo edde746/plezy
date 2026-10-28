@@ -3067,7 +3067,16 @@
     "browseCloud": "Browse files",
     "cloudEmpty": "No ready video files were found in this account.",
     "cloudLoadFailed": "Couldn't load cloud files. Check the connection and retry.",
-    "providers": "Debrid providers"
+    "providers": "Debrid providers",
+    "nativePeerTitle": "Play torrents on this device",
+    "nativePeerPlay": "Play on this device",
+    "nativePeerHelp": "Use peers when a cloud provider is unavailable. Peers can see your IP address. Uses up to 4 GB per video and uploads up to 256 KB/s while playing; stops when playback ends.",
+    "availableCopies": "Available sources",
+    "availableCopiesCount": "${count} sources",
+    "canonicalIndexing": "Finding your server and cloud copies…",
+    "preparationBackground": "Preparation continues when the app is closed. Your device decides when to run it.",
+    "preparationForeground": "This device can resume preparation while PlezyNG is open.",
+    "preparationQueue": "Preparation"
   },
   "addServer": {
     "addMediaBrowserTitle": "Add ${product} server",

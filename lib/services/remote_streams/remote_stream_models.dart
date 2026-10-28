@@ -229,6 +229,14 @@ typedef RemotePreparationProgress = Future<void> Function({required String stage
 /// Durable, non-secret checkpoint for one user-requested debrid preparation.
 /// Provider credentials and resolved links never enter this record.
 class RemotePreparationJob {
+  /// Shared eligibility for foreground recovery, OS workers and idle cleanup.
+  bool get canRecoverAutomatically =>
+      (state == RemotePreparationState.preparing || state == RemotePreparationState.interrupted) &&
+      providerJobId != null &&
+      recoveryAttempts < 3 &&
+      service != RemoteStreamService.premiumize &&
+      (errorCode == null || const {'timeout', 'unavailable', 'preparationFailed'}.contains(errorCode));
+
   const RemotePreparationJob({
     required this.id,
     required this.accountId,
@@ -374,24 +382,33 @@ String _requiredRemoteHash(Map<String, dynamic> json) {
 }
 
 class RemoteStreamSnapshot {
-  const RemoteStreamSnapshot({this.accounts = const [], this.addons = const [], this.preparations = const []});
+  const RemoteStreamSnapshot({
+    this.accounts = const [],
+    this.addons = const [],
+    this.preparations = const [],
+    this.nativePeerEnabled = false,
+  });
 
   final List<RemoteStreamAccount> accounts;
   final List<StremioAddonInstallation> addons;
   final List<RemotePreparationJob> preparations;
+  final bool nativePeerEnabled;
 
   RemoteStreamSnapshot copyWith({
     List<RemoteStreamAccount>? accounts,
     List<StremioAddonInstallation>? addons,
     List<RemotePreparationJob>? preparations,
+    bool? nativePeerEnabled,
   }) => RemoteStreamSnapshot(
     accounts: accounts ?? this.accounts,
     addons: addons ?? this.addons,
     preparations: preparations ?? this.preparations,
+    nativePeerEnabled: nativePeerEnabled ?? this.nativePeerEnabled,
   );
 
   Map<String, Object?> toJson() => {
     'version': 1,
+    'nativePeerEnabled': nativePeerEnabled,
     'accounts': accounts.map((account) => account.toJson()).toList(),
     'addons': addons.map((addon) => addon.toJson()).toList(),
     'preparations': preparations.map((job) => job.toJson()).toList(),
@@ -432,6 +449,7 @@ class RemoteStreamSnapshot {
           .map((row) => StremioAddonInstallation.fromJson(Map<String, dynamic>.from(row)))
           .toList(growable: false),
       preparations: preparations,
+      nativePeerEnabled: json['nativePeerEnabled'] == true,
     );
   }
 }
@@ -497,6 +515,7 @@ class RemoteStreamCandidate {
     this.externalUrl,
     this.subtitles = const [],
     this.behaviorHints = const {},
+    this.trackers = const [],
   });
 
   final String addonId;
@@ -510,6 +529,7 @@ class RemoteStreamCandidate {
   final Uri? externalUrl;
   final List<RemoteSubtitle> subtitles;
   final Map<String, dynamic> behaviorHints;
+  final List<String> trackers;
 
   bool get isInAppPlayable => url != null || infoHash != null;
 }

@@ -1401,6 +1401,20 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.6"
+  plezy_preparation:
+    dependency: "direct main"
+    description:
+      path: "packages/plezy_preparation"
+      relative: true
+    source: path
+    version: "1.0.0"
+  plezy_torrent:
+    dependency: "direct main"
+    description:
+      path: "packages/plezy_torrent"
+      relative: true
+    source: path
+    version: "1.0.0"
   plugin_platform_interface:
     dependency: "direct dev"
     description:

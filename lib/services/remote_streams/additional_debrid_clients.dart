@@ -518,7 +518,6 @@ class TorBoxClient {
     }
     if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
     final initialTorrent = torrent;
-    if (initialTorrent == null) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
     torrent = await _waitForTorrentReady(
       initialTorrent,
       hash: hash,

@@ -417,10 +417,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       bool isCurrentReload() =>
           attempt.isCurrent &&
           !_hasFatalPlaybackError &&
-          (_activeExternalPlaybackSource == null ||
-              _externalSourceProfileIsCurrent(_activeExternalPlaybackSource!)) &&
-          (_pendingExternalPlaybackSource == null ||
-              _externalSourceProfileIsCurrent(_pendingExternalPlaybackSource!));
+          (_activeExternalPlaybackSource == null || _externalSourceProfileIsCurrent(_activeExternalPlaybackSource!)) &&
+          (_pendingExternalPlaybackSource == null || _externalSourceProfileIsCurrent(_pendingExternalPlaybackSource!));
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)
@@ -590,7 +588,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             openResumePosition = activeExternalSource.initialPosition;
           }
         }
-        final PlaybackContext playbackContext;
+        PlaybackContext playbackContext;
         if (activeExternalSource != null) {
           playbackContext = await _resolveExternalPlaybackContext(metadata, activeExternalSource);
         } else {
@@ -770,10 +768,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             // same boundary so identity and source state flip together.
             if (!isCurrentReload()) return;
             didOpenReplacement = true;
-            _commitPlaybackSession(
-              session,
-              externalPlaybackSource: activeExternalSource,
-            );
+            _commitPlaybackSession(session, externalPlaybackSource: activeExternalSource);
           },
         );
         if (!opened) return MediaReloadOutcome.superseded;

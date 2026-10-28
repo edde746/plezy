@@ -38,7 +38,10 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   std::vector<std::string> command_line_arguments = GetCommandLineArguments();
   const auto link = std::find_if(command_line_arguments.begin(), command_line_arguments.end(), IsOpenMediaLink);
 
-  HANDLE mutex = CreateMutex(nullptr, TRUE, L"com.edde746.Plezy.SingleInstance");
+  const bool preparation_worker = std::find(command_line_arguments.begin(), command_line_arguments.end(),
+      "--plezy-preparation-worker") != command_line_arguments.end();
+  HANDLE mutex = CreateMutex(nullptr, TRUE, preparation_worker ? L"com.edde746.Plezy.PreparationWorker" : L"com.edde746.Plezy.SingleInstance");
+  if (GetLastError() == ERROR_ALREADY_EXISTS && preparation_worker) { CloseHandle(mutex); return EXIT_SUCCESS; }
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
     HWND existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"PlezyNG");
     if (existing == nullptr) {
@@ -113,7 +116,7 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   window.SetQuitOnClose(true);
 
   // Recover display mode if a prior crash left it changed.
-  mpv::DisplayModeManager::RecoverIfNeeded();
+  if (!preparation_worker) mpv::DisplayModeManager::RecoverIfNeeded();
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {

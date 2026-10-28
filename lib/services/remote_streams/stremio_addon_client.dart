@@ -448,6 +448,11 @@ class StremioAddonClient {
       externalUrl: external,
       subtitles: List.unmodifiable(subtitles),
       behaviorHints: behavior,
+      trackers: [
+        for (final source in (row['sources'] is List ? row['sources'] as List : const []).take(32))
+          if (source is String && source.startsWith('tracker:') && source.length < 2048)
+            source.substring(8),
+      ],
     );
   }
 

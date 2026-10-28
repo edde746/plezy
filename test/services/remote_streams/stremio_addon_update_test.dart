@@ -1,3 +1,6 @@
+import 'package:drift/native.dart';
+import 'package:plezy/sources/source_database.dart';
+import 'package:plezy/services/remote_streams/remote_stream_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/remote_streams/remote_streaming_provider.dart';
 import 'package:plezy/services/remote_streams/stremio_addon_client.dart';
@@ -8,6 +11,12 @@ import '../../test_helpers/prefs.dart';
 void main() {
   setUp(() {
     resetSharedPreferencesForTest();
+    final database = SourceDatabase(NativeDatabase.memory());
+    RemoteStreamStore.useDatabaseForTesting(database);
+    addTearDown(() async {
+      RemoteStreamStore.useDatabaseForTesting(null);
+      await database.close();
+    });
   });
 
   test('manifest updates require review and preserve the installation identity and toggle', () async {

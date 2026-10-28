@@ -1,22 +1,13 @@
 # Debrid, Stremio and remote streaming
 
-Status: the connected-stream feature is on
-`codex/debrid-stremio-integration-20261028`. The working tree now also includes
-a durable cloud-file source, a bounded cloud-video index and Home poster row,
-encrypted background download renewal, and a persisted debrid preparation
-journal. The branch is not publish-ready: an embedded native P2P engine and
-platform packaging are absent. Stremio streams and verified cloud-file matches
-use the shared video player. Server-matched playback keeps the server item's
-identity and queue; unmatched catalog streams and standalone cloud files keep
-resume state in the active profile's source journal without inventing a server
-identity. Catalog-only Stremio episodes now seed the shared client-side player
-queue. Exact episodes from one online server keep their real server identity;
-other next items resolve when needed against verified cached cloud files and
-enabled Stremio add-ons. Multi-file source sessions still use
-`SourcePlayback`. External viewing queues local resume updates without
-starting a false server now-playing session. See
-[IMPLEMENTATION.md](IMPLEMENTATION.md) for the exact implementation and
-qualification boundary.
+Status (2026-10-28): the connected-stream feature is on
+`codex/debrid-stremio-integration-20261028`. Native libtorrent playback and
+source-build packaging, OS-scheduled provider preparation, and a persistent
+cloud/server canonical library are implemented. The existing shared player
+and mixed server/cloud/add-on episode queue remain the playback boundary.
+See [COMPLETION.md](COMPLETION.md) for the code map, platform behavior and
+measured verification. Packaged-device and live-account qualification remain
+release gates; this status does not claim those checks have passed.
 
 Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 `a7b172b00ff437eb431fb5d3e7b8b758f4a5c422` on `main`.
@@ -98,20 +89,28 @@ recovery polls the saved torrent ID and does not create a replacement.
 Transient failures receive a capped retry with backoff. The existing streaming
 settings queue can cancel local polling or manually retry an exhausted job
 using its saved provider ID; cancellation leaves provider-side work untouched.
-Recovery runs in the app runtime, so OS suspension can pause it; this is not an
-OS-scheduled background worker, and jobs without a reusable provider ID still
-need a user action. A
-Stremio choice from a matched server item uses the normal video player and
-queue, with resume offsets reconciled through the existing watch queue.
-Catalog-only Stremio episodes use a session queue and can resolve a later
-episode from a uniquely matched online server, a verified cached cloud match,
-or another enabled add-on. Ambiguous and currently offline server matches stay
-remote-only, and multi-file source sessions remain separate. Cloud files are
-discoverable by exact identity in existing source-choice flows, but are not
-merged into one persistent server library card. Preparation remains app-runtime work, not an
-OS-scheduled worker. A native torrent engine and platform P2P packages are
-absent. TV's compact cloud row has not yet been qualified on device for D-pad
-focus, large text or different screen sizes.
+Android WorkManager and iOS BGProcessingTask resume saved provider jobs in
+headless Flutter engines. Desktop installs a per-user Task Scheduler job,
+launchd agent or systemd timer. Each worker reads encrypted state from SQLite
+and acquires an expiring job claim, so a foreground retry and another process
+cannot poll the same job concurrently. OS dispatch timing is discretionary.
+TV targets and unavailable schedulers use the existing app-runtime recovery.
+Jobs without a reusable provider ID still need a user action.
+
+The existing Videos shelf now presents persistent canonical cards containing
+both cloud and server copies. Exact typed external IDs and episode coordinates
+join copies; aliases and old-card redirects survive restarts. Conflicting IDs
+stay separate. Home, server library browsing and cloud indexing feed this graph,
+and the existing source sheet opens the chosen copy without adding a top-level
+navigation entry. Profile isolation and hidden libraries are respected.
+
+Native peer playback is an explicit opt-in in existing streaming settings.
+Eligible v1 magnet choices use pinned libtorrent sources through a private
+loopback byte-range lease in the shared player. Playback owns peer traffic and
+spool cleanup. Android, Apple, desktop, webOS and Tizen build/package hooks are
+included; local single-file and multi-file transfer/seek tests pass. Signed
+packages, background callbacks and TV focus/large-text behavior still require
+the corresponding target hardware and toolchains.
 
 ## Target experience after full completion
 
@@ -140,6 +139,7 @@ help sentence at setup, rather than requiring users to learn the architecture.
 | [UX.md](UX.md) | Screen integration, setup journeys, defaults, copy, focus and accessibility |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Repository integration, identities, persistence, resolution, playback, security and efficiency |
 | [IMPLEMENTATION.md](IMPLEMENTATION.md) | Ordered work packages, concrete file changes, migration and Luna instructions |
+| [COMPLETION.md](COMPLETION.md) | Implemented native transport, workers, persistent cards and current evidence |
 | [VALIDATION.md](VALIDATION.md) | Behavioral acceptance cases, platform coverage and evidence required for completion |
 
 ## Decisions
@@ -180,9 +180,9 @@ help sentence at setup, rather than requiring users to learn the architecture.
 | Completion level | Required outcome |
 | --- | --- |
 | Implemented connected-source slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud files and virtual sources; Stremio QR add-on import and manual manifest connection; Explore catalog/search and metadata; direct, hash, file-host and subtitle choices; shared video player for server-matched, catalog-only and single-file cloud playback; source-local resume; durable preparation checkpoints; cloud downloads with encrypted Android/iOS lease renewal; bounded Search/Videos shelf/Home poster integration with opt-in metadata |
-| Remaining core integration | Mixed server/cloud/Stremio queues and canonical cloud/server library-card merge, OS-scheduled preparation, native P2P engine/package, and regression gates; Stremio catalog/account, provider APIs, downloads, background callbacks and all target platforms still need fixture, live, and device qualification |
+| Implemented integration and release gates | Mixed server/cloud/Stremio queues, persistent canonical cards, OS-scheduled preparation and native P2P build hooks are present. Signed target builds, live provider accounts, OS callbacks, downloads and device behavior still require qualification |
 | Ecosystem breadth | put.io, Debrid-Link and Seedr qualification; user-configured aggregators; seedboxes and Usenet bridges through the existing file/HTTP adapters; capability-aware downloads and casting |
-| Native P2P | An actual bounded streaming engine, byte-range bridge, seek scheduling, native builds and device tests; a `magnet:` parser is not completion |
+| Native P2P | Pinned libtorrent 2.0.11 with Boost 1.86, verified-piece byte ranges, seek deadlines, quotas and playback-owned cleanup. Controlled single/multi-file transfer tests pass; packaged device testing remains |
 | Full handoff scope | All preceding work packages either implemented and evidenced, or explicitly recorded with the exact external credential/device/API dependency; no placeholder success states |
 
 Core clients target Windows, Linux, macOS, Android/mobile and Android TV,
@@ -214,8 +214,8 @@ cross-provider metadata matching; the proposed migration effort.
 **Unknown until exercised:** live account behavior, startup latency, rate-limit
 headroom, device secure storage, casting across networks, and native P2P on
 each packaged target. Performance numbers in this handoff are test targets,
-not measured results. No credentials were used and no transfers were started
-while preparing the plan.
+not measured results. No live service credentials were used. Native transfer verification used a
+locally generated fixture and a loopback-only seeder.
 
 The repository's inspected workflows are manual/reusable, rather than triggered
 by ordinary pushes. Preserve that policy. The owner requires private JIT runners

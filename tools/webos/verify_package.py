@@ -29,6 +29,7 @@ RUNTIME_LIBRARIES = (
 )
 REQUIRED_NATIVE_LIBRARIES = (
     "libapp.so",
+    "libplezy_torrent.so",
     "libflutter_secure_storage_webos_plugin.so",
     "libshared_preferences_webos_plugin.so",
     "libvideo_player_drm_plugin.so",

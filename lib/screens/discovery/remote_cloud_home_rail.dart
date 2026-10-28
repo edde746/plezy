@@ -12,7 +12,9 @@ import '../../sources/source_models.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/layout_constants.dart';
 import '../../widgets/app_icon.dart';
-import '../sources/source_detail_screen.dart';
+import '../sources/canonical_library_navigation.dart';
+import '../../media/canonical_library.dart';
+import '../../media/media_item.dart';
 import '../sources/source_widgets.dart';
 import '../sources/sources_screen.dart';
 
@@ -27,6 +29,7 @@ class RemoteCloudHomeRail extends StatefulWidget {
     this.onNavigateDown,
     this.onEntriesChanged,
     this.representedIdentities = const {},
+    this.representedItems = const [],
   });
 
   final bool tvMode;
@@ -34,6 +37,7 @@ class RemoteCloudHomeRail extends StatefulWidget {
   final VoidCallback? onNavigateDown;
   final ValueChanged<bool>? onEntriesChanged;
   final Set<String> representedIdentities;
+  final List<MediaItem> representedItems;
 
   @override
   RemoteCloudHomeRailState createState() => RemoteCloudHomeRailState();
@@ -43,6 +47,7 @@ class RemoteCloudHomeRailState extends State<RemoteCloudHomeRail> {
   SourceController? _sources;
   Timer? _refreshDebounce;
   List<SourceEntry> _entries = const [];
+  Map<String, Set<String>> _canonicalAliases = const {};
   List<PublicationProgress> _progress = const [];
   String? _loadedProfileId;
   int _request = 0;
@@ -56,7 +61,8 @@ class RemoteCloudHomeRailState extends State<RemoteCloudHomeRail> {
     if (represented.isEmpty) return rows;
     return [
       for (final entry in rows)
-        if (!canonicalVideoIdentitiesForSourceEntry(entry).any(represented.contains)) entry,
+        if (!(_canonicalAliases[entry.key] ?? canonicalVideoIdentitiesForSourceEntry(entry)).any(represented.contains))
+          entry,
     ];
   }
 
@@ -72,7 +78,13 @@ class RemoteCloudHomeRailState extends State<RemoteCloudHomeRail> {
     super.didUpdateWidget(oldWidget);
     final oldIds = oldWidget.representedIdentities;
     final newIds = widget.representedIdentities;
-    if (oldIds.length != newIds.length || !oldIds.containsAll(newIds)) {
+    final oldCopies = oldWidget.representedItems.map((item) => item.globalKey).toSet();
+    final newCopies = widget.representedItems.map((item) => item.globalKey).toSet();
+    if (oldIds.length != newIds.length ||
+        !oldIds.containsAll(newIds) ||
+        oldCopies.length != newCopies.length ||
+        !oldCopies.containsAll(newCopies)) {
+      _scheduleRefresh(const Duration(milliseconds: 250));
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) widget.onEntriesChanged?.call(hasEntries);
       });
@@ -137,7 +149,23 @@ class RemoteCloudHomeRailState extends State<RemoteCloudHomeRail> {
       if (!mounted || request != _request || sources.blocked || sources.profileId == null) return;
       final epoch = sources.generation;
       final profile = sources.profileId!;
-      final entries = await sources.recentRemoteCloudVideos();
+      final representedItems = widget.representedItems.toList(growable: false);
+      final recent = await sources.recentRemoteCloudVideos();
+      if (!mounted || request != _request || !sources.current(epoch) || sources.blocked) return;
+      final identity = CanonicalLibrary(sources.repository.database);
+      // The existing Home cards participate in the same persistent identity
+      // graph as Videos and library browsing, without crawling a server here.
+      await identity.recordServerItems(profile, representedItems);
+      final seen = <String>{};
+      final entries = <SourceEntry>[];
+      final aliases = <String, Set<String>>{};
+      for (final entry in recent) {
+        final card = await identity.cardForCopy(profile, CanonicalLibrary.entryKey(entry));
+        if (seen.add(card?.id ?? entry.key)) {
+          entries.add(entry);
+          if (card != null) aliases[entry.key] = await identity.aliases(profile, card.id);
+        }
+      }
       final progress = await sources.repository.progressForEntries(profile, entries.map((entry) => entry.key));
       if (!mounted ||
           request != _request ||
@@ -148,6 +176,7 @@ class RemoteCloudHomeRailState extends State<RemoteCloudHomeRail> {
       }
       setState(() {
         _entries = entries;
+        _canonicalAliases = aliases;
         _progress = progress;
         _loadedProfileId = profile;
       });
@@ -169,13 +198,9 @@ class RemoteCloudHomeRailState extends State<RemoteCloudHomeRail> {
   }
 
   void _openEntry(SourceEntry entry) {
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'cloud-video-detail'),
-        builder: (_) => SourceDetailScreen(entry: entry),
-      ),
-    );
+    final profile = _loadedProfileId;
+    if (profile == null || _sources?.profileId != profile || _sources?.blocked != false) return;
+    unawaited(openCanonicalEntry(context, entry, profile: profile));
   }
 
   @override
@@ -236,7 +261,9 @@ class RemoteCloudHomeRailState extends State<RemoteCloudHomeRail> {
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 final watched = _progress
-                    .where((item) => item.entryKey == entry.key && item.mode == PublicationMode.watching && !item.finished)
+                    .where(
+                      (item) => item.entryKey == entry.key && item.mode == PublicationMode.watching && !item.finished,
+                    )
                     .firstOrNull;
                 return SizedBox(
                   width: tvMode ? 108 * tvScale : 156,

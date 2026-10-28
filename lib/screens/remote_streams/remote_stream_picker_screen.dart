@@ -1,3 +1,4 @@
+import 'package:plezy_torrent/plezy_torrent.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
-import '../../media/ids.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/play_queue.dart';
@@ -97,8 +97,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       final result = await resultFuture;
       final cloudMatches = await cloudMatchesFuture;
       if (!mounted) return;
-      if (provider.profileId != profileId ||
-          (sourceController != null && sourceController.profileId != profileId)) {
+      if (provider.profileId != profileId || (sourceController != null && sourceController.profileId != profileId)) {
         setState(() => _loading = false);
         return;
       }
@@ -118,7 +117,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     }
   }
 
-  Future<void> _play(RemoteStreamCandidate candidate, {bool viaProvider = false}) async {
+  Future<void> _play(RemoteStreamCandidate candidate, {bool viaProvider = false, bool native = false}) async {
     if (_busyCandidate != null || _busyCloudMatch != null) return;
     final streaming = context.read<RemoteStreamingProvider>();
     final startingProfile = streaming.profileId;
@@ -126,7 +125,10 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     final accounts = viaProvider
         ? streaming.accounts.where((account) => account.service != RemoteStreamService.torbox).toList()
         : streaming.accounts;
-    final needsProvider = viaProvider || candidate.url == null && candidate.infoHash != null;
+    native =
+        native ||
+        (candidate.url == null && candidate.infoHash != null && accounts.isEmpty && streaming.nativePeerEnabled);
+    final needsProvider = !native && (viaProvider || candidate.url == null && candidate.infoHash != null);
     final service = !needsProvider
         ? null
         : accounts.length == 1
@@ -140,12 +142,19 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     }
     if (!mounted || streaming.profileId != startingProfile || !streaming.isReady) return;
     setState(() => _busyCandidate = candidate.addonId + candidate.label);
+    TorrentLease? peer;
     try {
       Uri? uri = candidate.url;
       Map<String, String> headers = candidate.headers;
       String fileName = _fileNameFor(candidate);
       int? size;
-      if (viaProvider && candidate.url != null) {
+      if (native) {
+        peer = await streaming.resolveNativeTorrent(candidate, shouldCancel: () => !mounted);
+        uri = peer.uri;
+        fileName = peer.fileName;
+        size = peer.size;
+        headers = const {};
+      } else if (viaProvider && candidate.url != null) {
         final resolved = await streaming.resolveHosterLink(candidate.url!, service: service!);
         uri = resolved.uri;
         fileName = resolved.fileName;
@@ -173,6 +182,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         viaProvider: viaProvider,
         service: service,
         profileId: startingProfile,
+        peer: peer,
       );
     } on RemoteProviderException catch (error) {
       if (mounted && error.reason != RemoteProviderFailure.cancelled) {
@@ -197,28 +207,30 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     } on Object {
       if (mounted) showAppSnackBar(context, t.streaming.streamPrepareFailed);
     } finally {
+      await peer?.close();
       if (mounted) setState(() => _busyCandidate = null);
     }
   }
 
-  Future<RemoteStreamService?> _chooseProvider(List<RemoteStreamAccount> accounts) => showModalBottomSheet<RemoteStreamService>(
-    context: context,
-    builder: (context) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(title: Text(t.streaming.chooseProvider), enabled: false),
-          for (final account in accounts)
-            ListTile(
-              leading: const AppIcon(Symbols.cloud_rounded),
-              title: Text(_serviceName(account.service)),
-              subtitle: Text(t.streaming.accountConnected(username: account.displayName)),
-              onTap: () => Navigator.pop(context, account.service),
-            ),
-        ],
-      ),
-    ),
-  );
+  Future<RemoteStreamService?> _chooseProvider(List<RemoteStreamAccount> accounts) =>
+      showModalBottomSheet<RemoteStreamService>(
+        context: context,
+        builder: (context) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(title: Text(t.streaming.chooseProvider), enabled: false),
+              for (final account in accounts)
+                ListTile(
+                  leading: const AppIcon(Symbols.cloud_rounded),
+                  title: Text(_serviceName(account.service)),
+                  subtitle: Text(t.streaming.accountConnected(username: account.displayName)),
+                  onTap: () => Navigator.pop(context, account.service),
+                ),
+            ],
+          ),
+        ),
+      );
 
   Future<void> _browseCloudFiles() async {
     final streaming = context.read<RemoteStreamingProvider>();
@@ -250,20 +262,14 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
                 expectedAccountId: account.id,
                 expectedProfileId: profileId,
               )
-            : SourcesScreen(
-                source: fileSource,
-                title: Text('${_serviceName(service)} · ${account.displayName}'),
-              ),
+            : SourcesScreen(source: fileSource, title: Text('${_serviceName(service)} · ${account.displayName}')),
       ),
     );
   }
 
   Future<void> _manageRemoteStreaming() async {
     if (!mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()),
-    );
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
   }
 
   String _serviceName(RemoteStreamService service) => switch (service) {
@@ -309,7 +315,8 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           ? queueItems.map(_mediaItemForQueueItem).toList(growable: false)
           : const <MediaItem>[];
       final currentQueueItem = queueItems.isEmpty ? _queueItemForCurrentRequest() : queueItems[queueStartIndex];
-      final media = playbackItem ??
+      final media =
+          playbackItem ??
           (hasQueue
               ? queueMediaItems[queueStartIndex]
               : _mediaItemForQueueItem(currentQueueItem, durationMs: widget.durationMs));
@@ -395,7 +402,9 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       if (mounted && error.reason != SourceFailure.cancelled) {
         showAppSnackBar(
           context,
-          error.reason == SourceFailure.authentication ? t.streaming.streamNeedsProvider : t.streaming.streamPrepareFailed,
+          error.reason == SourceFailure.authentication
+              ? t.streaming.streamNeedsProvider
+              : t.streaming.streamPrepareFailed,
         );
       }
     } on Object {
@@ -415,6 +424,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     required bool viaProvider,
     required RemoteStreamService? service,
     required String profileId,
+    TorrentLease? peer,
   }) async {
     final sources = context.read<SourceController>();
     final streaming = context.read<RemoteStreamingProvider>();
@@ -451,6 +461,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       if (streaming.profileId != profileId || !streaming.isReady) {
         throw const RemoteProviderException(RemoteProviderFailure.cancelled);
       }
+      if (peer != null) return (uri: peer.uri, headers: const <String, String>{});
       late final Uri renewedUri;
       late final Map<String, String> renewedHeaders;
       if (viaProvider && candidate.url != null) {
@@ -484,7 +495,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       return (uri: renewedUri, headers: renewedHeaders);
     }
 
-    Future<({Uri uri, Map<String, String> headers})>? renewSubtitle;
+    ExternalPlaybackRenewal? renewSubtitle;
     if (subtitle != null) {
       renewSubtitle = () async {
         if (streaming.profileId != profileId || !streaming.isReady) {
@@ -523,7 +534,8 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     final queueMediaItems = hasRemoteQueue
         ? queueItems.map(_mediaItemForQueueItem).toList(growable: false)
         : const <MediaItem>[];
-    final media = playbackItem ??
+    final media =
+        playbackItem ??
         (hasRemoteQueue
             ? queueMediaItems[queueStartIndex]
             : _mediaItemForQueueItem(
@@ -550,7 +562,10 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       subtitleRenew: renewSubtitle,
       onProgress: progress?.record,
       initialPosition: Duration(milliseconds: progress?.resumePositionMs ?? 0),
-      onRelease: progress?.close,
+      onRelease: () async {
+        await progress?.close();
+        await peer?.close();
+      },
     );
     try {
       if (!mounted || sources.profileId != profile || streaming.profileId != profile || !streaming.isReady) {
@@ -599,13 +614,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     if (item.serverItem case final serverItem?) return serverItem;
     final request = item.request;
     final itemId = sourceDigest(
-      jsonEncode([
-        item.identityNamespace,
-        request.type,
-        request.id,
-        request.season,
-        request.episode,
-      ]),
+      jsonEncode([item.identityNamespace, request.type, request.id, request.season, request.episode]),
     );
     final guids = [
       for (final key in const ['imdb', 'tmdb', 'tvdb'])
@@ -719,9 +728,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
                 requireCurrent();
                 final latestEntry = await sources.hydrate(freshEntry);
                 requireCurrent();
-                final latestFile = latestEntry.files
-                    .where((row) => row.fingerprint == file.fingerprint)
-                    .firstOrNull;
+                final latestFile = latestEntry.files.where((row) => row.fingerprint == file.fingerprint).firstOrNull;
                 if (latestFile == null) throw const SourceException(SourceFailure.unavailable);
                 final renewed = await sources.resolveRemoteCloudFile(latestEntry, latestFile);
                 requireCurrent();
@@ -771,6 +778,8 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         return aNeedsPreparation.compareTo(bNeedsPreparation);
       });
     for (final candidate in orderedCandidates.take(8)) {
+      TorrentLease? peer;
+      var transferred = false;
       try {
         requireCurrent();
         Uri? uri = candidate.url;
@@ -793,12 +802,20 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           headers = const {};
           resolvedByProvider = true;
         } else if (candidate.url == null && candidate.infoHash != null) {
-          final resolved = await streaming.resolveTorrent(candidate, service: selectedService, request: item.request);
-          uri = resolved.uri;
-          fileName = resolved.fileName;
-          size = resolved.size;
-          headers = const {};
-          resolvedByProvider = true;
+          if (streaming.accounts.isEmpty && streaming.nativePeerEnabled) {
+            peer = await streaming.resolveNativeTorrent(candidate);
+            uri = peer.uri;
+            fileName = peer.fileName;
+            size = peer.size;
+            headers = const {};
+          } else {
+            final resolved = await streaming.resolveTorrent(candidate, service: selectedService, request: item.request);
+            uri = resolved.uri;
+            fileName = resolved.fileName;
+            size = resolved.size;
+            headers = const {};
+            resolvedByProvider = true;
+          }
         }
         if (uri == null || !_isSafeRemoteStreamUri(uri)) {
           throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
@@ -832,16 +849,19 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           requireCurrent();
           Future<({Uri uri, Map<String, String> headers})> renew() async {
             requireCurrent();
+            if (peer != null) return (uri: peer.uri, headers: const <String, String>{});
             if (resolvedByProvider && candidate.infoHash != null) {
-              final current = await streaming.resolveTorrent(candidate, service: selectedService, request: item.request);
+              final current = await streaming.resolveTorrent(
+                candidate,
+                service: selectedService,
+                request: item.request,
+              );
               requireCurrent();
               return (uri: current.uri, headers: const <String, String>{});
             }
             final refreshed = await streaming.streamsFor(item.request);
             requireCurrent();
-            final current = refreshed.candidates
-                .where((row) => _sameRemoteCandidate(row, candidate))
-                .firstOrNull;
+            final current = refreshed.candidates.where((row) => _sameRemoteCandidate(row, candidate)).firstOrNull;
             if (current == null) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
             if (resolveHosterLinks && current.url != null) {
               if (selectedService == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
@@ -856,6 +876,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
             return (uri: renewedUri, headers: current.headers);
           }
 
+          transferred = true;
           return ExternalPlaybackSource(
             mediaGlobalKey: metadata.globalKey,
             profileId: profileId,
@@ -864,7 +885,10 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
             renew: renew,
             onProgress: progress.record,
             initialPosition: Duration(milliseconds: progress.resumePositionMs),
-            onRelease: progress.close,
+            onRelease: () async {
+              await progress.close();
+              await peer?.close();
+            },
           );
         } catch (_) {
           await progress.close();
@@ -881,17 +905,16 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         lastFailure = error;
       } on Object catch (error) {
         lastFailure = error;
+      } finally {
+        if (!transferred) await peer?.close();
       }
     }
-    if (lastFailure != null) throw lastFailure!;
+    if (lastFailure != null) throw lastFailure;
     throw const RemoteProviderException(RemoteProviderFailure.unavailable);
   }
 
   static bool _sameRemoteCandidate(RemoteStreamCandidate a, RemoteStreamCandidate b) =>
-      a.addonId == b.addonId &&
-      a.label == b.label &&
-      a.infoHash == b.infoHash &&
-      a.fileIndex == b.fileIndex;
+      a.addonId == b.addonId && a.label == b.label && a.infoHash == b.infoHash && a.fileIndex == b.fileIndex;
 
   Future<void> _chooseSubtitle(RemoteStreamCandidate candidate) async {
     final choice = await showModalBottomSheet<int>(
@@ -931,8 +954,9 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       '\u0000${candidate.url == null ? candidate.fileIndex ?? '' : sourceDigest(candidate.url.toString())}'
       '\u0000${candidate.externalUrl == null ? '' : sourceDigest(candidate.externalUrl.toString())}';
 
-  String _subtitleLabel(RemoteSubtitle subtitle) =>
-      subtitle.label?.trim().isNotEmpty == true ? subtitle.label! : subtitle.lang?.trim().isNotEmpty == true
+  String _subtitleLabel(RemoteSubtitle subtitle) => subtitle.label?.trim().isNotEmpty == true
+      ? subtitle.label!
+      : subtitle.lang?.trim().isNotEmpty == true
       ? subtitle.lang!
       : t.streaming.subtitleTracks(count: 1);
 
@@ -969,10 +993,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       title: Text(t.streaming.streamsTitle),
       slivers: [
         if (_loading || staleProfile)
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
-          )
+          const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()))
         else if (_error || result == null)
           SliverFillRemaining(
             hasScrollBody: false,
@@ -1052,12 +1073,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
                   child: Text(t.streaming.streamLookupPartial, style: Theme.of(context).textTheme.bodySmall),
                 ),
               for (final candidate in result.candidates)
-                _candidateTile(
-                  candidate,
-                  hasDebrid,
-                  hasHosterResolver,
-                  _preparationFor(candidate, streaming),
-                ),
+                _candidateTile(candidate, hasDebrid, hasHosterResolver, _preparationFor(candidate, streaming)),
               const SizedBox(height: 24),
             ]),
           ),
@@ -1080,15 +1096,15 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     );
   }
 
-  RemotePreparationJob? _preparationFor(RemoteStreamCandidate candidate, RemoteStreamingProvider streaming) =>
-      streaming.preparationJobs
-          .where(
-            (job) =>
-                job.requestId == widget.request.id &&
-                job.infoHash.toLowerCase() == candidate.infoHash?.toLowerCase() &&
-                job.fileIndex == candidate.fileIndex,
-          )
-          .firstOrNull;
+  RemotePreparationJob? _preparationFor(RemoteStreamCandidate candidate, RemoteStreamingProvider streaming) => streaming
+      .preparationJobs
+      .where(
+        (job) =>
+            job.requestId == widget.request.id &&
+            job.infoHash.toLowerCase() == candidate.infoHash?.toLowerCase() &&
+            job.fileIndex == candidate.fileIndex,
+      )
+      .firstOrNull;
 
   Widget _candidateTile(
     RemoteStreamCandidate candidate,
@@ -1098,11 +1114,13 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
   ) {
     final busy = _busyCandidate == '${candidate.addonId}${candidate.label}';
     final selectedSubtitle = _selectedSubtitles[_candidateKey(candidate)];
-    final canPlay = candidate.url != null || candidate.infoHash != null && hasDebrid;
+    final nativeEnabled = context.read<RemoteStreamingProvider>().nativePeerEnabled;
+    final canPlay = candidate.url != null || candidate.infoHash != null && (hasDebrid || nativeEnabled);
     final subtitle = [
       candidate.addonName,
       if (candidate.description?.isNotEmpty == true) candidate.description!,
-      if (candidate.infoHash != null && !hasDebrid) t.streaming.streamNeedsProvider,
+      if (candidate.infoHash != null && !hasDebrid)
+        nativeEnabled ? t.streaming.nativePeerPlay : t.streaming.streamNeedsProvider,
       if (preparation?.state == RemotePreparationState.preparing) t.streaming.streamPrepare,
       if (preparation?.state == RemotePreparationState.failed ||
           preparation?.state == RemotePreparationState.interrupted)
@@ -1113,6 +1131,12 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     final trailing = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (candidate.infoHash != null && nativeEnabled && !busy)
+          IconButton(
+            tooltip: t.streaming.nativePeerPlay,
+            onPressed: () => _play(candidate, native: true),
+            icon: const AppIcon(Symbols.devices_rounded),
+          ),
         if (candidate.subtitles.isNotEmpty)
           IconButton(
             tooltip: t.streaming.chooseSubtitle,
@@ -1128,7 +1152,10 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         if (busy)
           const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
         else if (candidate.externalUrl != null && candidate.url == null && candidate.infoHash == null)
-          TextButton(onPressed: () => _openExternal(candidate.externalUrl!), child: Text(t.streaming.streamOpenExternal))
+          TextButton(
+            onPressed: () => _openExternal(candidate.externalUrl!),
+            child: Text(t.streaming.streamOpenExternal),
+          )
         else if (!canPlay && candidate.infoHash != null && !hasDebrid)
           TextButton(onPressed: _openStreamingSettings, child: Text(t.streaming.manageConnections))
         else if (canPlay)

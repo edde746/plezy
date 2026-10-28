@@ -7243,6 +7243,33 @@ class Translations$streaming$en {
 
 	/// en: 'Debrid providers'
 	String get providers => 'Debrid providers';
+
+	/// en: 'Play torrents on this device'
+	String get nativePeerTitle => 'Play torrents on this device';
+
+	/// en: 'Play on this device'
+	String get nativePeerPlay => 'Play on this device';
+
+	/// en: 'Use peers when a cloud provider is unavailable. Peers can see your IP address. Uses up to 4 GB per video and uploads up to 256 KB/s while playing; stops when playback ends.'
+	String get nativePeerHelp => 'Use peers when a cloud provider is unavailable. Peers can see your IP address. Uses up to 4 GB per video and uploads up to 256 KB/s while playing; stops when playback ends.';
+
+	/// en: 'Available sources'
+	String get availableCopies => 'Available sources';
+
+	/// en: '${count} sources'
+	String availableCopiesCount({required Object count}) => '${count} sources';
+
+	/// en: 'Finding your server and cloud copies…'
+	String get canonicalIndexing => 'Finding your server and cloud copies…';
+
+	/// en: 'Preparation continues when the app is closed. Your device decides when to run it.'
+	String get preparationBackground => 'Preparation continues when the app is closed. Your device decides when to run it.';
+
+	/// en: 'This device can resume preparation while PlezyNG is open.'
+	String get preparationForeground => 'This device can resume preparation while PlezyNG is open.';
+
+	/// en: 'Preparation'
+	String get preparationQueue => 'Preparation';
 }
 
 // Path: addServer
@@ -15280,6 +15307,15 @@ extension on Translations {
 			'streaming.cloudEmpty' => 'No ready video files were found in this account.',
 			'streaming.cloudLoadFailed' => 'Couldn\'t load cloud files. Check the connection and retry.',
 			'streaming.providers' => 'Debrid providers',
+			'streaming.nativePeerTitle' => 'Play torrents on this device',
+			'streaming.nativePeerPlay' => 'Play on this device',
+			'streaming.nativePeerHelp' => 'Use peers when a cloud provider is unavailable. Peers can see your IP address. Uses up to 4 GB per video and uploads up to 256 KB/s while playing; stops when playback ends.',
+			'streaming.availableCopies' => 'Available sources',
+			'streaming.availableCopiesCount' => ({required Object count}) => '${count} sources',
+			'streaming.canonicalIndexing' => 'Finding your server and cloud copies…',
+			'streaming.preparationBackground' => 'Preparation continues when the app is closed. Your device decides when to run it.',
+			'streaming.preparationForeground' => 'This device can resume preparation while PlezyNG is open.',
+			'streaming.preparationQueue' => 'Preparation',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
@@ -15549,6 +15585,8 @@ extension on Translations {
 			'universalMedia.liveCue' => 'LIVE',
 			'universalMedia.liveSession' => 'Live stream',
 			'universalMedia.liveCueHelp' => 'For live video or radio, the app hides the time bar and skip buttons. It does not save the address or watch history.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.sessionOnly' => 'This playback is session-only',
 			'universalMedia.sessionOnlyHelp' => 'Playback never saves progress or history. Save the stream as a favorite to keep it in this profile if it is eligible.',
 			'universalMedia.pictureAdjustments' => 'Picture adjustments',
@@ -15558,8 +15596,6 @@ extension on Translations {
 			'universalMedia.contrast' => 'Contrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturation',
 			'universalMedia.view360' => 'Flat view for 360° video',
 			'universalMedia.view360Help' => 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.',
@@ -16063,6 +16099,8 @@ extension on Translations {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Selected client identity: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Rating ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Downloading subtitle: ${title}',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.sharedEntryPair' => 'Pair this item',
 			'sourceSetup.sharedEntryPairHelp' => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.',
 			'sourceSetup.sharedEntryId' => 'Shared item ID',
@@ -16072,8 +16110,6 @@ extension on Translations {
 			'sourceSetup.sharedLibraryInvalid' => 'Use 8–100 letters, numbers, dots, underscores or hyphens.',
 			'sourceSetup.generateSharedLibraryId' => 'Generate a shared library ID',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead requests',
-			_ => null,
-		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.',
 			'sourceSetup.nfsReadTest' => 'Measure NFS read performance',
 			'sourceSetup.nfsReadTestHelp' => 'Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.',

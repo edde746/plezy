@@ -1107,7 +1107,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         if (!isTv) SliverToBoxAdapter(child: SizedBox(height: topSpacerHeight)),
         if (showLegacyHero) _buildHeroSection(),
         SliverToBoxAdapter(
-          child: RemoteCloudHomeRail(representedIdentities: _videoIdentitiesInHubs(_hubs)),
+          child: RemoteCloudHomeRail(
+            representedIdentities: _videoIdentitiesInHubs(_hubs),
+            representedItems: _hubs.expand((hub) => hub.items).toList(),
+          ),
         ),
         if (_isLoading) LoadingIndicatorBox.sliver,
         if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
@@ -1333,15 +1336,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   key: _tvCloudRailKey,
                   tvMode: true,
                   representedIdentities: _videoIdentitiesInHubs(browseHubs),
+                  representedItems: browseHubs.expand((hub) => hub.items).toList(),
                   onNavigateUp: _focusTopActions,
                   onNavigateDown: _focusFirstTvBrowseItem,
                   onEntriesChanged: _onTvCloudEntriesChanged,
                 ),
                 if (browseHubs.isNotEmpty)
-                  _cachedTvBrowseRail(
-                    browseHubs,
-                    showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
-                  ),
+                  _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
               ],
             ),
           ),

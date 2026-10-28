@@ -6,7 +6,11 @@ import '../utils/external_ids.dart';
 /// Strong cross-source IDs for server-backed movies, shows and exact episodes.
 /// Title/year matches deliberately do not produce a canonical identity.
 Set<String> canonicalVideoIdentitiesForMediaItem(MediaItem media) {
-  final ids = _externalIdsForMediaItem(media);
+  // An episode's IMDb/TVDB ID identifies the episode itself, whereas catalog
+  // streams carry the series ID plus coordinates. Never equate those domains.
+  final ids = media.kind == MediaKind.episode
+      ? ExternalIds.fromJellyfinProviderIds(_objectMap(media.raw?['SeriesProviderIds']) ?? const {})
+      : _externalIdsForMediaItem(media);
   final String mediaType;
   String? episodeKey;
   switch (media.kind) {
@@ -24,15 +28,15 @@ Set<String> canonicalVideoIdentitiesForMediaItem(MediaItem media) {
       episodeKey = 's${season}e$episode';
       break;
     case MediaKind.clip ||
-          MediaKind.artist ||
-          MediaKind.album ||
-          MediaKind.track ||
-          MediaKind.season ||
-          MediaKind.collection ||
-          MediaKind.playlist ||
-          MediaKind.photo ||
-          MediaKind.folder ||
-          MediaKind.unknown:
+        MediaKind.artist ||
+        MediaKind.album ||
+        MediaKind.track ||
+        MediaKind.season ||
+        MediaKind.collection ||
+        MediaKind.playlist ||
+        MediaKind.photo ||
+        MediaKind.folder ||
+        MediaKind.unknown:
       return const {};
   }
   return _canonicalExternalIdKeys(ids, mediaType, episodeKey);
@@ -110,9 +114,9 @@ ExternalIds _externalIdsForMediaItem(MediaItem item) {
   final raw = item.raw;
   if (item is PlexMediaItem) {
     final guidList = raw?['Guid'];
-    return ExternalIds.fromGuids(guidList is List ? guidList : const []).fillFrom(
-      ExternalIds.fromLegacyPlexGuid(item.guid),
-    );
+    return ExternalIds.fromGuids(
+      guidList is List ? guidList : const [],
+    ).fillFrom(ExternalIds.fromLegacyPlexGuid(item.guid));
   }
   final providerIds = _objectMap(raw?['ProviderIds']);
   return providerIds == null ? const ExternalIds() : ExternalIds.fromJellyfinProviderIds(providerIds);
