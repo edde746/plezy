@@ -141,12 +141,14 @@ class DiscoveryEmptyView extends StatelessWidget {
     required this.heading,
     required this.hint,
     required this.icon,
+    this.onClearFilters,
     required this.onRefresh,
   });
 
   final String heading;
   final String hint;
   final IconData icon;
+  final VoidCallback? onClearFilters;
   final VoidCallback? onRefresh;
 
   @override
@@ -200,6 +202,19 @@ class DiscoveryEmptyView extends StatelessWidget {
                 },
               ),
             ),
+            if (onClearFilters != null) ...[
+              const SizedBox(height: 8),
+              FocusableButton(
+                onPressed: onClearFilters,
+                autoScroll: false,
+                child: TextButton.icon(
+                  onPressed: onClearFilters,
+                  icon: const AppIcon(Symbols.filter_alt_off_rounded),
+                  label: Text(t.common.clear),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
             FocusableButton(
               onPressed: onRefresh,
               autoScroll: false,

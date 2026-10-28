@@ -107,6 +107,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
         settings.read(SettingsService.showExploreTabForProfile(profileId));
   }
 
+  bool get _hasActiveFilters =>
+      _family != _DiscoveryFamily.anything || _maxMinutes != null || _genre != null || _sourceReason != null;
+
   DiscoveryChoice? get _current {
     final restored = _restoredChoice;
     if (restored != null) return restored;
@@ -809,6 +812,19 @@ class _FindNextScreenState extends State<FindNextScreen> {
     });
   }
 
+  void _clearFilters() {
+    setState(() {
+      _family = _DiscoveryFamily.anything;
+      _maxMinutes = null;
+      _genre = null;
+      _sourceReason = null;
+      _restoredChoice = null;
+      _feedback = null;
+      _position = _choices.indexWhere((choice) => !_state.seen.contains(choice.id) && _matchesFilters(choice));
+      if (_position < 0) _position = _choices.length;
+    });
+  }
+
   String _familyLabel(_DiscoveryFamily family) => switch (family) {
     _DiscoveryFamily.anything => t.discover.findNext.filterAnything,
     _DiscoveryFamily.watch => t.discover.findNext.filterWatch,
@@ -1356,6 +1372,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
         ? t.discover.findNext.allDoneHint
         : t.discover.findNext.noPicksHint,
     icon: noMatches ? Symbols.hourglass_empty_rounded : Symbols.explore_rounded,
+    onClearFilters: noMatches && _hasActiveFilters ? _clearFilters : null,
     onRefresh: _loading ? null : () => _load(fresh: true),
   );
 
@@ -1422,10 +1439,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
                 tooltip: t.discover.findNext.filters,
                 onPressed: profileChanged || _loading ? null : _showFilters,
                 icon: Badge(
-                  isLabelVisible: _family != _DiscoveryFamily.anything ||
-                      _maxMinutes != null ||
-                      _genre != null ||
-                      _sourceReason != null,
+                  isLabelVisible: _hasActiveFilters,
                   child: const AppIcon(Symbols.tune_rounded),
                 ),
               ),
