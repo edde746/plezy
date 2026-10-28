@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Ondertitel gedownload",
     "subtitleDownloadedNotApplied": "De ondertiteling is gedownload, maar kon niet worden geselecteerd",
     "subtitleDownloadFailed": "Ondertitel downloaden mislukt",
+    "subtitleDownloadTimedOut": "",
     "searchLanguages": "Talen zoeken...",
     "skipIntro": "Intro overslaan",
     "skipCredits": "Aftiteling overslaan",
