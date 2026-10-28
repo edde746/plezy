@@ -478,7 +478,9 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                 return a.name.compareTo(b.name);
               }),
     };
-    final hasResults = destinationsByCategory.values.any((destinations) => destinations.isNotEmpty);
+    final hasResults = destinationsByCategory.values.any((destinations) => destinations.isNotEmpty) ||
+        _watchmodeLoading ||
+        (_watchmodeResult?.sources.isNotEmpty ?? false);
     return FocusedScrollScaffold(
       title: Text(t.explore.detail.links),
       slivers: [
