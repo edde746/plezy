@@ -1,11 +1,17 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/branding/plezyng-artwork-dark.webp">
-  <img src="assets/branding/plezyng-artwork-light.webp" alt="PlezyNG — coral folded-ribbon identity" width="840">
-</picture>
+<a href="https://plezyng.app/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/branding/plezyng-artwork-dark.webp">
+    <img src="assets/branding/plezyng-artwork-light.webp" alt="PlezyNG — coral folded-ribbon identity" width="840">
+  </picture>
+</a>
+
+<p>
+  <a href="https://plezyng.app/"><strong>plezyng.app</strong></a>
+</p>
 
 A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
-PlezyNG is a downstream fork for feature requests that Plezy upstream has declined, left open, or not yet shipped. The table below maps those upstream gaps to the corresponding downstream implementation. If upstream provides equivalent behavior with comparable Plex, Jellyfin, and Emby coverage, PlezyNG can retire the duplicate implementation and converge on upstream. Until then, the fork maintains and validates the capabilities listed here.
+PlezyNG is a downstream fork for feature requests that Plezy upstream has declined, left open, or not yet shipped. The table below maps those upstream gaps to the corresponding downstream implementation.
 
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
 
@@ -65,6 +71,7 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 This table is a snapshot of downstream work and its current limits. The linked upstream requests provide context for the gap PlezyNG addresses; equivalent upstream implementations can replace the corresponding downstream code when their behavior and server coverage match.
 
 <p>
+  <a href="https://plezyng.app/">Website</a> ·
   <a href="https://github.com/edde746/plezy">Upstream Plezy</a> ·
   <a href="https://github.com/snapetech-org/PlezyNG/issues">PlezyNG issues</a> ·
   <a href="#download">Download</a> ·
