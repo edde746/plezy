@@ -202,25 +202,17 @@ class DiscoveryEmptyView extends StatelessWidget {
                 },
               ),
             ),
-            if (onClearFilters != null) ...[
-              const SizedBox(height: 8),
-              FocusableButton(
-                onPressed: onClearFilters,
-                autoScroll: false,
-                child: TextButton.icon(
-                  onPressed: onClearFilters,
-                  icon: const AppIcon(Symbols.filter_alt_off_rounded),
-                  label: Text(t.common.clear),
-                ),
-              ),
-            ],
             const SizedBox(height: 8),
             FocusableButton(
-              onPressed: onRefresh,
+              onPressed: onClearFilters ?? onRefresh,
               autoScroll: false,
               child: FilledButton(
-                onPressed: onRefresh,
-                child: Text(t.discover.findNext.refresh, maxLines: 2, textAlign: TextAlign.center),
+                onPressed: onClearFilters ?? onRefresh,
+                child: Text(
+                  onClearFilters != null ? t.common.clear : t.discover.findNext.refresh,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ],
