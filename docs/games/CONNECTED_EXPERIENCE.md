@@ -22,7 +22,7 @@ The implemented slices below are not substitutes for the remaining scope.
 | View-independent stream lifetime | Retained Android PlatformView and Linux texture surfaces | Native session still belongs to its retained surface; surface destruction stops it |
 | Adaptive metrics / advanced codecs | Host-driven adaptive feedback, native stream diagnostics, request ceilings and one-to-four Android controller seats | Live adaptation/performance qualification, direct GPU Pyrowave, HDR, 4:4:4, 4K, multichannel mapping/host qualification and physical multi-controller qualification |
 | Other embedded receiver platforms | Linux embedded receiver, texture lifecycle, native decoder and input tests implemented | Full Linux/SteamOS packaging and host qualification; Windows, macOS, iOS/iPadOS/tvOS receivers |
-| Rich Steam / host features | Achievements/news/optional friends-playing and confirmed Steam destinations implemented | Live API qualification, host cloud/family state APIs, Steam Input/remapping, Together and captures |
+| Rich Steam / host features | Achievements/news/optional friends-playing, Input/properties host actions, and confirmed Cloud/Families destinations implemented | Live API qualification, host cloud/family state APIs, live Steam Input configuration, Together and captures |
 | Companion game control / internet transport | Inventory, permissioned host launch/install/views, and active stream audio/fullscreen/disconnect controls implemented | Signaling/NAT/relay, internet connection diagnostics and actual host/device qualification |
 
 No claim of “every Steam API” is made: public catalog APIs, game-side Steamworks
@@ -262,7 +262,7 @@ The appended `gameAction` companion command negotiates version 1. Host control
 and installation each require separate profile permissions, off by default.
 The viewing device requires a previously imported inventory pinned to the
 same authenticated companion peer and confirms each action. The host accepts
-only `launch`, `install`, `library` and `downloads`; no caller-supplied path,
+only fixed launch, install, library, downloads, Input configuration and game-properties actions; no caller-supplied path,
 URL, command line, account ID or credentials are accepted. Launch requests
 require a current installed-game manifest. IDs are bounded uint32 values.
 Requests have random IDs, replay suppression, one operation at a time, bounded
@@ -298,7 +298,7 @@ Disconnect/remapping clears only the affected controller. Focus loss, input
 lease loss, teardown and profile retirement neutralize every seat and keyboard
 key. Local allocation is bounded to four devices. Game/host support, Android
 hotplug and controller ordering still require physical-device qualification;
-rumble, gyro and Steam Input configuration are separate unfinished features.
+rumble, gyro and live Steam Input configuration qualification remain separate work.
 
 
 ### Stage 6 — Measured streaming diagnostics and adaptive feedback
@@ -413,3 +413,24 @@ Local verification: strict C++ compilation against Flutter Linux headers;
 actual H.264 encode→decode pixel checks; common Opus/speaker and controller seat
 tests; Flutter texture lifecycle, timeout and late-retirement tests. These are
 not evidence of Apple/Windows receiver completion or live-host qualification.
+
+### Steam Input, Cloud and Families — follow-up PR #54
+
+The existing per-computer overflow menu now offers Steam Input and game
+properties when the authenticated peer explicitly advertises those actions.
+Older version-one peers retain only the four original verbs. These requests
+require the existing off-by-default host permission, an inventory-bound peer,
+a current installed-game manifest, and a confirmation identifying the computer.
+Only a numeric AppID crosses the boundary. A layout URL, published-file ID, VDF
+contents, command line or save-file write cannot be supplied. Steam owns the
+configuration screen and any changes the user makes there. The client protocol
+URIs (`controllerconfig/<appid>` and `gameproperties/<appid>`) require actual
+Steam-client compatibility qualification; submission is not evidence that the
+configuration screen appeared.
+
+Game details use the shared adaptive menu for Store, Community, Workshop, News,
+Cloud files and Families. Account destinations warn that the browser's Steam
+sign-in may differ from PlezyNG's linked account. Cloud downloads and family
+invites/permissions run on Steam's own account pages. This does not claim
+programmatic cloud-conflict resolution, automatic family entitlement discovery,
+or general cross-game Cloud OAuth authority. No Steam cookies are imported.

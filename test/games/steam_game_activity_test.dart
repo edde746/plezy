@@ -69,9 +69,11 @@ void main() {
       expect(uri.scheme, 'https');
       expect({'store.steampowered.com', 'steamcommunity.com'}, contains(uri.host));
       expect(uri.userInfo, isEmpty);
-      expect(uri.query, isEmpty);
+      expect(uri.queryParameters, destination == SteamDestination.cloudFiles ? {'appid': '620'} : isEmpty);
     }
     expect(() => steamDestination(0, SteamDestination.store), throwsFormatException);
     expect(() => steamDestination(0x100000000, SteamDestination.store), throwsFormatException);
+    expect(steamDestination(620, SteamDestination.families).path, '/account/familymanagement');
+    expect(steamDestination(620, SteamDestination.cloudFiles).path, '/account/remotestorageapp/');
   });
 }

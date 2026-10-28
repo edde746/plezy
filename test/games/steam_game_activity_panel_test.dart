@@ -14,15 +14,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: monoTheme(MonoPalette.oled),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+        ),
         home: Scaffold(
-          body: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-            child: Directionality(
-              textDirection: TextDirection.rtl,
-              child: SingleChildScrollView(
-                child: SteamGameActivityPanel(appId: 620, isCurrent: () => true, onLink: () => linked = true),
-              ),
-            ),
+          body: SingleChildScrollView(
+            child: SteamGameActivityPanel(appId: 620, isCurrent: () => true, onLink: () => linked = true),
           ),
         ),
       ),
@@ -35,6 +33,16 @@ void main() {
     await tester.tap(link);
     await tester.pump();
     expect(linked, isTrue);
+    expect(tester.takeException(), isNull);
+    final steamMenu = find.text(t.games.openInSteam);
+    await tester.ensureVisible(steamMenu);
+    await tester.tap(steamMenu);
+    await tester.pumpAndSettle();
+    final cloud = find.text(t.games.steamCloudFiles);
+    await tester.ensureVisible(cloud);
+    await tester.tap(cloud);
+    await tester.pumpAndSettle();
+    expect(find.text(t.games.steamCloudHelp), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

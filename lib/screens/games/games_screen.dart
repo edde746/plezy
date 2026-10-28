@@ -505,6 +505,20 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                             label: t.games.installOnComputer,
                             icon: Symbols.download_rounded,
                           ),
+                          if (context.read<CompanionRemoteProvider>().supportsGameAction(
+                            SteamHostAction.inputConfiguration,
+                          ))
+                            AppMenuItem(
+                              value: SteamHostAction.inputConfiguration,
+                              label: t.games.inputOnComputer,
+                              icon: Symbols.sports_esports_rounded,
+                            ),
+                          if (context.read<CompanionRemoteProvider>().supportsGameAction(SteamHostAction.properties))
+                            AppMenuItem(
+                              value: SteamHostAction.properties,
+                              label: t.games.propertiesOnComputer,
+                              icon: Symbols.settings_rounded,
+                            ),
                         ],
                         onSelected: (action) async {
                           Navigator.pop(dialogContext);
@@ -737,7 +751,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     final snapshot = c.library.inventories.where((i) => i.hostKey == host.key).firstOrNull;
     final peer = remote.gameActionPeerId;
     // A discovered name or matching IP cannot authorize a remote command.
-    if (snapshot == null || peer == null || snapshot.peerId != peer) {
+    if (snapshot == null || peer == null || snapshot.peerId != peer || !remote.supportsGameAction(action)) {
       showErrorSnackBar(context, t.games.hostActionPairingHelp);
       return;
     }
@@ -746,6 +760,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       SteamHostAction.install => t.games.installOnComputer,
       SteamHostAction.library => t.games.hostLibrary,
       SteamHostAction.downloads => t.games.hostDownloads,
+      SteamHostAction.inputConfiguration => t.games.inputOnComputer,
+      SteamHostAction.properties => t.games.propertiesOnComputer,
     };
     final confirmed = await showConfirmDialog(
       context,

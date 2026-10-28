@@ -10094,6 +10094,27 @@ class Translations$games$en {
 
 	/// en: 'Surround (5.1)'
 	String get audioSurround51 => 'Surround (5.1)';
+
+	/// en: 'Configure Steam Input on computer'
+	String get inputOnComputer => 'Configure Steam Input on computer';
+
+	/// en: 'Cloud and game settings on computer'
+	String get propertiesOnComputer => 'Cloud and game settings on computer';
+
+	/// en: 'Open in Steam'
+	String get openInSteam => 'Open in Steam';
+
+	/// en: 'Steam Cloud files'
+	String get steamCloudFiles => 'Steam Cloud files';
+
+	/// en: 'Steam Families'
+	String get steamFamilies => 'Steam Families';
+
+	/// en: 'Open this game’s Steam Cloud files in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Steam handles downloads, sync and conflicts. Files depend on the game’s Cloud support.'
+	String get steamCloudHelp => 'Open this game’s Steam Cloud files in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Steam handles downloads, sync and conflicts. Files depend on the game’s Cloud support.';
+
+	/// en: 'Open Steam Families in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Invitations, household eligibility, copy availability and parental controls are managed by Steam.'
+	String get steamFamiliesHelp => 'Open Steam Families in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Invitations, household eligibility, copy availability and parental controls are managed by Steam.';
 }
 
 // Path: deepLinks
@@ -16258,6 +16279,13 @@ extension on Translations {
 			'games.audioStereo' => 'Stereo',
 			'games.audioQuad' => 'Quad (4 speakers)',
 			'games.audioSurround51' => 'Surround (5.1)',
+			'games.inputOnComputer' => 'Configure Steam Input on computer',
+			'games.propertiesOnComputer' => 'Cloud and game settings on computer',
+			'games.openInSteam' => 'Open in Steam',
+			'games.steamCloudFiles' => 'Steam Cloud files',
+			'games.steamFamilies' => 'Steam Families',
+			'games.steamCloudHelp' => 'Open this game’s Steam Cloud files in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Steam handles downloads, sync and conflicts. Files depend on the game’s Cloud support.',
+			'games.steamFamiliesHelp' => 'Open Steam Families in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Invitations, household eligibility, copy availability and parental controls are managed by Steam.',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',

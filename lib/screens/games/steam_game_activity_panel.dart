@@ -11,6 +11,7 @@ import '../../services/trackers/oauth_proxy_client.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/focusable_list_tile.dart';
 
 /// Metadata is fetched on demand and lives only for this profile's detail view.
@@ -81,7 +82,11 @@ class _SteamGameActivityPanelState extends State<SteamGameActivityPanel> {
     final confirmed = await showConfirmDialog(
       context,
       title: t.games.openSteamPage,
-      message: t.games.openSteamPageHelp,
+      message: switch (destination) {
+        SteamDestination.cloudFiles => t.games.steamCloudHelp,
+        SteamDestination.families => t.games.steamFamiliesHelp,
+        _ => t.games.openSteamPageHelp,
+      },
       confirmText: t.games.openSteamPage,
     );
     if (!confirmed || !current) return;
@@ -182,14 +187,35 @@ class _SteamGameActivityPanelState extends State<SteamGameActivityPanel> {
           ],
           if (data.truncated) Text(t.games.activityTruncated),
         ],
-        Wrap(
-          spacing: 8,
-          children: [
-            _button(t.games.steamStore, () => _open(SteamDestination.store)),
-            _button(t.games.steamCommunity, () => _open(SteamDestination.community)),
-            _button(t.games.steamWorkshop, () => _open(SteamDestination.workshop)),
-            _button(t.games.gameNews, () => _open(SteamDestination.news)),
+        AppMenuButton<SteamDestination>(
+          tooltip: t.games.openInSteam,
+          adaptiveSheet: true,
+          entriesBuilder: (_) => [
+            AppMenuItem(value: SteamDestination.store, label: t.games.steamStore, icon: Symbols.storefront_rounded),
+            AppMenuItem(value: SteamDestination.community, label: t.games.steamCommunity, icon: Symbols.forum_rounded),
+            AppMenuItem(
+              value: SteamDestination.workshop,
+              label: t.games.steamWorkshop,
+              icon: Symbols.extension_rounded,
+            ),
+            AppMenuItem(value: SteamDestination.news, label: t.games.gameNews, icon: Symbols.newspaper_rounded),
+            const AppMenuDivider(),
+            AppMenuItem(
+              value: SteamDestination.cloudFiles,
+              label: t.games.steamCloudFiles,
+              icon: Symbols.cloud_rounded,
+            ),
+            AppMenuItem(
+              value: SteamDestination.families,
+              label: t.games.steamFamilies,
+              icon: Symbols.family_restroom_rounded,
+            ),
           ],
+          onSelected: _open,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: Text(t.games.openInSteam),
+          ),
         ),
       ],
     );

@@ -4,6 +4,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/games/steam_host_actions.dart';
 
 void main() {
+  test('new configuration actions require an explicit peer capability', () {
+    final legacy = steamHostActionCapabilities(null);
+    expect(legacy, contains(SteamHostAction.install));
+    expect(legacy, isNot(contains(SteamHostAction.inputConfiguration)));
+    expect(steamHostActionCapabilities(['inputConfiguration', 'unknown']), {SteamHostAction.inputConfiguration});
+    expect(steamHostActionCapabilities([]), isEmpty);
+    expect(steamHostActionCapabilities(['properties', 1]), isEmpty);
+    expect(steamHostActionCapabilities(List.filled(33, 'properties')), isEmpty);
+    expect(steamHostActionCapabilities({'properties': true}), isEmpty);
+  });
+
+  test('configuration URLs are fixed and never import a supplied layout', () {
+    expect(steamHostActionUri(SteamHostAction.inputConfiguration, 620).toString(), 'steam://controllerconfig/620');
+    expect(steamHostActionUri(SteamHostAction.properties, 620).toString(), 'steam://gameproperties/620');
+    for (final action in [SteamHostAction.inputConfiguration, SteamHostAction.properties]) {
+      for (final id in [null, -1, 0, 0x100000000]) {
+        expect(() => steamHostActionUri(action, id), throwsFormatException);
+      }
+    }
+  });
   test('timed-out inventory work cannot launch when it eventually returns', () {
     fakeAsync((async) {
       final inspected = Completer<void>();

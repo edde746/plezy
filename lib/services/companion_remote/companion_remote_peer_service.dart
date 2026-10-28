@@ -8,6 +8,7 @@ import 'package:web_socket_channel/io.dart';
 import '../../utils/future_extensions.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../games/steam_host_actions.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
@@ -1386,6 +1387,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           'role': _role?.name,
           'gameInventoryVersion': 1,
           'gameActionVersion': 1,
+          'gameActionKinds': SteamHostAction.values.map((action) => action.name).toList(growable: false),
           'gameSessionVersion': 1,
         },
       ),

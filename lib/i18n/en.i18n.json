@@ -4010,7 +4010,14 @@
     "streamAudioHelp": "Request stereo, quad or 5.1 audio for new streams. Surround needs a compatible host and speaker output. If the channel layout or output is unsupported, PlezyNG retries in stereo. Stream details show the negotiated channel count.",
     "audioStereo": "Stereo",
     "audioQuad": "Quad (4 speakers)",
-    "audioSurround51": "Surround (5.1)"
+    "audioSurround51": "Surround (5.1)",
+    "inputOnComputer": "Configure Steam Input on computer",
+    "propertiesOnComputer": "Cloud and game settings on computer",
+    "openInSteam": "Open in Steam",
+    "steamCloudFiles": "Steam Cloud files",
+    "steamFamilies": "Steam Families",
+    "steamCloudHelp": "Open this game’s Steam Cloud files in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Steam handles downloads, sync and conflicts. Files depend on the game’s Cloud support.",
+    "steamFamiliesHelp": "Open Steam Families in your browser? Check the signed-in Steam account; it may differ from the account linked to PlezyNG. Invitations, household eligibility, copy availability and parental controls are managed by Steam."
   },
   "deepLinks": {
     "invalid": "This Plezy link isn't valid.",

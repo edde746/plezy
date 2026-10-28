@@ -184,3 +184,14 @@ decoder test also passed AddressSanitizer and UndefinedBehaviorSanitizer. Local
 LeakSanitizer could not inspect `/proc` under this environment, so leak detection
 remains enabled in private JIT and is not claimed as locally passed. Workflow
 security, action-pin and architecture checks passed; no runner routing changed.
+
+### Configuration/account affordances — PR #54
+
+- 50 focused Flutter action, metadata, large-text RTL menu and companion-provider
+  tests passed. New tests reject malformed capability lists and AppIDs, preserve
+  older peers' action set, and verify that Cloud/Families destinations are fixed.
+- Localization checks passed for 37 locales / 3,725 messages; the new messages
+  and the surround-audio copy explicitly use reviewed English fallback until
+  translations are available.
+- Live Steam Input/properties URI behavior, browser sign-in and account changes
+  were not exercised. No cloud save was written and no family membership changed.

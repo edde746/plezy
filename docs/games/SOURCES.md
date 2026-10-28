@@ -43,3 +43,18 @@ The exact IHS runtime pin includes game-ID serialization and current/legacy auth
 - [Valve surround guidance](https://help.steampowered.com/en/faqs/view/32ED-36ED-8BC1-1B98)
   describes host and speaker requirements. Live host/output qualification remains
   separate from the codec's multichannel unit tests.
+
+## Configuration and account destinations
+
+- [Steam Cloud support](https://help.steampowered.com/en/faqs/view/68D2-35AB-09A9-7678)
+  identifies per-game Properties as the Cloud synchronization control and
+  explains conflict handling.
+- [Steam Families guide](https://help.steampowered.com/en/faqs/view/054C-3167-DD7F-49D4)
+  confirms account management via the client, mobile device and browser.
+- [Steam OAuth](https://partner.steamgames.com/doc/webapi_overview/OAuth)
+  scopes Cloud permissions to approved AppIDs; OpenID identity and PlezyNG's
+  catalog credential do not grant these permissions.
+- [Steam Input best practices](https://partner.steamgames.com/doc/features/steam_controller/steam_input_gamepad_emulation_bestpractices)
+  documents shared configuration links and game-side glyph handling. The
+  per-game configuration and properties client routes used here are compatibility
+  affordances, not a claimed supported Web API or an imported configuration.
