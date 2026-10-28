@@ -2071,8 +2071,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+          python3 scripts/retry_flatpak.py remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          python3 scripts/retry_flatpak.py install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
 
       - name: Build Flatpak bundle
         shell: bash

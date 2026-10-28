@@ -270,6 +270,14 @@ require(
     "Linux build attestation permissions changed",
 )
 require_explicit_shells("build-linux", linux, "bash")
+flatpak_setup = named_step(linux, "Install Flatpak packaging dependencies")
+require(
+    "scripts/retry_flatpak.py remote-add" in flatpak_setup
+    and "scripts/retry_flatpak.py install" in flatpak_setup
+    and "flatpak remote-add" not in flatpak_setup
+    and "flatpak install" not in flatpak_setup,
+    "Flathub remote and runtime downloads must use the bounded retry helper",
+)
 libmpv_cache = named_step(linux, "Cache libmpv prefix")
 require(
     "hashFiles('mpv-build.lock.json')" in libmpv_cache,
