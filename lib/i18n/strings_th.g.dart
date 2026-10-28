@@ -109,6 +109,8 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$th comics = _Translations$comics$th._(_root);
 	@override late final _Translations$games$th games = _Translations$games$th._(_root);
 	@override late final _Translations$deepLinks$th deepLinks = _Translations$deepLinks$th._(_root);
+	@override late final _Translations$householdSetup$th householdSetup = _Translations$householdSetup$th._(_root);
+	@override late final _Translations$issueReport$th issueReport = _Translations$issueReport$th._(_root);
 }
 
 // Path: app
@@ -3800,6 +3802,30 @@ class _Translations$deepLinks$th extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'เปิดเป็น ${name}';
 	@override String get copy => 'คูปอง';
 	@override String get copied => 'ลิงค์คัดลอก';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$th extends Translations$householdSetup$en {
+	_Translations$householdSetup$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'ตั้งค่าครอบครัว';
+}
+
+// Path: issueReport
+class _Translations$issueReport$th extends Translations$issueReport$en {
+	_Translations$issueReport$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'รายงานปัญหา';
+	@override String get instructions => 'สแกนคิวอาร์โค้ดเพื่อเปิดฉบับร่าง GitHub ที่กรอกข้อมูลไว้แล้ว ตรวจสอบก่อนส่งเมื่อพร้อม';
+	@override String get privacy => 'ฉบับร่างมีเวอร์ชันแอป แพลตฟอร์ม และจำนวนการเชื่อมต่อ โดยไม่รวมที่อยู่เซิร์ฟเวอร์ ชื่อบัญชีหรือโปรไฟล์ ชื่อสื่อ หรือเส้นทางไฟล์';
+	@override String get logPrivacy => 'บันทึกเป็นทางเลือก โปรดตรวจสอบก่อนอัปโหลด ID ของบันทึกจะเพิ่มลงในฉบับร่าง ซึ่งอาจเปิดเผยต่อสาธารณะ';
+	@override String get openDraft => 'เปิดฉบับร่าง GitHub';
 }
 
 // Path: appIcon.names
@@ -8520,6 +8546,12 @@ extension on TranslationsTh {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'เปิดเป็น ${name}',
 			'deepLinks.copy' => 'คูปอง',
 			'deepLinks.copied' => 'ลิงค์คัดลอก',
+			'householdSetup.title' => 'ตั้งค่าครอบครัว',
+			'issueReport.title' => 'รายงานปัญหา',
+			'issueReport.instructions' => 'สแกนคิวอาร์โค้ดเพื่อเปิดฉบับร่าง GitHub ที่กรอกข้อมูลไว้แล้ว ตรวจสอบก่อนส่งเมื่อพร้อม',
+			'issueReport.privacy' => 'ฉบับร่างมีเวอร์ชันแอป แพลตฟอร์ม และจำนวนการเชื่อมต่อ โดยไม่รวมที่อยู่เซิร์ฟเวอร์ ชื่อบัญชีหรือโปรไฟล์ ชื่อสื่อ หรือเส้นทางไฟล์',
+			'issueReport.logPrivacy' => 'บันทึกเป็นทางเลือก โปรดตรวจสอบก่อนอัปโหลด ID ของบันทึกจะเพิ่มลงในฉบับร่าง ซึ่งอาจเปิดเผยต่อสาธารณะ',
+			'issueReport.openDraft' => 'เปิดฉบับร่าง GitHub',
 			_ => null,
 		};
 	}

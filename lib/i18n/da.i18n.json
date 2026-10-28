@@ -3911,5 +3911,15 @@
     "openAsProfile": "Åbne som ${name}",
     "copy": "Kopiering",
     "copied": "Link kopieret"
+  },
+  "householdSetup": {
+    "title": "Opsætning af husstanden"
+  },
+  "issueReport": {
+    "title": "Rapportér et problem",
+    "instructions": "Scan QR-koden for at åbne et udfyldt GitHub-udkast. Gennemgå det, og indsend det, når du er klar.",
+    "privacy": "Udkastet indeholder appversion, platform og antal forbindelser. Det indeholder ikke serveradresser, konto- eller profilnavne, medietitler eller filstier.",
+    "logPrivacy": "Logfiler er valgfri. Gennemgå dem før upload. Deres ID føjes til udkastet, som kan være offentligt.",
+    "openDraft": "Åbn GitHub-udkast"
   }
 }

@@ -3886,5 +3886,15 @@
     "openAsProfile": "Buka sebagai ${name}",
     "copy": "Salinan",
     "copied": "Link yang disalin"
+  },
+  "householdSetup": {
+    "title": "Persediaan rumah tangga"
+  },
+  "issueReport": {
+    "title": "Laporkan masalah",
+    "instructions": "Imbas kod QR untuk membuka draf GitHub yang telah diisi. Semak dan hantar apabila anda bersedia.",
+    "privacy": "Draf mengandungi versi aplikasi, platform dan bilangan sambungan. Alamat pelayan, nama akaun dan profil, tajuk media serta laluan fail tidak disertakan.",
+    "logPrivacy": "Log adalah pilihan. Semak sebelum memuat naik. ID log ditambahkan pada draf yang mungkin terbuka kepada umum.",
+    "openDraft": "Buka draf GitHub"
   }
 }

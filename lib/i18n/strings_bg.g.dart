@@ -109,6 +109,8 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$bg comics = _Translations$comics$bg._(_root);
 	@override late final _Translations$games$bg games = _Translations$games$bg._(_root);
 	@override late final _Translations$deepLinks$bg deepLinks = _Translations$deepLinks$bg._(_root);
+	@override late final _Translations$householdSetup$bg householdSetup = _Translations$householdSetup$bg._(_root);
+	@override late final _Translations$issueReport$bg issueReport = _Translations$issueReport$bg._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$bg extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Отворете като ${name}';
 	@override String get copy => 'Копиране';
 	@override String get copied => 'Линкът копиран';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$bg extends Translations$householdSetup$en {
+	_Translations$householdSetup$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Настройка на домакинството';
+}
+
+// Path: issueReport
+class _Translations$issueReport$bg extends Translations$issueReport$en {
+	_Translations$issueReport$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Съобщаване за проблем';
+	@override String get instructions => 'Сканирайте QR кода, за да отворите предварително попълнена чернова в GitHub. Прегледайте я и я изпратете, когато сте готови.';
+	@override String get privacy => 'Черновата включва версията на приложението, платформата и броя на връзките. Не включва адреси на сървъри, имена на профили, заглавия или пътища до файлове.';
+	@override String get logPrivacy => 'Регистрационните файлове са по избор. Прегледайте ги преди качване. Идентификаторът им се добавя към чернова, която може да е публична.';
+	@override String get openDraft => 'Отваряне на чернова в GitHub';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsBg {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Отворете като ${name}',
 			'deepLinks.copy' => 'Копиране',
 			'deepLinks.copied' => 'Линкът копиран',
+			'householdSetup.title' => 'Настройка на домакинството',
+			'issueReport.title' => 'Съобщаване за проблем',
+			'issueReport.instructions' => 'Сканирайте QR кода, за да отворите предварително попълнена чернова в GitHub. Прегледайте я и я изпратете, когато сте готови.',
+			'issueReport.privacy' => 'Черновата включва версията на приложението, платформата и броя на връзките. Не включва адреси на сървъри, имена на профили, заглавия или пътища до файлове.',
+			'issueReport.logPrivacy' => 'Регистрационните файлове са по избор. Прегледайте ги преди качване. Идентификаторът им се добавя към чернова, която може да е публична.',
+			'issueReport.openDraft' => 'Отваряне на чернова в GitHub',
 			_ => null,
 		};
 	}

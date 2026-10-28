@@ -109,6 +109,8 @@ class TranslationsBn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$bn comics = _Translations$comics$bn._(_root);
 	@override late final _Translations$games$bn games = _Translations$games$bn._(_root);
 	@override late final _Translations$deepLinks$bn deepLinks = _Translations$deepLinks$bn._(_root);
+	@override late final _Translations$householdSetup$bn householdSetup = _Translations$householdSetup$bn._(_root);
+	@override late final _Translations$issueReport$bn issueReport = _Translations$issueReport$bn._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$bn extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name} হিসাবে খোলা';
 	@override String get copy => 'কপি';
 	@override String get copied => 'লিঙ্ক কপি';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$bn extends Translations$householdSetup$en {
+	_Translations$householdSetup$bn._(TranslationsBn root) : this._root = root, super.internal(root);
+
+	final TranslationsBn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'পরিবারের সেটআপ';
+}
+
+// Path: issueReport
+class _Translations$issueReport$bn extends Translations$issueReport$en {
+	_Translations$issueReport$bn._(TranslationsBn root) : this._root = root, super.internal(root);
+
+	final TranslationsBn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'সমস্যা জানান';
+	@override String get instructions => 'আগে থেকে পূরণ করা GitHub খসড়া খুলতে QR কোড স্ক্যান করুন। পাঠানোর আগে দেখে নিন।';
+	@override String get privacy => 'খসড়ায় অ্যাপের সংস্করণ, প্ল্যাটফর্ম ও সংযোগের সংখ্যা থাকে। সার্ভারের ঠিকানা, অ্যাকাউন্ট বা প্রোফাইলের নাম, মিডিয়ার শিরোনাম ও ফাইলের পথ থাকে না।';
+	@override String get logPrivacy => 'লগ ঐচ্ছিক। আপলোডের আগে দেখে নিন। লগ আইডি খসড়ায় যোগ হবে, যা সবার জন্য দৃশ্যমান হতে পারে।';
+	@override String get openDraft => 'GitHub খসড়া খুলুন';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsBn {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} হিসাবে খোলা',
 			'deepLinks.copy' => 'কপি',
 			'deepLinks.copied' => 'লিঙ্ক কপি',
+			'householdSetup.title' => 'পরিবারের সেটআপ',
+			'issueReport.title' => 'সমস্যা জানান',
+			'issueReport.instructions' => 'আগে থেকে পূরণ করা GitHub খসড়া খুলতে QR কোড স্ক্যান করুন। পাঠানোর আগে দেখে নিন।',
+			'issueReport.privacy' => 'খসড়ায় অ্যাপের সংস্করণ, প্ল্যাটফর্ম ও সংযোগের সংখ্যা থাকে। সার্ভারের ঠিকানা, অ্যাকাউন্ট বা প্রোফাইলের নাম, মিডিয়ার শিরোনাম ও ফাইলের পথ থাকে না।',
+			'issueReport.logPrivacy' => 'লগ ঐচ্ছিক। আপলোডের আগে দেখে নিন। লগ আইডি খসড়ায় যোগ হবে, যা সবার জন্য দৃশ্যমান হতে পারে।',
+			'issueReport.openDraft' => 'GitHub খসড়া খুলুন',
 			_ => null,
 		};
 	}

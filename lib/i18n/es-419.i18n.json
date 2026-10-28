@@ -525,5 +525,15 @@
   },
   "lending": {
     "cancel": "Cancelar"
+  },
+  "householdSetup": {
+    "title": "Configuración del hogar"
+  },
+  "issueReport": {
+    "title": "Reportar un problema",
+    "instructions": "Escanea el código QR para abrir un borrador de GitHub ya llenado. Revísalo y envíalo cuando estés listo.",
+    "privacy": "El borrador incluye la versión de la app, la plataforma y el número de conexiones. No incluye direcciones de servidores, nombres de cuentas o perfiles, títulos de contenido ni rutas de archivos.",
+    "logPrivacy": "Los registros son opcionales. Revísalos antes de subirlos. Su ID se agrega al borrador, que podría ser público.",
+    "openDraft": "Abrir borrador de GitHub"
   }
 }

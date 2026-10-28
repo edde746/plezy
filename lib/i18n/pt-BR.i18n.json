@@ -534,5 +534,15 @@
   },
   "lending": {
     "cancel": "Cancelar"
+  },
+  "householdSetup": {
+    "title": "Configuração da casa"
+  },
+  "issueReport": {
+    "title": "Relatar um problema",
+    "instructions": "Leia o QR code para abrir um rascunho do GitHub já preenchido. Revise e envie quando estiver pronto.",
+    "privacy": "O rascunho inclui a versão do app, a plataforma e o número de conexões. Não inclui endereços de servidores, nomes de contas e perfis, títulos de mídia ou caminhos de arquivos.",
+    "logPrivacy": "Os registros são opcionais. Revise antes de enviar. O ID do registro será incluído no rascunho, que pode ser público.",
+    "openDraft": "Abrir rascunho do GitHub"
   }
 }

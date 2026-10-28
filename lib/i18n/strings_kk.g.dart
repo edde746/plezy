@@ -109,6 +109,8 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$kk comics = _Translations$comics$kk._(_root);
 	@override late final _Translations$games$kk games = _Translations$games$kk._(_root);
 	@override late final _Translations$deepLinks$kk deepLinks = _Translations$deepLinks$kk._(_root);
+	@override late final _Translations$householdSetup$kk householdSetup = _Translations$householdSetup$kk._(_root);
+	@override late final _Translations$issueReport$kk issueReport = _Translations$issueReport$kk._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$kk extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name} профилі ретінде ашу';
 	@override String get copy => 'Көшіру';
 	@override String get copied => 'Сілтеме көшірілді.';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$kk extends Translations$householdSetup$en {
+	_Translations$householdSetup$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Үй шаруашылығын баптау';
+}
+
+// Path: issueReport
+class _Translations$issueReport$kk extends Translations$issueReport$en {
+	_Translations$issueReport$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Мәселе туралы хабарлау';
+	@override String get instructions => 'Алдын ала толтырылған GitHub жобасын ашу үшін QR кодын сканерлеңіз. Жібермес бұрын тексеріңіз.';
+	@override String get privacy => 'Жобада қолданба нұсқасы, платформа және байланыстар саны болады. Сервер мекенжайлары, тіркелгі мен профиль атаулары, медиа атаулары және файл жолдары қосылмайды.';
+	@override String get logPrivacy => 'Журналдар міндетті емес. Жүктемес бұрын тексеріңіз. Олардың ID-і ашық болуы мүмкін жобаға қосылады.';
+	@override String get openDraft => 'GitHub жобасын ашу';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsKk {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} профилі ретінде ашу',
 			'deepLinks.copy' => 'Көшіру',
 			'deepLinks.copied' => 'Сілтеме көшірілді.',
+			'householdSetup.title' => 'Үй шаруашылығын баптау',
+			'issueReport.title' => 'Мәселе туралы хабарлау',
+			'issueReport.instructions' => 'Алдын ала толтырылған GitHub жобасын ашу үшін QR кодын сканерлеңіз. Жібермес бұрын тексеріңіз.',
+			'issueReport.privacy' => 'Жобада қолданба нұсқасы, платформа және байланыстар саны болады. Сервер мекенжайлары, тіркелгі мен профиль атаулары, медиа атаулары және файл жолдары қосылмайды.',
+			'issueReport.logPrivacy' => 'Журналдар міндетті емес. Жүктемес бұрын тексеріңіз. Олардың ID-і ашық болуы мүмкін жобаға қосылады.',
+			'issueReport.openDraft' => 'GitHub жобасын ашу',
 			_ => null,
 		};
 	}

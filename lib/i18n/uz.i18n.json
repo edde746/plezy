@@ -3911,5 +3911,15 @@
     "openAsProfile": "${name} profili sifatida ochish",
     "copy": "Nusxalash",
     "copied": "Havola nusxalandi."
+  },
+  "householdSetup": {
+    "title": "Uy sozlamalari"
+  },
+  "issueReport": {
+    "title": "Muammo haqida xabar berish",
+    "instructions": "Oldindan to‘ldirilgan GitHub qoralamasini ochish uchun QR kodni skanerlang. Uni ko‘rib chiqing va tayyor bo‘lganda yuboring.",
+    "privacy": "Qoralamada ilova versiyasi, platforma va ulanishlar soni bo‘ladi. Server manzillari, hisob va profil nomlari, media sarlavhalari hamda fayl yo‘llari kiritilmaydi.",
+    "logPrivacy": "Jurnallar ixtiyoriy. Yuklashdan oldin ko‘rib chiqing. Ularning ID raqami ommaviy bo‘lishi mumkin bo‘lgan qoralamaga qo‘shiladi.",
+    "openDraft": "GitHub qoralamasini ochish"
   }
 }

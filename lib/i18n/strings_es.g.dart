@@ -109,6 +109,8 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$comics$es comics = Translations$comics$es.internal(_root);
 	@override late final Translations$games$es games = Translations$games$es.internal(_root);
 	@override late final Translations$deepLinks$es deepLinks = Translations$deepLinks$es.internal(_root);
+	@override late final Translations$householdSetup$es householdSetup = Translations$householdSetup$es.internal(_root);
+	@override late final Translations$issueReport$es issueReport = Translations$issueReport$es.internal(_root);
 }
 
 // Path: app
@@ -3830,6 +3832,30 @@ class Translations$deepLinks$es extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Abierto como ${name}';
 	@override String get copy => 'Copia';
 	@override String get copied => 'Link copiado';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$es extends Translations$householdSetup$en {
+	Translations$householdSetup$es.internal(TranslationsEs root) : this._root = root, super.internal(root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuración del hogar';
+}
+
+// Path: issueReport
+class Translations$issueReport$es extends Translations$issueReport$en {
+	Translations$issueReport$es.internal(TranslationsEs root) : this._root = root, super.internal(root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Informar de un problema';
+	@override String get instructions => 'Escanea el código QR para abrir un borrador de GitHub rellenado. Revísalo y envíalo cuando quieras.';
+	@override String get privacy => 'El borrador incluye la versión de la aplicación, la plataforma y el número de conexiones. No incluye direcciones de servidores, nombres de cuentas o perfiles, títulos ni rutas de archivos.';
+	@override String get logPrivacy => 'Los registros son opcionales. Revísalos antes de subirlos. Su ID se añade al borrador, que podría ser público.';
+	@override String get openDraft => 'Abrir borrador de GitHub';
 }
 
 // Path: appIcon.names
@@ -8552,6 +8578,12 @@ extension on TranslationsEs {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Abierto como ${name}',
 			'deepLinks.copy' => 'Copia',
 			'deepLinks.copied' => 'Link copiado',
+			'householdSetup.title' => 'Configuración del hogar',
+			'issueReport.title' => 'Informar de un problema',
+			'issueReport.instructions' => 'Escanea el código QR para abrir un borrador de GitHub rellenado. Revísalo y envíalo cuando quieras.',
+			'issueReport.privacy' => 'El borrador incluye la versión de la aplicación, la plataforma y el número de conexiones. No incluye direcciones de servidores, nombres de cuentas o perfiles, títulos ni rutas de archivos.',
+			'issueReport.logPrivacy' => 'Los registros son opcionales. Revísalos antes de subirlos. Su ID se añade al borrador, que podría ser público.',
+			'issueReport.openDraft' => 'Abrir borrador de GitHub',
 			_ => null,
 		};
 	}

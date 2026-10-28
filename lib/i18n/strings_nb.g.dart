@@ -109,6 +109,8 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$nb comics = _Translations$comics$nb._(_root);
 	@override late final _Translations$games$nb games = _Translations$games$nb._(_root);
 	@override late final _Translations$deepLinks$nb deepLinks = _Translations$deepLinks$nb._(_root);
+	@override late final _Translations$householdSetup$nb householdSetup = _Translations$householdSetup$nb._(_root);
+	@override late final _Translations$issueReport$nb issueReport = _Translations$issueReport$nb._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$nb extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Åpne som ${name}';
 	@override String get copy => 'Kopierer';
 	@override String get copied => 'Link kopieres';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$nb extends Translations$householdSetup$en {
+	_Translations$householdSetup$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Husholdsoppsett';
+}
+
+// Path: issueReport
+class _Translations$issueReport$nb extends Translations$issueReport$en {
+	_Translations$issueReport$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Rapporter et problem';
+	@override String get instructions => 'Skann QR-koden for å åpne et forhåndsutfylt GitHub-utkast. Se gjennom det, og send det inn når du er klar.';
+	@override String get privacy => 'Utkastet inneholder appversjon, plattform og antall tilkoblinger. Serveradresser, konto- og profilnavn, medietitler og filstier utelates.';
+	@override String get logPrivacy => 'Logger er valgfrie. Se gjennom dem før opplasting. Logg-ID-en legges til i utkastet, som kan være offentlig.';
+	@override String get openDraft => 'Åpne GitHub-utkast';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsNb {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Åpne som ${name}',
 			'deepLinks.copy' => 'Kopierer',
 			'deepLinks.copied' => 'Link kopieres',
+			'householdSetup.title' => 'Husholdsoppsett',
+			'issueReport.title' => 'Rapporter et problem',
+			'issueReport.instructions' => 'Skann QR-koden for å åpne et forhåndsutfylt GitHub-utkast. Se gjennom det, og send det inn når du er klar.',
+			'issueReport.privacy' => 'Utkastet inneholder appversjon, plattform og antall tilkoblinger. Serveradresser, konto- og profilnavn, medietitler og filstier utelates.',
+			'issueReport.logPrivacy' => 'Logger er valgfrie. Se gjennom dem før opplasting. Logg-ID-en legges til i utkastet, som kan være offentlig.',
+			'issueReport.openDraft' => 'Åpne GitHub-utkast',
 			_ => null,
 		};
 	}

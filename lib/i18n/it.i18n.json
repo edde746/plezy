@@ -3918,5 +3918,15 @@
     "openAsProfile": "Apri come ${name}",
     "copy": "Copia",
     "copied": "Link copiato"
+  },
+  "householdSetup": {
+    "title": "Configurazione famiglia"
+  },
+  "issueReport": {
+    "title": "Segnala un problema",
+    "instructions": "Scansiona il codice QR per aprire una bozza GitHub precompilata. Controllala e inviala solo quando sei pronto.",
+    "privacy": "La bozza include versione dell’app, piattaforma e numero di connessioni. Esclude indirizzi dei server, nomi di account e profili, titoli e percorsi dei file.",
+    "logPrivacy": "I log sono facoltativi. Controllali prima di caricarli. Il loro ID viene aggiunto alla bozza, che potrebbe essere pubblica.",
+    "openDraft": "Apri la bozza GitHub"
   }
 }

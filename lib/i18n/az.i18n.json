@@ -3911,5 +3911,15 @@
     "openAsProfile": "${name} kimi açılır",
     "copy": "Kopya",
     "copied": "Link kopyalar"
+  },
+  "householdSetup": {
+    "title": "Ev qurulumu"
+  },
+  "issueReport": {
+    "title": "Problemi bildirin",
+    "instructions": "Əvvəlcədən doldurulmuş GitHub qaralamasını açmaq üçün QR kodunu skan edin. Göndərməzdən əvvəl nəzərdən keçirin.",
+    "privacy": "Qaralamaya tətbiqin versiyası, platforma və bağlantı sayı daxildir. Server ünvanları, hesab və profil adları, media başlıqları və fayl yolları daxil edilmir.",
+    "logPrivacy": "Jurnallar istəyə bağlıdır. Yükləməzdən əvvəl nəzərdən keçirin. Jurnal ID-si ictimai ola bilən qaralamaya əlavə olunur.",
+    "openDraft": "GitHub qaralamasını açın"
   }
 }

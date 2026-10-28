@@ -109,6 +109,8 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$da comics = _Translations$comics$da._(_root);
 	@override late final _Translations$games$da games = _Translations$games$da._(_root);
 	@override late final _Translations$deepLinks$da deepLinks = _Translations$deepLinks$da._(_root);
+	@override late final _Translations$householdSetup$da householdSetup = _Translations$householdSetup$da._(_root);
+	@override late final _Translations$issueReport$da issueReport = _Translations$issueReport$da._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$da extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Åbne som ${name}';
 	@override String get copy => 'Kopiering';
 	@override String get copied => 'Link kopieret';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$da extends Translations$householdSetup$en {
+	_Translations$householdSetup$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Opsætning af husstanden';
+}
+
+// Path: issueReport
+class _Translations$issueReport$da extends Translations$issueReport$en {
+	_Translations$issueReport$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Rapportér et problem';
+	@override String get instructions => 'Scan QR-koden for at åbne et udfyldt GitHub-udkast. Gennemgå det, og indsend det, når du er klar.';
+	@override String get privacy => 'Udkastet indeholder appversion, platform og antal forbindelser. Det indeholder ikke serveradresser, konto- eller profilnavne, medietitler eller filstier.';
+	@override String get logPrivacy => 'Logfiler er valgfri. Gennemgå dem før upload. Deres ID føjes til udkastet, som kan være offentligt.';
+	@override String get openDraft => 'Åbn GitHub-udkast';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsDa {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Åbne som ${name}',
 			'deepLinks.copy' => 'Kopiering',
 			'deepLinks.copied' => 'Link kopieret',
+			'householdSetup.title' => 'Opsætning af husstanden',
+			'issueReport.title' => 'Rapportér et problem',
+			'issueReport.instructions' => 'Scan QR-koden for at åbne et udfyldt GitHub-udkast. Gennemgå det, og indsend det, når du er klar.',
+			'issueReport.privacy' => 'Udkastet indeholder appversion, platform og antal forbindelser. Det indeholder ikke serveradresser, konto- eller profilnavne, medietitler eller filstier.',
+			'issueReport.logPrivacy' => 'Logfiler er valgfri. Gennemgå dem før upload. Deres ID føjes til udkastet, som kan være offentligt.',
+			'issueReport.openDraft' => 'Åbn GitHub-udkast',
 			_ => null,
 		};
 	}

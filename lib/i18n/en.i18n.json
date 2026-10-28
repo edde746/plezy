@@ -3911,5 +3911,15 @@
     "openAsProfile": "Open as ${name}",
     "copy": "Copy",
     "copied": "Link copied"
+  },
+  "householdSetup": {
+    "title": "Household setup"
+  },
+  "issueReport": {
+    "title": "Report a problem",
+    "instructions": "Scan the QR code to open a prefilled GitHub draft. Review it and submit only when you are ready.",
+    "privacy": "The draft includes app version, platform, and connection counts. It excludes server addresses, account and profile names, media titles, and file paths.",
+    "logPrivacy": "Logs are optional. Review them before uploading. Their ID is added to the draft, which may be public.",
+    "openDraft": "Open GitHub draft"
   }
 }

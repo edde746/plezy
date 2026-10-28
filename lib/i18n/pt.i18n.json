@@ -3918,5 +3918,15 @@
     "openAsProfile": "Abra como ${name}",
     "copy": "Copia",
     "copied": "Link copiado"
+  },
+  "householdSetup": {
+    "title": "Configuração da casa"
+  },
+  "issueReport": {
+    "title": "Comunicar um problema",
+    "instructions": "Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.",
+    "privacy": "O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.",
+    "logPrivacy": "Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.",
+    "openDraft": "Abrir rascunho do GitHub"
   }
 }

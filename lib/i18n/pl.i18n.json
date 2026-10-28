@@ -3961,5 +3961,15 @@
     "openAsProfile": "Otwórz jako ${name}",
     "copy": "Kopia",
     "copied": "Link kopiowany"
+  },
+  "householdSetup": {
+    "title": "Konfiguracja domu"
+  },
+  "issueReport": {
+    "title": "Zgłoś problem",
+    "instructions": "Zeskanuj kod QR, aby otworzyć wstępnie wypełniony szkic GitHub. Sprawdź go i wyślij, gdy będziesz gotowy.",
+    "privacy": "Szkic zawiera wersję aplikacji, platformę i liczbę połączeń. Nie zawiera adresów serwerów, nazw kont i profili, tytułów multimediów ani ścieżek plików.",
+    "logPrivacy": "Logi są opcjonalne. Przejrzyj je przed przesłaniem. Ich identyfikator zostanie dodany do szkicu, który może być publiczny.",
+    "openDraft": "Otwórz szkic GitHub"
   }
 }

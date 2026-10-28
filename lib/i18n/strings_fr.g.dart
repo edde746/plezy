@@ -109,6 +109,8 @@ class TranslationsFr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$comics$fr comics = Translations$comics$fr.internal(_root);
 	@override late final Translations$games$fr games = Translations$games$fr.internal(_root);
 	@override late final Translations$deepLinks$fr deepLinks = Translations$deepLinks$fr.internal(_root);
+	@override late final Translations$householdSetup$fr householdSetup = Translations$householdSetup$fr.internal(_root);
+	@override late final Translations$issueReport$fr issueReport = Translations$issueReport$fr.internal(_root);
 }
 
 // Path: app
@@ -3830,6 +3832,30 @@ class Translations$deepLinks$fr extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Ouverture en ${name}';
 	@override String get copy => 'Copie';
 	@override String get copied => 'Le lien copié';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$fr extends Translations$householdSetup$en {
+	Translations$householdSetup$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuration du foyer';
+}
+
+// Path: issueReport
+class Translations$issueReport$fr extends Translations$issueReport$en {
+	Translations$issueReport$fr.internal(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Signaler un problème';
+	@override String get instructions => 'Scannez le code QR pour ouvrir un brouillon GitHub prérempli. Relisez-le et envoyez-le quand vous le souhaitez.';
+	@override String get privacy => 'Le brouillon contient la version de l’application, la plateforme et le nombre de connexions. Il exclut les adresses des serveurs, les noms de comptes et de profils, les titres et les chemins de fichiers.';
+	@override String get logPrivacy => 'Les journaux sont facultatifs. Relisez-les avant de les envoyer. Leur identifiant est ajouté au brouillon, qui peut être public.';
+	@override String get openDraft => 'Ouvrir le brouillon GitHub';
 }
 
 // Path: appIcon.names
@@ -8552,6 +8578,12 @@ extension on TranslationsFr {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Ouverture en ${name}',
 			'deepLinks.copy' => 'Copie',
 			'deepLinks.copied' => 'Le lien copié',
+			'householdSetup.title' => 'Configuration du foyer',
+			'issueReport.title' => 'Signaler un problème',
+			'issueReport.instructions' => 'Scannez le code QR pour ouvrir un brouillon GitHub prérempli. Relisez-le et envoyez-le quand vous le souhaitez.',
+			'issueReport.privacy' => 'Le brouillon contient la version de l’application, la plateforme et le nombre de connexions. Il exclut les adresses des serveurs, les noms de comptes et de profils, les titres et les chemins de fichiers.',
+			'issueReport.logPrivacy' => 'Les journaux sont facultatifs. Relisez-les avant de les envoyer. Leur identifiant est ajouté au brouillon, qui peut être public.',
+			'issueReport.openDraft' => 'Ouvrir le brouillon GitHub',
 			_ => null,
 		};
 	}

@@ -3886,5 +3886,15 @@
     "openAsProfile": "Buka sebagai ${name}",
     "copy": "Kopi",
     "copied": "Link yang disalin"
+  },
+  "householdSetup": {
+    "title": "Penyiapan rumah tangga"
+  },
+  "issueReport": {
+    "title": "Laporkan masalah",
+    "instructions": "Pindai kode QR untuk membuka draf GitHub yang sudah terisi. Tinjau dan kirim hanya jika Anda siap.",
+    "privacy": "Draf memuat versi aplikasi, platform, dan jumlah koneksi. Alamat server, nama akun dan profil, judul media, serta lokasi berkas tidak disertakan.",
+    "logPrivacy": "Log bersifat opsional. Tinjau sebelum mengunggah. ID log ditambahkan ke draf, yang mungkin bersifat publik.",
+    "openDraft": "Buka draf GitHub"
   }
 }

@@ -3911,5 +3911,15 @@
     "openAsProfile": "Nyissa meg, mint ${name}",
     "copy": "másolás",
     "copied": "Link másolat"
+  },
+  "householdSetup": {
+    "title": "Háztartás beállítása"
+  },
+  "issueReport": {
+    "title": "Hiba jelentése",
+    "instructions": "Olvasd be a QR-kódot az előre kitöltött GitHub-vázlat megnyitásához. Ellenőrizd, és csak akkor küldd el, ha készen állsz.",
+    "privacy": "A vázlat az alkalmazás verzióját, a platformot és a kapcsolatok számát tartalmazza. Nem tartalmaz szervercímeket, fiók- vagy profilneveket, médiacímeket és fájlútvonalakat.",
+    "logPrivacy": "A naplók megadása nem kötelező. Feltöltés előtt nézd át őket. Az azonosítójuk bekerülhet a nyilvános vázlatba.",
+    "openDraft": "GitHub-vázlat megnyitása"
   }
 }

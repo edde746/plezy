@@ -110,6 +110,8 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 	@override late final _Translations$comics$zh_Hant comics = _Translations$comics$zh_Hant._(_root);
 	@override late final _Translations$games$zh_Hant games = _Translations$games$zh_Hant._(_root);
 	@override late final _Translations$deepLinks$zh_Hant deepLinks = _Translations$deepLinks$zh_Hant._(_root);
+	@override late final _Translations$householdSetup$zh_Hant householdSetup = _Translations$householdSetup$zh_Hant._(_root);
+	@override late final _Translations$issueReport$zh_Hant issueReport = _Translations$issueReport$zh_Hant._(_root);
 }
 
 // Path: app
@@ -3819,6 +3821,30 @@ class _Translations$deepLinks$zh_Hant extends Translations$deepLinks$zh {
 	@override String openAsProfile({required Object name}) => '開啟 ${name}';
 	@override String get copy => '複製';
 	@override String get copied => '連結複製';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$zh_Hant extends Translations$householdSetup$zh {
+	_Translations$householdSetup$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '家庭設定';
+}
+
+// Path: issueReport
+class _Translations$issueReport$zh_Hant extends Translations$issueReport$zh {
+	_Translations$issueReport$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '回報問題';
+	@override String get instructions => '掃描 QR 碼即可開啟已預填的 GitHub 草稿。請先檢查內容，準備好後再送出。';
+	@override String get privacy => '草稿包含應用程式版本、平台和連線數量，不包含伺服器位址、帳戶或個人資料名稱、媒體標題及檔案路徑。';
+	@override String get logPrivacy => '記錄檔為選填。上傳前請先檢查。記錄檔 ID 會加入草稿，而問題可能是公開的。';
+	@override String get openDraft => '開啟 GitHub 草稿';
 }
 
 // Path: appIcon.names
@@ -8541,6 +8567,12 @@ extension on TranslationsZhHant {
 			'deepLinks.openAsProfile' => ({required Object name}) => '開啟 ${name}',
 			'deepLinks.copy' => '複製',
 			'deepLinks.copied' => '連結複製',
+			'householdSetup.title' => '家庭設定',
+			'issueReport.title' => '回報問題',
+			'issueReport.instructions' => '掃描 QR 碼即可開啟已預填的 GitHub 草稿。請先檢查內容，準備好後再送出。',
+			'issueReport.privacy' => '草稿包含應用程式版本、平台和連線數量，不包含伺服器位址、帳戶或個人資料名稱、媒體標題及檔案路徑。',
+			'issueReport.logPrivacy' => '記錄檔為選填。上傳前請先檢查。記錄檔 ID 會加入草稿，而問題可能是公開的。',
+			'issueReport.openDraft' => '開啟 GitHub 草稿',
 			_ => null,
 		};
 	}

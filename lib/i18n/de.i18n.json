@@ -3911,5 +3911,15 @@
     "openAsProfile": "Öffnen Sie als ${name}",
     "copy": "Kopieren",
     "copied": "Link kopiert"
+  },
+  "householdSetup": {
+    "title": "Haushalt einrichten"
+  },
+  "issueReport": {
+    "title": "Problem melden",
+    "instructions": "Scanne den QR-Code, um einen vorausgefüllten GitHub-Entwurf zu öffnen. Prüfe ihn und sende ihn erst ab, wenn du bereit bist.",
+    "privacy": "Der Entwurf enthält App-Version, Plattform und Verbindungszahlen. Serveradressen, Konto- und Profilnamen, Medientitel und Dateipfade bleiben außen vor.",
+    "logPrivacy": "Protokolle sind optional. Prüfe sie vor dem Hochladen. Ihre ID wird dem Entwurf hinzugefügt, der öffentlich sein kann.",
+    "openDraft": "GitHub-Entwurf öffnen"
   }
 }

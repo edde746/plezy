@@ -109,6 +109,8 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$ko comics = _Translations$comics$ko._(_root);
 	@override late final _Translations$games$ko games = _Translations$games$ko._(_root);
 	@override late final _Translations$deepLinks$ko deepLinks = _Translations$deepLinks$ko._(_root);
+	@override late final _Translations$householdSetup$ko householdSetup = _Translations$householdSetup$ko._(_root);
+	@override late final _Translations$issueReport$ko issueReport = _Translations$issueReport$ko._(_root);
 }
 
 // Path: app
@@ -3818,6 +3820,30 @@ class _Translations$deepLinks$ko extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name}으로 열기';
 	@override String get copy => '복사본';
 	@override String get copied => '링크 복사';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$ko extends Translations$householdSetup$en {
+	_Translations$householdSetup$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '가정 설정';
+}
+
+// Path: issueReport
+class _Translations$issueReport$ko extends Translations$issueReport$en {
+	_Translations$issueReport$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '문제 신고';
+	@override String get instructions => 'QR 코드를 스캔해 미리 작성된 GitHub 초안을 여세요. 내용을 확인한 뒤 준비되면 제출하세요.';
+	@override String get privacy => '초안에는 앱 버전, 플랫폼, 연결 수가 포함됩니다. 서버 주소, 계정 및 프로필 이름, 미디어 제목, 파일 경로는 포함되지 않습니다.';
+	@override String get logPrivacy => '로그 첨부는 선택 사항입니다. 업로드 전에 확인하세요. 로그 ID는 공개될 수 있는 초안에 추가됩니다.';
+	@override String get openDraft => 'GitHub 초안 열기';
 }
 
 // Path: appIcon.names
@@ -8540,6 +8566,12 @@ extension on TranslationsKo {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name}으로 열기',
 			'deepLinks.copy' => '복사본',
 			'deepLinks.copied' => '링크 복사',
+			'householdSetup.title' => '가정 설정',
+			'issueReport.title' => '문제 신고',
+			'issueReport.instructions' => 'QR 코드를 스캔해 미리 작성된 GitHub 초안을 여세요. 내용을 확인한 뒤 준비되면 제출하세요.',
+			'issueReport.privacy' => '초안에는 앱 버전, 플랫폼, 연결 수가 포함됩니다. 서버 주소, 계정 및 프로필 이름, 미디어 제목, 파일 경로는 포함되지 않습니다.',
+			'issueReport.logPrivacy' => '로그 첨부는 선택 사항입니다. 업로드 전에 확인하세요. 로그 ID는 공개될 수 있는 초안에 추가됩니다.',
+			'issueReport.openDraft' => 'GitHub 초안 열기',
 			_ => null,
 		};
 	}
