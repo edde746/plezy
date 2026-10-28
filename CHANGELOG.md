@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Retain checksum-verified webOS candidates and their exact source/run receipts in private storage after ephemeral runners exit, so device qualification can use the built package.
+
 - Add profile-scoped stereo, quad and 5.1 Steam audio requests with bounded Opus multistream decoding, explicit speaker mapping and a stereo compatibility retry for unsupported layouts or outputs.
 
 - Preserve TV navigation-remote assistance for player one without consuming a Steam gamepad seat; release both input paths when a composite device disconnects.

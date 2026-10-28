@@ -613,6 +613,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify private WebOS output storage
+        run: python3 tools/webos/retain_private_candidate.py --preflight
+
       - name: Test WebOS packaging and release gates
         env:
           PLEZY_WEBOS_TEST_TMP: ${{ runner.temp }}/plezy-webos-tests
@@ -679,6 +682,16 @@ jobs:
         env:
           PLEZYNG_WEBOS_TASK_ROOT: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}
           PLEZY_WEBOS_RELEASE_BUILD: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
+
+      - name: Retain verified WebOS candidate for private device testing
+        env:
+          OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/webos/retain_private_candidate.py \
+            --source-dir "$OUTPUT_DIR" \
+            --version "$(python3 scripts/pubspec_version.py pubspec.yaml)"
 
       - name: Verify the exact approved WebOS IPK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
