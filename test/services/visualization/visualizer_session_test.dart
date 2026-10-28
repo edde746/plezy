@@ -89,4 +89,39 @@ void main() {
     expect(session.hasFrame, isFalse);
     session.dispose();
   });
+  test('changing engines retires the old lease before loading a native double preset', () async {
+    final events = <String>[];
+    var lease = 0;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      final args = call.arguments as Map? ?? {};
+      if (call.method == 'visualizerCapabilities') return {'available': true, 'engine': '${args['engine']}-abi1'};
+      if (call.method == 'visualizerCreate') {
+        events.add('create:${args['engine']}'); return {'sessionId': ++lease, 'textureId': lease};
+      }
+      if (call.method == 'visualizerDispose') events.add('dispose:${args['sessionId']}');
+      if (call.method == 'visualizerLoad') events.add('load:${args['sessionId']}');
+      return null;
+    });
+    final session = VisualizerSession();
+    await session.load(preset);
+    await session.setEngine('milkrust');
+    await session.load(const VisualizerPresetFile(id: 'double', title: 'Double', path: '/library/double.milk2',
+      root: '/library', libraryPath: 'imports/double.milk2'));
+    expect(events, ['create:projectm', 'load:1', 'dispose:1', 'create:milkrust', 'load:2']);
+    expect(session.engine, 'milkrust');
+    expect(session.hasFrame, isFalse); // Acceptance never invents a native frame.
+    await session.stop(); session.dispose();
+  });
+
+  test('capability lookup reaches non-Linux native hosts', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      expect(call.method, 'visualizerCapabilities');
+      expect(call.arguments, {'engine': 'milkrust'});
+      return {'available': false, 'engine': 'milkrust-native-abi1', 'reason': 'PCM bridge missing'};
+    });
+    final capability = await VisualizerSession.capabilities(engine: 'milkrust');
+    expect(capability.reason, 'PCM bridge missing');
+  });
+
 }

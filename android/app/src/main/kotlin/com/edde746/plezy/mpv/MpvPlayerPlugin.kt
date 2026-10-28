@@ -264,7 +264,12 @@ open class MpvPlayerPlugin(
       when (call.method) {
         "visualizerDispose" -> disposeVisualizer()
         "visualizerLoad" -> current.load(checkNotNull(call.argument<String>("path")), checkNotNull(call.argument<String>("root")))
-        "visualizerResize" -> current.resize(checkNotNull(call.argument<Number>("width")).toInt(), checkNotNull(call.argument<Number>("height")).toInt())
+        "visualizerResize" -> {
+          val width = checkNotNull(call.argument<Number>("width")).toLong()
+          val height = checkNotNull(call.argument<Number>("height")).toLong()
+          require(width in 1..16384 && height in 1..16384) { "Invalid visualization dimensions." }
+          current.resize(width.toInt(), height.toInt())
+        }
         "visualizerSetPaused" -> current.pause(checkNotNull(call.argument<Boolean>("paused")))
         "visualizerStatus" -> { result.success(current.status()); return }
         else -> { result.notImplemented(); return }

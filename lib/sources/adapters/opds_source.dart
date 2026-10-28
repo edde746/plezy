@@ -63,8 +63,7 @@ class OpdsSourceAdapter extends SourceAdapter {
       rels.any((value) => value.split(RegExp(r'\s+')).contains(expected));
   bool _sampleAcquisition(Iterable<String> rels) => _hasRel(rels, _sampleRel);
   bool _openAccessAcquisition(Iterable<String> rels) => _hasRel(rels, 'http://opds-spec.org/acquisition/open-access');
-  bool _supportedFileAcquisition(Iterable<String> rels) =>
-      _sampleAcquisition(rels) || _openAccessAcquisition(rels) || _hasRel(rels, 'http://opds-spec.org/acquisition');
+  bool _supportedFileAcquisition(Iterable<String> rels) => _sampleAcquisition(rels) || _openAccessAcquisition(rels);
   bool _downloadable(String rel) => _supportedFileAcquisition([rel]);
   SourceItemKind _entryKind(List<PublicationFile> files) => files
       .map((file) => file.kind)

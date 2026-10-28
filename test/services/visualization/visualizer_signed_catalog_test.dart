@@ -50,6 +50,16 @@ void main() {
     await expectLater(quorum.verify(utf8.encode(jsonEncode(repeated)), now), throwsFormatException);
   });
 
+  test('one public key under two IDs cannot satisfy an independent-key quorum', () async {
+    final public = (await key.extractPublicKey()).bytes;
+    final verifier = VisualizerCatalogVerifier(VisualizerCatalogTrust(
+      keys: {'test': public, 'alias': public}, threshold: 2));
+    final signed = jsonDecode(utf8.decode(await envelope(5))) as Map<String, dynamic>;
+    final signatures = signed['signatures'] as List;
+    signatures.add({...signatures.single as Map, 'keyId': 'alias'});
+    await expectLater(verifier.verify(utf8.encode(jsonEncode(signed)), now), throwsFormatException);
+  });
+
   test('expiry denies download, but cache verification retains the sequence watermark', () async {
     final bytes = await envelope(7, expires: now.subtract(const Duration(minutes: 1)));
     final verifier = VisualizerCatalogVerifier(trust);

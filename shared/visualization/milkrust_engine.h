@@ -140,6 +140,33 @@ class MilkRustEngine {
       throw std::runtime_error("Asset is outside its verified preset root.");
     return path;
   }
+  static std::string Fold(std::string value) {
+    for (auto& ch : value) if (ch >= 'A' && ch <= 'Z') ch += 'a'-'A';
+    return value;
+  }
+  static std::filesystem::path CaseInsensitive(const std::filesystem::path& root,
+      const std::filesystem::path& candidate, size_t& remaining) {
+    auto current = root;
+    const auto relative = candidate.lexically_relative(root);
+    if (relative.empty()) return {};
+    for (const auto& part : relative) {
+      if (part == ".." || part == ".") return {};
+      if (!std::filesystem::is_directory(current)) return {};
+      std::filesystem::path found;
+      const auto folded = Fold(part.u8string());
+      for (const auto& entry : std::filesystem::directory_iterator(current)) {
+        if (remaining == 0) throw std::runtime_error("Texture lookup exceeds the pack entry budget.");
+        --remaining;
+        if (Fold(entry.path().filename().u8string()) != folded) continue;
+        if (!found.empty()) throw std::runtime_error("Texture path has ambiguous case aliases.");
+        if (entry.is_symlink()) throw std::runtime_error("Texture paths cannot follow symbolic links.");
+        found = entry.path();
+      }
+      if (found.empty()) return {};
+      current = found;
+    }
+    return Inside(root, current);
+  }
   static std::filesystem::path Resolve(const std::filesystem::path& root,
       const std::filesystem::path& preset_folder, std::string name) {
     std::replace(name.begin(), name.end(), '\\', '/');
@@ -147,11 +174,14 @@ class MilkRustEngine {
     if (name.empty() || relative.is_absolute() || name.find(':') != std::string::npos)
       throw std::runtime_error("Texture name is not a relative pack asset.");
     for (const auto& part : relative) if (part == ".." || part == ".") throw std::runtime_error("Unsafe texture path.");
+    size_t remaining = 20000;
     for (const auto& directory : {preset_folder, root, root/"textures"}) {
       for (const char* extension : {"", ".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tga", ".dds"}) {
         if (*extension && relative.has_extension()) continue;
         const auto candidate = directory / (name + extension);
         if (std::filesystem::exists(candidate)) return Inside(root, candidate);
+        const auto folded = CaseInsensitive(root, candidate, remaining);
+        if (!folded.empty()) return folded;
       }
     }
     return {};

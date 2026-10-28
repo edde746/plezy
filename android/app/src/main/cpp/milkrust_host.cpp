@@ -87,9 +87,13 @@ struct JavaDecoder {
     if (!bytes) { env->ExceptionClear(); throw std::runtime_error("Image path allocation failed."); }
     env->SetByteArrayRegion(bytes, 0, text.size(), reinterpret_cast<const jbyte*>(text.data()));
     jclass string_class = env->FindClass("java/lang/String");
+    if (!string_class) {env->ExceptionClear();throw std::runtime_error("Java String class unavailable.");}
     auto constructor = env->GetMethodID(string_class,"<init>","([BLjava/lang/String;)V");
+    if (!constructor) {env->ExceptionClear();throw std::runtime_error("UTF-8 path conversion unavailable.");}
     auto charset = env->NewStringUTF("UTF-8");
+    if (!charset) {env->ExceptionClear();throw std::runtime_error("Path encoding allocation failed.");}
     auto name = env->NewObject(string_class,constructor,bytes,charset);
+    if (!name) {env->ExceptionClear();throw std::runtime_error("Path conversion failed.");}
     auto bitmap = env->CallStaticObjectMethod(type,method,name);
     if (env->ExceptionCheck() || !bitmap) { env->ExceptionClear(); throw std::runtime_error("Android rejected the texture or its image budget."); }
     AndroidBitmapInfo info{};
@@ -118,9 +122,16 @@ std::shared_ptr<Host> Find(jlong id) {
   std::lock_guard<std::mutex> lock(registry_mutex);
   auto found=registry.find(id); if (found==registry.end()) throw std::runtime_error("Stale native visualization session."); return found->second;
 }
+std::string Diagnostic(std::string value) {
+  if (value.size() > 8192) value.resize(8192);
+  for (auto& byte : value) if (static_cast<unsigned char>(byte) >= 128 || byte == 0) byte = '?';
+  return value;
+}
 void Error(JNIEnv* env, const std::exception& error) {
   if (env->ExceptionCheck()) env->ExceptionClear();
-  env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),error.what());
+  const auto text = Diagnostic(error.what());
+  auto type = env->FindClass("java/lang/IllegalStateException");
+  if (type) env->ThrowNew(type,text.c_str());
 }
 std::string Utf8(JNIEnv* env, jstring string) {
   if (!string) throw std::runtime_error("Missing path.");
@@ -192,7 +203,8 @@ extern "C" JNIEXPORT void JNICALL JNI_NAME(pause)(JNIEnv* env,jobject,jlong id,j
 }
 extern "C" JNIEXPORT jobjectArray JNICALL JNI_NAME(status)(JNIEnv* env,jobject,jlong id) {
   try{const auto s=Find(id)->worker->Status(); auto result=env->NewObjectArray(6,env->FindClass("java/lang/String"),nullptr);
+    if (!result) return nullptr;
     const std::string fields[]={s.state,s.reason,s.has_frame?"1":"0",std::to_string(s.dropped),std::to_string(s.width),std::to_string(s.height)};
-    for(int i=0;i<6;++i){auto value=env->NewStringUTF(fields[i].c_str());env->SetObjectArrayElement(result,i,value);env->DeleteLocalRef(value);}return result;
+    for(int i=0;i<6;++i){auto value=env->NewStringUTF(Diagnostic(fields[i]).c_str());if(!value)return nullptr;env->SetObjectArrayElement(result,i,value);env->DeleteLocalRef(value);}return result;
   }catch(const std::exception& ex){Error(env,ex);return nullptr;}
 }
