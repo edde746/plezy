@@ -1,0 +1,23 @@
+--- a/include/ihslib/session.h
++++ b/include/ihslib/session.h
+@@ -58,6 +58,8 @@
+     uint32_t maxFps;
+     uint32_t maxBitrateKbps;
+     IHS_StreamQuality quality;
++    /** 0 retains the legacy stereo default. Supported requests: 2, 4, 6. */
++    uint32_t audioChannels;
+ } IHS_SessionConfig;
+
+ /** Optional platform/decoder facts. Unknown fields are omitted from the wire.
+--- a/src/session/channels/ch_control_negotiation.c
++++ b/src/session/channels/ch_control_negotiation.c
+@@ -213,7 +213,8 @@
+     PROTOBUF_C_SET_VALUE(clientConfig, enable_hardware_decoding, true);
+     PROTOBUF_C_SET_VALUE(clientConfig, enable_performance_overlay, true);
+     if (ihsConf.enableAudio) {
+-        PROTOBUF_C_SET_VALUE(clientConfig, audio_channels, 2);
++        PROTOBUF_C_SET_VALUE(clientConfig, audio_channels,
++            ihsConf.audioChannels == 4 || ihsConf.audioChannels == 6 ? ihsConf.audioChannels : 2);
+         PROTOBUF_C_SET_VALUE(clientConfig, enable_audio_streaming, true);
+     }
+     // Mic streaming is opt-in: only advertise when the user has registered mic callbacks.

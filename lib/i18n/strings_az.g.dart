@@ -3725,7 +3725,6 @@ class _Translations$games$az extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3750,7 +3749,6 @@ class _Translations$games$az extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3782,8 +3780,6 @@ class _Translations$games$az extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3791,14 +3787,12 @@ class _Translations$games$az extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -8478,7 +8472,6 @@ extension on TranslationsAz {
 			'comics.collections' => 'Kolleksiyalar',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8503,7 +8496,6 @@ extension on TranslationsAz {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8535,8 +8527,6 @@ extension on TranslationsAz {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8544,14 +8534,12 @@ extension on TranslationsAz {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'Bu Plezy bağlantısı geçerli deyil.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => '“${profile}” və “ZxqPROFile0” arasında heç bir profil yoxdur.',
 			'deepLinks.serverUnavailable' => 'Bu linki üçün serverə ulaşamazdım.',
@@ -8560,14 +8548,14 @@ extension on TranslationsAz {
 			'deepLinks.noLiveTv' => 'Bu linki üçün Live TV server yoxdur.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '“${channel}” kanalını bulamazdım.',
 			'deepLinks.showLink' => 'İndir Link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Profil link göstərmək',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Bu linki açın, bir sonraki epizod oynanır. shuffle-da şov oynamak için &mode=shuffle ekləyin.',
 			'deepLinks.movieHint' => 'Bu linki açmaq filmi oynayır.',
 			'deepLinks.episodeHint' => 'Bu linki açmaq bu epizodu oynayır.',
 			'deepLinks.profileHint' => 'Bu profillə bu link-i açılır.',
+			_ => null,
+		} ?? switch (path) {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} kimi açılır',
 			'deepLinks.copy' => 'Kopya',
 			'deepLinks.copied' => 'Link kopyalar',

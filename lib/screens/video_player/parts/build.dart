@@ -148,7 +148,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   onPressed: reportProblem,
                   child: TextButton.icon(
                     onPressed: reportProblem,
-                    icon: const Icon(Symbols.qr_code_2_rounded),
+                    icon: const AppIcon(Symbols.qr_code_2_rounded),
                     label: Text(t.issueReport.title),
                   ),
                 ),
