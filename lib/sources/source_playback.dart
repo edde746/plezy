@@ -13,6 +13,7 @@ import '../mpv/mpv.dart';
 import '../services/media_control_router.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_coordinator.dart';
+import '../services/settings_service.dart';
 import '../services/music/music_hardware_transport.dart';
 import '../services/player_sync_offsets.dart';
 import '../services/scoped_player_prefs.dart';
@@ -21,6 +22,7 @@ import '../services/driver_distraction.dart';
 import '../services/car_ux_restrictions_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
+import '../utils/subtitle_forced_semantics.dart';
 import '../utils/notification_permission.dart';
 import '../screens/video_player/wakelock_controller.dart';
 import 'content_access.dart';
@@ -86,6 +88,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool _pictureAdjustmentTouched = false;
   bool _disposed = false;
   bool _workspaceAudioEnabled = true;
+  bool _userMuted = false;
+  int _subtitleMuteGeneration = 0;
+  Future<void> _subtitleMuteQueue = Future<void>.value();
+  ({Player player, int fileIndex, String fingerprint, SubtitleTrack previousTrack, String temporaryTrackId})?
+  _subtitleMuteRestore;
   bool _resumeAfterInterruption = false;
   bool _useEntryChapters = false;
   int _fileEpoch = 0;
@@ -126,6 +133,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   int backwardSeconds = 15;
   int forwardSeconds = 30;
   bool get canUndoSeek => _undoSeek != null;
+  bool get muted => _userMuted;
   int get currentFilePositionMs => _failedFilePositionMs ?? _lastKnownFilePositionMs;
   bool get canRetry =>
       _valid &&
@@ -345,7 +353,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       } catch (error, stackTrace) {
         appLogger.w('Source workspace audio focus handoff failed', error: error, stackTrace: stackTrace);
       }
-      await native.setVolume(100);
+      await native.setVolume(_userMuted ? 0 : 100);
       return;
     }
 
@@ -358,6 +366,119 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         appLogger.w('Source workspace audio focus release failed', error: error, stackTrace: stackTrace);
       }
     }
+  }
+
+  Future<void> setMuted(bool muted) async {
+    if (_disposed || _userMuted == muted) return;
+    _userMuted = muted;
+    final generation = _subtitleMuteGeneration += 1;
+    final native = player;
+    if (native != null && !native.disposed) {
+      await native.setVolume(_workspaceAudioEnabled && !muted ? 100 : 0);
+      if (muted) {
+        if (SettingsService.instance.read(SettingsService.subtitleOnMute) && video) {
+          await _selectSubtitleForMute(native, generation);
+        }
+      } else {
+        await _restoreSubtitleAfterMute(generation);
+      }
+    } else if (!muted) {
+      await _restoreSubtitleAfterMute(generation);
+    }
+    _notify();
+  }
+
+  Future<void> _selectSubtitleForMute(
+    Player native,
+    int generation, {
+    List<SubtitleTrack>? availableTracks,
+  }) async {
+    if (!_userMuted ||
+        _disposed ||
+        !video ||
+        !identical(player, native) ||
+        !SettingsService.instance.read(SettingsService.subtitleOnMute) ||
+        _subtitleMuteRestore != null ||
+        opening) {
+      return;
+    }
+    final current = native.state.track.subtitle;
+    if (current != null && current.id != SubtitleTrack.off.id && current.id != SubtitleTrack.auto.id) return;
+    final tracks = (availableTracks ?? native.state.tracks.subtitle)
+        .where((track) => track.id != SubtitleTrack.off.id && track.id != SubtitleTrack.auto.id)
+        .toList(growable: false);
+    if (tracks.isEmpty || _fileIndex < 0 || _fileIndex >= files.length) return;
+
+    SubtitleTrack? candidate;
+    for (final track in tracks) {
+      if (track.isDefault && !track.effectiveForced) {
+        candidate = track;
+        break;
+      }
+    }
+    if (candidate == null) {
+      for (final track in tracks) {
+        if (!track.effectiveForced) {
+          candidate = track;
+          break;
+        }
+      }
+    }
+    candidate ??= tracks.first;
+    if (candidate.id == current?.id) return;
+    final restore = (
+      player: native,
+      fileIndex: _fileIndex,
+      fingerprint: files[_fileIndex].fingerprint,
+      previousTrack: current ?? SubtitleTrack.off,
+      temporaryTrackId: candidate.id,
+    );
+    _subtitleMuteRestore = restore;
+    await _queueSubtitleMuteMutation(() async {
+      if (generation != _subtitleMuteGeneration ||
+          !_userMuted ||
+          !identical(player, native) ||
+          _fileIndex != restore.fileIndex ||
+          _fileIndex < 0 ||
+          _fileIndex >= files.length ||
+          files[_fileIndex].fingerprint != restore.fingerprint) {
+        return;
+      }
+      final selected = native.state.track.subtitle;
+      if (selected != null && selected.id != SubtitleTrack.off.id && selected.id != SubtitleTrack.auto.id) {
+        _subtitleMuteRestore = null;
+        return;
+      }
+      await native.selectSubtitleTrack(candidate);
+    });
+  }
+
+  Future<void> _restoreSubtitleAfterMute(int generation) async {
+    final restore = _subtitleMuteRestore;
+    if (restore == null) return;
+    _subtitleMuteRestore = null;
+    await _queueSubtitleMuteMutation(() async {
+      if (generation != _subtitleMuteGeneration ||
+          _userMuted ||
+          !identical(player, restore.player) ||
+          _fileIndex != restore.fileIndex ||
+          _fileIndex < 0 ||
+          _fileIndex >= files.length ||
+          files[_fileIndex].fingerprint != restore.fingerprint) {
+        return;
+      }
+      if (restore.player.state.track.subtitle?.id != restore.temporaryTrackId) return;
+      await restore.player.selectSubtitleTrack(restore.previousTrack);
+    });
+  }
+
+  Future<void> _queueSubtitleMuteMutation(Future<void> Function() action) async {
+    final previous = _subtitleMuteQueue;
+    final operation = previous.catchError((Object _, StackTrace __) {}).then((_) => action());
+    _subtitleMuteQueue = operation.catchError((Object error, StackTrace stackTrace) {
+      appLogger.w('Standalone subtitle-on-mute operation failed', error: error, stackTrace: stackTrace);
+    });
+    await _subtitleMuteQueue;
   }
 
   double get speed => progress?.speed ?? 1;
@@ -543,6 +664,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _liveInput = liveInput;
       _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
       mode = requestedMode;
+      _userMuted = false;
+      _subtitleMuteRestore = null;
+      _subtitleMuteGeneration += 1;
       _useEntryChapters =
           selected.length == item.audio.length &&
           List.generate(
@@ -693,8 +817,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         }),
       );
       _subscriptions.add(
-        native.streams.tracks.listen((_) {
-          if (current()) _notify();
+        native.streams.tracks.listen((tracks) {
+          if (!current()) return;
+          _notify();
+          if (tracks.subtitle.isNotEmpty && _userMuted) {
+            unawaited(_selectSubtitleForMute(native, _subtitleMuteGeneration, availableTracks: tracks.subtitle));
+          }
         }),
       );
       _subscriptions.add(
@@ -1830,6 +1958,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _openFile(int index, int localPosition, {bool play = true}) async {
     if (!_valid || player == null) return;
+    _subtitleMuteGeneration += 1;
+    _subtitleMuteRestore = null;
     if (_streamRecordingPartial != null && index != _fileIndex) {
       try {
         await stopStreamRecording();
@@ -1840,7 +1970,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     opening = true;
     _selectedExternalSubtitlePath = null;
     _activeExternalSubtitleSyncBinding = null;
-    _fileEpoch  ;
+    _fileEpoch += 1;
     final generation = _generation;
     final fileEpoch = _fileEpoch;
     final edition = progress?.edition;
@@ -1927,6 +2057,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _rebuildChapters();
     opening = false;
     _notify();
+    if (_userMuted) unawaited(_selectSubtitleForMute(native, _subtitleMuteGeneration));
   }
 
   Future<void> _readChapters(Player native, int generation, int index) async {
@@ -2373,7 +2504,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _sleepBoundaryFile = null;
     _undoSeek = null;
     if (_persistProgress) sources.scheduleSync();
-    _generation  ;
+    _generation += 1;
+    _subtitleMuteGeneration += 1;
+    _subtitleMuteRestore = null;
+    _userMuted = false;
     for (final sub in _subscriptions) {
       await release(sub.cancel);
     }

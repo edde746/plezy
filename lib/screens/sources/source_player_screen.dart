@@ -1208,6 +1208,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             onPressed: () => sourceAction(context, s.toggle),
             icon: AppIcon(s.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded, fill: 1),
           ),
+          if (s.video)
+            IconButton(
+              tooltip: s.muted ? t.videoControls.unmuteButton : t.hotkeys.actions.muteToggle,
+              onPressed: () => sourceAction(context, () => s.setMuted(!s.muted)),
+              icon: AppIcon(s.muted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded),
+            ),
           if (!s.isLiveInput)
             IconButton(
               tooltip: t.fileSources.skipForward,
