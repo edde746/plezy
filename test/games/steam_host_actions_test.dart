@@ -1,8 +1,31 @@
 import 'dart:async';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/games/steam_host_actions.dart';
 
 void main() {
+  test('timed-out inventory work cannot launch when it eventually returns', () {
+    fakeAsync((async) {
+      final inspected = Completer<void>();
+      var launched = false;
+      final host = SteamHostActionExchange(
+        isHost: true,
+        allowed: (_) => true,
+        execute: (_, _, current) async {
+          await inspected.future;
+          launched = current();
+          return launched;
+        },
+        send: (_) {},
+      );
+      host.receive({'version': 1, 'op': 'request', 'request': '1' * 32, 'action': 'launch', 'appId': 620});
+      async.elapse(const Duration(seconds: 21));
+      inspected.complete();
+      async.flushMicrotasks();
+      expect(launched, isFalse);
+      host.close();
+    });
+  });
   test('host action URLs accept only fixed verbs and uint32 AppIDs', () {
     expect(steamHostActionUri(SteamHostAction.launch, 620).toString(), 'steam://rungameid/620');
     expect(steamHostActionUri(SteamHostAction.install, 620).toString(), 'steam://install/620');

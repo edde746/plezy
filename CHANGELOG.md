@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add opt-in Companion Remote controls for active PlezyNG game streams: inspect titles, choose audio, mute, fullscreen and confirm disconnect, using temporary session handles that expire on reconnection or replacement.
+- Prevent a timed-out Steam host inventory check from launching later, using monotonic deadlines and explicit operation retirement.
+
 - Add live Steam connection details from native receiver counters and host adaptation messages, including actual codec, frame rate, received video payload, queue depth and input reliability; opening details releases game input and keeps measurements local.
 
 - Add one-to-four independent Android Steam controller seats, with a profile setting, stable HID identities, shared native/Flutter device mapping and per-device disconnect cleanup; preserve the single-controller default.

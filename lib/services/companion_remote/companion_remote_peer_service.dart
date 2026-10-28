@@ -1386,6 +1386,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           'role': _role?.name,
           'gameInventoryVersion': 1,
           'gameActionVersion': 1,
+          'gameSessionVersion': 1,
         },
       ),
     );

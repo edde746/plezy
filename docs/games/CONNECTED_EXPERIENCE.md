@@ -23,7 +23,7 @@ The implemented slices below are not substitutes for the remaining scope.
 | Adaptive metrics / advanced codecs | Host-driven adaptive feedback, native stream diagnostics, request ceilings and one-to-four Android controller seats | Live adaptation/performance qualification, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround and physical multi-controller qualification |
 | Other embedded receiver platforms | Library browsing/sharing only | Linux/SteamOS, Windows, macOS, iOS/iPadOS/tvOS receivers and TV capability qualification |
 | Rich Steam / host features | Achievements/news/optional friends-playing and confirmed Steam destinations implemented | Live API qualification, host cloud/family state APIs, Steam Input/remapping, Together and captures |
-| Companion game control / internet transport | Inventory plus permissioned launch/install and host Steam/download views implemented | Session controls, signaling/NAT/relay, connection diagnostics and actual host action qualification |
+| Companion game control / internet transport | Inventory, permissioned host launch/install/views, and active stream audio/fullscreen/disconnect controls implemented | Signaling/NAT/relay, internet connection diagnostics and actual host/device qualification |
 
 No claim of “every Steam API” is made: public catalog APIs, game-side Steamworks
 APIs, private client interfaces and services requiring Valve approval have
@@ -323,3 +323,33 @@ Opening the dialog neutralizes game input, and closing it respects the current
 workspace lease. Missing/older native measurement methods produce an unavailable
 state without stopping playback. No client-side reconnect loop changes quality.
 Actual adaptation and presentation timings still need host/device measurements.
+
+
+### Stage 7 — Companion control of active game streams
+
+The paired remote's existing More tab offers Game sessions when the receiving
+peer advertises `gameSessionVersion: 1`. A separate profile permission, disabled
+by default, allows listing up to eight active game titles and requesting audio
+selection, mute, fullscreen or disconnect. It uses the profile-owned Multiview
+registrations, so movie/music sessions cannot be addressed as games. Muting an
+old game cannot cancel a newer audio selection for another session.
+
+No internal session ID, computer address or stream credential is sent. The
+receiver issues random 128-bit handles tied to the actual live registration.
+Disconnect/reconnect, profile retirement and replacing the game registration
+invalidate those handles. Requests have bounded deadlines, strict fields,
+version negotiation, replay suppression, bounded handle/request sets and a
+monotonic per-operation rate limit. Permission is checked again at dispatch;
+late acknowledgements cannot cross peer generations. Unknown/old peers do not
+advertise this feature. The new command is appended, preserving old indices.
+
+The phone confirms disconnect and explains that the host game stays running.
+Acknowledgement means the request was accepted; refresh obtains new state.
+Nothing synthesizes raw gamepad input, quits the host game, controls arbitrary
+other media, exposes a shell or configures an internet listener. The same
+connection control is protected against a peer change while its dialog is open.
+Actual phone/receiver interoperability is still a release gate.
+
+Host launch/install inspection now uses monotonic deadlines plus an explicit
+active-operation guard. A scan that finishes after its timeout cannot launch a
+game later, even if the wall clock changes during the request.
