@@ -472,7 +472,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       glossary: glossary,
     );
     _glossaryDrafts[_currentGlossaryDraftKey()] = _glossaryController.text;
-    if (mounted) setState(() => _status = 'Saved glossary for this profile and language pair.');
+    if (mounted) setState(() => _status = _useSeriesGlossary ? 'Saved glossary override for this series and language pair.' : 'Saved glossary for this profile and language pair.');
   }
 
   Future<void> _translate() => _run(() async {
