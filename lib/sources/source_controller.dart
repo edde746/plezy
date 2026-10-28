@@ -25,6 +25,7 @@ import 'content_access.dart';
 import 'source_database.dart';
 import 'source_models.dart';
 import 'source_oauth.dart';
+import '../media/canonical_video_identity.dart';
 import '../services/standalone_video_metadata_client.dart';
 import '../services/remote_streams/remote_stream_models.dart';
 import '../services/remote_streams/remote_streaming_provider.dart';
@@ -890,6 +891,13 @@ class SourceController extends ChangeNotifier {
       if (value.isNotEmpty) ids[key] = value;
     }
     if (ids.isEmpty) return const [];
+    final targetIdentities = canonicalVideoIdentitiesForExternalIds(
+      identifiers: ids,
+      mediaType: mediaType,
+      season: season,
+      episode: episode,
+    );
+    if (targetIdentities.isEmpty) return const [];
 
     final epoch = generation;
     final profile = profileId!;
@@ -913,13 +921,7 @@ class SourceController extends ChangeNotifier {
           return false;
         }
       }
-      final hasExactId = targetIds.any((candidate) {
-        final raw = entry.identifiers[candidate.key]?.trim().toLowerCase();
-        if (raw == null || raw.isEmpty) return false;
-        final value = raw.startsWith('${candidate.key}:') ? raw.substring(candidate.key.length + 1) : raw;
-        return value == candidate.value;
-      });
-      if (!hasExactId) return false;
+      if (!canonicalVideoIdentitiesForSourceEntry(entry).any(targetIdentities.contains)) return false;
       final candidateTitle = normalizeSearchText(entry.onlineTitle ?? entry.displayTitle);
       final titleMatches = candidateTitle == normalizedTitle ||
           (mediaType == 'show' && candidateTitle.startsWith('$normalizedTitle '));

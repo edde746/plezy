@@ -19,6 +19,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
+import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_kind.dart';
@@ -396,6 +397,54 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   bool get _hasActions => _watchlistSource != null || _canRequest || _canWatchWithServices || _hasEpisodes || _hasTrailer;
 
+  Future<Map<String, MediaItem>> _serverEpisodeQueue(CatalogItem item) async {
+    if (item.kind != MediaKind.show) return const {};
+    try {
+      final matches = _matches;
+      if (matches == null || _resolvingMatches || _uncheckedServerIds.isNotEmpty) return const {};
+      final shows = matches
+          .where((media) => media.kind == MediaKind.show && (media.serverId?.trim().isNotEmpty ?? false))
+          .toList(growable: false);
+      // Never pick an arbitrary server copy. A catalog queue can still mix
+      // add-on and cloud sources when this match is missing or ambiguous.
+      if (shows.length != 1) return const {};
+      final show = shows.single;
+      final serverId = ServerId(show.serverId!);
+      final multiServer = context.read<MultiServerProvider>();
+      if (!multiServer.expectedServerIds.contains(show.serverId)) return const {};
+      final manager = multiServer.serverManager;
+      if (!manager.isClientOnline(serverId)) return const {};
+      final client = manager.getClient(serverId);
+      if (client == null) return const {};
+      final episodes = await client.fetchClientSideEpisodeQueue(show.id);
+      if (!mounted || episodes == null || !multiServer.expectedServerIds.contains(show.serverId)) return const {};
+
+      String keyFor(int season, int number) => '$season:$number';
+
+      final byCoordinates = <String, MediaItem>{};
+      final ambiguous = <String>{};
+      for (final episode in episodes) {
+        if (episode.kind != MediaKind.episode) continue;
+        final season = episode.parentIndex;
+        final number = episode.index;
+        if (season == null || number == null || season < 0 || number < 0) continue;
+        final key = keyFor(season, number);
+        if (byCoordinates.containsKey(key)) {
+          ambiguous.add(key);
+        } else {
+          byCoordinates[key] = episode;
+        }
+      }
+      for (final key in ambiguous) {
+        byCoordinates.remove(key);
+      }
+      return byCoordinates;
+    } on Object catch (error, stackTrace) {
+      appLogger.d('Server episodes unavailable for catalog queue', error: error, stackTrace: stackTrace);
+      return const {};
+    }
+  }
+
   Future<bool> _ensureStreamingAddons() async {
     var streaming = context.read<RemoteStreamingProvider>();
     if (!streaming.isReady || streaming.addons.where((addon) => addon.enabled).isEmpty) {
@@ -454,6 +503,54 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
       if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
     };
+    final episodeOrder = {for (var index = 0; index < _episodes.length; index++) _episodes[index].id: index};
+    final orderedEpisodes = List<CatalogEpisode>.of(_episodes)..sort((a, b) {
+      final seasonOrder = (a.seasonNumber ?? -1).compareTo(b.seasonNumber ?? -1);
+      if (seasonOrder != 0) return seasonOrder;
+      final episodeOrderComparison = (a.episodeNumber ?? -1).compareTo(b.episodeNumber ?? -1);
+      if (episodeOrderComparison != 0) return episodeOrderComparison;
+      return (episodeOrder[a.id] ?? 0).compareTo(episodeOrder[b.id] ?? 0);
+    });
+    String episodePlaybackTitle(CatalogEpisode row) {
+      final rowSeason = row.seasonNumber;
+      final rowNumber = row.episodeNumber;
+      final rowPosition = rowSeason != null && rowNumber != null
+          ? t.streaming.episodePosition(season: rowSeason, episode: rowNumber)
+          : null;
+      return [item.title, if (rowPosition != null) rowPosition, row.title].join(' · ');
+    }
+
+    List<RemoteStreamQueueItem> queueItemsFor(Map<String, MediaItem> serverEpisodes) => [
+      for (final row in orderedEpisodes)
+        RemoteStreamQueueItem(
+          request: RemoteStreamRequest(
+            type: 'series',
+            id: row.id,
+            title: episodePlaybackTitle(row),
+            year: row.year ?? item.year,
+            season: row.seasonNumber,
+            episode: row.episodeNumber,
+          ),
+          identifiers: identifiers,
+          mediaTitle: row.title,
+          seriesTitle: item.title,
+          identityNamespace: item.sourceInstallationId ?? '${item.source.name}:${item.entryIdentityKey}',
+          durationMs: row.runtimeMinutes == null ? null : Duration(minutes: row.runtimeMinutes!).inMilliseconds,
+          serverItem: row.seasonNumber == null || row.episodeNumber == null
+              ? null
+              : serverEpisodes['${row.seasonNumber}:${row.episodeNumber}'],
+        ),
+    ];
+    final playbackQueue = orderedEpisodes.length == 1 ? queueItemsFor(const {}) : const <RemoteStreamQueueItem>[];
+    final Future<List<RemoteStreamQueueItem>>? playbackQueueFuture = orderedEpisodes.length <= 1
+        ? null
+        : _serverEpisodeQueue(item).then(queueItemsFor);
+    final queueStartIndex = orderedEpisodes.indexWhere(
+      (row) =>
+          row.id == episode.id &&
+          row.seasonNumber == episode.seasonNumber &&
+          row.episodeNumber == episode.episodeNumber,
+    );
     try {
       await Navigator.push(
         context,
@@ -469,7 +566,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
               episode: number,
             ),
             identifiers: identifiers,
-            durationMs: episode.runtimeMinutes == null ? null : Duration(minutes: episode.runtimeMinutes!).inMilliseconds,
+            seriesTitle: item.title,
+            durationMs: episode.runtimeMinutes == null
+                ? null
+                : Duration(minutes: episode.runtimeMinutes!).inMilliseconds,
+            playbackQueue: playbackQueue,
+            playbackQueueFuture: playbackQueueFuture,
+            queueStartIndex: queueStartIndex < 0 ? 0 : queueStartIndex,
           ),
         ),
       );

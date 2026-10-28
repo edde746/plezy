@@ -414,7 +414,13 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // A reload wants termination to stop it too: unlike a start, it has a
       // committed previous session to roll back to rather than an error view
       // to raise.
-      bool isCurrentReload() => attempt.isCurrent && !_hasFatalPlaybackError;
+      bool isCurrentReload() =>
+          attempt.isCurrent &&
+          !_hasFatalPlaybackError &&
+          (_activeExternalPlaybackSource == null ||
+              _externalSourceProfileIsCurrent(_activeExternalPlaybackSource!)) &&
+          (_pendingExternalPlaybackSource == null ||
+              _externalSourceProfileIsCurrent(_pendingExternalPlaybackSource!));
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)
@@ -424,6 +430,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       final previousMediaInfo = _currentMediaInfo;
       final previousPartId = previousMediaInfo?.partId;
       final previousMediaSourceId = previousMediaInfo?.mediaSourceId;
+      final previousExternalPlaybackSource = _activeExternalPlaybackSource;
       final previousFirstFrame = _firstFrame.snapshot();
       final previousHasFatalPlaybackError = _hasFatalPlaybackError;
       final previousOpenRequest = _currentOpenRequest;
@@ -456,6 +463,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       Completer<void>? reloadStartupHold;
       final reloadDone = Completer<void>();
       var didOpenReplacement = false;
+      ExternalPlaybackSource? resolvedExternalSource;
 
       // Capture context-dependent values before async gaps. The neutral
       // [PlaybackInitializationService] consumes [mediaClient] regardless of
@@ -569,15 +577,18 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
         await stoppedProgressFuture;
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
-        final requestedExternalSource = widget.externalPlaybackSource;
-        final shouldUseExternalSource =
-            !_offlineLibraryMode &&
-            !forceServerPlayback &&
-            requestedExternalSource != null &&
-            requestedExternalSource.mediaGlobalKey == metadata.globalKey;
-        final activeExternalSource = shouldUseExternalSource ? _externalSourceFor(metadata) : null;
-        if (shouldUseExternalSource && activeExternalSource == null) {
-          throw StateError('The selected remote stream is no longer available in this profile.');
+        ExternalPlaybackSource? activeExternalSource;
+        if (!_offlineLibraryMode && !forceServerPlayback) {
+          activeExternalSource = _externalSourceFor(metadata);
+          activeExternalSource ??= await playbackState.resolveExternalPlaybackSource(metadata);
+          if (activeExternalSource != null && !_externalSourceProfileIsCurrent(activeExternalSource)) {
+            throw StateError('The selected remote stream is no longer available in this profile.');
+          }
+          resolvedExternalSource = activeExternalSource;
+          _pendingExternalPlaybackSource = activeExternalSource;
+          if (activeExternalSource != null && activeExternalSource.onProgress != null && resumePosition == null) {
+            openResumePosition = activeExternalSource.initialPosition;
+          }
         }
         final PlaybackContext playbackContext;
         if (activeExternalSource != null) {
@@ -757,9 +768,12 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           onOpened: () {
             // The player now owns the new file — publish the session at the
             // same boundary so identity and source state flip together.
+            if (!isCurrentReload()) return;
             didOpenReplacement = true;
-            if (!attempt.isCurrent) return;
-            _commitPlaybackSession(session);
+            _commitPlaybackSession(
+              session,
+              externalPlaybackSource: activeExternalSource,
+            );
           },
         );
         if (!opened) return MediaReloadOutcome.superseded;
@@ -871,6 +885,18 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         }
         return didOpenReplacement ? MediaReloadOutcome.opened : MediaReloadOutcome.failed;
       } finally {
+        if (identical(_pendingExternalPlaybackSource, resolvedExternalSource)) {
+          _pendingExternalPlaybackSource = null;
+        }
+        if (!didOpenReplacement &&
+            resolvedExternalSource != null &&
+            !identical(resolvedExternalSource, previousExternalPlaybackSource)) {
+          try {
+            await resolvedExternalSource.onRelease?.call();
+          } on Object catch (error, stackTrace) {
+            appLogger.d('Uncommitted external playback lease release failed', error: error, stackTrace: stackTrace);
+          }
+        }
         if (attempt.isCurrent && !didOpenReplacement && _currentMetadata.globalKey != previousMetadata.globalKey) {
           _currentMetadata = previousMetadata;
           if (previousLaunchIdentity != null) {

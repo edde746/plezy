@@ -249,7 +249,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         requestedMediaSourceId: _requestedMediaSourceId,
         subtitleSelection: subtitleSelection,
       );
-      _commitPlaybackSession(session);
+      _commitPlaybackSession(
+        session,
+        externalPlaybackSource: _externalSourceFor(session.metadata),
+      );
 
       // Display matching: mpv and Apple TV open paused and negotiate from the
       // decoded stream at the first frame; ExoPlayer switches before creating

@@ -7,11 +7,14 @@ encrypted background download renewal, and a persisted debrid preparation
 journal. The branch is not publish-ready: an embedded native P2P engine and
 platform packaging are absent. Stremio streams and verified cloud-file matches
 use the shared video player. Server-matched playback keeps the server item's
-identity and queue; catalog-only streams and single-file cloud videos keep
+identity and queue; unmatched catalog streams and standalone cloud files keep
 resume state in the active profile's source journal without inventing a server
-identity. Multi-file source sessions still use `SourcePlayback`. External
-viewing queues local resume updates without starting a false server now-playing
-session. See
+identity. Catalog-only Stremio episodes now seed the shared client-side player
+queue. Exact episodes from one online server keep their real server identity;
+other next items resolve when needed against verified cached cloud files and
+enabled Stremio add-ons. Multi-file source sessions still use
+`SourcePlayback`. External viewing queues local resume updates without
+starting a false server now-playing session. See
 [IMPLEMENTATION.md](IMPLEMENTATION.md) for the exact implementation and
 qualification boundary.
 
@@ -61,18 +64,22 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   re-resolution of the same add-on candidate or provider job. Resume offsets
   are durably queued for the owning server without sending an active “now
   playing” session for an external stream.
+- Catalog-only episode queues use the same player queue, previous/next flow,
+  and controls as server playback. Queue rows retain stable catalog identity;
+  the next cloud lease or Stremio stream is re-resolved on advance, so expiring
+  links and credentials do not enter queue metadata.
 - Show a cloud-file result in that same “Watch with services” flow when the
   file already has matching external IDs plus a compatible title and year;
   episode files must also match the requested season and episode.
-  Keep the match local and profile-scoped; play it in the server queue when
-  that server is online and renew the same account/file lease after expiry.
+  Keep the match local and profile-scoped; preserve the matched server item and
+  queue, and renew the same account/file lease after expiry.
 - Find Next uses verified external IDs to avoid offering a cloud/source copy as
   a second recommendation when the same movie or exact episode is already in
   its bounded server sample. The selected server item remains the recommendation
   and keeps its normal details, queue, and source-choice actions.
 - Keep provider credentials and add-on URLs encrypted and scoped to the active
   profile; use the shared video-player surface and source-local resume journal
-  for catalog-only streams and single-file cloud videos. The existing source
+  for unmatched catalog streams and standalone cloud files. The existing source
   player remains for multi-file source sessions and other file types.
   Unreadable saved settings remain intact until the user explicitly clears
   them to reconnect; a temporarily locked device uses a retry path.
@@ -96,12 +103,15 @@ OS-scheduled background worker, and jobs without a reusable provider ID still
 need a user action. A
 Stremio choice from a matched server item uses the normal video player and
 queue, with resume offsets reconciled through the existing watch queue.
-Catalog-only streams and single-file cloud videos use the same player chrome
-with profile-scoped source progress; they do not receive a server queue.
-Cloud files are not merged into server library cards. Preparation remains
-app-runtime work, not an always-running OS worker. A native torrent engine
-and platform P2P packages are absent. TV's compact cloud row has not yet been
-qualified on device for D-pad focus, large text or different screen sizes.
+Catalog-only Stremio episodes use a session queue and can resolve a later
+episode from a uniquely matched online server, a verified cached cloud match,
+or another enabled add-on. Ambiguous and currently offline server matches stay
+remote-only, and multi-file source sessions remain separate. Cloud files are
+discoverable by exact identity in existing source-choice flows, but are not
+merged into one persistent server library card. Preparation remains app-runtime work, not an
+OS-scheduled worker. A native torrent engine and platform P2P packages are
+absent. TV's compact cloud row has not yet been qualified on device for D-pad
+focus, large text or different screen sizes.
 
 ## Target experience after full completion
 
@@ -170,7 +180,7 @@ help sentence at setup, rather than requiring users to learn the architecture.
 | Completion level | Required outcome |
 | --- | --- |
 | Implemented connected-source slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud files and virtual sources; Stremio QR add-on import and manual manifest connection; Explore catalog/search and metadata; direct, hash, file-host and subtitle choices; shared video player for server-matched, catalog-only and single-file cloud playback; source-local resume; durable preparation checkpoints; cloud downloads with encrypted Android/iOS lease renewal; bounded Search/Videos shelf/Home poster integration with opt-in metadata |
-| Remaining core integration | Cross-source next-item queue and canonical cloud/server library-card merge, OS-scheduled preparation, native P2P engine/package, and regression gates; Stremio catalog/account, provider APIs, downloads, background callbacks and all target platforms still need fixture, live, and device qualification |
+| Remaining core integration | Mixed server/cloud/Stremio queues and canonical cloud/server library-card merge, OS-scheduled preparation, native P2P engine/package, and regression gates; Stremio catalog/account, provider APIs, downloads, background callbacks and all target platforms still need fixture, live, and device qualification |
 | Ecosystem breadth | put.io, Debrid-Link and Seedr qualification; user-configured aggregators; seedboxes and Usenet bridges through the existing file/HTTP adapters; capability-aware downloads and casting |
 | Native P2P | An actual bounded streaming engine, byte-range bridge, seek scheduling, native builds and device tests; a `magnet:` parser is not completion |
 | Full handoff scope | All preceding work packages either implemented and evidenced, or explicitly recorded with the exact external credential/device/API dependency; no placeholder success states |

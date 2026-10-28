@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../media/media_item.dart';
+
 import 'package:uuid/uuid.dart';
 
 enum RemoteStreamService { realDebrid, allDebrid, premiumize, torbox }
@@ -450,6 +452,36 @@ class RemoteStreamRequest {
   final int? year;
   final int? season;
   final int? episode;
+}
+
+/// One item in a source-agnostic remote viewing queue. The request contains
+/// only catalog identity and display metadata; an expiring stream lease is
+/// resolved when the player advances to this item.
+class RemoteStreamQueueItem {
+  const RemoteStreamQueueItem({
+    required this.request,
+    required this.identifiers,
+    required this.mediaTitle,
+    required this.seriesTitle,
+    required this.identityNamespace,
+    this.durationMs,
+    this.serverItem,
+  });
+
+  final RemoteStreamRequest request;
+  final Map<String, String> identifiers;
+  final String mediaTitle;
+  final String seriesTitle;
+
+  /// Stable source-instance namespace used only when the item has no
+  /// cross-provider IMDb/TMDB/TVDB identity.
+  final String identityNamespace;
+  final int? durationMs;
+
+  /// A uniquely matched server-library episode, when the catalog episode was
+  /// found in exactly one online server queue. The queue keeps that real item
+  /// identity so the shared player can use native playback and watch history.
+  final MediaItem? serverItem;
 }
 
 class RemoteStreamCandidate {

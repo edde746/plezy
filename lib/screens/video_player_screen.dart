@@ -793,6 +793,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // through its own path). The getters below denormalize it for the many
   // existing read sites.
   PlaybackSession? _playbackSession;
+  ExternalPlaybackSource? _activeExternalPlaybackSource;
+  ExternalPlaybackSource? _pendingExternalPlaybackSource;
   SourceController? _externalSourceController;
   SourceStreamGateway? _externalStreamGateway;
   bool _externalStreamGatewayValid = true;
@@ -1106,18 +1108,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   ExternalPlaybackSource? _externalSourceFor(MediaItem metadata) {
-    final source = widget.externalPlaybackSource;
+    final source = _activeExternalPlaybackSource;
     if (source == null || source.mediaGlobalKey != metadata.globalKey) return null;
     final controller = _externalSourceController;
     if (controller == null || controller.blocked || controller.profileId != source.profileId) return null;
     return source;
   }
 
+  bool _externalSourceProfileIsCurrent(ExternalPlaybackSource source) {
+    final controller = _externalSourceController;
+    return _externalStreamGatewayValid &&
+        controller != null &&
+        !controller.blocked &&
+        controller.profileId == source.profileId;
+  }
+
   Future<PlaybackContext> _resolveExternalPlaybackContext(
     MediaItem metadata,
     ExternalPlaybackSource source,
   ) async {
-    if (_externalSourceFor(metadata) != source || !_externalStreamGatewayValid) {
+    if (source.mediaGlobalKey != metadata.globalKey || !_externalSourceProfileIsCurrent(source)) {
       throw StateError('The selected remote stream is no longer available in this profile.');
     }
     final gateway = _externalStreamGateway ??= SourceStreamGateway(
@@ -1145,7 +1155,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         ),
       );
     }
-    if (_externalSourceFor(metadata) != source || !_externalStreamGatewayValid) {
+    if (source.mediaGlobalKey != metadata.globalKey || !_externalSourceProfileIsCurrent(source)) {
       throw StateError('The selected remote stream is no longer available in this profile.');
     }
     return PlaybackContext(
@@ -1163,7 +1173,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   void _handleExternalProfileChanged() {
-    final source = widget.externalPlaybackSource;
+    final source = _activeExternalPlaybackSource ?? _pendingExternalPlaybackSource;
     final controller = _externalSourceController;
     if (source == null || controller == null ||
         (!controller.blocked && controller.profileId == source.profileId)) {
@@ -1205,7 +1215,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Reload-style flows call this from the open boundary: a failure before
   /// the commit leaves the previous session — and everything derived from
   /// it — untouched, so there is nothing to roll back.
-  void _commitPlaybackSession(PlaybackSession session) {
+  void _commitPlaybackSession(
+    PlaybackSession session, {
+    required ExternalPlaybackSource? externalPlaybackSource,
+  }) {
+    final previousExternalSource = _activeExternalPlaybackSource;
+    _activeExternalPlaybackSource = externalPlaybackSource;
+    _pendingExternalPlaybackSource = null;
     _playbackSession = session;
     _effectiveSelectedMediaIndex = session.mediaIndex;
     _requestedMediaSourceId = session.mediaSourceId;
@@ -1217,8 +1233,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // the chokepoint for the local last-played history. Offline plays and
     // prerolls are excluded — like version prefs, the history describes
     // online intent for the title the viewer actually chose.
-    final sourceOwnsPlaybackHistory =
-        widget.externalPlaybackSource?.onProgress != null && session.metadata.serverId == null;
+    final sourceOwnsPlaybackHistory = externalPlaybackSource?.onProgress != null && session.metadata.serverId == null;
+    if (previousExternalSource != null &&
+        !identical(previousExternalSource, externalPlaybackSource) &&
+        previousExternalSource.onRelease != null) {
+      unawaited(previousExternalSource.onRelease!.call());
+    }
     if (!session.isOffline && !widget.isPreroll && !sourceOwnsPlaybackHistory) {
       unawaited(LocalPlaybackHistory.recordPlayback(session.metadata));
     }
@@ -1492,13 +1512,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
-    if (widget.externalPlaybackSource != null) {
-      try {
-        _externalSourceController = context.read<SourceController?>();
-        _externalSourceController?.addListener(_handleExternalProfileChanged);
-      } on Object {
-        _externalSourceController = null;
-      }
+    _activeExternalPlaybackSource = widget.externalPlaybackSource;
+    try {
+      _externalSourceController = context.read<SourceController?>();
+      _externalSourceController?.addListener(_handleExternalProfileChanged);
+    } on Object {
+      _externalSourceController = null;
     }
     PlaybackCoordinator.instance.registerVideoSession(
       shutdown: _shutdownVideo,
@@ -1517,7 +1536,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     );
     // Downloads join too: a download of a server that is online is the
     // server's file, which the room can share and follow.
-    if (!widget.isLive && widget.externalPlaybackSource == null) {
+    final hasExternalQueueSources = context.read<PlaybackStateProvider>().hasExternalPlaybackSourceResolvers;
+    if (!widget.isLive && widget.externalPlaybackSource == null && !hasExternalQueueSources) {
       try {
         _watchTogetherProvider = context.read<WatchTogetherProvider?>();
       } catch (_) {
@@ -1937,13 +1957,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Skipped for live TV (has its own tune path — only the quality preset
       // is resolved below) and offline (its own branch in _startPlayback).
       if (!widget.isLive && !_offlineLibraryMode) {
-        final requestedExternalSource = widget.externalPlaybackSource;
-        if (requestedExternalSource != null &&
-            requestedExternalSource.mediaGlobalKey == _currentMetadata.globalKey) {
-          final externalSource = _externalSourceFor(_currentMetadata);
-          if (externalSource == null) {
-            throw StateError('The selected remote stream is no longer available in this profile.');
-          }
+        final externalSource = _externalSourceFor(_currentMetadata);
+        if (externalSource != null) {
           _serverSupportsTranscoding = false;
           _selectedQualityPreset = TranscodeQualityPreset.original;
           _playbackDataFuture = _resolveExternalPlaybackContext(_currentMetadata, externalSource);
@@ -2736,6 +2751,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
+    final retiringExternalSource = _activeExternalPlaybackSource;
+    _activeExternalPlaybackSource = null;
+    _pendingExternalPlaybackSource = null;
     _externalSourceController?.removeListener(_handleExternalProfileChanged);
     _externalSourceController = null;
     _externalStreamGatewayValid = false;
@@ -2757,6 +2775,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           await _routeDisposed.future;
           await Future.wait<void>([?_playerInitializationOperation, ?_shutdownOperation, ?_nativeDisposal]);
         } finally {
+          try {
+            await retiringExternalSource?.onRelease?.call();
+          } on Object catch (error, stackTrace) {
+            appLogger.d('External playback lease release failed', error: error, stackTrace: stackTrace);
+          }
           _releaseVideoPlayerLease();
         }
       }(),

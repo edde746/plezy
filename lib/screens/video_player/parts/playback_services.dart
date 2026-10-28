@@ -504,7 +504,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         player: currentPlayer,
         localOnly: true,
         offlineWatchService: offlineWatchService,
-        localProgressCallback: widget.externalPlaybackSource?.onProgress,
+        localProgressCallback: _externalSourceFor(metadata)?.onProgress,
         canReportPlayback: () =>
             _firstFrame.rendered && !_hasFatalPlaybackError && externalProgressOwnerIsCurrent(),
         hasRenderedPlayback: () => _firstFrame.rendered && externalProgressOwnerIsCurrent(),
