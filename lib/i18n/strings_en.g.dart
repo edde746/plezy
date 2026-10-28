@@ -10671,6 +10671,9 @@ class Translations$hotkeys$actions$en {
 	/// en: 'Advance Subtitles'
 	String get subtitleDelayDecrease => 'Advance Subtitles';
 
+	/// en: 'Reset Subtitle Timing'
+	String get subtitleDelayReset => 'Reset Subtitle Timing';
+
 	/// en: 'Toggle Shaders'
 	String get shaderToggle => 'Toggle Shaders';
 
@@ -13459,6 +13462,7 @@ extension on Translations {
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
 			'hotkeys.actions.subtitleDelayIncrease' => 'Delay Subtitles',
 			'hotkeys.actions.subtitleDelayDecrease' => 'Advance Subtitles',
+			'hotkeys.actions.subtitleDelayReset' => 'Reset Subtitle Timing',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
 			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
 			'hotkeys.actions.screenshot' => 'Take Screenshot',

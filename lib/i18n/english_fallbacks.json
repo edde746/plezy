@@ -127,6 +127,7 @@
     "games.streamSoftwareDecoder",
     "games.streamVideo",
     "games.streamVideoQueue",
+    "hotkeys.actions.subtitleDelayReset",
     "settings.subtitleOnMute",
     "settings.subtitleOnMuteDescription",
     "videoSettings.subtitleCopyCue",
