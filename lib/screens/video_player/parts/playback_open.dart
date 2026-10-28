@@ -182,22 +182,35 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     final localLanguage = settings.read(SettingsService.subtitleSearchLanguage);
     final appLanguage = settings.read(SettingsService.appLocale).languageCode;
-    final language =
-        LanguageCodes.getIso6391Code(profileSettings?.defaultSubtitleLanguage ?? '') ??
-        LanguageCodes.getIso6391Code(localLanguage ?? '') ??
-        LanguageCodes.getIso6391Code(appLanguage);
-    if (language == null) return (result: result, streamId: null);
-
-    bool matchesLanguage(String? code, String? name) {
-      return LanguageCodes.getIso6391Code(code ?? name ?? '') == language ||
-          LanguageCodes.getIso6391Code(name ?? '') == language;
+    final orderedLanguages = <String>[];
+    void addLanguage(String? raw) {
+      final normalized = LanguageCodes.getIso6391Code(raw ?? '');
+      if (normalized != null && !orderedLanguages.contains(normalized)) orderedLanguages.add(normalized);
     }
 
-    final existingPreferredTrack = source.subtitleTracks
-        .where((track) => matchesLanguage(track.languageCode, track.language))
-        .firstOrNull;
-    if (existingPreferredTrack != null) {
-      return (result: result, streamId: existingPreferredTrack.id);
+    addLanguage(profileSettings?.defaultSubtitleLanguage);
+    for (final preferred in settings.read(SettingsService.subtitleLanguageOrder)) {
+      addLanguage(preferred);
+    }
+    addLanguage(localLanguage);
+    addLanguage(appLanguage);
+    if (orderedLanguages.isEmpty) return (result: result, streamId: null);
+    final language = orderedLanguages.first;
+
+    bool matchesLanguageFor(String preferred, String? code, String? name) {
+      return LanguageCodes.getIso6391Code(code ?? name ?? '') == preferred ||
+          LanguageCodes.getIso6391Code(name ?? '') == preferred;
+    }
+
+    bool matchesLanguage(String? code, String? name) => matchesLanguageFor(language, code, name);
+
+    for (final preferred in orderedLanguages) {
+      final existingPreferredTrack = source.subtitleTracks
+          .where((track) => matchesLanguageFor(preferred, track.languageCode, track.language))
+          .firstOrNull;
+      if (existingPreferredTrack != null) {
+        return (result: result, streamId: existingPreferredTrack.id);
+      }
     }
 
     final client = context.tryGetMediaClientForServer(serverIdOrNull(metadata.serverId));

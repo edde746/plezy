@@ -110,7 +110,8 @@ class _SubtitleLanguageOrderScreenState extends State<SubtitleLanguageOrderScree
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Text(
                 'Enter ISO 639-1 language codes in priority order, separated by commas. '
-                'The server profile language is checked first. This order is used when no matching server choice is available.',
+                'The server profile language is checked first. This order is used by automatic track selection, '
+                'Always show subtitles, and preferred subtitle downloads when no matching server choice is available.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
