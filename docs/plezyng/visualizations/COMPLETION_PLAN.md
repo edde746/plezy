@@ -225,7 +225,11 @@ analysis are integrated with the same library and native controls. The paired
 MilkRust PR now implements separate experimental WebGL warp/composite stages,
 shader-aware meshes, explicit render/texture failures and resource limits. Its
 generic compatibility ledger remains conservative; stage-order regression
-source exists, but no GPU sequence has qualified this implementation.
+source exists, but no GPU sequence has qualified this implementation. Additional
+source commits bound sparse indexed input, nested equation work and shared
+per-frame equation work, and expose failures through checked runtime APIs.
+WebGL/desktop playback and CLI/headless statistics consume those checked APIs;
+regression source covers rejection/accounting and recovery but remains unrun.
 
 The full completion contract remains open. In particular, a complete native
 MilkRust renderer, faithful shader/.milk2 handling, other platform hosts,
