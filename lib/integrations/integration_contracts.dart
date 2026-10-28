@@ -63,7 +63,7 @@ enum DistributionChannel { direct, appleAppStore, googlePlay, amazonAppstore, tv
 
 enum PolicyDecision { allowed, denied, unknown }
 
-enum PolicyReason { officialHandoff, approvedCommerce, missingApproval, expiredApproval, scopeMismatch, invalidTarget }
+enum PolicyReason { officialHandoff, affiliateHandoff, approvedCommerce, missingApproval, expiredApproval, scopeMismatch, invalidTarget }
 
 /// A public, non-secret description of a provider. Provider definitions never
 /// imply that an account, offer source, or native capability is enabled.
@@ -76,11 +76,15 @@ class ProviderDefinition {
     required this.entityKinds,
     required this.capabilities,
     this.accessModels = const {},
+    this.affiliateHosts = const {},
   });
 
   final String id;
   final String displayName;
   final Set<String> officialHosts;
+  /// Exact HTTPS tracking hosts approved for this provider's affiliate links.
+  /// These do not grant purchase, availability, or playback capability.
+  final Set<String> affiliateHosts;
   final Set<IntegrationEntityKind> entityKinds;
   final Set<ProviderCapability> capabilities;
   final Set<ProviderAccessModel> accessModels;
@@ -89,7 +93,10 @@ class ProviderDefinition {
       _providerId.hasMatch(id) &&
       displayName.trim().isNotEmpty &&
       officialHosts.isNotEmpty &&
-      officialHosts.every(_validHost);
+      officialHosts.every(_validHost) &&
+      affiliateHosts.every(
+        (host) => host.startsWith('*.') ? _validHost(host.substring(2)) : _validHost(host),
+      );
 }
 
 /// Profile-bound connection metadata. Credentials are kept in the existing
@@ -315,6 +322,28 @@ final class OfficialExternalTarget extends AccessTarget {
       provider.officialHosts.any((host) => host.toLowerCase() == uri.host.toLowerCase());
 }
 
+/// A tracking link issued by the server-side broker after the storefront's
+/// agreement gate passed. Restricted to exact provider-approved hosts.
+final class AffiliateExternalTarget extends AccessTarget {
+  const AffiliateExternalTarget({required this.providerId, required this.uri});
+  final String providerId;
+  final Uri uri;
+
+  bool isValidFor(ProviderDefinition provider) =>
+      provider.id == providerId &&
+      uri.scheme == 'https' &&
+      uri.userInfo.isEmpty &&
+      uri.fragment.isEmpty &&
+      !_hasCredentialQuery(uri) &&
+      provider.affiliateHosts.any((host) {
+        final normalized = host.toLowerCase();
+        if (normalized.startsWith('*.')) {
+          return uri.host.toLowerCase().endsWith(normalized.substring(1));
+        }
+        return normalized == uri.host.toLowerCase();
+      });
+}
+
 final class ProviderSdkTarget extends AccessTarget {
   const ProviderSdkTarget({required this.providerId, required this.itemId, required this.connectionId});
   final String providerId;
@@ -380,9 +409,9 @@ class ActionPolicyDecision {
   final PolicyReason reason;
 }
 
-/// Local policy is deny-by-default for commercial actions. An external search
-/// handoff is allowed only to the provider's curated HTTPS host. A price or
-/// affiliate tag alone can never grant purchase permission.
+/// Local policy is deny-by-default for commercial actions. Opens may use the
+/// provider's curated HTTPS host or an exact affiliate host configured for the
+/// server broker. Affiliate links never grant purchase permission.
 abstract final class ActionPolicyEvaluator {
   static ActionPolicyDecision evaluate({
     required ProviderDefinition provider,
@@ -397,11 +426,14 @@ abstract final class ActionPolicyEvaluator {
     if (!provider.isValid) return const ActionPolicyDecision(PolicyDecision.denied, PolicyReason.invalidTarget);
 
     if (action == AccessAction.open) {
-      if (provider.capabilities.contains(ProviderCapability.officialHandoff) &&
-          (entityKind == IntegrationEntityKind.unknown || provider.entityKinds.contains(entityKind)) &&
-          target is OfficialExternalTarget &&
-          target.isValidFor(provider)) {
-        return const ActionPolicyDecision(PolicyDecision.allowed, PolicyReason.officialHandoff);
+      final entityAllowed = entityKind == IntegrationEntityKind.unknown || provider.entityKinds.contains(entityKind);
+      if (provider.capabilities.contains(ProviderCapability.officialHandoff) && entityAllowed) {
+        if (target is OfficialExternalTarget && target.isValidFor(provider)) {
+          return const ActionPolicyDecision(PolicyDecision.allowed, PolicyReason.officialHandoff);
+        }
+        if (target is AffiliateExternalTarget && target.isValidFor(provider)) {
+          return const ActionPolicyDecision(PolicyDecision.allowed, PolicyReason.affiliateHandoff);
+        }
       }
       return const ActionPolicyDecision(PolicyDecision.denied, PolicyReason.invalidTarget);
     }

@@ -191,3 +191,22 @@ Build one adapter boundary and run a small, repeatable bake-off rather than inte
 | Reelgood business data / Gracenote / other licensed EPG suppliers | Procurement alternative for missing regions, sports or TV guide data. | No quote/access/API tested in this audit. | P3 fallback procurement; unknown cost |
 
 Bake-off: 60 manually reviewed titles (20 Canadian mainstream, 10 French Canadian, 10 anime, 10 film/rental edge cases, 10 episode/edition cases), two regions including CA, and a separate 20-event sports sample if sports is in scope. Measure identity correctness, actual link destination, country/price accuracy, channel distinction, refresh delay, artwork license, requests/credits per detail and error recovery. These are proposed samples, not completed experiments. Do not report a coverage percentage until the sample is run.
+
+
+## Comic storefront and creator pathways
+
+| Option | Implemented path | Revenue model and boundary |
+| --- | --- | --- |
+| DriveThruComics | Official browse handoff; server adds an approved affiliate ID. | Affiliate credit requires a confirmed account and property approval. |
+| Fanatical | Official comic search; server may request an Awin tracking link. | Awin commission only for an approved advertiser and publisher relationship. |
+| Renta! | Official store handoff; a FlexOffers deep link can be created after approval. | Renta! supports 48-hour or unlimited access where the publisher offers it; network terms are account-specific. |
+| eBooks.com | Comic search handoff; affiliate link uses AID and a validated ISBN. | Affiliate program has account approval and a published annual commission tier. |
+| Gumroad | Discover search handoff and exact creator product links from a server-side mapping. | Discover and creator/product links have separate approval and attribution rules; creators control their own affiliate participation. |
+| Humble book bundles | Official books landing page; optional FlexOffers link after advertiser acceptance. | Account-specific terms are not hardcoded; no commission is presumed. |
+| GlobalComix | Reader search and creator/publisher publishing handoff. | Creator/publisher revenue share follows GlobalComix's own paid access, PDF, and donation models; no PlezyNG referral is claimed. |
+| Comics Plus / LibraryPass | Official school/library handoff. | Institutional access and catalog integration require a library relationship; no consumer commission route is included. |
+| Bookshop.org | Official comic search; after approval, the server creates its ISBN affiliate link from the configured affiliate ID. | Tracking is available only when a valid ISBN is present; the standard affiliate rate and enhanced eligibility are controlled by Bookshop.org. |
+| Kobo | Official comic search; after approval, the server requests a Rakuten deep link. | Requires an active Kobo advertiser relationship and Rakuten API token; API rejection falls back to direct Kobo. |
+| Marvel/DC/MANGA Plus/VIZ/Kindle/WEBTOON | Official reader, subscription, or store handoffs. | Provider-owned plans, sales, or free/ad-supported access; no commission is presumed. |
+
+The app labels only configured broker destinations as possible PlezyNG commission links. The broker is deny-by-default and returns the direct retailer URL when provider approval, credentials, advertiser approval, or a valid tracking response is missing.

@@ -10,6 +10,8 @@ import '../i18n/strings.g.dart';
 import '../integrations/integration_contracts.dart';
 import '../integrations/integration_preferences_store.dart';
 import '../profiles/active_profile_provider.dart';
+import '../services/book_identifiers.dart';
+import '../services/comic_commerce_link_client.dart';
 import '../services/external_access_directory.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/app_icon.dart';
@@ -48,6 +50,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
 
   final TextEditingController _filter = TextEditingController();
   final IntegrationPreferencesStore _preferences = IntegrationPreferencesStore();
+  final ComicCommerceLinkClient _commerceLinks = ComicCommerceLinkClient();
   String? _profileId;
   String? _countryCode;
   Set<String> _preferredProviderIds = const {};
@@ -210,6 +213,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
   @override
   void dispose() {
     _filter.dispose();
+    _commerceLinks.dispose();
     super.dispose();
   }
 
@@ -237,8 +241,33 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
       showErrorSnackBar(context, t.common.error);
       return;
     }
+    var launchUri = target.uri;
+    final commerceProviderId = destination.commerceProviderId;
+    if (commerceProviderId != null) {
+      final tracked = await _commerceLinks.resolve(
+        providerId: commerceProviderId,
+        destination: target.uri,
+        isbn: const {'ebooks-comics', 'bookshop-comics', 'kobo-comics'}.contains(commerceProviderId)
+             ? BookIdentifiers.preferred(widget.identifiers)
+             : null,
+      );
+      if (!context.mounted) return;
+      if (tracked != null) {
+        final affiliateTarget = AffiliateExternalTarget(providerId: destination.id, uri: tracked);
+        final affiliateDecision = ActionPolicyEvaluator.evaluate(
+          provider: provider,
+          target: affiliateTarget,
+          action: AccessAction.open,
+          channel: DistributionChannel.unknown,
+          countryCode: region,
+          entityKind: IntegrationEntityKind.unknown,
+          now: DateTime.now(),
+        );
+        if (affiliateDecision.decision == PolicyDecision.allowed) launchUri = tracked;
+      }
+    }
     try {
-      if (await launchUrl(target.uri, mode: LaunchMode.externalApplication)) return;
+      if (await launchUrl(launchUri, mode: LaunchMode.externalApplication)) return;
     } catch (_) {
       // Report the same recovery state for platform handlers and launch errors.
     }
@@ -327,6 +356,8 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                             subtitle: Text([
                               t.explore.detail.openOn(site: destination.name),
                               if (_subscriptionTiers[destination.id] case final tier?) 'Plan: $tier',
+              if (destination.commerceProviderId != null) 'PlezyNG may earn a commission',
+              if (destination.offerNote case final note?) note,
                             ].join(' · ')),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,

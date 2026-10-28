@@ -106,3 +106,14 @@ These are prepared requirements, not messages sent or applications submitted. Pr
 | Apple Music/TIDAL/Qobuz/SoundCloud/Spotify/Amazon Music | Multi-service product description, explicit SDK/player boundaries, platform list, commercial model and intended queue behavior | Whether this product is eligible; commercial/native playback approval; full-track entitlement; supported platforms; SDK/DRM rules; mixed-content/queue restrictions; certification |
 
 Record each answer in a provider decision record with date, owner, contract reference, approved capabilities and outstanding conditions. Continue independent implementation while partner requests are pending; do not simulate their approval.
+
+
+## Comic commerce implementation
+
+The comic storefront layer provides official handoffs for subscription services, transactional storefronts, creator marketplaces, booksellers, and school/library access. A server-side link broker can add partner tracking after an explicit provider approval gate. It does not report price, stock, territory entitlement, or purchase completion, and it does not receive credentials from the app.
+
+The broker has configuration paths for DriveThruComics, Fanatical/Awin, Renta!/FlexOffers, eBooks.com ISBN affiliate links, Bookshop.org ISBN links, Kobo/Rakuten deep links, optional Humble/FlexOffers, and Gumroad Discover affiliate links. All tracking stays disabled until the app property is approved and required credentials are configured. A missing, rejected, or unavailable tracking link falls back to the direct HTTPS storefront. The affiliate links do not enable in-app checkout or licensed file import.
+
+Comics Plus is represented as a school/library access handoff; its catalog API is an institutional integration gated by LibraryPass approval and library credentials, not a consumer referral commission. GlobalComix is represented with reader and creator/publisher paths; creator monetization through its own subscriptions, PDF sales, and donations is paid to creators/publishers, not to PlezyNG as an affiliate.
+
+See the [comic commerce setup](../comics/COMMERCE.md) for environment variables, user disclosure, revenue models, and remaining partner gates.
