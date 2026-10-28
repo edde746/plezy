@@ -379,7 +379,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
 
   String? get _activeProfileId {
     try {
-      await File(path).writeAsBytes(bytes, flush: true);
+      return context.read<ActiveProfileProvider>().activeId;
       return context.read<ActiveProfileProvider>().activeId;
     } catch (_) {
       return null;
