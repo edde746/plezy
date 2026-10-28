@@ -5,12 +5,12 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../i18n/strings.g.dart';
-import '../../../models/video_bookmark.dart';
+import '../../../models/media_bookmark.dart';
 import '../../../media/ids.dart';
 import '../../../media/media_server_client.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/download_storage_service.dart';
-import '../../../services/video_bookmark_service.dart';
+import '../../../services/media_bookmark_service.dart';
 import '../../../media/media_source_info.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
@@ -61,7 +61,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
   Duration? _loopStart;
   Duration? _loopEnd;
   bool _loopBusy = false;
-  List<VideoBookmark> _bookmarks = const [];
+  List<MediaBookmark> _bookmarks = const [];
   bool _bookmarkBusy = false;
   StreamSubscription<PlayerSourceStarted>? _sourceStartedSubscription;
   StreamSubscription<bool>? _seekableSubscription;
@@ -172,7 +172,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
 
   void _loadBookmarks() {
     final mediaKey = widget.bookmarkMediaKey;
-    _bookmarks = mediaKey == null || mediaKey.isEmpty ? const [] : VideoBookmarkService.forMedia(mediaKey);
+    _bookmarks = mediaKey == null || mediaKey.isEmpty ? const [] : MediaBookmarkService.forMedia(mediaKey);
   }
 
   Future<void> _addBookmark() async {
@@ -190,27 +190,27 @@ class _ChapterSheetState extends State<ChapterSheet> {
     if (!mounted || label == null || !_canShowBookmarks) return;
     setState(() => _bookmarkBusy = true);
     try {
-      final bookmark = await VideoBookmarkService.add(mediaKey, label, currentPosition.inMilliseconds);
+      final bookmark = await MediaBookmarkService.add(mediaKey, label, currentPosition.inMilliseconds);
       if (mounted) setState(() => _bookmarks = [..._bookmarks, bookmark]);
-    } on VideoBookmarkLimitException {
+    } on MediaBookmarkLimitException {
       if (mounted) showSnackBar(context, t.videoControls.bookmarkLimitReached);
     } on Object catch (error, stackTrace) {
-      appLogger.w('Failed to save video bookmark', error: error, stackTrace: stackTrace);
+      appLogger.w('Failed to save media bookmark', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoControls.bookmarkUnavailable);
     } finally {
       if (mounted) setState(() => _bookmarkBusy = false);
     }
   }
 
-  Future<void> _deleteBookmark(VideoBookmark bookmark) async {
+  Future<void> _deleteBookmark(MediaBookmark bookmark) async {
     final mediaKey = widget.bookmarkMediaKey;
     if (mediaKey == null || mediaKey.isEmpty || _bookmarkBusy) return;
     setState(() => _bookmarkBusy = true);
     try {
-      await VideoBookmarkService.remove(mediaKey, bookmark.id);
+      await MediaBookmarkService.remove(mediaKey, bookmark.id);
       if (mounted) setState(() => _bookmarks = _bookmarks.where((value) => value.id != bookmark.id).toList());
     } on Object catch (error, stackTrace) {
-      appLogger.w('Failed to delete video bookmark', error: error, stackTrace: stackTrace);
+      appLogger.w('Failed to delete media bookmark', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.videoControls.bookmarkUnavailable);
     } finally {
       if (mounted) setState(() => _bookmarkBusy = false);

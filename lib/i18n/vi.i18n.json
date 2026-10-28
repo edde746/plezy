@@ -4028,7 +4028,12 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": ""
+    "allowHostInstallHelp": "",
+    "streamAudio": "",
+    "streamAudioHelp": "",
+    "audioStereo": "",
+    "audioQuad": "",
+    "audioSurround51": ""
   },
   "deepLinks": {
     "invalid": "Liên kết Plezy này không hợp lệ.",

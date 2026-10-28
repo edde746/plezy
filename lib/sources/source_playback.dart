@@ -322,9 +322,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Stable, non-reversible local key for a temporary direct-media item.
   /// The URL or filesystem path itself is never stored in bookmark settings.
-  String? get localVideoBookmarkKey {
-    if (!video ||
-        !isTransientInput ||
+  String? get localMediaBookmarkKey {
+    if (!isTransientInput ||
         isLiveInput ||
         player?.state.seekable != true ||
         _fileIndex < 0 ||

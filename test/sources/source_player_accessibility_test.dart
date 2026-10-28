@@ -74,7 +74,7 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   bool get isRecordingStream => false;
   @override
-  String? get localVideoBookmarkKey => null;
+  String? get localMediaBookmarkKey => null;
   @override
   DateTime? get sleepDeadline => null;
   @override

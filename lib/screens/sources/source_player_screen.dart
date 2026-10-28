@@ -16,7 +16,7 @@ import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../mpv/mpv.dart';
 import '../../mpv/player/audio_spectrum.dart';
-import '../../models/video_bookmark.dart';
+import '../../models/media_bookmark.dart';
 import '../../multiview/source_playback_workspace_surface.dart';
 import '../../multiview/workspace_controller.dart';
 import '../../multiview/workspace_models.dart';
@@ -34,7 +34,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../services/fullscreen_state_manager.dart';
-import '../../services/video_bookmark_service.dart';
+import '../../services/media_bookmark_service.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/music/mini_player.dart';
@@ -488,10 +488,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     }
   }
 
-  Future<void> _addTransientVideoBookmark(SourcePlayback s) async {
-    final mediaKey = s.localVideoBookmarkKey;
+  Future<void> _addTransientMediaBookmark(SourcePlayback s) async {
+    final mediaKey = s.localMediaBookmarkKey;
     if (mediaKey == null || _bookmarkBusy) return;
-    final current = VideoBookmarkService.forMedia(mediaKey);
+    final current = MediaBookmarkService.forMedia(mediaKey);
     final label = await showTextInputDialog(
       context,
       title: t.videoControls.addBookmark,
@@ -500,14 +500,14 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       initialValue: t.videoControls.bookmarkDefaultName(n: current.length + 1),
       validator: (value) => value.trim().isEmpty ? t.videoControls.bookmarkNameRequired : null,
     );
-    if (!mounted || label == null || s.localVideoBookmarkKey != mediaKey) return;
+    if (!mounted || label == null || s.localMediaBookmarkKey != mediaKey) return;
     setState(() => _bookmarkBusy = true);
     try {
-      await VideoBookmarkService.add(mediaKey, label, s.currentFilePositionMs);
+      await MediaBookmarkService.add(mediaKey, label, s.currentFilePositionMs);
       if (!mounted) return;
       setState(() {});
       showSnackBar(context, t.videoControls.bookmarkSaved, type: SnackBarType.success);
-    } on VideoBookmarkLimitException {
+    } on MediaBookmarkLimitException {
       if (mounted) showSnackBar(context, t.videoControls.bookmarkLimitReached);
     } on Object {
       if (mounted) showErrorSnackBar(context, t.videoControls.bookmarkUnavailable);
@@ -516,11 +516,11 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     }
   }
 
-  Future<void> _removeTransientVideoBookmark(String mediaKey, VideoBookmark bookmark) async {
+  Future<void> _removeTransientMediaBookmark(String mediaKey, MediaBookmark bookmark) async {
     if (_bookmarkBusy) return;
     setState(() => _bookmarkBusy = true);
     try {
-      await VideoBookmarkService.remove(mediaKey, bookmark.id);
+      await MediaBookmarkService.remove(mediaKey, bookmark.id);
       if (mounted) {
         setState(() {});
         showSnackBar(context, t.videoControls.bookmarkDeleted);
@@ -532,8 +532,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     }
   }
 
-  Future<void> _seekTransientVideoBookmark(SourcePlayback playback, String mediaKey, VideoBookmark bookmark) async {
-    if (playback.localVideoBookmarkKey != mediaKey) return;
+  Future<void> _seekTransientMediaBookmark(SourcePlayback playback, String mediaKey, MediaBookmark bookmark) async {
+    if (playback.localMediaBookmarkKey != mediaKey) return;
     final offset = playback.positionMs - playback.currentFilePositionMs;
     await playback.seek(offset + bookmark.positionMs);
   }
@@ -1013,10 +1013,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       );
     }
     final core = s.player;
-    final localVideoBookmarkKey = s.localVideoBookmarkKey;
-    final localVideoBookmarks = localVideoBookmarkKey == null
-        ? const <VideoBookmark>[]
-        : VideoBookmarkService.forMedia(localVideoBookmarkKey);
+    final localMediaBookmarkKey = s.localMediaBookmarkKey;
+    final localMediaBookmarks = localMediaBookmarkKey == null
+        ? const <MediaBookmark>[]
+        : MediaBookmarkService.forMedia(localMediaBookmarkKey);
     final video = s.video && core != null
         ? _workspaceDetached
               ? AspectRatio(
@@ -1232,14 +1232,14 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                 ],
                               ),
                             ),
-                          if (s.chapters.isNotEmpty || localVideoBookmarkKey != null)
+                          if (s.chapters.isNotEmpty || localMediaBookmarkKey != null)
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 24),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    localVideoBookmarkKey == null
+                                    localMediaBookmarkKey == null
                                         ? t.fileSources.chapters
                                         : t.videoControls.chaptersAndBookmarks,
                                     style: Theme.of(context).textTheme.titleLarge,
@@ -1253,38 +1253,38 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                       index: i,
                                       count:
                                           s.chapters.length +
-                                          localVideoBookmarks.length +
-                                          (localVideoBookmarkKey == null ? 0 : 1),
+                                          localMediaBookmarks.length +
+                                          (localMediaBookmarkKey == null ? 0 : 1),
                                       onTap: () => sourceAction(context, () => s.seekChapter(i)),
                                     ),
-                                  if (localVideoBookmarkKey != null)
+                                  if (localMediaBookmarkKey != null)
                                     SourceTile(
                                       title: t.videoControls.addBookmark,
                                       icon: Symbols.bookmark_add_rounded,
                                       index: s.chapters.length,
-                                      count: s.chapters.length + localVideoBookmarks.length + 1,
-                                      onTap: _bookmarkBusy ? null : () => unawaited(_addTransientVideoBookmark(s)),
+                                      count: s.chapters.length + localMediaBookmarks.length + 1,
+                                      onTap: _bookmarkBusy ? null : () => unawaited(_addTransientMediaBookmark(s)),
                                     ),
-                                  if (localVideoBookmarkKey != null && localVideoBookmarks.isEmpty)
+                                  if (localMediaBookmarkKey != null && localMediaBookmarks.isEmpty)
                                     Padding(
                                       padding: const EdgeInsets.symmetric(vertical: 8),
                                       child: Text(t.videoControls.bookmarksHelp),
                                     )
-                                  else if (localVideoBookmarkKey != null)
-                                    for (var i = 0; i < localVideoBookmarks.length; i++)
+                                  else if (localMediaBookmarkKey != null)
+                                    for (var i = 0; i < localMediaBookmarks.length; i++)
                                       SourceTile(
-                                        key: ValueKey('local-video-bookmark-${localVideoBookmarks[i].id}'),
-                                        title: localVideoBookmarks[i].label,
-                                        subtitle: sourceTime(localVideoBookmarks[i].positionMs),
+                                        key: ValueKey('local-media-bookmark-${localMediaBookmarks[i].id}'),
+                                        title: localMediaBookmarks[i].label,
+                                        subtitle: sourceTime(localMediaBookmarks[i].positionMs),
                                         icon: Symbols.bookmark_rounded,
                                         index: s.chapters.length + i + 1,
-                                        count: s.chapters.length + localVideoBookmarks.length + 1,
+                                        count: s.chapters.length + localMediaBookmarks.length + 1,
                                         onTap: () => sourceAction(
                                           context,
-                                          () => _seekTransientVideoBookmark(
+                                          () => _seekTransientMediaBookmark(
                                             s,
-                                            localVideoBookmarkKey,
-                                            localVideoBookmarks[i],
+                                            localMediaBookmarkKey,
+                                            localMediaBookmarks[i],
                                           ),
                                         ),
                                         trailing: IconButton(
@@ -1292,9 +1292,9 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                           onPressed: _bookmarkBusy
                                               ? null
                                               : () => unawaited(
-                                                  _removeTransientVideoBookmark(
-                                                    localVideoBookmarkKey,
-                                                    localVideoBookmarks[i],
+                                                  _removeTransientMediaBookmark(
+                                                    localMediaBookmarkKey,
+                                                    localMediaBookmarks[i],
                                                   ),
                                                 ),
                                           icon: const AppIcon(Symbols.delete_outline_rounded),

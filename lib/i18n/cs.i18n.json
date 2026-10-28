@@ -4097,7 +4097,12 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": ""
+    "allowHostInstallHelp": "",
+    "streamAudio": "",
+    "streamAudioHelp": "",
+    "audioStereo": "",
+    "audioQuad": "",
+    "audioSurround51": ""
   },
   "deepLinks": {
     "invalid": "Tento odkaz Plezy není platný.",

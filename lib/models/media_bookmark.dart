@@ -1,6 +1,6 @@
 /// A device-local point in a media item's timeline, saved for quick return.
-class VideoBookmark {
-  const VideoBookmark({required this.id, required this.label, required this.positionMs, required this.createdAtMs});
+class MediaBookmark {
+  const MediaBookmark({required this.id, required this.label, required this.positionMs, required this.createdAtMs});
 
   final String id;
   final String label;
@@ -9,7 +9,7 @@ class VideoBookmark {
 
   Map<String, Object?> toJson() => {'id': id, 'label': label, 'positionMs': positionMs, 'createdAtMs': createdAtMs};
 
-  static VideoBookmark? tryFromJson(Object? value) {
+  static MediaBookmark? tryFromJson(Object? value) {
     if (value is! Map) return null;
     final id = value['id'];
     final label = value['label'];
@@ -19,6 +19,6 @@ class VideoBookmark {
     if (positionMs is! int || positionMs < 0 || createdAtMs is! int || createdAtMs < 0) return null;
     final normalizedLabel = label.trim();
     if (normalizedLabel.length > 80) return null;
-    return VideoBookmark(id: id, label: normalizedLabel, positionMs: positionMs, createdAtMs: createdAtMs);
+    return MediaBookmark(id: id, label: normalizedLabel, positionMs: positionMs, createdAtMs: createdAtMs);
   }
 }

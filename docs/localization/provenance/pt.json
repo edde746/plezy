@@ -1,7 +1,7 @@
 {
   "locale": "pt",
   "inherits": null,
-  "catalogSha256": "f28fecd4af986a83e58f56ce63c64e38e6371e8324030308295bd6937c93b17d",
+  "catalogSha256": "11deaa6c6504d523c8568e102ba2b9b8d28ebbeb15e7421043d20e5ac6eebf76",
   "nativeSpeakerReviewed": false,
   "messages": {
     "app.title": "nonlinguistic",
@@ -3644,7 +3644,12 @@
     "universalMedia.editionOrTitle": "m2m100-draft",
     "universalMedia.capturePreview": "m2m100-draft",
     "universalMedia.capturePreviewHelp": "m2m100-draft",
-    "universalMedia.capturePreviewActive": "m2m100-draft"
+    "universalMedia.capturePreviewActive": "m2m100-draft",
+    "games.audioQuad": "english-fallback",
+    "games.audioStereo": "english-fallback",
+    "games.audioSurround51": "english-fallback",
+    "games.streamAudio": "english-fallback",
+    "games.streamAudioHelp": "english-fallback"
   },
   "beforeIndependentQaCorrection": {
     "accessibility.reduceMotionHint": "m2m100-draft",

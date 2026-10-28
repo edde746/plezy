@@ -4053,7 +4053,12 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": ""
+    "allowHostInstallHelp": "",
+    "streamAudio": "",
+    "streamAudioHelp": "",
+    "audioStereo": "",
+    "audioQuad": "",
+    "audioSurround51": ""
   },
   "deepLinks": {
     "invalid": "এই Plezy লিঙ্ক সঠিক নয়।",

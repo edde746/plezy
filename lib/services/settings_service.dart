@@ -17,7 +17,7 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/player_setting_scope.dart';
 import '../models/external_player_models.dart';
-import '../models/video_bookmark.dart';
+import '../models/media_bookmark.dart';
 import '../utils/language_codes.dart';
 import 'base_shared_preferences_service.dart';
 import 'sensitive_prefs.dart';
@@ -48,14 +48,14 @@ import '../profiles/profile.dart';
 import '../theme/mono_theme.dart' show MonoPalette;
 import '../watch_together/services/watch_party_relays.dart';
 
-Map<String, List<VideoBookmark>> _decodeVideoBookmarks(dynamic raw) {
+Map<String, List<MediaBookmark>> _decodeMediaBookmarks(dynamic raw) {
   if (raw is! Map) return const {};
-  final decoded = <String, List<VideoBookmark>>{};
+  final decoded = <String, List<MediaBookmark>>{};
   for (final entry in raw.entries) {
     if (entry.key is! String || (entry.key as String).isEmpty || entry.value is! List) continue;
-    final bookmarks = <VideoBookmark>[];
+    final bookmarks = <MediaBookmark>[];
     for (final value in entry.value as List) {
-      final bookmark = VideoBookmark.tryFromJson(value);
+      final bookmark = MediaBookmark.tryFromJson(value);
       if (bookmark != null) bookmarks.add(bookmark);
     }
     if (bookmarks.isNotEmpty) decoded[entry.key as String] = bookmarks;
@@ -1436,13 +1436,13 @@ class SettingsService extends BaseSharedPreferencesService {
   );
 
   /// User-created local data; intentionally excluded from settings reset/export.
-  static final videoBookmarks = JsonPref<Map<String, List<VideoBookmark>>>(
+  static final mediaBookmarks = JsonPref<Map<String, List<MediaBookmark>>>(
     'video_bookmarks',
     defaultValue: const {},
     encode: (values) => json.encode(
       values.map((key, bookmarks) => MapEntry(key, bookmarks.map((bookmark) => bookmark.toJson()).toList())),
     ),
-    decode: _decodeVideoBookmarks,
+    decode: _decodeMediaBookmarks,
   );
   static final customShaderPresets = JsonPref<List<Map<String, dynamic>>>(
     'custom_shader_presets',

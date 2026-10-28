@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/mpv/player/audio_spectrum.dart';
@@ -67,7 +68,7 @@ class _MpvPlayer extends FakePlayer implements AudioSpectrumAnalyzer {
 }
 
 class _Playback extends ChangeNotifier implements SourcePlayback {
-  _Playback(this.player, {this.audio = false}) : entry = audio ? _audioEntry : _videoEntry;
+  _Playback(this.player, {this.audio = false, this.localBookmarkKey}) : entry = audio ? _audioEntry : _videoEntry;
 
   static const _videoFile = PublicationFile(
     id: 'movie',
@@ -92,6 +93,7 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   );
 
   final bool audio;
+  final String? localBookmarkKey;
 
   @override
   final SourceEntry entry;
@@ -114,7 +116,7 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   bool get canExportLocalPlaylist => false;
   @override
-  String? get localVideoBookmarkKey => null;
+  String? get localMediaBookmarkKey => localBookmarkKey;
   @override
   final Player player;
   @override
@@ -180,6 +182,18 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   Future<void> stop() async {}
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+Future<void> _captureSourcePlayer(WidgetTester tester, String name) async {
+  final output = Platform.environment['PLEZY_UI_SCREENSHOTS'];
+  if (output == null) return;
+  await tester.runAsync(() async {
+    final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(const ValueKey('source-bookmark-capture')));
+    final image = await boundary.toImage();
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    await File('$output/$name.png').writeAsBytes(bytes!.buffer.asUint8List());
+  });
 }
 
 void main() {
@@ -266,6 +280,68 @@ void main() {
     await tester.tap(find.text(t.videoControls.clearSegmentLoop));
     await tester.pump(const Duration(milliseconds: 250));
     expect(player.writes.sublist(player.writes.length - 2), [('ab-loop-a', 'no'), ('ab-loop-b', 'no')]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('direct audio offers named bookmarks in the existing chapter area on a narrow phone', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    playback = _Playback(player, audio: true, localBookmarkKey: 'open-media:private-hash');
+    final baseTheme = monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS);
+    final screenshotTheme = Platform.environment['PLEZY_UI_SCREENSHOTS'] == null
+        ? baseTheme
+        : baseTheme.copyWith(
+            textTheme: baseTheme.textTheme.apply(fontFamily: 'Roboto'),
+            primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: 'Roboto'),
+            appBarTheme: baseTheme.appBarTheme.copyWith(
+              titleTextStyle: baseTheme.appBarTheme.titleTextStyle?.copyWith(fontFamily: 'Roboto'),
+            ),
+          );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => MultiviewWorkspaceController()),
+          ChangeNotifierProvider<SourceController>.value(value: sources),
+          ChangeNotifierProvider<SourcePlayback>.value(value: playback),
+        ],
+        child: InputModeTracker(
+          child: RepaintBoundary(
+            key: const ValueKey('source-bookmark-capture'),
+            child: MaterialApp(
+              theme: screenshotTheme,
+              debugShowCheckedModeBanner: false,
+              home: const SourcePlayerScreen(),
+            ),
+          ),
+        ),
+      ),
+    );
+    for (var frame = 0; frame < 6; frame++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.text(t.videoControls.chaptersAndBookmarks), findsOneWidget);
+    final addBookmark = find.text(isolateDisplayText(t.videoControls.addBookmark));
+    expect(addBookmark, findsOneWidget);
+    for (var attempt = 0; attempt < 4; attempt++) {
+      if (tester.getRect(addBookmark).bottom <= 800) break;
+      await tester.drag(find.byType(CustomScrollView).first, const Offset(0, -500));
+      await tester.pumpAndSettle();
+    }
+    final rect = tester.getRect(addBookmark);
+    expect(rect.left, greaterThanOrEqualTo(0));
+    expect(rect.right, lessThanOrEqualTo(320));
+    await _captureSourcePlayer(tester, 'source-audio-bookmark-phone-dark');
+    await tester.tap(addBookmark);
+    await tester.pumpAndSettle();
+    expect(find.text(t.videoControls.bookmarkName), findsOneWidget);
+    expect(find.text(t.videoControls.bookmarkDefaultName(n: 1)), findsOneWidget);
+    await _captureSourcePlayer(tester, 'source-audio-bookmark-dialog-phone-dark');
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 

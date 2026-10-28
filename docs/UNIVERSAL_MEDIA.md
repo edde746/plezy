@@ -24,7 +24,7 @@ Playlist directives are not interpreted as player options. Only recognized audio
 
 ### Device files and disc images
 
-Choose audio or video files for a temporary queue, or select an ISO image where the platform’s player supports it. The file picker gives PlezyNG the selected file access; transient selections do not create a catalog item, bookmark, or progress record. Local files normally open by file URI. If the platform returns a read stream without a usable file path, PlezyNG makes a temporary copy and removes it when playback ends.
+Choose audio or video files for a temporary queue, or select an ISO image where the platform’s player supports it. On desktop, **Choose folder** adds supported media below the selected folder to the same temporary queue, ordered by relative path. The scan skips dot-hidden entries and symbolic links, and rejects folders above 10,000 entries, 1,000 playable files, or 32 folder levels without starting a partial queue. The file picker gives PlezyNG the selected file access; transient selections do not create a catalog item or progress record. Local files normally open by file URI. If the platform returns a read stream without a usable file path, PlezyNG makes a temporary copy and removes it when playback ends.
 
 Local `.m3u`/`.pls` playlists can name supported media files in the selected playlist's own folder. PlezyNG rejects absolute paths, parent traversal, encoded separators, symlinks that leave that folder, and unsupported file types. On platforms that provide no stable local playlist path, network entries still work and local siblings are skipped.
 
@@ -64,9 +64,9 @@ The equalizer bands and effect values are saved on this device. The equalizer re
 
 Now Playing keeps its existing accessible visualizer and preset controls. It prefers Plex's analyzed loudness profile; when that is unavailable, compatible MPV builds can use FFmpeg's derived spectral centroid and flatness while the visualizer is open. Direct audio files opened through Open media reuse the same scenes and controls from a small toolbar toggle in the current source player. The filter is optional, pauses while audio passthrough is active, and returns to ambient motion if the build does not provide usable metadata. It passes only the two derived measurements to Flutter, never PCM samples or full FFT bins. Preset controls keep their labels and status in screen-reader semantics, and reduced-motion settings continue to govern scene movement.
 
-## Segment loop
+## Named bookmarks and segment loop
 
-Open the existing **Chapters and bookmarks** sheet to save a named mark for a server-backed media item or return to it. One-off local files and direct streams keep named marks in the existing chapter area; their local path or URL is represented by a digest, never written as bookmark text. Bookmarks stay on this device, are not included in settings export/reset, and do not change server resume progress. MPV playback also offers loop point A and point B in its existing chapter sheet or source-player playback-options menu; the segment repeats until cleared or playback changes. Live inputs and sources without a seekable timeline do not offer bookmarks or segment looping.
+Open the existing **Chapters and bookmarks** sheet to save a named mark for a server-backed media item or return to it. One-off local audio and video files and direct streams keep named marks in that same chapter area; their local path or URL is represented by a digest, never written as bookmark text. Bookmarks stay on this device, are not included in settings export/reset, and do not change server resume progress. MPV playback also offers loop point A and point B in its existing chapter sheet or source-player playback-options menu; the segment repeats until cleared or playback changes. Live inputs and sources without a seekable timeline do not offer bookmarks or segment looping.
 
 ## Capture a screen or camera
 

@@ -4048,7 +4048,12 @@
     "allowHostActions": "",
     "allowHostActionsHelp": "",
     "allowHostInstall": "",
-    "allowHostInstallHelp": ""
+    "allowHostInstallHelp": "",
+    "streamAudio": "",
+    "streamAudioHelp": "",
+    "audioStereo": "",
+    "audioQuad": "",
+    "audioSurround51": ""
   },
   "deepLinks": {
     "invalid": "この Plezy リンクは有効ではありません。",

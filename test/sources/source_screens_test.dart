@@ -25,6 +25,7 @@ import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/publication_shelf.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/provider_mark.dart';
 import 'fixtures/memory_sources.dart';
@@ -173,6 +174,29 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     await capture(tester, 'open-media-phone-dark');
+
+    // The selected label opens the existing choice control without coupling
+    // this flow test to Flutter's generic DropdownButtonFormField runtime type.
+    await tester.tap(find.text(t.universalMedia.stream).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.universalMedia.files).last);
+    await tester.pumpAndSettle();
+    final chooseFiles = find.text(t.universalMedia.chooseFiles);
+    final chooseFolder = find.text(t.fileSources.localFolder);
+    expect(chooseFiles, findsOneWidget);
+    expect(chooseFolder, PlatformDetector.isDesktopOS() ? findsOneWidget : findsNothing);
+    tester.view.physicalSize = const Size(320, 844);
+    await tester.pumpAndSettle();
+    await capture(tester, 'open-media-device-files-phone-dark');
+    for (final action in [chooseFiles, if (PlatformDetector.isDesktopOS()) chooseFolder]) {
+      await tester.ensureVisible(action);
+      final actionRect = tester.getRect(action);
+      expect(actionRect.left, greaterThanOrEqualTo(0));
+      expect(actionRect.right, lessThanOrEqualTo(320));
+    }
+    expect(tester.takeException(), isNull);
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpAndSettle();
 
     final openMediaScrollables = find.descendant(of: openMedia, matching: find.byType(Scrollable));
     Future<void> bringIntoView(Finder target) async {

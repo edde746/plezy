@@ -473,11 +473,54 @@ void main() {
       localOverrides: {'local-movie': uri},
     );
 
-    final key = playback.localVideoBookmarkKey;
+    final key = playback.localMediaBookmarkKey;
     expect(key, startsWith('open-media:'));
     expect(key, isNot(contains(directory.path)));
     expect(key, isNot(contains('private-movie')));
     expect(playback.isLiveInput, isFalse);
+  });
+
+  test('seekable transient audio uses an opaque bookmark key and live audio does not', () async {
+    native = _RecordingMpvPlayer();
+    const audioFile = PublicationFile(
+      id: 'local-track',
+      name: 'A track.m4a',
+      mimeType: 'audio/mp4',
+      durationMs: 180000,
+    );
+    const audioEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'local-track',
+      title: 'A track',
+      kind: SourceItemKind.music,
+      files: [audioFile],
+    );
+    final uri = Uri.file('${directory.path}/private-track.m4a');
+
+    await playback.start(
+      audioEntry,
+      const [audioFile],
+      playbackMode: PublicationMode.listening,
+      persistProgress: false,
+      localOverrides: {'local-track': uri},
+    );
+
+    final key = playback.localMediaBookmarkKey;
+    expect(key, startsWith('open-media:'));
+    expect(key, isNot(contains(directory.path)));
+    expect(key, isNot(contains('private-track')));
+
+    await playback.stop();
+    native = _RecordingMpvPlayer();
+    await playback.start(
+      audioEntry,
+      const [audioFile],
+      playbackMode: PublicationMode.listening,
+      persistProgress: false,
+      liveInput: true,
+      localOverrides: {'local-track': Uri.parse('https://radio.example/live.m4a')},
+    );
+    expect(playback.localMediaBookmarkKey, isNull);
   });
 
   test('local queue export returns safe sibling entries and refuses a mixed folder', () async {

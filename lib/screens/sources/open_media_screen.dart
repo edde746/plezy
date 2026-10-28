@@ -18,6 +18,7 @@ import '../../sources/media_capture.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/source_transport.dart';
+import '../../sources/universal_media_folder.dart';
 import '../../sources/universal_media_input.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
@@ -562,6 +563,38 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
     });
   }
 
+  Future<void> _pickFolder() async {
+    if (!PlatformDetector.isDesktopOS()) return;
+    final path = await FilePicker.getDirectoryPath();
+    if (path == null || !mounted) return;
+    await _run(() async {
+      final files = await const UniversalMediaFolderScanner().scan(Directory(path));
+      final items = <UniversalMediaItem>[];
+      final overrides = <String, Uri>{};
+      var audioOnly = true;
+      _pendingFileIds.clear();
+      try {
+        for (final file in files) {
+          final id = const Uuid().v4();
+          final item = UniversalMediaItem(title: p.basename(file.path), uri: file.uri);
+          final kind = classifySourceFile(item.title);
+          if (kind != SourceItemKind.music && kind != SourceItemKind.audiobook) audioOnly = false;
+          items.add(item);
+          overrides[id] = item.uri;
+          _pendingFileIds[item] = id;
+        }
+        await _startItems(
+          items,
+          t.universalMedia.fileQueue(n: items.length, count: items.length),
+          audio: audioOnly,
+          localOverrides: overrides,
+        );
+      } finally {
+        _pendingFileIds.clear();
+      }
+    });
+  }
+
   final Map<UniversalMediaItem, String> _pendingFileIds = {};
 
   Future<void> _startItems(
@@ -812,10 +845,23 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
       children: [
         Text(t.universalMedia.filesHelp),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: _busy ? null : _pickFiles,
-          icon: const AppIcon(Symbols.file_open_rounded),
-          label: Text(t.universalMedia.chooseFiles),
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (PlatformDetector.isDesktopOS())
+              OutlinedButton.icon(
+                onPressed: _busy ? null : _pickFolder,
+                icon: const AppIcon(Symbols.folder_open_rounded),
+                label: Text(t.fileSources.localFolder),
+              ),
+            FilledButton.icon(
+              onPressed: _busy ? null : _pickFiles,
+              icon: const AppIcon(Symbols.file_open_rounded),
+              label: Text(t.universalMedia.chooseFiles),
+            ),
+          ],
         ),
       ],
     ),

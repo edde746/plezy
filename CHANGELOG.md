@@ -49,6 +49,10 @@
 - Route Windows x64 native CI through the private Packer JIT workflow allowlist.
 - Lock iOS, macOS and tvOS CocoaPods dependencies for CI, and retain root dependency overrides when resolving tvOS packages.
 
+### Localization
+
+- Keep the new Steam audio setting labels available through an explicit English fallback until reviewed translations are available.
+
 ### Release automation
 
 - Validate all platform assets before publishing and dispatch configured release channels from one private-JIT orchestrator.
@@ -60,6 +64,7 @@
 ### VLC feature parity
 
 - Expand the VLC feature comparison with safe local playlist references, more conversion formats, MPV audio effects, device-local playback bookmarks and temporary A/B loops in existing playback controls.
+- Add bounded desktop folder queues and named device-local bookmarks for seekable Open media audio while preserving existing bookmark data.
 - Save eligible same-folder desktop file queues as reopenable M3U playlists, and select alternate video tracks through existing MPV playback controls.
 - Show direct-input MPV file details in the shared File Info sheet, and expose edition/disc-title switching only when multiple choices are available.
 - Preview discovered desktop camera and display inputs in the existing MPV player from Media tools → Capture; keep preview session-only and video-only.
