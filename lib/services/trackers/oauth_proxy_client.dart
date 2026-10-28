@@ -5,6 +5,7 @@ import 'package:clock/clock.dart';
 import 'package:http/http.dart' as http;
 
 import '../../utils/abortable_http_request.dart';
+import '../../games/steam_game_activity.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
@@ -83,6 +84,33 @@ class OAuthProxyClient {
       headers: {'Authorization': 'Bearer $credential'},
       timeout: const Duration(seconds: 5),
       operation: 'Steam catalog unlink',
+    );
+  }
+
+  Future<SteamGameActivity> steamGameActivity(
+    String credential, {
+    required int appId,
+    required String steamId,
+    bool includeFriends = false,
+  }) async {
+    if (appId < 1 || appId > 0xffffffff) throw const OAuthProxyException('Invalid Steam game');
+    final response = await sendAbortableHttpRequest(
+      _http,
+      'POST',
+      Uri.parse('$baseUrl/auth/steam/game'),
+      headers: {'Authorization': 'Bearer $credential', 'Content-Type': 'application/json'},
+      body: json.encode({'appId': appId, 'includeFriends': includeFriends}),
+      timeout: TrackerConstants.authRequestTimeout,
+      operation: 'Steam game activity',
+    );
+    if (response.statusCode == 401 || response.statusCode == 404) throw const SteamCatalogRelinkRequired();
+    if (response.statusCode != 200 || response.bodyBytes.length > 2 * 1024 * 1024) {
+      throw const OAuthProxyException('Steam activity unavailable');
+    }
+    return SteamGameActivity.fromJson(
+      json.decode(response.body) as Map<String, dynamic>,
+      appId: appId,
+      steamId: steamId,
     );
   }
 

@@ -9837,6 +9837,120 @@ class Translations$games$en {
 
 	/// en: 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.'
 	String get streamFailed => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.';
+
+	/// en: 'Steam activity'
+	String get steamActivity => 'Steam activity';
+
+	/// en: 'Load news and achievements for your linked account. Activity is kept only while these details are open.'
+	String get steamActivityHelp => 'Load news and achievements for your linked account. Activity is kept only while these details are open.';
+
+	/// en: 'Include friends playing'
+	String get includeFriends => 'Include friends playing';
+
+	/// en: 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.'
+	String get includeFriendsHelp => 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.';
+
+	/// en: 'Load Steam activity'
+	String get loadSteamActivity => 'Load Steam activity';
+
+	/// en: 'Loading Steam activity…'
+	String get activityLoading => 'Loading Steam activity…';
+
+	/// en: 'Steam activity is unavailable. Try again shortly.'
+	String get activityUnavailable => 'Steam activity is unavailable. Try again shortly.';
+
+	/// en: 'Private or unavailable from Steam.'
+	String get activityPrivate => 'Private or unavailable from Steam.';
+
+	/// en: 'Achievements'
+	String get achievements => 'Achievements';
+
+	/// en: '$unlocked of $total unlocked'
+	String achievementProgress({required Object unlocked, required Object total}) => '${unlocked} of ${total} unlocked';
+
+	/// en: 'Hidden achievement'
+	String get hiddenAchievement => 'Hidden achievement';
+
+	/// en: 'Details appear after you unlock it.'
+	String get hiddenAchievementHelp => 'Details appear after you unlock it.';
+
+	/// en: 'Unlocked'
+	String get achievementUnlocked => 'Unlocked';
+
+	/// en: 'Locked'
+	String get achievementLocked => 'Locked';
+
+	/// en: 'Show more achievements'
+	String get moreAchievements => 'Show more achievements';
+
+	/// en: 'Game news'
+	String get gameNews => 'Game news';
+
+	/// en: 'No recent news available.'
+	String get noGameNews => 'No recent news available.';
+
+	/// en: 'Friends playing this game'
+	String get friendsPlaying => 'Friends playing this game';
+
+	/// en: 'No friends are reported playing in this snapshot.'
+	String get noFriendsPlaying => 'No friends are reported playing in this snapshot.';
+
+	/// en: 'This snapshot is limited; some achievements or friends may not be included.'
+	String get activityTruncated => 'This snapshot is limited; some achievements or friends may not be included.';
+
+	/// en: 'Steam store'
+	String get steamStore => 'Steam store';
+
+	/// en: 'Community'
+	String get steamCommunity => 'Community';
+
+	/// en: 'Workshop'
+	String get steamWorkshop => 'Workshop';
+
+	/// en: 'Open Steam page'
+	String get openSteamPage => 'Open Steam page';
+
+	/// en: 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.'
+	String get openSteamPageHelp => 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.';
+
+	/// en: 'Computer actions'
+	String get hostActions => 'Computer actions';
+
+	/// en: 'Launch on computer'
+	String get launchOnComputer => 'Launch on computer';
+
+	/// en: 'Install on computer'
+	String get installOnComputer => 'Install on computer';
+
+	/// en: 'Open Steam on computer'
+	String get hostLibrary => 'Open Steam on computer';
+
+	/// en: 'Open downloads on computer'
+	String get hostDownloads => 'Open downloads on computer';
+
+	/// en: 'Send this action to $computer? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.'
+	String hostActionConfirm({required Object computer}) => 'Send this action to ${computer}? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.';
+
+	/// en: 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.'
+	String get hostActionPairingHelp => 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.';
+
+	/// en: 'Request handed to Steam on the computer. Check Steam for the result or any prompts.'
+	String get hostActionSubmitted => 'Request handed to Steam on the computer. Check Steam for the result or any prompts.';
+
+	/// en: 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.'
+	String get hostActionDenied => 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.';
+
+	/// en: 'Allow paired remotes to control Steam'
+	String get allowHostActions => 'Allow paired remotes to control Steam';
+
+	/// en: 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.'
+	String get allowHostActionsHelp => 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.';
+
+	/// en: 'Allow Steam install requests'
+	String get allowHostInstall => 'Allow Steam install requests';
+
+	/// en: 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.'
+	String get allowHostInstallHelp => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.';
 }
 
 // Path: deepLinks
@@ -15880,6 +15994,44 @@ extension on Translations {
 			'games.reconnecting' => 'Reconnecting…',
 			'games.disconnectHelp' => 'Disconnecting leaves the game running on the computer.',
 			'games.streamFailed' => 'The stream stopped. Check that the computer is reachable and Steam Remote Play is enabled.',
+			'games.steamActivity' => 'Steam activity',
+			'games.steamActivityHelp' => 'Load news and achievements for your linked account. Activity is kept only while these details are open.',
+			'games.includeFriends' => 'Include friends playing',
+			'games.includeFriendsHelp' => 'Also ask Steam which friends are playing this game. Respects Steam privacy settings. Off by default.',
+			'games.loadSteamActivity' => 'Load Steam activity',
+			'games.activityLoading' => 'Loading Steam activity…',
+			'games.activityUnavailable' => 'Steam activity is unavailable. Try again shortly.',
+			'games.activityPrivate' => 'Private or unavailable from Steam.',
+			'games.achievements' => 'Achievements',
+			'games.achievementProgress' => ({required Object unlocked, required Object total}) => '${unlocked} of ${total} unlocked',
+			'games.hiddenAchievement' => 'Hidden achievement',
+			'games.hiddenAchievementHelp' => 'Details appear after you unlock it.',
+			'games.achievementUnlocked' => 'Unlocked',
+			'games.achievementLocked' => 'Locked',
+			'games.moreAchievements' => 'Show more achievements',
+			'games.gameNews' => 'Game news',
+			'games.noGameNews' => 'No recent news available.',
+			'games.friendsPlaying' => 'Friends playing this game',
+			'games.noFriendsPlaying' => 'No friends are reported playing in this snapshot.',
+			'games.activityTruncated' => 'This snapshot is limited; some achievements or friends may not be included.',
+			'games.steamStore' => 'Steam store',
+			'games.steamCommunity' => 'Community',
+			'games.steamWorkshop' => 'Workshop',
+			'games.openSteamPage' => 'Open Steam page',
+			'games.openSteamPageHelp' => 'Open this game’s Steam page in your browser? Your browser’s Steam sign-in and privacy settings apply.',
+			'games.hostActions' => 'Computer actions',
+			'games.launchOnComputer' => 'Launch on computer',
+			'games.installOnComputer' => 'Install on computer',
+			'games.hostLibrary' => 'Open Steam on computer',
+			'games.hostDownloads' => 'Open downloads on computer',
+			'games.hostActionConfirm' => ({required Object computer}) => 'Send this action to ${computer}? Steam on that computer handles ownership, downloads, family availability and any cloud-save prompts. This does not start a stream.',
+			'games.hostActionPairingHelp' => 'Pair with this computer through Companion Remote and import its installed games first. The authenticated computer identity must match.',
+			'games.hostActionSubmitted' => 'Request handed to Steam on the computer. Check Steam for the result or any prompts.',
+			'games.hostActionDenied' => 'This computer has not allowed that Steam action. Enable the corresponding permission in its Games settings.',
+			'games.allowHostActions' => 'Allow paired remotes to control Steam',
+			'games.allowHostActionsHelp' => 'Paired Companion Remotes may launch installed games and open Steam or downloads on this computer. Off by default; separate from library sharing.',
+			'games.allowHostInstall' => 'Allow Steam install requests',
+			'games.allowHostInstallHelp' => 'Also allow paired remotes to send installation requests to Steam. Requires Steam control above. Steam handles disk space, ownership and prompts. Off by default.',
 			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
 			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',

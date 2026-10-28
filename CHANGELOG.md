@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add on-demand Steam achievements, news and optional friends-playing context to game details, with identity-bound server requests, spoiler protection and confirmed Steam destinations.
+- Add separately permissioned Companion Remote requests to launch installed Steam games, request installation, and open Steam/downloads on the authenticated computer; reject replayed or arbitrary commands and preserve Steam's authority over launch/install results.
 - Unify Steam games across computers and library drives with one poster grid, shared favorites, computer filters, timestamped installation snapshots and optional encrypted Companion Remote inventory sharing.
 - Refresh linked Steam catalogs with encrypted, revocable, identity-scoped credentials while retaining compatibility with older relays and saved game libraries.
 - Add profile-scoped Android Steam quality and codec preferences, first-frame connection state, accessible reconnect controls and teardown acknowledgement before retrying a stream. Other embedded receiver platforms remain in development.

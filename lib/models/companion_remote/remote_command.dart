@@ -56,6 +56,7 @@ enum RemoteCommandType {
   // Append only: older peers encode this enum by index. Version negotiated
   // through deviceInfo before this read-only extension is requested.
   gameInventory,
+  gameAction,
 }
 
 class _RemoteCommandTypeConverter extends IndexedEnumConverter<RemoteCommandType> {

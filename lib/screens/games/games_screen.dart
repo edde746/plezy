@@ -14,6 +14,7 @@ import '../../games/game_library_controller.dart';
 import '../../games/game_models.dart';
 import '../../games/steam_stream_preferences.dart';
 import '../../games/steam_inventory_exchange.dart';
+import '../../games/steam_host_actions.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/credential_vault.dart';
@@ -44,6 +45,7 @@ import '../libraries/state_messages.dart';
 import 'game_connection_dialogs.dart';
 import '../../widgets/oauth_proxy_dialog.dart';
 import 'game_card.dart';
+import 'steam_game_activity_panel.dart';
 import '../settings/settings_utils.dart' show DialogOption;
 
 class GamesScreen extends StatefulWidget {
@@ -459,6 +461,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
   Future<void> _details(LibraryGame game) async {
     final c = _controller;
     if (c == null || !c.current) return;
+    final activityIdentity = c.library.steamAccountId;
+    final activityCredential = c.library.steamCatalogCredential;
     final choice = await showScopedDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -484,6 +488,40 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                   '${_installationLabel(route)} · ${route.host.protocol == GameProtocol.steam ? t.games.steam : t.games.moonlight}'
                   '${route.observedAt == null ? '' : '\n${t.games.inventoryChecked(date: MaterialLocalizations.of(context).formatCompactDate(route.observedAt!))}'}',
                 ),
+                trailing: game.steamAppId != null && route.host.protocol == GameProtocol.steam
+                    ? AppMenuButton<SteamHostAction>(
+                        tooltip: t.games.hostActions,
+                        adaptiveSheet: true,
+                        icon: const AppIcon(Symbols.more_vert_rounded),
+                        entriesBuilder: (_) => [
+                          AppMenuItem(
+                            value: SteamHostAction.launch,
+                            label: t.games.launchOnComputer,
+                            icon: Symbols.play_arrow_rounded,
+                          ),
+                          AppMenuItem(
+                            value: SteamHostAction.install,
+                            label: t.games.installOnComputer,
+                            icon: Symbols.download_rounded,
+                          ),
+                        ],
+                        onSelected: (action) async {
+                          Navigator.pop(dialogContext);
+                          await _remoteHostAction(route.host, action, appId: game.steamAppId);
+                        },
+                      )
+                    : null,
+              ),
+            if (game.steamAppId != null)
+              SteamGameActivityPanel(
+                appId: game.steamAppId!,
+                steamId: activityIdentity,
+                protectedCredential: activityCredential,
+                isCurrent: () =>
+                    c.current &&
+                    c.library.steamAccountId == activityIdentity &&
+                    c.library.steamCatalogCredential == activityCredential,
+                onLink: () => Navigator.pop(dialogContext, 'link'),
               ),
           ],
         ),
@@ -502,6 +540,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     );
     if (!mounted || !c.current) return;
     if (choice == 'favorite') await _run((c) => c.toggleLibraryFavorite(game));
+    if (choice == 'link') await _linkSteamAccount();
     if (choice == 'route') {
       if (game.routes.isEmpty) {
         await _add();
@@ -667,8 +706,50 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     if (mounted && c.current) setState(() {});
   }
 
+  Future<void> _remoteHostAction(GameHost host, SteamHostAction action, {int? appId}) async {
+    final c = _controller;
+    if (c == null || !c.current || c.busy) return;
+    final remote = context.read<CompanionRemoteProvider>();
+    final snapshot = c.library.inventories.where((i) => i.hostKey == host.key).firstOrNull;
+    final peer = remote.gameActionPeerId;
+    // A discovered name or matching IP cannot authorize a remote command.
+    if (snapshot == null || peer == null || snapshot.peerId != peer) {
+      showErrorSnackBar(context, t.games.hostActionPairingHelp);
+      return;
+    }
+    final label = switch (action) {
+      SteamHostAction.launch => t.games.launchOnComputer,
+      SteamHostAction.install => t.games.installOnComputer,
+      SteamHostAction.library => t.games.hostLibrary,
+      SteamHostAction.downloads => t.games.hostDownloads,
+    };
+    final confirmed = await showConfirmDialog(
+      context,
+      title: label,
+      message: t.games.hostActionConfirm(computer: isolateDisplayText(host.name)),
+      confirmText: label,
+    );
+    if (!confirmed || !mounted || !c.current || remote.gameActionPeerId != peer) return;
+    await _run((c) async {
+      final result = await remote.requestGameAction(action, appId: appId);
+      if (!mounted || !c.current || remote.gameActionPeerId != peer) return;
+      if (result == SteamHostActionResult.submitted) {
+        showSuccessSnackBar(context, t.games.hostActionSubmitted);
+      } else {
+        showErrorSnackBar(
+          context,
+          result == SteamHostActionResult.denied ? t.games.hostActionDenied : t.games.unavailable,
+        );
+      }
+    });
+  }
+
   Future<void> _hostAction(String action, GameHost host) async {
     switch (action) {
+      case 'hostLibrary':
+        await _remoteHostAction(host, SteamHostAction.library);
+      case 'hostDownloads':
+        await _remoteHostAction(host, SteamHostAction.downloads);
       case 'inventory':
         await _importInventory(host);
       case 'library':
@@ -724,6 +805,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
           AppMenuItem(value: 'inventory', label: t.games.importInstalledGames, icon: Symbols.download_rounded),
         if (host.protocol == GameProtocol.steam)
           AppMenuItem(value: 'library', label: t.games.steamLibrary, icon: Symbols.apps_rounded),
+        if (host.protocol == GameProtocol.steam) ...[
+          AppMenuItem(value: 'hostLibrary', label: t.games.hostLibrary, icon: Symbols.desktop_windows_rounded),
+          AppMenuItem(value: 'hostDownloads', label: t.games.hostDownloads, icon: Symbols.download_rounded),
+        ],
         AppMenuItem(value: 'pair', label: t.games.pair, icon: Symbols.link_rounded),
         AppMenuItem(value: 'refresh', label: t.games.refreshGames, icon: Symbols.refresh_rounded),
         AppMenuItem(value: 'add', label: t.games.addGame, icon: Symbols.add_rounded),
@@ -1091,6 +1176,18 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                   icon: Symbols.library_books_rounded,
                   title: t.games.shareLibrary,
                   subtitle: t.games.shareLibraryHelp,
+                ),
+                SettingSwitchTile(
+                  pref: SettingsService.allowSteamActionsForProfile(_profile!),
+                  icon: Symbols.security_rounded,
+                  title: t.games.allowHostActions,
+                  subtitle: t.games.allowHostActionsHelp,
+                ),
+                SettingSwitchTile(
+                  pref: SettingsService.allowSteamInstallForProfile(_profile!),
+                  icon: Symbols.download_rounded,
+                  title: t.games.allowHostInstall,
+                  subtitle: t.games.allowHostInstallHelp,
                 ),
                 FocusableListTile(
                   leading: const AppIcon(Symbols.folder_rounded),

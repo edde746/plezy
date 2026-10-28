@@ -95,3 +95,19 @@ No external streaming-app handoff is used.
   SurfaceView, Kotlin adapter or APK.
 - Android debug/minified release builds, live reconnect/quality negotiation,
   other platform receivers and hardware performance remain outstanding.
+
+### Steam activity and companion host-action follow-up
+
+- Games plus companion provider/receiver/peer Flutter suite: **128 tests passed**.
+- Focused static analysis of Games, its screens and companion implementation:
+  no issues.
+- Go server race suite passed in both packages after adding metadata endpoints
+  and global/per-grant request bounds. Tests cover identity selection rejection,
+  optional social reads, hidden spoilers, revocation during a fetch, redirects,
+  oversized upstream data and request validation.
+- Host-action tests cover strict URI construction, opt-in permission, replay
+  rejection, unknown command arguments, peer retirement and permission changes
+  during async inspection. Acknowledgements establish submission only.
+- Live Steam API credentials/relay deployment and real OS Steam URI handlers
+  were not exercised. These results do not validate new native receivers or
+  automatic internet streaming; those implementations remain outstanding.

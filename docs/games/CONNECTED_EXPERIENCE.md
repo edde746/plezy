@@ -22,8 +22,8 @@ The implemented slices below are not substitutes for the remaining scope.
 | View-independent stream lifetime | Partial: retained Multiview surface | Native session still belongs to its PlatformView; surface destruction stops it |
 | Adaptive metrics / advanced codecs | Fixed request presets only | Negotiated statistics, adaptive policy, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround, multiple pads |
 | Other embedded receiver platforms | Library browsing/sharing only | Linux/SteamOS, Windows, macOS, iOS/iPadOS/tvOS receivers and TV capability qualification |
-| Rich Steam / host features | Not implemented | Achievements/news/social, host-authoritative install/cloud/family states, Steam Input/remapping, Together and captures |
-| Companion game control / internet transport | Inventory extension only | Permissioned launch/session commands, signaling/NAT/relay, connection diagnostics |
+| Rich Steam / host features | Achievements/news/optional friends-playing and confirmed Steam destinations implemented | Live API qualification, host cloud/family state APIs, Steam Input/remapping, Together and captures |
+| Companion game control / internet transport | Inventory plus permissioned launch/install and host Steam/download views implemented | Session controls, signaling/NAT/relay, connection diagnostics and actual host action qualification |
 
 No claim of “every Steam API” is made: public catalog APIs, game-side Steamworks
 APIs, private client interfaces and services requiring Valve approval have
@@ -239,3 +239,39 @@ opened sessions; a reconnect retains the original session's preferences.
 
 Android reflection callbacks and teardown methods are kept during shrinking.
 Current platform build/qualification limitations remain in the table above.
+
+### Stage 4 — Steam activity and companion host actions
+
+Game details now load achievements and news on demand; friends playing the
+selected game require an additional off-by-default opt-in. `/auth/steam/game`
+accepts a bounded AppID request and derives the account from the verified,
+revocable read capability. The existing credential now covers these read-only
+public account/activity lookups as well as the catalog; it still grants no
+Steam account or host action access. Social lookups are never automatic.
+
+The server caps response bodies, achievements, news and friend summaries,
+rejects upstream redirects, limits per-grant request frequency and total
+in-flight game-context requests, and retires responses revoked during a fetch.
+Locked hidden-achievement names/descriptions are omitted. The client validates
+the game and account identity, retains metadata only within the detail view,
+and uses text rather than rendering upstream HTML. External destinations are
+constructed from known Steam domains and uint32 AppIDs; opening them requires
+a confirmation. Old relays expose unavailable/relink behavior.
+
+The appended `gameAction` companion command negotiates version 1. Host control
+and installation each require separate profile permissions, off by default.
+The viewing device requires a previously imported inventory pinned to the
+same authenticated companion peer and confirms each action. The host accepts
+only `launch`, `install`, `library` and `downloads`; no caller-supplied path,
+URL, command line, account ID or credentials are accepted. Launch requests
+require a current installed-game manifest. IDs are bounded uint32 values.
+Requests have random IDs, replay suppression, one operation at a time, bounded
+deadlines and permission/generation checks immediately before dispatch.
+
+Host actions invoke the local Steam URI handler on the **host computer**;
+they are separate from the embedded receiver and do not hand streaming off to
+another client. Acknowledgement means only submission to Steam. It never
+means installation finished, launch succeeded, a family copy is available or
+a cloud conflict was resolved. No quit, uninstall, purchase or cloud overwrite
+command is exposed. Once submitted, an action cannot be recalled by closing
+the companion connection. Live Steam/OS-handler qualification remains required.

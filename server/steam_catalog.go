@@ -16,10 +16,12 @@ const steamCatalogGrantTTL = 30 * 24 * time.Hour
 // They are not Steam tokens and confer no launch, purchase or account access.
 // Only digests live on the relay. Restart or revocation requires relinking.
 type steamCatalogGrant struct {
-	steamID string
-	expires time.Time
-	fetched time.Time
-	loading bool
+	steamID        string
+	expires        time.Time
+	fetched        time.Time
+	loading        bool
+	contextFetched time.Time
+	contextLoading bool
 }
 
 func (p *oauthProxy) issueSteamCatalogGrant(steamID string) string {

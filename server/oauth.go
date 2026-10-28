@@ -121,6 +121,7 @@ func (s *oauthSession) pkceVerifier() string {
 
 type oauthProxy struct {
 	steamCatalogGrants map[[32]byte]*steamCatalogGrant
+	steamContextActive int
 	baseURL            string
 	services           map[string]oauthServiceConfig
 	client             *http.Client
@@ -202,6 +203,7 @@ func registerOAuthRoutes(mux *http.ServeMux, p *oauthProxy) {
 		return
 	}
 	mux.HandleFunc("/auth/steam/library", p.handleSteamCatalog)
+	mux.HandleFunc("/auth/steam/game", p.handleSteamGameContext)
 	mux.HandleFunc("/auth/start", p.handleStart)
 	mux.HandleFunc("/auth/result", p.handleResult)
 	mux.HandleFunc("/auth/done", p.handleDone)
