@@ -92,6 +92,7 @@ class TranslationsBn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$bn trakt = _Translations$trakt$bn._(_root);
 	@override late final _Translations$seerr$bn seerr = _Translations$seerr$bn._(_root);
 	@override late final _Translations$services$bn services = _Translations$services$bn._(_root);
+	@override late final _Translations$streaming$bn streaming = _Translations$streaming$bn._(_root);
 	@override late final _Translations$addServer$bn addServer = _Translations$addServer$bn._(_root);
 	@override late final _Translations$cast$bn cast = _Translations$cast$bn._(_root);
 	@override late final _Translations$automation$bn automation = _Translations$automation$bn._(_root);
@@ -2755,6 +2756,119 @@ class _Translations$services$bn extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$bn libraryFilter = _Translations$services$libraryFilter$bn._(_root);
 	@override String get seerrDescription => 'Seerr বা Overseerr এর সাথে সংযোগ করুন এবং মিডিয়া অনুরোধের জন্য টাইমগুলি খুঁজে পেতে।';
 	@override late final _Translations$services$trackerDescriptions$bn trackerDescriptions = _Translations$services$trackerDescriptions$bn._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$bn extends Translations$streaming$en {
+	_Translations$streaming$bn._(TranslationsBn root) : this._root = root, super.internal(root);
+
+	final TranslationsBn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'ক্লাউড ও অ্যাড-অন স্ট্রিমিং';
+	@override String get subtitle => 'ক্লাউডে থাকা ফাইল দেখতে এবং সমর্থিত স্ট্রিম চালাতে Debrid অ্যাকাউন্ট সংযুক্ত করুন। Stremio-সামঞ্জস্যপূর্ণ অ্যাড-অন সিনেমা ও পর্বের পাতায় স্ট্রিমের বিকল্প দেয়। সংযোগের তথ্য এই ডিভাইসে এনক্রিপ্ট হয়ে এই প্রোফাইলে সংরক্ষিত থাকে।';
+	@override String connectionsConfigured({required Object count}) => 'সংযুক্ত উৎস: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG সংরক্ষিত স্ট্রিমিং সেটিংস খুলতে পারেনি। সংযোগ পরিবর্তনের আগে ডিভাইস আনলক করে আবার চেষ্টা করুন।';
+	@override String get settingsUnreadable => 'PlezyNG এই সংরক্ষিত সংযোগগুলো খুলতে পারেনি। পরিষেবাগুলো আবার সংযোগ করতে এগুলো মুছুন।';
+	@override String get clearUnreadableSettings => 'সংরক্ষিত সেটিংস মুছুন';
+	@override String get clearUnreadableSettingsConfirm => 'সংরক্ষিত স্ট্রিমিং সেটিংস মুছবেন?';
+	@override String get clearUnreadableSettingsBody => 'এতে এই প্রোফাইলের সব সংরক্ষিত প্রদানকারী অ্যাকাউন্ট ও অ্যাড-অনের ঠিকানা মুছে যাবে। এটি ফিরিয়ে আনা যাবে না।';
+	@override String get clearUnreadableSettingsFailed => 'সংরক্ষিত স্ট্রিমিং সেটিংস মুছতে পারেনি। ডিভাইস আনলক করে আবার চেষ্টা করুন।';
+	@override String get retrySettingsLoad => 'সংযোগ আবার লোড করুন';
+	@override String get addons => 'Stremio-সামঞ্জস্যপূর্ণ অ্যাড-অন';
+	@override String get addonsDescription => 'Stremio থেকে অ্যাড-অন আমদানি করুন বা ম্যানিফেস্ট URL দিয়ে সংযোগ করুন। এক্সপ্লোরে ক্যাটালগ দেখুন এবং সিনেমা বা পর্বের পাতা থেকে স্ট্রিমের বিকল্প খুলুন।';
+	@override String get catalogLoadFailed => 'এই ক্যাটালগ লোড করা যায়নি। রিফ্রেশ করে আবার চেষ্টা করুন।';
+	@override String get catalogFiltersRequired => 'এই ক্যাটালগ দেখতে প্রয়োজনীয় ফিল্টার বেছে নিন।';
+	@override String get catalogRequiredLabel => 'প্রয়োজনীয়';
+	@override String get importFromStremio => 'Stremio থেকে আমদানি';
+	@override String get stremioImportInstructions => 'QR কোড স্ক্যান করুন বা লিংক খুলুন। Stremio-তে সাইন ইন করে অনুরোধ অনুমোদন করুন। PlezyNG শুধু আপনার অ্যাড-অনের তালিকা পড়ে; এটি Stremio পাসওয়ার্ড চায় না বা সেটিংস বদলায় না।';
+	@override String get stremioImportOpen => 'Stremio লিংক খুলুন';
+	@override String get stremioImportCode => 'লিংক কোড';
+	@override String get stremioImportPreviewTitle => 'অ্যাড-অন বেছে নিন';
+	@override String get stremioImportPreviewBody => 'PlezyNG-তে সংযোগ করতে চান এমন অ্যাড-অন বেছে নিন। এই আমদানিতে শুধু HTTPS ঠিকানা গ্রহণ করা হয়।';
+	@override String stremioImportIgnored({required Object count}) => 'অসমর্থিত বা অনিরাপদ ঠিকানার অ্যাড-অন বাদ গেছে: ${count}।';
+	@override String get stremioCatalogs => 'ক্যাটালগ';
+	@override String get stremioStreams => 'স্ট্রিম';
+	@override String stremioImportAddSelected({required Object count}) => 'নির্বাচিতগুলো যোগ করুন (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Stremio থেকে সংযুক্ত অ্যাড-অন: ${count}।';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'সংযুক্ত অ্যাড-অন: ${added}; সংযোগ করা যায়নি: ${failed}।';
+	@override String get stremioImportFailed => 'Stremio থেকে অ্যাড-অন আমদানি করা যায়নি। আবার চেষ্টা করুন।';
+	@override String get stremioImportTimedOut => 'Stremio অনুমোদনের সময়সীমা শেষ হয়েছে। আবার আমদানি শুরু করুন।';
+	@override String get stremioImportEmpty => 'এই Stremio অ্যাকাউন্টে নতুন কোনো সামঞ্জস্যপূর্ণ অ্যাড-অন পাওয়া যায়নি।';
+	@override String get stremioImportLimitReached => 'আরও আমদানির আগে একটি অ্যাড-অন সরান।';
+	@override String get addByManifestUrl => 'ম্যানিফেস্ট URL দিয়ে যোগ করুন';
+	@override String get addAddon => 'অ্যাড-অন যোগ করুন';
+	@override String get manifestUrl => 'অ্যাড-অনের ম্যানিফেস্ট URL';
+	@override String get manifestUrlHint => 'অ্যাড-অনের ম্যানিফেস্ট URL পেস্ট করুন। সংযোগের আগে PlezyNG ক্যাটালগ বা স্ট্রিম রিসোর্স সমর্থিত কি না যাচাই করে।';
+	@override String get allowHttp => 'এনক্রিপ্ট না করা HTTP ঠিকানা অনুমতি দিন';
+	@override String get allowHttpDescription => 'ব্যক্তিগত নেটওয়ার্কে শুধু বিশ্বস্ত অ্যাড-অনের জন্য ব্যবহার করুন।';
+	@override String get installAddon => 'অ্যাড-অন সংযোগ করুন';
+	@override String get addonInstalled => 'অ্যাড-অন সংযুক্ত হয়েছে';
+	@override String get addonRemoved => 'অ্যাড-অন সরানো হয়েছে';
+	@override String get addonToggle => 'অ্যাড-অন চালু করুন';
+	@override String get addonEmpty => 'এখনও কোনো অ্যাড-অন সংযুক্ত নেই';
+	@override String get addonError => 'PlezyNG এই অ্যাড-অনে সংযোগ করতে পারেনি। ম্যানিফেস্ট URL পরীক্ষা করে আবার চেষ্টা করুন।';
+	@override String get addonPrivacy => 'শুধু বিশ্বস্ত অ্যাড-অন সংযোগ করুন। খোঁজার সময় অ্যাড-অন আপনার খোঁজা শিরোনাম পায় এবং তৃতীয় পক্ষের স্ট্রিম লিংক ফেরত দিতে পারে।';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'আপনার Real-Debrid অ্যাকাউন্ট দিয়ে সমর্থিত টরেন্ট স্ট্রিম চালান।';
+	@override String get connectRealDebrid => 'QR কোড দিয়ে সংযোগ করুন';
+	@override String get disconnectRealDebrid => 'Real-Debrid সংযোগ বিচ্ছিন্ন করুন';
+	@override String realDebridConnected({required Object username}) => '${username} হিসেবে সংযুক্ত';
+	@override String get realDebridInstructions => 'QR কোড স্ক্যান করুন বা লিংক খুলুন, তারপর PlezyNG সংযোগ করতে এই সক্রিয়করণ কোড দিন:';
+	@override String get realDebridActivate => 'সক্রিয় করতে Real-Debrid খুলুন';
+	@override String get realDebridCode => 'সক্রিয়করণ কোড';
+	@override String get realDebridConnectFailed => 'Real-Debrid-এ সংযোগ করা যায়নি। আবার চেষ্টা করুন।';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'আপনার AllDebrid অ্যাকাউন্ট দিয়ে সমর্থিত টরেন্ট স্ট্রিম চালান।';
+	@override String get connectAllDebrid => 'QR কোড দিয়ে সংযোগ করুন';
+	@override String get allDebridInstructions => 'PlezyNG অনুমোদন করতে QR কোড স্ক্যান করুন বা লিংক খুলুন। সংযোগ চলাকালীন এই স্ক্রিন খোলা রাখুন:';
+	@override String get allDebridActivate => 'সক্রিয় করতে AllDebrid খুলুন';
+	@override String get allDebridCode => 'সক্রিয়করণ PIN';
+	@override String get allDebridConnectFailed => 'AllDebrid-এ সংযোগ করা যায়নি। আবার চেষ্টা করুন।';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Premiumize দিয়ে ক্যাশ করা টরেন্ট স্ট্রিম চালান বা ফাইল দেখুন।';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'TorBox দিয়ে ক্যাশ করা টরেন্ট স্ট্রিম চালান বা ফাইল দেখুন।';
+	@override String get connectApiKey => 'API কী দিয়ে সংযোগ করুন';
+	@override String apiKeyTitle({required Object service}) => '${service} সংযোগ করুন';
+	@override String get apiKey => 'API কী';
+	@override String apiKeyHint({required Object service}) => '${service} অ্যাকাউন্ট সেটিংস থেকে API কী পেস্ট করুন। PlezyNG এই ডিভাইসে এটি এনক্রিপ্ট করে এই প্রোফাইলে সংরক্ষণ করে।';
+	@override String get apiKeyConnectFailed => 'এই API কী যাচাই করা যায়নি। পরীক্ষা করে আবার চেষ্টা করুন।';
+	@override String accountConnected({required Object username}) => '${username} হিসেবে সংযুক্ত';
+	@override String get streamNeedsProvider => 'এই টরেন্ট স্ট্রিম চালাতে Debrid পরিষেবা সংযোগ করুন।';
+	@override String get playViaProvider => 'Debrid দিয়ে চালান';
+	@override String disconnectConfirm({required Object service}) => '${service} সংযোগ বিচ্ছিন্ন করবেন?';
+	@override String get disconnectBody => 'PlezyNG এই ডিভাইসের অনুমতি সরিয়ে দেবে। প্রদানকারীর ফাইল ও চলমান স্থানান্তর অপরিবর্তিত থাকবে।';
+	@override String get streamsTitle => 'স্ট্রিম বেছে নিন';
+	@override String get searchingStreams => 'সংযুক্ত অ্যাড-অন পরীক্ষা করা হচ্ছে…';
+	@override String get noStreams => 'এই শিরোনামের জন্য কোনো স্ট্রিম পাওয়া যায়নি।';
+	@override String get manageConnections => 'স্ট্রিমিং পরিষেবা পরিচালনা';
+	@override String subtitleTracks({required Object count}) => 'সাবটাইটেল ট্র্যাক: ${count}';
+	@override String get chooseSubtitle => 'সাবটাইটেল বেছে নিন';
+	@override String get chooseProvider => 'Debrid পরিষেবা বেছে নিন';
+	@override String get subtitleOff => 'সাবটাইটেল বন্ধ';
+	@override String get subtitleLoadFailed => 'এই সাবটাইটেল লোড করা যায়নি। অন্য ট্র্যাক চেষ্টা করুন।';
+	@override String get subtitleApplied => 'প্লেব্যাকের জন্য সাবটাইটেল নির্বাচিত';
+	@override String get streamLookupPartial => 'কিছু অ্যাড-অনে পৌঁছানো যায়নি।';
+	@override String get streamLookupFailed => 'সংযুক্ত অ্যাড-অন পরীক্ষা করা যায়নি।';
+	@override String get streamOpenExternal => 'বাইরের লিংক খুলুন';
+	@override String get streamPrepare => 'আপনার Debrid পরিষেবা দিয়ে প্রস্তুত করা হচ্ছে…';
+	@override String get streamPrepareFailed => 'এই স্ট্রিম প্রস্তুত করা যায়নি। সংযুক্ত অ্যাকাউন্ট পরীক্ষা করে অন্য উৎস চেষ্টা করুন।';
+	@override String get streamNeedsRealDebrid => 'এই টরেন্ট স্ট্রিম চালাতে Debrid পরিষেবা সংযোগ করুন।';
+	@override String get streamUnsupported => 'অ্যাপের বিল্ট-ইন প্লেয়ার এই স্ট্রিম ফরম্যাট সমর্থন করে না।';
+	@override String get remoteNeedsEpisode => 'স্ট্রিম খোঁজার আগে একটি পর্ব বেছে নিন।';
+	@override String get remoteNeedsEpisodeNumber => 'এই পর্বে সিজন বা পর্ব নম্বর নেই।';
+	@override String get remoteNeedsExternalId => 'PlezyNG এই শিরোনামের IMDb বা TMDB ID খুঁজে পায়নি।';
+	@override String get watchWithServices => 'সংযুক্ত পরিষেবা দিয়ে দেখুন';
+	@override String get chooseEpisode => 'পর্ব বেছে নিন';
+	@override String get episodes => 'পর্বসমূহ';
+	@override String episodePosition({required Object season, required Object episode}) => 'সিজন ${season}, পর্ব ${episode}';
+	@override String get episodeStreamHint => 'এই পর্বের উপলভ্য স্ট্রিম খোলে।';
+	@override String get cloudFiles => 'ক্লাউড ফাইল';
+	@override String get browseCloud => 'ফাইল দেখুন';
+	@override String get cloudEmpty => 'এই অ্যাকাউন্টে চালানো যায় এমন ভিডিও ফাইল পাওয়া যায়নি।';
+	@override String get cloudLoadFailed => 'ক্লাউড ফাইল লোড করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।';
+	@override String get providers => 'Debrid প্রদানকারী';
 }
 
 // Path: addServer
@@ -7638,6 +7752,110 @@ extension on TranslationsBn {
 			'services.trackerDescriptions.anilist' => 'অ্যানিমি তালিকা সনাক্ত করুন এবং AniList এর সাথে উন্নয়ন দেখুন।',
 			'services.trackerDescriptions.simkl' => 'সিন্ক চলচ্চিত্র, টেলিভিশন প্রদর্শন এবং অ্যানিমি দেখে Simkl সঙ্গে।',
 			'services.trackerDescriptions.mdblist' => 'MDBList রিটার এবং তালিকায় পরামর্শগুলি দেখুন এবং অনুসন্ধান করুন।',
+			'streaming.title' => 'ক্লাউড ও অ্যাড-অন স্ট্রিমিং',
+			'streaming.subtitle' => 'ক্লাউডে থাকা ফাইল দেখতে এবং সমর্থিত স্ট্রিম চালাতে Debrid অ্যাকাউন্ট সংযুক্ত করুন। Stremio-সামঞ্জস্যপূর্ণ অ্যাড-অন সিনেমা ও পর্বের পাতায় স্ট্রিমের বিকল্প দেয়। সংযোগের তথ্য এই ডিভাইসে এনক্রিপ্ট হয়ে এই প্রোফাইলে সংরক্ষিত থাকে।',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'সংযুক্ত উৎস: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG সংরক্ষিত স্ট্রিমিং সেটিংস খুলতে পারেনি। সংযোগ পরিবর্তনের আগে ডিভাইস আনলক করে আবার চেষ্টা করুন।',
+			'streaming.settingsUnreadable' => 'PlezyNG এই সংরক্ষিত সংযোগগুলো খুলতে পারেনি। পরিষেবাগুলো আবার সংযোগ করতে এগুলো মুছুন।',
+			'streaming.clearUnreadableSettings' => 'সংরক্ষিত সেটিংস মুছুন',
+			'streaming.clearUnreadableSettingsConfirm' => 'সংরক্ষিত স্ট্রিমিং সেটিংস মুছবেন?',
+			'streaming.clearUnreadableSettingsBody' => 'এতে এই প্রোফাইলের সব সংরক্ষিত প্রদানকারী অ্যাকাউন্ট ও অ্যাড-অনের ঠিকানা মুছে যাবে। এটি ফিরিয়ে আনা যাবে না।',
+			'streaming.clearUnreadableSettingsFailed' => 'সংরক্ষিত স্ট্রিমিং সেটিংস মুছতে পারেনি। ডিভাইস আনলক করে আবার চেষ্টা করুন।',
+			'streaming.retrySettingsLoad' => 'সংযোগ আবার লোড করুন',
+			'streaming.addons' => 'Stremio-সামঞ্জস্যপূর্ণ অ্যাড-অন',
+			'streaming.addonsDescription' => 'Stremio থেকে অ্যাড-অন আমদানি করুন বা ম্যানিফেস্ট URL দিয়ে সংযোগ করুন। এক্সপ্লোরে ক্যাটালগ দেখুন এবং সিনেমা বা পর্বের পাতা থেকে স্ট্রিমের বিকল্প খুলুন।',
+			'streaming.catalogLoadFailed' => 'এই ক্যাটালগ লোড করা যায়নি। রিফ্রেশ করে আবার চেষ্টা করুন।',
+			'streaming.catalogFiltersRequired' => 'এই ক্যাটালগ দেখতে প্রয়োজনীয় ফিল্টার বেছে নিন।',
+			'streaming.catalogRequiredLabel' => 'প্রয়োজনীয়',
+			'streaming.importFromStremio' => 'Stremio থেকে আমদানি',
+			'streaming.stremioImportInstructions' => 'QR কোড স্ক্যান করুন বা লিংক খুলুন। Stremio-তে সাইন ইন করে অনুরোধ অনুমোদন করুন। PlezyNG শুধু আপনার অ্যাড-অনের তালিকা পড়ে; এটি Stremio পাসওয়ার্ড চায় না বা সেটিংস বদলায় না।',
+			'streaming.stremioImportOpen' => 'Stremio লিংক খুলুন',
+			'streaming.stremioImportCode' => 'লিংক কোড',
+			'streaming.stremioImportPreviewTitle' => 'অ্যাড-অন বেছে নিন',
+			'streaming.stremioImportPreviewBody' => 'PlezyNG-তে সংযোগ করতে চান এমন অ্যাড-অন বেছে নিন। এই আমদানিতে শুধু HTTPS ঠিকানা গ্রহণ করা হয়।',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'অসমর্থিত বা অনিরাপদ ঠিকানার অ্যাড-অন বাদ গেছে: ${count}।',
+			'streaming.stremioCatalogs' => 'ক্যাটালগ',
+			'streaming.stremioStreams' => 'স্ট্রিম',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'নির্বাচিতগুলো যোগ করুন (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Stremio থেকে সংযুক্ত অ্যাড-অন: ${count}।',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'সংযুক্ত অ্যাড-অন: ${added}; সংযোগ করা যায়নি: ${failed}।',
+			'streaming.stremioImportFailed' => 'Stremio থেকে অ্যাড-অন আমদানি করা যায়নি। আবার চেষ্টা করুন।',
+			'streaming.stremioImportTimedOut' => 'Stremio অনুমোদনের সময়সীমা শেষ হয়েছে। আবার আমদানি শুরু করুন।',
+			'streaming.stremioImportEmpty' => 'এই Stremio অ্যাকাউন্টে নতুন কোনো সামঞ্জস্যপূর্ণ অ্যাড-অন পাওয়া যায়নি।',
+			'streaming.stremioImportLimitReached' => 'আরও আমদানির আগে একটি অ্যাড-অন সরান।',
+			'streaming.addByManifestUrl' => 'ম্যানিফেস্ট URL দিয়ে যোগ করুন',
+			'streaming.addAddon' => 'অ্যাড-অন যোগ করুন',
+			'streaming.manifestUrl' => 'অ্যাড-অনের ম্যানিফেস্ট URL',
+			'streaming.manifestUrlHint' => 'অ্যাড-অনের ম্যানিফেস্ট URL পেস্ট করুন। সংযোগের আগে PlezyNG ক্যাটালগ বা স্ট্রিম রিসোর্স সমর্থিত কি না যাচাই করে।',
+			'streaming.allowHttp' => 'এনক্রিপ্ট না করা HTTP ঠিকানা অনুমতি দিন',
+			'streaming.allowHttpDescription' => 'ব্যক্তিগত নেটওয়ার্কে শুধু বিশ্বস্ত অ্যাড-অনের জন্য ব্যবহার করুন।',
+			'streaming.installAddon' => 'অ্যাড-অন সংযোগ করুন',
+			'streaming.addonInstalled' => 'অ্যাড-অন সংযুক্ত হয়েছে',
+			'streaming.addonRemoved' => 'অ্যাড-অন সরানো হয়েছে',
+			'streaming.addonToggle' => 'অ্যাড-অন চালু করুন',
+			'streaming.addonEmpty' => 'এখনও কোনো অ্যাড-অন সংযুক্ত নেই',
+			'streaming.addonError' => 'PlezyNG এই অ্যাড-অনে সংযোগ করতে পারেনি। ম্যানিফেস্ট URL পরীক্ষা করে আবার চেষ্টা করুন।',
+			'streaming.addonPrivacy' => 'শুধু বিশ্বস্ত অ্যাড-অন সংযোগ করুন। খোঁজার সময় অ্যাড-অন আপনার খোঁজা শিরোনাম পায় এবং তৃতীয় পক্ষের স্ট্রিম লিংক ফেরত দিতে পারে।',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'আপনার Real-Debrid অ্যাকাউন্ট দিয়ে সমর্থিত টরেন্ট স্ট্রিম চালান।',
+			'streaming.connectRealDebrid' => 'QR কোড দিয়ে সংযোগ করুন',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid সংযোগ বিচ্ছিন্ন করুন',
+			'streaming.realDebridConnected' => ({required Object username}) => '${username} হিসেবে সংযুক্ত',
+			'streaming.realDebridInstructions' => 'QR কোড স্ক্যান করুন বা লিংক খুলুন, তারপর PlezyNG সংযোগ করতে এই সক্রিয়করণ কোড দিন:',
+			'streaming.realDebridActivate' => 'সক্রিয় করতে Real-Debrid খুলুন',
+			'streaming.realDebridCode' => 'সক্রিয়করণ কোড',
+			'streaming.realDebridConnectFailed' => 'Real-Debrid-এ সংযোগ করা যায়নি। আবার চেষ্টা করুন।',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'আপনার AllDebrid অ্যাকাউন্ট দিয়ে সমর্থিত টরেন্ট স্ট্রিম চালান।',
+			'streaming.connectAllDebrid' => 'QR কোড দিয়ে সংযোগ করুন',
+			'streaming.allDebridInstructions' => 'PlezyNG অনুমোদন করতে QR কোড স্ক্যান করুন বা লিংক খুলুন। সংযোগ চলাকালীন এই স্ক্রিন খোলা রাখুন:',
+			'streaming.allDebridActivate' => 'সক্রিয় করতে AllDebrid খুলুন',
+			'streaming.allDebridCode' => 'সক্রিয়করণ PIN',
+			'streaming.allDebridConnectFailed' => 'AllDebrid-এ সংযোগ করা যায়নি। আবার চেষ্টা করুন।',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Premiumize দিয়ে ক্যাশ করা টরেন্ট স্ট্রিম চালান বা ফাইল দেখুন।',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'TorBox দিয়ে ক্যাশ করা টরেন্ট স্ট্রিম চালান বা ফাইল দেখুন।',
+			'streaming.connectApiKey' => 'API কী দিয়ে সংযোগ করুন',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service} সংযোগ করুন',
+			'streaming.apiKey' => 'API কী',
+			'streaming.apiKeyHint' => ({required Object service}) => '${service} অ্যাকাউন্ট সেটিংস থেকে API কী পেস্ট করুন। PlezyNG এই ডিভাইসে এটি এনক্রিপ্ট করে এই প্রোফাইলে সংরক্ষণ করে।',
+			'streaming.apiKeyConnectFailed' => 'এই API কী যাচাই করা যায়নি। পরীক্ষা করে আবার চেষ্টা করুন।',
+			'streaming.accountConnected' => ({required Object username}) => '${username} হিসেবে সংযুক্ত',
+			'streaming.streamNeedsProvider' => 'এই টরেন্ট স্ট্রিম চালাতে Debrid পরিষেবা সংযোগ করুন।',
+			'streaming.playViaProvider' => 'Debrid দিয়ে চালান',
+			'streaming.disconnectConfirm' => ({required Object service}) => '${service} সংযোগ বিচ্ছিন্ন করবেন?',
+			'streaming.disconnectBody' => 'PlezyNG এই ডিভাইসের অনুমতি সরিয়ে দেবে। প্রদানকারীর ফাইল ও চলমান স্থানান্তর অপরিবর্তিত থাকবে।',
+			'streaming.streamsTitle' => 'স্ট্রিম বেছে নিন',
+			'streaming.searchingStreams' => 'সংযুক্ত অ্যাড-অন পরীক্ষা করা হচ্ছে…',
+			'streaming.noStreams' => 'এই শিরোনামের জন্য কোনো স্ট্রিম পাওয়া যায়নি।',
+			'streaming.manageConnections' => 'স্ট্রিমিং পরিষেবা পরিচালনা',
+			'streaming.subtitleTracks' => ({required Object count}) => 'সাবটাইটেল ট্র্যাক: ${count}',
+			'streaming.chooseSubtitle' => 'সাবটাইটেল বেছে নিন',
+			'streaming.chooseProvider' => 'Debrid পরিষেবা বেছে নিন',
+			'streaming.subtitleOff' => 'সাবটাইটেল বন্ধ',
+			'streaming.subtitleLoadFailed' => 'এই সাবটাইটেল লোড করা যায়নি। অন্য ট্র্যাক চেষ্টা করুন।',
+			'streaming.subtitleApplied' => 'প্লেব্যাকের জন্য সাবটাইটেল নির্বাচিত',
+			'streaming.streamLookupPartial' => 'কিছু অ্যাড-অনে পৌঁছানো যায়নি।',
+			'streaming.streamLookupFailed' => 'সংযুক্ত অ্যাড-অন পরীক্ষা করা যায়নি।',
+			'streaming.streamOpenExternal' => 'বাইরের লিংক খুলুন',
+			'streaming.streamPrepare' => 'আপনার Debrid পরিষেবা দিয়ে প্রস্তুত করা হচ্ছে…',
+			'streaming.streamPrepareFailed' => 'এই স্ট্রিম প্রস্তুত করা যায়নি। সংযুক্ত অ্যাকাউন্ট পরীক্ষা করে অন্য উৎস চেষ্টা করুন।',
+			'streaming.streamNeedsRealDebrid' => 'এই টরেন্ট স্ট্রিম চালাতে Debrid পরিষেবা সংযোগ করুন।',
+			'streaming.streamUnsupported' => 'অ্যাপের বিল্ট-ইন প্লেয়ার এই স্ট্রিম ফরম্যাট সমর্থন করে না।',
+			'streaming.remoteNeedsEpisode' => 'স্ট্রিম খোঁজার আগে একটি পর্ব বেছে নিন।',
+			'streaming.remoteNeedsEpisodeNumber' => 'এই পর্বে সিজন বা পর্ব নম্বর নেই।',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG এই শিরোনামের IMDb বা TMDB ID খুঁজে পায়নি।',
+			'streaming.watchWithServices' => 'সংযুক্ত পরিষেবা দিয়ে দেখুন',
+			'streaming.chooseEpisode' => 'পর্ব বেছে নিন',
+			'streaming.episodes' => 'পর্বসমূহ',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'সিজন ${season}, পর্ব ${episode}',
+			'streaming.episodeStreamHint' => 'এই পর্বের উপলভ্য স্ট্রিম খোলে।',
+			'streaming.cloudFiles' => 'ক্লাউড ফাইল',
+			'streaming.browseCloud' => 'ফাইল দেখুন',
+			'streaming.cloudEmpty' => 'এই অ্যাকাউন্টে চালানো যায় এমন ভিডিও ফাইল পাওয়া যায়নি।',
+			'streaming.cloudLoadFailed' => 'ক্লাউড ফাইল লোড করা যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+			'streaming.providers' => 'Debrid প্রদানকারী',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'যোগ করুন ${product} সার্ভার',
 			'addServer.serverUrls' => 'URL সার্ভার',
 			'addServer.serverUrlsHelper' => 'কয়েকটি ইউরলি অনুমোদিত, কোমাস দ্বারা আলাদা।',
@@ -7916,6 +8134,8 @@ extension on TranslationsBn {
 			'universalMedia.contrast' => 'প্রতিরোধ',
 			'universalMedia.gamma' => 'গেম',
 			'universalMedia.hue' => 'হুই',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'সুরআন',
 			'universalMedia.view360' => '360° ভিডিও জন্য ফ্ল্যাট প্রদর্শন',
 			'universalMedia.view360Help' => 'এছাড়াও 360° ভিডিও ব্যবহার করুন. MPV এর জন্য FFmpeg\'s v360 ফিল্টার প্রয়োজন।',
@@ -8020,8 +8240,6 @@ extension on TranslationsBn {
 			'universalMedia.extensionInstallTitle' => 'এই অনুসন্ধান পরিষেবা যোগ করুন?',
 			'universalMedia.extensionReplaceTitle' => 'এই অনুসন্ধান পরিষেবা আপডেট?',
 			'universalMedia.extensionService' => 'পরিষেবা',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => 'আপনার অনুসন্ধান টেক্সটটি এই পরিষেবাকে পাঠানো হয়. ম্যানেজিনটি কোন executable কোড নেই. Continue only if you trust this endpoint.',
 			'universalMedia.extensionInstall' => 'পরিষেবা যোগ করুন',
@@ -8430,6 +8648,8 @@ extension on TranslationsBn {
 			'sourceSetup.sharedLibraryInvalid' => '8-100 বাক্স, নম্বর, পয়েন্ট, সাবস্কোর বা হাইফেন্স ব্যবহার করুন।',
 			'sourceSetup.generateSharedLibraryId' => 'একটি বিতর্কিত লাইব্রেরি ID তৈরি করুন',
 			'sourceSetup.nfsReadAhead' => 'NFS Read-ahead অনুরোধ',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'দ্রুত NAS বা নেটওয়ার্কে আরও সমান্তরাল রিড থ্রুপুট বাড়াতে পারে। সার্ভার একসঙ্গে অনুরোধ সীমিত করলে 1 ব্যবহার করুন।',
 			'sourceSetup.nfsReadTest' => 'NFS পড়া দক্ষতা মাত্রা',
 			'sourceSetup.nfsReadTestHelp' => 'এই NAS সংযোগকে মাত্রা করার জন্য সবচেয়ে বড় ফাইল থেকে 64 MiB পর্যন্ত পড়তে পারে।',
@@ -8534,8 +8754,6 @@ extension on TranslationsBn {
 			'deepLinks.noLiveTv' => 'এই লিঙ্ক জন্য কোন লাইভ টিভি সার্ভার পাওয়া যায় না।',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'আমি চ্যানেল "${channel}" খুঁজতে পারিনি।',
 			'deepLinks.showLink' => 'দেখুন লিঙ্ক',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'প্রোফাইল লিঙ্ক',
 			'deepLinks.dialogTitle' => 'লিঙ্ক',
 			'deepLinks.showHint' => 'এই লিংক খুললে পরের পর্বটি চলবে। সিরিজটি এলোমেলোভাবে চালাতে শেষে &mode=shuffle যোগ করুন.',

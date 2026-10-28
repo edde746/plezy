@@ -20,6 +20,8 @@ class StremioAddonCatalog {
     required this.canBrowse,
     required this.supportsSearch,
     required this.supportsSkip,
+    this.extras = const [],
+    this.requiredExtras = const {},
   });
 
   final String type;
@@ -28,6 +30,24 @@ class StremioAddonCatalog {
   final bool canBrowse;
   final bool supportsSearch;
   final bool supportsSkip;
+  final List<StremioAddonExtra> extras;
+  final Set<String> requiredExtras;
+}
+
+/// A catalog extra declared in an add-on manifest. Known option lists become
+/// selectable filters; an extra without options is edited as text.
+class StremioAddonExtra {
+  const StremioAddonExtra({
+    required this.name,
+    required this.title,
+    this.options = const [],
+    this.optionsLimit = 1,
+  });
+
+  final String name;
+  final String title;
+  final List<String> options;
+  final int optionsLimit;
 }
 
 /// Bounded client for the Stremio add-on HTTP protocol. It never logs a
@@ -78,13 +98,44 @@ class StremioAddonClient {
       final extras = row['extra'] is List ? row['extra'] as List : const [];
       final supportsSearchExtra = extras.any((extra) => extra is Map && extra['name'] == 'search');
       final supportsSkip = extras.any((extra) => extra is Map && extra['name'] == 'skip');
-      final required = row['extraRequired'] is List ? row['extraRequired'] as List : const [];
-      // A catalog that requires a user-selected filter has no honest default
-      // page. Keep it available to search when possible; a future filter UI
-      // can expose the remaining required extras without changing its ID.
-      final canBrowse = required.every((extra) => extra is String && extra == 'skip') &&
-          (required.isEmpty || supportsSkip);
-      final supportsSearch = supportsSearchExtra && required.every((extra) => extra is String && {'skip', 'search'}.contains(extra));
+      final rawRequired = row['extraRequired'] is List ? row['extraRequired'] as List : const [];
+      var requiredIsValid = rawRequired.every((extra) => extra is String && _validExtraName(extra));
+      final required = rawRequired
+          .whereType<String>()
+          .where(_validExtraName)
+          .toSet();
+      final parsedExtras = <StremioAddonExtra>[];
+      for (final extra in extras) {
+        // Current manifests declare required values on each Extra object.
+        // Accept the older catalog-level `extraRequired` form as well, but
+        // reject malformed requirements instead of accidentally browsing a
+        // catalog without the arguments its handler needs.
+        if (extra is Map && extra.containsKey('isRequired') && extra['isRequired'] is! bool) {
+          requiredIsValid = false;
+        }
+        final parsed = _parseCatalogExtra(extra);
+        if (extra is Map && extra['isRequired'] == true) {
+          final name = extra['name'];
+          if (name is String && _validExtraName(name)) {
+            required.add(name);
+          } else {
+            requiredIsValid = false;
+          }
+        }
+        if (parsed == null || parsedExtras.any((known) => known.name == parsed.name)) continue;
+        parsedExtras.add(parsed);
+      }
+      final declaredNames = parsedExtras.map((extra) => extra.name).toSet();
+      // `skip` is supplied automatically; `search` is handled by Explore's
+      // search path. Other required values are editable through the existing
+      // catalog filter sheet, including free-text extras.
+      final canBrowse = requiredIsValid &&
+          required.every((name) => name == 'skip'
+              ? supportsSkip
+              : name != 'search' && declaredNames.contains(name));
+      final supportsSearch = requiredIsValid &&
+          supportsSearchExtra &&
+          required.every((name) => name == 'skip' ? supportsSkip : name == 'search');
       result.add(
         StremioAddonCatalog(
           type: type,
@@ -93,6 +144,8 @@ class StremioAddonClient {
           canBrowse: canBrowse,
           supportsSearch: supportsSearch,
           supportsSkip: supportsSkip,
+          extras: List.unmodifiable(parsedExtras),
+          requiredExtras: Set.unmodifiable(required),
         ),
       );
     }
@@ -127,6 +180,7 @@ class StremioAddonClient {
     StremioAddonInstallation addon,
     StremioAddonCatalog catalog, {
     int skip = 0,
+    Map<String, String> extras = const {},
   }) async {
     if (skip < 0 || skip > 1000000 || !catalog.canBrowse || (skip > 0 && !catalog.supportsSkip)) {
       throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
@@ -136,8 +190,31 @@ class StremioAddonClient {
       throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
     }
     final manifestUri = _validateAddress(addon.manifestUrl, allowHttp: addon.allowHttp);
-    final extras = catalog.supportsSkip ? {'skip': '$skip'} : const <String, String>{};
-    final body = await _getJson(_resourceUri(manifestUri, 'catalog', catalog.type, catalog.id, extras: extras));
+    final declaredNames = catalog.extras.map((extra) => extra.name).toSet();
+    final requestedExtras = <String, String>{};
+    for (final entry in extras.entries) {
+      if (!declaredNames.contains(entry.key) ||
+          const {'skip', 'search'}.contains(entry.key) ||
+          !_validExtraValue(entry.value)) {
+        throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+      }
+      final definition = catalog.extras.firstWhere((extra) => extra.name == entry.key);
+      final values = definition.options.isEmpty || definition.options.contains(entry.value)
+          ? [entry.value]
+          : entry.value.split(',');
+      if ((definition.options.isNotEmpty && values.any((value) => !definition.options.contains(value))) ||
+          values.length > definition.optionsLimit) {
+        throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+      }
+      requestedExtras[entry.key] = entry.value;
+    }
+    if (catalog.requiredExtras.any((name) => name != 'skip' && !requestedExtras.containsKey(name))) {
+      throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    }
+    if (catalog.supportsSkip) requestedExtras['skip'] = '$skip';
+    final body = await _getJson(
+      _resourceUri(manifestUri, 'catalog', catalog.type, catalog.id, extras: requestedExtras),
+    );
     final raw = body['metas'];
     if (raw is! List) throw const StremioAddonException(StremioAddonFailure.invalidResponse);
     return [
@@ -251,7 +328,10 @@ class StremioAddonClient {
   static List<_AddonResource> _resources(Map<String, dynamic> manifest) {
     final raw = manifest['resources'];
     if (raw is! List) return const [];
-    return [for (final resource in raw) if (_AddonResource.tryParse(resource) case final parsed?) parsed];
+    return raw
+        .map((resource) => _AddonResource.tryParse(resource))
+        .whereType<_AddonResource>()
+        .toList(growable: false);
   }
 
   static Uri _resourceUri(
@@ -283,11 +363,43 @@ class StremioAddonClient {
   static List<Object?> _rawCatalogs(Map<String, dynamic> manifest) =>
       manifest['catalogs'] is List ? List<Object?>.from(manifest['catalogs'] as List) : const [];
 
+  static bool _validExtraName(String value) =>
+      value.isNotEmpty && value.length <= 80 && !value.runes.any((rune) => rune < 0x20 || rune == 0x7f);
+
+  static bool _validExtraValue(String value) =>
+      value.isNotEmpty && value.length <= 512 && !value.runes.any((rune) => rune < 0x20 || rune == 0x7f);
+
+  static StremioAddonExtra? _parseCatalogExtra(Object? raw) {
+    if (raw is! Map) return null;
+    final row = Map<String, dynamic>.from(raw);
+    final name = row['name'];
+    if (name is! String || !_validExtraName(name)) return null;
+    if (row.containsKey('isRequired') && row['isRequired'] is! bool) return null;
+    if (row.containsKey('options') && row['options'] is! List) return null;
+    final options = <String>[];
+    if (row['options'] is List) {
+      for (final value in (row['options'] as List).take(100)) {
+        if (value is! String || !_validExtraValue(value) || options.contains(value)) continue;
+        options.add(value);
+      }
+    }
+    final rawLimit = row['optionsLimit'];
+    final limit = rawLimit is num && rawLimit == rawLimit.toInt() ? rawLimit.toInt() : 1;
+    return StremioAddonExtra(
+      name: name,
+      title: _displayText(row['title']) ?? name,
+      options: List.unmodifiable(options),
+      optionsLimit: limit.clamp(1, 20),
+    );
+  }
+
   static bool _validSegment(String value) =>
       value.isNotEmpty && value.length <= 512 && !value.runes.any((rune) => rune < 0x20 || rune == 0x7f);
 
   static RemoteStreamCandidate? _parseCandidate(StremioAddonInstallation addon, Map<String, dynamic> row, int index) {
-    final behavior = row['behaviorHints'] is Map ? Map<String, dynamic>.from(row['behaviorHints'] as Map) : const {};
+    final behavior = row['behaviorHints'] is Map
+        ? Map<String, dynamic>.from(row['behaviorHints'] as Map)
+        : const <String, dynamic>{};
     Uri? url;
     final rawUrl = row['url'];
     if (rawUrl is String) url = _parseStreamUri(rawUrl, allowHttp: addon.allowHttp);

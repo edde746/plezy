@@ -92,6 +92,7 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$th trakt = _Translations$trakt$th._(_root);
 	@override late final _Translations$seerr$th seerr = _Translations$seerr$th._(_root);
 	@override late final _Translations$services$th services = _Translations$services$th._(_root);
+	@override late final _Translations$streaming$th streaming = _Translations$streaming$th._(_root);
 	@override late final _Translations$addServer$th addServer = _Translations$addServer$th._(_root);
 	@override late final _Translations$cast$th cast = _Translations$cast$th._(_root);
 	@override late final _Translations$automation$th automation = _Translations$automation$th._(_root);
@@ -2736,6 +2737,119 @@ class _Translations$services$th extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$th libraryFilter = _Translations$services$libraryFilter$th._(_root);
 	@override String get seerrDescription => 'เชื่อมต่อกับ Seerr หรือ Overseerr เพื่อค้นหาชื่อและส่งคําขอสื่อ';
 	@override late final _Translations$services$trackerDescriptions$th trackerDescriptions = _Translations$services$trackerDescriptions$th._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$th extends Translations$streaming$en {
+	_Translations$streaming$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'สตรีมจากคลาวด์และส่วนเสริม';
+	@override String get subtitle => 'เชื่อมต่อบัญชี Debrid เพื่อเรียกดูไฟล์ในคลาวด์และเล่นสตรีมที่รองรับ ส่วนเสริมที่เข้ากันได้กับ Stremio จะแสดงตัวเลือกสตรีมในหน้าภาพยนตร์และตอน ข้อมูลการเชื่อมต่อจะเข้ารหัสในอุปกรณ์นี้และบันทึกไว้ในโปรไฟล์นี้';
+	@override String connectionsConfigured({required Object count}) => 'แหล่งที่เชื่อมต่อ: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG ปลดล็อกการตั้งค่าสตรีมที่บันทึกไว้ไม่ได้ ปลดล็อกอุปกรณ์แล้วลองอีกครั้งก่อนเปลี่ยนการเชื่อมต่อ';
+	@override String get settingsUnreadable => 'PlezyNG ปลดล็อกการเชื่อมต่อที่บันทึกไว้เหล่านี้ไม่ได้ ล้างรายการเพื่อเชื่อมต่อบริการอีกครั้ง';
+	@override String get clearUnreadableSettings => 'ล้างการตั้งค่าที่บันทึกไว้';
+	@override String get clearUnreadableSettingsConfirm => 'ล้างการตั้งค่าสตรีมที่บันทึกไว้หรือไม่';
+	@override String get clearUnreadableSettingsBody => 'การดำเนินการนี้จะลบบัญชีผู้ให้บริการและที่อยู่ส่วนเสริมที่บันทึกไว้ทั้งหมดออกจากโปรไฟล์นี้ และย้อนกลับไม่ได้';
+	@override String get clearUnreadableSettingsFailed => 'ล้างการตั้งค่าสตรีมที่บันทึกไว้ไม่ได้ ปลดล็อกอุปกรณ์แล้วลองอีกครั้ง';
+	@override String get retrySettingsLoad => 'ลองโหลดการเชื่อมต่ออีกครั้ง';
+	@override String get addons => 'ส่วนเสริมที่เข้ากันได้กับ Stremio';
+	@override String get addonsDescription => 'นำเข้าส่วนเสริมจาก Stremio หรือเชื่อมต่อด้วย URL ของ manifest เรียกดูแค็ตตาล็อกในสำรวจ แล้วเปิดตัวเลือกสตรีมจากหน้าภาพยนตร์หรือตอน';
+	@override String get catalogLoadFailed => 'โหลดแค็ตตาล็อกนี้ไม่ได้ รีเฟรชแล้วลองอีกครั้ง';
+	@override String get catalogFiltersRequired => 'เลือกตัวกรองที่จำเป็นเพื่อเรียกดูแค็ตตาล็อกนี้';
+	@override String get catalogRequiredLabel => 'จำเป็น';
+	@override String get importFromStremio => 'นำเข้าจาก Stremio';
+	@override String get stremioImportInstructions => 'สแกนคิวอาร์โค้ดหรือเปิดลิงก์ ลงชื่อเข้าใช้ Stremio แล้วอนุมัติคำขอ PlezyNG อ่านเฉพาะรายชื่อส่วนเสริม และจะไม่ขอรหัสผ่าน Stremio หรือเปลี่ยนการตั้งค่า';
+	@override String get stremioImportOpen => 'เปิดลิงก์ Stremio';
+	@override String get stremioImportCode => 'รหัสเชื่อมโยง';
+	@override String get stremioImportPreviewTitle => 'เลือกส่วนเสริม';
+	@override String get stremioImportPreviewBody => 'เลือกส่วนเสริมที่ต้องการเชื่อมต่อกับ PlezyNG การนำเข้านี้ยอมรับเฉพาะที่อยู่ HTTPS';
+	@override String stremioImportIgnored({required Object count}) => 'ข้ามส่วนเสริมเนื่องจากที่อยู่ไม่รองรับหรือไม่ปลอดภัย: ${count}';
+	@override String get stremioCatalogs => 'แค็ตตาล็อก';
+	@override String get stremioStreams => 'สตรีม';
+	@override String stremioImportAddSelected({required Object count}) => 'เพิ่มรายการที่เลือก (${count})';
+	@override String stremioImportAdded({required Object count}) => 'เชื่อมต่อส่วนเสริมจาก Stremio แล้ว: ${count}';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'เชื่อมต่อส่วนเสริมแล้ว: ${added}; เชื่อมต่อไม่สำเร็จ: ${failed}';
+	@override String get stremioImportFailed => 'นำเข้าส่วนเสริมจาก Stremio ไม่ได้ ลองอีกครั้ง';
+	@override String get stremioImportTimedOut => 'การอนุมัติ Stremio หมดเวลา เริ่มนำเข้าใหม่';
+	@override String get stremioImportEmpty => 'ไม่พบส่วนเสริมใหม่ที่เข้ากันได้ในบัญชี Stremio นี้';
+	@override String get stremioImportLimitReached => 'นำส่วนเสริมออกก่อนจึงจะนำเข้าเพิ่มได้';
+	@override String get addByManifestUrl => 'เพิ่มด้วย URL ของ manifest';
+	@override String get addAddon => 'เพิ่มส่วนเสริม';
+	@override String get manifestUrl => 'URL ของ manifest ส่วนเสริม';
+	@override String get manifestUrlHint => 'วาง URL ของ manifest ส่วนเสริม PlezyNG จะตรวจสอบว่ารองรับแค็ตตาล็อกหรือทรัพยากรสตรีมหรือไม่ก่อนเชื่อมต่อ';
+	@override String get allowHttp => 'อนุญาตที่อยู่ HTTP ที่ไม่มีการเข้ารหัส';
+	@override String get allowHttpDescription => 'ใช้กับส่วนเสริมที่เชื่อถือได้ในเครือข่ายส่วนตัวเท่านั้น';
+	@override String get installAddon => 'เชื่อมต่อส่วนเสริม';
+	@override String get addonInstalled => 'เชื่อมต่อส่วนเสริมแล้ว';
+	@override String get addonRemoved => 'นำส่วนเสริมออกแล้ว';
+	@override String get addonToggle => 'เปิดใช้ส่วนเสริม';
+	@override String get addonEmpty => 'ยังไม่มีส่วนเสริมที่เชื่อมต่อ';
+	@override String get addonError => 'PlezyNG เชื่อมต่อส่วนเสริมนี้ไม่ได้ ตรวจสอบ URL ของ manifest แล้วลองอีกครั้ง';
+	@override String get addonPrivacy => 'เชื่อมต่อเฉพาะส่วนเสริมที่เชื่อถือได้ เมื่อค้นหา ส่วนเสริมจะได้รับชื่อเรื่องที่ค้นหาและอาจส่งลิงก์สตรีมจากบุคคลที่สามกลับมา';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'เล่นสตรีมทอร์เรนต์ที่รองรับผ่านบัญชี Real-Debrid';
+	@override String get connectRealDebrid => 'เชื่อมต่อด้วยคิวอาร์โค้ด';
+	@override String get disconnectRealDebrid => 'ยกเลิกการเชื่อมต่อ Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'เชื่อมต่อเป็น ${username}';
+	@override String get realDebridInstructions => 'สแกนคิวอาร์โค้ดหรือเปิดลิงก์ จากนั้นป้อนรหัสเปิดใช้งานนี้เพื่อเชื่อมต่อ PlezyNG:';
+	@override String get realDebridActivate => 'เปิด Real-Debrid เพื่อเปิดใช้งาน';
+	@override String get realDebridCode => 'รหัสเปิดใช้งาน';
+	@override String get realDebridConnectFailed => 'เชื่อมต่อ Real-Debrid ไม่ได้ ลองอีกครั้ง';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'เล่นสตรีมทอร์เรนต์ที่รองรับผ่านบัญชี AllDebrid';
+	@override String get connectAllDebrid => 'เชื่อมต่อด้วยคิวอาร์โค้ด';
+	@override String get allDebridInstructions => 'สแกนคิวอาร์โค้ดหรือเปิดลิงก์เพื่ออนุญาต PlezyNG เปิดหน้าจอนี้ไว้ระหว่างเชื่อมต่อ:';
+	@override String get allDebridActivate => 'เปิด AllDebrid เพื่อเปิดใช้งาน';
+	@override String get allDebridCode => 'PIN เปิดใช้งาน';
+	@override String get allDebridConnectFailed => 'เชื่อมต่อ AllDebrid ไม่ได้ ลองอีกครั้ง';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'เล่นสตรีมทอร์เรนต์ที่แคชไว้หรือเรียกดูไฟล์ผ่าน Premiumize';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'เล่นสตรีมทอร์เรนต์ที่แคชไว้หรือเรียกดูไฟล์ผ่าน TorBox';
+	@override String get connectApiKey => 'เชื่อมต่อด้วย API key';
+	@override String apiKeyTitle({required Object service}) => 'เชื่อมต่อ ${service}';
+	@override String get apiKey => 'API key';
+	@override String apiKeyHint({required Object service}) => 'วาง API key จากการตั้งค่าบัญชี ${service} PlezyNG จะเข้ารหัสไว้ในอุปกรณ์นี้และบันทึกไว้ในโปรไฟล์นี้';
+	@override String get apiKeyConnectFailed => 'ยืนยัน API key นี้ไม่ได้ ตรวจสอบแล้วลองอีกครั้ง';
+	@override String accountConnected({required Object username}) => 'เชื่อมต่อเป็น ${username}';
+	@override String get streamNeedsProvider => 'เชื่อมต่อบริการ Debrid เพื่อเล่นสตรีมทอร์เรนต์นี้';
+	@override String get playViaProvider => 'เล่นผ่าน Debrid';
+	@override String disconnectConfirm({required Object service}) => 'ยกเลิกการเชื่อมต่อ ${service} หรือไม่';
+	@override String get disconnectBody => 'PlezyNG จะนำสิทธิ์ของอุปกรณ์นี้ออก ไฟล์ของผู้ให้บริการและการโอนที่กำลังดำเนินอยู่จะไม่เปลี่ยนแปลง';
+	@override String get streamsTitle => 'เลือกสตรีม';
+	@override String get searchingStreams => 'กำลังตรวจสอบส่วนเสริมที่เชื่อมต่อ…';
+	@override String get noStreams => 'ไม่พบสตรีมสำหรับเรื่องนี้';
+	@override String get manageConnections => 'จัดการบริการสตรีม';
+	@override String subtitleTracks({required Object count}) => 'แทร็กคำบรรยาย: ${count}';
+	@override String get chooseSubtitle => 'เลือกคำบรรยาย';
+	@override String get chooseProvider => 'เลือกบริการ Debrid';
+	@override String get subtitleOff => 'ปิดคำบรรยาย';
+	@override String get subtitleLoadFailed => 'โหลดคำบรรยายนี้ไม่ได้ ลองแทร็กอื่น';
+	@override String get subtitleApplied => 'เลือกคำบรรยายสำหรับการเล่นแล้ว';
+	@override String get streamLookupPartial => 'เข้าถึงส่วนเสริมบางรายการไม่ได้';
+	@override String get streamLookupFailed => 'ตรวจสอบส่วนเสริมที่เชื่อมต่อไม่ได้';
+	@override String get streamOpenExternal => 'เปิดลิงก์ภายนอก';
+	@override String get streamPrepare => 'กำลังเตรียมผ่านบริการ Debrid…';
+	@override String get streamPrepareFailed => 'เตรียมสตรีมนี้ไม่ได้ ตรวจสอบบัญชีที่เชื่อมต่อแล้วลองแหล่งอื่น';
+	@override String get streamNeedsRealDebrid => 'เชื่อมต่อบริการ Debrid เพื่อเล่นสตรีมทอร์เรนต์นี้';
+	@override String get streamUnsupported => 'เครื่องเล่นในแอปไม่รองรับรูปแบบสตรีมนี้';
+	@override String get remoteNeedsEpisode => 'เลือกตอนก่อนค้นหาสตรีม';
+	@override String get remoteNeedsEpisodeNumber => 'ตอนนี้ไม่มีหมายเลขซีซันหรือตอน';
+	@override String get remoteNeedsExternalId => 'PlezyNG ไม่พบ ID ของ IMDb หรือ TMDB สำหรับเรื่องนี้';
+	@override String get watchWithServices => 'รับชมด้วยบริการที่เชื่อมต่อ';
+	@override String get chooseEpisode => 'เลือกตอน';
+	@override String get episodes => 'ตอน';
+	@override String episodePosition({required Object season, required Object episode}) => 'ซีซัน ${season} ตอนที่ ${episode}';
+	@override String get episodeStreamHint => 'เปิดสตรีมที่พร้อมใช้งานสำหรับตอนนี้';
+	@override String get cloudFiles => 'ไฟล์บนคลาวด์';
+	@override String get browseCloud => 'เรียกดูไฟล์';
+	@override String get cloudEmpty => 'ไม่พบไฟล์วิดีโอที่เล่นได้ในบัญชีนี้';
+	@override String get cloudLoadFailed => 'โหลดไฟล์บนคลาวด์ไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
+	@override String get providers => 'ผู้ให้บริการ Debrid';
 }
 
 // Path: addServer
@@ -7613,6 +7727,110 @@ extension on TranslationsTh {
 			'services.trackerDescriptions.anilist' => 'ซิงค์รายการอนิเมะและความคืบหน้าในการรับชมกับ AniList',
 			'services.trackerDescriptions.simkl' => 'Sync ดูภาพยนตร์, แสดงทีวีและ anime กับ Simkl.',
 			'services.trackerDescriptions.mdblist' => 'แสดงคะแนน MDBList และรายการในคําแนะนําและสํารวจ',
+			'streaming.title' => 'สตรีมจากคลาวด์และส่วนเสริม',
+			'streaming.subtitle' => 'เชื่อมต่อบัญชี Debrid เพื่อเรียกดูไฟล์ในคลาวด์และเล่นสตรีมที่รองรับ ส่วนเสริมที่เข้ากันได้กับ Stremio จะแสดงตัวเลือกสตรีมในหน้าภาพยนตร์และตอน ข้อมูลการเชื่อมต่อจะเข้ารหัสในอุปกรณ์นี้และบันทึกไว้ในโปรไฟล์นี้',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'แหล่งที่เชื่อมต่อ: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG ปลดล็อกการตั้งค่าสตรีมที่บันทึกไว้ไม่ได้ ปลดล็อกอุปกรณ์แล้วลองอีกครั้งก่อนเปลี่ยนการเชื่อมต่อ',
+			'streaming.settingsUnreadable' => 'PlezyNG ปลดล็อกการเชื่อมต่อที่บันทึกไว้เหล่านี้ไม่ได้ ล้างรายการเพื่อเชื่อมต่อบริการอีกครั้ง',
+			'streaming.clearUnreadableSettings' => 'ล้างการตั้งค่าที่บันทึกไว้',
+			'streaming.clearUnreadableSettingsConfirm' => 'ล้างการตั้งค่าสตรีมที่บันทึกไว้หรือไม่',
+			'streaming.clearUnreadableSettingsBody' => 'การดำเนินการนี้จะลบบัญชีผู้ให้บริการและที่อยู่ส่วนเสริมที่บันทึกไว้ทั้งหมดออกจากโปรไฟล์นี้ และย้อนกลับไม่ได้',
+			'streaming.clearUnreadableSettingsFailed' => 'ล้างการตั้งค่าสตรีมที่บันทึกไว้ไม่ได้ ปลดล็อกอุปกรณ์แล้วลองอีกครั้ง',
+			'streaming.retrySettingsLoad' => 'ลองโหลดการเชื่อมต่ออีกครั้ง',
+			'streaming.addons' => 'ส่วนเสริมที่เข้ากันได้กับ Stremio',
+			'streaming.addonsDescription' => 'นำเข้าส่วนเสริมจาก Stremio หรือเชื่อมต่อด้วย URL ของ manifest เรียกดูแค็ตตาล็อกในสำรวจ แล้วเปิดตัวเลือกสตรีมจากหน้าภาพยนตร์หรือตอน',
+			'streaming.catalogLoadFailed' => 'โหลดแค็ตตาล็อกนี้ไม่ได้ รีเฟรชแล้วลองอีกครั้ง',
+			'streaming.catalogFiltersRequired' => 'เลือกตัวกรองที่จำเป็นเพื่อเรียกดูแค็ตตาล็อกนี้',
+			'streaming.catalogRequiredLabel' => 'จำเป็น',
+			'streaming.importFromStremio' => 'นำเข้าจาก Stremio',
+			'streaming.stremioImportInstructions' => 'สแกนคิวอาร์โค้ดหรือเปิดลิงก์ ลงชื่อเข้าใช้ Stremio แล้วอนุมัติคำขอ PlezyNG อ่านเฉพาะรายชื่อส่วนเสริม และจะไม่ขอรหัสผ่าน Stremio หรือเปลี่ยนการตั้งค่า',
+			'streaming.stremioImportOpen' => 'เปิดลิงก์ Stremio',
+			'streaming.stremioImportCode' => 'รหัสเชื่อมโยง',
+			'streaming.stremioImportPreviewTitle' => 'เลือกส่วนเสริม',
+			'streaming.stremioImportPreviewBody' => 'เลือกส่วนเสริมที่ต้องการเชื่อมต่อกับ PlezyNG การนำเข้านี้ยอมรับเฉพาะที่อยู่ HTTPS',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'ข้ามส่วนเสริมเนื่องจากที่อยู่ไม่รองรับหรือไม่ปลอดภัย: ${count}',
+			'streaming.stremioCatalogs' => 'แค็ตตาล็อก',
+			'streaming.stremioStreams' => 'สตรีม',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'เพิ่มรายการที่เลือก (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'เชื่อมต่อส่วนเสริมจาก Stremio แล้ว: ${count}',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'เชื่อมต่อส่วนเสริมแล้ว: ${added}; เชื่อมต่อไม่สำเร็จ: ${failed}',
+			'streaming.stremioImportFailed' => 'นำเข้าส่วนเสริมจาก Stremio ไม่ได้ ลองอีกครั้ง',
+			'streaming.stremioImportTimedOut' => 'การอนุมัติ Stremio หมดเวลา เริ่มนำเข้าใหม่',
+			'streaming.stremioImportEmpty' => 'ไม่พบส่วนเสริมใหม่ที่เข้ากันได้ในบัญชี Stremio นี้',
+			'streaming.stremioImportLimitReached' => 'นำส่วนเสริมออกก่อนจึงจะนำเข้าเพิ่มได้',
+			'streaming.addByManifestUrl' => 'เพิ่มด้วย URL ของ manifest',
+			'streaming.addAddon' => 'เพิ่มส่วนเสริม',
+			'streaming.manifestUrl' => 'URL ของ manifest ส่วนเสริม',
+			'streaming.manifestUrlHint' => 'วาง URL ของ manifest ส่วนเสริม PlezyNG จะตรวจสอบว่ารองรับแค็ตตาล็อกหรือทรัพยากรสตรีมหรือไม่ก่อนเชื่อมต่อ',
+			'streaming.allowHttp' => 'อนุญาตที่อยู่ HTTP ที่ไม่มีการเข้ารหัส',
+			'streaming.allowHttpDescription' => 'ใช้กับส่วนเสริมที่เชื่อถือได้ในเครือข่ายส่วนตัวเท่านั้น',
+			'streaming.installAddon' => 'เชื่อมต่อส่วนเสริม',
+			'streaming.addonInstalled' => 'เชื่อมต่อส่วนเสริมแล้ว',
+			'streaming.addonRemoved' => 'นำส่วนเสริมออกแล้ว',
+			'streaming.addonToggle' => 'เปิดใช้ส่วนเสริม',
+			'streaming.addonEmpty' => 'ยังไม่มีส่วนเสริมที่เชื่อมต่อ',
+			'streaming.addonError' => 'PlezyNG เชื่อมต่อส่วนเสริมนี้ไม่ได้ ตรวจสอบ URL ของ manifest แล้วลองอีกครั้ง',
+			'streaming.addonPrivacy' => 'เชื่อมต่อเฉพาะส่วนเสริมที่เชื่อถือได้ เมื่อค้นหา ส่วนเสริมจะได้รับชื่อเรื่องที่ค้นหาและอาจส่งลิงก์สตรีมจากบุคคลที่สามกลับมา',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'เล่นสตรีมทอร์เรนต์ที่รองรับผ่านบัญชี Real-Debrid',
+			'streaming.connectRealDebrid' => 'เชื่อมต่อด้วยคิวอาร์โค้ด',
+			'streaming.disconnectRealDebrid' => 'ยกเลิกการเชื่อมต่อ Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'เชื่อมต่อเป็น ${username}',
+			'streaming.realDebridInstructions' => 'สแกนคิวอาร์โค้ดหรือเปิดลิงก์ จากนั้นป้อนรหัสเปิดใช้งานนี้เพื่อเชื่อมต่อ PlezyNG:',
+			'streaming.realDebridActivate' => 'เปิด Real-Debrid เพื่อเปิดใช้งาน',
+			'streaming.realDebridCode' => 'รหัสเปิดใช้งาน',
+			'streaming.realDebridConnectFailed' => 'เชื่อมต่อ Real-Debrid ไม่ได้ ลองอีกครั้ง',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'เล่นสตรีมทอร์เรนต์ที่รองรับผ่านบัญชี AllDebrid',
+			'streaming.connectAllDebrid' => 'เชื่อมต่อด้วยคิวอาร์โค้ด',
+			'streaming.allDebridInstructions' => 'สแกนคิวอาร์โค้ดหรือเปิดลิงก์เพื่ออนุญาต PlezyNG เปิดหน้าจอนี้ไว้ระหว่างเชื่อมต่อ:',
+			'streaming.allDebridActivate' => 'เปิด AllDebrid เพื่อเปิดใช้งาน',
+			'streaming.allDebridCode' => 'PIN เปิดใช้งาน',
+			'streaming.allDebridConnectFailed' => 'เชื่อมต่อ AllDebrid ไม่ได้ ลองอีกครั้ง',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'เล่นสตรีมทอร์เรนต์ที่แคชไว้หรือเรียกดูไฟล์ผ่าน Premiumize',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'เล่นสตรีมทอร์เรนต์ที่แคชไว้หรือเรียกดูไฟล์ผ่าน TorBox',
+			'streaming.connectApiKey' => 'เชื่อมต่อด้วย API key',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'เชื่อมต่อ ${service}',
+			'streaming.apiKey' => 'API key',
+			'streaming.apiKeyHint' => ({required Object service}) => 'วาง API key จากการตั้งค่าบัญชี ${service} PlezyNG จะเข้ารหัสไว้ในอุปกรณ์นี้และบันทึกไว้ในโปรไฟล์นี้',
+			'streaming.apiKeyConnectFailed' => 'ยืนยัน API key นี้ไม่ได้ ตรวจสอบแล้วลองอีกครั้ง',
+			'streaming.accountConnected' => ({required Object username}) => 'เชื่อมต่อเป็น ${username}',
+			'streaming.streamNeedsProvider' => 'เชื่อมต่อบริการ Debrid เพื่อเล่นสตรีมทอร์เรนต์นี้',
+			'streaming.playViaProvider' => 'เล่นผ่าน Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'ยกเลิกการเชื่อมต่อ ${service} หรือไม่',
+			'streaming.disconnectBody' => 'PlezyNG จะนำสิทธิ์ของอุปกรณ์นี้ออก ไฟล์ของผู้ให้บริการและการโอนที่กำลังดำเนินอยู่จะไม่เปลี่ยนแปลง',
+			'streaming.streamsTitle' => 'เลือกสตรีม',
+			'streaming.searchingStreams' => 'กำลังตรวจสอบส่วนเสริมที่เชื่อมต่อ…',
+			'streaming.noStreams' => 'ไม่พบสตรีมสำหรับเรื่องนี้',
+			'streaming.manageConnections' => 'จัดการบริการสตรีม',
+			'streaming.subtitleTracks' => ({required Object count}) => 'แทร็กคำบรรยาย: ${count}',
+			'streaming.chooseSubtitle' => 'เลือกคำบรรยาย',
+			'streaming.chooseProvider' => 'เลือกบริการ Debrid',
+			'streaming.subtitleOff' => 'ปิดคำบรรยาย',
+			'streaming.subtitleLoadFailed' => 'โหลดคำบรรยายนี้ไม่ได้ ลองแทร็กอื่น',
+			'streaming.subtitleApplied' => 'เลือกคำบรรยายสำหรับการเล่นแล้ว',
+			'streaming.streamLookupPartial' => 'เข้าถึงส่วนเสริมบางรายการไม่ได้',
+			'streaming.streamLookupFailed' => 'ตรวจสอบส่วนเสริมที่เชื่อมต่อไม่ได้',
+			'streaming.streamOpenExternal' => 'เปิดลิงก์ภายนอก',
+			'streaming.streamPrepare' => 'กำลังเตรียมผ่านบริการ Debrid…',
+			'streaming.streamPrepareFailed' => 'เตรียมสตรีมนี้ไม่ได้ ตรวจสอบบัญชีที่เชื่อมต่อแล้วลองแหล่งอื่น',
+			'streaming.streamNeedsRealDebrid' => 'เชื่อมต่อบริการ Debrid เพื่อเล่นสตรีมทอร์เรนต์นี้',
+			'streaming.streamUnsupported' => 'เครื่องเล่นในแอปไม่รองรับรูปแบบสตรีมนี้',
+			'streaming.remoteNeedsEpisode' => 'เลือกตอนก่อนค้นหาสตรีม',
+			'streaming.remoteNeedsEpisodeNumber' => 'ตอนนี้ไม่มีหมายเลขซีซันหรือตอน',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG ไม่พบ ID ของ IMDb หรือ TMDB สำหรับเรื่องนี้',
+			'streaming.watchWithServices' => 'รับชมด้วยบริการที่เชื่อมต่อ',
+			'streaming.chooseEpisode' => 'เลือกตอน',
+			'streaming.episodes' => 'ตอน',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'ซีซัน ${season} ตอนที่ ${episode}',
+			'streaming.episodeStreamHint' => 'เปิดสตรีมที่พร้อมใช้งานสำหรับตอนนี้',
+			'streaming.cloudFiles' => 'ไฟล์บนคลาวด์',
+			'streaming.browseCloud' => 'เรียกดูไฟล์',
+			'streaming.cloudEmpty' => 'ไม่พบไฟล์วิดีโอที่เล่นได้ในบัญชีนี้',
+			'streaming.cloudLoadFailed' => 'โหลดไฟล์บนคลาวด์ไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง',
+			'streaming.providers' => 'ผู้ให้บริการ Debrid',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'เพิ่มเซิร์ฟเวอร์ ${product}',
 			'addServer.serverUrls' => 'URL ของเซิร์ฟเวอร์',
 			'addServer.serverUrlsHelper' => 'URL จํานวนมากที่ได้รับอนุญาตแยกโดย commas',
@@ -7891,6 +8109,8 @@ extension on TranslationsTh {
 			'universalMedia.contrast' => 'ความต้านทาน',
 			'universalMedia.gamma' => 'กรม',
 			'universalMedia.hue' => 'กุหลาบ',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'ตุ๊กตา',
 			'universalMedia.view360' => 'แสดงแบนสําหรับวิดีโอ 360 องศา',
 			'universalMedia.view360Help' => 'ใช้นี้สําหรับวิดีโอ 360 องศาแบบสี่เหลี่ยม MPV ต้องกรอง v360 ของ FFmpeg สําหรับภาพนี้',
@@ -7995,8 +8215,6 @@ extension on TranslationsTh {
 			'universalMedia.extensionInstallTitle' => 'เพิ่มบริการค้นหานี้หรือไม่',
 			'universalMedia.extensionReplaceTitle' => 'ปรับปรุงบริการค้นหานี้',
 			'universalMedia.extensionService' => 'บริการ',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS จุดสิ้นสุด',
 			'universalMedia.extensionConsent' => 'ข้อความค้นหาของคุณจะถูกส่งไปยังบริการนี้ แสดงไม่มีรหัสที่สามารถดําเนินการได้ โปรดดําเนินการต่อไปถ้าคุณเชื่อมั่นในจุดสิ้นสุดนี้',
 			'universalMedia.extensionInstall' => 'เพิ่มบริการ',
@@ -8405,6 +8623,8 @@ extension on TranslationsTh {
 			'sourceSetup.sharedLibraryInvalid' => 'ใช้ 8 ถึง 100 หมายเลขจุด subscores หรือ hyphens',
 			'sourceSetup.generateSharedLibraryId' => 'สร้าง ID ห้องสมุดที่แบ่งปัน',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead คําขอ',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'อ่านแบบคล้ายมากขึ้นสามารถปรับปรุงการผ่านทางบน NAS หรือเครือข่ายที่รวดเร็ว ใช้ 1 หากเซิร์ฟเวอร์ จํากัด คําขอในปัจจุบัน',
 			'sourceSetup.nfsReadTest' => 'การวัดประสิทธิภาพการอ่าน NFS',
 			'sourceSetup.nfsReadTestHelp' => 'อ่านได้ถึง 64 MiB จากไฟล์ที่ใหญ่ที่สุดเพื่อวัดการเชื่อมต่อ NAS นี้ใช้แบนด์วิดท์เครือข่าย',
@@ -8509,8 +8729,6 @@ extension on TranslationsTh {
 			'deepLinks.noLiveTv' => 'ไม่มีเซิร์ฟเวอร์ทีวีสดที่มีอยู่สําหรับลิงค์นี้',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'ไม่สามารถหาช่อง "${channel}"',
 			'deepLinks.showLink' => 'แสดงลิงค์',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'แสดงโปรไฟล์ลิงค์',
 			'deepLinks.dialogTitle' => 'เชื่อมโยง',
 			'deepLinks.showHint' => 'การเปิดลิงก์นี้จะเล่นส่วนต่อไป เพิ่ม &mode=shuffle เพื่อเล่นการแสดงบน shuffle',

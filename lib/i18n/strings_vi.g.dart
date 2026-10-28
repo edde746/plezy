@@ -92,6 +92,7 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$vi trakt = _Translations$trakt$vi._(_root);
 	@override late final _Translations$seerr$vi seerr = _Translations$seerr$vi._(_root);
 	@override late final _Translations$services$vi services = _Translations$services$vi._(_root);
+	@override late final _Translations$streaming$vi streaming = _Translations$streaming$vi._(_root);
 	@override late final _Translations$addServer$vi addServer = _Translations$addServer$vi._(_root);
 	@override late final _Translations$cast$vi cast = _Translations$cast$vi._(_root);
 	@override late final _Translations$automation$vi automation = _Translations$automation$vi._(_root);
@@ -2736,6 +2737,119 @@ class _Translations$services$vi extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$vi libraryFilter = _Translations$services$libraryFilter$vi._(_root);
 	@override String get seerrDescription => 'Kết nối với Seerr hoặc Overseerr để tìm kiếm tiêu đề và gửi yêu cầu phương tiện truyền thông.';
 	@override late final _Translations$services$trackerDescriptions$vi trackerDescriptions = _Translations$services$trackerDescriptions$vi._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$vi extends Translations$streaming$en {
+	_Translations$streaming$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Phát trực tuyến từ đám mây và tiện ích';
+	@override String get subtitle => 'Kết nối tài khoản Debrid để duyệt tệp trên đám mây và phát các luồng được hỗ trợ. Tiện ích tương thích với Stremio cung cấp lựa chọn phát trên trang phim và tập. Thông tin kết nối được mã hóa trên thiết bị này và lưu trong hồ sơ này.';
+	@override String connectionsConfigured({required Object count}) => 'Nguồn đã kết nối: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG không thể mở khóa cài đặt phát trực tuyến đã lưu. Hãy mở khóa thiết bị rồi thử lại trước khi thay đổi kết nối.';
+	@override String get settingsUnreadable => 'PlezyNG không thể mở khóa các kết nối đã lưu này. Hãy xóa chúng để kết nối lại dịch vụ.';
+	@override String get clearUnreadableSettings => 'Xóa cài đặt đã lưu';
+	@override String get clearUnreadableSettingsConfirm => 'Xóa cài đặt phát trực tuyến đã lưu?';
+	@override String get clearUnreadableSettingsBody => 'Thao tác này xóa mọi tài khoản nhà cung cấp và địa chỉ tiện ích đã lưu khỏi hồ sơ này. Không thể hoàn tác.';
+	@override String get clearUnreadableSettingsFailed => 'Không thể xóa cài đặt phát trực tuyến đã lưu. Hãy mở khóa thiết bị rồi thử lại.';
+	@override String get retrySettingsLoad => 'Tải lại kết nối';
+	@override String get addons => 'Tiện ích tương thích với Stremio';
+	@override String get addonsDescription => 'Nhập tiện ích từ Stremio hoặc kết nối bằng URL manifest. Duyệt danh mục trong Khám phá và mở lựa chọn phát từ trang phim hoặc tập.';
+	@override String get catalogLoadFailed => 'Không thể tải danh mục này. Hãy làm mới rồi thử lại.';
+	@override String get catalogFiltersRequired => 'Chọn bộ lọc bắt buộc để duyệt danh mục này.';
+	@override String get catalogRequiredLabel => 'Bắt buộc';
+	@override String get importFromStremio => 'Nhập từ Stremio';
+	@override String get stremioImportInstructions => 'Quét mã QR hoặc mở liên kết. Đăng nhập Stremio và chấp thuận yêu cầu. PlezyNG chỉ đọc danh sách tiện ích; ứng dụng không yêu cầu mật khẩu Stremio hay thay đổi cài đặt của bạn.';
+	@override String get stremioImportOpen => 'Mở liên kết Stremio';
+	@override String get stremioImportCode => 'Mã liên kết';
+	@override String get stremioImportPreviewTitle => 'Chọn tiện ích';
+	@override String get stremioImportPreviewBody => 'Chọn tiện ích bạn muốn kết nối với PlezyNG. Chỉ có thể nhập địa chỉ HTTPS.';
+	@override String stremioImportIgnored({required Object count}) => 'Đã bỏ qua tiện ích do địa chỉ không được hỗ trợ hoặc không an toàn: ${count}.';
+	@override String get stremioCatalogs => 'Danh mục';
+	@override String get stremioStreams => 'Luồng';
+	@override String stremioImportAddSelected({required Object count}) => 'Thêm mục đã chọn (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Tiện ích đã kết nối từ Stremio: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Đã kết nối tiện ích: ${added}; không thể kết nối: ${failed}.';
+	@override String get stremioImportFailed => 'Không thể nhập tiện ích từ Stremio. Hãy thử lại.';
+	@override String get stremioImportTimedOut => 'Yêu cầu chấp thuận Stremio đã hết hạn. Hãy bắt đầu nhập lại.';
+	@override String get stremioImportEmpty => 'Không tìm thấy tiện ích tương thích mới trong tài khoản Stremio này.';
+	@override String get stremioImportLimitReached => 'Hãy xóa một tiện ích trước khi nhập thêm.';
+	@override String get addByManifestUrl => 'Thêm bằng URL manifest';
+	@override String get addAddon => 'Thêm tiện ích';
+	@override String get manifestUrl => 'URL manifest của tiện ích';
+	@override String get manifestUrlHint => 'Dán URL manifest của tiện ích. PlezyNG sẽ kiểm tra hỗ trợ danh mục hoặc tài nguyên luồng trước khi kết nối.';
+	@override String get allowHttp => 'Cho phép địa chỉ HTTP không mã hóa';
+	@override String get allowHttpDescription => 'Chỉ dùng với tiện ích đáng tin cậy trên mạng riêng của bạn.';
+	@override String get installAddon => 'Kết nối tiện ích';
+	@override String get addonInstalled => 'Đã kết nối tiện ích';
+	@override String get addonRemoved => 'Đã xóa tiện ích';
+	@override String get addonToggle => 'Bật tiện ích';
+	@override String get addonEmpty => 'Chưa có tiện ích nào được kết nối';
+	@override String get addonError => 'PlezyNG không thể kết nối tiện ích này. Hãy kiểm tra URL manifest rồi thử lại.';
+	@override String get addonPrivacy => 'Chỉ kết nối tiện ích bạn tin cậy. Khi tìm kiếm, tiện ích nhận tiêu đề bạn muốn tìm và có thể trả về liên kết luồng của bên thứ ba.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Phát các luồng torrent được hỗ trợ qua tài khoản Real-Debrid.';
+	@override String get connectRealDebrid => 'Kết nối bằng mã QR';
+	@override String get disconnectRealDebrid => 'Ngắt kết nối Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'Đã kết nối với tên ${username}';
+	@override String get realDebridInstructions => 'Quét mã QR hoặc mở liên kết, rồi nhập mã kích hoạt này để kết nối PlezyNG:';
+	@override String get realDebridActivate => 'Mở Real-Debrid để kích hoạt';
+	@override String get realDebridCode => 'Mã kích hoạt';
+	@override String get realDebridConnectFailed => 'Không thể kết nối Real-Debrid. Hãy thử lại.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Phát các luồng torrent được hỗ trợ qua tài khoản AllDebrid.';
+	@override String get connectAllDebrid => 'Kết nối bằng mã QR';
+	@override String get allDebridInstructions => 'Quét mã QR hoặc mở liên kết để cấp quyền cho PlezyNG. Giữ màn hình này mở trong khi kết nối:';
+	@override String get allDebridActivate => 'Mở AllDebrid để kích hoạt';
+	@override String get allDebridCode => 'Mã PIN kích hoạt';
+	@override String get allDebridConnectFailed => 'Không thể kết nối AllDebrid. Hãy thử lại.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Phát luồng torrent đã lưu bộ nhớ đệm hoặc duyệt tệp qua Premiumize.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Phát luồng torrent đã lưu bộ nhớ đệm hoặc duyệt tệp qua TorBox.';
+	@override String get connectApiKey => 'Kết nối bằng khóa API';
+	@override String apiKeyTitle({required Object service}) => 'Kết nối ${service}';
+	@override String get apiKey => 'Khóa API';
+	@override String apiKeyHint({required Object service}) => 'Dán khóa API từ cài đặt tài khoản ${service}. PlezyNG mã hóa khóa trên thiết bị này và lưu vào hồ sơ này.';
+	@override String get apiKeyConnectFailed => 'Không thể xác minh khóa API này. Hãy kiểm tra rồi thử lại.';
+	@override String accountConnected({required Object username}) => 'Đã kết nối với tên ${username}';
+	@override String get streamNeedsProvider => 'Kết nối dịch vụ Debrid để phát luồng torrent này.';
+	@override String get playViaProvider => 'Phát qua Debrid';
+	@override String disconnectConfirm({required Object service}) => 'Ngắt kết nối ${service}?';
+	@override String get disconnectBody => 'PlezyNG sẽ thu hồi quyền của thiết bị này. Tệp trên dịch vụ và các lần truyền đang diễn ra vẫn được giữ nguyên.';
+	@override String get streamsTitle => 'Chọn luồng';
+	@override String get searchingStreams => 'Đang kiểm tra tiện ích đã kết nối…';
+	@override String get noStreams => 'Không tìm thấy luồng cho tiêu đề này.';
+	@override String get manageConnections => 'Quản lý dịch vụ phát trực tuyến';
+	@override String subtitleTracks({required Object count}) => 'Bản phụ đề: ${count}';
+	@override String get chooseSubtitle => 'Chọn phụ đề';
+	@override String get chooseProvider => 'Chọn dịch vụ Debrid';
+	@override String get subtitleOff => 'Tắt phụ đề';
+	@override String get subtitleLoadFailed => 'Không thể tải phụ đề này. Hãy thử bản phụ đề khác.';
+	@override String get subtitleApplied => 'Đã chọn phụ đề để phát';
+	@override String get streamLookupPartial => 'Không thể truy cập một số tiện ích.';
+	@override String get streamLookupFailed => 'Không thể kiểm tra các tiện ích đã kết nối.';
+	@override String get streamOpenExternal => 'Mở liên kết bên ngoài';
+	@override String get streamPrepare => 'Đang chuẩn bị qua dịch vụ Debrid…';
+	@override String get streamPrepareFailed => 'Không thể chuẩn bị luồng này. Hãy kiểm tra tài khoản đã kết nối và thử nguồn khác.';
+	@override String get streamNeedsRealDebrid => 'Kết nối dịch vụ Debrid để phát luồng torrent này.';
+	@override String get streamUnsupported => 'Trình phát trong ứng dụng không hỗ trợ định dạng luồng này.';
+	@override String get remoteNeedsEpisode => 'Chọn tập trước khi tìm luồng.';
+	@override String get remoteNeedsEpisodeNumber => 'Tập này thiếu số mùa hoặc số tập.';
+	@override String get remoteNeedsExternalId => 'PlezyNG không tìm thấy ID IMDb hoặc TMDB cho tiêu đề này.';
+	@override String get watchWithServices => 'Xem bằng dịch vụ đã kết nối';
+	@override String get chooseEpisode => 'Chọn tập';
+	@override String get episodes => 'Các tập';
+	@override String episodePosition({required Object season, required Object episode}) => 'Mùa ${season}, tập ${episode}';
+	@override String get episodeStreamHint => 'Mở các luồng hiện có cho tập này.';
+	@override String get cloudFiles => 'Tệp trên đám mây';
+	@override String get browseCloud => 'Duyệt tệp';
+	@override String get cloudEmpty => 'Không tìm thấy tệp video có thể phát trong tài khoản này.';
+	@override String get cloudLoadFailed => 'Không thể tải tệp trên đám mây. Hãy kiểm tra kết nối rồi thử lại.';
+	@override String get providers => 'Nhà cung cấp Debrid';
 }
 
 // Path: addServer
@@ -7613,6 +7727,110 @@ extension on TranslationsVi {
 			'services.trackerDescriptions.anilist' => 'Đồng bộ danh sách anime và xem tiến bộ với AniList.',
 			'services.trackerDescriptions.simkl' => 'Sync xem phim, chương trình truyền hình và anime với Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Hiển thị xếp hạng và danh sách MDBList trong khuyến nghị và Khám phá.',
+			'streaming.title' => 'Phát trực tuyến từ đám mây và tiện ích',
+			'streaming.subtitle' => 'Kết nối tài khoản Debrid để duyệt tệp trên đám mây và phát các luồng được hỗ trợ. Tiện ích tương thích với Stremio cung cấp lựa chọn phát trên trang phim và tập. Thông tin kết nối được mã hóa trên thiết bị này và lưu trong hồ sơ này.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Nguồn đã kết nối: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG không thể mở khóa cài đặt phát trực tuyến đã lưu. Hãy mở khóa thiết bị rồi thử lại trước khi thay đổi kết nối.',
+			'streaming.settingsUnreadable' => 'PlezyNG không thể mở khóa các kết nối đã lưu này. Hãy xóa chúng để kết nối lại dịch vụ.',
+			'streaming.clearUnreadableSettings' => 'Xóa cài đặt đã lưu',
+			'streaming.clearUnreadableSettingsConfirm' => 'Xóa cài đặt phát trực tuyến đã lưu?',
+			'streaming.clearUnreadableSettingsBody' => 'Thao tác này xóa mọi tài khoản nhà cung cấp và địa chỉ tiện ích đã lưu khỏi hồ sơ này. Không thể hoàn tác.',
+			'streaming.clearUnreadableSettingsFailed' => 'Không thể xóa cài đặt phát trực tuyến đã lưu. Hãy mở khóa thiết bị rồi thử lại.',
+			'streaming.retrySettingsLoad' => 'Tải lại kết nối',
+			'streaming.addons' => 'Tiện ích tương thích với Stremio',
+			'streaming.addonsDescription' => 'Nhập tiện ích từ Stremio hoặc kết nối bằng URL manifest. Duyệt danh mục trong Khám phá và mở lựa chọn phát từ trang phim hoặc tập.',
+			'streaming.catalogLoadFailed' => 'Không thể tải danh mục này. Hãy làm mới rồi thử lại.',
+			'streaming.catalogFiltersRequired' => 'Chọn bộ lọc bắt buộc để duyệt danh mục này.',
+			'streaming.catalogRequiredLabel' => 'Bắt buộc',
+			'streaming.importFromStremio' => 'Nhập từ Stremio',
+			'streaming.stremioImportInstructions' => 'Quét mã QR hoặc mở liên kết. Đăng nhập Stremio và chấp thuận yêu cầu. PlezyNG chỉ đọc danh sách tiện ích; ứng dụng không yêu cầu mật khẩu Stremio hay thay đổi cài đặt của bạn.',
+			'streaming.stremioImportOpen' => 'Mở liên kết Stremio',
+			'streaming.stremioImportCode' => 'Mã liên kết',
+			'streaming.stremioImportPreviewTitle' => 'Chọn tiện ích',
+			'streaming.stremioImportPreviewBody' => 'Chọn tiện ích bạn muốn kết nối với PlezyNG. Chỉ có thể nhập địa chỉ HTTPS.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Đã bỏ qua tiện ích do địa chỉ không được hỗ trợ hoặc không an toàn: ${count}.',
+			'streaming.stremioCatalogs' => 'Danh mục',
+			'streaming.stremioStreams' => 'Luồng',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Thêm mục đã chọn (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Tiện ích đã kết nối từ Stremio: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Đã kết nối tiện ích: ${added}; không thể kết nối: ${failed}.',
+			'streaming.stremioImportFailed' => 'Không thể nhập tiện ích từ Stremio. Hãy thử lại.',
+			'streaming.stremioImportTimedOut' => 'Yêu cầu chấp thuận Stremio đã hết hạn. Hãy bắt đầu nhập lại.',
+			'streaming.stremioImportEmpty' => 'Không tìm thấy tiện ích tương thích mới trong tài khoản Stremio này.',
+			'streaming.stremioImportLimitReached' => 'Hãy xóa một tiện ích trước khi nhập thêm.',
+			'streaming.addByManifestUrl' => 'Thêm bằng URL manifest',
+			'streaming.addAddon' => 'Thêm tiện ích',
+			'streaming.manifestUrl' => 'URL manifest của tiện ích',
+			'streaming.manifestUrlHint' => 'Dán URL manifest của tiện ích. PlezyNG sẽ kiểm tra hỗ trợ danh mục hoặc tài nguyên luồng trước khi kết nối.',
+			'streaming.allowHttp' => 'Cho phép địa chỉ HTTP không mã hóa',
+			'streaming.allowHttpDescription' => 'Chỉ dùng với tiện ích đáng tin cậy trên mạng riêng của bạn.',
+			'streaming.installAddon' => 'Kết nối tiện ích',
+			'streaming.addonInstalled' => 'Đã kết nối tiện ích',
+			'streaming.addonRemoved' => 'Đã xóa tiện ích',
+			'streaming.addonToggle' => 'Bật tiện ích',
+			'streaming.addonEmpty' => 'Chưa có tiện ích nào được kết nối',
+			'streaming.addonError' => 'PlezyNG không thể kết nối tiện ích này. Hãy kiểm tra URL manifest rồi thử lại.',
+			'streaming.addonPrivacy' => 'Chỉ kết nối tiện ích bạn tin cậy. Khi tìm kiếm, tiện ích nhận tiêu đề bạn muốn tìm và có thể trả về liên kết luồng của bên thứ ba.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Phát các luồng torrent được hỗ trợ qua tài khoản Real-Debrid.',
+			'streaming.connectRealDebrid' => 'Kết nối bằng mã QR',
+			'streaming.disconnectRealDebrid' => 'Ngắt kết nối Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Đã kết nối với tên ${username}',
+			'streaming.realDebridInstructions' => 'Quét mã QR hoặc mở liên kết, rồi nhập mã kích hoạt này để kết nối PlezyNG:',
+			'streaming.realDebridActivate' => 'Mở Real-Debrid để kích hoạt',
+			'streaming.realDebridCode' => 'Mã kích hoạt',
+			'streaming.realDebridConnectFailed' => 'Không thể kết nối Real-Debrid. Hãy thử lại.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Phát các luồng torrent được hỗ trợ qua tài khoản AllDebrid.',
+			'streaming.connectAllDebrid' => 'Kết nối bằng mã QR',
+			'streaming.allDebridInstructions' => 'Quét mã QR hoặc mở liên kết để cấp quyền cho PlezyNG. Giữ màn hình này mở trong khi kết nối:',
+			'streaming.allDebridActivate' => 'Mở AllDebrid để kích hoạt',
+			'streaming.allDebridCode' => 'Mã PIN kích hoạt',
+			'streaming.allDebridConnectFailed' => 'Không thể kết nối AllDebrid. Hãy thử lại.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Phát luồng torrent đã lưu bộ nhớ đệm hoặc duyệt tệp qua Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Phát luồng torrent đã lưu bộ nhớ đệm hoặc duyệt tệp qua TorBox.',
+			'streaming.connectApiKey' => 'Kết nối bằng khóa API',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'Kết nối ${service}',
+			'streaming.apiKey' => 'Khóa API',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Dán khóa API từ cài đặt tài khoản ${service}. PlezyNG mã hóa khóa trên thiết bị này và lưu vào hồ sơ này.',
+			'streaming.apiKeyConnectFailed' => 'Không thể xác minh khóa API này. Hãy kiểm tra rồi thử lại.',
+			'streaming.accountConnected' => ({required Object username}) => 'Đã kết nối với tên ${username}',
+			'streaming.streamNeedsProvider' => 'Kết nối dịch vụ Debrid để phát luồng torrent này.',
+			'streaming.playViaProvider' => 'Phát qua Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'Ngắt kết nối ${service}?',
+			'streaming.disconnectBody' => 'PlezyNG sẽ thu hồi quyền của thiết bị này. Tệp trên dịch vụ và các lần truyền đang diễn ra vẫn được giữ nguyên.',
+			'streaming.streamsTitle' => 'Chọn luồng',
+			'streaming.searchingStreams' => 'Đang kiểm tra tiện ích đã kết nối…',
+			'streaming.noStreams' => 'Không tìm thấy luồng cho tiêu đề này.',
+			'streaming.manageConnections' => 'Quản lý dịch vụ phát trực tuyến',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Bản phụ đề: ${count}',
+			'streaming.chooseSubtitle' => 'Chọn phụ đề',
+			'streaming.chooseProvider' => 'Chọn dịch vụ Debrid',
+			'streaming.subtitleOff' => 'Tắt phụ đề',
+			'streaming.subtitleLoadFailed' => 'Không thể tải phụ đề này. Hãy thử bản phụ đề khác.',
+			'streaming.subtitleApplied' => 'Đã chọn phụ đề để phát',
+			'streaming.streamLookupPartial' => 'Không thể truy cập một số tiện ích.',
+			'streaming.streamLookupFailed' => 'Không thể kiểm tra các tiện ích đã kết nối.',
+			'streaming.streamOpenExternal' => 'Mở liên kết bên ngoài',
+			'streaming.streamPrepare' => 'Đang chuẩn bị qua dịch vụ Debrid…',
+			'streaming.streamPrepareFailed' => 'Không thể chuẩn bị luồng này. Hãy kiểm tra tài khoản đã kết nối và thử nguồn khác.',
+			'streaming.streamNeedsRealDebrid' => 'Kết nối dịch vụ Debrid để phát luồng torrent này.',
+			'streaming.streamUnsupported' => 'Trình phát trong ứng dụng không hỗ trợ định dạng luồng này.',
+			'streaming.remoteNeedsEpisode' => 'Chọn tập trước khi tìm luồng.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Tập này thiếu số mùa hoặc số tập.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG không tìm thấy ID IMDb hoặc TMDB cho tiêu đề này.',
+			'streaming.watchWithServices' => 'Xem bằng dịch vụ đã kết nối',
+			'streaming.chooseEpisode' => 'Chọn tập',
+			'streaming.episodes' => 'Các tập',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Mùa ${season}, tập ${episode}',
+			'streaming.episodeStreamHint' => 'Mở các luồng hiện có cho tập này.',
+			'streaming.cloudFiles' => 'Tệp trên đám mây',
+			'streaming.browseCloud' => 'Duyệt tệp',
+			'streaming.cloudEmpty' => 'Không tìm thấy tệp video có thể phát trong tài khoản này.',
+			'streaming.cloudLoadFailed' => 'Không thể tải tệp trên đám mây. Hãy kiểm tra kết nối rồi thử lại.',
+			'streaming.providers' => 'Nhà cung cấp Debrid',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Thêm máy chủ ${product}',
 			'addServer.serverUrls' => 'Server URL của bạn',
 			'addServer.serverUrlsHelper' => 'Nhiều URL được cho phép, tách biệt bởi commas.',
@@ -7891,6 +8109,8 @@ extension on TranslationsVi {
 			'universalMedia.contrast' => 'Ngược điểm',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturation',
 			'universalMedia.view360' => 'Màn hình 360° video',
 			'universalMedia.view360Help' => 'Sử dụng điều này cho video 360° đồng chiều. MPV cần bộ lọc v360 của FFmpeg để xem.',
@@ -7995,8 +8215,6 @@ extension on TranslationsVi {
 			'universalMedia.extensionInstallTitle' => 'Thêm dịch vụ tìm kiếm này?',
 			'universalMedia.extensionReplaceTitle' => 'Cập nhật dịch vụ tìm kiếm này?',
 			'universalMedia.extensionService' => 'Dịch vụ',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS điểm cuối',
 			'universalMedia.extensionConsent' => 'Văn bản tìm kiếm của bạn được gửi đến dịch vụ này.Manifest không chứa mã thực hiện.Hãy tiếp tục chỉ nếu bạn tin tưởng vào điểm kết thúc này.',
 			'universalMedia.extensionInstall' => 'thêm dịch vụ',
@@ -8405,6 +8623,8 @@ extension on TranslationsVi {
 			'sourceSetup.sharedLibraryInvalid' => 'Sử dụng 8-100 lá thư, số lượng, điểm, subscores hoặc hyphens.',
 			'sourceSetup.generateSharedLibraryId' => 'Tạo một ID thư viện chia sẻ',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead yêu cầu',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Đọc song song nhiều hơn có thể cải thiện khả năng thông qua trên một NAS nhanh hoặc mạng lưới. sử dụng 1 nếu máy chủ giới hạn các yêu cầu tương đương.',
 			'sourceSetup.nfsReadTest' => 'Đánh giá hiệu suất NFS',
 			'sourceSetup.nfsReadTestHelp' => 'Đọc lên đến 64 MiB từ tệp lớn nhất để đo kết nối NAS này.',
@@ -8509,8 +8729,6 @@ extension on TranslationsVi {
 			'deepLinks.noLiveTv' => 'Không có máy chủ TV trực tiếp có sẵn cho liên kết này.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Không thể tìm thấy kênh "${channel}".',
 			'deepLinks.showLink' => 'Hiển thị link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Hiển thị profile link',
 			'deepLinks.dialogTitle' => 'liên kết',
 			'deepLinks.showHint' => 'Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.',

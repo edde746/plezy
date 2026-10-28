@@ -93,6 +93,7 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 	@override late final _Translations$trakt$zh_Hant trakt = _Translations$trakt$zh_Hant._(_root);
 	@override late final _Translations$seerr$zh_Hant seerr = _Translations$seerr$zh_Hant._(_root);
 	@override late final _Translations$services$zh_Hant services = _Translations$services$zh_Hant._(_root);
+	@override late final _Translations$streaming$zh_Hant streaming = _Translations$streaming$zh_Hant._(_root);
 	@override late final _Translations$addServer$zh_Hant addServer = _Translations$addServer$zh_Hant._(_root);
 	@override late final _Translations$cast$zh_Hant cast = _Translations$cast$zh_Hant._(_root);
 	@override late final _Translations$automation$zh_Hant automation = _Translations$automation$zh_Hant._(_root);
@@ -2752,6 +2753,119 @@ class _Translations$services$zh_Hant extends Translations$services$zh {
 	@override late final _Translations$services$libraryFilter$zh_Hant libraryFilter = _Translations$services$libraryFilter$zh_Hant._(_root);
 	@override String get seerrDescription => '連線到 Seerr 或 Overseerr 以搜尋標題並提交媒體請求。';
 	@override late final _Translations$services$trackerDescriptions$zh_Hant trackerDescriptions = _Translations$services$trackerDescriptions$zh_Hant._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$zh_Hant extends Translations$streaming$zh {
+	_Translations$streaming$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '雲端與外掛串流';
+	@override String get subtitle => '連結 Debrid 帳戶，即可瀏覽雲端檔案並播放支援的串流。相容 Stremio 的外掛會在電影和影集詳細資料頁提供播放選項。連線資訊會在此裝置上加密，並儲存在此個人資料中。';
+	@override String connectionsConfigured({required Object count}) => '已連線的來源：${count}';
+	@override String get settingsLoadFailed => 'PlezyNG 無法解鎖已儲存的串流設定。請先解鎖裝置，再重試後變更連線。';
+	@override String get settingsUnreadable => 'PlezyNG 無法解鎖這些已儲存的連線。清除後即可重新連線服務。';
+	@override String get clearUnreadableSettings => '清除已儲存的設定';
+	@override String get clearUnreadableSettingsConfirm => '清除已儲存的串流設定？';
+	@override String get clearUnreadableSettingsBody => '這會從此個人資料移除所有已儲存的服務供應商帳戶和外掛網址，而且無法復原。';
+	@override String get clearUnreadableSettingsFailed => '無法清除已儲存的串流設定。請解鎖裝置後重試。';
+	@override String get retrySettingsLoad => '重新載入連線';
+	@override String get addons => '相容 Stremio 的外掛';
+	@override String get addonsDescription => '從 Stremio 匯入外掛，或透過資訊清單網址連線外掛。在「探索」中瀏覽目錄，並從電影或影集詳細資料頁開啟串流選項。';
+	@override String get catalogLoadFailed => '無法載入此目錄。請重新整理後再試。';
+	@override String get catalogFiltersRequired => '選取瀏覽此目錄所需的篩選條件。';
+	@override String get catalogRequiredLabel => '必填';
+	@override String get importFromStremio => '從 Stremio 匯入';
+	@override String get stremioImportInstructions => '掃描 QR 碼或開啟連結。登入 Stremio 並核准要求。PlezyNG 只會讀取你的外掛清單，不會要求 Stremio 密碼或變更設定。';
+	@override String get stremioImportOpen => '開啟 Stremio 連結';
+	@override String get stremioImportCode => '連結代碼';
+	@override String get stremioImportPreviewTitle => '選擇外掛';
+	@override String get stremioImportPreviewBody => '選取要連線至 PlezyNG 的外掛。此匯入僅接受 HTTPS 網址。';
+	@override String stremioImportIgnored({required Object count}) => '因網址不受支援或不安全而略過的外掛：${count}。';
+	@override String get stremioCatalogs => '目錄';
+	@override String get stremioStreams => '串流';
+	@override String stremioImportAddSelected({required Object count}) => '新增已選項目（${count}）';
+	@override String stremioImportAdded({required Object count}) => '從 Stremio 連線的外掛：${count}。';
+	@override String stremioImportPartial({required Object added, required Object failed}) => '已連線的外掛：${added}；無法連線：${failed}。';
+	@override String get stremioImportFailed => '無法從 Stremio 匯入外掛。請再試一次。';
+	@override String get stremioImportTimedOut => 'Stremio 授權已逾時。請重新開始匯入。';
+	@override String get stremioImportEmpty => '在此 Stremio 帳戶中找不到新的相容外掛。';
+	@override String get stremioImportLimitReached => '請先移除一個外掛，再匯入更多外掛。';
+	@override String get addByManifestUrl => '透過資訊清單網址新增';
+	@override String get addAddon => '新增外掛';
+	@override String get manifestUrl => '外掛資訊清單網址';
+	@override String get manifestUrlHint => '貼上外掛的資訊清單網址。連線前，PlezyNG 會檢查其是否支援目錄或串流資源。';
+	@override String get allowHttp => '允許未加密的 HTTP 網址';
+	@override String get allowHttpDescription => '僅適用於私人網路中可信任的外掛。';
+	@override String get installAddon => '連線外掛';
+	@override String get addonInstalled => '外掛已連線';
+	@override String get addonRemoved => '外掛已移除';
+	@override String get addonToggle => '啟用外掛';
+	@override String get addonEmpty => '尚未連線外掛';
+	@override String get addonError => 'PlezyNG 無法連線至此外掛。請檢查資訊清單網址並重試。';
+	@override String get addonPrivacy => '僅連線你信任的外掛。搜尋時，外掛會收到你要搜尋的標題，並可能傳回第三方串流連結。';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => '透過 Real-Debrid 帳戶播放支援的種子串流。';
+	@override String get connectRealDebrid => '使用 QR 碼連線';
+	@override String get disconnectRealDebrid => '中斷 Real-Debrid 連線';
+	@override String realDebridConnected({required Object username}) => '已連線：${username}';
+	@override String get realDebridInstructions => '掃描 QR 碼或開啟連結，接著輸入此啟用碼以連線 PlezyNG：';
+	@override String get realDebridActivate => '開啟 Real-Debrid 以啟用';
+	@override String get realDebridCode => '啟用碼';
+	@override String get realDebridConnectFailed => '無法連線至 Real-Debrid。請再試一次。';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => '透過 AllDebrid 帳戶播放支援的種子串流。';
+	@override String get connectAllDebrid => '使用 QR 碼連線';
+	@override String get allDebridInstructions => '掃描 QR 碼或開啟連結以授權 PlezyNG。連線期間請保持此畫面開啟：';
+	@override String get allDebridActivate => '開啟 AllDebrid 以啟用';
+	@override String get allDebridCode => '啟用 PIN 碼';
+	@override String get allDebridConnectFailed => '無法連線至 AllDebrid。請再試一次。';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => '透過 Premiumize 播放已快取的種子串流或瀏覽檔案。';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => '透過 TorBox 播放已快取的種子串流或瀏覽檔案。';
+	@override String get connectApiKey => '使用 API 金鑰連線';
+	@override String apiKeyTitle({required Object service}) => '連線 ${service}';
+	@override String get apiKey => 'API 金鑰';
+	@override String apiKeyHint({required Object service}) => '貼上 ${service} 帳戶設定中的 API 金鑰。PlezyNG 會在此裝置上加密金鑰，並將其儲存在此個人資料中。';
+	@override String get apiKeyConnectFailed => '無法驗證此 API 金鑰。請檢查後再試一次。';
+	@override String accountConnected({required Object username}) => '已連線：${username}';
+	@override String get streamNeedsProvider => '連線 Debrid 服務以播放此種子串流。';
+	@override String get playViaProvider => '透過 Debrid 播放';
+	@override String disconnectConfirm({required Object service}) => '中斷 ${service} 連線？';
+	@override String get disconnectBody => 'PlezyNG 會移除此裝置的授權，不會變更服務供應商中的檔案或進行中的傳輸。';
+	@override String get streamsTitle => '選擇串流';
+	@override String get searchingStreams => '正在檢查已連線的外掛…';
+	@override String get noStreams => '找不到此標題的串流。';
+	@override String get manageConnections => '管理串流服務';
+	@override String subtitleTracks({required Object count}) => '字幕軌：${count}';
+	@override String get chooseSubtitle => '選擇字幕';
+	@override String get chooseProvider => '選擇 Debrid 服務';
+	@override String get subtitleOff => '關閉字幕';
+	@override String get subtitleLoadFailed => '無法載入此字幕。請嘗試其他軌道。';
+	@override String get subtitleApplied => '已選取播放字幕';
+	@override String get streamLookupPartial => '部分外掛無法連線。';
+	@override String get streamLookupFailed => '無法檢查已連線的外掛。';
+	@override String get streamOpenExternal => '開啟外部連結';
+	@override String get streamPrepare => '正在透過 Debrid 服務準備…';
+	@override String get streamPrepareFailed => '無法準備此串流。請檢查已連線的帳戶，並嘗試其他來源。';
+	@override String get streamNeedsRealDebrid => '連線 Debrid 服務以播放此種子串流。';
+	@override String get streamUnsupported => '應用程式內播放器不支援此串流格式。';
+	@override String get remoteNeedsEpisode => '請先選擇一集，再搜尋串流。';
+	@override String get remoteNeedsEpisodeNumber => '此集缺少季數或集數。';
+	@override String get remoteNeedsExternalId => 'PlezyNG 找不到此標題的 IMDb 或 TMDB ID。';
+	@override String get watchWithServices => '透過已連線的服務觀看';
+	@override String get chooseEpisode => '選擇一集';
+	@override String get episodes => '影集';
+	@override String episodePosition({required Object season, required Object episode}) => '第 ${season} 季，第 ${episode} 集';
+	@override String get episodeStreamHint => '開啟此集可用的串流。';
+	@override String get cloudFiles => '雲端檔案';
+	@override String get browseCloud => '瀏覽檔案';
+	@override String get cloudEmpty => '此帳戶中找不到可播放的影片檔案。';
+	@override String get cloudLoadFailed => '無法載入雲端檔案。請檢查連線後再試一次。';
+	@override String get providers => 'Debrid 服務供應商';
 }
 
 // Path: addServer
@@ -7634,6 +7748,110 @@ extension on TranslationsZhHant {
 			'services.trackerDescriptions.anilist' => '同步動畫列表,並與 AniList 觀看進展。',
 			'services.trackerDescriptions.simkl' => '同步觀看電影,電視節目和動畫與Simkl。',
 			'services.trackerDescriptions.mdblist' => '在推薦和探索中顯示 MDBList 評分和列表。',
+			'streaming.title' => '雲端與外掛串流',
+			'streaming.subtitle' => '連結 Debrid 帳戶，即可瀏覽雲端檔案並播放支援的串流。相容 Stremio 的外掛會在電影和影集詳細資料頁提供播放選項。連線資訊會在此裝置上加密，並儲存在此個人資料中。',
+			'streaming.connectionsConfigured' => ({required Object count}) => '已連線的來源：${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG 無法解鎖已儲存的串流設定。請先解鎖裝置，再重試後變更連線。',
+			'streaming.settingsUnreadable' => 'PlezyNG 無法解鎖這些已儲存的連線。清除後即可重新連線服務。',
+			'streaming.clearUnreadableSettings' => '清除已儲存的設定',
+			'streaming.clearUnreadableSettingsConfirm' => '清除已儲存的串流設定？',
+			'streaming.clearUnreadableSettingsBody' => '這會從此個人資料移除所有已儲存的服務供應商帳戶和外掛網址，而且無法復原。',
+			'streaming.clearUnreadableSettingsFailed' => '無法清除已儲存的串流設定。請解鎖裝置後重試。',
+			'streaming.retrySettingsLoad' => '重新載入連線',
+			'streaming.addons' => '相容 Stremio 的外掛',
+			'streaming.addonsDescription' => '從 Stremio 匯入外掛，或透過資訊清單網址連線外掛。在「探索」中瀏覽目錄，並從電影或影集詳細資料頁開啟串流選項。',
+			'streaming.catalogLoadFailed' => '無法載入此目錄。請重新整理後再試。',
+			'streaming.catalogFiltersRequired' => '選取瀏覽此目錄所需的篩選條件。',
+			'streaming.catalogRequiredLabel' => '必填',
+			'streaming.importFromStremio' => '從 Stremio 匯入',
+			'streaming.stremioImportInstructions' => '掃描 QR 碼或開啟連結。登入 Stremio 並核准要求。PlezyNG 只會讀取你的外掛清單，不會要求 Stremio 密碼或變更設定。',
+			'streaming.stremioImportOpen' => '開啟 Stremio 連結',
+			'streaming.stremioImportCode' => '連結代碼',
+			'streaming.stremioImportPreviewTitle' => '選擇外掛',
+			'streaming.stremioImportPreviewBody' => '選取要連線至 PlezyNG 的外掛。此匯入僅接受 HTTPS 網址。',
+			'streaming.stremioImportIgnored' => ({required Object count}) => '因網址不受支援或不安全而略過的外掛：${count}。',
+			'streaming.stremioCatalogs' => '目錄',
+			'streaming.stremioStreams' => '串流',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => '新增已選項目（${count}）',
+			'streaming.stremioImportAdded' => ({required Object count}) => '從 Stremio 連線的外掛：${count}。',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => '已連線的外掛：${added}；無法連線：${failed}。',
+			'streaming.stremioImportFailed' => '無法從 Stremio 匯入外掛。請再試一次。',
+			'streaming.stremioImportTimedOut' => 'Stremio 授權已逾時。請重新開始匯入。',
+			'streaming.stremioImportEmpty' => '在此 Stremio 帳戶中找不到新的相容外掛。',
+			'streaming.stremioImportLimitReached' => '請先移除一個外掛，再匯入更多外掛。',
+			'streaming.addByManifestUrl' => '透過資訊清單網址新增',
+			'streaming.addAddon' => '新增外掛',
+			'streaming.manifestUrl' => '外掛資訊清單網址',
+			'streaming.manifestUrlHint' => '貼上外掛的資訊清單網址。連線前，PlezyNG 會檢查其是否支援目錄或串流資源。',
+			'streaming.allowHttp' => '允許未加密的 HTTP 網址',
+			'streaming.allowHttpDescription' => '僅適用於私人網路中可信任的外掛。',
+			'streaming.installAddon' => '連線外掛',
+			'streaming.addonInstalled' => '外掛已連線',
+			'streaming.addonRemoved' => '外掛已移除',
+			'streaming.addonToggle' => '啟用外掛',
+			'streaming.addonEmpty' => '尚未連線外掛',
+			'streaming.addonError' => 'PlezyNG 無法連線至此外掛。請檢查資訊清單網址並重試。',
+			'streaming.addonPrivacy' => '僅連線你信任的外掛。搜尋時，外掛會收到你要搜尋的標題，並可能傳回第三方串流連結。',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => '透過 Real-Debrid 帳戶播放支援的種子串流。',
+			'streaming.connectRealDebrid' => '使用 QR 碼連線',
+			'streaming.disconnectRealDebrid' => '中斷 Real-Debrid 連線',
+			'streaming.realDebridConnected' => ({required Object username}) => '已連線：${username}',
+			'streaming.realDebridInstructions' => '掃描 QR 碼或開啟連結，接著輸入此啟用碼以連線 PlezyNG：',
+			'streaming.realDebridActivate' => '開啟 Real-Debrid 以啟用',
+			'streaming.realDebridCode' => '啟用碼',
+			'streaming.realDebridConnectFailed' => '無法連線至 Real-Debrid。請再試一次。',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => '透過 AllDebrid 帳戶播放支援的種子串流。',
+			'streaming.connectAllDebrid' => '使用 QR 碼連線',
+			'streaming.allDebridInstructions' => '掃描 QR 碼或開啟連結以授權 PlezyNG。連線期間請保持此畫面開啟：',
+			'streaming.allDebridActivate' => '開啟 AllDebrid 以啟用',
+			'streaming.allDebridCode' => '啟用 PIN 碼',
+			'streaming.allDebridConnectFailed' => '無法連線至 AllDebrid。請再試一次。',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => '透過 Premiumize 播放已快取的種子串流或瀏覽檔案。',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => '透過 TorBox 播放已快取的種子串流或瀏覽檔案。',
+			'streaming.connectApiKey' => '使用 API 金鑰連線',
+			'streaming.apiKeyTitle' => ({required Object service}) => '連線 ${service}',
+			'streaming.apiKey' => 'API 金鑰',
+			'streaming.apiKeyHint' => ({required Object service}) => '貼上 ${service} 帳戶設定中的 API 金鑰。PlezyNG 會在此裝置上加密金鑰，並將其儲存在此個人資料中。',
+			'streaming.apiKeyConnectFailed' => '無法驗證此 API 金鑰。請檢查後再試一次。',
+			'streaming.accountConnected' => ({required Object username}) => '已連線：${username}',
+			'streaming.streamNeedsProvider' => '連線 Debrid 服務以播放此種子串流。',
+			'streaming.playViaProvider' => '透過 Debrid 播放',
+			'streaming.disconnectConfirm' => ({required Object service}) => '中斷 ${service} 連線？',
+			'streaming.disconnectBody' => 'PlezyNG 會移除此裝置的授權，不會變更服務供應商中的檔案或進行中的傳輸。',
+			'streaming.streamsTitle' => '選擇串流',
+			'streaming.searchingStreams' => '正在檢查已連線的外掛…',
+			'streaming.noStreams' => '找不到此標題的串流。',
+			'streaming.manageConnections' => '管理串流服務',
+			'streaming.subtitleTracks' => ({required Object count}) => '字幕軌：${count}',
+			'streaming.chooseSubtitle' => '選擇字幕',
+			'streaming.chooseProvider' => '選擇 Debrid 服務',
+			'streaming.subtitleOff' => '關閉字幕',
+			'streaming.subtitleLoadFailed' => '無法載入此字幕。請嘗試其他軌道。',
+			'streaming.subtitleApplied' => '已選取播放字幕',
+			'streaming.streamLookupPartial' => '部分外掛無法連線。',
+			'streaming.streamLookupFailed' => '無法檢查已連線的外掛。',
+			'streaming.streamOpenExternal' => '開啟外部連結',
+			'streaming.streamPrepare' => '正在透過 Debrid 服務準備…',
+			'streaming.streamPrepareFailed' => '無法準備此串流。請檢查已連線的帳戶，並嘗試其他來源。',
+			'streaming.streamNeedsRealDebrid' => '連線 Debrid 服務以播放此種子串流。',
+			'streaming.streamUnsupported' => '應用程式內播放器不支援此串流格式。',
+			'streaming.remoteNeedsEpisode' => '請先選擇一集，再搜尋串流。',
+			'streaming.remoteNeedsEpisodeNumber' => '此集缺少季數或集數。',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG 找不到此標題的 IMDb 或 TMDB ID。',
+			'streaming.watchWithServices' => '透過已連線的服務觀看',
+			'streaming.chooseEpisode' => '選擇一集',
+			'streaming.episodes' => '影集',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '第 ${season} 季，第 ${episode} 集',
+			'streaming.episodeStreamHint' => '開啟此集可用的串流。',
+			'streaming.cloudFiles' => '雲端檔案',
+			'streaming.browseCloud' => '瀏覽檔案',
+			'streaming.cloudEmpty' => '此帳戶中找不到可播放的影片檔案。',
+			'streaming.cloudLoadFailed' => '無法載入雲端檔案。請檢查連線後再試一次。',
+			'streaming.providers' => 'Debrid 服務供應商',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '新增 ${product} 伺服器',
 			'addServer.serverUrls' => '伺服器 URL',
 			'addServer.serverUrlsHelper' => '可輸入多個連線網址，以逗號區隔。',
@@ -7912,6 +8130,8 @@ extension on TranslationsZhHant {
 			'universalMedia.contrast' => '矛盾',
 			'universalMedia.gamma' => '加姆',
 			'universalMedia.hue' => '鬍子',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => '土星',
 			'universalMedia.view360' => '平板檢視360度影片',
 			'universalMedia.view360Help' => 'MPV 需要 FFmpeg 的 v360 過濾器來檢視此檢視。',
@@ -8016,8 +8236,6 @@ extension on TranslationsZhHant {
 			'universalMedia.extensionInstallTitle' => '新增此搜尋服務?',
 			'universalMedia.extensionReplaceTitle' => '更新此搜尋服務?',
 			'universalMedia.extensionService' => '服務',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS 終點',
 			'universalMedia.extensionConsent' => '您的搜尋文字被髮送到此服務. 該示文稿不包含執行程式碼. 繼續只有如果你信任這個終點。',
 			'universalMedia.extensionInstall' => '新增服務',
@@ -8426,6 +8644,8 @@ extension on TranslationsZhHant {
 			'sourceSetup.sharedLibraryInvalid' => '使用 8 至 100 個字母、數字、點、字幕或字元。',
 			'sourceSetup.generateSharedLibraryId' => '建立共享圖書館 ID',
 			'sourceSetup.nfsReadAhead' => 'NFS Read-ahead 請求',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => '更多的平行閱讀可以改善快速NAS或網路的通道。使用1如果伺服器限制當前請求。',
 			'sourceSetup.nfsReadTest' => '測量NFS閱讀效能',
 			'sourceSetup.nfsReadTestHelp' => '從最大的檔案中讀到64 MiB,以測量這個NAS連線,這使用網路頻寬。',
@@ -8530,8 +8750,6 @@ extension on TranslationsZhHant {
 			'deepLinks.noLiveTv' => '沒有現場電視伺服器可用於此連結。',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '我找不到“${channel}”頻道。',
 			'deepLinks.showLink' => '顯示連結',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => '顯示個人資料連結',
 			'deepLinks.dialogTitle' => '連結',
 			'deepLinks.showHint' => '開啟此連結會播放下一集。若要隨機播放整個影集，請在結尾加上 &mode=shuffle。',

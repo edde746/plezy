@@ -7,6 +7,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/mdblist_explore_shelf.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/services/remote_streams/remote_streaming_provider.dart';
 import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
@@ -134,9 +135,11 @@ void main() {
 
     final trackers = TrackersProvider();
     final seerr = SeerrAccountProvider();
+    final streaming = RemoteStreamingProvider();
     final sources = CatalogSourcesProvider(plexSessionSupplier: () async => null);
     addTearDown(() {
       sources.dispose();
+      streaming.dispose();
       trackers.dispose();
       seerr.dispose();
       MdblistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
@@ -144,7 +147,7 @@ void main() {
 
     await trackers.onActiveProfileChanged(userUuid);
     await TrackerCoordinator.instance.flushWriteQueue();
-    sources.update(trackers, seerr);
+    sources.update(trackers, seerr, streaming);
 
     expect(sources.connectedSources.map((source) => source.id), [CatalogSourceId.mdblist]);
     expect(sources.activeSource?.displayName, 'MDBList');
@@ -152,7 +155,7 @@ void main() {
 
     await trackers.onActiveProfileChanged('empty-profile');
     await TrackerCoordinator.instance.flushWriteQueue();
-    sources.update(trackers, seerr);
+    sources.update(trackers, seerr, streaming);
 
     expect(sources.connectedSources, isEmpty);
     expect(sources.hasAnySource, isFalse);

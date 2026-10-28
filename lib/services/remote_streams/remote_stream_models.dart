@@ -56,7 +56,15 @@ class RemoteCloudItem {
   );
 }
 
-enum RemoteProviderFailure { authentication, unavailable, invalidResponse, unsupported, preparationFailed, timeout, cancelled }
+enum RemoteProviderFailure {
+  authentication,
+  unavailable,
+  invalidResponse,
+  unsupported,
+  preparationFailed,
+  timeout,
+  cancelled,
+}
 
 class RemoteProviderException implements Exception {
   const RemoteProviderException(this.reason);
@@ -183,6 +191,30 @@ class StremioAddonInstallation {
     enabled: json['enabled'] as bool? ?? true,
     allowHttp: json['allowHttp'] as bool? ?? false,
   );
+}
+
+/// A fetched manifest update that is safe to present for user review.
+///
+/// Instances are created by [RemoteStreamingProvider] after validating the
+/// configured endpoint. The captured profile and generation prevent a review
+/// dialog opened for one profile from updating a later active profile.
+class StremioAddonUpdateCheck {
+  const StremioAddonUpdateCheck({
+    required this.installed,
+    required this.latestManifest,
+    required this.hasChanges,
+    required this.profileId,
+    required this.generation,
+  });
+
+  final StremioAddonInstallation installed;
+  final Map<String, dynamic> latestManifest;
+  final bool hasChanges;
+  final String profileId;
+  final int generation;
+
+  String get currentVersion => installed.manifest['version'] as String? ?? '';
+  String get latestVersion => latestManifest['version'] as String? ?? '';
 }
 
 class RemoteStreamSnapshot {

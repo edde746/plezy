@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../profiles/profile.dart';
 import '../base_shared_preferences_service.dart';
 import '../credential_vault.dart';
-import '../sensitive_prefs.dart';
 import 'remote_stream_models.dart';
 
 enum RemoteStreamStoreFailure { unreadable }

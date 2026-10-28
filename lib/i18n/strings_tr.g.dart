@@ -92,6 +92,7 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$tr trakt = _Translations$trakt$tr._(_root);
 	@override late final _Translations$seerr$tr seerr = _Translations$seerr$tr._(_root);
 	@override late final _Translations$services$tr services = _Translations$services$tr._(_root);
+	@override late final _Translations$streaming$tr streaming = _Translations$streaming$tr._(_root);
 	@override late final _Translations$addServer$tr addServer = _Translations$addServer$tr._(_root);
 	@override late final _Translations$cast$tr cast = _Translations$cast$tr._(_root);
 	@override late final _Translations$automation$tr automation = _Translations$automation$tr._(_root);
@@ -2755,6 +2756,119 @@ class _Translations$services$tr extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$tr libraryFilter = _Translations$services$libraryFilter$tr._(_root);
 	@override String get seerrDescription => 'Seerr veya Overseerr\'e bağlanın başlıkları aramak ve medya istekleri göndermek için.';
 	@override late final _Translations$services$trackerDescriptions$tr trackerDescriptions = _Translations$services$trackerDescriptions$tr._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$tr extends Translations$streaming$en {
+	_Translations$streaming$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bulut ve eklenti akışı';
+	@override String get subtitle => 'Bulutundaki dosyalara göz atmak ve desteklenen akışları oynatmak için Debrid hesabını bağla. Stremio uyumlu eklentiler film ve bölüm sayfalarında akış seçenekleri sunar. Bağlantı bilgileri bu cihazda şifrelenir ve bu profile kaydedilir.';
+	@override String connectionsConfigured({required Object count}) => 'Bağlı kaynaklar: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG kaydedilmiş akış ayarlarının kilidini açamadı. Bağlantıları değiştirmeden önce cihazının kilidini açıp yeniden dene.';
+	@override String get settingsUnreadable => 'PlezyNG bu kayıtlı bağlantıların kilidini açamadı. Hizmetleri yeniden bağlamak için bunları temizle.';
+	@override String get clearUnreadableSettings => 'Kayıtlı ayarları temizle';
+	@override String get clearUnreadableSettingsConfirm => 'Kayıtlı akış ayarları temizlensin mi?';
+	@override String get clearUnreadableSettingsBody => 'Bu işlem, bu profildeki tüm kayıtlı sağlayıcı hesaplarını ve eklenti adreslerini siler. Geri alınamaz.';
+	@override String get clearUnreadableSettingsFailed => 'Kayıtlı akış ayarları temizlenemedi. Cihazının kilidini açıp yeniden dene.';
+	@override String get retrySettingsLoad => 'Bağlantıları yeniden yükle';
+	@override String get addons => 'Stremio uyumlu eklentiler';
+	@override String get addonsDescription => 'Eklentileri Stremio’dan içe aktar veya manifest URL’siyle bağla. Kataloglara Keşfet’ten göz at ve film ya da bölüm sayfalarından akış seçeneklerini aç.';
+	@override String get catalogLoadFailed => 'Bu katalog yüklenemedi. Yenile ve tekrar dene.';
+	@override String get catalogFiltersRequired => 'Bu kataloğa göz atmak için gerekli filtreleri seç.';
+	@override String get catalogRequiredLabel => 'Gerekli';
+	@override String get importFromStremio => 'Stremio’dan içe aktar';
+	@override String get stremioImportInstructions => 'QR kodunu tara veya bağlantıyı aç. Stremio’da oturum aç ve isteği onayla. PlezyNG yalnızca eklenti listeni okur; Stremio parolanı istemez veya ayarlarını değiştirmez.';
+	@override String get stremioImportOpen => 'Stremio bağlantısını aç';
+	@override String get stremioImportCode => 'Bağlantı kodu';
+	@override String get stremioImportPreviewTitle => 'Eklentileri seç';
+	@override String get stremioImportPreviewBody => 'PlezyNG’ye bağlamak istediğin eklentileri seç. Bu içe aktarma yalnızca HTTPS adreslerini kabul eder.';
+	@override String stremioImportIgnored({required Object count}) => 'Desteklenmeyen veya güvenli olmayan adresleri nedeniyle atlanan eklentiler: ${count}.';
+	@override String get stremioCatalogs => 'Kataloglar';
+	@override String get stremioStreams => 'Akışlar';
+	@override String stremioImportAddSelected({required Object count}) => 'Seçilenleri ekle (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Stremio’dan bağlanan eklentiler: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Bağlanan eklentiler: ${added}; bağlanamayan: ${failed}.';
+	@override String get stremioImportFailed => 'Eklentiler Stremio’dan içe aktarılamadı. Tekrar dene.';
+	@override String get stremioImportTimedOut => 'Stremio onayının süresi doldu. İçe aktarmayı yeniden başlat.';
+	@override String get stremioImportEmpty => 'Bu Stremio hesabında yeni uyumlu eklenti bulunamadı.';
+	@override String get stremioImportLimitReached => 'Daha fazla içe aktarmadan önce bir eklentiyi kaldır.';
+	@override String get addByManifestUrl => 'Manifest URL’siyle ekle';
+	@override String get addAddon => 'Eklenti ekle';
+	@override String get manifestUrl => 'Eklenti manifest URL’si';
+	@override String get manifestUrlHint => 'Eklentinin manifest URL’sini yapıştır. PlezyNG, bağlamadan önce katalogları veya akış kaynaklarını desteklediğini denetler.';
+	@override String get allowHttp => 'Şifrelenmemiş HTTP adresine izin ver';
+	@override String get allowHttpDescription => 'Bunu yalnızca özel ağındaki güvenilir bir eklenti için kullan.';
+	@override String get installAddon => 'Eklentiyi bağla';
+	@override String get addonInstalled => 'Eklenti bağlandı';
+	@override String get addonRemoved => 'Eklenti kaldırıldı';
+	@override String get addonToggle => 'Eklentiyi etkinleştir';
+	@override String get addonEmpty => 'Henüz bağlı eklenti yok';
+	@override String get addonError => 'PlezyNG bu eklentiye bağlanamadı. Manifest URL’sini kontrol edip tekrar dene.';
+	@override String get addonPrivacy => 'Yalnızca güvendiğin eklentileri bağla. Arama yaptığında eklenti, aradığın başlığı alabilir ve üçüncü taraf akış bağlantıları döndürebilir.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Desteklenen torrent akışlarını Real-Debrid hesabınla oynat.';
+	@override String get connectRealDebrid => 'QR koduyla bağlan';
+	@override String get disconnectRealDebrid => 'Real-Debrid bağlantısını kes';
+	@override String realDebridConnected({required Object username}) => '${username} olarak bağlandı';
+	@override String get realDebridInstructions => 'QR kodunu tara veya bağlantıyı aç, ardından PlezyNG’yi bağlamak için bu etkinleştirme kodunu gir:';
+	@override String get realDebridActivate => 'Etkinleştirmek için Real-Debrid’i aç';
+	@override String get realDebridCode => 'Etkinleştirme kodu';
+	@override String get realDebridConnectFailed => 'Real-Debrid’e bağlanılamadı. Tekrar dene.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Desteklenen torrent akışlarını AllDebrid hesabınla oynat.';
+	@override String get connectAllDebrid => 'QR koduyla bağlan';
+	@override String get allDebridInstructions => 'PlezyNG’yi yetkilendirmek için QR kodunu tara veya bağlantıyı aç. Bağlanırken bu ekranı açık tut:';
+	@override String get allDebridActivate => 'Etkinleştirmek için AllDebrid’i aç';
+	@override String get allDebridCode => 'Etkinleştirme PIN’i';
+	@override String get allDebridConnectFailed => 'AllDebrid’e bağlanılamadı. Tekrar dene.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Önbelleğe alınmış torrent akışlarını oynat veya Premiumize ile dosyalara göz at.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Önbelleğe alınmış torrent akışlarını oynat veya TorBox ile dosyalara göz at.';
+	@override String get connectApiKey => 'API anahtarıyla bağlan';
+	@override String apiKeyTitle({required Object service}) => '${service} hesabını bağla';
+	@override String get apiKey => 'API anahtarı';
+	@override String apiKeyHint({required Object service}) => '${service} hesap ayarlarından API anahtarını yapıştır. PlezyNG anahtarı bu cihazda şifreler ve bu profile kaydeder.';
+	@override String get apiKeyConnectFailed => 'Bu API anahtarı doğrulanamadı. Kontrol edip tekrar dene.';
+	@override String accountConnected({required Object username}) => '${username} olarak bağlandı';
+	@override String get streamNeedsProvider => 'Bu torrent akışını oynatmak için bir Debrid hizmeti bağla.';
+	@override String get playViaProvider => 'Debrid ile oynat';
+	@override String disconnectConfirm({required Object service}) => '${service} bağlantısı kesilsin mi?';
+	@override String get disconnectBody => 'PlezyNG bu cihazın yetkisini kaldırır. Sağlayıcıdaki dosyaların ve devam eden aktarımların durumu değişmez.';
+	@override String get streamsTitle => 'Akış seç';
+	@override String get searchingStreams => 'Bağlı eklentiler kontrol ediliyor…';
+	@override String get noStreams => 'Bu başlık için akış bulunamadı.';
+	@override String get manageConnections => 'Akış hizmetlerini yönet';
+	@override String subtitleTracks({required Object count}) => 'Altyazı parçası: ${count}';
+	@override String get chooseSubtitle => 'Altyazı seç';
+	@override String get chooseProvider => 'Debrid hizmeti seç';
+	@override String get subtitleOff => 'Altyazılar kapalı';
+	@override String get subtitleLoadFailed => 'Bu altyazı yüklenemedi. Başka bir parça dene.';
+	@override String get subtitleApplied => 'Altyazı oynatma için seçildi';
+	@override String get streamLookupPartial => 'Bazı eklentilere ulaşılamadı.';
+	@override String get streamLookupFailed => 'Bağlı eklentiler kontrol edilemedi.';
+	@override String get streamOpenExternal => 'Harici bağlantıyı aç';
+	@override String get streamPrepare => 'Debrid hizmetinle hazırlanıyor…';
+	@override String get streamPrepareFailed => 'Bu akış hazırlanamadı. Bağlı hesabı kontrol et ve başka bir kaynak dene.';
+	@override String get streamNeedsRealDebrid => 'Bu torrent akışını oynatmak için bir Debrid hizmeti bağla.';
+	@override String get streamUnsupported => 'Bu akış biçimi uygulama içi oynatıcıda desteklenmiyor.';
+	@override String get remoteNeedsEpisode => 'Akış aramadan önce bir bölüm seç.';
+	@override String get remoteNeedsEpisodeNumber => 'Bu bölümde sezon veya bölüm numarası eksik.';
+	@override String get remoteNeedsExternalId => 'PlezyNG bu başlık için IMDb veya TMDB kimliği bulamadı.';
+	@override String get watchWithServices => 'Bağlı hizmetlerle izle';
+	@override String get chooseEpisode => 'Bölüm seç';
+	@override String get episodes => 'Bölümler';
+	@override String episodePosition({required Object season, required Object episode}) => '${season}. sezon, ${episode}. bölüm';
+	@override String get episodeStreamHint => 'Bu bölüm için kullanılabilir akışları açar.';
+	@override String get cloudFiles => 'Bulut dosyaları';
+	@override String get browseCloud => 'Dosyalara göz at';
+	@override String get cloudEmpty => 'Bu hesapta oynatılabilir video dosyası bulunamadı.';
+	@override String get cloudLoadFailed => 'Bulut dosyaları yüklenemedi. Bağlantıyı kontrol edip tekrar dene.';
+	@override String get providers => 'Debrid sağlayıcıları';
 }
 
 // Path: addServer
@@ -7638,6 +7752,110 @@ extension on TranslationsTr {
 			'services.trackerDescriptions.anilist' => 'Anime listeleri senkronize edin ve AniList ile ilerlemeyi izleyin.',
 			'services.trackerDescriptions.simkl' => 'Simkl ile filmler, TV şovları ve anime izledi.',
 			'services.trackerDescriptions.mdblist' => 'Önerilerde MDBList dereceleri ve listeleri gösterin ve Keşfedin.',
+			'streaming.title' => 'Bulut ve eklenti akışı',
+			'streaming.subtitle' => 'Bulutundaki dosyalara göz atmak ve desteklenen akışları oynatmak için Debrid hesabını bağla. Stremio uyumlu eklentiler film ve bölüm sayfalarında akış seçenekleri sunar. Bağlantı bilgileri bu cihazda şifrelenir ve bu profile kaydedilir.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Bağlı kaynaklar: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG kaydedilmiş akış ayarlarının kilidini açamadı. Bağlantıları değiştirmeden önce cihazının kilidini açıp yeniden dene.',
+			'streaming.settingsUnreadable' => 'PlezyNG bu kayıtlı bağlantıların kilidini açamadı. Hizmetleri yeniden bağlamak için bunları temizle.',
+			'streaming.clearUnreadableSettings' => 'Kayıtlı ayarları temizle',
+			'streaming.clearUnreadableSettingsConfirm' => 'Kayıtlı akış ayarları temizlensin mi?',
+			'streaming.clearUnreadableSettingsBody' => 'Bu işlem, bu profildeki tüm kayıtlı sağlayıcı hesaplarını ve eklenti adreslerini siler. Geri alınamaz.',
+			'streaming.clearUnreadableSettingsFailed' => 'Kayıtlı akış ayarları temizlenemedi. Cihazının kilidini açıp yeniden dene.',
+			'streaming.retrySettingsLoad' => 'Bağlantıları yeniden yükle',
+			'streaming.addons' => 'Stremio uyumlu eklentiler',
+			'streaming.addonsDescription' => 'Eklentileri Stremio’dan içe aktar veya manifest URL’siyle bağla. Kataloglara Keşfet’ten göz at ve film ya da bölüm sayfalarından akış seçeneklerini aç.',
+			'streaming.catalogLoadFailed' => 'Bu katalog yüklenemedi. Yenile ve tekrar dene.',
+			'streaming.catalogFiltersRequired' => 'Bu kataloğa göz atmak için gerekli filtreleri seç.',
+			'streaming.catalogRequiredLabel' => 'Gerekli',
+			'streaming.importFromStremio' => 'Stremio’dan içe aktar',
+			'streaming.stremioImportInstructions' => 'QR kodunu tara veya bağlantıyı aç. Stremio’da oturum aç ve isteği onayla. PlezyNG yalnızca eklenti listeni okur; Stremio parolanı istemez veya ayarlarını değiştirmez.',
+			'streaming.stremioImportOpen' => 'Stremio bağlantısını aç',
+			'streaming.stremioImportCode' => 'Bağlantı kodu',
+			'streaming.stremioImportPreviewTitle' => 'Eklentileri seç',
+			'streaming.stremioImportPreviewBody' => 'PlezyNG’ye bağlamak istediğin eklentileri seç. Bu içe aktarma yalnızca HTTPS adreslerini kabul eder.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Desteklenmeyen veya güvenli olmayan adresleri nedeniyle atlanan eklentiler: ${count}.',
+			'streaming.stremioCatalogs' => 'Kataloglar',
+			'streaming.stremioStreams' => 'Akışlar',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Seçilenleri ekle (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Stremio’dan bağlanan eklentiler: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Bağlanan eklentiler: ${added}; bağlanamayan: ${failed}.',
+			'streaming.stremioImportFailed' => 'Eklentiler Stremio’dan içe aktarılamadı. Tekrar dene.',
+			'streaming.stremioImportTimedOut' => 'Stremio onayının süresi doldu. İçe aktarmayı yeniden başlat.',
+			'streaming.stremioImportEmpty' => 'Bu Stremio hesabında yeni uyumlu eklenti bulunamadı.',
+			'streaming.stremioImportLimitReached' => 'Daha fazla içe aktarmadan önce bir eklentiyi kaldır.',
+			'streaming.addByManifestUrl' => 'Manifest URL’siyle ekle',
+			'streaming.addAddon' => 'Eklenti ekle',
+			'streaming.manifestUrl' => 'Eklenti manifest URL’si',
+			'streaming.manifestUrlHint' => 'Eklentinin manifest URL’sini yapıştır. PlezyNG, bağlamadan önce katalogları veya akış kaynaklarını desteklediğini denetler.',
+			'streaming.allowHttp' => 'Şifrelenmemiş HTTP adresine izin ver',
+			'streaming.allowHttpDescription' => 'Bunu yalnızca özel ağındaki güvenilir bir eklenti için kullan.',
+			'streaming.installAddon' => 'Eklentiyi bağla',
+			'streaming.addonInstalled' => 'Eklenti bağlandı',
+			'streaming.addonRemoved' => 'Eklenti kaldırıldı',
+			'streaming.addonToggle' => 'Eklentiyi etkinleştir',
+			'streaming.addonEmpty' => 'Henüz bağlı eklenti yok',
+			'streaming.addonError' => 'PlezyNG bu eklentiye bağlanamadı. Manifest URL’sini kontrol edip tekrar dene.',
+			'streaming.addonPrivacy' => 'Yalnızca güvendiğin eklentileri bağla. Arama yaptığında eklenti, aradığın başlığı alabilir ve üçüncü taraf akış bağlantıları döndürebilir.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Desteklenen torrent akışlarını Real-Debrid hesabınla oynat.',
+			'streaming.connectRealDebrid' => 'QR koduyla bağlan',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid bağlantısını kes',
+			'streaming.realDebridConnected' => ({required Object username}) => '${username} olarak bağlandı',
+			'streaming.realDebridInstructions' => 'QR kodunu tara veya bağlantıyı aç, ardından PlezyNG’yi bağlamak için bu etkinleştirme kodunu gir:',
+			'streaming.realDebridActivate' => 'Etkinleştirmek için Real-Debrid’i aç',
+			'streaming.realDebridCode' => 'Etkinleştirme kodu',
+			'streaming.realDebridConnectFailed' => 'Real-Debrid’e bağlanılamadı. Tekrar dene.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Desteklenen torrent akışlarını AllDebrid hesabınla oynat.',
+			'streaming.connectAllDebrid' => 'QR koduyla bağlan',
+			'streaming.allDebridInstructions' => 'PlezyNG’yi yetkilendirmek için QR kodunu tara veya bağlantıyı aç. Bağlanırken bu ekranı açık tut:',
+			'streaming.allDebridActivate' => 'Etkinleştirmek için AllDebrid’i aç',
+			'streaming.allDebridCode' => 'Etkinleştirme PIN’i',
+			'streaming.allDebridConnectFailed' => 'AllDebrid’e bağlanılamadı. Tekrar dene.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Önbelleğe alınmış torrent akışlarını oynat veya Premiumize ile dosyalara göz at.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Önbelleğe alınmış torrent akışlarını oynat veya TorBox ile dosyalara göz at.',
+			'streaming.connectApiKey' => 'API anahtarıyla bağlan',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service} hesabını bağla',
+			'streaming.apiKey' => 'API anahtarı',
+			'streaming.apiKeyHint' => ({required Object service}) => '${service} hesap ayarlarından API anahtarını yapıştır. PlezyNG anahtarı bu cihazda şifreler ve bu profile kaydeder.',
+			'streaming.apiKeyConnectFailed' => 'Bu API anahtarı doğrulanamadı. Kontrol edip tekrar dene.',
+			'streaming.accountConnected' => ({required Object username}) => '${username} olarak bağlandı',
+			'streaming.streamNeedsProvider' => 'Bu torrent akışını oynatmak için bir Debrid hizmeti bağla.',
+			'streaming.playViaProvider' => 'Debrid ile oynat',
+			'streaming.disconnectConfirm' => ({required Object service}) => '${service} bağlantısı kesilsin mi?',
+			'streaming.disconnectBody' => 'PlezyNG bu cihazın yetkisini kaldırır. Sağlayıcıdaki dosyaların ve devam eden aktarımların durumu değişmez.',
+			'streaming.streamsTitle' => 'Akış seç',
+			'streaming.searchingStreams' => 'Bağlı eklentiler kontrol ediliyor…',
+			'streaming.noStreams' => 'Bu başlık için akış bulunamadı.',
+			'streaming.manageConnections' => 'Akış hizmetlerini yönet',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Altyazı parçası: ${count}',
+			'streaming.chooseSubtitle' => 'Altyazı seç',
+			'streaming.chooseProvider' => 'Debrid hizmeti seç',
+			'streaming.subtitleOff' => 'Altyazılar kapalı',
+			'streaming.subtitleLoadFailed' => 'Bu altyazı yüklenemedi. Başka bir parça dene.',
+			'streaming.subtitleApplied' => 'Altyazı oynatma için seçildi',
+			'streaming.streamLookupPartial' => 'Bazı eklentilere ulaşılamadı.',
+			'streaming.streamLookupFailed' => 'Bağlı eklentiler kontrol edilemedi.',
+			'streaming.streamOpenExternal' => 'Harici bağlantıyı aç',
+			'streaming.streamPrepare' => 'Debrid hizmetinle hazırlanıyor…',
+			'streaming.streamPrepareFailed' => 'Bu akış hazırlanamadı. Bağlı hesabı kontrol et ve başka bir kaynak dene.',
+			'streaming.streamNeedsRealDebrid' => 'Bu torrent akışını oynatmak için bir Debrid hizmeti bağla.',
+			'streaming.streamUnsupported' => 'Bu akış biçimi uygulama içi oynatıcıda desteklenmiyor.',
+			'streaming.remoteNeedsEpisode' => 'Akış aramadan önce bir bölüm seç.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Bu bölümde sezon veya bölüm numarası eksik.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG bu başlık için IMDb veya TMDB kimliği bulamadı.',
+			'streaming.watchWithServices' => 'Bağlı hizmetlerle izle',
+			'streaming.chooseEpisode' => 'Bölüm seç',
+			'streaming.episodes' => 'Bölümler',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '${season}. sezon, ${episode}. bölüm',
+			'streaming.episodeStreamHint' => 'Bu bölüm için kullanılabilir akışları açar.',
+			'streaming.cloudFiles' => 'Bulut dosyaları',
+			'streaming.browseCloud' => 'Dosyalara göz at',
+			'streaming.cloudEmpty' => 'Bu hesapta oynatılabilir video dosyası bulunamadı.',
+			'streaming.cloudLoadFailed' => 'Bulut dosyaları yüklenemedi. Bağlantıyı kontrol edip tekrar dene.',
+			'streaming.providers' => 'Debrid sağlayıcıları',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} sunucusu ekle',
 			'addServer.serverUrls' => 'Sunucu URL\'leri',
 			'addServer.serverUrlsHelper' => 'Virgülle ayrılmış birden fazla URL\'ye izin verilir.',
@@ -7916,6 +8134,8 @@ extension on TranslationsTr {
 			'universalMedia.contrast' => 'kontrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Satürbasyon',
 			'universalMedia.view360' => '360 derecelik video için düz görünüm',
 			'universalMedia.view360Help' => 'MPV\'nin bu görünüm için FFmpeg\'in v360 filtresine ihtiyacı var.',
@@ -8020,8 +8240,6 @@ extension on TranslationsTr {
 			'universalMedia.extensionInstallTitle' => 'Bu arama hizmeti eklemek için?',
 			'universalMedia.extensionReplaceTitle' => 'Bu arama hizmetini güncelleyebilir misiniz?',
 			'universalMedia.extensionService' => 'Hizmet',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS son nokta',
 			'universalMedia.extensionConsent' => 'Arama metniniz bu hizmet için gönderilir.Manifest\'te yürütülebilir kod yoktur.Sadece bu son noktaya güveniyorsanız devam edin.',
 			'universalMedia.extensionInstall' => 'Hizmet Ekle',
@@ -8430,6 +8648,8 @@ extension on TranslationsTr {
 			'sourceSetup.sharedLibraryInvalid' => '8-100 harf, sayılar, noktalar, alt puanlar veya hyphens kullanın.',
 			'sourceSetup.generateSharedLibraryId' => 'Paylaşılan bir kütüphane kimliği oluşturun',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead talepleri',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Daha fazla paralel okuma hızlı bir NAS veya ağ üzerindeki geçiş kapasitesini geliştirebilir. 1 kullanın, eğer sunucu eşzamanlı talepleri sınırlarsa.',
 			'sourceSetup.nfsReadTest' => 'NFS performansını ölçmek',
 			'sourceSetup.nfsReadTestHelp' => 'Bu NAS bağlantısını ölçmek için en büyük dosyadan 64 MiB\'ye kadar okur. bu ağ bant genişliği kullanır.',
@@ -8534,8 +8754,6 @@ extension on TranslationsTr {
 			'deepLinks.noLiveTv' => 'Hiçbir canlı TV sunucusu bu bağlantı için mevcut değildir.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '“${channel}” kanalı bulamadım.',
 			'deepLinks.showLink' => 'Göster link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Profil Link Göster',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Bu bağlantıyı açtığınızda, bir sonraki bölüm oynanır. Shuffle\'da gösteriyi oynatmak için &mode=shuffle ekleyin.',

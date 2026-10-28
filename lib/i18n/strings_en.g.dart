@@ -6935,17 +6935,14 @@ class Translations$streaming$en {
 	/// en: 'Cloud & add-on streaming'
 	String get title => 'Cloud & add-on streaming';
 
-	/// en: 'Connect a debrid account or a Stremio-compatible add-on. Connections are private to this profile and encrypted on this device.'
+	/// en: 'Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.'
 	String get subtitle => 'Debrid accounts let you browse files already in your cloud and resolve supported streams; Stremio-compatible add-ons add stream choices to movie and episode details. Connections stay private to this profile and encrypted on this device.';
 
 	/// en: '${count} connected source(s)'
 	String connectionsConfigured({required Object count}) => '${count} connected source(s)';
 
-	/// en: 'Couldn\'t unlock the saved streaming settings. Unlock the device, then try again before changing connections.'
+	/// en: 'Couldn't unlock the saved streaming settings. Unlock the device, then try again before changing connections.'
 	String get settingsLoadFailed => 'Couldn\'t unlock the saved streaming settings. Unlock the device, then try again before changing connections.';
-
-	/// en: 'Retry loading connections'
-	String get retrySettingsLoad => 'Retry loading connections';
 
 	/// en: 'These saved connections can't be unlocked. Clear them to reconnect services.'
 	String get settingsUnreadable => 'These saved connections can\'t be unlocked. Clear them to reconnect services.';
@@ -6962,14 +6959,23 @@ class Translations$streaming$en {
 	/// en: 'Couldn't clear the saved streaming settings. Unlock the device and try again.'
 	String get clearUnreadableSettingsFailed => 'Couldn\'t clear the saved streaming settings. Unlock the device and try again.';
 
+	/// en: 'Retry loading connections'
+	String get retrySettingsLoad => 'Retry loading connections';
+
 	/// en: 'Stremio-compatible add-ons'
 	String get addons => 'Stremio-compatible add-ons';
 
-	/// en: 'This catalog couldn\'t be loaded. Refresh to try again.'
-	String get catalogLoadFailed => 'This catalog couldn\'t be loaded. Refresh to try again.';
-
 	/// en: 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.'
 	String get addonsDescription => 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.';
+
+	/// en: 'This catalog couldn't be loaded. Refresh to try again.'
+	String get catalogLoadFailed => 'This catalog couldn\'t be loaded. Refresh to try again.';
+
+	/// en: 'Choose the required filters to browse this catalog.'
+	String get catalogFiltersRequired => 'Choose the required filters to browse this catalog.';
+
+	/// en: 'Required'
+	String get catalogRequiredLabel => 'Required';
 
 	/// en: 'Import from Stremio'
 	String get importFromStremio => 'Import from Stremio';
@@ -7004,10 +7010,10 @@ class Translations$streaming$en {
 	/// en: 'Connected ${count} add-on(s) from Stremio.'
 	String stremioImportAdded({required Object count}) => 'Connected ${count} add-on(s) from Stremio.';
 
-	/// en: 'Connected ${added} add-on(s); ${failed} couldn\'t be connected.'
+	/// en: 'Connected ${added} add-on(s); ${failed} couldn't be connected.'
 	String stremioImportPartial({required Object added, required Object failed}) => 'Connected ${added} add-on(s); ${failed} couldn\'t be connected.';
 
-	/// en: 'Couldn\'t import add-ons from Stremio. Try again.'
+	/// en: 'Couldn't import add-ons from Stremio. Try again.'
 	String get stremioImportFailed => 'Couldn\'t import add-ons from Stremio. Try again.';
 
 	/// en: 'Stremio approval timed out. Start the import again.'
@@ -7028,7 +7034,7 @@ class Translations$streaming$en {
 	/// en: 'Add-on manifest URL'
 	String get manifestUrl => 'Add-on manifest URL';
 
-	/// en: 'Paste the add-on\'s manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.'
+	/// en: 'Paste the add-on's manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.'
 	String get manifestUrlHint => 'Paste the add-on\'s manifest URL. PlezyNG checks for supported catalogs or stream resources before connecting.';
 
 	/// en: 'Allow an unsecured HTTP address'
@@ -7052,7 +7058,7 @@ class Translations$streaming$en {
 	/// en: 'No add-ons connected yet'
 	String get addonEmpty => 'No add-ons connected yet';
 
-	/// en: 'PlezyNG couldn\'t connect to that add-on. Check the manifest URL and try again.'
+	/// en: 'PlezyNG couldn't connect to that add-on. Check the manifest URL and try again.'
 	String get addonError => 'PlezyNG couldn\'t connect to that add-on. Check the manifest URL and try again.';
 
 	/// en: 'Install only add-ons you trust. An add-on can receive the title you ask it to search and can return third-party stream links.'
@@ -7082,7 +7088,7 @@ class Translations$streaming$en {
 	/// en: 'Activation code'
 	String get realDebridCode => 'Activation code';
 
-	/// en: 'Couldn\'t connect to Real-Debrid. Try again.'
+	/// en: 'Couldn't connect to Real-Debrid. Try again.'
 	String get realDebridConnectFailed => 'Couldn\'t connect to Real-Debrid. Try again.';
 
 	/// en: 'AllDebrid'
@@ -7103,7 +7109,7 @@ class Translations$streaming$en {
 	/// en: 'Activation PIN'
 	String get allDebridCode => 'Activation PIN';
 
-	/// en: 'Couldn\'t connect to AllDebrid. Try again.'
+	/// en: 'Couldn't connect to AllDebrid. Try again.'
 	String get allDebridConnectFailed => 'Couldn\'t connect to AllDebrid. Try again.';
 
 	/// en: 'Premiumize'
@@ -7130,7 +7136,7 @@ class Translations$streaming$en {
 	/// en: 'Paste the API key from your ${service} account settings. PlezyNG encrypts it on this device and keeps it private to this profile.'
 	String apiKeyHint({required Object service}) => 'Paste the API key from your ${service} account settings. PlezyNG encrypts it on this device and keeps it private to this profile.';
 
-	/// en: 'Couldn\'t verify that API key. Check it and try again.'
+	/// en: 'Couldn't verify that API key. Check it and try again.'
 	String get apiKeyConnectFailed => 'Couldn\'t verify that API key. Check it and try again.';
 
 	/// en: 'Connected as ${username}'
@@ -7145,7 +7151,7 @@ class Translations$streaming$en {
 	/// en: 'Disconnect ${service}?'
 	String disconnectConfirm({required Object service}) => 'Disconnect ${service}?';
 
-	/// en: 'PlezyNG will remove this device\'s authorization. Your provider files and transfers stay untouched.'
+	/// en: 'PlezyNG will remove this device's authorization. Your provider files and transfers stay untouched.'
 	String get disconnectBody => 'PlezyNG will remove this device\'s authorization. Your provider files and transfers stay untouched.';
 
 	/// en: 'Choose a stream'
@@ -7172,16 +7178,16 @@ class Translations$streaming$en {
 	/// en: 'No subtitle'
 	String get subtitleOff => 'No subtitle';
 
-	/// en: 'Couldn\'t load that subtitle. Try another track.'
+	/// en: 'Couldn't load that subtitle. Try another track.'
 	String get subtitleLoadFailed => 'Couldn\'t load that subtitle. Try another track.';
 
 	/// en: 'Subtitle selected for playback'
 	String get subtitleApplied => 'Subtitle selected for playback';
 
-	/// en: 'Some add-ons couldn\'t be reached.'
+	/// en: 'Some add-ons couldn't be reached.'
 	String get streamLookupPartial => 'Some add-ons couldn\'t be reached.';
 
-	/// en: 'Couldn\'t check the connected add-ons.'
+	/// en: 'Couldn't check the connected add-ons.'
 	String get streamLookupFailed => 'Couldn\'t check the connected add-ons.';
 
 	/// en: 'Open external link'
@@ -7190,13 +7196,13 @@ class Translations$streaming$en {
 	/// en: 'Preparing through your debrid service…'
 	String get streamPrepare => 'Preparing through your debrid service…';
 
-	/// en: 'This stream couldn\'t be prepared. Check the connected account and try another source.'
+	/// en: 'This stream couldn't be prepared. Check the connected account and try another source.'
 	String get streamPrepareFailed => 'This stream couldn\'t be prepared. Check the connected account and try another source.';
 
 	/// en: 'Connect a debrid service to play this torrent stream.'
 	String get streamNeedsRealDebrid => 'Connect a debrid service to play this torrent stream.';
 
-	/// en: 'This stream format isn\'t supported by the in-app player.'
+	/// en: 'This stream format isn't supported by the in-app player.'
 	String get streamUnsupported => 'This stream format isn\'t supported by the in-app player.';
 
 	/// en: 'Choose an episode before searching for a stream.'
@@ -7205,7 +7211,7 @@ class Translations$streaming$en {
 	/// en: 'This episode is missing its season or episode number.'
 	String get remoteNeedsEpisodeNumber => 'This episode is missing its season or episode number.';
 
-	/// en: 'PlezyNG couldn\'t find an IMDb or TMDB ID for this title.'
+	/// en: 'PlezyNG couldn't find an IMDb or TMDB ID for this title.'
 	String get remoteNeedsExternalId => 'PlezyNG couldn\'t find an IMDb or TMDB ID for this title.';
 
 	/// en: 'Watch with connected services'
@@ -7223,9 +7229,6 @@ class Translations$streaming$en {
 	/// en: 'Opens available streams for this episode.'
 	String get episodeStreamHint => 'Opens available streams for this episode.';
 
-	/// en: 'Debrid providers'
-	String get providers => 'Debrid providers';
-
 	/// en: 'Cloud files'
 	String get cloudFiles => 'Cloud files';
 
@@ -7237,6 +7240,9 @@ class Translations$streaming$en {
 
 	/// en: 'Couldn't load cloud files. Check the connection and retry.'
 	String get cloudLoadFailed => 'Couldn\'t load cloud files. Check the connection and retry.';
+
+	/// en: 'Debrid providers'
+	String get providers => 'Debrid providers';
 }
 
 // Path: addServer
@@ -15181,8 +15187,10 @@ extension on Translations {
 			'streaming.clearUnreadableSettingsFailed' => 'Couldn\'t clear the saved streaming settings. Unlock the device and try again.',
 			'streaming.retrySettingsLoad' => 'Retry loading connections',
 			'streaming.addons' => 'Stremio-compatible add-ons',
-			'streaming.catalogLoadFailed' => 'This catalog couldn\'t be loaded. Refresh to try again.',
 			'streaming.addonsDescription' => 'Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.',
+			'streaming.catalogLoadFailed' => 'This catalog couldn\'t be loaded. Refresh to try again.',
+			'streaming.catalogFiltersRequired' => 'Choose the required filters to browse this catalog.',
+			'streaming.catalogRequiredLabel' => 'Required',
 			'streaming.importFromStremio' => 'Import from Stremio',
 			'streaming.stremioImportInstructions' => 'Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.',
 			'streaming.stremioImportOpen' => 'Open Stremio account link',
@@ -15267,11 +15275,11 @@ extension on Translations {
 			'streaming.episodes' => 'Episodes',
 			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Season ${season}, episode ${episode}',
 			'streaming.episodeStreamHint' => 'Opens available streams for this episode.',
-			'streaming.providers' => 'Debrid providers',
 			'streaming.cloudFiles' => 'Cloud files',
 			'streaming.browseCloud' => 'Browse files',
 			'streaming.cloudEmpty' => 'No ready video files were found in this account.',
 			'streaming.cloudLoadFailed' => 'Couldn\'t load cloud files. Check the connection and retry.',
+			'streaming.providers' => 'Debrid providers',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
@@ -15550,6 +15558,8 @@ extension on Translations {
 			'universalMedia.contrast' => 'Contrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturation',
 			'universalMedia.view360' => 'Flat view for 360° video',
 			'universalMedia.view360Help' => 'Use this for equirectangular 360° video. MPV needs FFmpeg’s v360 filter for this view.',
@@ -15654,8 +15664,6 @@ extension on Translations {
 			'universalMedia.extensionInstallTitle' => 'Add this search service?',
 			'universalMedia.extensionReplaceTitle' => 'Update this search service?',
 			'universalMedia.extensionService' => 'Service',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.',
 			'universalMedia.extensionInstall' => 'Add service',
@@ -16064,6 +16072,8 @@ extension on Translations {
 			'sourceSetup.sharedLibraryInvalid' => 'Use 8–100 letters, numbers, dots, underscores or hyphens.',
 			'sourceSetup.generateSharedLibraryId' => 'Generate a shared library ID',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead requests',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.',
 			'sourceSetup.nfsReadTest' => 'Measure NFS read performance',
 			'sourceSetup.nfsReadTestHelp' => 'Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.',
@@ -16168,8 +16178,6 @@ extension on Translations {
 			'deepLinks.noLiveTv' => 'No Live TV server is available for this link.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Couldn\'t find channel "${channel}".',
 			'deepLinks.showLink' => 'Show link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Show profile link',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.',

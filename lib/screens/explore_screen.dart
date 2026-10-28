@@ -395,7 +395,7 @@ class ExploreScreenState extends State<ExploreScreen>
               focusMemory: _hubFocusMemory,
               icon: _rowIcon(rowHubs[i].row),
               loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
-              filterSource: _filterSourceFor(rowHubs[i].row),
+              filterSource: _filterSourceFor(rowHubs[i]),
               onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
               onNavigateUp: i == 0 ? searchFocusNode.requestFocus : null,
               onNavigateToSidebar: _navigateToSidebar,
@@ -502,14 +502,28 @@ class ExploreScreenState extends State<ExploreScreen>
     });
   }
 
-  HubFilterSource? _filterSourceFor(CatalogRowId? row) {
+  HubFilterSource? _filterSourceFor(ExploreRowHub rowHub) {
     final source = _explore.activeSource;
-    if (row == null || source is! CatalogRowFilters) return null;
-    final filtering = source as CatalogRowFilters;
+    if (rowHub.row case final row?) {
+      if (source is! CatalogRowFilters) return null;
+      final filtering = source as CatalogRowFilters;
+      return HubFilterSource(
+        loadFilters: () => filtering.fetchRowFilters(row),
+        loadFilterValues: filtering.fetchRowFilterValues,
+        loadItems: (filters) => _explore.loadAllForFilteredRow(row, filters),
+      );
+    }
+    final hubId = rowHub.providerHubId;
+    final hub = rowHub.providerHub;
+    if (hubId == null || hub == null || source is! CatalogHubFiltersSource || hub.filters.isEmpty) return null;
+    final filtering = source as CatalogHubFiltersSource;
     return HubFilterSource(
-      loadFilters: () => filtering.fetchRowFilters(row),
-      loadFilterValues: filtering.fetchRowFilterValues,
-      loadItems: (filters) => _explore.loadAllForFilteredRow(row, filters),
+      loadFilters: () => filtering.fetchHubFilters(hubId),
+      loadFilterValues: (filter) => filtering.fetchHubFilterValues(hubId, filter),
+      loadItems: (filters) => _explore.loadAllForFilteredHub(rowHub, filters),
+      initialFilters: hub.initialFilters,
+      canLoadInitially: !hub.requiresFilterInput,
+      initialHint: hub.requiresFilterInput ? t.streaming.catalogFiltersRequired : null,
     );
   }
 
@@ -636,7 +650,10 @@ class ExploreScreenState extends State<ExploreScreen>
                   final rowHub = _rowForHub(hub);
                   return rowHub == null ? () => Future.value(hub.items) : () => _explore.loadAllForHub(rowHub);
                 },
-                filterSourceFor: (hub) => _filterSourceFor(_rowForHub(hub)?.row),
+                filterSourceFor: (hub) {
+                  final rowHub = _rowForHub(hub);
+                  return rowHub == null ? null : _filterSourceFor(rowHub);
+                },
                 onNavigateUp: _actionBarKey.currentState?.requestFocusOnFirst,
                 onNavigateToSidebar: _navigateToSidebar,
                 onBack: _navigateToSidebar,

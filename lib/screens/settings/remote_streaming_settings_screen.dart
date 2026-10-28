@@ -30,6 +30,7 @@ class RemoteStreamingSettingsScreen extends StatefulWidget {
 
 class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsScreen> {
   bool _connecting = false;
+  final Set<String> _checkingAddonIds = {};
 
   Future<void> _copyAuthorizationCode(String value) async {
     await Clipboard.setData(ClipboardData(text: value));
@@ -92,6 +93,57 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
     }
   }
 
+  Future<void> _checkAddonUpdate(StremioAddonInstallation addon) async {
+    if (!_checkingAddonIds.add(addon.id)) return;
+    final streaming = context.read<RemoteStreamingProvider>();
+    final profile = streaming.profileId;
+    setState(() {});
+    try {
+      final check = await streaming.checkAddonUpdate(addon.id);
+      if (!mounted || streaming.profileId != profile || !streaming.isReady) return;
+      if (!check.hasChanges) {
+        showAppSnackBar(context, t.update.latestVersion);
+        return;
+      }
+      final latestName = check.latestManifest['name'] as String;
+      final approved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t.update.available),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(addon.name, style: Theme.of(dialogContext).textTheme.titleSmall),
+                if (latestName != addon.name) ...[
+                  const SizedBox(height: 4),
+                  Text(latestName, style: Theme.of(dialogContext).textTheme.titleMedium),
+                ],
+                const SizedBox(height: 12),
+                Text(t.update.currentVersion(version: check.currentVersion)),
+                Text(t.update.versionAvailable(version: check.latestVersion)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.common.later)),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.common.confirm)),
+          ],
+        ),
+      );
+      if (approved != true || !mounted || streaming.profileId != profile || !streaming.isReady) return;
+      await streaming.applyAddonUpdate(check);
+      if (mounted && streaming.profileId == profile) showAppSnackBar(context, t.update.latestVersion);
+    } on Object {
+      if (mounted && streaming.profileId == profile) showAppSnackBar(context, t.update.checkFailed);
+    } finally {
+      _checkingAddonIds.remove(addon.id);
+      if (mounted) setState(() {});
+    }
+  }
+
   Future<void> _importFromStremio() async {
     if (_connecting) return;
     final streaming = context.read<RemoteStreamingProvider>();
@@ -127,7 +179,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
           children: [
             const SizedBox(height: 10),
             Text(t.streaming.stremioImportCode, style: Theme.of(context).textTheme.labelMedium),
-            _copyableAuthorizationCode(authorization.code, copyLabel: t.common.copy),
+            _copyableAuthorizationCode(authorization.code, copyLabel: t.services.deviceCode.copyCode),
           ],
         ),
       );
@@ -142,6 +194,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
         Navigator.of(context, rootNavigator: true).pop();
       }
       await dialogResult;
+      if (!mounted || streaming.profileId != profile || !streaming.isReady) return;
 
       final alreadyInstalled = streaming.addons.map((addon) => addon.manifestUrl).toSet();
       final candidates = collection.addons.where((addon) => !alreadyInstalled.contains(addon.manifestUrl)).toList();
@@ -158,7 +211,9 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
           maxSelected: remainingSlots,
         ),
       );
-      if (selected == null || selected.isEmpty || !mounted || streaming.profileId != profile || !streaming.isReady) return;
+      if (selected == null || selected.isEmpty || !mounted || streaming.profileId != profile || !streaming.isReady) {
+        return;
+      }
 
       var added = 0;
       var failed = 0;
@@ -282,7 +337,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
           children: [
             const SizedBox(height: 10),
             Text(t.streaming.allDebridCode, style: Theme.of(context).textTheme.labelMedium),
-            _copyableAuthorizationCode(code.pin, copyLabel: t.common.copy),
+            _copyableAuthorizationCode(code.pin, copyLabel: t.services.deviceCode.copyCode),
           ],
         ),
       );
@@ -361,10 +416,7 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
         content: Text(t.streaming.clearUnreadableSettingsBody),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(t.streaming.clearUnreadableSettings),
-          ),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.streaming.clearUnreadableSettings)),
         ],
       ),
     );
@@ -446,156 +498,167 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
         final premiumize = streaming.accountFor(RemoteStreamService.premiumize);
         final torbox = streaming.accountFor(RemoteStreamService.torbox);
         return FocusedScrollScaffold(
-        title: Text(t.streaming.title),
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate([
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: SettingsHelpHint(text: t.streaming.subtitle),
-              ),
-              if (streaming.loadFailed)
+          title: Text(t.streaming.title),
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate([
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        streaming.settingsUnreadable
-                            ? t.streaming.settingsUnreadable
-                            : t.streaming.settingsLoadFailed,
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        alignment: WrapAlignment.end,
-                        children: [
-                          if (streaming.settingsUnreadable)
-                            TextButton(
-                              onPressed: _clearUnreadableSettings,
-                              child: Text(t.streaming.clearUnreadableSettings),
-                            ),
-                          TextButton(
-                            onPressed: streaming.retrySettingsLoad,
-                            child: Text(t.streaming.retrySettingsLoad),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: SettingsHelpHint(text: t.streaming.subtitle),
                 ),
-              SettingsGroup(
-                title: t.streaming.addons,
-                children: [
+                if (streaming.loadFailed)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                    child: Text(t.streaming.addonsDescription, style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                  if (streaming.loading)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (streaming.addons.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: Text(t.streaming.addonEmpty, style: Theme.of(context).textTheme.bodyMedium),
-                    )
-                  else
-                    for (final addon in streaming.addons)
-                      FocusableListTile(
-                        leading: const AppIcon(Symbols.extension_rounded),
-                        title: Text(addon.name),
-                        subtitle: Text(addon.enabled ? t.streaming.addonInstalled : t.streaming.addonToggle),
-                        onTap: () => unawaited(streaming.setAddonEnabled(addon.id, !addon.enabled)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          streaming.settingsUnreadable
+                              ? t.streaming.settingsUnreadable
+                              : t.streaming.settingsLoadFailed,
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          alignment: WrapAlignment.end,
                           children: [
-                            Switch.adaptive(
-                              value: addon.enabled,
-                              onChanged: (value) => unawaited(streaming.setAddonEnabled(addon.id, value)),
-                            ),
-                            IconButton(
-                              tooltip: t.common.remove,
-                              onPressed: () async {
-                                await streaming.removeAddon(addon.id);
-                                if (context.mounted) showAppSnackBar(context, t.streaming.addonRemoved);
-                              },
-                              icon: const AppIcon(Symbols.delete_outline_rounded),
+                            if (streaming.settingsUnreadable)
+                              TextButton(
+                                onPressed: _clearUnreadableSettings,
+                                child: Text(t.streaming.clearUnreadableSettings),
+                              ),
+                            TextButton(
+                              onPressed: streaming.retrySettingsLoad,
+                              child: Text(t.streaming.retrySettingsLoad),
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                  ),
+                SettingsGroup(
+                  title: t.streaming.addons,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Text(t.streaming.addonsDescription, style: Theme.of(context).textTheme.bodySmall),
+                    ),
+                    if (streaming.loading)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (streaming.addons.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Text(t.streaming.addonEmpty, style: Theme.of(context).textTheme.bodyMedium),
+                      )
+                    else
+                      for (final addon in streaming.addons)
+                        FocusableListTile(
+                          leading: const AppIcon(Symbols.extension_rounded),
+                          title: Text(addon.name),
+                          subtitle: Text(addon.enabled ? t.streaming.addonInstalled : t.streaming.addonToggle),
+                          onTap: () => unawaited(streaming.setAddonEnabled(addon.id, !addon.enabled)),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: t.settings.checkForUpdates,
+                                onPressed: _checkingAddonIds.contains(addon.id)
+                                    ? null
+                                    : () => unawaited(_checkAddonUpdate(addon)),
+                                icon: _checkingAddonIds.contains(addon.id)
+                                    ? const SizedBox.square(
+                                        dimension: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const AppIcon(Symbols.system_update_rounded),
+                              ),
+                              Switch.adaptive(
+                                value: addon.enabled,
+                                onChanged: (value) => unawaited(streaming.setAddonEnabled(addon.id, value)),
+                              ),
+                              IconButton(
+                                tooltip: t.common.delete,
+                                onPressed: () async {
+                                  await streaming.removeAddon(addon.id);
+                                  if (context.mounted) showAppSnackBar(context, t.streaming.addonRemoved);
+                                },
+                                icon: const AppIcon(Symbols.delete_outline_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: FilledButton.tonalIcon(
+                        onPressed: streaming.isReady && !_connecting ? _importFromStremio : null,
+                        icon: _connecting
+                            ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const AppIcon(Symbols.qr_code_rounded),
+                        label: Text(t.streaming.importFromStremio),
                       ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                    child: FilledButton.tonalIcon(
-                      onPressed: streaming.isReady && !_connecting ? _importFromStremio : null,
-                      icon: _connecting
-                          ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const AppIcon(Symbols.qr_code_rounded),
-                      label: Text(t.streaming.importFromStremio),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: TextButton.icon(
-                      onPressed: streaming.isReady && !_connecting ? _addAddon : null,
-                      icon: const AppIcon(Symbols.add_rounded),
-                      label: Text(t.streaming.addByManifestUrl),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: TextButton.icon(
+                        onPressed: streaming.isReady && !_connecting ? _addAddon : null,
+                        icon: const AppIcon(Symbols.add_rounded),
+                        label: Text(t.streaming.addByManifestUrl),
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                    child: Text(t.streaming.addonPrivacy, style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                ],
-              ),
-              SettingsGroup(
-                title: t.streaming.providers,
-                children: [
-                  _providerTile(
-                    service: RemoteStreamService.realDebrid,
-                    label: t.streaming.realDebrid,
-                    description: t.streaming.realDebridDescription,
-                    account: realDebrid,
-                    canConnect: streaming.isReady,
-                    onConnect: _connectRealDebrid,
-                    onBrowse: () => _browseCloud(RemoteStreamService.realDebrid),
-                  ),
-                  _providerTile(
-                    service: RemoteStreamService.allDebrid,
-                    label: t.streaming.allDebrid,
-                    description: t.streaming.allDebridDescription,
-                    account: allDebrid,
-                    canConnect: streaming.isReady,
-                    onConnect: _connectAllDebrid,
-                    onBrowse: () => _browseCloud(RemoteStreamService.allDebrid),
-                  ),
-                  _providerTile(
-                    service: RemoteStreamService.premiumize,
-                    label: t.streaming.premiumize,
-                    description: t.streaming.premiumizeDescription,
-                    account: premiumize,
-                    canConnect: streaming.isReady,
-                    onConnect: () => _connectWithApiKey(RemoteStreamService.premiumize, t.streaming.premiumize),
-                    onBrowse: () => _browseCloud(RemoteStreamService.premiumize),
-                  ),
-                  _providerTile(
-                    service: RemoteStreamService.torbox,
-                    label: t.streaming.torbox,
-                    description: t.streaming.torboxDescription,
-                    account: torbox,
-                    canConnect: streaming.isReady,
-                    onConnect: () => _connectWithApiKey(RemoteStreamService.torbox, t.streaming.torbox),
-                    onBrowse: () => _browseCloud(RemoteStreamService.torbox),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ]),
-          ),
-        ],
-      ),
-      );
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                      child: Text(t.streaming.addonPrivacy, style: Theme.of(context).textTheme.bodySmall),
+                    ),
+                  ],
+                ),
+                SettingsGroup(
+                  title: t.streaming.providers,
+                  children: [
+                    _providerTile(
+                      service: RemoteStreamService.realDebrid,
+                      label: t.streaming.realDebrid,
+                      description: t.streaming.realDebridDescription,
+                      account: realDebrid,
+                      canConnect: streaming.isReady,
+                      onConnect: _connectRealDebrid,
+                      onBrowse: () => _browseCloud(RemoteStreamService.realDebrid),
+                    ),
+                    _providerTile(
+                      service: RemoteStreamService.allDebrid,
+                      label: t.streaming.allDebrid,
+                      description: t.streaming.allDebridDescription,
+                      account: allDebrid,
+                      canConnect: streaming.isReady,
+                      onConnect: _connectAllDebrid,
+                      onBrowse: () => _browseCloud(RemoteStreamService.allDebrid),
+                    ),
+                    _providerTile(
+                      service: RemoteStreamService.premiumize,
+                      label: t.streaming.premiumize,
+                      description: t.streaming.premiumizeDescription,
+                      account: premiumize,
+                      canConnect: streaming.isReady,
+                      onConnect: () => _connectWithApiKey(RemoteStreamService.premiumize, t.streaming.premiumize),
+                      onBrowse: () => _browseCloud(RemoteStreamService.premiumize),
+                    ),
+                    _providerTile(
+                      service: RemoteStreamService.torbox,
+                      label: t.streaming.torbox,
+                      description: t.streaming.torboxDescription,
+                      account: torbox,
+                      canConnect: streaming.isReady,
+                      onConnect: () => _connectWithApiKey(RemoteStreamService.torbox, t.streaming.torbox),
+                      onBrowse: () => _browseCloud(RemoteStreamService.torbox),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ]),
+            ),
+          ],
+        );
       },
     );
   }
@@ -712,11 +775,7 @@ class _AddAddonDialogState extends State<_AddAddonDialog> {
 }
 
 class _StremioAddonImportDialog extends StatefulWidget {
-  const _StremioAddonImportDialog({
-    required this.addons,
-    required this.ignoredCount,
-    required this.maxSelected,
-  });
+  const _StremioAddonImportDialog({required this.addons, required this.ignoredCount, required this.maxSelected});
 
   final List<StremioAccountAddon> addons;
   final int ignoredCount;
@@ -774,10 +833,7 @@ class _StremioAddonImportDialogState extends State<_StremioAddonImportDialog> {
                     if (addon.supportsStreams) t.streaming.stremioStreams,
                   ].join(' · ');
                   return FocusableListTile(
-                    leading: Checkbox.adaptive(
-                      value: selected,
-                      onChanged: canSelect ? (_) => _toggle(addon) : null,
-                    ),
+                    leading: Checkbox.adaptive(value: selected, onChanged: canSelect ? (_) => _toggle(addon) : null),
                     title: Text(addon.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                     subtitle: Text(
                       '${addon.host} · $capabilities',

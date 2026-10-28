@@ -169,7 +169,9 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
       return;
     }
     final accountId = provider.accountFor(widget.service)?.id;
-    final profileId = context.read<SourceController>().profileId;
+    final sourceController = context.read<SourceController>();
+    final sourcePlayback = context.read<SourcePlayback>();
+    final profileId = sourceController.profileId;
     if (!provider.isReady ||
         accountId == null ||
         accountId != item.accountId ||
@@ -182,7 +184,7 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
       final resolved = await provider.resolveCloudFile(item);
       if (provider.profileId != profileId ||
           provider.accountFor(widget.service)?.id != accountId ||
-          context.read<SourceController>().profileId != profileId) {
+          sourceController.profileId != profileId) {
         return;
       }
       final fileId = sourceDigest('${widget.service.name}\u0000${item.id}');
@@ -201,20 +203,19 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
         files: [file],
         onlineTitle: item.name,
       );
-      await context.read<SourcePlayback>().start(
+      await sourcePlayback.start(
         entry,
         [file],
         playbackMode: PublicationMode.watching,
         localOverrides: {file.id: resolved.uri},
         persistProgress: true,
       );
-      if (!mounted ||
-          provider.profileId != profileId ||
+      if (!mounted) return;
+      if (provider.profileId != profileId ||
           provider.accountFor(widget.service)?.id != accountId ||
-          context.read<SourceController>().profileId != profileId) {
+          sourceController.profileId != profileId) {
         return;
       }
-      if (!mounted) return;
       await Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -341,7 +342,7 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AppIcon(
-                      Symbols.video_library_outlined,
+                      Symbols.video_library_rounded,
                       size: 40,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

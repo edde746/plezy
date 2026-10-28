@@ -26,8 +26,12 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   load more from paged provider inventories, refresh, and recover from empty or
   unavailable states without losing account setup.
 - Browse supported Stremio add-on catalogs in the existing Explore source
-  switcher; search supported catalogs and open installation-scoped title
-  details without creating a new navigation destination.
+  switcher; search catalogs and use each catalog's required choice or text
+  filters from the existing View All filter sheet. Open installation-scoped
+  title details without creating a new navigation destination.
+- Check installed add-ons for manifest changes and review the proposed version
+  before applying it. Updates keep the saved installation and enabled state;
+  changed add-on identities require an explicit reinstall.
 - Fetch add-on stream options for supported library and catalog movie/episode
   details, with show episodes listed and selectable inside the existing title
   detail screen.

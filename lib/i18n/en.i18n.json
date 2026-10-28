@@ -2977,6 +2977,8 @@
     "addons": "Stremio-compatible add-ons",
     "addonsDescription": "Import from Stremio or connect by manifest URL. Browse catalogs in Explore and use streams from supported title details.",
     "catalogLoadFailed": "This catalog couldn't be loaded. Refresh to try again.",
+    "catalogFiltersRequired": "Choose the required filters to browse this catalog.",
+    "catalogRequiredLabel": "Required",
     "importFromStremio": "Import from Stremio",
     "stremioImportInstructions": "Scan the QR code or open the link, sign in on Stremio, then approve access. PlezyNG only reads your add-on list; it never asks for your password or changes your Stremio settings.",
     "stremioImportOpen": "Open Stremio account link",

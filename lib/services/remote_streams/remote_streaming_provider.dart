@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -19,6 +20,10 @@ class RemoteStreamSearchResult {
 /// Switching profile invalidates in-flight discovery before it can publish or
 /// persist results into the next profile.
 class RemoteStreamingProvider extends ChangeNotifier {
+  RemoteStreamingProvider({StremioAddonClient Function()? stremioAddonClientFactory})
+    : _stremioAddonClientFactory = stremioAddonClientFactory ?? StremioAddonClient.new;
+
+  final StremioAddonClient Function() _stremioAddonClientFactory;
   String? _profileId;
   int _generation = 0;
   bool loading = false;
@@ -115,7 +120,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
     final existing = addons.where((addon) => addon.manifestUrl == address).firstOrNull;
     if (existing != null) return existing;
     if (addons.length >= 50) throw const StremioAddonException(StremioAddonFailure.unavailable);
-    final client = StremioAddonClient();
+    final client = _stremioAddonClientFactory();
     try {
       final manifest = await client.fetchManifest(address, allowHttp: allowHttp);
       if (!_current(profile, generation)) throw const StremioAddonException(StremioAddonFailure.unavailable);
@@ -140,6 +145,74 @@ class RemoteStreamingProvider extends ChangeNotifier {
     } finally {
       client.close();
     }
+  }
+
+  /// Fetches a fresh manifest without changing the saved installation.
+  /// Callers can show the proposed version and ask before applying it.
+  Future<StremioAddonUpdateCheck> checkAddonUpdate(String id) async {
+    final (profile, generation) = _requireProfile();
+    final installed = addons.where((addon) => addon.id == id).firstOrNull;
+    if (installed == null) throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    final client = _stremioAddonClientFactory();
+    try {
+      final latestManifest = await client.fetchManifest(installed.manifestUrl, allowHttp: installed.allowHttp);
+      if (!_current(profile, generation)) {
+        throw const StremioAddonException(StremioAddonFailure.unavailable);
+      }
+      // A manifest URL is a signed endpoint for a particular add-on. A change
+      // of identity needs an explicit remove/reinstall action instead of
+      // silently replacing the source behind an existing catalog identity.
+      if (latestManifest['id'] != installed.manifest['id']) {
+        throw const StremioAddonException(StremioAddonFailure.invalidResponse);
+      }
+      return StremioAddonUpdateCheck(
+        installed: installed,
+        latestManifest: latestManifest,
+        hasChanges: _canonicalManifest(installed.manifest) != _canonicalManifest(latestManifest),
+        profileId: profile,
+        generation: generation,
+      );
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Applies only a previously reviewed update, keeping installation ID,
+  /// enabled state, endpoint and explicit HTTP opt-in intact.
+  Future<void> applyAddonUpdate(StremioAddonUpdateCheck check) async {
+    if (!check.hasChanges) return;
+    final profile = check.profileId;
+    final generation = check.generation;
+    if (!_current(profile, generation)) {
+      throw const StremioAddonException(StremioAddonFailure.unavailable);
+    }
+    if (check.latestManifest['id'] != check.installed.manifest['id']) {
+      throw const StremioAddonException(StremioAddonFailure.invalidResponse);
+    }
+    await _commit(profile, generation, (current) {
+      final saved = current.addons.where((addon) => addon.id == check.installed.id).firstOrNull;
+      if (saved == null ||
+          saved.manifestUrl != check.installed.manifestUrl ||
+          saved.allowHttp != check.installed.allowHttp ||
+          _canonicalManifest(saved.manifest) != _canonicalManifest(check.installed.manifest)) {
+        throw const StremioAddonException(StremioAddonFailure.unavailable);
+      }
+      final replacement = StremioAddonInstallation(
+        id: saved.id,
+        name: (check.latestManifest['name'] as String).trim(),
+        manifestUrl: saved.manifestUrl,
+        manifest: check.latestManifest,
+        enabled: saved.enabled,
+        allowHttp: saved.allowHttp,
+      );
+      return RemoteStreamSnapshot(
+        addons: [
+          for (final addon in current.addons)
+            if (addon.id == saved.id) replacement else addon,
+        ],
+        accounts: current.accounts,
+      );
+    });
   }
 
   Future<void> setAddonEnabled(String id, bool enabled) async {
@@ -197,7 +270,11 @@ class RemoteStreamingProvider extends ChangeNotifier {
       }
       return RemoteStreamSnapshot(
         addons: current.addons,
-        accounts: [for (final account in current.accounts) if (account.service != updated.service) account, updated],
+        accounts: [
+          for (final account in current.accounts)
+            if (account.service != updated.service) account,
+          updated,
+        ],
       );
     });
   }
@@ -284,10 +361,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
           onAccountRefreshed: (updated) => _persistRefreshedAccount(profile, generation, account.id, updated),
         );
         try {
-          page = await client.browseCloud(
-            torrentId: parentId,
-            offset: parentId == null ? _parseOffset(cursor) : 0,
-          );
+          page = await client.browseCloud(torrentId: parentId, offset: parentId == null ? _parseOffset(cursor) : 0);
         } finally {
           client.close();
         }
@@ -311,10 +385,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       case RemoteStreamService.torbox:
         final client = TorBoxClient(account: account);
         try {
-          page = await client.browseCloud(
-            torrentId: parentId,
-            offset: parentId == null ? _parseOffset(cursor) : 0,
-          );
+          page = await client.browseCloud(torrentId: parentId, offset: parentId == null ? _parseOffset(cursor) : 0);
         } finally {
           client.close();
         }
@@ -430,21 +501,23 @@ class RemoteStreamingProvider extends ChangeNotifier {
     final generation = _generation;
     final enabled = addons.where((addon) => addon.enabled).toList(growable: false);
     if (enabled.isEmpty) return const RemoteStreamSearchResult(candidates: [], failedAddons: 0);
-    final results = await Future.wait(enabled.map((addon) async {
-      final client = StremioAddonClient();
-      try {
-        return await client.fetchStreams(addon, request).timeout(const Duration(seconds: 22));
-      } on Object {
-        return null;
-      } finally {
-        client.close();
-      }
-    }));
+    final results = await Future.wait(
+      enabled.map((addon) async {
+        final client = StremioAddonClient();
+        try {
+          return await client.fetchStreams(addon, request).timeout(const Duration(seconds: 22));
+        } on Object {
+          return null;
+        } finally {
+          client.close();
+        }
+      }),
+    );
     if (!_current(profile, generation)) return const RemoteStreamSearchResult(candidates: [], failedAddons: 0);
-    final candidates = <RemoteStreamCandidate>[
-      for (final result in results)
-        if (result != null) ...result,
-    ];
+    final candidates = <RemoteStreamCandidate>[];
+    for (final result in results) {
+      if (result != null) candidates.addAll(result);
+    }
     return RemoteStreamSearchResult(
       candidates: List.unmodifiable(candidates),
       failedAddons: results.where((result) => result == null).length,
@@ -466,8 +539,19 @@ class RemoteStreamingProvider extends ChangeNotifier {
 
   Future<T> _serializeMutation<T>(Future<T> Function() operation) {
     final next = _mutationQueue.then((_) => operation());
-    _mutationQueue = next.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    _mutationQueue = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return next;
+  }
+
+  String _canonicalManifest(Map<String, dynamic> manifest) => jsonEncode(_canonicalJson(manifest));
+
+  Object? _canonicalJson(Object? value) {
+    if (value is Map) {
+      final keys = value.keys.map((key) => key.toString()).toList()..sort();
+      return {for (final key in keys) key: _canonicalJson(value[key])};
+    }
+    if (value is List) return [for (final item in value) _canonicalJson(item)];
+    return value;
   }
 
   (String, int) _requireProfile() {

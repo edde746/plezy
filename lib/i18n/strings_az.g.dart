@@ -92,6 +92,7 @@ class TranslationsAz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$az trakt = _Translations$trakt$az._(_root);
 	@override late final _Translations$seerr$az seerr = _Translations$seerr$az._(_root);
 	@override late final _Translations$services$az services = _Translations$services$az._(_root);
+	@override late final _Translations$streaming$az streaming = _Translations$streaming$az._(_root);
 	@override late final _Translations$addServer$az addServer = _Translations$addServer$az._(_root);
 	@override late final _Translations$cast$az cast = _Translations$cast$az._(_root);
 	@override late final _Translations$automation$az automation = _Translations$automation$az._(_root);
@@ -2755,6 +2756,119 @@ class _Translations$services$az extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$az libraryFilter = _Translations$services$libraryFilter$az._(_root);
 	@override String get seerrDescription => '“Seerr” və ya “Overseerr” ilə bağlanın, başlıklar aradan və medya talepləri gönderin.';
 	@override late final _Translations$services$trackerDescriptions$az trackerDescriptions = _Translations$services$trackerDescriptions$az._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$az extends Translations$streaming$en {
+	_Translations$streaming$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bulud və əlavələrdən yayım';
+	@override String get subtitle => 'Buludunuzdakı fayllara baxmaq və dəstəklənən yayımları oynatmaq üçün Debrid hesabı qoşun. Stremio ilə uyğun əlavələr film və bölüm səhifələrində yayım seçimləri təqdim edir. Bağlantı məlumatları bu cihazda şifrələnir və bu profildə saxlanılır.';
+	@override String connectionsConfigured({required Object count}) => 'Qoşulmuş mənbələr: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG saxlanmış yayım parametrlərinin kilidini aça bilmədi. Bağlantıları dəyişməzdən əvvəl cihazın kilidini açıb yenidən cəhd edin.';
+	@override String get settingsUnreadable => 'PlezyNG bu saxlanmış bağlantıların kilidini aça bilmədi. Xidmətləri yenidən qoşmaq üçün onları silin.';
+	@override String get clearUnreadableSettings => 'Saxlanmış parametrləri sil';
+	@override String get clearUnreadableSettingsConfirm => 'Saxlanmış yayım parametrləri silinsin?';
+	@override String get clearUnreadableSettingsBody => 'Bu, provayder hesablarını və əlavələrin ünvanlarını bu profildən silir. Bu əməliyyatı geri qaytarmaq mümkün deyil.';
+	@override String get clearUnreadableSettingsFailed => 'Saxlanmış yayım parametrlərini silmək olmadı. Cihazın kilidini açıb yenidən cəhd edin.';
+	@override String get retrySettingsLoad => 'Bağlantıları yenidən yüklə';
+	@override String get addons => 'Stremio ilə uyğun əlavələr';
+	@override String get addonsDescription => 'Stremio-dan əlavələri idxal edin və ya manifest URL-i ilə qoşun. Kəşf bölməsində kataloqlara baxın, film və ya bölüm səhifələrindən yayım seçimlərini açın.';
+	@override String get catalogLoadFailed => 'Bu kataloqu yükləmək olmadı. Yeniləyib yenidən cəhd edin.';
+	@override String get catalogFiltersRequired => 'Kataloqa baxmaq üçün tələb olunan filtrləri seçin.';
+	@override String get catalogRequiredLabel => 'Tələb olunur';
+	@override String get importFromStremio => 'Stremio-dan idxal et';
+	@override String get stremioImportInstructions => 'QR kodunu skan edin və ya keçidi açın. Stremio-ya daxil olun və sorğunu təsdiqləyin. PlezyNG yalnız əlavə siyahınızı oxuyur; Stremio parolunuzu istəmir və parametrləri dəyişmir.';
+	@override String get stremioImportOpen => 'Stremio keçidini aç';
+	@override String get stremioImportCode => 'Bağlantı kodu';
+	@override String get stremioImportPreviewTitle => 'Əlavələri seçin';
+	@override String get stremioImportPreviewBody => 'PlezyNG-yə qoşmaq istədiyiniz əlavələri seçin. Bu idxalda yalnız HTTPS ünvanları qəbul edilir.';
+	@override String stremioImportIgnored({required Object count}) => 'Dəstəklənməyən və ya təhlükəsiz olmayan ünvana görə ötürülən əlavələr: ${count}.';
+	@override String get stremioCatalogs => 'Kataloqlar';
+	@override String get stremioStreams => 'Yayımlar';
+	@override String stremioImportAddSelected({required Object count}) => 'Seçilənləri əlavə et (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Stremio-dan qoşulan əlavələr: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Qoşulan əlavələr: ${added}; qoşula bilməyən: ${failed}.';
+	@override String get stremioImportFailed => 'Stremio-dan əlavələri idxal etmək olmadı. Yenidən cəhd edin.';
+	@override String get stremioImportTimedOut => 'Stremio təsdiqinin müddəti bitdi. İdxalı yenidən başladın.';
+	@override String get stremioImportEmpty => 'Bu Stremio hesabında yeni uyğun əlavə tapılmadı.';
+	@override String get stremioImportLimitReached => 'Daha çox idxal etməzdən əvvəl bir əlavəni silin.';
+	@override String get addByManifestUrl => 'Manifest URL-i ilə əlavə et';
+	@override String get addAddon => 'Əlavə əlavə et';
+	@override String get manifestUrl => 'Əlavənin manifest URL-i';
+	@override String get manifestUrlHint => 'Əlavənin manifest URL-ini yapışdırın. Qoşulmazdan əvvəl PlezyNG kataloq və ya yayım resurslarını dəstəklədiyini yoxlayır.';
+	@override String get allowHttp => 'Şifrələnməmiş HTTP ünvanına icazə ver';
+	@override String get allowHttpDescription => 'Bunu yalnız şəxsi şəbəkənizdə etibarlı əlavə üçün istifadə edin.';
+	@override String get installAddon => 'Əlavəni qoş';
+	@override String get addonInstalled => 'Əlavə qoşuldu';
+	@override String get addonRemoved => 'Əlavə silindi';
+	@override String get addonToggle => 'Əlavəni aktiv et';
+	@override String get addonEmpty => 'Hələ qoşulmuş əlavə yoxdur';
+	@override String get addonError => 'PlezyNG bu əlavəyə qoşula bilmədi. Manifest URL-ini yoxlayıb yenidən cəhd edin.';
+	@override String get addonPrivacy => 'Yalnız etibar etdiyiniz əlavələri qoşun. Axtarış zamanı əlavə axtardığınız başlığı alır və üçüncü tərəf yayım keçidləri qaytara bilər.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Real-Debrid hesabınız vasitəsilə dəstəklənən torrent yayımlarını oynadın.';
+	@override String get connectRealDebrid => 'QR kodu ilə qoşul';
+	@override String get disconnectRealDebrid => 'Real-Debrid bağlantısını kəs';
+	@override String realDebridConnected({required Object username}) => '${username} adı ilə qoşuldu';
+	@override String get realDebridInstructions => 'QR kodunu skan edin və ya keçidi açın, sonra PlezyNG-ni qoşmaq üçün bu aktivləşdirmə kodunu daxil edin:';
+	@override String get realDebridActivate => 'Aktivləşdirmək üçün Real-Debrid-i aç';
+	@override String get realDebridCode => 'Aktivləşdirmə kodu';
+	@override String get realDebridConnectFailed => 'Real-Debrid-ə qoşulmaq olmadı. Yenidən cəhd edin.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'AllDebrid hesabınız vasitəsilə dəstəklənən torrent yayımlarını oynadın.';
+	@override String get connectAllDebrid => 'QR kodu ilə qoşul';
+	@override String get allDebridInstructions => 'PlezyNG-yə icazə vermək üçün QR kodunu skan edin və ya keçidi açın. Qoşulma zamanı bu ekranı açıq saxlayın:';
+	@override String get allDebridActivate => 'Aktivləşdirmək üçün AllDebrid-i aç';
+	@override String get allDebridCode => 'Aktivləşdirmə PIN-i';
+	@override String get allDebridConnectFailed => 'AllDebrid-ə qoşulmaq olmadı. Yenidən cəhd edin.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Premiumize vasitəsilə keşlənmiş torrent yayımlarını oynadın və ya fayllara baxın.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'TorBox vasitəsilə keşlənmiş torrent yayımlarını oynadın və ya fayllara baxın.';
+	@override String get connectApiKey => 'API açarı ilə qoşul';
+	@override String apiKeyTitle({required Object service}) => '${service} qoş';
+	@override String get apiKey => 'API açarı';
+	@override String apiKeyHint({required Object service}) => '${service} hesab ayarlarından API açarını yapışdırın. PlezyNG onu bu cihazda şifrələyib bu profildə saxlayır.';
+	@override String get apiKeyConnectFailed => 'Bu API açarını yoxlamaq olmadı. Yoxlayıb yenidən cəhd edin.';
+	@override String accountConnected({required Object username}) => '${username} adı ilə qoşuldu';
+	@override String get streamNeedsProvider => 'Bu torrent yayımını oynatmaq üçün Debrid xidməti qoşun.';
+	@override String get playViaProvider => 'Debrid ilə oynat';
+	@override String disconnectConfirm({required Object service}) => '${service} bağlantısı kəsilsin?';
+	@override String get disconnectBody => 'PlezyNG bu cihazın icazəsini ləğv edəcək. Provayderdəki fayllar və davam edən köçürmələr dəyişməyəcək.';
+	@override String get streamsTitle => 'Yayım seçin';
+	@override String get searchingStreams => 'Qoşulmuş əlavələr yoxlanılır…';
+	@override String get noStreams => 'Bu başlıq üçün yayım tapılmadı.';
+	@override String get manageConnections => 'Yayım xidmətlərini idarə et';
+	@override String subtitleTracks({required Object count}) => 'Subtitr izləri: ${count}';
+	@override String get chooseSubtitle => 'Subtitr seç';
+	@override String get chooseProvider => 'Debrid xidməti seç';
+	@override String get subtitleOff => 'Subtitrlər söndürülüb';
+	@override String get subtitleLoadFailed => 'Bu subtitr yüklənmədi. Başqa iz sınayın.';
+	@override String get subtitleApplied => 'Subtitr oynatma üçün seçildi';
+	@override String get streamLookupPartial => 'Bəzi əlavələrə çatmaq olmadı.';
+	@override String get streamLookupFailed => 'Qoşulmuş əlavələri yoxlamaq olmadı.';
+	@override String get streamOpenExternal => 'Xarici keçidi aç';
+	@override String get streamPrepare => 'Debrid xidmətiniz vasitəsilə hazırlanır…';
+	@override String get streamPrepareFailed => 'Bu yayımı hazırlamaq olmadı. Qoşulmuş hesabı yoxlayın və başqa mənbə sınayın.';
+	@override String get streamNeedsRealDebrid => 'Bu torrent yayımını oynatmaq üçün Debrid xidməti qoşun.';
+	@override String get streamUnsupported => 'Tətbiqdaxili pleyer bu yayım formatını dəstəkləmir.';
+	@override String get remoteNeedsEpisode => 'Yayım axtarmazdan əvvəl bölüm seçin.';
+	@override String get remoteNeedsEpisodeNumber => 'Bu bölümdə mövsüm və ya bölüm nömrəsi yoxdur.';
+	@override String get remoteNeedsExternalId => 'PlezyNG bu başlıq üçün IMDb və ya TMDB ID-si tapa bilmədi.';
+	@override String get watchWithServices => 'Qoşulmuş xidmətlərlə izlə';
+	@override String get chooseEpisode => 'Bölüm seç';
+	@override String get episodes => 'Bölümlər';
+	@override String episodePosition({required Object season, required Object episode}) => '${season}-ci mövsüm, ${episode}-ci bölüm';
+	@override String get episodeStreamHint => 'Bu bölüm üçün əlçatan yayımları açır.';
+	@override String get cloudFiles => 'Bulud faylları';
+	@override String get browseCloud => 'Fayllara bax';
+	@override String get cloudEmpty => 'Bu hesabda oynadıla bilən video faylı tapılmadı.';
+	@override String get cloudLoadFailed => 'Bulud fayllarını yükləmək olmadı. Bağlantını yoxlayıb yenidən cəhd edin.';
+	@override String get providers => 'Debrid provayderləri';
 }
 
 // Path: addServer
@@ -7638,6 +7752,110 @@ extension on TranslationsAz {
 			'services.trackerDescriptions.anilist' => 'Anime listləri və AniList ilə ilerlemeyi izləyin.',
 			'services.trackerDescriptions.simkl' => 'Simkl ilə filmlər, televiziyalar və anime izledi.',
 			'services.trackerDescriptions.mdblist' => 'MDBList ratings və listləri rekomandasyonlarda və Explore-da görünür.',
+			'streaming.title' => 'Bulud və əlavələrdən yayım',
+			'streaming.subtitle' => 'Buludunuzdakı fayllara baxmaq və dəstəklənən yayımları oynatmaq üçün Debrid hesabı qoşun. Stremio ilə uyğun əlavələr film və bölüm səhifələrində yayım seçimləri təqdim edir. Bağlantı məlumatları bu cihazda şifrələnir və bu profildə saxlanılır.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Qoşulmuş mənbələr: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG saxlanmış yayım parametrlərinin kilidini aça bilmədi. Bağlantıları dəyişməzdən əvvəl cihazın kilidini açıb yenidən cəhd edin.',
+			'streaming.settingsUnreadable' => 'PlezyNG bu saxlanmış bağlantıların kilidini aça bilmədi. Xidmətləri yenidən qoşmaq üçün onları silin.',
+			'streaming.clearUnreadableSettings' => 'Saxlanmış parametrləri sil',
+			'streaming.clearUnreadableSettingsConfirm' => 'Saxlanmış yayım parametrləri silinsin?',
+			'streaming.clearUnreadableSettingsBody' => 'Bu, provayder hesablarını və əlavələrin ünvanlarını bu profildən silir. Bu əməliyyatı geri qaytarmaq mümkün deyil.',
+			'streaming.clearUnreadableSettingsFailed' => 'Saxlanmış yayım parametrlərini silmək olmadı. Cihazın kilidini açıb yenidən cəhd edin.',
+			'streaming.retrySettingsLoad' => 'Bağlantıları yenidən yüklə',
+			'streaming.addons' => 'Stremio ilə uyğun əlavələr',
+			'streaming.addonsDescription' => 'Stremio-dan əlavələri idxal edin və ya manifest URL-i ilə qoşun. Kəşf bölməsində kataloqlara baxın, film və ya bölüm səhifələrindən yayım seçimlərini açın.',
+			'streaming.catalogLoadFailed' => 'Bu kataloqu yükləmək olmadı. Yeniləyib yenidən cəhd edin.',
+			'streaming.catalogFiltersRequired' => 'Kataloqa baxmaq üçün tələb olunan filtrləri seçin.',
+			'streaming.catalogRequiredLabel' => 'Tələb olunur',
+			'streaming.importFromStremio' => 'Stremio-dan idxal et',
+			'streaming.stremioImportInstructions' => 'QR kodunu skan edin və ya keçidi açın. Stremio-ya daxil olun və sorğunu təsdiqləyin. PlezyNG yalnız əlavə siyahınızı oxuyur; Stremio parolunuzu istəmir və parametrləri dəyişmir.',
+			'streaming.stremioImportOpen' => 'Stremio keçidini aç',
+			'streaming.stremioImportCode' => 'Bağlantı kodu',
+			'streaming.stremioImportPreviewTitle' => 'Əlavələri seçin',
+			'streaming.stremioImportPreviewBody' => 'PlezyNG-yə qoşmaq istədiyiniz əlavələri seçin. Bu idxalda yalnız HTTPS ünvanları qəbul edilir.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Dəstəklənməyən və ya təhlükəsiz olmayan ünvana görə ötürülən əlavələr: ${count}.',
+			'streaming.stremioCatalogs' => 'Kataloqlar',
+			'streaming.stremioStreams' => 'Yayımlar',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Seçilənləri əlavə et (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Stremio-dan qoşulan əlavələr: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Qoşulan əlavələr: ${added}; qoşula bilməyən: ${failed}.',
+			'streaming.stremioImportFailed' => 'Stremio-dan əlavələri idxal etmək olmadı. Yenidən cəhd edin.',
+			'streaming.stremioImportTimedOut' => 'Stremio təsdiqinin müddəti bitdi. İdxalı yenidən başladın.',
+			'streaming.stremioImportEmpty' => 'Bu Stremio hesabında yeni uyğun əlavə tapılmadı.',
+			'streaming.stremioImportLimitReached' => 'Daha çox idxal etməzdən əvvəl bir əlavəni silin.',
+			'streaming.addByManifestUrl' => 'Manifest URL-i ilə əlavə et',
+			'streaming.addAddon' => 'Əlavə əlavə et',
+			'streaming.manifestUrl' => 'Əlavənin manifest URL-i',
+			'streaming.manifestUrlHint' => 'Əlavənin manifest URL-ini yapışdırın. Qoşulmazdan əvvəl PlezyNG kataloq və ya yayım resurslarını dəstəklədiyini yoxlayır.',
+			'streaming.allowHttp' => 'Şifrələnməmiş HTTP ünvanına icazə ver',
+			'streaming.allowHttpDescription' => 'Bunu yalnız şəxsi şəbəkənizdə etibarlı əlavə üçün istifadə edin.',
+			'streaming.installAddon' => 'Əlavəni qoş',
+			'streaming.addonInstalled' => 'Əlavə qoşuldu',
+			'streaming.addonRemoved' => 'Əlavə silindi',
+			'streaming.addonToggle' => 'Əlavəni aktiv et',
+			'streaming.addonEmpty' => 'Hələ qoşulmuş əlavə yoxdur',
+			'streaming.addonError' => 'PlezyNG bu əlavəyə qoşula bilmədi. Manifest URL-ini yoxlayıb yenidən cəhd edin.',
+			'streaming.addonPrivacy' => 'Yalnız etibar etdiyiniz əlavələri qoşun. Axtarış zamanı əlavə axtardığınız başlığı alır və üçüncü tərəf yayım keçidləri qaytara bilər.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Real-Debrid hesabınız vasitəsilə dəstəklənən torrent yayımlarını oynadın.',
+			'streaming.connectRealDebrid' => 'QR kodu ilə qoşul',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid bağlantısını kəs',
+			'streaming.realDebridConnected' => ({required Object username}) => '${username} adı ilə qoşuldu',
+			'streaming.realDebridInstructions' => 'QR kodunu skan edin və ya keçidi açın, sonra PlezyNG-ni qoşmaq üçün bu aktivləşdirmə kodunu daxil edin:',
+			'streaming.realDebridActivate' => 'Aktivləşdirmək üçün Real-Debrid-i aç',
+			'streaming.realDebridCode' => 'Aktivləşdirmə kodu',
+			'streaming.realDebridConnectFailed' => 'Real-Debrid-ə qoşulmaq olmadı. Yenidən cəhd edin.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'AllDebrid hesabınız vasitəsilə dəstəklənən torrent yayımlarını oynadın.',
+			'streaming.connectAllDebrid' => 'QR kodu ilə qoşul',
+			'streaming.allDebridInstructions' => 'PlezyNG-yə icazə vermək üçün QR kodunu skan edin və ya keçidi açın. Qoşulma zamanı bu ekranı açıq saxlayın:',
+			'streaming.allDebridActivate' => 'Aktivləşdirmək üçün AllDebrid-i aç',
+			'streaming.allDebridCode' => 'Aktivləşdirmə PIN-i',
+			'streaming.allDebridConnectFailed' => 'AllDebrid-ə qoşulmaq olmadı. Yenidən cəhd edin.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Premiumize vasitəsilə keşlənmiş torrent yayımlarını oynadın və ya fayllara baxın.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'TorBox vasitəsilə keşlənmiş torrent yayımlarını oynadın və ya fayllara baxın.',
+			'streaming.connectApiKey' => 'API açarı ilə qoşul',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service} qoş',
+			'streaming.apiKey' => 'API açarı',
+			'streaming.apiKeyHint' => ({required Object service}) => '${service} hesab ayarlarından API açarını yapışdırın. PlezyNG onu bu cihazda şifrələyib bu profildə saxlayır.',
+			'streaming.apiKeyConnectFailed' => 'Bu API açarını yoxlamaq olmadı. Yoxlayıb yenidən cəhd edin.',
+			'streaming.accountConnected' => ({required Object username}) => '${username} adı ilə qoşuldu',
+			'streaming.streamNeedsProvider' => 'Bu torrent yayımını oynatmaq üçün Debrid xidməti qoşun.',
+			'streaming.playViaProvider' => 'Debrid ilə oynat',
+			'streaming.disconnectConfirm' => ({required Object service}) => '${service} bağlantısı kəsilsin?',
+			'streaming.disconnectBody' => 'PlezyNG bu cihazın icazəsini ləğv edəcək. Provayderdəki fayllar və davam edən köçürmələr dəyişməyəcək.',
+			'streaming.streamsTitle' => 'Yayım seçin',
+			'streaming.searchingStreams' => 'Qoşulmuş əlavələr yoxlanılır…',
+			'streaming.noStreams' => 'Bu başlıq üçün yayım tapılmadı.',
+			'streaming.manageConnections' => 'Yayım xidmətlərini idarə et',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Subtitr izləri: ${count}',
+			'streaming.chooseSubtitle' => 'Subtitr seç',
+			'streaming.chooseProvider' => 'Debrid xidməti seç',
+			'streaming.subtitleOff' => 'Subtitrlər söndürülüb',
+			'streaming.subtitleLoadFailed' => 'Bu subtitr yüklənmədi. Başqa iz sınayın.',
+			'streaming.subtitleApplied' => 'Subtitr oynatma üçün seçildi',
+			'streaming.streamLookupPartial' => 'Bəzi əlavələrə çatmaq olmadı.',
+			'streaming.streamLookupFailed' => 'Qoşulmuş əlavələri yoxlamaq olmadı.',
+			'streaming.streamOpenExternal' => 'Xarici keçidi aç',
+			'streaming.streamPrepare' => 'Debrid xidmətiniz vasitəsilə hazırlanır…',
+			'streaming.streamPrepareFailed' => 'Bu yayımı hazırlamaq olmadı. Qoşulmuş hesabı yoxlayın və başqa mənbə sınayın.',
+			'streaming.streamNeedsRealDebrid' => 'Bu torrent yayımını oynatmaq üçün Debrid xidməti qoşun.',
+			'streaming.streamUnsupported' => 'Tətbiqdaxili pleyer bu yayım formatını dəstəkləmir.',
+			'streaming.remoteNeedsEpisode' => 'Yayım axtarmazdan əvvəl bölüm seçin.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Bu bölümdə mövsüm və ya bölüm nömrəsi yoxdur.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG bu başlıq üçün IMDb və ya TMDB ID-si tapa bilmədi.',
+			'streaming.watchWithServices' => 'Qoşulmuş xidmətlərlə izlə',
+			'streaming.chooseEpisode' => 'Bölüm seç',
+			'streaming.episodes' => 'Bölümlər',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '${season}-ci mövsüm, ${episode}-ci bölüm',
+			'streaming.episodeStreamHint' => 'Bu bölüm üçün əlçatan yayımları açır.',
+			'streaming.cloudFiles' => 'Bulud faylları',
+			'streaming.browseCloud' => 'Fayllara bax',
+			'streaming.cloudEmpty' => 'Bu hesabda oynadıla bilən video faylı tapılmadı.',
+			'streaming.cloudLoadFailed' => 'Bulud fayllarını yükləmək olmadı. Bağlantını yoxlayıb yenidən cəhd edin.',
+			'streaming.providers' => 'Debrid provayderləri',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} serveri əlavə et',
 			'addServer.serverUrls' => 'Server URL-ləri',
 			'addServer.serverUrlsHelper' => 'Vergüllə ayrılmış bir neçə URL-ə icazə verilir.',
@@ -7916,6 +8134,8 @@ extension on TranslationsAz {
 			'universalMedia.contrast' => 'Kontrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Həyat',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturasiya',
 			'universalMedia.view360' => 'Görüntülər 360° video üçün',
 			'universalMedia.view360Help' => 'Bu görüntü üçün MPV-in FFmpeg v360 filtresine ihtiyacı var.',
@@ -8020,8 +8240,6 @@ extension on TranslationsAz {
 			'universalMedia.extensionInstallTitle' => 'Bu arşivdən istifadə etmək olarmı?',
 			'universalMedia.extensionReplaceTitle' => 'Bu arşivdə güncələ edilir?',
 			'universalMedia.extensionService' => 'Servisi',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => '“Manifest” bu xidmətə göndərilir.Manifest, işləmə qalıq kodunu içermez.Sadəcə, bu son noktaya inanırsanız devam edin.',
 			'universalMedia.extensionInstall' => 'Servisi artırmaq',
@@ -8430,6 +8648,8 @@ extension on TranslationsAz {
 			'sourceSetup.sharedLibraryInvalid' => '8–100 yazı, sayı, nokta, subscores və hyphens istifadə edin.',
 			'sourceSetup.generateSharedLibraryId' => 'Bir kütüphane ID-i oluşturmaq',
 			'sourceSetup.nfsReadAhead' => 'NFS-nin Qəzaq İzinləri',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Daha çox paralel okurlar, bir NAS və ya ağda geçiş gücünü artırır. sunucu sözleşmelerini sınırlandırdığında 1 istifadə edin.',
 			'sourceSetup.nfsReadTest' => 'NFS-in performansını ölçmək',
 			'sourceSetup.nfsReadTestHelp' => 'Bu NAS bağlantısını ölçmək üçün ən böyük faildən 64 MiB-a qədər okunur.Bu ağ bandwidthını kullanır.',
@@ -8534,8 +8754,6 @@ extension on TranslationsAz {
 			'deepLinks.noLiveTv' => 'Bu linki üçün Live TV server yoxdur.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '“${channel}” kanalını bulamazdım.',
 			'deepLinks.showLink' => 'İndir Link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Profil link göstərmək',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Bu linki açın, bir sonraki epizod oynanır. shuffle-da şov oynamak için &mode=shuffle ekləyin.',

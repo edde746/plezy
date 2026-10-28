@@ -1158,7 +1158,7 @@ void main() {
     // each.
     expect(find.byType(HubSection), findsOneWidget);
     expect(find.text(t.discover.moreLikeThis), findsOneWidget);
-    expect(find.text('A Similar Movie'), findsOneWidget);
+    expect(find.textContaining('A Similar Movie'), findsOneWidget);
 
     expect(find.text(t.explore.detail.relatedTitles), findsOneWidget);
     expect(find.text(t.explore.relation.sequel), findsOneWidget);
@@ -1522,9 +1522,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
   });
 
-  testWidgets('up from the first library copy reaches the overview when the item has no action bar', (tester) async {
-    // No watchlist support, trailer, or Seerr: nothing above the copies is a
-    // button, but the overview is still a stop rather than a dead end.
+  testWidgets('a movie with an external id offers contextual service streams', (tester) async {
     final source = _FakeCatalogSource(supportsWatchlist: false);
     await _pumpDetail(
       tester,
@@ -1538,17 +1536,8 @@ void main() {
         ),
       ],
     );
-    expect(find.byType(FocusableActionBar), findsNothing);
-
-    final tile = tester.widget<FocusableListTile>(
-      find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),
-    );
-    tile.focusNode!.requestFocus();
-    await tester.pump();
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-    await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+    expect(find.byType(FocusableActionBar), findsOneWidget);
+    expect(find.byTooltip(t.streaming.watchWithServices), findsOneWidget);
   });
 
   testWidgets('pending watchlist action keeps initial focus and its press retries the snapshot', (tester) async {

@@ -407,8 +407,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   Future<void> _watchWithServices() async {
-    if (!_canWatchWithServices) return;
-    if (!await _ensureStreamingAddons()) return;
+    if (!_canWatchWithServices || !await _ensureStreamingAddons() || !mounted) return;
 
     final item = _item;
     final id = _streamLookupId(item);
@@ -444,7 +443,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final position = season != null && number != null
         ? t.streaming.episodePosition(season: season, episode: number)
         : null;
-    final title = [item.title, if (position != null) position, episode.title].join(' · ');
+    final titleParts = <String>[item.title];
+    if (position != null) titleParts.add(position);
+    titleParts.add(episode.title);
+    final title = titleParts.join(' · ');
     final identifiers = <String, String>{
       if (item.ids.imdb != null) 'imdb': item.ids.imdb!,
       if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
@@ -918,13 +920,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final position = season != null && number != null
         ? t.streaming.episodePosition(season: season, episode: number)
         : null;
-    final details = [
-      if (position != null) position,
-      if (episode.runtimeMinutes != null)
-        formatDurationTextual(Duration(minutes: episode.runtimeMinutes!).inMilliseconds),
-      if (episode.year != null) '${episode.year}',
-    ];
-    final semanticLabel = [if (position != null) position, episode.title].join(': ');
+    final details = <String>[];
+    if (position != null) details.add(position);
+    if (episode.runtimeMinutes != null) {
+      details.add(formatDurationTextual(Duration(minutes: episode.runtimeMinutes!).inMilliseconds));
+    }
+    if (episode.year != null) details.add('${episode.year}');
+    final semanticLabel = position == null ? episode.title : '$position: ${episode.title}';
     final canMoveDown = index + 1 < _episodes.length || _hasCast || _hasSectionsBelowCast;
     return FocusableWrapper(
       focusNode: _episodeFocusNodes[index],

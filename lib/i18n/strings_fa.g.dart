@@ -92,6 +92,7 @@ class TranslationsFa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$fa trakt = _Translations$trakt$fa._(_root);
 	@override late final _Translations$seerr$fa seerr = _Translations$seerr$fa._(_root);
 	@override late final _Translations$services$fa services = _Translations$services$fa._(_root);
+	@override late final _Translations$streaming$fa streaming = _Translations$streaming$fa._(_root);
 	@override late final _Translations$addServer$fa addServer = _Translations$addServer$fa._(_root);
 	@override late final _Translations$cast$fa cast = _Translations$cast$fa._(_root);
 	@override late final _Translations$automation$fa automation = _Translations$automation$fa._(_root);
@@ -2755,6 +2756,119 @@ class _Translations$services$fa extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$fa libraryFilter = _Translations$services$libraryFilter$fa._(_root);
 	@override String get seerrDescription => 'برای جستجوی عنوان ها و ارسال درخواست های رسانه ای به Seerr یا Overseerr متصل شوید.';
 	@override late final _Translations$services$trackerDescriptions$fa trackerDescriptions = _Translations$services$trackerDescriptions$fa._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$fa extends Translations$streaming$en {
+	_Translations$streaming$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'پخش ابری و افزونه‌ها';
+	@override String get subtitle => 'برای مرور فایل‌های ابری و پخش جریان‌های پشتیبانی‌شده، حساب Debrid را وصل کنید. افزونه‌های سازگار با Stremio گزینه‌های پخش را در صفحه فیلم‌ها و قسمت‌ها ارائه می‌کنند. اطلاعات اتصال در این دستگاه رمزگذاری و در این نمایه ذخیره می‌شود.';
+	@override String connectionsConfigured({required Object count}) => 'منابع متصل: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG نتوانست تنظیمات پخش ذخیره‌شده را باز کند. قفل دستگاه را باز کنید و پیش از تغییر اتصال دوباره تلاش کنید.';
+	@override String get settingsUnreadable => 'PlezyNG نتوانست این اتصال‌های ذخیره‌شده را باز کند. برای اتصال دوباره سرویس‌ها، آن‌ها را پاک کنید.';
+	@override String get clearUnreadableSettings => 'پاک کردن تنظیمات ذخیره‌شده';
+	@override String get clearUnreadableSettingsConfirm => 'تنظیمات پخش ذخیره‌شده پاک شود؟';
+	@override String get clearUnreadableSettingsBody => 'این کار همه حساب‌های ارائه‌دهنده و نشانی افزونه‌های ذخیره‌شده در این نمایه را حذف می‌کند و برگشت‌پذیر نیست.';
+	@override String get clearUnreadableSettingsFailed => 'پاک کردن تنظیمات پخش ذخیره‌شده ممکن نشد. قفل دستگاه را باز کنید و دوباره تلاش کنید.';
+	@override String get retrySettingsLoad => 'بارگیری دوباره اتصال‌ها';
+	@override String get addons => 'افزونه‌های سازگار با Stremio';
+	@override String get addonsDescription => 'افزونه‌ها را از Stremio وارد کنید یا با نشانی مانیفست به آن‌ها وصل شوید. فهرست‌ها را در کاوش ببینید و گزینه‌های پخش را از صفحه فیلم یا قسمت باز کنید.';
+	@override String get catalogLoadFailed => 'بارگیری این فهرست ممکن نشد. تازه‌سازی کنید و دوباره تلاش کنید.';
+	@override String get catalogFiltersRequired => 'برای دیدن این فهرست، فیلترهای لازم را انتخاب کنید.';
+	@override String get catalogRequiredLabel => 'الزامی';
+	@override String get importFromStremio => 'وارد کردن از Stremio';
+	@override String get stremioImportInstructions => 'کد QR را اسکن کنید یا پیوند را باز کنید. وارد Stremio شوید و درخواست را تأیید کنید. PlezyNG فقط فهرست افزونه‌های شما را می‌خواند؛ هرگز گذرواژه Stremio را نمی‌خواهد یا تنظیمات آن را تغییر نمی‌دهد.';
+	@override String get stremioImportOpen => 'باز کردن پیوند Stremio';
+	@override String get stremioImportCode => 'کد پیوند';
+	@override String get stremioImportPreviewTitle => 'انتخاب افزونه‌ها';
+	@override String get stremioImportPreviewBody => 'افزونه‌هایی را که می‌خواهید به PlezyNG وصل کنید انتخاب کنید. این واردسازی فقط نشانی‌های HTTPS را می‌پذیرد.';
+	@override String stremioImportIgnored({required Object count}) => 'افزونه‌های ردشده به‌دلیل نشانی پشتیبانی‌نشده یا ناامن: ${count}.';
+	@override String get stremioCatalogs => 'فهرست‌ها';
+	@override String get stremioStreams => 'جریان‌ها';
+	@override String stremioImportAddSelected({required Object count}) => 'افزودن موارد انتخاب‌شده (${count})';
+	@override String stremioImportAdded({required Object count}) => 'افزونه‌های متصل از Stremio: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'افزونه‌های متصل: ${added}؛ اتصال ناموفق: ${failed}.';
+	@override String get stremioImportFailed => 'وارد کردن افزونه‌ها از Stremio ممکن نشد. دوباره تلاش کنید.';
+	@override String get stremioImportTimedOut => 'مهلت تأیید Stremio پایان یافت. واردسازی را از نو آغاز کنید.';
+	@override String get stremioImportEmpty => 'افزونه سازگار جدیدی در این حساب Stremio پیدا نشد.';
+	@override String get stremioImportLimitReached => 'پیش از وارد کردن موارد بیشتر، یک افزونه را حذف کنید.';
+	@override String get addByManifestUrl => 'افزودن با نشانی مانیفست';
+	@override String get addAddon => 'افزودن افزونه';
+	@override String get manifestUrl => 'نشانی مانیفست افزونه';
+	@override String get manifestUrlHint => 'نشانی مانیفست افزونه را جای‌گذاری کنید. PlezyNG پیش از اتصال، پشتیبانی از فهرست‌ها یا منابع جریان را بررسی می‌کند.';
+	@override String get allowHttp => 'اجازه به نشانی HTTP رمزگذاری‌نشده';
+	@override String get allowHttpDescription => 'فقط برای افزونه مورداعتماد در شبکه خصوصی خود استفاده کنید.';
+	@override String get installAddon => 'اتصال افزونه';
+	@override String get addonInstalled => 'افزونه متصل شد';
+	@override String get addonRemoved => 'افزونه حذف شد';
+	@override String get addonToggle => 'فعال کردن افزونه';
+	@override String get addonEmpty => 'هنوز افزونه‌ای متصل نیست';
+	@override String get addonError => 'PlezyNG نتوانست به این افزونه وصل شود. نشانی مانیفست را بررسی و دوباره تلاش کنید.';
+	@override String get addonPrivacy => 'فقط افزونه‌هایی را وصل کنید که به آن‌ها اعتماد دارید. هنگام جست‌وجو، افزونه عنوان درخواستی را دریافت می‌کند و ممکن است پیوندهای جریان شخص ثالث برگرداند.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'جریان‌های تورنت پشتیبانی‌شده را با حساب Real-Debrid خود پخش کنید.';
+	@override String get connectRealDebrid => 'اتصال با کد QR';
+	@override String get disconnectRealDebrid => 'قطع اتصال Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'متصل به نام ${username}';
+	@override String get realDebridInstructions => 'کد QR را اسکن یا پیوند را باز کنید، سپس این کد فعال‌سازی را برای اتصال PlezyNG وارد کنید:';
+	@override String get realDebridActivate => 'باز کردن Real-Debrid برای فعال‌سازی';
+	@override String get realDebridCode => 'کد فعال‌سازی';
+	@override String get realDebridConnectFailed => 'اتصال به Real-Debrid ممکن نشد. دوباره تلاش کنید.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'جریان‌های تورنت پشتیبانی‌شده را با حساب AllDebrid خود پخش کنید.';
+	@override String get connectAllDebrid => 'اتصال با کد QR';
+	@override String get allDebridInstructions => 'کد QR را اسکن یا پیوند را باز کنید تا PlezyNG را تأیید کنید. هنگام اتصال این صفحه را باز نگه دارید:';
+	@override String get allDebridActivate => 'باز کردن AllDebrid برای فعال‌سازی';
+	@override String get allDebridCode => 'PIN فعال‌سازی';
+	@override String get allDebridConnectFailed => 'اتصال به AllDebrid ممکن نشد. دوباره تلاش کنید.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'جریان‌های تورنت ذخیره‌شده در حافظه پنهان را پخش یا فایل‌ها را با Premiumize مرور کنید.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'جریان‌های تورنت ذخیره‌شده در حافظه پنهان را پخش یا فایل‌ها را با TorBox مرور کنید.';
+	@override String get connectApiKey => 'اتصال با کلید API';
+	@override String apiKeyTitle({required Object service}) => 'اتصال ${service}';
+	@override String get apiKey => 'کلید API';
+	@override String apiKeyHint({required Object service}) => 'کلید API را از تنظیمات حساب ${service} جای‌گذاری کنید. PlezyNG آن را در این دستگاه رمزگذاری و در این نمایه ذخیره می‌کند.';
+	@override String get apiKeyConnectFailed => 'تأیید این کلید API ممکن نشد. آن را بررسی و دوباره تلاش کنید.';
+	@override String accountConnected({required Object username}) => 'متصل به نام ${username}';
+	@override String get streamNeedsProvider => 'برای پخش این جریان تورنت، یک سرویس Debrid وصل کنید.';
+	@override String get playViaProvider => 'پخش با Debrid';
+	@override String disconnectConfirm({required Object service}) => 'اتصال ${service} قطع شود؟';
+	@override String get disconnectBody => 'PlezyNG مجوز این دستگاه را حذف می‌کند. فایل‌های ارائه‌دهنده و انتقال‌های در حال انجام دست‌نخورده می‌مانند.';
+	@override String get streamsTitle => 'انتخاب جریان';
+	@override String get searchingStreams => 'در حال بررسی افزونه‌های متصل…';
+	@override String get noStreams => 'جریانی برای این عنوان پیدا نشد.';
+	@override String get manageConnections => 'مدیریت سرویس‌های پخش';
+	@override String subtitleTracks({required Object count}) => 'زیرنویس‌ها: ${count}';
+	@override String get chooseSubtitle => 'انتخاب زیرنویس';
+	@override String get chooseProvider => 'انتخاب سرویس Debrid';
+	@override String get subtitleOff => 'زیرنویس خاموش';
+	@override String get subtitleLoadFailed => 'بارگیری این زیرنویس ممکن نشد. زیرنویس دیگری را امتحان کنید.';
+	@override String get subtitleApplied => 'زیرنویس برای پخش انتخاب شد';
+	@override String get streamLookupPartial => 'دسترسی به بعضی افزونه‌ها ممکن نشد.';
+	@override String get streamLookupFailed => 'بررسی افزونه‌های متصل ممکن نشد.';
+	@override String get streamOpenExternal => 'باز کردن پیوند خارجی';
+	@override String get streamPrepare => 'آماده‌سازی با سرویس Debrid شما…';
+	@override String get streamPrepareFailed => 'آماده‌سازی این جریان ممکن نشد. حساب متصل را بررسی و منبع دیگری را امتحان کنید.';
+	@override String get streamNeedsRealDebrid => 'برای پخش این جریان تورنت، یک سرویس Debrid وصل کنید.';
+	@override String get streamUnsupported => 'این قالب جریان در پخش‌کننده داخل برنامه پشتیبانی نمی‌شود.';
+	@override String get remoteNeedsEpisode => 'پیش از جست‌وجوی جریان، یک قسمت انتخاب کنید.';
+	@override String get remoteNeedsEpisodeNumber => 'شماره فصل یا قسمت این مورد موجود نیست.';
+	@override String get remoteNeedsExternalId => 'PlezyNG شناسه IMDb یا TMDB این عنوان را پیدا نکرد.';
+	@override String get watchWithServices => 'تماشا با سرویس‌های متصل';
+	@override String get chooseEpisode => 'انتخاب قسمت';
+	@override String get episodes => 'قسمت‌ها';
+	@override String episodePosition({required Object season, required Object episode}) => 'فصل ${season}، قسمت ${episode}';
+	@override String get episodeStreamHint => 'جریان‌های موجود برای این قسمت را باز می‌کند.';
+	@override String get cloudFiles => 'فایل‌های ابری';
+	@override String get browseCloud => 'مرور فایل‌ها';
+	@override String get cloudEmpty => 'هیچ فایل ویدیویی قابل‌پخشی در این حساب پیدا نشد.';
+	@override String get cloudLoadFailed => 'بارگیری فایل‌های ابری ممکن نشد. اتصال را بررسی و دوباره تلاش کنید.';
+	@override String get providers => 'ارائه‌دهندگان Debrid';
 }
 
 // Path: addServer
@@ -7638,6 +7752,110 @@ extension on TranslationsFa {
 			'services.trackerDescriptions.anilist' => 'همگام سازی لیست های انیمه و تماشای پیشرفت با AniList.',
 			'services.trackerDescriptions.simkl' => 'سینک فیلم ها، نمایش های تلویزیونی و انیمه را با Simkl تماشا کرد.',
 			'services.trackerDescriptions.mdblist' => 'نمایش رتبه های MDBList و لیست ها در توصیه ها و کشف.',
+			'streaming.title' => 'پخش ابری و افزونه‌ها',
+			'streaming.subtitle' => 'برای مرور فایل‌های ابری و پخش جریان‌های پشتیبانی‌شده، حساب Debrid را وصل کنید. افزونه‌های سازگار با Stremio گزینه‌های پخش را در صفحه فیلم‌ها و قسمت‌ها ارائه می‌کنند. اطلاعات اتصال در این دستگاه رمزگذاری و در این نمایه ذخیره می‌شود.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'منابع متصل: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG نتوانست تنظیمات پخش ذخیره‌شده را باز کند. قفل دستگاه را باز کنید و پیش از تغییر اتصال دوباره تلاش کنید.',
+			'streaming.settingsUnreadable' => 'PlezyNG نتوانست این اتصال‌های ذخیره‌شده را باز کند. برای اتصال دوباره سرویس‌ها، آن‌ها را پاک کنید.',
+			'streaming.clearUnreadableSettings' => 'پاک کردن تنظیمات ذخیره‌شده',
+			'streaming.clearUnreadableSettingsConfirm' => 'تنظیمات پخش ذخیره‌شده پاک شود؟',
+			'streaming.clearUnreadableSettingsBody' => 'این کار همه حساب‌های ارائه‌دهنده و نشانی افزونه‌های ذخیره‌شده در این نمایه را حذف می‌کند و برگشت‌پذیر نیست.',
+			'streaming.clearUnreadableSettingsFailed' => 'پاک کردن تنظیمات پخش ذخیره‌شده ممکن نشد. قفل دستگاه را باز کنید و دوباره تلاش کنید.',
+			'streaming.retrySettingsLoad' => 'بارگیری دوباره اتصال‌ها',
+			'streaming.addons' => 'افزونه‌های سازگار با Stremio',
+			'streaming.addonsDescription' => 'افزونه‌ها را از Stremio وارد کنید یا با نشانی مانیفست به آن‌ها وصل شوید. فهرست‌ها را در کاوش ببینید و گزینه‌های پخش را از صفحه فیلم یا قسمت باز کنید.',
+			'streaming.catalogLoadFailed' => 'بارگیری این فهرست ممکن نشد. تازه‌سازی کنید و دوباره تلاش کنید.',
+			'streaming.catalogFiltersRequired' => 'برای دیدن این فهرست، فیلترهای لازم را انتخاب کنید.',
+			'streaming.catalogRequiredLabel' => 'الزامی',
+			'streaming.importFromStremio' => 'وارد کردن از Stremio',
+			'streaming.stremioImportInstructions' => 'کد QR را اسکن کنید یا پیوند را باز کنید. وارد Stremio شوید و درخواست را تأیید کنید. PlezyNG فقط فهرست افزونه‌های شما را می‌خواند؛ هرگز گذرواژه Stremio را نمی‌خواهد یا تنظیمات آن را تغییر نمی‌دهد.',
+			'streaming.stremioImportOpen' => 'باز کردن پیوند Stremio',
+			'streaming.stremioImportCode' => 'کد پیوند',
+			'streaming.stremioImportPreviewTitle' => 'انتخاب افزونه‌ها',
+			'streaming.stremioImportPreviewBody' => 'افزونه‌هایی را که می‌خواهید به PlezyNG وصل کنید انتخاب کنید. این واردسازی فقط نشانی‌های HTTPS را می‌پذیرد.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'افزونه‌های ردشده به‌دلیل نشانی پشتیبانی‌نشده یا ناامن: ${count}.',
+			'streaming.stremioCatalogs' => 'فهرست‌ها',
+			'streaming.stremioStreams' => 'جریان‌ها',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'افزودن موارد انتخاب‌شده (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'افزونه‌های متصل از Stremio: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'افزونه‌های متصل: ${added}؛ اتصال ناموفق: ${failed}.',
+			'streaming.stremioImportFailed' => 'وارد کردن افزونه‌ها از Stremio ممکن نشد. دوباره تلاش کنید.',
+			'streaming.stremioImportTimedOut' => 'مهلت تأیید Stremio پایان یافت. واردسازی را از نو آغاز کنید.',
+			'streaming.stremioImportEmpty' => 'افزونه سازگار جدیدی در این حساب Stremio پیدا نشد.',
+			'streaming.stremioImportLimitReached' => 'پیش از وارد کردن موارد بیشتر، یک افزونه را حذف کنید.',
+			'streaming.addByManifestUrl' => 'افزودن با نشانی مانیفست',
+			'streaming.addAddon' => 'افزودن افزونه',
+			'streaming.manifestUrl' => 'نشانی مانیفست افزونه',
+			'streaming.manifestUrlHint' => 'نشانی مانیفست افزونه را جای‌گذاری کنید. PlezyNG پیش از اتصال، پشتیبانی از فهرست‌ها یا منابع جریان را بررسی می‌کند.',
+			'streaming.allowHttp' => 'اجازه به نشانی HTTP رمزگذاری‌نشده',
+			'streaming.allowHttpDescription' => 'فقط برای افزونه مورداعتماد در شبکه خصوصی خود استفاده کنید.',
+			'streaming.installAddon' => 'اتصال افزونه',
+			'streaming.addonInstalled' => 'افزونه متصل شد',
+			'streaming.addonRemoved' => 'افزونه حذف شد',
+			'streaming.addonToggle' => 'فعال کردن افزونه',
+			'streaming.addonEmpty' => 'هنوز افزونه‌ای متصل نیست',
+			'streaming.addonError' => 'PlezyNG نتوانست به این افزونه وصل شود. نشانی مانیفست را بررسی و دوباره تلاش کنید.',
+			'streaming.addonPrivacy' => 'فقط افزونه‌هایی را وصل کنید که به آن‌ها اعتماد دارید. هنگام جست‌وجو، افزونه عنوان درخواستی را دریافت می‌کند و ممکن است پیوندهای جریان شخص ثالث برگرداند.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'جریان‌های تورنت پشتیبانی‌شده را با حساب Real-Debrid خود پخش کنید.',
+			'streaming.connectRealDebrid' => 'اتصال با کد QR',
+			'streaming.disconnectRealDebrid' => 'قطع اتصال Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'متصل به نام ${username}',
+			'streaming.realDebridInstructions' => 'کد QR را اسکن یا پیوند را باز کنید، سپس این کد فعال‌سازی را برای اتصال PlezyNG وارد کنید:',
+			'streaming.realDebridActivate' => 'باز کردن Real-Debrid برای فعال‌سازی',
+			'streaming.realDebridCode' => 'کد فعال‌سازی',
+			'streaming.realDebridConnectFailed' => 'اتصال به Real-Debrid ممکن نشد. دوباره تلاش کنید.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'جریان‌های تورنت پشتیبانی‌شده را با حساب AllDebrid خود پخش کنید.',
+			'streaming.connectAllDebrid' => 'اتصال با کد QR',
+			'streaming.allDebridInstructions' => 'کد QR را اسکن یا پیوند را باز کنید تا PlezyNG را تأیید کنید. هنگام اتصال این صفحه را باز نگه دارید:',
+			'streaming.allDebridActivate' => 'باز کردن AllDebrid برای فعال‌سازی',
+			'streaming.allDebridCode' => 'PIN فعال‌سازی',
+			'streaming.allDebridConnectFailed' => 'اتصال به AllDebrid ممکن نشد. دوباره تلاش کنید.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'جریان‌های تورنت ذخیره‌شده در حافظه پنهان را پخش یا فایل‌ها را با Premiumize مرور کنید.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'جریان‌های تورنت ذخیره‌شده در حافظه پنهان را پخش یا فایل‌ها را با TorBox مرور کنید.',
+			'streaming.connectApiKey' => 'اتصال با کلید API',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'اتصال ${service}',
+			'streaming.apiKey' => 'کلید API',
+			'streaming.apiKeyHint' => ({required Object service}) => 'کلید API را از تنظیمات حساب ${service} جای‌گذاری کنید. PlezyNG آن را در این دستگاه رمزگذاری و در این نمایه ذخیره می‌کند.',
+			'streaming.apiKeyConnectFailed' => 'تأیید این کلید API ممکن نشد. آن را بررسی و دوباره تلاش کنید.',
+			'streaming.accountConnected' => ({required Object username}) => 'متصل به نام ${username}',
+			'streaming.streamNeedsProvider' => 'برای پخش این جریان تورنت، یک سرویس Debrid وصل کنید.',
+			'streaming.playViaProvider' => 'پخش با Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'اتصال ${service} قطع شود؟',
+			'streaming.disconnectBody' => 'PlezyNG مجوز این دستگاه را حذف می‌کند. فایل‌های ارائه‌دهنده و انتقال‌های در حال انجام دست‌نخورده می‌مانند.',
+			'streaming.streamsTitle' => 'انتخاب جریان',
+			'streaming.searchingStreams' => 'در حال بررسی افزونه‌های متصل…',
+			'streaming.noStreams' => 'جریانی برای این عنوان پیدا نشد.',
+			'streaming.manageConnections' => 'مدیریت سرویس‌های پخش',
+			'streaming.subtitleTracks' => ({required Object count}) => 'زیرنویس‌ها: ${count}',
+			'streaming.chooseSubtitle' => 'انتخاب زیرنویس',
+			'streaming.chooseProvider' => 'انتخاب سرویس Debrid',
+			'streaming.subtitleOff' => 'زیرنویس خاموش',
+			'streaming.subtitleLoadFailed' => 'بارگیری این زیرنویس ممکن نشد. زیرنویس دیگری را امتحان کنید.',
+			'streaming.subtitleApplied' => 'زیرنویس برای پخش انتخاب شد',
+			'streaming.streamLookupPartial' => 'دسترسی به بعضی افزونه‌ها ممکن نشد.',
+			'streaming.streamLookupFailed' => 'بررسی افزونه‌های متصل ممکن نشد.',
+			'streaming.streamOpenExternal' => 'باز کردن پیوند خارجی',
+			'streaming.streamPrepare' => 'آماده‌سازی با سرویس Debrid شما…',
+			'streaming.streamPrepareFailed' => 'آماده‌سازی این جریان ممکن نشد. حساب متصل را بررسی و منبع دیگری را امتحان کنید.',
+			'streaming.streamNeedsRealDebrid' => 'برای پخش این جریان تورنت، یک سرویس Debrid وصل کنید.',
+			'streaming.streamUnsupported' => 'این قالب جریان در پخش‌کننده داخل برنامه پشتیبانی نمی‌شود.',
+			'streaming.remoteNeedsEpisode' => 'پیش از جست‌وجوی جریان، یک قسمت انتخاب کنید.',
+			'streaming.remoteNeedsEpisodeNumber' => 'شماره فصل یا قسمت این مورد موجود نیست.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG شناسه IMDb یا TMDB این عنوان را پیدا نکرد.',
+			'streaming.watchWithServices' => 'تماشا با سرویس‌های متصل',
+			'streaming.chooseEpisode' => 'انتخاب قسمت',
+			'streaming.episodes' => 'قسمت‌ها',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'فصل ${season}، قسمت ${episode}',
+			'streaming.episodeStreamHint' => 'جریان‌های موجود برای این قسمت را باز می‌کند.',
+			'streaming.cloudFiles' => 'فایل‌های ابری',
+			'streaming.browseCloud' => 'مرور فایل‌ها',
+			'streaming.cloudEmpty' => 'هیچ فایل ویدیویی قابل‌پخشی در این حساب پیدا نشد.',
+			'streaming.cloudLoadFailed' => 'بارگیری فایل‌های ابری ممکن نشد. اتصال را بررسی و دوباره تلاش کنید.',
+			'streaming.providers' => 'ارائه‌دهندگان Debrid',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'اضافه کردن سرور ${product}',
 			'addServer.serverUrls' => 'سرور URL',
 			'addServer.serverUrlsHelper' => 'URL های چندگانه مجاز، جدا شده توسط commas.',
@@ -7916,6 +8134,8 @@ extension on TranslationsFa {
 			'universalMedia.contrast' => 'تناقض',
 			'universalMedia.gamma' => 'گاما',
 			'universalMedia.hue' => 'هوی',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturation',
 			'universalMedia.view360' => 'صفحه نمایش برای ویدئو 360 درجه',
 			'universalMedia.view360Help' => 'استفاده از این برای ویدئو 360 درجه مساوی. MPV نیاز به فیلتر v360 FFmpeg برای این نمایش دارد.',
@@ -8020,8 +8240,6 @@ extension on TranslationsFa {
 			'universalMedia.extensionInstallTitle' => 'این سرویس جستجو را اضافه کنید؟',
 			'universalMedia.extensionReplaceTitle' => 'این سرویس جستجو را به روز کنید؟',
 			'universalMedia.extensionService' => 'خدمات',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS نقطه نهایی',
 			'universalMedia.extensionConsent' => 'متن جستجوی شما به این سرویس ارسال می شود.این مانیفست هیچ کد اجرا نمی شود.با ادامه فقط اگر به این نقطه نهایی اعتماد کنید.',
 			'universalMedia.extensionInstall' => 'اضافه کردن خدمات',
@@ -8430,6 +8648,8 @@ extension on TranslationsFa {
 			'sourceSetup.sharedLibraryInvalid' => 'از 8 تا 100 حروف، اعداد، نقطه ها، زیرنویس ها یا هیفن استفاده کنید.',
 			'sourceSetup.generateSharedLibraryId' => 'ایجاد یک ID کتابخانه مشترک',
 			'sourceSetup.nfsReadAhead' => 'درخواست های NFS Read-ahead',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'بیشتر خواندن موازی می تواند پهنای باند را در یک NAS یا شبکه سریع بهبود بخشد.استفاده از 1 اگر سرور تقاضای همزمان را محدود می کند.',
 			'sourceSetup.nfsReadTest' => 'اندازه گیری عملکرد NFS خواندن',
 			'sourceSetup.nfsReadTestHelp' => 'خواندن تا 64 مگابایت از بزرگترین فایل برای اندازه گیری این اتصال NAS.',
@@ -8534,8 +8754,6 @@ extension on TranslationsFa {
 			'deepLinks.noLiveTv' => 'هیچ سرور تلویزیونی زنده برای این لینک در دسترس نیست.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'من نمی توانم کانال "${channel}" پیدا کنم.',
 			'deepLinks.showLink' => 'نمایش لینک',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'نمایش پروفایل لینک',
 			'deepLinks.dialogTitle' => 'لینک',
 			'deepLinks.showHint' => 'باز کردن این لینک قسمت بعدی را بازی می کند. اضافه کنید &mode=shuffle برای پخش نمایش در shuffle.',

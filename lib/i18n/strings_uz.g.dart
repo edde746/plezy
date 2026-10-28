@@ -92,6 +92,7 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$uz trakt = _Translations$trakt$uz._(_root);
 	@override late final _Translations$seerr$uz seerr = _Translations$seerr$uz._(_root);
 	@override late final _Translations$services$uz services = _Translations$services$uz._(_root);
+	@override late final _Translations$streaming$uz streaming = _Translations$streaming$uz._(_root);
 	@override late final _Translations$addServer$uz addServer = _Translations$addServer$uz._(_root);
 	@override late final _Translations$cast$uz cast = _Translations$cast$uz._(_root);
 	@override late final _Translations$automation$uz automation = _Translations$automation$uz._(_root);
@@ -2755,6 +2756,119 @@ class _Translations$services$uz extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$uz libraryFilter = _Translations$services$libraryFilter$uz._(_root);
 	@override String get seerrDescription => 'Seerr o Overseerr-i koʻshayni, titlar ko‘shaydi və medya isiladi.';
 	@override late final _Translations$services$trackerDescriptions$uz trackerDescriptions = _Translations$services$trackerDescriptions$uz._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$uz extends Translations$streaming$en {
+	_Translations$streaming$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bulut va qo‘shimcha oqimlari';
+	@override String get subtitle => 'Bulutingizdagi fayllarni ko‘rish va qo‘llab-quvvatlanadigan oqimlarni ijro etish uchun Debrid hisobini ulang. Stremio bilan mos qo‘shimchalar film va epizod sahifalarida oqim tanlovlarini ko‘rsatadi. Ulanish ma’lumotlari ushbu qurilmada shifrlanib, ushbu profilda saqlanadi.';
+	@override String connectionsConfigured({required Object count}) => 'Ulangan manbalar: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG saqlangan oqim sozlamalarini ocholmadi. Ulanishlarni o‘zgartirishdan oldin qurilma qulfini ochib, qayta urinib ko‘ring.';
+	@override String get settingsUnreadable => 'PlezyNG bu saqlangan ulanishlarni ocholmadi. Xizmatlarni qayta ulash uchun ularni tozalang.';
+	@override String get clearUnreadableSettings => 'Saqlangan sozlamalarni tozalash';
+	@override String get clearUnreadableSettingsConfirm => 'Saqlangan oqim sozlamalari tozalansinmi?';
+	@override String get clearUnreadableSettingsBody => 'Bu profildagi saqlangan barcha provayder hisoblari va qo‘shimcha manzillari o‘chiriladi. Bu amalni ortga qaytarib bo‘lmaydi.';
+	@override String get clearUnreadableSettingsFailed => 'Saqlangan oqim sozlamalarini tozalab bo‘lmadi. Qurilma qulfini ochib, qayta urinib ko‘ring.';
+	@override String get retrySettingsLoad => 'Ulanishlarni qayta yuklash';
+	@override String get addons => 'Stremio bilan mos qo‘shimchalar';
+	@override String get addonsDescription => 'Qo‘shimchalarni Stremio’dan import qiling yoki manifest URL orqali ulang. Kataloglarni Izlash bo‘limida ko‘ring va film yoki epizod sahifalaridan oqim tanlovlarini oching.';
+	@override String get catalogLoadFailed => 'Bu katalogni yuklab bo‘lmadi. Yangilab, qayta urinib ko‘ring.';
+	@override String get catalogFiltersRequired => 'Bu katalogni ko‘rish uchun kerakli filtrlarni tanlang.';
+	@override String get catalogRequiredLabel => 'Majburiy';
+	@override String get importFromStremio => 'Stremio’dan import qilish';
+	@override String get stremioImportInstructions => 'QR kodni skanerlang yoki havolani oching. Stremio’ga kiring va so‘rovni tasdiqlang. PlezyNG faqat qo‘shimchalar ro‘yxatini o‘qiydi; Stremio parolingizni so‘ramaydi va sozlamalarni o‘zgartirmaydi.';
+	@override String get stremioImportOpen => 'Stremio havolasini ochish';
+	@override String get stremioImportCode => 'Ulanish kodi';
+	@override String get stremioImportPreviewTitle => 'Qo‘shimchalarni tanlang';
+	@override String get stremioImportPreviewBody => 'PlezyNG’ga ulamoqchi bo‘lgan qo‘shimchalarni tanlang. Bu import faqat HTTPS manzillarini qabul qiladi.';
+	@override String stremioImportIgnored({required Object count}) => 'Qo‘llab-quvvatlanmaydigan yoki xavfsiz bo‘lmagan manzillar sabab o‘tkazib yuborilgan qo‘shimchalar: ${count}.';
+	@override String get stremioCatalogs => 'Kataloglar';
+	@override String get stremioStreams => 'Oqimlar';
+	@override String stremioImportAddSelected({required Object count}) => 'Tanlanganlarni qo‘shish (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Stremio’dan ulangan qo‘shimchalar: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Ulangan qo‘shimchalar: ${added}; ulanmagan: ${failed}.';
+	@override String get stremioImportFailed => 'Stremio’dan qo‘shimchalarni import qilib bo‘lmadi. Qayta urinib ko‘ring.';
+	@override String get stremioImportTimedOut => 'Stremio tasdig‘i muddati tugadi. Importni qaytadan boshlang.';
+	@override String get stremioImportEmpty => 'Bu Stremio hisobida yangi mos qo‘shimchalar topilmadi.';
+	@override String get stremioImportLimitReached => 'Ko‘proq import qilishdan oldin bir qo‘shimchani olib tashlang.';
+	@override String get addByManifestUrl => 'Manifest URL orqali qo‘shish';
+	@override String get addAddon => 'Qo‘shimcha qo‘shish';
+	@override String get manifestUrl => 'Qo‘shimcha manifest URL’i';
+	@override String get manifestUrlHint => 'Qo‘shimchaning manifest URL’ini joylashtiring. Ulanishdan oldin PlezyNG katalog yoki oqim resurslarini qo‘llab-quvvatlashini tekshiradi.';
+	@override String get allowHttp => 'Shifrlanmagan HTTP manziliga ruxsat berish';
+	@override String get allowHttpDescription => 'Buni faqat shaxsiy tarmog‘ingizdagi ishonchli qo‘shimcha uchun ishlating.';
+	@override String get installAddon => 'Qo‘shimchani ulash';
+	@override String get addonInstalled => 'Qo‘shimcha ulandi';
+	@override String get addonRemoved => 'Qo‘shimcha olib tashlandi';
+	@override String get addonToggle => 'Qo‘shimchani yoqish';
+	@override String get addonEmpty => 'Hali qo‘shimchalar ulanmagan';
+	@override String get addonError => 'PlezyNG bu qo‘shimchaga ulana olmadi. Manifest URL’ini tekshirib, qayta urinib ko‘ring.';
+	@override String get addonPrivacy => 'Faqat ishonchli qo‘shimchalarni ulang. Qidiruvda qo‘shimcha siz izlayotgan nomni oladi va uchinchi tomon oqim havolalarini qaytarishi mumkin.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Real-Debrid hisobingiz orqali qo‘llab-quvvatlanadigan torrent oqimlarini ijro eting.';
+	@override String get connectRealDebrid => 'QR kod orqali ulash';
+	@override String get disconnectRealDebrid => 'Real-Debrid’ni uzish';
+	@override String realDebridConnected({required Object username}) => '${username} nomi bilan ulandi';
+	@override String get realDebridInstructions => 'QR kodni skanerlang yoki havolani oching, so‘ng PlezyNG’ni ulash uchun faollashtirish kodini kiriting:';
+	@override String get realDebridActivate => 'Faollashtirish uchun Real-Debrid’ni ochish';
+	@override String get realDebridCode => 'Faollashtirish kodi';
+	@override String get realDebridConnectFailed => 'Real-Debrid’ga ulanib bo‘lmadi. Qayta urinib ko‘ring.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'AllDebrid hisobingiz orqali qo‘llab-quvvatlanadigan torrent oqimlarini ijro eting.';
+	@override String get connectAllDebrid => 'QR kod orqali ulash';
+	@override String get allDebridInstructions => 'PlezyNG’ga ruxsat berish uchun QR kodni skanerlang yoki havolani oching. Ulanish vaqtida bu ekranni ochiq qoldiring:';
+	@override String get allDebridActivate => 'Faollashtirish uchun AllDebrid’ni ochish';
+	@override String get allDebridCode => 'Faollashtirish PIN-kodi';
+	@override String get allDebridConnectFailed => 'AllDebrid’ga ulanib bo‘lmadi. Qayta urinib ko‘ring.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Premiumize orqali keshlangan torrent oqimlarini ijro eting yoki fayllarni ko‘ring.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'TorBox orqali keshlangan torrent oqimlarini ijro eting yoki fayllarni ko‘ring.';
+	@override String get connectApiKey => 'API kaliti bilan ulash';
+	@override String apiKeyTitle({required Object service}) => '${service}’ni ulash';
+	@override String get apiKey => 'API kaliti';
+	@override String apiKeyHint({required Object service}) => '${service} hisob sozlamalaridan API kalitini joylashtiring. PlezyNG uni ushbu qurilmada shifrlab, profilda saqlaydi.';
+	@override String get apiKeyConnectFailed => 'Bu API kalitini tekshirib bo‘lmadi. Tekshirib, qayta urinib ko‘ring.';
+	@override String accountConnected({required Object username}) => '${username} nomi bilan ulandi';
+	@override String get streamNeedsProvider => 'Bu torrent oqimini ijro etish uchun Debrid xizmatini ulang.';
+	@override String get playViaProvider => 'Debrid orqali ijro etish';
+	@override String disconnectConfirm({required Object service}) => '${service}’dan uzilsinmi?';
+	@override String get disconnectBody => 'PlezyNG bu qurilma ruxsatini bekor qiladi. Provayderdagi fayllar va davom etayotgan uzatishlar o‘zgarmaydi.';
+	@override String get streamsTitle => 'Oqimni tanlang';
+	@override String get searchingStreams => 'Ulangan qo‘shimchalar tekshirilmoqda…';
+	@override String get noStreams => 'Bu nom uchun oqim topilmadi.';
+	@override String get manageConnections => 'Oqim xizmatlarini boshqarish';
+	@override String subtitleTracks({required Object count}) => 'Subtitr yo‘laklari: ${count}';
+	@override String get chooseSubtitle => 'Subtitr tanlash';
+	@override String get chooseProvider => 'Debrid xizmatini tanlash';
+	@override String get subtitleOff => 'Subtitrlar o‘chiq';
+	@override String get subtitleLoadFailed => 'Bu subtitrni yuklab bo‘lmadi. Boshqa yo‘lakni sinab ko‘ring.';
+	@override String get subtitleApplied => 'Ijro uchun subtitr tanlandi';
+	@override String get streamLookupPartial => 'Ba’zi qo‘shimchalarga ulanib bo‘lmadi.';
+	@override String get streamLookupFailed => 'Ulangan qo‘shimchalarni tekshirib bo‘lmadi.';
+	@override String get streamOpenExternal => 'Tashqi havolani ochish';
+	@override String get streamPrepare => 'Debrid xizmati orqali tayyorlanmoqda…';
+	@override String get streamPrepareFailed => 'Bu oqimni tayyorlab bo‘lmadi. Ulangan hisobni tekshiring va boshqa manbani sinab ko‘ring.';
+	@override String get streamNeedsRealDebrid => 'Bu torrent oqimini ijro etish uchun Debrid xizmatini ulang.';
+	@override String get streamUnsupported => 'Ilova ichidagi pleyer bu oqim formatini qo‘llab-quvvatlamaydi.';
+	@override String get remoteNeedsEpisode => 'Oqim qidirishdan oldin epizodni tanlang.';
+	@override String get remoteNeedsEpisodeNumber => 'Bu epizodda mavsum yoki epizod raqami yo‘q.';
+	@override String get remoteNeedsExternalId => 'PlezyNG bu nom uchun IMDb yoki TMDB identifikatorini topmadi.';
+	@override String get watchWithServices => 'Ulangan xizmatlar orqali tomosha qilish';
+	@override String get chooseEpisode => 'Epizod tanlash';
+	@override String get episodes => 'Epizodlar';
+	@override String episodePosition({required Object season, required Object episode}) => '${season}-mavsum, ${episode}-epizod';
+	@override String get episodeStreamHint => 'Bu epizod uchun mavjud oqimlarni ochadi.';
+	@override String get cloudFiles => 'Bulut fayllari';
+	@override String get browseCloud => 'Fayllarni ko‘rish';
+	@override String get cloudEmpty => 'Bu hisobda ijro etiladigan video fayllar topilmadi.';
+	@override String get cloudLoadFailed => 'Bulut fayllarini yuklab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.';
+	@override String get providers => 'Debrid provayderlari';
 }
 
 // Path: addServer
@@ -7638,6 +7752,110 @@ extension on TranslationsUz {
 			'services.trackerDescriptions.anilist' => 'Anime listlar ko‘yingiz, AniList ile progresi ko\'yingiz.',
 			'services.trackerDescriptions.simkl' => 'Sync filmlar, televiziyalar ve anime simkl.',
 			'services.trackerDescriptions.mdblist' => 'MDBList ratings and lists we\'ll show in recommendations and Explore.',
+			'streaming.title' => 'Bulut va qo‘shimcha oqimlari',
+			'streaming.subtitle' => 'Bulutingizdagi fayllarni ko‘rish va qo‘llab-quvvatlanadigan oqimlarni ijro etish uchun Debrid hisobini ulang. Stremio bilan mos qo‘shimchalar film va epizod sahifalarida oqim tanlovlarini ko‘rsatadi. Ulanish ma’lumotlari ushbu qurilmada shifrlanib, ushbu profilda saqlanadi.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Ulangan manbalar: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG saqlangan oqim sozlamalarini ocholmadi. Ulanishlarni o‘zgartirishdan oldin qurilma qulfini ochib, qayta urinib ko‘ring.',
+			'streaming.settingsUnreadable' => 'PlezyNG bu saqlangan ulanishlarni ocholmadi. Xizmatlarni qayta ulash uchun ularni tozalang.',
+			'streaming.clearUnreadableSettings' => 'Saqlangan sozlamalarni tozalash',
+			'streaming.clearUnreadableSettingsConfirm' => 'Saqlangan oqim sozlamalari tozalansinmi?',
+			'streaming.clearUnreadableSettingsBody' => 'Bu profildagi saqlangan barcha provayder hisoblari va qo‘shimcha manzillari o‘chiriladi. Bu amalni ortga qaytarib bo‘lmaydi.',
+			'streaming.clearUnreadableSettingsFailed' => 'Saqlangan oqim sozlamalarini tozalab bo‘lmadi. Qurilma qulfini ochib, qayta urinib ko‘ring.',
+			'streaming.retrySettingsLoad' => 'Ulanishlarni qayta yuklash',
+			'streaming.addons' => 'Stremio bilan mos qo‘shimchalar',
+			'streaming.addonsDescription' => 'Qo‘shimchalarni Stremio’dan import qiling yoki manifest URL orqali ulang. Kataloglarni Izlash bo‘limida ko‘ring va film yoki epizod sahifalaridan oqim tanlovlarini oching.',
+			'streaming.catalogLoadFailed' => 'Bu katalogni yuklab bo‘lmadi. Yangilab, qayta urinib ko‘ring.',
+			'streaming.catalogFiltersRequired' => 'Bu katalogni ko‘rish uchun kerakli filtrlarni tanlang.',
+			'streaming.catalogRequiredLabel' => 'Majburiy',
+			'streaming.importFromStremio' => 'Stremio’dan import qilish',
+			'streaming.stremioImportInstructions' => 'QR kodni skanerlang yoki havolani oching. Stremio’ga kiring va so‘rovni tasdiqlang. PlezyNG faqat qo‘shimchalar ro‘yxatini o‘qiydi; Stremio parolingizni so‘ramaydi va sozlamalarni o‘zgartirmaydi.',
+			'streaming.stremioImportOpen' => 'Stremio havolasini ochish',
+			'streaming.stremioImportCode' => 'Ulanish kodi',
+			'streaming.stremioImportPreviewTitle' => 'Qo‘shimchalarni tanlang',
+			'streaming.stremioImportPreviewBody' => 'PlezyNG’ga ulamoqchi bo‘lgan qo‘shimchalarni tanlang. Bu import faqat HTTPS manzillarini qabul qiladi.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Qo‘llab-quvvatlanmaydigan yoki xavfsiz bo‘lmagan manzillar sabab o‘tkazib yuborilgan qo‘shimchalar: ${count}.',
+			'streaming.stremioCatalogs' => 'Kataloglar',
+			'streaming.stremioStreams' => 'Oqimlar',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Tanlanganlarni qo‘shish (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Stremio’dan ulangan qo‘shimchalar: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Ulangan qo‘shimchalar: ${added}; ulanmagan: ${failed}.',
+			'streaming.stremioImportFailed' => 'Stremio’dan qo‘shimchalarni import qilib bo‘lmadi. Qayta urinib ko‘ring.',
+			'streaming.stremioImportTimedOut' => 'Stremio tasdig‘i muddati tugadi. Importni qaytadan boshlang.',
+			'streaming.stremioImportEmpty' => 'Bu Stremio hisobida yangi mos qo‘shimchalar topilmadi.',
+			'streaming.stremioImportLimitReached' => 'Ko‘proq import qilishdan oldin bir qo‘shimchani olib tashlang.',
+			'streaming.addByManifestUrl' => 'Manifest URL orqali qo‘shish',
+			'streaming.addAddon' => 'Qo‘shimcha qo‘shish',
+			'streaming.manifestUrl' => 'Qo‘shimcha manifest URL’i',
+			'streaming.manifestUrlHint' => 'Qo‘shimchaning manifest URL’ini joylashtiring. Ulanishdan oldin PlezyNG katalog yoki oqim resurslarini qo‘llab-quvvatlashini tekshiradi.',
+			'streaming.allowHttp' => 'Shifrlanmagan HTTP manziliga ruxsat berish',
+			'streaming.allowHttpDescription' => 'Buni faqat shaxsiy tarmog‘ingizdagi ishonchli qo‘shimcha uchun ishlating.',
+			'streaming.installAddon' => 'Qo‘shimchani ulash',
+			'streaming.addonInstalled' => 'Qo‘shimcha ulandi',
+			'streaming.addonRemoved' => 'Qo‘shimcha olib tashlandi',
+			'streaming.addonToggle' => 'Qo‘shimchani yoqish',
+			'streaming.addonEmpty' => 'Hali qo‘shimchalar ulanmagan',
+			'streaming.addonError' => 'PlezyNG bu qo‘shimchaga ulana olmadi. Manifest URL’ini tekshirib, qayta urinib ko‘ring.',
+			'streaming.addonPrivacy' => 'Faqat ishonchli qo‘shimchalarni ulang. Qidiruvda qo‘shimcha siz izlayotgan nomni oladi va uchinchi tomon oqim havolalarini qaytarishi mumkin.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Real-Debrid hisobingiz orqali qo‘llab-quvvatlanadigan torrent oqimlarini ijro eting.',
+			'streaming.connectRealDebrid' => 'QR kod orqali ulash',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid’ni uzish',
+			'streaming.realDebridConnected' => ({required Object username}) => '${username} nomi bilan ulandi',
+			'streaming.realDebridInstructions' => 'QR kodni skanerlang yoki havolani oching, so‘ng PlezyNG’ni ulash uchun faollashtirish kodini kiriting:',
+			'streaming.realDebridActivate' => 'Faollashtirish uchun Real-Debrid’ni ochish',
+			'streaming.realDebridCode' => 'Faollashtirish kodi',
+			'streaming.realDebridConnectFailed' => 'Real-Debrid’ga ulanib bo‘lmadi. Qayta urinib ko‘ring.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'AllDebrid hisobingiz orqali qo‘llab-quvvatlanadigan torrent oqimlarini ijro eting.',
+			'streaming.connectAllDebrid' => 'QR kod orqali ulash',
+			'streaming.allDebridInstructions' => 'PlezyNG’ga ruxsat berish uchun QR kodni skanerlang yoki havolani oching. Ulanish vaqtida bu ekranni ochiq qoldiring:',
+			'streaming.allDebridActivate' => 'Faollashtirish uchun AllDebrid’ni ochish',
+			'streaming.allDebridCode' => 'Faollashtirish PIN-kodi',
+			'streaming.allDebridConnectFailed' => 'AllDebrid’ga ulanib bo‘lmadi. Qayta urinib ko‘ring.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Premiumize orqali keshlangan torrent oqimlarini ijro eting yoki fayllarni ko‘ring.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'TorBox orqali keshlangan torrent oqimlarini ijro eting yoki fayllarni ko‘ring.',
+			'streaming.connectApiKey' => 'API kaliti bilan ulash',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service}’ni ulash',
+			'streaming.apiKey' => 'API kaliti',
+			'streaming.apiKeyHint' => ({required Object service}) => '${service} hisob sozlamalaridan API kalitini joylashtiring. PlezyNG uni ushbu qurilmada shifrlab, profilda saqlaydi.',
+			'streaming.apiKeyConnectFailed' => 'Bu API kalitini tekshirib bo‘lmadi. Tekshirib, qayta urinib ko‘ring.',
+			'streaming.accountConnected' => ({required Object username}) => '${username} nomi bilan ulandi',
+			'streaming.streamNeedsProvider' => 'Bu torrent oqimini ijro etish uchun Debrid xizmatini ulang.',
+			'streaming.playViaProvider' => 'Debrid orqali ijro etish',
+			'streaming.disconnectConfirm' => ({required Object service}) => '${service}’dan uzilsinmi?',
+			'streaming.disconnectBody' => 'PlezyNG bu qurilma ruxsatini bekor qiladi. Provayderdagi fayllar va davom etayotgan uzatishlar o‘zgarmaydi.',
+			'streaming.streamsTitle' => 'Oqimni tanlang',
+			'streaming.searchingStreams' => 'Ulangan qo‘shimchalar tekshirilmoqda…',
+			'streaming.noStreams' => 'Bu nom uchun oqim topilmadi.',
+			'streaming.manageConnections' => 'Oqim xizmatlarini boshqarish',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Subtitr yo‘laklari: ${count}',
+			'streaming.chooseSubtitle' => 'Subtitr tanlash',
+			'streaming.chooseProvider' => 'Debrid xizmatini tanlash',
+			'streaming.subtitleOff' => 'Subtitrlar o‘chiq',
+			'streaming.subtitleLoadFailed' => 'Bu subtitrni yuklab bo‘lmadi. Boshqa yo‘lakni sinab ko‘ring.',
+			'streaming.subtitleApplied' => 'Ijro uchun subtitr tanlandi',
+			'streaming.streamLookupPartial' => 'Ba’zi qo‘shimchalarga ulanib bo‘lmadi.',
+			'streaming.streamLookupFailed' => 'Ulangan qo‘shimchalarni tekshirib bo‘lmadi.',
+			'streaming.streamOpenExternal' => 'Tashqi havolani ochish',
+			'streaming.streamPrepare' => 'Debrid xizmati orqali tayyorlanmoqda…',
+			'streaming.streamPrepareFailed' => 'Bu oqimni tayyorlab bo‘lmadi. Ulangan hisobni tekshiring va boshqa manbani sinab ko‘ring.',
+			'streaming.streamNeedsRealDebrid' => 'Bu torrent oqimini ijro etish uchun Debrid xizmatini ulang.',
+			'streaming.streamUnsupported' => 'Ilova ichidagi pleyer bu oqim formatini qo‘llab-quvvatlamaydi.',
+			'streaming.remoteNeedsEpisode' => 'Oqim qidirishdan oldin epizodni tanlang.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Bu epizodda mavsum yoki epizod raqami yo‘q.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG bu nom uchun IMDb yoki TMDB identifikatorini topmadi.',
+			'streaming.watchWithServices' => 'Ulangan xizmatlar orqali tomosha qilish',
+			'streaming.chooseEpisode' => 'Epizod tanlash',
+			'streaming.episodes' => 'Epizodlar',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '${season}-mavsum, ${episode}-epizod',
+			'streaming.episodeStreamHint' => 'Bu epizod uchun mavjud oqimlarni ochadi.',
+			'streaming.cloudFiles' => 'Bulut fayllari',
+			'streaming.browseCloud' => 'Fayllarni ko‘rish',
+			'streaming.cloudEmpty' => 'Bu hisobda ijro etiladigan video fayllar topilmadi.',
+			'streaming.cloudLoadFailed' => 'Bulut fayllarini yuklab bo‘lmadi. Ulanishni tekshirib, qayta urinib ko‘ring.',
+			'streaming.providers' => 'Debrid provayderlari',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} serverini qoʻshish',
 			'addServer.serverUrls' => 'Server URL-lari',
 			'addServer.serverUrlsHelper' => 'Vergul bilan ajratilgan bir nechta URL manziliga ruxsat beriladi.',
@@ -7916,6 +8134,8 @@ extension on TranslationsUz {
 			'universalMedia.contrast' => 'Kontrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hui',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturniya',
 			'universalMedia.view360' => '360° video-ga xiyimadi.',
 			'universalMedia.view360Help' => 'Bu 360° video\'ni xiyim. MPV bu view için FFmpeg v360 filtremni gerektirir.',
@@ -8020,8 +8240,6 @@ extension on TranslationsUz {
 			'universalMedia.extensionInstallTitle' => 'Bu search service\'ni sizga qurtlar?',
 			'universalMedia.extensionReplaceTitle' => 'Bu search service\'ni update?',
 			'universalMedia.extensionService' => 'Servisi',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS bilan bilan',
 			'universalMedia.extensionConsent' => 'Va\'qiz texti bu servisni qaytadi. Manifesto\'da kood qo‘yadi. Yalnız bu terminalni qaytadi va\'yadi.',
 			'universalMedia.extensionInstall' => 'Servisni',
@@ -8430,6 +8648,8 @@ extension on TranslationsUz {
 			'sourceSetup.sharedLibraryInvalid' => '8–100 korni, numrarlar, bodlar, subscores o hyphens.',
 			'sourceSetup.generateSharedLibraryId' => 'Bir librarya ID\'dir.',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead o‘zadi.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Paralel o‘zlar bir NAS-i ya network-i qaytarga boʻyadi.Servers 1\'i koʻyadlar koʻyorga koʻyarlar.',
 			'sourceSetup.nfsReadTest' => 'NFS read performans qadi.',
 			'sourceSetup.nfsReadTestHelp' => 'Bu NAS bağlantıyu ölçmək üçün maksimum 64 MiB\'dir. Bu network bandwidth kullanır.',
@@ -8534,8 +8754,6 @@ extension on TranslationsUz {
 			'deepLinks.noLiveTv' => 'Bu havola uchun Live TV serveri mavjud emas.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '“${channel}” kanali topilmadi.',
 			'deepLinks.showLink' => 'Havolani ko‘rsatish',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Profil havolasini ko‘rsatish',
 			'deepLinks.dialogTitle' => 'Havola',
 			'deepLinks.showHint' => 'Bu havolani ochish keyingi qismni ijro etadi. Serialni aralashtirib ijro etish uchun oxiriga &mode=shuffle qo‘shing.',

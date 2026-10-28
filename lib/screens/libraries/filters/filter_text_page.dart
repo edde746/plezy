@@ -36,6 +36,7 @@ class FilterTextPage extends StatefulWidget {
 
 class _FilterTextPageState extends State<FilterTextPage> {
   late final TextEditingController _controller;
+  final _textFocusNode = FocusNode(debugLabel: 'RequiredFilterText');
   late LibraryFilterOperator _operator;
 
   @override
@@ -48,6 +49,7 @@ class _FilterTextPageState extends State<FilterTextPage> {
   @override
   void dispose() {
     _controller.dispose();
+    _textFocusNode.dispose();
     super.dispose();
   }
 
@@ -78,6 +80,7 @@ class _FilterTextPageState extends State<FilterTextPage> {
 
   void _emit() {
     final text = _controller.text.trim();
+    if (text.isEmpty && widget.filter.isRequired) return;
     widget.onChanged(
       text.isEmpty
           ? const []
@@ -98,9 +101,16 @@ class _FilterTextPageState extends State<FilterTextPage> {
         // (`TvTextInputAutoOpenBehavior.automatic`), burying the sheet before
         // the viewer asked to type.
         FilterClearRow(
-          selected: _controller.text.trim().isEmpty,
+          selected: _controller.text.trim().isEmpty && !widget.filter.isRequired,
+          title: widget.filter.isRequired
+              ? '${t.streaming.catalogRequiredLabel} · ${t.libraries.advancedFilters.textHint}'
+              : null,
           focusNode: widget.initialFocusNode,
           onPressed: () {
+            if (widget.filter.isRequired) {
+              _textFocusNode.requestFocus();
+              return;
+            }
             _controller.clear();
             widget.onChanged(const []);
           },
@@ -109,6 +119,7 @@ class _FilterTextPageState extends State<FilterTextPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: FocusableTextField(
             controller: _controller,
+            focusNode: _textFocusNode,
             autofocus: false,
             decoration: InputDecoration(
               labelText: widget.filter.title,

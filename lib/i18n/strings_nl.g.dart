@@ -92,6 +92,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$nl trakt = _Translations$trakt$nl._(_root);
 	@override late final _Translations$seerr$nl seerr = _Translations$seerr$nl._(_root);
 	@override late final _Translations$services$nl services = _Translations$services$nl._(_root);
+	@override late final _Translations$streaming$nl streaming = _Translations$streaming$nl._(_root);
 	@override late final _Translations$addServer$nl addServer = _Translations$addServer$nl._(_root);
 	@override late final _Translations$cast$nl cast = _Translations$cast$nl._(_root);
 	@override late final _Translations$automation$nl automation = _Translations$automation$nl._(_root);
@@ -2755,6 +2756,119 @@ class _Translations$services$nl extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$nl libraryFilter = _Translations$services$libraryFilter$nl._(_root);
 	@override String get seerrDescription => 'Neem verbinding met Seerr of Overseerr om titels te zoeken en mediaverzoeken in te dienen.';
 	@override late final _Translations$services$trackerDescriptions$nl trackerDescriptions = _Translations$services$trackerDescriptions$nl._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$nl extends Translations$streaming$en {
+	_Translations$streaming$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Streamen vanuit cloud en add-ons';
+	@override String get subtitle => 'Koppel een Debrid-account om bestanden in je cloud te bekijken en ondersteunde streams af te spelen. Stremio-compatibele add-ons bieden streamopties op film- en afleveringspagina’s. Verbindingsgegevens zijn op dit apparaat versleuteld en opgeslagen in dit profiel.';
+	@override String connectionsConfigured({required Object count}) => 'Verbonden bronnen: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG kon de opgeslagen streaminginstellingen niet ontgrendelen. Ontgrendel je apparaat en probeer het opnieuw voordat je verbindingen wijzigt.';
+	@override String get settingsUnreadable => 'PlezyNG kan deze opgeslagen verbindingen niet ontgrendelen. Wis ze om de services opnieuw te koppelen.';
+	@override String get clearUnreadableSettings => 'Opgeslagen instellingen wissen';
+	@override String get clearUnreadableSettingsConfirm => 'Opgeslagen streaminginstellingen wissen?';
+	@override String get clearUnreadableSettingsBody => 'Hiermee verwijder je alle opgeslagen provideraccounts en add-onadressen uit dit profiel. Dit kan niet ongedaan worden gemaakt.';
+	@override String get clearUnreadableSettingsFailed => 'De opgeslagen streaminginstellingen wissen is mislukt. Ontgrendel je apparaat en probeer het opnieuw.';
+	@override String get retrySettingsLoad => 'Verbindingen opnieuw laden';
+	@override String get addons => 'Stremio-compatibele add-ons';
+	@override String get addonsDescription => 'Importeer add-ons uit Stremio of koppel er een via de manifest-URL. Bekijk catalogi in Verkennen en open streamopties vanaf film- of afleveringspagina’s.';
+	@override String get catalogLoadFailed => 'Deze catalogus kon niet worden geladen. Vernieuw en probeer het opnieuw.';
+	@override String get catalogFiltersRequired => 'Kies de vereiste filters om deze catalogus te bekijken.';
+	@override String get catalogRequiredLabel => 'Vereist';
+	@override String get importFromStremio => 'Importeren uit Stremio';
+	@override String get stremioImportInstructions => 'Scan de QR-code of open de link. Meld je aan bij Stremio en keur het verzoek goed. PlezyNG leest alleen je add-onlijst; je Stremio-wachtwoord wordt nooit gevraagd en je instellingen worden niet gewijzigd.';
+	@override String get stremioImportOpen => 'Stremio-link openen';
+	@override String get stremioImportCode => 'Koppelcode';
+	@override String get stremioImportPreviewTitle => 'Add-ons kiezen';
+	@override String get stremioImportPreviewBody => 'Selecteer de add-ons die je met PlezyNG wilt koppelen. Deze import accepteert alleen HTTPS-adressen.';
+	@override String stremioImportIgnored({required Object count}) => 'Add-ons overgeslagen wegens niet-ondersteunde of onveilige adressen: ${count}.';
+	@override String get stremioCatalogs => 'Catalogi';
+	@override String get stremioStreams => 'Streams';
+	@override String stremioImportAddSelected({required Object count}) => 'Selectie toevoegen (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Add-ons uit Stremio gekoppeld: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Add-ons gekoppeld: ${added}; niet gekoppeld: ${failed}.';
+	@override String get stremioImportFailed => 'Add-ons importeren uit Stremio is mislukt. Probeer het opnieuw.';
+	@override String get stremioImportTimedOut => 'De Stremio-goedkeuring is verlopen. Start de import opnieuw.';
+	@override String get stremioImportEmpty => 'Geen nieuwe compatibele add-ons gevonden in dit Stremio-account.';
+	@override String get stremioImportLimitReached => 'Verwijder een add-on voordat je er meer importeert.';
+	@override String get addByManifestUrl => 'Toevoegen via manifest-URL';
+	@override String get addAddon => 'Add-on toevoegen';
+	@override String get manifestUrl => 'Manifest-URL van add-on';
+	@override String get manifestUrlHint => 'Plak de manifest-URL van de add-on. PlezyNG controleert vóór het koppelen of deze catalogi of streambronnen ondersteunt.';
+	@override String get allowHttp => 'Een onbeveiligd HTTP-adres toestaan';
+	@override String get allowHttpDescription => 'Gebruik dit alleen voor een vertrouwde add-on op je privénetwerk.';
+	@override String get installAddon => 'Add-on koppelen';
+	@override String get addonInstalled => 'Add-on gekoppeld';
+	@override String get addonRemoved => 'Add-on verwijderd';
+	@override String get addonToggle => 'Add-on inschakelen';
+	@override String get addonEmpty => 'Nog geen add-ons gekoppeld';
+	@override String get addonError => 'PlezyNG kon geen verbinding maken met deze add-on. Controleer de manifest-URL en probeer het opnieuw.';
+	@override String get addonPrivacy => 'Koppel alleen add-ons die je vertrouwt. Bij een zoekopdracht ontvangt een add-on de gezochte titel en kan deze streamlinks van derden teruggeven.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Speel ondersteunde torrentstreams af via je Real-Debrid-account.';
+	@override String get connectRealDebrid => 'Koppelen met QR-code';
+	@override String get disconnectRealDebrid => 'Real-Debrid ontkoppelen';
+	@override String realDebridConnected({required Object username}) => 'Verbonden als ${username}';
+	@override String get realDebridInstructions => 'Scan de QR-code of open de link en voer deze activeringscode in om PlezyNG te koppelen:';
+	@override String get realDebridActivate => 'Real-Debrid openen om te activeren';
+	@override String get realDebridCode => 'Activeringscode';
+	@override String get realDebridConnectFailed => 'Verbinding maken met Real-Debrid is mislukt. Probeer het opnieuw.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Speel ondersteunde torrentstreams af via je AllDebrid-account.';
+	@override String get connectAllDebrid => 'Koppelen met QR-code';
+	@override String get allDebridInstructions => 'Scan de QR-code of open de link om PlezyNG toestemming te geven. Laat dit scherm open terwijl de verbinding wordt gemaakt:';
+	@override String get allDebridActivate => 'AllDebrid openen om te activeren';
+	@override String get allDebridCode => 'Activeringspincode';
+	@override String get allDebridConnectFailed => 'Verbinding maken met AllDebrid is mislukt. Probeer het opnieuw.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Speel gecachte torrentstreams af of blader door bestanden met Premiumize.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Speel gecachte torrentstreams af of blader door bestanden met TorBox.';
+	@override String get connectApiKey => 'Koppelen met API-sleutel';
+	@override String apiKeyTitle({required Object service}) => '${service} koppelen';
+	@override String get apiKey => 'API-sleutel';
+	@override String apiKeyHint({required Object service}) => 'Plak de API-sleutel uit de accountinstellingen van ${service}. PlezyNG versleutelt deze op dit apparaat en slaat hem op in dit profiel.';
+	@override String get apiKeyConnectFailed => 'Deze API-sleutel kon niet worden gecontroleerd. Controleer de sleutel en probeer het opnieuw.';
+	@override String accountConnected({required Object username}) => 'Verbonden als ${username}';
+	@override String get streamNeedsProvider => 'Koppel een Debrid-service om deze torrentstream af te spelen.';
+	@override String get playViaProvider => 'Afspelen via Debrid';
+	@override String disconnectConfirm({required Object service}) => '${service} ontkoppelen?';
+	@override String get disconnectBody => 'PlezyNG verwijdert de toegang van dit apparaat. Bestanden bij de provider en lopende overdrachten blijven ongewijzigd.';
+	@override String get streamsTitle => 'Stream kiezen';
+	@override String get searchingStreams => 'Verbonden add-ons controleren…';
+	@override String get noStreams => 'Geen streams gevonden voor deze titel.';
+	@override String get manageConnections => 'Streamingservices beheren';
+	@override String subtitleTracks({required Object count}) => 'Ondertitelsporen: ${count}';
+	@override String get chooseSubtitle => 'Ondertitel kiezen';
+	@override String get chooseProvider => 'Debrid-service kiezen';
+	@override String get subtitleOff => 'Ondertiteling uit';
+	@override String get subtitleLoadFailed => 'Deze ondertiteling kon niet worden geladen. Probeer een ander spoor.';
+	@override String get subtitleApplied => 'Ondertitel geselecteerd voor afspelen';
+	@override String get streamLookupPartial => 'Sommige add-ons zijn niet bereikbaar.';
+	@override String get streamLookupFailed => 'De verbonden add-ons konden niet worden gecontroleerd.';
+	@override String get streamOpenExternal => 'Externe link openen';
+	@override String get streamPrepare => 'Voorbereiden via je Debrid-service…';
+	@override String get streamPrepareFailed => 'Deze stream kon niet worden voorbereid. Controleer het gekoppelde account en probeer een andere bron.';
+	@override String get streamNeedsRealDebrid => 'Koppel een Debrid-service om deze torrentstream af te spelen.';
+	@override String get streamUnsupported => 'Dit streamformaat wordt niet ondersteund door de ingebouwde speler.';
+	@override String get remoteNeedsEpisode => 'Kies een aflevering voordat je naar een stream zoekt.';
+	@override String get remoteNeedsEpisodeNumber => 'Het seizoen- of afleveringsnummer ontbreekt bij deze aflevering.';
+	@override String get remoteNeedsExternalId => 'PlezyNG kon geen IMDb- of TMDB-ID voor deze titel vinden.';
+	@override String get watchWithServices => 'Kijken met verbonden services';
+	@override String get chooseEpisode => 'Aflevering kiezen';
+	@override String get episodes => 'Afleveringen';
+	@override String episodePosition({required Object season, required Object episode}) => 'Seizoen ${season}, aflevering ${episode}';
+	@override String get episodeStreamHint => 'Opent beschikbare streams voor deze aflevering.';
+	@override String get cloudFiles => 'Cloudbestanden';
+	@override String get browseCloud => 'Bestanden bekijken';
+	@override String get cloudEmpty => 'Geen afspeelbare videobestanden gevonden in dit account.';
+	@override String get cloudLoadFailed => 'Cloudbestanden laden is mislukt. Controleer de verbinding en probeer het opnieuw.';
+	@override String get providers => 'Debrid-providers';
 }
 
 // Path: addServer
@@ -7638,6 +7752,110 @@ extension on TranslationsNl {
 			'services.trackerDescriptions.anilist' => 'Sync anime lijsten en kijk vooruitgang met AniList.',
 			'services.trackerDescriptions.simkl' => 'Sync zag films, tv-shows en anime met Simkl.',
 			'services.trackerDescriptions.mdblist' => 'MDBList ratings en lijsten weergeven in aanbevelingen en verkennen.',
+			'streaming.title' => 'Streamen vanuit cloud en add-ons',
+			'streaming.subtitle' => 'Koppel een Debrid-account om bestanden in je cloud te bekijken en ondersteunde streams af te spelen. Stremio-compatibele add-ons bieden streamopties op film- en afleveringspagina’s. Verbindingsgegevens zijn op dit apparaat versleuteld en opgeslagen in dit profiel.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Verbonden bronnen: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG kon de opgeslagen streaminginstellingen niet ontgrendelen. Ontgrendel je apparaat en probeer het opnieuw voordat je verbindingen wijzigt.',
+			'streaming.settingsUnreadable' => 'PlezyNG kan deze opgeslagen verbindingen niet ontgrendelen. Wis ze om de services opnieuw te koppelen.',
+			'streaming.clearUnreadableSettings' => 'Opgeslagen instellingen wissen',
+			'streaming.clearUnreadableSettingsConfirm' => 'Opgeslagen streaminginstellingen wissen?',
+			'streaming.clearUnreadableSettingsBody' => 'Hiermee verwijder je alle opgeslagen provideraccounts en add-onadressen uit dit profiel. Dit kan niet ongedaan worden gemaakt.',
+			'streaming.clearUnreadableSettingsFailed' => 'De opgeslagen streaminginstellingen wissen is mislukt. Ontgrendel je apparaat en probeer het opnieuw.',
+			'streaming.retrySettingsLoad' => 'Verbindingen opnieuw laden',
+			'streaming.addons' => 'Stremio-compatibele add-ons',
+			'streaming.addonsDescription' => 'Importeer add-ons uit Stremio of koppel er een via de manifest-URL. Bekijk catalogi in Verkennen en open streamopties vanaf film- of afleveringspagina’s.',
+			'streaming.catalogLoadFailed' => 'Deze catalogus kon niet worden geladen. Vernieuw en probeer het opnieuw.',
+			'streaming.catalogFiltersRequired' => 'Kies de vereiste filters om deze catalogus te bekijken.',
+			'streaming.catalogRequiredLabel' => 'Vereist',
+			'streaming.importFromStremio' => 'Importeren uit Stremio',
+			'streaming.stremioImportInstructions' => 'Scan de QR-code of open de link. Meld je aan bij Stremio en keur het verzoek goed. PlezyNG leest alleen je add-onlijst; je Stremio-wachtwoord wordt nooit gevraagd en je instellingen worden niet gewijzigd.',
+			'streaming.stremioImportOpen' => 'Stremio-link openen',
+			'streaming.stremioImportCode' => 'Koppelcode',
+			'streaming.stremioImportPreviewTitle' => 'Add-ons kiezen',
+			'streaming.stremioImportPreviewBody' => 'Selecteer de add-ons die je met PlezyNG wilt koppelen. Deze import accepteert alleen HTTPS-adressen.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Add-ons overgeslagen wegens niet-ondersteunde of onveilige adressen: ${count}.',
+			'streaming.stremioCatalogs' => 'Catalogi',
+			'streaming.stremioStreams' => 'Streams',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Selectie toevoegen (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Add-ons uit Stremio gekoppeld: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Add-ons gekoppeld: ${added}; niet gekoppeld: ${failed}.',
+			'streaming.stremioImportFailed' => 'Add-ons importeren uit Stremio is mislukt. Probeer het opnieuw.',
+			'streaming.stremioImportTimedOut' => 'De Stremio-goedkeuring is verlopen. Start de import opnieuw.',
+			'streaming.stremioImportEmpty' => 'Geen nieuwe compatibele add-ons gevonden in dit Stremio-account.',
+			'streaming.stremioImportLimitReached' => 'Verwijder een add-on voordat je er meer importeert.',
+			'streaming.addByManifestUrl' => 'Toevoegen via manifest-URL',
+			'streaming.addAddon' => 'Add-on toevoegen',
+			'streaming.manifestUrl' => 'Manifest-URL van add-on',
+			'streaming.manifestUrlHint' => 'Plak de manifest-URL van de add-on. PlezyNG controleert vóór het koppelen of deze catalogi of streambronnen ondersteunt.',
+			'streaming.allowHttp' => 'Een onbeveiligd HTTP-adres toestaan',
+			'streaming.allowHttpDescription' => 'Gebruik dit alleen voor een vertrouwde add-on op je privénetwerk.',
+			'streaming.installAddon' => 'Add-on koppelen',
+			'streaming.addonInstalled' => 'Add-on gekoppeld',
+			'streaming.addonRemoved' => 'Add-on verwijderd',
+			'streaming.addonToggle' => 'Add-on inschakelen',
+			'streaming.addonEmpty' => 'Nog geen add-ons gekoppeld',
+			'streaming.addonError' => 'PlezyNG kon geen verbinding maken met deze add-on. Controleer de manifest-URL en probeer het opnieuw.',
+			'streaming.addonPrivacy' => 'Koppel alleen add-ons die je vertrouwt. Bij een zoekopdracht ontvangt een add-on de gezochte titel en kan deze streamlinks van derden teruggeven.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Speel ondersteunde torrentstreams af via je Real-Debrid-account.',
+			'streaming.connectRealDebrid' => 'Koppelen met QR-code',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid ontkoppelen',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Verbonden als ${username}',
+			'streaming.realDebridInstructions' => 'Scan de QR-code of open de link en voer deze activeringscode in om PlezyNG te koppelen:',
+			'streaming.realDebridActivate' => 'Real-Debrid openen om te activeren',
+			'streaming.realDebridCode' => 'Activeringscode',
+			'streaming.realDebridConnectFailed' => 'Verbinding maken met Real-Debrid is mislukt. Probeer het opnieuw.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Speel ondersteunde torrentstreams af via je AllDebrid-account.',
+			'streaming.connectAllDebrid' => 'Koppelen met QR-code',
+			'streaming.allDebridInstructions' => 'Scan de QR-code of open de link om PlezyNG toestemming te geven. Laat dit scherm open terwijl de verbinding wordt gemaakt:',
+			'streaming.allDebridActivate' => 'AllDebrid openen om te activeren',
+			'streaming.allDebridCode' => 'Activeringspincode',
+			'streaming.allDebridConnectFailed' => 'Verbinding maken met AllDebrid is mislukt. Probeer het opnieuw.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Speel gecachte torrentstreams af of blader door bestanden met Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Speel gecachte torrentstreams af of blader door bestanden met TorBox.',
+			'streaming.connectApiKey' => 'Koppelen met API-sleutel',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service} koppelen',
+			'streaming.apiKey' => 'API-sleutel',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Plak de API-sleutel uit de accountinstellingen van ${service}. PlezyNG versleutelt deze op dit apparaat en slaat hem op in dit profiel.',
+			'streaming.apiKeyConnectFailed' => 'Deze API-sleutel kon niet worden gecontroleerd. Controleer de sleutel en probeer het opnieuw.',
+			'streaming.accountConnected' => ({required Object username}) => 'Verbonden als ${username}',
+			'streaming.streamNeedsProvider' => 'Koppel een Debrid-service om deze torrentstream af te spelen.',
+			'streaming.playViaProvider' => 'Afspelen via Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => '${service} ontkoppelen?',
+			'streaming.disconnectBody' => 'PlezyNG verwijdert de toegang van dit apparaat. Bestanden bij de provider en lopende overdrachten blijven ongewijzigd.',
+			'streaming.streamsTitle' => 'Stream kiezen',
+			'streaming.searchingStreams' => 'Verbonden add-ons controleren…',
+			'streaming.noStreams' => 'Geen streams gevonden voor deze titel.',
+			'streaming.manageConnections' => 'Streamingservices beheren',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Ondertitelsporen: ${count}',
+			'streaming.chooseSubtitle' => 'Ondertitel kiezen',
+			'streaming.chooseProvider' => 'Debrid-service kiezen',
+			'streaming.subtitleOff' => 'Ondertiteling uit',
+			'streaming.subtitleLoadFailed' => 'Deze ondertiteling kon niet worden geladen. Probeer een ander spoor.',
+			'streaming.subtitleApplied' => 'Ondertitel geselecteerd voor afspelen',
+			'streaming.streamLookupPartial' => 'Sommige add-ons zijn niet bereikbaar.',
+			'streaming.streamLookupFailed' => 'De verbonden add-ons konden niet worden gecontroleerd.',
+			'streaming.streamOpenExternal' => 'Externe link openen',
+			'streaming.streamPrepare' => 'Voorbereiden via je Debrid-service…',
+			'streaming.streamPrepareFailed' => 'Deze stream kon niet worden voorbereid. Controleer het gekoppelde account en probeer een andere bron.',
+			'streaming.streamNeedsRealDebrid' => 'Koppel een Debrid-service om deze torrentstream af te spelen.',
+			'streaming.streamUnsupported' => 'Dit streamformaat wordt niet ondersteund door de ingebouwde speler.',
+			'streaming.remoteNeedsEpisode' => 'Kies een aflevering voordat je naar een stream zoekt.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Het seizoen- of afleveringsnummer ontbreekt bij deze aflevering.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG kon geen IMDb- of TMDB-ID voor deze titel vinden.',
+			'streaming.watchWithServices' => 'Kijken met verbonden services',
+			'streaming.chooseEpisode' => 'Aflevering kiezen',
+			'streaming.episodes' => 'Afleveringen',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Seizoen ${season}, aflevering ${episode}',
+			'streaming.episodeStreamHint' => 'Opent beschikbare streams voor deze aflevering.',
+			'streaming.cloudFiles' => 'Cloudbestanden',
+			'streaming.browseCloud' => 'Bestanden bekijken',
+			'streaming.cloudEmpty' => 'Geen afspeelbare videobestanden gevonden in dit account.',
+			'streaming.cloudLoadFailed' => 'Cloudbestanden laden is mislukt. Controleer de verbinding en probeer het opnieuw.',
+			'streaming.providers' => 'Debrid-providers',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product}-server toevoegen',
 			'addServer.serverUrls' => 'Server-URL\'s',
 			'addServer.serverUrlsHelper' => 'Meerdere URL\'s toegestaan, gescheiden door komma\'s.',
@@ -7916,6 +8134,8 @@ extension on TranslationsNl {
 			'universalMedia.contrast' => 'Contrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Huis',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturatie',
 			'universalMedia.view360' => 'Flat view voor 360° video',
 			'universalMedia.view360Help' => 'Gebruik dit voor 360° video. MPV heeft het v360-filter van FFmpeg nodig voor deze weergave.',
@@ -8020,8 +8240,6 @@ extension on TranslationsNl {
 			'universalMedia.extensionInstallTitle' => 'Voeg deze zoekdienst toe?',
 			'universalMedia.extensionReplaceTitle' => 'Update deze zoekdienst?',
 			'universalMedia.extensionService' => 'dienstbaarheid',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS eindpunt',
 			'universalMedia.extensionConsent' => 'Uw zoektekst wordt naar deze service verzonden. de manifest bevat geen uitgevoerde code. Continue only if you trust this endpoint.',
 			'universalMedia.extensionInstall' => 'Toegevoegde service',
@@ -8430,6 +8648,8 @@ extension on TranslationsNl {
 			'sourceSetup.sharedLibraryInvalid' => 'Gebruik 8-100 letters, cijfers, punten, ondertekeningen of hyphens.',
 			'sourceSetup.generateSharedLibraryId' => 'Een gedeelde bibliotheek ID genereren',
 			'sourceSetup.nfsReadAhead' => 'NFS read-ahead verzoeken',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Meer parallelle lezingen kunnen de doorvoer op een snelle NAS of netwerk verbeteren. gebruik 1 als de server concurrerende aanvragen beperkt.',
 			'sourceSetup.nfsReadTest' => 'NFS lees prestaties',
 			'sourceSetup.nfsReadTestHelp' => 'Het leest tot 64 MiB van de grootste bestand om deze NAS-verbinding te meten.',
@@ -8534,8 +8754,6 @@ extension on TranslationsNl {
 			'deepLinks.noLiveTv' => 'Geen Live TV-server is beschikbaar voor deze link.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Ik kon geen kanaal vinden "${channel}".',
 			'deepLinks.showLink' => 'Toon link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Profiel link weergeven',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Het openen van deze link speelt het volgende episode. Voeg &mode=shuffle toe om de show te spelen op shuffle.',

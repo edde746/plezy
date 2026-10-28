@@ -92,6 +92,7 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$cs trakt = _Translations$trakt$cs._(_root);
 	@override late final _Translations$seerr$cs seerr = _Translations$seerr$cs._(_root);
 	@override late final _Translations$services$cs services = _Translations$services$cs._(_root);
+	@override late final _Translations$streaming$cs streaming = _Translations$streaming$cs._(_root);
 	@override late final _Translations$addServer$cs addServer = _Translations$addServer$cs._(_root);
 	@override late final _Translations$cast$cs cast = _Translations$cast$cs._(_root);
 	@override late final _Translations$automation$cs automation = _Translations$automation$cs._(_root);
@@ -2789,6 +2790,119 @@ class _Translations$services$cs extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$cs libraryFilter = _Translations$services$libraryFilter$cs._(_root);
 	@override String get seerrDescription => 'Připojte se k Seerr nebo Overseerr pro vyhledávání titulů a předložte mediální požadavky.';
 	@override late final _Translations$services$trackerDescriptions$cs trackerDescriptions = _Translations$services$trackerDescriptions$cs._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$cs extends Translations$streaming$en {
+	_Translations$streaming$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Streamování z cloudu a doplňků';
+	@override String get subtitle => 'Připojte účet Debrid, abyste mohli procházet soubory v cloudu a přehrávat podporované streamy. Doplňky kompatibilní se Stremiem nabízejí možnosti streamování na stránkách filmů a epizod. Údaje o připojení jsou v tomto zařízení šifrované a uložené v tomto profilu.';
+	@override String connectionsConfigured({required Object count}) => 'Připojené zdroje: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG nemohl odemknout uložená nastavení streamování. Odemkněte zařízení a před změnou připojení to zkuste znovu.';
+	@override String get settingsUnreadable => 'PlezyNG nemohl odemknout tato uložená připojení. Vymažte je a služby znovu připojte.';
+	@override String get clearUnreadableSettings => 'Vymazat uložená nastavení';
+	@override String get clearUnreadableSettingsConfirm => 'Vymazat uložená nastavení streamování?';
+	@override String get clearUnreadableSettingsBody => 'Tím se z profilu odeberou všechny uložené účty poskytovatelů a adresy doplňků. Tuto akci nelze vrátit.';
+	@override String get clearUnreadableSettingsFailed => 'Uložená nastavení streamování se nepodařilo vymazat. Odemkněte zařízení a zkuste to znovu.';
+	@override String get retrySettingsLoad => 'Zkusit znovu načíst připojení';
+	@override String get addons => 'Doplňky kompatibilní se Stremiem';
+	@override String get addonsDescription => 'Importujte doplňky ze Stremia nebo je připojte pomocí URL manifestu. Procházejte katalogy v sekci Prozkoumat a otevírejte možnosti streamování ze stránek filmů nebo epizod.';
+	@override String get catalogLoadFailed => 'Katalog se nepodařilo načíst. Obnovte ho a zkuste to znovu.';
+	@override String get catalogFiltersRequired => 'Pro procházení katalogu vyberte požadované filtry.';
+	@override String get catalogRequiredLabel => 'Povinné';
+	@override String get importFromStremio => 'Importovat ze Stremia';
+	@override String get stremioImportInstructions => 'Naskenujte QR kód nebo otevřete odkaz. Přihlaste se do Stremia a schvalte žádost. PlezyNG čte pouze seznam vašich doplňků; nikdy nepožaduje heslo ke Stremiu ani nemění jeho nastavení.';
+	@override String get stremioImportOpen => 'Otevřít odkaz Stremia';
+	@override String get stremioImportCode => 'Párovací kód';
+	@override String get stremioImportPreviewTitle => 'Vybrat doplňky';
+	@override String get stremioImportPreviewBody => 'Vyberte doplňky, které chcete připojit k PlezyNG. Tento import přijímá pouze adresy HTTPS.';
+	@override String stremioImportIgnored({required Object count}) => 'Přeskočené doplňky s nepodporovanými nebo nezabezpečenými adresami: ${count}.';
+	@override String get stremioCatalogs => 'Katalogy';
+	@override String get stremioStreams => 'Streamy';
+	@override String stremioImportAddSelected({required Object count}) => 'Přidat vybrané (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Doplňky připojené ze Stremia: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Připojené doplňky: ${added}; nepodařilo se připojit: ${failed}.';
+	@override String get stremioImportFailed => 'Doplňky ze Stremia se nepodařilo importovat. Zkuste to znovu.';
+	@override String get stremioImportTimedOut => 'Platnost schválení Stremia vypršela. Spusťte import znovu.';
+	@override String get stremioImportEmpty => 'V tomto účtu Stremia nebyly nalezeny žádné nové kompatibilní doplňky.';
+	@override String get stremioImportLimitReached => 'Před importem dalších odeberte jeden doplněk.';
+	@override String get addByManifestUrl => 'Přidat pomocí URL manifestu';
+	@override String get addAddon => 'Přidat doplněk';
+	@override String get manifestUrl => 'URL manifestu doplňku';
+	@override String get manifestUrlHint => 'Vložte URL manifestu doplňku. PlezyNG před připojením ověří podporu katalogů nebo streamovacích zdrojů.';
+	@override String get allowHttp => 'Povolit nešifrovanou adresu HTTP';
+	@override String get allowHttpDescription => 'Používejte pouze pro důvěryhodný doplněk v soukromé síti.';
+	@override String get installAddon => 'Připojit doplněk';
+	@override String get addonInstalled => 'Doplněk připojen';
+	@override String get addonRemoved => 'Doplněk odebrán';
+	@override String get addonToggle => 'Povolit doplněk';
+	@override String get addonEmpty => 'Zatím nejsou připojené žádné doplňky';
+	@override String get addonError => 'PlezyNG se k tomuto doplňku nepodařilo připojit. Zkontrolujte URL manifestu a zkuste to znovu.';
+	@override String get addonPrivacy => 'Připojujte pouze doplňky, kterým důvěřujete. Při vyhledávání doplněk obdrží hledaný název a může vracet odkazy na streamy třetích stran.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Přehrávejte podporované torrentové streamy přes účet Real-Debrid.';
+	@override String get connectRealDebrid => 'Připojit pomocí QR kódu';
+	@override String get disconnectRealDebrid => 'Odpojit Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'Připojeno jako ${username}';
+	@override String get realDebridInstructions => 'Naskenujte QR kód nebo otevřete odkaz a zadejte tento aktivační kód pro připojení PlezyNG:';
+	@override String get realDebridActivate => 'Otevřít Real-Debrid a aktivovat';
+	@override String get realDebridCode => 'Aktivační kód';
+	@override String get realDebridConnectFailed => 'K Real-Debrid se nepodařilo připojit. Zkuste to znovu.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Přehrávejte podporované torrentové streamy přes účet AllDebrid.';
+	@override String get connectAllDebrid => 'Připojit pomocí QR kódu';
+	@override String get allDebridInstructions => 'Naskenujte QR kód nebo otevřete odkaz a autorizujte PlezyNG. Během připojování ponechte tuto obrazovku otevřenou:';
+	@override String get allDebridActivate => 'Otevřít AllDebrid a aktivovat';
+	@override String get allDebridCode => 'Aktivační PIN';
+	@override String get allDebridConnectFailed => 'K AllDebrid se nepodařilo připojit. Zkuste to znovu.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Přehrávejte streamy z torrentů v mezipaměti nebo procházejte soubory přes Premiumize.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Přehrávejte streamy z torrentů v mezipaměti nebo procházejte soubory přes TorBox.';
+	@override String get connectApiKey => 'Připojit pomocí klíče API';
+	@override String apiKeyTitle({required Object service}) => 'Připojit ${service}';
+	@override String get apiKey => 'Klíč API';
+	@override String apiKeyHint({required Object service}) => 'Vložte klíč API z nastavení účtu ${service}. PlezyNG ho zašifruje v tomto zařízení a uloží do tohoto profilu.';
+	@override String get apiKeyConnectFailed => 'Klíč API se nepodařilo ověřit. Zkontrolujte ho a zkuste to znovu.';
+	@override String accountConnected({required Object username}) => 'Připojeno jako ${username}';
+	@override String get streamNeedsProvider => 'Pro přehrání tohoto torrentového streamu připojte službu Debrid.';
+	@override String get playViaProvider => 'Přehrát přes Debrid';
+	@override String disconnectConfirm({required Object service}) => 'Odpojit ${service}?';
+	@override String get disconnectBody => 'PlezyNG odebere oprávnění tohoto zařízení. Soubory u poskytovatele ani probíhající přenosy se nezmění.';
+	@override String get streamsTitle => 'Vybrat stream';
+	@override String get searchingStreams => 'Kontrolují se připojené doplňky…';
+	@override String get noStreams => 'Pro tento titul nebyly nalezeny žádné streamy.';
+	@override String get manageConnections => 'Spravovat streamovací služby';
+	@override String subtitleTracks({required Object count}) => 'Titulky: ${count}';
+	@override String get chooseSubtitle => 'Vybrat titulky';
+	@override String get chooseProvider => 'Vybrat službu Debrid';
+	@override String get subtitleOff => 'Titulky vypnuté';
+	@override String get subtitleLoadFailed => 'Titulky se nepodařilo načíst. Zkuste jinou stopu.';
+	@override String get subtitleApplied => 'Titulky vybrány pro přehrávání';
+	@override String get streamLookupPartial => 'Některé doplňky nejsou dostupné.';
+	@override String get streamLookupFailed => 'Připojené doplňky se nepodařilo zkontrolovat.';
+	@override String get streamOpenExternal => 'Otevřít externí odkaz';
+	@override String get streamPrepare => 'Připravuje se přes službu Debrid…';
+	@override String get streamPrepareFailed => 'Stream se nepodařilo připravit. Zkontrolujte připojený účet a zkuste jiný zdroj.';
+	@override String get streamNeedsRealDebrid => 'Pro přehrání tohoto torrentového streamu připojte službu Debrid.';
+	@override String get streamUnsupported => 'Tento formát streamu vestavěný přehrávač nepodporuje.';
+	@override String get remoteNeedsEpisode => 'Před vyhledáním streamu vyberte epizodu.';
+	@override String get remoteNeedsEpisodeNumber => 'U této epizody chybí číslo řady nebo epizody.';
+	@override String get remoteNeedsExternalId => 'PlezyNG pro tento titul nenašel IMDb ani TMDB ID.';
+	@override String get watchWithServices => 'Sledovat přes připojené služby';
+	@override String get chooseEpisode => 'Vybrat epizodu';
+	@override String get episodes => 'Epizody';
+	@override String episodePosition({required Object season, required Object episode}) => 'Řada ${season}, epizoda ${episode}';
+	@override String get episodeStreamHint => 'Otevře dostupné streamy pro tuto epizodu.';
+	@override String get cloudFiles => 'Soubory v cloudu';
+	@override String get browseCloud => 'Procházet soubory';
+	@override String get cloudEmpty => 'V tomto účtu nebyly nalezeny žádné přehratelné videosoubory.';
+	@override String get cloudLoadFailed => 'Soubory v cloudu se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.';
+	@override String get providers => 'Poskytovatelé Debrid';
 }
 
 // Path: addServer
@@ -7682,6 +7796,110 @@ extension on TranslationsCs {
 			'services.trackerDescriptions.anilist' => 'Synchronizujte anime seznamy a sledujte pokrok s AniList.',
 			'services.trackerDescriptions.simkl' => 'Sync sledoval filmy, televizní pořady a anime s Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Zobrazit hodnocení a seznamy MDBList v doporučeních a prozkoumat.',
+			'streaming.title' => 'Streamování z cloudu a doplňků',
+			'streaming.subtitle' => 'Připojte účet Debrid, abyste mohli procházet soubory v cloudu a přehrávat podporované streamy. Doplňky kompatibilní se Stremiem nabízejí možnosti streamování na stránkách filmů a epizod. Údaje o připojení jsou v tomto zařízení šifrované a uložené v tomto profilu.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Připojené zdroje: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG nemohl odemknout uložená nastavení streamování. Odemkněte zařízení a před změnou připojení to zkuste znovu.',
+			'streaming.settingsUnreadable' => 'PlezyNG nemohl odemknout tato uložená připojení. Vymažte je a služby znovu připojte.',
+			'streaming.clearUnreadableSettings' => 'Vymazat uložená nastavení',
+			'streaming.clearUnreadableSettingsConfirm' => 'Vymazat uložená nastavení streamování?',
+			'streaming.clearUnreadableSettingsBody' => 'Tím se z profilu odeberou všechny uložené účty poskytovatelů a adresy doplňků. Tuto akci nelze vrátit.',
+			'streaming.clearUnreadableSettingsFailed' => 'Uložená nastavení streamování se nepodařilo vymazat. Odemkněte zařízení a zkuste to znovu.',
+			'streaming.retrySettingsLoad' => 'Zkusit znovu načíst připojení',
+			'streaming.addons' => 'Doplňky kompatibilní se Stremiem',
+			'streaming.addonsDescription' => 'Importujte doplňky ze Stremia nebo je připojte pomocí URL manifestu. Procházejte katalogy v sekci Prozkoumat a otevírejte možnosti streamování ze stránek filmů nebo epizod.',
+			'streaming.catalogLoadFailed' => 'Katalog se nepodařilo načíst. Obnovte ho a zkuste to znovu.',
+			'streaming.catalogFiltersRequired' => 'Pro procházení katalogu vyberte požadované filtry.',
+			'streaming.catalogRequiredLabel' => 'Povinné',
+			'streaming.importFromStremio' => 'Importovat ze Stremia',
+			'streaming.stremioImportInstructions' => 'Naskenujte QR kód nebo otevřete odkaz. Přihlaste se do Stremia a schvalte žádost. PlezyNG čte pouze seznam vašich doplňků; nikdy nepožaduje heslo ke Stremiu ani nemění jeho nastavení.',
+			'streaming.stremioImportOpen' => 'Otevřít odkaz Stremia',
+			'streaming.stremioImportCode' => 'Párovací kód',
+			'streaming.stremioImportPreviewTitle' => 'Vybrat doplňky',
+			'streaming.stremioImportPreviewBody' => 'Vyberte doplňky, které chcete připojit k PlezyNG. Tento import přijímá pouze adresy HTTPS.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Přeskočené doplňky s nepodporovanými nebo nezabezpečenými adresami: ${count}.',
+			'streaming.stremioCatalogs' => 'Katalogy',
+			'streaming.stremioStreams' => 'Streamy',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Přidat vybrané (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Doplňky připojené ze Stremia: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Připojené doplňky: ${added}; nepodařilo se připojit: ${failed}.',
+			'streaming.stremioImportFailed' => 'Doplňky ze Stremia se nepodařilo importovat. Zkuste to znovu.',
+			'streaming.stremioImportTimedOut' => 'Platnost schválení Stremia vypršela. Spusťte import znovu.',
+			'streaming.stremioImportEmpty' => 'V tomto účtu Stremia nebyly nalezeny žádné nové kompatibilní doplňky.',
+			'streaming.stremioImportLimitReached' => 'Před importem dalších odeberte jeden doplněk.',
+			'streaming.addByManifestUrl' => 'Přidat pomocí URL manifestu',
+			'streaming.addAddon' => 'Přidat doplněk',
+			'streaming.manifestUrl' => 'URL manifestu doplňku',
+			'streaming.manifestUrlHint' => 'Vložte URL manifestu doplňku. PlezyNG před připojením ověří podporu katalogů nebo streamovacích zdrojů.',
+			'streaming.allowHttp' => 'Povolit nešifrovanou adresu HTTP',
+			'streaming.allowHttpDescription' => 'Používejte pouze pro důvěryhodný doplněk v soukromé síti.',
+			'streaming.installAddon' => 'Připojit doplněk',
+			'streaming.addonInstalled' => 'Doplněk připojen',
+			'streaming.addonRemoved' => 'Doplněk odebrán',
+			'streaming.addonToggle' => 'Povolit doplněk',
+			'streaming.addonEmpty' => 'Zatím nejsou připojené žádné doplňky',
+			'streaming.addonError' => 'PlezyNG se k tomuto doplňku nepodařilo připojit. Zkontrolujte URL manifestu a zkuste to znovu.',
+			'streaming.addonPrivacy' => 'Připojujte pouze doplňky, kterým důvěřujete. Při vyhledávání doplněk obdrží hledaný název a může vracet odkazy na streamy třetích stran.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Přehrávejte podporované torrentové streamy přes účet Real-Debrid.',
+			'streaming.connectRealDebrid' => 'Připojit pomocí QR kódu',
+			'streaming.disconnectRealDebrid' => 'Odpojit Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Připojeno jako ${username}',
+			'streaming.realDebridInstructions' => 'Naskenujte QR kód nebo otevřete odkaz a zadejte tento aktivační kód pro připojení PlezyNG:',
+			'streaming.realDebridActivate' => 'Otevřít Real-Debrid a aktivovat',
+			'streaming.realDebridCode' => 'Aktivační kód',
+			'streaming.realDebridConnectFailed' => 'K Real-Debrid se nepodařilo připojit. Zkuste to znovu.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Přehrávejte podporované torrentové streamy přes účet AllDebrid.',
+			'streaming.connectAllDebrid' => 'Připojit pomocí QR kódu',
+			'streaming.allDebridInstructions' => 'Naskenujte QR kód nebo otevřete odkaz a autorizujte PlezyNG. Během připojování ponechte tuto obrazovku otevřenou:',
+			'streaming.allDebridActivate' => 'Otevřít AllDebrid a aktivovat',
+			'streaming.allDebridCode' => 'Aktivační PIN',
+			'streaming.allDebridConnectFailed' => 'K AllDebrid se nepodařilo připojit. Zkuste to znovu.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Přehrávejte streamy z torrentů v mezipaměti nebo procházejte soubory přes Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Přehrávejte streamy z torrentů v mezipaměti nebo procházejte soubory přes TorBox.',
+			'streaming.connectApiKey' => 'Připojit pomocí klíče API',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'Připojit ${service}',
+			'streaming.apiKey' => 'Klíč API',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Vložte klíč API z nastavení účtu ${service}. PlezyNG ho zašifruje v tomto zařízení a uloží do tohoto profilu.',
+			'streaming.apiKeyConnectFailed' => 'Klíč API se nepodařilo ověřit. Zkontrolujte ho a zkuste to znovu.',
+			'streaming.accountConnected' => ({required Object username}) => 'Připojeno jako ${username}',
+			'streaming.streamNeedsProvider' => 'Pro přehrání tohoto torrentového streamu připojte službu Debrid.',
+			'streaming.playViaProvider' => 'Přehrát přes Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'Odpojit ${service}?',
+			'streaming.disconnectBody' => 'PlezyNG odebere oprávnění tohoto zařízení. Soubory u poskytovatele ani probíhající přenosy se nezmění.',
+			'streaming.streamsTitle' => 'Vybrat stream',
+			'streaming.searchingStreams' => 'Kontrolují se připojené doplňky…',
+			'streaming.noStreams' => 'Pro tento titul nebyly nalezeny žádné streamy.',
+			'streaming.manageConnections' => 'Spravovat streamovací služby',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Titulky: ${count}',
+			'streaming.chooseSubtitle' => 'Vybrat titulky',
+			'streaming.chooseProvider' => 'Vybrat službu Debrid',
+			'streaming.subtitleOff' => 'Titulky vypnuté',
+			'streaming.subtitleLoadFailed' => 'Titulky se nepodařilo načíst. Zkuste jinou stopu.',
+			'streaming.subtitleApplied' => 'Titulky vybrány pro přehrávání',
+			'streaming.streamLookupPartial' => 'Některé doplňky nejsou dostupné.',
+			'streaming.streamLookupFailed' => 'Připojené doplňky se nepodařilo zkontrolovat.',
+			'streaming.streamOpenExternal' => 'Otevřít externí odkaz',
+			'streaming.streamPrepare' => 'Připravuje se přes službu Debrid…',
+			'streaming.streamPrepareFailed' => 'Stream se nepodařilo připravit. Zkontrolujte připojený účet a zkuste jiný zdroj.',
+			'streaming.streamNeedsRealDebrid' => 'Pro přehrání tohoto torrentového streamu připojte službu Debrid.',
+			'streaming.streamUnsupported' => 'Tento formát streamu vestavěný přehrávač nepodporuje.',
+			'streaming.remoteNeedsEpisode' => 'Před vyhledáním streamu vyberte epizodu.',
+			'streaming.remoteNeedsEpisodeNumber' => 'U této epizody chybí číslo řady nebo epizody.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG pro tento titul nenašel IMDb ani TMDB ID.',
+			'streaming.watchWithServices' => 'Sledovat přes připojené služby',
+			'streaming.chooseEpisode' => 'Vybrat epizodu',
+			'streaming.episodes' => 'Epizody',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Řada ${season}, epizoda ${episode}',
+			'streaming.episodeStreamHint' => 'Otevře dostupné streamy pro tuto epizodu.',
+			'streaming.cloudFiles' => 'Soubory v cloudu',
+			'streaming.browseCloud' => 'Procházet soubory',
+			'streaming.cloudEmpty' => 'V tomto účtu nebyly nalezeny žádné přehratelné videosoubory.',
+			'streaming.cloudLoadFailed' => 'Soubory v cloudu se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.',
+			'streaming.providers' => 'Poskytovatelé Debrid',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Přidat server ${product}',
 			'addServer.serverUrls' => 'Serverové URL',
 			'addServer.serverUrlsHelper' => 'Mnoho URL je povoleno, odděleno komami.',
@@ -7960,6 +8178,8 @@ extension on TranslationsCs {
 			'universalMedia.contrast' => 'kontrast',
 			'universalMedia.gamma' => 'Gamma',
 			'universalMedia.hue' => 'Hue',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.saturation' => 'Saturace',
 			'universalMedia.view360' => 'Flat View pro 360° video',
 			'universalMedia.view360Help' => 'Použijte toto pro rovnoměrné 360° video. MPV potřebuje filtr v360 FFmpeg pro tento pohled.',
@@ -8064,8 +8284,6 @@ extension on TranslationsCs {
 			'universalMedia.extensionInstallTitle' => 'Přidejte tuto vyhledávací službu?',
 			'universalMedia.extensionReplaceTitle' => 'Aktualizovat tuto službu vyhledávání?',
 			'universalMedia.extensionService' => 'Služba',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS konečný bod',
 			'universalMedia.extensionConsent' => 'Váš vyhledávací text je zaslán do této služby. manifest neobsahuje prováděcí kód. Pokračujte pouze v případě, že důvěřujete tomuto bodu.',
 			'universalMedia.extensionInstall' => 'Přidat službu',
@@ -8474,6 +8692,8 @@ extension on TranslationsCs {
 			'sourceSetup.sharedLibraryInvalid' => 'Použijte 8 až 100 písmen, čísel, bodů, podkoží nebo hyfen.',
 			'sourceSetup.generateSharedLibraryId' => 'Vytvoření sdíleného ID knihovny',
 			'sourceSetup.nfsReadAhead' => 'Žádosti o čtení NFS',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.nfsReadAheadHelp' => 'Více paralelních čtení může zlepšit průchod na rychlém NAS nebo síti. Použijte 1 pokud server omezuje souběžné požadavky.',
 			'sourceSetup.nfsReadTest' => 'Měření NFS čtení výkonu',
 			'sourceSetup.nfsReadTestHelp' => 'Čte až 64 MiB z největšího souboru pro měření tohoto připojení NAS. To používá síťovou šířku pásma.',
@@ -8578,8 +8798,6 @@ extension on TranslationsCs {
 			'deepLinks.noLiveTv' => 'Žádný Live TV server není k dispozici pro tento odkaz.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Nemohla jsem najít kanál "${channel}".',
 			'deepLinks.showLink' => 'Zobrazit link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Zobrazit profilový link',
 			'deepLinks.dialogTitle' => 'Link',
 			'deepLinks.showHint' => 'Otevření tohoto odkazu hraje další epizodu. Přidejte &mode=shuffle k hraní show na shuffle.',

@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../media/library_filter_result.dart';
+import '../../media/library_query.dart';
+import '../../media/media_filter.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
@@ -18,7 +21,7 @@ typedef _StremioCatalogRoute = ({StremioAddonInstallation addon, StremioAddonCat
 /// Presents configured Stremio catalogs through the existing Explore and
 /// catalog-detail contracts. Add-on installation IDs travel with each item so
 /// detail and stream lookup stay bound to the add-on that supplied it.
-class StremioCatalogSource implements CatalogSource, CatalogHubSource {
+class StremioCatalogSource implements CatalogSource, CatalogHubSource, CatalogHubFiltersSource {
   StremioCatalogSource(this._streaming);
 
   static const int _maxSearchCatalogs = 20;
@@ -70,15 +73,45 @@ class StremioCatalogSource implements CatalogSource, CatalogHubSource {
   Future<CatalogHub> _loadHubFirstPage(_StremioCatalogRoute route) async {
     final id = _routeId(route.addon.id, route.catalog.type, route.catalog.id);
     final title = '${route.addon.name} · ${route.catalog.name}';
+    final filters = _catalogFilters(route.catalog);
+    final initialFilters = _defaultFilters(route.catalog);
+    final cachedFilterValues = _cachedFilterValues(route.catalog);
+    final requiresFilterInput = _requiresFilterInput(route.catalog, initialFilters);
+    if (requiresFilterInput) {
+      return CatalogHub(
+        id: id,
+        title: title,
+        page: const CatalogPage(items: [], hasMore: true),
+        filters: filters,
+        cachedFilterValues: cachedFilterValues,
+        initialFilters: initialFilters,
+        requiresFilterInput: true,
+      );
+    }
     try {
-      final page = await _fetchCatalogPage(route, page: 1, limit: 25);
-      return CatalogHub(id: id, title: title, page: page);
+      final page = await _fetchCatalogPage(
+        route,
+        page: 1,
+        limit: 25,
+        extras: _extrasFromFilters(route.catalog, initialFilters),
+      );
+      return CatalogHub(
+        id: id,
+        title: title,
+        page: page,
+        filters: filters,
+        cachedFilterValues: cachedFilterValues,
+        initialFilters: initialFilters,
+      );
     } on Object {
       return CatalogHub(
         id: id,
         title: title,
         page: const CatalogPage(items: []),
         errorMessage: t.streaming.catalogLoadFailed,
+        filters: filters,
+        cachedFilterValues: cachedFilterValues,
+        initialFilters: initialFilters,
       );
     }
   }
@@ -88,16 +121,63 @@ class StremioCatalogSource implements CatalogSource, CatalogHubSource {
     if (page < 1 || limit < 1 || limit > 100) throw ArgumentError('Invalid Stremio catalog page');
     final route = _routeForId(id);
     if (route == null) throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
-    return _fetchCatalogPage(route, page: page, limit: limit);
+    return _fetchCatalogPage(
+      route,
+      page: page,
+      limit: limit,
+      extras: _extrasFromFilters(route.catalog, _defaultFilters(route.catalog)),
+    );
   }
 
-  Future<CatalogPage> _fetchCatalogPage(_StremioCatalogRoute route, {required int page, required int limit}) async {
+  @override
+  Future<LibraryFilterResult> fetchHubFilters(String id) async {
+    final route = _routeForId(id);
+    if (route == null) throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    return LibraryFilterResult(
+      filters: _catalogFilters(route.catalog),
+      cachedValues: _cachedFilterValues(route.catalog),
+    );
+  }
+
+  @override
+  Future<List<MediaFilterValue>> fetchHubFilterValues(String id, MediaFilter filter) async {
+    final route = _routeForId(id);
+    if (route == null) throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    final extra = route.catalog.extras.where((value) => value.name == filter.filter).firstOrNull;
+    if (extra == null || extra.options.isEmpty) return const [];
+    return [for (final option in extra.options) MediaFilterValue(key: option, title: option)];
+  }
+
+  @override
+  Future<CatalogPage> fetchFilteredHub(
+    String id, {
+    required List<LibraryFilter> filters,
+    int page = 1,
+    int limit = 25,
+  }) async {
+    if (page < 1 || limit < 1 || limit > 100) throw ArgumentError('Invalid Stremio catalog page');
+    final route = _routeForId(id);
+    if (route == null) throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    return _fetchCatalogPage(
+      route,
+      page: page,
+      limit: limit,
+      extras: _extrasFromFilters(route.catalog, filters),
+    );
+  }
+
+  Future<CatalogPage> _fetchCatalogPage(
+    _StremioCatalogRoute route, {
+    required int page,
+    required int limit,
+    Map<String, String> extras = const {},
+  }) async {
     final profile = _streaming.profileId;
     if (profile == null || !_addonIsCurrent(route.addon.id, profile)) {
       throw const StremioAddonException(StremioAddonFailure.unavailable);
     }
     final skip = (page - 1) * limit;
-    final rows = await _client.fetchCatalog(route.addon, route.catalog, skip: skip);
+    final rows = await _client.fetchCatalog(route.addon, route.catalog, skip: skip, extras: extras);
     if (!_addonIsCurrent(route.addon.id, profile)) {
       throw const StremioAddonException(StremioAddonFailure.unavailable);
     }
@@ -112,6 +192,63 @@ class StremioCatalogSource implements CatalogSource, CatalogHubSource {
       items: List.unmodifiable(items),
       hasMore: route.catalog.supportsSkip && rows.length >= limit,
     );
+  }
+
+  static List<MediaFilter> _catalogFilters(StremioAddonCatalog catalog) => [
+    for (final extra in catalog.extras)
+      if (!const {'skip', 'search'}.contains(extra.name))
+        MediaFilter(
+          filter: extra.name,
+          filterType: extra.options.isEmpty ? MediaFilterType.string : MediaFilterType.tag,
+          key: extra.options.isEmpty ? '' : extra.name,
+          title: catalog.requiredExtras.contains(extra.name) ? '${extra.title} *' : extra.title,
+          type: 'filter',
+          operators: const [LibraryFilterOperator.is_],
+          selectionLimit: extra.options.isEmpty ? null : extra.optionsLimit,
+          isRequired: catalog.requiredExtras.contains(extra.name),
+        ),
+  ];
+
+  static Map<String, List<MediaFilterValue>> _cachedFilterValues(StremioAddonCatalog catalog) => {
+    for (final extra in catalog.extras)
+      if (extra.options.isNotEmpty && !const {'skip', 'search'}.contains(extra.name))
+        extra.name: [for (final option in extra.options) MediaFilterValue(key: option, title: option)],
+  };
+
+  static List<LibraryFilter> _defaultFilters(StremioAddonCatalog catalog) => [
+    for (final name in catalog.requiredExtras)
+      if (name != 'skip')
+        for (final extra in catalog.extras.where((extra) => extra.name == name))
+          if (extra.options.isNotEmpty) LibraryFilter(field: name, values: [extra.options.first]),
+  ];
+
+  static bool _requiresFilterInput(StremioAddonCatalog catalog, List<LibraryFilter> filters) {
+    final selected = filters.map((filter) => filter.field).toSet();
+    return catalog.requiredExtras.any((name) => name != 'skip' && !selected.contains(name));
+  }
+
+  static Map<String, String> _extrasFromFilters(StremioAddonCatalog catalog, List<LibraryFilter> filters) {
+    final definitions = {for (final extra in catalog.extras) extra.name: extra};
+    final result = <String, String>{};
+    for (final filter in filters) {
+      final extra = definitions[filter.field];
+      if (extra == null || const {'skip', 'search'}.contains(extra.name) || result.containsKey(extra.name)) {
+        throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+      }
+      final values = filter.values.where((value) => value.isNotEmpty).toList(growable: false);
+      if (values.isEmpty || values.length > extra.optionsLimit ||
+          values.any((value) => value.length > 512 || value.runes.any((rune) => rune < 0x20 || rune == 0x7f))) {
+        throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+      }
+      if (extra.options.isNotEmpty && values.any((value) => !extra.options.contains(value))) {
+        throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+      }
+      result[extra.name] = values.join(',');
+    }
+    if (_requiresFilterInput(catalog, filters)) {
+      throw const StremioAddonException(StremioAddonFailure.unsupportedResource);
+    }
+    return Map.unmodifiable(result);
   }
 
   @override
@@ -152,10 +289,12 @@ class StremioCatalogSource implements CatalogSource, CatalogHubSource {
       if (!_addonIsCurrent(route.addon.id, profile)) return null;
       final rows = await _client.searchCatalog(route.addon, route.catalog, query);
       if (!_addonIsCurrent(route.addon.id, profile)) return null;
-      return [
-        for (final row in rows)
-          if (_toCatalogItem(route.addon, row, defaultType: route.catalog.type) case final item?) item,
-      ];
+      final items = <CatalogItem>[];
+      for (final row in rows) {
+        final item = _toCatalogItem(route.addon, row, defaultType: route.catalog.type);
+        if (item != null) items.add(item);
+      }
+      return items;
     } on Object {
       return null;
     }
