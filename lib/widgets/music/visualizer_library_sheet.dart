@@ -21,6 +21,7 @@ class VisualizerLibrarySheet extends StatefulWidget {
 class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   final VisualizerPackStore _store = VisualizerPackStore();
   List<VisualizerInstalledPack> _installed = const [];
+  List<VisualizerImportedPack> _communityPacks = const [];
   List<String> _imports = const [];
   bool _loading = true;
   bool _busy = false;
@@ -53,11 +54,16 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
       return;
     }
     try {
-      final results = await Future.wait([_store.installedPacks(), _store.importedPresets()]);
+      final results = await Future.wait([
+        _store.installedPacks(),
+        _store.importedPresets(),
+        _store.importedPacks(),
+      ]);
       if (!mounted) return;
       setState(() {
         _installed = results[0] as List<VisualizerInstalledPack>;
         _imports = results[1] as List<String>;
+        _communityPacks = results[2] as List<VisualizerImportedPack>;
         _loading = false;
       });
     } catch (error) {
@@ -170,6 +176,56 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(content: Text('Imported $imported of ${result.files.length} preset files$skipped.')),
       );
+    } catch (error) {
+      if (mounted) setState(() => _failure = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _importCommunityPack() async {
+    final result = await FilePickerService.instance.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['rmpack'],
+      withData: false,
+    );
+    if (result == null || result.files.isEmpty || !mounted) return;
+    final picked = result.files.first;
+    if (picked.size <= 0 || picked.size > VisualizerPackStore.maxLocalPackArchiveBytes) {
+      setState(() => _failure = 'Community pack archives must be 32 MB or smaller.');
+      return;
+    }
+    final sourcePath = picked.path;
+    if (sourcePath == null) {
+      setState(() => _failure = 'The selected community pack could not be read from device storage.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
+    try {
+      final pack = await _store.importPackFile(sourcePath, picked.size);
+      await _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text('Imported ${pack.name} ${pack.version}.')),
+      );
+    } catch (error) {
+      if (mounted) setState(() => _failure = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _removeCommunityPack(VisualizerImportedPack pack) async {
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
+    try {
+      await _store.removeImportedPack(pack);
+      await _refresh();
     } catch (error) {
       if (mounted) setState(() => _failure = error.toString());
     } finally {
@@ -336,6 +392,41 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               ),
                             ),
                           _sectionTitle(context, 'Local presets'),
+                          OutlinedButton.icon(
+                            onPressed: _busy || !_store.isStorageSupported ? null : _importCommunityPack,
+                            icon: const AppIcon(Symbols.folder_open_rounded, size: 18),
+                            label: const Text('Import .rmpack (check files and notices)'),
+                          ),
+                          if (_communityPacks.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'No community packs imported. Packs need a redistributable license, shipped notices, per-asset attribution and a valid integrity index.',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
+                              ),
+                            )
+                          else
+                            for (final pack in _communityPacks)
+                              Card(
+                                child: ListTile(
+                                  leading: AppIcon(
+                                    pack.isDamaged ? Symbols.error_rounded : Symbols.graphic_eq_rounded,
+                                    size: 20,
+                                  ),
+                                  title: Text(pack.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text(pack.isDamaged
+                                      ? '${pack.version} · metadata unavailable\n${pack.contentNotice}'
+                                      : '${pack.version} · ${pack.license} · ${pack.presetCount} presets\n'
+                                            'Content notice: ${pack.contentNotice}\n'
+                                            'File hashes checked at import · rights claims are self-declared · playback pending'),
+                                  isThreeLine: true,
+                                  trailing: IconButton(
+                                    tooltip: t.common.delete,
+                                    onPressed: _busy ? null : () => _removeCommunityPack(pack),
+                                    icon: const AppIcon(Symbols.delete_rounded, size: 18),
+                                  ),
+                                ),
+                              ),
                           OutlinedButton.icon(
                             onPressed: _busy || !_store.isStorageSupported ? null : _import,
                             icon: const AppIcon(Symbols.file_open_rounded, size: 18),

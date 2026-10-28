@@ -70,6 +70,30 @@ class VisualizerInstalledPack {
   final String path;
 }
 
+/// A user-imported, locally verified community pack. Its archive is not
+/// app-pinned, so every expanded file is checked against the shipped index.
+class VisualizerImportedPack {
+  const VisualizerImportedPack({
+    required this.id,
+    required this.name,
+    required this.version,
+    required this.license,
+    required this.contentNotice,
+    required this.presetCount,
+    required this.path,
+    this.isDamaged = false,
+  });
+
+  final String id;
+  final String name;
+  final String version;
+  final String license;
+  final String contentNotice;
+  final int presetCount;
+  final String path;
+  final bool isDamaged;
+}
+
 class VisualizerPackInstallCancellation {
   final Completer<void> _abort = Completer<void>();
 
@@ -91,6 +115,32 @@ class VisualizerPackStore {
   static const maxFileCount = 2500;
   static const maxPresetImportCount = 2500;
   static const maxPresetImportBatchBytes = 64 * 1024 * 1024;
+  static const maxLocalPackArchiveBytes = 32 * 1024 * 1024;
+  static const maxLocalPackExpandedBytes = 64 * 1024 * 1024;
+
+  static const _redistributableLicenses = <String>{
+    '0BSD',
+    'Apache-2.0',
+    'BSD-2-Clause',
+    'BSD-3-Clause',
+    'CC-BY-3.0',
+    'CC-BY-4.0',
+    'CC-BY-SA-3.0',
+    'CC-BY-SA-4.0',
+    'CC0-1.0',
+    'GPL-2.0-only',
+    'GPL-2.0-or-later',
+    'GPL-3.0-only',
+    'GPL-3.0-or-later',
+    'ISC',
+    'LGPL-2.1-only',
+    'LGPL-2.1-or-later',
+    'LGPL-3.0-only',
+    'LGPL-3.0-or-later',
+    'MIT',
+    'Unlicense',
+    'Zlib',
+  };
 
   final http.Client _client;
   Future<Directory>? _rootFuture;
@@ -125,6 +175,112 @@ class VisualizerPackStore {
   Future<bool> isInstalled(VisualizerPackCatalogEntry entry) async {
     final root = Directory(p.join((await _root()).path, 'packs'));
     return File(p.join(root.path, entry.id, entry.version, 'manifest.json')).exists();
+  }
+
+  Future<List<VisualizerImportedPack>> importedPacks() async {
+    final root = Directory(p.join((await _root()).path, 'community-packs'));
+    if (!await root.exists()) return const [];
+    final packs = <VisualizerImportedPack>[];
+    await for (final idDirectory in root.list(followLinks: false)) {
+      if (idDirectory is! Directory || p.basename(idDirectory.path).startsWith('.stage-')) continue;
+      await for (final versionDirectory in idDirectory.list(followLinks: false)) {
+        if (versionDirectory is! Directory || p.basename(versionDirectory.path).endsWith('.previous')) continue;
+        try {
+          final manifest = await _readPackManifest(versionDirectory);
+          packs.add(_packSummary(manifest, versionDirectory.path));
+        } on Object {
+          final id = p.basename(idDirectory.path);
+          final version = p.basename(versionDirectory.path);
+          if (_isSafePackIdentifier(id) && _isSafePackIdentifier(version)) {
+            packs.add(VisualizerImportedPack(
+              id: id,
+              name: 'Damaged community pack',
+              version: version,
+              license: 'Unknown',
+              contentNotice: 'Pack metadata is unavailable. Remove this damaged local copy.',
+              presetCount: 0,
+              path: versionDirectory.path,
+              isDamaged: true,
+            ));
+          }
+        }
+      }
+    }
+    packs.sort((a, b) {
+      final nameOrder = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      return nameOrder != 0 ? nameOrder : a.version.compareTo(b.version);
+    });
+    return packs;
+  }
+
+  Future<VisualizerImportedPack> importPackFile(String sourcePath, int announcedSize) async {
+    if (announcedSize <= 0 || announcedSize > maxLocalPackArchiveBytes) {
+      throw const VisualizerPackException('Community pack archives must be 32 MB or smaller.');
+    }
+    final archive = File(sourcePath);
+    if (await archive.length() != announcedSize) {
+      throw const VisualizerPackException('The selected pack changed while it was being imported.');
+    }
+    final root = await _root();
+    final packsRoot = Directory(p.join(root.path, 'community-packs'));
+    await packsRoot.create(recursive: true);
+    final stage = Directory(p.join(packsRoot.path, '.stage-${DateTime.now().microsecondsSinceEpoch}'));
+
+    try {
+      await stage.create(recursive: true);
+      final extracted = await Isolate.run(() => _extractArchive(archive.path, stage.path));
+      final expandedBytes = extracted.values.fold<int>(0, (sum, size) => sum + size);
+      if (expandedBytes > maxLocalPackExpandedBytes) {
+        throw const VisualizerPackException('The expanded community pack exceeds its 64 MB limit.');
+      }
+      final summary = await _validatePack(stage, extracted);
+      final target = Directory(p.join(packsRoot.path, summary.id, summary.version));
+      final backup = Directory('${target.path}.previous');
+      await target.parent.create(recursive: true);
+      if (await backup.exists()) await backup.delete(recursive: true);
+      if (await target.exists()) await target.rename(backup.path);
+      try {
+        await stage.rename(target.path);
+        if (await backup.exists()) {
+          try {
+            await backup.delete(recursive: true);
+          } on Object {
+            // The new pack is committed; a stale backup can be cleaned up on
+            // the next import without reporting the successful install as failed.
+          }
+        }
+      } catch (_) {
+        if (await backup.exists() && !await target.exists()) await backup.rename(target.path);
+        rethrow;
+      }
+      return VisualizerImportedPack(
+        id: summary.id,
+        name: summary.name,
+        version: summary.version,
+        license: summary.license,
+        contentNotice: summary.contentNotice,
+        presetCount: summary.presetCount,
+        path: target.path,
+        isDamaged: false,
+      );
+    } catch (_) {
+      if (await stage.exists()) await stage.delete(recursive: true);
+      rethrow;
+    }
+  }
+
+  Future<void> removeImportedPack(VisualizerImportedPack pack) async {
+    if (!_isSafePackIdentifier(pack.id) || !_isSafePackIdentifier(pack.version)) {
+      throw const VisualizerPackException('The local pack identity is invalid.');
+    }
+    final root = Directory(p.join((await _root()).path, 'community-packs'));
+    final target = Directory(p.join(root.path, pack.id, pack.version));
+    if (!p.isWithin(root.path, target.path)) {
+      throw const VisualizerPackException('The local pack path is invalid.');
+    }
+    if (await target.exists()) await target.delete(recursive: true);
+    final parent = target.parent;
+    if (await parent.exists() && await parent.list().isEmpty) await parent.delete();
   }
 
   Future<void> install(
@@ -185,7 +341,7 @@ class VisualizerPackStore {
       if (extracted.values.fold<int>(0, (sum, size) => sum + size) != entry.expandedBytes) {
         throw const VisualizerPackException('The expanded pack size does not match its pinned catalog.');
       }
-      await _validateInstalledPack(stage, entry);
+      await _validatePack(stage, extracted, expectedEntry: entry);
 
       await target.parent.create(recursive: true);
       if (await backup.exists()) await backup.delete(recursive: true);
@@ -336,20 +492,20 @@ class VisualizerPackStore {
     }
   }
 
-  static Future<void> _validateInstalledPack(Directory directory, VisualizerPackCatalogEntry entry) async {
-    final manifestFile = File(p.join(directory.path, 'manifest.json'));
-    final dynamic parsed;
-    try {
-      parsed = jsonDecode(await manifestFile.readAsString());
-    } on Object {
-      throw const VisualizerPackException('The pack manifest is unreadable.');
+  static Future<VisualizerImportedPack> _validatePack(
+    Directory directory,
+    Map<String, int> archiveFiles, {
+    VisualizerPackCatalogEntry? expectedEntry,
+  }) async {
+    final parsed = await _readPackManifest(directory);
+    final id = parsed['id'] as String;
+    final version = parsed['version'] as String;
+    final license = parsed['license'] as String;
+    if (!_redistributableLicenses.contains(license) || parsed['distributionStatus'] != 'redistributable') {
+      throw const VisualizerPackException('The pack does not declare an approved redistributable license.');
     }
-    if (parsed is! Map<String, dynamic> ||
-        parsed['schemaVersion'] != 1 ||
-        parsed['id'] != entry.id ||
-        parsed['version'] != entry.version ||
-        parsed['license'] != entry.license ||
-        parsed['distributionStatus'] != 'redistributable') {
+    if (expectedEntry != null &&
+        (id != expectedEntry.id || version != expectedEntry.version || license != expectedEntry.license)) {
       throw const VisualizerPackException('The pack manifest does not match its pinned catalog entry.');
     }
     final integrityFile = File(p.join(directory.path, 'integrity.json'));
@@ -361,8 +517,8 @@ class VisualizerPackStore {
     }
     if (integrity is! Map<String, dynamic> ||
         integrity['schemaVersion'] != 1 ||
-        integrity['packId'] != entry.id ||
-        integrity['packVersion'] != entry.version ||
+        integrity['packId'] != id ||
+        integrity['packVersion'] != version ||
         integrity['files'] is! List) {
       throw const VisualizerPackException('The pack integrity index is malformed.');
     }
@@ -377,18 +533,32 @@ class VisualizerPackStore {
       }
       final relative = safeArchivePath(record['path'] as String);
       if (!listedFiles.add(relative)) throw const VisualizerPackException('The pack integrity index has duplicates.');
-      indexedBytes += record['size'] as int;
+      final size = record['size'] as int;
+      final expectedDigest = record['sha256'] as String;
+      if (size < 0 || size > maxFileBytes || !RegExp(r'^[a-f0-9]{64}$').hasMatch(expectedDigest)) {
+        throw const VisualizerPackException('A pack integrity record is outside the allowed limits.');
+      }
+      indexedBytes += size;
       final file = File(p.join(directory.path, ...relative.split('/')));
-      if (!await file.exists() || await file.length() != record['size']) {
+      if (!await file.exists() || await file.length() != size) {
         throw const VisualizerPackException('A pack file does not match its integrity index.');
       }
       final digest = await sha256.bind(file.openRead()).first;
-      if (digest.toString() != record['sha256']) {
+      if (digest.toString() != expectedDigest) {
         throw const VisualizerPackException('A pack file checksum does not match its integrity index.');
       }
     }
-    if (!listedFiles.contains('manifest.json') || integrity['contentBytes'] != indexedBytes) {
+    final indexedArchivePaths = {...listedFiles, 'integrity.json'};
+    if (!listedFiles.contains('manifest.json') ||
+        listedFiles.contains('integrity.json') ||
+        integrity['contentBytes'] != indexedBytes ||
+        archiveFiles.length != indexedArchivePaths.length ||
+        !archiveFiles.keys.toSet().containsAll(indexedArchivePaths) ||
+        indexedBytes + (archiveFiles['integrity.json'] ?? maxLocalPackExpandedBytes) > maxLocalPackExpandedBytes) {
       throw const VisualizerPackException('The pack integrity index omits the manifest or has the wrong total size.');
+    }
+    if (archiveFiles.keys.toSet().difference(indexedArchivePaths).isNotEmpty) {
+      throw const VisualizerPackException('The archive contains files outside its integrity index.');
     }
     final licenseFiles = parsed['licenseFiles'];
     if (licenseFiles is! List || licenseFiles.isEmpty) {
@@ -445,6 +615,9 @@ class VisualizerPackStore {
           throw const VisualizerPackException('A pack asset attribution field is empty.');
         }
       }
+      if (!_redistributableLicenses.contains(asset['license'] as String)) {
+        throw const VisualizerPackException('An asset uses a license that is not approved for redistribution.');
+      }
       final sourceUri = Uri.tryParse(asset['sourceUrl'] as String);
       if (sourceUri == null || sourceUri.scheme != 'https' || sourceUri.host.isEmpty) {
         throw const VisualizerPackException('Pack asset source URLs must use HTTPS.');
@@ -459,19 +632,68 @@ class VisualizerPackStore {
       throw const VisualizerPackException('The pack attribution list does not cover every content file.');
     }
     final presets = parsed['presets'];
-    if (presets is! List || presets.length != entry.presetCount) {
-      throw const VisualizerPackException('The preset list does not match the catalog.');
+    if (presets is! List || presets.isEmpty ||
+        (expectedEntry != null && presets.length != expectedEntry.presetCount)) {
+      throw const VisualizerPackException('The preset list is empty or does not match the catalog.');
     }
+    final presetPaths = <String>{};
     for (final preset in presets) {
       if (preset is! Map<String, dynamic> || preset['file'] is! String) {
         throw const VisualizerPackException('A preset entry is malformed.');
       }
       final relative = safeArchivePath(preset['file'] as String);
-      if (!assetPaths.contains(relative) || !await File(p.join(directory.path, ...relative.split('/'))).exists()) {
+      if (!presetPaths.add(relative) ||
+          !assetPaths.contains(relative) ||
+          !['.milk', '.milk2'].contains(p.extension(relative).toLowerCase()) ||
+          !await File(p.join(directory.path, ...relative.split('/'))).exists()) {
         throw const VisualizerPackException('The pack is missing a preset file.');
       }
     }
+    return _packSummary(parsed, directory.path);
   }
+
+  static Future<Map<String, dynamic>> _readPackManifest(Directory directory) async {
+    final dynamic parsed;
+    try {
+      parsed = jsonDecode(await File(p.join(directory.path, 'manifest.json')).readAsString());
+    } on Object {
+      throw const VisualizerPackException('The pack manifest is unreadable.');
+    }
+    if (parsed is! Map<String, dynamic> ||
+        parsed['schemaVersion'] != 1 ||
+        parsed['id'] is! String ||
+        !_isSafePackIdentifier(parsed['id'] as String) ||
+        parsed['version'] is! String ||
+        !_isSafePackIdentifier(parsed['version'] as String) ||
+        parsed['name'] is! String ||
+        (parsed['name'] as String).trim().isEmpty ||
+        (parsed['name'] as String).length > 160 ||
+        parsed['license'] is! String ||
+        parsed['contentNotice'] is! String ||
+        (parsed['contentNotice'] as String).trim().isEmpty ||
+        (parsed['contentNotice'] as String).length > 2048 ||
+        parsed['presets'] is! List ||
+        (parsed['presets'] as List).isEmpty ||
+        (parsed['presets'] as List).length > maxFileCount) {
+      throw const VisualizerPackException('The pack manifest is malformed.');
+    }
+    return parsed;
+  }
+
+  static VisualizerImportedPack _packSummary(Map<String, dynamic> manifest, String path) {
+    return VisualizerImportedPack(
+      id: manifest['id'] as String,
+      name: manifest['name'] as String,
+      version: manifest['version'] as String,
+      license: manifest['license'] as String,
+      contentNotice: manifest['contentNotice'] as String,
+      presetCount: (manifest['presets'] as List).length,
+      path: path,
+    );
+  }
+
+  static bool _isSafePackIdentifier(String value) =>
+      value != '.' && value != '..' && RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$').hasMatch(value);
 }
 
 class _BoundedPackOutput extends OutputStream {

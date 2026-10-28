@@ -90,7 +90,7 @@
       "area": "MilkDrop-compatible music visualizer",
       "status": "partial",
       "evidence": ["lib/widgets/music/music_visualizer.dart", "lib/widgets/music/visualizer_library_sheet.dart", "lib/services/visualization/visualizer_pack_store.dart", "docs/plezyng/visualizations/IMPLEMENTATION_STATUS.md"],
-      "open": "The six original scenes remain the only playable PlezyNG visualizers. The pinned CC0 fixture pack download and local MilkDrop text import store files but do not render them. Live decoded PCM, a MilkDrop renderer, broad preset fidelity, a cleared community download library, signed catalog updates, web storage, and device qualification remain open."
+      "open": "The six original scenes remain the only playable PlezyNG visualizers. The pinned CC0 fixture download, bounded local .milk/.milk2 imports, and verified local .rmpack imports store files but do not render them. Live decoded PCM, a MilkDrop renderer, broad preset fidelity, a cleared community download library, signed catalog updates, web storage, and device qualification remain open."
     },
     {
       "area": "Dolby Vision and FEL",
@@ -263,7 +263,7 @@
       "implementationStatus": "partial",
       "confidence": "high",
       "evidence": ["lib/widgets/music/visualizer_library_sheet.dart", "lib/services/visualization/visualizer_pack_store.dart", "docs/plezyng/visualizations/IMPLEMENTATION_STATUS.md"],
-      "qualification": "The app can install the pinned CC0 fixture pack after verifying its archive digest and integrity index, import bounded .milk/.milk2 text, and link to no-assertion community sources without rehosting. Imported/downloaded presets are not playable: the app has no MilkDrop backend or decoded-PCM tap. No checks, CI, native builds, rendering captures, or device qualification were run."
+      "qualification": "The app can install the pinned CC0 fixture pack after verifying its archive digest and integrity index, import bounded .milk/.milk2 text, validate and atomically import .rmpack archives with per-file digests and rights metadata, and link to no-assertion community sources without rehosting. User-imported archives are not author-authenticated. Imported/downloaded presets are not playable: the app has no MilkDrop backend or decoded-PCM tap. No checks, CI, native builds, rendering captures, or device qualification were run."
     }
   ]
 }
