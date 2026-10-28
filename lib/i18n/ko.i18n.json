@@ -2192,6 +2192,7 @@
     "visualizerProfileLoading": "트랙 분석을 읽고...",
     "visualizerAmbientMotion": "환경 운동",
     "visualizerPlexLoudness": "Plex 소음",
+    "visualizerLiveAudio": "실시간 오디오 분석",
     "visualizerPreviousPreset": "이전 시각적 스타일",
     "visualizerNextPreset": "다음 시각적 스타일",
     "visualizerPresetAurora": "오로라",

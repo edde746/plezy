@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Stream, StreamController, unawaited;
 import 'dart:convert';
 import 'dart:io' show Platform;
 
@@ -11,6 +11,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
+import 'audio_spectrum.dart';
 import 'player_base.dart';
 import 'video_rect_support.dart';
 import 'mpv_certificate_trust.dart';
@@ -36,7 +37,15 @@ typedef _AudioStateGenerations = ({
 });
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
-class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFocusControl {
+class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFocusControl, AudioSpectrumAnalyzer {
+  final StreamController<AudioSpectrumSample?> _audioSpectrumController =
+      StreamController<AudioSpectrumSample?>.broadcast(sync: true);
+  final Stopwatch _audioSpectrumClock = Stopwatch()..start();
+  int _lastAudioSpectrumSampleMicros = 0;
+  bool _audioSpectrumAnalysisRequested = false;
+  bool _audioSpectrumAnalysisActive = false;
+  bool _audioSpectrumPropertyObserved = false;
+
   bool _hasSeenSegmentLoopSource = false;
   ({int left, int top, int right, int bottom, double devicePixelRatio})? _pendingVideoRect;
 
@@ -201,6 +210,13 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   @override
   bool get providesNativeStats => Platform.isAndroid;
+
+  @override
+  Stream<AudioSpectrumSample?> get audioSpectrumStream => _audioSpectrumController.stream;
+
+  void _emitAudioSpectrum(AudioSpectrumSample? sample) {
+    if (!_audioSpectrumController.isClosed) _audioSpectrumController.add(sample);
+  }
 
   // The Android plugin no-ops a dispose whose instanceId is not the core's
   // creator; other platforms' handlers do not read the token yet.
@@ -817,6 +833,17 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   @override
   void handlePropertyChange(String name, dynamic value, {int? sourceId}) {
+    if (audioOnly && name == 'af-metadata/plezy_spectrum') {
+      final sample = AudioSpectrumSample.tryParse(value);
+      if (sample != null) {
+        final now = _audioSpectrumClock.elapsedMicroseconds;
+        if (_lastAudioSpectrumSampleMicros == 0 || now - _lastAudioSpectrumSampleMicros >= 50000) {
+          _lastAudioSpectrumSampleMicros = now;
+          _emitAudioSpectrum(sample);
+        }
+      }
+      return;
+    }
     if (audioOnly && name == 'playlist-pos') {
       // Detection still belongs to _handleAudioFileLoaded, but this is the last
       // point ordered ahead of the new source's own position reports: they ride
@@ -835,7 +862,11 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
       if (_hasSeenSegmentLoopSource) unawaited(_clearTransientSegmentLoop());
       _hasSeenSegmentLoopSource = true;
     }
-    if (audioOnly && name == 'file-loaded') _handleAudioFileLoaded();
+    if (audioOnly && name == 'file-loaded') {
+      _lastAudioSpectrumSampleMicros = 0;
+      _emitAudioSpectrum(null);
+      _handleAudioFileLoaded();
+    }
     super.handlePlayerEvent(name, data);
   }
 
@@ -881,6 +912,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   Future<void> _disposeNative({required bool preserveDisplayMode}) async {
     if (disposed) return;
+    _audioSpectrumAnalysisRequested = false;
     // Settle an armed-but-unconsumed content fd before the base teardown
     // disables invoke() — the playlist is torn down without mpv ever opening
     // the entry.
@@ -892,6 +924,8 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
       }
     }
     await _audioStateTail;
+    _emitAudioSpectrum(null);
+    if (!_audioSpectrumController.isClosed) await _audioSpectrumController.close();
     await super.dispose(preserveDisplayMode: preserveDisplayMode);
   }
 
@@ -1302,6 +1336,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
         target.effects.stereoWidth < 0.01 &&
         !target.effects.spatializer &&
         target.effects.pitchSemitones.abs() < 0.05;
+    final spectrumAnalysisShouldBeActive = audioOnly && _audioSpectrumAnalysisRequested && !passthroughShouldBeActive;
     final normalizationShouldBeActive = target.normalization;
 
     // Ordering keeps the normalization filter off a bitstream in both
@@ -1341,6 +1376,29 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
       await super.setAudioEffects(target.effects);
       _activeEffects = target.effects;
     }
+    if (_audioSpectrumAnalysisActive != spectrumAnalysisShouldBeActive) {
+      final applied = await super.setAudioSpectrumAnalysis(spectrumAnalysisShouldBeActive);
+      if (!applied) {
+        _audioSpectrumAnalysisRequested = false;
+        _audioSpectrumAnalysisActive = false;
+        _emitAudioSpectrum(null);
+      } else if (spectrumAnalysisShouldBeActive && !_audioSpectrumPropertyObserved) {
+        try {
+          await observeProperty('af-metadata/plezy_spectrum', _nodeFormat);
+          _audioSpectrumPropertyObserved = true;
+          _audioSpectrumAnalysisActive = true;
+        } on Object catch (error, stackTrace) {
+          _audioSpectrumAnalysisRequested = false;
+          await super.setAudioSpectrumAnalysis(false);
+          _audioSpectrumAnalysisActive = false;
+          _emitAudioSpectrum(null);
+          appLogger.d('MPV: audio spectrum metadata is unavailable', error: error, stackTrace: stackTrace);
+        }
+      } else {
+        _audioSpectrumAnalysisActive = spectrumAnalysisShouldBeActive;
+        if (!spectrumAnalysisShouldBeActive) _emitAudioSpectrum(null);
+      }
+    }
     if (passthroughShouldBeActive && !_passthroughActive) {
       await _applyPassthrough(true);
     }
@@ -1351,6 +1409,26 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     if (_nativeCoreUnavailable) return Future<void>.value();
     _passthroughRequested = enabled;
     return _enqueueAudioStateReconciliation(_passthroughAudioField);
+  }
+
+  @override
+  Future<bool> setAudioSpectrumAnalysisEnabled(bool enabled) {
+    if (!audioOnly || _nativeCoreUnavailable || _disposing) return Future<bool>.value(false);
+    _audioSpectrumAnalysisRequested = enabled;
+    final operation = _audioStateTail.then<bool>((_) async {
+      if (_nativeCoreUnavailable) return false;
+      try {
+        await _ensureInitialized();
+        await _applyAudioState(_acceptedAudioState);
+        return _audioSpectrumAnalysisActive;
+      } on Object catch (error, stackTrace) {
+        _audioSpectrumAnalysisRequested = false;
+        appLogger.d('MPV: audio spectrum analysis could not be enabled', error: error, stackTrace: stackTrace);
+        return false;
+      }
+    });
+    _audioStateTail = operation.then<void>((_) {}, onError: (Object _) {});
+    return operation;
   }
 
   Future<void> _applyPassthrough(bool enabled) async {

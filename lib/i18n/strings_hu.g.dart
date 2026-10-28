@@ -2094,6 +2094,7 @@ class _Translations$music$hu extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'A track analízis...';
 	@override String get visualizerAmbientMotion => 'Környezetmoció';
 	@override String get visualizerPlexLoudness => 'Plex hangzás';
+	@override String get visualizerLiveAudio => 'Élő hangelemzés';
 	@override String get visualizerPreviousPreset => 'Előző vizuális stílus';
 	@override String get visualizerNextPreset => 'Következő vizuális stílus';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -6992,6 +6993,7 @@ extension on TranslationsHu {
 			'music.visualizerProfileLoading' => 'A track analízis...',
 			'music.visualizerAmbientMotion' => 'Környezetmoció',
 			'music.visualizerPlexLoudness' => 'Plex hangzás',
+			'music.visualizerLiveAudio' => 'Élő hangelemzés',
 			'music.visualizerPreviousPreset' => 'Előző vizuális stílus',
 			'music.visualizerNextPreset' => 'Következő vizuális stílus',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7038,9 +7040,9 @@ extension on TranslationsHu {
 			'watchTogether.codeCopied' => 'Szobakód másolva',
 			'watchTogether.shareInvite' => 'Meghívó megosztása',
 			'watchTogether.inviteCopied' => 'Meghívó másolva. Illeszd be egy üzenetbe.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Csatlakozz a Watch Together-szobámhoz a Plezyben: nyisd meg a Watch Together (Közös nézés) menüt, válaszd a Csatlakozás szobához lehetőséget, és írd be ezt a kódot: ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Csatlakozz a Watch Together-szobámhoz a Plezyben: nyisd meg a Watch Together (Közös nézés) menüt, válaszd a Csatlakozás szobához lehetőséget, és írd be ezt a kódot: ${code}.',
 			'watchTogether.openSessionControls' => 'Watch Together munkamenet-vezérlők megnyitása',
 			'watchTogether.reconnecting' => 'Újracsatlakozás...',
 			'watchTogether.reconnectingDescription' => 'Megszakadt a kapcsolat. Automatikusan visszacsatlakozol a szobához.',
@@ -7552,9 +7554,9 @@ extension on TranslationsHu {
 			'metadataEdit.metadataUpdated' => 'Metaadatok frissítve',
 			'metadataEdit.metadataUpdateFailed' => 'Nem sikerült a metaadatok frissítése',
 			'metadataEdit.artworkUpdated' => 'Képek frissítve',
-			'metadataEdit.artworkUpdateFailed' => 'Nem sikerült a képek frissítése',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Nem sikerült a képek frissítése',
 			'metadataEdit.noArtworkAvailable' => 'Nincsenek elérhető képek',
 			'metadataEdit.artworkOption' => ({required Object index}) => '${index}. képváltozat',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '${index}. képváltozat, kiválasztva',
@@ -8066,9 +8068,9 @@ extension on TranslationsHu {
 			'universalMedia.captureAudioNone' => 'Nincs audio',
 			'universalMedia.captureDefaultAudio' => 'Audio beviteli előzetes',
 			'universalMedia.captureWaylandHelp' => 'Wayland korlátozza ezt a XWayland fogást a X display-re. A XWayland-en kívüli Windows nem jelenik meg.',
-			'universalMedia.captureFrameRate' => 'Részletesebben Regisztrációs ráta',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Részletesebben Regisztrációs ráta',
 			'universalMedia.capturePrivacy' => 'A rögzítés csak az Ön által kiválasztott fájlra menthető. a mikrofon rögzítése opcionális. a PlezyNG nem tölti fel a rögzítést.',
 			'universalMedia.captureSaveAs' => 'A képernyő felvétele, mint',
 			'universalMedia.captureExtensionMismatch' => 'Válassza ki a .mp4-ben végződő filenámot.',
@@ -8580,9 +8582,9 @@ extension on TranslationsHu {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

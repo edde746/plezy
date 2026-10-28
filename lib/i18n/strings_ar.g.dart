@@ -2146,6 +2146,7 @@ class _Translations$music$ar extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'قراءة تحليل المسار ...';
 	@override String get visualizerAmbientMotion => 'حركة البيئة';
 	@override String get visualizerPlexLoudness => 'Plex الصوت';
+	@override String get visualizerLiveAudio => 'تحليل الصوت المباشر';
 	@override String get visualizerPreviousPreset => 'النمط البصري السابق';
 	@override String get visualizerNextPreset => 'النمط البصري التالي';
 	@override String get visualizerPresetAurora => 'أورورا';
@@ -7092,6 +7093,7 @@ extension on TranslationsAr {
 			'music.visualizerProfileLoading' => 'قراءة تحليل المسار ...',
 			'music.visualizerAmbientMotion' => 'حركة البيئة',
 			'music.visualizerPlexLoudness' => 'Plex الصوت',
+			'music.visualizerLiveAudio' => 'تحليل الصوت المباشر',
 			'music.visualizerPreviousPreset' => 'النمط البصري السابق',
 			'music.visualizerNextPreset' => 'النمط البصري التالي',
 			'music.visualizerPresetAurora' => 'أورورا',
@@ -7138,9 +7140,9 @@ extension on TranslationsAr {
 			'watchTogether.codeCopied' => 'رمز الغرفة نسخة',
 			'watchTogether.shareInvite' => 'مشاركة دعوة',
 			'watchTogether.inviteCopied' => 'إرسال الرسالة - إرسال الرسالة إلى الرسالة',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'انضم إلى غرفة Watch Together في PlezyNG: افتح غرفة Watch Together واختر انضم إلى غرفة وانضم إلى ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'انضم إلى غرفة Watch Together في PlezyNG: افتح غرفة Watch Together واختر انضم إلى غرفة وانضم إلى ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch معا مراقبة الجلسة',
 			'watchTogether.reconnecting' => 'إعادة الاتصال...',
 			'watchTogether.reconnectingDescription' => 'انقطع الاتصال.تصل إلى الغرفة تلقائيًا.',
@@ -7652,9 +7654,9 @@ extension on TranslationsAr {
 			'metadataEdit.metadataUpdated' => 'متاجدات تحديثات',
 			'metadataEdit.metadataUpdateFailed' => 'فشل في تحديث البيانات الميتا',
 			'metadataEdit.artworkUpdated' => 'الفنون المحدثة',
-			'metadataEdit.artworkUpdateFailed' => 'فشل في تحديث أعمال الفن',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'فشل في تحديث أعمال الفن',
 			'metadataEdit.noArtworkAvailable' => 'لا توجد أعمال فنية متاحة',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'الخيارات الفنية ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'الخيار الفن ${index}، اختياري',
@@ -8166,9 +8168,9 @@ extension on TranslationsAr {
 			'universalMedia.captureAudioNone' => 'لا صوت',
 			'universalMedia.captureDefaultAudio' => 'إدخال الصوت الافتراضي',
 			'universalMedia.captureWaylandHelp' => 'Wayland يحد من هذا التقاط XWayland إلى X display. قد لا تظهر النوافذ خارج XWayland.',
-			'universalMedia.captureFrameRate' => 'سعر الإطار التسجيل',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'سعر الإطار التسجيل',
 			'universalMedia.capturePrivacy' => 'يتم تخزين التسجيل فقط إلى الملف الذي تختاره.التسجيل الميكروفون اختياري.PlezyNG لا يقوم بتحميل التسجيل.',
 			'universalMedia.captureSaveAs' => 'حفظ تسجيل الشاشة كما',
 			'universalMedia.captureExtensionMismatch' => 'اختر اسم ملف ينتهي في .mp4.',
@@ -8680,9 +8682,9 @@ extension on TranslationsAr {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

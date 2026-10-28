@@ -2096,6 +2096,7 @@ class _Translations$music$it extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Leggi il track analysis...';
 	@override String get visualizerAmbientMotion => 'Movimento Ambientale';
 	@override String get visualizerPlexLoudness => 'Plex suono';
+	@override String get visualizerLiveAudio => 'Analisi audio in tempo reale';
 	@override String get visualizerPreviousPreset => 'Articolo precedenteStyle visivo';
 	@override String get visualizerNextPreset => 'Next Stile visivo';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -6999,6 +7000,7 @@ extension on TranslationsIt {
 			'music.visualizerProfileLoading' => 'Leggi il track analysis...',
 			'music.visualizerAmbientMotion' => 'Movimento Ambientale',
 			'music.visualizerPlexLoudness' => 'Plex suono',
+			'music.visualizerLiveAudio' => 'Analisi audio in tempo reale',
 			'music.visualizerPreviousPreset' => 'Articolo precedenteStyle visivo',
 			'music.visualizerNextPreset' => 'Next Stile visivo',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7045,9 +7047,9 @@ extension on TranslationsIt {
 			'watchTogether.codeCopied' => 'Codice stanza copiato',
 			'watchTogether.shareInvite' => 'Condividi invito',
 			'watchTogether.inviteCopied' => 'Invito copiato. Incollalo in un messaggio.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Unisciti alla mia stanza di Guarda insieme su PlezyNG: apri «Guarda insieme», scegli «Unisciti a una stanza» e inserisci ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Unisciti alla mia stanza di Guarda insieme su PlezyNG: apri «Guarda insieme», scegli «Unisciti a una stanza» e inserisci ${code}.',
 			'watchTogether.openSessionControls' => 'Apri i controlli della sessione di Guarda insieme',
 			'watchTogether.reconnecting' => 'Riconnessione...',
 			'watchTogether.reconnectingDescription' => 'La connessione si è interrotta. Rientrerai automaticamente nella stanza.',
@@ -7559,9 +7561,9 @@ extension on TranslationsIt {
 			'metadataEdit.metadataUpdated' => 'Metadati aggiornati correttamente',
 			'metadataEdit.metadataUpdateFailed' => 'Impossibile aggiornare i metadati',
 			'metadataEdit.artworkUpdated' => 'Immagini aggiornate',
-			'metadataEdit.artworkUpdateFailed' => 'Impossibile aggiornare le immagini',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Impossibile aggiornare le immagini',
 			'metadataEdit.noArtworkAvailable' => 'Nessuna immagine disponibile',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Opzione immagine ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Opzione immagine ${index}, selezionata',
@@ -8073,9 +8075,9 @@ extension on TranslationsIt {
 			'universalMedia.captureAudioNone' => 'Nessun audio',
 			'universalMedia.captureDefaultAudio' => 'Introduzione audio',
 			'universalMedia.captureWaylandHelp' => 'Wayland limita questa cattura XWayland al X display. Windows al di fuori di XWayland non può apparire.',
-			'universalMedia.captureFrameRate' => 'Tasso di registrazione frame rate',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Tasso di registrazione frame rate',
 			'universalMedia.capturePrivacy' => 'La registrazione viene salvata solo al file che scegli. la registrazione del microfono è facoltativa. PlezyNG non carica la registrazione.',
 			'universalMedia.captureSaveAs' => 'Salva la registrazione dello schermo come',
 			'universalMedia.captureExtensionMismatch' => 'Scegli un nome di file che finisce in .mp4.',
@@ -8587,9 +8589,9 @@ extension on TranslationsIt {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

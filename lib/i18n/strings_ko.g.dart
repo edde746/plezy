@@ -2091,6 +2091,7 @@ class _Translations$music$ko extends Translations$music$en {
 	@override String get visualizerProfileLoading => '트랙 분석을 읽고...';
 	@override String get visualizerAmbientMotion => '환경 운동';
 	@override String get visualizerPlexLoudness => 'Plex 소음';
+	@override String get visualizerLiveAudio => '실시간 오디오 분석';
 	@override String get visualizerPreviousPreset => '이전 시각적 스타일';
 	@override String get visualizerNextPreset => '다음 시각적 스타일';
 	@override String get visualizerPresetAurora => '오로라';
@@ -6987,6 +6988,7 @@ extension on TranslationsKo {
 			'music.visualizerProfileLoading' => '트랙 분석을 읽고...',
 			'music.visualizerAmbientMotion' => '환경 운동',
 			'music.visualizerPlexLoudness' => 'Plex 소음',
+			'music.visualizerLiveAudio' => '실시간 오디오 분석',
 			'music.visualizerPreviousPreset' => '이전 시각적 스타일',
 			'music.visualizerNextPreset' => '다음 시각적 스타일',
 			'music.visualizerPresetAurora' => '오로라',
@@ -7033,9 +7035,9 @@ extension on TranslationsKo {
 			'watchTogether.codeCopied' => '방 코드가 복사되었습니다',
 			'watchTogether.shareInvite' => '초대 공유',
 			'watchTogether.inviteCopied' => '초대 메시지가 복사되었습니다. 메시지에 붙여넣으세요.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG 함께 보기 방에 초대합니다. \'함께 보기\'를 열고 \'방 참여\'를 선택한 다음 ${code} 코드를 입력하세요.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG 함께 보기 방에 초대합니다. \'함께 보기\'를 열고 \'방 참여\'를 선택한 다음 ${code} 코드를 입력하세요.',
 			'watchTogether.openSessionControls' => '함께 보기 세션 제어 열기',
 			'watchTogether.reconnecting' => '재연결 중...',
 			'watchTogether.reconnectingDescription' => '연결이 끊어졌습니다. 자동으로 방에 다시 참여합니다.',
@@ -7547,9 +7549,9 @@ extension on TranslationsKo {
 			'metadataEdit.metadataUpdated' => '메타데이터가 업데이트되었습니다',
 			'metadataEdit.metadataUpdateFailed' => '메타데이터 업데이트 실패',
 			'metadataEdit.artworkUpdated' => '아트워크가 업데이트되었습니다',
-			'metadataEdit.artworkUpdateFailed' => '아트워크 업데이트 실패',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => '아트워크 업데이트 실패',
 			'metadataEdit.noArtworkAvailable' => '사용 가능한 아트워크 없음',
 			'metadataEdit.artworkOption' => ({required Object index}) => '아트워크 옵션 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '아트워크 옵션 ${index}, 선택됨',
@@ -8061,9 +8063,9 @@ extension on TranslationsKo {
 			'universalMedia.captureAudioNone' => '오디오 없음',
 			'universalMedia.captureDefaultAudio' => '기본 오디오 입력',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => '녹음 프레임 속도',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => '녹음 프레임 속도',
 			'universalMedia.capturePrivacy' => '녹음은 선택한 파일에만 저장됩니다.마이크로폰 캡처는 선택적입니다.PlezyNG은 녹음을 업로드하지 않습니다.',
 			'universalMedia.captureSaveAs' => '스크린 레코딩을 저장하는 방법',
 			'universalMedia.captureExtensionMismatch' => '.mp4에서 끝나는 파일 이름을 선택합니다.',
@@ -8575,9 +8577,9 @@ extension on TranslationsKo {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

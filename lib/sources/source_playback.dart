@@ -336,6 +336,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (uri == null) return null;
     return 'open-media:${sourceDigest(uri.toString())}';
   }
+
   BookChapter? get currentChapter =>
       chapters.where((c) => positionMs >= c.startMs && (c.endMs <= c.startMs || positionMs < c.endMs)).lastOrNull;
   bool get _valid =>

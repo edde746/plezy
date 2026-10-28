@@ -15,6 +15,7 @@ import '../../focus/focusable_slider.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../mpv/mpv.dart';
+import '../../mpv/player/audio_spectrum.dart';
 import '../../models/video_bookmark.dart';
 import '../../multiview/source_playback_workspace_surface.dart';
 import '../../multiview/workspace_controller.dart';
@@ -37,6 +38,7 @@ import '../../services/video_bookmark_service.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/music/mini_player.dart';
+import '../../widgets/music/music_visualizer.dart';
 import '../../widgets/source_edition_menu_button.dart';
 import '../../widgets/source_file_info_sheet.dart';
 import 'add_source_screen.dart';
@@ -63,6 +65,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   int? _sourceLoopStartMs;
   int? _sourceLoopEndMs;
   bool _bookmarkBusy = false;
+  bool _sourceVisualizerVisible = false;
+  MusicVisualizerPreset _sourceVisualizerPreset = MusicVisualizerPreset.bloom;
   double? _dragPosition;
   final _fullscreen = FullscreenStateManager();
 
@@ -1066,6 +1070,18 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
               focusableAppBarActions: true,
               actions: [
+                if (!s.video && core is AudioSpectrumAnalyzer)
+                  FocusableButton(
+                    autoScroll: false,
+                    onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                    child: IconButton(
+                      tooltip: t.music.visualizer,
+                      isSelected: _sourceVisualizerVisible,
+                      onPressed: () => setState(() => _sourceVisualizerVisible = !_sourceVisualizerVisible),
+                      selectedIcon: const AppIcon(Symbols.graphic_eq_rounded, fill: 1),
+                      icon: const AppIcon(Symbols.graphic_eq_rounded),
+                    ),
+                  ),
                 if (s.canExportLocalPlaylist)
                   IconButton(
                     tooltip: t.universalMedia.saveQueuePlaylist,
@@ -1106,14 +1122,34 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                               padding: const EdgeInsets.fromLTRB(32, 36, 32, 24),
                               child: Column(
                                 children: [
-                                  Container(
-                                    width: 160,
-                                    height: 200,
-                                    decoration: BoxDecoration(
-                                      color: tokens(context).surface,
-                                      borderRadius: BorderRadius.circular(tokens(context).radiusLg),
-                                    ),
-                                    child: SourceCover(entry: s.entry!),
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 220),
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    child: _sourceVisualizerVisible && core is AudioSpectrumAnalyzer
+                                        ? LayoutBuilder(
+                                            key: const ValueKey('source-audio-visualizer'),
+                                            builder: (context, constraints) => SizedBox(
+                                              width: constraints.maxWidth.clamp(180, 520).toDouble(),
+                                              height: 220,
+                                              child: MusicVisualizer.forSource(
+                                                playback: s,
+                                                preset: _sourceVisualizerPreset,
+                                                onPresetChanged: (preset) =>
+                                                    setState(() => _sourceVisualizerPreset = preset),
+                                              ),
+                                            ),
+                                          )
+                                        : Container(
+                                            key: const ValueKey('source-cover'),
+                                            width: 160,
+                                            height: 200,
+                                            decoration: BoxDecoration(
+                                              color: tokens(context).surface,
+                                              borderRadius: BorderRadius.circular(tokens(context).radiusLg),
+                                            ),
+                                            child: SourceCover(entry: s.entry!),
+                                          ),
                                   ),
                                   const SizedBox(height: 24),
                                   Text(

@@ -2094,6 +2094,7 @@ class _Translations$music$bn extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Read track বিশ্লেষণ ...';
 	@override String get visualizerAmbientMotion => 'পরিবেশ মোকাবিলা';
 	@override String get visualizerPlexLoudness => 'Plex শব্দ';
+	@override String get visualizerLiveAudio => 'লাইভ অডিও বিশ্লেষণ';
 	@override String get visualizerPreviousPreset => 'পূর্ববর্তী চিত্র';
 	@override String get visualizerNextPreset => 'পরবর্তী ভিজুয়াল স্টাইল';
 	@override String get visualizerPresetAurora => 'অুরোরা';
@@ -6992,6 +6993,7 @@ extension on TranslationsBn {
 			'music.visualizerProfileLoading' => 'Read track বিশ্লেষণ ...',
 			'music.visualizerAmbientMotion' => 'পরিবেশ মোকাবিলা',
 			'music.visualizerPlexLoudness' => 'Plex শব্দ',
+			'music.visualizerLiveAudio' => 'লাইভ অডিও বিশ্লেষণ',
 			'music.visualizerPreviousPreset' => 'পূর্ববর্তী চিত্র',
 			'music.visualizerNextPreset' => 'পরবর্তী ভিজুয়াল স্টাইল',
 			'music.visualizerPresetAurora' => 'অুরোরা',
@@ -7038,9 +7040,9 @@ extension on TranslationsBn {
 			'watchTogether.codeCopied' => 'রুম কোড কপি',
 			'watchTogether.shareInvite' => 'বিতর্ক invitaciones',
 			'watchTogether.inviteCopied' => 'কপি করুন, এটি একটি বার্তাে প্রবেশ করুন।',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG: খুলুন ঘোড়ি একসাথে, চিহ্ন করুন ঘোড়ি একসাথে এবং ${code} এ প্রবেশ করুন।',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG: খুলুন ঘোড়ি একসাথে, চিহ্ন করুন ঘোড়ি একসাথে এবং ${code} এ প্রবেশ করুন।',
 			'watchTogether.openSessionControls' => 'Open Watch Together সেশন কন্ট্রোল',
 			'watchTogether.reconnecting' => 'আবার সংযোগ...',
 			'watchTogether.reconnectingDescription' => 'সংযোগ বন্ধ হয়ে গেছে. আপনি স্বয়ংক্রিয়ভাবে রুমে যোগ দেবেন।',
@@ -7552,9 +7554,9 @@ extension on TranslationsBn {
 			'metadataEdit.metadataUpdated' => 'মেটাদাডেট আপডেট',
 			'metadataEdit.metadataUpdateFailed' => 'মেটাদাটা আপডেট করতে পারেনি',
 			'metadataEdit.artworkUpdated' => 'অ্যাকাউন্ট আপডেট',
-			'metadataEdit.artworkUpdateFailed' => 'শিল্প কাজ আপডেট করতে পারিনি',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'শিল্প কাজ আপডেট করতে পারিনি',
 			'metadataEdit.noArtworkAvailable' => 'কোন শিল্প কাজ পাওয়া যায় না',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'শিল্প বিকল্প ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'ছবির বিকল্প ${index}, নির্বাচিত',
@@ -8066,9 +8068,9 @@ extension on TranslationsBn {
 			'universalMedia.captureAudioNone' => 'অডিও নেই',
 			'universalMedia.captureDefaultAudio' => 'অডিও ইনপোর্ট',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'রেকর্ড ফ্রেম ফ্রেম',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'রেকর্ড ফ্রেম ফ্রেম',
 			'universalMedia.capturePrivacy' => 'রেকর্ডিংটি শুধুমাত্র আপনার বেছে নেওয়া ফাইলের জন্য সংরক্ষণ করা হয়. মাইক্রোফোন ফ্যাক্টরি অপশনীয়. PlezyNG রেকর্ডিংটি আপলোড করে না।',
 			'universalMedia.captureSaveAs' => 'স্ক্রিন রেকর্ডিং রেকর্ডিং',
 			'universalMedia.captureExtensionMismatch' => '.mp4 এর মধ্যে শেষ একটি ফাইল নাম নির্বাচন করুন।',
@@ -8580,9 +8582,9 @@ extension on TranslationsBn {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

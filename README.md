@@ -210,6 +210,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Album and artist screens with play, shuffle, and Instant Mix
 - Gapless playback with a full play queue — reorder, remove, play next, add to queue
 - Now Playing with synced lyrics[^lyrics], persistent mini-player, and sleep timer
+- Accessible visualizer that follows Plex analysis or optional live audio stats on compatible MPV builds
 - Background playback with lock-screen, media-key, and notification controls[^bgaudio]
 - Offline playback of downloaded albums and tracks
 - Streaming quality presets — Original, 320, 192, or 128 kbps

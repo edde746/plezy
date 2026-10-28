@@ -2081,6 +2081,7 @@ class _Translations$music$vi extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Đọc Track Analysis...';
 	@override String get visualizerAmbientMotion => 'động cơ môi trường';
 	@override String get visualizerPlexLoudness => 'Plex tiếng ồn';
+	@override String get visualizerLiveAudio => 'Phân tích âm thanh trực tiếp';
 	@override String get visualizerPreviousPreset => 'Phong cách Visual Previous';
 	@override String get visualizerNextPreset => 'Tiếp theo: Visual Style';
 	@override String get visualizerPresetAurora => 'Cực quang';
@@ -6967,6 +6968,7 @@ extension on TranslationsVi {
 			'music.visualizerProfileLoading' => 'Đọc Track Analysis...',
 			'music.visualizerAmbientMotion' => 'động cơ môi trường',
 			'music.visualizerPlexLoudness' => 'Plex tiếng ồn',
+			'music.visualizerLiveAudio' => 'Phân tích âm thanh trực tiếp',
 			'music.visualizerPreviousPreset' => 'Phong cách Visual Previous',
 			'music.visualizerNextPreset' => 'Tiếp theo: Visual Style',
 			'music.visualizerPresetAurora' => 'Cực quang',
@@ -7013,9 +7015,9 @@ extension on TranslationsVi {
 			'watchTogether.codeCopied' => 'Mã phòng copy',
 			'watchTogether.shareInvite' => 'Chia sẻ mời',
 			'watchTogether.inviteCopied' => 'Gửi tin nhắn, gửi nó vào một tin nhắn.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Tham gia phòng đồng hồ của tôi tại PlezyNG: mở phòng đồng hồ, chọn phòng đồng hồ và nhập phòng đồng hồ ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Tham gia phòng đồng hồ của tôi tại PlezyNG: mở phòng đồng hồ, chọn phòng đồng hồ và nhập phòng đồng hồ ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Cùng kiểm soát phiên',
 			'watchTogether.reconnecting' => 'Kết nối lại...',
 			'watchTogether.reconnectingDescription' => 'Kết nối bị hỏng. bạn sẽ tự động vào phòng.',
@@ -7527,9 +7529,9 @@ extension on TranslationsVi {
 			'metadataEdit.metadataUpdated' => 'Metadata cập nhật',
 			'metadataEdit.metadataUpdateFailed' => 'Không cập nhật metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork cập nhật',
-			'metadataEdit.artworkUpdateFailed' => 'Không cập nhật tác phẩm nghệ thuật',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Không cập nhật tác phẩm nghệ thuật',
 			'metadataEdit.noArtworkAvailable' => 'Không có tác phẩm nghệ thuật',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Tùy chọn nghệ thuật ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Tùy chọn Artwork ${index}, được chọn',
@@ -8041,9 +8043,9 @@ extension on TranslationsVi {
 			'universalMedia.captureAudioNone' => 'Không có Audio',
 			'universalMedia.captureDefaultAudio' => 'Lập trình Audio Input',
 			'universalMedia.captureWaylandHelp' => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.',
-			'universalMedia.captureFrameRate' => 'Tỷ lệ ghi âm frame rate',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Tỷ lệ ghi âm frame rate',
 			'universalMedia.capturePrivacy' => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.',
 			'universalMedia.captureSaveAs' => 'Lưu màn hình ghi âm như',
 			'universalMedia.captureExtensionMismatch' => 'Chọn tên file kết thúc trong .mp4.',
@@ -8555,9 +8557,9 @@ extension on TranslationsVi {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

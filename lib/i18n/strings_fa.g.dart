@@ -2094,6 +2094,7 @@ class _Translations$music$fa extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'در ادامه به بررسی تراکتور...';
 	@override String get visualizerAmbientMotion => 'حرکات محیطی';
 	@override String get visualizerPlexLoudness => 'Plex صدا';
+	@override String get visualizerLiveAudio => 'تحلیل زندهٔ صدا';
 	@override String get visualizerPreviousPreset => 'قبلی سبک بصری';
 	@override String get visualizerNextPreset => 'بعدی سبک بصری';
 	@override String get visualizerPresetAurora => 'آوریا';
@@ -6992,6 +6993,7 @@ extension on TranslationsFa {
 			'music.visualizerProfileLoading' => 'در ادامه به بررسی تراکتور...',
 			'music.visualizerAmbientMotion' => 'حرکات محیطی',
 			'music.visualizerPlexLoudness' => 'Plex صدا',
+			'music.visualizerLiveAudio' => 'تحلیل زندهٔ صدا',
 			'music.visualizerPreviousPreset' => 'قبلی سبک بصری',
 			'music.visualizerNextPreset' => 'بعدی سبک بصری',
 			'music.visualizerPresetAurora' => 'آوریا',
@@ -7038,9 +7040,9 @@ extension on TranslationsFa {
 			'watchTogether.codeCopied' => 'کد اتاق کپی شده',
 			'watchTogether.shareInvite' => 'دعوت به اشتراک گذاری',
 			'watchTogether.inviteCopied' => 'کپی کنید، آن را در یک پیام قرار دهید.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'به اتاق Watch Together من در PlezyNG بپیوندید، اتاق Watch Together را انتخاب کنید و به اتاق Watch Together ${code} وارد شوید.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'به اتاق Watch Together من در PlezyNG بپیوندید، اتاق Watch Together را انتخاب کنید و به اتاق Watch Together ${code} وارد شوید.',
 			'watchTogether.openSessionControls' => 'Open Watch با هم کنترل جلسه',
 			'watchTogether.reconnecting' => 'دوباره اتصال...',
 			'watchTogether.reconnectingDescription' => 'اتصال قطع شده است شما به طور خودکار به اتاق می روید.',
@@ -7552,9 +7554,9 @@ extension on TranslationsFa {
 			'metadataEdit.metadataUpdated' => 'Metadata به روز شده',
 			'metadataEdit.metadataUpdateFailed' => 'عدم به روز رسانی متا',
 			'metadataEdit.artworkUpdated' => 'هنر به روز شده',
-			'metadataEdit.artworkUpdateFailed' => 'به روز رسانی هنرهای هنری',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'به روز رسانی هنرهای هنری',
 			'metadataEdit.noArtworkAvailable' => 'هیچ هنری در دسترس نیست',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'گزینه هنری ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'گزینه هنری ${index} انتخاب شده',
@@ -8066,9 +8068,9 @@ extension on TranslationsFa {
 			'universalMedia.captureAudioNone' => 'بدون صدا',
 			'universalMedia.captureDefaultAudio' => 'واردات صوتی پیش فرض',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'نرخ ضبط فریم',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'نرخ ضبط فریم',
 			'universalMedia.capturePrivacy' => 'ضبط فقط به فایل انتخاب شده ذخیره می شود. ضبط میکروفون اختیاری است. PlezyNG ضبط را بارگذاری نمی کند.',
 			'universalMedia.captureSaveAs' => 'ضبط صفحه نمایش به عنوان',
 			'universalMedia.captureExtensionMismatch' => 'انتخاب یک نام فیل که در .mp4 به پایان می رسد.',
@@ -8580,9 +8582,9 @@ extension on TranslationsFa {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

@@ -1470,11 +1470,35 @@ abstract class PlayerBase
   static const String _androidNormalizationFilter =
       'acompressor=threshold=-34dB:ratio=4:knee=6dB:attack=30:release=300:makeup=15dB:link=maximum,'
       'alimiter=limit=-3dB:attack=1:release=60:level=false';
+  static const String _spectrumAnalysisFilter = '@plezy_spectrum:lavfi=[aspectralstats=measure=centroid+flatness]';
 
   static const List<int> _audioEqualizerFrequencies = [60, 125, 250, 500, 1000, 2000, 4000, 8000, 12000, 16000];
   List<double> _audioEqualizerBandGains = List<double>.filled(_audioEqualizerFrequencies.length, 0);
   PlayerAudioEffects _audioEffects = (stereoWidth: 0, spatializer: false, pitchSemitones: 0);
   bool _audioNormalizationEnabled = false;
+  bool _audioSpectrumAnalysisEnabled = false;
+
+  /// Adds the optional derived-statistics filter after user-requested effects.
+  /// The native audio-only backend serializes this with passthrough changes.
+  Future<bool> setAudioSpectrumAnalysis(bool enabled) async {
+    if (playerType != 'mpv') return false;
+    if (_audioSpectrumAnalysisEnabled == enabled) return true;
+    final previous = _audioSpectrumAnalysisEnabled;
+    _audioSpectrumAnalysisEnabled = enabled;
+    try {
+      await _applyAudioFilters();
+      return true;
+    } catch (error, stackTrace) {
+      _audioSpectrumAnalysisEnabled = previous;
+      appLogger.d('MPV: optional audio analysis filter is unavailable', error: error, stackTrace: stackTrace);
+      try {
+        await _applyAudioFilters();
+      } catch (_) {
+        // Keep the optional analysis failure away from normal playback.
+      }
+      return false;
+    }
+  }
 
   @override
   Future<void> setAudioNormalization(bool enabled) async {
@@ -1540,6 +1564,7 @@ abstract class PlayerBase
     if (_audioNormalizationEnabled) {
       filters.add(Platform.isAndroid ? _androidNormalizationFilter : _loudnormFilter);
     }
+    if (_audioSpectrumAnalysisEnabled) filters.add(_spectrumAnalysisFilter);
     await setProperty('af', filters.join(','));
   }
 

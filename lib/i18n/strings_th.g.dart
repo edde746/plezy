@@ -2081,6 +2081,7 @@ class _Translations$music$th extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'อ่าน track analysis ...';
 	@override String get visualizerAmbientMotion => 'การเคลื่อนไหวสภาพแวดล้อม';
 	@override String get visualizerPlexLoudness => 'Plex เสียง';
+	@override String get visualizerLiveAudio => 'การวิเคราะห์เสียงแบบเรียลไทม์';
 	@override String get visualizerPreviousPreset => 'สไตล์ภาพก่อนหน้า';
 	@override String get visualizerNextPreset => 'สไตล์ภาพต่อไป';
 	@override String get visualizerPresetAurora => 'ออโรารี';
@@ -6967,6 +6968,7 @@ extension on TranslationsTh {
 			'music.visualizerProfileLoading' => 'อ่าน track analysis ...',
 			'music.visualizerAmbientMotion' => 'การเคลื่อนไหวสภาพแวดล้อม',
 			'music.visualizerPlexLoudness' => 'Plex เสียง',
+			'music.visualizerLiveAudio' => 'การวิเคราะห์เสียงแบบเรียลไทม์',
 			'music.visualizerPreviousPreset' => 'สไตล์ภาพก่อนหน้า',
 			'music.visualizerNextPreset' => 'สไตล์ภาพต่อไป',
 			'music.visualizerPresetAurora' => 'ออโรารี',
@@ -7013,9 +7015,9 @@ extension on TranslationsTh {
 			'watchTogether.codeCopied' => 'รหัสห้องคัดลอก',
 			'watchTogether.shareInvite' => 'คู่มือ',
 			'watchTogether.inviteCopied' => 'ขออธิบายการคัดลอก เขียนลงในข้อความ',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'เข้าร่วมห้องของ Watch Together ที่ PlezyNG: เปิดห้องของ Watch Together, เลือกห้องของ Join และเข้าสู่ระบบ ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'เข้าร่วมห้องของ Watch Together ที่ PlezyNG: เปิดห้องของ Watch Together, เลือกห้องของ Join และเข้าสู่ระบบ ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch ร่วมกันเซสชันควบคุม',
 			'watchTogether.reconnecting' => 'การเชื่อมต่อ...',
 			'watchTogether.reconnectingDescription' => 'การเชื่อมต่อถูกปิดแล้ว คุณจะเข้าสู่ห้องโดยอัตโนมัติ',
@@ -7527,9 +7529,9 @@ extension on TranslationsTh {
 			'metadataEdit.metadataUpdated' => 'ข้อมูลอัปเดต',
 			'metadataEdit.metadataUpdateFailed' => 'ไม่สามารถปรับปรุงข้อมูล metadata',
 			'metadataEdit.artworkUpdated' => 'อัพเดทศิลปะ',
-			'metadataEdit.artworkUpdateFailed' => 'ไม่สามารถปรับปรุงงานศิลปะได้',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'ไม่สามารถปรับปรุงงานศิลปะได้',
 			'metadataEdit.noArtworkAvailable' => 'ไม่มีงานศิลปะ',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'ตัวเลือกงานศิลปะ ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'ตัวเลือกงานศิลปะ ${index}, เลือก',
@@ -8041,9 +8043,9 @@ extension on TranslationsTh {
 			'universalMedia.captureAudioNone' => 'ไม่มีเสียง',
 			'universalMedia.captureDefaultAudio' => 'การเข้าสู่ระบบอัตโนมัติ',
 			'universalMedia.captureWaylandHelp' => 'Wayland จํากัด นี้ XWayland capture ไปยัง X display. Windows ภายนอก XWayland อาจไม่ปรากฏ.',
-			'universalMedia.captureFrameRate' => 'อัตราการบันทึกเฟรม',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'อัตราการบันทึกเฟรม',
 			'universalMedia.capturePrivacy' => 'การบันทึกจะบันทึกไว้เฉพาะสําหรับไฟล์ที่คุณเลือก การบันทึกไมโครโฟนเป็นตัวเลือก PlezyNG ไม่อัพโหลดบันทึก',
 			'universalMedia.captureSaveAs' => 'การบันทึกหน้าจอเป็น',
 			'universalMedia.captureExtensionMismatch' => 'เลือกชื่อไฟล์ที่สิ้นสุดใน .mp4',
@@ -8555,9 +8557,9 @@ extension on TranslationsTh {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

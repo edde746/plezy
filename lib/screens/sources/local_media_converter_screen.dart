@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../sources/ffmpeg_capabilities.dart';
 import '../../sources/source_models.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
@@ -107,11 +108,7 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
       final output = await outputFuture;
       await diagnosticsFuture;
       if (exitCode != 0) throw StateError('FFmpeg encoder probe failed');
-      final encoders = <String>{};
-      final pattern = RegExp(r'^\s*[VAS\.]{6}\s+(\S+)', multiLine: true);
-      for (final match in pattern.allMatches(output)) {
-        encoders.add(match.group(1)!);
-      }
+      final encoders = FfmpegCapabilities.parseEncoders(output);
       final muxers = await _probeMuxers();
       if (mounted) {
         setState(() {
@@ -142,12 +139,7 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
     final output = await outputFuture;
     await diagnosticsFuture;
     if (exitCode != 0) throw StateError('FFmpeg muxer probe failed');
-    final muxers = <String>{};
-    final pattern = RegExp(r'^\s*(?:D?E)\s+(\S+)', multiLine: true);
-    for (final match in pattern.allMatches(output)) {
-      muxers.add(match.group(1)!);
-    }
-    return muxers;
+    return FfmpegCapabilities.parseMuxers(output);
   }
 
   bool _profileSupported(_ConversionFormat format) =>

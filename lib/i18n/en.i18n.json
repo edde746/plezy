@@ -2195,6 +2195,7 @@
     "visualizerProfileLoading": "Reading track analysis…",
     "visualizerAmbientMotion": "Ambient motion",
     "visualizerPlexLoudness": "Plex loudness",
+    "visualizerLiveAudio": "Live audio analysis",
     "visualizerPreviousPreset": "Previous visual style",
     "visualizerNextPreset": "Next visual style",
     "visualizerPresetAurora": "Aurora",

@@ -2094,6 +2094,7 @@ class _Translations$music$nb extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Lesing av track analyse.';
 	@override String get visualizerAmbientMotion => 'Miljøbevegelse';
 	@override String get visualizerPlexLoudness => 'Plex støy';
+	@override String get visualizerLiveAudio => 'Direkte lydanalyse';
 	@override String get visualizerPreviousPreset => 'Tidligere visuell stil';
 	@override String get visualizerNextPreset => 'Neste visuell stil';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -6992,6 +6993,7 @@ extension on TranslationsNb {
 			'music.visualizerProfileLoading' => 'Lesing av track analyse.',
 			'music.visualizerAmbientMotion' => 'Miljøbevegelse',
 			'music.visualizerPlexLoudness' => 'Plex støy',
+			'music.visualizerLiveAudio' => 'Direkte lydanalyse',
 			'music.visualizerPreviousPreset' => 'Tidligere visuell stil',
 			'music.visualizerNextPreset' => 'Neste visuell stil',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7038,9 +7040,9 @@ extension on TranslationsNb {
 			'watchTogether.codeCopied' => 'Romkode kopiert',
 			'watchTogether.shareInvite' => 'Del invitasjon',
 			'watchTogether.inviteCopied' => 'Invitasjon kopiert. Lim den inn i en melding.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Bli med i Se sammen-rommet mitt i PlezyNG: åpne Se sammen, velg «Bli med i rom» og skriv inn ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Bli med i Se sammen-rommet mitt i PlezyNG: åpne Se sammen, velg «Bli med i rom» og skriv inn ${code}.',
 			'watchTogether.openSessionControls' => 'Åpne øktkontroller for Se sammen',
 			'watchTogether.reconnecting' => 'Kobler til på nytt...',
 			'watchTogether.reconnectingDescription' => 'Tilkoblingen ble brutt. Du blir automatisk med i rommet igjen.',
@@ -7552,9 +7554,9 @@ extension on TranslationsNb {
 			'metadataEdit.metadataUpdated' => 'Metadata oppdatert',
 			'metadataEdit.metadataUpdateFailed' => 'Kunne ikke oppdatere metadata',
 			'metadataEdit.artworkUpdated' => 'Grafikk oppdatert',
-			'metadataEdit.artworkUpdateFailed' => 'Kunne ikke oppdatere grafikken',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Kunne ikke oppdatere grafikken',
 			'metadataEdit.noArtworkAvailable' => 'Ingen grafikk tilgjengelig',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Grafikkalternativ ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Grafikkalternativ ${index}, valgt',
@@ -8066,9 +8068,9 @@ extension on TranslationsNb {
 			'universalMedia.captureAudioNone' => 'Ingen lyd',
 			'universalMedia.captureDefaultAudio' => 'Standard lydinngang',
 			'universalMedia.captureWaylandHelp' => 'Wayland begrenser denne XWayland fangen til X display. Windows utenfor XWayland kan ikke vises.',
-			'universalMedia.captureFrameRate' => 'Rekordframe rate',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Rekordframe rate',
 			'universalMedia.capturePrivacy' => 'Opptaket lagres kun til filen du velger. mikrofonopptak er valgfritt. PlezyNG laster ikke opp opptaket.',
 			'universalMedia.captureSaveAs' => 'Lagre skjermopptak som',
 			'universalMedia.captureExtensionMismatch' => 'Velg et filnavn som slutter i .mp4.',
@@ -8580,9 +8582,9 @@ extension on TranslationsNb {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

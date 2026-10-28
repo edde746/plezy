@@ -2091,6 +2091,7 @@ class _Translations$music$ja extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'トラック分析の読み方...';
 	@override String get visualizerAmbientMotion => '環境運動';
 	@override String get visualizerPlexLoudness => 'Plex 音量';
+	@override String get visualizerLiveAudio => 'ライブ音声解析';
 	@override String get visualizerPreviousPreset => '前の視覚スタイル';
 	@override String get visualizerNextPreset => '次 次 視覚スタイル';
 	@override String get visualizerPresetAurora => 'オーラ';
@@ -6987,6 +6988,7 @@ extension on TranslationsJa {
 			'music.visualizerProfileLoading' => 'トラック分析の読み方...',
 			'music.visualizerAmbientMotion' => '環境運動',
 			'music.visualizerPlexLoudness' => 'Plex 音量',
+			'music.visualizerLiveAudio' => 'ライブ音声解析',
 			'music.visualizerPreviousPreset' => '前の視覚スタイル',
 			'music.visualizerNextPreset' => '次 次 視覚スタイル',
 			'music.visualizerPresetAurora' => 'オーラ',
@@ -7033,9 +7035,9 @@ extension on TranslationsJa {
 			'watchTogether.codeCopied' => 'ルームコードをコピーしました',
 			'watchTogether.shareInvite' => '招待を共有',
 			'watchTogether.inviteCopied' => '招待をコピーしました。メッセージに貼り付けてください。',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Plezyの「一緒に見る」ルームに参加しませんか？「一緒に見る」を開いて「ルームに参加」を選び、${code}を入力してください。',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Plezyの「一緒に見る」ルームに参加しませんか？「一緒に見る」を開いて「ルームに参加」を選び、${code}を入力してください。',
 			'watchTogether.openSessionControls' => '「一緒に見る」セッションのコントロールを開く',
 			'watchTogether.reconnecting' => '再接続中…',
 			'watchTogether.reconnectingDescription' => '接続が切断されました。自動的にルームに再参加します。',
@@ -7547,9 +7549,9 @@ extension on TranslationsJa {
 			'metadataEdit.metadataUpdated' => 'メタデータを更新しました',
 			'metadataEdit.metadataUpdateFailed' => 'メタデータの更新に失敗しました',
 			'metadataEdit.artworkUpdated' => 'アートワークを更新しました',
-			'metadataEdit.artworkUpdateFailed' => 'アートワークの更新に失敗しました',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'アートワークの更新に失敗しました',
 			'metadataEdit.noArtworkAvailable' => 'アートワークがありません',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'アートワークの選択肢 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'アートワークの選択肢 ${index}、選択済み',
@@ -8061,9 +8063,9 @@ extension on TranslationsJa {
 			'universalMedia.captureAudioNone' => 'オーディオなし',
 			'universalMedia.captureDefaultAudio' => 'デフォルトオーディオ入力',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'レコードフレームレート',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'レコードフレームレート',
 			'universalMedia.capturePrivacy' => '録音は、選択したファイルにのみ保存されます. マイクロフォンキャプチャはオプションです. PlezyNG は録音をアップロードしません。',
 			'universalMedia.captureSaveAs' => 'スクリーンレコーディングを保存する',
 			'universalMedia.captureExtensionMismatch' => '.mp4 で終了するファイル名を選択します。',
@@ -8575,9 +8577,9 @@ extension on TranslationsJa {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

@@ -5236,6 +5236,9 @@ class Translations$music$en {
 	/// en: 'Plex loudness'
 	String get visualizerPlexLoudness => 'Plex loudness';
 
+	/// en: 'Live audio analysis'
+	String get visualizerLiveAudio => 'Live audio analysis';
+
 	/// en: 'Previous visual style'
 	String get visualizerPreviousPreset => 'Previous visual style';
 
@@ -14302,6 +14305,7 @@ extension on Translations {
 			'music.visualizerProfileLoading' => 'Reading track analysis…',
 			'music.visualizerAmbientMotion' => 'Ambient motion',
 			'music.visualizerPlexLoudness' => 'Plex loudness',
+			'music.visualizerLiveAudio' => 'Live audio analysis',
 			'music.visualizerPreviousPreset' => 'Previous visual style',
 			'music.visualizerNextPreset' => 'Next visual style',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -14348,9 +14352,9 @@ extension on Translations {
 			'watchTogether.codeCopied' => 'Room code copied',
 			'watchTogether.shareInvite' => 'Share Invite',
 			'watchTogether.inviteCopied' => 'Invite copied. Paste it into a message.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Join my Watch Together room in PlezyNG: open Watch Together, choose Join Room and enter ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Join my Watch Together room in PlezyNG: open Watch Together, choose Join Room and enter ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Together session controls',
 			'watchTogether.reconnecting' => 'Reconnecting...',
 			'watchTogether.reconnectingDescription' => 'The connection dropped. You rejoin the room automatically.',
@@ -14862,9 +14866,9 @@ extension on Translations {
 			'metadataEdit.metadataUpdated' => 'Metadata updated',
 			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork updated',
-			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
@@ -15376,9 +15380,9 @@ extension on Translations {
 			'universalMedia.captureAudioNone' => 'No audio',
 			'universalMedia.captureDefaultAudio' => 'Default audio input',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'Capture frame rate',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Capture frame rate',
 			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
 			'universalMedia.captureSaveAs' => 'Save screen recording as',
 			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
@@ -15890,9 +15894,9 @@ extension on Translations {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

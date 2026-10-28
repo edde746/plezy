@@ -2092,6 +2092,7 @@ class _Translations$music$zh_Hant extends Translations$music$zh {
 	@override String get visualizerProfileLoading => '閱讀路徑分析';
 	@override String get visualizerAmbientMotion => '環境動作';
 	@override String get visualizerPlexLoudness => 'Plex 噪音';
+	@override String get visualizerLiveAudio => '即時音訊分析';
 	@override String get visualizerPreviousPreset => '以前的視覺風格';
 	@override String get visualizerNextPreset => '下一篇 視覺風格';
 	@override String get visualizerPresetAurora => '奧拉';
@@ -6988,6 +6989,7 @@ extension on TranslationsZhHant {
 			'music.visualizerProfileLoading' => '閱讀路徑分析',
 			'music.visualizerAmbientMotion' => '環境動作',
 			'music.visualizerPlexLoudness' => 'Plex 噪音',
+			'music.visualizerLiveAudio' => '即時音訊分析',
 			'music.visualizerPreviousPreset' => '以前的視覺風格',
 			'music.visualizerNextPreset' => '下一篇 視覺風格',
 			'music.visualizerPresetAurora' => '奧拉',
@@ -7034,9 +7036,9 @@ extension on TranslationsZhHant {
 			'watchTogether.codeCopied' => '房間代碼已複製',
 			'watchTogether.shareInvite' => '分享邀請',
 			'watchTogether.inviteCopied' => '已複製邀請。請將其貼到訊息中。',
-			'watchTogether.inviteMessage' => ({required Object code}) => '來 PlezyNG 加入我的「一起看」房間：開啟「一起看」，選擇「加入房間」，然後輸入 ${code}。',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => '來 PlezyNG 加入我的「一起看」房間：開啟「一起看」，選擇「加入房間」，然後輸入 ${code}。',
 			'watchTogether.openSessionControls' => '開啟「一起看」工作階段控制面板',
 			'watchTogether.reconnecting' => '正在重新連線…',
 			'watchTogether.reconnectingDescription' => '連線已中斷。您將自動重新加入房間。',
@@ -7548,9 +7550,9 @@ extension on TranslationsZhHant {
 			'metadataEdit.metadataUpdated' => '中繼資料已更新',
 			'metadataEdit.metadataUpdateFailed' => '中繼資料更新失敗',
 			'metadataEdit.artworkUpdated' => '封面圖片已更新',
-			'metadataEdit.artworkUpdateFailed' => '封面圖片更新失敗',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => '封面圖片更新失敗',
 			'metadataEdit.noArtworkAvailable' => '沒有可用的封面圖片',
 			'metadataEdit.artworkOption' => ({required Object index}) => '封面圖片選項 ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => '封面圖片選項 ${index}，已選擇',
@@ -8062,9 +8064,9 @@ extension on TranslationsZhHant {
 			'universalMedia.captureAudioNone' => '沒有音訊',
 			'universalMedia.captureDefaultAudio' => '預設音訊輸入',
 			'universalMedia.captureWaylandHelp' => 'Wayland 限制此 XWayland 捕獲到 X display. XWayland 以外的 Windows 可能不會出現。',
-			'universalMedia.captureFrameRate' => '記錄框率',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => '記錄框率',
 			'universalMedia.capturePrivacy' => '錄製僅儲存到您選擇的檔案。 微型錄制是可選的. PlezyNG 不會上傳錄製。',
 			'universalMedia.captureSaveAs' => '儲存螢幕錄製如',
 			'universalMedia.captureExtensionMismatch' => '在 .mp4 中選擇終端的檔名。',
@@ -8576,9 +8578,9 @@ extension on TranslationsZhHant {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

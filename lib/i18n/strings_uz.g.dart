@@ -2094,6 +2094,7 @@ class _Translations$music$uz extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'U‘qot bilan analizi...';
 	@override String get visualizerAmbientMotion => 'Ummatik Movisi';
 	@override String get visualizerPlexLoudness => 'Plex qiziziziz';
+	@override String get visualizerLiveAudio => 'Jonli audio tahlili';
 	@override String get visualizerPreviousPreset => 'Oldingi vizual uslub';
 	@override String get visualizerNextPreset => 'Keyingi vizual uslub';
 	@override String get visualizerPresetAurora => 'Qutb yog‘dusi';
@@ -6992,6 +6993,7 @@ extension on TranslationsUz {
 			'music.visualizerProfileLoading' => 'U‘qot bilan analizi...',
 			'music.visualizerAmbientMotion' => 'Ummatik Movisi',
 			'music.visualizerPlexLoudness' => 'Plex qiziziziz',
+			'music.visualizerLiveAudio' => 'Jonli audio tahlili',
 			'music.visualizerPreviousPreset' => 'Oldingi vizual uslub',
 			'music.visualizerNextPreset' => 'Keyingi vizual uslub',
 			'music.visualizerPresetAurora' => 'Qutb yog‘dusi',
@@ -7038,9 +7040,9 @@ extension on TranslationsUz {
 			'watchTogether.codeCopied' => 'Xona kodi nusxalandi',
 			'watchTogether.shareInvite' => 'Taklifni ulashish',
 			'watchTogether.inviteCopied' => 'Taklif nusxalandi. Uni xabarga joylashtiring.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG-dagi "Birgalikda tomosha qilish" xonamga qoʻshiling: "Birgalikda tomosha qilish" boʻlimini oching, "Xonaga qoʻshilish" tugmasini tanlang va ${code} kodini kiriting.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG-dagi "Birgalikda tomosha qilish" xonamga qoʻshiling: "Birgalikda tomosha qilish" boʻlimini oching, "Xonaga qoʻshilish" tugmasini tanlang va ${code} kodini kiriting.',
 			'watchTogether.openSessionControls' => 'Boshqaruv elementlarini ochish',
 			'watchTogether.reconnecting' => 'Qayta ulanmoqda...',
 			'watchTogether.reconnectingDescription' => 'Ulanish uzildi. Xonaga avtomatik ravishda qayta qoʻshilasiz.',
@@ -7552,9 +7554,9 @@ extension on TranslationsUz {
 			'metadataEdit.metadataUpdated' => 'Metamaʼlumotlar yangilandi',
 			'metadataEdit.metadataUpdateFailed' => 'Metamaʼlumotlarni yangilab boʻlmadi',
 			'metadataEdit.artworkUpdated' => 'Rasmlar yangilandi',
-			'metadataEdit.artworkUpdateFailed' => 'Rasmlarni yangilab boʻlmadi',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Rasmlarni yangilab boʻlmadi',
 			'metadataEdit.noArtworkAvailable' => 'Rasm mavjud emas',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Rasm opsiyasi ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Rasm opsiyasi ${index}, tanlandi',
@@ -8066,9 +8068,9 @@ extension on TranslationsUz {
 			'universalMedia.captureAudioNone' => 'Audio ko‘yadi',
 			'universalMedia.captureDefaultAudio' => 'Sa\'qizga audio input',
 			'universalMedia.captureWaylandHelp' => 'Wayland bu XWayland yakthadi X display. XWayland\'dan başqa Windows\'lar görünməz.',
-			'universalMedia.captureFrameRate' => 'Rekording Frame Rata',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Rekording Frame Rata',
 			'universalMedia.capturePrivacy' => 'Rekording yalnız seçti va\'yadi. Mikrofoni rekording is opsional. PlezyNG rekording ko‘yadi.',
 			'universalMedia.captureSaveAs' => 'Screen recording o‘zadi.',
 			'universalMedia.captureExtensionMismatch' => '.mp4\'da bir filenamini seçin.',
@@ -8580,9 +8582,9 @@ extension on TranslationsUz {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

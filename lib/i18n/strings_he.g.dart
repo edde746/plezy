@@ -2097,6 +2097,7 @@ class _Translations$music$he extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'קריאת רצועת ניתוח';
 	@override String get visualizerAmbientMotion => 'תנועת הסביבה';
 	@override String get visualizerPlexLoudness => 'Plex צליל';
+	@override String get visualizerLiveAudio => 'ניתוח שמע בזמן אמת';
 	@override String get visualizerPreviousPreset => 'סגנון חזותי קודם';
 	@override String get visualizerNextPreset => 'סגנון חזותי הבא';
 	@override String get visualizerPresetAurora => 'אווררה';
@@ -7000,6 +7001,7 @@ extension on TranslationsHe {
 			'music.visualizerProfileLoading' => 'קריאת רצועת ניתוח',
 			'music.visualizerAmbientMotion' => 'תנועת הסביבה',
 			'music.visualizerPlexLoudness' => 'Plex צליל',
+			'music.visualizerLiveAudio' => 'ניתוח שמע בזמן אמת',
 			'music.visualizerPreviousPreset' => 'סגנון חזותי קודם',
 			'music.visualizerNextPreset' => 'סגנון חזותי הבא',
 			'music.visualizerPresetAurora' => 'אווררה',
@@ -7046,9 +7048,9 @@ extension on TranslationsHe {
 			'watchTogether.codeCopied' => 'קוד חדר עותק',
 			'watchTogether.shareInvite' => 'שיתוף הזמנה',
 			'watchTogether.inviteCopied' => 'תנו לו להוסיף את ההודעה, תנו לו להוסיף הודעה.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'הצטרף לחדר השעון שלי ב- PlezyNG: פתח את השעון יחד, בחר לחדר השעון הצטרף והכנס ל- ${code}.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'הצטרף לחדר השעון שלי ב- PlezyNG: פתח את השעון יחד, בחר לחדר השעון הצטרף והכנס ל- ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch יחד בדיקת ישיבה',
 			'watchTogether.reconnecting' => 'חיבור מחדש...',
 			'watchTogether.reconnectingDescription' => 'הקשר נעלם, אתה נכנס לחדר באופן אוטומטי.',
@@ -7560,9 +7562,9 @@ extension on TranslationsHe {
 			'metadataEdit.metadataUpdated' => 'נתונים מתעדכנים',
 			'metadataEdit.metadataUpdateFailed' => 'לא הצלחתי לעדכן את הנתונים',
 			'metadataEdit.artworkUpdated' => 'ארכיון עדכונים',
-			'metadataEdit.artworkUpdateFailed' => 'לא הצלחתי לעדכן את האמנות',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'לא הצלחתי לעדכן את האמנות',
 			'metadataEdit.noArtworkAvailable' => 'אין יצירות אמנות זמינות',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'האפשרות האמנותית ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'האפשרות האמנותית ${index}, נבחר',
@@ -8074,9 +8076,9 @@ extension on TranslationsHe {
 			'universalMedia.captureAudioNone' => 'אין אודיו',
 			'universalMedia.captureDefaultAudio' => 'כניסה אודיו',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'שיעור הקלטת',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'שיעור הקלטת',
 			'universalMedia.capturePrivacy' => 'ההקלטה מאוחסנת רק לקובץ שבחרת.הקלטת המיקרופון היא אופציונלית.PlezyNG אינו מעלה את ההקלטה.',
 			'universalMedia.captureSaveAs' => 'שמור את הקלטת המסך כ',
 			'universalMedia.captureExtensionMismatch' => 'בחר שם קובץ הסתיים ב .mp4.',
@@ -8588,9 +8590,9 @@ extension on TranslationsHe {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

@@ -2094,6 +2094,7 @@ class _Translations$music$tr extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Track Analysis ile ilgili...';
 	@override String get visualizerAmbientMotion => 'Ambient hareketleri';
 	@override String get visualizerPlexLoudness => 'Plex sesli';
+	@override String get visualizerLiveAudio => 'Canlı ses analizi';
 	@override String get visualizerPreviousPreset => 'Önceki Görsel Stil';
 	@override String get visualizerNextPreset => 'Next Görsel Stil';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -6992,6 +6993,7 @@ extension on TranslationsTr {
 			'music.visualizerProfileLoading' => 'Track Analysis ile ilgili...',
 			'music.visualizerAmbientMotion' => 'Ambient hareketleri',
 			'music.visualizerPlexLoudness' => 'Plex sesli',
+			'music.visualizerLiveAudio' => 'Canlı ses analizi',
 			'music.visualizerPreviousPreset' => 'Önceki Görsel Stil',
 			'music.visualizerNextPreset' => 'Next Görsel Stil',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -7038,9 +7040,9 @@ extension on TranslationsTr {
 			'watchTogether.codeCopied' => 'Oda kodu kopyalandı',
 			'watchTogether.shareInvite' => 'Daveti Paylaş',
 			'watchTogether.inviteCopied' => 'Davet kopyalandı. Bir mesaja yapıştırın.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG\'de Birlikte İzle odama katıl: Birlikte İzle\'yi aç, Odaya Katıl seçeneğini seç ve ${code} kodunu gir.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG\'de Birlikte İzle odama katıl: Birlikte İzle\'yi aç, Odaya Katıl seçeneğini seç ve ${code} kodunu gir.',
 			'watchTogether.openSessionControls' => 'Birlikte İzle oturum kontrollerini aç',
 			'watchTogether.reconnecting' => 'Yeniden bağlanılıyor...',
 			'watchTogether.reconnectingDescription' => 'Bağlantı koptu. Odaya otomatik olarak yeniden katılacaksınız.',
@@ -7552,9 +7554,9 @@ extension on TranslationsTr {
 			'metadataEdit.metadataUpdated' => 'Meta veriler güncellendi',
 			'metadataEdit.metadataUpdateFailed' => 'Meta veriler güncellenemedi',
 			'metadataEdit.artworkUpdated' => 'Görseller güncellendi',
-			'metadataEdit.artworkUpdateFailed' => 'Görseller güncellenemedi',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artworkUpdateFailed' => 'Görseller güncellenemedi',
 			'metadataEdit.noArtworkAvailable' => 'Görsel bulunmuyor',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Görsel seçeneği ${index}',
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Görsel seçeneği ${index}, seçildi',
@@ -8066,9 +8068,9 @@ extension on TranslationsTr {
 			'universalMedia.captureAudioNone' => 'Audio yok',
 			'universalMedia.captureDefaultAudio' => 'Default Audio Giriş',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'Çerçeve Rate',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Çerçeve Rate',
 			'universalMedia.capturePrivacy' => 'Kayıt yalnızca seçtiğiniz dosyaya kaydedilir. mikrofon çekimi seçmeli. PlezyNG kayıt yüklemiyor.',
 			'universalMedia.captureSaveAs' => 'Ekran kaydını kaydetmek gibi',
 			'universalMedia.captureExtensionMismatch' => '.mp4 içinde sona eren bir fil adı seçin.',
@@ -8580,9 +8582,9 @@ extension on TranslationsTr {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
-			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			_ => null,
 		} ?? switch (path) {
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',

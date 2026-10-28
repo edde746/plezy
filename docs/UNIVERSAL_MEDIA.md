@@ -60,6 +60,10 @@ The existing playback settings sheet keeps audio tuning in one place. MPV playba
 
 The equalizer bands and effect values are saved on this device. The equalizer remains device-local and MPV-only; native TV players and Android ExoPlayer do not show these controls.
 
+## Audio visualization
+
+Now Playing keeps its existing accessible visualizer and preset controls. It prefers Plex's analyzed loudness profile; when that is unavailable, compatible MPV builds can use FFmpeg's derived spectral centroid and flatness while the visualizer is open. Direct audio files opened through Open media reuse the same scenes and controls from a small toolbar toggle in the current source player. The filter is optional, pauses while audio passthrough is active, and returns to ambient motion if the build does not provide usable metadata. It passes only the two derived measurements to Flutter, never PCM samples or full FFT bins. Preset controls keep their labels and status in screen-reader semantics, and reduced-motion settings continue to govern scene movement.
+
 ## Segment loop
 
 Open the existing **Chapters and bookmarks** sheet to save a named mark for a server-backed media item or return to it. One-off local files and direct streams keep named marks in the existing chapter area; their local path or URL is represented by a digest, never written as bookmark text. Bookmarks stay on this device, are not included in settings export/reset, and do not change server resume progress. MPV playback also offers loop point A and point B in its existing chapter sheet or source-player playback-options menu; the segment repeats until cleared or playback changes. Live inputs and sources without a seekable timeline do not offer bookmarks or segment looping.

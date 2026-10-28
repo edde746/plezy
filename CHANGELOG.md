@@ -10,6 +10,7 @@
 - Save eligible same-folder desktop file queues as reopenable M3U playlists, and select alternate video tracks through existing MPV playback controls.
 - Show direct-input MPV file details in the shared File Info sheet, and expose edition/disc-title switching only when multiple choices are available.
 - Preview discovered desktop camera and display inputs in the existing MPV player from Media tools → Capture; keep preview session-only and video-only.
+- Use optional MPV audio-analysis metadata in the existing visualizer when Plex loudness data is unavailable, and show conversion profiles only when the installed FFmpeg build supports them.
 - Keep argument-aware deep-link startup compatible with the webOS entrypoint and format Windows link forwarding for the native toolchain.
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
 - Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
