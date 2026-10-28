@@ -10,6 +10,7 @@ static uint64_t nowUs() {
       .count();
 }
 Runtime::Runtime() {
+  for (auto& pad : pads_) pad = std::make_shared<PadState>();
   static std::once_flag init;
   std::call_once(init, [] { IHS_Init(); });
 }
@@ -115,7 +116,7 @@ int Runtime::run(
   request.audioChannelCount = 2;
   request.streamingInterface = IHS_StreamInterfaceBigPicture;
   request.gameId = game;
-  request.gamepadCount = 1;
+  request.gamepadCount = options.controllerCount;
   request.streamDesktop = false;
   int result = IHS_ClientStreamingRequest(client, &target, &request) ? wait(std::chrono::seconds(30)) : -1;
   if (result == 0 && !cancelled_)
@@ -181,7 +182,8 @@ int Runtime::run(
   IHS_SessionSetVideoCallbacks(session, &videoCallbacks, this);
   IHS_SessionSetVideoTrackingIdentity(session, credentials.device);
   IHS_SessionSetAudioCallbacks(session, &audioCallbacks, this);
-  IHS_SessionHIDAddProvider(session, makeController(pad_));
+  for (int seat = 0; seat < options.controllerCount; ++seat)
+    IHS_SessionHIDAddProvider(session, makeController(pads_[seat], static_cast<unsigned>(seat)));
   {
     std::lock_guard<std::mutex> lock(apiMutex_);
     session_ = session;
@@ -279,9 +281,14 @@ void Runtime::audioStop(IHS_Session*, void* ctx) {
   self->opus_ = nullptr;
 }
 void Runtime::pad(const std::array<int16_t, 6>& axes, uint32_t buttons) {
-  std::lock_guard<std::mutex> lock(pad_->mutex);
-  pad_->axes = axes;
-  pad_->buttons = buttons & 0x7fff;
+  padSeat(0, axes, buttons);
+}
+void Runtime::padSeat(unsigned seat, const std::array<int16_t, 6>& axes, uint32_t buttons) {
+  if (seat >= pads_.size()) return;
+  const auto& pad = pads_[seat];
+  std::lock_guard<std::mutex> lock(pad->mutex);
+  pad->axes = axes;
+  pad->buttons = buttons & 0x7fff;
 }
 void Runtime::key(uint32_t usage, bool down) {
   if (usage > 255) return;

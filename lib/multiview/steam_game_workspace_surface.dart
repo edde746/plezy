@@ -7,6 +7,7 @@ import 'package:universal_gamepad/universal_gamepad.dart';
 
 import '../games/game_models.dart';
 import '../games/steam_stream_preferences.dart';
+import '../services/gamepad_service.dart';
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import 'workspace_game_input.dart';
@@ -23,12 +24,18 @@ class SteamGameWorkspaceSession {
     this.pyrowave = false,
     this.quality = SteamStreamQuality.balanced,
     this.codec = SteamStreamCodec.automatic,
+    this.controllerCount = 1,
     this.onFirstFrame,
   }) {
+    if (controllerCount < 1 || controllerCount > 4) throw ArgumentError.value(controllerCount, 'controllerCount');
     _inputBinding = WorkspaceGameInputBinding(
       onEvent: handleInput,
       onNativeKeyEvent: handleNativeKey,
-      onInputReset: (_) => resetInput(),
+      onInputReset: (reason) {
+        // The connection event releases that device only; focus/lease changes
+        // still neutralize every seat and keyboard key.
+        if (reason != WorkspaceGameInputResetReason.controllerDisconnected) resetInput();
+      },
     );
   }
 
@@ -38,6 +45,7 @@ class SteamGameWorkspaceSession {
   final bool pyrowave;
   final SteamStreamQuality quality;
   final SteamStreamCodec codec;
+  final int controllerCount;
   final VoidCallback? onFirstFrame;
   bool _reportedFirstFrame = false;
   bool _disposed = false;
@@ -48,8 +56,6 @@ class SteamGameWorkspaceSession {
   MethodChannel? _channel;
   bool _audioEnabled = false;
   bool _inputEnabled = false;
-  final Map<String, bool> _buttons = <String, bool>{};
-  final Map<String, double> _axes = <String, double>{};
   late final WorkspaceGameInputBinding _inputBinding;
   final GlobalKey _surfaceKey = GlobalKey();
 
@@ -66,6 +72,7 @@ class SteamGameWorkspaceSession {
     'pyrowave': pyrowave,
     ...quality.nativeArguments,
     'allowHevc': codec == SteamStreamCodec.automatic,
+    'controllerCount': controllerCount,
     'touchLabel': t.games.touchControls,
     'connecting': t.games.connecting,
     'error': t.games.unavailable,
@@ -83,8 +90,6 @@ class SteamGameWorkspaceSession {
     final canInput = enabled && sessionState.value == 'playing';
     _inputBinding.setEnabled(canInput);
     if (!enabled) {
-      _buttons.clear();
-      _axes.clear();
       await _invoke('resetInput');
     }
     await _invoke('setInputEnabled', {'enabled': canInput});
@@ -93,14 +98,23 @@ class SteamGameWorkspaceSession {
   void handleInput(GamepadEvent event) {
     if (!_inputEnabled || sessionState.value != 'playing') return;
     if (event is GamepadButtonEvent) {
-      _buttons[event.button.name] = event.pressed;
+      unawaited(
+        _invoke('setControllerDeviceState', {
+          'deviceId': event.gamepadId,
+          'buttons': {event.button.name: event.pressed},
+        }),
+      );
     } else if (event is GamepadAxisEvent) {
-      _axes[event.axis.name] = event.value;
+      if (!event.value.isFinite) return;
+      unawaited(
+        _invoke('setControllerDeviceState', {
+          'deviceId': event.gamepadId,
+          'axes': {event.axis.name: event.value},
+        }),
+      );
     } else if (event is GamepadConnectionEvent && !event.connected) {
-      resetInput();
-      return;
+      unawaited(_invoke('disconnectController', {'deviceId': event.gamepadId}));
     }
-    unawaited(_invoke('setControllerState', {'buttons': _buttons, 'axes': _axes}));
   }
 
   void handleNativeKey(KeyEvent event) {
@@ -114,8 +128,6 @@ class SteamGameWorkspaceSession {
   }
 
   void resetInput() {
-    _buttons.clear();
-    _axes.clear();
     unawaited(_invoke('resetInput'));
   }
 

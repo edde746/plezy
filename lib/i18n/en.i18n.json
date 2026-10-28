@@ -3914,6 +3914,8 @@
     "steamInstallFolder": "Steam installation folder",
     "automaticFolder": "Find automatically",
     "streamQuality": "Steam stream quality",
+    "controllerSeats": "Steam controllers",
+    "controllerSeatsHelp": "Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.",
     "streamQualityHelp": "Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.",
     "streamCodec": "Steam video codec",
     "streamCodecHelp": "Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.",

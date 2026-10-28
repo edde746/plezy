@@ -65,6 +65,18 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
             call.argument<Map<*, *>>("buttons") ?: emptyMap<Any, Any>(),
             call.argument<Map<*, *>>("axes") ?: emptyMap<Any, Any>()
           )
+          "setControllerDeviceState" -> invoke(
+            "setControllerDeviceState",
+            arrayOf(Int::class.javaPrimitiveType!!, Map::class.java, Map::class.java),
+            call.argument<Int>("deviceId") ?: throw IllegalArgumentException("Missing controller"),
+            call.argument<Map<*, *>>("buttons") ?: emptyMap<Any, Any>(),
+            call.argument<Map<*, *>>("axes") ?: emptyMap<Any, Any>()
+          )
+          "disconnectController" -> invoke(
+            "disconnectController",
+            arrayOf(Int::class.javaPrimitiveType!!),
+            call.argument<Int>("deviceId") ?: throw IllegalArgumentException("Missing controller")
+          )
           "inputKey" -> invoke(
             "inputKey",
             arrayOf(String::class.java, booleanType),
@@ -78,7 +90,7 @@ internal class SteamStreamPlatformViewFactory(private val messenger: BinaryMesse
           }
         }
         result.success(null)
-      } catch (error: ReflectiveOperationException) {
+      } catch (error: Exception) {
         result.error("STREAM_CONTROL_FAILED", "The game stream control could not be applied", null)
       }
     }

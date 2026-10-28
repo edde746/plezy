@@ -30,6 +30,7 @@ void main() {
       touchControls: false,
       quality: SteamStreamQuality.reducedBandwidth,
       codec: SteamStreamCodec.h264,
+      controllerCount: 4,
     );
     addTearDown(session.dispose);
     expect(session.creationParams, containsPair('streamWidth', 1280));
@@ -37,6 +38,20 @@ void main() {
     expect(session.creationParams, containsPair('streamFps', 60));
     expect(session.creationParams, containsPair('streamBitrateKbps', 12000));
     expect(session.creationParams, containsPair('allowHevc', false));
+    expect(session.creationParams, containsPair('controllerCount', 4));
     expect(session.creationParams.keys, isNot(contains('key')));
+  });
+
+  test('controller counts are profile scoped and malformed persisted values fall back to one', () async {
+    final settings = await SettingsService.getInstance();
+    final count = SettingsService.steamControllerCountForProfile('one');
+    expect(settings.read(count), 1);
+    await settings.write(count, 4);
+    expect(settings.read(count), 4);
+    expect(settings.read(SettingsService.steamControllerCountForProfile('two')), 1);
+    for (final value in [0, -1, 5, 1000]) {
+      await settings.prefs.setInt(count.key, value);
+      expect(settings.read(count), 1);
+    }
   });
 }

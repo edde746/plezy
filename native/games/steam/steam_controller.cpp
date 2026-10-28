@@ -12,10 +12,10 @@ extern "C" {
 
 namespace plezy::steam {
 namespace {
-constexpr char path[] = "plezy://controller/0";
 struct Device {
   IHS_HIDDevice base{};
   std::shared_ptr<PadState> state;
+  std::string serial;
   std::array<uint8_t, 128> report{}, previous{};
   size_t length = 48;
   bool started = false;
@@ -23,6 +23,7 @@ struct Device {
 struct Provider {
   IHS_HIDProvider base{};
   std::shared_ptr<PadState> state;
+  std::string path, serial;
   bool changed = true;
 };
 Device* device(IHS_HIDDevice* value) { return reinterpret_cast<Device*>(value); }
@@ -61,7 +62,7 @@ const IHS_HIDDeviceClass deviceClass = {
       return static_cast<int>(length);
     },
     [](IHS_HIDDevice*, const uint8_t*, size_t) { return -1; },
-    [](IHS_HIDDevice*, const uint8_t* number, size_t count, IHS_Buffer* out, size_t length) {
+    [](IHS_HIDDevice* d, const uint8_t* number, size_t count, IHS_Buffer* out, size_t length) {
       if (count < 1) return -1;
       uint8_t data[21]{};
       data[0] = number[0];
@@ -78,7 +79,7 @@ const IHS_HIDDeviceClass deviceClass = {
           size = 21;
           break;
         case 7:
-          std::memcpy(data + 1, "02504C455A59", 13);
+          std::memcpy(data + 1, device(d)->serial.c_str(), 13);
           size = 14;
           break;
         default:
@@ -90,7 +91,7 @@ const IHS_HIDDeviceClass deviceClass = {
     },
     [](IHS_HIDDevice*, IHS_Buffer* out) { return string(out, "PlezyNG"); },
     [](IHS_HIDDevice*, IHS_Buffer* out) { return string(out, "PlezyNG Controller"); },
-    [](IHS_HIDDevice*, IHS_Buffer* out) { return string(out, "02504C455A59"); },
+    [](IHS_HIDDevice* d, IHS_Buffer* out) { return string(out, device(d)->serial.c_str()); },
     [](IHS_HIDDevice* d, size_t length) {
       if (length > 128 || length < 48) return -1;
       device(d)->length = length;
@@ -119,11 +120,12 @@ const IHS_HIDProviderClass providerClass = {
       return &p->base;
     },
     [](IHS_HIDProvider* p) { delete provider(p); },
-    [](IHS_HIDProvider*, const char* name) { return name && std::strcmp(name, path) == 0; },
+    [](IHS_HIDProvider* p, const char* name) { return name && provider(p)->path == name; },
     [](IHS_HIDProvider* p, const char* name) -> IHS_HIDDevice* {
-      if (!name || std::strcmp(name, path) != 0) return nullptr;
+      if (!name || provider(p)->path != name) return nullptr;
       auto* d = device(IHS_HIDDeviceCreate(&deviceClass));
       d->state = provider(p)->state;
+      d->serial = provider(p)->serial;
       return &d->base;
     },
     [](IHS_HIDProvider* p) {
@@ -135,18 +137,23 @@ const IHS_HIDProviderClass providerClass = {
       static int slot = 0;
       return IHS_EnumerationArrayCreate(&slot, sizeof(slot), 1, nullptr);
     },
-    [](IHS_HIDProvider*, IHS_Enumeration*, IHS_HIDDeviceInfo* info) {
-      info->path = path;
+    [](IHS_HIDProvider* p, IHS_Enumeration*, IHS_HIDDeviceInfo* info) {
+      info->path = provider(p)->path.c_str();
       info->product_string = "PlezyNG Controller";
-      info->serial_number = "02504C455A59";
+      info->serial_number = provider(p)->serial.c_str();
       info->vendor_id = 0x045e;
       info->product_id = 0x02ea;
       info->product_version = 0x0100;
     }};
 }  // namespace
-IHS_HIDProvider* makeController(const std::shared_ptr<PadState>& state) {
+IHS_HIDProvider* makeController(const std::shared_ptr<PadState>& state, unsigned seat) {
+  if (!state || seat >= 4) return nullptr;
   auto* p = provider(IHS_SessionHIDProviderCreate(&providerClass));
   p->state = state;
+  p->path = "plezy://controller/" + std::to_string(seat);
+  // Keep the original identity for player one. Each other seat must have its
+  // own serial or Steam may coalesce distinct physical controllers.
+  p->serial = seat == 0 ? "02504C455A59" : "02504C455A5" + std::to_string(seat);
   return &p->base;
 }
 }  // namespace plezy::steam

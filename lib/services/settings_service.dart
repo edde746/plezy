@@ -766,6 +766,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: SteamStreamCodec.values,
     defaultValue: SteamStreamCodec.automatic,
   );
+  static IntPref steamControllerCountForProfile(String profileId) => IntPref(
+    profileScopedPrefsKey(profileId, 'steam_controller_count'),
+    defaultValue: 1,
+    transform: (value) => value >= 1 && value <= 4 ? value : 1,
+  );
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>

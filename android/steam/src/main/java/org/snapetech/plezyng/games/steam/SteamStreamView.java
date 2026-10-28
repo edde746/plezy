@@ -3,6 +3,7 @@ package org.snapetech.plezyng.games.steam;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.hardware.input.InputManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
@@ -22,14 +23,15 @@ import java.util.Map;
 import java.util.Set;
 
 /** A retained Steam stream surface used by Plezy's app-owned workspace. */
-public final class SteamStreamView extends FrameLayout implements SurfaceHolder.Callback, SteamDecoder.Events {
+public final class SteamStreamView extends FrameLayout implements SurfaceHolder.Callback, SteamDecoder.Events, InputManager.InputDeviceListener {
   private final Context context;
   private final Map<?, ?> args;
   private final SteamStreamOptions options;
   private final Handler main = new Handler(Looper.getMainLooper());
-  private final short[] physical = new short[6];
+  private final SteamControllerSeats controllerSeats;
+  private final InputManager inputManager;
   private short[] touch = new short[6];
-  private int physicalButtons, touchButtons;
+  private int touchButtons;
   private final Set<Integer> heldKeys = new HashSet<>();
   private final SteamControllerState controller = new SteamControllerState();
   private final SurfaceView surface;
@@ -50,6 +52,9 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     this.context = context;
     this.args = args;
     this.options = SteamStreamOptions.from(args);
+    controllerSeats = new SteamControllerSeats(options.controllerCount);
+    inputManager = (InputManager) context.getSystemService(Context.INPUT_SERVICE);
+    if (inputManager != null) inputManager.registerInputDeviceListener(this, main);
     setBackgroundColor(Color.BLACK);
     setFocusable(true);
     setFocusableInTouchMode(true);
@@ -61,12 +66,12 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
         if (!inputEnabled) {
           touch = new short[6];
           touchButtons = 0;
-          sendPad();
+          sendPad(0);
           return;
         }
         touch = axes;
         touchButtons = buttons;
-        sendPad();
+        sendPad(0);
       }
       @Override public void mouse(float x, float y, int button, boolean down) {
         long session = handle;
@@ -119,7 +124,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
   public void setControllerState(Map<?, ?> buttons, Map<?, ?> axes) {
     controller.reset();
     if (!inputEnabled || stopping) {
-      sendPad();
+      sendPad(0);
       return;
     }
     if (buttons != null) {
@@ -136,8 +141,33 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
         }
       }
     }
-    sendPad();
+    sendPad(0);
   }
+
+  /** Partial updates preserve native axes when Flutter only forwards a button.
+   * Both paths use the Android device ID, so one controller never gets two seats. */
+  public void setControllerDeviceState(int deviceId, Map<?, ?> buttons, Map<?, ?> axes) {
+    if (!inputEnabled || stopping || buttons == null || axes == null || buttons.size() > 32 || axes.size() > 8) return;
+    int seat = controllerSeats.seat(deviceId);
+    if (seat < 0) return;
+    SteamControllerState state = controllerSeats.state(seat);
+    for (Map.Entry<?, ?> entry : buttons.entrySet()) {
+      if (entry.getKey() instanceof String key && entry.getValue() instanceof Boolean pressed) state.setButton(key, pressed);
+    }
+    for (Map.Entry<?, ?> entry : axes.entrySet()) {
+      if (entry.getKey() instanceof String key && entry.getValue() instanceof Number value) state.setAxis(key, value.doubleValue());
+    }
+    sendPad(seat);
+  }
+
+  public void disconnectController(int deviceId) {
+    int seat = controllerSeats.disconnect(deviceId);
+    if (seat >= 0) sendPad(seat);
+  }
+
+  @Override public void onInputDeviceAdded(int deviceId) {}
+  @Override public void onInputDeviceChanged(int deviceId) { disconnectController(deviceId); }
+  @Override public void onInputDeviceRemoved(int deviceId) { disconnectController(deviceId); }
 
   public void inputKey(String name, boolean down) {
     if (!inputEnabled || stopping) return;
@@ -216,9 +246,9 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
         return;
       }
       boolean pyrowave = Boolean.TRUE.equals(args.get("pyrowave")) && NativeSteam.pyrowaveSupported();
-      NativeSteam.run(session, address, port(), hostId(), trust.device(), user, key, gameId(),
+      NativeSteam.runWithControllers(session, address, port(), hostId(), trust.device(), user, key, gameId(),
           options.allowHevc && SteamDecoder.supportsHevc(), pyrowave,
-          options.width, options.height, options.fps, options.bitrateKbps, sink);
+          options.width, options.height, options.fps, options.bitrateKbps, options.controllerCount, sink);
       if (pyrowave && sink.consumePyrowaveFallback() && !stopping) {
         sink.close();
         NativeSteam.destroy(session);
@@ -236,9 +266,9 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
             status.setVisibility(View.VISIBLE);
           }
         });
-        NativeSteam.run(session, address, port(), hostId(), trust.device(), user, key, gameId(),
+        NativeSteam.runWithControllers(session, address, port(), hostId(), trust.device(), user, key, gameId(),
             options.allowHevc && SteamDecoder.supportsHevc(), false,
-            options.width, options.height, options.fps, options.bitrateKbps, fallback);
+            options.width, options.height, options.fps, options.bitrateKbps, options.controllerCount, fallback);
       }
     } catch (Exception error) {
       failOnMain();
@@ -326,6 +356,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     // Setting stopping first caused sendPad() to discard this release.
     releaseInput();
     stopping = true;
+    if (inputManager != null) inputManager.unregisterInputDeviceListener(this);
     main.removeCallbacksAndMessages(null);
     if (!failed) state("disconnected");
     long session = handle;
@@ -337,25 +368,31 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
   private void releaseInput() {
     controls.reset();
     controller.reset();
-    Arrays.fill(physical, (short) 0);
-    physicalButtons = 0;
+    controllerSeats.reset();
+    Arrays.fill(touch, (short) 0);
+    touchButtons = 0;
     long session = handle;
     if (session != 0) for (int usage : heldKeys) NativeSteam.key(session, usage, false);
     heldKeys.clear();
-    sendPad();
+    for (int seat = 0; seat < controllerSeats.count(); seat++) sendPad(seat);
   }
 
-  private void sendPad() {
+  private void sendPad(int seat) {
     long session = handle;
     if (session == 0 || stopping) return;
-    short[] external = controller.axes();
-    int externalButtons = controller.buttons();
-    short[] combined = new short[6];
-    for (int i = 0; i < combined.length; i++) {
-      short best = Math.abs((int) touch[i]) > Math.abs((int) physical[i]) ? touch[i] : physical[i];
-      combined[i] = Math.abs((int) external[i]) > Math.abs((int) best) ? external[i] : best;
+    SteamControllerState state = controllerSeats.state(seat);
+    short[] combined = state.axes();
+    int buttons = state.buttons();
+    if (seat == 0) {
+      // Touch and the legacy single-pad API assist player one only.
+      short[] external = controller.axes();
+      for (int i = 0; i < combined.length; i++) {
+        if (Math.abs((int) touch[i]) > Math.abs((int) combined[i])) combined[i] = touch[i];
+        if (Math.abs((int) external[i]) > Math.abs((int) combined[i])) combined[i] = external[i];
+      }
+      buttons |= touchButtons | controller.buttons();
     }
-    NativeSteam.pad(session, combined, physicalButtons | touchButtons | externalButtons);
+    NativeSteam.padSeat(session, seat, combined, buttons);
   }
 
   @Override public boolean dispatchKeyEvent(KeyEvent event) {
@@ -366,15 +403,13 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     int bit = button(event.getKeyCode());
     boolean gamepad = event.isFromSource(InputDevice.SOURCE_GAMEPAD) || event.isFromSource(InputDevice.SOURCE_DPAD)
         || event.isFromSource(InputDevice.SOURCE_JOYSTICK);
-    if (bit >= 0 && gamepad) {
-      if (down) physicalButtons |= 1 << bit;
-      else physicalButtons &= ~(1 << bit);
-      sendPad();
-      return true;
-    }
-    if (gamepad && (event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_L2 || event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_R2)) {
-      physical[event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_L2 ? 4 : 5] = (short) (down ? 32767 : 0);
-      sendPad();
+    if (gamepad && (bit >= 0 || event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_L2 || event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_R2)) {
+      int seat = controllerSeats.seat(event.getDeviceId());
+      if (seat < 0) return true;
+      SteamControllerState state = controllerSeats.state(seat);
+      if (bit >= 0) state.setButtonBit(bit, down);
+      else state.setAxis(event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_L2 ? "leftTrigger" : "rightTrigger", down ? 1 : 0);
+      sendPad(seat);
       return true;
     }
     int usage = keyUsage(event.getKeyCode());
@@ -389,20 +424,23 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
 
   @Override public boolean onGenericMotionEvent(MotionEvent event) {
     if (inputEnabled && handle != 0 && !stopping && event.isFromSource(InputDevice.SOURCE_JOYSTICK)) {
+      int seat = controllerSeats.seat(event.getDeviceId());
+      if (seat < 0) return true;
+      SteamControllerState state = controllerSeats.state(seat);
       int[] axes = {MotionEvent.AXIS_X, MotionEvent.AXIS_Y, MotionEvent.AXIS_Z,
           MotionEvent.AXIS_RZ, MotionEvent.AXIS_LTRIGGER, MotionEvent.AXIS_RTRIGGER};
-      for (int i = 0; i < physical.length; i++) {
+      String[] names = {"leftStickX", "leftStickY", "rightStickX", "rightStickY", "leftTrigger", "rightTrigger"};
+      for (int i = 0; i < axes.length; i++) {
         float value = event.getAxisValue(axes[i]);
         if (Math.abs(value) < .12f) value = 0;
-        physical[i] = (short) (Math.max(i < 4 ? -1 : 0, Math.min(1, value)) * 32767);
+        state.setAxis(names[i], value);
       }
-      physicalButtons &= ~(15 << 11);
       float x = event.getAxisValue(MotionEvent.AXIS_HAT_X), y = event.getAxisValue(MotionEvent.AXIS_HAT_Y);
-      if (y < -.5f) physicalButtons |= 1 << 11;
-      if (y > .5f) physicalButtons |= 1 << 12;
-      if (x < -.5f) physicalButtons |= 1 << 13;
-      if (x > .5f) physicalButtons |= 1 << 14;
-      sendPad();
+      state.setButtonBit(11, y < -.5f);
+      state.setButtonBit(12, y > .5f);
+      state.setButtonBit(13, x < -.5f);
+      state.setButtonBit(14, x > .5f);
+      sendPad(seat);
       return true;
     }
     return super.onGenericMotionEvent(event);

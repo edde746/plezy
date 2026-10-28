@@ -577,6 +577,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       pyrowave: SettingsService.instance.read(SettingsService.gamePyrowaveForProfile(c.profileId)),
       quality: SettingsService.instance.read(SettingsService.steamQualityForProfile(c.profileId)),
       codec: SettingsService.instance.read(SettingsService.steamCodecForProfile(c.profileId)),
+      controllerCount: SettingsService.instance.read(SettingsService.steamControllerCountForProfile(c.profileId)),
       host: host,
       game: game,
       touchControls:
@@ -1137,6 +1138,14 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                       DialogOption(value: SteamStreamCodec.automatic, title: t.games.codecAutomatic),
                       const DialogOption(value: SteamStreamCodec.h264, title: 'H.264'),
                     ],
+                  ),
+                  SettingSelectionTile<int>(
+                    pref: SettingsService.steamControllerCountForProfile(_profile!),
+                    icon: Symbols.sports_esports_rounded,
+                    title: t.games.controllerSeats,
+                    subtitleBuilder: (count) => '$count',
+                    description: t.games.controllerSeatsHelp,
+                    options: [for (var count = 1; count <= 4; count++) DialogOption(value: count, title: '$count')],
                   ),
                 ],
                 if (_profile != null && defaultTargetPlatform == TargetPlatform.android)

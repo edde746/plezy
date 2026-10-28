@@ -36,7 +36,7 @@ struct PadState {
   std::array<int16_t, 6> axes{};
   uint32_t buttons = 0;
 };
-IHS_HIDProvider* makeController(const std::shared_ptr<PadState>& state);
+IHS_HIDProvider* makeController(const std::shared_ptr<PadState>& state, unsigned seat = 0);
 
 // All frame callbacks run on transport threads. Implementations must enqueue
 // bounded copies, never retain the transport buffer or block on rendering.
@@ -62,6 +62,7 @@ class Runtime {
   void stopPyrowave();
   void cancel();
   void pad(const std::array<int16_t, 6>& axes, uint32_t buttons);
+  void padSeat(unsigned seat, const std::array<int16_t, 6>& axes, uint32_t buttons);
   void key(uint32_t usage, bool down);
   void mouse(float x, float y, int button, bool down);
   void text(const std::string& value);
@@ -90,7 +91,7 @@ class Runtime {
   IHS_SessionInfo info_{};
   Credentials paired_{};
   std::shared_ptr<Sink> sink_;
-  std::shared_ptr<PadState> pad_ = std::make_shared<PadState>();
+  std::array<std::shared_ptr<PadState>, 4> pads_;
   OpusDecoder* opus_ = nullptr;
   int channels_ = 0;
   bool pyrowaveEnabled_ = false;

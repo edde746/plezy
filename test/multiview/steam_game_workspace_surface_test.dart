@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/games/game_models.dart';
 import 'package:plezy/multiview/steam_game_workspace_surface.dart';
+import 'package:plezy/services/gamepad_service.dart';
+import 'package:universal_gamepad/universal_gamepad.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,58 @@ void main() {
   }
 
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+  test('controller events retain device identity and disconnect releases only that controller', () async {
+    final commands = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      commands.add(call);
+      return call.method == 'getSessionState' ? 'playing' : null;
+    });
+    final stream = session();
+    addTearDown(stream.dispose);
+    stream.attachPlatformView(99);
+    await state('playing');
+    await stream.setInputEnabled(true);
+    commands.clear();
+    final gamepads = GamepadService.instance;
+    gamepads.debugSetWindowFocused(true);
+    gamepads.debugHandleGamepadEvent(
+      GamepadButtonEvent(gamepadId: 12, timestamp: 1, button: GamepadButton.a, pressed: true, value: 1),
+    );
+    gamepads.debugHandleGamepadEvent(
+      GamepadAxisEvent(gamepadId: 23, timestamp: 2, axis: GamepadAxis.leftStickX, value: .5),
+    );
+    gamepads.debugHandleGamepadEvent(
+      GamepadConnectionEvent(
+        gamepadId: 12,
+        timestamp: 3,
+        connected: false,
+        info: const GamepadInfo(id: 12, name: 'First'),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(commands.map((c) => c.method), [
+      'setControllerDeviceState',
+      'setControllerDeviceState',
+      'disconnectController',
+    ]);
+    expect(commands[0].arguments, {
+      'deviceId': 12,
+      'buttons': {'a': true},
+    });
+    expect(commands[1].arguments, {
+      'deviceId': 23,
+      'axes': {'leftStickX': .5},
+    });
+    expect(commands[2].arguments, {'deviceId': 12});
+    await stream.setInputEnabled(false);
+    expect(commands.any((c) => c.method == 'resetInput'), isTrue);
+    commands.clear();
+    stream.handleInput(
+      GamepadButtonEvent(gamepadId: 23, timestamp: 4, button: GamepadButton.b, pressed: true, value: 1),
+    );
+    expect(commands, isEmpty);
+  });
 
   test('late attachment replay cannot replace a newer first-frame event', () async {
     final replay = Completer<String>();

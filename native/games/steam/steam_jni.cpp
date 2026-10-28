@@ -187,10 +187,10 @@ extern "C" JNIEXPORT jbyteArray JNICALL JNI(pair)(
   std::memset(data, 0, sizeof(data));
   return output;
 }
-extern "C" JNIEXPORT void JNICALL JNI(run)(
-    JNIEnv* env, jclass, jlong id, jstring address, jint port, jlong hostId, jlong deviceId, jlong userId,
+static void runSession(
+    JNIEnv* env, jlong id, jstring address, jint port, jlong hostId, jlong deviceId, jlong userId,
     jbyteArray key, jlong game, jboolean hevc, jboolean pyrowave, jint width, jint height, jint fps,
-    jint bitrateKbps, jobject target) {
+    jint bitrateKbps, jint controllerCount, jobject target) {
   auto runtime = get(id);
   Credentials c{};
   if (!runtime || !target || port < 1 || port > 65535 || !credentials(env, deviceId, userId, key, c)) {
@@ -201,9 +201,24 @@ extern "C" JNIEXPORT void JNICALL JNI(run)(
   if (env->ExceptionCheck() || !sink->valid()) return;
   int result = runtime->run(
       {string(env, address), static_cast<uint16_t>(port), static_cast<uint64_t>(hostId)}, c,
-      static_cast<uint64_t>(game), hevc, pyrowave, sink, {width, height, fps, bitrateKbps});
+      static_cast<uint64_t>(game), hevc, pyrowave, sink, {width, height, fps, bitrateKbps, controllerCount});
   std::fill(c.key.begin(), c.key.end(), 0);
   if (result != 0 && result != -2) fail(env, result);
+}
+// Retain the original single-controller entry point for older module callers.
+extern "C" JNIEXPORT void JNICALL JNI(run)(
+    JNIEnv* env, jclass, jlong id, jstring address, jint port, jlong hostId, jlong deviceId, jlong userId,
+    jbyteArray key, jlong game, jboolean hevc, jboolean pyrowave, jint width, jint height, jint fps,
+    jint bitrateKbps, jobject target) {
+  runSession(env, id, address, port, hostId, deviceId, userId, key, game, hevc, pyrowave,
+             width, height, fps, bitrateKbps, 1, target);
+}
+extern "C" JNIEXPORT void JNICALL JNI(runWithControllers)(
+    JNIEnv* env, jclass, jlong id, jstring address, jint port, jlong hostId, jlong deviceId, jlong userId,
+    jbyteArray key, jlong game, jboolean hevc, jboolean pyrowave, jint width, jint height, jint fps,
+    jint bitrateKbps, jint controllerCount, jobject target) {
+  runSession(env, id, address, port, hostId, deviceId, userId, key, game, hevc, pyrowave,
+             width, height, fps, bitrateKbps, controllerCount, target);
 }
 extern "C" JNIEXPORT jboolean JNICALL
 JNI(pyrowaveStart)(JNIEnv* env, jclass, jlong id, jint width, jint height, jbyteArray initial) {
@@ -258,7 +273,16 @@ extern "C" JNIEXPORT void JNICALL JNI(pad)(JNIEnv* env, jclass, jlong id, jshort
   if (!r || !axes || env->GetArrayLength(axes) != 6) return;
   std::array<int16_t, 6> values{};
   env->GetShortArrayRegion(axes, 0, 6, values.data());
+  if (env->ExceptionCheck()) return;
   r->pad(values, buttons);
+}
+extern "C" JNIEXPORT void JNICALL JNI(padSeat)(JNIEnv* env, jclass, jlong id, jint seat, jshortArray axes, jint buttons) {
+  auto r = get(id);
+  if (!r || seat < 0 || seat >= 4 || !axes || env->GetArrayLength(axes) != 6) return;
+  std::array<int16_t, 6> values{};
+  env->GetShortArrayRegion(axes, 0, 6, values.data());
+  if (env->ExceptionCheck()) return;
+  r->padSeat(static_cast<unsigned>(seat), values, buttons);
 }
 extern "C" JNIEXPORT void JNICALL JNI(key)(JNIEnv*, jclass, jlong id, jint usage, jboolean down) {
   if (auto r = get(id)) r->key(usage, down);

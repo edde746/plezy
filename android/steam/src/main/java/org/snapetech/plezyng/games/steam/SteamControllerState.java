@@ -18,6 +18,12 @@ final class SteamControllerState {
     buttons = 0;
   }
 
+  void setButtonBit(int bit, boolean pressed) {
+    if (bit < 0 || bit > 14) return;
+    if (pressed) buttons |= 1 << bit;
+    else buttons &= ~(1 << bit);
+  }
+
   boolean setButton(String name, boolean pressed) {
     String key = normalize(name);
     int bit = switch (key) {
@@ -43,8 +49,7 @@ final class SteamControllerState {
     };
     if (bit == -2) return false;
     if (bit >= 0) {
-      if (pressed) buttons |= 1 << bit;
-      else buttons &= ~(1 << bit);
+      setButtonBit(bit, pressed);
     }
     return true;
   }

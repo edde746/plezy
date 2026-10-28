@@ -12,18 +12,20 @@ public final class SteamStreamOptionsTest {
     assertEquals(1080, options.height);
     assertEquals(60, options.fps);
     assertEquals(30000, options.bitrateKbps);
+    assertEquals(1, options.controllerCount);
     assertTrue(options.allowHevc);
   }
 
   @Test public void newLimitsAndCompatibilityCodecArePreserved() {
     SteamStreamOptions options = SteamStreamOptions.from(Map.of(
         "streamWidth", 1280L, "streamHeight", 720, "streamFps", 30,
-        "streamBitrateKbps", 12000, "allowHevc", false));
+        "streamBitrateKbps", 12000, "allowHevc", false, "controllerCount", 4));
     assertEquals(1280, options.width);
     assertEquals(720, options.height);
     assertEquals(30, options.fps);
     assertEquals(12000, options.bitrateKbps);
     assertFalse(options.allowHevc);
+    assertEquals(4, options.controllerCount);
   }
 
   @Test public void malformedOrExcessiveLimitsAreRejected() {
@@ -32,7 +34,8 @@ public final class SteamStreamOptionsTest {
     }
     for (Map<?, ?> values : new Map<?, ?>[] {
         Map.of("streamHeight", 721), Map.of("streamFps", 120),
-        Map.of("streamBitrateKbps", 50001), Map.of("allowHevc", "false")}) {
+        Map.of("streamBitrateKbps", 50001), Map.of("allowHevc", "false"),
+        Map.of("controllerCount", 0), Map.of("controllerCount", 5), Map.of("controllerCount", 1.0)}) {
       assertThrows(IllegalArgumentException.class, () -> SteamStreamOptions.from(values));
     }
   }

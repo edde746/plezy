@@ -20,7 +20,7 @@ The implemented slices below are not substitutes for the remaining scope.
 | Android stream preferences / recovery | Implemented through Flutter, Java and JNI | Full Android build/minification, real host reconnect and negotiated-quality measurements |
 | Native Steam transport | Portable Linux build and 38 tests pass locally | Current-head sanitizer CI, Android packaging and live transport qualification |
 | View-independent stream lifetime | Partial: retained Multiview surface | Native session still belongs to its PlatformView; surface destruction stops it |
-| Adaptive metrics / advanced codecs | Fixed request presets only | Negotiated statistics, adaptive policy, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround, multiple pads |
+| Adaptive metrics / advanced codecs | Fixed request presets and one-to-four Android controller seats | Negotiated statistics, adaptive policy, direct GPU Pyrowave, HDR, 4:4:4, 4K, surround and physical multi-controller qualification |
 | Other embedded receiver platforms | Library browsing/sharing only | Linux/SteamOS, Windows, macOS, iOS/iPadOS/tvOS receivers and TV capability qualification |
 | Rich Steam / host features | Achievements/news/optional friends-playing and confirmed Steam destinations implemented | Live API qualification, host cloud/family state APIs, Steam Input/remapping, Together and captures |
 | Companion game control / internet transport | Inventory plus permissioned launch/install and host Steam/download views implemented | Session controls, signaling/NAT/relay, connection diagnostics and actual host action qualification |
@@ -275,3 +275,26 @@ means installation finished, launch succeeded, a family copy is available or
 a cloud conflict was resolved. No quit, uninstall, purchase or cloud overwrite
 command is exposed. Once submitted, an action cannot be recalled by closing
 the companion connection. Live Steam/OS-handler qualification remains required.
+
+
+### Stage 5 — Independent controller seats
+
+Android Steam sessions can now request one to four controller seats using the
+existing Games settings UI. One remains the default for existing profiles and
+older creation arguments. Invalid persisted counts fall back to one; malformed
+native arguments fail before a transport starts. The legacy single-controller
+JNI entry points remain available.
+
+Physical device IDs are resolved to seats by one native allocator shared by the
+Android and Flutter event paths. Events update only that device's controls;
+Flutter button updates cannot erase native stick axes. Each advertised HID
+controller has its own path and serial. Seats are assigned on first input,
+remain stable across focus changes, and are reused only after disconnect.
+Touch controls assist player one. Excess devices are ignored instead of being
+merged into another player's input. Device IDs stay local to the receiver.
+
+Disconnect/remapping clears only the affected controller. Focus loss, input
+lease loss, teardown and profile retirement neutralize every seat and keyboard
+key. Local allocation is bounded to four devices. Game/host support, Android
+hotplug and controller ordering still require physical-device qualification;
+rumble, gyro and Steam Input configuration are separate unfinished features.

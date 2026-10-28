@@ -42,7 +42,7 @@ New Games messages are seeded with reviewed English fallback copy in non-English
 
 1. Build debug and minified release APKs for supported ABIs. Verify manifest merging, app identity, backup exclusions, private components, merged resources and shrinker retention. Test with the embedded module enabled and with `-PplezyGamesEmbedded=false`.
 2. Sunshine stable/current, Apollo, Wolf and representative legacy GameStream hosts: discovery, manual address/custom port, correct/wrong/expired PIN, rejection, certificate change, reconnect and revoked trust. Confirm no host credentials or trust material enter logs, QR codes, profile exports or backups.
-3. Android phone/tablet, Android TV and Fire TV: qualify GameStream codecs/HDR/refresh/input features independently from Steam. Steam currently negotiates at most 1080p60 conventional video and stereo Opus, with one controller, fixed touch overlay and basic keyboard. The retained Multiview surface and full-screen Activity share a decoder implementation, but PlatformView/SurfaceView composition, frame latency, clipping, workspace audio/input leases and reconnect after pane unmount are unverified. Pyrowave is off by default per profile; after explicit opt-in and a successful Vulkan probe, its experimental Android path adds bounded SDR 4:2:0 decode with CPU readback; measure first-frame delay, dropped frames, CPU/GPU load, thermals and battery against H.264/HEVC on actual hardware. Rumble, gyro, full IME, multiple pads, AV1/HDR and Pyrowave performance are not release-qualified for Steam. Record exact hardware and host/client versions.
+3. Android phone/tablet, Android TV and Fire TV: qualify GameStream codecs/HDR/refresh/input features independently from Steam. Steam currently negotiates at most 1080p60 conventional video and stereo Opus, with one controller by default (up to four selectable seats), fixed touch overlay and basic keyboard. The retained Multiview surface and full-screen Activity share a decoder implementation, but PlatformView/SurfaceView composition, frame latency, clipping, workspace audio/input leases and reconnect after pane unmount are unverified. Pyrowave is off by default per profile; after explicit opt-in and a successful Vulkan probe, its experimental Android path adds bounded SDR 4:2:0 decode with CPU readback; measure first-frame delay, dropped frames, CPU/GPU load, thermals and battery against H.264/HEVC on actual hardware. Rumble, gyro, full IME, multiple pads, AV1/HDR and Pyrowave performance are not release-qualified for Steam. Record exact hardware and host/client versions.
 4. Rotate/background/suspend, change profiles or disable Games during pairing/library/art requests, disconnect the network, and reopen repeatedly. Confirm cancellation, multicast-lock release, independent per-pane session teardown, no late launches, and sane media/audio restoration.
 5. Missing, malformed, oversized and slow cover art; large libraries; empty app list; offline refresh; multiple computers with duplicate game names. Confirm cards remain usable without artwork.
 6. Package the pinned modified engine's complete corresponding source, build instructions, dependencies and required license notices with each distribution. Review all third-party components and distribution-channel compatibility. The Moonlight and Steam notice assets alone are not a complete corresponding-source release bundle.
@@ -111,3 +111,19 @@ No external streaming-app handoff is used.
 - Live Steam API credentials/relay deployment and real OS Steam URI handlers
   were not exercised. These results do not validate new native receivers or
   automatic internet streaming; those implementations remain outstanding.
+
+
+### Independent controller seats follow-up
+
+- Focused Flutter preference/session/gamepad suite: **20 tests passed**. It
+  verifies device IDs reach the native boundary, disconnect releases one
+  controller, ownership loss releases all input, and legacy/profile defaults.
+- Java 17 compilation and JUnit: **11 tests passed**, including shared input
+  paths, independent held states, slot reuse, excess-device rejection and
+  neutralization without reordering. These are platform-independent classes,
+  not an Android APK build.
+- Portable native Debug build and **38 native tests passed**. The regression checks independent
+  pad state, unique HID identities, invalid seats/counts, and four-controller
+  negotiation in the actual serialized streaming request.
+- Strict host-JDK JNI syntax/type check passed. Full Android compilation,
+  minification and real multi-controller/host behavior remain unverified.

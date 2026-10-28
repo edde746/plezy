@@ -9802,6 +9802,12 @@ class Translations$games$en {
 	/// en: 'Steam stream quality'
 	String get streamQuality => 'Steam stream quality';
 
+	/// en: 'Steam controllers'
+	String get controllerSeats => 'Steam controllers';
+
+	/// en: 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.'
+	String get controllerSeatsHelp => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.';
+
 	/// en: 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.'
 	String get streamQualityHelp => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.';
 
@@ -15982,6 +15988,8 @@ extension on Translations {
 			'games.steamInstallFolder' => 'Steam installation folder',
 			'games.automaticFolder' => 'Find automatically',
 			'games.streamQuality' => 'Steam stream quality',
+			'games.controllerSeats' => 'Steam controllers',
+			'games.controllerSeatsHelp' => 'Applies to new connections. Up to four controllers, assigned in order of first input. Touch controls share player one. Extra controllers are ignored; game support varies.',
 			'games.streamQualityHelp' => 'Applies to new Steam connections. These are requested limits; the host and receiver decide the actual stream. Pyrowave may use more bandwidth than the bitrate limit.',
 			'games.streamCodec' => 'Steam video codec',
 			'games.streamCodecHelp' => 'Automatic allows HEVC on compatible receivers. Choose H.264 for compatibility. Also applies when experimental Pyrowave falls back. Changes apply to new connections.',
