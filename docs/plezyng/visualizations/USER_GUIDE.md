@@ -8,7 +8,7 @@ The library installs the small authored CC0 MilkRust sample pack from the app bu
 
 Installation verifies the pinned archive and its contents before making the directory active. Remote entries use the same verification path; Cancel stops installation even if transfer has finished and verification is still running. Retry starts a fresh transfer. When a future app catalog pins a newer version, Download update keeps previous complete versions available in Installed presets.
 
-Use Import .milk or .milk2 for loose files, or Import .rmpack for a packaged collection with its integrity index, provenance and license notices. Files stay on the device and work offline. A `.milk2` import is stored for future engine support; this renderer cannot play it. Historical collections with unresolved redistribution status have source links rather than app-hosted downloads.
+Use Import .milk or .milk2 for loose files, Import folder with textures and notices for a local collection, or Import .rmpack for a packaged collection with its integrity index, provenance and license notices. Folder import preserves relative paths and notices in a private, content-addressed copy. It rejects links and unsupported assets, bounds the collection to 2,500 entries/64 MB, and can be canceled. Hidden repository/OS files are omitted. The source folder is unchanged; this local copy makes no redistribution-rights claim. Files stay on the device and work offline. A `.milk2` import is stored for future engine support; this renderer cannot play it. Historical collections with unresolved redistribution status have source links rather than app-hosted downloads.
 
 ## Choose and organize
 

@@ -77,6 +77,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   }
 
   Future<void> _refresh() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     if (!_store.isStorageSupported) {
       if (!mounted) return;
@@ -270,6 +271,25 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
       if (mounted) setState(() => _failure = error.toString());
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _importFolder() async {
+    final cancellation = VisualizerPackInstallCancellation();
+    setState(() { _busy = true; _failure = null; });
+    try {
+      final path = await FilePickerService.instance.getDirectoryPath(dialogTitle: 'Import a preset folder with textures and notices');
+      if (path == null || !mounted) return;
+      setState(() { _busy = true; _failure = null; _installCancellation = cancellation; });
+      final pack = await _store.importPresetFolder(path, cancellation: cancellation);
+      await _refresh();
+      if (mounted) ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text('Imported ${pack.presetCount} presets from ${pack.name}.')),
+      );
+    } on VisualizerPackCanceledException { /* The staging directory is discarded. */ }
+    on Object catch (error) { if (mounted) setState(() => _failure = error.toString()); }
+    finally {
+      if (mounted) setState(() { _busy = false; _installCancellation = null; });
     }
   }
 
@@ -534,6 +554,14 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                             ),
                           _sectionTitle(context, 'Local presets'),
                           OutlinedButton.icon(
+                            onPressed: _busy || !_store.isStorageSupported ? null : _importFolder,
+                            icon: const AppIcon(Symbols.folder_open_rounded, size: 18),
+                            label: const Text('Import folder with textures and notices'),
+                          ),
+                          if (_busy && _installCancellation != null && _workingPackId == null)
+                            TextButton.icon(onPressed: _installCancellation!.cancel,
+                              icon: const Icon(Icons.close), label: const Text('Cancel folder import')),
+                          OutlinedButton.icon(
                             onPressed: _busy || !_store.isStorageSupported ? null : _importCommunityPack,
                             icon: const AppIcon(Symbols.folder_open_rounded, size: 18),
                             label: const Text('Import .rmpack (check files and notices)'),
@@ -542,7 +570,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
-                                'No community packs imported. Packs need a redistributable license, shipped notices, per-asset attribution and a valid integrity index.',
+                                'No local collections imported. Folder imports stay private and preserve original notices. Pack archives need license records, attribution and an integrity index.',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
                               ),
                             )
@@ -560,7 +588,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                       ? '${pack.version} · metadata unavailable\n${pack.contentNotice}'
                                       : '${pack.version} · ${pack.license} · ${pack.presetCount} presets\n'
                                             'Content notice: ${pack.contentNotice}\n'
-                                            'File hashes checked at import · rights claims are self-declared · browse presets'),
+                                            '${pack.localOnly ? 'Local folder snapshot · no redistribution rights asserted' : 'File hashes checked at import · rights claims are self-declared'} · browse presets'),
                                   isThreeLine: true,
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
