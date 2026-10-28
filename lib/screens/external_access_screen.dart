@@ -12,6 +12,8 @@ import '../integrations/integration_preferences_store.dart';
 import '../profiles/active_profile_provider.dart';
 import '../services/book_identifiers.dart';
 import '../services/comic_commerce_link_client.dart';
+import '../services/music/apple_music_kit_client.dart';
+import '../services/music/music_playback_service.dart';
 import '../services/watchmode_availability_client.dart';
 import '../services/external_access_directory.dart';
 import '../utils/snackbar_helper.dart';
@@ -78,6 +80,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
   final IntegrationPreferencesStore _preferences = IntegrationPreferencesStore();
   final ComicCommerceLinkClient _commerceLinks = ComicCommerceLinkClient();
   final WatchmodeAvailabilityClient _watchmode = WatchmodeAvailabilityClient();
+  final AppleMusicKitClient _appleMusic = AppleMusicKitClient();
   String? _profileId;
   String? _countryCode;
   Set<String> _preferredProviderIds = const {};
@@ -87,12 +90,15 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
   bool _watchmodeLoading = false;
   int _availabilityGeneration = 0;
   WatchmodeAvailabilityResult? _watchmodeResult;
+  bool _appleMusicLoading = false;
+  AppleMusicSong? _appleMusicPlaying;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final profileId = Provider.of<ActiveProfileProvider?>(context)?.activeId;
     if (_dependenciesInitialized && profileId == _profileId) return;
+    if (_dependenciesInitialized && _appleMusicPlaying != null) unawaited(_stopAppleMusic());
     _dependenciesInitialized = true;
     _availabilityGeneration++;
     _profileId = profileId;
@@ -373,6 +379,110 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     );
   }
 
+  bool get _showAppleMusic =>
+      _appleMusic.isAvailable && widget.categories.contains(ExternalAccessCategory.music);
+
+  Future<void> _searchAppleMusic() async {
+    if (_appleMusicLoading || !_showAppleMusic) return;
+    setState(() => _appleMusicLoading = true);
+    try {
+      if (!await _appleMusic.requestAuthorization()) {
+        if (mounted) showErrorSnackBar(context, t.common.error);
+        return;
+      }
+      final query = [widget.title.trim(), widget.creator.trim()].where((part) => part.isNotEmpty).join(' ');
+      final songs = await _appleMusic.search(query);
+      if (!mounted) return;
+      final selected = await showModalBottomSheet<AppleMusicSong>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * 0.68,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                  child: Text('Apple Music', style: Theme.of(sheetContext).textTheme.titleLarge),
+                ),
+                if (songs.isEmpty)
+                  Expanded(child: Center(child: Text(t.messages.noResultsFound)))
+                else
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        for (final song in songs)
+                          FocusableListTile(
+                            leading: const AppIcon(Symbols.play_circle_outline_rounded),
+                            title: Text(song.title),
+                            subtitle: Text([song.artist, if (song.album case final album?) album].join(' · ')),
+                            onTap: () => Navigator.of(sheetContext).pop(song),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (selected == null || !mounted) return;
+      if (!await _appleMusic.canPlayCatalogContent()) {
+        if (mounted) showErrorSnackBar(context, t.common.error);
+        return;
+      }
+      final localPlayer = Provider.of<MusicPlaybackService?>(context, listen: false);
+      if (localPlayer != null && localPlayer.status != MusicPlaybackStatus.idle) {
+        await localPlayer.stop();
+      }
+      await _appleMusic.play(selected);
+      if (mounted) setState(() => _appleMusicPlaying = selected);
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t.common.error);
+    } finally {
+      if (mounted) setState(() => _appleMusicLoading = false);
+    }
+  }
+
+  Future<void> _stopAppleMusic() async {
+    try {
+      await _appleMusic.stop();
+    } on Object {
+      // The provider may be unavailable after a profile or platform transition.
+    }
+    if (mounted) setState(() => _appleMusicPlaying = null);
+  }
+
+  Widget _buildAppleMusicSection() {
+    if (!_showAppleMusic) return const SizedBox.shrink();
+    return SettingsGroup(
+      title: 'Apple Music',
+      children: [
+        FocusableListTile(
+          leading: const AppIcon(Symbols.music_note_rounded),
+          title: const Text('Search Apple Music'),
+          subtitle: Text(t.lending.search),
+          trailing: _appleMusicLoading
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const AppIcon(Symbols.search_rounded),
+          onTap: _appleMusicLoading ? null : _searchAppleMusic,
+        ),
+        if (_appleMusicPlaying case final song?)
+          FocusableListTile(
+            leading: const AppIcon(Symbols.equalizer_rounded),
+            title: Text(song.title),
+            subtitle: Text('Playing on Apple Music · ${song.artist}'),
+            trailing: IconButton(
+              tooltip: t.common.stop,
+              onPressed: _stopAppleMusic,
+              icon: const AppIcon(Symbols.stop_rounded),
+            ),
+          ),
+      ],
+    );
+  }
+
   String _sectionLabel(ExternalAccessCategory category) => switch (category) {
     ExternalAccessCategory.video => t.explore.detail.watchOn,
     ExternalAccessCategory.rentals => t.explore.detail.links,
@@ -480,7 +590,8 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     };
     final hasResults = destinationsByCategory.values.any((destinations) => destinations.isNotEmpty) ||
         _watchmodeLoading ||
-        (_watchmodeResult?.sources.isNotEmpty ?? false);
+        (_watchmodeResult?.sources.isNotEmpty ?? false) ||
+        _showAppleMusic;
     return FocusedScrollScaffold(
       title: Text(t.explore.detail.links),
       slivers: [
@@ -542,6 +653,10 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                   ),
                 if (_watchmodeResult?.sources.isNotEmpty ?? false) ...[
                   _buildWatchmodeSection(),
+                  const SizedBox(height: 8),
+                ],
+                if (_showAppleMusic) ...[
+                  _buildAppleMusicSection(),
                   const SizedBox(height: 8),
                 ],
                 for (final category in widget.categories)
