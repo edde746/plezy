@@ -1,7 +1,7 @@
 {
   "locale": "ko",
   "inherits": null,
-  "catalogSha256": "ebd3b4374b99d5d87b5b3e3a12ac668a2ecc65816092d91007031e299db0e2ed",
+  "catalogSha256": "3a5e381bfa9e3a3338a662371fbec1bda4675027f00a54ec5fdca2202e065200",
   "nativeSpeakerReviewed": false,
   "messages": {
     "app.title": "nonlinguistic",
@@ -17,7 +17,6 @@
     "cast.noEpisodeAvailable": "m2m100-draft",
     "cast.startFailed": "independent-ai-qa-correction",
     "automation.noActivePlayback": "m2m100-draft",
-    "automation.profileNotFound": "m2m100-draft",
     "notifications.newEpisodeTitle": "m2m100-draft",
     "notifications.newEpisodeBody": "nonlinguistic",
     "appIcon.title": "existing",
@@ -945,7 +944,6 @@
     "videoControls.rotationLockButton": "existing",
     "videoControls.lockScreen": "existing",
     "videoControls.screenLockButton": "existing",
-    "videoControls.longPressToUnlock": "existing",
     "videoControls.timelineSlider": "existing",
     "videoControls.volumeSlider": "existing",
     "videoControls.endsAt": "existing",
@@ -3658,7 +3656,22 @@
     "deepLinks.copy": "m2m100-draft",
     "deepLinks.copied": "m2m100-draft",
     "videoControls.tapToUnlock": "targeted-ai-review",
-    "videoControls.tapAgainToUnlock": "targeted-ai-review"
+    "videoControls.tapAgainToUnlock": "targeted-ai-review",
+    "music.visualizerLiveAudio": "assistant-generated-draft",
+    "videoSettings.videoTrack": "m2m100-draft",
+    "videoSettings.videoTrackDescription": "m2m100-draft",
+    "videoSettings.videoTrackDefault": "m2m100-draft",
+    "videoSettings.videoTrackUnavailable": "m2m100-draft",
+    "videoSettings.videoTrackFailed": "m2m100-draft",
+    "videoSettings.videoTrackNumber": "m2m100-draft",
+    "universalMedia.saveQueuePlaylist": "m2m100-draft",
+    "universalMedia.queuePlaylistSaved": "m2m100-draft",
+    "universalMedia.queuePlaylistUnavailable": "m2m100-draft",
+    "universalMedia.queuePlaylistFolderRequired": "m2m100-draft",
+    "universalMedia.editionOrTitle": "m2m100-draft",
+    "universalMedia.capturePreview": "m2m100-draft",
+    "universalMedia.capturePreviewHelp": "m2m100-draft",
+    "universalMedia.capturePreviewActive": "m2m100-draft"
   },
   "beforeIndependentQaCorrection": {
     "settings.cloudBackupDescription": "m2m100-draft",

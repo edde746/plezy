@@ -1,7 +1,7 @@
 {
   "locale": "ms",
   "inherits": null,
-  "catalogSha256": "ee33bd2d2b7c3c1eed0b6f7de165c2e97f91266613d135d2f34b47578d7e706d",
+  "catalogSha256": "788e0813dfec2d0a3bd33ec562d637ebb1436d48ba63d581248fe5c0ee1b7a0b",
   "nativeSpeakerReviewed": false,
   "messages": {
     "app.title": "nonlinguistic",
@@ -17,7 +17,6 @@
     "cast.noEpisodeAvailable": "m2m100-draft",
     "cast.startFailed": "m2m100-draft",
     "automation.noActivePlayback": "m2m100-draft",
-    "automation.profileNotFound": "m2m100-draft",
     "notifications.newEpisodeTitle": "m2m100-draft",
     "notifications.newEpisodeBody": "nonlinguistic",
     "appIcon.title": "m2m100-draft",
@@ -945,7 +944,6 @@
     "videoControls.rotationLockButton": "m2m100-draft",
     "videoControls.lockScreen": "m2m100-draft",
     "videoControls.screenLockButton": "m2m100-draft",
-    "videoControls.longPressToUnlock": "m2m100-draft",
     "videoControls.timelineSlider": "m2m100-draft",
     "videoControls.volumeSlider": "m2m100-draft",
     "videoControls.endsAt": "m2m100-draft",
@@ -3637,7 +3635,22 @@
     "deepLinks.copy": "m2m100-draft",
     "deepLinks.copied": "m2m100-draft",
     "videoControls.tapToUnlock": "targeted-ai-review",
-    "videoControls.tapAgainToUnlock": "targeted-ai-review"
+    "videoControls.tapAgainToUnlock": "targeted-ai-review",
+    "music.visualizerLiveAudio": "assistant-generated-draft",
+    "videoSettings.videoTrack": "m2m100-draft",
+    "videoSettings.videoTrackDescription": "m2m100-draft",
+    "videoSettings.videoTrackDefault": "m2m100-draft",
+    "videoSettings.videoTrackUnavailable": "m2m100-draft",
+    "videoSettings.videoTrackFailed": "m2m100-draft",
+    "videoSettings.videoTrackNumber": "m2m100-draft",
+    "universalMedia.saveQueuePlaylist": "m2m100-draft",
+    "universalMedia.queuePlaylistSaved": "m2m100-draft",
+    "universalMedia.queuePlaylistUnavailable": "m2m100-draft",
+    "universalMedia.queuePlaylistFolderRequired": "m2m100-draft",
+    "universalMedia.editionOrTitle": "m2m100-draft",
+    "universalMedia.capturePreview": "m2m100-draft",
+    "universalMedia.capturePreviewHelp": "m2m100-draft",
+    "universalMedia.capturePreviewActive": "m2m100-draft"
   },
   "beforeIndependentQaCorrection": {
     "common.yes": "m2m100-draft",

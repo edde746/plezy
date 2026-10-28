@@ -8,13 +8,13 @@ the source. The 32 non-English base locales use drafts from
 from the Simplified Chinese draft with OpenCC `s2twp`. Regional catalogs inherit
 from their configured language parent.
 
-The pinned model produced unreliable output for Azerbaijani, Kazakh, and Uzbek,
-so those catalogs use explicit English fallbacks for these 36 messages. Each
-fallback is recorded per message in `docs/localization/provenance/` and
-`translation-provenance.json`. Other non-English entries are machine drafts,
-not verified translations. Some A/B loop terminology is especially vulnerable
-to mistranslation because the model confuses the playback meaning of “loop” with
-other senses of the word.
+Early QA flagged unreliable output for Azerbaijani, Kazakh, and Uzbek, and the
+initial plan used English fallbacks for these 36 messages. Follow-up catalog
+updates now contain translated M2M100 drafts for those locales. The previous
+fallback plan has been superseded: the per-message records classify the current
+text as drafts, not English fallbacks or verified translations. Some A/B loop
+terminology remains especially vulnerable to mistranslation because the model
+can confuse the playback meaning of “loop” with other senses of the word.
 
 No native-speaker review has been completed for these messages. The structural
 localization check verifies keys, placeholders, and plural structure; it does
@@ -24,15 +24,21 @@ announcements with fluent speakers before claiming language quality. Until then,
 treat these catalogs as drafts.
 
 The follow-up VLC audit adds 10 English source messages for local playlist
-export and alternate video-track selection. Their non-English forms use the
-configured English base-locale fallback until translations are prepared; they
-are not counted as translated or native-speaker reviewed. The source strings
-remain subject to focused localization review.
+export and alternate video-track selection. Non-English catalogs contain
+M2M100 draft translations for these messages; they are not English fallbacks
+and have not received native-speaker review. Per-message provenance records
+the drafts. The source strings and translations remain subject to focused
+localization review.
 
 A direct structural audit found no missing or empty entries and no placeholder
 mismatches for this 36-message batch across all 37 catalogs, including regional
-inheritance. The current repository report checks 37 locales and 3,626 English
-messages with no catalog key, placeholder, or plural-structure errors. Source
-review remains pending for 36 changed English messages, including this batch;
-the source checkpoint was not refreshed because these translations have not
-received native-speaker review.
+inheritance. The current repository report checks 37 locales and 3,641 English
+messages with no catalog key, placeholder, or plural-structure errors. The
+source checkpoint reflects the current catalog structure; source and
+translation review remains pending because these drafts have not received
+native-speaker review.
+
+A later visualizer follow-up adds the separate short status
+`music.visualizerLiveAudio` to the 32 non-English base catalogs; four regional
+catalogs inherit it. Its assistant-generated drafts are recorded in the
+per-message provenance. No native-speaker review is claimed for this label.
