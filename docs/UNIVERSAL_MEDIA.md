@@ -36,9 +36,15 @@ The desktop MPV menu can also request a DVD, Blu-ray, or audio CD from the compu
 
 When MPV reports multiple video tracks, choose **Video Track** from the existing playback settings sheet. The same choice appears beside audio and subtitle tracks in the Open media player. Track labels include available resolution and codec details. Native TV players and other backends do not expose equivalent video track identifiers, so the control stays hidden there.
 
+For direct MPV inputs, the **Info** button in the existing player controls opens the shared File Info sheet. It shows the container, size, duration, codec, resolution, frame rate, and track details MPV reports. Unsupported fields are omitted, and the sheet never displays a credential-bearing address or full local path. If the input exposes no usable properties, the sheet shows the standard unavailable state.
+
+When MPV reports multiple Matroska editions or DVD/Blu-ray titles, an edition icon appears in the same playback controls. Choose an entry to switch; MPV restarts playback for the selected edition or title. DVD menus are not supported, and builds or inputs without an edition list do not show the control.
+
 The player’s picture-adjustment sheet appears only for MPV video playback. Brightness, contrast, gamma, hue, and saturation sliders are named for screen readers and show their current values. **Reset picture** restores the defaults. A separate 360° flat-view control is offered for equirectangular footage when MPV’s FFmpeg `v360` filter exists; yaw, pitch, and field-of-view controls update the labelled filter. Filter support depends on the MPV/FFmpeg build, and the UI reports if it cannot apply the filter. These changes apply only to the current playback.
 
 Desktop MPV live streams can be recorded to MKV or MPEG-TS video, or MKA/MKV audio. PlezyNG writes to a unique temporary file in the destination directory, then finalizes it when recording stops or playback exits. If a destination already exists, the user confirms replacement; PlezyNG keeps a backup until finalization succeeds and restores it after a failure. Recording is not available on native TV players, Android ExoPlayer, or non-desktop builds. Container compatibility depends on the source stream. A stream that pauses or drops will produce corresponding gaps. Changing to another playlist item finalizes the current recording; the live input remains non-seekable. MPV documents stream recording as best-effort and warns that stream changes or seeks can stop or break the output ([MPV manual](https://mpv.io/manual/stable/#options-stream-record)); PlezyNG disables seeking for live sessions.
+
+From **Media tools → Capture**, choose **Preview in player** to open the selected desktop display or camera as a live MPV input. It uses the same frame-rate choice, plays through the normal Open media player, and stops when playback ends. Preview is session-only and video-only; use **Start recording** when you need a saved file or optional microphone audio. This path depends on MPV's FFmpeg avdevice backend and the operating-system capture permission. MPV documents `av://` as its libavdevice input path ([MPV manual](https://mpv.io/manual/stable/#protocols)); if the packaged MPV build lacks the selected device backend, use the existing FFmpeg recording action instead.
 
 ## Local conversion
 
@@ -99,10 +105,12 @@ The receiver accepts supported audio, video, ebook, and comic formats, up to 4 G
 - Forms have visible labels and short explanatory text; URL input is left-to-right, with autocomplete disabled.
 - The local playlist export action appears only for an eligible durable queue; its tooltip names the action, the save dialog opens beside the media, and the native overwrite prompt protects an existing playlist.
 - Video-track selection appears only when MPV reports alternatives and uses the existing adaptive settings and track menus.
+- Direct-input File Info uses the same labelled Info sheet as server media; device paths, URL user information, and query credentials are omitted.
+- Edition/disc-title selection appears only when MPV reports more than one choice. The Capture panel's preview button describes its session-only, video-only behavior beside the control.
 - Screen-reader labels include slider names and values, button tooltips, file counts, and a live-session cue.
 - Live streams remove seeking affordances instead of leaving controls that cannot work.
 - Transfer and conversion progress use live announcements; transfer errors remain visible in both the app and browser.
-- Capture, share, and extension status messages use polite live regions. The share QR code has a screen-reader label, a scan instruction, visible copyable URLs, and a date/time expiry cue.
+- Capture, share, and extension status messages use polite live regions. The live preview announces that it is active and not recording. The share QR code has a screen-reader label, a scan instruction, visible copyable URLs, and a date/time expiry cue.
 - Sliders, buttons, choices, and sheets use PlezyNG’s existing focus, keyboard, D-pad, and adaptive-sheet patterns.
 - Sensitive actions explain the scope next to the control: HTTP is opt-in, favorites are explicitly saved, recording overwrite is confirmed, and both transfer/share links expire.
 
@@ -117,19 +125,22 @@ The new interface strings use the repository’s documented machine-translation 
 | Local files, temporary queues, ISO images | File-picker platforms; ISO playback depends on the native player. |
 | Local queue export | Desktop only; durable local queues with at least two files in one folder export a relative-path M3U beside the files. |
 | Alternate video tracks | MPV builds only, when the source exposes multiple video tracks. |
+| Direct-input File Info | MPV builds only, using properties and track details exposed for the current input. |
+| Edition/disc-title selection | MPV builds only, when the source reports multiple editions or titles. |
 | Picture adjustments and 360° flat view | MPV video only; 360° also requires the v360 filter. |
 | Stream recording | Desktop MPV live sessions only. |
 | Optical discs | Desktop MPV only; build and OS drive support required. |
 | FFmpeg local conversion | Desktop only, with a compatible user-installed FFmpeg on `PATH`. |
 | Wi-Fi file transfer | Desktop and handheld Android, while the app stays active in the foreground. |
 | Screen/camera recording | Windows, macOS, and Linux desktop with the matching FFmpeg capture device; Linux Wayland is XWayland-limited. |
+| Live capture preview | Desktop MPV builds with the matching libavdevice backend and OS permission; preview is video-only and session-bound. |
 | Private-network HLS sharing | Windows, macOS, and Linux desktop with FFmpeg, a local file, and a private IPv4 address; foreground only, 60-minute maximum. |
 | Search extensions | Non-TV builds; HTTPS JSON endpoint only, profile-local, with bounded responses and no executable code. |
 | `plezyctl` | Python 3.10+ on desktop; opening results depends on the installed PlezyNG URL handler. |
 
 ## Scope boundaries
 
-This guide covers the VLC comparison features selected for this client: safe local media references and reusable queue export in M3U/PLS playlists, MPV alternate video tracks, additional FFmpeg conversion and remux profiles, ten-band MPV equalization and common audio effects, named device-local bookmarks, temporary A/B segment loops, desktop screen/camera capture, outgoing local-network streaming, declarative search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, server playlists, local files, optical-disc inputs on supported desktops, live-stream recording, MPV picture controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
+This guide covers the VLC comparison features selected for this client: safe local media references and reusable queue export in M3U/PLS playlists, MPV alternate video tracks, edition/disc-title selection and direct-input File Info, additional FFmpeg conversion and remux profiles, ten-band MPV equalization and common audio effects, named device-local bookmarks, temporary A/B segment loops, desktop screen/camera recording and live preview, outgoing local-network streaming, declarative search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, server playlists, local files, optical-disc inputs on supported desktops, live-stream recording, MPV picture controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
 
 The additions fit the existing Open media pane, playback settings, and chapter areas, using PlezyNG’s standard player, focus handling, and navigation. They do not claim full VLC parity: the stream-out path is bounded HLS file sharing; extensions are declarative search mappings rather than executable Lua modules; and `plezyctl` handles those manifests rather than controlling arbitrary playback sessions.
 

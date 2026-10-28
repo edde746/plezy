@@ -14,6 +14,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../sources/source_controller.dart';
+import '../../sources/media_capture.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/source_transport.dart';
@@ -220,14 +221,59 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
   }
 
   Future<void> _openMediaTools() async {
-    final selected = await Navigator.push<Uri>(context, MaterialPageRoute(builder: (_) => const MediaToolsScreen()));
+    final selected = await Navigator.push<Object?>(
+      context,
+      MaterialPageRoute(builder: (_) => const MediaToolsScreen()),
+    );
     if (!mounted || selected == null) return;
+    if (selected is MediaCapturePreviewRequest) {
+      await _startCapturePreview(selected);
+      return;
+    }
+    if (selected is! Uri) return;
     setState(() {
       _choice = _OpenChoice.stream;
       _url.text = selected.toString();
       _name.clear();
       _audio = false;
       _live = true;
+    });
+  }
+
+  Future<void> _startCapturePreview(MediaCapturePreviewRequest request) async {
+    await _run(() async {
+      if (!_desktopMpvAvailable) throw const SourceException(SourceFailure.unsupported);
+      final sessionId = const Uuid().v4();
+      final file = PublicationFile(
+        id: const Uuid().v4(),
+        name: request.sourceName,
+        mimeType: 'video/avdevice',
+        streamOnly: true,
+      );
+      final entry = SourceEntry(
+        sourceId: 'open:capture:$sessionId',
+        id: sessionId,
+        title: request.sourceName,
+        kind: SourceItemKind.video,
+        files: [file],
+      );
+      await context.read<SourcePlayback>().start(
+        entry,
+        [file],
+        playbackMode: PublicationMode.watching,
+        persistProgress: false,
+        liveInput: true,
+        directPlayerAddresses: {file.id: request.playerAddress},
+        localPlayerOptions: request.playerOptions,
+      );
+      if (!mounted) return;
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'universal-media-player'),
+          builder: (_) => const SourcePlayerScreen(),
+        ),
+      );
     });
   }
 

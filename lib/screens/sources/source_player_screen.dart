@@ -37,6 +37,8 @@ import '../../services/video_bookmark_service.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/music/mini_player.dart';
+import '../../widgets/source_edition_menu_button.dart';
+import '../../widgets/source_file_info_sheet.dart';
 import 'add_source_screen.dart';
 import 'source_notes_screen.dart';
 import 'standalone_subtitle_search_sheet.dart';
@@ -657,6 +659,21 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         ),
       if (s.sleepDeadline != null)
         Text(t.audiobook.sleepRemaining(time: sourceTime(s.sleepDeadline!.difference(DateTime.now()).inMilliseconds))),
+      if (s.isCapturePreview)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Semantics(
+            liveRegion: true,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const AppIcon(Symbols.videocam_rounded, size: 18),
+                const SizedBox(width: 6),
+                Text(t.universalMedia.capturePreviewActive),
+              ],
+            ),
+          ),
+        ),
       if (s.isRecordingStream)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -855,6 +872,18 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceListeningSettings())),
             icon: const AppIcon(Symbols.tune_rounded),
           ),
+          if (s.isTransientInput && s.player?.playerType == 'mpv')
+            IconButton(
+              tooltip: t.fileInfo.title,
+              onPressed: () => OverlaySheetController.showAdaptive<void>(
+                context,
+                isScrollControlled: true,
+                builder: (_) => SourceFileInfoSheet(player: s.player!, title: s.entry?.displayTitle ?? ''),
+              ),
+              icon: const AppIcon(Symbols.info_rounded),
+            ),
+          if (s.isTransientInput && s.video && s.player?.playerType == 'mpv')
+            SourceEditionMenuButton(player: s.player!, sourceIdentity: '${s.entry?.id ?? ''}:${s.fileIndex}'),
           if (s.video && !s.isTransientInput)
             IconButton(
               tooltip: t.videoControls.searchSubtitles,

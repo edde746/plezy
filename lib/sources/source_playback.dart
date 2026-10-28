@@ -68,6 +68,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool opening = false;
   bool fullPlayerVisible = false;
   Map<String, Uri> _localOverrides = const {};
+  Map<String, String> _directPlayerAddresses = const {};
+  Map<String, String> _localPlayerOptions = const {};
   bool _persistProgress = true;
   bool _liveInput = false;
   List<File> _temporaryMediaFiles = const [];
@@ -128,6 +130,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool get video => mode == PublicationMode.watching;
   bool get isTransientInput => !_persistProgress;
   bool get isLiveInput => _liveInput;
+  bool get isCapturePreview =>
+      _fileIndex >= 0 && _fileIndex < files.length && _directPlayerAddresses.containsKey(files[_fileIndex].id);
   bool get isRecordingStream => _streamRecordingPartial != null;
   bool get playing => player?.state.isActive ?? false;
 
@@ -351,6 +355,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     bool persistProgress = true,
     bool liveInput = false,
     List<File> temporaryMediaFiles = const [],
+    Map<String, String> directPlayerAddresses = const {},
+    Map<String, String> localPlayerOptions = const {},
   }) => _serialize(() async {
     await _stop();
     try {
@@ -359,6 +365,29 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       if (PlatformDetector.isAutomotive()) await CarUxRestrictionsService.instance.ensureResolved();
       final requestedMode =
           playbackMode ?? (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
+      if (directPlayerAddresses.isNotEmpty || localPlayerOptions.isNotEmpty) {
+        const captureFormats = {'gdigrab', 'dshow', 'avfoundation', 'x11grab', 'v4l2'};
+        const allowedOptions = {'demuxer-lavf-format', 'demuxer-lavf-o'};
+        if (!PlatformDetector.isDesktopOS() ||
+            persistProgress ||
+            !liveInput ||
+            requestedMode != PublicationMode.watching ||
+            selected.length != 1 ||
+            directPlayerAddresses.length != 1 ||
+            directPlayerAddresses.keys.single != selected.single.id ||
+            localPlayerOptions.keys.toSet().difference(allowedOptions).isNotEmpty) {
+          throw const SourceException(SourceFailure.unsupported);
+        }
+        final format = localPlayerOptions['demuxer-lavf-format'];
+        final options = localPlayerOptions['demuxer-lavf-o'];
+        if (format == null ||
+            !captureFormats.contains(format) ||
+            options == null ||
+            !RegExp(r'^framerate=(15|30|60)(,draw_mouse=1)?$').hasMatch(options) ||
+            !directPlayerAddresses.values.single.startsWith('av://$format:')) {
+          throw const SourceException(SourceFailure.unsupported);
+        }
+      }
       final coordinator = PlaybackCoordinator.instance;
       if (requestedMode == PublicationMode.watching) {
         // This SourcePlayback is itself the registered file owner. Asking the
@@ -385,6 +414,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       entry = item;
       files = List.unmodifiable(selected);
       _localOverrides = Map.unmodifiable(localOverrides);
+      _directPlayerAddresses = Map.unmodifiable(directPlayerAddresses);
+      _localPlayerOptions = Map.unmodifiable(localPlayerOptions);
       _persistProgress = persistProgress;
       _liveInput = liveInput;
       _temporaryMediaFiles = List.unmodifiable(temporaryMediaFiles);
@@ -644,31 +675,51 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _notify();
     _fileIndex = index;
     final file = files[index], item = entry!, native = player!;
-    final cached = await sources.downloads.local(_profile!, item.sourceId, file);
-    final Uri uri;
-    if (_localOverrides[file.id] != null) {
-      final override = _localOverrides[file.id]!;
-      uri = const {'http', 'https'}.contains(override.scheme) ? await _gateway!.registerUri(override) : override;
-    } else if (cached != null) {
-      uri = cached.uri;
-    } else {
-      final adapter = sources.adapter(item.sourceId);
-      if (adapter.source.kind == FileSourceKind.local) {
-        uri = (await adapter.resolve(file)).uri;
-      } else {
-        uri = await _gateway!.register(adapter, file);
+    final directAddress = _directPlayerAddresses[file.id];
+    final Uri? uri;
+    final String mediaAddress;
+    if (directAddress != null) {
+      if (native.playerType != 'mpv' || !directAddress.startsWith('av://')) {
+        throw const SourceException(SourceFailure.unsupported);
       }
+      uri = null;
+      mediaAddress = directAddress;
+    } else {
+      final cached = await sources.downloads.local(_profile!, item.sourceId, file);
+      late final Uri resolvedUri;
+      if (_localOverrides[file.id] != null) {
+        final override = _localOverrides[file.id]!;
+        resolvedUri = const {'http', 'https'}.contains(override.scheme)
+            ? await _gateway!.registerUri(override)
+            : override;
+      } else if (cached != null) {
+        resolvedUri = cached.uri;
+      } else {
+        final adapter = sources.adapter(item.sourceId);
+        if (adapter.source.kind == FileSourceKind.local) {
+          resolvedUri = (await adapter.resolve(file)).uri;
+        } else {
+          resolvedUri = await _gateway!.register(adapter, file);
+        }
+      }
+      uri = resolvedUri;
+      mediaAddress = resolvedUri.toString();
     }
     if (!_valid || player != native) return;
-    if (const {'rtsp', 'rtmp', 'rtmps', 'udp', 'rtp', 'dvd', 'bd', 'cdda'}.contains(uri.scheme) &&
+    if (uri != null &&
+        const {'rtsp', 'rtmp', 'rtmps', 'udp', 'rtp', 'dvd', 'bd', 'cdda'}.contains(uri.scheme) &&
         native.playerType != 'mpv') {
       throw const SourceException(SourceFailure.unsupported);
     }
     if (!PlatformDetector.isAutomotive()) unawaited(NotificationPermission.ensure());
     await native.requestAudioFocus();
+    for (final option in _localPlayerOptions.entries) {
+      await native.setProperty('file-local-options/${option.key}', option.value);
+    }
     await native.open(
-      Media(uri.toString(), start: Duration(milliseconds: math.max(0, localPosition))),
+      Media(mediaAddress, start: Duration(milliseconds: math.max(0, localPosition))),
       play: play && automotivePlaybackAllowedNow(),
+      isLive: _liveInput,
     );
     await native.setRate(speed);
     if (!_valid || player != native) return;
@@ -1111,6 +1162,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     entry = null;
     files = const [];
     _localOverrides = const {};
+    _directPlayerAddresses = const {};
+    _localPlayerOptions = const {};
     _persistProgress = true;
     _liveInput = false;
     progress = null;

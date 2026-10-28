@@ -8032,6 +8032,9 @@ class Translations$universalMedia$en {
 	/// en: 'Optical disc'
 	String get discs => 'Optical disc';
 
+	/// en: 'Edition or disc title'
+	String get editionOrTitle => 'Edition or disc title';
+
 	/// en: 'DVD'
 	String get dvd => 'DVD';
 
@@ -8134,8 +8137,8 @@ class Translations$universalMedia$en {
 	/// en: 'Media tool'
 	String get mediaTool => 'Media tool';
 
-	/// en: 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.'
-	String get captureIntro => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.';
+	/// en: 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.'
+	String get captureIntro => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.';
 
 	/// en: 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.'
 	String get captureNoDevices => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.';
@@ -8161,8 +8164,8 @@ class Translations$universalMedia$en {
 	/// en: 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.'
 	String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
 
-	/// en: 'Recording frame rate'
-	String get captureFrameRate => 'Recording frame rate';
+	/// en: 'Capture frame rate'
+	String get captureFrameRate => 'Capture frame rate';
 
 	/// en: 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.'
 	String get capturePrivacy => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.';
@@ -8187,6 +8190,15 @@ class Translations$universalMedia$en {
 
 	/// en: 'Start recording'
 	String get captureStart => 'Start recording';
+
+	/// en: 'Preview in player'
+	String get capturePreview => 'Preview in player';
+
+	/// en: 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.'
+	String get capturePreviewHelp => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.';
+
+	/// en: 'Live preview · not recording'
+	String get capturePreviewActive => 'Live preview · not recording';
 
 	/// en: 'Stop and save'
 	String get captureStop => 'Stop and save';
@@ -15320,6 +15332,7 @@ extension on Translations {
 			'universalMedia.replaceRecording' => 'Replace file',
 			'universalMedia.discHelp' => 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.',
 			'universalMedia.discs' => 'Optical disc',
+			'universalMedia.editionOrTitle' => 'Edition or disc title',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'Audio CD',
@@ -15354,7 +15367,7 @@ extension on Translations {
 			'universalMedia.mediaToolsIntro' => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.',
 			'universalMedia.mediaToolsAccessibility' => 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.',
 			'universalMedia.mediaTool' => 'Media tool',
-			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.',
+			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.',
 			'universalMedia.captureNoDevices' => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.',
 			'universalMedia.captureSource' => 'Screen or camera',
 			'universalMedia.captureScreen' => 'Screen',
@@ -15363,10 +15376,10 @@ extension on Translations {
 			'universalMedia.captureAudioNone' => 'No audio',
 			'universalMedia.captureDefaultAudio' => 'Default audio input',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'Recording frame rate',
-			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
+			'universalMedia.captureFrameRate' => 'Capture frame rate',
 			_ => null,
 		} ?? switch (path) {
+			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
 			'universalMedia.captureSaveAs' => 'Save screen recording as',
 			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
 			'universalMedia.captureFfmpegMissing' => 'FFmpeg or the H.264 video encoder is unavailable. Install a supported FFmpeg build, then try again.',
@@ -15374,6 +15387,9 @@ extension on Translations {
 			'universalMedia.captureSaved' => 'Screen recording saved.',
 			'universalMedia.captureElapsedLabel' => 'Recording time',
 			'universalMedia.captureStart' => 'Start recording',
+			'universalMedia.capturePreview' => 'Preview in player',
+			'universalMedia.capturePreviewHelp' => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.',
+			'universalMedia.capturePreviewActive' => 'Live preview · not recording',
 			'universalMedia.captureStop' => 'Stop and save',
 			'universalMedia.captureMode' => 'Capture',
 			'universalMedia.shareMode' => 'Share',
@@ -15875,12 +15891,12 @@ extension on Translations {
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			_ => null,
+		} ?? switch (path) {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
 			'games.addGame' => 'Add game shortcut',
