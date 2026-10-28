@@ -175,6 +175,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       videoZoomScale: widget.videoZoomScale,
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
+      secondarySubtitleSyncOffset: _secondarySubtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: FullscreenStateManager().isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,

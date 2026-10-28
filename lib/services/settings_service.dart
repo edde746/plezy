@@ -821,6 +821,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
+  static const secondarySubtitleSyncOffset = IntPref('secondary_subtitle_sync_offset');
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
@@ -1211,9 +1212,12 @@ class SettingsService extends BaseSharedPreferencesService {
   static final shaderPresetScope = PlayerSettingScopePref('shader_preset_scope', [globalShaderPreset]);
   static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
 
-  /// One scope for both sync offsets: they are tuned together and a user who
+  /// One scope for all sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
-  static final syncOffsetScope = PlayerSettingScopePref('sync_offset_scope', [audioSyncOffset, subtitleSyncOffset]);
+  static final syncOffsetScope = PlayerSettingScopePref(
+    'sync_offset_scope',
+    [audioSyncOffset, subtitleSyncOffset, secondarySubtitleSyncOffset],
+  );
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
   static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
@@ -1835,6 +1839,7 @@ class SettingsService extends BaseSharedPreferencesService {
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
+    secondarySubtitleSyncOffset,
     subtitleSearchLanguage,
     volume,
     subtitleFontSize,

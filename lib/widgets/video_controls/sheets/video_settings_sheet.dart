@@ -367,6 +367,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   _SettingsView _currentView = _SettingsView.menu;
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
+  late int _secondarySubtitleSyncOffset;
   late double _zoomScale;
   String _dvConversionMode = 'auto';
   int _dvConversionWriteGeneration = 0;
@@ -410,6 +411,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     super.initState();
     _audioSyncOffset = _state.audioSyncOffset;
     _subtitleSyncOffset = _state.subtitleSyncOffset;
+    _secondarySubtitleSyncOffset = _state.secondarySubtitleSyncOffset;
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
     _hdrToneMapping = SettingsService.instance.read(SettingsService.hdrToneMapping);
     _audioChannelLimit = SettingsService.instance.read(SettingsService.audioChannelLimit);
@@ -607,14 +609,26 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   // Sync adjustments open as a compact top bar instead of a sub-view.
-  void _openSyncBar({required bool isSubtitle}) {
+  void _openSyncBar({required bool isSubtitle, bool isSecondarySubtitle = false}) {
     final controller = OverlaySheetController.maybeOf(context);
     if (controller == null) return;
 
-    final title = isSubtitle ? t.videoSettings.subtitleSync : t.videoSettings.audioSync;
+    final title = isSecondarySubtitle
+        ? '${t.videoSettings.subtitleSync} (${t.videoControls.secondarySubtitle})'
+        : isSubtitle
+            ? t.videoSettings.subtitleSync
+            : t.videoSettings.audioSync;
     final icon = isSubtitle ? Symbols.subtitles_rounded : Symbols.sync_rounded;
-    final propertyName = isSubtitle ? 'sub-delay' : 'audio-delay';
-    final initialOffset = isSubtitle ? _subtitleSyncOffset : _audioSyncOffset;
+    final propertyName = isSecondarySubtitle
+        ? PlayerSyncOffsets.secondarySubtitleProperty
+        : isSubtitle
+            ? PlayerSyncOffsets.subtitleProperty
+            : PlayerSyncOffsets.audioProperty;
+    final initialOffset = isSecondarySubtitle
+        ? _secondarySubtitleSyncOffset
+        : isSubtitle
+            ? _subtitleSyncOffset
+            : _audioSyncOffset;
 
     // Created here so it can be passed as the overlay's initial focus target.
     // The creator disposes it after the overlay's lifecycle completes.
@@ -636,7 +650,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
             onOffsetChanged: (offset) async {
-              final pref = isSubtitle ? ScopedPlayerPrefs.subtitleSyncOffset : ScopedPlayerPrefs.audioSyncOffset;
+              final pref = isSecondarySubtitle
+                  ? ScopedPlayerPrefs.secondarySubtitleSyncOffset
+                  : isSubtitle
+                  ? ScopedPlayerPrefs.subtitleSyncOffset
+                  : ScopedPlayerPrefs.audioSyncOffset;
               await ScopedPlayerPrefs.write(pref, _state.metadata, offset);
             },
           ),
@@ -892,6 +910,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           isHighlighted: _subtitleSyncOffset != 0,
           onTap: () => _openSyncBar(isSubtitle: true),
         ),
+
+        if (widget.player.supportsSecondarySubtitles)
+          _SettingsMenuItem(
+            icon: Symbols.subtitles_rounded,
+            title: '${t.videoSettings.subtitleSync} (${t.videoControls.secondarySubtitle})',
+            valueText: formatSyncOffset(_secondarySubtitleSyncOffset.toDouble()),
+            isHighlighted: _secondarySubtitleSyncOffset != 0,
+            onTap: () => _openSyncBar(isSubtitle: true, isSecondarySubtitle: true),
+          ),
 
         if (_supportsHdrControl)
           _SettingsToggleItem(
@@ -1615,7 +1642,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final isZoomActive = (_zoomScale - 1.0).abs() > 0.0001;
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive || isZoomActive);
+        (sleepTimer.isActive ||
+            _audioSyncOffset != 0 ||
+            _subtitleSyncOffset != 0 ||
+            _secondarySubtitleSyncOffset != 0 ||
+            isShaderActive ||
+            isZoomActive);
 
     return BaseVideoControlSheet(
       title: _getTitle(),

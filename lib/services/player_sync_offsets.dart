@@ -4,8 +4,8 @@ import '../media/media_item.dart';
 import '../mpv/mpv.dart';
 import 'scoped_player_prefs.dart';
 
-/// The audio and subtitle sync offsets one video [Player] is applying, in
-/// milliseconds.
+/// The audio, primary-subtitle, and secondary-subtitle sync offsets one video
+/// [Player] is applying, in milliseconds.
 ///
 /// Both backends keep `audio-delay`/`sub-delay` across an in-place item swap,
 /// so the native value outlives the item it was tuned for — and under the
@@ -23,13 +23,16 @@ final class PlayerSyncOffsets extends ChangeNotifier {
 
   static const audioProperty = 'audio-delay';
   static const subtitleProperty = 'sub-delay';
+  static const secondarySubtitleProperty = 'secondary-sub-delay';
 
   final Player _player;
   int _audioMs = 0;
   int _subtitleMs = 0;
+  int _secondarySubtitleMs = 0;
 
   int get audioMs => _audioMs;
   int get subtitleMs => _subtitleMs;
+  int get secondarySubtitleMs => _secondarySubtitleMs;
 
   /// Make the player apply [item]'s scope-resolved offsets.
   ///
@@ -40,10 +43,21 @@ final class PlayerSyncOffsets extends ChangeNotifier {
   Future<void> applyFor(MediaItem item) async {
     await _apply(audioProperty, ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, item));
     await _apply(subtitleProperty, ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, item));
+    if (_player.supportsSecondarySubtitles) {
+      await _apply(
+        secondarySubtitleProperty,
+        ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.secondarySubtitleSyncOffset, item),
+      );
+    }
   }
 
   Future<void> _apply(String property, int offsetMs) async {
-    final applied = property == audioProperty ? _audioMs : _subtitleMs;
+    final int applied = switch (property) {
+      audioProperty => _audioMs,
+      subtitleProperty => _subtitleMs,
+      secondarySubtitleProperty => _secondarySubtitleMs,
+      _ => throw ArgumentError.value(property, 'property', 'not a sync offset property'),
+    };
     if (offsetMs == applied) return;
     await _player.setProperty(property, (offsetMs / 1000.0).toString());
     recordApplied(property, offsetMs);
@@ -58,6 +72,9 @@ final class PlayerSyncOffsets extends ChangeNotifier {
       case subtitleProperty:
         if (_subtitleMs == offsetMs) return;
         _subtitleMs = offsetMs;
+      case secondarySubtitleProperty:
+        if (_secondarySubtitleMs == offsetMs) return;
+        _secondarySubtitleMs = offsetMs;
       default:
         throw ArgumentError.value(property, 'property', 'not a sync offset property');
     }

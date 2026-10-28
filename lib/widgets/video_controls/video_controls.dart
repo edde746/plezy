@@ -838,6 +838,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // seed all read these.
   int get _audioSyncOffset => PlayerSyncOffsets.of(widget.player).audioMs;
   int get _subtitleSyncOffset => PlayerSyncOffsets.of(widget.player).subtitleMs;
+  int get _secondarySubtitleSyncOffset => PlayerSyncOffsets.of(widget.player).secondarySubtitleMs;
   bool get _isRotationLocked => _settings.read(SettingsService.rotationLocked);
   bool _isScreenLocked = false; // Touch lock during playback
   bool get _clickVideoTogglesPlayback => _settings.read(SettingsService.clickVideoTogglesPlayback);

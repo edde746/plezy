@@ -77,6 +77,13 @@ abstract final class ScopedPlayerPrefs {
     _decodeInt,
   );
 
+  static final secondarySubtitleSyncOffset = ScopedPlayerPref<int>._(
+    'secondary_subtitle_sync_offset',
+    SettingsService.syncOffsetScope,
+    SettingsService.secondarySubtitleSyncOffset,
+    _decodeInt,
+  );
+
   /// Shared limits for persisted sync offsets and the player's offset controls.
   static const int minimumSyncOffsetMs = -60000;
   static const int maximumSyncOffsetMs = 60000;

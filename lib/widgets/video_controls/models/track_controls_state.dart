@@ -34,6 +34,7 @@ class TrackControlsState {
   final double videoZoomScale;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
+  final int secondarySubtitleSyncOffset;
   final bool isRotationLocked;
   final bool isFullscreen;
   final bool isAlwaysOnTop;
@@ -107,6 +108,7 @@ class TrackControlsState {
     this.videoZoomScale = 1.0,
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
+    this.secondarySubtitleSyncOffset = 0,
     this.isRotationLocked = false,
     this.isFullscreen = false,
     this.isAlwaysOnTop = false,
