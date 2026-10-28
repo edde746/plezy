@@ -14,7 +14,10 @@
 #include <stdexcept>
 #include <thread>
 #include <vector>
+#include <fstream>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include "../../../shared/visualization/pcm_resampler.h"
+#include "../../../shared/visualization/milkrust_engine.h"
 
 namespace {
 using Clock = std::chrono::steady_clock;
@@ -175,9 +178,103 @@ struct OffscreenContext {
     if (display != EGL_NO_DISPLAY) eglTerminate(display);
   }
 };
+plezy::visualization::MilkRustImage DecodeImage(const std::filesystem::path& path) {
+  const auto length = std::filesystem::file_size(path);
+  if (length == 0 || length > 16*1024*1024) throw std::runtime_error("Texture file exceeds its byte limit.");
+  std::ifstream input(path, std::ios::binary);
+  std::vector<uint8_t> bytes(static_cast<size_t>(length));
+  if (!input.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size())) || input.peek() != EOF)
+    throw std::runtime_error("Texture changed while reading.");
+  g_autoptr(GdkPixbufLoader) loader = gdk_pixbuf_loader_new();
+  struct Size { bool seen = false, rejected = false; } size;
+  g_signal_connect(loader, "size-prepared", G_CALLBACK(+[](GdkPixbufLoader* loader, int width, int height, gpointer data) {
+    auto* size = static_cast<Size*>(data); size->seen = true;
+    size->rejected = width <= 0 || height <= 0 || width > 4096 || height > 4096 ||
+        static_cast<uint64_t>(width)*height > 8*1024*1024;
+    if (size->rejected) gdk_pixbuf_loader_set_size(loader, 1, 1);
+  }), &size);
+  g_autoptr(GError) error = nullptr;
+  for (size_t offset = 0; offset < bytes.size();) {
+    const auto chunk = std::min<size_t>(4096, bytes.size()-offset);
+    if (!gdk_pixbuf_loader_write(loader, bytes.data()+offset, chunk, &error) || size.rejected)
+      throw std::runtime_error("Texture decode failed or image dimensions exceed the limit.");
+    offset += chunk;
+  }
+  if (!gdk_pixbuf_loader_close(loader, &error) || !size.seen || size.rejected)
+    throw std::runtime_error("Texture decoder did not produce a bounded image.");
+  auto* image = gdk_pixbuf_loader_get_pixbuf(loader);
+  if (!image || gdk_pixbuf_get_bits_per_sample(image) != 8) throw std::runtime_error("Unsupported image pixel format.");
+  plezy::visualization::MilkRustImage result;
+  result.width = gdk_pixbuf_get_width(image); result.height = gdk_pixbuf_get_height(image);
+  const int channels = gdk_pixbuf_get_n_channels(image), stride = gdk_pixbuf_get_rowstride(image);
+  if (channels != 3 && channels != 4) throw std::runtime_error("Unsupported image channel count.");
+  result.rgba.resize(static_cast<size_t>(result.width)*result.height*4);
+  const auto* pixels = gdk_pixbuf_read_pixels(image);
+  for (uint32_t y=0; y<result.height; ++y) for (uint32_t x=0; x<result.width; ++x) {
+    const auto* src = pixels+y*stride+x*channels;
+    auto* dst = result.rgba.data()+(static_cast<size_t>(y)*result.width+x)*4;
+    std::copy(src, src+3, dst); dst[3] = channels == 4 ? src[3] : 255;
+  }
+  return result;
+}
 struct Engine {
+  bool native;
   void* instance = nullptr;
-  ~Engine() { if (instance) { try { Api().destroy(instance); } catch (...) {} } }
+  std::unique_ptr<plezy::visualization::MilkRustEngine> rust;
+  double elapsed = 0;
+  Clock::time_point tick{};
+  explicit Engine(bool use_rust) : native(use_rust) {}
+  ~Engine() { Reset(); }
+  bool Has() const { return instance || rust; }
+  void Reset() {
+    rust.reset();
+    if (instance) { try { Api().destroy(instance); } catch (...) {} instance = nullptr; }
+    elapsed = 0; tick = {};
+  }
+  void Pause(bool paused) {
+    if (instance) Api().pause(instance, paused);
+    if (paused) tick = {};
+  }
+  void Create(std::string* error) {
+    if (native) {
+      rust = std::make_unique<plezy::visualization::MilkRustEngine>(+[](const char* name) -> const void* {
+        return reinterpret_cast<const void*>(eglGetProcAddress(name));
+      }, true);
+    } else {
+      instance = Api().create();
+      if (!instance) throw std::runtime_error("projectM could not initialize.");
+      Api().failed(instance, [](const char*, const char* message, void* target) {
+        *static_cast<std::string*>(target) = message ? message : "Preset loading failed.";
+      }, error);
+      Api().lock(instance, true); Api().fps(instance, 30);
+    }
+  }
+  void Resize(int width, int height) { if (instance) Api().resize(instance, width, height); }
+  void Load(const std::string& path, const std::string& root, double transition, bool previous) {
+    if (rust) { rust->Load(path, root, DecodeImage); elapsed = 0; tick = {}; }
+    else {
+      std::string textures = root+"/textures";
+      const char* roots[] = {root.c_str(), textures.c_str()};
+      Api().paths(instance, roots, 2); Api().soft_cut(instance, std::max(0.01, transition));
+      Api().load(instance, path.c_str(), previous && transition > 0);
+    }
+  }
+  void Pcm(const std::vector<float>& pcm, uint32_t generation) {
+    if (rust) { rust->Pcm(pcm.data(), pcm.size()/2, generation); return; }
+    const auto maximum = Api().max_samples();
+    if (!maximum) throw std::runtime_error("Invalid projectM PCM capacity.");
+    for (size_t offset = 0; offset < pcm.size()/2;) {
+      const auto count = static_cast<unsigned int>(std::min<size_t>(maximum, pcm.size()/2-offset));
+      Api().pcm(instance, pcm.data()+offset*2, count, 2); offset += count;
+    }
+  }
+  void Render(uint32_t fbo, int width, int height) {
+    if (rust) {
+      const auto now = Clock::now();
+      if (tick != Clock::time_point{}) elapsed += std::chrono::duration<double>(now-tick).count();
+      tick = now; rust->Render(fbo, width, height, elapsed);
+    } else if (Api().render(instance, fbo) != 0) throw std::runtime_error("projectM failed to render this preset.");
+  }
 };
 } // namespace
 
@@ -187,6 +284,7 @@ struct VisualizerSession::Impl {
   PlezyBufferTexture* texture;
   std::shared_ptr<FrameState> frames = std::make_shared<FrameState>();
   AudioReader reader;
+  const std::string engine_name;
   mutable std::mutex mutex;
   std::condition_variable condition;
   std::thread worker;
@@ -199,8 +297,8 @@ struct VisualizerSession::Impl {
   guint timer = 0;
   uint64_t marked_serial = 0;
 
-  Impl(FlTextureRegistrar* r, AudioReader callback)
-      : registrar(FL_TEXTURE_REGISTRAR(g_object_ref(r))), reader(std::move(callback)) {
+  Impl(FlTextureRegistrar* r, AudioReader callback, std::string engine)
+      : registrar(FL_TEXTURE_REGISTRAR(g_object_ref(r))), reader(std::move(callback)), engine_name(std::move(engine)) {
     texture = reinterpret_cast<PlezyBufferTexture*>(g_object_new(plezy_buffer_texture_get_type(), nullptr));
     *texture->state = frames;
     if (!fl_texture_registrar_register_texture(registrar, FL_TEXTURE(texture))) {
@@ -238,10 +336,11 @@ struct VisualizerSession::Impl {
   }
   void Run() {
     try {
-      if (!Api().error.empty()) throw std::runtime_error(Api().error);
+      const auto dependency = VisualizerSession::DependencyError(engine_name);
+      if (!dependency.empty()) throw std::runtime_error(dependency);
       OffscreenContext graphics; graphics.Initialize();
       std::string load_error; // Callback target must outlive Engine destruction.
-      Engine engine;
+      Engine engine(engine_name == "milkrust");
       uint64_t loaded_serial = 0;
       uint32_t generation = 0;
       PcmResampler resampler;
@@ -254,7 +353,7 @@ struct VisualizerSession::Impl {
         double transition;
         {
           std::unique_lock<std::mutex> lock(mutex);
-          if (paused && engine.instance) Api().pause(engine.instance, true);
+          if (paused && engine.Has()) engine.Pause(true);
           condition.wait(lock, [this] { return stopping || (!paused && !path.empty()); });
           if (stopping) break;
           requested_path = path; requested_root = root; serial = preset_serial;
@@ -273,27 +372,15 @@ struct VisualizerSession::Impl {
           if (result < 0) throw std::runtime_error("The music PCM tap was lost.");
           if (result == 0) break;
           if (block.generation != generation) {
-            if (engine.instance) { Api().destroy(engine.instance); engine.instance = nullptr; }
+            engine.Reset();
             generation = block.generation; loaded_serial = 0;
             resampler = PcmResampler();
           }
-          if (!engine.instance) {
-            engine.instance = Api().create();
-            if (!engine.instance) throw std::runtime_error("projectM could not initialize.");
-            Api().failed(engine.instance, [](const char*, const char* message, void* target) {
-              *static_cast<std::string*>(target) = message ? message : "Preset loading failed.";
-            }, &load_error);
-            Api().lock(engine.instance, true);
-            Api().fps(engine.instance, 30);
-          }
-          Api().resize(engine.instance, w, h);
+          if (!engine.Has()) engine.Create(&load_error);
+          engine.Resize(w, h);
           if (loaded_serial != serial) {
-            std::string textures = requested_root + "/textures";
-            const char* roots[] = {requested_root.c_str(), textures.c_str()};
-            Api().paths(engine.instance, roots, 2);
             load_error.clear();
-            Api().soft_cut(engine.instance, std::max(0.01, transition));
-            Api().load(engine.instance, requested_path.c_str(), loaded_serial != 0 && transition > 0);
+            engine.Load(requested_path, requested_root, transition, loaded_serial != 0);
             if (!load_error.empty()) throw std::runtime_error(load_error);
             loaded_serial = serial;
           }
@@ -301,22 +388,15 @@ struct VisualizerSession::Impl {
             State("unavailable", "This sample rate or speaker layout is not supported for analysis.");
             audio_received = false; audio_at = Clock::time_point{}; break;
           }
-          const unsigned int maximum = Api().max_samples();
-          if (!maximum) throw std::runtime_error("Invalid projectM PCM capacity.");
-          for (size_t offset = 0; offset < pcm.size() / 2;) {
-            auto count = static_cast<unsigned int>(std::min<size_t>(maximum, pcm.size() / 2 - offset));
-            Api().pcm(engine.instance, pcm.data() + offset * 2, count, 2 /* stereo */);
-            offset += count;
-          }
+          engine.Pcm(pcm, generation);
           audio_received = true;
           { std::lock_guard<std::mutex> lock(mutex); dropped = block.dropped_frames; }
         }
         if (audio_received) audio_at = Clock::now();
-        if (engine.instance && loaded_serial == serial && Clock::now() - audio_at < std::chrono::milliseconds(250)) {
-          Api().pause(engine.instance, false);
-          Api().resize(engine.instance, w, h);
-          if (Api().render(engine.instance, graphics.framebuffer) != 0)
-            throw std::runtime_error("projectM failed to render this preset.");
+        if (engine.Has() && loaded_serial == serial && Clock::now() - audio_at < std::chrono::milliseconds(250)) {
+          engine.Pause(false);
+          engine.Resize(w, h);
+          engine.Render(graphics.framebuffer, w, h);
           auto frame = std::make_shared<Frame>();
           frame->width = w; frame->height = h; frame->pixels.resize(static_cast<size_t>(w) * h * 4);
           glBindFramebuffer(GL_FRAMEBUFFER, graphics.framebuffer);
@@ -332,7 +412,7 @@ struct VisualizerSession::Impl {
           frames->serial.fetch_add(1);
           State("rendering");
         } else {
-          if (engine.instance) Api().pause(engine.instance, true);
+          if (engine.Has()) engine.Pause(true);
           std::lock_guard<std::mutex> lock(mutex);
           if (state != "unavailable") { state = "waiting-audio"; error.clear(); }
         }
@@ -345,9 +425,13 @@ struct VisualizerSession::Impl {
   }
 };
 
-std::string VisualizerSession::DependencyError() { return Api().error; }
-VisualizerSession::VisualizerSession(FlTextureRegistrar* registrar, AudioReader reader)
-    : impl_(std::make_unique<Impl>(registrar, std::move(reader))) {}
+std::string VisualizerSession::DependencyError(const std::string& engine) {
+  if (engine == "milkrust") return MilkRustApi::Shared().error;
+  if (engine == "projectm") return Api().error;
+  return "Unknown visualization engine.";
+}
+VisualizerSession::VisualizerSession(FlTextureRegistrar* registrar, AudioReader reader, const std::string& engine)
+    : impl_(std::make_unique<Impl>(registrar, std::move(reader), engine)) {}
 VisualizerSession::~VisualizerSession() = default;
 int64_t VisualizerSession::texture_id() const { return fl_texture_get_id(FL_TEXTURE(impl_->texture)); }
 bool VisualizerSession::LoadPreset(const std::string& path, const std::string& root, double transition_seconds,
@@ -360,9 +444,9 @@ bool VisualizerSession::LoadPreset(const std::string& path, const std::string& r
     const auto relative = file.lexically_relative(base);
     std::string extension = file.extension().string();
     std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c) { return std::tolower(c); });
-    if (relative.empty() || *relative.begin() == ".." || extension != ".milk" ||
+    if (relative.empty() || *relative.begin() == ".." || (extension != ".milk" && !(impl_->engine_name == "milkrust" && extension == ".milk2")) ||
         !std::filesystem::is_regular_file(file) || std::filesystem::file_size(file) > 2 * 1024 * 1024)
-      throw std::runtime_error("Select a .milk file within the installed library, no larger than 2 MB.");
+      throw std::runtime_error("Select a supported preset within the installed library, no larger than 2 MB.");
     { std::lock_guard<std::mutex> lock(impl_->mutex);
       if (impl_->state == "failed" || impl_->stopping)
         throw std::runtime_error("Create a new visualization session to retry this preset.");
@@ -388,6 +472,7 @@ void VisualizerSession::SetPaused(bool paused) {
 FlValue* VisualizerSession::Status() const {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   FlValue* result = fl_value_new_map();
+  fl_value_set_string_take(result, "engine", fl_value_new_string(impl_->engine_name.c_str()));
   const bool inactive = impl_->paused && impl_->state != "failed" && impl_->state != "unavailable";
   fl_value_set_string_take(result, "state", fl_value_new_string(inactive ? "paused" : impl_->state.c_str()));
   fl_value_set_string_take(result, "reason", fl_value_new_string(impl_->error.c_str()));

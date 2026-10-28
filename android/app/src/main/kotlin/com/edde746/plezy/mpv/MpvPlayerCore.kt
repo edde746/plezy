@@ -427,6 +427,9 @@ class MpvPlayerCore private constructor(
   }
 
   @Volatile private var player: MpvPlayer? = null
+  internal fun visualizationSessionId(): Long? = synchronized(nativeOwnershipLock) {
+    if (audioOnly && isInitialized && !disposing) player?.session else null
+  }
   private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
   private val endFileDiagnostics = MpvEndFileDiagnostics()
 

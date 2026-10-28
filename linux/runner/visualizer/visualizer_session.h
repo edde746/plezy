@@ -13,8 +13,8 @@ namespace plezy::visualization {
 class VisualizerSession {
  public:
   using AudioReader = std::function<int(mpv_plezy_audio_block*)>;
-  static std::string DependencyError();
-  VisualizerSession(FlTextureRegistrar* registrar, AudioReader reader);
+  static std::string DependencyError(const std::string& engine = "projectm");
+  VisualizerSession(FlTextureRegistrar* registrar, AudioReader reader, const std::string& engine = "projectm");
   ~VisualizerSession();
   VisualizerSession(const VisualizerSession&) = delete;
   VisualizerSession& operator=(const VisualizerSession&) = delete;

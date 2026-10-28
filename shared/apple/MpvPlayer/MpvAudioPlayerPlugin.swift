@@ -15,6 +15,10 @@
 class MpvAudioPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginShared {
 
   private var playerCore: MpvAudioPlayerCore?
+  private var textureRegistry: FlutterTextureRegistry?
+  private var visualizer: MilkRustFlutterTexture?
+  private var visualizerTextureId: Int64 = -1
+  private var visualizerSessionId: Int64 = 0
   var eventSink: FlutterEventSink?
   var nameToId: [String: Int] = [:]
 
@@ -47,6 +51,11 @@ class MpvAudioPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPl
     )
 
     let instance = MpvAudioPlayerPlugin()
+    #if os(macOS)
+      instance.textureRegistry = registrar.textures
+    #else
+      instance.textureRegistry = registrar.textures()
+    #endif
     registrar.addMethodCallDelegate(instance, channel: methodChannel)
     eventChannel.setStreamHandler(instance)
   }
@@ -68,6 +77,7 @@ class MpvAudioPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPl
   // MARK: - FlutterPlugin Method Handler
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    if call.method.hasPrefix("visualizer") { handleVisualizer(call, result: result); return }
     switch call.method {
     case "initialize":
       handleInitialize(result: result)
@@ -125,9 +135,105 @@ class MpvAudioPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPl
   private func handleDispose(result: @escaping FlutterResult) {
     DispatchQueue.main.async { [weak self] in
       guard let self else { result(nil); return }
+      self.disposeVisualizer()
       self.playerCore?.dispose()
       self.playerCore = nil
       result(nil)
     }
+  }
+  private func disposeVisualizer() {
+    visualizer?.host.close()
+    if visualizerTextureId >= 0 { textureRegistry?.unregisterTexture(visualizerTextureId) }
+    visualizer = nil; visualizerTextureId = -1; visualizerSessionId &+= 1
+    _ = playerCore?.setVisualizationTap(false)
+  }
+
+  private func handleVisualizer(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let args = call.arguments as? [String: Any] ?? [:]
+    let engine = args["engine"] as? String ?? "projectm"
+    func reason() -> String {
+      guard playerCore?.isInitialized == true else { return "Initialize the music player before opening a preset." }
+      guard engine == "milkrust" else { return "Select native MilkRust on Apple platforms; this host does not bundle projectM." }
+      guard PlezyVisualizationTapAvailable() else { return "This mpv build lacks the visualization PCM tap ABI v1." }
+      return PlezyMilkRustHost.dependencyError()
+    }
+    if call.method == "visualizerCapabilities" {
+      let unavailable = reason()
+      result(["available":unavailable.isEmpty, "reason":unavailable, "engine":"milkrust-native-abi1",
+        "audioTap":PlezyVisualizationTapAvailable()]); return
+    }
+    do {
+      if call.method == "visualizerCreate" {
+        let unavailable = reason()
+        guard unavailable.isEmpty, let core = playerCore, let registry = textureRegistry else {
+          result(FlutterError(code:"VISUALIZER_UNAVAILABLE", message:unavailable, details:nil)); return
+        }
+        disposeVisualizer()
+        guard core.setVisualizationTap(true) >= 0 else {
+          result(FlutterError(code:"VISUALIZER_AUDIO", message:"Could not attach to music PCM.", details:nil)); return
+        }
+        let lease = visualizerSessionId
+        let host: PlezyMilkRustHost?
+        do {
+          host = try PlezyMilkRustHost(audioReader: { [weak core] output, size in
+            core?.readVisualizationAudio(output, size: size) ?? -1001
+          }, frameAvailable: { [weak self] in
+            DispatchQueue.main.async { [weak self] in
+              guard let self, self.visualizerSessionId == lease, self.visualizerTextureId >= 0 else { return }
+              self.textureRegistry?.textureFrameAvailable(self.visualizerTextureId)
+            }
+          })
+        } catch { _ = core.setVisualizationTap(false); throw error }
+        guard let host else {
+          _ = core.setVisualizationTap(false)
+          result(FlutterError(code:"VISUALIZER_CREATE", message:"Could not create the native renderer.", details:nil)); return
+        }
+        let texture = MilkRustFlutterTexture(host:host)
+        let id = registry.register(texture)
+        guard id >= 0 else {
+          host.close(); _ = core.setVisualizationTap(false)
+          result(FlutterError(code:"VISUALIZER_CREATE", message:"Flutter rejected the texture.", details:nil)); return
+        }
+        visualizer = texture; visualizerTextureId = id
+        result(["sessionId":visualizerSessionId, "textureId":id]); return
+      }
+      guard let texture = visualizer, (args["sessionId"] as? NSNumber)?.int64Value == visualizerSessionId else {
+        result(FlutterError(code:"VISUALIZER_STALE", message:"This visualization session has ended.", details:nil)); return
+      }
+      switch call.method {
+      case "visualizerDispose": disposeVisualizer()
+      case "visualizerLoad":
+        guard let path = args["path"] as? String, let root = args["root"] as? String else {
+          result(FlutterError(code:"INVALID_ARGS", message:"A preset path and pack root are required.", details:nil)); return
+        }
+        try texture.host.loadPreset(path, root:root)
+      case "visualizerResize":
+        guard let width = args["width"] as? Int, let height = args["height"] as? Int,
+          width > 0, height > 0, width <= 16384, height <= 16384 else {
+          result(FlutterError(code:"INVALID_ARGS", message:"Invalid dimensions.", details:nil)); return
+        }
+        texture.host.resizeWidth(width, height:height)
+      case "visualizerSetPaused":
+        guard let paused = args["paused"] as? Bool else {
+          result(FlutterError(code:"INVALID_ARGS", message:"A paused boolean is required.", details:nil)); return
+        }
+        texture.host.setPaused(paused)
+      case "visualizerStatus": result(texture.host.status()); return
+      default: result(FlutterMethodNotImplemented); return
+      }
+      result(nil)
+    } catch { result(FlutterError(code:"VISUALIZER_NATIVE", message:error.localizedDescription, details:nil)) }
+  }
+
+  deinit { disposeVisualizer() }
+
+}
+
+private final class MilkRustFlutterTexture: NSObject, FlutterTexture {
+  let host: PlezyMilkRustHost
+  init(host: PlezyMilkRustHost) { self.host = host; super.init() }
+  func copyPixelBuffer() -> Unmanaged<CVPixelBuffer>? {
+    guard let buffer = host.copyPixelBuffer() else { return nil }
+    return Unmanaged.passRetained(buffer)
   }
 }

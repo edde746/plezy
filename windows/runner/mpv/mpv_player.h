@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "../../../shared/mpv/mpv_player_common.h"
+#include "../../../shared/visualization/plezy_audio_tap.h"
+#include <limits>
 
 namespace mpv {
 struct InnerWindowSubclassState;
@@ -54,6 +56,9 @@ class MpvPlayer {
 
   // Disposes mpv and the video window.
   void Dispose();
+  static bool VisualizationTapAvailable();
+  int SetVisualizationTap(bool enabled);
+  int ReadVisualizationAudio(mpv_plezy_audio_block* block);
 
   // Returns true if mpv is initialized.
   bool IsInitialized() const { return mpv_ != nullptr; }
@@ -142,6 +147,8 @@ class MpvPlayer {
 
   const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
+  std::mutex visualization_mutex_;
+  std::atomic<double> visualization_pts_{std::numeric_limits<double>::quiet_NaN()};
   bool experimental_dv_ = false;
   bool p7_fel_filter_active_ = false;
   bool p7_fel_hwdec_overridden_ = false;

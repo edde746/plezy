@@ -10,7 +10,8 @@ import '../../services/visualization/visualizer_pack_store.dart';
 import '../../services/visualization/visualizer_session.dart';
 
 class VisualizerSelection {
-  const VisualizerSelection(this.preset, this.playlist);
+  const VisualizerSelection(this.preset, this.playlist, {this.engine});
+  final String? engine;
   final VisualizerPresetFile preset;
   final List<VisualizerPresetFile> playlist;
 }
@@ -140,8 +141,8 @@ class _VisualizerPresetBrowserState extends State<VisualizerPresetBrowser> {
         if (preset.notice.isNotEmpty) 'Content notice: ${preset.notice}',
         if (preset.tags.isNotEmpty) 'Tags: ${preset.tags.join(', ')}',
         preset.supportsProjectM
-            ? 'Classic .milk candidate for projectM. Visual fidelity is not yet qualified.'
-            : 'MilkDrop 3 saved double presets require a renderer with full .milk2 blend support.',
+            ? 'Classic .milk candidate. Rendering fidelity depends on the selected engine and is not yet qualified.'
+            : 'Native MilkRust can attempt saved uniform Fade blends. Other .milk2 patterns remain unsupported.',
         if (!widget.capability.available) widget.capability.reason,
         'Stored offline. Presets can contain rapid flashes and intense motion.',
       ].join('\n\n'))),
@@ -156,7 +157,7 @@ class _VisualizerPresetBrowserState extends State<VisualizerPresetBrowser> {
     final visible = widget.presets.where((preset) =>
       (selected == null || positions.containsKey(preset.libraryPath)) &&
       (!_favoritesOnly || _favorites.contains(preset.id)) &&
-      (!_playableOnly || preset.supportsProjectM) &&
+      (!_playableOnly || widget.capability.accepts(preset)) &&
       (_query.isEmpty || preset.searchText.contains(_query))).toList();
     if (selected != null) visible.sort((a, b) => positions[a.libraryPath]!.compareTo(positions[b.libraryPath]!));
     return SafeArea(child: SizedBox(
@@ -200,15 +201,16 @@ class _VisualizerPresetBrowserState extends State<VisualizerPresetBrowser> {
           ? const Center(child: Text('No matching presets.'))
           : ListView.builder(itemCount: visible.length, itemBuilder: (context, index) {
               final preset = visible[index];
-              final canPlay = widget.capability.available && preset.supportsProjectM;
+              final canPlay = widget.capability.available && widget.capability.accepts(preset);
               return ListTile(
                 leading: Icon(canPlay ? Icons.play_circle_outline : Icons.info_outline),
                 title: Text(preset.title, maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text([preset.author, preset.packName,
-                  if (!preset.supportsProjectM) '.milk2 playback unavailable',
+                  if (!widget.capability.accepts(preset)) 'Format unavailable for this engine',
                 ].where((part) => part.isNotEmpty).join(' · ')),
                 onTap: canPlay ? () => Navigator.pop(context, VisualizerSelection(preset,
-                    visible.where((item) => item.supportsProjectM).toList())) : () => _details(preset),
+                    visible.where(widget.capability.accepts).toList(),
+                    engine: widget.capability.engine.startsWith('milkrust') ? 'milkrust' : 'projectm')) : () => _details(preset),
                 trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                   if (selected != null) PopupMenuButton<int>(
                     tooltip: 'Reorder in playlist', icon: const Icon(Icons.swap_vert, size: 18),

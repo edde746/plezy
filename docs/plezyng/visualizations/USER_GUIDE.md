@@ -35,3 +35,18 @@ The Linux integration uses native pixel-buffer readback at up to 1280×720 and a
 ## Pack catalog updates
 
 Use **Check for pack updates** in the library to fetch a signed catalog when the release has configured signing keys. Playback never initiates a catalog request. Downloads require an app pin or a current, verified catalog; failed verification leaves the previous catalog and all installed presets intact. Expired or withdrawn packs remain available offline after installation, but cannot be downloaded again until authorized. New catalog versions can offer **Download update** while retaining installed versions. Builds without a release trust root keep the included pack and local import available, with remote updates disabled.
+
+
+### Choosing a native engine
+
+The preset library offers projectM and experimental native MilkRust. The choice
+is saved with the profile. Linux has source for both engines; Windows, macOS,
+iOS/tvOS and Android/TV have source for native MilkRust. A build without the
+matching engine and same-player PCM extension reports the missing dependency.
+This source increment does not add compiled engines to existing releases.
+
+Native MilkRust currently accepts classic `.milk` candidates and the saved
+uniform Fade form of `.milk2`. Unsupported shaders, missing images and other
+saved blend patterns produce a diagnostic. Preset changes are immediate in this
+engine; the cross-preset transition setting applies to projectM. Compatibility
+and performance remain unqualified across devices.

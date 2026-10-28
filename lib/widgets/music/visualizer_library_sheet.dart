@@ -14,9 +14,10 @@ import 'visualizer_preset_browser.dart';
 /// In-app entry point for license-cleared pack downloads and user-owned imports.
 /// Link-only historical collections are never rehosted by PlezyNG.
 class VisualizerLibrarySheet extends StatefulWidget {
-  const VisualizerLibrarySheet({super.key, this.profileId, this.hasMusicPcmSource = false});
+  const VisualizerLibrarySheet({super.key, this.profileId, this.hasMusicPcmSource = false, this.initialEngine = 'projectm'});
   final String? profileId;
   final bool hasMusicPcmSource;
+  final String initialEngine;
 
   @override
   State<VisualizerLibrarySheet> createState() => _VisualizerLibrarySheetState();
@@ -32,6 +33,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _favoritesOnly = false;
+  String _engine = 'projectm';
   bool _loading = true;
   bool _busy = false;
   String? _workingPackId;
@@ -42,15 +44,17 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   @override
   void initState() {
     super.initState();
+    _engine = widget.initialEngine == 'milkrust' ? 'milkrust' : 'projectm';
     _store = VisualizerPackStore(profileId: widget.profileId);
     _checkRenderer();
     _refresh();
   }
 
   Future<void> _checkRenderer() async {
-    final capability = widget.hasMusicPcmSource ? await VisualizerSession.capabilities()
+    final engine = _engine;
+    final capability = widget.hasMusicPcmSource ? await VisualizerSession.capabilities(engine: _engine)
         : const VisualizerCapabilities(available: false, reason: 'This music playback source has no native visualization audio.');
-    if (mounted) setState(() => _capability = capability);
+    if (mounted && engine == _engine) setState(() => _capability = capability);
   }
 
   Future<void> _browse({String? packPath, String? importedName}) async {
@@ -440,7 +444,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                           Padding(
                             padding: const EdgeInsets.all(8),
                             child: Text(_capability.available
-                                ? 'Classic .milk playback uses projectM and live music audio. Visual fidelity is not yet qualified.'
+                                ? 'The selected native renderer uses live music audio. Visual fidelity is not yet qualified.'
                                 : _capability.reason),
                           ),
                           if ((_searchQuery.isNotEmpty || _favoritesOnly) && !hasMatches)
@@ -448,6 +452,23 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                               child: Text('No matching packs or imported presets.'),
                             ),
+                          DropdownButtonFormField<String>(
+                            initialValue: _engine,
+                            decoration: const InputDecoration(labelText: 'Preset renderer'),
+                            items: const [
+                              DropdownMenuItem(value: 'projectm', child: Text('projectM')),
+                              DropdownMenuItem(value: 'milkrust', child: Text('MilkRust native (experimental)')),
+                            ],
+                            onChanged: _busy ? null : (value) {
+                              if (value == null) return;
+                              setState(() { _engine = value; _capability = const VisualizerCapabilities(
+                                available: false, reason: 'Checking native renderer…'); });
+                              _checkRenderer();
+                            },
+                          ),
+                          if (_engine == 'milkrust') const Padding(padding: EdgeInsets.all(8),
+                            child: Text('MilkRust supports a limited shader subset and uniform Fade double presets. '
+                                'Preset changes currently cut immediately. Unsupported presets report an error.')),
                           _sectionTitle(context, 'Included packs and downloads'),
                           Text(_store.catalogStatus, style: Theme.of(context).textTheme.bodySmall),
                           Align(alignment: Alignment.centerLeft, child: TextButton.icon(

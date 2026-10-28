@@ -21,6 +21,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		B1D51A6A2F00110000000091 /* MilkRustNativeHost.mm in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000090 /* MilkRustNativeHost.mm */; };
 		28A54CB9141D0CB5BB3C2E50 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F93D3355F7A242CE67311F7 /* Pods_Runner.framework */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
@@ -80,6 +81,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B1D51A6A2F00110000000090 /* MilkRustNativeHost.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = MilkRustNativeHost.mm; path = ../shared/apple/MpvPlayer/MilkRustNativeHost.mm; sourceTree = SOURCE_ROOT; };
 		10C0002C657183E0886559B6 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		2BF8F34B75C7EEBFABBAFB4A /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		331C80D5294CF71000263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -288,6 +290,7 @@
 				B1D51A6A2F00110000000008 /* MpvPlayerPluginShared.swift */,
 				B1D51A6A2F00110000000011 /* MpvAudioPlayerCore.swift */,
 				B1D51A6A2F00110000000013 /* MpvAudioPlayerPlugin.swift */,
+				B1D51A6A2F00110000000090 /* MilkRustNativeHost.mm */,
 				6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */,
 				6AD8B16B2ED7B50000E9E1B6 /* MpvPipController.swift */,
 				6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */,
@@ -584,6 +587,7 @@
 				B1D51A6A2F00110000000007 /* MpvPlayerPluginShared.swift in Sources */,
 				B1D51A6A2F00110000000010 /* MpvAudioPlayerCore.swift in Sources */,
 				B1D51A6A2F00110000000012 /* MpvAudioPlayerPlugin.swift in Sources */,
+				B1D51A6A2F00110000000091 /* MilkRustNativeHost.mm in Sources */,
 				6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */,
 				6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */,
 				6AD8B1662ED7B50000E9E1B5 /* WindowUtilsPlugin.swift in Sources */,
@@ -723,7 +727,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -809,7 +813,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -865,7 +869,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;

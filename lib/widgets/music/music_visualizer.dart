@@ -299,6 +299,8 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       final prefs = await store.preferences();
       final files = await store.allPresets();
       if (!mounted || generation != _preferenceGeneration) return;
+      await _native.setEngine(prefs['engine'] == 'milkrust' ? 'milkrust' : 'projectm');
+      if (!mounted || generation != _preferenceGeneration) return;
       _shuffle = prefs['shuffle'] == true;
       _locked = prefs['locked'] != false;
       _intervalSeconds = prefs['interval'] is int ? (prefs['interval'] as int).clamp(10, 600).toInt() : 30;
@@ -308,13 +310,13 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       final byPath = {for (final file in files) file.libraryPath: file};
       _playlist = savedQueue is List
           ? savedQueue.whereType<String>().map((path) => byPath[path]).whereType<VisualizerPresetFile>().toList()
-          : files.where((file) => file.supportsProjectM).toList();
+          : files.where(_native.accepts).toList();
       final original = prefs['original'];
       for (final preset in MusicVisualizerPreset.values) {
         if (preset.name == original) widget.onPresetChanged(preset);
       }
       final selected = byPath[prefs['selected']];
-      if (selected != null && selected.supportsProjectM && _nativeSourceReady) {
+      if (selected != null && _native.accepts(selected) && _nativeSourceReady) {
         if (!_playlist.any((file) => file.id == selected.id)) _playlist.add(selected);
         await _native.load(selected);
       }
@@ -334,6 +336,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
     });
     unawaited(store.savePreferences({
       'selected': _native.preset?.libraryPath,
+      'engine': _native.engine,
       'original': widget.preset.name,
       'playlist': _playlist.take(2500).map((file) => file.libraryPath).toList(),
       'shuffle': _shuffle, 'locked': _locked, 'interval': _intervalSeconds,
@@ -357,6 +360,8 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
     if (!_nativeSourceReady) return;
     ++_preferenceGeneration; // A late restore must not replace a user selection.
     _playlist = selection.playlist;
+    if (selection.engine != null) await _native.setEngine(selection.engine!);
+    if (!mounted) return;
     _syncTicker();
     await _native.load(selection.preset);
     if (!mounted) return;
@@ -735,7 +740,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => VisualizerLibrarySheet(profileId: profileId, hasMusicPcmSource: _nativeSourceReady),
+      builder: (_) => VisualizerLibrarySheet(profileId: profileId, hasMusicPcmSource: _nativeSourceReady, initialEngine: _native.engine),
     );
     if (mounted && profileId == _profileId && selection != null) await _selectPreset(selection);
   }

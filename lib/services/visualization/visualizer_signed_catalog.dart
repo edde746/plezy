@@ -34,6 +34,9 @@ class VisualizerCatalogTrust {
       if (key.length != 32) throw const FormatException('Catalog signing keys must be Ed25519 keys');
       keys[item.key] = key;
     }
+    if (keys.values.map(base64Encode).toSet().length != keys.length) {
+      throw const FormatException('Catalog key IDs must pin distinct public keys');
+    }
     if (threshold < 1 || threshold > keys.length) throw const FormatException('Invalid catalog signature quorum');
     return VisualizerCatalogTrust(keys: Map.unmodifiable(keys), threshold: threshold);
   }
@@ -63,7 +66,8 @@ class VisualizerCatalogVerifier {
 
   Future<VisualizerCatalogSnapshot> verify(List<int> bytes, DateTime now, {bool allowExpired = false}) async {
     if (trust.keys.isEmpty || trust.keys.length > 16 || trust.threshold < 1 ||
-        trust.threshold > trust.keys.length || trust.keys.values.any((key) => key.length != 32)) {
+        trust.threshold > trust.keys.length || trust.keys.values.any((key) => key.length != 32) ||
+        trust.keys.values.map(base64Encode).toSet().length != trust.keys.length) {
       throw const FormatException('This build has no catalog signing trust root');
     }
     if (bytes.isEmpty || bytes.length > maxEnvelopeBytes) throw const FormatException('Catalog envelope exceeds its limit');

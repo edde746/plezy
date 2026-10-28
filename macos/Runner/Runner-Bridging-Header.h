@@ -30,3 +30,5 @@
 - (void)pipActionStop:(PIPViewController*)pip;
 
 @end
+
+#import "../../shared/apple/MpvPlayer/MilkRustNativeHost.h"

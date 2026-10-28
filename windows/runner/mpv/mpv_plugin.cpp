@@ -75,6 +75,7 @@ MpvPlayerPlugin::MpvPlayerPlugin(
 }
 
 MpvPlayerPlugin::~MpvPlayerPlugin() {
+  DisposeVisualizer();
   player_generation_.fetch_add(1, std::memory_order_acq_rel);
   // Join the mpv event thread before draining: it enqueues platform tasks,
   // and platform_tasks_/platform_tasks_mutex_ are destroyed before player_
@@ -134,11 +135,81 @@ void MpvPlayerPlugin::DrainPlatformTasks() {
   }
 }
 
+void MpvPlayerPlugin::DisposeVisualizer() {
+  visualizer_.reset(); ++visualizer_session_id_;
+  if (player_) player_->SetVisualizationTap(false);
+}
+void MpvPlayerPlugin::HandleVisualizerMethod(const flutter::MethodCall<flutter::EncodableValue>& call,
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+  using V = flutter::EncodableValue; using M = flutter::EncodableMap;
+  const auto* args = call.arguments() ? std::get_if<M>(call.arguments()) : nullptr;
+  auto arg = [args](const char* key) -> const V* {
+    if (!args) return nullptr; const auto it = args->find(V(key)); return it == args->end() ? nullptr : &it->second;
+  };
+  auto string = [&arg](const char* key, const std::string& fallback = "") {
+    auto value = arg(key); const auto* text = value ? std::get_if<std::string>(value) : nullptr; return text ? *text : fallback;
+  };
+  auto integer = [&arg](const char* key, int64_t fallback = -1) -> int64_t {
+    auto value = arg(key); if (!value) return fallback;
+    if (auto p = std::get_if<int32_t>(value)) return *p;
+    if (auto p = std::get_if<int64_t>(value)) return *p;
+    return fallback;
+  };
+  const auto& method = call.method_name(); const auto engine = string("engine", "projectm");
+  auto reason = [&]() -> std::string {
+    if (!audio_only_ || !player_ || !player_->IsInitialized()) return "Initialize the music player before opening a preset.";
+    if (engine != "milkrust") return "Select native MilkRust on Windows; this host does not bundle projectM.";
+    if (!MpvPlayer::VisualizationTapAvailable()) return "This mpv build lacks the visualization PCM tap ABI v1.";
+    return plezy::visualization::MilkRustApi::Shared().error;
+  };
+  if (method == "visualizerCapabilities") {
+    const auto unavailable = reason();
+    result->Success(V(M{{V("available"), V(unavailable.empty())}, {V("engine"), V("milkrust-native-abi1")},
+        {V("audioTap"), V(MpvPlayer::VisualizationTapAvailable())}, {V("reason"), V(unavailable)}})); return;
+  }
+  try {
+    if (method == "visualizerCreate") {
+      const auto unavailable = reason(); if (!unavailable.empty()) throw std::runtime_error(unavailable);
+      DisposeVisualizer();
+      if (player_->SetVisualizationTap(true) < 0) throw std::runtime_error("Could not attach to music PCM.");
+      try {
+        visualizer_ = std::make_unique<plezy::visualization::WindowsVisualizerSession>(registrar_->texture_registrar(),
+            [player = player_.get()](mpv_plezy_audio_block* block) { return player->ReadVisualizationAudio(block); });
+      } catch (...) { player_->SetVisualizationTap(false); throw; }
+      result->Success(V(M{{V("sessionId"), V(visualizer_session_id_)}, {V("textureId"), V(visualizer_->texture_id())}})); return;
+    }
+    if (!visualizer_ || integer("sessionId") != visualizer_session_id_) {
+      result->Error("VISUALIZER_STALE", "This visualization session has ended."); return;
+    }
+    auto& worker = visualizer_->worker();
+    if (method == "visualizerDispose") DisposeVisualizer();
+    else if (method == "visualizerLoad") worker.Load(string("path"), string("root"));
+    else if (method == "visualizerResize") {
+      const auto width = integer("width"), height = integer("height");
+      if (width < 1 || height < 1 || width > 16384 || height > 16384) throw std::runtime_error("Invalid dimensions.");
+      worker.Resize(static_cast<int>(width), static_cast<int>(height));
+    } else if (method == "visualizerSetPaused") {
+      auto value = arg("paused"); auto paused = value ? std::get_if<bool>(value) : nullptr;
+      if (!paused) throw std::runtime_error("A paused boolean is required.");
+      worker.Pause(*paused);
+    } else if (method == "visualizerStatus") {
+      const auto status = worker.Status();
+      result->Success(V(M{{V("state"), V(status.state)}, {V("reason"), V(status.reason)},
+          {V("hasFrame"), V(status.has_frame)}, {V("droppedFrames"), V(static_cast<int64_t>(status.dropped))},
+          {V("width"), V(status.width)}, {V("height"), V(status.height)}, {V("engine"), V("milkrust")}})); return;
+    } else { result->NotImplemented(); return; }
+    result->Success();
+  } catch (const std::exception& error) { result->Error("VISUALIZER_NATIVE", error.what()); }
+}
+
 void MpvPlayerPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue>& method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   const auto& method = method_call.method_name();
 
+  if (method.rfind("visualizer", 0) == 0) {
+    HandleVisualizerMethod(method_call, std::move(result)); return;
+  }
   if (method == "initialize") {
     // Method-channel calls are serialized on the platform thread. Keep an
     // already-live core instead of replacing it (which would synchronously
@@ -222,6 +293,7 @@ void MpvPlayerPlugin::HandleMethodCall(
       result->Error("INIT_FAILED", "Failed to initialize MPV player");
     }
   } else if (method == "dispose") {
+    DisposeVisualizer();
     player_generation_.fetch_add(1, std::memory_order_acq_rel);
     if (player_) {
       player_->Dispose();

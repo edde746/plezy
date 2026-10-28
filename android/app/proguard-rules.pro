@@ -35,3 +35,6 @@
   private androidx.media3.extractor.ExtractorOutput extractorOutput;
   private androidx.media3.common.util.ParsableByteArray subtitleSample;
 }
+
+# Native MilkRust JNI entry points and its worker image decoder callback.
+-keep class com.edde746.plezy.mpv.MilkRustNativeBridge { *; }

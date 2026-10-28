@@ -1149,11 +1149,11 @@ static FlMethodResponse* bool_success_response(gboolean value) {
   return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
 }
 
-static std::string visualization_unavailable(MpvPlugin* self) {
+static std::string visualization_unavailable(MpvPlugin* self, const std::string& engine) {
   if (!self->audio_only) return "Visualizations require the dedicated music player.";
   if (!self->player || !self->initialized || self->player->IsDisposed()) return "Start music playback first.";
   if (!mpv::MpvPlayer::VisualizationTapAvailable()) return "This build does not include the native music PCM tap.";
-  return plezy::visualization::VisualizerSession::DependencyError();
+  return plezy::visualization::VisualizerSession::DependencyError(engine);
 }
 
 static FlMethodResponse* visualizer_method(MpvPlugin* self, const char* method, FlValue* args) {
@@ -1167,17 +1167,20 @@ static FlMethodResponse* visualizer_method(MpvPlugin* self, const char* method, 
     auto* value = arg(name);
     return value && fl_value_get_type(value) == FL_VALUE_TYPE_INT ? fl_value_get_int(value) : fallback;
   };
+  const auto* requested_engine = arg("engine");
+  const std::string engine = requested_engine && fl_value_get_type(requested_engine) == FL_VALUE_TYPE_STRING
+      ? fl_value_get_string(requested_engine) : "projectm";
   if (strcmp(method, "visualizerCapabilities") == 0) {
-    const std::string reason = visualization_unavailable(self);
+    const std::string reason = visualization_unavailable(self, engine);
     g_autoptr(FlValue) result = fl_value_new_map();
     fl_value_set_string_take(result, "available", fl_value_new_bool(reason.empty()));
-    fl_value_set_string_take(result, "engine", fl_value_new_string("projectm-4.1.8"));
+    fl_value_set_string_take(result, "engine", fl_value_new_string(engine == "milkrust" ? "milkrust-native-abi1" : "projectm-4.1.8"));
     fl_value_set_string_take(result, "reason", fl_value_new_string(reason.c_str()));
     fl_value_set_string_take(result, "audioTap", fl_value_new_bool(mpv::MpvPlayer::VisualizationTapAvailable()));
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
   }
   if (strcmp(method, "visualizerCreate") == 0) {
-    const std::string reason = visualization_unavailable(self);
+    const std::string reason = visualization_unavailable(self, engine);
     if (!reason.empty()) return failure("VISUALIZER_UNAVAILABLE", reason);
     self->visualizer.reset();
     ++self->visualizer_session_id;
@@ -1187,7 +1190,7 @@ static FlMethodResponse* visualizer_method(MpvPlugin* self, const char* method, 
       auto* player = self->player.get();
       self->visualizer = std::make_unique<plezy::visualization::VisualizerSession>(
           fl_plugin_registrar_get_texture_registrar(self->registrar),
-          [player](mpv_plezy_audio_block* block) { return player->ReadVisualizationAudio(block); });
+          [player](mpv_plezy_audio_block* block) { return player->ReadVisualizationAudio(block); }, engine);
       g_autoptr(FlValue) result = fl_value_new_map();
       fl_value_set_string_take(result, "sessionId", fl_value_new_int(self->visualizer_session_id));
       fl_value_set_string_take(result, "textureId", fl_value_new_int(self->visualizer->texture_id()));

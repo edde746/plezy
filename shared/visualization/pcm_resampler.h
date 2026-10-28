@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <vector>
-#include "plezy_audio_tap.h"
+#include "plezy_audio_tap_types.h"
 
 namespace plezy::visualization {
 

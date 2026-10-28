@@ -1,0 +1,111 @@
+--- a/platforms/android/lib/src/main/cpp/session.h
++++ b/platforms/android/lib/src/main/cpp/session.h
+@@ -7,6 +7,7 @@
+ #include <atomic>
+ #include <cstdint>
+ #include <memory>
++#include <limits>
+ #include <vector>
+ 
+ /**
+@@ -40,6 +41,7 @@
+   Session(const Session&) = delete;
+   Session& operator=(const Session&) = delete;
+ 
++  std::atomic<double> visualization_pts{std::numeric_limits<double>::quiet_NaN()};
+   const uint64_t id;
+   mpv_handle* const handle;
+ 
+--- a/platforms/android/lib/src/main/cpp/session.cpp
++++ b/platforms/android/lib/src/main/cpp/session.cpp
+@@ -57,3 +57,33 @@
+ SessionGuard::~SessionGuard() {
+   if (session) pthread_rwlock_unlock(&session->admission);
+ }
++
++// Optional Plezy visualization bridge v1. A registry identity, never a raw mpv
++// pointer, crosses into the application. SessionGuard admits each read through
++// its final mpv use, so session retirement cannot free a live PCM consumer.
++#include <dlfcn.h>
++#include <cmath>
++namespace {
++struct PlezyTapApi {
++  int (*version)() = reinterpret_cast<int(*)()>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_version"));
++  int (*enable)(mpv_handle*, int) = reinterpret_cast<int(*)(mpv_handle*, int)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_enable"));
++  int (*read)(mpv_handle*, double, void*, size_t) = reinterpret_cast<int(*)(mpv_handle*, double, void*, size_t)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_read"));
++  bool available() const { return version && enable && read && version() == 1; }
++};
++PlezyTapApi& plezy_tap() { static PlezyTapApi api; return api; }
++}
++extern "C" __attribute__((visibility("default"))) int plezy_android_visualization_version() {
++  return plezy_tap().available() ? 1 : 0;
++}
++extern "C" __attribute__((visibility("default"))) int plezy_android_visualization_enable(uint64_t id, int enabled) {
++  try { SessionGuard guard(static_cast<jlong>(id));
++    return guard.mpv && plezy_tap().available() ? plezy_tap().enable(guard.mpv, enabled) : MPV_ERROR_UNINITIALIZED;
++  } catch (...) { return MPV_ERROR_GENERIC; }
++}
++extern "C" __attribute__((visibility("default"))) int plezy_android_visualization_read(uint64_t id, void* output, size_t size) {
++  try { SessionGuard guard(static_cast<jlong>(id));
++    if (!guard.mpv || !plezy_tap().available()) return MPV_ERROR_UNINITIALIZED;
++    const auto pts = guard.session->visualization_pts.load();
++    return std::isfinite(pts) ? plezy_tap().read(guard.mpv, pts, output, size) : 0;
++  } catch (...) { return MPV_ERROR_GENERIC; }
++}
+--- a/platforms/android/lib/src/main/cpp/event.cpp
++++ b/platforms/android/lib/src/main/cpp/event.cpp
+@@ -132,6 +132,18 @@
+ // Forwards one event, advancing [source] at START_FILE. The live loop and the
+ // replay of events held behind an error end-file share it, so both attribute
+ // events to the same entry.
++// Cached presentation time for the optional native PCM consumer. Called at
++// event dequeue, before diagnostic holding/replay can lose reply_userdata.
++static void observeVisualizationEvent(Session* session, const mpv_event* event) {
++  if (event->event_id == MPV_EVENT_START_FILE || event->event_id == MPV_EVENT_END_FILE || event->event_id == MPV_EVENT_SEEK)
++    session->visualization_pts.store(std::numeric_limits<double>::quiet_NaN());
++  if (event->event_id == MPV_EVENT_PROPERTY_CHANGE && event->reply_userdata == UINT64_MAX-2) {
++    const auto* property = static_cast<const mpv_event_property*>(event->data);
++    session->visualization_pts.store(property && property->format == MPV_FORMAT_DOUBLE && property->data
++        ? *static_cast<const double*>(property->data) : std::numeric_limits<double>::quiet_NaN());
++  }
++}
++
+ static void dispatchEvent(JNIEnv* env, jlong jsession, mpv_handle* mpv, const mpv_event* event, SourceState& source) {
+   switch (event->event_id) {
+     case MPV_EVENT_LOG_MESSAGE:
+@@ -293,6 +305,8 @@
+   std::vector<HeldEvent> held;
+   for (int n = 0; n < kEndFileDrainLimit && !session->event_thread_exit; ++n) {
+     mpv_event* next = mpv_wait_event(session->handle, 0);
++    observeVisualizationEvent(session, next);
++    if (next->event_id == MPV_EVENT_PROPERTY_CHANGE && next->reply_userdata == UINT64_MAX-2) continue;
+     if (next->event_id == MPV_EVENT_NONE) break;
+     if (next->event_id == MPV_EVENT_LOG_MESSAGE) {
+       sendLogMessageToJava(env, jsession, (mpv_event_log_message*)next->data);
+@@ -322,6 +336,8 @@
+   // it would never return.
+   while (!session->event_thread_exit) {
+     mpv_event* event = mpv_wait_event(mpv, -1.0);
++    observeVisualizationEvent(session, event);
++    if (event->event_id == MPV_EVENT_PROPERTY_CHANGE && event->reply_userdata == UINT64_MAX-2) continue;
+ 
+     if (session->event_thread_exit) break;
+ 
+--- a/platforms/android/lib/src/main/cpp/main.cpp
++++ b/platforms/android/lib/src/main/cpp/main.cpp
+@@ -122,6 +122,7 @@
+   // until the client continues it (MpvPlayer.Listener.onHook, then
+   // MpvPlayer.continueHook, or the library's own continuation).
+   mpv_hook_add(guard.mpv, 0, "on_preloaded", 0);
++  mpv_observe_property(guard.mpv, UINT64_MAX-2, "time-pos", MPV_FORMAT_DOUBLE);
+ 
+   if (pthread_create(&s.event_thread, NULL, event_thread, &s) != 0) {
+     die("thread create failed");
+--- a/platforms/android/lib/src/main/cpp/CMakeLists.txt
++++ b/platforms/android/lib/src/main/cpp/CMakeLists.txt
+@@ -57,4 +57,4 @@
+ # The prefix map keeps the checkout path out of the binary, so the same sources
+ # build to the same bytes wherever they are checked out.
+ target_compile_options(player PRIVATE -Wall -Werror "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+-target_link_libraries(player PRIVATE mpv avcodec log)
++target_link_libraries(player PRIVATE mpv avcodec log dl)
