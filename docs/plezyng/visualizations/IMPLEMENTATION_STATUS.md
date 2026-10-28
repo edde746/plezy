@@ -7,13 +7,13 @@ This delivery is tracked by [PlezyNG PR #55](https://github.com/snapetech-org/Pl
 ## Implemented on the PR branches
 
 - PlezyNG keeps the six existing original scenes and now exposes a theme-styled Visualizer Library sheet from their on-screen controls.
-- The sheet can download the versioned CC0 MilkRust fixture pack from a pinned URL and SHA-256, verify its package and per-file integrity indexes, enforce archive size/path/file-count limits, validate the manifest and license notice, and activate the completed pack atomically.
+- The sheet can download the versioned CC0 MilkRust fixture pack from an immutable commit URL and SHA-256, verify its package and per-file integrity indexes, enforce archive size/path/file-count limits, validate per-asset author/license/source/notice coverage, and activate the completed pack atomically.
 - The sheet can save individual user-provided `.milk` and `.milk2` text files in a separate local-import area. Imports are size- and format-bounded.
 - The sheet exposes upstream links for historical projectM collections whose repository catalog records `NOASSERTION`; PlezyNG does not rehost those packs.
 - MilkRust's compatibility parser recognizes the classic numbered `warp_N` and `comp_N` shader keys and several community indexed-object key forms. The CLI retains files it cannot decode and reports them as unsupported.
 - MilkRust's import and compatibility gates reject blank or comments-only preset files instead of treating the absence of unsupported syntax as proof of compatibility.
 - MilkRust's intermediate two-state frame set now resolves shader sources and texture samplers for each preset independently.
-- MilkRust now has a deterministic `.rmpack` builder which refuses packs without an explicit redistributable status and shipped license notice. The first catalog archive contains only the small CC0-authored sample fixtures.
+- MilkRust now has a deterministic `.rmpack` builder which refuses packs without explicit redistributable status, per-asset author/license/source records, complete content-file coverage and shipped license notices. The first catalog archive contains only the small CC0-authored sample fixtures.
 - Root npm scripts use the checked-in tool filenames. The stale gap audit was replaced with a source-linked remaining-work inventory.
 
 ## Still open; no release claim

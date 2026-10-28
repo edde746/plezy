@@ -48,13 +48,13 @@ class VisualizerPackCatalogEntry {
       license: 'CC0-1.0',
       description: 'Two MilkRust-authored sample presets. No third-party assets.',
       archiveUrl:
-          'https://raw.githubusercontent.com/snapetech-org/MilkRust/7b6f108d850c67e6f56e5f6148ed2e22ebc9e551/content/downloads/milkrust-sample-pack-0.1.0.rmpack',
-      sha256: '4471b5a1ff98b3f8e0421dced0c902a44cf2354542e2d2f3382d2a01e37207d4',
-      archiveBytes: 2776,
-      expandedBytes: 4011,
+          'https://raw.githubusercontent.com/snapetech-org/MilkRust/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/content/downloads/milkrust-sample-pack-0.1.0.rmpack',
+      sha256: '175a042deb4edb224055a6334f67a1c492f32e447dc3c90a54f22849c43a27df',
+      archiveBytes: 2927,
+      expandedBytes: 5467,
       presetCount: 2,
       sourceUrl:
-          'https://github.com/snapetech-org/MilkRust/tree/7b6f108d850c67e6f56e5f6148ed2e22ebc9e551/examples/sample-pack',
+          'https://github.com/snapetech-org/MilkRust/tree/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/examples/sample-pack',
     ),
   ];
 }
@@ -373,15 +373,69 @@ class VisualizerPackStore {
     if (licenseFiles is! List || licenseFiles.isEmpty) {
       throw const VisualizerPackException('The pack does not include its license notice.');
     }
+    final licensePaths = <String>{};
     for (final rawPath in licenseFiles) {
       if (rawPath is! String) throw const VisualizerPackException('The license notice path is invalid.');
       final relative = safeArchivePath(rawPath);
+      if (!licensePaths.add(relative)) {
+        throw const VisualizerPackException('The pack repeats a license notice path.');
+      }
       if (!listedFiles.contains(relative)) {
         throw const VisualizerPackException('The pack integrity index omits its license notice.');
       }
-      if (!await File(p.join(directory.path, ...relative.split('/'))).exists()) {
+      final notice = File(p.join(directory.path, ...relative.split('/')));
+      if (!await notice.exists() || await notice.length() == 0) {
         throw const VisualizerPackException('The pack is missing its license notice.');
       }
+    }
+    final contentNotice = parsed['contentNotice'];
+    final sourceUrls = parsed['sourceUrls'];
+    if (contentNotice is! String || contentNotice.trim().isEmpty || sourceUrls is! List || sourceUrls.isEmpty) {
+      throw const VisualizerPackException('The pack is missing its content notice or source provenance.');
+    }
+    for (final value in sourceUrls) {
+      if (value is! String) throw const VisualizerPackException('A pack source URL is invalid.');
+      final uri = Uri.tryParse(value);
+      if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
+        throw const VisualizerPackException('Pack source URLs must use HTTPS.');
+      }
+    }
+    final assets = parsed['assets'];
+    if (assets is! List || assets.isEmpty) {
+      throw const VisualizerPackException('The pack does not include per-asset attribution.');
+    }
+    final assetPaths = <String>{};
+    for (final asset in assets) {
+      if (asset is! Map<String, dynamic> ||
+          asset['path'] is! String ||
+          asset['kind'] is! String ||
+          asset['license'] is! String ||
+          asset['author'] is! String ||
+          asset['sourceUrl'] is! String ||
+          asset['licenseFile'] is! String) {
+        throw const VisualizerPackException('A pack asset attribution record is malformed.');
+      }
+      final relative = safeArchivePath(asset['path'] as String);
+      if (!assetPaths.add(relative) || !listedFiles.contains(relative) || licensePaths.contains(relative)) {
+        throw const VisualizerPackException('A pack asset path is duplicated or missing from the integrity index.');
+      }
+      for (final field in ['kind', 'license', 'author']) {
+        if ((asset[field] as String).trim().isEmpty) {
+          throw const VisualizerPackException('A pack asset attribution field is empty.');
+        }
+      }
+      final sourceUri = Uri.tryParse(asset['sourceUrl'] as String);
+      if (sourceUri == null || sourceUri.scheme != 'https' || sourceUri.host.isEmpty) {
+        throw const VisualizerPackException('Pack asset source URLs must use HTTPS.');
+      }
+      final noticePath = safeArchivePath(asset['licenseFile'] as String);
+      if (!licensePaths.contains(noticePath)) {
+        throw const VisualizerPackException('A pack asset does not reference a shipped license notice.');
+      }
+    }
+    final expectedAssets = listedFiles.where((path) => path != 'manifest.json' && !licensePaths.contains(path)).toSet();
+    if (assetPaths.length != expectedAssets.length || !assetPaths.containsAll(expectedAssets)) {
+      throw const VisualizerPackException('The pack attribution list does not cover every content file.');
     }
     final presets = parsed['presets'];
     if (presets is! List || presets.length != entry.presetCount) {
@@ -392,7 +446,7 @@ class VisualizerPackStore {
         throw const VisualizerPackException('A preset entry is malformed.');
       }
       final relative = safeArchivePath(preset['file'] as String);
-      if (!await File(p.join(directory.path, ...relative.split('/'))).exists()) {
+      if (!assetPaths.contains(relative) || !await File(p.join(directory.path, ...relative.split('/'))).exists()) {
         throw const VisualizerPackException('The pack is missing a preset file.');
       }
     }
