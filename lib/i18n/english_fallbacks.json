@@ -127,6 +127,8 @@
     "games.streamSoftwareDecoder",
     "games.streamVideo",
     "games.streamVideoQueue",
+    "settings.subtitleOnMute",
+    "settings.subtitleOnMuteDescription",
     "videoSettings.subtitleCopyCue",
     "videoSettings.subtitleCueCopied",
     "videoSettings.subtitleCueSeekUnavailable",

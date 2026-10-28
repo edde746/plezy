@@ -893,6 +893,10 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Select a subtitle on this device when the server has no selected track.
   static const alwaysShowSubtitlesOnDevice = BoolPref('always_show_subtitles_on_device');
 
+  /// Temporarily select subtitles when the viewer mutes playback, then restore
+  /// the prior choice when audio returns unless the viewer changes tracks.
+  static const subtitleOnMute = BoolPref('subtitle_on_mute');
+
   /// Find and attach a subtitle in the preferred language when none is available.
   static const autoDownloadPreferredSubtitle = BoolPref('auto_download_preferred_subtitle');
 
@@ -1903,6 +1907,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberTrackSelections,
     chooseTracksBeforePlayback,
     alwaysShowSubtitlesOnDevice,
+    subtitleOnMute,
     autoDownloadPreferredSubtitle,
     followServerTrackSelections,
     downloadOnWifiOnly,

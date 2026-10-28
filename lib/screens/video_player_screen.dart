@@ -810,6 +810,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   final List<StreamSubscription<dynamic>> _mediaControlSubscriptions = [];
   StreamSubscription<AppleTvRemotePlayPauseAction>? _appleTvPlayPauseSubscription;
   TrackManager? _trackManager;
+  _SubtitleMuteRestore? _subtitleMuteRestore;
+  Future<void> _subtitleMuteSelectionQueue = Future<void>.value();
+  bool _subtitleMuteSelectionPending = false;
+  int _subtitleMuteGeneration = 0;
+  VoidCallback? _subtitleMuteVolumeListener;
   StreamSubscription<void>? _sleepTimerSubscription;
   bool _isHandlingBack = false;
 
@@ -1323,12 +1328,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @visibleForTesting
   Future<void> debugMarkPlaybackStartedForTesting() async {
     final settings = await SettingsService.getInstance();
-    _volumeController ??= VideoVolumeController(
+    final controller = _volumeController ??= VideoVolumeController(
       player: player!,
       settings: settings,
       initialVolume: 100,
       onUserChange: _announceVolumeCommand,
     );
+    _attachSubtitleMuteVolumeListener(controller);
     setState(() => _isPlayerInitialized = true);
     _firstFrame.markReady();
   }
@@ -1409,6 +1415,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
+    bindEffect<bool>(
+      SettingsService.subtitleOnMute,
+      (enabled) {
+        final volume = _volumeController?.value;
+        if (volume == null) return;
+        final generation = ++_subtitleMuteGeneration;
+        if (enabled && volume <= 0) {
+          unawaited(_selectSubtitleForMute(generation));
+        } else if (!enabled && _subtitleMuteRestore != null) {
+          unawaited(_restoreSubtitleAfterMute(generation));
+        }
+      },
+      fireImmediately: false,
+    );
     PlaybackCoordinator.instance.registerVideoSession(
       shutdown: _shutdownVideo,
       stopAndExit: _stopVideoAndExit,
@@ -1759,6 +1779,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   void _disposeVolumeControllerForPlayer(Player currentPlayer) {
     final controller = _volumeController;
     if (controller == null || !controller.ownsPlayer(currentPlayer)) return;
+    _detachSubtitleMuteVolumeListener(controller);
     _volumeController = null;
     controller.dispose();
   }
@@ -2369,6 +2390,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       );
 
       player = currentPlayer;
+      _attachSubtitleMuteVolumeListener(_volumeController!);
       if (workspace != null && workspace.sessionCount > 0) {
         _registerVideoWorkspaceSession(workspace);
       }
@@ -2812,6 +2834,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
     final volumeController = _volumeController;
+    if (volumeController != null) _detachSubtitleMuteVolumeListener(volumeController);
     _volumeController = null;
     volumeController?.dispose();
     final playerToDispose = player;
@@ -2927,6 +2950,169 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// themselves to silence without noticing (#2357). Every input reaches
   /// here — wheel, shortcut keys, the OSD slider, companion remote — while
   /// volume the player reports on its own never does.
+  void _handleSubtitleMuteVolume(double volume) {
+    if (!volume.isFinite) return;
+    final generation = ++_subtitleMuteGeneration;
+    if (volume <= 0) {
+      if (SettingsService.instance.read(SettingsService.subtitleOnMute)) {
+        unawaited(_selectSubtitleForMute(generation));
+      }
+    } else {
+      unawaited(_restoreSubtitleAfterMute(generation));
+    }
+  }
+
+  Future<void> _selectSubtitleForMute(int generation) async {
+    if (_subtitleMuteRestore != null || !mounted || generation != _subtitleMuteGeneration) return;
+    final currentPlayer = player;
+    final manager = _trackManager;
+    if (currentPlayer == null ||
+        manager == null ||
+        !manager.isActive() ||
+        !identical(manager.player, currentPlayer) ||
+        manager.primarySubtitleIsServerRendered) {
+      return;
+    }
+
+    final state = currentPlayer.state;
+    final previouslySelected = state.track.subtitle;
+    if (previouslySelected != null && previouslySelected.id != SubtitleTrack.off.id) return;
+
+    final tracks = state.tracks.subtitle;
+    if (tracks.isEmpty) return;
+    final settings = SettingsService.instance;
+    final profile = manager.getProfileSettings();
+    if (profile?.subtitleMode == SubtitlePlaybackMode.none) return;
+
+    final resolver = TrackSelectionService(
+      player: currentPlayer,
+      profileSettings: profile,
+      metadata: manager.metadata,
+      plexMediaInfo: manager.mediaInfo,
+      alwaysShowSubtitlesOnDevice: settings.read(SettingsService.alwaysShowSubtitlesOnDevice),
+    );
+    var candidate = resolver
+        .selectSubtitleTrack(
+          tracks,
+          manager.preferredSubtitleTrack,
+          state.track.audio,
+          waitForPendingSource: false,
+        )
+        ?.track;
+
+    if (candidate == null || candidate.id == SubtitleTrack.off.id || candidate.id == SubtitleTrack.auto.id) {
+      final selectable = tracks
+          .where((track) => track.id != SubtitleTrack.off.id && track.id != SubtitleTrack.auto.id)
+          .where((track) => profile?.subtitleMode != SubtitlePlaybackMode.onlyForced || track.effectiveForced)
+          .toList(growable: false);
+      if (selectable.isEmpty) return;
+
+      final preferredLanguage = profile?.defaultSubtitleLanguage?.trim();
+      final audioLanguage = state.track.audio?.language?.trim();
+      final language = preferredLanguage?.isNotEmpty == true ? preferredLanguage : audioLanguage;
+      if (language?.isNotEmpty == true) {
+        for (final track in selectable) {
+          if (languageMatches(track.language, language)) {
+            candidate = track;
+            break;
+          }
+        }
+      }
+      candidate ??= selectable.where((track) => track.isDefault && !track.effectiveForced).firstOrNull;
+      candidate ??= selectable.where((track) => !track.effectiveForced).firstOrNull;
+      candidate ??= selectable.first;
+    }
+
+    if (candidate.id == previouslySelected?.id ||
+        !mounted ||
+        generation != _subtitleMuteGeneration ||
+        !identical(player, currentPlayer)) {
+      return;
+    }
+
+    final restore = _SubtitleMuteRestore(
+      player: currentPlayer,
+      mediaIdentity: manager.metadata.globalKey,
+      previousTrack: previouslySelected ?? SubtitleTrack.off,
+      temporaryTrackId: candidate.id,
+    );
+    _subtitleMuteRestore = restore;
+    await _queueSubtitleMuteTrack(currentPlayer, candidate, generation);
+    if (generation != _subtitleMuteGeneration && identical(_subtitleMuteRestore, restore)) {
+      _subtitleMuteRestore = null;
+    }
+  }
+
+  Future<void> _restoreSubtitleAfterMute(int generation) async {
+    final restore = _subtitleMuteRestore;
+    if (restore == null) return;
+    _subtitleMuteRestore = null;
+    final manager = _trackManager;
+    if (!mounted ||
+        generation != _subtitleMuteGeneration ||
+        !identical(player, restore.player) ||
+        manager == null ||
+        manager.metadata.globalKey != restore.mediaIdentity) {
+      return;
+    }
+    await _queueSubtitleMuteTrack(
+      restore.player,
+      restore.previousTrack,
+      generation,
+      expectedCurrentTrackId: restore.temporaryTrackId,
+    );
+  }
+
+  Future<void> _queueSubtitleMuteTrack(
+    Player targetPlayer,
+    SubtitleTrack track,
+    int generation, {
+    String? expectedCurrentTrackId,
+  }) async {
+    _subtitleMuteSelectionPending = true;
+    final previous = _subtitleMuteSelectionQueue;
+    final operation = previous
+        .catchError((Object _, StackTrace __) {})
+        .then((_) async {
+          if (!mounted || generation != _subtitleMuteGeneration || !identical(player, targetPlayer)) return;
+          if (expectedCurrentTrackId != null &&
+              targetPlayer.state.track.subtitle?.id != expectedCurrentTrackId) {
+            return;
+          }
+          await targetPlayer.selectSubtitleTrack(track);
+        });
+    _subtitleMuteSelectionQueue = operation.catchError((Object error, StackTrace stackTrace) {
+      appLogger.w('Temporary subtitle selection failed', error: error, stackTrace: stackTrace);
+    });
+    await _subtitleMuteSelectionQueue;
+    if (generation == _subtitleMuteGeneration) _subtitleMuteSelectionPending = false;
+  }
+
+  void _attachSubtitleMuteVolumeListener(VideoVolumeController controller) {
+    _detachSubtitleMuteVolumeListener(controller);
+    void listener() => _handleSubtitleMuteVolume(controller.value);
+    _subtitleMuteVolumeListener = listener;
+    controller.addListener(listener);
+    _handleSubtitleMuteVolume(controller.value);
+  }
+
+  void _detachSubtitleMuteVolumeListener(VideoVolumeController controller) {
+    final listener = _subtitleMuteVolumeListener;
+    if (listener == null) return;
+    controller.removeListener(listener);
+    _subtitleMuteVolumeListener = null;
+  }
+
+  void _cancelSubtitleMuteRestoreForUserChoice(SubtitleTrack track) {
+    final shouldReapply = _subtitleMuteSelectionPending;
+    final targetPlayer = player;
+    final generation = ++_subtitleMuteGeneration;
+    _subtitleMuteRestore = null;
+    if (shouldReapply && targetPlayer != null) {
+      unawaited(_queueSubtitleMuteTrack(targetPlayer, track, generation));
+    }
+  }
+
   void _announceVolumeCommand(double volume) {
     if (!mounted) return;
     final percent = volume.round();
@@ -3053,6 +3239,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
+    _cancelSubtitleMuteRestoreForUserChoice(track);
     _rememberNativeSubtitleSelection(track, sourceStreamId: sourceStreamId);
     await _trackManager?.onSubtitleTrackSelectedByUser(track, sourceStreamId: sourceStreamId);
   }
@@ -3400,4 +3587,19 @@ String _getHwdecValue(bool enabled) {
   } else {
     return 'auto'; // Windows, Linux
   }
+}
+
+
+final class _SubtitleMuteRestore {
+  const _SubtitleMuteRestore({
+    required this.player,
+    required this.mediaIdentity,
+    required this.previousTrack,
+    required this.temporaryTrackId,
+  });
+
+  final Player player;
+  final String mediaIdentity;
+  final SubtitleTrack previousTrack;
+  final String temporaryTrackId;
 }

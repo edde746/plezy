@@ -1366,6 +1366,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     _trackManager = trackManager;
 
     trackManager.applyTrackSelectionWhenReady();
+    final volumeController = _volumeController;
+    if (volumeController != null && volumeController.value <= 0) {
+      _handleSubtitleMuteVolume(volumeController.value);
+    }
     if (staleGuard != null && !staleGuard()) return false;
 
     await _releaseFrameRateStartupGate(

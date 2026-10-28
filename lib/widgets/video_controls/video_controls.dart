@@ -953,6 +953,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Subtitle visibility toggle state
   bool _subtitlesVisible = true;
   bool _confirmedSubtitlesVisible = true;
+  bool? _subtitleVisibilityBeforeMute;
   int _subtitleVisibilityWriteGeneration = 0;
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
@@ -965,6 +966,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   /// Releases the [PlayerSyncOffsets] binding; rebound in [didUpdateWidget]
   /// when the screen swaps players.
   late VoidCallback _releaseSyncOffsetsListener;
+  late VoidCallback _releaseVolumeControllerListener;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
@@ -1044,6 +1046,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     bindEffect(SettingsService.skipAdsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     _releaseChromeListener = bindListenable(widget.chromeController, _onChromeChanged);
     _releaseSyncOffsetsListener = bindListenable(PlayerSyncOffsets.of(widget.player), _onSyncOffsetsChanged);
+    _releaseVolumeControllerListener = bindListenable(widget.volumeController, _onSubtitleMuteVolumeChanged);
+    bindEffect(
+      SettingsService.subtitleOnMute,
+      (_) => _onSubtitleMuteVolumeChanged(),
+      fireImmediately: false,
+    );
+    _onSubtitleMuteVolumeChanged();
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
@@ -1107,6 +1116,28 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _onSyncOffsetsChanged() => _setControlsState(() {});
 
+  void _onSubtitleMuteVolumeChanged() {
+    final muteVisibility = _subtitleVisibilityBeforeMute;
+    if (!_settings.read(SettingsService.subtitleOnMute)) {
+      if (muteVisibility != null) {
+        _subtitleVisibilityBeforeMute = null;
+        if (muteVisibility != _subtitlesVisible) _setSubtitleVisibility(muteVisibility);
+      }
+      return;
+    }
+
+    if (widget.volumeController.value <= 0) {
+      _subtitleVisibilityBeforeMute ??= _subtitlesVisible;
+      if (!_subtitlesVisible) _setSubtitleVisibility(true);
+      return;
+    }
+
+    if (muteVisibility != null) {
+      _subtitleVisibilityBeforeMute = null;
+      if (muteVisibility != _subtitlesVisible) _setSubtitleVisibility(muteVisibility);
+    }
+  }
+
   void _configureChromeController() {
     widget.chromeController.configure(
       hideDelay: _hideDelay,
@@ -1118,6 +1149,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void didUpdateWidget(PlexVideoControls oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.volumeController != widget.volumeController) {
+      _releaseVolumeControllerListener();
+      _subtitleVisibilityBeforeMute = null;
+      _releaseVolumeControllerListener = bindListenable(widget.volumeController, _onSubtitleMuteVolumeChanged);
+      _onSubtitleMuteVolumeChanged();
+    }
     if (oldWidget.player != widget.player) {
       ++_subtitleVisibilityWriteGeneration;
       // Otherwise the accumulator keeps listening to the retired player and
@@ -1162,6 +1199,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void dispose() {
     ++_subtitleVisibilityWriteGeneration;
+    _releaseVolumeControllerListener();
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();
     _accumulatedSkipSeconds.dispose();

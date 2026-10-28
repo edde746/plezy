@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add opt-in subtitle-on-mute for library playback, temporarily overriding an Off choice through the existing track policy and restoring the prior choice on unmute unless the viewer changes tracks or the item changes.
+
 - Carry selected SDH/closed-caption subtitle intent across library episode changes and saved show preferences, infer the role from older title-only preferences, and preserve the existing server fallback when the matching caption class is unavailable.
 
 - Read BOM-marked UTF-16LE/BE subtitle text for cue inspection and corrected export while preserving source encoding and line endings.

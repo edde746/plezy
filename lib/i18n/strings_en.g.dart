@@ -946,6 +946,12 @@ class Translations$settings$en {
 	/// en: 'When the server has no subtitle selected, choose a track locally. This never changes the server's preference.'
 	String get alwaysShowSubtitlesOnDeviceDescription => 'When the server has no subtitle selected, choose a track locally. This never changes the server\'s preference.';
 
+	/// en: 'Show subtitles when muted'
+	String get subtitleOnMute => 'Show subtitles when muted';
+
+	/// en: 'Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track.'
+	String get subtitleOnMuteDescription => 'Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track.';
+
 	/// en: 'Fetch missing preferred-language subtitles'
 	String get autoDownloadPreferredSubtitle => 'Fetch missing preferred-language subtitles';
 
@@ -12994,6 +13000,8 @@ extension on Translations {
 			'settings.chooseTracksBeforePlaybackDescription' => 'Pick the source audio and subtitle tracks before each video starts.',
 			'settings.alwaysShowSubtitlesOnDevice' => 'Always show subtitles on this device',
 			'settings.alwaysShowSubtitlesOnDeviceDescription' => 'When the server has no subtitle selected, choose a track locally. This never changes the server\'s preference.',
+			'settings.subtitleOnMute' => 'Show subtitles when muted',
+			'settings.subtitleOnMuteDescription' => 'Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track.',
 			'settings.autoDownloadPreferredSubtitle' => 'Fetch missing preferred-language subtitles',
 			'settings.autoDownloadPreferredSubtitleDescription' => 'Select an available subtitle in your preferred language locally. If none exists, ask the server to fetch one when supported. The selection stays on this device.',
 			'settings.rememberTrackSelectionsDescription' => 'Store audio and subtitle choices by show or movie on this device',

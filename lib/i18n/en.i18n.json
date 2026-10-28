@@ -697,7 +697,9 @@
     "prerollLibraryDescription": "Choose the library that contains the clips available as movie pre-rolls.",
     "prerollSelectionDescription": "Choose which clips from the selected library can play before movies.",
     "contentScreensaverDelayOptionDescription": "Wait this many minutes without input before showing screensaver artwork.",
-    "videoCodecOptionDescription": "Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server."
+    "videoCodecOptionDescription": "Allow direct playback for this codec when supported. Unchecked codecs are transcoded by the media server.",
+    "subtitleOnMute": "Show subtitles when muted",
+    "subtitleOnMuteDescription": "Temporarily select an available subtitle while muted, then restore the previous choice when sound returns unless you choose another track."
   },
   "themeEditor": {
     "builtIn": "Built-in",

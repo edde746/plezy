@@ -222,6 +222,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                   subtitle: t.settings.alwaysShowSubtitlesOnDeviceDescription,
                 ),
                 SettingSwitchTile(
+                  pref: SettingsService.subtitleOnMute,
+                  icon: Symbols.subtitles_rounded,
+                  title: t.settings.subtitleOnMute,
+                  subtitle: t.settings.subtitleOnMuteDescription,
+                ),
+                SettingSwitchTile(
                   pref: SettingsService.autoDownloadPreferredSubtitle,
                   icon: Symbols.download_rounded,
                   title: t.settings.autoDownloadPreferredSubtitle,
