@@ -13,10 +13,11 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 
 - Connect Real-Debrid or AllDebrid through a QR/code flow; connect Premiumize
   or TorBox with an API key.
-- Open connected cloud accounts from the existing Files and books screen, in
-  one nested Cloud & add-on streaming group. Browse ready video files with the
-  focused list, refresh, and recover from empty or unavailable states without
-  losing account setup.
+- Open Files and books from the existing library picker or its single nested
+  Libraries rail row. Connected accounts live together in the screen's Cloud
+  & add-on streaming group. Browse ready video files with the focused list,
+  refresh, and recover from empty or unavailable states without losing account
+  setup.
 - Install a Stremio-compatible add-on by manifest URL and fetch its stream
   options for a Plex/Jellyfin/Emby movie or episode detail.
 - Play direct HTTP streams, select add-on subtitles, open explicit external

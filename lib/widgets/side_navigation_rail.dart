@@ -681,6 +681,15 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   Iterable<String> _focusKeysForLibraryRows(List<_LibraryNavRow> rows) => rows.map(_focusKeyForLibraryRow);
 
+  Iterable<String> _sourceLibraryFocusKeys() sync* {
+    yield 'source:files';
+    if (!context.read<LibrariesProvider>().isLoading) {
+      for (final shelf in context.read<SourceController?>()?.shelves ?? <PublicationShelf>{}) {
+        yield 'source:${shelf.name}';
+      }
+    }
+  }
+
   /// Build the set of valid focus keys (main nav + currently rendered library rows).
   Set<String> _buildValidFocusKeys({
     required List<_LibraryNavRow> visibleRows,
@@ -705,6 +714,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       if (_showFullscreenToggle) _kFullscreen,
       if (hasLiveTv) 'liveTv',
       ..._focusKeysForLibraryRows(visibleRows),
+      ..._sourceLibraryFocusKeys(),
       if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
     };
   }
@@ -786,8 +796,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         // condition so a collapsed rail never targets a focus-excluded row.
         if (_librariesExpanded && !isCollapsed) ...[
           ..._focusKeysForLibraryRows(visibleRows),
-          for (final shelf in context.read<SourceController?>()?.shelves ?? <PublicationShelf>{})
-            'source:${shelf.name}',
+          ..._sourceLibraryFocusKeys(),
           if (hasHiddenLibraries) ...[
             _kHiddenLibraries,
             if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
@@ -1335,6 +1344,29 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       );
     }
 
+    Widget filesLibraryItem() {
+      final selected = isLibrariesTabSelected && widget.selectedLibraryKey == 'source:files';
+      return NavigationRailItem(
+        icon: Symbols.folder_open_rounded,
+        selectedIcon: Symbols.folder_open_rounded,
+        label: Text(
+          Translations.of(context).fileSources.title,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected ? t.text : t.textMuted,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        isSelected: selected,
+        iconSize: 18,
+        expandedHeight: 40,
+        focusNode: _focusTracker.get('source:files'),
+        onTap: () => widget.onLibrarySelected('source:files'),
+        onNavigateRight: widget.onNavigateToContent,
+      );
+    }
+
     return Column(
       crossAxisAlignment: .start,
       children: [
@@ -1383,26 +1415,33 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               children: [
                 const SizedBox(height: 4),
                 if (isLoading)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
+                  ...[
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
+                        ),
                       ),
                     ),
-                  )
+                    filesLibraryItem(),
+                  ]
                 else if (allEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      Translations.of(context).libraries.noLibrariesFound,
-                      style: TextStyle(fontSize: 12, color: t.textMuted),
+                  ...[
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        Translations.of(context).libraries.noLibrariesFound,
+                        style: TextStyle(fontSize: 12, color: t.textMuted),
+                      ),
                     ),
-                  )
+                    filesLibraryItem(),
+                  ]
                 else ...[
                   if (visibleRows.isNotEmpty) _buildLibraryGroupedColumn(visibleRows, t),
+                  filesLibraryItem(),
                   for (final shelf in sourceShelves)
                     Builder(
                       builder: (context) {
