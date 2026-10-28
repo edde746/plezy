@@ -109,6 +109,8 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$hu comics = _Translations$comics$hu._(_root);
 	@override late final _Translations$games$hu games = _Translations$games$hu._(_root);
 	@override late final _Translations$deepLinks$hu deepLinks = _Translations$deepLinks$hu._(_root);
+	@override late final _Translations$householdSetup$hu householdSetup = _Translations$householdSetup$hu._(_root);
+	@override late final _Translations$issueReport$hu issueReport = _Translations$issueReport$hu._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$hu extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Nyissa meg, mint ${name}';
 	@override String get copy => 'másolás';
 	@override String get copied => 'Link másolat';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$hu extends Translations$householdSetup$en {
+	_Translations$householdSetup$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Háztartás beállítása';
+}
+
+// Path: issueReport
+class _Translations$issueReport$hu extends Translations$issueReport$en {
+	_Translations$issueReport$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Hiba jelentése';
+	@override String get instructions => 'Olvasd be a QR-kódot az előre kitöltött GitHub-vázlat megnyitásához. Ellenőrizd, és csak akkor küldd el, ha készen állsz.';
+	@override String get privacy => 'A vázlat az alkalmazás verzióját, a platformot és a kapcsolatok számát tartalmazza. Nem tartalmaz szervercímeket, fiók- vagy profilneveket, médiacímeket és fájlútvonalakat.';
+	@override String get logPrivacy => 'A naplók megadása nem kötelező. Feltöltés előtt nézd át őket. Az azonosítójuk bekerülhet a nyilvános vázlatba.';
+	@override String get openDraft => 'GitHub-vázlat megnyitása';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsHu {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Nyissa meg, mint ${name}',
 			'deepLinks.copy' => 'másolás',
 			'deepLinks.copied' => 'Link másolat',
+			'householdSetup.title' => 'Háztartás beállítása',
+			'issueReport.title' => 'Hiba jelentése',
+			'issueReport.instructions' => 'Olvasd be a QR-kódot az előre kitöltött GitHub-vázlat megnyitásához. Ellenőrizd, és csak akkor küldd el, ha készen állsz.',
+			'issueReport.privacy' => 'A vázlat az alkalmazás verzióját, a platformot és a kapcsolatok számát tartalmazza. Nem tartalmaz szervercímeket, fiók- vagy profilneveket, médiacímeket és fájlútvonalakat.',
+			'issueReport.logPrivacy' => 'A naplók megadása nem kötelező. Feltöltés előtt nézd át őket. Az azonosítójuk bekerülhet a nyilvános vázlatba.',
+			'issueReport.openDraft' => 'GitHub-vázlat megnyitása',
 			_ => null,
 		};
 	}

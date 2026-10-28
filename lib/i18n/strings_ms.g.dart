@@ -109,6 +109,8 @@ class TranslationsMs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$ms comics = _Translations$comics$ms._(_root);
 	@override late final _Translations$games$ms games = _Translations$games$ms._(_root);
 	@override late final _Translations$deepLinks$ms deepLinks = _Translations$deepLinks$ms._(_root);
+	@override late final _Translations$householdSetup$ms householdSetup = _Translations$householdSetup$ms._(_root);
+	@override late final _Translations$issueReport$ms issueReport = _Translations$issueReport$ms._(_root);
 }
 
 // Path: app
@@ -3800,6 +3802,30 @@ class _Translations$deepLinks$ms extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Buka sebagai ${name}';
 	@override String get copy => 'Salinan';
 	@override String get copied => 'Link yang disalin';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$ms extends Translations$householdSetup$en {
+	_Translations$householdSetup$ms._(TranslationsMs root) : this._root = root, super.internal(root);
+
+	final TranslationsMs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Persediaan rumah tangga';
+}
+
+// Path: issueReport
+class _Translations$issueReport$ms extends Translations$issueReport$en {
+	_Translations$issueReport$ms._(TranslationsMs root) : this._root = root, super.internal(root);
+
+	final TranslationsMs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Laporkan masalah';
+	@override String get instructions => 'Imbas kod QR untuk membuka draf GitHub yang telah diisi. Semak dan hantar apabila anda bersedia.';
+	@override String get privacy => 'Draf mengandungi versi aplikasi, platform dan bilangan sambungan. Alamat pelayan, nama akaun dan profil, tajuk media serta laluan fail tidak disertakan.';
+	@override String get logPrivacy => 'Log adalah pilihan. Semak sebelum memuat naik. ID log ditambahkan pada draf yang mungkin terbuka kepada umum.';
+	@override String get openDraft => 'Buka draf GitHub';
 }
 
 // Path: appIcon.names
@@ -8520,6 +8546,12 @@ extension on TranslationsMs {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Buka sebagai ${name}',
 			'deepLinks.copy' => 'Salinan',
 			'deepLinks.copied' => 'Link yang disalin',
+			'householdSetup.title' => 'Persediaan rumah tangga',
+			'issueReport.title' => 'Laporkan masalah',
+			'issueReport.instructions' => 'Imbas kod QR untuk membuka draf GitHub yang telah diisi. Semak dan hantar apabila anda bersedia.',
+			'issueReport.privacy' => 'Draf mengandungi versi aplikasi, platform dan bilangan sambungan. Alamat pelayan, nama akaun dan profil, tajuk media serta laluan fail tidak disertakan.',
+			'issueReport.logPrivacy' => 'Log adalah pilihan. Semak sebelum memuat naik. ID log ditambahkan pada draf yang mungkin terbuka kepada umum.',
+			'issueReport.openDraft' => 'Buka draf GitHub',
 			_ => null,
 		};
 	}

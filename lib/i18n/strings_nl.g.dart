@@ -109,6 +109,8 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$nl comics = _Translations$comics$nl._(_root);
 	@override late final _Translations$games$nl games = _Translations$games$nl._(_root);
 	@override late final _Translations$deepLinks$nl deepLinks = _Translations$deepLinks$nl._(_root);
+	@override late final _Translations$householdSetup$nl householdSetup = _Translations$householdSetup$nl._(_root);
+	@override late final _Translations$issueReport$nl issueReport = _Translations$issueReport$nl._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$nl extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Open als ${name}';
 	@override String get copy => 'Kopieer';
 	@override String get copied => 'Link gekopieerd';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$nl extends Translations$householdSetup$en {
+	_Translations$householdSetup$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Huishouden instellen';
+}
+
+// Path: issueReport
+class _Translations$issueReport$nl extends Translations$issueReport$en {
+	_Translations$issueReport$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Probleem melden';
+	@override String get instructions => 'Scan de QR-code om een vooraf ingevuld GitHub-concept te openen. Controleer het en verstuur het pas wanneer je er klaar voor bent.';
+	@override String get privacy => 'Het concept bevat de appversie, het platform en het aantal verbindingen. Serveradressen, account- en profielnamen, mediatitels en bestandspaden worden weggelaten.';
+	@override String get logPrivacy => 'Logboeken zijn optioneel. Controleer ze voordat je ze uploadt. Hun ID wordt toegevoegd aan het concept, dat openbaar kan zijn.';
+	@override String get openDraft => 'GitHub-concept openen';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsNl {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Open als ${name}',
 			'deepLinks.copy' => 'Kopieer',
 			'deepLinks.copied' => 'Link gekopieerd',
+			'householdSetup.title' => 'Huishouden instellen',
+			'issueReport.title' => 'Probleem melden',
+			'issueReport.instructions' => 'Scan de QR-code om een vooraf ingevuld GitHub-concept te openen. Controleer het en verstuur het pas wanneer je er klaar voor bent.',
+			'issueReport.privacy' => 'Het concept bevat de appversie, het platform en het aantal verbindingen. Serveradressen, account- en profielnamen, mediatitels en bestandspaden worden weggelaten.',
+			'issueReport.logPrivacy' => 'Logboeken zijn optioneel. Controleer ze voordat je ze uploadt. Hun ID wordt toegevoegd aan het concept, dat openbaar kan zijn.',
+			'issueReport.openDraft' => 'GitHub-concept openen',
 			_ => null,
 		};
 	}

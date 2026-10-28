@@ -109,6 +109,8 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$tr comics = _Translations$comics$tr._(_root);
 	@override late final _Translations$games$tr games = _Translations$games$tr._(_root);
 	@override late final _Translations$deepLinks$tr deepLinks = _Translations$deepLinks$tr._(_root);
+	@override late final _Translations$householdSetup$tr householdSetup = _Translations$householdSetup$tr._(_root);
+	@override late final _Translations$issueReport$tr issueReport = _Translations$issueReport$tr._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$tr extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name} olarak açılır';
 	@override String get copy => 'kopyası';
 	@override String get copied => 'Link kopyalanmış';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$tr extends Translations$householdSetup$en {
+	_Translations$householdSetup$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Ev kurulumu';
+}
+
+// Path: issueReport
+class _Translations$issueReport$tr extends Translations$issueReport$en {
+	_Translations$issueReport$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Sorun bildir';
+	@override String get instructions => 'Önceden doldurulmuş bir GitHub taslağını açmak için QR kodunu tarayın. İnceleyin ve hazır olduğunuzda gönderin.';
+	@override String get privacy => 'Taslakta uygulama sürümü, platform ve bağlantı sayısı bulunur. Sunucu adresleri, hesap ve profil adları, medya başlıkları ve dosya yolları eklenmez.';
+	@override String get logPrivacy => 'Günlükler isteğe bağlıdır. Yüklemeden önce inceleyin. Günlük kimliği herkese açık olabilecek taslağa eklenir.';
+	@override String get openDraft => 'GitHub taslağını aç';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsTr {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} olarak açılır',
 			'deepLinks.copy' => 'kopyası',
 			'deepLinks.copied' => 'Link kopyalanmış',
+			'householdSetup.title' => 'Ev kurulumu',
+			'issueReport.title' => 'Sorun bildir',
+			'issueReport.instructions' => 'Önceden doldurulmuş bir GitHub taslağını açmak için QR kodunu tarayın. İnceleyin ve hazır olduğunuzda gönderin.',
+			'issueReport.privacy' => 'Taslakta uygulama sürümü, platform ve bağlantı sayısı bulunur. Sunucu adresleri, hesap ve profil adları, medya başlıkları ve dosya yolları eklenmez.',
+			'issueReport.logPrivacy' => 'Günlükler isteğe bağlıdır. Yüklemeden önce inceleyin. Günlük kimliği herkese açık olabilecek taslağa eklenir.',
+			'issueReport.openDraft' => 'GitHub taslağını aç',
 			_ => null,
 		};
 	}

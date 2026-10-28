@@ -504,5 +504,15 @@
   },
   "lending": {
     "cancel": "Annuler"
+  },
+  "householdSetup": {
+    "title": "Configuration du foyer"
+  },
+  "issueReport": {
+    "title": "Signaler un problème",
+    "instructions": "Balayez le code QR pour ouvrir un brouillon GitHub prérempli. Vérifiez-le et envoyez-le quand vous êtes prêt.",
+    "privacy": "Le brouillon contient la version de l’application, la plateforme et le nombre de connexions. Il exclut les adresses des serveurs, les noms de comptes et de profils, les titres et les chemins de fichiers.",
+    "logPrivacy": "Les journaux sont facultatifs. Vérifiez-les avant l’envoi. Leur identifiant est ajouté au brouillon, qui peut être public.",
+    "openDraft": "Ouvrir le brouillon GitHub"
   }
 }

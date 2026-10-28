@@ -109,6 +109,8 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$sv comics = _Translations$comics$sv._(_root);
 	@override late final _Translations$games$sv games = _Translations$games$sv._(_root);
 	@override late final _Translations$deepLinks$sv deepLinks = _Translations$deepLinks$sv._(_root);
+	@override late final _Translations$householdSetup$sv householdSetup = _Translations$householdSetup$sv._(_root);
+	@override late final _Translations$issueReport$sv issueReport = _Translations$issueReport$sv._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$sv extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Öppna som ${name}';
 	@override String get copy => 'Kopiera';
 	@override String get copied => 'Link kopierad';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$sv extends Translations$householdSetup$en {
+	_Translations$householdSetup$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Hushållsinställningar';
+}
+
+// Path: issueReport
+class _Translations$issueReport$sv extends Translations$issueReport$en {
+	_Translations$issueReport$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Rapportera ett problem';
+	@override String get instructions => 'Skanna QR-koden för att öppna ett förifyllt GitHub-utkast. Granska det och skicka först när du är redo.';
+	@override String get privacy => 'Utkastet innehåller appversion, plattform och antal anslutningar. Serveradresser, konto- och profilnamn, medietitlar och filsökvägar utelämnas.';
+	@override String get logPrivacy => 'Loggar är valfria. Granska dem före uppladdning. Deras ID läggs till i utkastet, som kan vara offentligt.';
+	@override String get openDraft => 'Öppna GitHub-utkast';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsSv {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Öppna som ${name}',
 			'deepLinks.copy' => 'Kopiera',
 			'deepLinks.copied' => 'Link kopierad',
+			'householdSetup.title' => 'Hushållsinställningar',
+			'issueReport.title' => 'Rapportera ett problem',
+			'issueReport.instructions' => 'Skanna QR-koden för att öppna ett förifyllt GitHub-utkast. Granska det och skicka först när du är redo.',
+			'issueReport.privacy' => 'Utkastet innehåller appversion, plattform och antal anslutningar. Serveradresser, konto- och profilnamn, medietitlar och filsökvägar utelämnas.',
+			'issueReport.logPrivacy' => 'Loggar är valfria. Granska dem före uppladdning. Deras ID läggs till i utkastet, som kan vara offentligt.',
+			'issueReport.openDraft' => 'Öppna GitHub-utkast',
 			_ => null,
 		};
 	}

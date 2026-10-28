@@ -109,6 +109,8 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$ru comics = _Translations$comics$ru._(_root);
 	@override late final _Translations$games$ru games = _Translations$games$ru._(_root);
 	@override late final _Translations$deepLinks$ru deepLinks = _Translations$deepLinks$ru._(_root);
+	@override late final _Translations$householdSetup$ru householdSetup = _Translations$householdSetup$ru._(_root);
+	@override late final _Translations$issueReport$ru issueReport = _Translations$issueReport$ru._(_root);
 }
 
 // Path: app
@@ -3869,6 +3871,30 @@ class _Translations$deepLinks$ru extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Откройте как ${name}';
 	@override String get copy => 'Копировать';
 	@override String get copied => 'Линк копирован';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$ru extends Translations$householdSetup$en {
+	_Translations$householdSetup$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Настройка дома';
+}
+
+// Path: issueReport
+class _Translations$issueReport$ru extends Translations$issueReport$en {
+	_Translations$issueReport$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Сообщить о проблеме';
+	@override String get instructions => 'Отсканируйте QR-код, чтобы открыть заполненный черновик GitHub. Проверьте его и отправляйте, только когда будете готовы.';
+	@override String get privacy => 'Черновик включает версию приложения, платформу и число подключений. Адреса серверов, имена аккаунтов и профилей, названия медиа и пути к файлам не добавляются.';
+	@override String get logPrivacy => 'Журналы необязательны. Проверьте их перед загрузкой. Их ID добавляется в черновик, который может быть общедоступным.';
+	@override String get openDraft => 'Открыть черновик GitHub';
 }
 
 // Path: appIcon.names
@@ -8595,6 +8621,12 @@ extension on TranslationsRu {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Откройте как ${name}',
 			'deepLinks.copy' => 'Копировать',
 			'deepLinks.copied' => 'Линк копирован',
+			'householdSetup.title' => 'Настройка дома',
+			'issueReport.title' => 'Сообщить о проблеме',
+			'issueReport.instructions' => 'Отсканируйте QR-код, чтобы открыть заполненный черновик GitHub. Проверьте его и отправляйте, только когда будете готовы.',
+			'issueReport.privacy' => 'Черновик включает версию приложения, платформу и число подключений. Адреса серверов, имена аккаунтов и профилей, названия медиа и пути к файлам не добавляются.',
+			'issueReport.logPrivacy' => 'Журналы необязательны. Проверьте их перед загрузкой. Их ID добавляется в черновик, который может быть общедоступным.',
+			'issueReport.openDraft' => 'Открыть черновик GitHub',
 			_ => null,
 		};
 	}

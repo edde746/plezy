@@ -3955,5 +3955,15 @@
     "openAsProfile": "Otevřete jako ${name}",
     "copy": "Kopírování",
     "copied": "Link kopírovaný"
+  },
+  "householdSetup": {
+    "title": "Nastavení domácnosti"
+  },
+  "issueReport": {
+    "title": "Nahlásit problém",
+    "instructions": "Naskenujte QR kód a otevřete předvyplněný návrh na GitHubu. Před odesláním ho zkontrolujte.",
+    "privacy": "Návrh obsahuje verzi aplikace, platformu a počty připojení. Neobsahuje adresy serverů, názvy účtů a profilů, názvy médií ani cesty k souborům.",
+    "logPrivacy": "Protokoly jsou volitelné. Před nahráním je zkontrolujte. Jejich ID se přidá do návrhu, který může být veřejný.",
+    "openDraft": "Otevřít návrh na GitHubu"
   }
 }

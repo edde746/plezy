@@ -3911,5 +3911,15 @@
     "openAsProfile": "Öppna som ${name}",
     "copy": "Kopiera",
     "copied": "Link kopierad"
+  },
+  "householdSetup": {
+    "title": "Hushållsinställningar"
+  },
+  "issueReport": {
+    "title": "Rapportera ett problem",
+    "instructions": "Skanna QR-koden för att öppna ett förifyllt GitHub-utkast. Granska det och skicka först när du är redo.",
+    "privacy": "Utkastet innehåller appversion, plattform och antal anslutningar. Serveradresser, konto- och profilnamn, medietitlar och filsökvägar utelämnas.",
+    "logPrivacy": "Loggar är valfria. Granska dem före uppladdning. Deras ID läggs till i utkastet, som kan vara offentligt.",
+    "openDraft": "Öppna GitHub-utkast"
   }
 }

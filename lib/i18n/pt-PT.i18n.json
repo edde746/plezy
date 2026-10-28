@@ -542,5 +542,15 @@
     "subtitleApplyFailed": "Não foi possível descarregar ou aplicar esta legenda. Verifique a ligação e tente outro resultado.",
     "subtitleSearching": "A pesquisar no OpenSubtitles",
     "subtitleDownloading(param:title)": "A descarregar a legenda: ${title}"
+  },
+  "householdSetup": {
+    "title": "Configuração do agregado familiar"
+  },
+  "issueReport": {
+    "title": "Comunicar um problema",
+    "instructions": "Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.",
+    "privacy": "O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.",
+    "logPrivacy": "Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.",
+    "openDraft": "Abrir rascunho do GitHub"
   }
 }

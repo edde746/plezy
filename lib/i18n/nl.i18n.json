@@ -3911,5 +3911,15 @@
     "openAsProfile": "Open als ${name}",
     "copy": "Kopieer",
     "copied": "Link gekopieerd"
+  },
+  "householdSetup": {
+    "title": "Huishouden instellen"
+  },
+  "issueReport": {
+    "title": "Probleem melden",
+    "instructions": "Scan de QR-code om een vooraf ingevuld GitHub-concept te openen. Controleer het en verstuur het pas wanneer je er klaar voor bent.",
+    "privacy": "Het concept bevat de appversie, het platform en het aantal verbindingen. Serveradressen, account- en profielnamen, mediatitels en bestandspaden worden weggelaten.",
+    "logPrivacy": "Logboeken zijn optioneel. Controleer ze voordat je ze uploadt. Hun ID wordt toegevoegd aan het concept, dat openbaar kan zijn.",
+    "openDraft": "GitHub-concept openen"
   }
 }

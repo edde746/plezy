@@ -109,6 +109,8 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$cs comics = _Translations$comics$cs._(_root);
 	@override late final _Translations$games$cs games = _Translations$games$cs._(_root);
 	@override late final _Translations$deepLinks$cs deepLinks = _Translations$deepLinks$cs._(_root);
+	@override late final _Translations$householdSetup$cs householdSetup = _Translations$householdSetup$cs._(_root);
+	@override late final _Translations$issueReport$cs issueReport = _Translations$issueReport$cs._(_root);
 }
 
 // Path: app
@@ -3865,6 +3867,30 @@ class _Translations$deepLinks$cs extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Otevřete jako ${name}';
 	@override String get copy => 'Kopírování';
 	@override String get copied => 'Link kopírovaný';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$cs extends Translations$householdSetup$en {
+	_Translations$householdSetup$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Nastavení domácnosti';
+}
+
+// Path: issueReport
+class _Translations$issueReport$cs extends Translations$issueReport$en {
+	_Translations$issueReport$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Nahlásit problém';
+	@override String get instructions => 'Naskenujte QR kód a otevřete předvyplněný návrh na GitHubu. Před odesláním ho zkontrolujte.';
+	@override String get privacy => 'Návrh obsahuje verzi aplikace, platformu a počty připojení. Neobsahuje adresy serverů, názvy účtů a profilů, názvy médií ani cesty k souborům.';
+	@override String get logPrivacy => 'Protokoly jsou volitelné. Před nahráním je zkontrolujte. Jejich ID se přidá do návrhu, který může být veřejný.';
+	@override String get openDraft => 'Otevřít návrh na GitHubu';
 }
 
 // Path: appIcon.names
@@ -8589,6 +8615,12 @@ extension on TranslationsCs {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Otevřete jako ${name}',
 			'deepLinks.copy' => 'Kopírování',
 			'deepLinks.copied' => 'Link kopírovaný',
+			'householdSetup.title' => 'Nastavení domácnosti',
+			'issueReport.title' => 'Nahlásit problém',
+			'issueReport.instructions' => 'Naskenujte QR kód a otevřete předvyplněný návrh na GitHubu. Před odesláním ho zkontrolujte.',
+			'issueReport.privacy' => 'Návrh obsahuje verzi aplikace, platformu a počty připojení. Neobsahuje adresy serverů, názvy účtů a profilů, názvy médií ani cesty k souborům.',
+			'issueReport.logPrivacy' => 'Protokoly jsou volitelné. Před nahráním je zkontrolujte. Jejich ID se přidá do návrhu, který může být veřejný.',
+			'issueReport.openDraft' => 'Otevřít návrh na GitHubu',
 			_ => null,
 		};
 	}

@@ -3918,5 +3918,15 @@
     "openAsProfile": "Abierto como ${name}",
     "copy": "Copia",
     "copied": "Link copiado"
+  },
+  "householdSetup": {
+    "title": "Configuración del hogar"
+  },
+  "issueReport": {
+    "title": "Informar de un problema",
+    "instructions": "Escanea el código QR para abrir un borrador de GitHub rellenado. Revísalo y envíalo cuando quieras.",
+    "privacy": "El borrador incluye la versión de la aplicación, la plataforma y el número de conexiones. No incluye direcciones de servidores, nombres de cuentas o perfiles, títulos ni rutas de archivos.",
+    "logPrivacy": "Los registros son opcionales. Revísalos antes de subirlos. Su ID se añade al borrador, que podría ser público.",
+    "openDraft": "Abrir borrador de GitHub"
   }
 }

@@ -12,6 +12,7 @@ cd "$ROOT_DIR"
 for checker in \
   scripts/checks/check_brand_assets.py \
   scripts/checks/check_deep_link_schemes.py \
+  scripts/checks/check_capability_manifest.py \
   scripts/checks/check_build_workflow.py \
   scripts/checks/check_apple_spm_locks.py \
   scripts/checks/check_tvos_test_wiring.py \

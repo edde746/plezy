@@ -3911,5 +3911,15 @@
     "openAsProfile": "${name} olarak açılır",
     "copy": "kopyası",
     "copied": "Link kopyalanmış"
+  },
+  "householdSetup": {
+    "title": "Ev kurulumu"
+  },
+  "issueReport": {
+    "title": "Sorun bildir",
+    "instructions": "Önceden doldurulmuş bir GitHub taslağını açmak için QR kodunu tarayın. İnceleyin ve hazır olduğunuzda gönderin.",
+    "privacy": "Taslakta uygulama sürümü, platform ve bağlantı sayısı bulunur. Sunucu adresleri, hesap ve profil adları, medya başlıkları ve dosya yolları eklenmez.",
+    "logPrivacy": "Günlükler isteğe bağlıdır. Yüklemeden önce inceleyin. Günlük kimliği herkese açık olabilecek taslağa eklenir.",
+    "openDraft": "GitHub taslağını aç"
   }
 }

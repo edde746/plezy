@@ -109,6 +109,8 @@ class TranslationsPt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$comics$pt comics = Translations$comics$pt.internal(_root);
 	@override late final Translations$games$pt games = Translations$games$pt.internal(_root);
 	@override late final Translations$deepLinks$pt deepLinks = Translations$deepLinks$pt.internal(_root);
+	@override late final Translations$householdSetup$pt householdSetup = Translations$householdSetup$pt.internal(_root);
+	@override late final Translations$issueReport$pt issueReport = Translations$issueReport$pt.internal(_root);
 }
 
 // Path: app
@@ -3830,6 +3832,30 @@ class Translations$deepLinks$pt extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Abra como ${name}';
 	@override String get copy => 'Copia';
 	@override String get copied => 'Link copiado';
+}
+
+// Path: householdSetup
+class Translations$householdSetup$pt extends Translations$householdSetup$en {
+	Translations$householdSetup$pt.internal(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuração da casa';
+}
+
+// Path: issueReport
+class Translations$issueReport$pt extends Translations$issueReport$en {
+	Translations$issueReport$pt.internal(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Comunicar um problema';
+	@override String get instructions => 'Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.';
+	@override String get privacy => 'O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.';
+	@override String get logPrivacy => 'Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.';
+	@override String get openDraft => 'Abrir rascunho do GitHub';
 }
 
 // Path: appIcon.names
@@ -8552,6 +8578,12 @@ extension on TranslationsPt {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Abra como ${name}',
 			'deepLinks.copy' => 'Copia',
 			'deepLinks.copied' => 'Link copiado',
+			'householdSetup.title' => 'Configuração da casa',
+			'issueReport.title' => 'Comunicar um problema',
+			'issueReport.instructions' => 'Leia o código QR para abrir um rascunho do GitHub já preenchido. Reveja-o e envie-o quando estiver pronto.',
+			'issueReport.privacy' => 'O rascunho inclui a versão da aplicação, a plataforma e o número de ligações. Exclui endereços de servidores, nomes de contas e perfis, títulos e caminhos de ficheiros.',
+			'issueReport.logPrivacy' => 'Os registos são opcionais. Reveja-os antes de os carregar. O respetivo ID é adicionado ao rascunho, que pode ser público.',
+			'issueReport.openDraft' => 'Abrir rascunho do GitHub',
 			_ => null,
 		};
 	}

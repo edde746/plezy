@@ -109,6 +109,8 @@ class TranslationsUk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$uk comics = _Translations$comics$uk._(_root);
 	@override late final _Translations$games$uk games = _Translations$games$uk._(_root);
 	@override late final _Translations$deepLinks$uk deepLinks = _Translations$deepLinks$uk._(_root);
+	@override late final _Translations$householdSetup$uk householdSetup = _Translations$householdSetup$uk._(_root);
+	@override late final _Translations$issueReport$uk issueReport = _Translations$issueReport$uk._(_root);
 }
 
 // Path: app
@@ -3865,6 +3867,30 @@ class _Translations$deepLinks$uk extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Відкрийте як ${name}';
 	@override String get copy => 'Копія';
 	@override String get copied => 'Link копіюється';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$uk extends Translations$householdSetup$en {
+	_Translations$householdSetup$uk._(TranslationsUk root) : this._root = root, super.internal(root);
+
+	final TranslationsUk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Налаштування дому';
+}
+
+// Path: issueReport
+class _Translations$issueReport$uk extends Translations$issueReport$en {
+	_Translations$issueReport$uk._(TranslationsUk root) : this._root = root, super.internal(root);
+
+	final TranslationsUk _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Повідомити про проблему';
+	@override String get instructions => 'Скануйте QR-код, щоб відкрити попередньо заповнену чернетку GitHub. Перевірте її та надішліть, коли будете готові.';
+	@override String get privacy => 'Чернетка містить версію застосунку, платформу та кількість з’єднань. Адреси серверів, імена облікових записів і профілів, назви медіа й шляхи до файлів не додаються.';
+	@override String get logPrivacy => 'Журнали необов’язкові. Перегляньте їх перед завантаженням. Їхній ID додається до чернетки, яка може бути публічною.';
+	@override String get openDraft => 'Відкрити чернетку GitHub';
 }
 
 // Path: appIcon.names
@@ -8589,6 +8615,12 @@ extension on TranslationsUk {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Відкрийте як ${name}',
 			'deepLinks.copy' => 'Копія',
 			'deepLinks.copied' => 'Link копіюється',
+			'householdSetup.title' => 'Налаштування дому',
+			'issueReport.title' => 'Повідомити про проблему',
+			'issueReport.instructions' => 'Скануйте QR-код, щоб відкрити попередньо заповнену чернетку GitHub. Перевірте її та надішліть, коли будете готові.',
+			'issueReport.privacy' => 'Чернетка містить версію застосунку, платформу та кількість з’єднань. Адреси серверів, імена облікових записів і профілів, назви медіа й шляхи до файлів не додаються.',
+			'issueReport.logPrivacy' => 'Журнали необов’язкові. Перегляньте їх перед завантаженням. Їхній ID додається до чернетки, яка може бути публічною.',
+			'issueReport.openDraft' => 'Відкрити чернетку GitHub',
 			_ => null,
 		};
 	}

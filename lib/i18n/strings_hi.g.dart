@@ -109,6 +109,8 @@ class TranslationsHi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$hi comics = _Translations$comics$hi._(_root);
 	@override late final _Translations$games$hi games = _Translations$games$hi._(_root);
 	@override late final _Translations$deepLinks$hi deepLinks = _Translations$deepLinks$hi._(_root);
+	@override late final _Translations$householdSetup$hi householdSetup = _Translations$householdSetup$hi._(_root);
+	@override late final _Translations$issueReport$hi issueReport = _Translations$issueReport$hi._(_root);
 }
 
 // Path: app
@@ -3823,6 +3825,30 @@ class _Translations$deepLinks$hi extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => '${name} के रूप में खोलें';
 	@override String get copy => 'कॉपी करें';
 	@override String get copied => 'लिंक कॉपी करें';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$hi extends Translations$householdSetup$en {
+	_Translations$householdSetup$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'घर का सेटअप';
+}
+
+// Path: issueReport
+class _Translations$issueReport$hi extends Translations$issueReport$en {
+	_Translations$issueReport$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'समस्या की रिपोर्ट करें';
+	@override String get instructions => 'पहले से भरा GitHub ड्राफ़्ट खोलने के लिए QR कोड स्कैन करें। भेजने से पहले उसे देख लें।';
+	@override String get privacy => 'ड्राफ़्ट में ऐप संस्करण, प्लेटफ़ॉर्म और कनेक्शन की संख्या होती है। इसमें सर्वर पते, खाते या प्रोफ़ाइल के नाम, मीडिया शीर्षक या फ़ाइल पथ शामिल नहीं होते।';
+	@override String get logPrivacy => 'लॉग वैकल्पिक हैं। अपलोड करने से पहले उन्हें देखें। उनका ID ड्राफ़्ट में जुड़ता है, जो सार्वजनिक हो सकता है।';
+	@override String get openDraft => 'GitHub ड्राफ़्ट खोलें';
 }
 
 // Path: appIcon.names
@@ -8545,6 +8571,12 @@ extension on TranslationsHi {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} के रूप में खोलें',
 			'deepLinks.copy' => 'कॉपी करें',
 			'deepLinks.copied' => 'लिंक कॉपी करें',
+			'householdSetup.title' => 'घर का सेटअप',
+			'issueReport.title' => 'समस्या की रिपोर्ट करें',
+			'issueReport.instructions' => 'पहले से भरा GitHub ड्राफ़्ट खोलने के लिए QR कोड स्कैन करें। भेजने से पहले उसे देख लें।',
+			'issueReport.privacy' => 'ड्राफ़्ट में ऐप संस्करण, प्लेटफ़ॉर्म और कनेक्शन की संख्या होती है। इसमें सर्वर पते, खाते या प्रोफ़ाइल के नाम, मीडिया शीर्षक या फ़ाइल पथ शामिल नहीं होते।',
+			'issueReport.logPrivacy' => 'लॉग वैकल्पिक हैं। अपलोड करने से पहले उन्हें देखें। उनका ID ड्राफ़्ट में जुड़ता है, जो सार्वजनिक हो सकता है।',
+			'issueReport.openDraft' => 'GitHub ड्राफ़्ट खोलें',
 			_ => null,
 		};
 	}

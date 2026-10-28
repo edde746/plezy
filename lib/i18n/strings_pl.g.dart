@@ -109,6 +109,8 @@ class TranslationsPl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$comics$pl comics = _Translations$comics$pl._(_root);
 	@override late final _Translations$games$pl games = _Translations$games$pl._(_root);
 	@override late final _Translations$deepLinks$pl deepLinks = _Translations$deepLinks$pl._(_root);
+	@override late final _Translations$householdSetup$pl householdSetup = _Translations$householdSetup$pl._(_root);
+	@override late final _Translations$issueReport$pl issueReport = _Translations$issueReport$pl._(_root);
 }
 
 // Path: app
@@ -3869,6 +3871,30 @@ class _Translations$deepLinks$pl extends Translations$deepLinks$en {
 	@override String openAsProfile({required Object name}) => 'Otwórz jako ${name}';
 	@override String get copy => 'Kopia';
 	@override String get copied => 'Link kopiowany';
+}
+
+// Path: householdSetup
+class _Translations$householdSetup$pl extends Translations$householdSetup$en {
+	_Translations$householdSetup$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Konfiguracja domu';
+}
+
+// Path: issueReport
+class _Translations$issueReport$pl extends Translations$issueReport$en {
+	_Translations$issueReport$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Zgłoś problem';
+	@override String get instructions => 'Zeskanuj kod QR, aby otworzyć wstępnie wypełniony szkic GitHub. Sprawdź go i wyślij, gdy będziesz gotowy.';
+	@override String get privacy => 'Szkic zawiera wersję aplikacji, platformę i liczbę połączeń. Nie zawiera adresów serwerów, nazw kont i profili, tytułów multimediów ani ścieżek plików.';
+	@override String get logPrivacy => 'Logi są opcjonalne. Przejrzyj je przed przesłaniem. Ich identyfikator zostanie dodany do szkicu, który może być publiczny.';
+	@override String get openDraft => 'Otwórz szkic GitHub';
 }
 
 // Path: appIcon.names
@@ -8595,6 +8621,12 @@ extension on TranslationsPl {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Otwórz jako ${name}',
 			'deepLinks.copy' => 'Kopia',
 			'deepLinks.copied' => 'Link kopiowany',
+			'householdSetup.title' => 'Konfiguracja domu',
+			'issueReport.title' => 'Zgłoś problem',
+			'issueReport.instructions' => 'Zeskanuj kod QR, aby otworzyć wstępnie wypełniony szkic GitHub. Sprawdź go i wyślij, gdy będziesz gotowy.',
+			'issueReport.privacy' => 'Szkic zawiera wersję aplikacji, platformę i liczbę połączeń. Nie zawiera adresów serwerów, nazw kont i profili, tytułów multimediów ani ścieżek plików.',
+			'issueReport.logPrivacy' => 'Logi są opcjonalne. Przejrzyj je przed przesłaniem. Ich identyfikator zostanie dodany do szkicu, który może być publiczny.',
+			'issueReport.openDraft' => 'Otwórz szkic GitHub',
 			_ => null,
 		};
 	}
