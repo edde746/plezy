@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Sync and repair subtitle timing across languages by locally translating target cue text for matching while preserving the target wording and applying only the matched timings.
+
+- Keep a bounded, device-local revision history of reviewed subtitles per profile and server library item. Restore, export, or delete prior results; word/token timing records are retained where available.
+
+
 - Export Whisper token timestamps as cue-linked word/token timing records in reviewed subtitle JSON; unsupported accelerators clearly return cue timing without word records.
 
 - Import bounded gzip-compressed TAR subtitle archives (`.tar.gz` and `.tgz`) through the picker, desktop drop, and Android share flows.

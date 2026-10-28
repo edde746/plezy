@@ -23,6 +23,7 @@ import '../../../services/subtitle_sync_service.dart';
 import '../../../services/subtitle_translation_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/subtitle_playback_transcription_service.dart';
+import '../../../services/subtitle_revision_service.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
@@ -70,6 +71,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   bool _lastResultUploadedToServer = false;
   String? _status;
   String? _error;
+  String? _revisionStatus;
   SubtitleInferenceProvider _provider = SubtitleInferenceProvider.cpu;
   String _speechLanguageCode = 'auto';
   TranslateLanguage _sourceLanguage = TranslateLanguage.english;
@@ -114,6 +116,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       _busy = true;
       _error = null;
       _status = null;
+      _revisionStatus = null;
     });
     try {
       await operation();
@@ -307,6 +310,168 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     setState(() => _status = service.status);
   });
 
+  Future<(TranslateLanguage, TranslateLanguage)?> _chooseCrossLanguagePair() async {
+    var source = _sourceLanguage;
+    var reference = _targetLanguage;
+    return showDialog<(TranslateLanguage, TranslateLanguage)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Subtitle languages for matching'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<TranslateLanguage>(
+                value: source,
+                decoration: const InputDecoration(
+                  labelText: 'Subtitle to synchronize',
+                  border: OutlineInputBorder(),
+                ),
+                items: SubtitleTranslationService.languages
+                    .map((language) => DropdownMenuItem(
+                          value: language,
+                          child: Text(
+                            SubtitleTranslationService.languageLabel(language),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .toList(growable: false),
+                onChanged: (value) => setDialogState(() => source = value ?? source),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<TranslateLanguage>(
+                value: reference,
+                decoration: const InputDecoration(
+                  labelText: 'Reference subtitle',
+                  border: OutlineInputBorder(),
+                ),
+                items: SubtitleTranslationService.languages
+                    .map((language) => DropdownMenuItem(
+                          value: language,
+                          child: Text(
+                            SubtitleTranslationService.languageLabel(language),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .toList(growable: false),
+                onChanged: (value) => setDialogState(() => reference = value ?? reference),
+              ),
+              if (source == reference)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Choose different languages to use translated text for matching.'),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: source == reference ? null : () => Navigator.of(dialogContext).pop((source, reference)),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Map<String, String> _glossaryForPair(
+    TranslateLanguage source,
+    TranslateLanguage target,
+  ) {
+    final sameAsCurrent = source == _sourceLanguage && target == _targetLanguage;
+    if (sameAsCurrent) return _parseGlossary();
+    final profileId = _activeProfileId;
+    if (profileId == null) return const <String, String>{};
+    try {
+      return SubtitleTranslationService.loadGlossaryForProfile(
+        profileId: profileId,
+        sourceLanguage: source,
+        targetLanguage: target,
+        seriesId: _useSeriesGlossary ? widget.seriesKey : null,
+      );
+    } catch (_) {
+      return const <String, String>{};
+    }
+  }
+
+  Future<void> _synchronizeAcrossLanguages({required bool repairCuts}) => _run(() async {
+    setState(() => _status = 'Choose the subtitle that needs synchronization…');
+    final target = await _pickSubtitleCues();
+    if (target == null || !mounted) return;
+    setState(() => _status = 'Choose a synchronized subtitle in another language…');
+    final reference = await _pickSubtitleCues();
+    if (reference == null || !mounted) return;
+    final pair = await _chooseCrossLanguagePair();
+    if (pair == null || !mounted) return;
+    final sourceLanguage = pair.$1;
+    final referenceLanguage = pair.$2;
+    final durationMs = widget.player.state.duration.inMilliseconds;
+    if (durationMs <= 0) {
+      throw const StateError('The player must expose media duration for subtitle-to-subtitle synchronization.');
+    }
+
+    setState(() => _status = 'Translating target cues locally for text matching…');
+    final translated = await SubtitleTranslationService.translateCues(
+      cues: target.$1,
+      sourceLanguage: sourceLanguage,
+      targetLanguage: referenceLanguage,
+      allowMobileData: _allowMobileData,
+      requestDesktopCuda: _requestTranslationCuda,
+      glossary: _glossaryForPair(sourceLanguage, referenceLanguage),
+      onProgress: (completed, total) {
+        if (!mounted) return;
+        setState(() => _status = 'Translating cues for alignment ($completed/$total)…');
+      },
+    );
+    if (!mounted) return;
+    if (translated.cues.length != target.$1.length) {
+      throw const StateError('Translation changed the cue count; no synchronization was applied.');
+    }
+
+    setState(() => _status = 'Aligning translated target text against the reference…');
+    final aligned = SubtitleSyncService.synchronizeAgainstReference(
+      subtitleCues: translated.cues,
+      referenceCues: reference.$1,
+      mediaDurationMs: durationMs,
+      repairCuts: repairCuts,
+    );
+    if (aligned.cues.length != target.$1.length) {
+      throw const StateError('Cross-language alignment changed the target cue count.');
+    }
+    final retimedOriginal = List<SubtitleCue>.generate(
+      target.$1.length,
+      (index) => SubtitleCue(
+        index: target.$1[index].index,
+        startMs: aligned.cues[index].startMs,
+        endMs: aligned.cues[index].endMs,
+        text: target.$1[index].text,
+      ),
+      growable: false,
+    );
+    if (!await _writeAndApply(
+      retimedOriginal,
+      operationLabel: repairCuts ? 'Cross-language reference cut repair' : 'Cross-language subtitle sync',
+      operationLanguageCode: sourceLanguage.bcpCode,
+    )) return;
+    if (!mounted) return;
+    final percent = (aligned.meanMatchConfidence * 100).round();
+    final warningCount = translated.qualityWarnings.length;
+    setState(() {
+      _status = 'Cross-language ${repairCuts ? 'cut repair' : 'sync'} applied to '
+          '${aligned.matchedCueCount} of ${aligned.totalCueCount} cues ($percent% match confidence). '
+          'The original target text was preserved. Translated from '
+          '${SubtitleTranslationService.languageLabel(sourceLanguage)} to '
+          '${SubtitleTranslationService.languageLabel(referenceLanguage)}'
+          '${warningCount == 0 ? '.' : '; $warningCount translation quality warnings.'}'
+          '${_lastResultUploadedToServer ? ' Uploaded to the server library.' : ''}';
+    });
+    await _showApplied();
+  });
+
   Future<void> _synchronizeToReference({required bool repairCuts}) => _run(() async {
     setState(() => _status = 'Choose the subtitle that needs synchronization…');
     final target = await _pickSubtitleCues();
@@ -408,6 +573,177 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       return context.read<ActiveProfileProvider>().activeId;
     } catch (_) {
       return null;
+    }
+  }
+
+  SubtitleRevisionIdentity? get _revisionIdentity {
+    final profileId = _activeProfileId?.trim();
+    final serverId = widget.serverId?.trim();
+    final ratingKey = widget.ratingKey?.trim();
+    if (profileId == null ||
+        profileId.isEmpty ||
+        serverId == null ||
+        serverId.isEmpty ||
+        ratingKey == null ||
+        ratingKey.isEmpty ||
+        widget.mediaIndex < 0) {
+      return null;
+    }
+    return SubtitleRevisionIdentity(
+      profileId: profileId,
+      serverId: serverId,
+      ratingKey: ratingKey,
+      mediaIndex: widget.mediaIndex,
+    );
+  }
+
+  Future<void> _storeReviewedRevision({
+    required List<SubtitleCue> cues,
+    required String operation,
+    String? languageCode,
+    required List<SubtitleWordTiming> wordTimings,
+  }) async {
+    final identity = _revisionIdentity;
+    if (identity == null) {
+      if (mounted) setState(() => _revisionStatus = 'Revision history needs an active profile and server library item.');
+      return;
+    }
+    try {
+      final revision = await SubtitleRevisionService.saveRevision(
+        identity: identity,
+        operation: operation,
+        languageCode: languageCode,
+        cues: cues,
+        wordTimings: wordTimings,
+      );
+      if (mounted) {
+        setState(() => _revisionStatus =
+            'Saved revision ${revision.id} to this device for this profile and library item.');
+      }
+    } catch (error) {
+      if (mounted) setState(() => _revisionStatus = 'Could not save this revision locally: $error');
+    }
+  }
+
+  Future<void> _restoreSubtitleRevision(SubtitleRevision revision) async {
+    final bytes = SubtitleSyncService.writeSrt(revision.cues);
+    final directory = await getTemporaryDirectory();
+    final path = p.join(directory.path, 'plezyng_revision_${revision.id}.srt');
+    await File(path).writeAsBytes(bytes, flush: true);
+    await widget.player.command(['sub-add', path, 'select']);
+    if (mounted) {
+      setState(() => _status = 'Attached reviewed revision from ${_formatRevisionDate(revision.createdAt)}.');
+      OverlaySheetController.of(context).refocus();
+    }
+  }
+
+  Future<void> _exportSubtitleRevision(SubtitleRevision revision) async {
+    final result = await FilePickerService.instance.saveFile(
+      dialogTitle: 'Export reviewed subtitle revision',
+      fileName: 'PlezyNG_revision_${revision.id}.srt',
+      bytes: SubtitleSyncService.writeSrt(revision.cues),
+      type: FileType.custom,
+      allowedExtensions: const ['srt'],
+    );
+    if (mounted && result != null) {
+      setState(() => _status = 'Reviewed subtitle revision exported as SRT.');
+    }
+  }
+
+  String _formatRevisionDate(DateTime value) {
+    final local = value.toLocal();
+    String pad(int part) => part.toString().padLeft(2, '0');
+    return '${local.year}-${pad(local.month)}-${pad(local.day)} ${pad(local.hour)}:${pad(local.minute)}';
+  }
+
+  Future<void> _showRevisionHistory() async {
+    final identity = _revisionIdentity;
+    if (identity == null) {
+      setState(() => _revisionStatus = 'Revision history needs an active profile and server library item.');
+      return;
+    }
+    try {
+      var revisions = await SubtitleRevisionService.loadRevisions(identity);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            final height = (MediaQuery.sizeOf(dialogContext).height - 220).clamp(240.0, 460.0).toDouble();
+            return AlertDialog(
+              title: const Text('Subtitle revision history'),
+              content: SizedBox(
+                width: 620,
+                height: height,
+                child: revisions.isEmpty
+                    ? const Center(child: Text('No reviewed revisions have been saved for this item yet.'))
+                    : ListView.separated(
+                        itemCount: revisions.length,
+                        separatorBuilder: (_, __) => const Divider(height: 12),
+                        itemBuilder: (context, index) {
+                          final revision = revisions[index];
+                          final language = revision.languageCode == null ? '' : ' · ${revision.languageCode}';
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(revision.operation, style: Theme.of(context).textTheme.titleSmall),
+                                Text(
+                                  '${_formatRevisionDate(revision.createdAt)} · ${revision.cues.length} cues$language',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                if (revision.wordTimings.isNotEmpty)
+                                  Text(
+                                    '${revision.wordTimings.length} token-derived timing spans retained',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
+                                        unawaited(_run(() => _restoreSubtitleRevision(revision)));
+                                      },
+                                      icon: const Icon(Icons.subtitles_outlined),
+                                      label: const Text('Attach'),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
+                                        unawaited(_run(() => _exportSubtitleRevision(revision)));
+                                      },
+                                      icon: const Icon(Icons.save_alt_outlined),
+                                      label: const Text('Export'),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: () async {
+                                        await SubtitleRevisionService.deleteRevision(identity, revision.id);
+                                        if (!mounted || !dialogContext.mounted) return;
+                                        setDialogState(() => revisions =
+                                            revisions.where((item) => item.id != revision.id).toList(growable: false));
+                                      },
+                                      icon: const Icon(Icons.delete_outline),
+                                      label: const Text('Delete'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Close')),
+              ],
+            );
+          },
+        ),
+      );
+    } catch (error) {
+      if (mounted) setState(() => _revisionStatus = 'Could not open subtitle revision history: $error');
     }
   }
 
@@ -1067,6 +1403,12 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         setState(() => _status = 'SRT export was cancelled; the active track and source subtitle are unchanged.');
         return false;
       }
+      await _storeReviewedRevision(
+        cues: reviewedCues,
+        operation: operationLabel,
+        languageCode: operationLanguageCode,
+        wordTimings: reviewedWordTimings,
+      );
       setState(() => _status = 'Reviewed subtitle exported as SRT.');
       return false;
     }
@@ -1112,6 +1454,12 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         setState(() => _status = 'JSON export was cancelled; the active track and source subtitle are unchanged.');
         return false;
       }
+      await _storeReviewedRevision(
+        cues: reviewedCues,
+        operation: operationLabel,
+        languageCode: operationLanguageCode,
+        wordTimings: reviewedWordTimings,
+      );
       setState(() => _status = 'Reviewed subtitle exported as versioned cue JSON.');
       return false;
     }
@@ -1128,10 +1476,22 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       await widget.player.command(['sub-add', path, 'select']);
     } catch (error) {
       if (_lastResultUploadedToServer) {
+        await _storeReviewedRevision(
+          cues: reviewedCues,
+          operation: operationLabel,
+          languageCode: operationLanguageCode,
+          wordTimings: reviewedWordTimings,
+        );
         throw StateError('Uploaded to the server library, but could not attach the local copy: $error');
       }
       rethrow;
     }
+    await _storeReviewedRevision(
+      cues: reviewedCues,
+      operation: operationLabel,
+      languageCode: operationLanguageCode,
+      wordTimings: reviewedWordTimings,
+    );
     return true;
   }
 
@@ -1301,6 +1661,17 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
             const SizedBox(height: 8),
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
+          if (_revisionStatus != null) ...[
+            const SizedBox(height: 6),
+            Text(_revisionStatus!, style: Theme.of(context).textTheme.bodySmall),
+          ],
+          if (_revisionIdentity != null)
+            FocusableListTile(
+              leading: const AppIcon(Symbols.history_rounded),
+              title: const Text('Subtitle revision history'),
+              subtitle: const Text('Restore, export, or delete reviewed versions stored on this device'),
+              onTap: _busy ? null : () => unawaited(_showRevisionHistory()),
+            ),
           if (_playbackCaptureSupported) ...[
             const Divider(height: 24),
             Text('Live captions from playback', style: Theme.of(context).textTheme.titleMedium),
@@ -1407,6 +1778,20 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
             subtitle: const Text('Use a same-language SRT, VTT, ASS, or SSA subtitle as the timing reference'),
             onTap: _busy ? null : () => unawaited(_synchronizeToReference(repairCuts: false)),
           ),
+          if (_translationSupported)
+            FocusableListTile(
+              leading: const AppIcon(Symbols.translate_rounded),
+              title: const Text('Sync across subtitle languages'),
+              subtitle: const Text('Translate target text locally for matching; keep its original text'),
+              onTap: _busy ? null : () => unawaited(_synchronizeAcrossLanguages(repairCuts: false)),
+            ),
+          if (_translationSupported)
+            FocusableListTile(
+              leading: const AppIcon(Symbols.content_cut_rounded),
+              title: const Text('Repair cuts across subtitle languages'),
+              subtitle: const Text('Uses translated text for anchors and keeps the original target text'),
+              onTap: _busy ? null : () => unawaited(_synchronizeAcrossLanguages(repairCuts: true)),
+            ),
           FocusableListTile(
             leading: const AppIcon(Symbols.content_cut_rounded),
             title: const Text('Repair cuts using another subtitle'),
