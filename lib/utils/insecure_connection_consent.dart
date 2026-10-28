@@ -16,7 +16,9 @@ Future<bool> confirmInsecureConnection(BuildContext context, String url) async {
           scrollable: true,
           title: Text(t.addServer.insecureTitle),
           content: Text(
-            t.addServer.insecureDescription(url: uri.replace(userInfo: '', query: null, fragment: null).toString()),
+            t.addServer.insecureDescription(
+              url: uri.replace(userInfo: '', query: '', fragment: '').toString(),
+            ),
           ),
           actions: [
             DialogActionButton(

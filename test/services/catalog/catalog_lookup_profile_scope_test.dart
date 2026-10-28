@@ -79,7 +79,7 @@ class _LibraryServer {
   }
 }
 
-PlexAccountConnection _clientlessAccount(String serverId, String baseUrl) => PlexAccountConnection(
+PlexAccountConnection _clientlessAccount(String serverId) => PlexAccountConnection(
   id: 'account-$serverId',
   accountToken: 'account-token-$serverId',
   clientIdentifier: 'test-client',
@@ -93,11 +93,11 @@ PlexAccountConnection _clientlessAccount(String serverId, String baseUrl) => Ple
       owned: true,
       connections: [
         PlexConnection(
-          protocol: 'http',
-          address: '127.0.0.1',
-          port: Uri.parse(baseUrl).port,
-          uri: baseUrl,
-          local: true,
+          protocol: 'https',
+          address: '$serverId.example.invalid',
+          port: 32400,
+          uri: 'https://$serverId.example.invalid:32400',
+          local: false,
           relay: false,
           ipv6: false,
         ),
@@ -161,8 +161,8 @@ void main() {
     final b = Profile.local(id: 'profile-b', displayName: 'B', createdAt: DateTime.utc(2026));
     await stack.profiles.upsert(a);
     await stack.profiles.upsert(b);
-    final aClientless = _clientlessAccount('a-clientless', aServer.baseUrl);
-    final bClientless = _clientlessAccount('b-clientless', bServer.baseUrl);
+    final aClientless = _clientlessAccount('a-clientless');
+    final bClientless = _clientlessAccount('b-clientless');
     final aConnection = testJellyfinConnection(machineId: 'a', baseUrl: aServer.baseUrl);
     final bConnection = testJellyfinConnection(machineId: 'b', baseUrl: bServer.baseUrl);
     for (final connection in <Connection>[aClientless, bClientless, aConnection, bConnection]) {
