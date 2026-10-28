@@ -14,6 +14,8 @@ import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/mpv/player/audio_spectrum.dart';
 import 'package:plezy/multiview/workspace_controller.dart';
 import 'package:plezy/screens/sources/source_player_screen.dart';
+import 'package:plezy/screens/sources/source_queue_sheet.dart';
+import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/sources/source_controller.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
@@ -68,7 +70,15 @@ class _MpvPlayer extends FakePlayer implements AudioSpectrumAnalyzer {
 }
 
 class _Playback extends ChangeNotifier implements SourcePlayback {
-  _Playback(this.player, {this.audio = false, this.localBookmarkKey}) : entry = audio ? _audioEntry : _videoEntry;
+  _Playback(this.player, {this.audio = false, this.localBookmarkKey, bool queued = false})
+    : entry = queued
+          ? _queueEntry
+          : audio
+          ? _audioEntry
+          : _videoEntry,
+      _queueEnabled = queued {
+    _queueOrder.addAll(List.generate(entry.files.length, (index) => index));
+  }
 
   static const _videoFile = PublicationFile(
     id: 'movie',
@@ -91,9 +101,31 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
     kind: SourceItemKind.music,
     files: [_audioFile],
   );
+  static const _queueFiles = [
+    PublicationFile(id: 'queue-1', name: '01.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(id: 'queue-2', name: '02.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(
+      id: 'queue-3',
+      name: 'https://listener:secret@music.example/03.mp3?token=private',
+      mimeType: 'audio/mpeg',
+      durationMs: 180000,
+    ),
+  ];
+  static const _queueEntry = SourceEntry(
+    sourceId: 'open:session',
+    id: 'audio-queue-session',
+    title: 'Audio queue',
+    kind: SourceItemKind.music,
+    files: _queueFiles,
+  );
 
   final bool audio;
   final String? localBookmarkKey;
+  final bool _queueEnabled;
+  final List<int> _queueOrder = [];
+  bool _queueShuffled = false;
+  MusicRepeatMode _queueRepeatMode = MusicRepeatMode.off;
+  int _fileIndex = 0;
 
   @override
   final SourceEntry entry;
@@ -128,7 +160,7 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   int positionMs = 23000;
   @override
-  int get durationMs => files.single.durationMs!;
+  int get durationMs => files.fold(0, (total, file) => total + (file.durationMs ?? 0));
   @override
   int get timelineStartMs => 0;
   @override
@@ -142,11 +174,21 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   int get currentFilePositionMs => positionMs;
   @override
-  int get currentFileDurationMs => durationMs;
+  int get currentFileDurationMs => files[_fileIndex].durationMs!;
   @override
-  int get fileIndex => 0;
+  int get fileIndex => _fileIndex;
   @override
   List<PublicationFile> get files => entry.files;
+  @override
+  bool get canUseDirectQueueControls => _queueEnabled;
+  @override
+  bool get queueShuffled => _queueShuffled;
+  @override
+  MusicRepeatMode get queueRepeatMode => _queueRepeatMode;
+  @override
+  int get currentQueuePosition => _queueOrder.indexOf(_fileIndex);
+  @override
+  List<int> get queueFileIndices => List.unmodifiable(_queueOrder);
   @override
   bool get hasCompleteTimeline => true;
   @override
@@ -178,6 +220,33 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   Future<void> previousChapter() async {}
   @override
   Future<void> nextChapter() async {}
+  @override
+  Future<void> toggleQueueShuffle() async {
+    if (!_queueEnabled) return;
+    final position = currentQueuePosition;
+    final prefix = _queueOrder.take(position + 1).toList();
+    final remaining = _queueOrder.skip(position + 1).toList().reversed.toList();
+    _queueOrder
+      ..clear()
+      ..addAll([...prefix, ...remaining]);
+    _queueShuffled = !_queueShuffled;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> setQueueRepeatMode(MusicRepeatMode mode) async {
+    _queueRepeatMode = mode;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> selectQueueFile(int fileIndex) async {
+    if (_queueEnabled && _queueOrder.contains(fileIndex)) {
+      _fileIndex = fileIndex;
+      notifyListeners();
+    }
+  }
+
   @override
   Future<void> stop() async {}
   @override
@@ -420,5 +489,133 @@ void main() {
     expect(player.spectrumEnabled, isFalse, reason: 'hiding the visualizer releases its optional analysis filter');
     expect(find.byType(MusicVisualizer), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('direct queue browsing uses the shared phone sheet and labelled playback actions', (tester) async {
+    final semantics = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    playback = _Playback(player, audio: true, queued: true);
+    final baseTheme = monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS);
+    final screenshotTheme = Platform.environment['PLEZY_UI_SCREENSHOTS'] == null
+        ? baseTheme
+        : baseTheme.copyWith(
+            textTheme: baseTheme.textTheme.apply(fontFamily: 'Roboto'),
+            primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: 'Roboto'),
+            appBarTheme: baseTheme.appBarTheme.copyWith(
+              titleTextStyle: baseTheme.appBarTheme.titleTextStyle?.copyWith(fontFamily: 'Roboto'),
+            ),
+          );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => MultiviewWorkspaceController()),
+          ChangeNotifierProvider<SourceController>.value(value: sources),
+          ChangeNotifierProvider<SourcePlayback>.value(value: playback),
+        ],
+        child: InputModeTracker(
+          child: RepaintBoundary(
+            key: const ValueKey('source-queue-capture'),
+            child: MaterialApp(
+              theme: screenshotTheme,
+              debugShowCheckedModeBanner: false,
+              home: const SourcePlayerScreen(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final openQueue = find.byTooltip(t.music.queue);
+    expect(openQueue, findsOneWidget);
+    final toolbarRect = tester.getRect(openQueue);
+    expect(toolbarRect.left, greaterThanOrEqualTo(0));
+    expect(toolbarRect.right, lessThanOrEqualTo(320));
+    await tester.tap(openQueue);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('01.mp3'), findsOneWidget);
+    expect(find.textContaining('02.mp3'), findsOneWidget);
+    expect(find.textContaining('03.mp3'), findsOneWidget);
+    expect(find.textContaining('https://'), findsNothing);
+    expect(find.textContaining('secret'), findsNothing);
+    expect(find.textContaining(t.music.nowPlaying), findsOneWidget);
+    expect(find.byTooltip(t.common.shuffle), findsOneWidget);
+    expect(find.byTooltip(t.music.repeat), findsOneWidget);
+    expect(
+      tester.getSemantics(find.byTooltip(t.common.shuffle)).getSemanticsData().flagsCollection.isSelected,
+      ui.Tristate.isFalse,
+    );
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('source-queue-0'))).getSemanticsData().flagsCollection.isSelected,
+      ui.Tristate.isTrue,
+    );
+    expect(tester.takeException(), isNull);
+
+    final output = Platform.environment['PLEZY_UI_SCREENSHOTS'];
+    if (output != null) {
+      await tester.runAsync(() async {
+        final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(const ValueKey('source-queue-capture')));
+        final image = await boundary.toImage();
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        image.dispose();
+        await File('$output/source-queue-phone-dark.png').writeAsBytes(bytes!.buffer.asUint8List());
+      });
+    }
+
+    await tester.tap(find.byTooltip(t.common.shuffle));
+    await tester.pumpAndSettle();
+    expect(playback.queueShuffled, isTrue);
+    expect(
+      tester.getSemantics(find.byTooltip(t.common.shuffle)).getSemanticsData().flagsCollection.isSelected,
+      ui.Tristate.isTrue,
+    );
+    await tester.tap(find.byTooltip(t.music.repeat));
+    await tester.pumpAndSettle();
+    expect(playback.queueRepeatMode, MusicRepeatMode.all);
+    expect(find.byTooltip(t.music.repeatAll), findsOneWidget);
+    expect(
+      tester.getSemantics(find.byTooltip(t.music.repeatAll)).getSemanticsData().flagsCollection.isSelected,
+      ui.Tristate.isTrue,
+    );
+    await tester.tap(find.byTooltip(t.music.repeatAll));
+    await tester.pumpAndSettle();
+    expect(playback.queueRepeatMode, MusicRepeatMode.one);
+    expect(find.byTooltip(t.music.repeatOne), findsOneWidget);
+    await tester.tap(find.byTooltip(t.music.repeatOne));
+    await tester.pumpAndSettle();
+    expect(playback.queueRepeatMode, MusicRepeatMode.off);
+    expect(find.byTooltip(t.music.repeat), findsOneWidget);
+    expect(
+      tester.getSemantics(find.byTooltip(t.music.repeat)).getSemanticsData().flagsCollection.isSelected,
+      ui.Tristate.isFalse,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('source-queue-1')));
+    await tester.pumpAndSettle();
+    expect(playback.fileIndex, 1);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(MonoPalette.dark),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: SizedBox(width: 320, height: 600, child: SourceQueueSheet(playback: playback)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('03.mp3'), findsOneWidget);
+    expect(find.bySemanticsLabel(t.music.trackCount(n: 3)), findsOneWidget);
+    expect(tester.takeException(), isNull, reason: 'the queue sheet remains usable at 2× text scaling');
+    semantics.dispose();
   });
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_playback.dart';
+import 'package:plezy/services/music/music_playback_service.dart';
 
 import '../services/music/music_playback_service_test.dart' show FakePlayer, FakeMediaControlsManager;
 import 'fixtures/memory_sources.dart';
@@ -89,6 +91,19 @@ void main() {
     kind: SourceItemKind.audiobook,
     files: [first, second],
   );
+  const queueFiles = [
+    PublicationFile(id: 'queue-0', name: '01.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(id: 'queue-1', name: '02.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(id: 'queue-2', name: '03.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+    PublicationFile(id: 'queue-3', name: '04.mp3', mimeType: 'audio/mpeg', durationMs: 180000),
+  ];
+  const directQueueEntry = SourceEntry(
+    sourceId: 'open:session',
+    id: 'local-queue',
+    title: 'Local queue',
+    kind: SourceItemKind.music,
+    files: queueFiles,
+  );
   setUp(() async {
     PlaybackCoordinator.instance
       ..setWorkspaceVideoSessionCount(0)
@@ -103,6 +118,7 @@ void main() {
       playerFactory: (_) => native,
       controlsFactory: () => controls,
       wakelockToggle: (_) async {},
+      shuffleRandom: math.Random(2),
     );
   });
   tearDown(() async {
@@ -121,6 +137,13 @@ void main() {
     item,
     item.audio,
     localOverrides: {'one': Uri.file('${directory.path}/one'), 'two': Uri.file('${directory.path}/two')},
+  );
+  Future<void> startDirectQueue() => playback.start(
+    directQueueEntry,
+    queueFiles,
+    playbackMode: PublicationMode.listening,
+    persistProgress: false,
+    localOverrides: {for (final file in queueFiles) file.id: Uri.file('${directory.path}/${file.name}')},
   );
   Future<_RecordingMpvPlayer> startLiveVideo() async {
     final player = _RecordingMpvPlayer();
@@ -380,6 +403,91 @@ void main() {
     expect(playback.progress!.positionMs, 0);
     expect(native.openStarts.single, Duration.zero);
   });
+  test('direct media queues shuffle only upcoming files and keep timeline and navigation in queue order', () async {
+    await startDirectQueue();
+    expect(playback.canUseDirectQueueControls, isTrue);
+    expect(playback.queueFileIndices, [0, 1, 2, 3]);
+
+    await playback.toggleQueueShuffle();
+    final shuffled = playback.queueFileIndices;
+    expect(playback.queueShuffled, isTrue);
+    expect(shuffled.first, 0, reason: 'shuffle keeps the current file in place');
+    expect([...shuffled]..sort(), [0, 1, 2, 3]);
+    expect(shuffled, isNot([0, 1, 2, 3]));
+
+    await playback.selectQueueFile(shuffled[1]);
+    expect(playback.currentQueuePosition, 1);
+    expect(native.openedUris.last, Uri.file('${directory.path}/${queueFiles[shuffled[1]].name}').toString());
+    await playback.seek(185000);
+    expect(playback.fileIndex, shuffled[1]);
+    expect(playback.currentFilePositionMs, 5000);
+
+    await playback.toggleQueueShuffle();
+    expect(playback.queueShuffled, isFalse);
+    expect(playback.queueFileIndices.take(2), shuffled.take(2), reason: 'unshuffle preserves the played prefix');
+    final restoredRemaining = shuffled.skip(2).toList()..sort();
+    expect(playback.queueFileIndices.skip(2), restoredRemaining);
+
+    await playback.nextChapter();
+    expect(playback.fileIndex, playback.queueFileIndices[2]);
+    await playback.previousChapter();
+    expect(playback.fileIndex, playback.queueFileIndices[1]);
+
+    native = FakePlayer();
+    controls = _Controls();
+    await start();
+    expect(playback.canUseDirectQueueControls, isFalse, reason: 'book chapter order is never shuffled');
+    await playback.toggleQueueShuffle();
+    expect(playback.queueFileIndices, [0, 1]);
+  });
+
+  test('direct queue repeat all wraps, repeat one restarts the current file, and off stops at the end', () async {
+    await startDirectQueue();
+    await playback.setQueueRepeatMode(MusicRepeatMode.all);
+    expect(playback.queueRepeatMode, MusicRepeatMode.all);
+    await playback.selectQueueFile(3);
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, 0);
+    expect(native.openedUris.last, Uri.file('${directory.path}/01.mp3').toString());
+
+    await playback.setQueueRepeatMode(MusicRepeatMode.one);
+    await playback.selectQueueFile(2);
+    final oneOpenCount = native.openedUris.length;
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, 2);
+    expect(native.openedUris.length, oneOpenCount + 1);
+    expect(native.openedUris.last, Uri.file('${directory.path}/03.mp3').toString());
+
+    await playback.setQueueRepeatMode(MusicRepeatMode.off);
+    await playback.selectQueueFile(3);
+    final finalOpenCount = native.openedUris.length;
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, 3);
+    expect(native.openedUris.length, finalOpenCount);
+  });
+
+  test('direct queue sleep-after-chapter follows the shuffled playback order', () async {
+    await startDirectQueue();
+    await playback.toggleQueueShuffle();
+    final nextFile = playback.queueFileIndices[1];
+    playback.sleepAfterChapter(count: 2);
+
+    native.setPosition(const Duration(minutes: 3));
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, nextFile);
+    expect(playback.sleepEnabled, isTrue);
+
+    native.setPosition(const Duration(minutes: 3));
+    native.emitCompleted();
+    await playback.pause();
+    expect(playback.fileIndex, nextFile);
+    expect(playback.sleepEnabled, isFalse);
+    expect(playback.playing, isFalse);
+  });
 
   test('capture preview opens only the validated device address as a live transient item', () async {
     final capturePlayer = _RecordingMpvPlayer();
@@ -526,37 +634,45 @@ void main() {
   test('local queue export returns safe sibling entries and refuses a mixed folder', () async {
     const firstVideo = PublicationFile(id: 'one', name: 'First.mkv', mimeType: 'video/x-matroska');
     const secondVideo = PublicationFile(id: 'two', name: 'Second.mkv', mimeType: 'video/x-matroska');
+    const thirdVideo = PublicationFile(id: 'three', name: 'Third.mkv', mimeType: 'video/x-matroska');
+    const fourthVideo = PublicationFile(id: 'four', name: 'Fourth.mkv', mimeType: 'video/x-matroska');
     const videoEntry = SourceEntry(
       sourceId: 'local',
       id: 'local-set',
       title: 'A local set',
       kind: SourceItemKind.video,
-      files: [firstVideo, secondVideo],
+      files: [firstVideo, secondVideo, thirdVideo, fourthVideo],
     );
     final firstFile = File('${directory.path}/First.mkv')..writeAsBytesSync([1]);
     final secondFile = File('${directory.path}/Second.mkv')..writeAsBytesSync([2]);
+    final thirdFile = File('${directory.path}/Third.mkv')..writeAsBytesSync([3]);
+    final fourthFile = File('${directory.path}/Fourth.mkv')..writeAsBytesSync([4]);
 
     await playback.start(
       videoEntry,
-      const [firstVideo, secondVideo],
+      const [firstVideo, secondVideo, thirdVideo, fourthVideo],
       playbackMode: PublicationMode.watching,
       persistProgress: false,
-      localOverrides: {'one': firstFile.uri, 'two': secondFile.uri},
+      localOverrides: {'one': firstFile.uri, 'two': secondFile.uri, 'three': thirdFile.uri, 'four': fourthFile.uri},
     );
 
     expect(playback.canExportLocalPlaylist, isTrue);
+    await playback.toggleQueueShuffle();
+    expect(playback.queueFileIndices, isNot([0, 1, 2, 3]));
     final entries = await playback.localPlaylistExportItems();
-    expect(entries?.map((item) => item.title), ['First.mkv', 'Second.mkv']);
-    expect(entries?.map((item) => item.uri), [firstFile.uri, secondFile.uri]);
+    expect(
+      entries?.map((item) => item.uri),
+      playback.queueFileIndices.map((index) => [firstFile.uri, secondFile.uri, thirdFile.uri, fourthFile.uri][index]),
+    );
 
     final otherDirectory = Directory('${directory.path}/other')..createSync();
-    final other = File('${otherDirectory.path}/Second.mkv')..writeAsBytesSync([2]);
+    final other = File('${otherDirectory.path}/Fourth.mkv')..writeAsBytesSync([4]);
     await playback.start(
       videoEntry,
-      const [firstVideo, secondVideo],
+      const [firstVideo, secondVideo, thirdVideo, fourthVideo],
       playbackMode: PublicationMode.watching,
       persistProgress: false,
-      localOverrides: {'one': firstFile.uri, 'two': other.uri},
+      localOverrides: {'one': firstFile.uri, 'two': secondFile.uri, 'three': thirdFile.uri, 'four': other.uri},
     );
     expect(playback.canExportLocalPlaylist, isFalse);
     expect(await playback.localPlaylistExportItems(), isNull);

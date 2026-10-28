@@ -30,6 +30,12 @@ Local `.m3u`/`.pls` playlists can name supported media files in the selected pla
 
 On desktop, for a queue made from durable local files in one folder, use the playlist icon in the player app bar and save an `.m3u` beside those files. The save dialog opens in that folder, and its standard overwrite prompt protects an existing playlist. The export contains only relative sibling names; it does not copy media, store a path in the profile, or include temporary uploads and network URLs. Keeping the playlist beside the media lets the existing **Choose playlist file** action reopen it safely. The app offers this action only when every queued file can be validated and the files share one folder.
 
+### Browse a direct media queue
+
+For a multi-file local or network audio/video queue, the queue icon in the source player opens the existing adaptive sheet. It shows the playback order, marks the current file as **Now Playing**, and lets you select another file to play. **Shuffle** rearranges only files after the current one, and **Repeat** cycles through off, repeat all, and repeat one. The current item and played prefix stay in place while shuffle changes; turning shuffle off restores the remaining items to their original file order. Saving an eligible local M3U queue follows the order shown in the sheet.
+
+Queue controls appear only for session-only, non-live multi-file audio/video playback. Server and audiobook progression remains under its existing playback rules. The sheet reuses the source rows and shared keyboard, remote, touch, and screen-reader affordances; its action labels announce the active shuffle and repeat state.
+
 The desktop MPV menu can also request a DVD, Blu-ray, or audio CD from the computer’s optical drive. This depends on the MPV build, device path, drive, and operating-system permissions. It does not bypass commercial disc protection. Opening an ISO from Device files is the portable alternative when supported by the local player.
 
 ## Picture and recording tools
@@ -108,6 +114,7 @@ The receiver accepts supported audio, video, ebook, and comic formats, up to 4 G
 
 - Forms have visible labels and short explanatory text; URL input is left-to-right, with autocomplete disabled.
 - The local playlist export action appears only for an eligible durable queue; its tooltip names the action, the save dialog opens beside the media, and the native overwrite prompt protects an existing playlist.
+- The direct queue action appears only for multi-file, non-live audio/video playback. The current row is selected and labelled, while shuffle and repeat expose localized tooltips and state through screen-reader semantics.
 - Video-track selection appears only when MPV reports alternatives and uses the existing adaptive settings and track menus.
 - Direct-input File Info uses the same labelled Info sheet as server media; device paths, URL user information, and query credentials are omitted.
 - Edition/disc-title selection appears only when MPV reports more than one choice. The Capture panel's preview button describes its session-only, video-only behavior beside the control.
@@ -128,6 +135,7 @@ The new interface strings use the repository’s documented machine-translation 
 | RTSP/RTMP/RTMPS/UDP/RTP and direct FTP | MPV builds only; FTP additionally needs explicit opt-in and is unencrypted. Not available on webOS/Tizen native TV or Android ExoPlayer. |
 | Local files, temporary queues, ISO images | File-picker platforms; ISO playback depends on the native player. |
 | Local queue export | Desktop only; durable local queues with at least two files in one folder export a relative-path M3U beside the files. |
+| Direct queue browsing, shuffle, and repeat | Multi-file session-only audio/video queues across source-player platforms; live inputs and server/audiobook progression keep their existing controls. |
 | Alternate video tracks | MPV builds only, when the source exposes multiple video tracks. |
 | Direct-input File Info | MPV builds only, using properties and track details exposed for the current input. |
 | Edition/disc-title selection | MPV builds only, when the source reports multiple editions or titles. |
@@ -144,7 +152,7 @@ The new interface strings use the repository’s documented machine-translation 
 
 ## Scope boundaries
 
-This guide covers the VLC comparison features selected for this client: safe local media references and reusable queue export in M3U/PLS playlists, MPV alternate video tracks, edition/disc-title selection and direct-input File Info, additional FFmpeg conversion and remux profiles, ten-band MPV equalization and common audio effects, named device-local bookmarks, temporary A/B segment loops, desktop screen/camera recording and live preview, outgoing local-network streaming, declarative search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, server playlists, local files, optical-disc inputs on supported desktops, live-stream recording, MPV picture controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
+This guide covers the VLC comparison features selected for this client: safe local media references and reusable queue export in M3U/PLS playlists, direct queue browsing/shuffle/repeat, MPV alternate video tracks, edition/disc-title selection and direct-input File Info, additional FFmpeg conversion and remux profiles, ten-band MPV equalization and common audio effects, named device-local bookmarks, temporary A/B segment loops, desktop screen/camera recording and live preview, outgoing local-network streaming, declarative search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, server playlists, local files, optical-disc inputs on supported desktops, live-stream recording, MPV picture controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
 
 The additions fit the existing Open media pane, playback settings, and chapter areas, using PlezyNG’s standard player, focus handling, and navigation. They do not claim full VLC parity: the stream-out path is bounded HLS file sharing; extensions are declarative search mappings rather than executable Lua modules; and `plezyctl` handles those manifests rather than controlling arbitrary playback sessions.
 

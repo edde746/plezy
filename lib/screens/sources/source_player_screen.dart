@@ -44,6 +44,7 @@ import '../../widgets/source_file_info_sheet.dart';
 import 'add_source_screen.dart';
 import 'source_notes_screen.dart';
 import 'standalone_subtitle_search_sheet.dart';
+import 'source_queue_sheet.dart';
 import 'source_widgets.dart';
 import '../../widgets/video_controls/sheets/picture_adjustments_sheet.dart';
 
@@ -1081,6 +1082,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                       selectedIcon: const AppIcon(Symbols.graphic_eq_rounded, fill: 1),
                       icon: const AppIcon(Symbols.graphic_eq_rounded),
                     ),
+                  ),
+                if (s.canUseDirectQueueControls)
+                  IconButton(
+                    tooltip: t.music.queue,
+                    onPressed: () => unawaited(showSourceQueueSheet(context, s)),
+                    icon: const AppIcon(Symbols.queue_music_rounded),
                   ),
                 if (s.canExportLocalPlaylist)
                   IconButton(

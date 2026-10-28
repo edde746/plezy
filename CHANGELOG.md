@@ -66,6 +66,7 @@
 
 - Expand the VLC feature comparison with safe local playlist references, more conversion formats, MPV audio effects, device-local playback bookmarks and temporary A/B loops in existing playback controls.
 - Add bounded desktop folder queues and named device-local bookmarks for seekable Open media audio while preserving existing bookmark data.
+- Add direct source-queue browsing, upcoming-file shuffle, repeat modes, and item selection in the existing adaptive player sheet; keep audiobook/server order and current-item progress intact.
 - Save eligible same-folder desktop file queues as reopenable M3U playlists, and select alternate video tracks through existing MPV playback controls.
 - Show direct-input MPV file details in the shared File Info sheet, and expose edition/disc-title switching only when multiple choices are available.
 - Preview discovered desktop camera and display inputs in the existing MPV player from Media tools → Capture; keep preview session-only and video-only.
