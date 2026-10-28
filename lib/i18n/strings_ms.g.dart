@@ -1197,6 +1197,30 @@ class _Translations$videoControls$ms extends Translations$videoControls$en {
 	@override String get settingsButton => 'Pengaturan Playback';
 	@override String get tracksButton => 'Audio dan Subtitle';
 	@override String get chaptersButton => 'Bab yang';
+	@override String get segmentLoopHelp => 'Setkan A, kemudian setkan B kemudian dalam garis masa.';
+	@override String get setLoopStart => 'Set loop permulaan (A)';
+	@override String get setLoopEnd => 'Set loop akhir (B)';
+	@override String get clearSegmentLoop => 'Segmen yang jelas';
+	@override String get setLoopStartFirst => 'Set loop permulaan (A) sebelum akhir (B).';
+	@override String get loopEndAfterStart => 'Tarikh akhir mesti lebih lambat daripada permulaan.';
+	@override String get segmentLoopUnavailable => 'Segment looping tidak tersedia untuk playback ini.';
+	@override String get loopPointNotSet => 'Tidak menetapkan';
+	@override String get bookmarksHelp => 'Tanda-tanda buku disimpan pada peranti ini. pilih satu untuk pergi ke masa itu.';
+	@override String get bookmarksButton => 'Buku-buku yang';
+	@override String get chaptersAndBookmarks => 'Bab dan Bookmark';
+	@override String get segmentLoop => 'Perbezaan segmen';
+	@override String get addBookmark => 'Menambah Bookmark';
+	@override String get bookmarkName => 'Nama Bookmark';
+	@override String get bookmarkNameHint => 'Sebagai contoh, adegan pembukaan';
+	@override String bookmarkDefaultName({required Object n}) => 'Perpustakaan ${n}';
+	@override String get bookmarkNameRequired => 'Masukkan nama untuk buku ini.';
+	@override String get deleteBookmark => 'Menghapuskan Bookmark';
+	@override String get bookmarkLimitReached => 'Artikel ini sudah mempunyai 100 buku.';
+	@override String get bookmarkUnavailable => 'Saya tidak boleh menyimpan atau menghapuskan buku ini.';
+	@override String get bookmarkSaved => 'Bookmark diselamatkan';
+	@override String get bookmarkDeleted => 'Bookmark telah dihapuskan.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Tarikan titik ${point} Set untuk ${time}.';
+	@override String get noChaptersOrBookmarks => 'Tiada bab atau buku-buku yang tersedia.';
 	@override String get versionQualityButton => 'Versi & Kualiti';
 	@override String get versionColumnHeader => 'Versi';
 	@override String get qualityColumnHeader => 'Kualiti';
@@ -2059,6 +2083,7 @@ class _Translations$music$ms extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Membaca Analisis Track ...';
 	@override String get visualizerAmbientMotion => 'Pergerakan Lingkungan';
 	@override String get visualizerPlexLoudness => 'Plex bunyi';
+	@override String get visualizerLiveAudio => 'Analisis audio langsung';
 	@override String get visualizerPreviousPreset => 'Gaya visual yang terdahulu';
 	@override String get visualizerNextPreset => 'Seterusnya Visual Style';
 	@override String get visualizerPresetAurora => 'Aurora yang';
@@ -2406,6 +2431,12 @@ class _Translations$videoSettings$ms extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Peta ke puncak kecerahan paparan dalam pemain, kemudian memberitahu komposer hasilnya.';
 	@override String get hdrToneMappingFailed => 'Tidak boleh mengubah pemetaan nada HDR - mod terdahulu masih aktif.';
 	@override String get audioOutput => 'Pengeluaran Audio';
+	@override String get videoTrack => 'Trek video';
+	@override String get videoTrackDescription => 'Pilih strim video yang hendak dipaparkan. Tersedia dalam main balik MPV apabila fail mengandungi trek video alternatif.';
+	@override String get videoTrackDefault => 'Lalai';
+	@override String get videoTrackUnavailable => 'Tiada trek video alternatif yang tersedia.';
+	@override String get videoTrackFailed => 'Trek video tidak dapat ditukar.';
+	@override String videoTrackNumber({required Object id}) => 'Trek ${id}';
 	@override String get performanceOverlay => 'Persembahan Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2413,10 +2444,17 @@ class _Translations$videoSettings$ms extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Audio ruang';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio Penyelesaian';
-	@override String get audioEqualizerDescription => 'Menyesuaikan lima jalur frekuensi untuk peranti ini. tersedia pada mpv; EQ aktif mendekodkan audio dan menghalang sambungan.';
+	@override String get audioEqualizerDescription => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.';
 	@override String get audioEqualizerFlat => 'Permukaan';
 	@override String get audioEqualizerActive => 'Khas';
 	@override String get audioEqualizerSaveFailed => 'Tidak boleh menyimpan seting audio equalizer.';
+	@override String get audioEffectsDescription => 'Efek menggunakan audio yang dikodkan, jadi passthrough berbalik. persekitaran bilik dan pembesaran stereo bergantung kepada MPV membina dan mengesan.';
+	@override String get audioStereoWidth => 'Pengembangan Stereo';
+	@override String get audioSpatializer => 'Persekitaran bilik';
+	@override String get audioSpatializerDescription => 'Menambah refleksi bilik yang tenang.';
+	@override String get audioPitch => 'Perubahan Pitch';
+	@override String get audioPitchDescription => 'Menukar pitch tanpa mengubah kelajuan. MPV Pembinaan hendaklah termasuk Rubber Band.';
+	@override String get audioEffectUnavailable => 'Kesan ini tidak tersedia untuk trek ini atau MPV membina .';
 	@override String get backgroundVideoAudio => 'Video audio latar belakang';
 	@override String get backgroundVideoAudioDescription => 'Pastikan video audio dimainkan apabila anda meninggalkan pemain; imej itu tersembunyi sehingga anda kembali. Android menggunakan pemberitahuan pemutaran media.';
 	@override String get audioNormalization => 'Mengatur bunyi bising';
@@ -3068,6 +3106,10 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Pilih fail playlist';
 	@override String get openPlaylist => 'Senarai Permainan Terbuka';
 	@override String get playlistFormatsHelp => 'Senarai main boleh mengandungi sehingga 1,000 item dan 2 MB. HLS terbuka sebagai aliran supaya pemain boleh memilih kualiti.';
+	@override String get saveQueuePlaylist => 'Simpan baris gilir sebagai senarai main';
+	@override String get queuePlaylistSaved => 'Senarai main disimpan di sebelah fail media.';
+	@override String get queuePlaylistUnavailable => 'Baris gilir ini tidak dapat disimpan sebagai senarai main setempat yang boleh digunakan semula.';
+	@override String get queuePlaylistFolderRequired => 'Pilih lokasi simpanan dalam folder yang sama dengan fail dalam baris gilir.';
 	@override String get noFavorites => 'Tiada rangkaian kegemaran disimpan sehingga kini. kekal dalam profil ini.';
 	@override String get removeFavorite => 'Menghapuskan stream kegemaran';
 	@override String get filesHelp => 'Pilih fail audio, video, atau ISO untuk tempoh sementara. fail dan URL tidak ditambah kepada sejarah perpustakaan.';
@@ -3130,12 +3172,13 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Menggantikan fail';
 	@override String get discHelp => 'Buka cakera dalam cakera optik komputer ini.Anda juga boleh membuka imej ISO daripada fail Peranti.';
 	@override String get discs => 'cakera optik';
+	@override String get editionOrTitle => 'Edisi atau tajuk cakera';
 	@override String get dvd => 'Perkhidmatan DVD';
 	@override String get bluray => 'Perbezaan Blu-ray';
 	@override String get audioCd => 'CD audio';
 	@override String get discAvailability => 'Disk playback memerlukan pembinaan MPV yang kompatibel, cakera disokong, dan kebenaran sistem operasi. ia tidak boleh melebihi perlindungan cakera komersial.';
 	@override String get converterTitle => 'Menukar fail media tempatan';
-	@override String get converterHelp => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.';
+	@override String get converterHelp => 'Menukar fail tempatan atau mengubahnya dengan FFmpeg.';
 	@override String get converterIntro => 'Menukar fail audio atau video tempatan kepada format yang berfungsi pada lebih banyak peranti.';
 	@override String get converterPrivacy => 'FFmpeg mesti dipasang pada komputer ini.Conversion hanya membaca fail tempatan.Ia tidak memuat turun aliran atau menghapuskan DRM.';
 	@override String get converterChooseInput => 'Pilih fail media tempatan';
@@ -3143,6 +3186,8 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 dan AAC';
 	@override String get converterM4a => 'M4A · AAC audio';
 	@override String get converterMp3 => 'MP3 dan audio';
+	@override String get allowFtp => 'membenarkan FTP';
+	@override String get allowFtpHelp => 'FTP menghantar media tanpa penyulitan. gunakan hanya pada rangkaian yang dipercayai.';
 	@override String get converterSaveAs => 'Menyelamatkan media yang ditukar sebagai';
 	@override String get converterExtensionMismatch => 'Pilih nama fail dengan ekstensi output yang dipilih.';
 	@override String get converterUnsupportedInput => 'Pilih fail audio atau video.';
@@ -3152,7 +3197,7 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Bermula daripada FFmpeg...';
 	@override String get converterProgress => 'Menukar kepada komputer ini ...';
 	@override String get converterComplete => 'Konversi selesai. fail baru telah siap.';
-	@override String get converterFfmpegMissing => 'Instal FFmpeg dengan sokongan H.264, AAC, dan MP3, kemudian cuba lagi.';
+	@override String get converterFfmpegMissing => 'FFmpeg kekurangan atau tidak menyokong format ini.';
 	@override String get converterFailed => 'Periksa bahawa fail sumber boleh dibaca dan destinasi mempunyai ruang percuma yang mencukupi.';
 	@override String get converterCancelled => 'Konversi dibatalkan. hasil yang tidak lengkap telah dihapuskan.';
 	@override String get converterDesktopOnly => 'Konversi tempatan boleh didapati pada komputer desktop dengan FFmpeg dipasang.';
@@ -3180,6 +3225,9 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Rekod skrin disimpan.';
 	@override String get captureElapsedLabel => 'Masa rekod';
 	@override String get captureStart => 'Mulakan rekod';
+	@override String get capturePreview => 'Pratonton dalam pemain';
+	@override String get capturePreviewHelp => 'Pratonton sumber yang dipilih dalam pemain standard. Pratonton hanya untuk sesi ini dan tidak menyimpan rakaman. Sokongan peranti dan keizinan bergantung pada MPV dan sistem pengendalian. Pratonton menggunakan video sahaja; audio pilihan boleh disertakan dalam rakaman yang disimpan.';
+	@override String get capturePreviewActive => 'Pratonton langsung · tidak merakam';
 	@override String get captureStop => 'berhenti dan menyelamatkan';
 	@override String get captureMode => 'Penangkapan';
 	@override String get shareMode => 'berkongsi';
@@ -3498,7 +3546,6 @@ class _Translations$audiobook$ms extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 dalam Fail & Buku terlebih dahulu.';
 	@override String get syncDestination => 'Akaun Penyimpanan Sync';
 	@override String get syncFolder => 'Sinkron folder atau prefix';
-	@override String get syncFolderHelp => 'Gunakan folder berasingan yang sedia ada dalam sumber WebDAV anda, atau prefiks S3 khusus. fail buku tidak pernah berubah.';
 	@override String get syncCode => 'Kod Sinkron Peribadi';
 	@override String get syncCodeHelp => 'Mencipta kod pada peranti pertama anda, kemudian masukkan kod itu pada peranti lain anda. simpan salinan peribadi: ia adalah kunci kepada keadaan yang disulitkan anda. gunakan kod yang berbeza untuk setiap orang.';
 	@override String get showCode => 'Menunjukkan atau menyembunyikan kod sink';
@@ -3508,7 +3555,6 @@ class _Translations$audiobook$ms extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Menghapuskan sumber ini akan mematikan bacaan dan mendengar sink di sini. fail sink yang disulitkan akan kekal dalam pembekal.';
 	@override String get syncReconnect => 'Menghubungkan semula akaun penyimpanan';
 	@override String lastSynced({required Object time}) => 'Terakhir disegerakkan di ${time}';
-	@override String get syncPrivacy => 'Hanya kemajuan yang disulitkan dan nota disimpan. fail audio dan ebook, token akaun dan kata laluan tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan boleh meminta akses penulisan tambahan. sementara diaktifkan, destinasi ini mempunyai penyegerakan kemajuan; kemajuan pelayan kekal berasingan. Mengalihkan penyegerakan mengekalkan sejarah tempatan dan keadaan jauh.';
 	@override String get syncConflicts => 'Pilih di mana untuk mengembalikan';
 	@override String get conflictHelp => 'Perubahan-perubahan ini dibuat secara bebas. pilih kedudukan atau versi bookmark untuk disimpan. jam yang lebih lambat atau peratusan yang lebih tinggi tidak secara automatik menang.';
 	@override String syncDevice({required Object device}) => 'Peranti ${device}';
@@ -5945,6 +5991,32 @@ extension on TranslationsMs {
 			'videoControls.settingsButton' => 'Pengaturan Playback',
 			'videoControls.tracksButton' => 'Audio dan Subtitle',
 			'videoControls.chaptersButton' => 'Bab yang',
+			'videoControls.segmentLoopHelp' => 'Setkan A, kemudian setkan B kemudian dalam garis masa.',
+			'videoControls.setLoopStart' => 'Set loop permulaan (A)',
+			'videoControls.setLoopEnd' => 'Set loop akhir (B)',
+			'videoControls.clearSegmentLoop' => 'Segmen yang jelas',
+			'videoControls.setLoopStartFirst' => 'Set loop permulaan (A) sebelum akhir (B).',
+			'videoControls.loopEndAfterStart' => 'Tarikh akhir mesti lebih lambat daripada permulaan.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping tidak tersedia untuk playback ini.',
+			'videoControls.loopPointNotSet' => 'Tidak menetapkan',
+			'videoControls.bookmarksHelp' => 'Tanda-tanda buku disimpan pada peranti ini. pilih satu untuk pergi ke masa itu.',
+			'videoControls.bookmarksButton' => 'Buku-buku yang',
+			'videoControls.chaptersAndBookmarks' => 'Bab dan Bookmark',
+			'videoControls.segmentLoop' => 'Perbezaan segmen',
+			'videoControls.addBookmark' => 'Menambah Bookmark',
+			'videoControls.bookmarkName' => 'Nama Bookmark',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Sebagai contoh, adegan pembukaan',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Perpustakaan ${n}',
+			'videoControls.bookmarkNameRequired' => 'Masukkan nama untuk buku ini.',
+			'videoControls.deleteBookmark' => 'Menghapuskan Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Artikel ini sudah mempunyai 100 buku.',
+			'videoControls.bookmarkUnavailable' => 'Saya tidak boleh menyimpan atau menghapuskan buku ini.',
+			'videoControls.bookmarkSaved' => 'Bookmark diselamatkan',
+			'videoControls.bookmarkDeleted' => 'Bookmark telah dihapuskan.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Tarikan titik ${point} Set untuk ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Tiada bab atau buku-buku yang tersedia.',
 			'videoControls.versionQualityButton' => 'Versi & Kualiti',
 			'videoControls.versionColumnHeader' => 'Versi',
 			'videoControls.qualityColumnHeader' => 'Kualiti',
@@ -5959,8 +6031,6 @@ extension on TranslationsMs {
 			'videoControls.exitFullscreenButton' => 'Keluarkan skrin penuh',
 			'videoControls.alwaysOnTopButton' => 'Selalu di atas',
 			'videoControls.rotationLockButton' => 'Lencana Rotasi',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Menutup skrin',
 			'videoControls.screenLockButton' => 'Penutup skrin',
 			'videoControls.timelineSlider' => 'Tarikh video',
@@ -6449,6 +6519,8 @@ extension on TranslationsMs {
 			'libraries.hideLibrary' => 'Perpustakaan tersembunyi',
 			'libraries.libraryOptions' => 'Pilihan Perpustakaan',
 			'libraries.content' => 'Perpustakaan kandungan',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Pilih Perpustakaan',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filter (${count})',
 			'libraries.noRecommendations' => 'Tiada cadangan yang tersedia',
@@ -6473,8 +6545,6 @@ extension on TranslationsMs {
 			'libraries.filterCategories.year' => 'Tahun yang',
 			'libraries.filterCategories.contentRating' => 'Penilaian Kandungan',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'tidak diperhatikan',
 			'libraries.filterCategories.unplayed' => 'Tidak Bermain',
 			'libraries.filterCategories.favorites' => 'Kegemaran',
@@ -6916,6 +6986,7 @@ extension on TranslationsMs {
 			'music.visualizerProfileLoading' => 'Membaca Analisis Track ...',
 			'music.visualizerAmbientMotion' => 'Pergerakan Lingkungan',
 			'music.visualizerPlexLoudness' => 'Plex bunyi',
+			'music.visualizerLiveAudio' => 'Analisis audio langsung',
 			'music.visualizerPreviousPreset' => 'Gaya visual yang terdahulu',
 			'music.visualizerNextPreset' => 'Seterusnya Visual Style',
 			'music.visualizerPresetAurora' => 'Aurora yang',
@@ -6962,6 +7033,8 @@ extension on TranslationsMs {
 			'watchTogether.codeCopied' => 'Kod bilik disalin',
 			'watchTogether.shareInvite' => 'Memberi jemputan',
 			'watchTogether.inviteCopied' => 'Sila rujuk. masukkan ke dalam mesej.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Bergabunglah dengan Bilik Bersama saya di PlezyNG: buka Bilik Bersama, pilih Bilik Bersama dan masukkan ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Bersama-sama kawalan sesi',
 			'watchTogether.reconnecting' => 'Menghubungkan semula...',
@@ -6987,8 +7060,6 @@ extension on TranslationsMs {
 			'watchTogether.playAnyway' => 'Bermain bagaimanapun',
 			'watchTogether.chooseAnotherCopy' => 'Pilih salinan lain',
 			'watchTogether.dontPlay' => 'Jangan Bermain',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Anda tidak mempunyai video ini',
 			'watchTogether.unavailableDescription' => 'PlezyNG tidak dapat menemukannya dalam perpustakaan anda. pilih salinan sendiri atau cari lagi.',
 			'watchTogether.chooseCopy' => 'Pilih salinan',
@@ -7342,6 +7413,12 @@ extension on TranslationsMs {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Peta ke puncak kecerahan paparan dalam pemain, kemudian memberitahu komposer hasilnya.',
 			'videoSettings.hdrToneMappingFailed' => 'Tidak boleh mengubah pemetaan nada HDR - mod terdahulu masih aktif.',
 			'videoSettings.audioOutput' => 'Pengeluaran Audio',
+			'videoSettings.videoTrack' => 'Trek video',
+			'videoSettings.videoTrackDescription' => 'Pilih strim video yang hendak dipaparkan. Tersedia dalam main balik MPV apabila fail mengandungi trek video alternatif.',
+			'videoSettings.videoTrackDefault' => 'Lalai',
+			'videoSettings.videoTrackUnavailable' => 'Tiada trek video alternatif yang tersedia.',
+			'videoSettings.videoTrackFailed' => 'Trek video tidak dapat ditukar.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Trek ${id}',
 			'videoSettings.performanceOverlay' => 'Persembahan Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7349,10 +7426,17 @@ extension on TranslationsMs {
 			'videoSettings.audioOutputSpatial' => 'Audio ruang',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Penyelesaian',
-			'videoSettings.audioEqualizerDescription' => 'Menyesuaikan lima jalur frekuensi untuk peranti ini. tersedia pada mpv; EQ aktif mendekodkan audio dan menghalang sambungan.',
+			'videoSettings.audioEqualizerDescription' => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Permukaan',
 			'videoSettings.audioEqualizerActive' => 'Khas',
 			'videoSettings.audioEqualizerSaveFailed' => 'Tidak boleh menyimpan seting audio equalizer.',
+			'videoSettings.audioEffectsDescription' => 'Efek menggunakan audio yang dikodkan, jadi passthrough berbalik. persekitaran bilik dan pembesaran stereo bergantung kepada MPV membina dan mengesan.',
+			'videoSettings.audioStereoWidth' => 'Pengembangan Stereo',
+			'videoSettings.audioSpatializer' => 'Persekitaran bilik',
+			'videoSettings.audioSpatializerDescription' => 'Menambah refleksi bilik yang tenang.',
+			'videoSettings.audioPitch' => 'Perubahan Pitch',
+			'videoSettings.audioPitchDescription' => 'Menukar pitch tanpa mengubah kelajuan. MPV Pembinaan hendaklah termasuk Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Kesan ini tidak tersedia untuk trek ini atau MPV membina .',
 			'videoSettings.backgroundVideoAudio' => 'Video audio latar belakang',
 			'videoSettings.backgroundVideoAudioDescription' => 'Pastikan video audio dimainkan apabila anda meninggalkan pemain; imej itu tersembunyi sehingga anda kembali. Android menggunakan pemberitahuan pemutaran media.',
 			'videoSettings.audioNormalization' => 'Mengatur bunyi bising',
@@ -7463,6 +7547,8 @@ extension on TranslationsMs {
 			'metadataEdit.metadataUpdated' => 'Metadata dikemaskini',
 			'metadataEdit.metadataUpdateFailed' => 'Kegagalan Mengemas kini Metadata',
 			'metadataEdit.artworkUpdated' => 'Seni yang dikemaskini',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Kegagalan untuk mengemas kini karya seni',
 			'metadataEdit.noArtworkAvailable' => 'Tiada karya seni yang tersedia',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Pilihan seni ${index}',
@@ -7501,8 +7587,6 @@ extension on TranslationsMs {
 			'metadataEdit.shownWithForeignAudio' => 'Diterbitkan dengan audio asing',
 			'metadataEdit.alwaysEnabled' => 'Selalu dibenarkan',
 			'metadataEdit.tags' => 'Tag :',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Tambah tag',
 			'metadataEdit.genre' => 'Jenis',
 			'metadataEdit.director' => 'Pengarah',
@@ -7871,6 +7955,10 @@ extension on TranslationsMs {
 			'universalMedia.choosePlaylist' => 'Pilih fail playlist',
 			'universalMedia.openPlaylist' => 'Senarai Permainan Terbuka',
 			'universalMedia.playlistFormatsHelp' => 'Senarai main boleh mengandungi sehingga 1,000 item dan 2 MB. HLS terbuka sebagai aliran supaya pemain boleh memilih kualiti.',
+			'universalMedia.saveQueuePlaylist' => 'Simpan baris gilir sebagai senarai main',
+			'universalMedia.queuePlaylistSaved' => 'Senarai main disimpan di sebelah fail media.',
+			'universalMedia.queuePlaylistUnavailable' => 'Baris gilir ini tidak dapat disimpan sebagai senarai main setempat yang boleh digunakan semula.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Pilih lokasi simpanan dalam folder yang sama dengan fail dalam baris gilir.',
 			'universalMedia.noFavorites' => 'Tiada rangkaian kegemaran disimpan sehingga kini. kekal dalam profil ini.',
 			'universalMedia.removeFavorite' => 'Menghapuskan stream kegemaran',
 			'universalMedia.filesHelp' => 'Pilih fail audio, video, atau ISO untuk tempoh sementara. fail dan URL tidak ditambah kepada sejarah perpustakaan.',
@@ -7929,12 +8017,13 @@ extension on TranslationsMs {
 			'universalMedia.replaceRecording' => 'Menggantikan fail',
 			'universalMedia.discHelp' => 'Buka cakera dalam cakera optik komputer ini.Anda juga boleh membuka imej ISO daripada fail Peranti.',
 			'universalMedia.discs' => 'cakera optik',
+			'universalMedia.editionOrTitle' => 'Edisi atau tajuk cakera',
 			'universalMedia.dvd' => 'Perkhidmatan DVD',
 			'universalMedia.bluray' => 'Perbezaan Blu-ray',
 			'universalMedia.audioCd' => 'CD audio',
 			'universalMedia.discAvailability' => 'Disk playback memerlukan pembinaan MPV yang kompatibel, cakera disokong, dan kebenaran sistem operasi. ia tidak boleh melebihi perlindungan cakera komersial.',
 			'universalMedia.converterTitle' => 'Menukar fail media tempatan',
-			'universalMedia.converterHelp' => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.',
+			'universalMedia.converterHelp' => 'Menukar fail tempatan atau mengubahnya dengan FFmpeg.',
 			'universalMedia.converterIntro' => 'Menukar fail audio atau video tempatan kepada format yang berfungsi pada lebih banyak peranti.',
 			'universalMedia.converterPrivacy' => 'FFmpeg mesti dipasang pada komputer ini.Conversion hanya membaca fail tempatan.Ia tidak memuat turun aliran atau menghapuskan DRM.',
 			'universalMedia.converterChooseInput' => 'Pilih fail media tempatan',
@@ -7942,6 +8031,8 @@ extension on TranslationsMs {
 			'universalMedia.converterMp4' => 'MP4 · H.264 dan AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC audio',
 			'universalMedia.converterMp3' => 'MP3 dan audio',
+			'universalMedia.allowFtp' => 'membenarkan FTP',
+			'universalMedia.allowFtpHelp' => 'FTP menghantar media tanpa penyulitan. gunakan hanya pada rangkaian yang dipercayai.',
 			'universalMedia.converterSaveAs' => 'Menyelamatkan media yang ditukar sebagai',
 			'universalMedia.converterExtensionMismatch' => 'Pilih nama fail dengan ekstensi output yang dipilih.',
 			'universalMedia.converterUnsupportedInput' => 'Pilih fail audio atau video.',
@@ -7951,7 +8042,7 @@ extension on TranslationsMs {
 			'universalMedia.converterStarting' => 'Bermula daripada FFmpeg...',
 			'universalMedia.converterProgress' => 'Menukar kepada komputer ini ...',
 			'universalMedia.converterComplete' => 'Konversi selesai. fail baru telah siap.',
-			'universalMedia.converterFfmpegMissing' => 'Instal FFmpeg dengan sokongan H.264, AAC, dan MP3, kemudian cuba lagi.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg kekurangan atau tidak menyokong format ini.',
 			'universalMedia.converterFailed' => 'Periksa bahawa fail sumber boleh dibaca dan destinasi mempunyai ruang percuma yang mencukupi.',
 			'universalMedia.converterCancelled' => 'Konversi dibatalkan. hasil yang tidak lengkap telah dihapuskan.',
 			'universalMedia.converterDesktopOnly' => 'Konversi tempatan boleh didapati pada komputer desktop dengan FFmpeg dipasang.',
@@ -7970,6 +8061,8 @@ extension on TranslationsMs {
 			'universalMedia.captureAudioNone' => 'Tiada audio',
 			'universalMedia.captureDefaultAudio' => 'Pengenalan audio lalai',
 			'universalMedia.captureWaylandHelp' => 'Wayland membatasi penangkapan XWayland ini kepada X display. Windows di luar XWayland mungkin tidak muncul.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Kadar rakaman',
 			'universalMedia.capturePrivacy' => 'Rekod disimpan hanya untuk fail yang anda pilih. penangkapan mikrofon adalah opsional. PlezyNG tidak memuat naik rekod.',
 			'universalMedia.captureSaveAs' => 'Menyimpan rekod skrin sebagai',
@@ -7979,6 +8072,9 @@ extension on TranslationsMs {
 			'universalMedia.captureSaved' => 'Rekod skrin disimpan.',
 			'universalMedia.captureElapsedLabel' => 'Masa rekod',
 			'universalMedia.captureStart' => 'Mulakan rekod',
+			'universalMedia.capturePreview' => 'Pratonton dalam pemain',
+			'universalMedia.capturePreviewHelp' => 'Pratonton sumber yang dipilih dalam pemain standard. Pratonton hanya untuk sesi ini dan tidak menyimpan rakaman. Sokongan peranti dan keizinan bergantung pada MPV dan sistem pengendalian. Pratonton menggunakan video sahaja; audio pilihan boleh disertakan dalam rakaman yang disimpan.',
+			'universalMedia.capturePreviewActive' => 'Pratonton langsung · tidak merakam',
 			'universalMedia.captureStop' => 'berhenti dan menyelamatkan',
 			'universalMedia.captureMode' => 'Penangkapan',
 			'universalMedia.shareMode' => 'berkongsi',
@@ -8015,8 +8111,6 @@ extension on TranslationsMs {
 			'universalMedia.extensionInstallTitle' => 'Menambah perkhidmatan carian ini?',
 			'universalMedia.extensionReplaceTitle' => 'Memperbaharui perkhidmatan carian ini?',
 			'universalMedia.extensionService' => 'Perkhidmatan',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS titik akhir',
 			'universalMedia.extensionConsent' => 'Teks carian anda dihantar ke perkhidmatan ini. manifesto tidak mengandungi kod yang boleh dijalankan. teruskan hanya jika anda mempercayai titik akhir ini.',
 			'universalMedia.extensionInstall' => 'menambah perkhidmatan',
@@ -8270,7 +8364,6 @@ extension on TranslationsMs {
 			'audiobook.addSyncSource' => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 dalam Fail & Buku terlebih dahulu.',
 			'audiobook.syncDestination' => 'Akaun Penyimpanan Sync',
 			'audiobook.syncFolder' => 'Sinkron folder atau prefix',
-			'audiobook.syncFolderHelp' => 'Gunakan folder berasingan yang sedia ada dalam sumber WebDAV anda, atau prefiks S3 khusus. fail buku tidak pernah berubah.',
 			'audiobook.syncCode' => 'Kod Sinkron Peribadi',
 			'audiobook.syncCodeHelp' => 'Mencipta kod pada peranti pertama anda, kemudian masukkan kod itu pada peranti lain anda. simpan salinan peribadi: ia adalah kunci kepada keadaan yang disulitkan anda. gunakan kod yang berbeza untuk setiap orang.',
 			'audiobook.showCode' => 'Menunjukkan atau menyembunyikan kod sink',
@@ -8280,7 +8373,6 @@ extension on TranslationsMs {
 			'audiobook.syncSourceDisconnect' => 'Menghapuskan sumber ini akan mematikan bacaan dan mendengar sink di sini. fail sink yang disulitkan akan kekal dalam pembekal.',
 			'audiobook.syncReconnect' => 'Menghubungkan semula akaun penyimpanan',
 			'audiobook.lastSynced' => ({required Object time}) => 'Terakhir disegerakkan di ${time}',
-			'audiobook.syncPrivacy' => 'Hanya kemajuan yang disulitkan dan nota disimpan. fail audio dan ebook, token akaun dan kata laluan tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan boleh meminta akses penulisan tambahan. sementara diaktifkan, destinasi ini mempunyai penyegerakan kemajuan; kemajuan pelayan kekal berasingan. Mengalihkan penyegerakan mengekalkan sejarah tempatan dan keadaan jauh.',
 			'audiobook.syncConflicts' => 'Pilih di mana untuk mengembalikan',
 			'audiobook.conflictHelp' => 'Perubahan-perubahan ini dibuat secara bebas. pilih kedudukan atau versi bookmark untuk disimpan. jam yang lebih lambat atau peratusan yang lebih tinggi tidak secara automatik menang.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Peranti ${device}',
@@ -8483,6 +8575,8 @@ extension on TranslationsMs {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8529,8 +8623,6 @@ extension on TranslationsMs {
 			'deepLinks.movieHint' => 'Membuka pautan ini memainkan filem.',
 			'deepLinks.episodeHint' => 'Membuka pautan ini memainkan episod ini.',
 			'deepLinks.profileHint' => 'Membuka pautan ini beralih kepada profil ini.',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.openAsProfile' => ({required Object name}) => 'Buka sebagai ${name}',
 			'deepLinks.copy' => 'Salinan',
 			'deepLinks.copied' => 'Link yang disalin',

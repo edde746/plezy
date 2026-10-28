@@ -252,6 +252,8 @@ flutter:
     - assets/licenses/libsmb2-LGPL-2.1.txt
     - assets/licenses/Unicode.txt
     - assets/licenses/JellyfinWebTranslations.txt
+    - assets/licenses/MilkRust_Sample_Pack.txt
+    - assets/visualizer/milkrust-sample-pack-0.1.0.rmpack
     - assets/plezy.png
     - assets/branding/plezyng-compact.png
     - assets/branding/plezyng-mark-light.png

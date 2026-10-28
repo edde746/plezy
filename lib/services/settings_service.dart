@@ -17,11 +17,13 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/player_setting_scope.dart';
 import '../models/external_player_models.dart';
+import '../models/media_bookmark.dart';
 import '../utils/language_codes.dart';
 import 'base_shared_preferences_service.dart';
 import 'sensitive_prefs.dart';
 import 'device_performance.dart';
 import 'shortcut_action.dart';
+
 export 'base_shared_preferences_service.dart'
     show
         Pref,
@@ -35,6 +37,7 @@ export 'base_shared_preferences_service.dart'
         NullableEnumPref,
         JsonPref;
 import '../models/audio_channel_limit.dart';
+import '../models/motion_clarity.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../models/home_section_config.dart';
@@ -45,6 +48,21 @@ import 'trackers/tracker_constants.dart';
 import '../profiles/profile.dart';
 import '../theme/mono_theme.dart' show MonoPalette;
 import '../watch_together/services/watch_party_relays.dart';
+
+Map<String, List<MediaBookmark>> _decodeMediaBookmarks(dynamic raw) {
+  if (raw is! Map) return const {};
+  final decoded = <String, List<MediaBookmark>>{};
+  for (final entry in raw.entries) {
+    if (entry.key is! String || (entry.key as String).isEmpty || entry.value is! List) continue;
+    final bookmarks = <MediaBookmark>[];
+    for (final value in entry.value as List) {
+      final bookmark = MediaBookmark.tryFromJson(value);
+      if (bookmark != null) bookmarks.add(bookmark);
+    }
+    if (bookmarks.isNotEmpty) decoded[entry.key as String] = bookmarks;
+  }
+  return decoded;
+}
 
 /// The app theme. Value names are the persisted ids. [system] follows the
 /// platform between [light] and [dark]; every other value is one fixed palette,
@@ -951,6 +969,42 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const matchContentResolution = BoolPref('match_content_resolution');
+  static const motionClarityPreset = EnumPref<MotionClarityPreset>(
+    'motion_clarity_preset',
+    values: MotionClarityPreset.values,
+    defaultValue: MotionClarityPreset.original,
+  );
+  /// Preset restored when the player-bar motion toggle is turned back on.
+  static const motionClarityLastPreset = EnumPref<MotionClarityPreset>(
+    'motion_clarity_last_preset',
+    values: MotionClarityPreset.values,
+    defaultValue: MotionClarityPreset.balanced,
+  );
+  static const motionClarityKernel = EnumPref<MotionTemporalKernel>(
+    'motion_clarity_kernel',
+    values: MotionTemporalKernel.values,
+    defaultValue: MotionTemporalKernel.linear,
+  );
+  static final motionClarityThreshold = IntPref(
+    'motion_clarity_threshold_percent',
+    defaultValue: 1,
+    transform: (value) => value.clamp(0, 10).toInt(),
+  );
+  static const motionClarityEngine = EnumPref<MotionClarityEngine>(
+    'motion_clarity_engine',
+    values: MotionClarityEngine.values,
+    defaultValue: MotionClarityEngine.temporalBlend,
+  );
+  static const motionClarityOutputRate = EnumPref<MotionClarityOutputRate>(
+    'motion_clarity_output_rate',
+    values: MotionClarityOutputRate.values,
+    defaultValue: MotionClarityOutputRate.currentDisplay,
+  );
+  static const motionClarityMciQuality = EnumPref<MotionClarityMciQuality>(
+    'motion_clarity_mci_quality',
+    values: MotionClarityMciQuality.values,
+    defaultValue: MotionClarityMciQuality.balanced,
+  );
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: false);
   static const dvConversionMode = EnumPref<DvConversionModePreference>(
     'dv_conversion_mode',
@@ -1134,18 +1188,37 @@ class SettingsService extends BaseSharedPreferencesService {
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
+  static final audioStereoWidth = DoublePref(
+    'audio_stereo_width',
+    transform: (value) => value.isFinite ? value.clamp(0.0, 1.0).toDouble() : 0.0,
+  );
+  static const audioSpatializer = BoolPref('audio_spatializer');
+  static final audioPitchShiftSemitones = DoublePref(
+    'audio_pitch_shift_semitones',
+    transform: (value) => value.isFinite ? value.clamp(-12.0, 12.0).toDouble() : 0.0,
+  );
   static const backgroundVideoAudio = BoolPref('background_video_audio');
   static final audioEqualizer60 = _audioEqualizerPref('audio_equalizer_60');
+  static final audioEqualizer125 = _audioEqualizerPref('audio_equalizer_125');
   static final audioEqualizer250 = _audioEqualizerPref('audio_equalizer_250');
+  static final audioEqualizer500 = _audioEqualizerPref('audio_equalizer_500');
   static final audioEqualizer1000 = _audioEqualizerPref('audio_equalizer_1000');
+  static final audioEqualizer2000 = _audioEqualizerPref('audio_equalizer_2000');
   static final audioEqualizer4000 = _audioEqualizerPref('audio_equalizer_4000');
+  static final audioEqualizer8000 = _audioEqualizerPref('audio_equalizer_8000');
   static final audioEqualizer12000 = _audioEqualizerPref('audio_equalizer_12000');
+  static final audioEqualizer16000 = _audioEqualizerPref('audio_equalizer_16000');
   static List<DoublePref> get audioEqualizerBandPrefs => [
     audioEqualizer60,
+    audioEqualizer125,
     audioEqualizer250,
+    audioEqualizer500,
     audioEqualizer1000,
+    audioEqualizer2000,
     audioEqualizer4000,
+    audioEqualizer8000,
     audioEqualizer12000,
+    audioEqualizer16000,
   ];
 
   static DoublePref _audioEqualizerPref(String key) =>
@@ -1223,6 +1296,15 @@ class SettingsService extends BaseSharedPreferencesService {
   static final playbackSpeedScope = PlayerSettingScopePref('playback_speed_scope', [defaultPlaybackSpeed]);
   static final shaderPresetScope = PlayerSettingScopePref('shader_preset_scope', [globalShaderPreset]);
   static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
+  static final motionClarityScope = PlayerSettingScopePref('motion_clarity_scope', [
+    motionClarityPreset,
+    motionClarityLastPreset,
+    motionClarityKernel,
+    motionClarityThreshold,
+    motionClarityEngine,
+    motionClarityOutputRate,
+    motionClarityMciQuality,
+  ]);
 
   /// One scope for both sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
@@ -1410,6 +1492,16 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: const {},
     encode: json.encode,
     decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
+  );
+
+  /// User-created local data; intentionally excluded from settings reset/export.
+  static final mediaBookmarks = JsonPref<Map<String, List<MediaBookmark>>>(
+    'video_bookmarks',
+    defaultValue: const {},
+    encode: (values) => json.encode(
+      values.map((key, bookmarks) => MapEntry(key, bookmarks.map((bookmark) => bookmark.toJson()).toList())),
+    ),
+    decode: _decodeMediaBookmarks,
   );
   static final customShaderPresets = JsonPref<List<Map<String, dynamic>>>(
     'custom_shader_presets',
@@ -1873,6 +1965,14 @@ class SettingsService extends BaseSharedPreferencesService {
     for (final s in TrackerService.values) scrobblePref(s),
     matchContentFrameRate,
     matchContentResolution,
+    motionClarityPreset,
+    motionClarityLastPreset,
+    motionClarityKernel,
+    motionClarityThreshold,
+    motionClarityEngine,
+    motionClarityOutputRate,
+    motionClarityMciQuality,
+    motionClarityScope,
     tunneledPlayback,
     dvConversionMode,
     disableDolbyVision,
@@ -1913,6 +2013,9 @@ class SettingsService extends BaseSharedPreferencesService {
     ambientLighting,
     audioPassthrough,
     audioNormalization,
+    audioStereoWidth,
+    audioSpatializer,
+    audioPitchShiftSemitones,
     backgroundVideoAudio,
     ...audioEqualizerBandPrefs,
     audioChannelLimit,
@@ -2051,6 +2154,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'rewind_on_resume' || 'display_switch_delay' => (0, 10),
     'sleep_timer_duration' => (5, 240),
     'play_next_countdown' => (0, 30),
+    'motion_clarity_threshold_percent' => (0, 10),
     'auto_skip_delay' => (1, 30),
     'subtitle_font_size' => (10, 80),
     'subtitle_border_size' => (0, 5),

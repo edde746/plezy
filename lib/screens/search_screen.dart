@@ -16,18 +16,21 @@ import '../media/media_person.dart';
 import '../media/search_hit.dart';
 import '../iptv/iptv_models.dart';
 import '../iptv/iptv_source_repository.dart';
-import '../profiles/active_profile_provider.dart';
+import '../integrations/integration_contracts.dart';
+import '../integrations/integration_identity_store.dart';
 import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
+import '../profiles/active_profile_provider.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/seerr_account_provider.dart';
+import '../services/catalog/catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
@@ -35,9 +38,11 @@ import '../sources/source_controller.dart';
 import '../sources/source_models.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
+import '../utils/external_ids.dart';
+import '../utils/focus_utils.dart';
+import '../utils/media_server_http_client.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
-import '../utils/media_server_http_client.dart';
 import '../utils/search_relevance.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/catalog_source_logo.dart';
@@ -50,7 +55,6 @@ import '../widgets/focusable_media_card.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/person_search_row.dart';
 import '../widgets/seerr_request_sheet.dart';
-import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
 import 'iptv/iptv_vod_screen.dart';
 import 'main_screen.dart';
@@ -80,6 +84,7 @@ class _SearchScreenState extends State<SearchScreen>
     String query,
     SearchAggregationResult? result,
     List<MediaItem> seerr,
+    List<MediaItem> catalogs,
     List<SourceEntry> files,
     List<IptvVodItem> iptvVod,
     String? iptvVodProfileId,
@@ -110,10 +115,23 @@ class _SearchScreenState extends State<SearchScreen>
   List<MediaItem> _seerrResults = const [];
   List<IptvVodItem> _iptvVodResults = const [];
   String? _iptvVodProfileId;
+  List<MediaItem> _catalogResults = const [];
+  final Map<String, _CatalogSearchCacheEntry> _catalogSearchCache = {};
+  final Map<String, _CatalogSearchSourceHealth> _catalogSearchHealth = {};
+  final IntegrationIdentityStore _identityStore = IntegrationIdentityStore();
+  CatalogSourcesProvider? _catalogSourcesProvider;
+  String _catalogSourceSignature = '';
   late final FocusNode _allChipFocusNode = FocusNode(debugLabel: 'SearchKindChipAll');
   late final FocusNode _peopleChipFocusNode = FocusNode(debugLabel: 'SearchPeopleChip');
   late final FocusNode _firstIptvVodFocusNode = FocusNode(debugLabel: 'SearchFirstIptvVodResult');
   final Map<MediaKind, FocusNode> _kindChipFocusNodes = {};
+  final Map<CatalogSourceId, FocusNode> _catalogChipFocusNodes = {};
+
+  static const Duration _catalogSearchTimeout = Duration(seconds: 5);
+  static const Duration _catalogSearchCacheTtl = Duration(seconds: 30);
+  static const Duration _catalogSearchFailureCacheTtl = Duration(seconds: 5);
+  static const int _catalogSearchLimit = 12;
+  static const int _catalogSearchCacheLimit = 96;
 
   HiddenLibrariesProvider? _hiddenLibraries;
   Set<String> _lastSeenHiddenKeys = const {};
@@ -129,11 +147,35 @@ class _SearchScreenState extends State<SearchScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final sources = context.read<SourceController?>();
-    if (identical(sources, _sourceController)) return;
-    _sourceController?.removeListener(_onSourceScopeChanged);
-    _sourceController = sources;
-    _sourceGeneration = sources?.generation;
-    sources?.addListener(_onSourceScopeChanged);
+    if (!identical(sources, _sourceController)) {
+      _sourceController?.removeListener(_onSourceScopeChanged);
+      _sourceController = sources;
+      _sourceGeneration = sources?.generation;
+      sources?.addListener(_onSourceScopeChanged);
+    }
+    final catalogs = context.read<CatalogSourcesProvider?>();
+    if (!identical(catalogs, _catalogSourcesProvider)) {
+      _catalogSourcesProvider?.removeListener(_onCatalogSourcesChanged);
+      _catalogSourcesProvider = catalogs;
+      _catalogSourceSignature = _catalogSignature(catalogs);
+      catalogs?.addListener(_onCatalogSourcesChanged);
+    }
+  }
+
+  static String _catalogSignature(CatalogSourcesProvider? catalogs) =>
+      (catalogs?.connectedSources ?? const <CatalogSource>[])
+          .map((source) => '${source.id.name}:${identityHashCode(source)}')
+          .join('|');
+
+  void _onCatalogSourcesChanged() {
+    final catalogs = _catalogSourcesProvider;
+    final signature = _catalogSignature(catalogs);
+    if (signature == _catalogSourceSignature) return;
+    _catalogSourceSignature = signature;
+    _catalogSearchCache.clear();
+    _catalogSearchHealth.clear();
+    final query = searchController.text.trim();
+    if (query.isNotEmpty && hasSearched) unawaited(runSearch(query));
   }
 
   void _onSourceScopeChanged() {
@@ -146,6 +188,7 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   void dispose() {
     _sourceController?.removeListener(_onSourceScopeChanged);
+    _catalogSourcesProvider?.removeListener(_onCatalogSourcesChanged);
     for (final node in _sourceChipFocusNodes.values) {
       node.dispose();
     }
@@ -154,6 +197,9 @@ class _SearchScreenState extends State<SearchScreen>
     _peopleChipFocusNode.dispose();
     _firstIptvVodFocusNode.dispose();
     for (final node in _kindChipFocusNodes.values) {
+      node.dispose();
+    }
+    for (final node in _catalogChipFocusNodes.values) {
       node.dispose();
     }
     super.dispose();
@@ -195,11 +241,16 @@ class _SearchScreenState extends State<SearchScreen>
     final abort = AbortController();
     _activeSearchAbort = abort;
     final hadServers = multiServer.hasConnectedServers;
+    final profileId = context.read<ActiveProfileProvider?>()?.activeId;
 
     // Every leg settles independently. A broken server must not discard
     // playable indexed files, and a locked Files profile must not hide titles.
     final filesFuture = _searchIndex(sources, query);
     final seerrFuture = _searchSeerr(query);
+    final catalogsFuture = _searchConnectedCatalogs(query);
+    final crosswalksFuture = profileId == null
+        ? Future.value(const <IdentityCrosswalk>[])
+        : _loadIdentityCrosswalks(profileId);
     final serversFuture = () async {
       if (!hadServers) return null;
       try {
@@ -221,10 +272,13 @@ class _SearchScreenState extends State<SearchScreen>
       final files = await filesFuture;
       final seerr = await seerrFuture;
       final iptvVod = await iptvVodFuture;
+      final catalogSearch = await catalogsFuture;
+      final crosswalks = await crosswalksFuture;
       abort.throwIfAborted();
       if (!mounted) return const [];
+      if (profileId != context.read<ActiveProfileProvider?>()?.activeId) return const [];
       final serverSucceeded = result?.succeededServerIds.isNotEmpty ?? false;
-      if (!serverSucceeded && !files.available && seerr == null && !iptvVod.available) {
+      if (!serverSucceeded && !files.available && seerr == null && !catalogSearch.succeeded && !iptvVod.available) {
         if (result != null && result.failedServerIds.isEmpty && result.cancelledServerIds.isNotEmpty) {
           throw MediaServerHttpException(
             type: MediaServerHttpErrorType.cancelled,
@@ -234,11 +288,20 @@ class _SearchScreenState extends State<SearchScreen>
         throw const _SearchUnavailableException();
       }
       final partial =
-          hadServers && (result == null || result.failedServerIds.isNotEmpty || result.cancelledServerIds.isNotEmpty);
+          (hadServers &&
+              (result == null || result.failedServerIds.isNotEmpty || result.cancelledServerIds.isNotEmpty)) ||
+          catalogSearch.failed;
+      final catalogItems = _deduplicateConnectedCatalogItems([
+        for (final item in catalogSearch.items)
+          if (!_matchesLocalCatalogItem(item, [...?result?.candidates, ...?seerr]) &&
+              !_matchesConfirmedCrosswalk(item, [...?result?.candidates, ...?seerr], crosswalks))
+            item.toMediaItem(),
+      ]);
       _pendingSearchOutcome = (
         query: query,
         result: result,
         seerr: seerr ?? const [],
+        catalogs: catalogItems,
         files: files.entries,
         iptvVod: iptvVod.items,
         iptvVodProfileId: iptvVod.profileId,
@@ -252,6 +315,7 @@ class _SearchScreenState extends State<SearchScreen>
           limit: defaultMediaSearchLimit,
         ),
         for (final item in seerr ?? const <MediaItem>[]) MediaSearchHit(item),
+        for (final item in catalogItems) MediaSearchHit(item),
       ];
     } finally {
       if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
@@ -269,6 +333,202 @@ class _SearchScreenState extends State<SearchScreen>
     } on Object {
       return (items: const [], profileId: profileId, available: false);
     }
+  }
+
+  Future<({List<CatalogItem> items, bool succeeded, bool failed})> _searchConnectedCatalogs(String query) async {
+    final sources = [
+      for (final source in _catalogSourcesProvider?.connectedSources ?? const <CatalogSource>[])
+        if (source.id != CatalogSourceId.seerr) source,
+    ];
+    if (sources.isEmpty) {
+      return (items: const <CatalogItem>[], succeeded: false, failed: false);
+    }
+    if (query.trim().runes.length < 2) {
+      return (items: const <CatalogItem>[], succeeded: true, failed: false);
+    }
+
+    final outcomes = await Future.wait([for (final source in sources) _searchCatalogSource(source, query)]);
+    return (
+      items: [for (final outcome in outcomes) ...?outcome.items?.take(_catalogSearchLimit)],
+      succeeded: outcomes.any((outcome) => !outcome.failed),
+      failed: outcomes.any((outcome) => outcome.failed),
+    );
+  }
+
+  Future<List<IdentityCrosswalk>> _loadIdentityCrosswalks(String profileId) async {
+    try {
+      return await _identityStore.load(profileId);
+    } on Object {
+      // A preference-store failure must not take local or provider search down.
+      return const [];
+    }
+  }
+
+  Future<({List<CatalogItem>? items, bool failed})> _searchCatalogSource(CatalogSource source, String query) async {
+    final key = '${identityHashCode(source)}:${source.id.name}:${query.trim().toLowerCase()}';
+    final sourceKey = '${identityHashCode(source)}:${source.id.name}';
+    final now = DateTime.now();
+    final cached = _catalogSearchCache[key];
+    if (cached != null && now.isBefore(cached.expiresAt)) {
+      if (cached.inFlight case final pending?) {
+        final result = await pending;
+        return (items: result, failed: result == null);
+      }
+      return (items: cached.items, failed: cached.failed);
+    }
+    final health = _catalogSearchHealth[sourceKey];
+    if (health != null && now.isBefore(health.retryAt)) return (items: null, failed: true);
+
+    _pruneCatalogSearchCache(now);
+    final entry = _CatalogSearchCacheEntry();
+    final request = () async {
+      try {
+        return await source.search(query, limit: _catalogSearchLimit).timeout(_catalogSearchTimeout);
+      } catch (error) {
+        appLogger.w('Search: ${source.id.name} catalog lookup failed (${error.runtimeType})');
+        return null;
+      }
+    }();
+    entry
+      ..inFlight = request
+      ..expiresAt = now.add(_catalogSearchTimeout + const Duration(seconds: 1));
+    _catalogSearchCache[key] = entry;
+    final result = await request;
+    if (identical(_catalogSearchCache[key], entry)) {
+      entry
+        ..inFlight = null
+        ..items = result
+        ..failed = result == null
+        ..expiresAt = DateTime.now().add(result == null ? _catalogSearchFailureCacheTtl : _catalogSearchCacheTtl);
+    }
+    if (result == null) {
+      (_catalogSearchHealth[sourceKey] ??= _CatalogSearchSourceHealth()).recordFailure(DateTime.now());
+    } else {
+      _catalogSearchHealth.remove(sourceKey);
+    }
+    return (items: result, failed: result == null);
+  }
+
+  void _pruneCatalogSearchCache(DateTime now) {
+    _catalogSearchCache.removeWhere((_, entry) => entry.inFlight == null && !now.isBefore(entry.expiresAt));
+    while (_catalogSearchCache.length >= _catalogSearchCacheLimit) {
+      _catalogSearchCache.remove(_catalogSearchCache.keys.first);
+    }
+  }
+
+  static bool _matchesLocalCatalogItem(CatalogItem catalogItem, List<MediaItem> candidates) {
+    if (catalogItem.season != null) return false;
+    final ids = catalogItem.ids.toExternalIds();
+    if (!ids.hasCatalogIds) return false;
+    for (final candidate in candidates) {
+      if (candidate.kind != catalogItem.kind) continue;
+      final candidateIds = candidate.catalogItem?.ids.toExternalIds() ?? _externalIdsFor(candidate);
+      if (ids.intersects(candidateIds)) return true;
+    }
+    return false;
+  }
+
+  static bool _matchesConfirmedCrosswalk(
+    CatalogItem catalogItem,
+    List<MediaItem> candidates,
+    List<IdentityCrosswalk> crosswalks,
+  ) {
+    final catalogRef = _catalogEntityRef(catalogItem);
+    if (catalogRef == null) return false;
+    for (final candidate in candidates) {
+      if (candidate.kind != catalogItem.kind) continue;
+      final serverRef = _serverEntityRef(candidate);
+      if (serverRef == null) continue;
+      if (crosswalks.any((crosswalk) {
+        if (crosswalk.method != IdentifierMatchMethod.userConfirmed ||
+            crosswalk.relation != EntityRelationKind.sameWork) {
+          return false;
+        }
+        return (_sameEntity(crosswalk.from, catalogRef) && _sameEntity(crosswalk.to, serverRef)) ||
+            (_sameEntity(crosswalk.from, serverRef) && _sameEntity(crosswalk.to, catalogRef));
+      })) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static IntegrationEntityRef? _catalogEntityRef(CatalogItem item) {
+    final kind = _integrationKindForMediaKind(item.kind);
+    final entryKey = item.ids.entryKey;
+    if (kind == null || entryKey == null || entryKey.trim().isEmpty) return null;
+    final nativeId = '${item.kind.id}/$entryKey';
+    final reference = IntegrationEntityRef(providerId: item.source.name, nativeId: nativeId, kind: kind);
+    return reference.isValid ? reference : null;
+  }
+
+  static IntegrationEntityRef? _serverEntityRef(MediaItem item) {
+    final kind = _integrationKindForMediaKind(item.kind);
+    final serverId = item.serverId;
+    if (kind == null || serverId == null || serverId.trim().isEmpty || item.id.trim().isEmpty) return null;
+    final reference = IntegrationEntityRef(
+      providerId: 'server.${item.backend.id}',
+      nativeId: sourceDigest('$serverId\u0000${item.id}'),
+      kind: kind,
+    );
+    return reference.isValid ? reference : null;
+  }
+
+  static IntegrationEntityKind? _integrationKindForMediaKind(MediaKind kind) => switch (kind) {
+    MediaKind.movie => IntegrationEntityKind.movie,
+    MediaKind.show => IntegrationEntityKind.series,
+    MediaKind.season => IntegrationEntityKind.season,
+    MediaKind.episode => IntegrationEntityKind.episode,
+    MediaKind.artist ||
+    MediaKind.album ||
+    MediaKind.track ||
+    MediaKind.collection ||
+    MediaKind.playlist ||
+    MediaKind.clip ||
+    MediaKind.photo ||
+    MediaKind.folder ||
+    MediaKind.unknown => null,
+  };
+
+  static bool _sameEntity(IntegrationEntityRef left, IntegrationEntityRef right) =>
+      left.providerId == right.providerId &&
+      left.nativeId == right.nativeId &&
+      left.kind == right.kind &&
+      left.editionId == right.editionId;
+
+  /// A title returned by two connected catalogs is still one exact work for
+  /// global Search. Keep the first provider's row, but retain seasons and
+  /// entries without globally comparable identifiers rather than guessing.
+  static List<MediaItem> _deduplicateConnectedCatalogItems(List<MediaItem> items) {
+    final seenByKind = <MediaKind, List<ExternalIds>>{};
+    final result = <MediaItem>[];
+    for (final media in items) {
+      final catalog = media.catalogItem;
+      final ids = catalog?.ids.toExternalIds() ?? const ExternalIds();
+      if (catalog?.season == null && ids.hasCatalogIds) {
+        final seen = seenByKind.putIfAbsent(media.kind, () => []);
+        if (seen.any(ids.intersects)) continue;
+        seen.add(ids);
+      }
+      result.add(media);
+    }
+    return result;
+  }
+
+  static ExternalIds _externalIdsFor(MediaItem item) {
+    final raw = item.raw;
+    if (item is PlexMediaItem) {
+      final guids = raw?['Guid'];
+      return ExternalIds.fromGuids(
+        guids is List ? guids : const [],
+      ).fillFrom(ExternalIds.fromLegacyPlexGuid(item.guid));
+    }
+    final providerIds = raw?['ProviderIds'];
+    if (providerIds is! Map) return const ExternalIds();
+    return ExternalIds.fromJellyfinProviderIds({
+      for (final entry in providerIds.entries)
+        if (entry.key is String) entry.key as String: entry.value,
+    });
   }
 
   Future<({List<SourceEntry> entries, bool available, bool failed})> _searchIndex(
@@ -326,11 +586,11 @@ class _SearchScreenState extends State<SearchScreen>
     setState(() {
       searchResults = [
         for (final hit in searchResults)
-          if (hit is! MediaSearchHit || !hit.item.isCatalogItem) hit,
+          if (hit is! MediaSearchHit || hit.item.catalogItem?.source != CatalogSourceId.seerr) hit,
         for (final item in fresh) MediaSearchHit(item),
       ];
       _seerrResults = fresh;
-      _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults]);
+      _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults, ..._catalogResults]);
       if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
       _filteredResults = _rankFilteredResults(_selectedFilter, query);
     });
@@ -386,7 +646,16 @@ class _SearchScreenState extends State<SearchScreen>
         matchedOutcome?.seerr ??
         [
           for (final hit in results)
-            if (hit case MediaSearchHit(:final item) when item.isCatalogItem) item,
+            if (hit case MediaSearchHit(:final item) when item.catalogItem?.source == CatalogSourceId.seerr) item,
+        ];
+    _catalogResults =
+        matchedOutcome?.catalogs ??
+        [
+          for (final hit in results)
+            if (hit case MediaSearchHit(
+              :final item,
+            ) when item.catalogItem?.source != null && item.catalogItem?.source != CatalogSourceId.seerr)
+              item,
         ];
     _searchPeople =
         matched?.people ??
@@ -397,7 +666,7 @@ class _SearchScreenState extends State<SearchScreen>
     _sourceCandidates = matchedOutcome?.files ?? const [];
     _iptvVodResults = matchedOutcome?.iptvVod ?? const [];
     _iptvVodProfileId = matchedOutcome?.iptvVodProfileId;
-    _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults]);
+    _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults, ..._catalogResults]);
     if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
     _filteredResults = _rankFilteredResults(_selectedFilter, query);
 
@@ -570,6 +839,8 @@ class _SearchScreenState extends State<SearchScreen>
     for (final kind in _candidateKinds) _KindResults(kind),
     for (final kind in SourceItemKind.values)
       if (_sourceCandidates.any((entry) => entry.kind == kind)) _SourceKindResults(kind),
+    for (final source in CatalogSourceId.values)
+      if (_hasCatalogResultsFor(source)) _CatalogSourceResults(source),
     if (_searchPeople.isNotEmpty) const _PeopleResults(),
   ];
 
@@ -582,7 +853,12 @@ class _SearchScreenState extends State<SearchScreen>
     _KindResults(:final kind) => _candidateKinds.contains(kind),
     _PeopleResults() => _searchPeople.isNotEmpty,
     _SourceKindResults(:final kind) => _sourceCandidates.any((entry) => entry.kind == kind),
+    _CatalogSourceResults(:final source) => _hasCatalogResultsFor(source),
   };
+
+  bool _hasCatalogResultsFor(CatalogSourceId source) =>
+      _catalogResults.any((item) => item.catalogItem?.source == source) ||
+      _seerrResults.any((item) => item.catalogItem?.source == source);
 
   /// The selected filter's pool re-ranked with the full display budget, or
   /// null for "All" (the aggregation's ranked list).
@@ -600,6 +876,8 @@ class _SearchScreenState extends State<SearchScreen>
             MediaSearchHit(item),
           for (final item in _seerrResults)
             if (item.kind == kind) MediaSearchHit(item),
+          for (final item in _catalogResults)
+            if (item.kind == kind) MediaSearchHit(item),
         ];
       case _SourceKindResults(:final kind):
         return rankSearchHits(
@@ -610,6 +888,13 @@ class _SearchScreenState extends State<SearchScreen>
           query,
           limit: defaultMediaSearchLimit,
         );
+      case _CatalogSourceResults(:final source):
+        return [
+          for (final item in _seerrResults)
+            if (item.catalogItem?.source == source) MediaSearchHit(item),
+          for (final item in _catalogResults)
+            if (item.catalogItem?.source == source) MediaSearchHit(item),
+        ];
       case _PeopleResults():
         return [
           for (final person in rankPeopleSearchResults(_searchPeople, query, limit: defaultMediaSearchLimit))
@@ -636,6 +921,8 @@ class _SearchScreenState extends State<SearchScreen>
     _seerrResults = const [];
     _iptvVodResults = const [];
     _iptvVodProfileId = null;
+    _catalogResults = const [];
+    _catalogSearchCache.clear();
   }
 
   FocusNode _chipFocusNode(_SearchFilter filter) => switch (filter) {
@@ -648,6 +935,10 @@ class _SearchScreenState extends State<SearchScreen>
     _SourceKindResults(:final kind) => _sourceChipFocusNodes.putIfAbsent(
       kind,
       () => FocusNode(debugLabel: 'SearchSourceKind_${kind.name}'),
+    ),
+    _CatalogSourceResults(:final source) => _catalogChipFocusNodes.putIfAbsent(
+      source,
+      () => FocusNode(debugLabel: 'SearchCatalogSource_${source.name}'),
     ),
   };
 
@@ -662,6 +953,7 @@ class _SearchScreenState extends State<SearchScreen>
     _AllResults() => t.libraries.groupings.all,
     _KindResults(:final kind) => _kindFilterLabel(kind),
     _PeopleResults() => t.search.people,
+    _CatalogSourceResults(:final source) => _catalogSourceName(source),
     _SourceKindResults(:final kind) => switch (kind) {
       SourceItemKind.ebook => t.fileSources.ebooks,
       SourceItemKind.audiobook => t.fileSources.audiobooks,
@@ -685,6 +977,86 @@ class _SearchScreenState extends State<SearchScreen>
     // Unreachable: excluded from _kindFilterOrder.
     MediaKind.clip || MediaKind.photo || MediaKind.folder || MediaKind.unknown => kind.id,
   };
+
+  String _catalogSourceName(CatalogSourceId id) {
+    for (final source in _catalogSourcesProvider?.connectedSources ?? const <CatalogSource>[]) {
+      if (source.id == id) return source.displayName;
+    }
+    return switch (id) {
+      CatalogSourceId.plex => 'Plex',
+      CatalogSourceId.trakt => 'Trakt',
+      CatalogSourceId.mal => 'MyAnimeList',
+      CatalogSourceId.anilist => 'AniList',
+      CatalogSourceId.simkl => 'Simkl',
+      CatalogSourceId.seerr => t.seerr.title,
+      CatalogSourceId.mdblist => 'MDBList',
+    };
+  }
+
+  List<MediaItem> _localMatchCandidates(CatalogItem item) => [
+    for (final candidate in _searchCandidates)
+      if (candidate.kind == item.kind && candidate.serverId != null && _serverEntityRef(candidate) != null) candidate,
+  ];
+
+  Future<void> _matchCatalogItem(CatalogItem remote, List<MediaItem> candidates) async {
+    final profileId = context.read<ActiveProfileProvider?>()?.activeId;
+    if (profileId == null) return;
+    final selected = await showDialog<MediaItem>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(t.matchScreen.match),
+        children: [
+          for (final candidate in candidates.take(50))
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, candidate),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(candidate.displayTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(
+                    [
+                      if (candidate.year != null) candidate.year.toString(),
+                      candidate.serverName ?? candidate.backend.id,
+                    ].join(' · '),
+                    style: Theme.of(dialogContext).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (selected == null || !mounted || context.read<ActiveProfileProvider?>()?.activeId != profileId) return;
+    if (!_searchCandidates.any((candidate) => candidate.globalKey == selected.globalKey) ||
+        !context.read<MultiServerProvider>().serverIds.contains(selected.serverId)) {
+      showErrorSnackBar(context, t.matchScreen.matchFailed);
+      return;
+    }
+    final from = _catalogEntityRef(remote);
+    final to = _serverEntityRef(selected);
+    if (from == null || to == null) {
+      showErrorSnackBar(context, t.matchScreen.matchFailed);
+      return;
+    }
+    final crosswalk = IdentityCrosswalk(
+      id: sourceDigest('${from.providerId}:${from.nativeId}:${to.providerId}:${to.nativeId}'),
+      from: from,
+      to: to,
+      relation: EntityRelationKind.sameWork,
+      method: IdentifierMatchMethod.userConfirmed,
+      confirmedAt: DateTime.now().toUtc(),
+    );
+    try {
+      await _identityStore.put(profileId, crosswalk);
+      if (!mounted || context.read<ActiveProfileProvider?>()?.activeId != profileId) return;
+      showAppSnackBar(context, t.matchScreen.matchApplied);
+      unawaited(runSearch(searchController.text.trim()));
+    } on Object {
+      if (mounted && context.read<ActiveProfileProvider?>()?.activeId == profileId) {
+        showErrorSnackBar(context, t.matchScreen.matchFailed);
+      }
+    }
+  }
 
   Widget _buildFilterChips() {
     // Chips trap RIGHT to keep focus inside the strip (see
@@ -754,12 +1126,12 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
-  /// A Seerr title the servers do not have: the same row as a library hit
-  /// (a tap opens the catalog detail screen), plus its request action. The
-  /// first one heads the Seerr section.
-  Widget _buildSeerrRow(
+  /// A connected catalog result stays attributed to its source. A tap opens
+  /// that provider's detail path; only Seerr rows receive a request action.
+  Widget _buildCatalogRow(
     BuildContext context,
     MediaItem item, {
+    required CatalogSourceId sourceId,
     required SeerrCatalogSource? seerr,
     required bool showHeader,
     required bool isFirst,
@@ -774,12 +1146,28 @@ class _SearchScreenState extends State<SearchScreen>
       onNavigateLeft: _navigateToSidebar,
       onNavigateUp: onNavigateUp,
     );
-    if (_seerrRowAction(context, item.catalogItem, seerr) case final action?) {
+    final actions = <Widget>[];
+    final catalogItem = item.catalogItem;
+    if (sourceId != CatalogSourceId.seerr && catalogItem != null) {
+      final localCandidates = _localMatchCandidates(catalogItem);
+      if (localCandidates.isNotEmpty) {
+        actions.add(
+          IconButton(
+            tooltip: t.matchScreen.match,
+            icon: const AppIcon(Symbols.link_rounded),
+            onPressed: () => unawaited(_matchCatalogItem(catalogItem, localCandidates)),
+          ),
+        );
+      }
+    }
+    final seerrAction = sourceId == CatalogSourceId.seerr ? _seerrRowAction(context, item.catalogItem, seerr) : null;
+    if (seerrAction != null) actions.add(seerrAction);
+    if (actions.isNotEmpty) {
       row = Row(
         children: [
           Expanded(child: row),
           const SizedBox(width: 8),
-          action,
+          ...actions,
         ],
       );
     }
@@ -791,9 +1179,9 @@ class _SearchScreenState extends State<SearchScreen>
           padding: EdgeInsets.fromLTRB(8, isFirst ? 0 : 16, 8, 8),
           child: Row(
             children: [
-              const CatalogSourceLogo(CatalogSourceId.seerr, size: 18),
+              CatalogSourceLogo(sourceId, size: 18),
               const SizedBox(width: 8),
-              Text(t.seerr.title, style: Theme.of(context).textTheme.titleSmall),
+              Text(_catalogSourceName(sourceId), style: Theme.of(context).textTheme.titleSmall),
             ],
           ),
         ),
@@ -812,7 +1200,13 @@ class _SearchScreenState extends State<SearchScreen>
     final showServerName = multiServer.totalServerCount > 1;
     final showChips = _showFilterChips;
     final visible = _visibleResults;
-    final firstSeerrIndex = visible.indexWhere((hit) => hit is MediaSearchHit && hit.item.isCatalogItem);
+    final firstCatalogIndexBySource = <CatalogSourceId, int>{};
+    for (var index = 0; index < visible.length; index++) {
+      if (visible[index] case MediaSearchHit(:final item)) {
+        final sourceId = item.catalogItem?.source;
+        if (sourceId != null) firstCatalogIndexBySource.putIfAbsent(sourceId, () => index);
+      }
+    }
     return buildResultsSliver(
       childCount: visible.length,
       // Half the default top padding when the chip strip sits directly above:
@@ -822,11 +1216,12 @@ class _SearchScreenState extends State<SearchScreen>
         final isFirst = index == 0;
         final onNavigateUp = isFirst ? (showChips ? _focusFilterChips : focusSearchInput) : null;
         return switch (visible[index]) {
-          MediaSearchHit(:final item) when item.isCatalogItem => _buildSeerrRow(
+          MediaSearchHit(:final item) when item.isCatalogItem => _buildCatalogRow(
             context,
             item,
+            sourceId: item.catalogItem!.source,
             seerr: seerr,
-            showHeader: index == firstSeerrIndex,
+            showHeader: index == firstCatalogIndexBySource[item.catalogItem!.source],
             isFirst: isFirst,
             onNavigateUp: onNavigateUp,
           ),
@@ -1019,6 +1414,31 @@ final class _SearchUnavailableException implements Exception {
   const _SearchUnavailableException();
 }
 
+final class _CatalogSearchCacheEntry {
+  DateTime expiresAt = DateTime.fromMillisecondsSinceEpoch(0);
+  List<CatalogItem>? items;
+  bool failed = false;
+  Future<List<CatalogItem>?>? inFlight;
+}
+
+final class _CatalogSearchSourceHealth {
+  int failures = 0;
+  DateTime retryAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void recordFailure(DateTime now) {
+    failures++;
+    final seconds = switch (failures) {
+      1 => 1,
+      2 => 2,
+      3 => 4,
+      4 => 8,
+      5 => 16,
+      _ => 32,
+    };
+    retryAt = now.add(Duration(seconds: seconds));
+  }
+}
+
 /// One chip of the search results filter strip.
 sealed class _SearchFilter {
   const _SearchFilter();
@@ -1054,4 +1474,16 @@ final class _SourceKindResults extends _SearchFilter {
 
   @override
   int get hashCode => kind.hashCode;
+}
+
+final class _CatalogSourceResults extends _SearchFilter {
+  final CatalogSourceId source;
+
+  const _CatalogSourceResults(this.source);
+
+  @override
+  bool operator ==(Object other) => other is _CatalogSourceResults && other.source == source;
+
+  @override
+  int get hashCode => source.hashCode;
 }

@@ -115,6 +115,23 @@ install(CODE "
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 
+# Opt-in dependency built from native/visualizer/sources.lock.json on private
+# JIT. Stock app builds stay usable and report this capability unavailable.
+# A path alone is not release evidence; promotion also requires recorded
+# source, license, artifact digest and platform qualification.
+set(PLEZY_VISUALIZER_PROJECTM_LIBRARY "" CACHE FILEPATH "Pinned patched projectM shared library")
+if(PLEZY_VISUALIZER_PROJECTM_LIBRARY)
+  if(NOT EXISTS "${PLEZY_VISUALIZER_PROJECTM_LIBRARY}")
+    message(FATAL_ERROR "The requested projectM shared library does not exist")
+  endif()
+  install(FILES "${PLEZY_VISUALIZER_PROJECTM_LIBRARY}"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" RENAME "libprojectM-4.so.4" COMPONENT Runtime)
+  install(DIRECTORY "${CMAKE_SOURCE_DIR}/../native/visualizer/notices/"
+    DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/visualizer-notices" COMPONENT Runtime)
+  install(FILES "${CMAKE_SOURCE_DIR}/../native/visualizer/sources.lock.json"
+    DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/visualizer-notices" COMPONENT Runtime)
+endif()
+
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 

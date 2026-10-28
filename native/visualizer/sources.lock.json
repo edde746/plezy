@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "status": "source-only-unqualified",
+  "projectm": {
+    "repository": "https://github.com/projectM-visualizer/projectm.git",
+    "version": "4.1.8",
+    "commit": "4967dc003e5206d7df3ff447287f7609c47d2343",
+    "submodules": {
+      "vendor/projectm-eval": "e8c311e86f4d8c082e96e02b6a33525034eee6d4"
+    },
+    "patch": "patches/projectm-4.1.8-output-fbo.patch",
+    "patchSha256": "a1da62083afdc9676878dab6bfad3e1f09055632459fd6ea6544124797f3ee8d"
+  },
+  "mpv": {
+    "repository": "https://github.com/mpv-player/mpv.git",
+    "version": "0.41.0",
+    "commit": "41f6a645068483470267271e1d09966ca3b9f413",
+    "patch": "patches/mpv-0.41.0-pcm-tap.patch",
+    "patchSha256": "0f430ad4f5473c71124826327cb67723b2d4df3cd5f07495e932e62167ba0ce5"
+  },
+  "appMpvBuild": {
+    "repository": "https://github.com/edde746/mpv-build",
+    "commit": "3b9f38affe3c4171f8e6bc47331feffd3d13be1d",
+    "integrationStatus": "linux-source-series-composed; native-artifacts-unbuilt"
+  }
+}

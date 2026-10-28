@@ -1,0 +1,20 @@
+MilkRust Sample Pack 0.1.0
+
+Author: MilkRust
+Archive source: https://github.com/snapetech-org/MilkRust/blob/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/content/downloads/milkrust-sample-pack-0.1.0.rmpack
+SHA-256: 175a042deb4edb224055a6334f67a1c492f32e447dc3c90a54f22849c43a27df
+
+This small fixture pack is included for offline installation. Its engine fidelity is not yet qualified; it does not represent the community preset collection. Original author, source, per-file notices and the integrity index are preserved in the unmodified archive.
+
+MilkRust Sample Pack — CC0 1.0 Universal
+
+The MilkRust sample presets and pack metadata in this directory are dedicated
+to the public domain under the Creative Commons CC0 1.0 Universal dedication.
+You may copy, modify, distribute, and use these materials without asking
+permission. See the full legal text at:
+
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+This dedication applies only to the MilkRust-authored sample content in this
+pack. It does not change the license of MilkRust source code or any other
+third-party content.

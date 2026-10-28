@@ -99,7 +99,7 @@ Finder _tile(settings.ThemeMode mode) => find.byKey(ValueKey(mode));
 bool _isChecked(settings.ThemeMode mode) =>
     find.descendant(of: _tile(mode), matching: find.byIcon(Symbols.radio_button_checked_rounded)).evaluate().isNotEmpty;
 
-Finder get _savedMarker => find.text(t.themeEditor.savedLocked);
+Finder get _savedMarker => find.textContaining(t.themeEditor.savedLocked);
 
 /// The theme tile holding focus, if any.
 settings.ThemeMode? _focusedTile() {
@@ -272,7 +272,7 @@ void main() {
 
   testWidgets('Custom with nothing saved opens the editor seeded from the theme on screen', (tester) async {
     final harness = await _pumpPicker(tester, SupporterAvailability.free);
-    expect(find.text(t.themeEditor.customEmpty), findsOneWidget);
+    expect(find.textContaining(t.themeEditor.customEmpty), findsOneWidget);
 
     await tester.tap(_tile(settings.ThemeMode.custom));
     await tester.pumpAndSettle();
@@ -287,7 +287,7 @@ void main() {
     final saved = MonoPalette.forest.withColor(MonoPaletteSlot.accent, const Color(0xFFFF00AA));
     await SettingsService.instance.write(SettingsService.customThemePalette, saved);
     await _pumpPicker(tester, SupporterAvailability.free);
-    expect(find.text(t.themeEditor.customEmpty), findsNothing);
+    expect(find.textContaining(t.themeEditor.customEmpty), findsNothing);
 
     await tester.tap(find.text(t.themeEditor.editCustom));
     await tester.pumpAndSettle();

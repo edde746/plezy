@@ -114,12 +114,12 @@ void main() {
       expect(loaded.owned, original.owned);
       expect(loaded.product, original.product);
       expect(loaded.platform, original.platform);
-      // The HTTPS connection auto-generates an HTTP fallback on parse, so the
-      // re-read list is at least as long as what we passed in.
-      expect(loaded.connections.length, greaterThanOrEqualTo(original.connections.length));
-      // The first persisted connection is preserved (modulo order).
+      // Account-server records keep their HTTPS connections; the HTTP row is
+      // discarded so an account token can never be sent over cleartext.
+      expect(loaded.connections.length, 1);
+      expect(loaded.connections.every((connection) => connection.protocol == 'https'), isTrue);
       final addresses = loaded.connections.map((c) => c.address).toSet();
-      expect(addresses, containsAll(['198.51.100.5', '203.0.113.10']));
+      expect(addresses, contains('198.51.100.5'));
     });
   });
 }

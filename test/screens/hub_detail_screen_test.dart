@@ -150,11 +150,10 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(findDisplayText('Item 449'), findsOneWidget);
-    expect(harness.client.requestedStarts, [0, 200]);
+    expect(harness.client.requestedStarts, [0, 200, 400]);
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
     await tester.pumpAndSettle();
-    expect(harness.client.requestedStarts, [0, 200, 400]);
     expect(harness.client.requestedStarts, [0, 200, 400]);
     expect(harness.client.requestedSizes, [200, 200, 50]);
   });
@@ -194,7 +193,8 @@ void main() {
     await tester.idle();
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 100));
     await tester.pumpAndSettle();
-    expect(findDisplayText('Item 449'), findsOneWidget);
+    expect(findDisplayText('Item 449'), findsNothing);
+    expect(harness.client.requestedStarts, [0, 200]);
   });
 
   testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {

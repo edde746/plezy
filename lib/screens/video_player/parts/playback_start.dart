@@ -91,6 +91,21 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         frameRatePlan = _armLiveDisplayNegotiation(currentPlayer, attempt.outcome);
         final holdPlaybackStart = frameRatePlan?.holdPlaybackStart ?? false;
+        if (currentPlayer.playerType == 'mpv') {
+          final motionResult = await MotionClarityService.forPlayer(currentPlayer).configure(
+            preset: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, _currentMetadata),
+            kernel: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, _currentMetadata),
+            thresholdPercent: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, _currentMetadata),
+            beforeSourceOpen: true,
+            engine: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, _currentMetadata),
+            outputRate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, _currentMetadata),
+            mciQuality: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, _currentMetadata),
+          );
+          if (!motionResult.isSupported && motionResult.reason != null) {
+            appLogger.d('PlaybackStart: motion clarity unavailable for live output: ${motionResult.reason}');
+          }
+          if (!attempt.isCurrent) return;
+        }
         final opened = await _openLiveStream(
           currentPlayer,
           streamUrl,
@@ -101,7 +116,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           isCurrent: () => attempt.isCurrent && identical(_live.session, session),
           timeShifted: requestedEpoch != null,
         );
-        if (opened) openedStream = _live.streamGeneration;
+        if (opened) {
+          openedStream = _live.streamGeneration;
+          if (currentPlayer.playerType == 'mpv') {
+            MotionClarityService.forPlayer(currentPlayer).markSourceOpened();
+          }
+        }
         if (!attempt.isCurrent) return;
 
         await _initVideoFilterAndPip();
@@ -345,6 +365,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
           await _initVideoFilterAndPip();
           if (!attempt.isCurrent) return false;
+
+          if (currentPlayer.playerType == 'mpv') {
+            // Mark only after the open. The shared open path applies the
+            // media-scoped profile before player.open(), while decoder surfaces
+            // can still be sized for this source.
+            MotionClarityService.forPlayer(currentPlayer).markSourceOpened();
+          }
 
           if (player == currentPlayer) {
             // Auto-PiP: set up callback for API 26-30 path and initial state

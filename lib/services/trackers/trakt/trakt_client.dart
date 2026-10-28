@@ -8,6 +8,7 @@ import '../../../models/trakt/trakt_catalog_entry.dart';
 import '../../../models/trakt/trakt_catalog_media.dart';
 import '../../../models/trakt/trakt_scrobble_request.dart';
 import '../../../models/trakt/trakt_user.dart';
+import '../../../models/trakt/trakt_movie_history_entry.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/json_utils.dart';
 import '../future_coalescer.dart';
@@ -78,6 +79,23 @@ class TraktClient implements DisposableTrackerClient {
   Future<List<dynamic>> getRatings(String type) async {
     final res = await _request('GET', '/sync/ratings/$type');
     return res is List ? res : const [];
+  }
+
+  /// Movie watch events for an explicit, user-requested CSV export. The
+  /// captured end time keeps new watches from shifting pages during export.
+  Future<TrackerPage<TraktMovieHistoryEntry>> getMovieHistory({
+    int page = 1,
+    int limit = 250,
+    required DateTime endAt,
+  }) async {
+    if (page < 1 || limit < 1 || limit > 250) {
+      throw ArgumentError('Trakt history page and limit are out of range');
+    }
+    final query = Uri(
+      queryParameters: {'page': page.toString(), 'limit': limit.toString(), 'end_at': endAt.toUtc().toIso8601String()},
+    ).query;
+    final res = await _requestResponse('GET', '/users/me/history/movies?$query');
+    return TrackerPage.fromResponse(res, _decodeMovieHistory(res.body));
   }
 
   // --- Catalog endpoints (Explore tab) ---
@@ -211,6 +229,18 @@ class TraktClient implements DisposableTrackerClient {
     final decoded = TrackerHttpClient.decodeJson(body);
     if (decoded is! List) return const [];
     return [for (final e in decoded.whereType<Map<String, dynamic>>()) TraktCatalogMedia.fromJson(e)];
+  }
+
+  static List<TraktMovieHistoryEntry> _decodeMovieHistory(String body) {
+    final decoded = TrackerHttpClient.decodeJson(body);
+    if (decoded is! List) throw const FormatException('Expected a Trakt movie history list.');
+
+    final entries = <TraktMovieHistoryEntry>[];
+    for (final value in decoded) {
+      if (value is! Map) throw const FormatException('Trakt returned a malformed movie history entry.');
+      entries.add(TraktMovieHistoryEntry.fromJson(Map<String, dynamic>.from(value)));
+    }
+    return entries;
   }
 
   /// Refresh the access token. Coalesces concurrent calls so

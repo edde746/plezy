@@ -69,6 +69,8 @@ String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.opds => 'OPDS',
   FileSourceKind.komga => 'Komga',
   FileSourceKind.audiobookshelf => 'Audiobookshelf',
+  FileSourceKind.openSubsonic => 'OpenSubsonic',
+  FileSourceKind.podcastRss => 'Podcasts (RSS / Atom)',
 };
 IconData sourceItemIcon(SourceItemKind kind) => switch (kind) {
   SourceItemKind.comic => Symbols.auto_stories_rounded,

@@ -1202,6 +1202,30 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get settingsButton => 'Oynatma tənzimləmələri';
 	@override String get tracksButton => 'Səs və Altyazılar';
 	@override String get chaptersButton => 'Hissələr';
+	@override String get segmentLoopHelp => 'Bu oxutma zamanı bir bölməni təkrarlayın. Əvvəl A-nı, sonra zaman xəttində daha sonrakı nöqtədə B-ni təyin edin.';
+	@override String get setLoopStart => 'Təkrarın başlanğıcını təyin et (A)';
+	@override String get setLoopEnd => 'Təkrarın sonunu təyin et (B)';
+	@override String get clearSegmentLoop => 'Bölmə təkrarını sil';
+	@override String get setLoopStartFirst => 'Əvvəl təkrarın başlanğıcını (A), sonra sonunu (B) təyin edin.';
+	@override String get loopEndAfterStart => 'Təkrarın sonu başlanğıcdan sonra olmalıdır.';
+	@override String get segmentLoopUnavailable => 'Bu oxutma üçün bölmə təkrarı mövcud deyil.';
+	@override String get loopPointNotSet => 'Təyin edilməyib';
+	@override String get bookmarksHelp => 'Əlfəcinlər bu cihazda saxlanılır. Həmin vaxta keçmək üçün birini seçin.';
+	@override String get bookmarksButton => 'Əlfəcinlər';
+	@override String get chaptersAndBookmarks => 'Fəsillər və əlfəcinlər';
+	@override String get segmentLoop => 'Bölmə təkrarı';
+	@override String get addBookmark => 'Əlfəcin əlavə et';
+	@override String get bookmarkName => 'Əlfəcin adı';
+	@override String get bookmarkNameHint => 'Məsələn, açılış səhnəsi';
+	@override String bookmarkDefaultName({required Object n}) => 'Əlfəcin ${n}';
+	@override String get bookmarkNameRequired => 'Bu əlfəcin üçün ad daxil edin.';
+	@override String get deleteBookmark => 'Əlfəcini sil';
+	@override String get bookmarkLimitReached => 'Bu elementdə artıq 100 əlfəcin var.';
+	@override String get bookmarkUnavailable => 'Bu əlfəcini saxlamaq və ya silmək mümkün olmadı.';
+	@override String get bookmarkSaved => 'Əlfəcin saxlanıldı.';
+	@override String get bookmarkDeleted => 'Əlfəcin silindi.';
+	@override String loopPointSet({required Object point, required Object time}) => '${point} təkrar nöqtəsi ${time} vaxtında təyin edildi.';
+	@override String get noChaptersOrBookmarks => 'Fəsil və ya əlfəcin yoxdur.';
 	@override String get versionQualityButton => 'Versiya və Keyfiyyət';
 	@override String get versionColumnHeader => 'Versiya';
 	@override String get qualityColumnHeader => 'Keyfiyyət';
@@ -2072,6 +2096,7 @@ class _Translations$music$az extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'İndi analizə baxmaq...';
 	@override String get visualizerAmbientMotion => 'Atmosferin aktivitesi';
 	@override String get visualizerPlexLoudness => 'Plex Sürücüsüz';
+	@override String get visualizerLiveAudio => 'Canlı audio təhlili';
 	@override String get visualizerPreviousPreset => 'Öncəki Görünürlük';
 	@override String get visualizerNextPreset => 'Sonraki Görünüş Stili';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2425,6 +2450,12 @@ class _Translations$videoSettings$az extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Oynadıcıda tonları ekranın pik parlaqlığına uyğunlaşdır, sonra nəticəni kompozitora bildir.';
 	@override String get hdrToneMappingFailed => 'HDR ton uyğunlaşdırmasını dəyişmək olmadı — əvvəlki rejim hələ də aktivdir.';
 	@override String get audioOutput => 'Səs çıxışı';
+	@override String get videoTrack => 'Video treki';
+	@override String get videoTrackDescription => 'Göstəriləcək video axınını seçin. Faylda alternativ video trekləri olduqda MPV oynadılmasında mövcuddur.';
+	@override String get videoTrackDefault => 'Standart';
+	@override String get videoTrackUnavailable => 'Alternativ video treki yoxdur.';
+	@override String get videoTrackFailed => 'Video trekini dəyişmək mümkün olmadı.';
+	@override String videoTrackNumber({required Object id}) => 'Trek ${id}';
 	@override String get performanceOverlay => 'Məhsuldarlıq paneli';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2432,10 +2463,17 @@ class _Translations$videoSettings$az extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Məkan səsi';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio düzəltmə';
-	@override String get audioEqualizerDescription => 'Bu cihaz üçün beş frekans bandı ayarlayın. mpv-də mevcut; aktiv EQ-in sesini decod və passthrough-a çalın.';
+	@override String get audioEqualizerDescription => 'MPV üçün 10 zolaqlı ekvalayzer. Audio filtrləri dekodlaşdırılmış səsdən istifadə edir və ötürməni söndürür.';
 	@override String get audioEqualizerFlat => 'Düz';
 	@override String get audioEqualizerActive => 'Xüsusi';
 	@override String get audioEqualizerSaveFailed => 'Audio equalizer ayarları saxlayamazdı.';
+	@override String get audioEffectsDescription => 'Effektlər dekodlaşdırılmış səsdən istifadə edir, buna görə birbaşa ötürmə söndürülür. Otaq əks-sədası və stereo genişləndirməsi MPV quruluşundan və trekdən asılıdır.';
+	@override String get audioStereoWidth => 'Stereo genişləndirmə';
+	@override String get audioSpatializer => 'Otaq mühiti';
+	@override String get audioSpatializerDescription => 'Yüngül otaq əks-sədası əlavə et.';
+	@override String get audioPitch => 'Tonun dəyişdirilməsi';
+	@override String get audioPitchDescription => 'Sürəti dəyişmədən tonu dəyişin. MPV quruluşunda Rubber Band olmalıdır.';
+	@override String get audioEffectUnavailable => 'Bu effekt bu trek və ya MPV quruluşu üçün əlçatan deyil.';
 	@override String get backgroundVideoAudio => 'Video və Audio';
 	@override String get backgroundVideoAudioDescription => 'Videoya oyunun oynamaq üçün oynamaq üçün videoya oyunun oyuncusu çıxırsanız qalandır. xilasın geri qayıtılana qədər gizlidir. Android bir medya oynamaq bildirimi kullanır.';
 	@override String get audioNormalization => 'Səsin gurluğunu normallaşdır';
@@ -3088,6 +3126,10 @@ class _Translations$universalMedia$az extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Playlist filləri seçin';
 	@override String get openPlaylist => 'Açıklandı Playlist';
 	@override String get playlistFormatsHelp => 'Bir oyun listəsi 1000-dən çox element və 2 MB içerir. HLS akışlar kimi açılır, bu yüzden oyuncu bir kalitə seçebilir.';
+	@override String get saveQueuePlaylist => 'Növbəni pleylist kimi saxla';
+	@override String get queuePlaylistSaved => 'Pleylist media fayllarının yanında saxlanıldı.';
+	@override String get queuePlaylistUnavailable => 'Bu növbəni təkrar istifadə edilə bilən yerli pleylist kimi saxlamaq mümkün deyil.';
+	@override String get queuePlaylistFolderRequired => 'Yadda saxlama yeri növbədəki fayllarla eyni qovluqda olmalıdır.';
 	@override String get noFavorites => 'Movqe.Az xəbər verir ki, Hollandiyada futbolçular bu profildə qalır.';
 	@override String get removeFavorite => 'Movqe favoritləri';
 	@override String get filesHelp => 'Video, audio və ISO filləri seçin. Fillər və URL-lər kütüphane tarihinə daxil olmaz.';
@@ -3152,12 +3194,13 @@ class _Translations$universalMedia$az extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Filə dəyişdirmək';
 	@override String get discHelp => 'Bu bilgisayarın optik sürücüsündən bir disk açılır.Ayrıca cihaz dosyalarından ISO görüntü açabilirsiniz.';
 	@override String get discs => 'Optik disk';
+	@override String get editionOrTitle => 'Buraxılış və ya disk başlığı';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray';
 	@override String get audioCd => 'Audio CD';
 	@override String get discAvailability => 'Disk playback-ın uyumlu MPV yapılandırması, supported drive və operating-system izinə ehtiyacıdır.';
 	@override String get converterTitle => 'Yerel medya dosyasını dönüştürmək';
-	@override String get converterHelp => 'Bir MP4, M4A və ya MP3 kopyası yaratmaq üçün FFmpeg istifadə edin.';
+	@override String get converterHelp => 'Yerli faylı FFmpeg ilə çevirin və ya konteynerini yenidən qurun.';
 	@override String get converterIntro => 'Yerel bir audio və video dosyasını daha çox cihazlarda çalışan formata dönüştürür.';
 	@override String get converterPrivacy => 'Bu bilgisayarda FFmpeg yüklü olmalıdır. Conversion yalnız yerel dosyaları oxur. Streamları indirmir və DRM-i kaldırmaz.';
 	@override String get converterChooseInput => 'Yerel medya dosyasını seçin';
@@ -3165,6 +3208,8 @@ class _Translations$universalMedia$az extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 və AAC';
 	@override String get converterM4a => 'M4A və AAC audio';
 	@override String get converterMp3 => 'MP3 və audio';
+	@override String get allowFtp => 'FTP-yə icazə ver';
+	@override String get allowFtpHelp => 'FTP medianı şifrələmədən göndərir. Yalnız etibarlı şəbəkələrdə istifadə edin.';
 	@override String get converterSaveAs => 'Konvertiyasiya medya';
 	@override String get converterExtensionMismatch => 'Bir filnamə seçin, seçilmiş çıkış genişliği ilə.';
 	@override String get converterUnsupportedInput => 'Video və ya audio fil seçin.';
@@ -3174,7 +3219,7 @@ class _Translations$universalMedia$az extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Başlamaq üçün FFmpeg...';
 	@override String get converterProgress => 'Bu bilgisayara dönüştürmək üçün...';
 	@override String get converterComplete => 'Yeni fil hazırdır.';
-	@override String get converterFfmpegMissing => 'FFmpeg, H.264, AAC və MP3 destekli bir kodlayıcı bulamazdı.';
+	@override String get converterFfmpegMissing => 'FFmpeg yoxdur və ya bu formatı dəstəkləmir.';
 	@override String get converterFailed => 'Konversiya başarısız oldu. kaynak dosyasının oxuyub və destinasyonun yeterli boş alanı var olduğunu kontrol edin.';
 	@override String get converterCancelled => 'Konversiya iptal edilmişdir. eksakt çıkış kaldırılmışdır.';
 	@override String get converterDesktopOnly => 'Yerel dönüşüm, FFmpeg yüklü olan masaüstü bilgisayarlarda mevcutdur.';
@@ -3202,6 +3247,9 @@ class _Translations$universalMedia$az extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Ekranın qalıb olması.';
 	@override String get captureElapsedLabel => 'Rekord zamanı';
 	@override String get captureStart => 'Rekord başlatmaq';
+	@override String get capturePreview => 'Pleyerdə önizləmə';
+	@override String get capturePreviewHelp => 'Seçilmiş mənbəyə standart pleyerdə baxın. Bu, yalnız cari sessiya üçündür və yazı yaratmır. Cihaz dəstəyi və icazələr MPV-dən və əməliyyat sistemindən asılıdır. Önizləmə yalnız videonu göstərir; yadda saxlanan yazılara əlavə audio daxil edilə bilər.';
+	@override String get capturePreviewActive => 'Canlı önizləmə · yazılmır';
 	@override String get captureStop => 'Qısa və qısa';
 	@override String get captureMode => 'Tövbə';
 	@override String get shareMode => 'Paylaşım';
@@ -3521,7 +3569,6 @@ class _Translations$audiobook$az extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Google Drive, OneDrive, Dropbox, WebDAV və ya S3 filləri və kitabları ilk dəfə ekləyin.';
 	@override String get syncDestination => 'Sync hesabı';
 	@override String get syncFolder => 'Xatırmaq və / və ya prefix';
-	@override String get syncFolderHelp => 'WebDAV kaynağınızın içində ayrı bir var olan klassiyayı və ya özgün bir S3 prefiksini istifadə edin.';
 	@override String get syncCode => 'Private Sink kodları';
 	@override String get syncCodeHelp => 'İlk cihazınızda bir kod oluşturun, sonra o kodu diğer cihazlarınızda yazın. özel bir kopya tutun: bu şifrə edilmiş durumunuzun anahtarıdır. hər kişi için farklı bir kod kullanın.';
 	@override String get showCode => 'Sink kodu göstərmək və ya gizləmək';
@@ -3531,7 +3578,6 @@ class _Translations$audiobook$az extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Bu kayanın kaldırılması burada oxuma və dinləmə sinqə açılır. şifrə edilmiş sinq filları sağlayıcının içində kalır.';
 	@override String get syncReconnect => 'Depozito hesabını yeniden bağlayın';
 	@override String lastSynced({required Object time}) => 'Son zamanlarda ${time}';
-	@override String get syncPrivacy => 'Sadəcə şifrə edilmiş progres və notlar kaydedilir. Audio və ebook filləri, hesab tokenləri və şifrələr yüklə edilmir. Google Drive və OneDrive istifadə app depolama; Dropbox kullanır PlezyNG Sync. Enable sync ekstra yazma qapı isteyebilir. Enable, bu destinasyon progres sync sahibidir; server progres ayrı kalır. Turn sync off yerel tarih və uzaq durum tutar.';
 	@override String get syncConflicts => 'Yenə qayıtma yeri seçin';
 	@override String get conflictHelp => 'Bu değişikliklər bağımsızdır. tutmaq üçün pozisyonu və ya kart versiyonu seçin. Daha sonra bir zaman çizgisi və ya daha yüksek bir faiz oranı otomatik olarak kazanmaz.';
 	@override String syncDevice({required Object device}) => '${device} və QXZQ';
@@ -5970,6 +6016,32 @@ extension on TranslationsAz {
 			'videoControls.settingsButton' => 'Oynatma tənzimləmələri',
 			'videoControls.tracksButton' => 'Səs və Altyazılar',
 			'videoControls.chaptersButton' => 'Hissələr',
+			'videoControls.segmentLoopHelp' => 'Bu oxutma zamanı bir bölməni təkrarlayın. Əvvəl A-nı, sonra zaman xəttində daha sonrakı nöqtədə B-ni təyin edin.',
+			'videoControls.setLoopStart' => 'Təkrarın başlanğıcını təyin et (A)',
+			'videoControls.setLoopEnd' => 'Təkrarın sonunu təyin et (B)',
+			'videoControls.clearSegmentLoop' => 'Bölmə təkrarını sil',
+			'videoControls.setLoopStartFirst' => 'Əvvəl təkrarın başlanğıcını (A), sonra sonunu (B) təyin edin.',
+			'videoControls.loopEndAfterStart' => 'Təkrarın sonu başlanğıcdan sonra olmalıdır.',
+			'videoControls.segmentLoopUnavailable' => 'Bu oxutma üçün bölmə təkrarı mövcud deyil.',
+			'videoControls.loopPointNotSet' => 'Təyin edilməyib',
+			'videoControls.bookmarksHelp' => 'Əlfəcinlər bu cihazda saxlanılır. Həmin vaxta keçmək üçün birini seçin.',
+			'videoControls.bookmarksButton' => 'Əlfəcinlər',
+			'videoControls.chaptersAndBookmarks' => 'Fəsillər və əlfəcinlər',
+			'videoControls.segmentLoop' => 'Bölmə təkrarı',
+			'videoControls.addBookmark' => 'Əlfəcin əlavə et',
+			'videoControls.bookmarkName' => 'Əlfəcin adı',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Məsələn, açılış səhnəsi',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Əlfəcin ${n}',
+			'videoControls.bookmarkNameRequired' => 'Bu əlfəcin üçün ad daxil edin.',
+			'videoControls.deleteBookmark' => 'Əlfəcini sil',
+			'videoControls.bookmarkLimitReached' => 'Bu elementdə artıq 100 əlfəcin var.',
+			'videoControls.bookmarkUnavailable' => 'Bu əlfəcini saxlamaq və ya silmək mümkün olmadı.',
+			'videoControls.bookmarkSaved' => 'Əlfəcin saxlanıldı.',
+			'videoControls.bookmarkDeleted' => 'Əlfəcin silindi.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => '${point} təkrar nöqtəsi ${time} vaxtında təyin edildi.',
+			'videoControls.noChaptersOrBookmarks' => 'Fəsil və ya əlfəcin yoxdur.',
 			'videoControls.versionQualityButton' => 'Versiya və Keyfiyyət',
 			'videoControls.versionColumnHeader' => 'Versiya',
 			'videoControls.qualityColumnHeader' => 'Keyfiyyət',
@@ -5984,8 +6056,6 @@ extension on TranslationsAz {
 			'videoControls.exitFullscreenButton' => 'Tam ekrandan çıx',
 			'videoControls.alwaysOnTopButton' => 'Həmişə üstə',
 			'videoControls.rotationLockButton' => 'Dönmə kilidi',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Ekranı kilidlə',
 			'videoControls.screenLockButton' => 'Ekran kilidi',
 			'videoControls.timelineSlider' => 'Video zaman çubuğu',
@@ -6474,6 +6544,8 @@ extension on TranslationsAz {
 			'libraries.hideLibrary' => 'Kitabxananı gizlət',
 			'libraries.libraryOptions' => 'Kitabxana seçimləri',
 			'libraries.content' => 'kitabxana məzmunu',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Kitabxana seç',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtrlər (${count})',
 			'libraries.noRecommendations' => 'Tövsiyə yoxdur',
@@ -6498,8 +6570,6 @@ extension on TranslationsAz {
 			'libraries.filterCategories.year' => 'İl',
 			'libraries.filterCategories.contentRating' => 'Məzmun reytinqi',
 			'libraries.filterCategories.tag' => 'Teq',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Baxılmayıb',
 			'libraries.filterCategories.unplayed' => 'Oynadılmayıb',
 			'libraries.filterCategories.favorites' => 'Sevimlilər',
@@ -6941,6 +7011,7 @@ extension on TranslationsAz {
 			'music.visualizerProfileLoading' => 'İndi analizə baxmaq...',
 			'music.visualizerAmbientMotion' => 'Atmosferin aktivitesi',
 			'music.visualizerPlexLoudness' => 'Plex Sürücüsüz',
+			'music.visualizerLiveAudio' => 'Canlı audio təhlili',
 			'music.visualizerPreviousPreset' => 'Öncəki Görünürlük',
 			'music.visualizerNextPreset' => 'Sonraki Görünüş Stili',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6987,6 +7058,8 @@ extension on TranslationsAz {
 			'watchTogether.codeCopied' => 'Otaq kodu kopyalandı',
 			'watchTogether.shareInvite' => 'Dəvəti paylaş',
 			'watchTogether.inviteCopied' => 'Dəvət kopyalandı. Onu mesaja yapışdırın.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG-də Birlikdə İzlə otağıma qoşul: Birlikdə İzlə bölməsini aç, "Otağa qoşul" düyməsinə bas və ${code} kodunu daxil et.',
 			'watchTogether.openSessionControls' => 'Birlikdə İzlə seans idarəetmələrini aç',
 			'watchTogether.reconnecting' => 'Yenidən qoşulunur...',
@@ -7012,8 +7085,6 @@ extension on TranslationsAz {
 			'watchTogether.playAnyway' => 'Yenə də oynat',
 			'watchTogether.chooseAnotherCopy' => 'Başqa nüsxə seç',
 			'watchTogether.dontPlay' => 'Oynatma',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Bu video sizdə yoxdur',
 			'watchTogether.unavailableDescription' => 'PlezyNG onu kitabxanalarınızda tapa bilmədi. Nüsxəni özünüz seçin və ya yenidən axtarın.',
 			'watchTogether.chooseCopy' => 'Nüsxə seç',
@@ -7367,6 +7438,12 @@ extension on TranslationsAz {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Oynadıcıda tonları ekranın pik parlaqlığına uyğunlaşdır, sonra nəticəni kompozitora bildir.',
 			'videoSettings.hdrToneMappingFailed' => 'HDR ton uyğunlaşdırmasını dəyişmək olmadı — əvvəlki rejim hələ də aktivdir.',
 			'videoSettings.audioOutput' => 'Səs çıxışı',
+			'videoSettings.videoTrack' => 'Video treki',
+			'videoSettings.videoTrackDescription' => 'Göstəriləcək video axınını seçin. Faylda alternativ video trekləri olduqda MPV oynadılmasında mövcuddur.',
+			'videoSettings.videoTrackDefault' => 'Standart',
+			'videoSettings.videoTrackUnavailable' => 'Alternativ video treki yoxdur.',
+			'videoSettings.videoTrackFailed' => 'Video trekini dəyişmək mümkün olmadı.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Trek ${id}',
 			'videoSettings.performanceOverlay' => 'Məhsuldarlıq paneli',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7374,10 +7451,17 @@ extension on TranslationsAz {
 			'videoSettings.audioOutputSpatial' => 'Məkan səsi',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio düzəltmə',
-			'videoSettings.audioEqualizerDescription' => 'Bu cihaz üçün beş frekans bandı ayarlayın. mpv-də mevcut; aktiv EQ-in sesini decod və passthrough-a çalın.',
+			'videoSettings.audioEqualizerDescription' => 'MPV üçün 10 zolaqlı ekvalayzer. Audio filtrləri dekodlaşdırılmış səsdən istifadə edir və ötürməni söndürür.',
 			'videoSettings.audioEqualizerFlat' => 'Düz',
 			'videoSettings.audioEqualizerActive' => 'Xüsusi',
 			'videoSettings.audioEqualizerSaveFailed' => 'Audio equalizer ayarları saxlayamazdı.',
+			'videoSettings.audioEffectsDescription' => 'Effektlər dekodlaşdırılmış səsdən istifadə edir, buna görə birbaşa ötürmə söndürülür. Otaq əks-sədası və stereo genişləndirməsi MPV quruluşundan və trekdən asılıdır.',
+			'videoSettings.audioStereoWidth' => 'Stereo genişləndirmə',
+			'videoSettings.audioSpatializer' => 'Otaq mühiti',
+			'videoSettings.audioSpatializerDescription' => 'Yüngül otaq əks-sədası əlavə et.',
+			'videoSettings.audioPitch' => 'Tonun dəyişdirilməsi',
+			'videoSettings.audioPitchDescription' => 'Sürəti dəyişmədən tonu dəyişin. MPV quruluşunda Rubber Band olmalıdır.',
+			'videoSettings.audioEffectUnavailable' => 'Bu effekt bu trek və ya MPV quruluşu üçün əlçatan deyil.',
 			'videoSettings.backgroundVideoAudio' => 'Video və Audio',
 			'videoSettings.backgroundVideoAudioDescription' => 'Videoya oyunun oynamaq üçün oynamaq üçün videoya oyunun oyuncusu çıxırsanız qalandır. xilasın geri qayıtılana qədər gizlidir. Android bir medya oynamaq bildirimi kullanır.',
 			'videoSettings.audioNormalization' => 'Səsin gurluğunu normallaşdır',
@@ -7488,6 +7572,8 @@ extension on TranslationsAz {
 			'metadataEdit.metadataUpdated' => 'Meta-məlumatlar yeniləndi',
 			'metadataEdit.metadataUpdateFailed' => 'Meta-məlumatlar yenilənə bilmədi',
 			'metadataEdit.artworkUpdated' => 'Şəkillər yeniləndi',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Şəkillər yenilənə bilmədi',
 			'metadataEdit.noArtworkAvailable' => 'Şəkil əlçatan deyil',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Şəkil seçimi ${index}',
@@ -7526,8 +7612,6 @@ extension on TranslationsAz {
 			'metadataEdit.shownWithForeignAudio' => 'Xarici səs olduqda göstərilən',
 			'metadataEdit.alwaysEnabled' => 'Həmişə aktivdir',
 			'metadataEdit.tags' => 'Teqlər',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Teq əlavə et',
 			'metadataEdit.genre' => 'Janr',
 			'metadataEdit.director' => 'Rejissor',
@@ -7896,6 +7980,10 @@ extension on TranslationsAz {
 			'universalMedia.choosePlaylist' => 'Playlist filləri seçin',
 			'universalMedia.openPlaylist' => 'Açıklandı Playlist',
 			'universalMedia.playlistFormatsHelp' => 'Bir oyun listəsi 1000-dən çox element və 2 MB içerir. HLS akışlar kimi açılır, bu yüzden oyuncu bir kalitə seçebilir.',
+			'universalMedia.saveQueuePlaylist' => 'Növbəni pleylist kimi saxla',
+			'universalMedia.queuePlaylistSaved' => 'Pleylist media fayllarının yanında saxlanıldı.',
+			'universalMedia.queuePlaylistUnavailable' => 'Bu növbəni təkrar istifadə edilə bilən yerli pleylist kimi saxlamaq mümkün deyil.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Yadda saxlama yeri növbədəki fayllarla eyni qovluqda olmalıdır.',
 			'universalMedia.noFavorites' => 'Movqe.Az xəbər verir ki, Hollandiyada futbolçular bu profildə qalır.',
 			'universalMedia.removeFavorite' => 'Movqe favoritləri',
 			'universalMedia.filesHelp' => 'Video, audio və ISO filləri seçin. Fillər və URL-lər kütüphane tarihinə daxil olmaz.',
@@ -7954,12 +8042,13 @@ extension on TranslationsAz {
 			'universalMedia.replaceRecording' => 'Filə dəyişdirmək',
 			'universalMedia.discHelp' => 'Bu bilgisayarın optik sürücüsündən bir disk açılır.Ayrıca cihaz dosyalarından ISO görüntü açabilirsiniz.',
 			'universalMedia.discs' => 'Optik disk',
+			'universalMedia.editionOrTitle' => 'Buraxılış və ya disk başlığı',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'Audio CD',
 			'universalMedia.discAvailability' => 'Disk playback-ın uyumlu MPV yapılandırması, supported drive və operating-system izinə ehtiyacıdır.',
 			'universalMedia.converterTitle' => 'Yerel medya dosyasını dönüştürmək',
-			'universalMedia.converterHelp' => 'Bir MP4, M4A və ya MP3 kopyası yaratmaq üçün FFmpeg istifadə edin.',
+			'universalMedia.converterHelp' => 'Yerli faylı FFmpeg ilə çevirin və ya konteynerini yenidən qurun.',
 			'universalMedia.converterIntro' => 'Yerel bir audio və video dosyasını daha çox cihazlarda çalışan formata dönüştürür.',
 			'universalMedia.converterPrivacy' => 'Bu bilgisayarda FFmpeg yüklü olmalıdır. Conversion yalnız yerel dosyaları oxur. Streamları indirmir və DRM-i kaldırmaz.',
 			'universalMedia.converterChooseInput' => 'Yerel medya dosyasını seçin',
@@ -7967,6 +8056,8 @@ extension on TranslationsAz {
 			'universalMedia.converterMp4' => 'MP4 · H.264 və AAC',
 			'universalMedia.converterM4a' => 'M4A və AAC audio',
 			'universalMedia.converterMp3' => 'MP3 və audio',
+			'universalMedia.allowFtp' => 'FTP-yə icazə ver',
+			'universalMedia.allowFtpHelp' => 'FTP medianı şifrələmədən göndərir. Yalnız etibarlı şəbəkələrdə istifadə edin.',
 			'universalMedia.converterSaveAs' => 'Konvertiyasiya medya',
 			'universalMedia.converterExtensionMismatch' => 'Bir filnamə seçin, seçilmiş çıkış genişliği ilə.',
 			'universalMedia.converterUnsupportedInput' => 'Video və ya audio fil seçin.',
@@ -7976,7 +8067,7 @@ extension on TranslationsAz {
 			'universalMedia.converterStarting' => 'Başlamaq üçün FFmpeg...',
 			'universalMedia.converterProgress' => 'Bu bilgisayara dönüştürmək üçün...',
 			'universalMedia.converterComplete' => 'Yeni fil hazırdır.',
-			'universalMedia.converterFfmpegMissing' => 'FFmpeg, H.264, AAC və MP3 destekli bir kodlayıcı bulamazdı.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg yoxdur və ya bu formatı dəstəkləmir.',
 			'universalMedia.converterFailed' => 'Konversiya başarısız oldu. kaynak dosyasının oxuyub və destinasyonun yeterli boş alanı var olduğunu kontrol edin.',
 			'universalMedia.converterCancelled' => 'Konversiya iptal edilmişdir. eksakt çıkış kaldırılmışdır.',
 			'universalMedia.converterDesktopOnly' => 'Yerel dönüşüm, FFmpeg yüklü olan masaüstü bilgisayarlarda mevcutdur.',
@@ -7995,6 +8086,8 @@ extension on TranslationsAz {
 			'universalMedia.captureAudioNone' => 'Audio yoxdur',
 			'universalMedia.captureDefaultAudio' => 'İndirimli audio',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Xatırım çerçevəsi',
 			'universalMedia.capturePrivacy' => '“Mikrofon” filinin seçilməsinə yalnız kaydırılır.Mikrofon çekimi seçicidir.PlezyNG, kaydı yükləmir.',
 			'universalMedia.captureSaveAs' => 'Ekranın qalıbı kimi',
@@ -8004,6 +8097,9 @@ extension on TranslationsAz {
 			'universalMedia.captureSaved' => 'Ekranın qalıb olması.',
 			'universalMedia.captureElapsedLabel' => 'Rekord zamanı',
 			'universalMedia.captureStart' => 'Rekord başlatmaq',
+			'universalMedia.capturePreview' => 'Pleyerdə önizləmə',
+			'universalMedia.capturePreviewHelp' => 'Seçilmiş mənbəyə standart pleyerdə baxın. Bu, yalnız cari sessiya üçündür və yazı yaratmır. Cihaz dəstəyi və icazələr MPV-dən və əməliyyat sistemindən asılıdır. Önizləmə yalnız videonu göstərir; yadda saxlanan yazılara əlavə audio daxil edilə bilər.',
+			'universalMedia.capturePreviewActive' => 'Canlı önizləmə · yazılmır',
 			'universalMedia.captureStop' => 'Qısa və qısa',
 			'universalMedia.captureMode' => 'Tövbə',
 			'universalMedia.shareMode' => 'Paylaşım',
@@ -8040,8 +8136,6 @@ extension on TranslationsAz {
 			'universalMedia.extensionInstallTitle' => 'Bu arşivdən istifadə etmək olarmı?',
 			'universalMedia.extensionReplaceTitle' => 'Bu arşivdə güncələ edilir?',
 			'universalMedia.extensionService' => 'Servisi',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => '“Manifest” bu xidmətə göndərilir.Manifest, işləmə qalıq kodunu içermez.Sadəcə, bu son noktaya inanırsanız devam edin.',
 			'universalMedia.extensionInstall' => 'Servisi artırmaq',
@@ -8295,7 +8389,6 @@ extension on TranslationsAz {
 			'audiobook.addSyncSource' => 'Google Drive, OneDrive, Dropbox, WebDAV və ya S3 filləri və kitabları ilk dəfə ekləyin.',
 			'audiobook.syncDestination' => 'Sync hesabı',
 			'audiobook.syncFolder' => 'Xatırmaq və / və ya prefix',
-			'audiobook.syncFolderHelp' => 'WebDAV kaynağınızın içində ayrı bir var olan klassiyayı və ya özgün bir S3 prefiksini istifadə edin.',
 			'audiobook.syncCode' => 'Private Sink kodları',
 			'audiobook.syncCodeHelp' => 'İlk cihazınızda bir kod oluşturun, sonra o kodu diğer cihazlarınızda yazın. özel bir kopya tutun: bu şifrə edilmiş durumunuzun anahtarıdır. hər kişi için farklı bir kod kullanın.',
 			'audiobook.showCode' => 'Sink kodu göstərmək və ya gizləmək',
@@ -8305,7 +8398,6 @@ extension on TranslationsAz {
 			'audiobook.syncSourceDisconnect' => 'Bu kayanın kaldırılması burada oxuma və dinləmə sinqə açılır. şifrə edilmiş sinq filları sağlayıcının içində kalır.',
 			'audiobook.syncReconnect' => 'Depozito hesabını yeniden bağlayın',
 			'audiobook.lastSynced' => ({required Object time}) => 'Son zamanlarda ${time}',
-			'audiobook.syncPrivacy' => 'Sadəcə şifrə edilmiş progres və notlar kaydedilir. Audio və ebook filləri, hesab tokenləri və şifrələr yüklə edilmir. Google Drive və OneDrive istifadə app depolama; Dropbox kullanır PlezyNG Sync. Enable sync ekstra yazma qapı isteyebilir. Enable, bu destinasyon progres sync sahibidir; server progres ayrı kalır. Turn sync off yerel tarih və uzaq durum tutar.',
 			'audiobook.syncConflicts' => 'Yenə qayıtma yeri seçin',
 			'audiobook.conflictHelp' => 'Bu değişikliklər bağımsızdır. tutmaq üçün pozisyonu və ya kart versiyonu seçin. Daha sonra bir zaman çizgisi və ya daha yüksek bir faiz oranı otomatik olarak kazanmaz.',
 			'audiobook.syncDevice' => ({required Object device}) => '${device} və QXZQ',
@@ -8508,6 +8600,8 @@ extension on TranslationsAz {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8554,8 +8648,6 @@ extension on TranslationsAz {
 			'deepLinks.movieHint' => 'Bu linki açmaq filmi oynayır.',
 			'deepLinks.episodeHint' => 'Bu linki açmaq bu epizodu oynayır.',
 			'deepLinks.profileHint' => 'Bu profillə bu link-i açılır.',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.openAsProfile' => ({required Object name}) => '${name} kimi açılır',
 			'deepLinks.copy' => 'Kopya',
 			'deepLinks.copied' => 'Link kopyalar',

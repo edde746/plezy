@@ -271,20 +271,14 @@ if ($EmitScriptOnly) {
 
 Write-Host "`nChecking for 7-Zip..." -ForegroundColor Cyan
 if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
-    Write-Host "7-Zip not found in PATH. Installing via Chocolatey..." -ForegroundColor Yellow
+    throw '7-Zip is missing from the Windows runner toolchain. Provision it before packaging.'
+}
 
-    if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-        Write-Error "Chocolatey is not installed. Please install it from https://chocolatey.org/install"
-        exit 1
-    }
-
-    choco install 7zip -y
-    refreshenv
-
-    if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
-        Write-Error "Failed to install 7-Zip"
-        exit 1
-    }
+# Check all installer prerequisites before creating archives or staging files.
+& (Join-Path $PSScriptRoot 'tool/prepare-build-toolchain.ps1') -IncludeInstaller -VerifyOnly
+$InnoSetupPath = $env:PLEZY_INNO_SETUP_COMPILER
+if (-not $InnoSetupPath -or -not (Test-Path -LiteralPath $InnoSetupPath -PathType Leaf)) {
+    throw 'Run windows/tool/prepare-build-toolchain.ps1 -IncludeInstaller before packaging.'
 }
 
 if ($HasX64) {
@@ -332,25 +326,6 @@ Write-Host "`nGenerating Inno Setup script..." -ForegroundColor Cyan
 New-InnoSetupScript -Version $Version -HasX64 ([bool]$HasX64) -HasArm64 ([bool]$HasArm64) |
     Out-File -FilePath $SetupScript -Encoding ASCII
 Write-Host "Created: $SetupScript" -ForegroundColor Green
-
-Write-Host "`nChecking for Inno Setup..." -ForegroundColor Cyan
-$InnoSetupPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-
-if (-not (Test-Path $InnoSetupPath)) {
-    Write-Host "Inno Setup not found. Installing via Chocolatey..." -ForegroundColor Yellow
-
-    if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-        Write-Error "Chocolatey is not installed. Please install it from https://chocolatey.org/install"
-        exit 1
-    }
-
-    choco install innosetup -y
-
-    if (-not (Test-Path $InnoSetupPath)) {
-        Write-Error "Failed to install Inno Setup"
-        exit 1
-    }
-}
 
 Write-Host "`nBuilding installer with Inno Setup..." -ForegroundColor Cyan
 & $InnoSetupPath $SetupScript

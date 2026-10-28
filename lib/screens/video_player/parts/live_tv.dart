@@ -732,7 +732,20 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   /// detection, and on desktop. Time-shift seeks, subtitle rebuilds and
   /// stream recovery reopen the same channel and keep its negotiated mode.
   _FrameRateStartupPlan? _armLiveDisplayNegotiation(Player currentPlayer, PlaybackOpenOutcome firstFrame) {
-    final plan = _firstFrameStartupPlan(currentPlayer, SettingsService.instance, hasVideoUrl: true);
+    final metadata = _currentMetadata;
+    final preset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, metadata);
+    final engine = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, metadata);
+    final outputRate = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, metadata);
+    final motionCompensatedRequested = currentPlayer.playerType == 'mpv' &&
+        preset.interpolationEnabled &&
+        engine == MotionClarityEngine.motionCompensated;
+    final plan = _firstFrameStartupPlan(
+      currentPlayer,
+      SettingsService.instance,
+      hasVideoUrl: true,
+      suppressContentRateMatching: motionCompensatedRequested,
+      motionCompensatedOutputFps: motionCompensatedRequested ? outputRate.resolve(null) : null,
+    );
     if (plan == null) return null;
     _frameRate.resetForNewItem();
     if (plan.countsAsApplied) _frameRate.applied = true;

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/book_identifiers.dart';
 import '../sources/source_database.dart';
 import '../sources/source_models.dart';
 import '../sources/source_oauth.dart';
@@ -91,6 +92,7 @@ class LendingBook {
     this.purchaseLink,
     this.price,
     this.currency,
+    this.identifiers = const {},
     this.data = const {},
     this.loan = false,
     this.hold = false,
@@ -99,6 +101,7 @@ class LendingBook {
   final Uri? cover, page, purchaseLink;
   final double? price;
   final String? currency;
+  final Map<String, String> identifiers;
   final Map<String, dynamic> data;
   final bool loan, hold;
   DateTime? get due => DateTime.tryParse(data['expires'] as String? ?? '');
@@ -194,7 +197,7 @@ class LendingService {
         'q': query,
         'page': '$page',
         'limit': '30',
-        'fields': 'key,title,author_name,cover_i',
+        'fields': 'key,title,author_name,cover_i,isbn',
       }),
       headers: const {'User-Agent': 'PlezyNG (https://github.com/snapetech-org/PlezyNG)'},
     );
@@ -210,6 +213,7 @@ class LendingService {
             author: sourceList(b['author_name']).join(', '),
             cover: cover == null ? null : Uri.https('covers.openlibrary.org', '/b/id/$cover-M.jpg'),
             page: Uri.https('openlibrary.org', b['key'] as String),
+            identifiers: BookIdentifiers.fromValues(b['isbn']),
           );
         })
         .toList();
@@ -270,6 +274,7 @@ class LendingService {
           purchaseLink: forSale ? buyLink : null,
           price: forSale && buyLink != null && amount != null && amount >= 0 ? amount : null,
           currency: currencyCode is String && RegExp(r'^[A-Z]{3}$').hasMatch(currencyCode) ? currencyCode : null,
+          identifiers: BookIdentifiers.fromValues(info['industryIdentifiers']),
           data: {'source': 'googleBooks', if (saleability is String) 'saleability': saleability},
         ),
       );
@@ -461,6 +466,7 @@ class LendingService {
       author: sourceMap(data['primaryCreator'])['name'] as String? ?? '',
       cover: optional(sourceMap(images['cover300Wide'] ?? images['cover'])['href'] as String?),
       page: optional(sourceMap(sourceList(data['contentDetails']).firstOrNull)['href'] as String?),
+      identifiers: BookIdentifiers.fromValues([data['identifiers'], data['isbn'], data['isbn10'], data['isbn13']]),
       data: data,
       loan: loan,
       hold: hold,

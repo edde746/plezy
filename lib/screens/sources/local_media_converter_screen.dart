@@ -9,13 +9,58 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../sources/ffmpeg_capabilities.dart';
 import '../../sources/source_models.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 
-enum _ConversionFormat { mp4, m4a, mp3 }
+enum _ConversionFormat {
+  mp4H264,
+  mkvH264,
+  mp4Copy,
+  mkvCopy,
+  m4a,
+  mp3,
+  flac,
+  wav,
+  opus,
+  webmVp9;
+
+  String get extension => switch (this) {
+    mp4H264 || mp4Copy => 'mp4',
+    mkvH264 || mkvCopy => 'mkv',
+    m4a => 'm4a',
+    mp3 => 'mp3',
+    flac => 'flac',
+    wav => 'wav',
+    opus => 'ogg',
+    webmVp9 => 'webm',
+  };
+
+  Set<String> get requiredEncoders => switch (this) {
+    mp4H264 || mkvH264 => const {'libx264', 'aac'},
+    mp4Copy || mkvCopy => const {},
+    m4a => const {'aac'},
+    mp3 => const {'libmp3lame'},
+    flac => const {'flac'},
+    wav => const {'pcm_s16le'},
+    opus => const {'libopus'},
+    webmVp9 => const {'libvpx-vp9', 'libopus'},
+  };
+
+  String get requiredMuxer => switch (this) {
+    mp4H264 || mp4Copy => 'mp4',
+    mkvH264 || mkvCopy => 'matroska',
+    m4a => 'ipod',
+    mp3 => 'mp3',
+    flac => 'flac',
+    wav => 'wav',
+    opus => 'ogg',
+    webmVp9 => 'webm',
+  };
+}
 
 class LocalMediaConverterScreen extends StatefulWidget {
   const LocalMediaConverterScreen({super.key});
@@ -27,14 +72,113 @@ class LocalMediaConverterScreen extends StatefulWidget {
 class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
   File? _input;
   String? _inputName;
-  _ConversionFormat _format = _ConversionFormat.mp4;
+  SourceItemKind? _inputKind;
+  _ConversionFormat _format = _ConversionFormat.mp4H264;
   Process? _process;
+  Set<String> _availableEncoders = const {};
+  Set<String> _availableMuxers = const {};
+  bool _formatProbeComplete = false;
+  bool _ffmpegAvailable = false;
   bool _busy = false;
   bool _cancelled = false;
   double? _progress;
   int? _durationMs;
   String? _status;
   String? _failure;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_probeEncoders());
+  }
+
+  Future<void> _probeEncoders() async {
+    Process? process;
+    try {
+      process = await Process.start('ffmpeg', const ['-hide_banner', '-encoders'], runInShell: false);
+      final outputFuture = process.stdout.transform(utf8.decoder).join();
+      final diagnosticsFuture = process.stderr.drain<void>();
+      final exitCode = await process.exitCode.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          process?.kill();
+          return -1;
+        },
+      );
+      final output = await outputFuture;
+      await diagnosticsFuture;
+      if (exitCode != 0) throw StateError('FFmpeg encoder probe failed');
+      final encoders = FfmpegCapabilities.parseEncoders(output);
+      final muxers = await _probeMuxers();
+      if (mounted) {
+        setState(() {
+          _availableEncoders = encoders;
+          _availableMuxers = muxers;
+          _ffmpegAvailable = true;
+          _formatProbeComplete = true;
+          if (!_profileSupported(_format)) _format = _firstSupported(_inputKind) ?? _format;
+        });
+      }
+    } on Object {
+      process?.kill();
+      if (mounted) setState(() => _formatProbeComplete = true);
+    }
+  }
+
+  Future<Set<String>> _probeMuxers() async {
+    final process = await Process.start('ffmpeg', const ['-hide_banner', '-muxers'], runInShell: false);
+    final outputFuture = process.stdout.transform(utf8.decoder).join();
+    final diagnosticsFuture = process.stderr.drain<void>();
+    final exitCode = await process.exitCode.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        process.kill();
+        return -1;
+      },
+    );
+    final output = await outputFuture;
+    await diagnosticsFuture;
+    if (exitCode != 0) throw StateError('FFmpeg muxer probe failed');
+    return FfmpegCapabilities.parseMuxers(output);
+  }
+
+  bool _profileSupported(_ConversionFormat format) =>
+      _ffmpegAvailable &&
+      _availableMuxers.contains(format.requiredMuxer) &&
+      format.requiredEncoders.every(_availableEncoders.contains);
+
+  _ConversionFormat? _firstSupported(SourceItemKind? kind) {
+    for (final format in _formatsFor(kind)) {
+      if (_profileSupported(format)) return format;
+    }
+    return null;
+  }
+
+  List<_ConversionFormat> _formatsFor(SourceItemKind? kind) {
+    if (kind == SourceItemKind.music || kind == SourceItemKind.audiobook) {
+      return const [
+        _ConversionFormat.m4a,
+        _ConversionFormat.mp3,
+        _ConversionFormat.flac,
+        _ConversionFormat.wav,
+        _ConversionFormat.opus,
+      ];
+    }
+    return _ConversionFormat.values;
+  }
+
+  String _formatLabel(_ConversionFormat format) => switch (format) {
+    _ConversionFormat.mp4H264 => t.universalMedia.converterMp4,
+    _ConversionFormat.mkvH264 => 'MKV · H.264/AAC',
+    _ConversionFormat.mp4Copy => 'MP4 · remux',
+    _ConversionFormat.mkvCopy => 'MKV · remux',
+    _ConversionFormat.m4a => t.universalMedia.converterM4a,
+    _ConversionFormat.mp3 => t.universalMedia.converterMp3,
+    _ConversionFormat.flac => 'FLAC · lossless',
+    _ConversionFormat.wav => 'WAV · PCM',
+    _ConversionFormat.opus => 'Opus · Ogg',
+    _ConversionFormat.webmVp9 => 'WebM · VP9/Opus',
+  };
 
   Future<void> _chooseInput() async {
     final result = await FilePicker.pickFiles(type: FileType.any, allowMultiple: false);
@@ -52,10 +196,14 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
     setState(() {
       _input = File(selected.path!);
       _inputName = selected.name;
+      _inputKind = kind;
       if (kind == SourceItemKind.music || kind == SourceItemKind.audiobook) {
         _format = _ConversionFormat.m4a;
       } else {
-        _format = _ConversionFormat.mp4;
+        _format = _ConversionFormat.mp4H264;
+      }
+      if (_formatProbeComplete && !_profileSupported(_format)) {
+        _format = _firstSupported(kind) ?? _format;
       }
       _failure = null;
       _progress = null;
@@ -63,15 +211,9 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
     });
   }
 
-  String _extension(_ConversionFormat format) => switch (format) {
-    _ConversionFormat.mp4 => 'mp4',
-    _ConversionFormat.m4a => 'm4a',
-    _ConversionFormat.mp3 => 'mp3',
-  };
-
   String _suggestedName() {
     final input = _inputName ?? 'media';
-    return '${p.basenameWithoutExtension(input)}.${_extension(_format)}';
+    return '${p.basenameWithoutExtension(input)}.${_format.extension}';
   }
 
   List<String> _arguments(String input, String output) {
@@ -85,14 +227,17 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
       input,
       '-map_metadata',
       '0',
-      '-map',
-      '0:v:0?',
-      '-map',
-      '0:a:0?',
+      '-map_chapters',
+      '0',
     ];
     switch (_format) {
-      case _ConversionFormat.mp4:
+      case _ConversionFormat.mp4H264:
+      case _ConversionFormat.mkvH264:
         arguments.addAll([
+          '-map',
+          '0:v:0?',
+          '-map',
+          '0:a:0?',
           '-c:v',
           'libx264',
           '-preset',
@@ -105,13 +250,43 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
           'aac',
           '-b:a',
           '192k',
-          '-movflags',
-          '+faststart',
         ]);
+        if (_format == _ConversionFormat.mp4H264) arguments.addAll(['-movflags', '+faststart']);
+      case _ConversionFormat.mp4Copy:
+      case _ConversionFormat.mkvCopy:
+        arguments.addAll(['-map', '0:v?', '-map', '0:a?', '-map', '0:s?', '-c', 'copy']);
+        if (_format == _ConversionFormat.mp4Copy) arguments.addAll(['-movflags', '+faststart']);
       case _ConversionFormat.m4a:
-        arguments.addAll(['-vn', '-c:a', 'aac', '-b:a', '192k']);
+        arguments.addAll(['-map', '0:a:0?', '-vn', '-c:a', 'aac', '-b:a', '192k']);
       case _ConversionFormat.mp3:
-        arguments.addAll(['-vn', '-c:a', 'libmp3lame', '-q:a', '2']);
+        arguments.addAll(['-map', '0:a:0?', '-vn', '-c:a', 'libmp3lame', '-q:a', '2']);
+      case _ConversionFormat.flac:
+        arguments.addAll(['-map', '0:a:0?', '-vn', '-c:a', 'flac', '-compression_level', '5']);
+      case _ConversionFormat.wav:
+        arguments.addAll(['-map', '0:a:0?', '-vn', '-c:a', 'pcm_s16le']);
+      case _ConversionFormat.opus:
+        arguments.addAll(['-map', '0:a:0?', '-vn', '-c:a', 'libopus', '-b:a', '160k', '-vbr', 'on']);
+      case _ConversionFormat.webmVp9:
+        arguments.addAll([
+          '-map',
+          '0:v:0?',
+          '-map',
+          '0:a:0?',
+          '-c:v',
+          'libvpx-vp9',
+          '-crf',
+          '32',
+          '-b:v',
+          '0',
+          '-deadline',
+          'good',
+          '-cpu-used',
+          '2',
+          '-c:a',
+          'libopus',
+          '-b:a',
+          '128k',
+        ]);
     }
     arguments.addAll(['-progress', 'pipe:1', '-nostats', output]);
     return arguments;
@@ -152,16 +327,20 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
   Future<void> _convert() async {
     final input = _input;
     if (input == null || _busy || !await input.exists()) return;
+    if (!_profileSupported(_format)) {
+      setState(() => _failure = t.universalMedia.converterFfmpegMissing);
+      return;
+    }
     final chosenPath = await FilePicker.saveFile(
       dialogTitle: t.universalMedia.converterSaveAs,
       fileName: _suggestedName(),
       type: FileType.custom,
-      allowedExtensions: [_extension(_format)],
+      allowedExtensions: [_format.extension],
     );
     if (chosenPath == null || !mounted) return;
     var path = chosenPath;
-    if (p.extension(path).isEmpty) path += '.${_extension(_format)}';
-    if (p.extension(path).toLowerCase() != '.${_extension(_format)}') {
+    if (p.extension(path).isEmpty) path += '.${_format.extension}';
+    if (p.extension(path).toLowerCase() != '.${_format.extension}') {
       setState(() => _failure = t.universalMedia.converterExtensionMismatch);
       return;
     }
@@ -319,12 +498,21 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
                       initialValue: _format,
                       decoration: InputDecoration(labelText: t.universalMedia.converterFormat),
                       items: [
-                        DropdownMenuItem(value: _ConversionFormat.mp4, child: Text(t.universalMedia.converterMp4)),
-                        DropdownMenuItem(value: _ConversionFormat.m4a, child: Text(t.universalMedia.converterM4a)),
-                        DropdownMenuItem(value: _ConversionFormat.mp3, child: Text(t.universalMedia.converterMp3)),
+                        for (final format in _formatsFor(_inputKind))
+                          DropdownMenuItem(
+                            value: format,
+                            enabled: _profileSupported(format),
+                            child: Text(_formatLabel(format)),
+                          ),
                       ],
-                      onChanged: _busy ? null : (value) => setState(() => _format = value ?? _format),
+                      onChanged: _busy || !_formatProbeComplete
+                          ? null
+                          : (value) => setState(() => _format = value ?? _format),
                     ),
+                    if (_formatProbeComplete && !_profileSupported(_format)) ...[
+                      const SizedBox(height: 8),
+                      Semantics(liveRegion: true, child: Text(t.universalMedia.converterFfmpegMissing)),
+                    ],
                     const SizedBox(height: 20),
                     if (_busy) ...[
                       LinearProgressIndicator(value: _progress),
@@ -349,7 +537,9 @@ class _LocalMediaConverterScreenState extends State<LocalMediaConverterScreen> {
                     ],
                     const SizedBox(height: 20),
                     FilledButton.icon(
-                      onPressed: !_busy && _input != null ? _convert : null,
+                      onPressed: !_busy && _input != null && _formatProbeComplete && _profileSupported(_format)
+                          ? _convert
+                          : null,
                       icon: const AppIcon(Symbols.swap_horiz_rounded),
                       label: Text(t.universalMedia.converterStart),
                     ),

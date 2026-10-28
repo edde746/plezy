@@ -363,6 +363,9 @@ class Translations$common$en {
 	/// en: 'Shuffle'
 	String get shuffle => 'Shuffle';
 
+	/// en: 'Compare'
+	String get compare => 'Compare';
+
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
 
@@ -389,6 +392,9 @@ class Translations$common$en {
 
 	/// en: 'Search'
 	String get search => 'Search';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
 
 	/// en: 'Home'
 	String get home => 'Home';
@@ -3042,6 +3048,78 @@ class Translations$videoControls$en {
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
 
+	/// en: 'Loop a section during this playback. Set A, then set B later in the timeline.'
+	String get segmentLoopHelp => 'Loop a section during this playback. Set A, then set B later in the timeline.';
+
+	/// en: 'Set loop start (A)'
+	String get setLoopStart => 'Set loop start (A)';
+
+	/// en: 'Set loop end (B)'
+	String get setLoopEnd => 'Set loop end (B)';
+
+	/// en: 'Clear segment loop'
+	String get clearSegmentLoop => 'Clear segment loop';
+
+	/// en: 'Set loop start (A) before the end (B).'
+	String get setLoopStartFirst => 'Set loop start (A) before the end (B).';
+
+	/// en: 'The loop end must be later than the start.'
+	String get loopEndAfterStart => 'The loop end must be later than the start.';
+
+	/// en: 'Segment looping isn't available for this playback.'
+	String get segmentLoopUnavailable => 'Segment looping isn\'t available for this playback.';
+
+	/// en: 'Not set'
+	String get loopPointNotSet => 'Not set';
+
+	/// en: 'Bookmarks are saved on this device. Select one to go to that time.'
+	String get bookmarksHelp => 'Bookmarks are saved on this device. Select one to go to that time.';
+
+	/// en: 'Bookmarks'
+	String get bookmarksButton => 'Bookmarks';
+
+	/// en: 'Chapters and bookmarks'
+	String get chaptersAndBookmarks => 'Chapters and bookmarks';
+
+	/// en: 'Segment loop'
+	String get segmentLoop => 'Segment loop';
+
+	/// en: 'Add bookmark'
+	String get addBookmark => 'Add bookmark';
+
+	/// en: 'Bookmark name'
+	String get bookmarkName => 'Bookmark name';
+
+	/// en: 'For example, Opening scene'
+	String get bookmarkNameHint => 'For example, Opening scene';
+
+	/// en: 'Bookmark ${n}'
+	String bookmarkDefaultName({required Object n}) => 'Bookmark ${n}';
+
+	/// en: 'Enter a name for this bookmark.'
+	String get bookmarkNameRequired => 'Enter a name for this bookmark.';
+
+	/// en: 'Delete bookmark'
+	String get deleteBookmark => 'Delete bookmark';
+
+	/// en: 'This item already has 100 bookmarks.'
+	String get bookmarkLimitReached => 'This item already has 100 bookmarks.';
+
+	/// en: 'Couldn't save or remove this bookmark.'
+	String get bookmarkUnavailable => 'Couldn\'t save or remove this bookmark.';
+
+	/// en: 'Bookmark saved.'
+	String get bookmarkSaved => 'Bookmark saved.';
+
+	/// en: 'Bookmark deleted.'
+	String get bookmarkDeleted => 'Bookmark deleted.';
+
+	/// en: 'Loop point ${point} set at ${time}.'
+	String loopPointSet({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.';
+
+	/// en: 'No chapters or bookmarks available.'
+	String get noChaptersOrBookmarks => 'No chapters or bookmarks available.';
+
 	/// en: 'Version & Quality'
 	String get versionQualityButton => 'Version & Quality';
 
@@ -5166,6 +5244,9 @@ class Translations$music$en {
 	/// en: 'Plex loudness'
 	String get visualizerPlexLoudness => 'Plex loudness';
 
+	/// en: 'Live audio analysis'
+	String get visualizerLiveAudio => 'Live audio analysis';
+
 	/// en: 'Previous visual style'
 	String get visualizerPreviousPreset => 'Previous visual style';
 
@@ -6084,6 +6165,24 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Output'
 	String get audioOutput => 'Audio Output';
 
+	/// en: 'Video Track'
+	String get videoTrack => 'Video Track';
+
+	/// en: 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.'
+	String get videoTrackDescription => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.';
+
+	/// en: 'Default'
+	String get videoTrackDefault => 'Default';
+
+	/// en: 'No alternate video tracks are available.'
+	String get videoTrackUnavailable => 'No alternate video tracks are available.';
+
+	/// en: 'Could not change the video track.'
+	String get videoTrackFailed => 'Could not change the video track.';
+
+	/// en: 'Track ${id}'
+	String videoTrackNumber({required Object id}) => 'Track ${id}';
+
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
 
@@ -6105,8 +6204,8 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Equalizer'
 	String get audioEqualizer => 'Audio Equalizer';
 
-	/// en: 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.'
-	String get audioEqualizerDescription => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.';
+	/// en: '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.'
+	String get audioEqualizerDescription => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.';
 
 	/// en: 'Flat'
 	String get audioEqualizerFlat => 'Flat';
@@ -6116,6 +6215,27 @@ class Translations$videoSettings$en {
 
 	/// en: 'Couldn't save audio equalizer settings.'
 	String get audioEqualizerSaveFailed => 'Couldn\'t save audio equalizer settings.';
+
+	/// en: 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.'
+	String get audioEffectsDescription => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.';
+
+	/// en: 'Stereo widening'
+	String get audioStereoWidth => 'Stereo widening';
+
+	/// en: 'Room ambience'
+	String get audioSpatializer => 'Room ambience';
+
+	/// en: 'Add quiet room reflections.'
+	String get audioSpatializerDescription => 'Add quiet room reflections.';
+
+	/// en: 'Pitch shift'
+	String get audioPitch => 'Pitch shift';
+
+	/// en: 'Change pitch without changing speed. The MPV build must include Rubber Band.'
+	String get audioPitchDescription => 'Change pitch without changing speed. The MPV build must include Rubber Band.';
+
+	/// en: 'This effect isn't available for this track or MPV build.'
+	String get audioEffectUnavailable => 'This effect isn\'t available for this track or MPV build.';
 
 	/// en: 'Background Video Audio'
 	String get backgroundVideoAudio => 'Background Video Audio';
@@ -6128,6 +6248,179 @@ class Translations$videoSettings$en {
 
 	/// en: 'Decodes audio to PCM; passthrough is off while this is on'
 	String get audioNormalizationDisablesPassthrough => 'Decodes audio to PCM; passthrough is off while this is on';
+	/// en: 'Motion & clarity'
+	String get motionClarity => 'Motion & clarity';
+	/// en: 'Motion & clarity. Tap to toggle processing; hold to choose a preset.'
+	String get motionClarityQuickToggle => 'Motion & clarity. Tap to toggle processing; hold to choose a preset.';
+	/// en: 'Motion is on. Tap to turn it off; hold for presets.'
+	String get motionClarityQuickToggleOn => 'Motion is on. Tap to turn it off; hold for presets.';
+	/// en: 'Motion is off. Tap to turn on the last preset; hold for presets.'
+	String get motionClarityQuickToggleOff => 'Motion is off. Tap to turn on the last preset; hold for presets.';
+
+	/// en: 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.'
+	String get motionClarityDescription => 'Choose how playback handles motion. Select a preset or compare it live; use Custom for manual motion and frame-rate controls. Spatial upscaling remains in Shader presets.';
+	/// en: 'Desktop: tap the player’s Motion & clarity button to toggle motion; hold it for presets. First use starts with Balanced. Mobile: Video settings > Motion & clarity. Compare for A/B during playback.'
+	String get motionClarityControlsHint => 'Desktop: tap the player’s Motion & clarity button to toggle motion; hold it for presets. First use starts with Balanced. Mobile: Video settings > Motion & clarity. Compare for A/B during playback.';
+
+	/// en: 'Original'
+	String get motionClarityOriginal => 'Original';
+
+	/// en: 'Preserve the source cadence and the player\'s existing configuration.'
+	String get motionClarityOriginalDescription => 'Preserve the source cadence and the player\'s existing configuration.';
+
+	/// en: 'Cinema'
+	String get motionClarityCinema => 'Cinema';
+
+	/// en: 'Light cadence blending that keeps film motion close to its original look.'
+	String get motionClarityCinemaDescription => 'Light cadence blending that keeps film motion close to its original look.';
+
+	/// en: 'Balanced'
+	String get motionClarityBalanced => 'Balanced';
+
+	/// en: 'Moderate temporal blending for a smoother picture with restrained softness.'
+	String get motionClarityBalancedDescription => 'Moderate temporal blending for a smoother picture with restrained softness.';
+
+	/// en: 'Smooth'
+	String get motionClaritySmooth => 'Smooth';
+
+	/// en: 'Stronger blending for smoother motion; moving edges may look softer or doubled.'
+	String get motionClaritySmoothDescription => 'Stronger blending for smoother motion; moving edges may look softer or doubled.';
+
+	/// en: 'Animation'
+	String get motionClarityAnimation => 'Animation';
+
+	/// en: 'A sharper temporal filter for animation and clean graphic edges.'
+	String get motionClarityAnimationDescription => 'A sharper temporal filter for animation and clean graphic edges.';
+
+	/// en: 'Sports'
+	String get motionClaritySports => 'Sports';
+
+	/// en: 'A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.'
+	String get motionClaritySportsDescription => 'A smoother temporal filter for fast movement. Native high-frame-rate sources remain unchanged when cadence already matches.';
+
+	/// en: 'OLED'
+	String get motionClarityOled => 'OLED';
+
+	/// en: 'Targets the current display cadence with motion-compensated frames to reduce sample-and-hold blur. Higher rates create a smoother, more video-like look.'
+	String get motionClarityOledDescription => 'Targets the current display cadence with motion-compensated frames to reduce sample-and-hold blur. Higher rates create a smoother, more video-like look.';
+
+	/// en: 'OLED uses motion compensation at the renderer-reported display rate. Choose Custom to adjust the engine or target rate.'
+	String get motionClarityOledEngineDescription => 'OLED uses motion compensation at the renderer-reported display rate. Choose Custom to adjust the engine or target rate.';
+
+	/// en: 'Custom'
+	String get motionClarityCustom => 'Custom';
+
+	/// en: 'Choose the temporal filter and when interpolation engages.'
+	String get motionClarityCustomDescription => 'Choose the temporal filter and when interpolation engages.';
+
+	/// en: 'Temporal filter'
+	String get motionClarityKernel => 'Temporal filter';
+
+	/// en: 'Oversample — sharpest, least blending'
+	String get motionClarityKernelOversample => 'Oversample — sharpest, least blending';
+
+	/// en: 'Linear — light blending'
+	String get motionClarityKernelLinear => 'Linear — light blending';
+
+	/// en: 'Catmull–Rom — sharper, may ring'
+	String get motionClarityKernelCatmullRom => 'Catmull–Rom — sharper, may ring';
+
+	/// en: 'Mitchell — balanced softness'
+	String get motionClarityKernelMitchell => 'Mitchell — balanced softness';
+
+	/// en: 'Gaussian — smooth, softer edges'
+	String get motionClarityKernelGaussian => 'Gaussian — smooth, softer edges';
+
+	/// en: 'Bicubic — smoothest, softest'
+	String get motionClarityKernelBicubic => 'Bicubic — smoothest, softest';
+
+	/// en: 'Interpolation threshold'
+	String get motionClarityThreshold => 'Interpolation threshold';
+
+	/// en: 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.'
+	String get motionClarityThresholdDescription => 'Ignore refresh-rate differences below this percentage. Set to 0 to always interpolate.';
+
+	/// en: 'This playback route does not expose a supported motion-processing path.'
+	String get motionClarityOutputUnsupported => 'This playback route does not expose a supported motion-processing path.';
+
+	/// en: 'Restart playback to allocate the frame buffers required by the selected processing mode.'
+	String get motionClarityRestartRequired => 'Restart playback to allocate the frame buffers required by the selected processing mode.';
+
+	/// en: 'Processing options were accepted. Presented frame rate depends on the active renderer and display.'
+	String get motionClarityConfigured => 'Processing options were accepted. Presented frame rate depends on the active renderer and display.';
+	/// en: 'Renderer-reported display rate'
+	String get motionClarityReportedDisplayRate => 'Renderer-reported display rate';
+	/// en: 'Container-reported nominal rate'
+	String get motionClaritySourceRate => 'Container-reported nominal rate';
+	/// en: 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.'
+	String get motionClarityPassthroughWarning => 'Audio passthrough uses a different synchronization mode; refresh mismatches can cause dropped or uneven video cadence. Decoded audio may allow tighter synchronization.';
+	/// en: 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.'
+	String get motionClarityCompareFailed => 'The renderer couldn\'t switch comparison mode. Playback settings were left as they are.';
+	/// en: 'Couldn\'t save motion clarity settings.'
+	String get motionClaritySaveFailed => 'Couldn\'t save motion clarity settings.';
+	/// en: 'Motion method'
+	String get motionClarityEngine => 'Motion method';
+	/// en: 'Temporal blend'
+	String get motionClarityTemporalBlend => 'Temporal blend';
+	/// en: 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.'
+	String get motionClarityTemporalBlendDescription => 'Low-overhead mpv blending for cadence differences. Moving edges can look soft or doubled.';
+	/// en: 'Motion-compensated frames'
+	String get motionClarityMotionCompensated => 'Motion-compensated frames';
+	/// en: 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.'
+	String get motionClarityMotionCompensatedDescription => 'FFmpeg motion search creates in-between frames. Higher output rates and search effort use more processing; the generated rate sets smoothness, while search effort adjusts motion-match detail.';
+	/// en: 'Generated frame-rate target'
+	String get motionClarityOutputRate => 'Generated frame-rate target';
+	/// en: 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.'
+	String get motionClarityOutputRateDescription => 'This sets motion strength: higher targets create smoother motion and can look more video-like; lower targets preserve more of the original cadence. Search effort changes processing cost, not smoothing strength.';
+	/// en: 'Match current display'
+	String get motionClarityOutputCurrentDisplay => 'Match current display';
+	/// en: '48 fps'
+	String get motionClarityOutput48 => '48 fps';
+	/// en: '50 fps'
+	String get motionClarityOutput50 => '50 fps';
+	/// en: '60 fps'
+	String get motionClarityOutput60 => '60 fps';
+	/// en: '72 fps'
+	String get motionClarityOutput72 => '72 fps';
+	/// en: '90 fps'
+	String get motionClarityOutput90 => '90 fps';
+	/// en: '100 fps'
+	String get motionClarityOutput100 => '100 fps';
+	/// en: '120 fps'
+	String get motionClarityOutput120 => '120 fps';
+	/// en: '144 fps'
+	String get motionClarityOutput144 => '144 fps';
+	/// en: 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.'
+	String get motionClarityMciProfileDescription => 'Motion-compensated mode uses the generated rate to set smoothness and search effort to tune processing cost. Choose Original to turn processing off.';
+	/// en: 'Motion search effort'
+	String get motionClarityMciQuality => 'Motion search effort';
+	/// en: 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.'
+	String get motionClarityMciQualityDescription => 'Higher search effort uses more CPU for block matching and edge refinement and can improve difficult matches. It changes processing cost, not smoothing strength. Repeated timing reports can temporarily lower the active tier; your saved choice stays unchanged.';
+	/// en: 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.'
+	String get motionClarityGuardReduced => 'The renderer reported repeated late frames or drops. Active motion search effort was reduced temporarily; your saved choice is unchanged. Select the preset again to retry it.';
+	/// en: 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.'
+	String get motionClarityGuardFallback => 'Motion compensation could not keep up after search-effort reductions. Temporal blending is active. Select the preset again to retry.';
+	/// en: 'Motion compensation could not keep up, and temporal fallback could not be enabled.'
+	String get motionClarityGuardFallbackFailed => 'Motion compensation could not keep up, and temporal fallback could not be enabled.';
+	/// en: 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.'
+	String get motionClarityGuardTelemetryUnavailable => 'The renderer does not expose usable late-frame or dropped-frame telemetry; automatic load fallback is unavailable.';
+	/// en: 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.'
+	String get motionClarityGuardFailure => 'The renderer reports repeated late frames or drops; motion compensation may not be keeping up.';
+	/// en: 'Low search effort'
+	String get motionClarityMciFast => 'Low search effort';
+	/// en: 'Balanced search effort'
+	String get motionClarityMciBalanced => 'Balanced search effort';
+	/// en: 'High search effort'
+	String get motionClarityMciHigh => 'High search effort';
+	/// en: 'Motion-compensated processing is configured. Use Compare without motion processing to compare it with the same playback.'
+	String get motionClarityMciConfigured => 'Motion-compensated processing is configured. Use Compare without motion processing to compare it with the same playback.';
+	/// en: 'Compare without motion processing'
+	String get motionClarityCompareWithoutProcessing => 'Compare without motion processing';
+	/// en: 'Return to motion processing'
+	String get motionClarityReturnToProcessing => 'Return to motion processing';
+	/// en: 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.'
+	String get motionClarityCompareProcessingDescription => 'Temporarily bypass frame processing while keeping display synchronization, scaling and audio settings unchanged.';
+
 }
 
 // Path: performanceOverlay
@@ -6659,6 +6952,18 @@ class Translations$matchScreen$en {
 
 	/// en: 'No matches found'
 	String get noMatchesFound => 'No matches found';
+
+	/// en: 'Plex Discover'
+	String get plexDiscover => 'Plex Discover';
+
+	/// en: 'Plex library'
+	String get plexLibrary => 'Plex library';
+
+	/// en: 'Jellyfin library'
+	String get jellyfinLibrary => 'Jellyfin library';
+
+	/// en: 'Emby library'
+	String get embyLibrary => 'Emby library';
 }
 
 // Path: serverTasks
@@ -6713,6 +7018,48 @@ class Translations$trakt$en {
 
 	/// en: 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.'
 	String get watchedSyncDescription => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.';
+
+	/// en: 'Export to Letterboxd'
+	String get historyExport => 'Export to Letterboxd';
+
+	/// en: 'Create a local CSV from Trakt movie history. Nothing is uploaded.'
+	String get historyExportDescription => 'Create a local CSV from Trakt movie history. Nothing is uploaded.';
+
+	/// en: 'Loading Trakt movie history…'
+	String get historyExportLoading => 'Loading Trakt movie history…';
+
+	/// en: 'Export movie history'
+	String get historyExportReviewTitle => 'Export movie history';
+
+	/// en: 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device's local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd's 1 MB import limit.'
+	String historyExportReview({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.';
+
+	/// en: '${count} incomplete entries could not be included.'
+	String historyExportSkipped({required Object count}) => '${count} incomplete entries could not be included.';
+
+	/// en: 'No exportable movie history was found in Trakt.'
+	String get historyExportNoHistory => 'No exportable movie history was found in Trakt.';
+
+	/// en: 'Couldn't load Trakt movie history. Try again.'
+	String get historyExportFailed => 'Couldn\'t load Trakt movie history. Try again.';
+
+	/// en: 'Save CSV'
+	String get historyExportSave => 'Save CSV';
+
+	/// en: 'Save Letterboxd file ${part} of ${total}'
+	String historyExportPart({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}';
+
+	/// en: 'Saved ${count} Letterboxd CSV file(s).'
+	String historyExportSaved({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).';
+
+	/// en: 'Export stopped after saving ${saved} of ${total} files.'
+	String historyExportPartial({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.';
+
+	/// en: 'Couldn't save the CSV file. Try again.'
+	String get historyExportSaveFailed => 'Couldn\'t save the CSV file. Try again.';
+
+	/// en: 'This history is too large to package here. Use Trakt's own data export to split very large histories.'
+	String get historyExportTooLarge => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.';
 }
 
 // Path: seerr
@@ -6890,6 +7237,24 @@ class Translations$services$en {
 
 	/// en: 'Integrations'
 	String get integrations => 'Integrations';
+
+	/// en: 'Hardcover'
+	String get hardcover => 'Hardcover';
+
+	/// en: 'Linked catalog titles'
+	String get linkedCatalogTitles => 'Linked catalog titles';
+
+	/// en: 'Optional plan note. This label is only for you; PlezyNG does not verify account access.'
+	String get planNote => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.';
+
+	/// en: 'Plan label'
+	String get planLabel => 'Plan label';
+
+	/// en: 'Set plan label'
+	String get setPlanLabel => 'Set plan label';
+
+	/// en: 'PlezyNG may earn a commission from some links.'
+	String get commissionDisclosure => 'PlezyNG may earn a commission from some links.';
 
 	/// en: 'Not connected'
 	String get notConnected => 'Not connected';
@@ -7731,6 +8096,18 @@ class Translations$universalMedia$en {
 	/// en: 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.'
 	String get playlistFormatsHelp => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.';
 
+	/// en: 'Save queue as playlist'
+	String get saveQueuePlaylist => 'Save queue as playlist';
+
+	/// en: 'Playlist saved beside the media files.'
+	String get queuePlaylistSaved => 'Playlist saved beside the media files.';
+
+	/// en: 'This queue can’t be saved as a reusable local playlist.'
+	String get queuePlaylistUnavailable => 'This queue can’t be saved as a reusable local playlist.';
+
+	/// en: 'Choose a save location in the same folder as the queued files.'
+	String get queuePlaylistFolderRequired => 'Choose a save location in the same folder as the queued files.';
+
 	/// en: 'No saved stream favorites yet. Favorites stay in this profile.'
 	String get noFavorites => 'No saved stream favorites yet. Favorites stay in this profile.';
 
@@ -7911,6 +8288,9 @@ class Translations$universalMedia$en {
 	/// en: 'Optical disc'
 	String get discs => 'Optical disc';
 
+	/// en: 'Edition or disc title'
+	String get editionOrTitle => 'Edition or disc title';
+
 	/// en: 'DVD'
 	String get dvd => 'DVD';
 
@@ -7926,8 +8306,8 @@ class Translations$universalMedia$en {
 	/// en: 'Convert a local media file'
 	String get converterTitle => 'Convert a local media file';
 
-	/// en: 'Use FFmpeg to make an MP4, M4A, or MP3 copy.'
-	String get converterHelp => 'Use FFmpeg to make an MP4, M4A, or MP3 copy.';
+	/// en: 'Convert a local file or remux it with FFmpeg.'
+	String get converterHelp => 'Convert a local file or remux it with FFmpeg.';
 
 	/// en: 'Convert a local audio or video file to a format that works on more devices.'
 	String get converterIntro => 'Convert a local audio or video file to a format that works on more devices.';
@@ -7949,6 +8329,12 @@ class Translations$universalMedia$en {
 
 	/// en: 'MP3 · audio'
 	String get converterMp3 => 'MP3 · audio';
+
+	/// en: 'Allow FTP'
+	String get allowFtp => 'Allow FTP';
+
+	/// en: 'FTP sends media without encryption. Use only on trusted networks.'
+	String get allowFtpHelp => 'FTP sends media without encryption. Use only on trusted networks.';
 
 	/// en: 'Save converted media as'
 	String get converterSaveAs => 'Save converted media as';
@@ -7977,8 +8363,8 @@ class Translations$universalMedia$en {
 	/// en: 'Conversion complete. The new file is ready.'
 	String get converterComplete => 'Conversion complete. The new file is ready.';
 
-	/// en: 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.'
-	String get converterFfmpegMissing => 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.';
+	/// en: 'FFmpeg is missing or does not support this format.'
+	String get converterFfmpegMissing => 'FFmpeg is missing or does not support this format.';
 
 	/// en: 'Conversion failed. Check that the source file can be read and the destination has enough free space.'
 	String get converterFailed => 'Conversion failed. Check that the source file can be read and the destination has enough free space.';
@@ -8007,8 +8393,8 @@ class Translations$universalMedia$en {
 	/// en: 'Media tool'
 	String get mediaTool => 'Media tool';
 
-	/// en: 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.'
-	String get captureIntro => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.';
+	/// en: 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.'
+	String get captureIntro => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.';
 
 	/// en: 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.'
 	String get captureNoDevices => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.';
@@ -8034,8 +8420,8 @@ class Translations$universalMedia$en {
 	/// en: 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.'
 	String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
 
-	/// en: 'Recording frame rate'
-	String get captureFrameRate => 'Recording frame rate';
+	/// en: 'Capture frame rate'
+	String get captureFrameRate => 'Capture frame rate';
 
 	/// en: 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.'
 	String get capturePrivacy => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.';
@@ -8060,6 +8446,15 @@ class Translations$universalMedia$en {
 
 	/// en: 'Start recording'
 	String get captureStart => 'Start recording';
+
+	/// en: 'Preview in player'
+	String get capturePreview => 'Preview in player';
+
+	/// en: 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.'
+	String get capturePreviewHelp => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.';
+
+	/// en: 'Live preview · not recording'
+	String get capturePreviewActive => 'Live preview · not recording';
 
 	/// en: 'Stop and save'
 	String get captureStop => 'Stop and save';
@@ -8958,8 +9353,8 @@ class Translations$audiobook$en {
 	/// en: 'Sync folder or prefix'
 	String get syncFolder => 'Sync folder or prefix';
 
-	/// en: 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.'
-	String get syncFolderHelp => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.';
+	/// en: 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.'
+	String get syncFolderHelp => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.';
 
 	/// en: 'Private sync code'
 	String get syncCode => 'Private sync code';
@@ -8988,8 +9383,8 @@ class Translations$audiobook$en {
 	/// en: 'Last synced at $time'
 	String lastSynced({required Object time}) => 'Last synced at ${time}';
 
-	/// en: 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.'
-	String get syncPrivacy => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.';
+	/// en: 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.'
+	String get syncPrivacy => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.';
 
 	/// en: 'Choose where to resume'
 	String get syncConflicts => 'Choose where to resume';
@@ -9125,6 +9520,9 @@ class Translations$sourceSetup$en {
 
 	/// en: 'Saved server certificate'
 	String get savedCertificate => 'Saved server certificate';
+
+	/// en: 'Project Gutenberg'
+	String get projectGutenberg => 'Project Gutenberg';
 
 	/// en: 'Enter an NFS URL such as nfs://nas:2049/export.'
 	String get nfsEndpointInvalid => 'Enter an NFS URL such as nfs://nas:2049/export.';
@@ -10833,6 +11231,171 @@ class Translations$discover$findNext$en {
 	/// en: 'Choose the moment'
 	String get filters => 'Choose the moment';
 
+	/// en: 'Mood'
+	String get mood => 'Mood';
+
+	/// en: 'Mood filters use mood tags supplied by your media server; some picks do not have them.'
+	String get moodMetadataHint => 'Mood filters use mood tags supplied by your media server; some picks do not have them.';
+
+	/// en: 'Familiarity'
+	String get familiarity => 'Familiarity';
+
+	/// en: 'Any familiarity'
+	String get familiarityAny => 'Any familiarity';
+
+	/// en: 'New to me'
+	String get newToMe => 'New to me';
+
+	/// en: 'Already started'
+	String get inProgress => 'Already started';
+
+	/// en: 'Revisit'
+	String get revisit => 'Revisit';
+
+	/// en: 'Taste controls'
+	String get tasteControls => 'Taste controls';
+
+	/// en: 'Choose styles to bring forward or gently push back. Not now never changes these preferences.'
+	String get tasteControlsHelp => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.';
+
+	/// en: 'Bring forward'
+	String get preferMore => 'Bring forward';
+
+	/// en: 'Show less'
+	String get showLess => 'Show less';
+
+	/// en: 'Hide this pick'
+	String get hideFromDiscovery => 'Hide this pick';
+
+	/// en: 'Hidden picks'
+	String get hiddenPicks => 'Hidden picks';
+
+	/// en: 'No hidden picks'
+	String get noHiddenPicks => 'No hidden picks';
+
+	/// en: 'Reset taste and hidden picks'
+	String get resetTaste => 'Reset taste and hidden picks';
+
+	/// en: 'Clear genre preferences and restore every hidden pick?'
+	String get resetTasteConfirm => 'Clear genre preferences and restore every hidden pick?';
+
+	/// en: 'Choose together'
+	String get chooseTogether => 'Choose together';
+
+	/// en: 'Make a shortlist decision together'
+	String get voteSetup => 'Make a shortlist decision together';
+
+	/// en: 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.'
+	String get votePrivacy => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.';
+
+	/// en: 'How many guests?'
+	String get guestCount => 'How many guests?';
+
+	/// en: 'Start private voting'
+	String get beginVoting => 'Start private voting';
+
+	/// en: 'Guest ${guest} of ${count}'
+	String guestProgress({required Object guest, required Object count}) => 'Guest ${guest} of ${count}';
+
+	/// en: 'Maybe'
+	String get maybe => 'Maybe';
+
+	/// en: 'Not tonight'
+	String get notTonight => 'Not tonight';
+
+	/// en: 'Pass the device'
+	String get passDevice => 'Pass the device';
+
+	/// en: 'The previous guest’s choices are covered. Hand the device to the next guest when ready.'
+	String get passDeviceHint => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.';
+
+	/// en: 'Ready for next guest'
+	String get readyNextGuest => 'Ready for next guest';
+
+	/// en: 'No shared pick yet'
+	String get noSharedPick => 'No shared pick yet';
+
+	/// en: 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.'
+	String get noSharedPickHint => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.';
+
+	/// en: 'You found a shared pick'
+	String get sharedPick => 'You found a shared pick';
+
+	/// en: '${title} received the strongest shared approval.'
+	String sharedPickHint({required Object title}) => '${title} received the strongest shared approval.';
+
+	/// en: 'Put this pick on the deck'
+	String get useSharedPick => 'Put this pick on the deck';
+
+	/// en: 'Widen the shortlist'
+	String get widenShortlist => 'Widen the shortlist';
+
+	/// en: 'Choose picks to vote on'
+	String get selectToVote => 'Choose picks to vote on';
+
+	/// en: 'Start voting'
+	String get startVote => 'Start voting';
+
+	/// en: 'Choose between 2 and 12 picks.'
+	String get voteLimit => 'Choose between 2 and 12 picks.';
+
+	/// en: 'Availability'
+	String get availability => 'Availability';
+
+	/// en: 'Check again when opened'
+	String get availabilityNotChecked => 'Check again when opened';
+
+	/// en: 'Find a library catalog pick'
+	String get libraryCatalog => 'Find a library catalog pick';
+
+	/// en: 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.'
+	String get libraryCatalogHint => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.';
+
+	/// en: 'Open Library'
+	String get openLibraryName => 'Open Library';
+
+	/// en: 'Catalog record · availability not checked'
+	String get catalogOnly => 'Catalog record · availability not checked';
+
+	/// en: 'Optional AI ranking'
+	String get aiRanking => 'Optional AI ranking';
+
+	/// en: 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.'
+	String get aiRankingHelp => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.';
+
+	/// en: 'Service URL'
+	String get aiEndpoint => 'Service URL';
+
+	/// en: 'Model name'
+	String get aiModel => 'Model name';
+
+	/// en: 'API key (optional for local services)'
+	String get aiApiKey => 'API key (optional for local services)';
+
+	/// en: 'Enable AI ranking'
+	String get aiEnabled => 'Enable AI ranking';
+
+	/// en: 'Review AI ranking data'
+	String get aiConsentTitle => 'Review AI ranking data';
+
+	/// en: 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.'
+	String get aiConsentBody => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.';
+
+	/// en: 'AI ranking settings saved'
+	String get aiSaved => 'AI ranking settings saved';
+
+	/// en: 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.'
+	String get aiInvalidConfig => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.';
+
+	/// en: 'A key is saved securely'
+	String get aiSavedKey => 'A key is saved securely';
+
+	/// en: 'Remove saved API key'
+	String get aiClearKey => 'Remove saved API key';
+
+	/// en: 'AI ranking was unavailable. Your usual discovery order is still active.'
+	String get aiError => 'AI ranking was unavailable. Your usual discovery order is still active.';
+
 	/// en: 'Watch'
 	String get watch => 'Watch';
 
@@ -10865,6 +11428,30 @@ class Translations$discover$findNext$en {
 
 	/// en: 'Saved picks'
 	String get saved => 'Saved picks';
+
+	/// en: 'Select picks to compare'
+	String get selectToCompare => 'Select picks to compare';
+
+	/// en: 'Compare up to three picks at a time.'
+	String get compareLimit => 'Compare up to three picks at a time.';
+
+	/// en: 'Choose at least two saved picks to compare.'
+	String get compareNeedsTwo => 'Choose at least two saved picks to compare.';
+
+	/// en: 'On this device'
+	String get localOnly => 'On this device';
+
+	/// en: 'Sync Saved picks across devices'
+	String get syncSavedPicks => 'Sync Saved picks across devices';
+
+	/// en: 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.'
+	String get syncSavedPicksHelp => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.';
+
+	/// en: 'These devices changed this saved pick independently. Choose which saved state to keep.'
+	String get savedPickConflict => 'These devices changed this saved pick independently. Choose which saved state to keep.';
+
+	/// en: 'Use this version'
+	String get useThisVersion => 'Use this version';
 
 	/// en: 'Saved picks · ${count}'
 	String savedCount({required Object count}) => 'Saved picks · ${count}';
@@ -12643,6 +13230,7 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.edit' => 'Edit',
 			'common.shuffle' => 'Shuffle',
+			'common.compare' => 'Compare',
 			'common.addTo' => 'Add to...',
 			'common.createNew' => 'Create new',
 			'common.connect' => 'Connect',
@@ -12652,6 +13240,7 @@ extension on Translations {
 			'common.resume' => 'Resume',
 			'common.error' => 'Error',
 			'common.search' => 'Search',
+			'common.preview' => 'Preview',
 			'common.home' => 'Home',
 			'common.back' => 'Back',
 			'common.settings' => 'Settings',
@@ -13059,10 +13648,10 @@ extension on Translations {
 			'settings.dvExperimentDiagnosticsDescription' => 'Enable detailed player logs on the next playback.',
 			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
-			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
-			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
+			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
 			'settings.hdrSdrConversionAutoDescription' => 'Device on Android 9 and later, player on older versions',
 			'settings.hdrSdrConversionDevice' => 'Device',
@@ -13561,6 +14150,32 @@ extension on Translations {
 			'videoControls.settingsButton' => 'Playback Settings',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
+			'videoControls.segmentLoopHelp' => 'Loop a section during this playback. Set A, then set B later in the timeline.',
+			'videoControls.setLoopStart' => 'Set loop start (A)',
+			'videoControls.setLoopEnd' => 'Set loop end (B)',
+			'videoControls.clearSegmentLoop' => 'Clear segment loop',
+			'videoControls.setLoopStartFirst' => 'Set loop start (A) before the end (B).',
+			'videoControls.loopEndAfterStart' => 'The loop end must be later than the start.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping isn\'t available for this playback.',
+			'videoControls.loopPointNotSet' => 'Not set',
+			'videoControls.bookmarksHelp' => 'Bookmarks are saved on this device. Select one to go to that time.',
+			'videoControls.bookmarksButton' => 'Bookmarks',
+			'videoControls.chaptersAndBookmarks' => 'Chapters and bookmarks',
+			'videoControls.segmentLoop' => 'Segment loop',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.addBookmark' => 'Add bookmark',
+			'videoControls.bookmarkName' => 'Bookmark name',
+			'videoControls.bookmarkNameHint' => 'For example, Opening scene',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark ${n}',
+			'videoControls.bookmarkNameRequired' => 'Enter a name for this bookmark.',
+			'videoControls.deleteBookmark' => 'Delete bookmark',
+			'videoControls.bookmarkLimitReached' => 'This item already has 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Couldn\'t save or remove this bookmark.',
+			'videoControls.bookmarkSaved' => 'Bookmark saved.',
+			'videoControls.bookmarkDeleted' => 'Bookmark deleted.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'No chapters or bookmarks available.',
 			'videoControls.versionQualityButton' => 'Version & Quality',
 			'videoControls.versionColumnHeader' => 'Version',
 			'videoControls.qualityColumnHeader' => 'Quality',
@@ -13575,8 +14190,6 @@ extension on Translations {
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
 			'videoControls.rotationLockButton' => 'Rotation lock',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
 			'videoControls.timelineSlider' => 'Video timeline',
@@ -13945,6 +14558,61 @@ extension on Translations {
 			'discover.findNext.anyTime' => 'Any time',
 			'discover.findNext.timeAvailable' => 'How much time do you have?',
 			'discover.findNext.filters' => 'Choose the moment',
+			'discover.findNext.mood' => 'Mood',
+			'discover.findNext.moodMetadataHint' => 'Mood filters use mood tags supplied by your media server; some picks do not have them.',
+			'discover.findNext.familiarity' => 'Familiarity',
+			'discover.findNext.familiarityAny' => 'Any familiarity',
+			'discover.findNext.newToMe' => 'New to me',
+			'discover.findNext.inProgress' => 'Already started',
+			'discover.findNext.revisit' => 'Revisit',
+			'discover.findNext.tasteControls' => 'Taste controls',
+			'discover.findNext.tasteControlsHelp' => 'Choose styles to bring forward or gently push back. Not now never changes these preferences.',
+			'discover.findNext.preferMore' => 'Bring forward',
+			'discover.findNext.showLess' => 'Show less',
+			'discover.findNext.hideFromDiscovery' => 'Hide this pick',
+			'discover.findNext.hiddenPicks' => 'Hidden picks',
+			'discover.findNext.noHiddenPicks' => 'No hidden picks',
+			'discover.findNext.resetTaste' => 'Reset taste and hidden picks',
+			'discover.findNext.resetTasteConfirm' => 'Clear genre preferences and restore every hidden pick?',
+			'discover.findNext.chooseTogether' => 'Choose together',
+			'discover.findNext.voteSetup' => 'Make a shortlist decision together',
+			'discover.findNext.votePrivacy' => 'Each guest votes privately on this device. Completed ballots stay covered; no votes or guest identities are saved.',
+			'discover.findNext.guestCount' => 'How many guests?',
+			'discover.findNext.beginVoting' => 'Start private voting',
+			'discover.findNext.guestProgress' => ({required Object guest, required Object count}) => 'Guest ${guest} of ${count}',
+			'discover.findNext.maybe' => 'Maybe',
+			'discover.findNext.notTonight' => 'Not tonight',
+			'discover.findNext.passDevice' => 'Pass the device',
+			'discover.findNext.passDeviceHint' => 'The previous guest’s choices are covered. Hand the device to the next guest when ready.',
+			'discover.findNext.readyNextGuest' => 'Ready for next guest',
+			'discover.findNext.noSharedPick' => 'No shared pick yet',
+			'discover.findNext.noSharedPickHint' => 'Every pick received at least one “Not tonight” vote. Widen the shortlist and try again.',
+			'discover.findNext.sharedPick' => 'You found a shared pick',
+			'discover.findNext.sharedPickHint' => ({required Object title}) => '${title} received the strongest shared approval.',
+			'discover.findNext.useSharedPick' => 'Put this pick on the deck',
+			'discover.findNext.widenShortlist' => 'Widen the shortlist',
+			'discover.findNext.selectToVote' => 'Choose picks to vote on',
+			'discover.findNext.startVote' => 'Start voting',
+			'discover.findNext.voteLimit' => 'Choose between 2 and 12 picks.',
+			'discover.findNext.availability' => 'Availability',
+			'discover.findNext.availabilityNotChecked' => 'Check again when opened',
+			'discover.findNext.libraryCatalog' => 'Find a library catalog pick',
+			'discover.findNext.libraryCatalogHint' => 'Search Open Library by this title. A catalog match is not proof that your local library owns or can lend it.',
+			'discover.findNext.openLibraryName' => 'Open Library',
+			'discover.findNext.catalogOnly' => 'Catalog record · availability not checked',
+			'discover.findNext.aiRanking' => 'Optional AI ranking',
+			'discover.findNext.aiRankingHelp' => 'An external or loopback OpenAI-compatible service may reorder up to 24 eligible picks. The ordinary deck stays usable if it is off or unavailable.',
+			'discover.findNext.aiEndpoint' => 'Service URL',
+			'discover.findNext.aiModel' => 'Model name',
+			'discover.findNext.aiApiKey' => 'API key (optional for local services)',
+			'discover.findNext.aiEnabled' => 'Enable AI ranking',
+			'discover.findNext.aiConsentTitle' => 'Review AI ranking data',
+			'discover.findNext.aiConsentBody' => 'When enabled, the configured service receives up to 24 picks with temporary IDs, title, media type, genre tags, metadata mood tags and your selected moment filters for media, time, genre, mood and familiarity. It receives no server or source IDs, URLs, filenames, playback history, account data, notes, credentials or content. Results can only reorder picks already eligible on this device.',
+			'discover.findNext.aiSaved' => 'AI ranking settings saved',
+			'discover.findNext.aiInvalidConfig' => 'Enter a model and a valid HTTPS URL, or use HTTP on this device only.',
+			'discover.findNext.aiSavedKey' => 'A key is saved securely',
+			'discover.findNext.aiClearKey' => 'Remove saved API key',
+			'discover.findNext.aiError' => 'AI ranking was unavailable. Your usual discovery order is still active.',
 			'discover.findNext.watch' => 'Watch',
 			'discover.findNext.listen' => 'Listen',
 			'discover.findNext.read' => 'Read',
@@ -13956,6 +14624,14 @@ extension on Translations {
 			'discover.findNext.notNow' => 'Not now',
 			'discover.findNext.swipeHint' => 'Swipe the cover toward an arrow, or use the buttons below.',
 			'discover.findNext.saved' => 'Saved picks',
+			'discover.findNext.selectToCompare' => 'Select picks to compare',
+			'discover.findNext.compareLimit' => 'Compare up to three picks at a time.',
+			'discover.findNext.compareNeedsTwo' => 'Choose at least two saved picks to compare.',
+			'discover.findNext.localOnly' => 'On this device',
+			'discover.findNext.syncSavedPicks' => 'Sync Saved picks across devices',
+			'discover.findNext.syncSavedPicksHelp' => 'Optional. Shares saved titles and public catalog IDs using your existing encrypted sync code. Server IDs, source addresses, credentials, playback history and previews are never included.',
+			'discover.findNext.savedPickConflict' => 'These devices changed this saved pick independently. Choose which saved state to keep.',
+			'discover.findNext.useThisVersion' => 'Use this version',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
 			'discover.findNext.details' => 'Details',
@@ -14000,6 +14676,8 @@ extension on Translations {
 			'discover.director' => 'Director',
 			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
+			_ => null,
+		} ?? switch (path) {
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
@@ -14089,8 +14767,6 @@ extension on Translations {
 			'libraries.filterCategories.year' => 'Year',
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Unwatched',
 			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
@@ -14514,6 +15190,8 @@ extension on Translations {
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
 			'playlists.errorAdding' => 'Failed to add to playlist',
+			_ => null,
+		} ?? switch (path) {
 			'playlists.errorReordering' => 'Failed to reorder playlist item',
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'music.goToAlbum' => 'Go to album',
@@ -14532,6 +15210,7 @@ extension on Translations {
 			'music.visualizerProfileLoading' => 'Reading track analysis…',
 			'music.visualizerAmbientMotion' => 'Ambient motion',
 			'music.visualizerPlexLoudness' => 'Plex loudness',
+			'music.visualizerLiveAudio' => 'Live audio analysis',
 			'music.visualizerPreviousPreset' => 'Previous visual style',
 			'music.visualizerNextPreset' => 'Next visual style',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -14603,8 +15282,6 @@ extension on Translations {
 			'watchTogether.playAnyway' => 'Play Anyway',
 			'watchTogether.chooseAnotherCopy' => 'Choose Another Copy',
 			'watchTogether.dontPlay' => 'Don\'t Play',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'You don\'t have this video',
 			'watchTogether.unavailableDescription' => 'PlezyNG couldn\'t find it in your libraries. Pick a copy yourself or search again.',
 			'watchTogether.chooseCopy' => 'Choose a Copy',
@@ -14958,6 +15635,12 @@ extension on Translations {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
 			'videoSettings.audioOutput' => 'Audio Output',
+			'videoSettings.videoTrack' => 'Video Track',
+			'videoSettings.videoTrackDescription' => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.',
+			'videoSettings.videoTrackDefault' => 'Default',
+			'videoSettings.videoTrackUnavailable' => 'No alternate video tracks are available.',
+			'videoSettings.videoTrackFailed' => 'Could not change the video track.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Track ${id}',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -14965,10 +15648,17 @@ extension on Translations {
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Equalizer',
-			'videoSettings.audioEqualizerDescription' => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Flat',
 			'videoSettings.audioEqualizerActive' => 'Custom',
 			'videoSettings.audioEqualizerSaveFailed' => 'Couldn\'t save audio equalizer settings.',
+			'videoSettings.audioEffectsDescription' => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.',
+			'videoSettings.audioStereoWidth' => 'Stereo widening',
+			'videoSettings.audioSpatializer' => 'Room ambience',
+			'videoSettings.audioSpatializerDescription' => 'Add quiet room reflections.',
+			'videoSettings.audioPitch' => 'Pitch shift',
+			'videoSettings.audioPitchDescription' => 'Change pitch without changing speed. The MPV build must include Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'This effect isn\'t available for this track or MPV build.',
 			'videoSettings.backgroundVideoAudio' => 'Background Video Audio',
 			'videoSettings.backgroundVideoAudioDescription' => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
@@ -15014,6 +15704,8 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
@@ -15117,8 +15809,6 @@ extension on Translations {
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
 			'metadataEdit.alwaysEnabled' => 'Always enabled',
 			'metadataEdit.tags' => 'Tags',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Add tag',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Director',
@@ -15140,6 +15830,10 @@ extension on Translations {
 			'matchScreen.yearHint' => 'Year',
 			'matchScreen.search' => 'Search',
 			'matchScreen.noMatchesFound' => 'No matches found',
+			'matchScreen.plexDiscover' => 'Plex Discover',
+			'matchScreen.plexLibrary' => 'Plex library',
+			'matchScreen.jellyfinLibrary' => 'Jellyfin library',
+			'matchScreen.embyLibrary' => 'Emby library',
 			'serverTasks.title' => 'Server Tasks',
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',
@@ -15152,6 +15846,20 @@ extension on Translations {
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.',
+			'trakt.historyExport' => 'Export to Letterboxd',
+			'trakt.historyExportDescription' => 'Create a local CSV from Trakt movie history. Nothing is uploaded.',
+			'trakt.historyExportLoading' => 'Loading Trakt movie history…',
+			'trakt.historyExportReviewTitle' => 'Export movie history',
+			'trakt.historyExportReview' => ({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.',
+			'trakt.historyExportSkipped' => ({required Object count}) => '${count} incomplete entries could not be included.',
+			'trakt.historyExportNoHistory' => 'No exportable movie history was found in Trakt.',
+			'trakt.historyExportFailed' => 'Couldn\'t load Trakt movie history. Try again.',
+			'trakt.historyExportSave' => 'Save CSV',
+			'trakt.historyExportPart' => ({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}',
+			'trakt.historyExportSaved' => ({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).',
+			'trakt.historyExportPartial' => ({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.',
+			'trakt.historyExportSaveFailed' => 'Couldn\'t save the CSV file. Try again.',
+			'trakt.historyExportTooLarge' => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',
@@ -15205,6 +15913,12 @@ extension on Translations {
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
+			'services.hardcover' => 'Hardcover',
+			'services.linkedCatalogTitles' => 'Linked catalog titles',
+			'services.planNote' => 'Optional plan note. This label is only for you; PlezyNG does not verify account access.',
+			'services.planLabel' => 'Plan label',
+			'services.setPlanLabel' => 'Set plan label',
+			'services.commissionDisclosure' => 'PlezyNG may earn a commission from some links.',
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',
@@ -15487,6 +16201,10 @@ extension on Translations {
 			'universalMedia.choosePlaylist' => 'Choose playlist file',
 			'universalMedia.openPlaylist' => 'Open playlist',
 			'universalMedia.playlistFormatsHelp' => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.',
+			'universalMedia.saveQueuePlaylist' => 'Save queue as playlist',
+			'universalMedia.queuePlaylistSaved' => 'Playlist saved beside the media files.',
+			'universalMedia.queuePlaylistUnavailable' => 'This queue can’t be saved as a reusable local playlist.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Choose a save location in the same folder as the queued files.',
 			'universalMedia.noFavorites' => 'No saved stream favorites yet. Favorites stay in this profile.',
 			'universalMedia.removeFavorite' => 'Remove stream favorite',
 			'universalMedia.filesHelp' => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.',
@@ -15500,6 +16218,8 @@ extension on Translations {
 			'universalMedia.wifiTransferUnavailable' => 'Could not start the transfer. Check local-network access and try again.',
 			'universalMedia.openThisAddress' => 'Open one of these addresses on the sending device',
 			'universalMedia.copyAddress' => 'Copy transfer address',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.addressCopied' => 'Transfer address copied',
 			'universalMedia.transferExpires' => ({required Object time}) => 'This address expires in ${time}.',
 			'universalMedia.uploadCount' => ({required num n, required Object count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${count} file received', other: '${count} files received', ), 
@@ -15545,12 +16265,13 @@ extension on Translations {
 			'universalMedia.replaceRecording' => 'Replace file',
 			'universalMedia.discHelp' => 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.',
 			'universalMedia.discs' => 'Optical disc',
+			'universalMedia.editionOrTitle' => 'Edition or disc title',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'Audio CD',
 			'universalMedia.discAvailability' => 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.',
 			'universalMedia.converterTitle' => 'Convert a local media file',
-			'universalMedia.converterHelp' => 'Use FFmpeg to make an MP4, M4A, or MP3 copy.',
+			'universalMedia.converterHelp' => 'Convert a local file or remux it with FFmpeg.',
 			'universalMedia.converterIntro' => 'Convert a local audio or video file to a format that works on more devices.',
 			'universalMedia.converterPrivacy' => 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.',
 			'universalMedia.converterChooseInput' => 'Choose a local media file',
@@ -15558,6 +16279,8 @@ extension on Translations {
 			'universalMedia.converterMp4' => 'MP4 · H.264 and AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC audio',
 			'universalMedia.converterMp3' => 'MP3 · audio',
+			'universalMedia.allowFtp' => 'Allow FTP',
+			'universalMedia.allowFtpHelp' => 'FTP sends media without encryption. Use only on trusted networks.',
 			'universalMedia.converterSaveAs' => 'Save converted media as',
 			'universalMedia.converterExtensionMismatch' => 'Choose a filename with the selected output extension.',
 			'universalMedia.converterUnsupportedInput' => 'Choose an audio or video file.',
@@ -15567,7 +16290,7 @@ extension on Translations {
 			'universalMedia.converterStarting' => 'Starting FFmpeg…',
 			'universalMedia.converterProgress' => 'Converting on this computer…',
 			'universalMedia.converterComplete' => 'Conversion complete. The new file is ready.',
-			'universalMedia.converterFfmpegMissing' => 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg is missing or does not support this format.',
 			'universalMedia.converterFailed' => 'Conversion failed. Check that the source file can be read and the destination has enough free space.',
 			'universalMedia.converterCancelled' => 'Conversion cancelled. The incomplete output was removed.',
 			'universalMedia.converterDesktopOnly' => 'Local conversion is available on desktop computers with FFmpeg installed.',
@@ -15577,7 +16300,7 @@ extension on Translations {
 			'universalMedia.mediaToolsIntro' => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.',
 			'universalMedia.mediaToolsAccessibility' => 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.',
 			'universalMedia.mediaTool' => 'Media tool',
-			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.',
+			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.',
 			'universalMedia.captureNoDevices' => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.',
 			'universalMedia.captureSource' => 'Screen or camera',
 			'universalMedia.captureScreen' => 'Screen',
@@ -15586,7 +16309,7 @@ extension on Translations {
 			'universalMedia.captureAudioNone' => 'No audio',
 			'universalMedia.captureDefaultAudio' => 'Default audio input',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'Recording frame rate',
+			'universalMedia.captureFrameRate' => 'Capture frame rate',
 			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
 			'universalMedia.captureSaveAs' => 'Save screen recording as',
 			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
@@ -15595,6 +16318,9 @@ extension on Translations {
 			'universalMedia.captureSaved' => 'Screen recording saved.',
 			'universalMedia.captureElapsedLabel' => 'Recording time',
 			'universalMedia.captureStart' => 'Start recording',
+			'universalMedia.capturePreview' => 'Preview in player',
+			'universalMedia.capturePreviewHelp' => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.',
+			'universalMedia.capturePreviewActive' => 'Live preview · not recording',
 			'universalMedia.captureStop' => 'Stop and save',
 			'universalMedia.captureMode' => 'Capture',
 			'universalMedia.shareMode' => 'Share',
@@ -15631,8 +16357,6 @@ extension on Translations {
 			'universalMedia.extensionInstallTitle' => 'Add this search service?',
 			'universalMedia.extensionReplaceTitle' => 'Update this search service?',
 			'universalMedia.extensionService' => 'Service',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.',
 			'universalMedia.extensionInstall' => 'Add service',
@@ -15886,7 +16610,7 @@ extension on Translations {
 			'audiobook.addSyncSource' => 'Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.',
 			'audiobook.syncDestination' => 'Sync storage account',
 			'audiobook.syncFolder' => 'Sync folder or prefix',
-			'audiobook.syncFolderHelp' => 'Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.',
+			'audiobook.syncFolderHelp' => 'Choose a separate existing WebDAV folder or a dedicated S3 prefix for app-owned state files. Playback media is never uploaded, replaced, renamed or deleted.',
 			'audiobook.syncCode' => 'Private sync code',
 			'audiobook.syncCodeHelp' => 'Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.',
 			'audiobook.showCode' => 'Show or hide sync code',
@@ -15896,7 +16620,7 @@ extension on Translations {
 			'audiobook.syncSourceDisconnect' => 'Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.',
 			'audiobook.syncReconnect' => 'Reconnect storage account',
 			'audiobook.lastSynced' => ({required Object time}) => 'Last synced at ${time}',
-			'audiobook.syncPrivacy' => 'Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.',
+			'audiobook.syncPrivacy' => 'Cloud sync writes encrypted progress, completion, bookmark and note data to app-owned sync files. Playback media is never uploaded, replaced, renamed or deleted. Account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync; WebDAV and S3 use the chosen folder or prefix. Enabling sync may require provider write permission, but the app writes only those state files. Cloud sync and compatible server progress/bookmark sync run independently with separate retries. Conflicts are shown for you to resolve. Turning sync off keeps local history and remote state.',
 			'audiobook.syncConflicts' => 'Choose where to resume',
 			'audiobook.conflictHelp' => 'These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Device ${device}',
@@ -15939,6 +16663,7 @@ extension on Translations {
 			'audiobook.recoveryExported' => 'Encrypted recovery file saved.',
 			'audiobook.recoveryImported' => 'Recovery data merged.',
 			'sourceSetup.savedCertificate' => 'Saved server certificate',
+			'sourceSetup.projectGutenberg' => 'Project Gutenberg',
 			'sourceSetup.nfsEndpointInvalid' => 'Enter an NFS URL such as nfs://nas:2049/export.',
 			'sourceSetup.dlnaNone' => 'No DLNA servers found. Enter the device description URL manually.',
 			'sourceSetup.dlnaServers' => 'DLNA media servers',
@@ -16007,6 +16732,8 @@ extension on Translations {
 			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API key required',
 			'sourceSetup.subtitleKeyHelp' => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
 			'sourceSetup.subtitleSearchFailed' => 'Subtitle search failed. Check the API key, connection, and service access.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.subtitleApplyFailed' => 'Could not download or apply this subtitle. Check your connection and try another result.',
 			'sourceSetup.subtitleSearch' => 'Search OpenSubtitles',
 			'sourceSetup.subtitleSearchPrivacy' => 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.',
@@ -16145,8 +16872,6 @@ extension on Translations {
 			'games.installed' => 'Installed',
 			'games.installationIncomplete' => 'Installation incomplete',
 			'games.notInstalled' => 'Not in the last inventory',
-			_ => null,
-		} ?? switch (path) {
 			'games.installationUnknown' => 'Installation not checked',
 			'games.allComputers' => 'All computers',
 			'games.importInstalledGames' => 'Import installed games',
