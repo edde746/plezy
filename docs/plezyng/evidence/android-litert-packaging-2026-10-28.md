@@ -4,7 +4,28 @@
 **Host:** `kspld0`
 **Build:** Android debug APK with embedded Moonlight and Steam modules
 
-## Model pack
+## Updated eight-model APK verification
+
+The debug APK was rebuilt after the W8A8 candidates were added to the LiteRT
+manifest. Both Gradle output paths contain the same 526,471,987-byte APK with
+SHA-256 `e12dbc651f37234180d457bb2800afe3934d3d590f757dc5ffc699d2152f2c84`:
+
+- `build/app/outputs/flutter-apk/app-debug.apk`
+- `build/app/outputs/apk/debug/app-debug.apk`
+
+The embedded `assets/litert/models/manifest.json` is byte-identical to
+`assets/motion_models/litert/manifest.json`. All eight packaged model files
+match their manifest sizes and SHA-256 values: four float32 GPU packs total
+28,344,192 bytes, and four generic W8A8 JIT NPU candidates total 7,574,992
+bytes, for 35,919,184 model bytes. Exact per-model hashes remain in the
+checked-in manifest. No target-specific Google Tensor, Samsung LiteCore, or
+Qualcomm HTP AOT artifacts are included.
+
+This verifies Gradle packaging and asset integrity. The APK was not installed;
+provider execution, Android inference latency, visible quality, presentation
+pacing, and audio/video synchronization remain unqualified.
+
+## Original four-model pack
 
 The four float32 GPU packs were generated locally with
 `scripts/motion/export_android_litert_models.py`, using the ANVIL source
@@ -31,7 +52,7 @@ Their single-clip comparison is recorded separately in
 [`android-litert-w8a8-validation-2026-10-28.md`](android-litert-w8a8-validation-2026-10-28.md).
 No vendor-specific AOT models are included in the current default manifest.
 
-## APK build
+## Original four-model APK build
 
 Command:
 
