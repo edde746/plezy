@@ -1,7 +1,7 @@
-<h1>
-  <img src="assets/plezy.png" alt="PlezyNG Logo" height="24" style="vertical-align: middle;" />
-  PlezyNG
-</h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/branding/plezyng-artwork-dark.webp">
+  <img src="assets/branding/plezyng-artwork-light.webp" alt="PlezyNG — coral folded-ribbon identity" width="840">
+</picture>
 
 A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
