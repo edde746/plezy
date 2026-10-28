@@ -567,6 +567,11 @@ class MotionClarityService {
     }
     _samplingHealth = true;
     try {
+      await _followCurrentDisplayRate();
+      if (_currentEngine != MotionClarityEngine.motionCompensated || !_currentPreset.interpolationEnabled) {
+        _stopHealthMonitor();
+        return;
+      }
       final rawDelayedCount = await _readProperty('vo-delayed-frame-count');
       final rawDropCount = await _readProperty('frame-drop-count');
       if (_currentEngine != MotionClarityEngine.motionCompensated || !_currentPreset.interpolationEnabled) {
@@ -661,6 +666,52 @@ class MotionClarityService {
     } finally {
       _samplingHealth = false;
     }
+  }
+
+  Future<void> _followCurrentDisplayRate() async {
+    final outputRate = _currentOutputRate;
+    final engine = _currentEngine;
+    final preset = _currentPreset;
+    final kernel = _currentKernel;
+    final threshold = _currentThresholdPercent;
+    final quality = _currentMciQuality;
+    final targetFps = _currentTargetFps;
+    final comparisonBypass = _comparisonBypass;
+    if (outputRate != MotionClarityOutputRate.currentDisplay ||
+        engine != MotionClarityEngine.motionCompensated ||
+        !preset.interpolationEnabled ||
+        comparisonBypass) {
+      return;
+    }
+
+    bool isStillCurrent() =>
+        _currentOutputRate == outputRate &&
+        _currentEngine == engine &&
+        _currentPreset == preset &&
+        _currentKernel == kernel &&
+        _currentThresholdPercent == threshold &&
+        _currentMciQuality == quality &&
+        _currentTargetFps == targetFps &&
+        _comparisonBypass == comparisonBypass;
+
+    final displayFps = _readFps(await _readProperty('display-fps'));
+    if (!isStillCurrent() || displayFps == null || displayFps <= 0) return;
+    if (targetFps != null && (displayFps - targetFps).abs() < 0.05) return;
+
+    final sourceFps = _readFps(await _readProperty('container-fps'));
+    if (!isStillCurrent()) return;
+
+    await configure(
+      preset: preset,
+      kernel: kernel,
+      thresholdPercent: threshold,
+      beforeSourceOpen: false,
+      engine: MotionClarityEngine.motionCompensated,
+      outputRate: outputRate,
+      mciQuality: quality,
+      sourceFps: sourceFps,
+      applyPresetRouting: false,
+    );
   }
 
   void _resetActiveProcessing() {

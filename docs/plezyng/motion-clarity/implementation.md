@@ -21,7 +21,9 @@ first; the remaining work packages describe follow-on engineering.
   mpv allocates decoder surfaces. Temporal blend configures display sync, kernel,
   threshold and renderer status. The motion-compensated path installs a labelled
   FFmpeg `minterpolate` filter, chooses 48–144 fps and Fast/Balanced/High search effort,
-  and applies scene-change detection. Android mpv suppresses source-rate matching for
+  and applies scene-change detection. While MCI is active with Current display selected,
+  the health monitor reapplies the filter when mpv reports a changed display rate,
+  preserving the active preset and search effort. Android mpv suppresses source-rate matching for
   MCI and can negotiate the selected generated rate while preserving resolution matching.
   Unsupported filter setups fall back to temporal blend. The A/B switch bypasses the active
   filter while keeping display sync, scaling and audio settings; Original restores captured options.
