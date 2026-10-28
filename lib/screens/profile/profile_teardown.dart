@@ -377,6 +377,8 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   final sources = scope.sources;
   if (sources != null) {
     await sources.ready;
+    sources.attachProfile(null, blocked: true);
+    await sources.stopPlayback?.call();
     await HardcoverAccountStore(sources.repository).clearAllProfiles();
   }
   await scope.storage.clearUserData();
