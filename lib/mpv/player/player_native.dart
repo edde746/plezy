@@ -80,6 +80,11 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
       audioOnly = true,
       _hardwareDecoding = true;
 
+  @override
+  Set<String> get supportedLocalSubtitleExtensions => audioOnly
+      ? const <String>{}
+      : const <String>{'srt', 'ass', 'ssa', 'vtt', 'sub', 'idx', 'sup'};
+
   /// Whether this session intends to hardware-decode; carried on
   /// `initialize` for the Android core's vo decision.
   final bool _hardwareDecoding;

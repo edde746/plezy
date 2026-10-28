@@ -52,6 +52,8 @@ class PlayerTizen extends PlayerBase {
   @override
   bool get supportsSecondarySubtitles => false;
   @override
+  Set<String> get supportedLocalSubtitleExtensions => const {'srt', 'vtt'};
+  @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
   bool _current(int generation) => !disposed && !_closing && generation == _generation;
@@ -343,6 +345,27 @@ class PlayerTizen extends PlayerBase {
     if (!isVtt && codec != 'srt' && codec != 'subrip' && !uri.path.toLowerCase().endsWith('.srt')) {
       throw UnsupportedError('Samsung TV supports SRT/VTT sidecars; use server subtitle burn-in for this format.');
     }
+    if (uri.scheme == 'file' || uri.scheme.isEmpty) {
+      final file = uri.scheme == 'file' ? File.fromUri(uri) : File(uri.path);
+      final bytes = <int>[];
+      try {
+        await for (final chunk in file.openRead(0, 2 * 1024 * 1024 + 1)) {
+          if (bytes.length + chunk.length > 2 * 1024 * 1024) {
+            throw const FormatException('Subtitle file exceeds 2 MiB');
+          }
+          bytes.addAll(chunk);
+        }
+      } on FormatException {
+        rethrow;
+      } catch (_) {
+        // File-system errors may include the user's full local path.
+        throw const FormatException('Subtitle file could not be read.');
+      }
+      if (bytes.isEmpty) throw const FormatException('Subtitle file is empty.');
+      final content = utf8.decode(bytes);
+      return isVtt ? samsung.WebVTTCaptionFile(content) : samsung.SubRipCaptionFile(content);
+    }
+
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
     try {
       if (uri.scheme != 'http' && uri.scheme != 'https') throw const FormatException('Subtitle URL requires HTTP(S)');
@@ -434,7 +457,29 @@ class PlayerTizen extends PlayerBase {
   @override
   Future<void> setLogLevel(String level) async {}
   @override
-  Future<void> command(List<String> args) async {}
+  Future<void> command(List<String> args) async {
+    if (disposed || _closing || args.isEmpty || args.first != 'sub-add') return;
+    if (args.length < 2) throw ArgumentError('sub-add requires a local file path.');
+    if (_controller == null || !_loaded) throw StateError('No active playback session for subtitle import.');
+    final localPath = args[1];
+    final fileName = localPath.split(RegExp(r'[/\\]')).last;
+    final extension = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : '';
+    if (!supportedLocalSubtitleExtensions.contains(extension)) {
+      throw UnsupportedError('Samsung TV supports local SRT and WebVTT subtitles.');
+    }
+
+    final uri = Uri.file(localPath);
+    final existingIndex = _externalSubtitles.indexWhere((track) => track.uri == uri.toString());
+    final track = existingIndex >= 0
+        ? _externalSubtitles[existingIndex]
+        : SubtitleTrack.uri(uri.toString(), title: fileName, codec: extension);
+    if (existingIndex < 0) {
+      _externalSubtitles = [..._externalSubtitles, track];
+      updateTracks(Tracks(audio: state.tracks.audio, subtitle: [...state.tracks.subtitle, track]));
+    }
+
+    if (args.length < 3 || args[2] == 'select') await selectSubtitleTrack(track);
+  }
   @override
   Future<void> configureSubtitleFonts() async {}
   @override

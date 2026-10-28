@@ -1376,6 +1376,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
   bool get supportsSecondarySubtitles => true;
 
   @override
+  Set<String> get supportedLocalSubtitleExtensions => const <String>{};
+
+  @override
   bool get detectsFpsAfterRender => false;
 
   @override

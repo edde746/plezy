@@ -520,7 +520,7 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
     );
   }
 
-  if (player.playerType != 'exoplayer') {
+  if (player.supportedLocalSubtitleExtensions.isNotEmpty) {
     actions.add(
       FocusableListTile(
         leading: const AppIcon(Symbols.file_open_rounded),
@@ -545,7 +545,7 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
 Future<void> _loadSubtitleFile(BuildContext context, Player player) async {
   final result = await FilePickerService.instance.pickFiles(
     type: FileType.custom,
-    allowedExtensions: ['srt', 'ass', 'ssa', 'vtt', 'sub', 'idx', 'sup'],
+    allowedExtensions: player.supportedLocalSubtitleExtensions.toList()..sort(),
   );
   if (result == null || result.files.isEmpty || !context.mounted) return;
   final path = result.files.first.path;

@@ -146,6 +146,12 @@ abstract class Player {
   /// Whether this player backend supports secondary subtitle tracks.
   bool get supportsSecondarySubtitles;
 
+  /// Local subtitle formats that the backend can attach to the active session.
+  ///
+  /// An empty set means local-file attachment is unavailable. Backends must
+  /// not advertise a format unless they can parse and select it at runtime.
+  Set<String> get supportedLocalSubtitleExtensions;
+
   /// Whether the backend detects container fps from rendered frame
   /// timestamps, so `container-fps` only becomes available a few frames
   /// after playback starts (retry the property read instead of giving up).
