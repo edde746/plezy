@@ -77,6 +77,8 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
                   title: widget.request.title,
                   mediaType: widget.request.type == 'series' ? 'show' : widget.request.type,
                   identifiers: widget.identifiers,
+                  season: widget.request.season,
+                  episode: widget.request.episode,
                   year: widget.request.year,
                 )
                 .catchError((Object _) => const <SourceEntry>[]);

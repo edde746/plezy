@@ -629,7 +629,9 @@ class RemoteStreamingProvider extends ChangeNotifier {
               job.accountId == account.id &&
               job.infoHash.toLowerCase() == hash.toLowerCase() &&
               job.fileIndex == candidate.fileIndex &&
-              job.state != RemotePreparationState.cancelled &&
+              // Local cancellation leaves the provider-side job intact. A
+              // later explicit play request should reconnect to that saved ID
+              // instead of creating a duplicate provider transfer.
               job.state != RemotePreparationState.failed &&
               job.providerJobId != null,
         )

@@ -872,6 +872,8 @@ class SourceController extends ChangeNotifier {
     required String title,
     required String mediaType,
     required Map<String, String> identifiers,
+    int? season,
+    int? episode,
     int? year,
     int limit = 8,
   }) async {
@@ -903,6 +905,14 @@ class SourceController extends ChangeNotifier {
       if (entry.kind != SourceItemKind.video || entry.unavailable) return false;
       final indexedType = entry.identifiers['plezyMediaType'];
       if (indexedType != null && indexedType != mediaType) return false;
+      if (season != null || episode != null) {
+        if (season == null ||
+            episode == null ||
+            int.tryParse(entry.identifiers['plezySeason'] ?? '') != season ||
+            int.tryParse(entry.identifiers['plezyEpisode'] ?? '') != episode) {
+          return false;
+        }
+      }
       final hasExactId = targetIds.any((candidate) {
         final value = entry.identifiers[candidate.key]?.trim().toLowerCase();
         return value == candidate.value;
