@@ -48,4 +48,13 @@ class HardcoverAccountStore {
     await repository.forgetPreference(profileId, importUndoPreferenceKey);
     await repository.forgetPreference(profileId, exportUndoPreferenceKey);
   }
+
+  /// Removes Hardcover credentials, shelf snapshots, and undo state on
+  /// full logout while leaving source configuration and downloaded files intact.
+  Future<void> clearAllProfiles() => repository.forgetPreferencesForAllProfiles({
+    accountPreferenceKey,
+    importedLibraryPreferenceKey,
+    importUndoPreferenceKey,
+    exportUndoPreferenceKey,
+  });
 }

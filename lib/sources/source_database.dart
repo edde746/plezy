@@ -964,6 +964,19 @@ class SourceRepository {
   Future<void> forgetPreference(String profile, String key) =>
       database.customStatement('DELETE FROM preferences WHERE profile=? AND key=?', [profile, key]);
 
+  /// Deletes a known set of private integration preferences across profiles
+  /// during app-wide sign-out without removing the profiles' source files.
+  Future<void> forgetPreferencesForAllProfiles(Set<String> keys) async {
+    if (keys.isEmpty) return;
+    final placeholders = List.filled(keys.length, '?').join(',');
+    await database.transaction(
+      () => database.customStatement(
+        'DELETE FROM preferences WHERE key IN ($placeholders)',
+        keys.toList(growable: false),
+      ),
+    );
+  }
+
   Future<void> recordDownload(
     String profile,
     String key,
