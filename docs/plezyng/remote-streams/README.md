@@ -23,8 +23,8 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 - Open Files and books from the existing library picker or its single nested
   Libraries rail row. Connected accounts live together in the screen's Cloud
   & add-on streaming group. Browse ready video files with the focused list,
-  refresh, and recover from empty or unavailable states without losing account
-  setup.
+  load more from paged provider inventories, refresh, and recover from empty or
+  unavailable states without losing account setup.
 - Browse supported Stremio add-on catalogs in the existing Explore source
   switcher; search supported catalogs and open installation-scoped title
   details without creating a new navigation destination.

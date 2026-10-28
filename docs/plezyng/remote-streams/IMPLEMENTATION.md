@@ -21,15 +21,17 @@ requires private ephemeral JIT runners for any later authorized build/CI work.
 | Connection setup | Real-Debrid device authorization and AllDebrid PIN flow use the shared QR/code dialog. Premiumize and TorBox API keys are validated with their account endpoints before encrypted save. | Premiumize uses API-key setup because PlezyNG does not yet have a registered OAuth client. TorBox device flow is not wired. |
 | Stremio add-ons | HTTPS manifest validation, manual install, first-party QR account link and read-only installed-add-on import preview; catalog and stream resources, catalog search/paging, title metadata, per-installation enable/remove, external links, HTTPS streams, hash/file index, request headers and subtitles. Imported account keys are memory-only; imported manifest URLs are revalidated before encrypted profile save. | Required catalog filters/configuration, account add-on ordering, automatic manifest update review, and native JavaScript add-ons are not implemented. HTTP add-ons require manual setup with explicit opt-in. |
 | Playback | Stream choices open the existing standalone `SourcePlayback`/`SourcePlayerScreen`, retain the title's external identifiers and duration, and persist local resume progress. Subtitle selection downloads a bounded file and uses the existing external-subtitle path. | This does not join the server video queue/player chrome or report remote playback to a Plex/Jellyfin/Emby server. PiP/multiview and background playback qualification are outstanding. |
-| Resolver services | Real-Debrid, AllDebrid and Premiumize resolve v1 hashes and supported file-host links. TorBox resolves cached v1 torrents only and only creates items with `add_only_if_cached`. All four providers expose on-demand video-file browsing from their cloud inventory. When multiple services are connected, the picker asks which account to use. | No v2 hash resolution, uncached TorBox jobs, durable operation ledger or same-copy lease renewal. A generated CDN link can expire during long playback. |
+| Resolver services | Real-Debrid, AllDebrid and Premiumize resolve v1 hashes and supported file-host links. TorBox resolves cached v1 torrents only and only creates items with `add_only_if_cached`. All four providers expose on-demand video-file browsing. Real-Debrid and TorBox use their documented offset/limit controls; the focused browser exposes an accessible Load more action. When multiple services are connected, the picker asks which account to use. | AllDebrid status and Premiumize folder browsing currently consume the provider response as returned; no persisted inventory or background scan. No v2 hash resolution, uncached TorBox jobs, durable operation ledger or same-copy lease renewal. A generated CDN link can expire during long playback. |
 | Network boundary | Add-on request headers are bounded and validated, then held in memory behind the loopback media gateway. HTTP is opt-in per add-on. HLS children inherit headers only on the same origin; redirect policy prevents HTTPS downgrade and strips sensitive headers on cross-origin redirects. | Provider-specific DNS/IP egress blocking, DASH nested-resource handling and native-engine fetch auditing remain unqualified. |
 | App integration | The existing Services hub manages accounts and add-ons; Explore loads enabled Stremio catalogs and search; Stremio catalog titles resolve metadata and movie stream options; supported library title details offer contextual stream discovery; Files and books remains one destination in the picker and nested Libraries rail. Cloud browsing has refresh, empty/error recovery, and a path back to connection management. Shared authorization QR, copyable codes, catalog source marks, keyboard focus, and loading/error cues reuse existing UI contracts. | Cloud inventory remains on-demand and is not indexed as poster libraries or merged into Home, Search or Downloads. Remote playback does not write progress to a Plex/Jellyfin/Emby server; the native player/P2P engine remains separate. |
 
-No automated tests or app builds were run for this implementation. The current
-workspace does not include the Dart or Flutter SDK, and the user requested no
-CI dispatch. `git diff --check` and source/document inspection are the local
-review gates for this branch; live account linking, imported descriptor
-fixtures, playback behavior and packaged-device behavior remain unverified.
+A focused fixture test now covers Real-Debrid and TorBox cloud-page boundaries,
+but no automated tests or app builds were run for this implementation. The
+current workspace does not include the Dart or Flutter SDK. The repository
+requires private ephemeral JIT runners for authorized CI/build work;
+`git diff --check` and source/document inspection are the local review gates
+available here. Live account linking, imported descriptor fixtures, playback
+behavior and packaged-device behavior remain unverified.
 
 ## Start here
 
@@ -39,8 +41,10 @@ fixtures, playback behavior and packaged-device behavior remain unverified.
    startup, source, catalog, playback, download, PiP and multiview contracts.
    Use existing dependency injection, HTTP factories, clocks and platform
    abstractions.
-3. Establish a provider fixture harness using synthetic public test media and
-   sanitized captured protocol shapes. Keep live accounts out of unit tests.
+3. Extend the provider fixture coverage in
+   `test/services/remote_streams/remote_cloud_paging_test.dart` with synthetic
+   public test media and sanitized protocol shapes. Keep live accounts out of
+   unit tests.
 4. Promote the on-demand provider inventory into existing source/catalog
    queries with stable account and file identities. The current Stremio
    catalog/account-import slice is a compatibility baseline; add fixture

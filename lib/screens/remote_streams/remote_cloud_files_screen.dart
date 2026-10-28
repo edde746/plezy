@@ -41,11 +41,14 @@ class RemoteCloudFilesScreen extends StatefulWidget {
 class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
   List<RemoteCloudItem> _items = const [];
   bool _loading = true;
+  bool _loadingMore = false;
   bool _failed = false;
+  bool _moreFailed = false;
   bool _accountReloadQueued = false;
   String? _loadedAccountId;
   String? _loadedProfileId;
   String? _openingId;
+  String? _nextCursor;
 
   @override
   void initState() {
@@ -53,17 +56,24 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool more = false}) async {
     if (!mounted) return;
+    if (more && (_loading || _loadingMore || _nextCursor == null)) return;
     final provider = context.read<RemoteStreamingProvider>();
     final accountId = provider.accountFor(widget.service)?.id;
     final profileId = provider.profileId;
+    final cursor = more ? _nextCursor : null;
     setState(() {
-      _loading = true;
+      _loading = !more;
+      _loadingMore = more;
       _failed = false;
-      _items = const [];
-      _loadedAccountId = accountId;
-      _loadedProfileId = profileId;
+      _moreFailed = false;
+      if (!more) {
+        _items = const [];
+        _nextCursor = null;
+        _loadedAccountId = accountId;
+        _loadedProfileId = profileId;
+      }
     });
     try {
       if (accountId == null || profileId == null || !provider.isReady) {
@@ -73,16 +83,17 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
           (widget.expectedProfileId != null && widget.expectedProfileId != profileId)) {
         throw const SourceException(SourceFailure.cancelled);
       }
-      final items = await provider.browseCloud(
+      final page = await provider.browseCloud(
         widget.service,
         parentId: widget.parentId,
+        cursor: cursor,
       );
       if (!mounted) return;
       if (provider.profileId != profileId || provider.accountFor(widget.service)?.id != accountId) {
         setState(() => _loading = false);
         return;
       }
-      final visible = items
+      final visible = page.items
           .where(
             (item) =>
                 item.kind == RemoteCloudItemKind.folder ||
@@ -98,15 +109,29 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
       setState(() {
         _loadedAccountId = accountId;
         _loadedProfileId = profileId;
-        _items = List.unmodifiable(visible);
-        _loading = false;
+        final knownIds = _items.map((item) => item.id).toSet();
+        _items = List.unmodifiable([
+          if (more) ..._items,
+          ...visible.where((item) => knownIds.add(item.id)),
+        ]);
+        _nextCursor = page.nextCursor;
       });
     } on Object {
       if (!mounted) return;
       setState(() {
-        _failed = true;
-        _loading = false;
+        if (more) {
+          _moreFailed = true;
+        } else {
+          _failed = true;
+        }
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadingMore = false;
+        });
+      }
     }
   }
 
@@ -306,7 +331,7 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
               ),
             ),
           )
-        else if (_items.isEmpty)
+        else if (_items.isEmpty && _nextCursor == null)
           SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
@@ -336,6 +361,29 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
         else
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
+              if (index == _items.length) {
+                if (_loadingMore) {
+                  return Semantics(
+                    liveRegion: true,
+                    label: t.common.loading,
+                    child: const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  );
+                }
+                if (_nextCursor == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: _loading || !ready || staleContext ? null : () => _load(more: true),
+                      icon: AppIcon(_moreFailed ? Symbols.refresh_rounded : Symbols.expand_more_rounded),
+                      label: Text(_moreFailed ? t.common.retry : t.fileSources.loadMore),
+                    ),
+                  ),
+                );
+              }
               final item = _items[index];
               final busy = _openingId == item.id;
               final isFolder = item.kind == RemoteCloudItemKind.folder;
@@ -362,7 +410,7 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
                   onTap: busy ? null : () => _open(item),
                 ),
               );
-            }, childCount: _items.length),
+            }, childCount: _items.length + (_nextCursor != null || _loadingMore ? 1 : 0)),
           ),
       ],
     );

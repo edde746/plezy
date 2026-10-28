@@ -164,24 +164,26 @@ class AllDebridClient {
     );
   }
 
-  Future<List<RemoteCloudItem>> browseCloud({String? magnetId}) async {
+  Future<RemoteCloudPage> browseCloud({String? magnetId}) async {
     if (magnetId == null) {
       final response = await _api('POST', '/v4.1/magnet/status');
       final magnets = response['magnets'];
       if (magnets is! List) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
-      return [
-        for (final raw in magnets)
-          if (raw is Map)
-            if ((raw['statusCode'] == 4 || raw['ready'] == true) && raw['id'] != null)
-              RemoteCloudItem(
-                id: 'ad:${raw['id']}',
-                name: _safeFileName(raw['filename'] as String? ?? raw['name'] as String? ?? 'Magnet'),
-                service: RemoteStreamService.allDebrid,
-                kind: RemoteCloudItemKind.folder,
-                size: _safeSize(raw['size']),
-                providerId: raw['id'].toString(),
-              ),
-      ];
+      return RemoteCloudPage(
+        items: [
+          for (final raw in magnets)
+            if (raw is Map)
+              if ((raw['statusCode'] == 4 || raw['ready'] == true) && raw['id'] != null)
+                RemoteCloudItem(
+                  id: 'ad:${raw['id']}',
+                  name: _safeFileName(raw['filename'] as String? ?? raw['name'] as String? ?? 'Magnet'),
+                  service: RemoteStreamService.allDebrid,
+                  kind: RemoteCloudItemKind.folder,
+                  size: _safeSize(raw['size']),
+                  providerId: raw['id'].toString(),
+                ),
+        ],
+      );
     }
     if (!RegExp(r'^\d{1,16}$').hasMatch(magnetId)) {
       throw const RemoteProviderException(RemoteProviderFailure.unsupported);
@@ -193,18 +195,20 @@ class AllDebridClient {
     }
     final files = <_DebridFile>[];
     _flattenAllDebridFiles((magnets.first as Map)['files'], '', files, 0);
-    return [
-      for (final file in files)
-        RemoteCloudItem(
-          id: 'ad:$magnetId:${file.id ?? file.name}',
-          name: file.name,
-          service: RemoteStreamService.allDebrid,
-          kind: RemoteCloudItemKind.file,
-          size: file.size,
-          providerId: magnetId,
-          uri: file.url,
-        ),
-    ];
+    return RemoteCloudPage(
+      items: [
+        for (final file in files)
+          RemoteCloudItem(
+            id: 'ad:$magnetId:${file.id ?? file.name}',
+            name: file.name,
+            service: RemoteStreamService.allDebrid,
+            kind: RemoteCloudItemKind.file,
+            size: file.size,
+            providerId: magnetId,
+            uri: file.url,
+          ),
+      ],
+    );
   }
 
   Future<Map<String, dynamic>> _api(String method, String path, {Map<String, String>? fields}) async {
@@ -324,7 +328,7 @@ class PremiumizeClient {
     return ResolvedRemoteStream(uri: selected.url, fileName: selected.name, size: selected.size);
   }
 
-  Future<List<RemoteCloudItem>> browseCloud({String? folderId}) async {
+  Future<RemoteCloudPage> browseCloud({String? folderId}) async {
     final baseUri = Uri.parse('$_base/folder/list');
     final uri = baseUri.replace(queryParameters: {
       if (folderId != null && folderId.isNotEmpty) 'id': folderId,
@@ -367,7 +371,7 @@ class PremiumizeClient {
         uri: isFolder ? null : link,
       ));
     }
-    return items;
+    return RemoteCloudPage(items: items);
   }
 
   void close() => _http.close();
@@ -484,50 +488,60 @@ class TorBoxClient {
     return ResolvedRemoteStream(uri: uri, fileName: selected.name, size: selected.size);
   }
 
-  Future<List<RemoteCloudItem>> browseCloud({String? torrentId}) async {
+  Future<RemoteCloudPage> browseCloud({String? torrentId, int offset = 0, int limit = 100}) async {
     if (torrentId == null) {
-      final uri = Uri.parse('$_base/torrents/mylist').replace(
-        queryParameters: const {'bypass_cache': 'true', 'limit': '1000'},
-      );
+      if (offset < 0 || offset > 1000000000 || limit < 1 || limit > 100) {
+        throw const RemoteProviderException(RemoteProviderFailure.unsupported);
+      }
+      final uri = Uri.parse('$_base/torrents/mylist').replace(queryParameters: {
+        'bypass_cache': 'true',
+        'limit': '$limit',
+        'offset': '$offset',
+      });
       final response = await _request('GET', uri);
       final rows = response['data'];
       if (rows is! List) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
-      return [
-        for (final raw in rows)
-          if (raw is Map)
-            if (_isTorBoxReady(Map<String, dynamic>.from(raw)) && raw['id'] != null)
-              RemoteCloudItem(
-                id: 'tb:${raw['id']}',
-                name: _safeFileName(raw['name'] as String? ?? 'Torrent'),
-                service: RemoteStreamService.torbox,
-                kind: RemoteCloudItemKind.folder,
-                size: _safeSize(raw['size']),
-                providerId: raw['id'].toString(),
-              ),
-      ];
+      return RemoteCloudPage(
+        items: [
+          for (final raw in rows)
+            if (raw is Map)
+              if (_isTorBoxReady(Map<String, dynamic>.from(raw)) && raw['id'] != null)
+                RemoteCloudItem(
+                  id: 'tb:${raw['id']}',
+                  name: _safeFileName(raw['name'] as String? ?? 'Torrent'),
+                  service: RemoteStreamService.torbox,
+                  kind: RemoteCloudItemKind.folder,
+                  size: _safeSize(raw['size']),
+                  providerId: raw['id'].toString(),
+                ),
+        ],
+        nextCursor: rows.length >= limit ? '${offset + limit}' : null,
+      );
     }
     if (torrentId.isEmpty || torrentId.length > 128) {
       throw const RemoteProviderException(RemoteProviderFailure.unsupported);
     }
     final torrent = await _loadTorrent(torrentId);
-    if (!_isTorBoxReady(torrent)) return const [];
+    if (!_isTorBoxReady(torrent)) return const RemoteCloudPage(items: []);
     final rawFiles = torrent['files'];
-    if (rawFiles is! List) return const [];
-    return [
-      for (final raw in rawFiles)
-        if (raw is Map)
-          if (raw['id'] != null && raw['name'] is String)
-            RemoteCloudItem(
-              id: 'tb:$torrentId:${raw['id']}',
-              name: _safeFileName(raw['name'] as String),
-              service: RemoteStreamService.torbox,
-              kind: RemoteCloudItemKind.file,
-              size: _safeSize(raw['size']),
-              mimeType: raw['mime_type'] as String? ?? raw['mimetype'] as String?,
-              providerId: torrentId,
-              providerFileId: raw['id'].toString(),
-            ),
-    ];
+    if (rawFiles is! List) return const RemoteCloudPage(items: []);
+    return RemoteCloudPage(
+      items: [
+        for (final raw in rawFiles)
+          if (raw is Map)
+            if (raw['id'] != null && raw['name'] is String)
+              RemoteCloudItem(
+                id: 'tb:$torrentId:${raw['id']}',
+                name: _safeFileName(raw['name'] as String),
+                service: RemoteStreamService.torbox,
+                kind: RemoteCloudItemKind.file,
+                size: _safeSize(raw['size']),
+                mimeType: raw['mime_type'] as String? ?? raw['mimetype'] as String?,
+                providerId: torrentId,
+                providerFileId: raw['id'].toString(),
+              ),
+      ],
+    );
   }
 
   Future<ResolvedRemoteStream> resolveCloudFile(RemoteCloudItem item) async {

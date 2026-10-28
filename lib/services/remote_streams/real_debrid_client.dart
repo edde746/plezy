@@ -264,45 +264,55 @@ class RealDebridClient {
     );
   }
 
-  Future<List<RemoteCloudItem>> browseCloud({String? torrentId}) async {
+  Future<RemoteCloudPage> browseCloud({String? torrentId, int offset = 0, int limit = 100}) async {
     if (torrentId == null) {
-      final rows = await _apiList('/torrents?limit=100');
-      return [
-        for (final row in rows)
-          if (row['status'] == 'downloaded' && row['id'] != null)
-            RemoteCloudItem(
-              id: 'rd:${row['id']}',
-              name: _safeFileName(row['filename'] as String? ?? 'Torrent'),
-              service: RemoteStreamService.realDebrid,
-              kind: RemoteCloudItemKind.folder,
-              size: (row['bytes'] as num?)?.toInt(),
-              providerId: row['id'].toString(),
-            ),
-      ];
+      if (offset < 0 || offset > 1000000000 || limit < 1 || limit > 100) {
+        throw const RealDebridException(RealDebridFailure.unsupported);
+      }
+      final rows = await _apiList('/torrents?limit=$limit&offset=$offset');
+      return RemoteCloudPage(
+        items: [
+          for (final row in rows)
+            if (row['status'] == 'downloaded' && row['id'] != null)
+              RemoteCloudItem(
+                id: 'rd:${row['id']}',
+                name: _safeFileName(row['filename'] as String? ?? 'Torrent'),
+                service: RemoteStreamService.realDebrid,
+                kind: RemoteCloudItemKind.folder,
+                size: (row['bytes'] as num?)?.toInt(),
+                providerId: row['id'].toString(),
+              ),
+        ],
+        nextCursor: rows.length >= limit ? '${offset + limit}' : null,
+      );
     }
     if (torrentId.isEmpty || torrentId.length > 128) {
       throw const RealDebridException(RealDebridFailure.unsupported);
     }
     final info = await _apiGet('/torrents/info/${Uri.encodeComponent(torrentId)}');
-    if (info['status'] != 'downloaded') return const [];
+    if (info['status'] != 'downloaded') return const RemoteCloudPage(items: []);
     final files = _fileList(info['files']).where((file) => file['selected'] == 1).toList(growable: false);
     final links = info['links'];
-    if (files.isEmpty || links is! List || files.length != links.length) return const [];
-    return [
-      for (var index = 0; index < files.length; index++)
-        if (links[index] is String)
-          if (_safeProviderLink(links[index] as String) case final link?)
-            RemoteCloudItem(
-              id: 'rd:$torrentId:${files[index]['id']}',
-              name: _safeFileName(files[index]['path'] as String? ?? 'Video.mp4'),
-              service: RemoteStreamService.realDebrid,
-              kind: RemoteCloudItemKind.file,
-              size: (files[index]['bytes'] as num?)?.toInt(),
-              providerId: torrentId,
-              providerFileId: files[index]['id']?.toString(),
-              uri: link,
-            ),
-    ];
+    if (files.isEmpty || links is! List || files.length != links.length) {
+      return const RemoteCloudPage(items: []);
+    }
+    return RemoteCloudPage(
+      items: [
+        for (var index = 0; index < files.length; index++)
+          if (links[index] is String)
+            if (_safeProviderLink(links[index] as String) case final link?)
+              RemoteCloudItem(
+                id: 'rd:$torrentId:${files[index]['id']}',
+                name: _safeFileName(files[index]['path'] as String? ?? 'Video.mp4'),
+                service: RemoteStreamService.realDebrid,
+                kind: RemoteCloudItemKind.file,
+                size: (files[index]['bytes'] as num?)?.toInt(),
+                providerId: torrentId,
+                providerFileId: files[index]['id']?.toString(),
+                uri: link,
+              ),
+      ],
+    );
   }
 
   Future<List<Map<String, dynamic>>> _apiList(String path) async {

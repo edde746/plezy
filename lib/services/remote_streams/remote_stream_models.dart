@@ -6,6 +6,15 @@ enum RemoteStreamService { realDebrid, allDebrid, premiumize, torbox }
 
 enum RemoteCloudItemKind { folder, file }
 
+/// One bounded inventory page. `nextCursor` is an opaque, provider-local
+/// continuation token and is deliberately kept out of persisted settings.
+class RemoteCloudPage {
+  const RemoteCloudPage({required this.items, this.nextCursor});
+
+  final List<RemoteCloudItem> items;
+  final String? nextCursor;
+}
+
 /// A short-lived inventory row returned by a debrid account. `uri` and
 /// provider identifiers are held only in memory; this type is never persisted.
 class RemoteCloudItem {

@@ -272,11 +272,11 @@ class RemoteStreamingProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<RemoteCloudItem>> browseCloud(RemoteStreamService service, {String? parentId}) async {
+  Future<RemoteCloudPage> browseCloud(RemoteStreamService service, {String? parentId, String? cursor}) async {
     final (profile, generation) = _requireProfile();
     final account = accountFor(service);
     if (account == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
-    List<RemoteCloudItem> items;
+    late RemoteCloudPage page;
     switch (service) {
       case RemoteStreamService.realDebrid:
         final client = RealDebridClient(
@@ -284,7 +284,10 @@ class RemoteStreamingProvider extends ChangeNotifier {
           onAccountRefreshed: (updated) => _persistRefreshedAccount(profile, generation, account.id, updated),
         );
         try {
-          items = await client.browseCloud(torrentId: parentId);
+          page = await client.browseCloud(
+            torrentId: parentId,
+            offset: parentId == null ? _parseOffset(cursor) : 0,
+          );
         } finally {
           client.close();
         }
@@ -292,7 +295,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       case RemoteStreamService.allDebrid:
         final client = AllDebridClient(account: account);
         try {
-          items = await client.browseCloud(magnetId: parentId);
+          page = await client.browseCloud(magnetId: parentId);
         } finally {
           client.close();
         }
@@ -300,7 +303,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       case RemoteStreamService.premiumize:
         final client = PremiumizeClient(account: account);
         try {
-          items = await client.browseCloud(folderId: parentId);
+          page = await client.browseCloud(folderId: parentId);
         } finally {
           client.close();
         }
@@ -308,14 +311,28 @@ class RemoteStreamingProvider extends ChangeNotifier {
       case RemoteStreamService.torbox:
         final client = TorBoxClient(account: account);
         try {
-          items = await client.browseCloud(torrentId: parentId);
+          page = await client.browseCloud(
+            torrentId: parentId,
+            offset: parentId == null ? _parseOffset(cursor) : 0,
+          );
         } finally {
           client.close();
         }
         break;
     }
     if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-    return List.unmodifiable(items.map((item) => item.withAccountId(account.id)));
+    return RemoteCloudPage(
+      items: List.unmodifiable(page.items.map((item) => item.withAccountId(account.id))),
+      nextCursor: page.nextCursor,
+    );
+  }
+
+  int _parseOffset(String? cursor) {
+    final value = cursor == null ? 0 : int.tryParse(cursor);
+    if (value == null || value < 0 || value > 1000000000) {
+      throw const RemoteProviderException(RemoteProviderFailure.unsupported);
+    }
+    return value;
   }
 
   Future<ResolvedRemoteStream> resolveCloudFile(RemoteCloudItem item) async {
