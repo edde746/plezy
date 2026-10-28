@@ -11,6 +11,7 @@ import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
+import '../../sources/offline_readiness.dart';
 import '../../sources/publication_library.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
@@ -177,11 +178,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
       final uniqueItems = {for (final entry in items) entry.key: entry}.values.toList(growable: false);
       final progress = await controller.repository.progressForEntries(profile, uniqueItems.map((entry) => entry.key));
       final downloads = await controller.repository.downloads(profile);
+      final verified = await controller.downloads.verifiedFiles(profile, uniqueItems, records: downloads);
       controller.requireSession(epoch);
       if (!mounted || request != _request) return;
       _offline
         ..clear()
-        ..addAll(downloads.where((d) => d['complete'] == 1).map((d) => d['key'] as String));
+        ..addAll(verified);
       _downloadJobs = downloads
           .where((d) => d['complete'] != 1 && d['state'] != 'completed' && d['state'] != 'legacy')
           .toList(growable: false);
@@ -396,11 +398,18 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (mounted) await _load();
   }
 
-  bool downloaded(SourceEntry e) => e.files.any((f) => _offline.contains(sourceKey(e.sourceId, f.id)));
+  bool downloaded(SourceEntry e) => PublicationOfflineReadiness.evaluate(e, _offline).isReady;
+  String? _offlineLabel(SourceEntry entry) {
+    final ready = PublicationOfflineReadiness.evaluate(entry, _offline);
+    if (ready.isReady) return t.fileSources.offline;
+    if (ready.isPartial) return '${t.seerr.statusPartiallyAvailable} (${ready.availableFiles}/${ready.totalFiles})';
+    return null;
+  }
+
   Widget itemTile(SourceEntry e, int index, int count, {PublicationProgress? progress}) => SourceTile(
     key: ValueKey('${e.key}:${progress?.mode.name ?? ''}'),
     title: e.displayTitle,
-    subtitle: [e.author, e.series, if (downloaded(e)) t.fileSources.offline].where((s) => s.isNotEmpty).join(' · '),
+    subtitle: [e.author, e.series, ?_offlineLabel(e)].where((s) => s.isNotEmpty).join(' · '),
     icon: sourceItemIcon(e.kind),
     onTap: () => _open(e),
     index: index,

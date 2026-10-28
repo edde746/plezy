@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import '../services/credential_vault.dart';
 import 'source_database.dart';
 import 'source_models.dart';
+import 'offline_readiness.dart';
 import 'adapters/s3_source.dart';
 import 'source_oauth.dart';
 import 'source_transport.dart';
@@ -226,9 +227,8 @@ Future<_RenewedBackgroundLease> _renewBackgroundLease(Map<String, dynamic> descr
         ? '/v1.0/me/drive/items/$encodedFileId'
         : '/v1.0/drives/$encodedDriveId/items/$encodedFileId';
     final metadata = await _renewalJson(
-      Uri.parse(
-        'https://graph.microsoft.com$path',
-      ).replace(queryParameters: const {'\$select': 'id,size,eTag,cTag,@microsoft.graph.downloadUrl'}),
+      Uri.parse('https://graph.microsoft.com$path')
+          .replace(queryParameters: const {'\$select': 'id,size,eTag,cTag,@microsoft.graph.downloadUrl'}),
       method: 'GET',
       headers: {'Authorization': 'Bearer $accessToken'},
     );
@@ -731,14 +731,47 @@ class PublicationDownloads {
     );
   }
 
-  Future<File?> local(String profile, String sourceId, PublicationFile file) async {
-    final record = await repository.download(profile, key(sourceId, file));
+  Future<File?> local(String profile, String sourceId, PublicationFile file) async =>
+      _verifiedLocal(profile, file, await repository.download(profile, key(sourceId, file)));
+
+  Future<File?> _verifiedLocal(String profile, PublicationFile file, Map<String, dynamic>? record) async {
     if (record == null || record['complete'] != 1 || record['fingerprint'] != file.fingerprint) return null;
     final value = File(record['path'] as String);
     final expected = p.join(directory.path, sourceDigest(profile));
     if (!p.isWithin(expected, value.path)) throw const SourceException(SourceFailure.permission);
-    if (!await value.exists() || await value.length() != record['bytes']) return null;
-    return value;
+    try {
+      // A disappearing file is an availability change, not a screen failure.
+      final stat = await value.stat();
+      if (stat.type != FileSystemEntityType.file || stat.size != record['bytes']) return null;
+      return value;
+    } on FileSystemException {
+      return null;
+    }
+  }
+
+  /// One ledger read and one filesystem check per distinct representation,
+  /// bounded to the entries on screen. No leases or network access are needed.
+  Future<Set<String>> verifiedFiles(
+    String profile,
+    Iterable<SourceEntry> entries, {
+    List<Map<String, dynamic>>? records,
+  }) async {
+    final byKey = {for (final row in records ?? await repository.downloads(profile)) row['key']: row};
+    final checked = <String>{};
+    final verified = <String>{};
+    for (final entry in entries) {
+      for (final file in entry.files) {
+        final identity = offlineFileIdentity(entry.sourceId, file);
+        if (!checked.add(identity)) continue;
+        final record = byKey[key(entry.sourceId, file)];
+        try {
+          if (await _verifiedLocal(profile, file, record) != null) verified.add(identity);
+        } on SourceException {
+          // An invalid ledger path must never make a publication look ready.
+        }
+      }
+    }
+    return verified;
   }
 
   Future<void> reconcileProfile(String profile) async {
