@@ -43,8 +43,14 @@ class VisualizerCatalogTrust {
 }
 
 class VisualizerCatalogSnapshot {
-  const VisualizerCatalogSnapshot({required this.sequence, required this.digest, required this.expires,
-    required this.entries, required this.revoked, required this.envelope});
+  const VisualizerCatalogSnapshot({
+    required this.sequence,
+    required this.digest,
+    required this.expires,
+    required this.entries,
+    required this.revoked,
+    required this.envelope,
+  });
   final int sequence;
   final String digest;
   final DateTime expires;
@@ -52,7 +58,8 @@ class VisualizerCatalogSnapshot {
   final Set<String> revoked;
   final List<int> envelope;
   bool freshAt(DateTime now) => expires.isAfter(now.toUtc());
-  bool isRevoked(VisualizerPackCatalogEntry entry) => revoked.contains(entry.identity) || revoked.contains('${entry.id}@*');
+  bool isRevoked(VisualizerPackCatalogEntry entry) =>
+      revoked.contains(entry.identity) || revoked.contains('${entry.id}@*');
 }
 
 /// Signatures cover the exact decoded payload bytes plus a protocol prefix.
@@ -65,19 +72,27 @@ class VisualizerCatalogVerifier {
   static const domain = 'MilkRust.catalog.v1\n';
 
   Future<VisualizerCatalogSnapshot> verify(List<int> bytes, DateTime now, {bool allowExpired = false}) async {
-    if (trust.keys.isEmpty || trust.keys.length > 16 || trust.threshold < 1 ||
-        trust.threshold > trust.keys.length || trust.keys.values.any((key) => key.length != 32) ||
+    if (trust.keys.isEmpty ||
+        trust.keys.length > 16 ||
+        trust.threshold < 1 ||
+        trust.threshold > trust.keys.length ||
+        trust.keys.values.any((key) => key.length != 32) ||
         trust.keys.values.map(base64Encode).toSet().length != trust.keys.length) {
       throw const FormatException('This build has no catalog signing trust root');
     }
-    if (bytes.isEmpty || bytes.length > maxEnvelopeBytes) throw const FormatException('Catalog envelope exceeds its limit');
+    if (bytes.isEmpty || bytes.length > maxEnvelopeBytes)
+      throw const FormatException('Catalog envelope exceeds its limit');
     final wrapper = jsonDecode(utf8.decode(bytes));
-    if (wrapper is! Map<String, dynamic> || wrapper['schemaVersion'] != 1 || wrapper['payload'] is! String ||
-        wrapper['signatures'] is! List || (wrapper['signatures'] as List).length > 16) {
+    if (wrapper is! Map<String, dynamic> ||
+        wrapper['schemaVersion'] != 1 ||
+        wrapper['payload'] is! String ||
+        wrapper['signatures'] is! List ||
+        (wrapper['signatures'] as List).length > 16) {
       throw const FormatException('Invalid signed catalog envelope');
     }
     final payload = base64Decode(wrapper['payload'] as String);
-    if (payload.isEmpty || payload.length > maxPayloadBytes) throw const FormatException('Catalog payload exceeds its limit');
+    if (payload.isEmpty || payload.length > maxPayloadBytes)
+      throw const FormatException('Catalog payload exceeds its limit');
     final message = [...utf8.encode(domain), ...payload];
     final accepted = <String>{};
     for (final signature in wrapper['signatures'] as List) {
@@ -88,14 +103,23 @@ class VisualizerCatalogVerifier {
       if (key == null || accepted.contains(keyId)) continue;
       final raw = base64Decode(signature['signature'] as String);
       if (raw.length != 64) continue;
-      if (await Ed25519().verify(message, signature: Signature(raw,
-          publicKey: SimplePublicKey(key, type: KeyPairType.ed25519)))) accepted.add(keyId);
+      if (await Ed25519().verify(
+        message,
+        signature: Signature(raw, publicKey: SimplePublicKey(key, type: KeyPairType.ed25519)),
+      ))
+        accepted.add(keyId);
     }
     if (accepted.length < trust.threshold) throw const FormatException('Catalog signature quorum was not met');
     final data = jsonDecode(utf8.decode(payload));
-    if (data is! Map<String, dynamic> || data['schemaVersion'] != 1 || data['sequence'] is! int ||
-        data['sequence'] <= 0 || data['sequence'] > 9007199254740991 || data['entries'] is! List ||
-        (data['entries'] as List).length > 1000 || data['revoked'] is! List || (data['revoked'] as List).length > 2000) {
+    if (data is! Map<String, dynamic> ||
+        data['schemaVersion'] != 1 ||
+        data['sequence'] is! int ||
+        data['sequence'] <= 0 ||
+        data['sequence'] > 9007199254740991 ||
+        data['entries'] is! List ||
+        (data['entries'] as List).length > 1000 ||
+        data['revoked'] is! List ||
+        (data['revoked'] as List).length > 2000) {
       throw const FormatException('Unsupported catalog schema or size');
     }
     DateTime date(String key) {
@@ -103,9 +127,12 @@ class VisualizerCatalogVerifier {
       if (value is! String || !value.endsWith('Z')) throw FormatException('Catalog $key must be UTC');
       return DateTime.parse(value).toUtc();
     }
+
     final issued = date('issuedAt'), expires = date('expiresAt');
-    if (issued.isAfter(now.toUtc().add(const Duration(minutes: 5))) || !expires.isAfter(issued) ||
-        expires.difference(issued) > const Duration(days: 31) || (!allowExpired && !expires.isAfter(now.toUtc()))) {
+    if (issued.isAfter(now.toUtc().add(const Duration(minutes: 5))) ||
+        !expires.isAfter(issued) ||
+        expires.difference(issued) > const Duration(days: 31) ||
+        (!allowExpired && !expires.isAfter(now.toUtc()))) {
       throw const FormatException('Catalog is expired or has an invalid validity window');
     }
     final entries = <VisualizerPackCatalogEntry>[], identities = <String>{}, ids = <String>{};
@@ -121,26 +148,39 @@ class VisualizerCatalogVerifier {
     }
     final revoked = <String>{};
     for (final item in data['revoked'] as List) {
-      if (item is! String || !RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,79}@(?:[A-Za-z0-9][A-Za-z0-9._-]{0,79}|\*)$').hasMatch(item)) {
+      if (item is! String ||
+          !RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,79}@(?:[A-Za-z0-9][A-Za-z0-9._-]{0,79}|\*)$').hasMatch(item)) {
         throw const FormatException('Invalid catalog revocation');
       }
       revoked.add(item);
     }
-    return VisualizerCatalogSnapshot(sequence: data['sequence'] as int,
-      digest: hashes.sha256.convert(payload).toString(), expires: expires,
-      entries: List.unmodifiable(entries), revoked: Set.unmodifiable(revoked), envelope: List.unmodifiable(bytes));
+    return VisualizerCatalogSnapshot(
+      sequence: data['sequence'] as int,
+      digest: hashes.sha256.convert(payload).toString(),
+      expires: expires,
+      entries: List.unmodifiable(entries),
+      revoked: Set.unmodifiable(revoked),
+      envelope: List.unmodifiable(bytes),
+    );
   }
 }
 
 /// A shared device catalog. Opening playback reads only verified local metadata;
 /// a remote refresh happens only through the library's explicit update action.
 class VisualizerSignedCatalog {
-  VisualizerSignedCatalog({VisualizerCatalogTrust? trust, http.Client? client,
-    Future<Directory> Function()? directory, DateTime Function()? clock, Uri? endpoint})
-      : verifier = VisualizerCatalogVerifier(trust ?? VisualizerCatalogTrust.release()),
-        _client = client ?? http.Client(), _directory = directory ?? _defaultDirectory,
-        _clock = clock ?? DateTime.now, endpoint = endpoint ?? Uri.parse(
-          'https://raw.githubusercontent.com/snapetech-org/MilkRust/catalog/visualizer-catalog.json');
+  VisualizerSignedCatalog({
+    VisualizerCatalogTrust? trust,
+    http.Client? client,
+    Future<Directory> Function()? directory,
+    DateTime Function()? clock,
+    Uri? endpoint,
+  }) : verifier = VisualizerCatalogVerifier(trust ?? VisualizerCatalogTrust.release()),
+       _client = client ?? http.Client(),
+       _directory = directory ?? _defaultDirectory,
+       _clock = clock ?? DateTime.now,
+       endpoint =
+           endpoint ??
+           Uri.parse('https://raw.githubusercontent.com/snapetech-org/MilkRust/catalog/visualizer-catalog.json');
 
   static final shared = VisualizerSignedCatalog();
   final VisualizerCatalogVerifier verifier;
@@ -157,19 +197,28 @@ class VisualizerSignedCatalog {
   final Map<String, VisualizerPackCatalogEntry> _history = {};
   bool get configured => verifier.trust.keys.isNotEmpty;
   bool get fresh => snapshot?.freshAt(_clock()) ?? false;
-  String get status => !configured ? 'Remote pack updates are not configured in this build.'
-      : _cacheError != null ? 'Saved catalog could not be verified. Installed presets remain available.'
-      : snapshot == null ? 'Check for signed pack updates.'
-      : fresh ? 'Signed catalog ${snapshot!.sequence}' : 'Saved catalog expired. Installed presets remain available.';
+  String get status => !configured
+      ? 'Remote pack updates are not configured in this build.'
+      : _cacheError != null
+      ? 'Saved catalog could not be verified. Installed presets remain available.'
+      : snapshot == null
+      ? 'Check for signed pack updates.'
+      : fresh
+      ? 'Signed catalog ${snapshot!.sequence}'
+      : 'Saved catalog expired. Installed presets remain available.';
 
   List<VisualizerPackCatalogEntry> get entries {
     final result = {for (final e in VisualizerPackCatalogEntry.available) e.id: e};
-    for (final e in snapshot?.entries ?? const <VisualizerPackCatalogEntry>[]) { result[e.id] = e; }
+    for (final e in snapshot?.entries ?? const <VisualizerPackCatalogEntry>[]) {
+      result[e.id] = e;
+    }
     return result.values.where((e) => !(snapshot?.isRevoked(e) ?? false)).toList();
   }
 
   List<VisualizerPackCatalogEntry> get knownEntries => [
-    ...VisualizerPackCatalogEntry.available, ..._history.values, ...entries,
+    ...VisualizerPackCatalogEntry.available,
+    ..._history.values,
+    ...entries,
   ];
 
   bool authorizes(VisualizerPackCatalogEntry entry) {
@@ -204,12 +253,16 @@ class VisualizerSignedCatalog {
       VisualizerCatalogSnapshot next;
       try {
         next = await verifier.verify(await file.readAsBytes(), _clock(), allowExpired: true);
-      } on FormatException { continue; } // Invalid files never authorize downloads.
+      } on FormatException {
+        continue;
+      } // Invalid files never authorize downloads.
       if (p.basename(file.path) != 'catalog-${next.sequence}-${next.digest}.json') continue;
       final prior = sequences.putIfAbsent(next.sequence, () => next.digest);
       if (prior != next.digest) throw const FormatException('Conflicting signed catalog revisions');
       _checkpoints[file.path] = next;
-      for (final entry in next.entries) { _history[entry.identity] = entry; }
+      for (final entry in next.entries) {
+        _history[entry.identity] = entry;
+      }
       if (snapshot == null || next.sequence > snapshot!.sequence) _snapshot = next;
     }
   }
@@ -228,21 +281,26 @@ class VisualizerSignedCatalog {
       throw const FormatException('Invalid catalog origin');
     }
     final abort = Completer<void>();
-    final deadline = Timer(const Duration(seconds: 60), () { if (!abort.isCompleted) abort.complete(); });
+    final deadline = Timer(const Duration(seconds: 60), () {
+      if (!abort.isCompleted) abort.complete();
+    });
     try {
       final request = http.AbortableRequest('GET', endpoint, abortTrigger: abort.future)..followRedirects = false;
       final response = await _client.send(request).timeout(const Duration(seconds: 20));
       if (response.statusCode != 200) throw HttpException('Catalog request failed: ${response.statusCode}');
-      if ((response.contentLength ?? 0) > VisualizerCatalogVerifier.maxEnvelopeBytes) throw const FormatException('Catalog response is too large');
+      if ((response.contentLength ?? 0) > VisualizerCatalogVerifier.maxEnvelopeBytes)
+        throw const FormatException('Catalog response is too large');
       final bytes = <int>[];
       await for (final chunk in response.stream.timeout(const Duration(seconds: 20))) {
-        if (bytes.length + chunk.length > VisualizerCatalogVerifier.maxEnvelopeBytes) throw const FormatException('Catalog response is too large');
+        if (bytes.length + chunk.length > VisualizerCatalogVerifier.maxEnvelopeBytes)
+          throw const FormatException('Catalog response is too large');
         bytes.addAll(chunk);
       }
       final next = await verifier.verify(bytes, _clock());
       final previous = snapshot;
-      if (previous != null && (next.sequence < previous.sequence ||
-          (next.sequence == previous.sequence && next.digest != previous.digest))) {
+      if (previous != null &&
+          (next.sequence < previous.sequence ||
+              (next.sequence == previous.sequence && next.digest != previous.digest))) {
         throw const FormatException('Catalog rollback or revision replacement was rejected');
       }
       final directory = await _directory();
@@ -260,13 +318,16 @@ class VisualizerSignedCatalog {
           // name, retaining every previously verified rollback checkpoint.
           if (await target.exists()) await target.delete();
           await temporary.rename(target.path);
-        } finally { if (await temporary.exists()) await temporary.delete(); }
+        } finally {
+          if (await temporary.exists()) await temporary.delete();
+        }
       }
       _checkpoints[target.path] = next;
       _snapshot = next; // Only after the authenticated checkpoint is durable.
-      for (final entry in next.entries) { _history[entry.identity] = entry; }
-      final old = _checkpoints.entries.toList()
-        ..sort((a, b) => b.value.sequence.compareTo(a.value.sequence));
+      for (final entry in next.entries) {
+        _history[entry.identity] = entry;
+      }
+      final old = _checkpoints.entries.toList()..sort((a, b) => b.value.sequence.compareTo(a.value.sequence));
       // Only verified files participate in retention. Forged filenames cannot
       // evict the highest authenticated sequence or crowd the retention set.
       for (final checkpoint in old.skip(8)) {
@@ -274,8 +335,13 @@ class VisualizerSignedCatalog {
         try {
           await File(checkpoint.key).delete();
           _checkpoints.remove(checkpoint.key);
-        } on FileSystemException { /* Retry on a later refresh. */ }
+        } on FileSystemException {
+          /* Retry on a later refresh. */
+        }
       }
-    } finally { deadline.cancel(); if (!abort.isCompleted) abort.complete(); }
+    } finally {
+      deadline.cancel();
+      if (!abort.isCompleted) abort.complete();
+    }
   }
 }

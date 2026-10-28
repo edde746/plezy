@@ -248,6 +248,43 @@ void main() {
     ]);
   });
 
+  testWidgets('single-choice catalog filters replace the selected option', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(
+      tester,
+      loader: (_) async => const [],
+      onChanged: applied.add,
+      filters: [
+        MediaFilter(
+          filter: 'genre',
+          filterType: MediaFilterType.tag,
+          key: 'genre',
+          title: 'Genre',
+          type: 'filter',
+          operators: const [LibraryFilterOperator.is_],
+          selectionLimit: 1,
+          isRequired: true,
+        ),
+      ],
+      cachedValues: {
+        'genre': [_value('1', 'Action'), _value('2', 'Comedy')],
+      },
+    );
+
+    await tester.tap(find.text('Genre'));
+    await tester.pumpAndSettle();
+    expect(find.text('Exclude'), findsNothing);
+    await tester.tap(find.text('Action'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Required'));
+    await tester.pumpAndSettle();
+    expect(applied.last, const [LibraryFilter(field: 'genre', values: ['1'])]);
+    await tester.tap(find.text('Comedy'));
+    await tester.pumpAndSettle();
+
+    expect(applied.last, const [LibraryFilter(field: 'genre', values: ['2'])]);
+  });
+
   testWidgets('the exclude row negates the clause and survives a value change', (tester) async {
     final applied = <List<LibraryFilter>>[];
     await _pumpSheet(
@@ -427,6 +464,41 @@ void main() {
     expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus, isFalse);
   });
 
+  testWidgets('required free text offers a clear way into the field and keeps a value selected', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(
+      tester,
+      loader: (_) async => const [],
+      onChanged: applied.add,
+      filters: [
+        MediaFilter(
+          filter: 'query',
+          filterType: MediaFilterType.string,
+          key: '',
+          title: 'Title',
+          type: 'filter',
+          operators: const [LibraryFilterOperator.is_],
+          isRequired: true,
+        ),
+      ],
+    );
+
+    await tester.tap(find.text('Title').first);
+    await tester.pumpAndSettle();
+    const enterTextLabel = 'Required · Type to match';
+    await tester.tap(find.text(enterTextLabel));
+    await tester.pumpAndSettle();
+    expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus, isTrue);
+
+    await tester.enterText(find.byType(TextField).first, 'Mystery');
+    await tester.pumpAndSettle();
+    expect(applied.last, const [LibraryFilter(field: 'query', values: ['Mystery'])]);
+
+    await tester.enterText(find.byType(TextField).first, '');
+    await tester.pumpAndSettle();
+    expect(applied.last, const [LibraryFilter(field: 'query', values: ['Mystery'])]);
+  });
+
   testWidgets('cached values bypass the lazy loader', (tester) async {
     var loadCount = 0;
     await _pumpSheet(
@@ -450,6 +522,7 @@ void main() {
 Future<_SheetHarness> _pumpSheet(
   WidgetTester tester, {
   required Future<List<MediaFilterValue>> Function(MediaFilter filter) loader,
+  List<MediaFilter>? filters,
   List<LibraryFilter> selectedFilters = const [],
   Map<String, List<MediaFilterValue>>? cachedValues,
   ValueChanged<List<LibraryFilter>>? onChanged,
@@ -475,7 +548,7 @@ Future<_SheetHarness> _pumpSheet(
                   valueListenable: config,
                   builder: (_, value, _) => FiltersBottomSheet(
                     key: const ValueKey('filters-sheet'),
-                    filters: _filters,
+                    filters: filters ?? _filters,
                     selectedFilters: value.selectedFilters,
                     onFiltersChanged: onChanged ?? (_) {},
                     serverId: value.serverId,

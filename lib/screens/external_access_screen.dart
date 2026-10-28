@@ -12,12 +12,16 @@ import '../integrations/integration_preferences_store.dart';
 import '../profiles/active_profile_provider.dart';
 import '../services/book_identifiers.dart';
 import '../services/comic_commerce_link_client.dart';
+import '../services/music/apple_music_kit_client.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/watchmode_availability_client.dart';
 import '../services/external_access_directory.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/focused_scroll_scaffold.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/settings_section.dart';
+import '../utils/platform_detector.dart';
 
 /// Title-aware official-site handoff. Provider pages make the final offer,
 /// territory, account and access decision; this screen never implies that a
@@ -28,6 +32,8 @@ class ExternalAccessScreen extends StatefulWidget {
     required this.title,
     this.creator = '',
     this.identifiers = const {},
+    this.tmdbType,
+    this.tmdbId,
     this.gamePlatformIds = const {},
     required this.categories,
   });
@@ -35,6 +41,8 @@ class ExternalAccessScreen extends StatefulWidget {
   final String title;
   final String creator;
   final Map<String, String> identifiers;
+  final String? tmdbType;
+  final int? tmdbId;
   final Map<String, String> gamePlatformIds;
   final List<ExternalAccessCategory> categories;
 
@@ -71,17 +79,28 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
   final TextEditingController _filter = TextEditingController();
   final IntegrationPreferencesStore _preferences = IntegrationPreferencesStore();
   final ComicCommerceLinkClient _commerceLinks = ComicCommerceLinkClient();
+  final WatchmodeAvailabilityClient _watchmode = WatchmodeAvailabilityClient();
+  final AppleMusicKitClient _appleMusic = AppleMusicKitClient();
   String? _profileId;
   String? _countryCode;
   Set<String> _preferredProviderIds = const {};
   Map<String, String> _subscriptionTiers = const {};
   bool _savingCountry = false;
+  bool _dependenciesInitialized = false;
+  bool _watchmodeLoading = false;
+  int _availabilityGeneration = 0;
+  WatchmodeAvailabilityResult? _watchmodeResult;
+  bool _appleMusicLoading = false;
+  AppleMusicSong? _appleMusicPlaying;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final profileId = Provider.of<ActiveProfileProvider?>(context)?.activeId;
-    if (profileId == _profileId) return;
+    if (_dependenciesInitialized && profileId == _profileId) return;
+    if (_dependenciesInitialized && _appleMusicPlaying != null) unawaited(_stopAppleMusic());
+    _dependenciesInitialized = true;
+    _availabilityGeneration++;
     _profileId = profileId;
     _countryCode = _defaultCountryCode();
     _savingCountry = false;
@@ -102,6 +121,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
           _subscriptionTiers = const {};
         });
       }
+      unawaited(_loadWatchmodeAvailability());
       return;
     }
     try {
@@ -112,6 +132,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
         _preferredProviderIds = preference.preferredProviderIds.toSet();
         _subscriptionTiers = Map.unmodifiable(preference.subscriptionTiers);
       });
+      unawaited(_loadWatchmodeAvailability());
     } on Object {
       if (mounted && _profileId == profileId) {
         setState(() {
@@ -119,6 +140,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
           _preferredProviderIds = const {};
           _subscriptionTiers = const {};
         });
+        unawaited(_loadWatchmodeAvailability());
       }
     }
   }
@@ -130,6 +152,7 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
       _countryCode = countryCode;
       _savingCountry = true;
     });
+    unawaited(_loadWatchmodeAvailability());
     try {
       if (profileId != null) await _preferences.setCountryCode(profileId, countryCode);
     } on Object {
@@ -212,6 +235,249 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
     }
   }
 
+  Future<void> _loadWatchmodeAvailability() async {
+    final type = widget.tmdbType?.toLowerCase();
+    final tmdbId = widget.tmdbId;
+    if ((type != 'movie' && type != 'tv') ||
+        tmdbId == null ||
+        !widget.categories.contains(ExternalAccessCategory.video) ||
+        widget.title.trim().isEmpty) {
+      if (mounted) {
+        setState(() {
+          _watchmodeResult = null;
+          _watchmodeLoading = false;
+        });
+      }
+      return;
+    }
+
+    final generation = ++_availabilityGeneration;
+    final region = (_countryCode ?? _defaultCountryCode()).toUpperCase();
+    if (mounted) {
+      setState(() {
+        _watchmodeLoading = true;
+        _watchmodeResult = null;
+      });
+    }
+    final result = await _watchmode.lookup(tmdbType: type, tmdbId: tmdbId, region: region);
+    if (!mounted || generation != _availabilityGeneration || region != (_countryCode ?? _defaultCountryCode())) {
+      return;
+    }
+    setState(() {
+      _watchmodeResult = result;
+      _watchmodeLoading = false;
+    });
+  }
+
+  Uri? _watchmodeUri(WatchmodeAvailabilitySource source) {
+    final raw = PlatformDetector.isTV()
+        ? (PlatformDetector.isAppleTV()
+              ? (source.tvosUrl ?? source.webUrl)
+              : (Theme.of(context).platform == TargetPlatform.android
+                    ? (source.androidTvUrl ?? source.webUrl)
+                    : source.webUrl))
+        : switch (Theme.of(context).platform) {
+            TargetPlatform.iOS => source.iosUrl ?? source.webUrl,
+            TargetPlatform.android => source.androidUrl ?? source.webUrl,
+            _ => source.webUrl,
+          };
+    if (raw == null || raw.length > 2048) return null;
+    final uri = Uri.tryParse(raw);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        uri.hasPort) {
+      return null;
+    }
+    return uri;
+  }
+
+  ExternalAccessDestination? _watchmodeDestination(WatchmodeAvailabilitySource source) {
+    final uri = _watchmodeUri(source);
+    if (uri == null) return null;
+
+    final candidates = [
+      ...ExternalAccessDirectory.forCategory(ExternalAccessCategory.video),
+      ...ExternalAccessDirectory.forCategory(ExternalAccessCategory.rentals),
+    ];
+    final host = uri.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+    for (final destination in candidates) {
+      final registered = destination.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+      if (host != registered && !host.endsWith('.' + registered)) continue;
+      final provider = destination.integrationDefinition((_countryCode ?? _defaultCountryCode()).toLowerCase());
+      final decision = ActionPolicyEvaluator.evaluate(
+        provider: provider,
+        target: OfficialExternalTarget(providerId: destination.id, uri: uri),
+        action: AccessAction.open,
+        channel: DistributionChannel.unknown,
+        countryCode: _countryCode ?? _defaultCountryCode(),
+        entityKind: widget.tmdbType == 'movie' ? IntegrationEntityKind.movie : IntegrationEntityKind.series,
+        now: DateTime.now(),
+      );
+      if (decision.decision == PolicyDecision.allowed) return destination;
+    }
+    return null;
+  }
+
+  Future<void> _openWatchmodeSource(WatchmodeAvailabilitySource source) async {
+    final target = _watchmodeUri(source);
+    if (target == null || _watchmodeDestination(source) == null) return;
+    try {
+      if (await launchUrl(target, mode: LaunchMode.externalApplication)) return;
+    } on Object {
+      // The existing error feedback covers a missing platform handler.
+    }
+    if (mounted) showErrorSnackBar(context, t.common.error);
+  }
+
+  Widget _buildWatchmodeSection() {
+    final result = _watchmodeResult;
+    if (result == null || result.sources.isEmpty) return const SizedBox.shrink();
+    final sources = result.sources.toList()
+      ..sort((a, b) {
+        final aDestination = _watchmodeDestination(a)?.id;
+        final bDestination = _watchmodeDestination(b)?.id;
+        final aPreferred = aDestination != null && _preferredProviderIds.contains(aDestination);
+        final bPreferred = bDestination != null && _preferredProviderIds.contains(bDestination);
+        if (aPreferred != bPreferred) return aPreferred ? -1 : 1;
+        return a.name.compareTo(b.name);
+      });
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsGroup(
+          title: t.explore.detail.watchOn,
+          children: [
+            for (final source in sources)
+              FocusableListTile(
+                leading: const AppIcon(Symbols.play_circle_outline_rounded),
+                title: Text(source.name),
+                subtitle: Text(
+                  [
+                    source.typeLabel,
+                    source.region,
+                    if (source.price case final price?) price,
+                    if (source.format case final format?) format,
+                  ].join(' · '),
+                ),
+                trailing: _watchmodeDestination(source) == null ? null : const AppIcon(Symbols.open_in_new_rounded),
+                onTap: _watchmodeDestination(source) == null ? null : () => _openWatchmodeSource(source),
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 2, bottom: 8),
+          child: Text('Streaming availability powered by Watchmode', style: Theme.of(context).textTheme.bodySmall),
+        ),
+      ],
+    );
+  }
+
+  bool get _showAppleMusic => _appleMusic.isAvailable && widget.categories.contains(ExternalAccessCategory.music);
+
+  Future<void> _searchAppleMusic() async {
+    if (_appleMusicLoading || !_showAppleMusic) return;
+    setState(() => _appleMusicLoading = true);
+    try {
+      if (!await _appleMusic.requestAuthorization()) {
+        if (mounted) showErrorSnackBar(context, t.common.error);
+        return;
+      }
+      final query = [widget.title.trim(), widget.creator.trim()].where((part) => part.isNotEmpty).join(' ');
+      final songs = await _appleMusic.search(query);
+      if (!mounted) return;
+      final selected = await showModalBottomSheet<AppleMusicSong>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * 0.68,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                  child: Text('Apple Music', style: Theme.of(sheetContext).textTheme.titleLarge),
+                ),
+                if (songs.isEmpty)
+                  Expanded(child: Center(child: Text(t.messages.noResultsFound)))
+                else
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        for (final song in songs)
+                          FocusableListTile(
+                            leading: const AppIcon(Symbols.play_circle_outline_rounded),
+                            title: Text(song.title),
+                            subtitle: Text([song.artist, if (song.album case final album?) album].join(' · ')),
+                            onTap: () => Navigator.of(sheetContext).pop(song),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (selected == null || !mounted) return;
+      if (!await _appleMusic.canPlayCatalogContent()) {
+        if (mounted) showErrorSnackBar(context, t.common.error);
+        return;
+      }
+      final localPlayer = Provider.of<MusicPlaybackService?>(context, listen: false);
+      if (localPlayer != null && localPlayer.status != MusicPlaybackStatus.idle) {
+        await localPlayer.stop();
+      }
+      await _appleMusic.play(selected);
+      if (mounted) setState(() => _appleMusicPlaying = selected);
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t.common.error);
+    } finally {
+      if (mounted) setState(() => _appleMusicLoading = false);
+    }
+  }
+
+  Future<void> _stopAppleMusic() async {
+    try {
+      await _appleMusic.stop();
+    } on Object {
+      // The provider may be unavailable after a profile or platform transition.
+    }
+    if (mounted) setState(() => _appleMusicPlaying = null);
+  }
+
+  Widget _buildAppleMusicSection() {
+    if (!_showAppleMusic) return const SizedBox.shrink();
+    return SettingsGroup(
+      title: 'Apple Music',
+      children: [
+        FocusableListTile(
+          leading: const AppIcon(Symbols.music_note_rounded),
+          title: Text(t.lending.search),
+          subtitle: const Text('Apple Music'),
+          trailing: _appleMusicLoading
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const AppIcon(Symbols.search_rounded),
+          onTap: _appleMusicLoading ? null : _searchAppleMusic,
+        ),
+        if (_appleMusicPlaying case final song?)
+          FocusableListTile(
+            leading: const AppIcon(Symbols.music_note_rounded),
+            title: Text(song.title),
+            subtitle: Text(song.artist),
+            trailing: IconButton(
+              tooltip: 'Stop',
+              onPressed: _stopAppleMusic,
+              icon: const AppIcon(Symbols.stop_rounded),
+            ),
+          ),
+      ],
+    );
+  }
+
   String _sectionLabel(ExternalAccessCategory category) => switch (category) {
     ExternalAccessCategory.video => t.explore.detail.watchOn,
     ExternalAccessCategory.rentals => t.explore.detail.links,
@@ -232,8 +498,10 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
 
   @override
   void dispose() {
+    _availabilityGeneration++;
     _filter.dispose();
     _commerceLinks.dispose();
+    _watchmode.dispose();
     super.dispose();
   }
 
@@ -315,7 +583,11 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                 return a.name.compareTo(b.name);
               }),
     };
-    final hasResults = destinationsByCategory.values.any((destinations) => destinations.isNotEmpty);
+    final hasResults =
+        destinationsByCategory.values.any((destinations) => destinations.isNotEmpty) ||
+        _watchmodeLoading ||
+        (_watchmodeResult?.sources.isNotEmpty ?? false) ||
+        _showAppleMusic;
     return FocusedScrollScaffold(
       title: Text(t.explore.detail.links),
       slivers: [
@@ -370,6 +642,16 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
                       : (countryCode) => countryCode == null ? null : _setCountry(countryCode),
                 ),
                 const SizedBox(height: 12),
+                if (_watchmodeLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: LinearProgressIndicator(),
+                  ),
+                if (_watchmodeResult?.sources.isNotEmpty ?? false) ...[
+                  _buildWatchmodeSection(),
+                  const SizedBox(height: 8),
+                ],
+                if (_showAppleMusic) ...[_buildAppleMusicSection(), const SizedBox(height: 8)],
                 for (final category in widget.categories)
                   if (destinationsByCategory[category]!.isNotEmpty)
                     SettingsGroup(

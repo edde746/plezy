@@ -100,6 +100,7 @@ class TvSpotlightScaffold extends StatelessWidget {
     required this.resolveClient,
     required this.foreground,
     this.hideSpoilers,
+    this.additionalForegroundHeight = 0,
   });
 
   final List<MediaHub> hubs;
@@ -109,6 +110,7 @@ class TvSpotlightScaffold extends StatelessWidget {
   final Widget foreground;
 
   final bool? hideSpoilers;
+  final double additionalForegroundHeight;
 
   /// The spotlighted item only carries its own data, not which hub it came
   /// from — needed to check that hub's Hero setting, the same way
@@ -149,7 +151,7 @@ class TvSpotlightScaffold extends StatelessWidget {
             widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (8 * scale);
+    final minimumSpotlightBottom = railHeight + additionalForegroundHeight + (8 * scale);
     final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
     final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
         ? minimumSpotlightBottom

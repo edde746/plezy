@@ -20,6 +20,9 @@ import '../../widgets/hardcover_shelf_status.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
+import '../../sources/source_video_session.dart';
+import '../../providers/playback_state_provider.dart';
+import '../../media/play_queue.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
@@ -31,6 +34,7 @@ import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/services_settings_screen.dart';
+import '../video_player_screen.dart';
 import '../external_access_screen.dart';
 import 'publication_reader_screen.dart';
 import 'source_notes_screen.dart';
@@ -106,12 +110,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             mode: PublicationMode.listening,
             session: const Uuid().v4(),
           ),
-        if (_entry.kind == SourceItemKind.video && _entry.files.any((f) => !f.sampleOnly))
+        for (final file in _entry.files.where((file) => file.kind == SourceItemKind.video && !file.sampleOnly))
           PublicationProgress(
             entryKey: _entry.key,
-            edition: sourceDigest(
-              jsonEncode(_entry.files.where((f) => !f.sampleOnly).map((f) => f.fingerprint).toList()),
-            ),
+            edition: sourceDigest(jsonEncode([file.fingerprint])),
             mode: PublicationMode.watching,
             session: const Uuid().v4(),
           ),
@@ -489,12 +491,17 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   }
 
   Future<void> _play(List<PublicationFile> files) async {
-    final playback = context.read<SourcePlayback>();
-    final sources = context.read<SourceController>();
+    if (files.isEmpty) return;
     final sampleOnly = files.isNotEmpty && files.every((file) => file.sampleOnly);
     if (sampleOnly && files.length != 1) {
       throw const SourceException(SourceFailure.unsupported);
     }
+    if (!sampleOnly && files.every((file) => file.kind == SourceItemKind.video)) {
+      await _playSharedVideo(files);
+      return;
+    }
+    final playback = context.read<SourcePlayback>();
+    final sources = context.read<SourceController>();
     await playback.start(
       _entry,
       files,
@@ -510,6 +517,38 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           builder: (_) => const SourcePlayerScreen(),
         ),
       );
+    }
+    if (mounted) await _load();
+  }
+
+  Future<void> _playSharedVideo(List<PublicationFile> files) async {
+    final sources = context.read<SourceController>();
+    final playbackState = context.read<PlaybackStateProvider>();
+    final sourcePlayback = context.read<SourcePlayback>();
+    final session = await SourceVideoSession.open(sources, _entry, files);
+    try {
+      await sourcePlayback.stop();
+      final descriptor = await session.resolve(session.items.first);
+      if (!mounted || !session.valid) throw const SourceException(SourceFailure.cancelled);
+      playbackState.setPlaybackFromLocalQueue(
+        LocalPlayQueue(items: session.items, currentIndex: 0),
+        contextKey: session.contextKey,
+        externalSourceResolvers: {for (final item in session.items) item.globalKey: session.resolve},
+      );
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'source-video-player'),
+          builder: (_) => VideoPlayerScreen(
+            metadata: session.items.first,
+            externalPlaybackSource: descriptor,
+            initialPosition: descriptor.initialPosition,
+          ),
+        ),
+      );
+    } finally {
+      if (playbackState.shuffleContextKey == session.contextKey) playbackState.clearShuffle();
+      await session.close();
     }
     if (mounted) await _load();
   }

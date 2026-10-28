@@ -20,6 +20,7 @@ import '../focus/key_event_utils.dart';
 import '../focus/back_press.dart';
 import '../focus/input_mode_tracker.dart';
 
+import '../discovery/discovery_choice.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
@@ -70,6 +71,7 @@ import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
 import 'discovery/find_next_screen.dart';
+import 'discovery/remote_cloud_home_rail.dart';
 import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
@@ -135,6 +137,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final Map<String, GlobalKey<HeroHubSectionState>> _heroHubKeysByIdentity = {};
   List<GlobalKey<HeroHubSectionState>?> _orderedHeroHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
+  final _tvCloudRailKey = GlobalKey<RemoteCloudHomeRailState>();
+  bool _hasTvCloudItems = false;
   final _hubFocusMemory = HubFocusMemory();
 
   late FocusNode _heroFocusNode;
@@ -152,6 +156,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
     return context.tryGetMediaClientForServer(ServerId(serverId));
   }
+
+  Set<String> _videoIdentitiesInHubs(Iterable<MediaHub> hubs) => {
+    for (final hub in hubs)
+      for (final item in hub.items) ...canonicalVideoIdentitiesForMediaItem(item),
+  };
 
   String _hubIdentity(MediaHub hub) => '${hub.serverId ?? ''}:${hub.identifier ?? hub.id}';
 
@@ -299,6 +308,28 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     } else {
       rail.requestFocus();
     }
+  }
+
+  void _focusFirstTvBrowseItem() {
+    if (_tvBrowseHubs.isEmpty) {
+      _focusTopActions();
+      return;
+    }
+    _focusTvBrowseRailWhenReady(immediate: true, initial: true);
+  }
+
+  void _focusCloudRailOrTopActions() {
+    final cloudRail = _tvCloudRailKey.currentState;
+    if (cloudRail?.hasEntries == true) {
+      cloudRail!.requestFirstCardFocus();
+    } else {
+      _focusTopActions();
+    }
+  }
+
+  void _onTvCloudEntriesChanged(bool hasEntries) {
+    if (!mounted || _hasTvCloudItems == hasEntries) return;
+    setState(() => _hasTvCloudItems = hasEntries);
   }
 
   /// A rail-focus request stays armed while the rail has no hubs to focus
@@ -1083,6 +1114,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       slivers: [
         if (!isTv) SliverToBoxAdapter(child: SizedBox(height: topSpacerHeight)),
         if (showLegacyHero) _buildHeroSection(),
+        SliverToBoxAdapter(
+          child: RemoteCloudHomeRail(
+            representedIdentities: _videoIdentitiesInHubs(_hubs),
+            representedItems: _hubs.expand((hub) => hub.items).toList(),
+          ),
+        ),
         if (_isLoading) LoadingIndicatorBox.sliver,
         if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
         if (!_isLoading && _errorMessage == null) ...[
@@ -1222,7 +1259,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           : hub.isNextUpHub
           ? _discover.loadAllNextUp
           : null,
-      onNavigateUp: _focusTopActions,
+      onNavigateUp: _focusCloudRailOrTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
       widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
@@ -1276,6 +1313,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       resolveSpotlight: () => _spotlight.resolve(browseHubs),
       resolveClient: _getMediaClientForItem,
       hideSpoilers: hideSpoilers,
+      additionalForegroundHeight: _hasTvCloudItems ? 218 * TvLayoutConstants.scaleOf(context) : 0,
       foreground: Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,
@@ -1295,13 +1333,27 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               subtitle: t.discover.addMediaToLibraries,
               icon: Symbols.movie_rounded,
             ),
-          if (browseHubs.isNotEmpty)
-            PositionedDirectional(
-              start: 0,
-              end: 0,
-              bottom: 0,
-              child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
+          PositionedDirectional(
+            start: 0,
+            end: 0,
+            bottom: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RemoteCloudHomeRail(
+                  key: _tvCloudRailKey,
+                  tvMode: true,
+                  representedIdentities: _videoIdentitiesInHubs(browseHubs),
+                  representedItems: browseHubs.expand((hub) => hub.items).toList(),
+                  onNavigateUp: _focusTopActions,
+                  onNavigateDown: _focusFirstTvBrowseItem,
+                  onEntriesChanged: _onTvCloudEntriesChanged,
+                ),
+                if (browseHubs.isNotEmpty)
+                  _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
+              ],
             ),
+          ),
           _cachedTvToolbarOverlay(),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],

@@ -88,7 +88,7 @@ def inspect_package(path, arch, *, signed=True):
         if not re.fullmatch(r'\d+\.\d+\.\d+', version):
             raise ValueError('Expected numeric Tizen version')
         libraries = [n for n in names if n.endswith('.so') or '.so.' in n]
-        required = {'libapp.so', 'libplezy_sqlite3.so', 'libdart_smb2.so',
+        required = {'libapp.so', 'libplezy_sqlite3.so', 'libdart_smb2.so', 'libplezy_torrent.so',
                     'libflutter_engine.so', 'libflutter_tizen_tv.so', 'libflutter_plugins.so',
                     'libftpw_video_player_videohole.so'}
         if not required <= {PurePosixPath(n).name for n in libraries}:
@@ -183,8 +183,13 @@ target_link_options(plezy_sqlite3 PRIVATE "-Wl,-Bsymbolic-functions")
     run('cmake', '-S', sqlite, '-B', out / 'sqlite-build', f'-DCMAKE_TOOLCHAIN_FILE={toolchain}', '-DCMAKE_BUILD_TYPE=Release')
     run('cmake', '--build', out / 'sqlite-build', '--parallel', args.jobs)
     shutil.copyfile(out / 'sqlite-build/libplezy_sqlite3.so', out / 'libplezy_sqlite3.so')
+    run('cmake', '-S', ROOT / 'packages/plezy_torrent/src', '-B', out / 'torrent-build',
+        f'-DCMAKE_TOOLCHAIN_FILE={toolchain}', '-DCMAKE_BUILD_TYPE=Release',
+        f'-DFETCHCONTENT_BASE_DIR={sources / "torrent-dependencies"}')
+    run('cmake', '--build', out / 'torrent-build', '--parallel', args.jobs)
+    shutil.copyfile(out / 'torrent-build/libplezy_torrent.so', out / 'libplezy_torrent.so')
     report = {'architecture': args.arch, 'pins': PINS, 'libraries': {}}
-    for name in ('libplezy_sqlite3.so', 'libdart_smb2.so'):
+    for name in ('libplezy_sqlite3.so', 'libdart_smb2.so', 'libplezy_torrent.so'):
         path = out / name
         if elf_arch(path.read_bytes()[:64]) != args.arch:
             raise ValueError('Toolchain produced the wrong architecture')
@@ -210,11 +215,11 @@ def stage(source, destination, native_dir, arch):
         raise ValueError('Native inputs do not match the pinned toolchain/architecture')
     native_target = destination / 'tizen/lib'
     native_target.mkdir(parents=True, exist_ok=True)
-    for name in ('libdart_smb2.so', 'libplezy_sqlite3.so'):
+    for name in ('libdart_smb2.so', 'libplezy_sqlite3.so', 'libplezy_torrent.so'):
         path = native_dir / name
         if sha256(path) != report['libraries'][name] or elf_arch(path.read_bytes()[:64]) != arch:
             raise ValueError(f'Native input mismatch: {name}')
-        dest = native_target / name if name == 'libplezy_sqlite3.so' else destination / 'build-inputs' / name
+        dest = native_target / name if name in {'libplezy_sqlite3.so', 'libplezy_torrent.so'} else destination / 'build-inputs' / name
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, dest)
     icon = destination / 'tizen/shared/res/plezyng.png'

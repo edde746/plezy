@@ -92,6 +92,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$trakt$ko trakt = _Translations$trakt$ko._(_root);
 	@override late final _Translations$seerr$ko seerr = _Translations$seerr$ko._(_root);
 	@override late final _Translations$services$ko services = _Translations$services$ko._(_root);
+	@override late final _Translations$streaming$ko streaming = _Translations$streaming$ko._(_root);
 	@override late final _Translations$addServer$ko addServer = _Translations$addServer$ko._(_root);
 	@override late final _Translations$cast$ko cast = _Translations$cast$ko._(_root);
 	@override late final _Translations$automation$ko automation = _Translations$automation$ko._(_root);
@@ -2791,6 +2792,119 @@ class _Translations$services$ko extends Translations$services$en {
 	@override late final _Translations$services$libraryFilter$ko libraryFilter = _Translations$services$libraryFilter$ko._(_root);
 	@override String get seerrDescription => 'Seerr 또는 Overseerr에 연결하여 제목을 검색하고 미디어 요청을 제출합니다.';
 	@override late final _Translations$services$trackerDescriptions$ko trackerDescriptions = _Translations$services$trackerDescriptions$ko._(_root);
+}
+
+// Path: streaming
+class _Translations$streaming$ko extends Translations$streaming$en {
+	_Translations$streaming$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '클라우드 및 애드온 스트리밍';
+	@override String get subtitle => 'Debrid 계정을 연결하면 클라우드 파일을 찾아보고 지원되는 스트림을 재생할 수 있습니다. Stremio 호환 애드온은 영화 및 에피소드 페이지에 스트림 옵션을 제공합니다. 연결 정보는 이 기기에서 암호화되어 이 프로필에 저장됩니다.';
+	@override String connectionsConfigured({required Object count}) => '연결된 소스: ${count}';
+	@override String get settingsLoadFailed => 'PlezyNG에서 저장된 스트리밍 설정을 잠금 해제하지 못했습니다. 연결을 변경하기 전에 기기 잠금을 해제한 뒤 다시 시도하세요.';
+	@override String get settingsUnreadable => 'PlezyNG에서 저장된 연결을 잠금 해제하지 못했습니다. 삭제한 뒤 서비스를 다시 연결하세요.';
+	@override String get clearUnreadableSettings => '저장된 설정 지우기';
+	@override String get clearUnreadableSettingsConfirm => '저장된 스트리밍 설정을 지울까요?';
+	@override String get clearUnreadableSettingsBody => '이 프로필에 저장된 모든 제공업체 계정과 애드온 주소가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.';
+	@override String get clearUnreadableSettingsFailed => '저장된 스트리밍 설정을 지우지 못했습니다. 기기 잠금을 해제한 뒤 다시 시도하세요.';
+	@override String get retrySettingsLoad => '연결 다시 불러오기';
+	@override String get addons => 'Stremio 호환 애드온';
+	@override String get addonsDescription => 'Stremio에서 애드온을 가져오거나 매니페스트 URL로 연결하세요. 탐색에서 카탈로그를 둘러보고 영화 또는 에피소드 페이지에서 스트림 옵션을 여세요.';
+	@override String get catalogLoadFailed => '카탈로그를 불러오지 못했습니다. 새로고침한 뒤 다시 시도하세요.';
+	@override String get catalogFiltersRequired => '이 카탈로그를 둘러보려면 필수 필터를 선택하세요.';
+	@override String get catalogRequiredLabel => '필수';
+	@override String get importFromStremio => 'Stremio에서 가져오기';
+	@override String get stremioImportInstructions => 'QR 코드를 스캔하거나 링크를 여세요. Stremio에 로그인하고 요청을 승인하세요. PlezyNG는 애드온 목록만 읽으며 Stremio 비밀번호를 묻거나 설정을 변경하지 않습니다.';
+	@override String get stremioImportOpen => 'Stremio 링크 열기';
+	@override String get stremioImportCode => '연결 코드';
+	@override String get stremioImportPreviewTitle => '애드온 선택';
+	@override String get stremioImportPreviewBody => 'PlezyNG에 연결할 애드온을 선택하세요. 이 가져오기에서는 HTTPS 주소만 허용됩니다.';
+	@override String stremioImportIgnored({required Object count}) => '지원되지 않거나 안전하지 않은 주소로 건너뛴 애드온: ${count}.';
+	@override String get stremioCatalogs => '카탈로그';
+	@override String get stremioStreams => '스트림';
+	@override String stremioImportAddSelected({required Object count}) => '선택 항목 추가 (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Stremio에서 연결한 애드온: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => '연결한 애드온: ${added}; 연결 실패: ${failed}.';
+	@override String get stremioImportFailed => 'Stremio에서 애드온을 가져오지 못했습니다. 다시 시도하세요.';
+	@override String get stremioImportTimedOut => 'Stremio 승인이 만료되었습니다. 가져오기를 다시 시작하세요.';
+	@override String get stremioImportEmpty => '이 Stremio 계정에서 새 호환 애드온을 찾지 못했습니다.';
+	@override String get stremioImportLimitReached => '애드온을 더 가져오기 전에 하나를 삭제하세요.';
+	@override String get addByManifestUrl => '매니페스트 URL로 추가';
+	@override String get addAddon => '애드온 추가';
+	@override String get manifestUrl => '애드온 매니페스트 URL';
+	@override String get manifestUrlHint => '애드온 매니페스트 URL을 붙여넣으세요. 연결 전에 PlezyNG가 지원되는 카탈로그 또는 스트림 리소스를 확인합니다.';
+	@override String get allowHttp => '암호화되지 않은 HTTP 주소 허용';
+	@override String get allowHttpDescription => '비공개 네트워크에서 신뢰하는 애드온에만 사용하세요.';
+	@override String get installAddon => '애드온 연결';
+	@override String get addonInstalled => '애드온 연결됨';
+	@override String get addonRemoved => '애드온 삭제됨';
+	@override String get addonToggle => '애드온 사용 설정';
+	@override String get addonEmpty => '연결된 애드온이 없습니다';
+	@override String get addonError => 'PlezyNG에서 이 애드온에 연결하지 못했습니다. 매니페스트 URL을 확인하고 다시 시도하세요.';
+	@override String get addonPrivacy => '신뢰하는 애드온만 연결하세요. 검색할 때 애드온은 검색한 제목을 받고 타사 스트림 링크를 반환할 수 있습니다.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Real-Debrid 계정으로 지원되는 토렌트 스트림을 재생하세요.';
+	@override String get connectRealDebrid => 'QR 코드로 연결';
+	@override String get disconnectRealDebrid => 'Real-Debrid 연결 해제';
+	@override String realDebridConnected({required Object username}) => '${username} 계정으로 연결됨';
+	@override String get realDebridInstructions => 'QR 코드를 스캔하거나 링크를 연 다음 이 활성화 코드를 입력해 PlezyNG를 연결하세요:';
+	@override String get realDebridActivate => 'Real-Debrid를 열어 활성화';
+	@override String get realDebridCode => '활성화 코드';
+	@override String get realDebridConnectFailed => 'Real-Debrid에 연결하지 못했습니다. 다시 시도하세요.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'AllDebrid 계정으로 지원되는 토렌트 스트림을 재생하세요.';
+	@override String get connectAllDebrid => 'QR 코드로 연결';
+	@override String get allDebridInstructions => 'QR 코드를 스캔하거나 링크를 열어 PlezyNG를 승인하세요. 연결되는 동안 이 화면을 열어 두세요:';
+	@override String get allDebridActivate => 'AllDebrid를 열어 활성화';
+	@override String get allDebridCode => '활성화 PIN';
+	@override String get allDebridConnectFailed => 'AllDebrid에 연결하지 못했습니다. 다시 시도하세요.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Premiumize에서 캐시된 토렌트 스트림을 재생하거나 파일을 둘러보세요.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'TorBox에서 캐시된 토렌트 스트림을 재생하거나 파일을 둘러보세요.';
+	@override String get connectApiKey => 'API 키로 연결';
+	@override String apiKeyTitle({required Object service}) => '${service} 연결';
+	@override String get apiKey => 'API 키';
+	@override String apiKeyHint({required Object service}) => '${service} 계정 설정의 API 키를 붙여넣으세요. PlezyNG는 이 기기에서 키를 암호화해 이 프로필에 저장합니다.';
+	@override String get apiKeyConnectFailed => '이 API 키를 확인하지 못했습니다. 키를 확인한 뒤 다시 시도하세요.';
+	@override String accountConnected({required Object username}) => '${username} 계정으로 연결됨';
+	@override String get streamNeedsProvider => '이 토렌트 스트림을 재생하려면 Debrid 서비스를 연결하세요.';
+	@override String get playViaProvider => 'Debrid로 재생';
+	@override String disconnectConfirm({required Object service}) => '${service} 연결을 해제할까요?';
+	@override String get disconnectBody => 'PlezyNG가 이 기기의 권한을 삭제합니다. 제공업체에 저장된 파일과 진행 중인 전송은 변경되지 않습니다.';
+	@override String get streamsTitle => '스트림 선택';
+	@override String get searchingStreams => '연결된 애드온 확인 중…';
+	@override String get noStreams => '이 제목에 사용할 스트림을 찾지 못했습니다.';
+	@override String get manageConnections => '스트리밍 서비스 관리';
+	@override String subtitleTracks({required Object count}) => '자막 트랙: ${count}';
+	@override String get chooseSubtitle => '자막 선택';
+	@override String get chooseProvider => 'Debrid 서비스 선택';
+	@override String get subtitleOff => '자막 끄기';
+	@override String get subtitleLoadFailed => '자막을 불러오지 못했습니다. 다른 트랙을 시도하세요.';
+	@override String get subtitleApplied => '재생할 자막을 선택했습니다';
+	@override String get streamLookupPartial => '일부 애드온에 연결할 수 없습니다.';
+	@override String get streamLookupFailed => '연결된 애드온을 확인하지 못했습니다.';
+	@override String get streamOpenExternal => '외부 링크 열기';
+	@override String get streamPrepare => 'Debrid 서비스로 준비 중…';
+	@override String get streamPrepareFailed => '스트림을 준비하지 못했습니다. 연결된 계정을 확인하고 다른 소스를 시도하세요.';
+	@override String get streamNeedsRealDebrid => '이 토렌트 스트림을 재생하려면 Debrid 서비스를 연결하세요.';
+	@override String get streamUnsupported => '앱 내 플레이어에서 이 스트림 형식을 지원하지 않습니다.';
+	@override String get remoteNeedsEpisode => '스트림을 검색하기 전에 에피소드를 선택하세요.';
+	@override String get remoteNeedsEpisodeNumber => '이 에피소드에 시즌 또는 에피소드 번호가 없습니다.';
+	@override String get remoteNeedsExternalId => 'PlezyNG에서 이 제목의 IMDb 또는 TMDB ID를 찾지 못했습니다.';
+	@override String get watchWithServices => '연결된 서비스로 시청';
+	@override String get chooseEpisode => '에피소드 선택';
+	@override String get episodes => '에피소드';
+	@override String episodePosition({required Object season, required Object episode}) => '시즌 ${season}, 에피소드 ${episode}';
+	@override String get episodeStreamHint => '이 에피소드에서 이용할 수 있는 스트림을 엽니다.';
+	@override String get cloudFiles => '클라우드 파일';
+	@override String get browseCloud => '파일 둘러보기';
+	@override String get cloudEmpty => '이 계정에서 재생할 수 있는 동영상 파일을 찾지 못했습니다.';
+	@override String get cloudLoadFailed => '클라우드 파일을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.';
+	@override String get providers => 'Debrid 제공업체';
 }
 
 // Path: addServer
@@ -7737,6 +7851,110 @@ extension on TranslationsKo {
 			'services.trackerDescriptions.anilist' => '애니메이션 목록을 동기화하고 AniList와 함께 진행을 지켜보십시오.',
 			'services.trackerDescriptions.simkl' => 'Sync는 Simkl와 함께 영화, TV 쇼 및 애니메이션을 보았습니다.',
 			'services.trackerDescriptions.mdblist' => '추천 및 탐색에서 MDBList 등급 및 목록을 표시합니다.',
+			'streaming.title' => '클라우드 및 애드온 스트리밍',
+			'streaming.subtitle' => 'Debrid 계정을 연결하면 클라우드 파일을 찾아보고 지원되는 스트림을 재생할 수 있습니다. Stremio 호환 애드온은 영화 및 에피소드 페이지에 스트림 옵션을 제공합니다. 연결 정보는 이 기기에서 암호화되어 이 프로필에 저장됩니다.',
+			'streaming.connectionsConfigured' => ({required Object count}) => '연결된 소스: ${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG에서 저장된 스트리밍 설정을 잠금 해제하지 못했습니다. 연결을 변경하기 전에 기기 잠금을 해제한 뒤 다시 시도하세요.',
+			'streaming.settingsUnreadable' => 'PlezyNG에서 저장된 연결을 잠금 해제하지 못했습니다. 삭제한 뒤 서비스를 다시 연결하세요.',
+			'streaming.clearUnreadableSettings' => '저장된 설정 지우기',
+			'streaming.clearUnreadableSettingsConfirm' => '저장된 스트리밍 설정을 지울까요?',
+			'streaming.clearUnreadableSettingsBody' => '이 프로필에 저장된 모든 제공업체 계정과 애드온 주소가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+			'streaming.clearUnreadableSettingsFailed' => '저장된 스트리밍 설정을 지우지 못했습니다. 기기 잠금을 해제한 뒤 다시 시도하세요.',
+			'streaming.retrySettingsLoad' => '연결 다시 불러오기',
+			'streaming.addons' => 'Stremio 호환 애드온',
+			'streaming.addonsDescription' => 'Stremio에서 애드온을 가져오거나 매니페스트 URL로 연결하세요. 탐색에서 카탈로그를 둘러보고 영화 또는 에피소드 페이지에서 스트림 옵션을 여세요.',
+			'streaming.catalogLoadFailed' => '카탈로그를 불러오지 못했습니다. 새로고침한 뒤 다시 시도하세요.',
+			'streaming.catalogFiltersRequired' => '이 카탈로그를 둘러보려면 필수 필터를 선택하세요.',
+			'streaming.catalogRequiredLabel' => '필수',
+			'streaming.importFromStremio' => 'Stremio에서 가져오기',
+			'streaming.stremioImportInstructions' => 'QR 코드를 스캔하거나 링크를 여세요. Stremio에 로그인하고 요청을 승인하세요. PlezyNG는 애드온 목록만 읽으며 Stremio 비밀번호를 묻거나 설정을 변경하지 않습니다.',
+			'streaming.stremioImportOpen' => 'Stremio 링크 열기',
+			'streaming.stremioImportCode' => '연결 코드',
+			'streaming.stremioImportPreviewTitle' => '애드온 선택',
+			'streaming.stremioImportPreviewBody' => 'PlezyNG에 연결할 애드온을 선택하세요. 이 가져오기에서는 HTTPS 주소만 허용됩니다.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => '지원되지 않거나 안전하지 않은 주소로 건너뛴 애드온: ${count}.',
+			'streaming.stremioCatalogs' => '카탈로그',
+			'streaming.stremioStreams' => '스트림',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => '선택 항목 추가 (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Stremio에서 연결한 애드온: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => '연결한 애드온: ${added}; 연결 실패: ${failed}.',
+			'streaming.stremioImportFailed' => 'Stremio에서 애드온을 가져오지 못했습니다. 다시 시도하세요.',
+			'streaming.stremioImportTimedOut' => 'Stremio 승인이 만료되었습니다. 가져오기를 다시 시작하세요.',
+			'streaming.stremioImportEmpty' => '이 Stremio 계정에서 새 호환 애드온을 찾지 못했습니다.',
+			'streaming.stremioImportLimitReached' => '애드온을 더 가져오기 전에 하나를 삭제하세요.',
+			'streaming.addByManifestUrl' => '매니페스트 URL로 추가',
+			'streaming.addAddon' => '애드온 추가',
+			'streaming.manifestUrl' => '애드온 매니페스트 URL',
+			'streaming.manifestUrlHint' => '애드온 매니페스트 URL을 붙여넣으세요. 연결 전에 PlezyNG가 지원되는 카탈로그 또는 스트림 리소스를 확인합니다.',
+			'streaming.allowHttp' => '암호화되지 않은 HTTP 주소 허용',
+			'streaming.allowHttpDescription' => '비공개 네트워크에서 신뢰하는 애드온에만 사용하세요.',
+			'streaming.installAddon' => '애드온 연결',
+			'streaming.addonInstalled' => '애드온 연결됨',
+			'streaming.addonRemoved' => '애드온 삭제됨',
+			'streaming.addonToggle' => '애드온 사용 설정',
+			'streaming.addonEmpty' => '연결된 애드온이 없습니다',
+			'streaming.addonError' => 'PlezyNG에서 이 애드온에 연결하지 못했습니다. 매니페스트 URL을 확인하고 다시 시도하세요.',
+			'streaming.addonPrivacy' => '신뢰하는 애드온만 연결하세요. 검색할 때 애드온은 검색한 제목을 받고 타사 스트림 링크를 반환할 수 있습니다.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Real-Debrid 계정으로 지원되는 토렌트 스트림을 재생하세요.',
+			'streaming.connectRealDebrid' => 'QR 코드로 연결',
+			'streaming.disconnectRealDebrid' => 'Real-Debrid 연결 해제',
+			'streaming.realDebridConnected' => ({required Object username}) => '${username} 계정으로 연결됨',
+			'streaming.realDebridInstructions' => 'QR 코드를 스캔하거나 링크를 연 다음 이 활성화 코드를 입력해 PlezyNG를 연결하세요:',
+			'streaming.realDebridActivate' => 'Real-Debrid를 열어 활성화',
+			'streaming.realDebridCode' => '활성화 코드',
+			'streaming.realDebridConnectFailed' => 'Real-Debrid에 연결하지 못했습니다. 다시 시도하세요.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'AllDebrid 계정으로 지원되는 토렌트 스트림을 재생하세요.',
+			'streaming.connectAllDebrid' => 'QR 코드로 연결',
+			'streaming.allDebridInstructions' => 'QR 코드를 스캔하거나 링크를 열어 PlezyNG를 승인하세요. 연결되는 동안 이 화면을 열어 두세요:',
+			'streaming.allDebridActivate' => 'AllDebrid를 열어 활성화',
+			'streaming.allDebridCode' => '활성화 PIN',
+			'streaming.allDebridConnectFailed' => 'AllDebrid에 연결하지 못했습니다. 다시 시도하세요.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Premiumize에서 캐시된 토렌트 스트림을 재생하거나 파일을 둘러보세요.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'TorBox에서 캐시된 토렌트 스트림을 재생하거나 파일을 둘러보세요.',
+			'streaming.connectApiKey' => 'API 키로 연결',
+			'streaming.apiKeyTitle' => ({required Object service}) => '${service} 연결',
+			'streaming.apiKey' => 'API 키',
+			'streaming.apiKeyHint' => ({required Object service}) => '${service} 계정 설정의 API 키를 붙여넣으세요. PlezyNG는 이 기기에서 키를 암호화해 이 프로필에 저장합니다.',
+			'streaming.apiKeyConnectFailed' => '이 API 키를 확인하지 못했습니다. 키를 확인한 뒤 다시 시도하세요.',
+			'streaming.accountConnected' => ({required Object username}) => '${username} 계정으로 연결됨',
+			'streaming.streamNeedsProvider' => '이 토렌트 스트림을 재생하려면 Debrid 서비스를 연결하세요.',
+			'streaming.playViaProvider' => 'Debrid로 재생',
+			'streaming.disconnectConfirm' => ({required Object service}) => '${service} 연결을 해제할까요?',
+			'streaming.disconnectBody' => 'PlezyNG가 이 기기의 권한을 삭제합니다. 제공업체에 저장된 파일과 진행 중인 전송은 변경되지 않습니다.',
+			'streaming.streamsTitle' => '스트림 선택',
+			'streaming.searchingStreams' => '연결된 애드온 확인 중…',
+			'streaming.noStreams' => '이 제목에 사용할 스트림을 찾지 못했습니다.',
+			'streaming.manageConnections' => '스트리밍 서비스 관리',
+			'streaming.subtitleTracks' => ({required Object count}) => '자막 트랙: ${count}',
+			'streaming.chooseSubtitle' => '자막 선택',
+			'streaming.chooseProvider' => 'Debrid 서비스 선택',
+			'streaming.subtitleOff' => '자막 끄기',
+			'streaming.subtitleLoadFailed' => '자막을 불러오지 못했습니다. 다른 트랙을 시도하세요.',
+			'streaming.subtitleApplied' => '재생할 자막을 선택했습니다',
+			'streaming.streamLookupPartial' => '일부 애드온에 연결할 수 없습니다.',
+			'streaming.streamLookupFailed' => '연결된 애드온을 확인하지 못했습니다.',
+			'streaming.streamOpenExternal' => '외부 링크 열기',
+			'streaming.streamPrepare' => 'Debrid 서비스로 준비 중…',
+			'streaming.streamPrepareFailed' => '스트림을 준비하지 못했습니다. 연결된 계정을 확인하고 다른 소스를 시도하세요.',
+			'streaming.streamNeedsRealDebrid' => '이 토렌트 스트림을 재생하려면 Debrid 서비스를 연결하세요.',
+			'streaming.streamUnsupported' => '앱 내 플레이어에서 이 스트림 형식을 지원하지 않습니다.',
+			'streaming.remoteNeedsEpisode' => '스트림을 검색하기 전에 에피소드를 선택하세요.',
+			'streaming.remoteNeedsEpisodeNumber' => '이 에피소드에 시즌 또는 에피소드 번호가 없습니다.',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG에서 이 제목의 IMDb 또는 TMDB ID를 찾지 못했습니다.',
+			'streaming.watchWithServices' => '연결된 서비스로 시청',
+			'streaming.chooseEpisode' => '에피소드 선택',
+			'streaming.episodes' => '에피소드',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '시즌 ${season}, 에피소드 ${episode}',
+			'streaming.episodeStreamHint' => '이 에피소드에서 이용할 수 있는 스트림을 엽니다.',
+			'streaming.cloudFiles' => '클라우드 파일',
+			'streaming.browseCloud' => '파일 둘러보기',
+			'streaming.cloudEmpty' => '이 계정에서 재생할 수 있는 동영상 파일을 찾지 못했습니다.',
+			'streaming.cloudLoadFailed' => '클라우드 파일을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.',
+			'streaming.providers' => 'Debrid 제공업체',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} 서버 추가',
 			'addServer.serverUrls' => '서버 URL',
 			'addServer.serverUrlsHelper' => '쉼표로 구분하여 여러 URL을 입력할 수 있습니다.',
@@ -7977,6 +8195,8 @@ extension on TranslationsKo {
 			'universalMedia.playlistFormatsHelp' => '플레이리스트는 최대 1,000 개의 항목과 2 MB를 포함할 수 있습니다.HLS는 스트림으로 열려 있으므로 플레이어가 품질을 선택할 수 있도록합니다.',
 			'universalMedia.saveQueuePlaylist' => '대기열을 재생목록으로 저장',
 			'universalMedia.queuePlaylistSaved' => '재생목록을 미디어 파일 옆에 저장했습니다.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => '이 대기열은 재사용 가능한 로컬 재생목록으로 저장할 수 없습니다.',
 			'universalMedia.queuePlaylistFolderRequired' => '대기열 파일과 같은 폴더를 저장 위치로 선택하세요.',
 			'universalMedia.noFavorites' => '아직 좋아하는 스트림을 저장하지 않았습니다.Favorites 이 프로필에 남아 있습니다.',
@@ -8081,8 +8301,6 @@ extension on TranslationsKo {
 			'universalMedia.captureAudioNone' => '오디오 없음',
 			'universalMedia.captureDefaultAudio' => '기본 오디오 입력',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => '녹음 프레임 속도',
 			'universalMedia.capturePrivacy' => '녹음은 선택한 파일에만 저장됩니다.마이크로폰 캡처는 선택적입니다.PlezyNG은 녹음을 업로드하지 않습니다.',
 			'universalMedia.captureSaveAs' => '스크린 레코딩을 저장하는 방법',
@@ -8491,6 +8709,8 @@ extension on TranslationsKo {
 			'sourceSetup.nfsEncryptionFailure' => '암호화된 NFS 연결에서는 NAS의 두 서비스가 RFC 9289와 TLS 1.3을 지원하는지, 인증서 이름과 내보내기 UID/GID가 올바른지 확인하세요. PlezyNG는 암호화 없이 이 연결을 다시 시도하지 않습니다.',
 			'sourceSetup.sourceConnecting' => '소스에 연결 중',
 			'sourceSetup.metadataSearchPrivacy' => '이 제목 검색은 Trakt로 전송됩니다. 입력한 제목만 전송하며, 동영상이나 소스 자격 증명은 전송하지 않습니다.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => '일치하는 결과 선택',
 			'sourceSetup.metadataMatchHelp' => '선택하기 전에 제목과 연도를 확인하세요. Trakt에는 검색 제목이 전송되며, 동영상은 원래 소스에 그대로 남습니다.',
 			'sourceSetup.metadataNoMatches' => '일치하는 온라인 제목을 찾지 못했습니다. 다른 제목으로 검색하세요.',
@@ -8595,8 +8815,6 @@ extension on TranslationsKo {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

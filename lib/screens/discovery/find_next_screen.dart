@@ -799,16 +799,23 @@ class _FindNextScreenState extends State<FindNextScreen> {
     }
     final bySource = {for (final source in sources.sources) source.id: source};
     final candidateIds = result.map((choice) => choice.id).toSet();
+    final canonicalVideoIds = <String>{for (final choice in result) ...discoveryCanonicalVideoIdentities(choice)};
+
+    void addSourceChoice(DiscoveryChoice choice) {
+      if (!candidateIds.add(choice.id)) return;
+      final identities = discoveryCanonicalVideoIdentities(choice);
+      if (identities.any(canonicalVideoIds.contains)) return;
+      canonicalVideoIds.addAll(identities);
+      result.add(choice);
+    }
+
     for (final entry in indexed) {
       if (!activeSourceIds.contains(entry.sourceId)) continue;
       if (candidateIds.contains(discoverySourceIdentity(entry))) continue;
       final source = bySource[entry.sourceId];
       if (source == null) continue;
       final choice = await _choiceForSource(entry, source, sources, profileId, offlineOnly: offlineOnly);
-      if (choice != null) {
-        result.add(choice);
-        candidateIds.add(choice.id);
-      }
+      if (choice != null) addSourceChoice(choice);
     }
 
     // Root browse is one bounded page per connected source. It makes a freshly
@@ -816,27 +823,20 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final rootSources = sources.sources.take(9).toList();
     for (var start = 0; !offlineOnly && start < rootSources.length; start += 3) {
       final batch = rootSources.skip(start).take(3);
-      await Future.wait([
+      final pages = await Future.wait([
         for (final source in batch)
-          sources
-              .browse(source.id)
-              .then((page) async {
-                for (final entry in page.entries) {
-                  if (candidateIds.contains(discoverySourceIdentity(entry))) {
-                    continue;
-                  }
-                  final choice = await _choiceForSource(entry, source, sources, profileId);
-                  if (choice != null) {
-                    result.add(choice);
-                    candidateIds.add(choice.id);
-                  }
-                }
-              })
-              .catchError((Object _) {}),
+          sources.browse(source.id).then<SourcePage?>((page) => page).catchError((Object _) => null),
       ]);
-      if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) {
-        return result;
+      for (var index = 0; index < batch.length; index++) {
+        final page = pages[index];
+        if (page == null) continue;
+        for (final entry in page.entries) {
+          if (candidateIds.contains(discoverySourceIdentity(entry))) continue;
+          final choice = await _choiceForSource(entry, batch.elementAt(index), sources, profileId);
+          if (choice != null) addSourceChoice(choice);
+        }
       }
+      if (!mounted || !_sessionCurrent(profileId, sourceGeneration, request)) return result;
     }
 
     // Reuse the selected Explore provider's cached, bounded rows first, then

@@ -172,9 +172,10 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
   @override
   void dispose() {
     final route = _fullscreenRoute;
-    if (route != null) WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (route.isActive) route.navigator?.removeRoute(route);
-    });
+    if (route != null)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (route.isActive) route.navigator?.removeRoute(route);
+      });
     WidgetsBinding.instance.removeObserver(this);
     _playbackListenable.removeListener(_onSourceChanged);
     final reducedMotionSubscription = _reducedMotionPositionSubscription;
@@ -334,23 +335,42 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _optionsRevision.value++;
     });
-    unawaited(store.savePreferences({
-      'selected': _native.preset?.libraryPath,
-      'engine': _native.engine,
-      'original': widget.preset.name,
-      'playlist': _playlist.take(2500).map((file) => file.libraryPath).toList(),
-      'shuffle': _shuffle, 'locked': _locked, 'interval': _intervalSeconds,
-      'quality': _resolutionScale < 1 ? 'low' : 'balanced',
-      'transition': _native.transitionSeconds,
-    }).catchError((Object error) {
-      if (mounted) ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text('Could not save visualization choices: $error')));
-    }));
+    unawaited(
+      store
+          .savePreferences({
+            'selected': _native.preset?.libraryPath,
+            'engine': _native.engine,
+            'original': widget.preset.name,
+            'playlist': _playlist.take(2500).map((file) => file.libraryPath).toList(),
+            'shuffle': _shuffle,
+            'locked': _locked,
+            'interval': _intervalSeconds,
+            'quality': _resolutionScale < 1 ? 'low' : 'balanced',
+            'transition': _native.transitionSeconds,
+          })
+          .catchError((Object error) {
+            if (mounted)
+              ScaffoldMessenger.maybeOf(
+                context,
+              )?.showSnackBar(SnackBar(content: Text('Could not save visualization choices: $error')));
+          }),
+    );
   }
 
   void _syncPresetTimer() {
-    final enabled = !_locked && _native.active && _playlist.length > 1 && _appResumed &&
-        !_reduceMotion && (_fullscreen || TickerMode.of(context)) && _isPlaying;
-    if (!enabled) { _presetTimer?.cancel(); _presetTimer = null; return; }
+    final enabled =
+        !_locked &&
+        _native.active &&
+        _playlist.length > 1 &&
+        _appResumed &&
+        !_reduceMotion &&
+        (_fullscreen || TickerMode.of(context)) &&
+        _isPlaying;
+    if (!enabled) {
+      _presetTimer?.cancel();
+      _presetTimer = null;
+      return;
+    }
     _presetTimer ??= Timer.periodic(Duration(seconds: _intervalSeconds), (_) {
       if (_native.state == 'rendering') _stepPreset(1);
     });
@@ -365,7 +385,8 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
     _syncTicker();
     await _native.load(selection.preset);
     if (!mounted) return;
-    _savePreferences(); _syncTicker();
+    _savePreferences();
+    _syncTicker();
   }
 
   void _stepPreset(int direction) {
@@ -382,7 +403,10 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
   Future<void> _originalScenes() async {
     ++_preferenceGeneration;
     await _native.stop();
-    if (mounted) { _savePreferences(); _syncTicker(); }
+    if (mounted) {
+      _savePreferences();
+      _syncTicker();
+    }
   }
 
   void _beginProfileLoad() {
@@ -430,8 +454,14 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
 
   void _syncSpectrumAnalyzer() {
     final analyzer = _availableAnalyzer;
-    final canAnalyze = _profileLoaded && _sourceReady && _sceneVisible && _appResumed &&
-        !_reduceMotion && !_native.hasFrame && _profile == null;
+    final canAnalyze =
+        _profileLoaded &&
+        _sourceReady &&
+        _sceneVisible &&
+        _appResumed &&
+        !_reduceMotion &&
+        !_native.hasFrame &&
+        _profile == null;
     if (!canAnalyze || analyzer == null) {
       if (_spectrumAnalyzer != null) _stopSpectrumAnalysis();
       _spectrumSample = null;
@@ -558,6 +588,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
     final scale = math.min(1.0, math.min(1280 / width, 720 / height)) * _resolutionScale;
     _native.resize(width * scale, height * scale);
   }
+
   static double _energyFromSpectrum(AudioSpectrumSample sample) =>
       (0.18 + sample.normalizedCentroid * 0.52 + sample.flatness * 0.24).clamp(0.08, 1.0).toDouble();
 
@@ -571,7 +602,9 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       outline: tk.outline,
       preset: widget.preset,
     );
-    final status = _native.active ? (_reduceMotion ? 'Reduced motion · visualization paused' : _native.statusLabel) : !_profileLoaded
+    final status = _native.active
+        ? (_reduceMotion ? 'Reduced motion · visualization paused' : _native.statusLabel)
+        : !_profileLoaded
         ? t.music.visualizerProfileLoading
         : _profile == null
         ? _spectrumSample == null
@@ -608,7 +641,9 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
                   ),
                 ),
                 if (_native.hasFrame && _native.textureId != null && !_fullscreen)
-                  Positioned.fill(child: Texture(textureId: _native.textureId!, filterQuality: FilterQuality.low)),
+                  Positioned.fill(
+                    child: Texture(textureId: _native.textureId!, filterQuality: FilterQuality.low),
+                  ),
                 Positioned(
                   top: 12,
                   left: 12,
@@ -645,90 +680,108 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
             BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 18, offset: const Offset(0, 4)),
           ],
         ),
-        child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FocusableButton(
-                onPressed: () => _stepPreset(-1),
-                child: IconButton(
-                  tooltip: t.music.visualizerPreviousPreset,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FocusableButton(
                   onPressed: () => _stepPreset(-1),
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-                  icon: const AppIcon(Symbols.chevron_left_rounded, fill: 1, size: 22),
-                ),
-              ),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxLabelWidth, minHeight: 40),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        selectedName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      Tooltip(message: status, child: Text(
-                        status,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelSmall?.copyWith(color: tk.textMuted, height: 1.1),
-                      )),
-                    ],
+                  child: IconButton(
+                    tooltip: t.music.visualizerPreviousPreset,
+                    onPressed: () => _stepPreset(-1),
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                    icon: const AppIcon(Symbols.chevron_left_rounded, fill: 1, size: 22),
                   ),
                 ),
-              ),
-              FocusableButton(
-                onPressed: () => _stepPreset(1),
-                child: IconButton(
-                  tooltip: t.music.visualizerNextPreset,
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxLabelWidth, minHeight: 40),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          selectedName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        Tooltip(
+                          message: status,
+                          child: Text(
+                            status,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(color: tk.textMuted, height: 1.1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                FocusableButton(
                   onPressed: () => _stepPreset(1),
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-                  icon: const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 22),
+                  child: IconButton(
+                    tooltip: t.music.visualizerNextPreset,
+                    onPressed: () => _stepPreset(1),
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                    icon: const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 22),
+                  ),
                 ),
-              ),
-              FocusableButton(
-                onPressed: () => _showLibrary(context),
-                child: IconButton(
-                  tooltip: 'Browse and download presets',
+                FocusableButton(
                   onPressed: () => _showLibrary(context),
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-                  icon: const AppIcon(Symbols.library_music_rounded, fill: 1, size: 20),
+                  child: IconButton(
+                    tooltip: 'Browse and download presets',
+                    onPressed: () => _showLibrary(context),
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                    icon: const AppIcon(Symbols.library_music_rounded, fill: 1, size: 20),
+                  ),
                 ),
-              ),
-              PopupMenuButton<String>(
-                tooltip: 'Visualization options',
-                icon: const Icon(Icons.more_vert, size: 20),
-                onSelected: _option,
-                itemBuilder: (_) => [
-                  if (_native.active) const PopupMenuItem(value: 'original', child: Text('Original scenes')),
-                  if (_native.active) CheckedPopupMenuItem(value: 'lock', checked: _locked, child: const Text('Lock preset')),
-                  if (_native.active) CheckedPopupMenuItem(value: 'shuffle', checked: _shuffle, child: const Text('Shuffle presets')),
-                  if (_native.active) ...[
-                    for (final seconds in [15, 30, 60, 120])
-                      CheckedPopupMenuItem(value: 'interval:$seconds', checked: _intervalSeconds == seconds,
-                        child: Text('Change every $seconds seconds')),
-                    CheckedPopupMenuItem(value: 'quality', checked: _resolutionScale < 1, child: const Text('Lower resolution')),
-                    for (final seconds in [0, 3, 8])
-                      CheckedPopupMenuItem(value: 'transition:$seconds', checked: _native.transitionSeconds == seconds,
-                        child: Text(seconds == 0 ? 'Instant transitions' : '$seconds second transitions')),
-                    const PopupMenuItem(value: 'retry', child: Text('Reload preset')),
-                    const PopupMenuItem(value: 'diagnostics', child: Text('Playback details')),
+                PopupMenuButton<String>(
+                  tooltip: 'Visualization options',
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onSelected: _option,
+                  itemBuilder: (_) => [
+                    if (_native.active) const PopupMenuItem(value: 'original', child: Text('Original scenes')),
+                    if (_native.active)
+                      CheckedPopupMenuItem(value: 'lock', checked: _locked, child: const Text('Lock preset')),
+                    if (_native.active)
+                      CheckedPopupMenuItem(value: 'shuffle', checked: _shuffle, child: const Text('Shuffle presets')),
+                    if (_native.active) ...[
+                      for (final seconds in [15, 30, 60, 120])
+                        CheckedPopupMenuItem(
+                          value: 'interval:$seconds',
+                          checked: _intervalSeconds == seconds,
+                          child: Text('Change every $seconds seconds'),
+                        ),
+                      CheckedPopupMenuItem(
+                        value: 'quality',
+                        checked: _resolutionScale < 1,
+                        child: const Text('Lower resolution'),
+                      ),
+                      for (final seconds in [0, 3, 8])
+                        CheckedPopupMenuItem(
+                          value: 'transition:$seconds',
+                          checked: _native.transitionSeconds == seconds,
+                          child: Text(seconds == 0 ? 'Instant transitions' : '$seconds second transitions'),
+                        ),
+                      const PopupMenuItem(value: 'retry', child: Text('Reload preset')),
+                      const PopupMenuItem(value: 'diagnostics', child: Text('Playback details')),
+                    ],
+                    const PopupMenuItem(value: 'fullscreen', child: Text('Fullscreen')),
                   ],
-                  const PopupMenuItem(value: 'fullscreen', child: Text('Fullscreen')),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
-        )),
+        ),
       ),
     );
   }
@@ -740,24 +793,38 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => VisualizerLibrarySheet(profileId: profileId, hasMusicPcmSource: _nativeSourceReady, initialEngine: _native.engine),
+      builder: (_) => VisualizerLibrarySheet(
+        profileId: profileId,
+        hasMusicPcmSource: _nativeSourceReady,
+        initialEngine: _native.engine,
+      ),
     );
     if (mounted && profileId == _profileId && selection != null) await _selectPreset(selection);
   }
 
   void _option(String action) {
     if (action == 'diagnostics') {
-      showDialog<void>(context: context, builder: (context) => AlertDialog(
-        title: const Text('Visualization playback'),
-        content: SingleChildScrollView(child: SelectableText(_native.diagnostics)),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
-      ));
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Visualization playback'),
+          content: SingleChildScrollView(child: SelectableText(_native.diagnostics)),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        ),
+      );
       return;
     }
-    if (action == 'original') { unawaited(_originalScenes()); return; }
-    if (action == 'fullscreen') { unawaited(_showFullscreen()); return; }
+    if (action == 'original') {
+      unawaited(_originalScenes());
+      return;
+    }
+    if (action == 'fullscreen') {
+      unawaited(_showFullscreen());
+      return;
+    }
     if (action == 'retry' && _native.preset != null) {
-      unawaited(_selectPreset(VisualizerSelection(_native.preset!, _playlist))); return;
+      unawaited(_selectPreset(VisualizerSelection(_native.preset!, _playlist)));
+      return;
     }
     setState(() {
       if (action == 'lock') _locked = !_locked;
@@ -766,50 +833,101 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       if (action.startsWith('interval:')) _intervalSeconds = int.parse(action.split(':').last);
       if (action.startsWith('transition:')) _native.transitionSeconds = double.parse(action.split(':').last);
     });
-    _presetTimer?.cancel(); _presetTimer = null;
-    _savePreferences(); _syncTicker();
+    _presetTimer?.cancel();
+    _presetTimer = null;
+    _savePreferences();
+    _syncTicker();
   }
 
   Future<void> _showFullscreen() async {
     if (_fullscreen) return;
     setState(() => _fullscreen = true);
     _syncTicker();
-    await showDialog<void>(context: context, useSafeArea: false, builder: (dialogContext) {
-      if (!mounted) return const SizedBox.shrink();
-      _fullscreenRoute = ModalRoute.of<void>(dialogContext);
-      return Dialog.fullscreen(child: CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.pop(dialogContext),
-          const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _stepPreset(-1),
-          const SingleActivator(LogicalKeyboardKey.arrowRight): () => _stepPreset(1),
-        },
-        child: Focus(autofocus: true, child: AnimatedBuilder(
-          animation: Listenable.merge([_native, _optionsRevision]),
-          builder: (context, _) => !mounted ? const SizedBox.shrink() : LayoutBuilder(builder: (context, constraints) {
-            _resizeNative(constraints, MediaQuery.devicePixelRatioOf(context));
-            final tk = tokens(context);
-            return Stack(fit: StackFit.expand, children: [
-              if (_native.hasFrame && _native.textureId != null)
-                Texture(textureId: _native.textureId!, filterQuality: FilterQuality.low)
-              else CustomPaint(painter: MusicVisualizerPainter(frame: _frame, preset: widget.preset, profile: _profile,
-                palette: MusicVisualizerPalette.fromTheme(accent: tk.accent, background: tk.bg,
-                  surface: tk.surface, outline: tk.outline, preset: widget.preset))),
-              SafeArea(child: Align(alignment: Alignment.topCenter, child: Padding(
-                padding: const EdgeInsets.all(12), child: Row(children: [
-                  Expanded(child: Align(alignment: Alignment.topLeft, child: _buildPresetControls(context,
-                    _native.active ? _native.statusLabel : _presetName(widget.preset),
-                    maxLabelWidth: (constraints.maxWidth - 244).clamp(72, 190).toDouble()))),
-                  IconButton(tooltip: 'Exit fullscreen', onPressed: () => Navigator.pop(dialogContext),
-                    icon: const Icon(Icons.fullscreen_exit)),
-                ]),
-              ))),
-            ]);
-          }),
-        )),
-      )); },
+    await showDialog<void>(
+      context: context,
+      useSafeArea: false,
+      builder: (dialogContext) {
+        if (!mounted) return const SizedBox.shrink();
+        _fullscreenRoute = ModalRoute.of<void>(dialogContext);
+        return Dialog.fullscreen(
+          child: CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.pop(dialogContext),
+              const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _stepPreset(-1),
+              const SingleActivator(LogicalKeyboardKey.arrowRight): () => _stepPreset(1),
+            },
+            child: Focus(
+              autofocus: true,
+              child: AnimatedBuilder(
+                animation: Listenable.merge([_native, _optionsRevision]),
+                builder: (context, _) => !mounted
+                    ? const SizedBox.shrink()
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          _resizeNative(constraints, MediaQuery.devicePixelRatioOf(context));
+                          final tk = tokens(context);
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (_native.hasFrame && _native.textureId != null)
+                                Texture(textureId: _native.textureId!, filterQuality: FilterQuality.low)
+                              else
+                                CustomPaint(
+                                  painter: MusicVisualizerPainter(
+                                    frame: _frame,
+                                    preset: widget.preset,
+                                    profile: _profile,
+                                    palette: MusicVisualizerPalette.fromTheme(
+                                      accent: tk.accent,
+                                      background: tk.bg,
+                                      surface: tk.surface,
+                                      outline: tk.outline,
+                                      preset: widget.preset,
+                                    ),
+                                  ),
+                                ),
+                              SafeArea(
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Align(
+                                            alignment: Alignment.topLeft,
+                                            child: _buildPresetControls(
+                                              context,
+                                              _native.active ? _native.statusLabel : _presetName(widget.preset),
+                                              maxLabelWidth: (constraints.maxWidth - 244).clamp(72, 190).toDouble(),
+                                            ),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          tooltip: 'Exit fullscreen',
+                                          onPressed: () => Navigator.pop(dialogContext),
+                                          icon: const Icon(Icons.fullscreen_exit),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ),
+        );
+      },
     );
     _fullscreenRoute = null;
-    if (mounted) { setState(() => _fullscreen = false); _syncTicker(); }
+    if (mounted) {
+      setState(() => _fullscreen = false);
+      _syncTicker();
+    }
   }
 
   static String _presetName(MusicVisualizerPreset preset) => switch (preset) {

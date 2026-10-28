@@ -92,6 +92,7 @@ class TranslationsPt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$trakt$pt trakt = Translations$trakt$pt.internal(_root);
 	@override late final Translations$seerr$pt seerr = Translations$seerr$pt.internal(_root);
 	@override late final Translations$services$pt services = Translations$services$pt.internal(_root);
+	@override late final Translations$streaming$pt streaming = Translations$streaming$pt.internal(_root);
 	@override late final Translations$addServer$pt addServer = Translations$addServer$pt.internal(_root);
 	@override late final Translations$cast$pt cast = Translations$cast$pt.internal(_root);
 	@override late final Translations$automation$pt automation = Translations$automation$pt.internal(_root);
@@ -2798,6 +2799,119 @@ class Translations$services$pt extends Translations$services$en {
 	@override late final Translations$services$libraryFilter$pt libraryFilter = Translations$services$libraryFilter$pt.internal(_root);
 	@override String get seerrDescription => 'Conecte-se a Seerr ou Overseerr para pesquisar títulos e enviar pedidos de mídia.';
 	@override late final Translations$services$trackerDescriptions$pt trackerDescriptions = Translations$services$trackerDescriptions$pt.internal(_root);
+}
+
+// Path: streaming
+class Translations$streaming$pt extends Translations$streaming$en {
+	Translations$streaming$pt.internal(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Streaming na nuvem e por complementos';
+	@override String get subtitle => 'Conecte uma conta Debrid para procurar arquivos na sua nuvem e reproduzir links compatíveis. Complementos compatíveis com o Stremio oferecem opções de reprodução nas páginas de filmes e episódios. Os dados de conexão são criptografados neste dispositivo e salvos neste perfil.';
+	@override String connectionsConfigured({required Object count}) => 'Fontes conectadas: ${count}';
+	@override String get settingsLoadFailed => 'O PlezyNG não conseguiu desbloquear as configurações de streaming salvas. Desbloqueie o dispositivo e tente novamente antes de alterar as conexões.';
+	@override String get settingsUnreadable => 'O PlezyNG não conseguiu desbloquear estas conexões salvas. Apague-as para conectar os serviços novamente.';
+	@override String get clearUnreadableSettings => 'Apagar configurações salvas';
+	@override String get clearUnreadableSettingsConfirm => 'Apagar as configurações de streaming salvas?';
+	@override String get clearUnreadableSettingsBody => 'Isso remove deste perfil todas as contas de provedores e os endereços de complementos salvos. Não é possível desfazer.';
+	@override String get clearUnreadableSettingsFailed => 'Não foi possível apagar as configurações de streaming salvas. Desbloqueie o dispositivo e tente novamente.';
+	@override String get retrySettingsLoad => 'Tentar carregar as conexões novamente';
+	@override String get addons => 'Complementos compatíveis com o Stremio';
+	@override String get addonsDescription => 'Importe complementos do Stremio ou conecte um pela URL do manifesto. Explore catálogos em Explorar e abra opções de reprodução nas páginas de filmes ou episódios.';
+	@override String get catalogLoadFailed => 'Não foi possível carregar este catálogo. Atualize e tente novamente.';
+	@override String get catalogFiltersRequired => 'Escolha os filtros necessários para explorar este catálogo.';
+	@override String get catalogRequiredLabel => 'Obrigatório';
+	@override String get importFromStremio => 'Importar do Stremio';
+	@override String get stremioImportInstructions => 'Leia o código QR ou abra o link. Entre no Stremio e autorize a solicitação. O PlezyNG só lê sua lista de complementos; nunca pede sua senha do Stremio nem altera as configurações.';
+	@override String get stremioImportOpen => 'Abrir link do Stremio';
+	@override String get stremioImportCode => 'Código de vínculo';
+	@override String get stremioImportPreviewTitle => 'Escolher complementos';
+	@override String get stremioImportPreviewBody => 'Selecione os complementos para conectar ao PlezyNG. Esta importação aceita apenas endereços HTTPS.';
+	@override String stremioImportIgnored({required Object count}) => 'Complementos ignorados por endereço incompatível ou inseguro: ${count}.';
+	@override String get stremioCatalogs => 'Catálogos';
+	@override String get stremioStreams => 'Streams';
+	@override String stremioImportAddSelected({required Object count}) => 'Adicionar selecionados (${count})';
+	@override String stremioImportAdded({required Object count}) => 'Complementos conectados do Stremio: ${count}.';
+	@override String stremioImportPartial({required Object added, required Object failed}) => 'Complementos conectados: ${added}; não foi possível conectar: ${failed}.';
+	@override String get stremioImportFailed => 'Não foi possível importar complementos do Stremio. Tente novamente.';
+	@override String get stremioImportTimedOut => 'A autorização do Stremio expirou. Inicie a importação novamente.';
+	@override String get stremioImportEmpty => 'Nenhum novo complemento compatível foi encontrado nesta conta do Stremio.';
+	@override String get stremioImportLimitReached => 'Remova um complemento antes de importar mais.';
+	@override String get addByManifestUrl => 'Adicionar por URL do manifesto';
+	@override String get addAddon => 'Adicionar complemento';
+	@override String get manifestUrl => 'URL do manifesto do complemento';
+	@override String get manifestUrlHint => 'Cole a URL do manifesto do complemento. O PlezyNG verifica se há catálogos ou recursos de stream compatíveis antes de conectar.';
+	@override String get allowHttp => 'Permitir um endereço HTTP sem criptografia';
+	@override String get allowHttpDescription => 'Use somente com um complemento confiável na sua rede privada.';
+	@override String get installAddon => 'Conectar complemento';
+	@override String get addonInstalled => 'Complemento conectado';
+	@override String get addonRemoved => 'Complemento removido';
+	@override String get addonToggle => 'Ativar complemento';
+	@override String get addonEmpty => 'Nenhum complemento conectado ainda';
+	@override String get addonError => 'O PlezyNG não conseguiu conectar esse complemento. Confira a URL do manifesto e tente novamente.';
+	@override String get addonPrivacy => 'Conecte somente complementos confiáveis. Ao pesquisar, um complemento recebe o título solicitado e pode retornar links de stream de terceiros.';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => 'Reproduza streams compatíveis baseados em torrent com sua conta Real-Debrid.';
+	@override String get connectRealDebrid => 'Conectar com código QR';
+	@override String get disconnectRealDebrid => 'Desconectar Real-Debrid';
+	@override String realDebridConnected({required Object username}) => 'Conectado como ${username}';
+	@override String get realDebridInstructions => 'Leia o código QR ou abra o link e insira este código de ativação para conectar o PlezyNG:';
+	@override String get realDebridActivate => 'Abrir Real-Debrid para ativar';
+	@override String get realDebridCode => 'Código de ativação';
+	@override String get realDebridConnectFailed => 'Não foi possível conectar ao Real-Debrid. Tente novamente.';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => 'Reproduza streams compatíveis baseados em torrent com sua conta AllDebrid.';
+	@override String get connectAllDebrid => 'Conectar com código QR';
+	@override String get allDebridInstructions => 'Leia o código QR ou abra o link para autorizar o PlezyNG. Mantenha esta tela aberta enquanto conecta:';
+	@override String get allDebridActivate => 'Abrir AllDebrid para ativar';
+	@override String get allDebridCode => 'PIN de ativação';
+	@override String get allDebridConnectFailed => 'Não foi possível conectar ao AllDebrid. Tente novamente.';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => 'Reproduza streams torrent em cache ou procure arquivos com o Premiumize.';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => 'Reproduza streams torrent em cache ou procure arquivos com o TorBox.';
+	@override String get connectApiKey => 'Conectar com chave de API';
+	@override String apiKeyTitle({required Object service}) => 'Conectar ${service}';
+	@override String get apiKey => 'Chave de API';
+	@override String apiKeyHint({required Object service}) => 'Cole a chave de API das configurações da sua conta ${service}. O PlezyNG a criptografa neste dispositivo e a salva neste perfil.';
+	@override String get apiKeyConnectFailed => 'Não foi possível verificar esta chave de API. Confira e tente novamente.';
+	@override String accountConnected({required Object username}) => 'Conectado como ${username}';
+	@override String get streamNeedsProvider => 'Conecte um serviço Debrid para reproduzir este stream de torrent.';
+	@override String get playViaProvider => 'Reproduzir com Debrid';
+	@override String disconnectConfirm({required Object service}) => 'Desconectar ${service}?';
+	@override String get disconnectBody => 'O PlezyNG removerá a autorização deste dispositivo. Os arquivos do provedor e as transferências em andamento não serão alterados.';
+	@override String get streamsTitle => 'Escolher um stream';
+	@override String get searchingStreams => 'Verificando complementos conectados…';
+	@override String get noStreams => 'Nenhum stream foi encontrado para este título.';
+	@override String get manageConnections => 'Gerenciar serviços de streaming';
+	@override String subtitleTracks({required Object count}) => 'Faixas de legenda: ${count}';
+	@override String get chooseSubtitle => 'Escolher legenda';
+	@override String get chooseProvider => 'Escolher serviço Debrid';
+	@override String get subtitleOff => 'Legendas desativadas';
+	@override String get subtitleLoadFailed => 'Não foi possível carregar esta legenda. Tente outra faixa.';
+	@override String get subtitleApplied => 'Legenda selecionada para reprodução';
+	@override String get streamLookupPartial => 'Não foi possível acessar alguns complementos.';
+	@override String get streamLookupFailed => 'Não foi possível verificar os complementos conectados.';
+	@override String get streamOpenExternal => 'Abrir link externo';
+	@override String get streamPrepare => 'Preparando pelo seu serviço Debrid…';
+	@override String get streamPrepareFailed => 'Não foi possível preparar este stream. Confira a conta conectada e tente outra fonte.';
+	@override String get streamNeedsRealDebrid => 'Conecte um serviço Debrid para reproduzir este stream de torrent.';
+	@override String get streamUnsupported => 'Este formato de stream não é compatível com o player do app.';
+	@override String get remoteNeedsEpisode => 'Escolha um episódio antes de buscar um stream.';
+	@override String get remoteNeedsEpisodeNumber => 'Este episódio está sem o número da temporada ou do episódio.';
+	@override String get remoteNeedsExternalId => 'O PlezyNG não encontrou um ID do IMDb ou TMDB para este título.';
+	@override String get watchWithServices => 'Assistir com serviços conectados';
+	@override String get chooseEpisode => 'Escolher episódio';
+	@override String get episodes => 'Episódios';
+	@override String episodePosition({required Object season, required Object episode}) => 'Temporada ${season}, episódio ${episode}';
+	@override String get episodeStreamHint => 'Abre os streams disponíveis para este episódio.';
+	@override String get cloudFiles => 'Arquivos na nuvem';
+	@override String get browseCloud => 'Procurar arquivos';
+	@override String get cloudEmpty => 'Nenhum arquivo de vídeo reproduzível foi encontrado nesta conta.';
+	@override String get cloudLoadFailed => 'Não foi possível carregar os arquivos na nuvem. Verifique a conexão e tente novamente.';
+	@override String get providers => 'Provedores Debrid';
 }
 
 // Path: addServer
@@ -7749,6 +7863,110 @@ extension on TranslationsPt {
 			'services.trackerDescriptions.anilist' => 'Sincronize listas de anime e veja o progresso com AniList.',
 			'services.trackerDescriptions.simkl' => 'Sync assistiu filmes, shows de TV e anime com Simkl.',
 			'services.trackerDescriptions.mdblist' => 'Mostrar classificações e listas do MDBList em recomendações e Explore.',
+			'streaming.title' => 'Streaming na nuvem e por complementos',
+			'streaming.subtitle' => 'Conecte uma conta Debrid para procurar arquivos na sua nuvem e reproduzir links compatíveis. Complementos compatíveis com o Stremio oferecem opções de reprodução nas páginas de filmes e episódios. Os dados de conexão são criptografados neste dispositivo e salvos neste perfil.',
+			'streaming.connectionsConfigured' => ({required Object count}) => 'Fontes conectadas: ${count}',
+			'streaming.settingsLoadFailed' => 'O PlezyNG não conseguiu desbloquear as configurações de streaming salvas. Desbloqueie o dispositivo e tente novamente antes de alterar as conexões.',
+			'streaming.settingsUnreadable' => 'O PlezyNG não conseguiu desbloquear estas conexões salvas. Apague-as para conectar os serviços novamente.',
+			'streaming.clearUnreadableSettings' => 'Apagar configurações salvas',
+			'streaming.clearUnreadableSettingsConfirm' => 'Apagar as configurações de streaming salvas?',
+			'streaming.clearUnreadableSettingsBody' => 'Isso remove deste perfil todas as contas de provedores e os endereços de complementos salvos. Não é possível desfazer.',
+			'streaming.clearUnreadableSettingsFailed' => 'Não foi possível apagar as configurações de streaming salvas. Desbloqueie o dispositivo e tente novamente.',
+			'streaming.retrySettingsLoad' => 'Tentar carregar as conexões novamente',
+			'streaming.addons' => 'Complementos compatíveis com o Stremio',
+			'streaming.addonsDescription' => 'Importe complementos do Stremio ou conecte um pela URL do manifesto. Explore catálogos em Explorar e abra opções de reprodução nas páginas de filmes ou episódios.',
+			'streaming.catalogLoadFailed' => 'Não foi possível carregar este catálogo. Atualize e tente novamente.',
+			'streaming.catalogFiltersRequired' => 'Escolha os filtros necessários para explorar este catálogo.',
+			'streaming.catalogRequiredLabel' => 'Obrigatório',
+			'streaming.importFromStremio' => 'Importar do Stremio',
+			'streaming.stremioImportInstructions' => 'Leia o código QR ou abra o link. Entre no Stremio e autorize a solicitação. O PlezyNG só lê sua lista de complementos; nunca pede sua senha do Stremio nem altera as configurações.',
+			'streaming.stremioImportOpen' => 'Abrir link do Stremio',
+			'streaming.stremioImportCode' => 'Código de vínculo',
+			'streaming.stremioImportPreviewTitle' => 'Escolher complementos',
+			'streaming.stremioImportPreviewBody' => 'Selecione os complementos para conectar ao PlezyNG. Esta importação aceita apenas endereços HTTPS.',
+			'streaming.stremioImportIgnored' => ({required Object count}) => 'Complementos ignorados por endereço incompatível ou inseguro: ${count}.',
+			'streaming.stremioCatalogs' => 'Catálogos',
+			'streaming.stremioStreams' => 'Streams',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => 'Adicionar selecionados (${count})',
+			'streaming.stremioImportAdded' => ({required Object count}) => 'Complementos conectados do Stremio: ${count}.',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => 'Complementos conectados: ${added}; não foi possível conectar: ${failed}.',
+			'streaming.stremioImportFailed' => 'Não foi possível importar complementos do Stremio. Tente novamente.',
+			'streaming.stremioImportTimedOut' => 'A autorização do Stremio expirou. Inicie a importação novamente.',
+			'streaming.stremioImportEmpty' => 'Nenhum novo complemento compatível foi encontrado nesta conta do Stremio.',
+			'streaming.stremioImportLimitReached' => 'Remova um complemento antes de importar mais.',
+			'streaming.addByManifestUrl' => 'Adicionar por URL do manifesto',
+			'streaming.addAddon' => 'Adicionar complemento',
+			'streaming.manifestUrl' => 'URL do manifesto do complemento',
+			'streaming.manifestUrlHint' => 'Cole a URL do manifesto do complemento. O PlezyNG verifica se há catálogos ou recursos de stream compatíveis antes de conectar.',
+			'streaming.allowHttp' => 'Permitir um endereço HTTP sem criptografia',
+			'streaming.allowHttpDescription' => 'Use somente com um complemento confiável na sua rede privada.',
+			'streaming.installAddon' => 'Conectar complemento',
+			'streaming.addonInstalled' => 'Complemento conectado',
+			'streaming.addonRemoved' => 'Complemento removido',
+			'streaming.addonToggle' => 'Ativar complemento',
+			'streaming.addonEmpty' => 'Nenhum complemento conectado ainda',
+			'streaming.addonError' => 'O PlezyNG não conseguiu conectar esse complemento. Confira a URL do manifesto e tente novamente.',
+			'streaming.addonPrivacy' => 'Conecte somente complementos confiáveis. Ao pesquisar, um complemento recebe o título solicitado e pode retornar links de stream de terceiros.',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => 'Reproduza streams compatíveis baseados em torrent com sua conta Real-Debrid.',
+			'streaming.connectRealDebrid' => 'Conectar com código QR',
+			'streaming.disconnectRealDebrid' => 'Desconectar Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => 'Conectado como ${username}',
+			'streaming.realDebridInstructions' => 'Leia o código QR ou abra o link e insira este código de ativação para conectar o PlezyNG:',
+			'streaming.realDebridActivate' => 'Abrir Real-Debrid para ativar',
+			'streaming.realDebridCode' => 'Código de ativação',
+			'streaming.realDebridConnectFailed' => 'Não foi possível conectar ao Real-Debrid. Tente novamente.',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => 'Reproduza streams compatíveis baseados em torrent com sua conta AllDebrid.',
+			'streaming.connectAllDebrid' => 'Conectar com código QR',
+			'streaming.allDebridInstructions' => 'Leia o código QR ou abra o link para autorizar o PlezyNG. Mantenha esta tela aberta enquanto conecta:',
+			'streaming.allDebridActivate' => 'Abrir AllDebrid para ativar',
+			'streaming.allDebridCode' => 'PIN de ativação',
+			'streaming.allDebridConnectFailed' => 'Não foi possível conectar ao AllDebrid. Tente novamente.',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => 'Reproduza streams torrent em cache ou procure arquivos com o Premiumize.',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => 'Reproduza streams torrent em cache ou procure arquivos com o TorBox.',
+			'streaming.connectApiKey' => 'Conectar com chave de API',
+			'streaming.apiKeyTitle' => ({required Object service}) => 'Conectar ${service}',
+			'streaming.apiKey' => 'Chave de API',
+			'streaming.apiKeyHint' => ({required Object service}) => 'Cole a chave de API das configurações da sua conta ${service}. O PlezyNG a criptografa neste dispositivo e a salva neste perfil.',
+			'streaming.apiKeyConnectFailed' => 'Não foi possível verificar esta chave de API. Confira e tente novamente.',
+			'streaming.accountConnected' => ({required Object username}) => 'Conectado como ${username}',
+			'streaming.streamNeedsProvider' => 'Conecte um serviço Debrid para reproduzir este stream de torrent.',
+			'streaming.playViaProvider' => 'Reproduzir com Debrid',
+			'streaming.disconnectConfirm' => ({required Object service}) => 'Desconectar ${service}?',
+			'streaming.disconnectBody' => 'O PlezyNG removerá a autorização deste dispositivo. Os arquivos do provedor e as transferências em andamento não serão alterados.',
+			'streaming.streamsTitle' => 'Escolher um stream',
+			'streaming.searchingStreams' => 'Verificando complementos conectados…',
+			'streaming.noStreams' => 'Nenhum stream foi encontrado para este título.',
+			'streaming.manageConnections' => 'Gerenciar serviços de streaming',
+			'streaming.subtitleTracks' => ({required Object count}) => 'Faixas de legenda: ${count}',
+			'streaming.chooseSubtitle' => 'Escolher legenda',
+			'streaming.chooseProvider' => 'Escolher serviço Debrid',
+			'streaming.subtitleOff' => 'Legendas desativadas',
+			'streaming.subtitleLoadFailed' => 'Não foi possível carregar esta legenda. Tente outra faixa.',
+			'streaming.subtitleApplied' => 'Legenda selecionada para reprodução',
+			'streaming.streamLookupPartial' => 'Não foi possível acessar alguns complementos.',
+			'streaming.streamLookupFailed' => 'Não foi possível verificar os complementos conectados.',
+			'streaming.streamOpenExternal' => 'Abrir link externo',
+			'streaming.streamPrepare' => 'Preparando pelo seu serviço Debrid…',
+			'streaming.streamPrepareFailed' => 'Não foi possível preparar este stream. Confira a conta conectada e tente outra fonte.',
+			'streaming.streamNeedsRealDebrid' => 'Conecte um serviço Debrid para reproduzir este stream de torrent.',
+			'streaming.streamUnsupported' => 'Este formato de stream não é compatível com o player do app.',
+			'streaming.remoteNeedsEpisode' => 'Escolha um episódio antes de buscar um stream.',
+			'streaming.remoteNeedsEpisodeNumber' => 'Este episódio está sem o número da temporada ou do episódio.',
+			'streaming.remoteNeedsExternalId' => 'O PlezyNG não encontrou um ID do IMDb ou TMDB para este título.',
+			'streaming.watchWithServices' => 'Assistir com serviços conectados',
+			'streaming.chooseEpisode' => 'Escolher episódio',
+			'streaming.episodes' => 'Episódios',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => 'Temporada ${season}, episódio ${episode}',
+			'streaming.episodeStreamHint' => 'Abre os streams disponíveis para este episódio.',
+			'streaming.cloudFiles' => 'Arquivos na nuvem',
+			'streaming.browseCloud' => 'Procurar arquivos',
+			'streaming.cloudEmpty' => 'Nenhum arquivo de vídeo reproduzível foi encontrado nesta conta.',
+			'streaming.cloudLoadFailed' => 'Não foi possível carregar os arquivos na nuvem. Verifique a conexão e tente novamente.',
+			'streaming.providers' => 'Provedores Debrid',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Adicionar servidor ${product}',
 			'addServer.serverUrls' => 'URLs do servidor',
 			'addServer.serverUrlsHelper' => 'Várias URLs são permitidas, separadas por vírgulas.',
@@ -7989,6 +8207,8 @@ extension on TranslationsPt {
 			'universalMedia.playlistFormatsHelp' => 'Uma lista de reprodução pode conter até 1.000 itens e 2 MB. HLS manifesta-se aberta como fluxos para que o jogador possa escolher uma qualidade.',
 			'universalMedia.saveQueuePlaylist' => 'Guardar fila como lista de reprodução',
 			'universalMedia.queuePlaylistSaved' => 'A lista de reprodução foi guardada junto aos ficheiros multimédia.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => 'Esta fila não pode ser guardada como uma lista local reutilizável.',
 			'universalMedia.queuePlaylistFolderRequired' => 'Escolha uma localização na mesma pasta dos ficheiros da fila.',
 			'universalMedia.noFavorites' => 'Não foram salvos favoritos ainda. favoritos permanecem neste perfil.',
@@ -8093,8 +8313,6 @@ extension on TranslationsPt {
 			'universalMedia.captureAudioNone' => 'Não há áudio',
 			'universalMedia.captureDefaultAudio' => 'Introdução de áudio',
 			'universalMedia.captureWaylandHelp' => 'Wayland limita esta captura XWayland para o X display. Windows fora XWayland pode não aparecer.',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Rápido de gravação',
 			'universalMedia.capturePrivacy' => 'A gravação é salvida apenas para o arquivo que você escolher. captura de microfone é opcional. PlezyNG não carrega a gravação.',
 			'universalMedia.captureSaveAs' => 'Salve a gravação de tela como',
@@ -8503,6 +8721,8 @@ extension on TranslationsPt {
 			'sourceSetup.nfsEncryptionFailure' => 'Para NFS criptografado, verifique o suporte a RFC 9289 e TLS 1.3 nos dois serviços do NAS, o nome no certificado e os UID/GID do compartilhamento. PlezyNG não tentará esta conexão novamente sem criptografia.',
 			'sourceSetup.sourceConnecting' => 'Conectando à fonte',
 			'sourceSetup.metadataSearchPrivacy' => 'Esta busca de títulos é enviada ao Trakt. Ela envia o título digitado, não o vídeo nem as credenciais da fonte.',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => 'Escolher uma correspondência',
 			'sourceSetup.metadataMatchHelp' => 'Confira o título e o ano antes de escolher. O Trakt recebe o título pesquisado; o vídeo permanece na fonte.',
 			'sourceSetup.metadataNoMatches' => 'Nenhum título correspondente encontrado online. Tente outro título.',
@@ -8607,8 +8827,6 @@ extension on TranslationsPt {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

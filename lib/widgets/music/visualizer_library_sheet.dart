@@ -14,7 +14,12 @@ import 'visualizer_preset_browser.dart';
 /// In-app entry point for license-cleared pack downloads and user-owned imports.
 /// Link-only historical collections are never rehosted by PlezyNG.
 class VisualizerLibrarySheet extends StatefulWidget {
-  const VisualizerLibrarySheet({super.key, this.profileId, this.hasMusicPcmSource = false, this.initialEngine = 'projectm'});
+  const VisualizerLibrarySheet({
+    super.key,
+    this.profileId,
+    this.hasMusicPcmSource = false,
+    this.initialEngine = 'projectm',
+  });
   final String? profileId;
   final bool hasMusicPcmSource;
   final String initialEngine;
@@ -25,7 +30,10 @@ class VisualizerLibrarySheet extends StatefulWidget {
 
 class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   late final VisualizerPackStore _store;
-  VisualizerCapabilities _capability = const VisualizerCapabilities(available: false, reason: 'Checking native renderer…');
+  VisualizerCapabilities _capability = const VisualizerCapabilities(
+    available: false,
+    reason: 'Checking native renderer…',
+  );
   List<VisualizerInstalledPack> _installed = const [];
   List<VisualizerImportedPack> _communityPacks = const [];
   List<String> _imports = const [];
@@ -52,24 +60,37 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
 
   Future<void> _checkRenderer() async {
     final engine = _engine;
-    final capability = widget.hasMusicPcmSource ? await VisualizerSession.capabilities(engine: _engine)
-        : const VisualizerCapabilities(available: false, reason: 'This music playback source has no native visualization audio.');
+    final capability = widget.hasMusicPcmSource
+        ? await VisualizerSession.capabilities(engine: _engine)
+        : const VisualizerCapabilities(
+            available: false,
+            reason: 'This music playback source has no native visualization audio.',
+          );
     if (mounted && engine == _engine) setState(() => _capability = capability);
   }
 
   Future<void> _browse({String? packPath, String? importedName}) async {
     try {
-      final presets = packPath != null ? await _store.presetsForPack(packPath)
-          : importedName != null ? [await _store.importedPreset(importedName)] : await _store.allPresets();
+      final presets = packPath != null
+          ? await _store.presetsForPack(packPath)
+          : importedName != null
+          ? [await _store.importedPreset(importedName)]
+          : await _store.allPresets();
       if (!mounted) return;
       final selection = await showModalBottomSheet<VisualizerSelection>(
-        context: context, isScrollControlled: true, useSafeArea: true,
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
         builder: (_) => VisualizerPresetBrowser(presets: presets, store: _store, capability: _capability),
       );
       if (!mounted) return;
-      if (selection != null) Navigator.pop(context, selection);
-      else await _refresh(); // Per-preset favorites may have changed.
-    } on Object catch (error) { if (mounted) setState(() => _failure = error.toString()); }
+      if (selection != null)
+        Navigator.pop(context, selection);
+      else
+        await _refresh(); // Per-preset favorites may have changed.
+    } on Object catch (error) {
+      if (mounted) setState(() => _failure = error.toString());
+    }
   }
 
   @override
@@ -116,8 +137,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
     }
   }
 
-  bool _matches(String value) =>
-      _searchQuery.isEmpty || value.toLowerCase().contains(_searchQuery);
+  bool _matches(String value) => _searchQuery.isEmpty || value.toLowerCase().contains(_searchQuery);
 
   String _packFavoriteKey(String id, String version) => 'pack:$id@$version';
 
@@ -136,13 +156,18 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   }
 
   Future<void> _checkPackUpdates() async {
-    setState(() { _busy = true; _failure = null; });
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
     try {
       await _store.refreshCatalog();
       await _refresh();
     } on Object catch (error) {
       if (mounted) setState(() => _failure = 'Could not update pack catalog: $error');
-    } finally { if (mounted) setState(() => _busy = false); }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _install(VisualizerPackCatalogEntry entry) async {
@@ -155,21 +180,26 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
       _failure = null;
     });
     try {
-      await _store.install(entry, cancellation: cancellation, onProgress: (value) {
-        if (mounted) setState(() => _progress = value.clamp(0.0, 1.0).toDouble());
-      });
+      await _store.install(
+        entry,
+        cancellation: cancellation,
+        onProgress: (value) {
+          if (mounted) setState(() => _progress = value.clamp(0.0, 1.0).toDouble());
+        },
+      );
       await _refresh();
     } on VisualizerPackCanceledException {
       if (mounted) setState(() => _failure = null);
     } catch (error) {
       if (mounted) setState(() => _failure = error.toString());
     } finally {
-      if (mounted) setState(() {
-        _busy = false;
-        _workingPackId = null;
-        _installCancellation = null;
-        _progress = null;
-      });
+      if (mounted)
+        setState(() {
+          _busy = false;
+          _workingPackId = null;
+          _installCancellation = null;
+          _progress = null;
+        });
     }
   }
 
@@ -243,9 +273,9 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
       final skipped = failures.isEmpty
           ? ''
           : '; skipped ${failures.length}: ${failures.take(2).join(' · ')}${failures.length > 2 ? ' · …' : ''}';
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text('Imported $imported of ${result.files.length} preset files$skipped.')),
-      );
+      ScaffoldMessenger.maybeOf(
+        context,
+      )?.showSnackBar(SnackBar(content: Text('Imported $imported of ${result.files.length} preset files$skipped.')));
     } catch (error) {
       if (mounted) setState(() => _failure = error.toString());
     } finally {
@@ -278,9 +308,9 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
       final pack = await _store.importPackFile(sourcePath, picked.size);
       await _refresh();
       if (!mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text('Imported ${pack.name} ${pack.version}.')),
-      );
+      ScaffoldMessenger.maybeOf(
+        context,
+      )?.showSnackBar(SnackBar(content: Text('Imported ${pack.name} ${pack.version}.')));
     } catch (error) {
       if (mounted) setState(() => _failure = error.toString());
     } finally {
@@ -290,20 +320,36 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
 
   Future<void> _importFolder() async {
     final cancellation = VisualizerPackInstallCancellation();
-    setState(() { _busy = true; _failure = null; });
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
     try {
-      final path = await FilePickerService.instance.getDirectoryPath(dialogTitle: 'Import a preset folder with textures and notices');
+      final path = await FilePickerService.instance.getDirectoryPath(
+        dialogTitle: 'Import a preset folder with textures and notices',
+      );
       if (path == null || !mounted) return;
-      setState(() { _busy = true; _failure = null; _installCancellation = cancellation; });
+      setState(() {
+        _busy = true;
+        _failure = null;
+        _installCancellation = cancellation;
+      });
       final pack = await _store.importPresetFolder(path, cancellation: cancellation);
       await _refresh();
-      if (mounted) ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text('Imported ${pack.presetCount} presets from ${pack.name}.')),
-      );
-    } on VisualizerPackCanceledException { /* The staging directory is discarded. */ }
-    on Object catch (error) { if (mounted) setState(() => _failure = error.toString()); }
-    finally {
-      if (mounted) setState(() { _busy = false; _installCancellation = null; });
+      if (mounted)
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(SnackBar(content: Text('Imported ${pack.presetCount} presets from ${pack.name}.')));
+    } on VisualizerPackCanceledException {
+      /* The staging directory is discarded. */
+    } on Object catch (error) {
+      if (mounted) setState(() => _failure = error.toString());
+    } finally {
+      if (mounted)
+        setState(() {
+          _busy = false;
+          _installCancellation = null;
+        });
     }
   }
 
@@ -335,12 +381,16 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
     final tk = tokens(context);
     final installedIds = _installed.where((pack) => pack.isCurrent).map((pack) => pack.entry.id).toSet();
     final olderIds = _installed.where((pack) => !pack.isCurrent).map((pack) => pack.entry.id).toSet();
-    final entries = {for (final pack in _installed) pack.entry.id: pack.entry,
-      for (final entry in _store.catalogEntries) entry.id: entry};
+    final entries = {
+      for (final pack in _installed) pack.entry.id: pack.entry,
+      for (final entry in _store.catalogEntries) entry.id: entry,
+    };
     final visibleEntries = entries.values.where((entry) {
       final favorite = _favorites.contains(_packFavoriteKey(entry.id, entry.version));
       return (!_favoritesOnly || favorite) &&
-          _matches('${entry.name} ${entry.searchText} ${entry.version} ${entry.license} ${entry.description} ${entry.contentNotice}');
+          _matches(
+            '${entry.name} ${entry.searchText} ${entry.version} ${entry.license} ${entry.description} ${entry.contentNotice}',
+          );
     }).toList();
     final visibleLinks = _linkOnlySources
         .where((source) => !_favoritesOnly && _matches('${source.name} ${source.status}'))
@@ -348,13 +398,16 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
     final visibleCommunityPacks = _communityPacks.where((pack) {
       final favorite = _favorites.contains(_packFavoriteKey(pack.id, pack.version));
       return (!_favoritesOnly || favorite) &&
-          _matches('${pack.name} ${pack.authors} ${pack.presetSearchText} ${pack.version} ${pack.license} ${pack.contentNotice}');
+          _matches(
+            '${pack.name} ${pack.authors} ${pack.presetSearchText} ${pack.version} ${pack.license} ${pack.contentNotice}',
+          );
     }).toList();
     final visibleImports = _imports.where((name) {
       final favorite = _favorites.contains(_presetFavoriteKey(name));
       return (!_favoritesOnly || favorite) && _matches(name);
     }).toList();
-    final hasMatches = visibleEntries.isNotEmpty ||
+    final hasMatches =
+        visibleEntries.isNotEmpty ||
         visibleLinks.isNotEmpty ||
         visibleCommunityPacks.isNotEmpty ||
         visibleImports.isNotEmpty;
@@ -426,9 +479,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                 MaterialBanner(
                   content: Text(_failure!),
                   leading: Icon(Symbols.error_rounded, color: Theme.of(context).colorScheme.error),
-                  actions: [
-                    TextButton(onPressed: () => setState(() => _failure = null), child: Text(t.common.close)),
-                  ],
+                  actions: [TextButton(onPressed: () => setState(() => _failure = null), child: Text(t.common.close))],
                 ),
               Expanded(
                 child: _loading
@@ -443,9 +494,11 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                           ),
                           Padding(
                             padding: const EdgeInsets.all(8),
-                            child: Text(_capability.available
-                                ? 'The selected native renderer uses live music audio. Visual fidelity is not yet qualified.'
-                                : _capability.reason),
+                            child: Text(
+                              _capability.available
+                                  ? 'The selected native renderer uses live music audio. Visual fidelity is not yet qualified.'
+                                  : _capability.reason,
+                            ),
                           ),
                           if ((_searchQuery.isNotEmpty || _favoritesOnly) && !hasMatches)
                             const Padding(
@@ -459,22 +512,38 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               DropdownMenuItem(value: 'projectm', child: Text('projectM')),
                               DropdownMenuItem(value: 'milkrust', child: Text('MilkRust native (experimental)')),
                             ],
-                            onChanged: _busy ? null : (value) {
-                              if (value == null) return;
-                              setState(() { _engine = value; _capability = const VisualizerCapabilities(
-                                available: false, reason: 'Checking native renderer…'); });
-                              _checkRenderer();
-                            },
+                            onChanged: _busy
+                                ? null
+                                : (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _engine = value;
+                                      _capability = const VisualizerCapabilities(
+                                        available: false,
+                                        reason: 'Checking native renderer…',
+                                      );
+                                    });
+                                    _checkRenderer();
+                                  },
                           ),
-                          if (_engine == 'milkrust') const Padding(padding: EdgeInsets.all(8),
-                            child: Text('MilkRust supports a limited shader subset and uniform Fade double presets. '
-                                'Preset changes currently cut immediately. Unsupported presets report an error.')),
+                          if (_engine == 'milkrust')
+                            const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Text(
+                                'MilkRust supports a limited shader subset and uniform Fade double presets. '
+                                'Preset changes currently cut immediately. Unsupported presets report an error.',
+                              ),
+                            ),
                           _sectionTitle(context, 'Included packs and downloads'),
                           Text(_store.catalogStatus, style: Theme.of(context).textTheme.bodySmall),
-                          Align(alignment: Alignment.centerLeft, child: TextButton.icon(
-                            onPressed: _busy || !_store.catalogConfigured ? null : _checkPackUpdates,
-                            icon: const Icon(Icons.refresh_rounded), label: const Text('Check for pack updates'),
-                          )),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: _busy || !_store.catalogConfigured ? null : _checkPackUpdates,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Check for pack updates'),
+                            ),
+                          ),
                           for (final entry in visibleEntries)
                             Card(
                               child: Padding(
@@ -493,7 +562,9 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                               Text(entry.name, style: Theme.of(context).textTheme.titleMedium),
                                               Text(
                                                 '${entry.version} · ${entry.license} · ${entry.presetCount} presets',
-                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall?.copyWith(color: tk.textMuted),
                                               ),
                                             ],
                                           ),
@@ -505,9 +576,15 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                     if (entry.bundledAsset != null)
                                       const Text('Included with the app. Installation and restoration work offline.'),
                                     if (!_store.canDownload(entry))
-                                      const Text('Download unavailable. Installed presets can still be browsed and removed.'),
-                                    if (_store.canDownload(entry) && olderIds.contains(entry.id) && !installedIds.contains(entry.id))
-                                      const Text('Update available. Previous versions stay available in Installed presets.'),
+                                      const Text(
+                                        'Download unavailable. Installed presets can still be browsed and removed.',
+                                      ),
+                                    if (_store.canDownload(entry) &&
+                                        olderIds.contains(entry.id) &&
+                                        !installedIds.contains(entry.id))
+                                      const Text(
+                                        'Update available. Previous versions stay available in Installed presets.',
+                                      ),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Content notice: ${entry.contentNotice}',
@@ -529,8 +606,15 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                       children: [
                                         if (installedIds.contains(entry.id))
                                           FilledButton.icon(
-                                            onPressed: _busy ? null : () => _browse(packPath:
-                                                _installed.firstWhere((pack) => pack.entry.id == entry.id && pack.isCurrent).path),
+                                            onPressed: _busy
+                                                ? null
+                                                : () => _browse(
+                                                    packPath: _installed
+                                                        .firstWhere(
+                                                          (pack) => pack.entry.id == entry.id && pack.isCurrent,
+                                                        )
+                                                        .path,
+                                                  ),
                                             icon: const Icon(Icons.grid_view_rounded, size: 18),
                                             label: const Text('Browse presets'),
                                           ),
@@ -548,10 +632,17 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                           )
                                         else if (!installedIds.contains(entry.id))
                                           FilledButton.icon(
-                                            onPressed: _busy || !_store.isStorageSupported || !_store.canDownload(entry) ? null : () => _install(entry),
+                                            onPressed: _busy || !_store.isStorageSupported || !_store.canDownload(entry)
+                                                ? null
+                                                : () => _install(entry),
                                             icon: const AppIcon(Symbols.download_rounded, size: 18),
-                                            label: Text(entry.bundledAsset != null ? 'Restore included pack'
-                                                : olderIds.contains(entry.id) ? 'Download update' : t.downloads.downloadNow),
+                                            label: Text(
+                                              entry.bundledAsset != null
+                                                  ? 'Restore included pack'
+                                                  : olderIds.contains(entry.id)
+                                                  ? 'Download update'
+                                                  : t.downloads.downloadNow,
+                                            ),
                                           ),
                                         IconButton(
                                           tooltip: _favorites.contains(_packFavoriteKey(entry.id, entry.version))
@@ -599,8 +690,11 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                             label: const Text('Import folder with textures and notices'),
                           ),
                           if (_busy && _installCancellation != null && _workingPackId == null)
-                            TextButton.icon(onPressed: _installCancellation!.cancel,
-                              icon: const Icon(Icons.close), label: const Text('Cancel folder import')),
+                            TextButton.icon(
+                              onPressed: _installCancellation!.cancel,
+                              icon: const Icon(Icons.close),
+                              label: const Text('Cancel folder import'),
+                            ),
                           OutlinedButton.icon(
                             onPressed: _busy || !_store.isStorageSupported ? null : _importCommunityPack,
                             icon: const AppIcon(Symbols.folder_open_rounded, size: 18),
@@ -624,11 +718,13 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                   ),
                                   title: Text(pack.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                                   onTap: _busy || pack.isDamaged ? null : () => _browse(packPath: pack.path),
-                                  subtitle: Text(pack.isDamaged
-                                      ? '${pack.version} · metadata unavailable\n${pack.contentNotice}'
-                                      : '${pack.version} · ${pack.license} · ${pack.presetCount} presets\n'
-                                            'Content notice: ${pack.contentNotice}\n'
-                                            '${pack.localOnly ? 'Local folder snapshot · no redistribution rights asserted' : 'File hashes checked at import · rights claims are self-declared'} · browse presets'),
+                                  subtitle: Text(
+                                    pack.isDamaged
+                                        ? '${pack.version} · metadata unavailable\n${pack.contentNotice}'
+                                        : '${pack.version} · ${pack.license} · ${pack.presetCount} presets\n'
+                                              'Content notice: ${pack.contentNotice}\n'
+                                              '${pack.localOnly ? 'Local folder snapshot · no redistribution rights asserted' : 'File hashes checked at import · rights claims are self-declared'} · browse presets',
+                                  ),
                                   isThreeLine: true,
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -670,8 +766,11 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                 leading: const AppIcon(Symbols.music_note_rounded, size: 18),
                                 title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
                                 onTap: _busy ? null : () => _browse(importedName: name),
-                                subtitle: Text(name.toLowerCase().endsWith('.milk2')
-                                    ? 'Stored offline · .milk2 playback unavailable' : 'Stored offline · browse to play or view details'),
+                                subtitle: Text(
+                                  name.toLowerCase().endsWith('.milk2')
+                                      ? 'Stored offline · .milk2 playback unavailable'
+                                      : 'Stored offline · browse to play or view details',
+                                ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [

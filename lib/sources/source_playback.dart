@@ -534,7 +534,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       files = List.unmodifiable(selected);
       _localOverrides = Map.unmodifiable(effectiveOverrides);
       _localOverrideHeaders = Map.unmodifiable({
-        for (final entry in localOverrideHeaders.entries) entry.key: Map.unmodifiable(entry.value),
+        for (final entry in localOverrideHeaders.entries) entry.key: Map<String, String>.unmodifiable(entry.value),
       });
       _queueOrder = List<int>.generate(files.length, (index) => index);
       _queueShuffled = false;

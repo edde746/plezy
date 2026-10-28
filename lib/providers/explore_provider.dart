@@ -21,10 +21,12 @@ class ExploreRowHub {
   final String? providerHubId;
   final CatalogHubStyle? style;
   final int? totalResults;
+  final CatalogHub? providerHub;
   final MediaHub hub;
 
   const ExploreRowHub.catalogRow({required CatalogRowId this.row, required this.hub, this.totalResults})
     : providerHubId = null,
+      providerHub = null,
       style = null;
 
   const ExploreRowHub.providerHub({
@@ -32,6 +34,7 @@ class ExploreRowHub {
     required this.hub,
     this.style,
     this.totalResults,
+    required this.providerHub,
   }) : row = null;
 }
 
@@ -110,7 +113,19 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
       if (isDisposed || generation != _generation) return;
       _providerHubs = [
         for (final hub in _providerHubs)
-          if (hub.id == id) CatalogHub(id: hub.id, title: hub.title, style: hub.style, page: page) else hub,
+          if (hub.id == id)
+            CatalogHub(
+              id: hub.id,
+              title: hub.title,
+              style: hub.style,
+              page: page,
+              filters: hub.filters,
+              cachedFilterValues: hub.cachedFilterValues,
+              initialFilters: hub.initialFilters,
+              requiresFilterInput: hub.requiresFilterInput,
+            )
+          else
+            hub,
       ];
       _rowsEpoch++;
     } catch (_) {
@@ -148,11 +163,13 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
               ),
             ),
       for (final providerHub in _providerHubs)
-        if (_rendersProviderHub(providerHub) && providerHub.page.items.isNotEmpty)
+        if (_rendersProviderHub(providerHub) &&
+            (providerHub.page.items.isNotEmpty || providerHub.requiresFilterInput))
           ExploreRowHub.providerHub(
             providerHubId: providerHub.id,
             style: providerHub.style,
             totalResults: providerHub.page.totalResults,
+            providerHub: providerHub,
             hub: MediaHub(
               id: 'explore:${source.id.name}:hub:${providerHub.id}',
               identifier: 'explore.hub.${providerHub.id}',
@@ -320,6 +337,23 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     if (source is! CatalogHubSource || hubId == null) return rowHub.hub.items;
     final hubSource = source as CatalogHubSource;
     return _loadAllPages(hubId, (page) => hubSource.fetchHub(hubId, page: page, limit: viewAllPageLimit));
+  }
+
+  /// Full-list view for a dynamic hub with provider-declared filters.
+  Future<List<MediaItem>> loadAllForFilteredHub(ExploreRowHub rowHub, List<LibraryFilter> filters) async {
+    final source = _source;
+    final hubId = rowHub.providerHubId;
+    if (source is! CatalogHubFiltersSource || hubId == null) return rowHub.hub.items;
+    final filterSource = source as CatalogHubFiltersSource;
+    return _loadAllPages(
+      hubId,
+      (page) => filterSource.fetchFilteredHub(
+        hubId,
+        filters: filters,
+        page: page,
+        limit: viewAllPageLimit,
+      ),
+    );
   }
 
   Future<List<MediaItem>> _loadAllPages(String label, Future<CatalogPage> Function(int page) fetchPage) async {

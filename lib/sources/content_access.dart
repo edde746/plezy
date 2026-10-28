@@ -36,13 +36,15 @@ String? _renewalText(Map<String, dynamic> data, String key, {int maxLength = 409
   return value;
 }
 
-int? _renewalSize(Map<String, dynamic> data) {
-  final value = data['size'];
+int? _renewalNumber(Map<String, dynamic> data, String key) {
+  final value = data[key];
   if (value is int) return value;
   if (value is num && value.isFinite && value >= 0) return value.toInt();
   if (value is String) return int.tryParse(value);
   return null;
 }
+
+int? _renewalSize(Map<String, dynamic> data) => _renewalNumber(data, 'size');
 
 void _checkRenewedRepresentation(Map<String, dynamic> descriptor, String? revision, int? size) {
   final expectedRevision = _renewalText(descriptor, 'revision', maxLength: 2048);
@@ -145,8 +147,261 @@ bool _safeProviderDownloadUri(Uri uri, Iterable<String> domains) =>
     InternetAddress.tryParse(uri.host) == null &&
     _hostMatchesDomain(uri.host, domains);
 
+bool _safeRemoteCloudDownloadUri(Uri uri) =>
+    uri.scheme == 'https' &&
+    uri.host.isNotEmpty &&
+    uri.host.contains('.') &&
+    !uri.host.toLowerCase().endsWith('.localhost') &&
+    !uri.host.toLowerCase().endsWith('.local') &&
+    !uri.host.toLowerCase().endsWith('.internal') &&
+    uri.userInfo.isEmpty &&
+    !uri.hasFragment &&
+    (!uri.hasPort || uri.port == 443) &&
+    uri.toString().length <= 8192 &&
+    InternetAddress.tryParse(uri.host) == null;
+
+Future<Map<String, dynamic>> _remoteCloudApi(
+  String host,
+  String path, {
+  required String token,
+  String method = 'GET',
+  Map<String, String>? query,
+  Map<String, String>? form,
+}) =>
+    _renewalJson(Uri.https(host, path, query), method: method, headers: {'Authorization': 'Bearer $token'}, form: form);
+
+String? _remoteCloudId(Map<String, dynamic> descriptor, String key, {int maxLength = 128}) {
+  final value = _renewalText(descriptor, key, maxLength: maxLength);
+  if (value == null || value == '.' || value == '..' || value.contains('/') || value.contains('\\')) return null;
+  return value;
+}
+
+String? _remoteCloudFileId(Map<String, dynamic> descriptor) {
+  final value = _renewalText(descriptor, 'providerFileId', maxLength: 1024);
+  if (value == null || value == '.' || value == '..' || value.contains('\\')) return null;
+  if (value.split('/').any((segment) => segment == '.' || segment == '..')) return null;
+  return value;
+}
+
+Future<_RenewedBackgroundLease> _renewRemoteCloudBackgroundLease(Map<String, dynamic> descriptor) async {
+  final service = _renewalText(descriptor, 'service', maxLength: 32);
+  final accountId = _remoteCloudId(descriptor, 'accountId');
+  final providerId = _remoteCloudId(descriptor, 'providerId');
+  final fileId = _remoteCloudFileId(descriptor);
+  final expectedSize = _renewalSize(descriptor);
+  var accessToken = _renewalText(descriptor, 'accessToken', maxLength: 16384);
+  if (service == null ||
+      accountId == null ||
+      providerId == null ||
+      fileId == null ||
+      expectedSize == null ||
+      expectedSize <= 0 ||
+      accessToken == null) {
+    throw const SourceException(SourceFailure.permission);
+  }
+
+  var updatedDescriptor = Map<String, dynamic>.from(descriptor);
+  if (service == 'realDebrid') {
+    final refreshToken = _renewalText(descriptor, 'refreshToken', maxLength: 8192);
+    final clientId = _renewalText(descriptor, 'clientId', maxLength: 512);
+    final clientSecret = _renewalText(descriptor, 'clientSecret', maxLength: 4096);
+    final expiresAt = _renewalNumber(descriptor, 'expiresAt');
+    if (expiresAt != null && expiresAt <= DateTime.now().millisecondsSinceEpoch ~/ 1000 + 60) {
+      if (refreshToken == null || clientId == null || clientSecret == null) {
+        throw const SourceException(SourceFailure.authentication);
+      }
+      final refreshed = await _renewalJson(
+        Uri.https('api.real-debrid.com', '/oauth/v2/token'),
+        form: {
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'code': refreshToken,
+          'grant_type': 'http://oauth.net/grant_type/device/1.0',
+        },
+      );
+      final nextAccessToken = _renewalText(refreshed, 'access_token', maxLength: 16384);
+      final nextRefreshToken = _renewalText(refreshed, 'refresh_token', maxLength: 8192);
+      final expiresIn = _renewalNumber(refreshed, 'expires_in');
+      if (nextAccessToken == null || nextRefreshToken == null || expiresIn == null || expiresIn <= 0) {
+        throw const SourceException(SourceFailure.authentication);
+      }
+      accessToken = nextAccessToken;
+      updatedDescriptor
+        ..['accessToken'] = nextAccessToken
+        ..['refreshToken'] = nextRefreshToken
+        ..['expiresAt'] = DateTime.now().millisecondsSinceEpoch ~/ 1000 + expiresIn;
+    }
+
+    if (!RegExp(r'^\d{1,32}$').hasMatch(providerId) || !RegExp(r'^\d{1,32}$').hasMatch(fileId)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final info = await _remoteCloudApi(
+      'api.real-debrid.com',
+      '/rest/1.0/torrents/info/$providerId',
+      token: accessToken,
+    );
+    if (info['status'] != 'downloaded' || info['files'] is! List || info['links'] is! List) {
+      throw const SourceException(SourceFailure.conflict);
+    }
+    final allFiles = (info['files'] as List).whereType<Map>().map((row) => Map<String, dynamic>.from(row)).toList();
+    final selectedFiles = allFiles.where((row) => row['selected'] == 1).toList(growable: false);
+    final fileIndex = selectedFiles.indexWhere((row) => '${row['id']}' == fileId);
+    if (fileIndex < 0 || fileIndex >= (info['links'] as List).length)
+      throw const SourceException(SourceFailure.conflict);
+    final selected = selectedFiles[fileIndex];
+    final size = _renewalNumber(selected, 'bytes');
+    final stableRevision = 'realDebrid:$providerId:$fileId:$size';
+    _checkRenewedRepresentation(descriptor, stableRevision, size);
+    final rawLink = (info['links'] as List)[fileIndex];
+    if (rawLink is! String || rawLink.length > 8192) throw const SourceException(SourceFailure.invalidData);
+    final unrestricted = await _remoteCloudApi(
+      'api.real-debrid.com',
+      '/rest/1.0/unrestrict/link',
+      token: accessToken,
+      method: 'POST',
+      form: {'link': rawLink},
+    );
+    final rawUrl = unrestricted['download'];
+    final uri = rawUrl is String ? Uri.tryParse(rawUrl) : null;
+    if (uri == null || !_safeRemoteCloudDownloadUri(uri)) throw const SourceException(SourceFailure.permission);
+    return _RenewedBackgroundLease(uri, const {}, refreshDescriptor: updatedDescriptor);
+  }
+
+  if (service == 'allDebrid') {
+    if (!RegExp(r'^\d{1,32}$').hasMatch(providerId)) throw const SourceException(SourceFailure.permission);
+    final response = await _remoteCloudApi(
+      'api.alldebrid.com',
+      '/v4.1/magnet/files',
+      token: accessToken,
+      method: 'POST',
+      form: {'id[]': providerId},
+    );
+    final magnets = response['magnets'];
+    if (magnets is! List || magnets.isEmpty || magnets.first is! Map) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final files = <({String path, String link, int? size})>[];
+    void collect(Object? rows, String parent, int depth) {
+      if (depth > 20 || files.length >= 10000 || rows is! List) return;
+      for (final raw in rows) {
+        if (raw is! Map || files.length >= 10000) continue;
+        final row = Map<String, dynamic>.from(raw);
+        final name = row['n'];
+        if (name is! String || name.isEmpty || name.length > 512) continue;
+        final path = parent.isEmpty ? name : '$parent/$name';
+        final children = row['e'];
+        if (children is List) {
+          collect(children, path, depth + 1);
+        } else if (row['l'] is String && (row['l'] as String).length <= 8192) {
+          files.add((path: path, link: row['l'] as String, size: _renewalNumber(row, 's')));
+        }
+      }
+    }
+
+    collect((magnets.first as Map)['files'], '', 0);
+    final selected = files.where((file) => file.path == fileId).firstOrNull;
+    if (selected == null) throw const SourceException(SourceFailure.conflict);
+    final stableRevision = 'allDebrid:$providerId:$fileId:${selected.size}';
+    _checkRenewedRepresentation(descriptor, stableRevision, selected.size);
+    final unlocked = await _remoteCloudApi(
+      'api.alldebrid.com',
+      '/v4/link/unlock',
+      token: accessToken,
+      method: 'POST',
+      form: {'link': selected.link},
+    );
+    final rawUrl = unlocked['link'];
+    final uri = rawUrl is String ? Uri.tryParse(rawUrl) : null;
+    if (uri == null || !_safeRemoteCloudDownloadUri(uri)) throw const SourceException(SourceFailure.permission);
+    return _RenewedBackgroundLease(uri, const {});
+  }
+
+  if (service == 'premiumize') {
+    if (!RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(fileId)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final parentId = descriptor['parentProviderId'] == null ? null : _remoteCloudId(descriptor, 'parentProviderId');
+    if (descriptor['parentProviderId'] != null && parentId == null) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final list = await _remoteCloudApi(
+      'www.premiumize.me',
+      '/api/folder/list',
+      token: accessToken,
+      query: {if (parentId != null) 'id': parentId},
+    );
+    final content = list['content'];
+    if (content is! List) throw const SourceException(SourceFailure.invalidData);
+    final file = content
+        .whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
+        .where((row) => '${row['id']}' == fileId && row['type'] == 'file')
+        .firstOrNull;
+    if (file == null) throw const SourceException(SourceFailure.conflict);
+    final size = _renewalNumber(file, 'size');
+    final stableRevision = 'premiumize:${parentId ?? 'root'}:$fileId:$size';
+    _checkRenewedRepresentation(descriptor, stableRevision, size);
+    final rawUrl = file['link'];
+    final uri = rawUrl is String ? Uri.tryParse(rawUrl) : null;
+    if (uri == null || !_safeRemoteCloudDownloadUri(uri)) throw const SourceException(SourceFailure.permission);
+    return _RenewedBackgroundLease(uri, const {});
+  }
+
+  if (service == 'torbox') {
+    if (!RegExp(r'^\d{1,32}$').hasMatch(providerId) || !RegExp(r'^\d{1,32}$').hasMatch(fileId)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final list = await _remoteCloudApi(
+      'api.torbox.app',
+      '/v1/api/torrents/mylist',
+      token: accessToken,
+      query: {'id': providerId, 'bypass_cache': 'true'},
+    );
+    final rawData = list['data'];
+    final torrent = rawData is Map
+        ? Map<String, dynamic>.from(rawData)
+        : rawData is List && rawData.isNotEmpty && rawData.first is Map
+        ? Map<String, dynamic>.from(rawData.first as Map)
+        : null;
+    if (torrent == null ||
+        !(torrent['cached'] == true || torrent['download_finished'] == true || torrent['status'] == 'cached')) {
+      throw const SourceException(SourceFailure.conflict);
+    }
+    final rawFiles = torrent['files'];
+    if (rawFiles is! List) throw const SourceException(SourceFailure.invalidData);
+    final file = rawFiles
+        .whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
+        .where((row) => '${row['id']}' == fileId)
+        .firstOrNull;
+    if (file == null) throw const SourceException(SourceFailure.conflict);
+    final size = _renewalNumber(file, 'size');
+    final stableRevision = 'torbox:$providerId:$fileId:$size';
+    _checkRenewedRepresentation(descriptor, stableRevision, size);
+    final request = await _remoteCloudApi(
+      'api.torbox.app',
+      '/v1/api/torrents/requestdl',
+      token: accessToken,
+      query: {
+        'token': accessToken,
+        'torrent_id': providerId,
+        'file_id': fileId,
+        'redirect': 'false',
+        'append_name': 'true',
+      },
+    );
+    final rawUrl = request['data'];
+    final uri = rawUrl is String ? Uri.tryParse(rawUrl) : null;
+    if (uri == null || !_safeRemoteCloudDownloadUri(uri)) throw const SourceException(SourceFailure.permission);
+    return _RenewedBackgroundLease(uri, const {});
+  }
+
+  throw const SourceException(SourceFailure.unsupported);
+}
+
 Future<_RenewedBackgroundLease> _renewBackgroundLease(Map<String, dynamic> descriptor) async {
   final provider = _renewalText(descriptor, 'provider', maxLength: 32);
+  if (provider == 'remoteCloud') return _renewRemoteCloudBackgroundLease(descriptor);
   if (provider == 's3') {
     final rawUri = _renewalText(descriptor, 'uri', maxLength: 4096);
     final uri = Uri.tryParse(rawUri ?? '');
@@ -507,6 +762,16 @@ class PublicationDownloads {
       }
       oldRefresh.remove('refreshToken');
       newRefresh.remove('refreshToken');
+      if (oldRefresh['provider'] == 'remoteCloud') {
+        // OAuth tokens can rotate in the headless renewal callback. Compare
+        // the account and selected-file identity, not those rotating secrets.
+        oldRefresh
+          ..remove('accessToken')
+          ..remove('expiresAt');
+        newRefresh
+          ..remove('accessToken')
+          ..remove('expiresAt');
+      }
       String canonical(Map<String, dynamic> map) =>
           jsonEncode(Map.fromEntries(map.entries.toList()..sort((a, b) => a.key.compareTo(b.key))));
       return canonical(oldRefresh) == canonical(newRefresh);
@@ -1031,7 +1296,9 @@ class PublicationDownloads {
         final adapter = resolveAdapter(sourceId);
         if (adapter == null) {
           await _pauseNativeTask(_nativeTaskId(profile, sourceId, file));
-          await repository.setDownloadState(profile, row['key'] as String, 'paused');
+          // Virtual account sources are published after their encrypted
+          // provider settings finish loading. Keep this durable job queued so
+          // the reconciler can resume it as soon as that adapter is available.
           continue;
         }
         unawaited(
@@ -1753,6 +2020,8 @@ class _DownloadTask {
 /// A session-owned loopback gateway keeps provider credentials away from
 /// native player logging, redirects and OS metadata. It only serves explicitly
 /// registered files, renews expired leases, and streams with backpressure.
+typedef SourceUriRenewal = Future<({Uri uri, Map<String, String> headers})> Function();
+
 class SourceStreamGateway {
   SourceStreamGateway({required this.valid});
   final bool Function() valid;
@@ -1760,8 +2029,11 @@ class SourceStreamGateway {
   final _secret = SourceOAuthService.randomSecret();
   final Map<String, ({SourceAdapter adapter, PublicationFile file})> _files = {};
   final Map<String, ContentLease> _leases = {};
-  final LinkedHashMap<String, ({Uri uri, Map<String, String> headers, String cacheKey})> _directUris = LinkedHashMap();
+  final LinkedHashMap<String, ({Uri uri, Map<String, String> headers, String cacheKey, SourceUriRenewal? renew})>
+  _directUris = LinkedHashMap();
   final Map<String, String> _directIdsByUri = {};
+  final Set<String> _nonDeduplicatedDirectIds = {};
+  final Map<String, Future<({Uri uri, Map<String, String> headers})>> _directRenewals = {};
   var _directCounter = 0;
   final _abort = Completer<void>();
 
@@ -1783,27 +2055,138 @@ class SourceStreamGateway {
   /// capability. The native player sees only localhost; credentials and
   /// signed query strings stay in this in-memory proxy and are never logged by
   /// the player or written to the source database.
-  Future<Uri> registerUri(Uri uri, {Map<String, String> headers = const {}}) async {
+  Future<Uri> registerUri(
+    Uri uri, {
+    Map<String, String> headers = const {},
+    SourceUriRenewal? renew,
+    bool deduplicate = true,
+  }) async {
     if (!valid()) throw const SourceException(SourceFailure.cancelled);
     if (uri.hasFragment || uri.userInfo.isNotEmpty || !const {'http', 'https'}.contains(uri.scheme)) {
       throw const SourceException(SourceFailure.permission);
     }
+    final safeHeaders = _validateDirectHeaders(headers);
     SourceTransport(allowHttp: uri.scheme == 'http').validate(uri);
     await _ensureServer();
-    final uriText = uri.toString();
-    final sortedHeaders = headers.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-    final cacheKey = '$uriText\u0000${jsonEncode(sortedHeaders.map((entry) => [entry.key, entry.value]).toList())}';
-    final existing = _directIdsByUri[cacheKey];
-    if (existing != null) return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$existing');
+    final uriText = _directCacheKey(uri, safeHeaders);
+    final existing = deduplicate ? _directIdsByUri[uriText] : null;
+    if (existing != null) {
+      final registered = _directUris[existing];
+      if (registered != null && registered.renew == null && renew != null) {
+        _directUris[existing] = (
+          uri: registered.uri,
+          headers: registered.headers,
+          cacheKey: registered.cacheKey,
+          renew: renew,
+        );
+      }
+      return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$existing');
+    }
     final id = sourceDigest('direct:$_secret:${_directCounter++}');
-    _directUris[id] = (uri: uri, headers: Map.unmodifiable(Map.of(headers)), cacheKey: cacheKey);
-    _directIdsByUri[cacheKey] = id;
+    _directUris[id] = (uri: uri, headers: safeHeaders, cacheKey: uriText, renew: renew);
+    if (deduplicate) {
+      _directIdsByUri[uriText] = id;
+    } else {
+      _nonDeduplicatedDirectIds.add(id);
+    }
     while (_directUris.length > 4096) {
       final oldest = _directUris.keys.first;
       final removed = _directUris.remove(oldest);
-      if (removed != null) _directIdsByUri.remove(removed.cacheKey);
+      _nonDeduplicatedDirectIds.remove(oldest);
+      if (removed != null && _directIdsByUri[removed.cacheKey] == oldest) {
+        _directIdsByUri.remove(removed.cacheKey);
+      }
     }
     return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$id');
+  }
+
+  Map<String, String> _validateDirectHeaders(Map<String, String> headers) {
+    if (headers.length > 32) throw const SourceException(SourceFailure.invalidData);
+    const forbidden = {
+      'host',
+      'content-length',
+      'connection',
+      'transfer-encoding',
+      'proxy-authorization',
+      'range',
+      'accept-encoding',
+      'origin',
+    };
+    final safe = <String, String>{};
+    for (final entry in headers.entries) {
+      final name = entry.key.trim();
+      final value = entry.value.trim();
+      if (name.isEmpty || name.length > 100 || value.length > 4096 || forbidden.contains(name.toLowerCase())) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      if (!RegExp(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$").hasMatch(name) ||
+          name.runes.any((code) => code < 32 || code == 127) ||
+          value.runes.any((code) => code < 32 && code != 9 || code == 127)) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      final normalizedName = name.toLowerCase();
+      if (safe.containsKey(normalizedName)) throw const SourceException(SourceFailure.invalidData);
+      safe[normalizedName] = value;
+    }
+    return Map.unmodifiable(safe);
+  }
+
+  String _directCacheKey(Uri uri, Map<String, String> headers) {
+    final sortedHeaders = headers.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    return sourceDigest(
+      jsonEncode([
+        uri.toString(),
+        sortedHeaders.map((entry) => [entry.key, entry.value]).toList(),
+      ]),
+    );
+  }
+
+  bool _sameDirectHeaders(Map<String, String> a, Map<String, String> b) =>
+      a.length == b.length && a.entries.every((entry) => b[entry.key] == entry.value);
+
+  Future<({Uri uri, Map<String, String> headers, String cacheKey, SourceUriRenewal? renew})> _renewDirectUri(
+    String id, {
+    required Uri expiredUri,
+    required Map<String, String> expiredHeaders,
+    required SourceUriRenewal renew,
+  }) async {
+    final current = _directUris[id];
+    if (current == null) throw const SourceException(SourceFailure.cancelled);
+    if (current.uri != expiredUri || !_sameDirectHeaders(current.headers, expiredHeaders)) return current;
+
+    final inFlight = _directRenewals[id];
+    if (inFlight != null) {
+      await inFlight;
+      return _directUris[id] ?? (throw const SourceException(SourceFailure.cancelled));
+    }
+
+    final pending = renew();
+    _directRenewals[id] = pending;
+    try {
+      final refreshed = await pending;
+      if (!valid() ||
+          !const {'http', 'https'}.contains(refreshed.uri.scheme) ||
+          refreshed.uri.host.isEmpty ||
+          refreshed.uri.userInfo.isNotEmpty ||
+          refreshed.uri.hasFragment) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      final safeHeaders = _validateDirectHeaders(refreshed.headers);
+      final latest = _directUris[id];
+      if (latest == null) throw const SourceException(SourceFailure.cancelled);
+      // A newer concurrent renewal owns the slot; do not overwrite it with an
+      // older callback result that happened to complete later.
+      if (latest.uri != expiredUri || !_sameDirectHeaders(latest.headers, expiredHeaders)) return latest;
+      final key = _directCacheKey(refreshed.uri, safeHeaders);
+      final expiredKey = current.cacheKey;
+      final next = (uri: refreshed.uri, headers: safeHeaders, cacheKey: key, renew: renew);
+      _directUris[id] = next;
+      if (_directIdsByUri[expiredKey] == id) _directIdsByUri.remove(expiredKey);
+      if (!_nonDeduplicatedDirectIds.contains(id)) _directIdsByUri.putIfAbsent(key, () => id);
+      return next;
+    } finally {
+      if (identical(_directRenewals[id], pending)) _directRenewals.remove(id);
+    }
   }
 
   Future<void> _serve(HttpRequest request) async {
@@ -1826,7 +2209,7 @@ class SourceStreamGateway {
           request.response.statusCode = 404;
           return;
         }
-        await _serveDirect(request, direct.uri, headers: direct.headers);
+        await _serveDirect(request, id: segments[1], uri: direct.uri, headers: direct.headers, renew: direct.renew);
         return;
       }
       final range = request.headers.value(HttpHeaders.rangeHeader);
@@ -1933,7 +2316,14 @@ class SourceStreamGateway {
     }
   }
 
-  Future<String> _registerManifestUri(Uri base, String value, {Map<String, String> headers = const {}}) async {
+  Future<String> _registerManifestUri(
+    Uri base,
+    String value,
+    Map<String, String> headers, {
+    required String parentId,
+    required SourceUriRenewal? parentRenew,
+    required int referenceIndex,
+  }) async {
     final raw = value.trim();
     final uri = base.resolve(raw);
     final scheme = uri.scheme.toLowerCase();
@@ -1944,27 +2334,66 @@ class SourceStreamGateway {
     if (!const {'http', 'https'}.contains(scheme) || (base.scheme == 'https' && scheme != 'https')) {
       throw const SourceException(SourceFailure.permission);
     }
-    final local = await registerUri(uri, headers: sameSourceOrigin(base, uri) ? headers : const {});
+    // Manifest children can point at a CDN or a different host. Request
+    // credentials are scoped to the stream origin and must never follow them.
+    final childHeaders = sameSourceOrigin(base, uri) ? headers : const <String, String>{};
+    final SourceUriRenewal? childRenew = parentRenew == null
+        ? null
+        : () => _renewManifestChildUri(
+            parentId,
+            parentRenew: parentRenew,
+            referenceIndex: referenceIndex,
+            expectedPath: uri.path,
+          );
+    // Each manifest reference keeps its own renewal ordinal. Reusing an
+    // identical URI for two playlist slots would otherwise bind both slots to
+    // whichever callback registered first.
+    final local = await registerUri(uri, headers: childHeaders, renew: childRenew, deduplicate: false);
     return local.toString();
   }
 
-  Future<String> _rewriteHlsManifest(String value, Uri base, {Map<String, String> headers = const {}}) async {
+  Future<String> _rewriteHlsManifest(
+    String value,
+    Uri base,
+    Map<String, String> headers, {
+    required String parentId,
+    required SourceUriRenewal? parentRenew,
+  }) async {
     final lines = value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
     var rewrittenUris = 0;
+    var referenceIndex = 0;
     final attributeUri = RegExp(r'URI="([^"]+)"');
     for (var index = 0; index < lines.length; index++) {
       var line = lines[index];
       if (line.trim().isEmpty) continue;
       if (!line.startsWith('#')) {
-        line = await _registerManifestUri(base, line, headers: headers);
+        if (referenceIndex >= 2000) throw const SourceException(SourceFailure.invalidData);
+        line = await _registerManifestUri(
+          base,
+          line,
+          headers,
+          parentId: parentId,
+          parentRenew: parentRenew,
+          referenceIndex: referenceIndex++,
+        );
         rewrittenUris++;
       } else {
         final matches = attributeUri.allMatches(line).toList();
-        for (final match in matches.reversed) {
-          final local = await _registerManifestUri(base, match.group(1)!, headers: headers);
+        if (referenceIndex + matches.length > 2000) throw const SourceException(SourceFailure.invalidData);
+        for (var matchIndex = matches.length - 1; matchIndex >= 0; matchIndex--) {
+          final match = matches[matchIndex];
+          final local = await _registerManifestUri(
+            base,
+            match.group(1)!,
+            headers,
+            parentId: parentId,
+            parentRenew: parentRenew,
+            referenceIndex: referenceIndex + matchIndex,
+          );
           line = line.replaceRange(match.start, match.end, 'URI="$local"');
           rewrittenUris++;
         }
+        referenceIndex += matches.length;
       }
       if (rewrittenUris > 2000) throw const SourceException(SourceFailure.invalidData);
       lines[index] = line;
@@ -1972,7 +2401,116 @@ class SourceStreamGateway {
     return lines.join('\n');
   }
 
-  Future<void> _serveDirect(HttpRequest request, Uri uri, {Map<String, String> headers = const {}}) async {
+  List<Uri> _hlsReferences(String manifest, Uri base) {
+    final references = <Uri>[];
+    final attributeUri = RegExp(r'URI="([^"]+)"');
+    for (final rawLine in manifest.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n')) {
+      final line = rawLine.trim();
+      if (line.isEmpty) continue;
+      if (!line.startsWith('#')) {
+        references.add(base.resolve(line));
+        if (references.length > 2000) throw const SourceException(SourceFailure.invalidData);
+        continue;
+      }
+      for (final match in attributeUri.allMatches(line)) {
+        references.add(base.resolve(match.group(1)!));
+        if (references.length > 2000) throw const SourceException(SourceFailure.invalidData);
+      }
+    }
+    return references;
+  }
+
+  Future<({Uri base, Map<String, String> headers, String manifest})> _readRenewedManifest(
+    String parentId, {
+    required SourceUriRenewal parentRenew,
+  }) async {
+    var parent = _directUris[parentId];
+    if (parent == null) throw const SourceException(SourceFailure.cancelled);
+    final transport = SourceTransport(allowHttp: parent.uri.scheme == 'http');
+    try {
+      var response = await transport.send(
+        'GET',
+        parent.uri,
+        headers: parent.headers,
+        redirects: true,
+        abort: _abort.future,
+      );
+      if (const {HttpStatus.unauthorized, HttpStatus.forbidden, HttpStatus.gone}.contains(response.statusCode)) {
+        await response.stream.drain<void>();
+        if (!valid()) throw const SourceException(SourceFailure.cancelled);
+        parent = await _renewDirectUri(
+          parentId,
+          expiredUri: parent.uri,
+          expiredHeaders: parent.headers,
+          renew: parentRenew,
+        );
+        transport.validate(parent.uri);
+        response = await transport.send(
+          'GET',
+          parent.uri,
+          headers: parent.headers,
+          redirects: true,
+          abort: _abort.future,
+        );
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        await response.stream.drain<void>();
+        throw SourceException(
+          response.statusCode == HttpStatus.notFound ? SourceFailure.unavailable : SourceFailure.authentication,
+          status: response.statusCode,
+        );
+      }
+      const maxManifestBytes = 2 * 1024 * 1024;
+      final bytes = <int>[];
+      await for (final chunk in response.stream.timeout(const Duration(seconds: 30))) {
+        if (!valid()) throw const SourceException(SourceFailure.cancelled);
+        if (bytes.length + chunk.length > maxManifestBytes) throw const SourceException(SourceFailure.invalidData);
+        bytes.addAll(chunk);
+      }
+      final base = response.request?.url ?? parent.uri;
+      final headers = sameSourceOrigin(parent.uri, base) ? parent.headers : const <String, String>{};
+      final manifest = utf8.decode(bytes, allowMalformed: true);
+      if (!manifest.trimLeft().startsWith('#EXTM3U')) throw const SourceException(SourceFailure.invalidData);
+      return (base: base, headers: headers, manifest: manifest);
+    } finally {
+      transport.close();
+    }
+  }
+
+  Future<({Uri uri, Map<String, String> headers})> _renewManifestChildUri(
+    String parentId, {
+    required SourceUriRenewal parentRenew,
+    required int referenceIndex,
+    required String expectedPath,
+  }) async {
+    if (!valid()) throw const SourceException(SourceFailure.cancelled);
+    final refreshed = await _readRenewedManifest(parentId, parentRenew: parentRenew);
+    final references = _hlsReferences(refreshed.manifest, refreshed.base);
+    if (referenceIndex < 0 || referenceIndex >= references.length) {
+      throw const SourceException(SourceFailure.conflict);
+    }
+    final uri = references[referenceIndex];
+    final scheme = uri.scheme.toLowerCase();
+    if (!const {'http', 'https'}.contains(scheme) ||
+        (refreshed.base.scheme == 'https' && scheme != 'https') ||
+        uri.path != expectedPath) {
+      // A live playlist may roll forward or a provider may replace the file.
+      // Refuse to splice a different segment into the current playback.
+      throw const SourceException(SourceFailure.conflict);
+    }
+    if (uri.host.isEmpty || uri.userInfo.isNotEmpty || uri.hasFragment) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    return (uri: uri, headers: sameSourceOrigin(refreshed.base, uri) ? refreshed.headers : const <String, String>{});
+  }
+
+  Future<void> _serveDirect(
+    HttpRequest request, {
+    required String id,
+    required Uri uri,
+    Map<String, String> headers = const {},
+    SourceUriRenewal? renew,
+  }) async {
     final range = request.headers.value(HttpHeaders.rangeHeader);
     if (range != null && !RegExp(r'^bytes=(\d+-\d*|-\d+)$').hasMatch(range)) {
       request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
@@ -1980,13 +2518,36 @@ class SourceStreamGateway {
     }
     final transport = SourceTransport(allowHttp: uri.scheme == 'http');
     try {
-      final upstream = await transport.send(
+      var currentUri = uri;
+      var currentHeaders = headers;
+      var upstream = await transport.send(
         request.method,
-        uri,
-        headers: {...headers, HttpHeaders.rangeHeader: ?range},
+        currentUri,
+        headers: {...currentHeaders, HttpHeaders.rangeHeader: ?range},
         redirects: true,
         abort: _abort.future,
       );
+      if (const {HttpStatus.unauthorized, HttpStatus.forbidden, HttpStatus.gone}.contains(upstream.statusCode) &&
+          renew != null) {
+        await upstream.stream.drain<void>();
+        if (!valid()) throw const SourceException(SourceFailure.cancelled);
+        final refreshed = await _renewDirectUri(
+          id,
+          expiredUri: currentUri,
+          expiredHeaders: currentHeaders,
+          renew: renew,
+        );
+        currentUri = refreshed.uri;
+        currentHeaders = refreshed.headers;
+        transport.validate(currentUri);
+        upstream = await transport.send(
+          request.method,
+          currentUri,
+          headers: {...currentHeaders, HttpHeaders.rangeHeader: ?range},
+          redirects: true,
+          abort: _abort.future,
+        );
+      }
       request.response.statusCode = upstream.statusCode;
       request.response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
       for (final name in [
@@ -2006,7 +2567,7 @@ class SourceStreamGateway {
       }
 
       final contentType = upstream.headers[HttpHeaders.contentTypeHeader]?.toLowerCase() ?? '';
-      final isHls = uri.path.toLowerCase().endsWith('.m3u8') || contentType.contains('mpegurl');
+      final isHls = currentUri.path.toLowerCase().endsWith('.m3u8') || contentType.contains('mpegurl');
       if (!isHls || upstream.statusCode < 200 || upstream.statusCode >= 300) {
         await request.response.addStream(
           upstream.stream.timeout(const Duration(seconds: 45)).map((bytes) {
@@ -2024,9 +2585,11 @@ class SourceStreamGateway {
         bytes.addAll(chunk);
       }
       final manifest = utf8.decode(bytes, allowMalformed: true);
-      final manifestBase = upstream.request?.url ?? uri;
-      final manifestHeaders = sameSourceOrigin(uri, manifestBase) ? headers : const <String, String>{};
-      final rewritten = utf8.encode(await _rewriteHlsManifest(manifest, manifestBase, headers: manifestHeaders));
+      final manifestBase = upstream.request?.url ?? currentUri;
+      final manifestHeaders = sameSourceOrigin(currentUri, manifestBase) ? currentHeaders : const <String, String>{};
+      final rewritten = utf8.encode(
+        await _rewriteHlsManifest(manifest, manifestBase, manifestHeaders, parentId: id, parentRenew: renew),
+      );
       request.response.headers.set(HttpHeaders.contentLengthHeader, rewritten.length);
       await request.response.addStream(Stream<List<int>>.value(rewritten));
     } finally {
@@ -2039,6 +2602,8 @@ class SourceStreamGateway {
     _leases.clear();
     _directUris.clear();
     _directIdsByUri.clear();
+    _nonDeduplicatedDirectIds.clear();
+    _directRenewals.clear();
     if (!_abort.isCompleted) _abort.complete();
     await _server?.close(force: true);
     _server = null;

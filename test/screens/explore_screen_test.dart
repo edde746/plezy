@@ -263,6 +263,7 @@ void main() {
         await tester.pump();
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
         await tester.pump();
+        expect(FocusManager.instance.primaryFocus?.debugLabel, 'ExploreSourceSwitcher');
         for (var i = 0; i < 4; i++) {
           await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
           await tester.pump();

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Add experimental native MilkRust visualization hosts across Linux, Windows, Apple and Android, with same-player PCM routing and profile-scoped engine selection; compiled engines are not in current releases and platform behavior remains unqualified.
+
+- Add profile-scoped Real-Debrid, AllDebrid, Premiumize and TorBox connections, Stremio add-on imports, cloud/server canonical libraries, renewable shared playback, scheduled preparation, and optional native libtorrent streaming; live-provider and packaged-device qualification remains open.
+
+- Add a Watchmode title-availability adapter behind server-side credentials and an explicit commercial-approval gate, plus an iOS-only Apple MusicKit catalog/playback pilot behind a build flag; provider, account and device qualification remains open.
+
 - Add normalized provider, evidence, and licensed-offer contracts with bounded, no-cache availability lookup; keep offers non-actionable until approval and exclude generic OPDS purchase links from local-file access.
 - Make a single tap or click toggle playback by default across platforms, with a preference to show the playback controls instead.
 

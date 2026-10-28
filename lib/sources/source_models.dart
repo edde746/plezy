@@ -18,6 +18,11 @@ enum FileSourceKind {
   opds,
   audiobookshelf,
   komga,
+
+  /// A virtual source backed by one profile-scoped debrid account. Its
+  /// credentials stay in RemoteStreamStore; FileSource.options contains only
+  /// the stable account and service identifiers.
+  remoteCloud,
   openSubsonic,
   podcastRss,
 }
@@ -500,7 +505,7 @@ class ContentLease {
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
         uri.toString().length > 8192 ||
-        !const {'s3', 'googleDrive', 'oneDrive', 'dropbox'}.contains(refresh['provider'])) {
+        !const {'s3', 'googleDrive', 'oneDrive', 'dropbox', 'remoteCloud'}.contains(refresh['provider'])) {
       return false;
     }
     try {

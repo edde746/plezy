@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+
 import '../media/media_item.dart';
 import '../media/play_queue.dart';
 import '../models/plex/play_queue_response.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../services/playback_context.dart';
 
 /// Fetches a window of items from a server-side play queue. Provider calls
 /// this when the currently loaded window doesn't contain the next item it
@@ -76,6 +78,10 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   // Client reference for loading more items
   PlayQueueWindowFetcher? _windowFetcher;
 
+  /// Profile-scoped resolvers for non-server items in a client-side queue.
+  /// Each callback re-queries its owner at transition time.
+  Map<String, ExternalPlaybackSourceResolver> _externalSourceResolvers = const {};
+
   // Repeat-all is scoped to one video-playlist context. The setting survives
   // queue teardown, but it is active only while that playlist owns the queue.
   bool _repeatQueueEnabled = false;
@@ -92,7 +98,22 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     // its synthetic identity even if a fetched Plex item happens to retain a
     // stale server playQueueItemId from an earlier response.
     if (_playQueueId == -1) {
-      final idx = _loadedItems.indexOf(item);
+      var idx = _loadedItems.indexOf(item);
+      if (idx < 0) {
+        // Fresh metadata and progress updates preserve queue identity. Keep
+        // the current occurrence of a repeated item; otherwise require a
+        // unique global key, never a server-local numeric ID.
+        final cursor = _currentPlayQueueItemID == null ? -1 : _findLoadedIndex(_currentPlayQueueItemID!);
+        if (cursor >= 0 && _loadedItems[cursor].globalKey == item.globalKey) {
+          idx = cursor;
+        } else {
+          for (var i = 0; i < _loadedItems.length; i++) {
+            if (_loadedItems[i].globalKey != item.globalKey) continue;
+            if (idx >= 0) return null;
+            idx = i;
+          }
+        }
+      }
       if (idx < 0 || idx >= _syntheticIds.length) return null;
       return _syntheticIds[idx];
     }
@@ -202,6 +223,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
     _contextKey = contextKey;
     _isQueueMode = true;
+    _externalSourceResolvers = const {};
     safeNotifyListeners();
   }
 
@@ -216,7 +238,11 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// Window-extension paths (`_ensureItemsLoaded`, `getNextEpisode`) consult
   /// `_windowFetcher`, which stays null for client-side queues — JF callers
   /// resolve adjacent items through [EpisodeNavigationService] instead.
-  void setPlaybackFromLocalQueue(LocalPlayQueue queue, {String? contextKey}) {
+  void setPlaybackFromLocalQueue(
+    LocalPlayQueue queue, {
+    String? contextKey,
+    Map<String, ExternalPlaybackSourceResolver> externalSourceResolvers = const {},
+  }) {
     _playQueueId = -1; // sentinel for "client-side queue"
     _playQueueTotalCount = queue.items.length;
     _playQueueShuffled = queue.shuffled;
@@ -226,8 +252,37 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     _contextKey = contextKey;
     _isQueueMode = true;
     _windowFetcher = null; // disable server-side window extension
+    final queueKeys = queue.items.map((item) => item.globalKey).toSet();
+    _externalSourceResolvers = {
+      for (final entry in externalSourceResolvers.entries)
+        if (queueKeys.contains(entry.key)) entry.key: entry.value,
+    };
     safeNotifyListeners();
   }
+
+  /// Resolve a queue item lazily. Returning null keeps the normal server path;
+  /// a mixed queue can instead return a lease when that server is offline.
+  Future<ExternalPlaybackSource?> resolveExternalPlaybackSource(MediaItem item) async {
+    if (!isItemInActiveQueue(item)) return null;
+    final resolver = _externalSourceResolvers[item.globalKey];
+    if (resolver == null) return null;
+    final queueResolvers = _externalSourceResolvers;
+    final source = await resolver(item);
+    if (!identical(queueResolvers, _externalSourceResolvers) || !isItemInActiveQueue(item)) {
+      await source?.release();
+      throw StateError('The playback queue changed while resolving its source.');
+    }
+    if (source != null && source.mediaGlobalKey != item.globalKey) {
+      await source.release();
+      throw StateError('The queued source returned a lease for a different media item.');
+    }
+    return source;
+  }
+
+  bool hasExternalPlaybackSourceResolver(MediaItem item) =>
+      isItemInActiveQueue(item) && _externalSourceResolvers.containsKey(item.globalKey);
+
+  bool get hasExternalPlaybackSourceResolvers => _externalSourceResolvers.isNotEmpty;
 
   /// Load a server queue window centered on [centerPlayQueueItemID].
   ///
@@ -484,6 +539,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     _syntheticIds = const [];
     _contextKey = null;
     _isQueueMode = false;
+    _externalSourceResolvers = const {};
     safeNotifyListeners();
   }
 }

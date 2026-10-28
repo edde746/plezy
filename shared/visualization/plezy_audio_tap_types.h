@@ -18,4 +18,3 @@ typedef struct mpv_plezy_audio_block {
     double seconds_per_frame;
     float samples[MPV_PLEZY_AUDIO_TAP_FRAMES * MPV_PLEZY_AUDIO_TAP_CHANNELS];
 } mpv_plezy_audio_block;
-

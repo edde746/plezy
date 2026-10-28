@@ -48,5 +48,6 @@ class FileSourceMark extends StatelessWidget {
     FileSourceKind.smb || FileSourceKind.ftp || FileSourceKind.dlna => AppIcon(Symbols.storage_rounded, size: size),
     FileSourceKind.sftp => AppIcon(Symbols.lock_rounded, size: size),
     FileSourceKind.nfs => AppIcon(Symbols.folder_open_rounded, size: size),
+    FileSourceKind.remoteCloud => AppIcon(Symbols.cloud_rounded, size: size),
   };
 }

@@ -92,6 +92,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$trakt$zh trakt = Translations$trakt$zh.internal(_root);
 	@override late final Translations$seerr$zh seerr = Translations$seerr$zh.internal(_root);
 	@override late final Translations$services$zh services = Translations$services$zh.internal(_root);
+	@override late final Translations$streaming$zh streaming = Translations$streaming$zh.internal(_root);
 	@override late final Translations$addServer$zh addServer = Translations$addServer$zh.internal(_root);
 	@override late final Translations$cast$zh cast = Translations$cast$zh.internal(_root);
 	@override late final Translations$automation$zh automation = Translations$automation$zh.internal(_root);
@@ -2791,6 +2792,119 @@ class Translations$services$zh extends Translations$services$en {
 	@override late final Translations$services$libraryFilter$zh libraryFilter = Translations$services$libraryFilter$zh.internal(_root);
 	@override String get seerrDescription => '连接到 Seerr 或 Overseerr 以搜索标题并提交媒体请求。';
 	@override late final Translations$services$trackerDescriptions$zh trackerDescriptions = Translations$services$trackerDescriptions$zh.internal(_root);
+}
+
+// Path: streaming
+class Translations$streaming$zh extends Translations$streaming$en {
+	Translations$streaming$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '云端与插件串流';
+	@override String get subtitle => '连接 Debrid 账户，即可浏览云端文件并播放受支持的流。兼容 Stremio 的插件会在电影和剧集详情页提供播放选项。连接信息会在此设备上加密，并保存到此个人资料。';
+	@override String connectionsConfigured({required Object count}) => '已连接的来源：${count}';
+	@override String get settingsLoadFailed => 'PlezyNG 无法解锁已保存的串流设置。请先解锁设备，再重试后更改连接。';
+	@override String get settingsUnreadable => 'PlezyNG 无法解锁这些已保存的连接。清除后即可重新连接服务。';
+	@override String get clearUnreadableSettings => '清除已保存的设置';
+	@override String get clearUnreadableSettingsConfirm => '清除已保存的串流设置？';
+	@override String get clearUnreadableSettingsBody => '这会从此个人资料中移除所有已保存的服务商账户和插件地址，且无法撤销。';
+	@override String get clearUnreadableSettingsFailed => '无法清除已保存的串流设置。请解锁设备后重试。';
+	@override String get retrySettingsLoad => '重新加载连接';
+	@override String get addons => '兼容 Stremio 的插件';
+	@override String get addonsDescription => '从 Stremio 导入插件，或通过清单网址连接插件。在“探索”中浏览目录，并从电影或剧集详情页打开串流选项。';
+	@override String get catalogLoadFailed => '无法加载此目录。请刷新后重试。';
+	@override String get catalogFiltersRequired => '选择浏览此目录所需的筛选条件。';
+	@override String get catalogRequiredLabel => '必填';
+	@override String get importFromStremio => '从 Stremio 导入';
+	@override String get stremioImportInstructions => '扫描二维码或打开链接。登录 Stremio 并批准请求。PlezyNG 只会读取你的插件列表，不会索要 Stremio 密码或更改设置。';
+	@override String get stremioImportOpen => '打开 Stremio 链接';
+	@override String get stremioImportCode => '关联码';
+	@override String get stremioImportPreviewTitle => '选择插件';
+	@override String get stremioImportPreviewBody => '选择要连接到 PlezyNG 的插件。此导入仅接受 HTTPS 地址。';
+	@override String stremioImportIgnored({required Object count}) => '因地址不受支持或不安全而跳过的插件：${count}。';
+	@override String get stremioCatalogs => '目录';
+	@override String get stremioStreams => '串流';
+	@override String stremioImportAddSelected({required Object count}) => '添加所选项（${count}）';
+	@override String stremioImportAdded({required Object count}) => '从 Stremio 连接的插件：${count}。';
+	@override String stremioImportPartial({required Object added, required Object failed}) => '已连接的插件：${added}；未能连接：${failed}。';
+	@override String get stremioImportFailed => '无法从 Stremio 导入插件。请重试。';
+	@override String get stremioImportTimedOut => 'Stremio 授权已超时。请重新开始导入。';
+	@override String get stremioImportEmpty => '此 Stremio 账户中没有找到新的兼容插件。';
+	@override String get stremioImportLimitReached => '请先移除一个插件，再导入更多插件。';
+	@override String get addByManifestUrl => '通过清单网址添加';
+	@override String get addAddon => '添加插件';
+	@override String get manifestUrl => '插件清单网址';
+	@override String get manifestUrlHint => '粘贴插件的清单网址。连接前，PlezyNG 会检查其是否支持目录或串流资源。';
+	@override String get allowHttp => '允许未加密的 HTTP 地址';
+	@override String get allowHttpDescription => '仅对私人网络中可信任的插件使用。';
+	@override String get installAddon => '连接插件';
+	@override String get addonInstalled => '插件已连接';
+	@override String get addonRemoved => '插件已移除';
+	@override String get addonToggle => '启用插件';
+	@override String get addonEmpty => '尚未连接插件';
+	@override String get addonError => 'PlezyNG 无法连接此插件。请检查清单网址并重试。';
+	@override String get addonPrivacy => '仅连接你信任的插件。搜索时，插件会收到你要搜索的标题，并可能返回第三方串流链接。';
+	@override String get realDebrid => 'Real-Debrid';
+	@override String get realDebridDescription => '通过 Real-Debrid 账户播放受支持的种子流。';
+	@override String get connectRealDebrid => '使用二维码连接';
+	@override String get disconnectRealDebrid => '断开 Real-Debrid';
+	@override String realDebridConnected({required Object username}) => '已连接：${username}';
+	@override String get realDebridInstructions => '扫描二维码或打开链接，然后输入此激活码以连接 PlezyNG：';
+	@override String get realDebridActivate => '打开 Real-Debrid 进行激活';
+	@override String get realDebridCode => '激活码';
+	@override String get realDebridConnectFailed => '无法连接 Real-Debrid。请重试。';
+	@override String get allDebrid => 'AllDebrid';
+	@override String get allDebridDescription => '通过 AllDebrid 账户播放受支持的种子流。';
+	@override String get connectAllDebrid => '使用二维码连接';
+	@override String get allDebridInstructions => '扫描二维码或打开链接以授权 PlezyNG。连接期间请保持此页面打开：';
+	@override String get allDebridActivate => '打开 AllDebrid 进行激活';
+	@override String get allDebridCode => '激活 PIN 码';
+	@override String get allDebridConnectFailed => '无法连接 AllDebrid。请重试。';
+	@override String get premiumize => 'Premiumize';
+	@override String get premiumizeDescription => '通过 Premiumize 播放已缓存的种子流或浏览文件。';
+	@override String get torbox => 'TorBox';
+	@override String get torboxDescription => '通过 TorBox 播放已缓存的种子流或浏览文件。';
+	@override String get connectApiKey => '使用 API 密钥连接';
+	@override String apiKeyTitle({required Object service}) => '连接 ${service}';
+	@override String get apiKey => 'API 密钥';
+	@override String apiKeyHint({required Object service}) => '粘贴 ${service} 账户设置中的 API 密钥。PlezyNG 会在此设备上加密密钥，并将其保存在此个人资料中。';
+	@override String get apiKeyConnectFailed => '无法验证此 API 密钥。请检查后重试。';
+	@override String accountConnected({required Object username}) => '已连接：${username}';
+	@override String get streamNeedsProvider => '连接 Debrid 服务以播放此种子流。';
+	@override String get playViaProvider => '通过 Debrid 播放';
+	@override String disconnectConfirm({required Object service}) => '断开 ${service}？';
+	@override String get disconnectBody => 'PlezyNG 会移除此设备的授权，不会更改服务商中的文件或正在进行的传输。';
+	@override String get streamsTitle => '选择串流';
+	@override String get searchingStreams => '正在检查已连接的插件…';
+	@override String get noStreams => '未找到此标题的串流。';
+	@override String get manageConnections => '管理串流服务';
+	@override String subtitleTracks({required Object count}) => '字幕轨道：${count}';
+	@override String get chooseSubtitle => '选择字幕';
+	@override String get chooseProvider => '选择 Debrid 服务';
+	@override String get subtitleOff => '关闭字幕';
+	@override String get subtitleLoadFailed => '无法加载此字幕。请尝试其他轨道。';
+	@override String get subtitleApplied => '已选择播放字幕';
+	@override String get streamLookupPartial => '部分插件无法访问。';
+	@override String get streamLookupFailed => '无法检查已连接的插件。';
+	@override String get streamOpenExternal => '打开外部链接';
+	@override String get streamPrepare => '正在通过 Debrid 服务准备…';
+	@override String get streamPrepareFailed => '无法准备此串流。请检查已连接的账户，然后尝试其他来源。';
+	@override String get streamNeedsRealDebrid => '连接 Debrid 服务以播放此种子流。';
+	@override String get streamUnsupported => '应用内播放器不支持此串流格式。';
+	@override String get remoteNeedsEpisode => '请先选择剧集，再搜索串流。';
+	@override String get remoteNeedsEpisodeNumber => '此剧集缺少季号或集号。';
+	@override String get remoteNeedsExternalId => 'PlezyNG 找不到此标题的 IMDb 或 TMDB ID。';
+	@override String get watchWithServices => '通过已连接的服务观看';
+	@override String get chooseEpisode => '选择剧集';
+	@override String get episodes => '剧集';
+	@override String episodePosition({required Object season, required Object episode}) => '第 ${season} 季，第 ${episode} 集';
+	@override String get episodeStreamHint => '打开此剧集的可用串流。';
+	@override String get cloudFiles => '云端文件';
+	@override String get browseCloud => '浏览文件';
+	@override String get cloudEmpty => '此账户中没有找到可播放的视频文件。';
+	@override String get cloudLoadFailed => '无法加载云端文件。请检查连接后重试。';
+	@override String get providers => 'Debrid 服务商';
 }
 
 // Path: addServer
@@ -7737,6 +7851,110 @@ extension on TranslationsZh {
 			'services.trackerDescriptions.anilist' => '同步动画列表,并与 AniList 观看进展。',
 			'services.trackerDescriptions.simkl' => '同步观看电影,电视节目和动画与Simkl。',
 			'services.trackerDescriptions.mdblist' => '在推荐和探索中显示 MDBList 评分和列表。',
+			'streaming.title' => '云端与插件串流',
+			'streaming.subtitle' => '连接 Debrid 账户，即可浏览云端文件并播放受支持的流。兼容 Stremio 的插件会在电影和剧集详情页提供播放选项。连接信息会在此设备上加密，并保存到此个人资料。',
+			'streaming.connectionsConfigured' => ({required Object count}) => '已连接的来源：${count}',
+			'streaming.settingsLoadFailed' => 'PlezyNG 无法解锁已保存的串流设置。请先解锁设备，再重试后更改连接。',
+			'streaming.settingsUnreadable' => 'PlezyNG 无法解锁这些已保存的连接。清除后即可重新连接服务。',
+			'streaming.clearUnreadableSettings' => '清除已保存的设置',
+			'streaming.clearUnreadableSettingsConfirm' => '清除已保存的串流设置？',
+			'streaming.clearUnreadableSettingsBody' => '这会从此个人资料中移除所有已保存的服务商账户和插件地址，且无法撤销。',
+			'streaming.clearUnreadableSettingsFailed' => '无法清除已保存的串流设置。请解锁设备后重试。',
+			'streaming.retrySettingsLoad' => '重新加载连接',
+			'streaming.addons' => '兼容 Stremio 的插件',
+			'streaming.addonsDescription' => '从 Stremio 导入插件，或通过清单网址连接插件。在“探索”中浏览目录，并从电影或剧集详情页打开串流选项。',
+			'streaming.catalogLoadFailed' => '无法加载此目录。请刷新后重试。',
+			'streaming.catalogFiltersRequired' => '选择浏览此目录所需的筛选条件。',
+			'streaming.catalogRequiredLabel' => '必填',
+			'streaming.importFromStremio' => '从 Stremio 导入',
+			'streaming.stremioImportInstructions' => '扫描二维码或打开链接。登录 Stremio 并批准请求。PlezyNG 只会读取你的插件列表，不会索要 Stremio 密码或更改设置。',
+			'streaming.stremioImportOpen' => '打开 Stremio 链接',
+			'streaming.stremioImportCode' => '关联码',
+			'streaming.stremioImportPreviewTitle' => '选择插件',
+			'streaming.stremioImportPreviewBody' => '选择要连接到 PlezyNG 的插件。此导入仅接受 HTTPS 地址。',
+			'streaming.stremioImportIgnored' => ({required Object count}) => '因地址不受支持或不安全而跳过的插件：${count}。',
+			'streaming.stremioCatalogs' => '目录',
+			'streaming.stremioStreams' => '串流',
+			'streaming.stremioImportAddSelected' => ({required Object count}) => '添加所选项（${count}）',
+			'streaming.stremioImportAdded' => ({required Object count}) => '从 Stremio 连接的插件：${count}。',
+			'streaming.stremioImportPartial' => ({required Object added, required Object failed}) => '已连接的插件：${added}；未能连接：${failed}。',
+			'streaming.stremioImportFailed' => '无法从 Stremio 导入插件。请重试。',
+			'streaming.stremioImportTimedOut' => 'Stremio 授权已超时。请重新开始导入。',
+			'streaming.stremioImportEmpty' => '此 Stremio 账户中没有找到新的兼容插件。',
+			'streaming.stremioImportLimitReached' => '请先移除一个插件，再导入更多插件。',
+			'streaming.addByManifestUrl' => '通过清单网址添加',
+			'streaming.addAddon' => '添加插件',
+			'streaming.manifestUrl' => '插件清单网址',
+			'streaming.manifestUrlHint' => '粘贴插件的清单网址。连接前，PlezyNG 会检查其是否支持目录或串流资源。',
+			'streaming.allowHttp' => '允许未加密的 HTTP 地址',
+			'streaming.allowHttpDescription' => '仅对私人网络中可信任的插件使用。',
+			'streaming.installAddon' => '连接插件',
+			'streaming.addonInstalled' => '插件已连接',
+			'streaming.addonRemoved' => '插件已移除',
+			'streaming.addonToggle' => '启用插件',
+			'streaming.addonEmpty' => '尚未连接插件',
+			'streaming.addonError' => 'PlezyNG 无法连接此插件。请检查清单网址并重试。',
+			'streaming.addonPrivacy' => '仅连接你信任的插件。搜索时，插件会收到你要搜索的标题，并可能返回第三方串流链接。',
+			'streaming.realDebrid' => 'Real-Debrid',
+			'streaming.realDebridDescription' => '通过 Real-Debrid 账户播放受支持的种子流。',
+			'streaming.connectRealDebrid' => '使用二维码连接',
+			'streaming.disconnectRealDebrid' => '断开 Real-Debrid',
+			'streaming.realDebridConnected' => ({required Object username}) => '已连接：${username}',
+			'streaming.realDebridInstructions' => '扫描二维码或打开链接，然后输入此激活码以连接 PlezyNG：',
+			'streaming.realDebridActivate' => '打开 Real-Debrid 进行激活',
+			'streaming.realDebridCode' => '激活码',
+			'streaming.realDebridConnectFailed' => '无法连接 Real-Debrid。请重试。',
+			'streaming.allDebrid' => 'AllDebrid',
+			'streaming.allDebridDescription' => '通过 AllDebrid 账户播放受支持的种子流。',
+			'streaming.connectAllDebrid' => '使用二维码连接',
+			'streaming.allDebridInstructions' => '扫描二维码或打开链接以授权 PlezyNG。连接期间请保持此页面打开：',
+			'streaming.allDebridActivate' => '打开 AllDebrid 进行激活',
+			'streaming.allDebridCode' => '激活 PIN 码',
+			'streaming.allDebridConnectFailed' => '无法连接 AllDebrid。请重试。',
+			'streaming.premiumize' => 'Premiumize',
+			'streaming.premiumizeDescription' => '通过 Premiumize 播放已缓存的种子流或浏览文件。',
+			'streaming.torbox' => 'TorBox',
+			'streaming.torboxDescription' => '通过 TorBox 播放已缓存的种子流或浏览文件。',
+			'streaming.connectApiKey' => '使用 API 密钥连接',
+			'streaming.apiKeyTitle' => ({required Object service}) => '连接 ${service}',
+			'streaming.apiKey' => 'API 密钥',
+			'streaming.apiKeyHint' => ({required Object service}) => '粘贴 ${service} 账户设置中的 API 密钥。PlezyNG 会在此设备上加密密钥，并将其保存在此个人资料中。',
+			'streaming.apiKeyConnectFailed' => '无法验证此 API 密钥。请检查后重试。',
+			'streaming.accountConnected' => ({required Object username}) => '已连接：${username}',
+			'streaming.streamNeedsProvider' => '连接 Debrid 服务以播放此种子流。',
+			'streaming.playViaProvider' => '通过 Debrid 播放',
+			'streaming.disconnectConfirm' => ({required Object service}) => '断开 ${service}？',
+			'streaming.disconnectBody' => 'PlezyNG 会移除此设备的授权，不会更改服务商中的文件或正在进行的传输。',
+			'streaming.streamsTitle' => '选择串流',
+			'streaming.searchingStreams' => '正在检查已连接的插件…',
+			'streaming.noStreams' => '未找到此标题的串流。',
+			'streaming.manageConnections' => '管理串流服务',
+			'streaming.subtitleTracks' => ({required Object count}) => '字幕轨道：${count}',
+			'streaming.chooseSubtitle' => '选择字幕',
+			'streaming.chooseProvider' => '选择 Debrid 服务',
+			'streaming.subtitleOff' => '关闭字幕',
+			'streaming.subtitleLoadFailed' => '无法加载此字幕。请尝试其他轨道。',
+			'streaming.subtitleApplied' => '已选择播放字幕',
+			'streaming.streamLookupPartial' => '部分插件无法访问。',
+			'streaming.streamLookupFailed' => '无法检查已连接的插件。',
+			'streaming.streamOpenExternal' => '打开外部链接',
+			'streaming.streamPrepare' => '正在通过 Debrid 服务准备…',
+			'streaming.streamPrepareFailed' => '无法准备此串流。请检查已连接的账户，然后尝试其他来源。',
+			'streaming.streamNeedsRealDebrid' => '连接 Debrid 服务以播放此种子流。',
+			'streaming.streamUnsupported' => '应用内播放器不支持此串流格式。',
+			'streaming.remoteNeedsEpisode' => '请先选择剧集，再搜索串流。',
+			'streaming.remoteNeedsEpisodeNumber' => '此剧集缺少季号或集号。',
+			'streaming.remoteNeedsExternalId' => 'PlezyNG 找不到此标题的 IMDb 或 TMDB ID。',
+			'streaming.watchWithServices' => '通过已连接的服务观看',
+			'streaming.chooseEpisode' => '选择剧集',
+			'streaming.episodes' => '剧集',
+			'streaming.episodePosition' => ({required Object season, required Object episode}) => '第 ${season} 季，第 ${episode} 集',
+			'streaming.episodeStreamHint' => '打开此剧集的可用串流。',
+			'streaming.cloudFiles' => '云端文件',
+			'streaming.browseCloud' => '浏览文件',
+			'streaming.cloudEmpty' => '此账户中没有找到可播放的视频文件。',
+			'streaming.cloudLoadFailed' => '无法加载云端文件。请检查连接后重试。',
+			'streaming.providers' => 'Debrid 服务商',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => '添加 ${product} 服务器',
 			'addServer.serverUrls' => '服务器 URL',
 			'addServer.serverUrlsHelper' => '可输入多个 URL，并用逗号分隔。',
@@ -7977,6 +8195,8 @@ extension on TranslationsZh {
 			'universalMedia.playlistFormatsHelp' => '一张播放列表可以包含最多1000个项目和2MB的HLS显示为流,所以玩家可以选择质量。',
 			'universalMedia.saveQueuePlaylist' => '将队列另存为播放列表',
 			'universalMedia.queuePlaylistSaved' => '播放列表已保存在媒体文件旁边。',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.queuePlaylistUnavailable' => '无法将此队列另存为可重复使用的本地播放列表。',
 			'universalMedia.queuePlaylistFolderRequired' => '请选择与队列文件相同文件夹中的保存位置。',
 			'universalMedia.noFavorites' => '尚未存储流喜爱. 喜爱留在此个人资料中。',
@@ -8081,8 +8301,6 @@ extension on TranslationsZh {
 			'universalMedia.captureAudioNone' => '没有音频',
 			'universalMedia.captureDefaultAudio' => '默认音频输入',
 			'universalMedia.captureWaylandHelp' => 'Wayland 限制此 XWayland 捕获到 X display. XWayland 以外的 Windows 可能不会出现。',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => '记录框率',
 			'universalMedia.capturePrivacy' => '录制仅存储到您选择的文件。 微型录制是可选的. PlezyNG 不会上传录制。',
 			'universalMedia.captureSaveAs' => '保存屏幕录制如',
@@ -8491,6 +8709,8 @@ extension on TranslationsZh {
 			'sourceSetup.nfsEncryptionFailure' => '对于加密 NFS，请检查 NAS 的两项服务是否支持 RFC 9289 和 TLS 1.3，并核对证书名称以及导出 UID/GID。PlezyNG 不会在不加密的情况下重试此连接。',
 			'sourceSetup.sourceConnecting' => '正在连接来源',
 			'sourceSetup.metadataSearchPrivacy' => '此标题搜索由 Trakt 处理。只会发送您输入的标题，不会发送视频或来源凭据。',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.chooseMatch' => '选择匹配结果',
 			'sourceSetup.metadataMatchHelp' => '选择前请核对标题和年份。Trakt 会收到搜索标题；视频文件会保留在原来源中。',
 			'sourceSetup.metadataNoMatches' => '未找到在线标题匹配结果。请尝试其他标题。',
@@ -8595,8 +8815,6 @@ extension on TranslationsZh {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
-			_ => null,
-		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/library_filter_result.dart';
+import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
@@ -92,6 +95,7 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
   CatalogHubStyle? hubStyle;
   int? hubTotalResults;
   String? hubError;
+  CatalogHub? dynamicHub;
 
   CatalogItem _hubItem(String title) => CatalogItem(
     source: id,
@@ -108,7 +112,7 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
       throw StateError('hub fetch failed');
     }
     if (returnEmptyHubs) return const [];
-    return [
+    final hubs = <CatalogHub>[
       CatalogHub(
         id: 'trending-plex',
         title: 'Trending on Plex',
@@ -117,12 +121,44 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
         page: CatalogPage(items: [_hubItem('Initial Recommendation')], hasMore: true, totalResults: hubTotalResults),
       ),
     ];
+    if (dynamicHub != null) hubs.add(dynamicHub!);
+    return hubs;
   }
 
   @override
   Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25}) async {
     hubPageFetches.add(page);
     return CatalogPage(items: [_hubItem('Recommendation Page $page')], hasMore: page == 1);
+  }
+}
+
+class _FakeFilteredHubSource extends _FakeHubSource implements CatalogHubFiltersSource {
+  _FakeFilteredHubSource(super.id);
+
+  final filteredRequests = <({int page, List<LibraryFilter> filters})>[];
+
+  @override
+  Future<LibraryFilterResult> fetchHubFilters(String id) async {
+    final hub = dynamicHub!;
+    return LibraryFilterResult(filters: hub.filters, cachedValues: hub.cachedFilterValues);
+  }
+
+  @override
+  Future<List<MediaFilterValue>> fetchHubFilterValues(String id, MediaFilter filter) async =>
+      dynamicHub!.cachedFilterValues[filter.filter] ?? const [];
+
+  @override
+  Future<CatalogPage> fetchFilteredHub(
+    String id, {
+    required List<LibraryFilter> filters,
+    int page = 1,
+    int limit = 25,
+  }) async {
+    filteredRequests.add((page: page, filters: filters));
+    return CatalogPage(
+      items: [_hubItem('Filtered page $page')],
+      hasMore: page == 1,
+    );
   }
 }
 
@@ -222,6 +258,45 @@ void main() {
 
       expect(source.hubPageFetches, [1, 2]);
       expect(allItems.map((item) => item.title), ['Recommendation Page 1', 'Recommendation Page 2']);
+    });
+
+    test('required-filter hubs remain visible and use the selected filter for every page', () async {
+      final source = _FakeFilteredHubSource(CatalogSourceId.stremio);
+      addTearDown(source.dispose);
+      source.dynamicHub = CatalogHub(
+        id: 'required-catalog',
+        title: 'Catalog with required genre',
+        page: const CatalogPage(items: [], hasMore: true),
+        filters: [
+          MediaFilter(
+            filter: 'genre',
+            filterType: MediaFilterType.tag,
+            key: 'genre',
+            title: 'Genre',
+            type: 'filter',
+            isRequired: true,
+            selectionLimit: 1,
+            operators: const [LibraryFilterOperator.is_],
+          ),
+        ],
+        requiresFilterInput: true,
+      );
+
+      sources.setActive(source);
+      await _pumpMicrotasks();
+
+      final row = explore.rowHubs.last;
+      expect(row.providerHubId, 'required-catalog');
+      expect(row.providerHub?.requiresFilterInput, isTrue);
+      expect(row.hub.items, isEmpty);
+      expect(row.hub.more, isTrue);
+
+      const filters = [LibraryFilter(field: 'genre', values: ['Drama'])];
+      final items = await explore.loadAllForFilteredHub(row, filters);
+
+      expect(items.map((item) => item.title), ['Filtered page 1', 'Filtered page 2']);
+      expect(source.filteredRequests.map((request) => request.page), [1, 2]);
+      expect(source.filteredRequests.map((request) => request.filters), [filters, filters]);
     });
 
     test('null and shelf styles retain the existing shelf appearance', () async {

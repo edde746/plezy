@@ -15,6 +15,7 @@ String catalogSourceLogoAsset(CatalogSourceId id) => switch (id) {
   CatalogSourceId.simkl => 'assets/simkl_mark.svg',
   CatalogSourceId.seerr => 'assets/seerr_mark.svg',
   CatalogSourceId.mdblist => 'assets/mdblist_mark.svg',
+  CatalogSourceId.stremio => 'assets/addon_source_mark.svg',
 };
 
 /// Brand mark of a service, tinted with the ambient icon color. Uses

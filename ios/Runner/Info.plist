@@ -62,7 +62,6 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<!-- Return links for x-callback-url external players (plezy://external-player/...). -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -92,8 +91,6 @@
 	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<!-- canOpenURL returns false for undeclared schemes, which both blocks the
-	     external-player handoff and hides the players from Settings. -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>vlc</string>
@@ -118,6 +115,8 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Search Apple Music catalog results you choose and play them through Apple's native player.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose images from your photo library to use as media artwork.</string>
 	<key>NSCameraUsageDescription</key>
@@ -134,6 +133,7 @@
 	<array>
 		<string>audio</string>
 		<string>fetch</string>
+		<string>processing</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
@@ -191,5 +191,9 @@
 			</array>
 		</dict>
 	</dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>org.plezy.preparation</string>
+	</array>
 </dict>
 </plist>

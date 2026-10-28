@@ -602,6 +602,8 @@ class PlexMetadataDto {
   final String ratingKey;
   final String? key;
   final String? guid;
+  @JsonKey(name: 'Guid', includeToJson: false)
+  final List<dynamic>? guids;
   final String? studio;
   final String? type;
   final String? title;
@@ -714,6 +716,7 @@ class PlexMetadataDto {
     required this.ratingKey,
     this.key,
     this.guid,
+    this.guids,
     this.studio,
     this.type,
     this.title,
@@ -982,6 +985,7 @@ class PlexMetadataDto {
 Map<String, Object?>? _rawMetadata(PlexMetadataDto dto) {
   final raw = <String, Object?>{};
   if (dto.key != null) raw['key'] = dto.key;
+  if (dto.guids != null) raw['Guid'] = dto.guids;
   if (dto.skipChildren != null) raw['skipChildren'] = dto.skipChildren;
   if (dto.flattenSeasons != null) raw['flattenSeasons'] = dto.flattenSeasons;
   return raw.isEmpty ? null : raw;

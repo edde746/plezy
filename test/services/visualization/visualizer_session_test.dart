@@ -11,8 +11,13 @@ import 'package:plezy/services/visualization/visualizer_session.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('com.plezy/mpv_audio_player');
-  const preset = VisualizerPresetFile(id: 'fixture', title: 'Fixture', path: '/library/fixture.milk',
-    root: '/library', libraryPath: 'imports/fixture.milk');
+  const preset = VisualizerPresetFile(
+    id: 'fixture',
+    title: 'Fixture',
+    path: '/library/fixture.milk',
+    root: '/library',
+    libraryPath: 'imports/fixture.milk',
+  );
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
   setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.linux);
@@ -28,7 +33,10 @@ void main() {
     var loads = 0;
     messenger.setMockMethodCallHandler(channel, (call) async {
       if (call.method == 'visualizerCapabilities') return {'available': true};
-      if (call.method == 'visualizerCreate') { creating.complete(); return created.future; }
+      if (call.method == 'visualizerCreate') {
+        creating.complete();
+        return created.future;
+      }
       if (call.method == 'visualizerDispose') disposed.complete((call.arguments as Map)['sessionId'] as int);
       if (call.method == 'visualizerLoad') loads++;
       return null;
@@ -80,10 +88,20 @@ void main() {
 
   test('saved double presets are rejected before a native session is created', () async {
     var calls = 0;
-    messenger.setMockMethodCallHandler(channel, (_) async { calls++; return null; });
+    messenger.setMockMethodCallHandler(channel, (_) async {
+      calls++;
+      return null;
+    });
     final session = VisualizerSession();
-    await session.load(const VisualizerPresetFile(id: 'double', title: 'Double', path: '/library/double.milk2',
-      root: '/library', libraryPath: 'imports/double.milk2'));
+    await session.load(
+      const VisualizerPresetFile(
+        id: 'double',
+        title: 'Double',
+        path: '/library/double.milk2',
+        root: '/library',
+        libraryPath: 'imports/double.milk2',
+      ),
+    );
     expect(calls, 0);
     expect(session.state, 'failed');
     expect(session.hasFrame, isFalse);
@@ -96,7 +114,8 @@ void main() {
       final args = call.arguments as Map? ?? {};
       if (call.method == 'visualizerCapabilities') return {'available': true, 'engine': '${args['engine']}-abi1'};
       if (call.method == 'visualizerCreate') {
-        events.add('create:${args['engine']}'); return {'sessionId': ++lease, 'textureId': lease};
+        events.add('create:${args['engine']}');
+        return {'sessionId': ++lease, 'textureId': lease};
       }
       if (call.method == 'visualizerDispose') events.add('dispose:${args['sessionId']}');
       if (call.method == 'visualizerLoad') events.add('load:${args['sessionId']}');
@@ -105,12 +124,20 @@ void main() {
     final session = VisualizerSession();
     await session.load(preset);
     await session.setEngine('milkrust');
-    await session.load(const VisualizerPresetFile(id: 'double', title: 'Double', path: '/library/double.milk2',
-      root: '/library', libraryPath: 'imports/double.milk2'));
+    await session.load(
+      const VisualizerPresetFile(
+        id: 'double',
+        title: 'Double',
+        path: '/library/double.milk2',
+        root: '/library',
+        libraryPath: 'imports/double.milk2',
+      ),
+    );
     expect(events, ['create:projectm', 'load:1', 'dispose:1', 'create:milkrust', 'load:2']);
     expect(session.engine, 'milkrust');
     expect(session.hasFrame, isFalse); // Acceptance never invents a native frame.
-    await session.stop(); session.dispose();
+    await session.stop();
+    session.dispose();
   });
 
   test('capability lookup reaches non-Linux native hosts', () async {
@@ -123,5 +150,4 @@ void main() {
     final capability = await VisualizerSession.capabilities(engine: 'milkrust');
     expect(capability.reason, 'PCM bridge missing');
   });
-
 }

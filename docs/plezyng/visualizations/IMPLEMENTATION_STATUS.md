@@ -1,6 +1,6 @@
 # Visualizer implementation status
 
-Updated: 2026-10-28. The original plan and signed-catalog source were merged via PlezyNG PRs #55 and #57. New native host source is on `codex/visualizer-native-hosts-20261028` and [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The [original plan](COMPLETION_PLAN.md) and its completion gates remain authoritative. **The end-to-end plan is not complete and the implementation is not release-qualified.**
+Updated: 2026-10-28. The original plan and signed-catalog source were merged via PlezyNG PRs #55 and #57. Native host source now covers Linux, Windows, Apple and Android; compiled engines are not in current releases and platform behavior remains unqualified. See the upstream [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The [original plan](COMPLETION_PLAN.md) and its completion gates remain authoritative. **The end-to-end plan is not complete and the implementation is not release-qualified.**
 
 ## Implemented source
 
