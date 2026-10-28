@@ -38,8 +38,9 @@ x64 and ARM64 use the private PC pool; the Mac is reserved for Apple and Linux A
 work. See [the Windows toolchain runbook](../../windows/tool/build-toolchain.md).
 
 Release-channel workflows set `GH_REPO` before checkout, so their release gates
-and downloads do not depend on a previous workspace. Linux Fastlane jobs install
-native gem compilation prerequisites before Bundler. Relay container publication
+and downloads do not depend on a previous workspace. The runner bootstrap installs
+native gem compilation and distribution package tools before accepting publication
+jobs; Fastlane, COPR and PPA jobs verify them without sudo before use. Relay container publication
 passes the private proxy into both the BuildKit daemon and Docker's predefined
 proxy build arguments; the Dockerfile does not persist those settings in the
 runtime image. See [Docker's proxy arguments](https://docs.docker.com/build/building/variables/#proxy-arguments).
