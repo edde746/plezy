@@ -3711,5 +3711,19 @@
   "issueReport.instructions": "ba5cd1aafd91f243",
   "issueReport.privacy": "18f52ee7b3a27de8",
   "issueReport.logPrivacy": "e6b034062755b9e7",
-  "issueReport.openDraft": "ae8533f1a1a2875b"
+  "issueReport.openDraft": "ae8533f1a1a2875b",
+  "trakt.historyExport": "989aa05f8732a39a",
+  "trakt.historyExportDescription": "32427efcd15feca0",
+  "trakt.historyExportFailed": "813ae28db095eae2",
+  "trakt.historyExportLoading": "e6576382d03b86a4",
+  "trakt.historyExportNoHistory": "2cbdae5bc72a9f8a",
+  "trakt.historyExportPart": "d3ec38a81863bd73",
+  "trakt.historyExportPartial": "73b181d3ffbef7df",
+  "trakt.historyExportReview": "055ba55d58c1515b",
+  "trakt.historyExportReviewTitle": "78769e51d1267e08",
+  "trakt.historyExportSave": "a4e1e4ff16f82d40",
+  "trakt.historyExportSaveFailed": "82305844132fe0c1",
+  "trakt.historyExportSaved": "a928122fca21e55c",
+  "trakt.historyExportSkipped": "3b61c8e43153a63c",
+  "trakt.historyExportTooLarge": "3a424d7a345976eb"
 }

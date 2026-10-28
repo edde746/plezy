@@ -6713,6 +6713,48 @@ class Translations$trakt$en {
 
 	/// en: 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.'
 	String get watchedSyncDescription => 'When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.';
+
+	/// en: 'Export to Letterboxd'
+	String get historyExport => 'Export to Letterboxd';
+
+	/// en: 'Create a local CSV from Trakt movie history. Nothing is uploaded.'
+	String get historyExportDescription => 'Create a local CSV from Trakt movie history. Nothing is uploaded.';
+
+	/// en: 'Loading Trakt movie history…'
+	String get historyExportLoading => 'Loading Trakt movie history…';
+
+	/// en: 'Export movie history'
+	String get historyExportReviewTitle => 'Export movie history';
+
+	/// en: 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device's local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd's 1 MB import limit.'
+	String historyExportReview({required Object plays, required Object movies, required Object files}) => 'This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device\'s local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd\'s 1 MB import limit.';
+
+	/// en: '${count} incomplete entries could not be included.'
+	String historyExportSkipped({required Object count}) => '${count} incomplete entries could not be included.';
+
+	/// en: 'No exportable movie history was found in Trakt.'
+	String get historyExportNoHistory => 'No exportable movie history was found in Trakt.';
+
+	/// en: 'Couldn't load Trakt movie history. Try again.'
+	String get historyExportFailed => 'Couldn\'t load Trakt movie history. Try again.';
+
+	/// en: 'Save CSV'
+	String get historyExportSave => 'Save CSV';
+
+	/// en: 'Save Letterboxd file ${part} of ${total}'
+	String historyExportPart({required Object part, required Object total}) => 'Save Letterboxd file ${part} of ${total}';
+
+	/// en: 'Saved ${count} Letterboxd CSV file(s).'
+	String historyExportSaved({required Object count}) => 'Saved ${count} Letterboxd CSV file(s).';
+
+	/// en: 'Export stopped after saving ${saved} of ${total} files.'
+	String historyExportPartial({required Object saved, required Object total}) => 'Export stopped after saving ${saved} of ${total} files.';
+
+	/// en: 'Couldn't save the CSV file. Try again.'
+	String get historyExportSaveFailed => 'Couldn\'t save the CSV file. Try again.';
+
+	/// en: 'This history is too large to package here. Use Trakt's own data export to split very large histories.'
+	String get historyExportTooLarge => 'This history is too large to package here. Use Trakt\'s own data export to split very large histories.';
 }
 
 // Path: seerr
