@@ -11,7 +11,7 @@
 
 A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
-PlezyNG is a downstream fork for feature requests that Plezy upstream has declined, left open, or not yet shipped. The table below maps those upstream gaps to the corresponding downstream implementation. If upstream provides equivalent behavior with comparable Plex, Jellyfin, and Emby coverage, PlezyNG can retire the duplicate implementation and converge on upstream. Until then, the fork maintains and validates the capabilities listed here.
+PlezyNG is a downstream fork for feature requests that Plezy upstream has declined, left open, or not yet shipped. The table below maps those upstream gaps to the corresponding downstream implementation.
 
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
 
