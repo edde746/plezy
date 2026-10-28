@@ -435,12 +435,28 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                         child: Text(service.status!, style: Theme.of(context).textTheme.bodySmall),
                       ),
                     FocusableListTile(
-                      leading: AppIcon((service.isRunning || service.hasActiveSession) ? Symbols.stop_circle_rounded : Symbols.closed_caption_rounded),
-                      title: Text((service.isRunning || service.hasActiveSession) ? 'Stop live capture' : 'Start live captions'),
-                      subtitle: Text((service.isRunning || service.hasActiveSession)
-                          ? 'Stop capture and retain the transcript for sync'
-                          : 'VOD on Android ExoPlayer; downloads the local Whisper model on first use'),
-                      onTap: _busy ? null : () => unawaited(_captureLivePlayback()),
+                      leading: AppIcon(
+                        service.isStarting
+                            ? Symbols.sync_rounded
+                            : (service.isRunning || service.hasActiveSession)
+                                ? Symbols.stop_circle_rounded
+                                : Symbols.closed_caption_rounded,
+                      ),
+                      title: Text(
+                        service.isStarting
+                            ? 'Preparing live captions…'
+                            : (service.isRunning || service.hasActiveSession)
+                                ? 'Stop live capture'
+                                : 'Start live captions',
+                      ),
+                      subtitle: Text(
+                        service.isStarting
+                            ? 'Loading the local Whisper model'
+                            : (service.isRunning || service.hasActiveSession)
+                                ? 'Stop capture and retain the transcript for sync'
+                                : 'VOD on Android ExoPlayer; downloads the local Whisper model on first use',
+                      ),
+                      onTap: (_busy || service.isStarting) ? null : () => unawaited(_captureLivePlayback()),
                     ),
                     if (service.hasRecentTranscript && !service.isRunning) ...[
                       FocusableListTile(
