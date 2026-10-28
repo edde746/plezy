@@ -347,10 +347,10 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
 ///
 /// Identity matching ([findPlexTrackForMpvSubtitle]) answers "which row IS
 /// this track"; this answers "which row of a DIFFERENT item serves the same
-/// intent". Effective forced-ness is a hard requirement, and so is language
-/// when both sides declare one: the intent's class is preserved or the match
-/// declines, so the selection ladder can fall back to the server's own
-/// per-item choice (#1716/#1717).
+/// intent". Effective forced-ness and explicit SDH/CC title markers are hard
+/// requirements, and so is language when both sides declare one: the intent's
+/// class is preserved or the match declines, so the selection ladder can fall
+/// back to the server's own per-item choice (#1716/#1717).
 ///
 /// When language metadata is missing on either side, a unique real title
 /// match may vouch for the row instead (#1785) — untagged tracks whose only
@@ -366,7 +366,8 @@ MediaSubtitleTrack? findSourceTrackForIntent(SubtitleIntent intent, List<MediaSu
     sourceTracks,
     intentLanguage: intent.language,
     isSelectable: (_) => true,
-    classMatches: (row) => row.effectiveForced == intent.forced,
+    classMatches: (row) =>
+        row.effectiveForced == intent.forced && row.effectiveHearingImpaired == intent.hearingImpaired,
     language: (row) => row.languageCode ?? row.language,
     titleScore: (row) => _titleScore(intent.title, row.title, row.displayTitle),
     codecMatches: (row) => _subtitleCodecsMatch(intent.codec, row.codec),
@@ -381,7 +382,8 @@ SubtitleTrack? findNativeTrackForIntent(SubtitleIntent intent, List<SubtitleTrac
     tracks,
     intentLanguage: intent.language,
     isSelectable: (track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id,
-    classMatches: (track) => track.effectiveForced == intent.forced,
+    classMatches: (track) =>
+        track.effectiveForced == intent.forced && track.effectiveHearingImpaired == intent.hearingImpaired,
     language: (track) => track.language,
     titleScore: (track) => _titleScore(intent.title, track.title, null),
     codecMatches: (track) => _subtitleCodecsMatch(intent.codec, track.codec),

@@ -3,21 +3,30 @@ import '../utils/subtitle_forced_semantics.dart';
 
 /// Item-agnostic semantic subtitle intent.
 ///
-/// [language] and [forced] are hard matching requirements — an intent only
-/// resolves to a track of the same language AND the same forced-ness class,
+/// [language], [forced], and [hearingImpaired] are hard matching requirements.
+/// An intent only resolves to a track with the same language and subtitle role,
 /// otherwise resolution declines and the selection ladder falls back to the
-/// server's own per-item choice (#1716/#1717). [forced] is EFFECTIVE
-/// forced-ness (flag OR title-says-forced), captured once at the boundary.
+/// server's own per-item choice (#1716/#1717). Forced status is effective
+/// (flag OR title marker); hearing-impaired status uses explicit title markers
+/// because the common track contracts have no dedicated SDH/CC field.
 final class SubtitleIntent {
   final String? language;
   final bool forced;
+  final bool hearingImpaired;
 
   /// Tiebreakers between same-class candidates, and log diagnostics.
   final String? title;
   final String? codec;
   final bool isExternal;
 
-  const SubtitleIntent({this.language, required this.forced, this.title, this.codec, this.isExternal = false});
+  const SubtitleIntent({
+    this.language,
+    required this.forced,
+    this.hearingImpaired = false,
+    this.title,
+    this.codec,
+    this.isExternal = false,
+  });
 
   /// Null when [track] is null/off or carries no semantic metadata at all —
   /// an intent that can never resolve is not worth carrying.
@@ -31,6 +40,7 @@ final class SubtitleIntent {
     return SubtitleIntent(
       language: track.language,
       forced: track.effectiveForced,
+      hearingImpaired: track.effectiveHearingImpaired,
       title: track.title,
       codec: track.codec,
       isExternal: track.isExternal,
@@ -42,15 +52,17 @@ final class SubtitleIntent {
       other is SubtitleIntent &&
       other.language == language &&
       other.forced == forced &&
+      other.hearingImpaired == hearingImpaired &&
       other.title == title &&
       other.codec == codec &&
       other.isExternal == isExternal;
 
   @override
-  int get hashCode => Object.hash(language, forced, title, codec, isExternal);
+  int get hashCode => Object.hash(language, forced, hearingImpaired, title, codec, isExternal);
 
   @override
-  String toString() => 'SubtitleIntent($language, forced: $forced, title: $title, codec: $codec)';
+  String toString() =>
+      'SubtitleIntent($language, forced: $forced, hearingImpaired: $hearingImpaired, title: $title, codec: $codec)';
 }
 
 /// What the next open/selection pass should aim for, subtitle-wise.

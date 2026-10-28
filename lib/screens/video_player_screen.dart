@@ -1740,6 +1740,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         title: title,
         codec: codec,
         forced: subtitle['forced'] == true,
+        hearingImpaired: subtitle['hearingImpaired'] == true,
         isExternal: subtitle['external'] == true,
       ),
     );

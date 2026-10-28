@@ -531,6 +531,7 @@ class TrackManager {
                 if (intent?.title?.isNotEmpty ?? false) 'title': intent!.title,
                 if (intent?.codec?.isNotEmpty ?? false) 'codec': intent!.codec,
                 if (intent != null) 'forced': intent.forced,
+                if (intent != null) 'hearingImpaired': intent.hearingImpaired,
                 if (intent != null) 'external': intent.isExternal,
               },
       );
