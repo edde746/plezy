@@ -601,10 +601,16 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     }
   }
 
+  void _rememberCueEdit(List<(int, SubtitleCue)> undoHistory, int index, SubtitleCue cue) {
+    if (undoHistory.length == 100) undoHistory.removeAt(0);
+    undoHistory.add((index, cue));
+  }
+
   Future<void> _showFullCueEditor(
     BuildContext dialogContext,
     List<SubtitleCue> cues, {
     List<SubtitleCue>? sourceCues,
+    required List<(int, SubtitleCue)> undoHistory,
     VoidCallback? onChanged,
   }) async {
     final searchController = TextEditingController();
@@ -661,6 +667,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                                 Future<void> editCue() async {
                                   final edited = await _editCueForReview(editorContext, cue);
                                   if (edited != null && mounted) {
+                                    _rememberCueEdit(undoHistory, cueIndex, cue);
                                     setEditorState(() => cues[cueIndex] = edited);
                                     onChanged?.call();
                                   }
@@ -696,6 +703,16 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                 ),
               ),
               actions: [
+                if (undoHistory.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () {
+                      final previous = undoHistory.removeLast();
+                      setEditorState(() => cues[previous.$1] = previous.$2);
+                      onChanged?.call();
+                    },
+                    icon: const Icon(Icons.undo),
+                    label: Text('Undo (${undoHistory.length})'),
+                  ),
                 TextButton(
                   onPressed: () => Navigator.of(editorContext).pop(),
                   child: const Text('Done'),
@@ -750,6 +767,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       throw StateError('Source and output cue counts do not match; no subtitle was attached.');
     }
     final reviewedCues = List<SubtitleCue>.from(cues);
+    final undoHistory = <(int, SubtitleCue)>[];
     _lastResultUploadedToServer = false;
     final uploadLanguage = _normalizedUploadLanguage(operationLanguageCode);
     final canUploadToServer =
@@ -783,6 +801,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                       dialogContext,
                       reviewedCues,
                       sourceCues: sourceCues,
+                      undoHistory: undoHistory,
                       onChanged: () => setDialogState(() {}),
                     ),
                   ),
@@ -826,7 +845,10 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                                 onPressed: () async {
                                   final edited = await _editCueForReview(dialogContext, cue);
                                   if (edited != null && mounted) {
-                                    setDialogState(() => reviewedCues[cueIndex] = edited);
+                                    setDialogState(() {
+                                      _rememberCueEdit(undoHistory, cueIndex, cue);
+                                      reviewedCues[cueIndex] = edited;
+                                    });
                                   }
                                 },
                                 icon: const Icon(Icons.edit_outlined),
@@ -843,6 +865,15 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
             ),
           ),
           actions: [
+            if (undoHistory.isNotEmpty)
+              TextButton.icon(
+                onPressed: () {
+                  final previous = undoHistory.removeLast();
+                  setDialogState(() => reviewedCues[previous.$1] = previous.$2);
+                },
+                icon: const Icon(Icons.undo),
+                label: Text('Undo (${undoHistory.length})'),
+              ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.discard),
               child: const Text('Discard'),
