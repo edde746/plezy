@@ -127,6 +127,9 @@
     "videoSettings.subtitleDriftCalibration",
     "videoSettings.subtitleDriftCalibrationHelp",
     "videoSettings.subtitleDriftInvalidAnchors",
+    "videoSettings.subtitleDriftPreview",
+    "videoSettings.subtitleDriftPreviewActive",
+    "videoSettings.subtitleDriftPreviewFailed",
     "videoSettings.subtitlePlaybackTimeAnchor1",
     "videoSettings.subtitlePlaybackTimeAnchor2",
     "videoSettings.subtitleUsePlaybackTime"
