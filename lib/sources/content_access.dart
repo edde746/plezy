@@ -1941,6 +1941,7 @@ class SourceStreamGateway {
   final LinkedHashMap<String, ({Uri uri, Map<String, String> headers, SourceUriRenewal? renew})> _directUris =
       LinkedHashMap();
   final Map<String, String> _directIdsByUri = {};
+  final Set<String> _nonDeduplicatedDirectIds = {};
   final Map<String, Future<({Uri uri, Map<String, String> headers})>> _directRenewals = {};
   var _directCounter = 0;
   final _abort = Completer<void>();
@@ -1967,6 +1968,7 @@ class SourceStreamGateway {
     Uri uri, {
     Map<String, String> headers = const {},
     SourceUriRenewal? renew,
+    bool deduplicate = true,
   }) async {
     if (!valid()) throw const SourceException(SourceFailure.cancelled);
     if (uri.hasFragment || uri.userInfo.isNotEmpty || !const {'http', 'https'}.contains(uri.scheme)) {
@@ -1981,7 +1983,7 @@ class SourceStreamGateway {
         safeHeaders.entries.map((entry) => [entry.key.toLowerCase(), entry.value]).toList(),
       ]),
     );
-    final existing = _directIdsByUri[uriText];
+    final existing = deduplicate ? _directIdsByUri[uriText] : null;
     if (existing != null) {
       final registered = _directUris[existing];
       if (registered != null && registered.renew == null && renew != null) {
@@ -1991,10 +1993,15 @@ class SourceStreamGateway {
     }
     final id = sourceDigest('direct:$_secret:${_directCounter++}');
     _directUris[id] = (uri: uri, headers: safeHeaders, renew: renew);
-    _directIdsByUri[uriText] = id;
+    if (deduplicate) {
+      _directIdsByUri[uriText] = id;
+    } else {
+      _nonDeduplicatedDirectIds.add(id);
+    }
     while (_directUris.length > 4096) {
       final oldest = _directUris.keys.first;
       _directUris.remove(oldest);
+      _nonDeduplicatedDirectIds.remove(oldest);
       _directIdsByUri.removeWhere((_, value) => value == oldest);
     }
     return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$id');
@@ -2082,7 +2089,7 @@ class SourceStreamGateway {
       final next = (uri: refreshed.uri, headers: safeHeaders, renew: renew);
       _directUris[id] = next;
       if (_directIdsByUri[expiredKey] == id) _directIdsByUri.remove(expiredKey);
-      _directIdsByUri.putIfAbsent(key, () => id);
+      if (!_nonDeduplicatedDirectIds.contains(id)) _directIdsByUri.putIfAbsent(key, () => id);
       return next;
     } finally {
       if (identical(_directRenewals[id], pending)) _directRenewals.remove(id);
@@ -2216,7 +2223,14 @@ class SourceStreamGateway {
     }
   }
 
-  Future<String> _registerManifestUri(Uri base, String value, Map<String, String> headers) async {
+  Future<String> _registerManifestUri(
+    Uri base,
+    String value,
+    Map<String, String> headers, {
+    required String parentId,
+    required SourceUriRenewal? parentRenew,
+    required int referenceIndex,
+  }) async {
     final raw = value.trim();
     final uri = base.resolve(raw);
     final scheme = uri.scheme.toLowerCase();
@@ -2229,32 +2243,172 @@ class SourceStreamGateway {
     }
     // Manifest children can point at a CDN or a different host. Request
     // credentials are scoped to the stream origin and must never follow them.
-    final local = await registerUri(uri, headers: sameSourceOrigin(base, uri) ? headers : const {});
+    final childHeaders = sameSourceOrigin(base, uri) ? headers : const <String, String>{};
+    final SourceUriRenewal? childRenew = parentRenew == null
+        ? null
+        : () => _renewManifestChildUri(
+            parentId,
+            parentRenew: parentRenew,
+            referenceIndex: referenceIndex,
+            expectedPath: uri.path,
+          );
+    // Each manifest reference keeps its own renewal ordinal. Reusing an
+    // identical URI for two playlist slots would otherwise bind both slots to
+    // whichever callback registered first.
+    final local = await registerUri(uri, headers: childHeaders, renew: childRenew, deduplicate: false);
     return local.toString();
   }
 
-  Future<String> _rewriteHlsManifest(String value, Uri base, Map<String, String> headers) async {
+  Future<String> _rewriteHlsManifest(
+    String value,
+    Uri base,
+    Map<String, String> headers, {
+    required String parentId,
+    required SourceUriRenewal? parentRenew,
+  }) async {
     final lines = value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
     var rewrittenUris = 0;
+    var referenceIndex = 0;
     final attributeUri = RegExp(r'URI="([^"]+)"');
     for (var index = 0; index < lines.length; index++) {
       var line = lines[index];
       if (line.trim().isEmpty) continue;
       if (!line.startsWith('#')) {
-        line = await _registerManifestUri(base, line, headers);
+        if (referenceIndex >= 2000) throw const SourceException(SourceFailure.invalidData);
+        line = await _registerManifestUri(
+          base,
+          line,
+          headers,
+          parentId: parentId,
+          parentRenew: parentRenew,
+          referenceIndex: referenceIndex++,
+        );
         rewrittenUris++;
       } else {
         final matches = attributeUri.allMatches(line).toList();
-        for (final match in matches.reversed) {
-          final local = await _registerManifestUri(base, match.group(1)!, headers);
+        if (referenceIndex + matches.length > 2000) throw const SourceException(SourceFailure.invalidData);
+        for (var matchIndex = matches.length - 1; matchIndex >= 0; matchIndex--) {
+          final match = matches[matchIndex];
+          final local = await _registerManifestUri(
+            base,
+            match.group(1)!,
+            headers,
+            parentId: parentId,
+            parentRenew: parentRenew,
+            referenceIndex: referenceIndex + matchIndex,
+          );
           line = line.replaceRange(match.start, match.end, 'URI="$local"');
           rewrittenUris++;
         }
+        referenceIndex += matches.length;
       }
       if (rewrittenUris > 2000) throw const SourceException(SourceFailure.invalidData);
       lines[index] = line;
     }
     return lines.join('\n');
+  }
+
+  List<Uri> _hlsReferences(String manifest, Uri base) {
+    final references = <Uri>[];
+    final attributeUri = RegExp(r'URI="([^"]+)"');
+    for (final rawLine in manifest.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n')) {
+      final line = rawLine.trim();
+      if (line.isEmpty) continue;
+      if (!line.startsWith('#')) {
+        references.add(base.resolve(line));
+        if (references.length > 2000) throw const SourceException(SourceFailure.invalidData);
+        continue;
+      }
+      for (final match in attributeUri.allMatches(line)) {
+        references.add(base.resolve(match.group(1)!));
+        if (references.length > 2000) throw const SourceException(SourceFailure.invalidData);
+      }
+    }
+    return references;
+  }
+
+  Future<({Uri base, Map<String, String> headers, String manifest})> _readRenewedManifest(
+    String parentId, {
+    required SourceUriRenewal parentRenew,
+  }) async {
+    var parent = _directUris[parentId];
+    if (parent == null) throw const SourceException(SourceFailure.cancelled);
+    final transport = SourceTransport(allowHttp: parent.uri.scheme == 'http');
+    try {
+      var response = await transport.send(
+        'GET',
+        parent.uri,
+        headers: parent.headers,
+        redirects: true,
+        abort: _abort.future,
+      );
+      if (const {HttpStatus.unauthorized, HttpStatus.forbidden, HttpStatus.gone}.contains(response.statusCode)) {
+        await response.stream.drain<void>();
+        if (!valid()) throw const SourceException(SourceFailure.cancelled);
+        parent = await _renewDirectUri(
+          parentId,
+          expiredUri: parent.uri,
+          expiredHeaders: parent.headers,
+          renew: parentRenew,
+        );
+        transport.validate(parent.uri);
+        response = await transport.send(
+          'GET',
+          parent.uri,
+          headers: parent.headers,
+          redirects: true,
+          abort: _abort.future,
+        );
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        await response.stream.drain<void>();
+        throw SourceException(
+          response.statusCode == HttpStatus.notFound ? SourceFailure.unavailable : SourceFailure.authentication,
+          status: response.statusCode,
+        );
+      }
+      const maxManifestBytes = 2 * 1024 * 1024;
+      final bytes = <int>[];
+      await for (final chunk in response.stream.timeout(const Duration(seconds: 30))) {
+        if (!valid()) throw const SourceException(SourceFailure.cancelled);
+        if (bytes.length + chunk.length > maxManifestBytes) throw const SourceException(SourceFailure.invalidData);
+        bytes.addAll(chunk);
+      }
+      final base = response.request?.url ?? parent.uri;
+      final headers = sameSourceOrigin(parent.uri, base) ? parent.headers : const <String, String>{};
+      final manifest = utf8.decode(bytes, allowMalformed: true);
+      if (!manifest.trimLeft().startsWith('#EXTM3U')) throw const SourceException(SourceFailure.invalidData);
+      return (base: base, headers: headers, manifest: manifest);
+    } finally {
+      transport.close();
+    }
+  }
+
+  Future<({Uri uri, Map<String, String> headers})> _renewManifestChildUri(
+    String parentId, {
+    required SourceUriRenewal parentRenew,
+    required int referenceIndex,
+    required String expectedPath,
+  }) async {
+    if (!valid()) throw const SourceException(SourceFailure.cancelled);
+    final refreshed = await _readRenewedManifest(parentId, parentRenew: parentRenew);
+    final references = _hlsReferences(refreshed.manifest, refreshed.base);
+    if (referenceIndex < 0 || referenceIndex >= references.length) {
+      throw const SourceException(SourceFailure.conflict);
+    }
+    final uri = references[referenceIndex];
+    final scheme = uri.scheme.toLowerCase();
+    if (!const {'http', 'https'}.contains(scheme) ||
+        (refreshed.base.scheme == 'https' && scheme != 'https') ||
+        uri.path != expectedPath) {
+      // A live playlist may roll forward or a provider may replace the file.
+      // Refuse to splice a different segment into the current playback.
+      throw const SourceException(SourceFailure.conflict);
+    }
+    if (uri.host.isEmpty || uri.userInfo.isNotEmpty || uri.hasFragment) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    return (uri: uri, headers: sameSourceOrigin(refreshed.base, uri) ? refreshed.headers : const <String, String>{});
   }
 
   Future<void> _serveDirect(
@@ -2280,7 +2434,8 @@ class SourceStreamGateway {
         redirects: true,
         abort: _abort.future,
       );
-      if (const {HttpStatus.unauthorized, HttpStatus.forbidden}.contains(upstream.statusCode) && renew != null) {
+      if (const {HttpStatus.unauthorized, HttpStatus.forbidden, HttpStatus.gone}.contains(upstream.statusCode) &&
+          renew != null) {
         await upstream.stream.drain<void>();
         if (!valid()) throw const SourceException(SourceFailure.cancelled);
         final refreshed = await _renewDirectUri(
@@ -2339,7 +2494,15 @@ class SourceStreamGateway {
       final manifest = utf8.decode(bytes, allowMalformed: true);
       final manifestBase = upstream.request?.url ?? currentUri;
       final manifestHeaders = sameSourceOrigin(currentUri, manifestBase) ? currentHeaders : const <String, String>{};
-      final rewritten = utf8.encode(await _rewriteHlsManifest(manifest, manifestBase, manifestHeaders));
+      final rewritten = utf8.encode(
+        await _rewriteHlsManifest(
+          manifest,
+          manifestBase,
+          manifestHeaders,
+          parentId: id,
+          parentRenew: renew,
+        ),
+      );
       request.response.headers.set(HttpHeaders.contentLengthHeader, rewritten.length);
       await request.response.addStream(Stream<List<int>>.value(rewritten));
     } finally {
@@ -2352,6 +2515,7 @@ class SourceStreamGateway {
     _leases.clear();
     _directUris.clear();
     _directIdsByUri.clear();
+    _nonDeduplicatedDirectIds.clear();
     _directRenewals.clear();
     if (!_abort.isCompleted) _abort.complete();
     await _server?.close(force: true);
