@@ -5,6 +5,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../media/media_source_info.dart';
+import '../../../media/ids.dart';
+import '../../../services/settings_service.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/playback_subtitle_resolver.dart';
@@ -12,6 +14,8 @@ import '../../../services/subtitle_archive_importer.dart';
 import '../../../services/track_selection_service.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/formatters.dart';
+import '../../../utils/language_codes.dart';
+import '../../../utils/provider_extensions.dart';
 import '../../../utils/track_label_builder.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -534,6 +538,16 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
     );
   }
 
+  if (state.serverId != null && state.ratingKey.isNotEmpty) {
+    actions.add(
+      FocusableListTile(
+        leading: const AppIcon(Symbols.cloud_upload_rounded),
+        title: const Text('Attach subtitle to server library'),
+        onTap: () => _attachSubtitleFile(context, state),
+      ),
+    );
+  }
+
   if (player.supportsSubtitleStyleControls) {
     actions.add(
       FocusableListTile(
@@ -567,6 +581,140 @@ Future<void> _loadSubtitleFile(BuildContext context, Player player) async {
   } catch (error, stackTrace) {
     appLogger.w('Could not load local subtitle file', error: error, stackTrace: stackTrace);
     if (context.mounted) showErrorSnackBar(context, t.videoControls.subtitleLoadFailed);
+  }
+}
+
+Future<void> _attachSubtitleFile(BuildContext context, TrackControlsState state) async {
+  final result = await FilePickerService.instance.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: const ['ass', 'srt', 'ssa', 'vtt'],
+  );
+  if (result == null || result.files.isEmpty || !context.mounted) return;
+  final file = result.files.first;
+  final format = p.extension(file.name).toLowerCase().replaceFirst('.', '');
+  if (!const {'srt', 'vtt', 'ass', 'ssa'}.contains(format)) {
+    showErrorSnackBar(context, 'Choose an SRT, VTT, ASS, or SSA subtitle.');
+    return;
+  }
+
+  try {
+    final bytes = await SubtitleArchiveImporter.readPickedArchive(file);
+    if (bytes.isEmpty || bytes.lengthInBytes > 20 * 1024 * 1024) {
+      showErrorSnackBar(context, 'Subtitle files must be smaller than 20 MiB.');
+      return;
+    }
+
+    final settings = SettingsService.instanceOrNull;
+    final systemCode = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    final defaultLanguage = LanguageCodes.getIso6391Code(
+      settings?.read(SettingsService.subtitleSearchLanguage) ?? systemCode,
+    ) ?? 'en';
+    final languageController = TextEditingController(text: defaultLanguage);
+    var forced = RegExp(r'(^|[._ -])forced([._ -]|$)', caseSensitive: false).hasMatch(file.name);
+    var hearingImpaired = RegExp(r'(^|[._ -])(sdh|cc)([._ -]|$)', caseSensitive: false).hasMatch(file.name);
+    String? languageError;
+    final options = await showDialog<({String language, bool forced, bool hearingImpaired})>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Attach subtitle to server library'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(file.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: languageController,
+                  decoration: InputDecoration(
+                    labelText: 'Language code',
+                    helperText: 'ISO 639-1, for example en or ja',
+                    errorText: languageError,
+                  ),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Forced subtitles'),
+                  value: forced,
+                  onChanged: (value) => setDialogState(() => forced = value),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('SDH / closed captions'),
+                  value: hearingImpaired,
+                  onChanged: (value) => setDialogState(() => hearingImpaired = value),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(t.common.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final language = LanguageCodes.getIso6391Code(languageController.text.trim());
+                if (language == null) {
+                  setDialogState(() => languageError = 'Enter a valid ISO 639-1 language code.');
+                  return;
+                }
+                Navigator.of(dialogContext).pop((
+                  language: language,
+                  forced: forced,
+                  hearingImpaired: hearingImpaired,
+                ));
+              },
+              child: const Text('Upload'),
+            ),
+          ],
+        ),
+      ),
+    );
+    languageController.dispose();
+    if (options == null || !context.mounted) return;
+
+    final client = context.tryGetMediaClientForServer(ServerId(state.serverId!));
+    if (client == null) {
+      showErrorSnackBar(context, 'The media server is no longer available.');
+      return;
+    }
+    final uploaded = await client.attachSubtitle(
+      state.ratingKey,
+      bytes: bytes,
+      fileName: file.name,
+      format: format,
+      language: options.language,
+      forced: options.forced,
+      hearingImpaired: options.hearingImpaired,
+      mediaIndex: state.selectedMediaIndex,
+    );
+    if (!context.mounted) return;
+    if (!uploaded) {
+      showErrorSnackBar(context, 'The media server did not accept this subtitle.');
+      return;
+    }
+
+    SubtitleDownloadApplyOutcome? outcome;
+    try {
+      outcome = await state.onSubtitleDownloaded?.call(
+        serverId: state.serverId!,
+        ratingKey: state.ratingKey,
+        preferredLanguageCode: options.language,
+      );
+    } catch (error, stackTrace) {
+      appLogger.w('Subtitle uploaded but playback refresh did not complete', error: error, stackTrace: stackTrace);
+    }
+    if (!context.mounted) return;
+    if (outcome == SubtitleDownloadApplyOutcome.applied) {
+      showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+    } else {
+      showSuccessSnackBar(context, 'Subtitle uploaded. Refresh playback to load it.');
+    }
+    OverlaySheetController.of(context).close();
+  } catch (error, stackTrace) {
+    appLogger.w('Could not attach subtitle to media library', error: error, stackTrace: stackTrace);
+    if (context.mounted) showErrorSnackBar(context, 'Could not attach subtitle to the server library.');
   }
 }
 

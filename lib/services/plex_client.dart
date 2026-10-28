@@ -1656,6 +1656,42 @@ class PlexClient
   }
 
   @override
+  Future<bool> attachSubtitle(
+    String ratingKey, {
+    required List<int> bytes,
+    required String fileName,
+    required String format,
+    required String language,
+    bool hearingImpaired = false,
+    bool forced = false,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async {
+    const allowedFormats = {'srt', 'vtt', 'ass', 'ssa'};
+    final normalizedFormat = format.trim().toLowerCase().replaceFirst('.', '');
+    final safeName = fileName.split(RegExp(r'[/\\\\]')).last.trim();
+    if (bytes.isEmpty ||
+        bytes.length > 20 * 1024 * 1024 ||
+        !allowedFormats.contains(normalizedFormat) ||
+        safeName.isEmpty) {
+      throw ArgumentError('Subtitle upload must be a non-empty SRT, VTT, ASS, or SSA file under 20 MiB.');
+    }
+
+    // Plex's upload route accepts a binary request body and uses these fields
+    // to name and classify the new sidecar. Language/forced/SDH are preserved
+    // in the filename where Plex supports them; no undocumented query fields
+    // are sent.
+    final response = await _http.post(
+      '/library/metadata/${Uri.encodeComponent(ratingKey)}/subtitles',
+      queryParameters: {'title': safeName, 'format': normalizedFormat},
+      headers: const {'Content-Type': 'application/octet-stream'},
+      body: bytes,
+    );
+    throwIfHttpError(response);
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  @override
   Future<int?> consumeDownloadedSubtitleStreamId(String ratingKey, {int mediaIndex = 0, String? mediaSourceId}) async =>
       null;
 

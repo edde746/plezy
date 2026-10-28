@@ -118,6 +118,46 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
   }
 
   @override
+  Future<bool> attachSubtitle(
+    String ratingKey, {
+    required List<int> bytes,
+    required String fileName,
+    required String format,
+    required String language,
+    bool hearingImpaired = false,
+    bool forced = false,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async {
+    const allowedFormats = {'srt', 'vtt', 'ass', 'ssa'};
+    final normalizedFormat = format.trim().toLowerCase().replaceFirst('.', '');
+    if (bytes.isEmpty ||
+        bytes.length > 20 * 1024 * 1024 ||
+        !allowedFormats.contains(normalizedFormat)) {
+      throw ArgumentError('Subtitle upload must be a non-empty SRT, VTT, ASS, or SSA file under 20 MiB.');
+    }
+
+    // Jellyfin and Emby use the same authenticated upload DTO. Sending a fixed
+    // extension allowlist prevents user-controlled path components reaching
+    // the server's subtitle-file writer, including older server releases.
+    final languageCode = LanguageCodes.getIso6392Code(language) ?? language;
+    final response = await _http.post(
+      '/Videos/${_segment(ratingKey)}/Subtitles',
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'Language': languageCode,
+        'Format': normalizedFormat,
+        'IsForced': forced,
+        'IsHearingImpaired': hearingImpaired,
+        'Data': base64Encode(bytes),
+      }),
+    );
+    throwIfHttpError(response);
+    await cache.deleteForItem(ServerId(cacheServerId), ratingKey);
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  @override
   Future<int?> consumeDownloadedSubtitleStreamId(String ratingKey, {int mediaIndex = 0, String? mediaSourceId}) async {
     if (dialect != MediaBrowserDialect.emby) return null;
     final sourceId = await _resolveSubtitleMediaSourceId(
