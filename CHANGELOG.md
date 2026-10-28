@@ -2,8 +2,26 @@
 
 ## [Unreleased]
 
-- Apply the coral ribbon identity across native launchers, store artwork and in-app branding, with light/dark marks, matching wordmarks and simplified small-size icons.
+- Add exact millisecond audio/subtitle sync entry and backend-aware local subtitle import: MPV keeps its existing formats, Android ExoPlayer accepts SRT/ASS/SSA/VTT on VOD, and Tizen/webOS add SRT/VTT overlays.
 
+- Add profile-scoped stereo, quad and 5.1 Steam audio requests with bounded Opus multistream decoding, explicit speaker mapping and a stereo compatibility retry for unsupported layouts or outputs.
+
+- Preserve TV navigation-remote assistance for player one without consuming a Steam gamepad seat; release both input paths when a composite device disconnects.
+
+- Add opt-in Companion Remote controls for active PlezyNG game streams: inspect titles, choose audio, mute, fullscreen and confirm disconnect, using temporary session handles that expire on reconnection or replacement.
+- Prevent a timed-out Steam host inventory check from launching later, using monotonic deadlines and explicit operation retirement.
+
+- Add live Steam connection details from native receiver counters and host adaptation messages, including actual codec, frame rate, received video payload, queue depth and input reliability; opening details releases game input and keeps measurements local.
+
+- Add one-to-four independent Android Steam controller seats, with a profile setting, stable HID identities, shared native/Flutter device mapping and per-device disconnect cleanup; preserve the single-controller default.
+
+- Add on-demand Steam achievements, news and optional friends-playing context to game details, with identity-bound server requests, spoiler protection and confirmed Steam destinations.
+- Add separately permissioned Companion Remote requests to launch installed Steam games, request installation, and open Steam/downloads on the authenticated computer; reject replayed or arbitrary commands and preserve Steam's authority over launch/install results.
+- Unify Steam games across computers and library drives with one poster grid, shared favorites, computer filters, timestamped installation snapshots and optional encrypted Companion Remote inventory sharing.
+- Refresh linked Steam catalogs with encrypted, revocable, identity-scoped credentials while retaining compatibility with older relays and saved game libraries.
+- Add profile-scoped Android Steam quality and codec preferences, first-frame connection state, accessible reconnect controls and teardown acknowledgement before retrying a stream. Other embedded receiver platforms remain in development.
+
+- Apply the coral ribbon identity across native launchers, store artwork and in-app branding, with light/dark marks, matching wordmarks and simplified small-size icons.
 - Add a searchable, region-aware directory of official video, rental, book, audiobook, comics, music and game storefronts to Services and title details; add Google Books catalog search with country-specific sale metadata and official purchase handoff.
 - Keep file-source activation profile-scoped through download and shelf reconciliation, and stop cloud settings backup or restore when the initiating profile session changes.
 - Require every release-critical CI job, including each native platform matrix row, to pass for the exact release commit; keep implementation and qualification claims in a source-linked capability ledger.
@@ -16,6 +34,7 @@
 - Let people shuffle a saved pick back onto the deck for a deliberate action, without auto-starting playback.
 - Clear all active Find your next filters directly from a no-match result.
 - Link the QR GitHub issue draft directly from Household setup for faster problem reporting.
+- Fix compile errors in discovery, source details and issue reporting by using existing translations and framework symbols; localize the Steam source badge.
 - Offer the same QR report flow from the startup failure screen, alongside copy and log upload.
 - Include the startup phase and exception type in its reviewed GitHub issue draft while excluding the raw message and stack trace from the QR payload.
 - Search the full Find your next source and genre option lists from the existing filter sheet when the quick chips are insufficient.
