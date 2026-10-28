@@ -12,6 +12,8 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/lending/lending_service.dart';
 import 'package:plezy/screens/lending/public_libraries_screen.dart';
 import 'package:plezy/screens/sources/add_source_screen.dart';
+import 'package:plezy/screens/sources/capture_share_screen.dart';
+import 'package:plezy/screens/sources/local_media_converter_screen.dart';
 import 'package:plezy/screens/sources/open_media_screen.dart';
 import 'package:plezy/screens/sources/source_navigation.dart';
 import 'package:plezy/screens/sources/sources_screen.dart';
@@ -23,6 +25,7 @@ import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/publication_shelf.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/provider_mark.dart';
 import 'fixtures/memory_sources.dart';
@@ -50,12 +53,14 @@ void main() {
         ),
     ];
     LocaleSettings.setLocaleSync(AppLocale.en);
+    final screenshotFontPath = [
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      '/usr/share/fonts/noto/NotoSans-Regular.ttf',
+    ].firstWhere((path) => File(path).existsSync());
+    final font = FontLoader('Roboto')
+      ..addFont(File(screenshotFontPath).readAsBytes().then((b) => ByteData.sublistView(b)));
+    await font.load();
     if (Platform.environment['PLEZY_UI_SCREENSHOTS'] != null) {
-      final font = FontLoader('Roboto')
-        ..addFont(
-          File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf').readAsBytes().then((b) => ByteData.sublistView(b)),
-        );
-      await font.load();
       final material = FontLoader('MaterialIcons')..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
       await material.load();
       for (final face in ['Rounded', 'Outlined']) {
@@ -85,15 +90,13 @@ void main() {
           key: const ValueKey('capture'),
           child: InputModeTracker(
             child: MaterialApp(
-              theme: Platform.environment['PLEZY_UI_SCREENSHOTS'] == null
-                  ? monoTheme(palette)
-                  : monoTheme(palette).copyWith(
-                      textTheme: monoTheme(palette).textTheme.apply(fontFamily: 'Roboto'),
-                      primaryTextTheme: monoTheme(palette).primaryTextTheme.apply(fontFamily: 'Roboto'),
-                      appBarTheme: monoTheme(palette).appBarTheme.copyWith(
-                        titleTextStyle: monoTheme(palette).appBarTheme.titleTextStyle?.copyWith(fontFamily: 'Roboto'),
-                      ),
-                    ),
+              theme: monoTheme(palette).copyWith(
+                textTheme: monoTheme(palette).textTheme.apply(fontFamily: 'Roboto'),
+                primaryTextTheme: monoTheme(palette).primaryTextTheme.apply(fontFamily: 'Roboto'),
+                appBarTheme: monoTheme(palette).appBarTheme.copyWith(
+                  titleTextStyle: monoTheme(palette).appBarTheme.titleTextStyle?.copyWith(fontFamily: 'Roboto'),
+                ),
+              ),
               debugShowCheckedModeBanner: false,
               home: screen,
             ),
@@ -162,10 +165,108 @@ void main() {
       findsOneWidget,
     );
     expect(
+      find.descendant(of: openMedia, matching: find.text(isolateDisplayText(t.universalMedia.converterHelp))),
+      findsOneWidget,
+    );
+    expect(
       find.descendant(of: openMedia, matching: find.text(isolateDisplayText(t.universalMedia.mediaToolsTitle))),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
+    await capture(tester, 'open-media-phone-dark');
+
+    // The selected label opens the existing choice control without coupling
+    // this flow test to Flutter's generic DropdownButtonFormField runtime type.
+    await tester.tap(find.text(t.universalMedia.stream).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.universalMedia.files).last);
+    await tester.pumpAndSettle();
+    final chooseFiles = find.text(t.universalMedia.chooseFiles);
+    final chooseFolder = find.text(t.fileSources.localFolder);
+    expect(chooseFiles, findsOneWidget);
+    expect(chooseFolder, PlatformDetector.isDesktopOS() ? findsOneWidget : findsNothing);
+    tester.view.physicalSize = const Size(320, 844);
+    await tester.pumpAndSettle();
+    await capture(tester, 'open-media-device-files-phone-dark');
+    for (final action in [chooseFiles, if (PlatformDetector.isDesktopOS()) chooseFolder]) {
+      await tester.ensureVisible(action);
+      final actionRect = tester.getRect(action);
+      expect(actionRect.left, greaterThanOrEqualTo(0));
+      expect(actionRect.right, lessThanOrEqualTo(320));
+    }
+    expect(tester.takeException(), isNull);
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpAndSettle();
+
+    final openMediaScrollables = find.descendant(of: openMedia, matching: find.byType(Scrollable));
+    Future<void> bringIntoView(Finder target) async {
+      final scrollable = openMediaScrollables.first;
+      for (var attempt = 0; attempt < 4; attempt++) {
+        final rect = tester.getRect(target);
+        if (rect.top >= 0 && rect.bottom <= tester.view.physicalSize.height) return;
+        await tester.drag(scrollable, Offset(0, rect.bottom > tester.view.physicalSize.height ? -600 : 600));
+        await tester.pumpAndSettle();
+      }
+      expect(tester.getRect(target).top, greaterThanOrEqualTo(0));
+      expect(tester.getRect(target).bottom, lessThanOrEqualTo(tester.view.physicalSize.height));
+    }
+
+    final converter = find.text(isolateDisplayText(t.universalMedia.converterTitle));
+    await bringIntoView(converter);
+    await capture(tester, 'open-media-tools-phone-dark');
+    await tester.tap(converter);
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(find.byType(LocalMediaConverterScreen), findsOneWidget);
+    await capture(tester, 'local-converter-phone-dark');
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    final mediaTools = find.text(isolateDisplayText(t.universalMedia.mediaToolsTitle));
+    await bringIntoView(mediaTools);
+    await tester.tap(mediaTools);
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(seconds: 8));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
+    await tester.pump();
+    expect(find.byType(MediaToolsScreen), findsOneWidget);
+    await capture(tester, 'media-tools-phone-dark');
+    final mediaToolsLayoutError = tester.takeException();
+    expect(mediaToolsLayoutError, isNull);
+
+    final modePicker = find
+        .descendant(
+          of: find.byType(MediaToolsScreen),
+          matching: find.byWidgetPredicate((widget) => widget is DropdownButtonFormField),
+        )
+        .first;
+    Future<void> selectMode(String label) async {
+      await tester.tap(modePicker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label).last);
+      await tester.pumpAndSettle();
+    }
+
+    await selectMode(t.universalMedia.shareMode);
+    expect(find.text(t.universalMedia.shareIntro), findsOneWidget);
+    expect(find.text(t.universalMedia.sharePrivacy), findsOneWidget);
+    expect(find.text(isolateDisplayText(t.universalMedia.shareChooseHelp)), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'media-tools-share-phone-dark');
+
+    await selectMode(t.universalMedia.extensionsMode);
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
+    expect(find.text(t.universalMedia.extensionsIntro), findsOneWidget);
+    expect(find.text(t.universalMedia.extensionImport), findsOneWidget);
+    expect(find.text(t.universalMedia.extensionEmpty), findsOneWidget);
+    expect(find.text(t.universalMedia.cliHelp), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'media-tools-extensions-phone-dark');
   });
   testWidgets('OverDrive is visibly coming soon without a patron credential form', (tester) async {
     await sources.repository.savePreference('alice', 'lending:libraries', {

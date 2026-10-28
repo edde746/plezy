@@ -292,6 +292,12 @@ class _MediaToolsScreenState extends State<MediaToolsScreen> with WidgetsBinding
     }
   }
 
+  void _previewInPlayer() {
+    final source = _captureSource;
+    if (source == null || _busy || _recording || _sharing) return;
+    Navigator.pop(context, source.previewRequest(_frameRate));
+  }
+
   Future<void> _stopRecording() async {
     final process = _recorder;
     if (process == null) return;
@@ -742,10 +748,23 @@ class _MediaToolsScreenState extends State<MediaToolsScreen> with WidgetsBinding
               label: Text(t.universalMedia.captureStop),
             ),
           ] else
-            FilledButton.icon(
-              onPressed: _busy || _discovering || _captureSource == null ? null : _startRecording,
-              icon: const AppIcon(Symbols.fiber_manual_record_rounded),
-              label: Text(t.universalMedia.captureStart),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton.icon(
+                  onPressed: _busy || _discovering || _captureSource == null ? null : _startRecording,
+                  icon: const AppIcon(Symbols.fiber_manual_record_rounded),
+                  label: Text(t.universalMedia.captureStart),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _busy || _discovering || _captureSource == null ? null : _previewInPlayer,
+                  icon: const AppIcon(Symbols.videocam_rounded),
+                  label: Text(t.universalMedia.capturePreview),
+                ),
+                const SizedBox(height: 6),
+                Text(t.universalMedia.capturePreviewHelp, style: Theme.of(context).textTheme.bodySmall),
+              ],
             ),
         ],
       ],

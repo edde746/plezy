@@ -3042,6 +3042,78 @@ class Translations$videoControls$en {
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
 
+	/// en: 'Loop a section during this playback. Set A, then set B later in the timeline.'
+	String get segmentLoopHelp => 'Loop a section during this playback. Set A, then set B later in the timeline.';
+
+	/// en: 'Set loop start (A)'
+	String get setLoopStart => 'Set loop start (A)';
+
+	/// en: 'Set loop end (B)'
+	String get setLoopEnd => 'Set loop end (B)';
+
+	/// en: 'Clear segment loop'
+	String get clearSegmentLoop => 'Clear segment loop';
+
+	/// en: 'Set loop start (A) before the end (B).'
+	String get setLoopStartFirst => 'Set loop start (A) before the end (B).';
+
+	/// en: 'The loop end must be later than the start.'
+	String get loopEndAfterStart => 'The loop end must be later than the start.';
+
+	/// en: 'Segment looping isn't available for this playback.'
+	String get segmentLoopUnavailable => 'Segment looping isn\'t available for this playback.';
+
+	/// en: 'Not set'
+	String get loopPointNotSet => 'Not set';
+
+	/// en: 'Bookmarks are saved on this device. Select one to go to that time.'
+	String get bookmarksHelp => 'Bookmarks are saved on this device. Select one to go to that time.';
+
+	/// en: 'Bookmarks'
+	String get bookmarksButton => 'Bookmarks';
+
+	/// en: 'Chapters and bookmarks'
+	String get chaptersAndBookmarks => 'Chapters and bookmarks';
+
+	/// en: 'Segment loop'
+	String get segmentLoop => 'Segment loop';
+
+	/// en: 'Add bookmark'
+	String get addBookmark => 'Add bookmark';
+
+	/// en: 'Bookmark name'
+	String get bookmarkName => 'Bookmark name';
+
+	/// en: 'For example, Opening scene'
+	String get bookmarkNameHint => 'For example, Opening scene';
+
+	/// en: 'Bookmark ${n}'
+	String bookmarkDefaultName({required Object n}) => 'Bookmark ${n}';
+
+	/// en: 'Enter a name for this bookmark.'
+	String get bookmarkNameRequired => 'Enter a name for this bookmark.';
+
+	/// en: 'Delete bookmark'
+	String get deleteBookmark => 'Delete bookmark';
+
+	/// en: 'This item already has 100 bookmarks.'
+	String get bookmarkLimitReached => 'This item already has 100 bookmarks.';
+
+	/// en: 'Couldn't save or remove this bookmark.'
+	String get bookmarkUnavailable => 'Couldn\'t save or remove this bookmark.';
+
+	/// en: 'Bookmark saved.'
+	String get bookmarkSaved => 'Bookmark saved.';
+
+	/// en: 'Bookmark deleted.'
+	String get bookmarkDeleted => 'Bookmark deleted.';
+
+	/// en: 'Loop point ${point} set at ${time}.'
+	String loopPointSet({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.';
+
+	/// en: 'No chapters or bookmarks available.'
+	String get noChaptersOrBookmarks => 'No chapters or bookmarks available.';
+
 	/// en: 'Version & Quality'
 	String get versionQualityButton => 'Version & Quality';
 
@@ -5166,6 +5238,9 @@ class Translations$music$en {
 	/// en: 'Plex loudness'
 	String get visualizerPlexLoudness => 'Plex loudness';
 
+	/// en: 'Live audio analysis'
+	String get visualizerLiveAudio => 'Live audio analysis';
+
 	/// en: 'Previous visual style'
 	String get visualizerPreviousPreset => 'Previous visual style';
 
@@ -6084,6 +6159,24 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Output'
 	String get audioOutput => 'Audio Output';
 
+	/// en: 'Video Track'
+	String get videoTrack => 'Video Track';
+
+	/// en: 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.'
+	String get videoTrackDescription => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.';
+
+	/// en: 'Default'
+	String get videoTrackDefault => 'Default';
+
+	/// en: 'No alternate video tracks are available.'
+	String get videoTrackUnavailable => 'No alternate video tracks are available.';
+
+	/// en: 'Could not change the video track.'
+	String get videoTrackFailed => 'Could not change the video track.';
+
+	/// en: 'Track ${id}'
+	String videoTrackNumber({required Object id}) => 'Track ${id}';
+
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
 
@@ -6105,8 +6198,8 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Equalizer'
 	String get audioEqualizer => 'Audio Equalizer';
 
-	/// en: 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.'
-	String get audioEqualizerDescription => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.';
+	/// en: '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.'
+	String get audioEqualizerDescription => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.';
 
 	/// en: 'Flat'
 	String get audioEqualizerFlat => 'Flat';
@@ -6116,6 +6209,27 @@ class Translations$videoSettings$en {
 
 	/// en: 'Couldn't save audio equalizer settings.'
 	String get audioEqualizerSaveFailed => 'Couldn\'t save audio equalizer settings.';
+
+	/// en: 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.'
+	String get audioEffectsDescription => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.';
+
+	/// en: 'Stereo widening'
+	String get audioStereoWidth => 'Stereo widening';
+
+	/// en: 'Room ambience'
+	String get audioSpatializer => 'Room ambience';
+
+	/// en: 'Add quiet room reflections.'
+	String get audioSpatializerDescription => 'Add quiet room reflections.';
+
+	/// en: 'Pitch shift'
+	String get audioPitch => 'Pitch shift';
+
+	/// en: 'Change pitch without changing speed. The MPV build must include Rubber Band.'
+	String get audioPitchDescription => 'Change pitch without changing speed. The MPV build must include Rubber Band.';
+
+	/// en: 'This effect isn't available for this track or MPV build.'
+	String get audioEffectUnavailable => 'This effect isn\'t available for this track or MPV build.';
 
 	/// en: 'Background Video Audio'
 	String get backgroundVideoAudio => 'Background Video Audio';
@@ -7731,6 +7845,18 @@ class Translations$universalMedia$en {
 	/// en: 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.'
 	String get playlistFormatsHelp => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.';
 
+	/// en: 'Save queue as playlist'
+	String get saveQueuePlaylist => 'Save queue as playlist';
+
+	/// en: 'Playlist saved beside the media files.'
+	String get queuePlaylistSaved => 'Playlist saved beside the media files.';
+
+	/// en: 'This queue can’t be saved as a reusable local playlist.'
+	String get queuePlaylistUnavailable => 'This queue can’t be saved as a reusable local playlist.';
+
+	/// en: 'Choose a save location in the same folder as the queued files.'
+	String get queuePlaylistFolderRequired => 'Choose a save location in the same folder as the queued files.';
+
 	/// en: 'No saved stream favorites yet. Favorites stay in this profile.'
 	String get noFavorites => 'No saved stream favorites yet. Favorites stay in this profile.';
 
@@ -7911,6 +8037,9 @@ class Translations$universalMedia$en {
 	/// en: 'Optical disc'
 	String get discs => 'Optical disc';
 
+	/// en: 'Edition or disc title'
+	String get editionOrTitle => 'Edition or disc title';
+
 	/// en: 'DVD'
 	String get dvd => 'DVD';
 
@@ -7926,8 +8055,8 @@ class Translations$universalMedia$en {
 	/// en: 'Convert a local media file'
 	String get converterTitle => 'Convert a local media file';
 
-	/// en: 'Use FFmpeg to make an MP4, M4A, or MP3 copy.'
-	String get converterHelp => 'Use FFmpeg to make an MP4, M4A, or MP3 copy.';
+	/// en: 'Convert a local file or remux it with FFmpeg.'
+	String get converterHelp => 'Convert a local file or remux it with FFmpeg.';
 
 	/// en: 'Convert a local audio or video file to a format that works on more devices.'
 	String get converterIntro => 'Convert a local audio or video file to a format that works on more devices.';
@@ -7949,6 +8078,12 @@ class Translations$universalMedia$en {
 
 	/// en: 'MP3 · audio'
 	String get converterMp3 => 'MP3 · audio';
+
+	/// en: 'Allow FTP'
+	String get allowFtp => 'Allow FTP';
+
+	/// en: 'FTP sends media without encryption. Use only on trusted networks.'
+	String get allowFtpHelp => 'FTP sends media without encryption. Use only on trusted networks.';
 
 	/// en: 'Save converted media as'
 	String get converterSaveAs => 'Save converted media as';
@@ -7977,8 +8112,8 @@ class Translations$universalMedia$en {
 	/// en: 'Conversion complete. The new file is ready.'
 	String get converterComplete => 'Conversion complete. The new file is ready.';
 
-	/// en: 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.'
-	String get converterFfmpegMissing => 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.';
+	/// en: 'FFmpeg is missing or does not support this format.'
+	String get converterFfmpegMissing => 'FFmpeg is missing or does not support this format.';
 
 	/// en: 'Conversion failed. Check that the source file can be read and the destination has enough free space.'
 	String get converterFailed => 'Conversion failed. Check that the source file can be read and the destination has enough free space.';
@@ -8007,8 +8142,8 @@ class Translations$universalMedia$en {
 	/// en: 'Media tool'
 	String get mediaTool => 'Media tool';
 
-	/// en: 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.'
-	String get captureIntro => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.';
+	/// en: 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.'
+	String get captureIntro => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.';
 
 	/// en: 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.'
 	String get captureNoDevices => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.';
@@ -8034,8 +8169,8 @@ class Translations$universalMedia$en {
 	/// en: 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.'
 	String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
 
-	/// en: 'Recording frame rate'
-	String get captureFrameRate => 'Recording frame rate';
+	/// en: 'Capture frame rate'
+	String get captureFrameRate => 'Capture frame rate';
 
 	/// en: 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.'
 	String get capturePrivacy => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.';
@@ -8060,6 +8195,15 @@ class Translations$universalMedia$en {
 
 	/// en: 'Start recording'
 	String get captureStart => 'Start recording';
+
+	/// en: 'Preview in player'
+	String get capturePreview => 'Preview in player';
+
+	/// en: 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.'
+	String get capturePreviewHelp => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.';
+
+	/// en: 'Live preview · not recording'
+	String get capturePreviewActive => 'Live preview · not recording';
 
 	/// en: 'Stop and save'
 	String get captureStop => 'Stop and save';
@@ -13561,6 +13705,32 @@ extension on Translations {
 			'videoControls.settingsButton' => 'Playback Settings',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
+			'videoControls.segmentLoopHelp' => 'Loop a section during this playback. Set A, then set B later in the timeline.',
+			'videoControls.setLoopStart' => 'Set loop start (A)',
+			'videoControls.setLoopEnd' => 'Set loop end (B)',
+			'videoControls.clearSegmentLoop' => 'Clear segment loop',
+			'videoControls.setLoopStartFirst' => 'Set loop start (A) before the end (B).',
+			'videoControls.loopEndAfterStart' => 'The loop end must be later than the start.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping isn\'t available for this playback.',
+			'videoControls.loopPointNotSet' => 'Not set',
+			'videoControls.bookmarksHelp' => 'Bookmarks are saved on this device. Select one to go to that time.',
+			'videoControls.bookmarksButton' => 'Bookmarks',
+			'videoControls.chaptersAndBookmarks' => 'Chapters and bookmarks',
+			'videoControls.segmentLoop' => 'Segment loop',
+			'videoControls.addBookmark' => 'Add bookmark',
+			'videoControls.bookmarkName' => 'Bookmark name',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'For example, Opening scene',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark ${n}',
+			'videoControls.bookmarkNameRequired' => 'Enter a name for this bookmark.',
+			'videoControls.deleteBookmark' => 'Delete bookmark',
+			'videoControls.bookmarkLimitReached' => 'This item already has 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Couldn\'t save or remove this bookmark.',
+			'videoControls.bookmarkSaved' => 'Bookmark saved.',
+			'videoControls.bookmarkDeleted' => 'Bookmark deleted.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'No chapters or bookmarks available.',
 			'videoControls.versionQualityButton' => 'Version & Quality',
 			'videoControls.versionColumnHeader' => 'Version',
 			'videoControls.qualityColumnHeader' => 'Quality',
@@ -13575,8 +13745,6 @@ extension on Translations {
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Always on top',
 			'videoControls.rotationLockButton' => 'Rotation lock',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
 			'videoControls.timelineSlider' => 'Video timeline',
@@ -14065,6 +14233,8 @@ extension on Translations {
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Select library',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			'libraries.noRecommendations' => 'No recommendations available',
@@ -14089,8 +14259,6 @@ extension on Translations {
 			'libraries.filterCategories.year' => 'Year',
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Unwatched',
 			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
@@ -14532,6 +14700,7 @@ extension on Translations {
 			'music.visualizerProfileLoading' => 'Reading track analysis…',
 			'music.visualizerAmbientMotion' => 'Ambient motion',
 			'music.visualizerPlexLoudness' => 'Plex loudness',
+			'music.visualizerLiveAudio' => 'Live audio analysis',
 			'music.visualizerPreviousPreset' => 'Previous visual style',
 			'music.visualizerNextPreset' => 'Next visual style',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -14578,6 +14747,8 @@ extension on Translations {
 			'watchTogether.codeCopied' => 'Room code copied',
 			'watchTogether.shareInvite' => 'Share Invite',
 			'watchTogether.inviteCopied' => 'Invite copied. Paste it into a message.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Join my Watch Together room in PlezyNG: open Watch Together, choose Join Room and enter ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Together session controls',
 			'watchTogether.reconnecting' => 'Reconnecting...',
@@ -14603,8 +14774,6 @@ extension on Translations {
 			'watchTogether.playAnyway' => 'Play Anyway',
 			'watchTogether.chooseAnotherCopy' => 'Choose Another Copy',
 			'watchTogether.dontPlay' => 'Don\'t Play',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'You don\'t have this video',
 			'watchTogether.unavailableDescription' => 'PlezyNG couldn\'t find it in your libraries. Pick a copy yourself or search again.',
 			'watchTogether.chooseCopy' => 'Choose a Copy',
@@ -14958,6 +15127,12 @@ extension on Translations {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
 			'videoSettings.audioOutput' => 'Audio Output',
+			'videoSettings.videoTrack' => 'Video Track',
+			'videoSettings.videoTrackDescription' => 'Choose which video stream to display. Available on MPV playback when a file contains alternate video tracks.',
+			'videoSettings.videoTrackDefault' => 'Default',
+			'videoSettings.videoTrackUnavailable' => 'No alternate video tracks are available.',
+			'videoSettings.videoTrackFailed' => 'Could not change the video track.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Track ${id}',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -14965,10 +15140,17 @@ extension on Translations {
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Equalizer',
-			'videoSettings.audioEqualizerDescription' => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Flat',
 			'videoSettings.audioEqualizerActive' => 'Custom',
 			'videoSettings.audioEqualizerSaveFailed' => 'Couldn\'t save audio equalizer settings.',
+			'videoSettings.audioEffectsDescription' => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.',
+			'videoSettings.audioStereoWidth' => 'Stereo widening',
+			'videoSettings.audioSpatializer' => 'Room ambience',
+			'videoSettings.audioSpatializerDescription' => 'Add quiet room reflections.',
+			'videoSettings.audioPitch' => 'Pitch shift',
+			'videoSettings.audioPitchDescription' => 'Change pitch without changing speed. The MPV build must include Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'This effect isn\'t available for this track or MPV build.',
 			'videoSettings.backgroundVideoAudio' => 'Background Video Audio',
 			'videoSettings.backgroundVideoAudioDescription' => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
@@ -15079,6 +15261,8 @@ extension on Translations {
 			'metadataEdit.metadataUpdated' => 'Metadata updated',
 			'metadataEdit.metadataUpdateFailed' => 'Failed to update metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork updated',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
@@ -15117,8 +15301,6 @@ extension on Translations {
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
 			'metadataEdit.alwaysEnabled' => 'Always enabled',
 			'metadataEdit.tags' => 'Tags',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Add tag',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Director',
@@ -15487,6 +15669,10 @@ extension on Translations {
 			'universalMedia.choosePlaylist' => 'Choose playlist file',
 			'universalMedia.openPlaylist' => 'Open playlist',
 			'universalMedia.playlistFormatsHelp' => 'A playlist can contain at most 1,000 items and 2 MB. HLS manifests open as streams so the player can choose a quality.',
+			'universalMedia.saveQueuePlaylist' => 'Save queue as playlist',
+			'universalMedia.queuePlaylistSaved' => 'Playlist saved beside the media files.',
+			'universalMedia.queuePlaylistUnavailable' => 'This queue can’t be saved as a reusable local playlist.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Choose a save location in the same folder as the queued files.',
 			'universalMedia.noFavorites' => 'No saved stream favorites yet. Favorites stay in this profile.',
 			'universalMedia.removeFavorite' => 'Remove stream favorite',
 			'universalMedia.filesHelp' => 'Choose audio, video, or ISO files for a temporary queue. Files and URLs are not added to library history.',
@@ -15545,12 +15731,13 @@ extension on Translations {
 			'universalMedia.replaceRecording' => 'Replace file',
 			'universalMedia.discHelp' => 'Open a disc in this computer’s optical drive. You can also open an ISO image from Device files.',
 			'universalMedia.discs' => 'Optical disc',
+			'universalMedia.editionOrTitle' => 'Edition or disc title',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray',
 			'universalMedia.audioCd' => 'Audio CD',
 			'universalMedia.discAvailability' => 'Disc playback needs a compatible MPV build, supported drive, and operating-system permission. It cannot bypass commercial disc protection.',
 			'universalMedia.converterTitle' => 'Convert a local media file',
-			'universalMedia.converterHelp' => 'Use FFmpeg to make an MP4, M4A, or MP3 copy.',
+			'universalMedia.converterHelp' => 'Convert a local file or remux it with FFmpeg.',
 			'universalMedia.converterIntro' => 'Convert a local audio or video file to a format that works on more devices.',
 			'universalMedia.converterPrivacy' => 'FFmpeg must be installed on this computer. Conversion reads local files only. It does not download streams or remove DRM.',
 			'universalMedia.converterChooseInput' => 'Choose a local media file',
@@ -15558,6 +15745,8 @@ extension on Translations {
 			'universalMedia.converterMp4' => 'MP4 · H.264 and AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC audio',
 			'universalMedia.converterMp3' => 'MP3 · audio',
+			'universalMedia.allowFtp' => 'Allow FTP',
+			'universalMedia.allowFtpHelp' => 'FTP sends media without encryption. Use only on trusted networks.',
 			'universalMedia.converterSaveAs' => 'Save converted media as',
 			'universalMedia.converterExtensionMismatch' => 'Choose a filename with the selected output extension.',
 			'universalMedia.converterUnsupportedInput' => 'Choose an audio or video file.',
@@ -15567,7 +15756,7 @@ extension on Translations {
 			'universalMedia.converterStarting' => 'Starting FFmpeg…',
 			'universalMedia.converterProgress' => 'Converting on this computer…',
 			'universalMedia.converterComplete' => 'Conversion complete. The new file is ready.',
-			'universalMedia.converterFfmpegMissing' => 'FFmpeg could not find a required encoder. Install FFmpeg with H.264, AAC, and MP3 support, then try again.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg is missing or does not support this format.',
 			'universalMedia.converterFailed' => 'Conversion failed. Check that the source file can be read and the destination has enough free space.',
 			'universalMedia.converterCancelled' => 'Conversion cancelled. The incomplete output was removed.',
 			'universalMedia.converterDesktopOnly' => 'Local conversion is available on desktop computers with FFmpeg installed.',
@@ -15577,7 +15766,7 @@ extension on Translations {
 			'universalMedia.mediaToolsIntro' => 'Choose a focused tool. Capture and stream-out use FFmpeg installed on this desktop. Extensions and CLI commands use bounded HTTPS requests and the existing Open media flow.',
 			'universalMedia.mediaToolsAccessibility' => 'Tool choices and controls work with touch, pointer, keyboard, and D-pad focus. Recording, sharing, and search status changes are announced.',
 			'universalMedia.mediaTool' => 'Media tool',
-			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.',
+			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file, or preview a live input in the player. FFmpeg must be installed and include the H.264 encoder for recording.',
 			'universalMedia.captureNoDevices' => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.',
 			'universalMedia.captureSource' => 'Screen or camera',
 			'universalMedia.captureScreen' => 'Screen',
@@ -15586,7 +15775,9 @@ extension on Translations {
 			'universalMedia.captureAudioNone' => 'No audio',
 			'universalMedia.captureDefaultAudio' => 'Default audio input',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
-			'universalMedia.captureFrameRate' => 'Recording frame rate',
+			_ => null,
+		} ?? switch (path) {
+			'universalMedia.captureFrameRate' => 'Capture frame rate',
 			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
 			'universalMedia.captureSaveAs' => 'Save screen recording as',
 			'universalMedia.captureExtensionMismatch' => 'Choose a filename ending in .mp4.',
@@ -15595,6 +15786,9 @@ extension on Translations {
 			'universalMedia.captureSaved' => 'Screen recording saved.',
 			'universalMedia.captureElapsedLabel' => 'Recording time',
 			'universalMedia.captureStart' => 'Start recording',
+			'universalMedia.capturePreview' => 'Preview in player',
+			'universalMedia.capturePreviewHelp' => 'Preview the selected source in the standard player. It is session-only and does not save a recording. Device support and permissions depend on MPV and the operating system. The preview uses video only; optional audio is included in saved recordings.',
+			'universalMedia.capturePreviewActive' => 'Live preview · not recording',
 			'universalMedia.captureStop' => 'Stop and save',
 			'universalMedia.captureMode' => 'Capture',
 			'universalMedia.shareMode' => 'Share',
@@ -15631,8 +15825,6 @@ extension on Translations {
 			'universalMedia.extensionInstallTitle' => 'Add this search service?',
 			'universalMedia.extensionReplaceTitle' => 'Update this search service?',
 			'universalMedia.extensionService' => 'Service',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => 'Your search text is sent to this service. The manifest contains no executable code. Continue only if you trust this endpoint.',
 			'universalMedia.extensionInstall' => 'Add service',
@@ -16097,6 +16289,8 @@ extension on Translations {
 			'games.unfavorite' => 'Remove favorite',
 			'games.forget' => 'Forget computer',
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
+			_ => null,
+		} ?? switch (path) {
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
@@ -16145,8 +16339,6 @@ extension on Translations {
 			'games.installed' => 'Installed',
 			'games.installationIncomplete' => 'Installation incomplete',
 			'games.notInstalled' => 'Not in the last inventory',
-			_ => null,
-		} ?? switch (path) {
 			'games.installationUnknown' => 'Installation not checked',
 			'games.allComputers' => 'All computers',
 			'games.importInstalledGames' => 'Import installed games',

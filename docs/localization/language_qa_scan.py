@@ -68,6 +68,12 @@ def verify_2_25_catalog_overlay(raw, tags, overlay, merge_overlay):
     base_hashes = {}
     additions = {}
     changes = {}
+    feature_keys = set(overlay.get('additionalFeatureMessageKeys', []))
+    feature_changed_keys = set(overlay.get('additionalFeatureChangedMessageKeys', []))
+    if len(feature_keys) != overlay.get('additionalFeatureMessagesPerBaseLocale', len(feature_keys)):
+        raise SystemExit('Additional feature-message inventory count differs')
+    if feature_keys & feature_changed_keys:
+        raise SystemExit('Additional feature additions overlap changed feature messages')
     for tag in tags:
         info = overlay['catalogs'][tag]
         path = info['catalogPath']
@@ -93,8 +99,13 @@ def verify_2_25_catalog_overlay(raw, tags, overlay, merge_overlay):
         base_raw[tag] = json.loads(base_bytes)
         base_hashes[tag] = base_hash
         added, changed = _flat_message_changes(base_raw[tag], raw[tag])
-        if (len(added) != info['addedMessageCount'] or
-                len(changed) != info['changedMessageCount']):
+        is_base_locale = tag in set(overlay['baseLocales']) | {'en'}
+        feature_additions = feature_keys if is_base_locale else set()
+        feature_changes = feature_changed_keys if is_base_locale else set()
+        if (not feature_additions <= added or
+                not feature_changes <= changed or
+                len(added - feature_additions) != info['addedMessageCount'] or
+                len(changed - feature_changes) != info['changedMessageCount']):
             raise SystemExit(f'2.25.0 catalog delta count changed: {path}')
         additions[tag] = added
         changes[tag] = changed
@@ -102,13 +113,15 @@ def verify_2_25_catalog_overlay(raw, tags, overlay, merge_overlay):
     source = messages(raw['en'])
     new_keys = set(overlay['newDraftMessageKeys'])
     fallback_keys = set(overlay.get('englishFallbackMessageKeys', []))
+    if feature_keys & (new_keys | fallback_keys):
+        raise SystemExit('Additional feature messages overlap the 2.25.0 draft inventory')
     if len(new_keys) != overlay['newDraftMessagesPerBaseLocale']:
         raise SystemExit('2.25.0 draft-message inventory count differs')
     if len(fallback_keys) != overlay.get('englishFallbackMessagesPerBaseLocale', 0):
         raise SystemExit('2.25.0 English-fallback inventory count differs')
-    if not (new_keys | fallback_keys) <= set(source):
+    if not (new_keys | fallback_keys | feature_keys) <= set(source):
         raise SystemExit('A 2.25.0 translation has no English source message')
-    if len(additions['en']) != overlay['sourceMessagesAddedSinceReviewedSnapshot']:
+    if len(additions['en'] - feature_keys) != overlay['sourceMessagesAddedSinceReviewedSnapshot']:
         raise SystemExit('English source addition count differs from the 2.25.0 overlay')
 
     base_locales = set(overlay['baseLocales'])
@@ -116,9 +129,11 @@ def verify_2_25_catalog_overlay(raw, tags, overlay, merge_overlay):
         raise SystemExit('Unexpected 2.25.0 base-locale inventory')
     catalog_additions = new_keys | fallback_keys
     for tag in base_locales:
+        if not feature_keys <= additions[tag]:
+            raise SystemExit(f'Additional feature messages are missing from {tag}')
         if not catalog_additions <= additions[tag]:
             raise SystemExit(f'New 2.25.0 messages are missing from {tag}')
-        if len(additions[tag] - catalog_additions) != overlay['retainedMainNewTranslationKeys']:
+        if len(additions[tag] - catalog_additions - feature_keys) != overlay['retainedMainNewTranslationKeys']:
             raise SystemExit(f'Retained main translation count differs: {tag}')
 
     sources = json.loads((DOCS / 'sources.json').read_text())
@@ -170,7 +185,7 @@ def verify_2_25_catalog_overlay(raw, tags, overlay, merge_overlay):
     for tag in base_locales:
         origins = per_locale[tag]
         for key in new_keys:
-            if origins.get(key) not in {'m2m100-draft', 'targeted-ai-review'}:
+            if origins.get(key) not in {'m2m100-draft', 'targeted-ai-review', 'assistant-generated-draft'}:
                 raise SystemExit(f'Unexpected draft provenance: {tag}.{key}')
             if (tag, key) in correction_pairs and origins[key] != 'targeted-ai-review':
                 raise SystemExit(f'Correction provenance missing: {tag}.{key}')

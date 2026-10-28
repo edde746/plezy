@@ -72,9 +72,9 @@ class MusicVisualizerPalette {
 }
 
 /// Draws one original, procedural scene per preset. The only audio-derived
-/// input available to the Flutter player is Plex's time-indexed loudness
-/// profile, so the visuals react to that envelope and use ambient motion for
-/// movement between its samples. No waveform or spectrum is synthesized.
+/// inputs available to the Flutter player are Plex's time-indexed loudness
+/// profile or MPV's compact centroid/flatness statistics. The scenes react to
+/// those envelopes; they never receive decoded samples or frequency bins.
 class MusicVisualizerPainter extends CustomPainter {
   MusicVisualizerPainter({required this.frame, required this.preset, required this.palette, required this.profile})
     : super(repaint: frame);
