@@ -43,6 +43,7 @@ abstract final class MotionProcessingService {
   static final Expando<_OriginalDesktopPmeOptions> _desktopPmeOriginals = Expando(
     'motion-processing-desktop-pme-originals',
   );
+  static final Expando<Future<void>> _operationTails = Expando('motion-processing-operation-tails');
 
   /// Windows uses MPV's embedded gpu-next output. Linux's Wayland plane uses
   /// libmpv and reports both display refresh and successful swaps. Android
@@ -144,6 +145,26 @@ abstract final class MotionProcessingService {
     return null;
   }
 
+  /// mpv's filter graph and native surface choice are shared by all motion
+  /// paths for one player. Serialize async transitions so a slow provider setup
+  /// cannot finish after a newer mode or lifecycle request.
+  static Future<T> _serializePlayerOperation<T>(Player player, Future<T> Function() operation) {
+    final previous = _operationTails[player] ?? Future<void>.value();
+    final release = Completer<void>();
+    _operationTails[player] = release.future;
+    return () async {
+      try {
+        await previous;
+        return await operation();
+      } finally {
+        if (identical(_operationTails[player], release.future)) {
+          _operationTails[player] = null;
+        }
+        release.complete();
+      }
+    }();
+  }
+
   /// Whether this player has its platform motion path configured, making
   /// in-session option changes safe. Live streams stay excluded.
   static bool canChangeLive(Player player, {required MotionProcessingMode mode, bool isLive = false}) {
@@ -168,6 +189,26 @@ abstract final class MotionProcessingService {
   /// Configure interpolation before the first file opens so MPV can size its
   /// renderer references and any hardware-decoder surface pool.
   static Future<void> configureForPlayback(
+    Player player,
+    MotionProcessingMode mode, {
+    bool isLive = false,
+    bool isTranscoding = false,
+    MediaVersion? selectedVersion,
+    NeuralInterpolationPreset neuralPreset = NeuralInterpolationPreset.balanced,
+  }) =>
+      _serializePlayerOperation(
+        player,
+        () => _configureForPlayback(
+          player,
+          mode,
+          isLive: isLive,
+          isTranscoding: isTranscoding,
+          selectedVersion: selectedVersion,
+          neuralPreset: neuralPreset,
+        ),
+      );
+
+  static Future<void> _configureForPlayback(
     Player player,
     MotionProcessingMode mode, {
     bool isLive = false,
@@ -386,6 +427,16 @@ abstract final class MotionProcessingService {
   /// restore the user's original MPV timing properties rather than assuming
   /// MPV's defaults.
   static Future<void> apply(
+    Player player,
+    MotionProcessingMode mode, {
+    NeuralInterpolationPreset neuralPreset = NeuralInterpolationPreset.balanced,
+  }) =>
+      _serializePlayerOperation(
+        player,
+        () => _apply(player, mode, neuralPreset: neuralPreset),
+      );
+
+  static Future<void> _apply(
     Player player,
     MotionProcessingMode mode, {
     NeuralInterpolationPreset neuralPreset = NeuralInterpolationPreset.balanced,
@@ -636,14 +687,21 @@ abstract final class MotionProcessingService {
             return;
           }
           _thermalLimited[player] = true;
-          if (await _suspendNeuralForThermal(player, status)) {
-            await _stopThermalMonitoring(player);
-          } else {
-            // Keep observing and retry the transition while the provider is
-            // still active. Do not report a successful thermal fallback until
-            // the active provider has actually stopped.
-            _thermalLimited[player] = false;
-          }
+          await _serializePlayerOperation(player, () async {
+            if (player.disposed || _thermalGeneration[player] != generation) return;
+            final currentStatus = _thermalStatus[player];
+            final currentProviderActive = Platform.isAndroid
+                ? _androidAnvilActive[player] == true
+                : _appleNeuralEligible[player] == true;
+            if (!_thermalStatusRequiresFallback(currentStatus) || !currentProviderActive) return;
+            if (await _suspendNeuralForThermal(player, currentStatus!)) {
+              if (_thermalGeneration[player] == generation) await _stopThermalMonitoring(player);
+            } else if (_thermalGeneration[player] == generation) {
+              // Keep observing and retry while the provider remains active.
+              // Report the limit only after the active provider has stopped.
+              _thermalLimited[player] = false;
+            }
+          });
         }
       } catch (error, stackTrace) {
         appLogger.d('MotionProcessingService: platform thermal polling failed', error: error, stackTrace: stackTrace);
@@ -712,6 +770,7 @@ abstract final class MotionProcessingService {
         (externalPower) {
           if (externalPower == null || _neuralRequested[player] != true) return;
           _powerSourceGeneration[player] = (_powerSourceGeneration[player] ?? 0) + 1;
+          final generation = _powerSourceGeneration[player]!;
           if (externalPower) {
             // Reconnection does not hot-start a model that was already
             // suspended, but it clears a stale limit during initial setup.
@@ -722,11 +781,16 @@ abstract final class MotionProcessingService {
           if (settings?.read(SettingsService.neuralOnlyWhenPluggedIn) != true) return;
           _powerLimited[player] = true;
           _powerSuspendedForSession[player] = true;
-          unawaited(
-            _suspendNeuralForPower(player).then((disabled) {
-              if (!disabled) _powerLimited[player] = false;
-            }),
-          );
+          unawaited(_serializePlayerOperation(player, () async {
+            if (player.disposed ||
+                _powerSourceGeneration[player] != generation ||
+                _neuralRequested[player] != true ||
+                (SettingsService.instanceOrNull?.read(SettingsService.neuralOnlyWhenPluggedIn) ?? true) != true) {
+              return;
+            }
+            final disabled = await _suspendNeuralForPower(player);
+            if (!disabled && _powerSourceGeneration[player] == generation) _powerLimited[player] = false;
+          }));
         },
         onError: (Object error, StackTrace stackTrace) {
           appLogger.d('MotionProcessingService: power-source updates are unavailable', error: error);
@@ -799,6 +863,10 @@ abstract final class MotionProcessingService {
 
   /// Releases the per-player power observer when its video route is disposed.
   static Future<void> stopPowerSourceMonitoring(Player player) async {
+    await _serializePlayerOperation(player, () => _stopPowerSourceMonitoring(player));
+  }
+
+  static Future<void> _stopPowerSourceMonitoring(Player player) async {
     _neuralRequested[player] = false;
     await _stopPowerMonitoring(player);
     await _stopThermalMonitoring(player);
@@ -809,6 +877,10 @@ abstract final class MotionProcessingService {
   /// the guard off does not hot-start a model that was already suspended; that
   /// route is prepared at the next item boundary.
   static Future<void> refreshPowerPolicyForPlayer(Player player) async {
+    await _serializePlayerOperation(player, () => _refreshPowerPolicyForPlayer(player));
+  }
+
+  static Future<void> _refreshPowerPolicyForPlayer(Player player) async {
     if (_neuralRequested[player] != true) return;
     final settings = SettingsService.instanceOrNull;
     final enabled = settings?.read(SettingsService.neuralOnlyWhenPluggedIn) ?? true;
