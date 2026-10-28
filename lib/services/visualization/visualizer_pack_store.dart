@@ -26,6 +26,7 @@ class VisualizerPackCatalogEntry {
     required this.expandedBytes,
     required this.presetCount,
     required this.sourceUrl,
+    this.searchText = '',
   });
 
   final String id;
@@ -40,6 +41,7 @@ class VisualizerPackCatalogEntry {
   final int expandedBytes;
   final int presetCount;
   final String sourceUrl;
+  final String searchText;
 
   String get fileName => '$id-$version.rmpack';
 
@@ -59,6 +61,7 @@ class VisualizerPackCatalogEntry {
       presetCount: 2,
       sourceUrl:
           'https://github.com/snapetech-org/MilkRust/tree/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/examples/sample-pack',
+      searchText: 'Warm Scope Blue Shape scope geometry shape fixture',
     ),
   ];
 }
@@ -81,6 +84,8 @@ class VisualizerImportedPack {
     required this.contentNotice,
     required this.presetCount,
     required this.path,
+    this.authors = '',
+    this.presetSearchText = '',
     this.isDamaged = false,
   });
 
@@ -91,6 +96,8 @@ class VisualizerImportedPack {
   final String contentNotice;
   final int presetCount;
   final String path;
+  final String authors;
+  final String presetSearchText;
   final bool isDamaged;
 }
 
@@ -157,6 +164,28 @@ class VisualizerPackStore {
     final root = Directory(p.join(support.path, 'visualizer'));
     await root.create(recursive: true);
     return root;
+  }
+
+  Future<Set<String>> favoriteIds() async {
+    final file = File(p.join((await _root()).path, 'favorites.json'));
+    if (!await file.exists()) return <String>{};
+    try {
+      final decoded = jsonDecode(await file.readAsString());
+      if (decoded is! List) return <String>{};
+      return decoded.whereType<String>().where((value) => value.length <= 512).toSet();
+    } on Object {
+      return <String>{};
+    }
+  }
+
+  Future<void> saveFavoriteIds(Set<String> favorites) async {
+    final root = await _root();
+    final target = File(p.join(root.path, 'favorites.json'));
+    final temporary = File('${target.path}.tmp');
+    final values = favorites.where((value) => value.length <= 512).toList()..sort();
+    await temporary.writeAsString(jsonEncode(values), flush: true);
+    if (await target.exists()) await target.delete();
+    await temporary.rename(target.path);
   }
 
   Future<List<VisualizerInstalledPack>> installedPacks() async {
@@ -681,6 +710,34 @@ class VisualizerPackStore {
   }
 
   static VisualizerImportedPack _packSummary(Map<String, dynamic> manifest, String path) {
+    final authors = <String>{};
+    final packAuthor = manifest['author'];
+    if (packAuthor is String && packAuthor.trim().isNotEmpty) authors.add(packAuthor.trim());
+    final presetSearchTerms = <String>{};
+    final presets = manifest['presets'];
+    if (presets is List) {
+      for (final preset in presets) {
+        if (preset is Map) {
+          for (final key in ['title', 'id']) {
+            final value = preset[key];
+            if (value is String && value.trim().isNotEmpty) presetSearchTerms.add(value.trim());
+          }
+          final tags = preset['tags'];
+          if (tags is List) {
+            presetSearchTerms.addAll(tags.whereType<String>().where((tag) => tag.trim().isNotEmpty));
+          }
+        }
+      }
+    }
+    final assets = manifest['assets'];
+    if (assets is List) {
+      for (final asset in assets) {
+        if (asset is Map) {
+          final author = asset['author'];
+          if (author is String && author.trim().isNotEmpty) authors.add(author.trim());
+        }
+      }
+    }
     return VisualizerImportedPack(
       id: manifest['id'] as String,
       name: manifest['name'] as String,
@@ -689,6 +746,8 @@ class VisualizerPackStore {
       contentNotice: manifest['contentNotice'] as String,
       presetCount: (manifest['presets'] as List).length,
       path: path,
+      authors: authors.join(', '),
+      presetSearchText: presetSearchTerms.join(' '),
     );
   }
 

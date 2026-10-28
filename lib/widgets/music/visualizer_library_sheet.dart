@@ -23,6 +23,10 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   List<VisualizerInstalledPack> _installed = const [];
   List<VisualizerImportedPack> _communityPacks = const [];
   List<String> _imports = const [];
+  Set<String> _favorites = <String>{};
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _favoritesOnly = false;
   bool _loading = true;
   bool _busy = false;
   String? _workingPackId;
@@ -39,6 +43,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   @override
   void dispose() {
     _installCancellation?.cancel();
+    _searchController.dispose();
     _store.dispose();
     super.dispose();
   }
@@ -58,12 +63,14 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
         _store.installedPacks(),
         _store.importedPresets(),
         _store.importedPacks(),
+        _store.favoriteIds(),
       ]);
       if (!mounted) return;
       setState(() {
         _installed = results[0] as List<VisualizerInstalledPack>;
         _imports = results[1] as List<String>;
         _communityPacks = results[2] as List<VisualizerImportedPack>;
+        _favorites = results[3] as Set<String>;
         _loading = false;
       });
     } catch (error) {
@@ -72,6 +79,25 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
         _failure = error.toString();
         _loading = false;
       });
+    }
+  }
+
+  bool _matches(String value) =>
+      _searchQuery.isEmpty || value.toLowerCase().contains(_searchQuery);
+
+  String _packFavoriteKey(String id, String version) => 'pack:$id@$version';
+
+  String _presetFavoriteKey(String name) => 'preset:$name';
+
+  Future<void> _toggleFavorite(String key) async {
+    final next = {..._favorites};
+    if (!next.add(key)) next.remove(key);
+    setState(() => _favorites = next);
+    try {
+      await _store.saveFavoriteIds(next);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _failure = 'Could not save library favorites: $error');
     }
   }
 
@@ -245,6 +271,27 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   Widget build(BuildContext context) {
     final tk = tokens(context);
     final installedIds = _installed.map((pack) => pack.entry.id).toSet();
+    final visibleEntries = VisualizerPackCatalogEntry.available.where((entry) {
+      final favorite = _favorites.contains(_packFavoriteKey(entry.id, entry.version));
+      return (!_favoritesOnly || favorite) &&
+          _matches('${entry.name} ${entry.searchText} ${entry.version} ${entry.license} ${entry.description} ${entry.contentNotice}');
+    }).toList();
+    final visibleLinks = _linkOnlySources
+        .where((source) => !_favoritesOnly && _matches('${source.name} ${source.status}'))
+        .toList();
+    final visibleCommunityPacks = _communityPacks.where((pack) {
+      final favorite = _favorites.contains(_packFavoriteKey(pack.id, pack.version));
+      return (!_favoritesOnly || favorite) &&
+          _matches('${pack.name} ${pack.authors} ${pack.presetSearchText} ${pack.version} ${pack.license} ${pack.contentNotice}');
+    }).toList();
+    final visibleImports = _imports.where((name) {
+      final favorite = _favorites.contains(_presetFavoriteKey(name));
+      return (!_favoritesOnly || favorite) && _matches(name);
+    }).toList();
+    final hasMatches = visibleEntries.isNotEmpty ||
+        visibleLinks.isNotEmpty ||
+        visibleCommunityPacks.isNotEmpty ||
+        visibleImports.isNotEmpty;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return FractionallySizedBox(
       heightFactor: 0.88,
@@ -284,6 +331,31 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                 ),
               ),
               const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          prefixIcon: Icon(Icons.search_rounded),
+                          hintText: 'Search packs, presets, authors, or licenses',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      label: const Text('Favorites'),
+                      selected: _favoritesOnly,
+                      onSelected: (value) => setState(() => _favoritesOnly = value),
+                    ),
+                  ],
+                ),
+              ),
               if (_failure != null)
                 MaterialBanner(
                   content: Text(_failure!),
@@ -298,8 +370,13 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                     : ListView(
                         padding: EdgeInsets.fromLTRB(16, 8, 16, 20 + bottomInset),
                         children: [
+                          if ((_searchQuery.isNotEmpty || _favoritesOnly) && !hasMatches)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                              child: Text('No matching packs or imported presets.'),
+                            ),
                           _sectionTitle(context, 'License-cleared downloads'),
-                          for (final entry in VisualizerPackCatalogEntry.available)
+                          for (final entry in visibleEntries)
                             Card(
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
@@ -363,6 +440,17 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                             icon: const AppIcon(Symbols.download_rounded, size: 18),
                                             label: Text(_workingPackId == entry.id ? 'Downloading…' : t.downloads.downloadNow),
                                           ),
+                                        IconButton(
+                                          tooltip: _favorites.contains(_packFavoriteKey(entry.id, entry.version))
+                                              ? 'Remove from favorites'
+                                              : 'Add to favorites',
+                                          onPressed: () => _toggleFavorite(_packFavoriteKey(entry.id, entry.version)),
+                                          icon: Icon(
+                                            _favorites.contains(_packFavoriteKey(entry.id, entry.version))
+                                                ? Icons.favorite_rounded
+                                                : Icons.favorite_border_rounded,
+                                          ),
+                                        ),
                                         TextButton.icon(
                                           onPressed: () => _openSource(entry.sourceUrl),
                                           icon: const AppIcon(Symbols.open_in_new_rounded, size: 18),
@@ -381,7 +469,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               'Historical preset collections without an explicit redistribution license stay link-only. Open their source and import a local copy; this app does not rehost those files.',
                             ),
                           ),
-                          for (final source in _linkOnlySources)
+                          for (final source in visibleLinks)
                             ListTile(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                               title: Text(source.name),
@@ -406,7 +494,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               ),
                             )
                           else
-                            for (final pack in _communityPacks)
+                            for (final pack in visibleCommunityPacks)
                               Card(
                                 child: ListTile(
                                   leading: AppIcon(
@@ -420,10 +508,26 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                             'Content notice: ${pack.contentNotice}\n'
                                             'File hashes checked at import · rights claims are self-declared · playback pending'),
                                   isThreeLine: true,
-                                  trailing: IconButton(
-                                    tooltip: t.common.delete,
-                                    onPressed: _busy ? null : () => _removeCommunityPack(pack),
-                                    icon: const AppIcon(Symbols.delete_rounded, size: 18),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        tooltip: _favorites.contains(_packFavoriteKey(pack.id, pack.version))
+                                            ? 'Remove from favorites'
+                                            : 'Add to favorites',
+                                        onPressed: () => _toggleFavorite(_packFavoriteKey(pack.id, pack.version)),
+                                        icon: Icon(
+                                          _favorites.contains(_packFavoriteKey(pack.id, pack.version))
+                                              ? Icons.favorite_rounded
+                                              : Icons.favorite_border_rounded,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        tooltip: t.common.delete,
+                                        onPressed: _busy ? null : () => _removeCommunityPack(pack),
+                                        icon: const AppIcon(Symbols.delete_rounded, size: 18),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -438,16 +542,32 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               child: Text('No local presets imported.', style: TextStyle(color: tk.textMuted)),
                             )
                           else
-                            for (final name in _imports)
+                            for (final name in visibleImports)
                               ListTile(
                                 dense: true,
                                 leading: const AppIcon(Symbols.music_note_rounded, size: 18),
                                 title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
                                 subtitle: const Text('Saved on this device · playback pending engine integration'),
-                                trailing: IconButton(
-                                  tooltip: t.common.delete,
-                                  onPressed: _busy ? null : () => _removeImported(name),
-                                  icon: const AppIcon(Symbols.delete_rounded, size: 18),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      tooltip: _favorites.contains(_presetFavoriteKey(name))
+                                          ? 'Remove from favorites'
+                                          : 'Add to favorites',
+                                      onPressed: () => _toggleFavorite(_presetFavoriteKey(name)),
+                                      icon: Icon(
+                                        _favorites.contains(_presetFavoriteKey(name))
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_border_rounded,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: t.common.delete,
+                                      onPressed: _busy ? null : () => _removeImported(name),
+                                      icon: const AppIcon(Symbols.delete_rounded, size: 18),
+                                    ),
+                                  ],
                                 ),
                               ),
                           const SizedBox(height: 12),
