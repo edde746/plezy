@@ -50,6 +50,11 @@ enum EntityRelationKind {
 
 enum AccessOfferKind { free, adSupported, subscription, borrow, rent, buy }
 
+/// Provider-level access models used only to organize external destinations.
+/// They do not assert that a specific title, territory, or user account has
+/// access; only a fresh [AccessOffer] can make that claim.
+enum ProviderAccessModel { freeAdSupported, subscription, transactional, publicService }
+
 enum AccessEvidenceState { verified, selfReported, unknown, expired, revoked }
 
 enum AccessAction { open, play, read, listen, preview, borrow, placeHold, renew, returnLoan, rent, buy, import }
@@ -70,6 +75,7 @@ class ProviderDefinition {
     required this.officialHosts,
     required this.entityKinds,
     required this.capabilities,
+    this.accessModels = const {},
   });
 
   final String id;
@@ -77,6 +83,7 @@ class ProviderDefinition {
   final Set<String> officialHosts;
   final Set<IntegrationEntityKind> entityKinds;
   final Set<ProviderCapability> capabilities;
+  final Set<ProviderAccessModel> accessModels;
 
   bool get isValid =>
       _providerId.hasMatch(id) &&

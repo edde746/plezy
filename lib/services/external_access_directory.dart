@@ -16,6 +16,7 @@ class ExternalAccessDestination {
     this.path = '/',
     this.queryParameter,
     this.fixedQuery = const {},
+    this.accessModels = const {},
   });
 
   final String id;
@@ -25,6 +26,11 @@ class ExternalAccessDestination {
   final String path;
   final String? queryParameter;
   final Map<String, String> fixedQuery;
+
+  /// Broad provider-level access models for directory organization only.
+  /// These are not title availability, territory support, user entitlement,
+  /// or a claim that PlezyNG can play the provider's content.
+  final Set<ProviderAccessModel> accessModels;
 
   Uri searchUri(
     String title, {
@@ -149,6 +155,7 @@ class ExternalAccessDestination {
       officialHosts: {host.toLowerCase(), hostForRegion(normalizedRegion).toLowerCase()},
       entityKinds: entityKinds,
       capabilities: const {ProviderCapability.officialHandoff},
+      accessModels: accessModels,
     );
   }
 }
@@ -278,6 +285,7 @@ abstract final class ExternalAccessDirectory {
       host: 'tubitv.com',
       path: '/search',
       queryParameter: 'query',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'pluto-tv',
@@ -286,6 +294,7 @@ abstract final class ExternalAccessDirectory {
       host: 'pluto.tv',
       path: '/search',
       queryParameter: 'q',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'cbc-gem',
@@ -310,6 +319,11 @@ abstract final class ExternalAccessDirectory {
       host: 'watch.plex.tv',
       path: '/search',
       queryParameter: 'q',
+      accessModels: {
+        ProviderAccessModel.freeAdSupported,
+        ProviderAccessModel.subscription,
+        ProviderAccessModel.transactional,
+      },
     ),
     ExternalAccessDestination(
       id: 'youtube',
@@ -422,6 +436,17 @@ abstract final class ExternalAccessDirectory {
       host: 'therokuchannel.roku.com',
       path: '/search',
       queryParameter: 'query',
+      accessModels: {
+        ProviderAccessModel.freeAdSupported,
+        ProviderAccessModel.subscription,
+      },
+    ),
+    ExternalAccessDestination(
+      id: 'samsung-tv-plus',
+      name: 'Samsung TV Plus',
+      category: ExternalAccessCategory.video,
+      host: 'www.samsungtvplus.com',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'xumo-play',
@@ -430,6 +455,7 @@ abstract final class ExternalAccessDirectory {
       host: 'play.xumo.com',
       path: '/search',
       queryParameter: 'q',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'dazn',
@@ -952,6 +978,18 @@ abstract final class ExternalAccessDirectory {
 
   static List<ExternalAccessDestination> forCategory(ExternalAccessCategory category) =>
       all.where((destination) => destination.category == category).toList(growable: false);
+
+  /// The directory entries that identify services with a general free,
+  /// ad-supported offering. This is deliberately provider-level metadata; the
+  /// destination must still confirm a title's availability in the selected
+  /// country and whether it is free for the user.
+  static List<ExternalAccessDestination> get freeAdSupportedVideo => all
+      .where(
+        (destination) =>
+            destination.category == ExternalAccessCategory.video &&
+            destination.accessModels.contains(ProviderAccessModel.freeAdSupported),
+      )
+      .toList(growable: false);
 
   /// Catalog providers may return third-party streaming links. Keep these
   /// three services outside PlezyNG's discovery and launch surface.

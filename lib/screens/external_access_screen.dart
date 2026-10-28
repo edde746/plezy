@@ -257,6 +257,11 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
             final aPreferred = _preferredProviderIds.contains(a.id);
             final bPreferred = _preferredProviderIds.contains(b.id);
             if (aPreferred != bPreferred) return aPreferred ? -1 : 1;
+            if (category == ExternalAccessCategory.video) {
+              final aFreeAdSupported = a.accessModels.contains(ProviderAccessModel.freeAdSupported);
+              final bFreeAdSupported = b.accessModels.contains(ProviderAccessModel.freeAdSupported);
+              if (aFreeAdSupported != bFreeAdSupported) return aFreeAdSupported ? -1 : 1;
+            }
             return a.name.compareTo(b.name);
           }),
     };

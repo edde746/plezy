@@ -22,6 +22,21 @@ All public terms below were reviewed for this audit on 2026-10-27. They are obse
 
 **High confidence:** a payout program does not grant playback, user-library access, synchronization, private metadata, artwork redistribution or general DRM rights.
 
+## FAST services: distribution deals are not referral commissions
+
+The video directory exposes official handoffs for Tubi, Pluto TV, The Roku Channel, Plex, Samsung TV Plus and Xumo Play. These are useful to users without a PlezyNG affiliate deal. Their published partner routes are primarily for content owners, publishers, distributors or advertisers—not a general commission on a link from PlezyNG to the viewing app.
+
+| Service | Public partner/revenue route | What it means for PlezyNG |
+| --- | --- | --- |
+| Roku / The Roku Channel | Roku documents partner payouts for accepted publishers and content partners, including monetization through ads, subscriptions and Roku Pay. Its published 80/20 split applies to qualifying app transactions through Roku Pay; The Roku Channel content payouts follow a separate distribution agreement/reporting path. [S70](SOURCES.md#s70) | Strongest published revenue-sharing route in this group **if PlezyNG or its content is accepted for Roku distribution**. It does not pay us merely for directing a user to The Roku Channel. The TV app itself would be a separate Roku platform build and approval. |
+| Tubi | Official partner intake and content/distribution relationships; advertising is sold to brands. [S68](SOURCES.md#s68) | Partner access may support licensed content distribution or advertising; no public fixed referral commission or split for a third-party app link was found. Ask for a written PlezyNG app, content and distribution proposal. |
+| Pluto TV | Official distribution, content and advertising partner inquiries. [S69](SOURCES.md#s69) | A negotiated content/distribution/ad deal may include economics, but no public payout schedule for app referrals is published. No unofficial streams or private APIs. |
+| Samsung TV Plus | Official advertising opportunities and device-bound service distribution. [S71](SOURCES.md#s71) | The public route is primarily advertising and content partnership; no public viewer-referral commission is listed. Device/platform qualification is central. |
+| Xumo Play | Xumo Enterprise invites content owners, distribution services and advertisers to use its FAST monetization and distribution systems. [S72](SOURCES.md#s72) | Business-development route, not a posted affiliate percentage. Request the content/distribution terms and the required player/ad integration before estimating revenue. |
+| Plex free streaming | Plex has ad sales and content partners; its consumer terms do not create a general right to share Plex revenue. [S73](SOURCES.md#s73) | No public outbound-referral commission or client playback API was verified. Keep the official handoff; ask Plex for an explicit agreement if a deeper integration is pursued. |
+
+**Recommendation:** treat Roku as the first revenue-sharing inquiry because payout mechanics are publicly documented, but pitch PlezyNG as a publisher/platform or content partner only if that is genuinely the proposed product. For a neutral guide linking viewers to services, count **zero** commission until a provider signs written referral terms for PlezyNG's exact app/storefront. Content revenue share, ad-inventory share, subscription billing share and affiliate referrals are different contracts.
+
 ## Amazon is a special gating case
 
 Current Associates policies restrict Special Links/Program Content in client software other than approved mobile apps, and restrict television/set-top devices. The relevant clause also uses broader linking language, so an untagged link or redirect must not be treated as an automatic workaround inside an Associates integration. [S17](SOURCES.md#s17)

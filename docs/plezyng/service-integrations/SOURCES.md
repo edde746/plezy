@@ -274,6 +274,30 @@ Podcast formats: [RSS 2.0 specification](https://www.rssboard.org/rss-specificat
 
 Project Gutenberg: [official offline catalog documentation](https://www.gutenberg.org/help/offline_catalogs.html). The public OPDS 1.2 search catalog is `https://www.gutenberg.org/ebooks/search.opds/`; Gutenberg says its XML feeds are expected to sunset in 2027 and that OPDS 2.0 remains a testing route. The app preset uses the documented public OPDS endpoint; recheck the migration notice before relying on it for a release. High.
 
+## S68
+
+Tubi: [free/ad-supported service explanation](https://tubitv.com/help-center/About-Tubi/articles/4409975158043), [official partner intake](https://corporate.tubitv.com/partners/partner-with-us/). Confirms ad-supported viewing and a partner route; no public app-referral rate identified. Checked 2026-10-28.
+
+## S69
+
+Pluto TV: [why the service has ads](https://support.pluto.tv/s/article/PTV-Why-does-Pluto-TV-have-ads?language=en_US), [distribution, content and advertising partners](https://pluto.tv/partners). Confirms free ad-supported viewing and partner inquiry channels; no public app-referral rate identified. Checked 2026-10-28.
+
+## S70
+
+Roku: [The Roku Channel partner overview](https://developer.roku.com/dev/docs/overview), [monetization](https://developer.roku.com/dev/docs/monetization), and [publisher payouts](https://developer.roku.com/dev/docs/payouts). Current public documentation describes app and content partner routes, Roku Pay's published 80/20 app-transaction share, and separate Roku Channel content payouts/terms. These are publisher/platform economics, not referral commissions for sending traffic to Roku. Checked 2026-10-28.
+
+## S71
+
+Samsung TV Plus: [official free/ad-supported service support](https://www.samsung.com/us/support/answer/ANS10000933/) and [advertising options](https://www.samsungtvplus.com/advertise.html). The service is device and region dependent; the public commercial page addresses advertisers and does not publish a viewer-referral rate. Checked 2026-10-28.
+
+## S72
+
+Xumo: [Xumo Play service information](https://www.xumo.com/about) and [Xumo Enterprise](https://www.xumo.com/enterprise). Xumo describes free ad-supported viewing and enterprise monetization/distribution for content owners and distribution partners; no public fixed referral payout was found. Checked 2026-10-28.
+
+## S73
+
+Plex: [free streaming FAQ](https://support.plex.tv/articles/frequently-asked-questions-vod/) and [Terms of Service](https://www.plex.tv/about/privacy-legal/plex-terms-of-service/). Ad-supported distributor economics and consumer terms do not establish a third-party client playback license or general revenue share. No public PlezyNG referral rate was found. Checked 2026-10-28.
+
 ## Conflicts and unresolved research
 
 - Kobo standard versus influencer rates: retained as different program offers, not averaged.
