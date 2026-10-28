@@ -177,7 +177,9 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
 
   public void disconnectController(int deviceId) {
     int seat = controllerSeats.disconnect(deviceId);
-    if (seat >= 0) sendPad(seat);
+    // A composite device can supply both navigation keys and a gamepad.
+    // Resend unchanged seats too, so both representations release together.
+    if (seat >= 0) for (int i = 0; i < controllerSeats.count(); i++) sendPad(i);
   }
 
   @Override public void onInputDeviceAdded(int deviceId) {}
@@ -405,7 +407,7 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
         if (Math.abs((int) touch[i]) > Math.abs((int) combined[i])) combined[i] = touch[i];
         if (Math.abs((int) external[i]) > Math.abs((int) combined[i])) combined[i] = external[i];
       }
-      buttons |= touchButtons | controller.buttons();
+      buttons |= touchButtons | controller.buttons() | controllerSeats.navigation().buttons();
     }
     NativeSteam.padSeat(session, seat, combined, buttons);
   }
@@ -419,6 +421,15 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     boolean gamepad = event.isFromSource(InputDevice.SOURCE_GAMEPAD) || event.isFromSource(InputDevice.SOURCE_DPAD)
         || event.isFromSource(InputDevice.SOURCE_JOYSTICK);
     if (gamepad && (bit >= 0 || event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_L2 || event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_R2)) {
+      InputDevice device = event.getDevice();
+      int sources = device == null ? event.getSource() : device.getSources();
+      boolean physicalPad = (sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
+          || (sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
+      if (!physicalPad) {
+        controllerSeats.navigationButton(event.getDeviceId(), bit, down);
+        sendPad(0);
+        return true;
+      }
       int seat = controllerSeats.seat(event.getDeviceId());
       if (seat < 0) return true;
       SteamControllerState state = controllerSeats.state(seat);

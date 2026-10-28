@@ -154,3 +154,12 @@ No external streaming-app handoff is used.
 - Focused Dart analysis of the changed implementation and tests: no issues.
 - These are local automated results. Current-head private-JIT builds, real
   companion devices and actual Steam host actions remain unverified.
+
+
+### TV navigation compatibility follow-up
+
+- Java controller/options suite: **13 tests passed** after separating navigation-
+  only remote buttons from physical controller seat allocation. A single-seat
+  stream still accepts its first physical pad after TV-remote input; composite
+  device removal releases both paths without clearing another player's state.
+- Android SurfaceView compilation and physical TV input remain release gates.

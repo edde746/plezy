@@ -8,6 +8,8 @@ package org.snapetech.plezyng.games.steam;
 final class SteamControllerSeats {
   private final Integer[] devices;
   private final SteamControllerState[] states;
+  private final SteamControllerState navigation = new SteamControllerState();
+  private Integer navigationDevice;
 
   SteamControllerSeats(int count) {
     if (count < 1 || count > 4) throw new IllegalArgumentException("Invalid controller count");
@@ -18,6 +20,14 @@ final class SteamControllerSeats {
 
   int count() { return states.length; }
   SteamControllerState state(int seat) { return states[seat]; }
+  SteamControllerState navigation() { return navigation; }
+
+  /** A TV's navigation-only remote assists player one without taking a pad seat. */
+  void navigationButton(int deviceId, int bit, boolean pressed) {
+    if (navigationDevice != null && navigationDevice != deviceId) navigation.reset();
+    navigationDevice = deviceId;
+    navigation.setButtonBit(bit, pressed);
+  }
 
   int seat(int deviceId) {
     for (int i = 0; i < devices.length; i++) {
@@ -34,6 +44,11 @@ final class SteamControllerSeats {
   }
 
   int disconnect(int deviceId) {
+    boolean navigationRemoved = navigationDevice != null && navigationDevice == deviceId;
+    if (navigationRemoved) {
+      navigation.reset();
+      navigationDevice = null;
+    }
     for (int i = 0; i < devices.length; i++) {
       if (devices[i] != null && devices[i] == deviceId) {
         states[i].reset();
@@ -41,10 +56,11 @@ final class SteamControllerSeats {
         return i;
       }
     }
-    return -1;
+    return navigationRemoved ? 0 : -1;
   }
 
   void reset() {
     for (SteamControllerState state : states) state.reset();
+    navigation.reset();
   }
 }

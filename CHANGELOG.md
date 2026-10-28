@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Preserve TV navigation-remote assistance for player one without consuming a Steam gamepad seat; release both input paths when a composite device disconnects.
+
 - Add opt-in Companion Remote controls for active PlezyNG game streams: inspect titles, choose audio, mute, fullscreen and confirm disconnect, using temporary session handles that expire on reconnection or replacement.
 - Prevent a timed-out Steam host inventory check from launching later, using monotonic deadlines and explicit operation retirement.
 

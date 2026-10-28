@@ -290,7 +290,8 @@ Android and Flutter event paths. Events update only that device's controls;
 Flutter button updates cannot erase native stick axes. Each advertised HID
 controller has its own path and serial. Seats are assigned on first input,
 remain stable across focus changes, and are reused only after disconnect.
-Touch controls assist player one. Excess devices are ignored instead of being
+Touch controls and navigation-only TV remotes assist player one; a TV remote
+does not consume a physical controller seat. Excess gamepads are ignored instead of being
 merged into another player's input. Device IDs stay local to the receiver.
 
 Disconnect/remapping clears only the affected controller. Focus loss, input
