@@ -18,6 +18,7 @@ class VisualizerPackCatalogEntry {
     required this.version,
     required this.license,
     required this.description,
+    required this.contentNotice,
     required this.archiveUrl,
     required this.sha256,
     required this.archiveBytes,
@@ -31,6 +32,7 @@ class VisualizerPackCatalogEntry {
   final String version;
   final String license;
   final String description;
+  final String contentNotice;
   final String archiveUrl;
   final String sha256;
   final int archiveBytes;
@@ -47,6 +49,7 @@ class VisualizerPackCatalogEntry {
       version: '0.1.0',
       license: 'CC0-1.0',
       description: 'Two MilkRust-authored sample presets. No third-party assets.',
+      contentNotice: 'MilkRust-authored sample content dedicated under CC0-1.0. No third-party presets or textures are included.',
       archiveUrl:
           'https://raw.githubusercontent.com/snapetech-org/MilkRust/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/content/downloads/milkrust-sample-pack-0.1.0.rmpack',
       sha256: '175a042deb4edb224055a6334f67a1c492f32e447dc3c90a54f22849c43a27df',

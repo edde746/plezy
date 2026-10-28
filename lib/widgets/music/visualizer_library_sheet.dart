@@ -236,6 +236,11 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                     Text(entry.description, style: Theme.of(context).textTheme.bodyMedium),
                                     const SizedBox(height: 4),
                                     Text(
+                                      'Content notice: ${entry.contentNotice}',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
                                       'The archive hash and included license notice are checked before installation. It is stored offline. MilkDrop playback is not enabled by PlezyNG yet.',
                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
                                     ),
