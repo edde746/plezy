@@ -41,6 +41,8 @@ final class IncomingSubtitleShareService {
     'xml',
     'zip',
     'tar',
+    'tgz',
+    'gz',
   };
 
   StreamSubscription<List<SharedMediaFile>>? _subscription;
@@ -100,9 +102,9 @@ final class IncomingSubtitleShareService {
           continue;
         }
         final extension = p.extension(entity.path).toLowerCase().replaceFirst('.', '');
-        if (!_extensions.contains(extension)) continue;
+        if (!_extensions.contains(extension) || (extension == 'gz' && !p.basename(entity.path).toLowerCase().endsWith('.tar.gz'))) continue;
         final length = await entity.length();
-        final maximum = const {'zip', 'tar'}.contains(extension) ? _maximumArchiveBytes : _maximumSubtitleBytes;
+        final maximum = _isArchiveName(entity.path) ? _maximumArchiveBytes : _maximumSubtitleBytes;
         if (length == 0 || length > maximum || restored.length >= _maximumFiles) continue;
         if (bytes + length > _maximumPendingBytes) continue;
         restored.add(entity);
@@ -115,6 +117,14 @@ final class IncomingSubtitleShareService {
     } catch (error, stackTrace) {
       appLogger.w('Could not restore pending subtitle shares', error: error, stackTrace: stackTrace);
     }
+  }
+
+  bool _isArchiveName(String path) {
+    final name = p.basename(path).toLowerCase();
+    return name.endsWith('.zip') ||
+        name.endsWith('.tar') ||
+        name.endsWith('.tar.gz') ||
+        name.endsWith('.tgz');
   }
 
   Future<void> _copySharedFiles(List<SharedMediaFile> media) async {
@@ -133,11 +143,11 @@ final class IncomingSubtitleShareService {
         if (uri != null && uri.hasScheme && uri.scheme != 'file') continue;
         final sourcePath = uri?.scheme == 'file' ? uri!.toFilePath() : rawPath;
         final extension = p.extension(sourcePath).toLowerCase().replaceFirst('.', '');
-        if (!_extensions.contains(extension)) continue;
+        if (!_extensions.contains(extension) || (extension == 'gz' && !p.basename(sourcePath).toLowerCase().endsWith('.tar.gz'))) continue;
 
         final source = File(sourcePath);
         final sourceBytes = await source.length();
-        final maximum = const {'zip', 'tar'}.contains(extension) ? _maximumArchiveBytes : _maximumSubtitleBytes;
+        final maximum = _isArchiveName(sourcePath) ? _maximumArchiveBytes : _maximumSubtitleBytes;
         if (sourceBytes == 0 || sourceBytes > maximum || _pendingBytes + sourceBytes > _maximumPendingBytes) {
           continue;
         }

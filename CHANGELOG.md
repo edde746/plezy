@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Import bounded gzip-compressed TAR subtitle archives (`.tar.gz` and `.tgz`) through the picker, desktop drop, and Android share flows.
+
 - Browse captured Android ExoPlayer transcripts with search, cue-level seeking, and an optional hide-future-dialogue filter.
 
 - Save reviewed subtitle results as standalone SRT or versioned cue JSON files without attaching them to playback or modifying the source.

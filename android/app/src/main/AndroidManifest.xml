@@ -133,6 +133,7 @@
                 <data android:mimeType="text/plain" />
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/x-tar" />
+                <data android:mimeType="application/gzip" />
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
             <intent-filter>
@@ -143,6 +144,7 @@
                 <data android:mimeType="text/plain" />
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/x-tar" />
+                <data android:mimeType="application/gzip" />
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
 </activity>

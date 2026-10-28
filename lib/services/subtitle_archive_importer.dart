@@ -23,7 +23,7 @@ final class SubtitleArchiveCandidate {
   final String _documentDigest;
 }
 
-/// Bounded ZIP/TAR reader that only writes selected subtitle files under
+/// Bounded ZIP/TAR/gzip-TAR reader that only writes selected subtitle files under
 /// the application's temporary directory. Archive names are never used as paths.
 abstract final class SubtitleArchiveImporter {
   static const int maximumArchiveBytes = 50 * 1024 * 1024;
@@ -69,6 +69,16 @@ abstract final class SubtitleArchiveImporter {
     return bytes;
   }
 
+  static bool isSupportedArchiveName(String fileName) {
+    final normalized = fileName.replaceAll('\\', '/').split('/').last.toLowerCase();
+    return normalized.endsWith('.zip') ||
+        normalized.endsWith('.tar') ||
+        normalized.endsWith('.tar.gz') ||
+        normalized.endsWith('.tgz');
+  }
+
+  static bool isLargeArchiveName(String fileName) => isSupportedArchiveName(fileName);
+
   static SubtitleArchiveDocument open(
     Uint8List bytes, {
     required String fileName,
@@ -77,11 +87,22 @@ abstract final class SubtitleArchiveImporter {
     if (bytes.isEmpty || bytes.lengthInBytes > maximumArchiveBytes) {
       throw const FormatException('Subtitle archive must be between 1 byte and 50 MiB.');
     }
-    final archive = switch (p.extension(fileName).toLowerCase()) {
-      '.zip' => _openZip(bytes),
-      '.tar' => _openTar(bytes),
-      _ => throw const FormatException('Choose a ZIP or uncompressed TAR subtitle archive.'),
-    };
+    final normalized = fileName.replaceAll('\\', '/').split('/').last.toLowerCase();
+    final Archive archive;
+    if (normalized.endsWith('.zip')) {
+      archive = _openZip(bytes);
+    } else if (normalized.endsWith('.tar.gz') || normalized.endsWith('.tgz')) {
+      final expandedTar = GZipDecoder().decodeBytes(
+        bytes,
+        verify: true,
+        maxOutputSize: maximumExpandedArchiveBytes + maximumEntries * 1024 + 1024,
+      );
+      archive = _openTar(Uint8List.fromList(expandedTar));
+    } else if (normalized.endsWith('.tar')) {
+      archive = _openTar(bytes);
+    } else {
+      throw const FormatException('Choose a ZIP, TAR, or gzip-compressed TAR subtitle archive.');
+    }
     if (archive.files.length > maximumEntries) {
       throw const FormatException('Archive contains too many entries to inspect safely.');
     }
