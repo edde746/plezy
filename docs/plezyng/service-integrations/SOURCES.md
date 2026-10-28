@@ -1,6 +1,6 @@
 # Source register and evidence limits
 
-Reviewed **2026-10-27 (America/Regina)** using current web retrieval, official provider documentation and the repository snapshots identified in AUDIT. Prices, terms, APIs, branding and service availability require rechecking immediately before implementation/release. A crawl or page update date is not proof that PlezyNG has been accepted into a program.
+Reviewed **2026-10-28 (America/Regina)** using current web retrieval, official provider documentation and the repository snapshots identified in AUDIT. Prices, terms, APIs, branding and service availability require rechecking immediately before implementation/release. A crawl or page update date is not proof that PlezyNG has been accepted into a program.
 
 **High confidence** means a cited primary source directly documents the narrow capability or condition. **Moderate** describes a reasoned integration recommendation or incomplete operational evidence. **Low** describes speculative readiness/effort. **Unknown** means no qualifying evidence or approval was obtained. No provider was contacted or enrolled, and no live API credential was exercised.
 
@@ -269,6 +269,10 @@ OpenSubtitles: [getting started](https://opensubtitles.tawk.help/article/getting
 ## S66
 
 Podcast formats: [RSS 2.0 specification](https://www.rssboard.org/rss-specification), [Atom syndication format (RFC 4287)](https://www.rfc-editor.org/rfc/rfc4287), and [OPML 2.0 specification](https://opml.org/spec2.opml). These describe feed/subscription formats, not rights to replay every linked enclosure. High format evidence.
+
+## S67
+
+Project Gutenberg: [official offline catalog documentation](https://www.gutenberg.org/help/offline_catalogs.html). The public OPDS 1.2 search catalog is `https://www.gutenberg.org/ebooks/search.opds/`; Gutenberg says its XML feeds are expected to sunset in 2027 and that OPDS 2.0 remains a testing route. The app preset uses the documented public OPDS endpoint; recheck the migration notice before relying on it for a release. High.
 
 ## Conflicts and unresolved research
 

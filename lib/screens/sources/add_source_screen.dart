@@ -32,6 +32,8 @@ class AddSourceScreen extends StatefulWidget {
 }
 
 class _AddSourceScreenState extends State<AddSourceScreen> {
+  static const _projectGutenbergOpdsEndpoint = 'https://www.gutenberg.org/ebooks/search.opds/';
+
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
@@ -550,6 +552,25 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             : _kind == FileSourceKind.openSubsonic
                             ? _validateOpenSubsonicEndpoint
                             : null,
+                      ),
+                    if (_kind == FileSourceKind.opds)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: OutlinedButton.icon(
+                            onPressed: _busy
+                                ? null
+                                : () => setState(() {
+                                    field('endpoint').text = _projectGutenbergOpdsEndpoint;
+                                    if (field('name').text.trim().isEmpty) {
+                                      field('name').text = 'Project Gutenberg';
+                                    }
+                                  }),
+                            icon: const AppIcon(Symbols.menu_book_rounded),
+                            label: const Text('Project Gutenberg'),
+                          ),
+                        ),
                       ),
                     if (_kind == FileSourceKind.dlna) ...[
                       OutlinedButton.icon(

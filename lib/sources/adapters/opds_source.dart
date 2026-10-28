@@ -63,6 +63,9 @@ class OpdsSourceAdapter extends SourceAdapter {
       rels.contains('http://opds-spec.org/acquisition/open-access');
   bool _supportedFileAcquisition(Iterable<String> rels) =>
       _sampleAcquisition(rels) || _openAccessAcquisition(rels);
+  SourceItemKind _entryKind(List<PublicationFile> files) => files
+      .map((file) => file.kind)
+      .firstWhere((kind) => kind != SourceItemKind.unknown, orElse: () => files.first.kind);
 
   @override
   SourceCapabilities get capabilities => const SourceCapabilities();
@@ -192,7 +195,7 @@ class OpdsSourceAdapter extends SourceAdapter {
           sourceId: source.id,
           id: id,
           title: _label(meta['title']),
-          kind: files.first.kind,
+          kind: _entryKind(files),
           parentId: uri.toString(),
           author: _label(meta['author']),
           language: _label(meta['language']),
@@ -292,7 +295,7 @@ class OpdsSourceAdapter extends SourceAdapter {
             sourceId: source.id,
             id: id,
             title: title,
-            kind: files.first.kind,
+            kind: _entryKind(files),
             author: entry.childElements
                 .where((e) => e.name.local == 'author')
                 .map((e) => e.innerText.trim())
