@@ -1,3 +1,5 @@
+import '../utils/display_text_finder.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -1158,7 +1160,7 @@ void main() {
     // each.
     expect(find.byType(HubSection), findsOneWidget);
     expect(find.text(t.discover.moreLikeThis), findsOneWidget);
-    expect(find.text('A Similar Movie'), findsOneWidget);
+    expect(findDisplayText('A Similar Movie'), findsOneWidget);
 
     expect(find.text(t.explore.detail.relatedTitles), findsOneWidget);
     expect(find.text(t.explore.relation.sequel), findsOneWidget);

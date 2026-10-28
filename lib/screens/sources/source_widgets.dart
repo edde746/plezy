@@ -100,6 +100,9 @@ class SourceTile extends StatelessWidget {
     this.progress,
     this.index = 0,
     this.count = 1,
+    this.focusNode,
+    this.onNavigateLeft,
+    this.onNavigateUp,
   });
   final String title;
   final String? subtitle;
@@ -109,6 +112,8 @@ class SourceTile extends StatelessWidget {
   final Widget? leading;
   final double? progress;
   final int index, count;
+  final FocusNode? focusNode;
+  final VoidCallback? onNavigateLeft, onNavigateUp;
   @override
   Widget build(BuildContext context) {
     final shape = groupItemRadii(context, index, count), theme = Theme.of(context);
@@ -119,6 +124,9 @@ class SourceTile extends StatelessWidget {
         borderRadius: shape,
         clipBehavior: Clip.antiAlias,
         child: FocusableWrapper(
+          focusNode: focusNode,
+          onNavigateLeft: onNavigateLeft,
+          onNavigateUp: onNavigateUp,
           disableScale: true,
           useBackgroundFocus: true,
           borderRadii: shape,

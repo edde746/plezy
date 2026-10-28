@@ -651,7 +651,18 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       if (s.failure != null)
         Padding(
           padding: const EdgeInsets.all(16),
-          child: SourceErrorMessage(message: sourceFailureText(SourceException(s.failure!))),
+          child: Column(
+            children: [
+              SourceErrorMessage(message: sourceFailureText(SourceException(s.failure!))),
+              if (s.canRetry) ...[
+                const SizedBox(height: 8),
+                FocusableButton(
+                  onPressed: () => unawaited(sourceAction(context, s.retry)),
+                  child: Text(t.common.retry),
+                ),
+              ],
+            ],
+          ),
         ),
     ],
   );

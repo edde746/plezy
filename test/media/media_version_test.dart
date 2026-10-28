@@ -1,7 +1,36 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/media/media_part.dart';
 
 void main() {
+  test('multipart playability requires every known part while tolerating unknown status', () {
+    expect(const MediaVersion(id: 'unknown').isPlayable, isTrue);
+    expect(
+      const MediaVersion(
+        id: 'unknown-part',
+        parts: [MediaPart(id: 'one')],
+      ).isPlayable,
+      isTrue,
+    );
+    expect(
+      const MediaVersion(
+        id: 'broken',
+        parts: [
+          MediaPart(id: 'one', accessible: true, exists: true),
+          MediaPart(id: 'two', exists: false),
+        ],
+      ).isPlayable,
+      isFalse,
+    );
+    expect(
+      const MediaVersion(
+        id: 'denied',
+        parts: [MediaPart(id: 'one', accessible: false)],
+      ).isPlayable,
+      isFalse,
+    );
+  });
+
   MediaVersion version(String resolution, String codec, String container, {String id = ''}) {
     return MediaVersion(id: id, videoResolution: resolution, videoCodec: codec, container: container);
   }

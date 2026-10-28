@@ -88,6 +88,12 @@ Name: "{autodesktop}\{#Name}"; Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 Root: HKCU; Subkey: "Software\Classes\plezy"; ValueType: string; ValueName: ""; ValueData: "URL:PlezyNG media link"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\plezy"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\plezy\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#ExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\plezyng"; ValueType: string; ValueName: ""; ValueData: "URL:PlezyNG media link"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\plezyng"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\plezyng\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#ExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\plezxyng"; ValueType: string; ValueName: ""; ValueData: "URL:PlezyNG media link"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\plezxyng"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\plezxyng\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#ExeName}"" ""%1"""
 
 [Run]
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall

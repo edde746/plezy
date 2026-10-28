@@ -24,7 +24,8 @@ static bool IsOpenMediaLink(const std::string& value) {
              return expected == static_cast<char>(std::tolower(static_cast<unsigned char>(actual)));
            });
   };
-  return starts_with("plezy://open-media?") || starts_with("plezxyng://open-media?");
+  return starts_with("plezy://open-media?") || starts_with("plezyng://open-media?") ||
+         starts_with("plezxyng://open-media?");
 }
 // When true, WM_WINDOWPOSCHANGED should not persist placement. Used while a
 // native fullscreen toggle is in flux so we don't record the fullscreen rect

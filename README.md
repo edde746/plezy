@@ -105,7 +105,7 @@ Install Flatpak with your distribution's package manager, download the bundle fo
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install --user flathub org.freedesktop.Platform//25.08
 flatpak install --user ./plezy-linux-x64.flatpak
-flatpak run com.edde746.plezy
+flatpak run org.snapetech.plezyng
 ```
 
 On arm64, install `plezy-linux-arm64.flatpak`.
@@ -120,7 +120,9 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 
 </details>
 
-### Arch Linux — Pacman
+The following distribution packages are for upstream **Plezy**, not this PlezyNG fork. Use the PlezyNG release bundles above for the features documented here.
+
+### Arch Linux — Pacman (upstream Plezy)
 
 [Distribution package](https://archlinux.org/packages/extra/x86_64/plezy/).
 
@@ -353,7 +355,7 @@ Check the installed package against the runtime (not just the SDK), then launch 
 python3 linux/packaging/check-flatpak.py
 ```
 
-The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
+The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe org.snapetech.plezyng` for software-rendered verification; this is not a hardware-decoding or HDR test.
 
 </details>
 

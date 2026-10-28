@@ -46,9 +46,10 @@ class NavigationTab {
     bool hasLiveTv = false,
     bool hasExplore = false,
     bool hasGames = false,
+    bool hasFileSources = false,
   }) {
     return allNavigationTabs.where((tab) {
-      if (isOffline && tab.onlineOnly) return false;
+      if (isOffline && tab.onlineOnly && !(hasFileSources && tab.id == NavigationTabId.search)) return false;
       if (tab.id == NavigationTabId.games && !hasGames) return false;
       if (tab.id == NavigationTabId.liveTv && !hasLiveTv) return false;
       if (tab.id == NavigationTabId.explore && !hasExplore) return false;
@@ -67,9 +68,16 @@ class NavigationTab {
     required bool hasLiveTv,
     bool hasExplore = false,
     bool hasGames = false,
+    bool hasFileSources = false,
     required NavigationTabId? preferredStartup,
   }) {
-    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasExplore: hasExplore, hasGames: hasGames);
+    final tabs = getVisibleTabs(
+      isOffline: isOffline,
+      hasLiveTv: hasLiveTv,
+      hasExplore: hasExplore,
+      hasGames: hasGames,
+      hasFileSources: hasFileSources,
+    );
     if (isOffline && tabs.any((t) => t.id == NavigationTabId.downloads)) {
       return NavigationTabId.downloads;
     }

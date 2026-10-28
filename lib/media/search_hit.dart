@@ -1,7 +1,9 @@
+import '../sources/source_models.dart';
+
 import 'media_item.dart';
 import 'media_person.dart';
 
-/// One row of the ranked search results: a title or a person.
+/// One row of the ranked search results: a server title, indexed file or person.
 sealed class SearchHit {
   const SearchHit();
 
@@ -25,4 +27,15 @@ final class PersonSearchHit extends SearchHit {
 
   @override
   String get globalKey => person.globalKey;
+}
+
+/// An indexed publication retains its source identity, edition and native
+/// open path. It is never disguised as a server item or merged by title.
+final class SourceSearchHit extends SearchHit {
+  final SourceEntry entry;
+
+  const SourceSearchHit(this.entry);
+
+  @override
+  String get globalKey => 'source:${entry.key}';
 }
