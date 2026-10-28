@@ -6,7 +6,9 @@ One incoming Malay phrase was clarified: `Leret kulit ke arah anak panah atau gu
 
 The 19 other newly merged English paths—seven settings messages and twelve discovery messages—are explicitly outside this bounded semantic review. They account for 656 new physical non-English messages and 28 inherited evaluations, or 684 effective messages. They were included in the full automated scan; none created a new corrupt-symbol, repeated-word or short-translation candidate. No new broad translation authoring was performed for these features.
 
-Current catalogs contain **3,079 English messages, 110,844 resolved non-English locale/message pairs and 110,052 scalar comparisons**. The scan retains 3,959 English-equality matches and the same 23 explicitly adjudicated adequate short cases. There are zero corrupt-symbol, repeated-word or identical opposite-action candidates. English equality remains a heuristic inventory, not an exhaustive fluency approval.
+A later main update added five Steam audio setting messages. They remain outside semantic translation review and use explicit English fallbacks in non-English catalogs until translations are reviewed.
+
+At the merge review, catalogs contained **3,079 English messages, 110,844 resolved non-English locale/message pairs and 110,052 scalar comparisons**. The scan retains 3,959 English-equality matches and the same 23 explicitly adjudicated adequate short cases. There are zero corrupt-symbol, repeated-word or identical opposite-action candidates. English equality remains a heuristic inventory, not an exhaustive fluency approval.
 
 The regional hint overrides change the physical/inherited classification of four already covered locale/key pairs. Combined unique semantic coverage is now **8,117 physical reviews plus 854 inherited evaluations, or 8,971 effective pairs**. The 36 hint reads concern new wording of already covered messages, so they are not added again to the unique-pair total. Independent AI review does not certify native fluency, regional style or real-device layout.
 

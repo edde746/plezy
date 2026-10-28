@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
 import '../../database/app_database.dart';
+import '../../iptv/iptv_source_repository.dart';
 import '../../database/download_collection_operations.dart';
 import '../../database/download_operations.dart';
 import '../../i18n/strings.g.dart';
@@ -23,6 +24,7 @@ import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/playback_state_provider.dart';
 import '../../services/api_cache.dart';
+import '../../services/hardcover/hardcover_account_store.dart';
 import '../../services/multi_server_manager.dart';
 import '../../services/storage_service.dart';
 import '../../services/system_shelf_service.dart';
@@ -207,6 +209,7 @@ Future<void> deleteProfile(BuildContext context, Profile profile) async {
     await scope.database.deleteDownloadCollectionsForProfile(profile.id);
     await scope.database.deleteWatchActionsForProfile(profile.id);
     await scope.database.deleteMusicSessionForProfile(profile.id);
+    await IptvSourceRepository(scope.database).deleteProfile(profile.id);
     await scope.sources?.forgetProfile(profile.id);
     await scope.cleanup.removeAllProfileConnections(profile.id);
     await scope.profileRegistry.remove(profile.id);
@@ -371,8 +374,15 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   }
 
   await companionRemote.resetForLogout();
-  // Credentials and the signed-out users' server-side preferences go first so
-  // nothing below can read them back as the next sign-in's defaults.
+  // Credentials and the signed-out users' preferences go first so nothing
+  // below can read them back as the next sign-in's defaults.
+  final sources = scope.sources;
+  if (sources != null) {
+    await sources.ready;
+    sources.attachProfile(null, blocked: true);
+    await sources.stopPlayback?.call();
+    await HardcoverAccountStore(sources.repository).clearAllProfiles();
+  }
   await scope.storage.clearUserData();
   accountPreferences.repository.clear();
   // Downloads are device-local data, not credentials. Keep their physical

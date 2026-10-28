@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "image": "ghcr.io/canonical/snapcraft@sha256:0443273552768a3230c2ede3aa47e567da0242bfbb0a7bb1283093208c404a0c",
+  "upstreamTag": "8_core24",
+  "snapcraftVersion": "8.11.1",
+  "base": "core24",
+  "source": "https://github.com/canonical/snapcraft-rocks",
+  "platforms": {
+    "linux/amd64": "sha256:615b979408f55a4c7839d13f49e39bc3c01185417026a28c30917f6d1652e861",
+    "linux/arm64": "sha256:4707253beaf957208d63ee73da7da00c457b6a8a55031a4152d90ab1b24606bb"
+  }
+}

@@ -15,6 +15,7 @@ import '../../media/media_server_client.dart';
 import '../../media/media_source_info.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../mpv/models.dart';
+import '../../mpv/player/audio_spectrum.dart';
 import '../../mpv/player/player.dart';
 import '../../mpv/player/player_native.dart';
 import '../../utils/app_logger.dart';
@@ -84,7 +85,13 @@ class _PendingResume {
 /// progress stop the session with [MusicPlaybackStatus.error].
 class MusicPlaybackServiceImpl extends MusicPlaybackService
     with WidgetsBindingObserver
-    implements MusicLoudnessProfileService {
+    implements MusicLoudnessProfileService, MusicAudioSpectrumService, MusicVisualizationAudioService {
+  @override
+  bool get hasNativeVisualizationAudio {
+    final player = _player;
+    return !_disposed && player is PlayerNative && player.isAudioCoreReady;
+  }
+
   MusicPlaybackServiceImpl({
     required MultiServerManager serverManager,
     AppDatabase? database,
@@ -178,6 +185,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
 
   Player? _player;
   final List<StreamSubscription<Object?>> _playerSubs = [];
+
+  @override
+  AudioSpectrumAnalyzer? get audioSpectrumAnalyzer =>
+      _player is AudioSpectrumAnalyzer ? _player! as AudioSpectrumAnalyzer : null;
 
   MediaControlsManager? _mediaControls;
   StreamSubscription<MediaControlEvent>? _controlEventsSub;

@@ -1,5 +1,9 @@
 # Games validation and release gates
 
+For current PR #46 completion status, see
+[CONNECTED_EXPERIENCE.md](CONNECTED_EXPERIENCE.md#scope-and-acceptance).
+Historical builds below do not validate the current branch.
+
 Recorded 2026-10-26. This is an experimental implementation, not a claim of certified streaming support.
 
 ## Evidence
@@ -38,7 +42,7 @@ New Games messages are seeded with reviewed English fallback copy in non-English
 
 1. Build debug and minified release APKs for supported ABIs. Verify manifest merging, app identity, backup exclusions, private components, merged resources and shrinker retention. Test with the embedded module enabled and with `-PplezyGamesEmbedded=false`.
 2. Sunshine stable/current, Apollo, Wolf and representative legacy GameStream hosts: discovery, manual address/custom port, correct/wrong/expired PIN, rejection, certificate change, reconnect and revoked trust. Confirm no host credentials or trust material enter logs, QR codes, profile exports or backups.
-3. Android phone/tablet, Android TV and Fire TV: qualify GameStream codecs/HDR/refresh/input features independently from Steam. Steam currently negotiates at most 1080p60 conventional video and stereo Opus, with one controller, fixed touch overlay and basic keyboard. The retained Multiview surface and full-screen Activity share a decoder implementation, but PlatformView/SurfaceView composition, frame latency, clipping, workspace audio/input leases and reconnect after pane unmount are unverified. Pyrowave is off by default per profile; after explicit opt-in and a successful Vulkan probe, its experimental Android path adds bounded SDR 4:2:0 decode with CPU readback; measure first-frame delay, dropped frames, CPU/GPU load, thermals and battery against H.264/HEVC on actual hardware. Rumble, gyro, full IME, multiple pads, AV1/HDR and Pyrowave performance are not release-qualified for Steam. Record exact hardware and host/client versions.
+3. Android phone/tablet, Android TV and Fire TV: qualify GameStream codecs/HDR/refresh/input features independently from Steam. Steam currently negotiates at most 1080p60 conventional video and stereo Opus, with one controller by default (up to four selectable seats), fixed touch overlay and basic keyboard. The retained Multiview surface and full-screen Activity share a decoder implementation, but PlatformView/SurfaceView composition, frame latency, clipping, workspace audio/input leases and reconnect after pane unmount are unverified. Pyrowave is off by default per profile; after explicit opt-in and a successful Vulkan probe, its experimental Android path adds bounded SDR 4:2:0 decode with CPU readback; measure first-frame delay, dropped frames, CPU/GPU load, thermals and battery against H.264/HEVC on actual hardware. Rumble, gyro, full IME, multiple pads, AV1/HDR and Pyrowave performance are not release-qualified for Steam. Record exact hardware and host/client versions.
 4. Rotate/background/suspend, change profiles or disable Games during pairing/library/art requests, disconnect the network, and reopen repeatedly. Confirm cancellation, multicast-lock release, independent per-pane session teardown, no late launches, and sane media/audio restoration.
 5. Missing, malformed, oversized and slow cover art; large libraries; empty app list; offline refresh; multiple computers with duplicate game names. Confirm cards remain usable without artwork.
 6. Package the pinned modified engine's complete corresponding source, build instructions, dependencies and required license notices with each distribution. Review all third-party components and distribution-channel compatibility. The Moonlight and Steam notice assets alone are not a complete corresponding-source release bundle.
@@ -51,3 +55,111 @@ New Games messages are seeded with reviewed English fallback copy in non-English
 - **Platform ports:** only Android has native playback adapters in this change. The shared Games UI and Linux-tested portable Steam core do not provide desktop/Apple/webOS playback. See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 No external streaming-app handoff is used.
+
+
+## Connected experience PR #46 — 2026-10-28
+
+- Dart analysis of Games, Games screens, companion provider and OAuth client:
+  no issues.
+- Focused Flutter Games, all Multiview, companion provider/receiver/peer and
+  OAuth poll regression suite: **158 tests passed**.
+- `go test -race ./...` in `server`: both packages passed, including catalog
+  identity binding, credential rejection, rate limiting, expiry, revocation
+  and concurrent revocation during an upstream fetch.
+- New inventory fixtures cover multiple Steam drives, three different gaming
+  computers in one grid, malformed manifests, cancellation, opt-in sharing,
+  multi-page transfer and out-of-order response rejection.
+- No native Android build or attached-device qualification has yet been run
+  for the new Java/Kotlin first-frame callback. Desktop browsing/inventory
+  support does not mean a desktop streaming receiver is available.
+
+### Stream preferences and recovery follow-up
+
+- Games/Multiview Flutter suite: **99 tests passed**. After adding the late
+  replay regression, the final session test file passed **6 tests**; these
+  counts overlap and must not be added to the earlier 158-test suite.
+- Focused Dart analysis: no issues. Recovery tests cover first-frame input
+  gating, duplicate reconnect taps, teardown failure, stale state replay and
+  profile retirement during shutdown.
+- Portable Linux Steam/Pyrowave C++ build: successful. **38 native tests passed**
+  across the initial run and a targeted timer rerun. The initial timer test
+  could not execute because its generated binary lacked its executable bit;
+  repairing that local build-file permission allowed it to pass. This run was
+  Debug without sanitizers; it is not a replacement for sanitizer CI.
+- Native request test inspects the transmitted resolution and rejects invalid
+  limits before a connection. Strict host-JDK JNI syntax/type check passed with
+  upstream headers treated as system includes, matching the CMake target.
+- Java 17 compilation and JUnit: **6 option/controller tests passed**, including
+  legacy defaults, explicit H.264, integer overflow, wrong types and excessive
+  limits. This compiles the platform-independent Java classes, not the Android
+  SurfaceView, Kotlin adapter or APK.
+- Android debug/minified release builds, live reconnect/quality negotiation,
+  other platform receivers and hardware performance remain outstanding.
+
+### Steam activity and companion host-action follow-up
+
+- Games plus companion provider/receiver/peer Flutter suite: **128 tests passed**.
+- Focused static analysis of Games, its screens and companion implementation:
+  no issues.
+- Go server race suite passed in both packages after adding metadata endpoints
+  and global/per-grant request bounds. Tests cover identity selection rejection,
+  optional social reads, hidden spoilers, revocation during a fetch, redirects,
+  oversized upstream data and request validation.
+- Host-action tests cover strict URI construction, opt-in permission, replay
+  rejection, unknown command arguments, peer retirement and permission changes
+  during async inspection. Acknowledgements establish submission only.
+- Live Steam API credentials/relay deployment and real OS Steam URI handlers
+  were not exercised. These results do not validate new native receivers or
+  automatic internet streaming; those implementations remain outstanding.
+
+
+### Independent controller seats follow-up
+
+- Focused Flutter preference/session/gamepad suite: **20 tests passed**. It
+  verifies device IDs reach the native boundary, disconnect releases one
+  controller, ownership loss releases all input, and legacy/profile defaults.
+- Java 17 compilation and JUnit: **11 tests passed**, including shared input
+  paths, independent held states, slot reuse, excess-device rejection and
+  neutralization without reordering. These are platform-independent classes,
+  not an Android APK build.
+- Portable native Debug build and **38 native tests passed**. The regression checks independent
+  pad state, unique HID identities, invalid seats/counts, and four-controller
+  negotiation in the actual serialized streaming request.
+- Strict host-JDK JNI syntax/type check passed. Full Android compilation,
+  minification and real multi-controller/host behavior remain unverified.
+
+
+### Native stream diagnostics follow-up
+
+- Focused metrics/dialog/session Flutter suite: **14 tests passed**. Coverage
+  includes missing targets, fractional host rates, counter deltas, reconnect
+  epochs, backwards timestamps, unknown native versions, old native modules,
+  input lease changes while a dialog is open, and polling teardown. The dialog
+  is exercised at 320px width with RTL and 2× text.
+- Portable native Debug build and **38 native tests passed**. Adapter tests
+  assert duplicate frame callbacks do not inflate counts, reset frames remain
+  separate, malformed host targets are ignored and receiver epochs are unique.
+- Strict host-JDK JNI syntax/type check passed. Full Android packaging and live
+  host adaptation/latency measurement have not been run.
+
+
+### Companion game-session controls follow-up
+
+- Games, Multiview, companion provider/receiver/peer suite: **194 tests passed**.
+  This includes permissions, replay rejection, unknown commands, stale/replaced
+  handles, disconnect during work, bounded replies, game-only workspace actions,
+  audio isolation and a timed-out host-inspection regression.
+- Two additional dialog tests passed: connection retirement suppresses a late
+  title, and game-session actions fit a 320px RTL dialog with 2× text.
+- Focused Dart analysis of the changed implementation and tests: no issues.
+- These are local automated results. Current-head private-JIT builds, real
+  companion devices and actual Steam host actions remain unverified.
+
+
+### TV navigation compatibility follow-up
+
+- Java controller/options suite: **13 tests passed** after separating navigation-
+  only remote buttons from physical controller seat allocation. A single-seat
+  stream still accepts its first physical pad after TV-remote input; composite
+  device removal releases both paths without clearing another player's state.
+- Android SurfaceView compilation and physical TV input remain release gates.

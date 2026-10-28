@@ -1202,6 +1202,30 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get settingsButton => 'Uppspelningsinställningar';
 	@override String get tracksButton => 'Ljud och undertexter';
 	@override String get chaptersButton => 'Kapitel';
+	@override String get segmentLoopHelp => 'Spela en sektion under denna återställning. Ställ in A, sedan ställ in B senare i tidslinjen.';
+	@override String get setLoopStart => 'Ange startpunkt för slinga (A)';
+	@override String get setLoopEnd => 'Set loop slut (B)';
+	@override String get clearSegmentLoop => 'tydlig segment loop';
+	@override String get setLoopStartFirst => 'Ställ in loppet start (A) före slutet (B).';
+	@override String get loopEndAfterStart => 'Slutet måste vara senare än början.';
+	@override String get segmentLoopUnavailable => 'Segment looping är inte tillgänglig för denna playback.';
+	@override String get loopPointNotSet => 'inte ställer';
+	@override String get bookmarksHelp => 'Bokmärken sparas på denna enhet. Välj ett för att gå till den tiden.';
+	@override String get bookmarksButton => 'Bokmärken';
+	@override String get chaptersAndBookmarks => 'Kapitel och bokmärken';
+	@override String get segmentLoop => 'Segment Lås';
+	@override String get addBookmark => 'Lägg till bookmark';
+	@override String get bookmarkName => 'Bookmark namn';
+	@override String get bookmarkNameHint => 'Till exempel öppna scenen';
+	@override String bookmarkDefaultName({required Object n}) => 'Bokmärke ${n}';
+	@override String get bookmarkNameRequired => 'Skriv in ett namn för denna bokmärke.';
+	@override String get deleteBookmark => 'Ta bort bokmärke';
+	@override String get bookmarkLimitReached => 'Den här artikeln har redan 100 bokmärken.';
+	@override String get bookmarkUnavailable => 'Jag kunde inte spara eller ta bort denna bokmärke.';
+	@override String get bookmarkSaved => 'Bokmärket räddades.';
+	@override String get bookmarkDeleted => 'Bokmärket är raderat.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop poäng ${point} Ställ in på ${time}.';
+	@override String get noChaptersOrBookmarks => 'Inga kapitel eller bokmärken finns tillgängliga.';
 	@override String get versionQualityButton => 'Version och kvalitet';
 	@override String get versionColumnHeader => 'Version';
 	@override String get qualityColumnHeader => 'Kvalitet';
@@ -2072,6 +2096,7 @@ class _Translations$music$sv extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Läs track analys...';
 	@override String get visualizerAmbientMotion => 'Miljö rörelse';
 	@override String get visualizerPlexLoudness => 'Plex höghet';
+	@override String get visualizerLiveAudio => 'Live-ljudanalys';
 	@override String get visualizerPreviousPreset => 'Föregående Visua stil';
 	@override String get visualizerNextPreset => 'Nästa visuell stil';
 	@override String get visualizerPresetAurora => 'Aurora';
@@ -2425,6 +2450,12 @@ class _Translations$videoSettings$sv extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Tonmappa till skärmens maximala ljusstyrka i spelaren och informera sedan kompositionshanteraren om resultatet.';
 	@override String get hdrToneMappingFailed => 'Det gick inte att ändra HDR-tonmappningen – det föregående läget är fortfarande aktivt.';
 	@override String get audioOutput => 'Ljudutgång';
+	@override String get videoTrack => 'Videospår';
+	@override String get videoTrackDescription => 'Välj vilken videoström som ska visas. Tillgängligt vid MPV-uppspelning när en fil innehåller alternativa videospår.';
+	@override String get videoTrackDefault => 'Standard';
+	@override String get videoTrackUnavailable => 'Inga alternativa videospår är tillgängliga.';
+	@override String get videoTrackFailed => 'Det gick inte att byta videospår.';
+	@override String videoTrackNumber({required Object id}) => 'Spår ${id}';
 	@override String get performanceOverlay => 'Prestandaöverlägg';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2432,10 +2463,17 @@ class _Translations$videoSettings$sv extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Rumsligt ljud';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio Equalizer för';
-	@override String get audioEqualizerDescription => 'Anpassa fem frekvensband för denna enhet. Finns på mpv; en aktiv EQ dekoder ljud och stänger av matchhrough.';
+	@override String get audioEqualizerDescription => '10-band equalizer för MPVAudiofilter använder decoderad ljud och stänger av passthrough.';
 	@override String get audioEqualizerFlat => 'Neutral';
 	@override String get audioEqualizerActive => 'Anpassat';
 	@override String get audioEqualizerSaveFailed => 'Kan inte spara ljud equalizer inställningar.';
+	@override String get audioEffectsDescription => 'Effekter använder decoderad ljud, så passthrough vänds av. Rummiljö och stereo utvidgning beror på MPV Bygg och track.';
+	@override String get audioStereoWidth => 'Stereo utvidgning';
+	@override String get audioSpatializer => 'Rummiljö';
+	@override String get audioSpatializerDescription => 'Lägg till tyst rum reflektioner.';
+	@override String get audioPitch => 'Pitch byte';
+	@override String get audioPitchDescription => 'ändra pitch utan att förändra hastighet. MPV Byggnaden måste inkludera Rubber Band.';
+	@override String get audioEffectUnavailable => 'Denna effekt är inte tillgänglig för denna spår eller MPV att bygga.';
 	@override String get backgroundVideoAudio => 'Bakgrundsvideo ljud';
 	@override String get backgroundVideoAudioDescription => 'Håll video-ljudspel när du lämnar spelaren; bilden är dolt tills du återvänder. Android använder en media-spelning meddelande.';
 	@override String get audioNormalization => 'Normalisera ljudstyrka';
@@ -3088,6 +3126,10 @@ class _Translations$universalMedia$sv extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Välj Playlist fil';
 	@override String get openPlaylist => 'Öppna Playlist';
 	@override String get playlistFormatsHelp => 'En spellista kan innehålla upp till 1000 objekt och 2 MB. HLS manifesterar sig öppen som strömmar så att spelaren kan välja en kvalitet.';
+	@override String get saveQueuePlaylist => 'Spara kön som spellista';
+	@override String get queuePlaylistSaved => 'Spellistan sparades bredvid mediefilerna.';
+	@override String get queuePlaylistUnavailable => 'Den här kön kan inte sparas som en återanvändbar lokal spellista.';
+	@override String get queuePlaylistFolderRequired => 'Välj en plats i samma mapp som filerna i kön.';
 	@override String get noFavorites => 'Inga spara ström favorit än. Favoriter stannar i denna profil.';
 	@override String get removeFavorite => 'Ta bort stream favorit';
 	@override String get filesHelp => 'Välj ljud, video eller ISO-filer för en tillfällig spårning. filer och URL-adresser läggs inte till i bibliotekshistorik.';
@@ -3152,12 +3194,13 @@ class _Translations$universalMedia$sv extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Ersätt filer';
 	@override String get discHelp => 'Öppna en skiva i datorns optiska disk. Du kan också öppna ett ISO-bild från Device-filer.';
 	@override String get discs => 'Optik disk';
+	@override String get editionOrTitle => 'Utgåva eller skivtitel';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Blu-ray och';
 	@override String get audioCd => 'ljud CD';
 	@override String get discAvailability => 'Diskspelning kräver en kompatibel MPV-byggnad, stödd disk och operativsystem tillstånd. Det kan inte gå under kommersiell skivskydd.';
 	@override String get converterTitle => 'Konvertera en lokal mediafil';
-	@override String get converterHelp => 'Använd FFmpeg för att göra en MP4, M4A eller MP3 kopia.';
+	@override String get converterHelp => 'Konvertera en lokal fil eller ändra den med FFmpeg.';
 	@override String get converterIntro => 'Konvertera en lokal ljud- eller videofil till ett format som fungerar på flera enheter.';
 	@override String get converterPrivacy => 'FFmpeg måste installeras på den här datorn. Conversion läser endast lokala filer. Det laddar inte ner strömmar eller tar bort DRM.';
 	@override String get converterChooseInput => 'Välj en lokal mediafil';
@@ -3165,6 +3208,8 @@ class _Translations$universalMedia$sv extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 och AAC';
 	@override String get converterM4a => 'M4A · AAC ljud';
 	@override String get converterMp3 => 'MP3 - ljud';
+	@override String get allowFtp => 'Tillåta FTP';
+	@override String get allowFtpHelp => 'FTP skickar media utan kryptering. Använd endast på tillförlitliga nätverk.';
 	@override String get converterSaveAs => 'Spara konverterade medier som';
 	@override String get converterExtensionMismatch => 'Välj ett filnamn med den valda utgångsförlängningen.';
 	@override String get converterUnsupportedInput => 'Välj en ljud- eller videofil.';
@@ -3174,7 +3219,7 @@ class _Translations$universalMedia$sv extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Börja med FFmpeg...';
 	@override String get converterProgress => 'Omvandlas till den här datorn...';
 	@override String get converterComplete => 'Konvertering är klar. den nya filen är redo.';
-	@override String get converterFfmpegMissing => 'Installera FFmpeg med H.264, AAC och MP3-support, försök sedan igen.';
+	@override String get converterFfmpegMissing => 'FFmpeg saknas eller stöder inte detta format.';
 	@override String get converterFailed => 'Kontrollera att källfilen kan läsas och destinationen har tillräckligt med gratis utrymme.';
 	@override String get converterCancelled => 'Konvertering avbokad. den ofullständiga utgången har tagits bort.';
 	@override String get converterDesktopOnly => 'Lokal konvertering är tillgänglig på skrivbordsdatorer med FFmpeg installerat.';
@@ -3202,6 +3247,9 @@ class _Translations$universalMedia$sv extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Skärminspelning sparas.';
 	@override String get captureElapsedLabel => 'inspelningstid';
 	@override String get captureStart => 'Börja inspelning';
+	@override String get capturePreview => 'Förhandsvisa i spelaren';
+	@override String get capturePreviewHelp => 'Förhandsvisa den valda källan i standardspelaren. Förhandsvisningen gäller endast den här sessionen och sparar ingen inspelning. Enhetsstöd och behörigheter beror på MPV och operativsystemet. Förhandsvisningen använder endast video; sparade inspelningar kan även innehålla valfritt ljud.';
+	@override String get capturePreviewActive => 'Liveförhandsvisning · spelar inte in';
 	@override String get captureStop => 'Stoppa och spara';
 	@override String get captureMode => 'fångar';
 	@override String get shareMode => 'Delade';
@@ -3521,7 +3569,6 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Lägg till Google Drive, OneDrive, Dropbox, WebDAV eller S3 i Filer och böcker först.';
 	@override String get syncDestination => 'Sync lagringskonto';
 	@override String get syncFolder => 'Synkronisera mappen eller prefixet';
-	@override String get syncFolderHelp => 'Använd en separat befintlig mapp inom din WebDAV-källa, eller en dedikerad S3-prefix. bokfiler ändras aldrig.';
 	@override String get syncCode => 'Privat synkroniseringskod';
 	@override String get syncCodeHelp => 'Skapa en kod på din första enhet, skriv sedan den koden på dina andra enheter. Håll en privat kopia: det är nyckeln till din krypterade status. Använd en annan kod för varje person.';
 	@override String get showCode => 'Visa eller dölja synkroniseringskoden';
@@ -3531,7 +3578,6 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Ta bort denna källa kommer att avaktivera läsning och lyssnande synkroniseras här. krypterade synkroniserade filer kommer att förbli i leverantören.';
 	@override String get syncReconnect => 'Återkoppling av lagringskonto';
 	@override String lastSynced({required Object time}) => 'Senast synkroniserad på ${time}';
-	@override String get syncPrivacy => 'Endast krypterade framsteg och anteckningar lagras. ljud- och e-bokfiler, konto tokens och lösenord laddas inte. Google Drive och OneDrive använder app lagring; Dropbox använder PlezyNG Sync. Tillåter synkronisering kan begära ytterligare skriftlig åtkomst. Medan aktiverad, denna destination äger framsteg synkronisering; server framsteg förblir separat. Turn synkronisering av håller lokal historia och fjärrstatus.';
 	@override String get syncConflicts => 'Välj var du ska återställa';
 	@override String get conflictHelp => 'Dessa ändringar gjordes oberoende. Välj positionen eller bokmärkesversionen att hålla. En senare timestamp eller en högre procentsats vinner inte automatiskt.';
 	@override String syncDevice({required Object device}) => 'Anläggning ${device}';
@@ -3725,7 +3771,6 @@ class _Translations$games$sv extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3750,7 +3795,6 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3782,8 +3826,6 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3791,14 +3833,12 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -5976,6 +6016,32 @@ extension on TranslationsSv {
 			'videoControls.settingsButton' => 'Uppspelningsinställningar',
 			'videoControls.tracksButton' => 'Ljud och undertexter',
 			'videoControls.chaptersButton' => 'Kapitel',
+			'videoControls.segmentLoopHelp' => 'Spela en sektion under denna återställning. Ställ in A, sedan ställ in B senare i tidslinjen.',
+			'videoControls.setLoopStart' => 'Ange startpunkt för slinga (A)',
+			'videoControls.setLoopEnd' => 'Set loop slut (B)',
+			'videoControls.clearSegmentLoop' => 'tydlig segment loop',
+			'videoControls.setLoopStartFirst' => 'Ställ in loppet start (A) före slutet (B).',
+			'videoControls.loopEndAfterStart' => 'Slutet måste vara senare än början.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping är inte tillgänglig för denna playback.',
+			'videoControls.loopPointNotSet' => 'inte ställer',
+			'videoControls.bookmarksHelp' => 'Bokmärken sparas på denna enhet. Välj ett för att gå till den tiden.',
+			'videoControls.bookmarksButton' => 'Bokmärken',
+			'videoControls.chaptersAndBookmarks' => 'Kapitel och bokmärken',
+			'videoControls.segmentLoop' => 'Segment Lås',
+			'videoControls.addBookmark' => 'Lägg till bookmark',
+			'videoControls.bookmarkName' => 'Bookmark namn',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Till exempel öppna scenen',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bokmärke ${n}',
+			'videoControls.bookmarkNameRequired' => 'Skriv in ett namn för denna bokmärke.',
+			'videoControls.deleteBookmark' => 'Ta bort bokmärke',
+			'videoControls.bookmarkLimitReached' => 'Den här artikeln har redan 100 bokmärken.',
+			'videoControls.bookmarkUnavailable' => 'Jag kunde inte spara eller ta bort denna bokmärke.',
+			'videoControls.bookmarkSaved' => 'Bokmärket räddades.',
+			'videoControls.bookmarkDeleted' => 'Bokmärket är raderat.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop poäng ${point} Ställ in på ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Inga kapitel eller bokmärken finns tillgängliga.',
 			'videoControls.versionQualityButton' => 'Version och kvalitet',
 			'videoControls.versionColumnHeader' => 'Version',
 			'videoControls.qualityColumnHeader' => 'Kvalitet',
@@ -5990,8 +6056,6 @@ extension on TranslationsSv {
 			'videoControls.exitFullscreenButton' => 'Avsluta helskärm',
 			'videoControls.alwaysOnTopButton' => 'Alltid överst',
 			'videoControls.rotationLockButton' => 'Rotationslås',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Lås skärm',
 			'videoControls.screenLockButton' => 'Skärmlås',
 			'videoControls.timelineSlider' => 'Videotidslinje',
@@ -6480,6 +6544,8 @@ extension on TranslationsSv {
 			'libraries.hideLibrary' => 'Dölj bibliotek',
 			'libraries.libraryOptions' => 'Biblioteksalternativ',
 			'libraries.content' => 'bibliotekets innehåll',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Välj bibliotek',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filter (${count})',
 			'libraries.noRecommendations' => 'Inga rekommendationer tillgängliga',
@@ -6504,8 +6570,6 @@ extension on TranslationsSv {
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Åldersgräns',
 			'libraries.filterCategories.tag' => 'Tagg',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Osedda',
 			'libraries.filterCategories.unplayed' => 'Ospelat',
 			'libraries.filterCategories.favorites' => 'Favoriter',
@@ -6947,6 +7011,7 @@ extension on TranslationsSv {
 			'music.visualizerProfileLoading' => 'Läs track analys...',
 			'music.visualizerAmbientMotion' => 'Miljö rörelse',
 			'music.visualizerPlexLoudness' => 'Plex höghet',
+			'music.visualizerLiveAudio' => 'Live-ljudanalys',
 			'music.visualizerPreviousPreset' => 'Föregående Visua stil',
 			'music.visualizerNextPreset' => 'Nästa visuell stil',
 			'music.visualizerPresetAurora' => 'Aurora',
@@ -6993,6 +7058,8 @@ extension on TranslationsSv {
 			'watchTogether.codeCopied' => 'Rumskod kopierad',
 			'watchTogether.shareInvite' => 'Dela inbjudan',
 			'watchTogether.inviteCopied' => 'Inbjudan kopierad. Klistra in den i ett meddelande.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Gå med i mitt Titta tillsammans-rum i PlezyNG: öppna Titta tillsammans, välj Gå med i rum och ange ${code}.',
 			'watchTogether.openSessionControls' => 'Öppna sessionskontroller för Titta tillsammans',
 			'watchTogether.reconnecting' => 'Återansluter...',
@@ -7018,8 +7085,6 @@ extension on TranslationsSv {
 			'watchTogether.playAnyway' => 'Spela ändå',
 			'watchTogether.chooseAnotherCopy' => 'Välj en annan kopia',
 			'watchTogether.dontPlay' => 'Spela inte',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Du har inte den här videon',
 			'watchTogether.unavailableDescription' => 'PlezyNG hittade den inte i dina bibliotek. Välj en kopia själv eller sök igen.',
 			'watchTogether.chooseCopy' => 'Välj en kopia',
@@ -7373,6 +7438,12 @@ extension on TranslationsSv {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Tonmappa till skärmens maximala ljusstyrka i spelaren och informera sedan kompositionshanteraren om resultatet.',
 			'videoSettings.hdrToneMappingFailed' => 'Det gick inte att ändra HDR-tonmappningen – det föregående läget är fortfarande aktivt.',
 			'videoSettings.audioOutput' => 'Ljudutgång',
+			'videoSettings.videoTrack' => 'Videospår',
+			'videoSettings.videoTrackDescription' => 'Välj vilken videoström som ska visas. Tillgängligt vid MPV-uppspelning när en fil innehåller alternativa videospår.',
+			'videoSettings.videoTrackDefault' => 'Standard',
+			'videoSettings.videoTrackUnavailable' => 'Inga alternativa videospår är tillgängliga.',
+			'videoSettings.videoTrackFailed' => 'Det gick inte att byta videospår.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Spår ${id}',
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7380,10 +7451,17 @@ extension on TranslationsSv {
 			'videoSettings.audioOutputSpatial' => 'Rumsligt ljud',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Equalizer för',
-			'videoSettings.audioEqualizerDescription' => 'Anpassa fem frekvensband för denna enhet. Finns på mpv; en aktiv EQ dekoder ljud och stänger av matchhrough.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer för MPVAudiofilter använder decoderad ljud och stänger av passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Neutral',
 			'videoSettings.audioEqualizerActive' => 'Anpassat',
 			'videoSettings.audioEqualizerSaveFailed' => 'Kan inte spara ljud equalizer inställningar.',
+			'videoSettings.audioEffectsDescription' => 'Effekter använder decoderad ljud, så passthrough vänds av. Rummiljö och stereo utvidgning beror på MPV Bygg och track.',
+			'videoSettings.audioStereoWidth' => 'Stereo utvidgning',
+			'videoSettings.audioSpatializer' => 'Rummiljö',
+			'videoSettings.audioSpatializerDescription' => 'Lägg till tyst rum reflektioner.',
+			'videoSettings.audioPitch' => 'Pitch byte',
+			'videoSettings.audioPitchDescription' => 'ändra pitch utan att förändra hastighet. MPV Byggnaden måste inkludera Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Denna effekt är inte tillgänglig för denna spår eller MPV att bygga.',
 			'videoSettings.backgroundVideoAudio' => 'Bakgrundsvideo ljud',
 			'videoSettings.backgroundVideoAudioDescription' => 'Håll video-ljudspel när du lämnar spelaren; bilden är dolt tills du återvänder. Android använder en media-spelning meddelande.',
 			'videoSettings.audioNormalization' => 'Normalisera ljudstyrka',
@@ -7494,6 +7572,8 @@ extension on TranslationsSv {
 			'metadataEdit.metadataUpdated' => 'Metadata har uppdaterats',
 			'metadataEdit.metadataUpdateFailed' => 'Det gick inte att uppdatera metadata',
 			'metadataEdit.artworkUpdated' => 'Bildmaterialet har uppdaterats',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Det gick inte att uppdatera bildmaterialet',
 			'metadataEdit.noArtworkAvailable' => 'Inget bildmaterial är tillgängligt',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Bildalternativ ${index}',
@@ -7532,8 +7612,6 @@ extension on TranslationsSv {
 			'metadataEdit.shownWithForeignAudio' => 'Visas med ljud på främmande språk',
 			'metadataEdit.alwaysEnabled' => 'Alltid aktiverad',
 			'metadataEdit.tags' => 'Taggar',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Lägg till tagg',
 			'metadataEdit.genre' => 'Genre',
 			'metadataEdit.director' => 'Regissör',
@@ -7902,6 +7980,10 @@ extension on TranslationsSv {
 			'universalMedia.choosePlaylist' => 'Välj Playlist fil',
 			'universalMedia.openPlaylist' => 'Öppna Playlist',
 			'universalMedia.playlistFormatsHelp' => 'En spellista kan innehålla upp till 1000 objekt och 2 MB. HLS manifesterar sig öppen som strömmar så att spelaren kan välja en kvalitet.',
+			'universalMedia.saveQueuePlaylist' => 'Spara kön som spellista',
+			'universalMedia.queuePlaylistSaved' => 'Spellistan sparades bredvid mediefilerna.',
+			'universalMedia.queuePlaylistUnavailable' => 'Den här kön kan inte sparas som en återanvändbar lokal spellista.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Välj en plats i samma mapp som filerna i kön.',
 			'universalMedia.noFavorites' => 'Inga spara ström favorit än. Favoriter stannar i denna profil.',
 			'universalMedia.removeFavorite' => 'Ta bort stream favorit',
 			'universalMedia.filesHelp' => 'Välj ljud, video eller ISO-filer för en tillfällig spårning. filer och URL-adresser läggs inte till i bibliotekshistorik.',
@@ -7960,12 +8042,13 @@ extension on TranslationsSv {
 			'universalMedia.replaceRecording' => 'Ersätt filer',
 			'universalMedia.discHelp' => 'Öppna en skiva i datorns optiska disk. Du kan också öppna ett ISO-bild från Device-filer.',
 			'universalMedia.discs' => 'Optik disk',
+			'universalMedia.editionOrTitle' => 'Utgåva eller skivtitel',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Blu-ray och',
 			'universalMedia.audioCd' => 'ljud CD',
 			'universalMedia.discAvailability' => 'Diskspelning kräver en kompatibel MPV-byggnad, stödd disk och operativsystem tillstånd. Det kan inte gå under kommersiell skivskydd.',
 			'universalMedia.converterTitle' => 'Konvertera en lokal mediafil',
-			'universalMedia.converterHelp' => 'Använd FFmpeg för att göra en MP4, M4A eller MP3 kopia.',
+			'universalMedia.converterHelp' => 'Konvertera en lokal fil eller ändra den med FFmpeg.',
 			'universalMedia.converterIntro' => 'Konvertera en lokal ljud- eller videofil till ett format som fungerar på flera enheter.',
 			'universalMedia.converterPrivacy' => 'FFmpeg måste installeras på den här datorn. Conversion läser endast lokala filer. Det laddar inte ner strömmar eller tar bort DRM.',
 			'universalMedia.converterChooseInput' => 'Välj en lokal mediafil',
@@ -7973,6 +8056,8 @@ extension on TranslationsSv {
 			'universalMedia.converterMp4' => 'MP4 · H.264 och AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC ljud',
 			'universalMedia.converterMp3' => 'MP3 - ljud',
+			'universalMedia.allowFtp' => 'Tillåta FTP',
+			'universalMedia.allowFtpHelp' => 'FTP skickar media utan kryptering. Använd endast på tillförlitliga nätverk.',
 			'universalMedia.converterSaveAs' => 'Spara konverterade medier som',
 			'universalMedia.converterExtensionMismatch' => 'Välj ett filnamn med den valda utgångsförlängningen.',
 			'universalMedia.converterUnsupportedInput' => 'Välj en ljud- eller videofil.',
@@ -7982,7 +8067,7 @@ extension on TranslationsSv {
 			'universalMedia.converterStarting' => 'Börja med FFmpeg...',
 			'universalMedia.converterProgress' => 'Omvandlas till den här datorn...',
 			'universalMedia.converterComplete' => 'Konvertering är klar. den nya filen är redo.',
-			'universalMedia.converterFfmpegMissing' => 'Installera FFmpeg med H.264, AAC och MP3-support, försök sedan igen.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg saknas eller stöder inte detta format.',
 			'universalMedia.converterFailed' => 'Kontrollera att källfilen kan läsas och destinationen har tillräckligt med gratis utrymme.',
 			'universalMedia.converterCancelled' => 'Konvertering avbokad. den ofullständiga utgången har tagits bort.',
 			'universalMedia.converterDesktopOnly' => 'Lokal konvertering är tillgänglig på skrivbordsdatorer med FFmpeg installerat.',
@@ -8001,6 +8086,8 @@ extension on TranslationsSv {
 			'universalMedia.captureAudioNone' => 'Inga ljud',
 			'universalMedia.captureDefaultAudio' => 'Standard ljudinträde',
 			'universalMedia.captureWaylandHelp' => 'Wayland begränsar denna XWayland fångst till X display. Windows utanför XWayland kan inte visas.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Rekordram Rate',
 			'universalMedia.capturePrivacy' => 'Inspelningen sparas endast till den fil du väljer. Mikrofonfång är valfri. PlezyNG laddar inte upp inspelningen.',
 			'universalMedia.captureSaveAs' => 'Spara skärminspelning som',
@@ -8010,6 +8097,9 @@ extension on TranslationsSv {
 			'universalMedia.captureSaved' => 'Skärminspelning sparas.',
 			'universalMedia.captureElapsedLabel' => 'inspelningstid',
 			'universalMedia.captureStart' => 'Börja inspelning',
+			'universalMedia.capturePreview' => 'Förhandsvisa i spelaren',
+			'universalMedia.capturePreviewHelp' => 'Förhandsvisa den valda källan i standardspelaren. Förhandsvisningen gäller endast den här sessionen och sparar ingen inspelning. Enhetsstöd och behörigheter beror på MPV och operativsystemet. Förhandsvisningen använder endast video; sparade inspelningar kan även innehålla valfritt ljud.',
+			'universalMedia.capturePreviewActive' => 'Liveförhandsvisning · spelar inte in',
 			'universalMedia.captureStop' => 'Stoppa och spara',
 			'universalMedia.captureMode' => 'fångar',
 			'universalMedia.shareMode' => 'Delade',
@@ -8046,8 +8136,6 @@ extension on TranslationsSv {
 			'universalMedia.extensionInstallTitle' => 'Lägg till denna sökningstjänst?',
 			'universalMedia.extensionReplaceTitle' => 'Uppdatera denna söktjänst?',
 			'universalMedia.extensionService' => 'tjänst',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS slutpunkt',
 			'universalMedia.extensionConsent' => 'Din söktekst skickas till denna tjänst. manifestet innehåller ingen exekuterbar kod. Fortsätt bara om du litar på denna slutpunkt.',
 			'universalMedia.extensionInstall' => 'Lägg till service',
@@ -8301,7 +8389,6 @@ extension on TranslationsSv {
 			'audiobook.addSyncSource' => 'Lägg till Google Drive, OneDrive, Dropbox, WebDAV eller S3 i Filer och böcker först.',
 			'audiobook.syncDestination' => 'Sync lagringskonto',
 			'audiobook.syncFolder' => 'Synkronisera mappen eller prefixet',
-			'audiobook.syncFolderHelp' => 'Använd en separat befintlig mapp inom din WebDAV-källa, eller en dedikerad S3-prefix. bokfiler ändras aldrig.',
 			'audiobook.syncCode' => 'Privat synkroniseringskod',
 			'audiobook.syncCodeHelp' => 'Skapa en kod på din första enhet, skriv sedan den koden på dina andra enheter. Håll en privat kopia: det är nyckeln till din krypterade status. Använd en annan kod för varje person.',
 			'audiobook.showCode' => 'Visa eller dölja synkroniseringskoden',
@@ -8311,7 +8398,6 @@ extension on TranslationsSv {
 			'audiobook.syncSourceDisconnect' => 'Ta bort denna källa kommer att avaktivera läsning och lyssnande synkroniseras här. krypterade synkroniserade filer kommer att förbli i leverantören.',
 			'audiobook.syncReconnect' => 'Återkoppling av lagringskonto',
 			'audiobook.lastSynced' => ({required Object time}) => 'Senast synkroniserad på ${time}',
-			'audiobook.syncPrivacy' => 'Endast krypterade framsteg och anteckningar lagras. ljud- och e-bokfiler, konto tokens och lösenord laddas inte. Google Drive och OneDrive använder app lagring; Dropbox använder PlezyNG Sync. Tillåter synkronisering kan begära ytterligare skriftlig åtkomst. Medan aktiverad, denna destination äger framsteg synkronisering; server framsteg förblir separat. Turn synkronisering av håller lokal historia och fjärrstatus.',
 			'audiobook.syncConflicts' => 'Välj var du ska återställa',
 			'audiobook.conflictHelp' => 'Dessa ändringar gjordes oberoende. Välj positionen eller bokmärkesversionen att hålla. En senare timestamp eller en högre procentsats vinner inte automatiskt.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Anläggning ${device}',
@@ -8478,7 +8564,6 @@ extension on TranslationsSv {
 			'comics.collections' => 'Samlingar',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8503,7 +8588,6 @@ extension on TranslationsSv {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8516,6 +8600,8 @@ extension on TranslationsSv {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8535,8 +8621,6 @@ extension on TranslationsSv {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8544,14 +8628,12 @@ extension on TranslationsSv {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'Denna Plezy länk är inte giltig.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'Ingen profil matchar "${profile}".',
 			'deepLinks.serverUnavailable' => 'Jag kunde inte nå serveren för den här länken.',
@@ -8560,8 +8642,6 @@ extension on TranslationsSv {
 			'deepLinks.noLiveTv' => 'Ingen Live TV-server är tillgänglig för den här länken.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Kan inte hitta kanal "${channel}".',
 			'deepLinks.showLink' => 'Visa länken',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Visa profil länk',
 			'deepLinks.dialogTitle' => 'Länkar',
 			'deepLinks.showHint' => 'Öppna den här länken spelar nästa avsnitt. Lägg till &mode=shuffle för att spela showen på shuffle.',

@@ -16,12 +16,6 @@ import '../../utils/platform_detector.dart';
 
 export 'player_base.dart';
 
-/// Optional capability for player implementations that can apply the
-/// device-local five-band equalizer.
-abstract interface class AudioEqualizerCapable {
-  Future<void> setAudioEqualizer(List<double> bandGains);
-}
-
 /// Abstract interface for the video player.
 ///
 /// This interface defines all playback control methods, state access,

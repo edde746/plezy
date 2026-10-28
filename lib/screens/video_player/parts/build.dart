@@ -148,7 +148,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   onPressed: reportProblem,
                   child: TextButton.icon(
                     onPressed: reportProblem,
-                    icon: const Icon(Symbols.qr_code_2_rounded),
+                    icon: const AppIcon(Symbols.qr_code_2_rounded),
                     label: Text(t.issueReport.title),
                   ),
                 ),
@@ -354,6 +354,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onShaderChanged: () => _setPlayerState(() {}),
                         thumbnailDataBuilder: _scrubPreviewSource?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
+                        isRecordingLiveStream: _isRecordingIptv,
+                        onToggleLiveRecording: _canRecordIptv ? _toggleIptvRecording : null,
+                        onOpenLiveChannelPicker: widget.isLive && (widget.live?.channels?.length ?? 0) > 1
+                            ? _showLiveChannelPicker
+                            : null,
                         liveChannelName: _live.channelName,
                         liveTimelineForPosition: widget.isLive && _live.session is LiveTvTimeshiftSession
                             ? _liveTimelineForPosition

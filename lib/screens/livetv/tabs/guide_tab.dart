@@ -15,11 +15,14 @@ import '../../../focus/focus_theme.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/back_press.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../i18n/iptv_copy.dart';
 import '../../../mixins/mounted_set_state_mixin.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_program.dart';
 import '../../../models/media_grab_operation.dart';
 import '../../../providers/multi_server_provider.dart';
+import '../../../profiles/active_profile_provider.dart';
+import '../../../iptv/iptv_source_repository.dart';
 import '../../../media/media_server_client.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
@@ -491,6 +494,19 @@ class GuideTabState extends State<GuideTab>
         },
       );
 
+      if (widget.channels.any((channel) => channel.iptvSourceId != null)) {
+        final profileId = context.read<ActiveProfileProvider>().activeId;
+        if (profileId != null) {
+          try {
+            allPrograms.addAll(await context.read<IptvSourceRepository>().schedule(profileId, from, to));
+          } on Object catch (error, stackTrace) {
+            if (_isCurrentProgramLoad(loadGeneration)) {
+              appLogger.e('Failed to load IPTV guide window', error: error, stackTrace: stackTrace);
+            }
+          }
+        }
+      }
+
       if (!_isCurrentProgramLoad(loadGeneration)) return;
       final shouldFocus = _pendingFocus;
       final programsByChannelScope = _indexProgramsByChannel(allPrograms, widget.channels);
@@ -658,7 +674,10 @@ class GuideTabState extends State<GuideTab>
 
   List<_GuideRow> get _guideRows {
     final groups = groupLiveTvChannelsBySource(widget.channels);
-    if (groups.length <= 1) {
+    final hasIptvCategories = widget.channels.any(
+      (channel) => channel.iptvSourceId != null && (channel.iptvGroupTitle?.trim().isNotEmpty ?? false),
+    );
+    if (groups.length <= 1 && !hasIptvCategories) {
       return [
         for (var i = 0; i < widget.channels.length; i++) _GuideChannelRow(channel: widget.channels[i], channelIndex: i),
       ];
@@ -669,13 +688,43 @@ class GuideTabState extends State<GuideTab>
       channelIndexes[widget.channels[i]] = i;
     }
 
-    return [
-      for (final group in groups) ...[
-        _GuideSourceHeaderRow(label: group.label),
-        for (final channel in group.channels)
-          _GuideChannelRow(channel: channel, channelIndex: channelIndexes[channel] ?? 0),
-      ],
-    ];
+    final rows = <_GuideRow>[];
+    final showSourceNames = groups.length > 1;
+    for (final group in groups) {
+      final isIptvSource = group.channels.any((channel) => channel.iptvSourceId != null);
+      final hasCategories = group.channels.any(
+        (channel) => channel.iptvSourceId != null && (channel.iptvGroupTitle?.trim().isNotEmpty ?? false),
+      );
+      if (!isIptvSource || !hasCategories) {
+        if (showSourceNames) rows.add(_GuideSourceHeaderRow(label: group.label));
+        rows.addAll([
+          for (final channel in group.channels) _GuideChannelRow(channel: channel, channelIndex: channelIndexes[channel] ?? 0),
+        ]);
+        continue;
+      }
+
+      final categoryOrder = <String>[];
+      final byCategory = <String, List<LiveTvChannel>>{};
+      for (final channel in group.channels) {
+        final category = channel.iptvGroupTitle?.trim() ?? '';
+        if (!byCategory.containsKey(category)) {
+          categoryOrder.add(category);
+          byCategory[category] = [];
+        }
+        byCategory[category]!.add(channel);
+      }
+      for (final category in categoryOrder) {
+        final channels = byCategory[category]!;
+        final title = category.isEmpty ? t.iptv.uncategorizedChannels : category;
+        rows.add(
+          _GuideSourceHeaderRow(label: showSourceNames ? '${group.label} · $title' : title),
+        );
+        rows.addAll([
+          for (final channel in channels) _GuideChannelRow(channel: channel, channelIndex: channelIndexes[channel] ?? 0),
+        ]);
+      }
+    }
+    return rows;
   }
 
   /// Flat [GuideTab.channels] indexes in displayed row order. Differs from
@@ -1952,9 +2001,10 @@ class _ChannelCellState extends State<_ChannelCell> {
                       AnimatedOpacity(
                         opacity: showAction ? 0.3 : 1.0,
                         duration: FocusTheme.getAnimationDuration(context),
-                        child: widget.channelThumb != null && widget.client != null
+                        child: widget.channelThumb != null &&
+                                (widget.client != null || widget.channelThumb!.startsWith('http'))
                             ? OptimizedMediaImage.thumb(
-                                client: widget.client!,
+                                client: widget.client,
                                 imagePath: widget.channelThumb,
                                 width: widget.channelColumnWidth - 16,
                                 height: widget.rowHeight - 16,

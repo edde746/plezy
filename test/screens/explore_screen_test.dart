@@ -263,6 +263,10 @@ void main() {
         await tester.pump();
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
         await tester.pump();
+        for (var i = 0; i < 4; i++) {
+          await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+          await tester.pump();
+        }
         expect(FocusManager.instance.primaryFocus?.debugLabel, 'ManageMdblistShelves');
       }
     });
@@ -369,7 +373,7 @@ void main() {
     await sources.setActiveSource(CatalogSourceId.plex);
     await tester.pumpAndSettle();
 
-    expect(find.text('Plex Movie'), findsAtLeast(1));
+    expect(find.textContaining('Plex Movie'), findsAtLeast(1));
     expect(find.text('Trending on Plex'), findsNothing);
     expect(find.text('Plex Recommendation'), findsNothing);
   });
@@ -506,12 +510,12 @@ void main() {
 
       expect(trakt.searchQueries, ['incep']);
       expect(find.text(t.explore.rows.popularMovies), findsNothing);
-      expect(find.text('Trakt search: incep'), findsOneWidget);
+      expect(find.textContaining('Trakt search: incep'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), '');
       await tester.pumpAndSettle();
 
-      expect(find.text('Trakt search: incep'), findsNothing);
+      expect(find.textContaining('Trakt search: incep'), findsNothing);
       expect(find.text(t.explore.rows.popularMovies), findsOneWidget);
     });
 
@@ -542,7 +546,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(t.explore.searchFailed), findsNothing);
-      expect(find.text('Trakt search: abcd'), findsOneWidget);
+      expect(find.textContaining('Trakt search: abcd'), findsOneWidget);
     });
 
     testWidgets('switching source re-runs the live query against the new source', (tester) async {
@@ -551,14 +555,14 @@ void main() {
       await tester.enterText(find.byType(TextField), 'abc');
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
-      expect(find.text('Trakt search: abc'), findsOneWidget);
+      expect(find.textContaining('Trakt search: abc'), findsOneWidget);
 
       await sources.setActiveSource(CatalogSourceId.mal);
       await tester.pumpAndSettle();
 
       expect(_fakeSource(sources, CatalogSourceId.mal).searchQueries, ['abc']);
-      expect(find.text('MyAnimeList search: abc'), findsOneWidget);
-      expect(find.text('Trakt search: abc'), findsNothing);
+      expect(find.textContaining('MyAnimeList search: abc'), findsOneWidget);
+      expect(find.textContaining('Trakt search: abc'), findsNothing);
     });
 
     testWidgets('the field sits between the app bar and the first shelf at phone width', (tester) async {

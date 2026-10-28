@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
 import '../../media/media_source_info.dart';
+import '../../mpv/player/audio_spectrum.dart';
 import '../playback_launch_observer.dart';
 
 /// Repeat behavior of the music queue.
@@ -21,6 +22,18 @@ enum MusicPlayContextKind { album, artist, playlist, mix, tracks }
 /// [MusicPlaybackService].
 abstract interface class MusicLoudnessProfileService {
   Future<AudioLoudnessProfile?> loadCurrentTrackLoudnessProfile();
+}
+
+/// Identifies the playback-owned native music core. Native dependency/format
+/// availability is negotiated separately; this never promises live FFT data.
+abstract interface class MusicVisualizationAudioService {
+  bool get hasNativeVisualizationAudio;
+}
+
+/// Optional live analysis capability for the existing Now Playing visualizer.
+/// Backends without derived audio metadata keep using Plex loudness or ambient motion.
+abstract interface class MusicAudioSpectrumService {
+  AudioSpectrumAnalyzer? get audioSpectrumAnalyzer;
 }
 
 /// Outcome of [MusicPlaybackService.playInstantMix]. Fetch failures throw

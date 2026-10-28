@@ -259,6 +259,9 @@ class PlatformDetector {
     return TvDetectionService.isAutomotiveSync();
   }
 
+  /// Library browsing and connection management do not require a decoder.
+  static bool supportsGameLibrary() => !isAutomotive();
+
   /// The embedded game streaming engines ship on Android handheld and TV builds.
   static bool supportsEmbeddedGameStreaming() => Platform.isAndroid && !isAutomotive();
 

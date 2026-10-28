@@ -165,10 +165,28 @@ sealed class SubtitleTrack with _$SubtitleTrack {
 }
 
 @Freezed(toStringOverride: false)
+sealed class VideoTrack with _$VideoTrack {
+  const VideoTrack._();
+
+  const factory VideoTrack({
+    required String id,
+    String? title,
+    String? language,
+    String? codec,
+    int? width,
+    int? height,
+    @Default(false) bool isDefault,
+    @Default(false) bool isSelected,
+    @Default(false) bool isExternal,
+  }) = _VideoTrack;
+}
+
+@Freezed(toStringOverride: false)
 sealed class Tracks with _$Tracks {
   const Tracks._();
 
   const factory Tracks({
+    @Default(<VideoTrack>[]) List<VideoTrack> video,
     @Default(<AudioTrack>[]) List<AudioTrack> audio,
     @Default(<SubtitleTrack>[]) List<SubtitleTrack> subtitle,
   }) = _Tracks;

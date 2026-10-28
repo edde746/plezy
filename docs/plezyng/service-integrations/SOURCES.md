@@ -1,6 +1,6 @@
 # Source register and evidence limits
 
-Reviewed **2026-10-27 (America/Regina)** using current web retrieval, official provider documentation and the repository snapshots identified in AUDIT. Prices, terms, APIs, branding and service availability require rechecking immediately before implementation/release. A crawl or page update date is not proof that PlezyNG has been accepted into a program.
+Reviewed **2026-10-28 (America/Regina)** using current web retrieval, official provider documentation and the repository snapshots identified in AUDIT. Prices, terms, APIs, branding and service availability require rechecking immediately before implementation/release. A crawl or page update date is not proof that PlezyNG has been accepted into a program.
 
 **High confidence** means a cited primary source directly documents the narrow capability or condition. **Moderate** describes a reasoned integration recommendation or incomplete operational evidence. **Low** describes speculative readiness/effort. **Unknown** means no qualifying evidence or approval was obtained. No provider was contacted or enrolled, and no live API credential was exercised.
 
@@ -68,7 +68,7 @@ Amazon KDP: [Digital Rights Management](https://kdp.amazon.com/en_US/help/topic/
 
 ## S16
 
-Amazon: [Creators API introduction](https://affiliate-program.amazon.com/creatorsapi/docs/), [registration eligibility](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/onboarding/register-for-creators-api), [PA-API 5 deprecation](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/paapiv5-deprecation), [migration/auth changes](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/migrating-to-creatorsapi-from-paapi). Use current successor documentation instead of stale PA-API tutorials. High.
+Amazon: [Creators API introduction](https://affiliate-program.amazon.com/creatorsapi/docs/), [locale reference](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/locale-reference), [registration eligibility](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/onboarding/register-for-creators-api), [PA-API 5 deprecation](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/paapiv5-deprecation), [migration/auth changes](https://affiliate-program.amazon.com/creatorsapi/docs/en-us/migrating-to-creatorsapi-from-paapi). The locale reference supports marketplace-aware routing for official searches; catalog API use still requires eligibility. High.
 
 ## S17
 
@@ -172,7 +172,7 @@ Twitch: [video and clips embeds](https://dev.twitch.tv/docs/embed/video-and-clip
 
 ## S42
 
-OpenSubsonic: [API reference](https://opensubsonic.netlify.app/docs/api-reference/). Versioned common protocol and auth variants; implementations/extensions require server tests. High protocol evidence.
+OpenSubsonic: [API reference and authentication](https://opensubsonic.netlify.app/docs/api-reference/), [artists](https://opensubsonic.netlify.app/docs/endpoints/getartists/), [artist](https://opensubsonic.netlify.app/docs/endpoints/getartist/), [album](https://opensubsonic.netlify.app/docs/endpoints/getalbum/), [search](https://opensubsonic.netlify.app/docs/endpoints/search3/), [stream](https://opensubsonic.netlify.app/docs/endpoints/stream/), and [API-key authentication](https://opensubsonic.netlify.app/docs/extensions/apikeyauth/). Versioned protocol and auth variants; implementations/extensions require server tests. High protocol evidence.
 
 ## S43
 
@@ -188,7 +188,7 @@ Kavita: [API/authentication guide](https://wiki.kavitareader.com/guides/api/). C
 
 ## S46
 
-Audiobookshelf: [current API-key guidance](https://audiobookshelf.org/docs/documentation/server-management/api-keys/), [third-party-app guidance](https://audiobookshelf.org/docs/documentation/community/community-apps/), [old API reference](https://api.audiobookshelf.org/). Current documentation directs third-party apps to standard JWT auth; old reference explicitly says it is unmaintained. High reason for a compatibility audit; no live breakage was measured.
+Audiobookshelf: [current API-key guidance](https://audiobookshelf.org/docs/documentation/server-management/api-keys/), [third-party-app guidance](https://audiobookshelf.org/docs/documentation/community/community-apps/), [old API reference](https://api.audiobookshelf.org/), and the [maintainer's JWT endpoint contract](https://github.com/advplyr/audiobookshelf/discussions/4460). Current docs direct third-party apps to JWT login/refresh and reserve API keys for server-to-server automation; the old API reference is unmaintained. This branch implements the mobile token flow, but server/version/runtime compatibility remains unqualified.
 
 ## S47
 
@@ -265,6 +265,38 @@ Booklore: [official OPDS/Komga-compatible API documentation](https://github.com/
 ## S65
 
 OpenSubtitles: [getting started](https://opensubtitles.tawk.help/article/getting-started), [official API reference](https://ai.opensubtitles.com/api-docs). Current REST API key and user-token distinction. High.
+
+## S66
+
+Podcast formats: [RSS 2.0 specification](https://www.rssboard.org/rss-specification), [Atom syndication format (RFC 4287)](https://www.rfc-editor.org/rfc/rfc4287), and [OPML 2.0 specification](https://opml.org/spec2.opml). These describe feed/subscription formats, not rights to replay every linked enclosure. High format evidence.
+
+## S67
+
+Project Gutenberg: [official offline catalog documentation](https://www.gutenberg.org/help/offline_catalogs.html). The public OPDS 1.2 search catalog is `https://www.gutenberg.org/ebooks/search.opds/`; Gutenberg says its XML feeds are expected to sunset in 2027 and that OPDS 2.0 remains a testing route. The app preset uses the documented public OPDS endpoint; recheck the migration notice before relying on it for a release. High.
+
+## S68
+
+Tubi: [free/ad-supported service explanation](https://tubitv.com/help-center/About-Tubi/articles/4409975158043), [official partner intake](https://corporate.tubitv.com/partners/partner-with-us/). Confirms ad-supported viewing and a partner route; no public app-referral rate identified. Checked 2026-10-28.
+
+## S69
+
+Pluto TV: [why the service has ads](https://support.pluto.tv/s/article/PTV-Why-does-Pluto-TV-have-ads?language=en_US), [distribution, content and advertising partners](https://pluto.tv/partners). Confirms free ad-supported viewing and partner inquiry channels; no public app-referral rate identified. Checked 2026-10-28.
+
+## S70
+
+Roku: [The Roku Channel partner overview](https://developer.roku.com/dev/docs/overview), [monetization](https://developer.roku.com/dev/docs/monetization), and [publisher payouts](https://developer.roku.com/dev/docs/payouts). Current public documentation describes app and content partner routes, Roku Pay's published 80/20 app-transaction share, and separate Roku Channel content payouts/terms. These are publisher/platform economics, not referral commissions for sending traffic to Roku. Checked 2026-10-28.
+
+## S71
+
+Samsung TV Plus: [official free/ad-supported service support](https://www.samsung.com/us/support/answer/ANS10000933/) and [advertising options](https://www.samsungtvplus.com/advertise.html). The service is device and region dependent; the public commercial page addresses advertisers and does not publish a viewer-referral rate. Checked 2026-10-28.
+
+## S72
+
+Xumo: [Xumo Play service information](https://www.xumo.com/about) and [Xumo Enterprise](https://www.xumo.com/enterprise). Xumo describes free ad-supported viewing and enterprise monetization/distribution for content owners and distribution partners; no public fixed referral payout was found. Checked 2026-10-28.
+
+## S73
+
+Plex: [free streaming FAQ](https://support.plex.tv/articles/frequently-asked-questions-vod/) and [Terms of Service](https://www.plex.tv/about/privacy-legal/plex-terms-of-service/). Ad-supported distributor economics and consumer terms do not establish a third-party client playback license or general revenue share. No public PlezyNG referral rate was found. Checked 2026-10-28.
 
 ## Conflicts and unresolved research
 

@@ -7,13 +7,14 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   /// current refresh rate.
   ({double? fps, int width, int height})? _displayTargetFor(
     SettingsService settingsService,
-    PlayerOutputFormat output,
-  ) {
+    PlayerOutputFormat output, {
+    bool suppressContentRateMatching = false,
+  }) {
     final matchRate = settingsService.read(SettingsService.matchContentFrameRate);
     if (matchRate && !output.hasFrameRate) {
       appLogger.d('Display matching: no frame rate to match');
     }
-    final fps = matchRate ? output.fps : null;
+    final fps = matchRate && !suppressContentRateMatching ? output.fps : null;
     final matchResolution = settingsService.read(SettingsService.matchContentResolution);
     if (matchResolution && !output.hasDimensions) {
       appLogger.d('Display matching: no decoded dimensions for resolution matching');

@@ -1202,6 +1202,30 @@ class _Translations$videoControls$bn extends Translations$videoControls$en {
 	@override String get settingsButton => 'Playback সিস্টেম';
 	@override String get tracksButton => 'অডিও & সাবটাইটল';
 	@override String get chaptersButton => 'চিঠি';
+	@override String get segmentLoopHelp => 'এই প্লেব্যাকের সময় একটি বিভাগ চালু করুন. A সিস্টেম, তারপর পরবর্তী সময়ের মধ্যে B সিস্টেট করুন.';
+	@override String get setLoopStart => 'সেন্ট লোভ শুরু (এ)';
+	@override String get setLoopEnd => 'সেন্ট লোভ শেষ (B)';
+	@override String get clearSegmentLoop => 'স্পষ্ট সেক্টর লুক';
+	@override String get setLoopStartFirst => 'শুরু (এ) এর আগে শেষ (বি) সিস্টেম করুন।';
+	@override String get loopEndAfterStart => 'শুরু থেকে পরবর্তী সূচনা হতে হবে।';
+	@override String get segmentLoopUnavailable => 'এই প্লাইবের জন্য সেকেন্ড লুপিং পাওয়া যায় না।';
+	@override String get loopPointNotSet => 'সিস্টেম না';
+	@override String get bookmarksHelp => 'এই ডিভাইসে বুকমার্ক সংরক্ষণ করা হয়. সেই সময়ের জন্য একটি নির্বাচন করুন।';
+	@override String get bookmarksButton => 'বুকমার্ক';
+	@override String get chaptersAndBookmarks => 'বিভাগ ও বইমেলা';
+	@override String get segmentLoop => 'সেগেট লোভ';
+	@override String get addBookmark => 'Bookmark যোগ করুন';
+	@override String get bookmarkName => 'Bookmark নাম';
+	@override String get bookmarkNameHint => 'উদাহরণস্বরূপ, দৃশ্য খোলা';
+	@override String bookmarkDefaultName({required Object n}) => 'বইমার্ক ${n}';
+	@override String get bookmarkNameRequired => 'এ বইয়ের জন্য একটি নাম লিখুন।';
+	@override String get deleteBookmark => 'বুকমার্ক 삭제';
+	@override String get bookmarkLimitReached => 'এই পণ্যটি এখন 100 বইমেলা আছে।';
+	@override String get bookmarkUnavailable => 'আমি এই বইমেলাটি সংরক্ষণ বা মুছে ফেলতে পারতাম না।';
+	@override String get bookmarkSaved => 'বুকমার্ক উদ্ধার করা হয়েছে।';
+	@override String get bookmarkDeleted => 'Bookmark মুছে ফেলা হয়েছে।';
+	@override String loopPointSet({required Object point, required Object time}) => 'লোপ পয়েন্ট ${point} সেট করুন ${time}.';
+	@override String get noChaptersOrBookmarks => 'কোন বই বা চিঠি পাওয়া যায় না।';
 	@override String get versionQualityButton => 'সংস্করণ & মান';
 	@override String get versionColumnHeader => 'সংস্করণ';
 	@override String get qualityColumnHeader => 'মানের';
@@ -2072,6 +2096,7 @@ class _Translations$music$bn extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Read track বিশ্লেষণ ...';
 	@override String get visualizerAmbientMotion => 'পরিবেশ মোকাবিলা';
 	@override String get visualizerPlexLoudness => 'Plex শব্দ';
+	@override String get visualizerLiveAudio => 'লাইভ অডিও বিশ্লেষণ';
 	@override String get visualizerPreviousPreset => 'পূর্ববর্তী চিত্র';
 	@override String get visualizerNextPreset => 'পরবর্তী ভিজুয়াল স্টাইল';
 	@override String get visualizerPresetAurora => 'অুরোরা';
@@ -2425,6 +2450,12 @@ class _Translations$videoSettings$bn extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'খেলোয়াড়ে ডিভাইসের পাইকেল সূর্যকে ম্যাপ করুন, তারপর ফলাফলটি কম্পিউটারকে বলুন।';
 	@override String get hdrToneMappingFailed => 'HDR টন ম্যাপিং পরিবর্তন করা যায় না - পূর্ববর্তী মডিট এখনও সক্রিয়।';
 	@override String get audioOutput => 'অডিও উৎস';
+	@override String get videoTrack => 'ভিডিও ট্র্যাক';
+	@override String get videoTrackDescription => 'কোন ভিডিও স্ট্রিম দেখানো হবে তা বেছে নিন। ফাইলে বিকল্প ভিডিও ট্র্যাক থাকলে MPV প্লেব্যাকে এটি পাওয়া যায়।';
+	@override String get videoTrackDefault => 'ডিফল্ট';
+	@override String get videoTrackUnavailable => 'কোনো বিকল্প ভিডিও ট্র্যাক নেই।';
+	@override String get videoTrackFailed => 'ভিডিও ট্র্যাক পরিবর্তন করা যায়নি।';
+	@override String videoTrackNumber({required Object id}) => 'ট্র্যাক ${id}';
 	@override String get performanceOverlay => 'অভ্যন্তরীণ Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2432,10 +2463,17 @@ class _Translations$videoSettings$bn extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'স্পেশাল অডিও';
 	@override String get audioOutputStereo => 'স্টেরিও';
 	@override String get audioEqualizer => 'Audio Equalizer অডিও equalizer';
-	@override String get audioEqualizerDescription => 'এই ডিভাইসের জন্য পাঁচ ফ্রিক্স ব্যান্ডগুলি সংশোধন করা. mpv এ পাওয়া যায়; একটি কার্যকর EQ অডিও ডকোড করে এবং পাস্ট হ্রাস বন্ধ করে।';
+	@override String get audioEqualizerDescription => '10-ব্যান্ড Equalizer এর জন্য MPV. অডিও ফিল্টার decoded আউডিও ব্যবহার করে এবং passthrough বন্ধ করে।';
 	@override String get audioEqualizerFlat => 'ফ্লাইট';
 	@override String get audioEqualizerActive => 'কাস্টম';
 	@override String get audioEqualizerSaveFailed => 'Audio Equalizer সেটগুলি সংরক্ষণ করতে পারবেন না।';
+	@override String get audioEffectsDescription => 'প্রভাব decoded অডিও ব্যবহার করে, তাই passthrough বের হয়. রুম পরিবেশ এবং স্টেয়েও বিতরণ নির্ভর করে MPV গঠন ও ট্র্যাক';
+	@override String get audioStereoWidth => 'Stereo বিতর্ক';
+	@override String get audioSpatializer => 'রুম পরিবেশ';
+	@override String get audioSpatializerDescription => 'শান্ত রুমের প্রতিশ্রুতি যোগ করুন।';
+	@override String get audioPitch => 'Pitch পরিবর্তন';
+	@override String get audioPitchDescription => 'দ্রুত পরিবর্তন ছাড়া পাইচ পরিবর্তন করুন। MPV নির্মাণ করা উচিত Rubber Band.';
+	@override String get audioEffectUnavailable => 'এই পথের জন্য এই প্রভাব পাওয়া যায় না অথবা MPV গঠন';
 	@override String get backgroundVideoAudio => 'ভিডিও অডিও ফাউন্ডেশন';
 	@override String get backgroundVideoAudioDescription => 'আপনি খেলোয়াড়কে ছেড়ে যখন ভিডিও অডিও খেলতে থাকেন; আপনি ফিরে যখন পর্যন্ত ছবি छिपा रहती है. Android একটি মিডিয়া প্লাইবক নীতি ব্যবহার করে।';
 	@override String get audioNormalization => 'স্বাভাবিক শব্দ';
@@ -3088,6 +3126,10 @@ class _Translations$universalMedia$bn extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Playlist ফাইল নির্বাচন করুন';
 	@override String get openPlaylist => 'খোলা Playlist';
 	@override String get playlistFormatsHelp => 'একটি খেলা লিস্টে সর্বাধিক 1,000 পণ্য এবং 2 মিবি রয়েছে. HLS স্ট্রিম হিসাবে খোলা হয়, তাই খেলোয়াড় একটি মান নির্বাচন করতে পারেন।';
+	@override String get saveQueuePlaylist => 'কিউ প্লেলিস্ট হিসেবে সংরক্ষণ করুন';
+	@override String get queuePlaylistSaved => 'মিডিয়া ফাইলগুলোর পাশে প্লেলিস্ট সংরক্ষিত হয়েছে।';
+	@override String get queuePlaylistUnavailable => 'এই কিউ পুনরায় ব্যবহারযোগ্য স্থানীয় প্লেলিস্ট হিসেবে সংরক্ষণ করা যাবে না।';
+	@override String get queuePlaylistFolderRequired => 'কিউতে থাকা ফাইলগুলোর একই ফোল্ডারে সংরক্ষণের স্থান বেছে নিন।';
 	@override String get noFavorites => 'এখনো কোন প্রেমের পছন্দ সংরক্ষণ করা হয় না. পছন্দের এই प्रोফাইলে থাকুন।';
 	@override String get removeFavorite => 'প্রিয় স্ট্রিম মুছে ফেলুন';
 	@override String get filesHelp => 'অডিও, ভিডিও বা আইএসও ফাইলগুলি একটি temporary quue জন্য নির্বাচন করুন. ফাইল এবং URLs লাইব্রেরির ইতিহাসে যোগ করা হয় না।';
@@ -3152,12 +3194,13 @@ class _Translations$universalMedia$bn extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'ফাইল পরিবর্তন';
 	@override String get discHelp => 'এই কম্পিউটারের অপটিক ড্রাইভে একটি ডিস্ক খুলুন. আপনি ডিভাইস ফাইল থেকে আইএসও ইমেজ খুলতে পারেন।';
 	@override String get discs => 'অপটিক্যাল ডিভাইস';
+	@override String get editionOrTitle => 'সংস্করণ বা ডিস্কের শিরোনাম';
 	@override String get dvd => 'ডিভিডি';
 	@override String get bluray => 'ব্লু-রাই';
 	@override String get audioCd => 'অডিও সিডি';
 	@override String get discAvailability => 'ডিভাইস প্লেব্যাক একটি সামঞ্জস্যপূর্ণ MPV গঠন, সমর্থিত ড্রাইভ এবং অপারেটিং সিস্টেম অনুমতি প্রয়োজন. এটি বাণিজ্যিক ডিভিডি রক্ষা অতিক্রম করতে পারে না।';
 	@override String get converterTitle => 'স্থানীয় গণমাধ্যম ফাইল পরিবর্তন';
-	@override String get converterHelp => 'MP4, M4A বা MP3 কপি তৈরি করার জন্য FFmpeg ব্যবহার করুন।';
+	@override String get converterHelp => 'একটি স্থানীয় ফাইল পরিদর্শন করুন অথবা এটি রেমুশ করতে FFmpeg.';
 	@override String get converterIntro => 'একটি স্থানীয় অডিও বা ভিডিও ফাইলটি একাধিক ডিভাইসের উপর কাজ করে ফর্মটামে পরিদর্শন করুন।';
 	@override String get converterPrivacy => 'FFmpeg এই কম্পিউটারে ইনস্টল করা উচিত. Conversion শুধুমাত্র স্থানীয় ফাইলগুলি পড়বে. এটি স্ট্রিম ডাউনলোড করে না বা DRM মুছে নেয় না।';
 	@override String get converterChooseInput => 'স্থানীয় মিডিয়া ফাইল নির্বাচন করুন';
@@ -3165,6 +3208,8 @@ class _Translations$universalMedia$bn extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 এবং AAC';
 	@override String get converterM4a => 'M4A · AAC অডিও';
 	@override String get converterMp3 => 'MP3 অডিও';
+	@override String get allowFtp => 'FTP অনুমোদন';
+	@override String get allowFtpHelp => 'FTP ক্রিপ্টিং ছাড়া মিডিয়া পাঠায়. শুধুমাত্র বিশ্বাসযোগ্য নেটওয়ার্কগুলিতে ব্যবহার করুন।';
 	@override String get converterSaveAs => 'পরিদর্শন মিডিয়ার হিসাবে সংরক্ষণ করুন';
 	@override String get converterExtensionMismatch => 'নির্বাচিত উত্পাদন প্রদর্শন সঙ্গে একটি ফাইল নাম নির্বাচন করুন।';
 	@override String get converterUnsupportedInput => 'একটি অডিও বা ভিডিও ফাইল নির্বাচন করুন।';
@@ -3174,7 +3219,7 @@ class _Translations$universalMedia$bn extends Translations$universalMedia$en {
 	@override String get converterStarting => 'শুরু করে ফিপিএফ...';
 	@override String get converterProgress => 'এই কম্পিউটারের মাধ্যমে পরিদর্শন ...';
 	@override String get converterComplete => 'নতুন ফাইল প্রস্তুত।';
-	@override String get converterFfmpegMissing => 'H.264, AAC এবং MP3 সমর্থন সঙ্গে FFmpeg ইনস্টল করুন, তারপর আবার চেষ্টা করুন।';
+	@override String get converterFfmpegMissing => 'FFmpeg অথবা এই ফর্মটি সমর্থন করে না।';
 	@override String get converterFailed => 'ফাইলটি পড়তে পারে এবং উদ্দেশ্য पर्याप्त বিনামূল্যে স্থান আছে কিনা নিশ্চিত করুন।';
 	@override String get converterCancelled => 'অসম্পূর্ণ উৎপাদন বাতিল করা হয়েছে।';
 	@override String get converterDesktopOnly => 'স্থানীয় পরিদর্শন FFmpeg ইনস্টল করা হয় ডেস্টো কম্পিউটারগুলিতে পাওয়া যায়।';
@@ -3202,6 +3247,9 @@ class _Translations$universalMedia$bn extends Translations$universalMedia$en {
 	@override String get captureSaved => 'স্ক্রিন রেকর্ড সংরক্ষিত।';
 	@override String get captureElapsedLabel => 'রেকর্ড সময়';
 	@override String get captureStart => 'রেকর্ডিং শুরু';
+	@override String get capturePreview => 'প্লেয়ারে প্রিভিউ';
+	@override String get capturePreviewHelp => 'নির্বাচিত উৎসটি সাধারণ প্লেয়ারে দেখুন। এটি শুধু এই সেশনের জন্য এবং কোনো রেকর্ডিং সংরক্ষণ করে না। ডিভাইস সমর্থন ও অনুমতি MPV এবং অপারেটিং সিস্টেমের ওপর নির্ভর করে। প্রিভিউতে শুধু ভিডিও থাকে; সংরক্ষিত রেকর্ডিংয়ে ঐচ্ছিক অডিও যোগ করা যায়।';
+	@override String get capturePreviewActive => 'লাইভ প্রিভিউ · রেকর্ড হচ্ছে না';
 	@override String get captureStop => 'বন্ধ এবং বাঁচান';
 	@override String get captureMode => 'আঘাত';
 	@override String get shareMode => 'শেয়ার করুন';
@@ -3521,7 +3569,6 @@ class _Translations$audiobook$bn extends Translations$audiobook$en {
 	@override String get addSyncSource => 'প্রথমেই ফাইল এবং বইগুলিতে Google ড্রাইভ, OneDrive, ড্রপবক্স, WebDAV বা S3 যোগ করুন।';
 	@override String get syncDestination => 'সিনক স্টোরেজ অ্যাকাউন্ট';
 	@override String get syncFolder => 'সিন্ক ফোল্ডার বা প্রফেক্স';
-	@override String get syncFolderHelp => 'আপনার WebDAV সূত্রের মধ্যে একটি নির্দিষ্ট অ্যাপ্লিকেশন ব্যবহার করুন, অথবা একটি নির্দিষ্ট S3 পূর্বাভাস ব্যবহার করুন. বই ফাইলগুলি কখনো পরিবর্তন হয় না।';
 	@override String get syncCode => 'ব্যক্তিগত সিন্ক কোড';
 	@override String get syncCodeHelp => 'আপনার প্রথম ডিভাইসে একটি কোড তৈরি করুন, তারপর আপনার অন্যান্য ডিভাইসে সেই কোড লিখুন. একটি ব্যক্তিগত কপি রাখুন: এটি আপনার সক্রিপ্ট অবস্থার চিঠি।';
 	@override String get showCode => 'সিন্ক কোড প্রদর্শন বা লুকিয়ে রাখুন';
@@ -3531,7 +3578,6 @@ class _Translations$audiobook$bn extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'এই সূত্রটি মুছে ফেলুন, এখানে পড়ার এবং শুনার সনাকশন বন্ধ হবে. ক্রিপ্ট সনাকশন ফাইলগুলি সরবরাহকারী মধ্যে থাকবে।';
 	@override String get syncReconnect => 'সংরক্ষণ অ্যাকাউন্ট পুনরায়';
 	@override String lastSynced({required Object time}) => 'শেষ সমন্বয় ${time}';
-	@override String get syncPrivacy => 'শুধু সক্রিপ্ট প্রসেস এবং নোট সংরক্ষণ করা হয়. অডিও এবং ইবুক ফাইল, অ্যাকাউন্ট টোকেন এবং পাসওয়ার্ড আপলোড করা হয় না. Google ড্রাইভ এবং OneDrive অ্যাপ স্টোরেজ ব্যবহার করে; ড্রপবক্স PlezyNG সিন্ক ব্যবহার করে. সিন্ক অনুমোদন আরও লিখিত অ্যাক্সেস প্রয়োজন হতে পারে. সক্রিপ্ট করা হলেও, এই লক্ষ্য প্রসেস সিন্ক মালিক; সার্ভার প্রসেস আলাদা থাকে. সিন্ক বন্ধ করে স্থানীয় ইতিহাস এবং আলাদা অবস্থা সংরক্ষণ করে।';
 	@override String get syncConflicts => 'জেনে নিন কোথায় ফিরে আসতে হবে';
 	@override String get conflictHelp => 'এই পরিবর্তনগুলি স্বাধীনভাবে করা হয়. রাখার জন্য অবস্থান বা বুকমার্ক সংস্করণ নির্বাচন করুন. একটি পরবর্তী সময়সীমা বা একটি উচ্চ প্রয়োগ স্বয়ংক্রিয়ভাবে জিতবে না।';
 	@override String syncDevice({required Object device}) => 'ডিভাইস ${device}';
@@ -3725,7 +3771,6 @@ class _Translations$games$bn extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3750,7 +3795,6 @@ class _Translations$games$bn extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3782,8 +3826,6 @@ class _Translations$games$bn extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3791,14 +3833,12 @@ class _Translations$games$bn extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -5976,6 +6016,32 @@ extension on TranslationsBn {
 			'videoControls.settingsButton' => 'Playback সিস্টেম',
 			'videoControls.tracksButton' => 'অডিও & সাবটাইটল',
 			'videoControls.chaptersButton' => 'চিঠি',
+			'videoControls.segmentLoopHelp' => 'এই প্লেব্যাকের সময় একটি বিভাগ চালু করুন. A সিস্টেম, তারপর পরবর্তী সময়ের মধ্যে B সিস্টেট করুন.',
+			'videoControls.setLoopStart' => 'সেন্ট লোভ শুরু (এ)',
+			'videoControls.setLoopEnd' => 'সেন্ট লোভ শেষ (B)',
+			'videoControls.clearSegmentLoop' => 'স্পষ্ট সেক্টর লুক',
+			'videoControls.setLoopStartFirst' => 'শুরু (এ) এর আগে শেষ (বি) সিস্টেম করুন।',
+			'videoControls.loopEndAfterStart' => 'শুরু থেকে পরবর্তী সূচনা হতে হবে।',
+			'videoControls.segmentLoopUnavailable' => 'এই প্লাইবের জন্য সেকেন্ড লুপিং পাওয়া যায় না।',
+			'videoControls.loopPointNotSet' => 'সিস্টেম না',
+			'videoControls.bookmarksHelp' => 'এই ডিভাইসে বুকমার্ক সংরক্ষণ করা হয়. সেই সময়ের জন্য একটি নির্বাচন করুন।',
+			'videoControls.bookmarksButton' => 'বুকমার্ক',
+			'videoControls.chaptersAndBookmarks' => 'বিভাগ ও বইমেলা',
+			'videoControls.segmentLoop' => 'সেগেট লোভ',
+			'videoControls.addBookmark' => 'Bookmark যোগ করুন',
+			'videoControls.bookmarkName' => 'Bookmark নাম',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'উদাহরণস্বরূপ, দৃশ্য খোলা',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'বইমার্ক ${n}',
+			'videoControls.bookmarkNameRequired' => 'এ বইয়ের জন্য একটি নাম লিখুন।',
+			'videoControls.deleteBookmark' => 'বুকমার্ক 삭제',
+			'videoControls.bookmarkLimitReached' => 'এই পণ্যটি এখন 100 বইমেলা আছে।',
+			'videoControls.bookmarkUnavailable' => 'আমি এই বইমেলাটি সংরক্ষণ বা মুছে ফেলতে পারতাম না।',
+			'videoControls.bookmarkSaved' => 'বুকমার্ক উদ্ধার করা হয়েছে।',
+			'videoControls.bookmarkDeleted' => 'Bookmark মুছে ফেলা হয়েছে।',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'লোপ পয়েন্ট ${point} সেট করুন ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'কোন বই বা চিঠি পাওয়া যায় না।',
 			'videoControls.versionQualityButton' => 'সংস্করণ & মান',
 			'videoControls.versionColumnHeader' => 'সংস্করণ',
 			'videoControls.qualityColumnHeader' => 'মানের',
@@ -5990,8 +6056,6 @@ extension on TranslationsBn {
 			'videoControls.exitFullscreenButton' => 'পুরো স্ক্রিনের বাইরে',
 			'videoControls.alwaysOnTopButton' => 'সবসময় শীর্ষে',
 			'videoControls.rotationLockButton' => 'রটিং লক',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'স্ক্রিন লক',
 			'videoControls.screenLockButton' => 'স্ক্রিন লক',
 			'videoControls.timelineSlider' => 'ভিডিও টাইমলাইন',
@@ -6480,6 +6544,8 @@ extension on TranslationsBn {
 			'libraries.hideLibrary' => 'কবর লাইব্রেরি',
 			'libraries.libraryOptions' => 'লাইব্রেরি বিকল্প',
 			'libraries.content' => 'লাইব্রেরি বিষয়বস্তু',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'লাইব্রেরি নির্বাচন',
 			'libraries.filtersWithCount' => ({required Object count}) => 'ফিল্টার (${count})',
 			'libraries.noRecommendations' => 'উপলব্ধি নেই',
@@ -6504,8 +6570,6 @@ extension on TranslationsBn {
 			'libraries.filterCategories.year' => 'বছর',
 			'libraries.filterCategories.contentRating' => 'বিষয়বস্তু Rating',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'অপসারণ',
 			'libraries.filterCategories.unplayed' => 'খেলা না',
 			'libraries.filterCategories.favorites' => 'পছন্দগুলি',
@@ -6947,6 +7011,7 @@ extension on TranslationsBn {
 			'music.visualizerProfileLoading' => 'Read track বিশ্লেষণ ...',
 			'music.visualizerAmbientMotion' => 'পরিবেশ মোকাবিলা',
 			'music.visualizerPlexLoudness' => 'Plex শব্দ',
+			'music.visualizerLiveAudio' => 'লাইভ অডিও বিশ্লেষণ',
 			'music.visualizerPreviousPreset' => 'পূর্ববর্তী চিত্র',
 			'music.visualizerNextPreset' => 'পরবর্তী ভিজুয়াল স্টাইল',
 			'music.visualizerPresetAurora' => 'অুরোরা',
@@ -6993,6 +7058,8 @@ extension on TranslationsBn {
 			'watchTogether.codeCopied' => 'রুম কোড কপি',
 			'watchTogether.shareInvite' => 'বিতর্ক invitaciones',
 			'watchTogether.inviteCopied' => 'কপি করুন, এটি একটি বার্তাে প্রবেশ করুন।',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG: খুলুন ঘোড়ি একসাথে, চিহ্ন করুন ঘোড়ি একসাথে এবং ${code} এ প্রবেশ করুন।',
 			'watchTogether.openSessionControls' => 'Open Watch Together সেশন কন্ট্রোল',
 			'watchTogether.reconnecting' => 'আবার সংযোগ...',
@@ -7018,8 +7085,6 @@ extension on TranslationsBn {
 			'watchTogether.playAnyway' => 'খেলুন যেকোনো',
 			'watchTogether.chooseAnotherCopy' => 'অন্য কপি নির্বাচন করুন',
 			'watchTogether.dontPlay' => 'খেলবেন না',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'আপনি এই ভিডিও নেই',
 			'watchTogether.unavailableDescription' => 'PlezyNG আপনার লাইব্রেরিতে এটি খুঁজে পাওয়া যায়নি. নিজের জন্য একটি কপি বা আবার খুঁজে পেতে পারেন।',
 			'watchTogether.chooseCopy' => 'একটি কপি নির্বাচন করুন',
@@ -7373,6 +7438,12 @@ extension on TranslationsBn {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'খেলোয়াড়ে ডিভাইসের পাইকেল সূর্যকে ম্যাপ করুন, তারপর ফলাফলটি কম্পিউটারকে বলুন।',
 			'videoSettings.hdrToneMappingFailed' => 'HDR টন ম্যাপিং পরিবর্তন করা যায় না - পূর্ববর্তী মডিট এখনও সক্রিয়।',
 			'videoSettings.audioOutput' => 'অডিও উৎস',
+			'videoSettings.videoTrack' => 'ভিডিও ট্র্যাক',
+			'videoSettings.videoTrackDescription' => 'কোন ভিডিও স্ট্রিম দেখানো হবে তা বেছে নিন। ফাইলে বিকল্প ভিডিও ট্র্যাক থাকলে MPV প্লেব্যাকে এটি পাওয়া যায়।',
+			'videoSettings.videoTrackDefault' => 'ডিফল্ট',
+			'videoSettings.videoTrackUnavailable' => 'কোনো বিকল্প ভিডিও ট্র্যাক নেই।',
+			'videoSettings.videoTrackFailed' => 'ভিডিও ট্র্যাক পরিবর্তন করা যায়নি।',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'ট্র্যাক ${id}',
 			'videoSettings.performanceOverlay' => 'অভ্যন্তরীণ Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7380,10 +7451,17 @@ extension on TranslationsBn {
 			'videoSettings.audioOutputSpatial' => 'স্পেশাল অডিও',
 			'videoSettings.audioOutputStereo' => 'স্টেরিও',
 			'videoSettings.audioEqualizer' => 'Audio Equalizer অডিও equalizer',
-			'videoSettings.audioEqualizerDescription' => 'এই ডিভাইসের জন্য পাঁচ ফ্রিক্স ব্যান্ডগুলি সংশোধন করা. mpv এ পাওয়া যায়; একটি কার্যকর EQ অডিও ডকোড করে এবং পাস্ট হ্রাস বন্ধ করে।',
+			'videoSettings.audioEqualizerDescription' => '10-ব্যান্ড Equalizer এর জন্য MPV. অডিও ফিল্টার decoded আউডিও ব্যবহার করে এবং passthrough বন্ধ করে।',
 			'videoSettings.audioEqualizerFlat' => 'ফ্লাইট',
 			'videoSettings.audioEqualizerActive' => 'কাস্টম',
 			'videoSettings.audioEqualizerSaveFailed' => 'Audio Equalizer সেটগুলি সংরক্ষণ করতে পারবেন না।',
+			'videoSettings.audioEffectsDescription' => 'প্রভাব decoded অডিও ব্যবহার করে, তাই passthrough বের হয়. রুম পরিবেশ এবং স্টেয়েও বিতরণ নির্ভর করে MPV গঠন ও ট্র্যাক',
+			'videoSettings.audioStereoWidth' => 'Stereo বিতর্ক',
+			'videoSettings.audioSpatializer' => 'রুম পরিবেশ',
+			'videoSettings.audioSpatializerDescription' => 'শান্ত রুমের প্রতিশ্রুতি যোগ করুন।',
+			'videoSettings.audioPitch' => 'Pitch পরিবর্তন',
+			'videoSettings.audioPitchDescription' => 'দ্রুত পরিবর্তন ছাড়া পাইচ পরিবর্তন করুন। MPV নির্মাণ করা উচিত Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'এই পথের জন্য এই প্রভাব পাওয়া যায় না অথবা MPV গঠন',
 			'videoSettings.backgroundVideoAudio' => 'ভিডিও অডিও ফাউন্ডেশন',
 			'videoSettings.backgroundVideoAudioDescription' => 'আপনি খেলোয়াড়কে ছেড়ে যখন ভিডিও অডিও খেলতে থাকেন; আপনি ফিরে যখন পর্যন্ত ছবি छिपा रहती है. Android একটি মিডিয়া প্লাইবক নীতি ব্যবহার করে।',
 			'videoSettings.audioNormalization' => 'স্বাভাবিক শব্দ',
@@ -7494,6 +7572,8 @@ extension on TranslationsBn {
 			'metadataEdit.metadataUpdated' => 'মেটাদাডেট আপডেট',
 			'metadataEdit.metadataUpdateFailed' => 'মেটাদাটা আপডেট করতে পারেনি',
 			'metadataEdit.artworkUpdated' => 'অ্যাকাউন্ট আপডেট',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'শিল্প কাজ আপডেট করতে পারিনি',
 			'metadataEdit.noArtworkAvailable' => 'কোন শিল্প কাজ পাওয়া যায় না',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'শিল্প বিকল্প ${index}',
@@ -7532,8 +7612,6 @@ extension on TranslationsBn {
 			'metadataEdit.shownWithForeignAudio' => 'বিদেশী অডিও সঙ্গে সনাক্ত',
 			'metadataEdit.alwaysEnabled' => 'সবসময় অনুমোদিত',
 			'metadataEdit.tags' => 'ট্যাগ',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Add ট্যাগ',
 			'metadataEdit.genre' => 'ধরণ',
 			'metadataEdit.director' => 'পরিচালক',
@@ -7902,6 +7980,10 @@ extension on TranslationsBn {
 			'universalMedia.choosePlaylist' => 'Playlist ফাইল নির্বাচন করুন',
 			'universalMedia.openPlaylist' => 'খোলা Playlist',
 			'universalMedia.playlistFormatsHelp' => 'একটি খেলা লিস্টে সর্বাধিক 1,000 পণ্য এবং 2 মিবি রয়েছে. HLS স্ট্রিম হিসাবে খোলা হয়, তাই খেলোয়াড় একটি মান নির্বাচন করতে পারেন।',
+			'universalMedia.saveQueuePlaylist' => 'কিউ প্লেলিস্ট হিসেবে সংরক্ষণ করুন',
+			'universalMedia.queuePlaylistSaved' => 'মিডিয়া ফাইলগুলোর পাশে প্লেলিস্ট সংরক্ষিত হয়েছে।',
+			'universalMedia.queuePlaylistUnavailable' => 'এই কিউ পুনরায় ব্যবহারযোগ্য স্থানীয় প্লেলিস্ট হিসেবে সংরক্ষণ করা যাবে না।',
+			'universalMedia.queuePlaylistFolderRequired' => 'কিউতে থাকা ফাইলগুলোর একই ফোল্ডারে সংরক্ষণের স্থান বেছে নিন।',
 			'universalMedia.noFavorites' => 'এখনো কোন প্রেমের পছন্দ সংরক্ষণ করা হয় না. পছন্দের এই प्रोফাইলে থাকুন।',
 			'universalMedia.removeFavorite' => 'প্রিয় স্ট্রিম মুছে ফেলুন',
 			'universalMedia.filesHelp' => 'অডিও, ভিডিও বা আইএসও ফাইলগুলি একটি temporary quue জন্য নির্বাচন করুন. ফাইল এবং URLs লাইব্রেরির ইতিহাসে যোগ করা হয় না।',
@@ -7960,12 +8042,13 @@ extension on TranslationsBn {
 			'universalMedia.replaceRecording' => 'ফাইল পরিবর্তন',
 			'universalMedia.discHelp' => 'এই কম্পিউটারের অপটিক ড্রাইভে একটি ডিস্ক খুলুন. আপনি ডিভাইস ফাইল থেকে আইএসও ইমেজ খুলতে পারেন।',
 			'universalMedia.discs' => 'অপটিক্যাল ডিভাইস',
+			'universalMedia.editionOrTitle' => 'সংস্করণ বা ডিস্কের শিরোনাম',
 			'universalMedia.dvd' => 'ডিভিডি',
 			'universalMedia.bluray' => 'ব্লু-রাই',
 			'universalMedia.audioCd' => 'অডিও সিডি',
 			'universalMedia.discAvailability' => 'ডিভাইস প্লেব্যাক একটি সামঞ্জস্যপূর্ণ MPV গঠন, সমর্থিত ড্রাইভ এবং অপারেটিং সিস্টেম অনুমতি প্রয়োজন. এটি বাণিজ্যিক ডিভিডি রক্ষা অতিক্রম করতে পারে না।',
 			'universalMedia.converterTitle' => 'স্থানীয় গণমাধ্যম ফাইল পরিবর্তন',
-			'universalMedia.converterHelp' => 'MP4, M4A বা MP3 কপি তৈরি করার জন্য FFmpeg ব্যবহার করুন।',
+			'universalMedia.converterHelp' => 'একটি স্থানীয় ফাইল পরিদর্শন করুন অথবা এটি রেমুশ করতে FFmpeg.',
 			'universalMedia.converterIntro' => 'একটি স্থানীয় অডিও বা ভিডিও ফাইলটি একাধিক ডিভাইসের উপর কাজ করে ফর্মটামে পরিদর্শন করুন।',
 			'universalMedia.converterPrivacy' => 'FFmpeg এই কম্পিউটারে ইনস্টল করা উচিত. Conversion শুধুমাত্র স্থানীয় ফাইলগুলি পড়বে. এটি স্ট্রিম ডাউনলোড করে না বা DRM মুছে নেয় না।',
 			'universalMedia.converterChooseInput' => 'স্থানীয় মিডিয়া ফাইল নির্বাচন করুন',
@@ -7973,6 +8056,8 @@ extension on TranslationsBn {
 			'universalMedia.converterMp4' => 'MP4 · H.264 এবং AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC অডিও',
 			'universalMedia.converterMp3' => 'MP3 অডিও',
+			'universalMedia.allowFtp' => 'FTP অনুমোদন',
+			'universalMedia.allowFtpHelp' => 'FTP ক্রিপ্টিং ছাড়া মিডিয়া পাঠায়. শুধুমাত্র বিশ্বাসযোগ্য নেটওয়ার্কগুলিতে ব্যবহার করুন।',
 			'universalMedia.converterSaveAs' => 'পরিদর্শন মিডিয়ার হিসাবে সংরক্ষণ করুন',
 			'universalMedia.converterExtensionMismatch' => 'নির্বাচিত উত্পাদন প্রদর্শন সঙ্গে একটি ফাইল নাম নির্বাচন করুন।',
 			'universalMedia.converterUnsupportedInput' => 'একটি অডিও বা ভিডিও ফাইল নির্বাচন করুন।',
@@ -7982,7 +8067,7 @@ extension on TranslationsBn {
 			'universalMedia.converterStarting' => 'শুরু করে ফিপিএফ...',
 			'universalMedia.converterProgress' => 'এই কম্পিউটারের মাধ্যমে পরিদর্শন ...',
 			'universalMedia.converterComplete' => 'নতুন ফাইল প্রস্তুত।',
-			'universalMedia.converterFfmpegMissing' => 'H.264, AAC এবং MP3 সমর্থন সঙ্গে FFmpeg ইনস্টল করুন, তারপর আবার চেষ্টা করুন।',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg অথবা এই ফর্মটি সমর্থন করে না।',
 			'universalMedia.converterFailed' => 'ফাইলটি পড়তে পারে এবং উদ্দেশ্য पर्याप्त বিনামূল্যে স্থান আছে কিনা নিশ্চিত করুন।',
 			'universalMedia.converterCancelled' => 'অসম্পূর্ণ উৎপাদন বাতিল করা হয়েছে।',
 			'universalMedia.converterDesktopOnly' => 'স্থানীয় পরিদর্শন FFmpeg ইনস্টল করা হয় ডেস্টো কম্পিউটারগুলিতে পাওয়া যায়।',
@@ -8001,6 +8086,8 @@ extension on TranslationsBn {
 			'universalMedia.captureAudioNone' => 'অডিও নেই',
 			'universalMedia.captureDefaultAudio' => 'অডিও ইনপোর্ট',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'রেকর্ড ফ্রেম ফ্রেম',
 			'universalMedia.capturePrivacy' => 'রেকর্ডিংটি শুধুমাত্র আপনার বেছে নেওয়া ফাইলের জন্য সংরক্ষণ করা হয়. মাইক্রোফোন ফ্যাক্টরি অপশনীয়. PlezyNG রেকর্ডিংটি আপলোড করে না।',
 			'universalMedia.captureSaveAs' => 'স্ক্রিন রেকর্ডিং রেকর্ডিং',
@@ -8010,6 +8097,9 @@ extension on TranslationsBn {
 			'universalMedia.captureSaved' => 'স্ক্রিন রেকর্ড সংরক্ষিত।',
 			'universalMedia.captureElapsedLabel' => 'রেকর্ড সময়',
 			'universalMedia.captureStart' => 'রেকর্ডিং শুরু',
+			'universalMedia.capturePreview' => 'প্লেয়ারে প্রিভিউ',
+			'universalMedia.capturePreviewHelp' => 'নির্বাচিত উৎসটি সাধারণ প্লেয়ারে দেখুন। এটি শুধু এই সেশনের জন্য এবং কোনো রেকর্ডিং সংরক্ষণ করে না। ডিভাইস সমর্থন ও অনুমতি MPV এবং অপারেটিং সিস্টেমের ওপর নির্ভর করে। প্রিভিউতে শুধু ভিডিও থাকে; সংরক্ষিত রেকর্ডিংয়ে ঐচ্ছিক অডিও যোগ করা যায়।',
+			'universalMedia.capturePreviewActive' => 'লাইভ প্রিভিউ · রেকর্ড হচ্ছে না',
 			'universalMedia.captureStop' => 'বন্ধ এবং বাঁচান',
 			'universalMedia.captureMode' => 'আঘাত',
 			'universalMedia.shareMode' => 'শেয়ার করুন',
@@ -8046,8 +8136,6 @@ extension on TranslationsBn {
 			'universalMedia.extensionInstallTitle' => 'এই অনুসন্ধান পরিষেবা যোগ করুন?',
 			'universalMedia.extensionReplaceTitle' => 'এই অনুসন্ধান পরিষেবা আপডেট?',
 			'universalMedia.extensionService' => 'পরিষেবা',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => 'আপনার অনুসন্ধান টেক্সটটি এই পরিষেবাকে পাঠানো হয়. ম্যানেজিনটি কোন executable কোড নেই. Continue only if you trust this endpoint.',
 			'universalMedia.extensionInstall' => 'পরিষেবা যোগ করুন',
@@ -8301,7 +8389,6 @@ extension on TranslationsBn {
 			'audiobook.addSyncSource' => 'প্রথমেই ফাইল এবং বইগুলিতে Google ড্রাইভ, OneDrive, ড্রপবক্স, WebDAV বা S3 যোগ করুন।',
 			'audiobook.syncDestination' => 'সিনক স্টোরেজ অ্যাকাউন্ট',
 			'audiobook.syncFolder' => 'সিন্ক ফোল্ডার বা প্রফেক্স',
-			'audiobook.syncFolderHelp' => 'আপনার WebDAV সূত্রের মধ্যে একটি নির্দিষ্ট অ্যাপ্লিকেশন ব্যবহার করুন, অথবা একটি নির্দিষ্ট S3 পূর্বাভাস ব্যবহার করুন. বই ফাইলগুলি কখনো পরিবর্তন হয় না।',
 			'audiobook.syncCode' => 'ব্যক্তিগত সিন্ক কোড',
 			'audiobook.syncCodeHelp' => 'আপনার প্রথম ডিভাইসে একটি কোড তৈরি করুন, তারপর আপনার অন্যান্য ডিভাইসে সেই কোড লিখুন. একটি ব্যক্তিগত কপি রাখুন: এটি আপনার সক্রিপ্ট অবস্থার চিঠি।',
 			'audiobook.showCode' => 'সিন্ক কোড প্রদর্শন বা লুকিয়ে রাখুন',
@@ -8311,7 +8398,6 @@ extension on TranslationsBn {
 			'audiobook.syncSourceDisconnect' => 'এই সূত্রটি মুছে ফেলুন, এখানে পড়ার এবং শুনার সনাকশন বন্ধ হবে. ক্রিপ্ট সনাকশন ফাইলগুলি সরবরাহকারী মধ্যে থাকবে।',
 			'audiobook.syncReconnect' => 'সংরক্ষণ অ্যাকাউন্ট পুনরায়',
 			'audiobook.lastSynced' => ({required Object time}) => 'শেষ সমন্বয় ${time}',
-			'audiobook.syncPrivacy' => 'শুধু সক্রিপ্ট প্রসেস এবং নোট সংরক্ষণ করা হয়. অডিও এবং ইবুক ফাইল, অ্যাকাউন্ট টোকেন এবং পাসওয়ার্ড আপলোড করা হয় না. Google ড্রাইভ এবং OneDrive অ্যাপ স্টোরেজ ব্যবহার করে; ড্রপবক্স PlezyNG সিন্ক ব্যবহার করে. সিন্ক অনুমোদন আরও লিখিত অ্যাক্সেস প্রয়োজন হতে পারে. সক্রিপ্ট করা হলেও, এই লক্ষ্য প্রসেস সিন্ক মালিক; সার্ভার প্রসেস আলাদা থাকে. সিন্ক বন্ধ করে স্থানীয় ইতিহাস এবং আলাদা অবস্থা সংরক্ষণ করে।',
 			'audiobook.syncConflicts' => 'জেনে নিন কোথায় ফিরে আসতে হবে',
 			'audiobook.conflictHelp' => 'এই পরিবর্তনগুলি স্বাধীনভাবে করা হয়. রাখার জন্য অবস্থান বা বুকমার্ক সংস্করণ নির্বাচন করুন. একটি পরবর্তী সময়সীমা বা একটি উচ্চ প্রয়োগ স্বয়ংক্রিয়ভাবে জিতবে না।',
 			'audiobook.syncDevice' => ({required Object device}) => 'ডিভাইস ${device}',
@@ -8478,7 +8564,6 @@ extension on TranslationsBn {
 			'comics.collections' => 'সংগ্রহ',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8503,7 +8588,6 @@ extension on TranslationsBn {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8516,6 +8600,8 @@ extension on TranslationsBn {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8535,8 +8621,6 @@ extension on TranslationsBn {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8544,14 +8628,12 @@ extension on TranslationsBn {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'এই Plezy লিঙ্ক সঠিক নয়।',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'কোন প্রোফাইল "${profile}" সঙ্গে জড়িত না।',
 			'deepLinks.serverUnavailable' => 'আমি এই লিঙ্কের জন্য সার্ভার পৌঁছাতে পারিনি।',
@@ -8560,8 +8642,6 @@ extension on TranslationsBn {
 			'deepLinks.noLiveTv' => 'এই লিঙ্ক জন্য কোন লাইভ টিভি সার্ভার পাওয়া যায় না।',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'আমি চ্যানেল "${channel}" খুঁজতে পারিনি।',
 			'deepLinks.showLink' => 'দেখুন লিঙ্ক',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'প্রোফাইল লিঙ্ক',
 			'deepLinks.dialogTitle' => 'লিঙ্ক',
 			'deepLinks.showHint' => 'এই লিংক খুললে পরের পর্বটি চলবে। সিরিজটি এলোমেলোভাবে চালাতে শেষে &mode=shuffle যোগ করুন.',

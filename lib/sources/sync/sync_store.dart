@@ -8,6 +8,7 @@ import '../adapters/s3_source.dart';
 import '../adapters/webdav_source.dart';
 import '../source_models.dart';
 import '../source_transport.dart';
+import 'sync_path.dart';
 
 class SyncFile {
   const SyncFile(this.name, this.id);
@@ -103,18 +104,16 @@ class ProviderSyncStore implements SyncStore {
   }
 
   Uri get _davRoot {
-    if (folder.trim().isEmpty) throw const SourceException(SourceFailure.invalidData);
-    return (adapter as WebDavSourceAdapter).contained('${folder.replaceAll(RegExp(r'/+$'), '')}/');
+    final relative = normalizeSyncFolder(folder);
+    if (relative == null) throw const SourceException(SourceFailure.invalidData);
+    return (adapter as WebDavSourceAdapter).contained('${encodeSyncFolderPath(relative)}/');
   }
 
   String get _s3Prefix {
-    final base = adapter.source.root.replaceAll(RegExp(r'^/+|/+$'), '');
-    final relative = folder.replaceAll(RegExp(r'^/+|/+$'), '');
-    if (relative.isEmpty ||
-        relative.contains('\\') ||
-        relative.split('/').any((s) => s == '.' || s == '..' || s.isEmpty)) {
-      throw const SourceException(SourceFailure.invalidData);
-    }
+    final rawBase = adapter.source.root.replaceAll(RegExp(r'^/+|/+$'), '');
+    final base = rawBase.isEmpty ? '' : normalizeSyncFolder(rawBase);
+    final relative = normalizeSyncFolder(folder);
+    if (relative == null || base == null) throw const SourceException(SourceFailure.invalidData);
     return '${base.isEmpty ? '' : '$base/'}$relative/';
   }
 

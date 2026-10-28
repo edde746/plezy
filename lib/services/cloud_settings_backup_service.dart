@@ -100,8 +100,7 @@ class CloudSettingsBackupService {
       throw const CloudSettingsBackupException('Sign in before restoring settings.');
     }
     final storage = await StorageService.getInstance();
-    bool isOwnerCurrent() =>
-        _sameOwner(storage, expectedProfileId, expectedOwner, isCurrentSession: isCurrentSession);
+    bool isOwnerCurrent() => _sameOwner(storage, expectedProfileId, expectedOwner, isCurrentSession: isCurrentSession);
     if (!isOwnerCurrent()) {
       throw const CloudSettingsBackupException('The active profile changed before the restore started.');
     }
@@ -144,12 +143,7 @@ class CloudSettingsBackupService {
     );
   }
 
-  bool _sameOwner(
-    StorageService storage,
-    String? profileId,
-    String? owner, {
-    bool Function()? isCurrentSession,
-  }) =>
+  bool _sameOwner(StorageService storage, String? profileId, String? owner, {bool Function()? isCurrentSession}) =>
       (isCurrentSession?.call() ?? true) &&
       storage.getActiveProfileId() == profileId &&
       storage.activeUserScope() == owner;

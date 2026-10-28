@@ -1197,6 +1197,30 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get settingsButton => 'Cài đặt Playback';
 	@override String get tracksButton => 'Âm thanh & Subtitles';
 	@override String get chaptersButton => 'Chương 1';
+	@override String get segmentLoopHelp => 'Đặt A, sau đó đặt B sau đó trong dòng thời gian.';
+	@override String get setLoopStart => 'Cài đặt loop bắt đầu (A)';
+	@override String get setLoopEnd => 'Thiết lập vòng tròn kết thúc (B)';
+	@override String get clearSegmentLoop => 'Chi tiết Segment Loop';
+	@override String get setLoopStartFirst => 'Cài đặt vòng bắt đầu (A) trước khi kết thúc (B).';
+	@override String get loopEndAfterStart => 'Kết thúc vòng tròn phải là muộn hơn khởi đầu.';
+	@override String get segmentLoopUnavailable => 'Segment looping không có sẵn cho playback này.';
+	@override String get loopPointNotSet => 'Không đặt';
+	@override String get bookmarksHelp => 'Bookmarks được lưu trên thiết bị này. chọn một để đi đến thời điểm đó.';
+	@override String get bookmarksButton => 'Bookmarks Đánh giá';
+	@override String get chaptersAndBookmarks => 'Chương và Bookmark';
+	@override String get segmentLoop => 'phân đoạn loop';
+	@override String get addBookmark => 'Thêm Bookmark';
+	@override String get bookmarkName => 'Bookmark tên';
+	@override String get bookmarkNameHint => 'Ví dụ: Mở cảnh';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark Đề ${n}';
+	@override String get bookmarkNameRequired => 'Nhập tên cho bookmark này.';
+	@override String get deleteBookmark => 'xóa bookmark';
+	@override String get bookmarkLimitReached => 'Bài viết này đã có 100 bookmarks.';
+	@override String get bookmarkUnavailable => 'Không thể lưu hoặc xóa sổ này.';
+	@override String get bookmarkSaved => 'Bookmark được tiết kiệm';
+	@override String get bookmarkDeleted => 'Bookmark bị xóa';
+	@override String loopPointSet({required Object point, required Object time}) => 'Điểm Loop ${point} Set tại ${time}.';
+	@override String get noChaptersOrBookmarks => 'Không có chương hoặc bảng chữ cái có sẵn.';
 	@override String get versionQualityButton => 'Phiên bản & Chất lượng';
 	@override String get versionColumnHeader => 'Phiên bản';
 	@override String get qualityColumnHeader => 'Chất lượng';
@@ -2059,6 +2083,7 @@ class _Translations$music$vi extends Translations$music$en {
 	@override String get visualizerProfileLoading => 'Đọc Track Analysis...';
 	@override String get visualizerAmbientMotion => 'động cơ môi trường';
 	@override String get visualizerPlexLoudness => 'Plex tiếng ồn';
+	@override String get visualizerLiveAudio => 'Phân tích âm thanh trực tiếp';
 	@override String get visualizerPreviousPreset => 'Phong cách Visual Previous';
 	@override String get visualizerNextPreset => 'Tiếp theo: Visual Style';
 	@override String get visualizerPresetAurora => 'Cực quang';
@@ -2406,6 +2431,12 @@ class _Translations$videoSettings$vi extends Translations$videoSettings$en {
 	@override String get hdrToneMappingPlayerDescription => 'Bản đồ cho độ sáng cao của màn hình trong người chơi, sau đó nói với nhà soạn nhạc kết quả.';
 	@override String get hdrToneMappingFailed => 'Không thể thay đổi bản đồ âm thanh HDR - chế độ trước vẫn hoạt động.';
 	@override String get audioOutput => 'Audio output xuất';
+	@override String get videoTrack => 'Bản video';
+	@override String get videoTrackDescription => 'Chọn luồng video cần hiển thị. Có sẵn khi phát bằng MPV nếu tệp có các bản video thay thế.';
+	@override String get videoTrackDefault => 'Mặc định';
+	@override String get videoTrackUnavailable => 'Không có bản video thay thế nào.';
+	@override String get videoTrackFailed => 'Không thể đổi bản video.';
+	@override String videoTrackNumber({required Object id}) => 'Bản ${id}';
 	@override String get performanceOverlay => 'Hiệu suất Overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
@@ -2413,10 +2444,17 @@ class _Translations$videoSettings$vi extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'âm thanh không gian';
 	@override String get audioOutputStereo => 'Âm Thanh Nổi';
 	@override String get audioEqualizer => 'âm thanh equalizer';
-	@override String get audioEqualizerDescription => 'Tùy chỉnh 5 tần số cho thiết bị này. có sẵn trên mpv; một EQ hoạt động giải mã âm thanh và chặn phù hợp.';
+	@override String get audioEqualizerDescription => '10-band equalizer cho MPVCác bộ lọc âm thanh sử dụng âm thanh giải mã và tắt passthrough.';
 	@override String get audioEqualizerFlat => 'Đơn giản';
 	@override String get audioEqualizerActive => 'Tùy chọn';
 	@override String get audioEqualizerSaveFailed => 'Không thể tiết kiệm các thiết lập Audio Equalizer.';
+	@override String get audioEffectsDescription => 'Hiệu ứng sử dụng âm thanh giải mã, do đó passthrough xoay. không gian phòng và mở rộng stereo phụ thuộc vào MPV xây dựng và theo dõi.';
+	@override String get audioStereoWidth => 'Stereo mở rộng';
+	@override String get audioSpatializer => 'Môi trường phòng';
+	@override String get audioSpatializerDescription => 'Thêm phản ánh phòng yên tĩnh.';
+	@override String get audioPitch => 'Pitch thay đổi';
+	@override String get audioPitchDescription => 'Thay đổi vị trí mà không thay đổi tốc độ. MPV xây dựng phải bao gồm Rubber Band.';
+	@override String get audioEffectUnavailable => 'Hiệu ứng này không có sẵn cho con đường này hoặc MPV xây dựng';
 	@override String get backgroundVideoAudio => 'Video âm thanh nền';
 	@override String get backgroundVideoAudioDescription => 'Giữ video chơi âm thanh khi bạn rời chơi; hình ảnh được ẩn cho đến khi bạn trở về. Android sử dụng thông báo phát lại phương tiện truyền thông.';
 	@override String get audioNormalization => 'bình thường tiếng ồn';
@@ -3068,6 +3106,10 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get choosePlaylist => 'Chọn playlist file';
 	@override String get openPlaylist => 'playlist mở';
 	@override String get playlistFormatsHelp => 'Một danh sách phát có thể chứa tối đa 1.000 mục và 2 MB. HLS hiển thị mở như dòng để người chơi có thể chọn một chất lượng.';
+	@override String get saveQueuePlaylist => 'Lưu hàng đợi thành danh sách phát';
+	@override String get queuePlaylistSaved => 'Danh sách phát đã được lưu cạnh các tệp phương tiện.';
+	@override String get queuePlaylistUnavailable => 'Không thể lưu hàng đợi này thành danh sách phát cục bộ để dùng lại.';
+	@override String get queuePlaylistFolderRequired => 'Chọn vị trí lưu trong cùng thư mục với các tệp trong hàng đợi.';
 	@override String get noFavorites => 'Không được lưu stream yêu thích cho đến nay. Favorites stay in this profile.';
 	@override String get removeFavorite => 'Xóa stream yêu thích';
 	@override String get filesHelp => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.';
@@ -3130,12 +3172,13 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get replaceRecording => 'Thay thế file';
 	@override String get discHelp => 'Mở một đĩa trong ổ đĩa quang của máy tính này. Bạn cũng có thể mở hình ảnh ISO từ các tệp thiết bị.';
 	@override String get discs => 'Đĩa Optical';
+	@override String get editionOrTitle => 'Ấn bản hoặc tên đĩa';
 	@override String get dvd => 'DVD';
 	@override String get bluray => 'Đánh giá Blu-ray';
 	@override String get audioCd => 'CD âm thanh';
 	@override String get discAvailability => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.';
 	@override String get converterTitle => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương';
-	@override String get converterHelp => 'Sử dụng FFmpeg để tạo bản sao MP4, M4A hoặc MP3.';
+	@override String get converterHelp => 'Chuyển đổi một tệp địa phương hoặc sửa lại nó với FFmpeg.';
 	@override String get converterIntro => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.';
 	@override String get converterPrivacy => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.';
 	@override String get converterChooseInput => 'Chọn một tập tin phương tiện truyền thông địa phương';
@@ -3143,6 +3186,8 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get converterMp4 => 'MP4 · H.264 và AAC';
 	@override String get converterM4a => 'M4A · AAC âm thanh';
 	@override String get converterMp3 => 'MP3 - Âm thanh';
+	@override String get allowFtp => 'Khả năng FTP';
+	@override String get allowFtpHelp => 'FTP gửi các phương tiện truyền thông mà không có mã hóa. sử dụng chỉ trên mạng tin cậy.';
 	@override String get converterSaveAs => 'Lưu các phương tiện truyền thông được chuyển đổi như';
 	@override String get converterExtensionMismatch => 'Chọn tên file với phần mở rộng output được chọn.';
 	@override String get converterUnsupportedInput => 'Chọn một file audio hoặc video.';
@@ -3152,7 +3197,7 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Bắt đầu FFmpeg...';
 	@override String get converterProgress => 'Chuyển đổi vào máy tính này...';
 	@override String get converterComplete => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.';
-	@override String get converterFfmpegMissing => 'Cài đặt FFmpeg với hỗ trợ H.264, AAC, và MP3, sau đó thử lại.';
+	@override String get converterFfmpegMissing => 'FFmpeg thiếu hoặc không hỗ trợ định dạng này.';
 	@override String get converterFailed => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.';
 	@override String get converterCancelled => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.';
 	@override String get converterDesktopOnly => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.';
@@ -3180,6 +3225,9 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get captureSaved => 'Màn hình ghi âm được tiết kiệm';
 	@override String get captureElapsedLabel => 'Thời gian ghi âm';
 	@override String get captureStart => 'Bắt đầu ghi âm';
+	@override String get capturePreview => 'Xem trước trong trình phát';
+	@override String get capturePreviewHelp => 'Xem trước nguồn đã chọn trong trình phát thông thường. Bản xem trước chỉ tồn tại trong phiên này và không lưu bản ghi. Hỗ trợ thiết bị và quyền truy cập tùy thuộc vào MPV và hệ điều hành. Bản xem trước chỉ dùng video; bản ghi đã lưu có thể kèm âm thanh tùy chọn.';
+	@override String get capturePreviewActive => 'Xem trước trực tiếp · không ghi hình';
 	@override String get captureStop => 'Stop và Save';
 	@override String get captureMode => 'bắt giữ';
 	@override String get shareMode => 'chia sẻ';
@@ -3498,7 +3546,6 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Thêm Google Drive, OneDrive, Dropbox, WebDAV hoặc S3 vào tệp và sách trước.';
 	@override String get syncDestination => 'Tài khoản lưu trữ Sync';
 	@override String get syncFolder => 'Sync folder hoặc prefix';
-	@override String get syncFolderHelp => 'Sử dụng một thư mục riêng biệt hiện có trong nguồn WebDAV của bạn, hoặc một tiền lệ S3 dành riêng.';
 	@override String get syncCode => 'Mã đồng bộ riêng';
 	@override String get syncCodeHelp => 'Tạo một mã trên thiết bị đầu tiên của bạn, sau đó nhập mã đó trên các thiết bị khác của bạn. giữ một bản sao riêng: đó là chìa khóa cho trạng thái mã hóa của bạn. Sử dụng mã khác nhau cho mỗi người.';
 	@override String get showCode => 'Hiển thị hoặc ẩn mã đồng bộ';
@@ -3508,7 +3555,6 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Xóa nguồn này sẽ tắt đọc và nghe đồng bộ ở đây. các tệp đồng bộ mã hóa sẽ ở lại trong nhà cung cấp.';
 	@override String get syncReconnect => 'Kết nối lại tài khoản lưu trữ';
 	@override String lastSynced({required Object time}) => 'Kết quả tìm kiếm tại ${time}';
-	@override String get syncPrivacy => 'Chỉ mã hóa tiến bộ và ghi chú được lưu trữ. Audio và ebook tập tin, tài khoản tokens và mật khẩu không được tải lên. Google Drive và OneDrive sử dụng lưu trữ ứng dụng; Dropbox sử dụng PlezyNG Sync. Khả năng đồng bộ có thể yêu cầu thêm truy cập viết. Trong khi bật, điểm đến này sở hữu tiến bộ đồng bộ; tiến bộ máy chủ vẫn riêng biệt. Khả năng đồng bộ tắt giữ lịch sử địa phương và trạng thái từ xa.';
 	@override String get syncConflicts => 'Chọn nơi để lặp lại';
 	@override String get conflictHelp => 'Những thay đổi này được thực hiện độc lập.Chọn vị trí hoặc phiên bản đánh dấu để giữ.Một thời gian sau hoặc tỷ lệ cao hơn không tự động giành chiến thắng.';
 	@override String syncDevice({required Object device}) => 'Thiết bị ${device}';
@@ -3702,7 +3748,6 @@ class _Translations$games$vi extends Translations$games$en {
 	// Translations
 	@override String get title => 'Games';
 	@override String get enable => 'Show Games for this profile';
-	@override String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
 	@override String get subtitle => 'Your games, from your computers.';
 	@override String get computers => 'Your computers';
 	@override String get nearby => 'Nearby computers';
@@ -3727,7 +3772,6 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
 	@override String get refreshGames => 'Refresh games';
 	@override String get play => 'Play';
-	@override String get recent => 'Recently opened';
 	@override String get favorites => 'Favorites';
 	@override String get allGames => 'All games';
 	@override String get search => 'Find a game';
@@ -3759,8 +3803,6 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
 	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
-	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get linkSteamAccount => 'Link Steam account';
 	@override String get refreshSteamAccount => 'Refresh Steam account';
@@ -3768,14 +3810,12 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get unlinkSteamAccountConfirm => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.';
 	@override String get steamAccountLinked => 'Steam account linked. Games imported.';
 	@override String get steamLibraryPrivate => 'Steam account linked. Its library is private or unavailable, so no games were imported.';
-	@override String get steamAppId => 'Steam App ID';
 	@override String get steamLibraryStale => 'Steam could not refresh the library. Showing the last available catalog.';
 	@override String get steamLibraryTruncated => 'Showing up to 2,000 games. The Steam catalog was truncated.';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
 	@override String get streamControls => 'Stream controls';
 	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
-	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: deepLinks
@@ -5951,6 +5991,32 @@ extension on TranslationsVi {
 			'videoControls.settingsButton' => 'Cài đặt Playback',
 			'videoControls.tracksButton' => 'Âm thanh & Subtitles',
 			'videoControls.chaptersButton' => 'Chương 1',
+			'videoControls.segmentLoopHelp' => 'Đặt A, sau đó đặt B sau đó trong dòng thời gian.',
+			'videoControls.setLoopStart' => 'Cài đặt loop bắt đầu (A)',
+			'videoControls.setLoopEnd' => 'Thiết lập vòng tròn kết thúc (B)',
+			'videoControls.clearSegmentLoop' => 'Chi tiết Segment Loop',
+			'videoControls.setLoopStartFirst' => 'Cài đặt vòng bắt đầu (A) trước khi kết thúc (B).',
+			'videoControls.loopEndAfterStart' => 'Kết thúc vòng tròn phải là muộn hơn khởi đầu.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping không có sẵn cho playback này.',
+			'videoControls.loopPointNotSet' => 'Không đặt',
+			'videoControls.bookmarksHelp' => 'Bookmarks được lưu trên thiết bị này. chọn một để đi đến thời điểm đó.',
+			'videoControls.bookmarksButton' => 'Bookmarks Đánh giá',
+			'videoControls.chaptersAndBookmarks' => 'Chương và Bookmark',
+			'videoControls.segmentLoop' => 'phân đoạn loop',
+			'videoControls.addBookmark' => 'Thêm Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark tên',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.bookmarkNameHint' => 'Ví dụ: Mở cảnh',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark Đề ${n}',
+			'videoControls.bookmarkNameRequired' => 'Nhập tên cho bookmark này.',
+			'videoControls.deleteBookmark' => 'xóa bookmark',
+			'videoControls.bookmarkLimitReached' => 'Bài viết này đã có 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Không thể lưu hoặc xóa sổ này.',
+			'videoControls.bookmarkSaved' => 'Bookmark được tiết kiệm',
+			'videoControls.bookmarkDeleted' => 'Bookmark bị xóa',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Điểm Loop ${point} Set tại ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Không có chương hoặc bảng chữ cái có sẵn.',
 			'videoControls.versionQualityButton' => 'Phiên bản & Chất lượng',
 			'videoControls.versionColumnHeader' => 'Phiên bản',
 			'videoControls.qualityColumnHeader' => 'Chất lượng',
@@ -5965,8 +6031,6 @@ extension on TranslationsVi {
 			'videoControls.exitFullscreenButton' => 'Khởi hành Fullscreen',
 			'videoControls.alwaysOnTopButton' => 'Luôn ở trên',
 			'videoControls.rotationLockButton' => 'Lock xoay',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.lockScreen' => 'Màn hình Lock',
 			'videoControls.screenLockButton' => 'màn hình lock',
 			'videoControls.timelineSlider' => 'Thanh thời gian video',
@@ -6455,6 +6519,8 @@ extension on TranslationsVi {
 			'libraries.hideLibrary' => 'ẩn thư viện',
 			'libraries.libraryOptions' => 'Tùy chọn thư viện',
 			'libraries.content' => 'Thư viện Content',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Chọn thư viện',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Bộ lọc (${count})',
 			'libraries.noRecommendations' => 'Không có khuyến nghị có sẵn',
@@ -6479,8 +6545,6 @@ extension on TranslationsVi {
 			'libraries.filterCategories.year' => 'Năm',
 			'libraries.filterCategories.contentRating' => 'Content Đánh giá',
 			'libraries.filterCategories.tag' => 'Nhãn',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Không quan sát',
 			'libraries.filterCategories.unplayed' => 'Chưa Phát',
 			'libraries.filterCategories.favorites' => 'Yêu Thích',
@@ -6922,6 +6986,7 @@ extension on TranslationsVi {
 			'music.visualizerProfileLoading' => 'Đọc Track Analysis...',
 			'music.visualizerAmbientMotion' => 'động cơ môi trường',
 			'music.visualizerPlexLoudness' => 'Plex tiếng ồn',
+			'music.visualizerLiveAudio' => 'Phân tích âm thanh trực tiếp',
 			'music.visualizerPreviousPreset' => 'Phong cách Visual Previous',
 			'music.visualizerNextPreset' => 'Tiếp theo: Visual Style',
 			'music.visualizerPresetAurora' => 'Cực quang',
@@ -6968,6 +7033,8 @@ extension on TranslationsVi {
 			'watchTogether.codeCopied' => 'Mã phòng copy',
 			'watchTogether.shareInvite' => 'Chia sẻ mời',
 			'watchTogether.inviteCopied' => 'Gửi tin nhắn, gửi nó vào một tin nhắn.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Tham gia phòng đồng hồ của tôi tại PlezyNG: mở phòng đồng hồ, chọn phòng đồng hồ và nhập phòng đồng hồ ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Cùng kiểm soát phiên',
 			'watchTogether.reconnecting' => 'Kết nối lại...',
@@ -6993,8 +7060,6 @@ extension on TranslationsVi {
 			'watchTogether.playAnyway' => 'Chơi bất cứ',
 			'watchTogether.chooseAnotherCopy' => 'Chọn một bản sao khác',
 			'watchTogether.dontPlay' => 'Đừng chơi',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Bạn không có video này',
 			'watchTogether.unavailableDescription' => 'PlezyNG không thể tìm thấy nó trong thư viện của bạn. chọn bản sao cho chính mình hoặc tìm kiếm lại.',
 			'watchTogether.chooseCopy' => 'Chọn một bản sao',
@@ -7348,6 +7413,12 @@ extension on TranslationsVi {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Bản đồ cho độ sáng cao của màn hình trong người chơi, sau đó nói với nhà soạn nhạc kết quả.',
 			'videoSettings.hdrToneMappingFailed' => 'Không thể thay đổi bản đồ âm thanh HDR - chế độ trước vẫn hoạt động.',
 			'videoSettings.audioOutput' => 'Audio output xuất',
+			'videoSettings.videoTrack' => 'Bản video',
+			'videoSettings.videoTrackDescription' => 'Chọn luồng video cần hiển thị. Có sẵn khi phát bằng MPV nếu tệp có các bản video thay thế.',
+			'videoSettings.videoTrackDefault' => 'Mặc định',
+			'videoSettings.videoTrackUnavailable' => 'Không có bản video thay thế nào.',
+			'videoSettings.videoTrackFailed' => 'Không thể đổi bản video.',
+			'videoSettings.videoTrackNumber' => ({required Object id}) => 'Bản ${id}',
 			'videoSettings.performanceOverlay' => 'Hiệu suất Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
@@ -7355,10 +7426,17 @@ extension on TranslationsVi {
 			'videoSettings.audioOutputSpatial' => 'âm thanh không gian',
 			'videoSettings.audioOutputStereo' => 'Âm Thanh Nổi',
 			'videoSettings.audioEqualizer' => 'âm thanh equalizer',
-			'videoSettings.audioEqualizerDescription' => 'Tùy chỉnh 5 tần số cho thiết bị này. có sẵn trên mpv; một EQ hoạt động giải mã âm thanh và chặn phù hợp.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer cho MPVCác bộ lọc âm thanh sử dụng âm thanh giải mã và tắt passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Đơn giản',
 			'videoSettings.audioEqualizerActive' => 'Tùy chọn',
 			'videoSettings.audioEqualizerSaveFailed' => 'Không thể tiết kiệm các thiết lập Audio Equalizer.',
+			'videoSettings.audioEffectsDescription' => 'Hiệu ứng sử dụng âm thanh giải mã, do đó passthrough xoay. không gian phòng và mở rộng stereo phụ thuộc vào MPV xây dựng và theo dõi.',
+			'videoSettings.audioStereoWidth' => 'Stereo mở rộng',
+			'videoSettings.audioSpatializer' => 'Môi trường phòng',
+			'videoSettings.audioSpatializerDescription' => 'Thêm phản ánh phòng yên tĩnh.',
+			'videoSettings.audioPitch' => 'Pitch thay đổi',
+			'videoSettings.audioPitchDescription' => 'Thay đổi vị trí mà không thay đổi tốc độ. MPV xây dựng phải bao gồm Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Hiệu ứng này không có sẵn cho con đường này hoặc MPV xây dựng',
 			'videoSettings.backgroundVideoAudio' => 'Video âm thanh nền',
 			'videoSettings.backgroundVideoAudioDescription' => 'Giữ video chơi âm thanh khi bạn rời chơi; hình ảnh được ẩn cho đến khi bạn trở về. Android sử dụng thông báo phát lại phương tiện truyền thông.',
 			'videoSettings.audioNormalization' => 'bình thường tiếng ồn',
@@ -7469,6 +7547,8 @@ extension on TranslationsVi {
 			'metadataEdit.metadataUpdated' => 'Metadata cập nhật',
 			'metadataEdit.metadataUpdateFailed' => 'Không cập nhật metadata',
 			'metadataEdit.artworkUpdated' => 'Artwork cập nhật',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artworkUpdateFailed' => 'Không cập nhật tác phẩm nghệ thuật',
 			'metadataEdit.noArtworkAvailable' => 'Không có tác phẩm nghệ thuật',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Tùy chọn nghệ thuật ${index}',
@@ -7507,8 +7587,6 @@ extension on TranslationsVi {
 			'metadataEdit.shownWithForeignAudio' => 'Hiển thị bằng âm thanh nước ngoài',
 			'metadataEdit.alwaysEnabled' => 'Luôn có khả năng',
 			'metadataEdit.tags' => 'Thẻ',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'thêm tag',
 			'metadataEdit.genre' => 'Thể loại',
 			'metadataEdit.director' => 'Đạo Diễn',
@@ -7877,6 +7955,10 @@ extension on TranslationsVi {
 			'universalMedia.choosePlaylist' => 'Chọn playlist file',
 			'universalMedia.openPlaylist' => 'playlist mở',
 			'universalMedia.playlistFormatsHelp' => 'Một danh sách phát có thể chứa tối đa 1.000 mục và 2 MB. HLS hiển thị mở như dòng để người chơi có thể chọn một chất lượng.',
+			'universalMedia.saveQueuePlaylist' => 'Lưu hàng đợi thành danh sách phát',
+			'universalMedia.queuePlaylistSaved' => 'Danh sách phát đã được lưu cạnh các tệp phương tiện.',
+			'universalMedia.queuePlaylistUnavailable' => 'Không thể lưu hàng đợi này thành danh sách phát cục bộ để dùng lại.',
+			'universalMedia.queuePlaylistFolderRequired' => 'Chọn vị trí lưu trong cùng thư mục với các tệp trong hàng đợi.',
 			'universalMedia.noFavorites' => 'Không được lưu stream yêu thích cho đến nay. Favorites stay in this profile.',
 			'universalMedia.removeFavorite' => 'Xóa stream yêu thích',
 			'universalMedia.filesHelp' => 'Chọn các tệp âm thanh, video hoặc ISO cho một cặp tạm thời. tệp và URL không được thêm vào lịch sử thư viện.',
@@ -7935,12 +8017,13 @@ extension on TranslationsVi {
 			'universalMedia.replaceRecording' => 'Thay thế file',
 			'universalMedia.discHelp' => 'Mở một đĩa trong ổ đĩa quang của máy tính này. Bạn cũng có thể mở hình ảnh ISO từ các tệp thiết bị.',
 			'universalMedia.discs' => 'Đĩa Optical',
+			'universalMedia.editionOrTitle' => 'Ấn bản hoặc tên đĩa',
 			'universalMedia.dvd' => 'DVD',
 			'universalMedia.bluray' => 'Đánh giá Blu-ray',
 			'universalMedia.audioCd' => 'CD âm thanh',
 			'universalMedia.discAvailability' => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.',
 			'universalMedia.converterTitle' => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương',
-			'universalMedia.converterHelp' => 'Sử dụng FFmpeg để tạo bản sao MP4, M4A hoặc MP3.',
+			'universalMedia.converterHelp' => 'Chuyển đổi một tệp địa phương hoặc sửa lại nó với FFmpeg.',
 			'universalMedia.converterIntro' => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.',
 			'universalMedia.converterPrivacy' => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.',
 			'universalMedia.converterChooseInput' => 'Chọn một tập tin phương tiện truyền thông địa phương',
@@ -7948,6 +8031,8 @@ extension on TranslationsVi {
 			'universalMedia.converterMp4' => 'MP4 · H.264 và AAC',
 			'universalMedia.converterM4a' => 'M4A · AAC âm thanh',
 			'universalMedia.converterMp3' => 'MP3 - Âm thanh',
+			'universalMedia.allowFtp' => 'Khả năng FTP',
+			'universalMedia.allowFtpHelp' => 'FTP gửi các phương tiện truyền thông mà không có mã hóa. sử dụng chỉ trên mạng tin cậy.',
 			'universalMedia.converterSaveAs' => 'Lưu các phương tiện truyền thông được chuyển đổi như',
 			'universalMedia.converterExtensionMismatch' => 'Chọn tên file với phần mở rộng output được chọn.',
 			'universalMedia.converterUnsupportedInput' => 'Chọn một file audio hoặc video.',
@@ -7957,7 +8042,7 @@ extension on TranslationsVi {
 			'universalMedia.converterStarting' => 'Bắt đầu FFmpeg...',
 			'universalMedia.converterProgress' => 'Chuyển đổi vào máy tính này...',
 			'universalMedia.converterComplete' => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.',
-			'universalMedia.converterFfmpegMissing' => 'Cài đặt FFmpeg với hỗ trợ H.264, AAC, và MP3, sau đó thử lại.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg thiếu hoặc không hỗ trợ định dạng này.',
 			'universalMedia.converterFailed' => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.',
 			'universalMedia.converterCancelled' => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.',
 			'universalMedia.converterDesktopOnly' => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.',
@@ -7976,6 +8061,8 @@ extension on TranslationsVi {
 			'universalMedia.captureAudioNone' => 'Không có Audio',
 			'universalMedia.captureDefaultAudio' => 'Lập trình Audio Input',
 			'universalMedia.captureWaylandHelp' => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.captureFrameRate' => 'Tỷ lệ ghi âm frame rate',
 			'universalMedia.capturePrivacy' => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.',
 			'universalMedia.captureSaveAs' => 'Lưu màn hình ghi âm như',
@@ -7985,6 +8072,9 @@ extension on TranslationsVi {
 			'universalMedia.captureSaved' => 'Màn hình ghi âm được tiết kiệm',
 			'universalMedia.captureElapsedLabel' => 'Thời gian ghi âm',
 			'universalMedia.captureStart' => 'Bắt đầu ghi âm',
+			'universalMedia.capturePreview' => 'Xem trước trong trình phát',
+			'universalMedia.capturePreviewHelp' => 'Xem trước nguồn đã chọn trong trình phát thông thường. Bản xem trước chỉ tồn tại trong phiên này và không lưu bản ghi. Hỗ trợ thiết bị và quyền truy cập tùy thuộc vào MPV và hệ điều hành. Bản xem trước chỉ dùng video; bản ghi đã lưu có thể kèm âm thanh tùy chọn.',
+			'universalMedia.capturePreviewActive' => 'Xem trước trực tiếp · không ghi hình',
 			'universalMedia.captureStop' => 'Stop và Save',
 			'universalMedia.captureMode' => 'bắt giữ',
 			'universalMedia.shareMode' => 'chia sẻ',
@@ -8021,8 +8111,6 @@ extension on TranslationsVi {
 			'universalMedia.extensionInstallTitle' => 'Thêm dịch vụ tìm kiếm này?',
 			'universalMedia.extensionReplaceTitle' => 'Cập nhật dịch vụ tìm kiếm này?',
 			'universalMedia.extensionService' => 'Dịch vụ',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS điểm cuối',
 			'universalMedia.extensionConsent' => 'Văn bản tìm kiếm của bạn được gửi đến dịch vụ này.Manifest không chứa mã thực hiện.Hãy tiếp tục chỉ nếu bạn tin tưởng vào điểm kết thúc này.',
 			'universalMedia.extensionInstall' => 'thêm dịch vụ',
@@ -8276,7 +8364,6 @@ extension on TranslationsVi {
 			'audiobook.addSyncSource' => 'Thêm Google Drive, OneDrive, Dropbox, WebDAV hoặc S3 vào tệp và sách trước.',
 			'audiobook.syncDestination' => 'Tài khoản lưu trữ Sync',
 			'audiobook.syncFolder' => 'Sync folder hoặc prefix',
-			'audiobook.syncFolderHelp' => 'Sử dụng một thư mục riêng biệt hiện có trong nguồn WebDAV của bạn, hoặc một tiền lệ S3 dành riêng.',
 			'audiobook.syncCode' => 'Mã đồng bộ riêng',
 			'audiobook.syncCodeHelp' => 'Tạo một mã trên thiết bị đầu tiên của bạn, sau đó nhập mã đó trên các thiết bị khác của bạn. giữ một bản sao riêng: đó là chìa khóa cho trạng thái mã hóa của bạn. Sử dụng mã khác nhau cho mỗi người.',
 			'audiobook.showCode' => 'Hiển thị hoặc ẩn mã đồng bộ',
@@ -8286,7 +8373,6 @@ extension on TranslationsVi {
 			'audiobook.syncSourceDisconnect' => 'Xóa nguồn này sẽ tắt đọc và nghe đồng bộ ở đây. các tệp đồng bộ mã hóa sẽ ở lại trong nhà cung cấp.',
 			'audiobook.syncReconnect' => 'Kết nối lại tài khoản lưu trữ',
 			'audiobook.lastSynced' => ({required Object time}) => 'Kết quả tìm kiếm tại ${time}',
-			'audiobook.syncPrivacy' => 'Chỉ mã hóa tiến bộ và ghi chú được lưu trữ. Audio và ebook tập tin, tài khoản tokens và mật khẩu không được tải lên. Google Drive và OneDrive sử dụng lưu trữ ứng dụng; Dropbox sử dụng PlezyNG Sync. Khả năng đồng bộ có thể yêu cầu thêm truy cập viết. Trong khi bật, điểm đến này sở hữu tiến bộ đồng bộ; tiến bộ máy chủ vẫn riêng biệt. Khả năng đồng bộ tắt giữ lịch sử địa phương và trạng thái từ xa.',
 			'audiobook.syncConflicts' => 'Chọn nơi để lặp lại',
 			'audiobook.conflictHelp' => 'Những thay đổi này được thực hiện độc lập.Chọn vị trí hoặc phiên bản đánh dấu để giữ.Một thời gian sau hoặc tỷ lệ cao hơn không tự động giành chiến thắng.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Thiết bị ${device}',
@@ -8453,7 +8539,6 @@ extension on TranslationsVi {
 			'comics.collections' => 'Bộ sưu tập',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
-			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
 			'games.subtitle' => 'Your games, from your computers.',
 			'games.computers' => 'Your computers',
 			'games.nearby' => 'Nearby computers',
@@ -8478,7 +8563,6 @@ extension on TranslationsVi {
 			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
 			'games.refreshGames' => 'Refresh games',
 			'games.play' => 'Play',
-			'games.recent' => 'Recently opened',
 			'games.favorites' => 'Favorites',
 			'games.allGames' => 'All games',
 			'games.search' => 'Find a game',
@@ -8491,6 +8575,8 @@ extension on TranslationsVi {
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
@@ -8510,8 +8596,6 @@ extension on TranslationsVi {
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
 			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
-			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.linkSteamAccount' => 'Link Steam account',
 			'games.refreshSteamAccount' => 'Refresh Steam account',
@@ -8519,14 +8603,12 @@ extension on TranslationsVi {
 			'games.unlinkSteamAccountConfirm' => 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
 			'games.steamAccountLinked' => 'Steam account linked. Games imported.',
 			'games.steamLibraryPrivate' => 'Steam account linked. Its library is private or unavailable, so no games were imported.',
-			'games.steamAppId' => 'Steam App ID',
 			'games.steamLibraryStale' => 'Steam could not refresh the library. Showing the last available catalog.',
 			'games.steamLibraryTruncated' => 'Showing up to 2,000 games. The Steam catalog was truncated.',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
 			'games.streamControls' => 'Stream controls',
 			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
-			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			'deepLinks.invalid' => 'Liên kết Plezy này không hợp lệ.',
 			'deepLinks.profileNotFound' => ({required Object profile}) => 'Không có hồ sơ phù hợp với "${profile}".',
 			'deepLinks.serverUnavailable' => 'Tôi không thể truy cập máy chủ cho liên kết này.',
@@ -8535,8 +8617,6 @@ extension on TranslationsVi {
 			'deepLinks.noLiveTv' => 'Không có máy chủ TV trực tiếp có sẵn cho liên kết này.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Không thể tìm thấy kênh "${channel}".',
 			'deepLinks.showLink' => 'Hiển thị link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Hiển thị profile link',
 			'deepLinks.dialogTitle' => 'liên kết',
 			'deepLinks.showHint' => 'Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.',

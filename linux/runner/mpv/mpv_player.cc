@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <dlfcn.h>
 
 #include "experimental_render_api.h"
 #include "sanitize_utf8.h"
@@ -56,6 +57,20 @@ constexpr uint64_t kVideoParamsUserdata = UINT64_MAX;
 // symptom, so every transition is logged with a timestamp from the native
 // side rather than inferred from an overlay readout.
 constexpr uint64_t kHwdecCurrentUserdata = UINT64_MAX - 1;
+constexpr uint64_t kVisualizationTimeUserdata = UINT64_MAX - 2;
+
+struct VisualizationTapApi {
+  int (*version)() = nullptr;
+  int (*enable)(mpv_handle*, int) = nullptr;
+  int (*read)(mpv_handle*, double, mpv_plezy_audio_block*, size_t) = nullptr;
+  VisualizationTapApi() {
+    version = reinterpret_cast<decltype(version)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_version"));
+    enable = reinterpret_cast<decltype(enable)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_enable"));
+    read = reinterpret_cast<decltype(read)>(dlsym(RTLD_DEFAULT, "mpv_plezy_audio_tap_read"));
+  }
+  bool available() const { return version && enable && read && version() == MPV_PLEZY_AUDIO_TAP_ABI; }
+};
+VisualizationTapApi& TapApi() { static VisualizationTapApi api; return api; }
 
 // Parses the string reply of a `time-pos` read: the whole string must be one
 // finite number. Anything else — an empty reply, "inf"/"nan", trailing text —
@@ -315,6 +330,22 @@ struct MpvPlayer::SourceCallbackData {
 MpvPlayer::MpvPlayer(bool audio_only)
     : audio_only_(audio_only), callback_context_(std::make_shared<CallbackContext>(this)) {}
 
+bool MpvPlayer::VisualizationTapAvailable() { return TapApi().available(); }
+
+int MpvPlayer::SetVisualizationTap(bool enabled) {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  if (!audio_only_ || disposed_ || !mpv_ || !TapApi().available()) return MPV_ERROR_UNSUPPORTED;
+  return TapApi().enable(mpv_, enabled ? 1 : 0);
+}
+
+int MpvPlayer::ReadVisualizationAudio(mpv_plezy_audio_block* block) {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  if (!audio_only_ || disposed_ || !mpv_ || !TapApi().available()) return MPV_ERROR_UNSUPPORTED;
+  const double pts = visualization_pts_.load();
+  if (!std::isfinite(pts)) return 0;
+  return TapApi().read(mpv_, pts, block, sizeof(*block));
+}
+
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
 bool MpvPlayer::IsInitialized() const {
@@ -395,6 +426,7 @@ bool MpvPlayer::Initialize() {
   mpv_set_wakeup_callback(mpv_, OnMpvWakeup, callback_context_.get());
   mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
   mpv_observe_property(mpv_, 0, "audio-device-list", MPV_FORMAT_NONE);
+  if (audio_only_) mpv_observe_property(mpv_, kVisualizationTimeUserdata, "time-pos", MPV_FORMAT_DOUBLE);
   if (!audio_only_) {
     // One node observation stands in for six blocking sub-property reads. The
     // HDR decision runs on the GTK main thread and one of its callers fires on
@@ -1192,6 +1224,11 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       auto* prop = static_cast<mpv_event_property*>(event->data);
       if (!prop || !prop->name) break;
       mpv_node node = plezy::mpv_common::ExtractPropertyNode(prop);
+      if (event->reply_userdata == kVisualizationTimeUserdata) {
+        visualization_pts_.store(node.format == MPV_FORMAT_DOUBLE ? node.u.double_ :
+                                 std::numeric_limits<double>::quiet_NaN());
+        break;
+      }
 
       // This runner's own observation, which nothing on the Dart side asked
       // for and nothing there is waiting on. mpv delivers one event per
@@ -1216,6 +1253,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_END_FILE: {
+      visualization_pts_.store(std::numeric_limits<double>::quiet_NaN());
       audio_recovery_.SetFileLoaded(false);
       // The stop that audio recovery issued on giving up ends the file with
       // reason stop, which Dart would take for the user's own. It is reported
@@ -1253,6 +1291,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_START_FILE: {
+      visualization_pts_.store(std::numeric_limits<double>::quiet_NaN());
       auto* start = static_cast<mpv_event_start_file*>(event->data);
       if (!start) break;
       FlushPendingRestartPositions();
@@ -1267,6 +1306,9 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       SendActiveSourceEvent("file-loaded");
       break;
     }
+    case MPV_EVENT_SEEK:
+      visualization_pts_.store(std::numeric_limits<double>::quiet_NaN());
+      break;
     case MPV_EVENT_PLAYBACK_RESTART: {
       // The position is asked for, not read: a synchronous read hands the
       // request to the core and parks the GTK main thread on the playloop — the

@@ -172,7 +172,8 @@ CUSTOM_ENGINE_ROOT="$TASK_ROOT/custom-engine"
 OUTPUT_ROOT="$TASK_ROOT/output"
 BOOTSTRAP_DEPOT_TOOLS="$TASK_ROOT/bootstrap-depot-tools"
 HOST_TOOLS="$TASK_ROOT/host-tools/bin"
-mkdir -m 700 -- "$LOG_ROOT" "$DOWNLOAD_ROOT" "$CUSTOM_ENGINE_ROOT" "$OUTPUT_ROOT" "$HOST_TOOLS"
+mkdir -m 700 -- "$LOG_ROOT" "$DOWNLOAD_ROOT" "$CUSTOM_ENGINE_ROOT" "$OUTPUT_ROOT" "$TASK_ROOT/host-tools"
+mkdir -m 700 -- "$HOST_TOOLS"
 exec > >(tee -a "$LOG_ROOT/build-release-candidate.log") 2>&1
 
 printf 'PlezyNG WebOS release build task: %s\n' "$TASK_ROOT"
@@ -253,6 +254,13 @@ ln -s -- "$PYTHON_BIN" "$HOST_TOOLS/python3"
 
 (
   cd -- "$SDK_ROOT/flutter"
+  # Flutter's monorepo DEPS uses engine/src paths relative to this root.
+  # The pinned standard template keeps this patched checkout unmanaged.
+  if [[ -e .gclient || -L .gclient ]]; then
+    echo "Refusing to overwrite an existing gclient configuration." >&2
+    exit 1
+  fi
+  install -m 600 -- engine/scripts/standard.gclient .gclient
   gclient sync --no-history --shallow -j 8
 )
 

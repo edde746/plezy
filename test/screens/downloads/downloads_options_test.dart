@@ -35,6 +35,7 @@ import '../../test_helpers/prefs.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/io_fakes.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
+import '../../test_helpers/profile_stack.dart';
 import '../../test_helpers/stub_music_playback_service.dart';
 
 class _FakeConnectionRegistry extends ConnectionRegistry {
@@ -53,6 +54,7 @@ void main() {
   late DownloadProvider downloadProvider;
   late MultiServerProvider multiServerProvider;
   late MultiServerManager serverManager;
+  late ProfileStack profileStack;
   late DownloadManagerService downloadManager;
   late DownloadStorageService storageService;
   late Directory temporaryDirectory;
@@ -72,6 +74,7 @@ void main() {
     await storageService.initialize(SettingsService.instance);
 
     db = AppDatabase.forTesting(NativeDatabase.memory());
+    profileStack = await ProfileStack.create(db: db, withStorage: false);
     PlexApiCache.initialize(db);
     JellyfinApiCache.initialize(db);
 
@@ -91,6 +94,7 @@ void main() {
     downloadProvider.dispose();
     downloadManager.dispose();
     multiServerProvider.dispose();
+    await profileStack.dispose();
     await db.close();
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
@@ -117,6 +121,7 @@ void main() {
             Provider<ConnectionRegistry>.value(value: _FakeConnectionRegistry(db)),
             ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider.value(value: profileStack.active),
             ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
           ],
           child: MaterialApp(

@@ -8,7 +8,6 @@ import '../../discovery/discovery_choice.dart';
 import '../../discovery/discovery_store.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
-import '../../media/media_kind.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
@@ -51,7 +50,9 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
   Future<void> _load() async {
     try {
       final state = await widget.store.load(widget.profileId);
-      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+      if (!mounted || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+        return;
+      }
       setState(() {
         _state = state;
         _loading = false;
@@ -91,7 +92,9 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
   };
 
   Future<void> _restoreToDeck(DiscoveryChoice choice) async {
-    if (_restoring.contains(choice.id) || context.read<ActiveProfileProvider>().active?.id != widget.profileId) return;
+    if (_restoring.contains(choice.id) || context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
+      return;
+    }
     setState(() => _restoring.add(choice.id));
     try {
       await widget.onRestoreToDeck(choice);
@@ -144,7 +147,7 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
                       IconButton(
                         tooltip: t.discover.findNext.details,
                         onPressed: profileChanged ? null : () => widget.onDetails(choice),
-                        icon: const AppIcon(Symbols.info_outline_rounded),
+                        icon: const AppIcon(Symbols.info_rounded),
                       ),
                       IconButton(
                         tooltip: t.common.retry,

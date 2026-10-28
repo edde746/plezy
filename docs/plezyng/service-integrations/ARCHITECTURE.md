@@ -1,6 +1,6 @@
 # Architecture and integration contracts
 
-Status: broader architecture proposed. This branch implements a curated external-destination directory and Google Books public search; the access-option, account, offer persistence and partner contracts below remain guidance for follow-up work. **High-confidence design recommendation:** add capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
+Status: partner/availability architecture remains proposed. Shipped code includes a curated external-destination directory, Google Books public search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom sources, OPML transfer, and a limited integration layer. `integration_contracts.dart` contains provider definitions, safe external targets and deny-by-default commerce policy; `integration_preferences_store.dart` and `integration_identity_store.dart` store non-secret profile-scoped preferences and reversible confirmed crosswalks. The proposed connection, identifier, offer and evidence models below are not implemented; there is no universal account registry or licensed offer backend. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
 
 ## Boundaries
 
@@ -21,6 +21,8 @@ flowchart TD
 Catalog browsing must work without obtaining playback leases. Reading an offer never initiates a checkout, loan, provider download job or account mutation. All access routes retain their original data owner and provenance.
 
 ## Proposed domain contracts
+
+The following table is a future target model. Its connection, identity-provenance, offer, evidence and fulfillment rows are design notes, not shipped Dart types. Implement each only when a concrete approved provider needs it.
 
 | Type | Minimum fields / purpose | Invariant |
 | --- | --- | --- |

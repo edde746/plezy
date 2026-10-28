@@ -4,6 +4,8 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/widgets/tv_color_picker.dart';
 import 'package:plezy/widgets/tv_number_spinner.dart';
 
+import '../test_helpers/theme.dart';
+
 void main() {
   setUp(() async {
     await LocaleSettings.setLocale(AppLocale.bg);
@@ -37,6 +39,7 @@ void main() {
     await tester.pumpWidget(
       TranslationProvider(
         child: MaterialApp(
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: TvColorPicker(initialColor: Colors.red, onColorChanged: (_) {}),
           ),

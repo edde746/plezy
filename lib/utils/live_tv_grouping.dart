@@ -46,6 +46,8 @@ List<LiveTvChannelGroup> groupLiveTvChannelsBySource(List<LiveTvChannel> channel
 }
 
 String liveTvChannelSourceKey(LiveTvChannel channel) {
+  final iptvSourceId = liveTvNonEmpty(channel.iptvSourceId);
+  if (iptvSourceId != null) return 'iptv\u0000$iptvSourceId';
   final serverId = liveTvNonEmpty(channel.serverId) ?? '';
   final providerSource = liveTvNonEmpty(channel.favoriteSource) ?? liveTvNonEmpty(channel.lineup) ?? '';
   final dvrSource = liveTvNonEmpty(channel.liveDvrKey) ?? '';
@@ -53,6 +55,7 @@ String liveTvChannelSourceKey(LiveTvChannel channel) {
 }
 
 String liveTvChannelSourceLabel(LiveTvChannel channel) {
+  if (channel.iptvSourceId != null) return liveTvNonEmpty(channel.liveTvSourceTitle) ?? 'IPTV';
   final serverLabel = liveTvNonEmpty(channel.serverName) ?? liveTvNonEmpty(channel.serverId) ?? t.liveTv.title;
   final sourceTitle = liveTvNonEmpty(channel.liveTvSourceTitle);
   if (sourceTitle == null || sourceTitle == serverLabel) return serverLabel;

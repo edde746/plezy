@@ -32,8 +32,9 @@ jobs:
         run: python3 scripts/games/prepare_steam.py
       - name: Install Vulkan loader, headers and software driver
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers
+          sudo apt-get update -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+            build-essential cmake ninja-build python3-jinja2 libvulkan-dev mesa-vulkan-drivers
       - name: Configure transport and lifecycle tests with sanitizers
         run: >-
           cmake -S native/games/steam -B build/games-steam-tests
@@ -60,6 +61,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Configure private Android download proxy
+        run: python3 scripts/prepare_android_sdk.py proxy
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: '15859902'
+          log-accepted-android-sdk-licenses: false
+      - name: Install all pinned Android module toolchains
+        run: python3 scripts/prepare_android_sdk.py install
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable

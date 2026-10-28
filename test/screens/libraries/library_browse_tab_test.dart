@@ -442,8 +442,9 @@ void main() {
   });
 }
 
-FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
-    tester.widget<FocusableMediaCard>(find.ancestor(of: find.text(title), matching: find.byType(FocusableMediaCard)));
+FocusableMediaCard _cardFor(WidgetTester tester, String title) => tester.widget<FocusableMediaCard>(
+  find.ancestor(of: find.textContaining(title), matching: find.byType(FocusableMediaCard)),
+);
 
 /// Starts a keyboard/D-pad session so cards render their focus chrome and
 /// focus moves behave like they do on TV.

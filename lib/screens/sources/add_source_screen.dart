@@ -32,10 +32,12 @@ class AddSourceScreen extends StatefulWidget {
 }
 
 class _AddSourceScreenState extends State<AddSourceScreen> {
+  static const _projectGutenbergOpdsEndpoint = 'https://www.gutenberg.org/ebooks/search.opds/';
+
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
-  bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = false;
+  bool _busy = false, _loadingPodcastFeed = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = false;
   bool _discoveringDlna = false;
   bool _nfsRpcTls = false;
   bool _nfsTlsIdentitySelected = false;
@@ -43,7 +45,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   bool _nfsTlsIdentitySaved = false;
   String? _nfsServerCertificateFileName;
   String? _nfsClientIdentityFileName;
-  Set<PublicationShelf> _shelves = {PublicationShelf.ebooks, PublicationShelf.audiobooks, PublicationShelf.videos};
+  Set<PublicationShelf> _shelves = defaultPublicationShelves(FileSourceKind.webdav);
   Object? _error;
   SourceController? _connecting;
   TextEditingController field(String key) => _fields.putIfAbsent(key, TextEditingController.new);
@@ -79,6 +81,23 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('syncRoot').text = old.options['syncRoot'] ?? '';
       field('syncLibrary').text = old.options['syncLibrary'] ?? '';
       field('region').text = old.options['region'] ?? '';
+      if (old.kind == FileSourceKind.podcastRss) {
+        _loadingPodcastFeed = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _loadSavedPodcastFeed(old));
+      }
+    }
+  }
+
+  Future<void> _loadSavedPodcastFeed(FileSource source) async {
+    try {
+      final controller = context.read<SourceController>();
+      await controller.ready;
+      final saved = await controller.repository.credentials(source);
+      if (mounted && saved['feedUrl']?.isNotEmpty == true) field('endpoint').text = saved['feedUrl']!;
+    } on Object {
+      // Keep the source editable if its encrypted feed URL cannot be read.
+    } finally {
+      if (mounted) setState(() => _loadingPodcastFeed = false);
     }
   }
 
@@ -169,6 +188,52 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       );
     }
     return null;
+  }
+
+  String? _validatePodcastFeedUrl(String? value) {
+    final uri = Uri.tryParse(value?.trim() ?? '');
+    if (uri == null ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        (uri.scheme != 'https' && !(uri.scheme == 'http' && _allowHttp)) ||
+        uri.toString().length > 8192) {
+      return t.fileSources.errorInvalidData;
+    }
+    return null;
+  }
+
+  String? _validateOpenSubsonicEndpoint(String? value) {
+    final uri = Uri.tryParse(value?.trim() ?? '');
+    if (uri == null ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        (uri.scheme != 'https' && !(uri.scheme == 'http' && _allowHttp)) ||
+        uri.toString().length > 2048 ||
+        uri.pathSegments.any((part) => part == '.' || part == '..')) {
+      return t.fileSources.errorInvalidData;
+    }
+    return null;
+  }
+
+  String? _validateOpenSubsonicCredentials(String? _) {
+    if (widget.existing?.kind == FileSourceKind.openSubsonic ||
+        field('apiKey').text.trim().isNotEmpty ||
+        (field('username').text.trim().isNotEmpty && field('password').text.isNotEmpty)) {
+      return null;
+    }
+    return t.fileSources.errorAuthentication;
+  }
+
+  String? _validateAudiobookshelfCredentials(String? _) {
+    if (widget.existing?.kind == FileSourceKind.audiobookshelf ||
+        field('token').text.trim().isNotEmpty ||
+        (field('username').text.trim().isNotEmpty && field('password').text.isNotEmpty)) {
+      return null;
+    }
+    return t.fileSources.errorAuthentication;
   }
 
   String? _validateSharedLibrary(String? value) {
@@ -316,7 +381,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         profileId: controller.profileId!,
         kind: _kind,
         name: field('name').text.trim().isEmpty ? sourceKindName(_kind) : field('name').text.trim(),
-        endpoint: field('endpoint').text.trim(),
+        endpoint: _kind == FileSourceKind.podcastRss
+            ? sourceOrigin(Uri.parse(field('endpoint').text.trim()))
+            : field('endpoint').text.trim(),
         root: field('root').text.trim(),
         options: {
           ...preservedOptions,
@@ -347,7 +414,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       );
       final credentialKeys = [
         ...switch (_kind) {
-          FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
+          FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.podcastRss => const ['username', 'password'],
           FileSourceKind.smb || FileSourceKind.ftp => const ['username', 'password'],
           FileSourceKind.sftp => const [
             'username',
@@ -358,7 +425,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           ],
           FileSourceKind.nfs => const ['nfsTlsClientIdentity', 'nfsTlsClientIdentityPassword'],
           FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
-          FileSourceKind.audiobookshelf => const ['token'],
+          FileSourceKind.audiobookshelf => const ['token', 'username', 'password'],
+          FileSourceKind.openSubsonic => const ['username', 'password', 'apiKey'],
           FileSourceKind.komga => const ['username', 'password', 'token'],
           _ => const <String>[],
         },
@@ -382,7 +450,14 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           if (widget.existing != null) ...await controller.repository.credentials(widget.existing!),
           for (final key in credentialKeys)
             if (field(key).text.isNotEmpty) key: field(key).text,
+          if (_kind == FileSourceKind.podcastRss) 'feedUrl': field('endpoint').text.trim(),
         };
+        if (_kind == FileSourceKind.openSubsonic &&
+            field('apiKey').text.trim().isEmpty &&
+            field('username').text.trim().isNotEmpty &&
+            field('password').text.isNotEmpty) {
+          credentials.remove('apiKey');
+        }
       }
       if (_clearNfsTlsIdentity) {
         credentials.remove('nfsTlsClientIdentity');
@@ -444,8 +519,10 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           ? null
                           : (kind) => setState(() {
                               _kind = kind!;
+                              _shelves = kind == FileSourceKind.komga
+                                  ? {PublicationShelf.comics}
+                                  : defaultPublicationShelves(kind);
                               if (kind == FileSourceKind.dlna) _allowHttp = true;
-                              if (kind == FileSourceKind.komga) _shelves = {PublicationShelf.comics};
                             }),
                     ),
                     const SizedBox(height: 24),
@@ -462,13 +539,38 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           FileSourceKind.nfs => 'nfs://nas:2049/export',
                           FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
                           FileSourceKind.komga => 'https://komga.example.com',
+                          FileSourceKind.openSubsonic => 'https://music.example.com',
+                          FileSourceKind.podcastRss => 'https://podcast.example/feed.xml',
                           _ => null,
                         },
                         validator: _kind == FileSourceKind.nfs
                             ? _validateNfsEndpoint
                             : _kind == FileSourceKind.smb
                             ? _validateSmbEndpoint
+                            : _kind == FileSourceKind.podcastRss
+                            ? _validatePodcastFeedUrl
+                            : _kind == FileSourceKind.openSubsonic
+                            ? _validateOpenSubsonicEndpoint
                             : null,
+                      ),
+                    if (_kind == FileSourceKind.opds)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: OutlinedButton.icon(
+                            onPressed: _busy
+                                ? null
+                                : () => setState(() {
+                                    field('endpoint').text = _projectGutenbergOpdsEndpoint;
+                                    if (field('name').text.trim().isEmpty) {
+                                      field('name').text = t.sourceSetup.projectGutenberg;
+                                    }
+                                  }),
+                            icon: const AppIcon(Symbols.menu_book_rounded),
+                            label: Text(t.sourceSetup.projectGutenberg),
+                          ),
+                        ),
                       ),
                     if (_kind == FileSourceKind.dlna) ...[
                       OutlinedButton.icon(
@@ -502,7 +604,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       ),
                     ] else if (_kind != FileSourceKind.audiobookshelf &&
                         _kind != FileSourceKind.opds &&
-                        _kind != FileSourceKind.komga)
+                        _kind != FileSourceKind.komga &&
+                        _kind != FileSourceKind.openSubsonic &&
+                        _kind != FileSourceKind.podcastRss)
                       input(
                         'root',
                         t.fileSources.root,
@@ -533,25 +637,31 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       FileSourceKind.webdav,
                       FileSourceKind.opds,
                       FileSourceKind.komga,
+                      FileSourceKind.audiobookshelf,
+                      FileSourceKind.openSubsonic,
+                      FileSourceKind.nfs,
                       FileSourceKind.smb,
                       FileSourceKind.ftp,
                       FileSourceKind.sftp,
+                      FileSourceKind.podcastRss,
                     }.contains(_kind)) ...[
-                      input(
-                        'username',
-                        t.fileSources.username,
-                        required: _kind == FileSourceKind.sftp && widget.existing == null,
-                      ),
-                      input(
-                        'password',
-                        t.fileSources.password,
-                        secret: true,
-                        validator: _kind == FileSourceKind.sftp && widget.existing == null
-                            ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
-                                  ? null
-                                  : t.sourceSetup.passwordOrKey
-                            : null,
-                      ),
+                      if (_kind != FileSourceKind.nfs) ...[
+                        input(
+                          'username',
+                          t.fileSources.username,
+                          required: _kind == FileSourceKind.sftp && widget.existing == null,
+                        ),
+                        input(
+                          'password',
+                          t.fileSources.password,
+                          secret: true,
+                          validator: _kind == FileSourceKind.sftp && widget.existing == null
+                              ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
+                                    ? null
+                                    : t.sourceSetup.passwordOrKey
+                              : null,
+                        ),
+                      ],
                       if (_kind == FileSourceKind.smb) input('domain', t.fileSources.smbDomain),
                       if (_kind == FileSourceKind.sftp) ...[
                         input(
@@ -729,7 +839,10 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         ),
                     ],
                     if (_kind == FileSourceKind.audiobookshelf)
-                      input('token', t.fileSources.token, secret: true, required: widget.existing == null),
+                      input('token', t.fileSources.token, secret: true, validator: _validateAudiobookshelfCredentials),
+                    if (_kind == FileSourceKind.openSubsonic) ...[
+                      input('apiKey', t.sourceSetup.apiKey, secret: true, validator: _validateOpenSubsonicCredentials),
+                    ],
                     if (_kind == FileSourceKind.komga)
                       input('token', t.fileSources.token, secret: true, hint: t.sourceSetup.sshAuthenticationHelp),
                     if (_kind == FileSourceKind.s3) ...[
@@ -740,7 +853,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     ],
                     if (_kind != FileSourceKind.opds &&
                         _kind != FileSourceKind.audiobookshelf &&
-                        _kind != FileSourceKind.komga)
+                        _kind != FileSourceKind.komga &&
+                        _kind != FileSourceKind.openSubsonic &&
+                        _kind != FileSourceKind.podcastRss)
                       ExpansionTile(
                         tilePadding: EdgeInsets.zero,
                         title: Text(t.sourceSetup.openSubtitles),
@@ -767,7 +882,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       ),
                     if (_kind != FileSourceKind.opds &&
                         _kind != FileSourceKind.audiobookshelf &&
-                        _kind != FileSourceKind.komga)
+                        _kind != FileSourceKind.komga &&
+                        _kind != FileSourceKind.openSubsonic &&
+                        _kind != FileSourceKind.podcastRss)
                       FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.sourceSetup.automaticMetadata),
@@ -794,6 +911,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       FileSourceKind.audiobookshelf,
                       FileSourceKind.dlna,
                       FileSourceKind.komga,
+                      FileSourceKind.openSubsonic,
+                      FileSourceKind.podcastRss,
                     }.contains(_kind))
                       FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
@@ -820,6 +939,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             label: Text(switch (shelf) {
                               PublicationShelf.ebooks => t.fileSources.ebooks,
                               PublicationShelf.audiobooks => t.fileSources.audiobooks,
+                              PublicationShelf.music => t.downloads.music,
                               PublicationShelf.comics => t.fileSources.comics,
                               PublicationShelf.videos => t.fileSources.video,
                             }),
@@ -834,7 +954,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     ),
                     const SizedBox(height: 24),
                     FilledButton(
-                      onPressed: _busy ? null : connect,
+                      onPressed: _busy || _loadingPodcastFeed ? null : connect,
                       child: _busy
                           ? Semantics(
                               label: t.sourceSetup.sourceConnecting,

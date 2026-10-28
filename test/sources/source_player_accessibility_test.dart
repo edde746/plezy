@@ -15,6 +15,7 @@ import 'package:plezy/sources/source_controller.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_playback.dart';
+import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
 
@@ -30,7 +31,15 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   bool get active => true;
   @override
+  List<PublicationFile> get files => const [];
+  @override
   bool get video => false;
+  @override
+  bool get isTransientInput => false;
+  @override
+  bool get isLiveInput => false;
+  @override
+  bool get isSamplePreview => false;
   @override
   Player? get player => null;
   @override
@@ -56,9 +65,29 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   @override
   int get currentFilePositionMs => positionMs;
   @override
+  int get fileIndex => 0;
+  @override
   bool get hasCompleteTimeline => true;
   @override
   bool get canUndoSeek => false;
+  @override
+  bool get canExportLocalPlaylist => false;
+  @override
+  bool get canUseDirectQueueControls => false;
+  @override
+  bool get queueShuffled => false;
+  @override
+  MusicRepeatMode get queueRepeatMode => MusicRepeatMode.off;
+  @override
+  int get currentQueuePosition => 0;
+  @override
+  List<int> get queueFileIndices => const [];
+  @override
+  bool get isCapturePreview => false;
+  @override
+  bool get isRecordingStream => false;
+  @override
+  String? get localMediaBookmarkKey => null;
   @override
   DateTime? get sleepDeadline => null;
   @override
@@ -85,6 +114,12 @@ class _Playback extends ChangeNotifier implements SourcePlayback {
   Future<void> previousChapter() async => previous++;
   @override
   Future<void> nextChapter() async => next++;
+  @override
+  Future<void> toggleQueueShuffle() async {}
+  @override
+  Future<void> setQueueRepeatMode(MusicRepeatMode mode) async {}
+  @override
+  Future<void> selectQueueFile(int fileIndex) async {}
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
