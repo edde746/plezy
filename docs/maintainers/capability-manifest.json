@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-10-28",
+  "sourceAudit": {
+    "file": "PlezyNG-audit-2026-10-26.pdf",
+    "auditedMainCommit": "c781dd83d69025c8596ace69f40352d982dc4ba7",
+    "note": "The audit is pinned to an older main commit. Finding status below was rechecked against this work branch by source inspection; this is not a fresh CI, device, provider, or release qualification."
+  },
+  "statusDefinitions": {
+    "implemented": "The code path is present in this branch. It does not imply a passing test, native build, device exercise, or public release.",
+    "partial": "The core path is present, while a material capability, performance measurement, integration, or qualification remains open.",
+    "gated": "The capability intentionally stays disabled or experimental until its stated external or platform evidence exists."
+  },
+  "release": {
+    "version": "2.24.1",
+    "publicationStatus": "draft",
+    "publicLatestAvailable": false,
+    "releasesPage": "https://github.com/snapetech-org/PlezyNG/releases",
+    "requiredCiJobs": [
+      "Code Analysis",
+      "Unit Tests",
+      "Android JVM and Native Tests",
+      "Native Formatting",
+      "Linux native reliability (address)",
+      "Linux native reliability (thread)",
+      "Apple native reliability (iOS)",
+      "Apple native reliability (macOS)",
+      "Apple native reliability (tvOS)",
+      "Windows native reliability (x64)",
+      "Windows native reliability (arm64)",
+      "Dependency Validation",
+      "Server checks"
+    ],
+    "optionalCiJobs": ["Linux package smoke build"],
+    "releaseGate": {
+      "workflowFile": ".github/workflows/ci.yml",
+      "workflowId": "ci.yml",
+      "workflowName": "CI - Sanity Checks",
+      "branch": "main",
+      "event": "workflow_dispatch",
+      "requiredJobs": [
+        "Code Analysis",
+        "Unit Tests",
+        "Android JVM and Native Tests",
+        "Native Formatting",
+        "Linux native reliability (address)",
+        "Linux native reliability (thread)",
+        "Apple native reliability (iOS)",
+        "Apple native reliability (macOS)",
+        "Apple native reliability (tvOS)",
+        "Windows native reliability (x64)",
+        "Windows native reliability (arm64)",
+        "Dependency Validation",
+        "Server checks"
+      ]
+    }
+  },
+  "localization": {
+    "localeChoices": 37,
+    "directory": "lib/i18n",
+    "filePattern": "*.i18n.json",
+    "qualityStatus": "Structural locale coverage is present; native-speaker fluency review is not established by key counts or generated-file checks."
+  },
+  "productBoundaries": [
+    {
+      "area": "Find your next",
+      "status": "partial",
+      "evidence": ["docs/plezyng/swipe/DELIVERY.md", "lib/discovery"],
+      "open": "The bounded mixed-media deck, saved picks, filters, canonical actions, and Undo are implemented. Isolated samples, verified adaptation matching, discovery cloud sync, lending candidates, AI reranking, and physical-device qualification remain open. No research-cohort feature is in scope."
+    },
+    {
+      "area": "Comics",
+      "status": "partial",
+      "evidence": ["lib/sources/comic_document.dart", "lib/screens/sources/publication_reader_screen.dart", "docs/plezyng/comics/DELIVERY.md"],
+      "open": "The current comic reading path exists. The separate conflicted PR #25 work must be reconciled against the current base before integration; Chromium and native reader qualification remain separate."
+    },
+    {
+      "area": "Games",
+      "status": "gated",
+      "evidence": ["docs/games/ARCHITECTURE.md", "docs/games/VALIDATION.md"],
+      "open": "Android GameStream and Steam paths remain experimental. Real host sessions, physical controller/TV navigation, lifecycle, and device qualification are required before broadening release claims."
+    },
+    {
+      "area": "Multiview",
+      "status": "isolated",
+      "evidence": ["docs/plezyng/multiview/README.md", "docs/plezyng/multiview/DELIVERY.md"],
+      "open": "Keep the workspace branch isolated. Per-session native ownership, concurrent decoder limits, composition, accessibility, and device acceptance are not release-qualified."
+    },
+    {
+      "area": "Dolby Vision and FEL",
+      "status": "gated",
+      "evidence": ["docs/maintainers/dv-platform-buildout.md", "docs/maintainers/dv-engine-luna-handoff.md"],
+      "open": "Keep experiments identified as experimental and default-off where configured. Reference-output, signaling, seek/sync, and platform evidence are still required."
+    },
+    {
+      "area": "OverDrive lending",
+      "status": "gated",
+      "evidence": ["docs/LENDING_SETUP.md", "lib/lending/lending_service.dart"],
+      "open": "Keep OverDrive disabled until provider approval, deployed gateway controls, assigned sandbox credentials, and live fulfillment qualification are available."
+    },
+    {
+      "area": "Private JIT runners",
+      "status": "gated",
+      "evidence": ["AGENTS.md", ".github/workflows/ci.yml", ".github/workflows/build.yml"],
+      "open": "Workflows must stay on compatible private ephemeral JIT runners with no hosted fallback. This PR does not dispatch a workflow or establish live pool capacity."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "title": "Profile source loading and adapter ownership",
+      "priority": "P1",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/sources/source_controller.dart", "lib/profiles/active_profile_provider.dart"],
+      "qualification": "Profile data is staged and published as one owner-scoped snapshot; stale loads and adapter callbacks are generation-guarded. Adversarial A→B→A completion-order and credential-refresh acceptance has not been run on this branch."
+    },
+    {
+      "id": "F02",
+      "title": "Exact-commit required-job release gate",
+      "priority": "P1",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["scripts/verify_release_ci.py", ".github/workflows/build.yml", ".github/workflows/ci.yml"],
+      "qualification": "The release workflow checks the newest manually dispatched main CI run for the exact SHA and requires every named job, including each matrix expansion, to complete successfully. The changed workflow has not been dispatched on private JIT; negative-gate and successful-candidate evidence remain pending."
+    },
+    {
+      "id": "F03",
+      "title": "Verified Apple purchase entitlement",
+      "priority": "P1 for IAP releases",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/services/supporter/supporter_store.dart", "lib/services/supporter/supporter_service.dart"],
+      "qualification": "A StoreKit purchase event cannot grant a new entitlement until verified transaction history confirms ownership; empty history is treated as unknown, and revocation is handled separately. StoreKit configuration and sandbox replay, restore, invalid, refund, and offline cases remain unqualified."
+    },
+    {
+      "id": "F04",
+      "title": "Profile-bound, bounded settings backup and restore",
+      "priority": "P2",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/services/cloud_settings_backup_service.dart", "lib/screens/settings/cloud_settings_backup_dialog.dart", "lib/services/settings_export_service.dart"],
+      "qualification": "The initiating profile identity and mutation generation are captured before storage awaits; restore is streamed with a 4 MiB cap and import checks ownership through guarded writes and rollback. Switch-during-download, malformed payload, and mid-write failure scenarios have not been run on this branch."
+    },
+    {
+      "id": "F05",
+      "title": "Source edit option preservation",
+      "priority": "P2",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/screens/sources/add_source_screen.dart", "lib/sources/source_models.dart"],
+      "qualification": "Edits retain unrecognized provider options and carry the applicable NFS, OAuth drive, and sync identity fields. Provider-by-provider edit/reconnect round-trip acceptance remains pending."
+    },
+    {
+      "id": "F06",
+      "title": "Independent encrypted and provider sync targets",
+      "priority": "P1 for combined sync",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/sources/source_controller.dart", "lib/sources/sync/publication_sync.dart", "docs/sources/QUALIFICATION.md"],
+      "qualification": "Cloud and provider targets retain independent acknowledgments, failure reporting, and retry state. Two-device conflict convergence against live provider accounts remains unqualified."
+    },
+    {
+      "id": "F07",
+      "title": "Atomic bounded discovery Undo history",
+      "priority": "P2",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/discovery/discovery_store.dart", "lib/sources/source_database.dart"],
+      "qualification": "History appends then keeps the newest 500 actions within an atomic database read-modify-write. Boundary and concurrent-device cases have not been run on this branch."
+    },
+    {
+      "id": "F08",
+      "title": "Complete-scan index deletion reconciliation",
+      "priority": "P2",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/sources/source_database.dart", "lib/sources/source_controller.dart"],
+      "qualification": "A generation mark is reconciled only when a scan completes; failed and cancelled partial scans do not delete unvisited rows. Deleted-source-entry and interrupted-scan durability acceptance remains pending."
+    },
+    {
+      "id": "F09",
+      "title": "Bounded source index and page retrieval",
+      "priority": "P2",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": ["lib/sources/source_database.dart", "lib/sources/adapters/local_source.dart", "lib/screens/sources/sources_screen.dart"],
+      "qualification": "UI retrieval is SQL-paged and local directory snapshots are bounded in memory and on disk. Oversized directories can be re-enumerated; target-device latency, memory, and I/O budgets have not been measured."
+    },
+    {
+      "id": "F10",
+      "title": "Reusable NFS RPC sessions and bounded read-ahead",
+      "priority": "P2",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": ["lib/sources/adapters/nfs_source.dart", "docs/sources/QUALIFICATION.md"],
+      "qualification": "Adapters reuse a bounded RPC session pool and permit at most four read-ahead lanes. NAS interoperability, cancellation, and repeated throughput measurements remain unqualified."
+    },
+    {
+      "id": "F11",
+      "title": "Durable bounded publication download jobs",
+      "priority": "P2",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": ["lib/sources/content_access.dart", "lib/sources/source_database.dart", "docs/sources/QUALIFICATION.md"],
+      "qualification": "The app persists jobs, applies per-profile quota and free-space bounds, recovers interrupted transfers, and limits native background transfer to explicit safe subsets. Crash/resume, low-space, and platform lifecycle acceptance remains open."
+    },
+    {
+      "id": "F12",
+      "title": "Cross-device shared book identity",
+      "priority": "P2",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": ["lib/sources/sync/publication_sync.dart", "lib/sources/source_models.dart", "lib/sources/adapters/local_source.dart"],
+      "qualification": "Explicit shared-library and shared-item IDs can map provider entries and uniquely compatible editions. Copied local books are not automatically joined by title or content digest; households must establish matching IDs on participating devices."
+    },
+    {
+      "id": "F13",
+      "title": "Sync failure isolation, capacity, and recovery",
+      "priority": "P2",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": ["lib/sources/source_controller.dart", "lib/sources/sync/publication_sync.dart", "lib/sources/sync/sync_document.dart", "lib/sources/sync/sync_store.dart"],
+      "qualification": "Per-target retry, bounded state, causal annotation tombstones, compaction, and encrypted recovery exist. Multi-device retirement and stale offline-device rejoin behavior still need explicit convergence evidence."
+    },
+    {
+      "id": "F14",
+      "title": "Reader browser and native platform qualification",
+      "priority": "P2",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": [".github/workflows/ci.yml", "tools/reader-tests/package.json", "lib/screens/sources/publication_reader_screen.dart", "docs/sources/QUALIFICATION.md"],
+      "qualification": "The main Unit Tests job installs Playwright Chromium and runs the reader browser suite; this branch has not run that job. Android WebView, Apple WebKit, Windows WebView2, Linux external-browser lifecycle, and physical reader acceptance remain separate."
+    },
+    {
+      "id": "F15",
+      "title": "Capability, release, and documentation truth",
+      "priority": "P2",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": ["docs/maintainers/capability-manifest.json", "README.md", "PRIVACY.md", "docs/FILES_AND_BOOKS.md"],
+      "qualification": "A source-linked status ledger and repository guard now cover the audit findings, 37 locale files, privacy disclosure, and the honest releases-page link. Version 2.24.1 remains a draft; public assets and native-speaker review are not established."
+    },
+    {
+      "id": "F16",
+      "title": "Automatic metadata lookup privacy expectations",
+      "priority": "P3",
+      "implementationStatus": "implemented",
+      "confidence": "high",
+      "evidence": ["lib/screens/sources/add_source_screen.dart", "lib/screens/sources/source_detail_screen.dart", "PRIVACY.md", "docs/FILES_AND_BOOKS.md"],
+      "qualification": "Metadata lookup defaults off. The privacy notice identifies the title/year/episode/NFO identifier sent to Trakt when opted in and states that file bytes, full paths, and source credentials are excluded. Request-capture acceptance was not run on this branch."
+    }
+  ]
+}

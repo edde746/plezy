@@ -1,6 +1,10 @@
 # PlezyNG feature build-out handoff
 
-Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry requested features that upstream declined or has not shipped, while keeping parity across Plex, Jellyfin, and Emby where the APIs allow it. The fork should retire as the corresponding capabilities converge upstream.
+Status: 2026-10-28. PlezyNG is a fork of `edde746/plezy` intended to carry requested features that upstream declined or has not shipped, while keeping parity across Plex, Jellyfin, and Emby where the APIs allow it. The fork should retire as the corresponding capabilities converge upstream.
+
+## Current audit remediation status
+
+The 26 October engineering audit is pinned to main commit `c781dd83d69025c8596ace69f40352d982dc4ba7`, not this work branch. Its F01–F16 findings have been rechecked against current source and are tracked in the [capability and qualification ledger](../maintainers/capability-manifest.json). That ledger separates code present from CI, provider, native-device and public-release evidence. This work slice has not run tests, analysis, native builds or GitHub Actions.
 
 ## Implemented in this work branch
 
@@ -45,7 +49,9 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 | Settings | HTTPS WebDAV backup of the portable settings export is implemented. Configure a file URL ending in `.json`, optionally with WebDAV credentials; local server connections, tokens, download locations, and history are excluded. |
 | webOS TV | An experimental ARM IPK was installed and launched on one LG C6; its app and native library hashes match the package. Plex login, artwork/cards, and playback were confirmed on an earlier build, and secure-store write/read/delete passed. The latest package's current UI frame, token persistence, Jellyfin/Emby, broader device coverage, and release packaging remain unverified; see [webOS port status](../maintainers/webos-tv.md). |
 
-## Validation and cautions
+## Historical validation and cautions
+
+The results below belong to an earlier feature checkout and do not qualify the current branch or PR #47.
 
 - The focused download, storage, manager, provider, Downloads focus, appearance, and orphan-cleanup test set passes all 284 tests. Analyzer and translation hygiene pass, and an Android arm64 debug APK builds against the merged SDK 37 configuration.
 - The latest full `scripts/ci_checks.sh` run still reports repository-wide issues: formatting drift in two legacy screens, the example WebDAV URL flagged as a hard-coded UI string, an iOS SwiftPM lock mismatch for Google Cast, 22 existing icon consistency findings, and the unused `hubIdentifierMatches` helper. Translation and native-format checks pass; the screensaver description key is restored and analyzer passes independently.
