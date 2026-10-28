@@ -33,6 +33,7 @@ import '../widgets/focus_builders.dart';
 import '../media/library_query.dart';
 import '../media/library_change_event.dart';
 import '../media/media_hub.dart';
+import '../utils/external_ids.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
