@@ -16,6 +16,7 @@ import '../../providers/trackers_provider.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
 import '../../services/external_access_directory.dart';
 import '../../widgets/comic_commerce_section.dart';
+import '../../widgets/hardcover_shelf_status.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -737,6 +738,8 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                   style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
                                 ),
                               ),
+                            if (_entry.kind == SourceItemKind.ebook || _entry.kind == SourceItemKind.comic)
+                              HardcoverShelfStatus(identifiers: _entry.identifiers),
                             const SizedBox(height: 24),
                             Wrap(
                               spacing: 12,
