@@ -4981,6 +4981,33 @@ class Translations$downloads$en {
 	/// en: '${completed}/${total} completed'
 	String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} completed';
 
+	/// en: 'Storage used: ${size}'
+	String storageUsed({required Object size}) => 'Storage used: ${size}';
+
+	/// en: '(one) {${n} download} (other) {${n} downloads}'
+	String downloadCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} download',
+		other: '${n} downloads',
+	);
+
+	/// en: '(one) {${n} show} (other) {${n} shows}'
+	String showCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} show',
+		other: '${n} shows',
+	);
+
+	/// en: '(one) {${n} movie} (other) {${n} movies}'
+	String movieCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} movie',
+		other: '${n} movies',
+	);
+
+	/// en: '(one) {${n} album} (other) {${n} albums}'
+	String albumCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} album',
+		other: '${n} albums',
+	);
+
 	/// en: 'File not found (404)'
 	String get errorFileNotFound => 'File not found (404)';
 
@@ -9978,6 +10005,11 @@ extension on Translations {
 			'downloads.unknownSeason' => 'Unknown Season',
 			'downloads.unknownAlbum' => 'Unknown Album',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} completed',
+			'downloads.storageUsed' => ({required Object size}) => 'Storage used: ${size}',
+			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} download', other: '${n} downloads', ), 
+			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} show', other: '${n} shows', ), 
+			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} movie', other: '${n} movies', ), 
+			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} album', other: '${n} albums', ), 
 			'downloads.errorFileNotFound' => 'File not found (404)',
 			'downloads.errorDownloadNotAllowed' => 'Download not allowed by the server (403)',
 			'downloads.errorDownloadFailed' => 'Download failed',
@@ -10141,13 +10173,13 @@ extension on Translations {
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Active',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',
