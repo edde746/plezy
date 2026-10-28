@@ -88,6 +88,14 @@ def check_workflow(path: Path, text: str) -> list[str]:
     errors: list[str] = []
     active = _active_text(text)
 
+    if path.as_posix() == CI_WORKFLOW.as_posix():
+        windows_job = re.search(r"(?m)^  windows-native-test:\s*$", text)
+        marker = "  # packer-windows-jit-v1\n  windows-native-test:"
+        if windows_job is not None and marker not in text:
+            errors.append(
+                f"{path}: Windows native CI must declare the private Packer JIT marker"
+            )
+
     for dangerous_trigger in ("pull_request_target", "workflow_run"):
         if _has_trigger(active, dangerous_trigger):
             errors.append(f"{path}: unaudited privileged trigger {dangerous_trigger}")
