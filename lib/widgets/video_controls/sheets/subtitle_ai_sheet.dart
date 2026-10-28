@@ -883,6 +883,16 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                       'Upload + attach stores this SRT on the active library item when the server allows it.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      uploadLanguage == null
+                          ? 'Server upload is unavailable because this result has no known subtitle language. You can still attach it to the current player.'
+                          : 'Server upload is unavailable because this is not an active server library item. You can still attach it to the current player.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                 const SizedBox(height: 10),
                 Expanded(
