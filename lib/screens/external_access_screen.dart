@@ -461,8 +461,8 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
       children: [
         FocusableListTile(
           leading: const AppIcon(Symbols.music_note_rounded),
-          title: const Text('Search Apple Music'),
-          subtitle: const Text('Choose a catalog match to play'),
+          title: Text(t.lending.search),
+          subtitle: const Text('Apple Music'),
           trailing: _appleMusicLoading
               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
               : const AppIcon(Symbols.search_rounded),
@@ -472,9 +472,9 @@ class _ExternalAccessScreenState extends State<ExternalAccessScreen> {
           FocusableListTile(
             leading: const AppIcon(Symbols.music_note_rounded),
             title: Text(song.title),
-            subtitle: Text('Playing on Apple Music · ${song.artist}'),
+            subtitle: Text(song.artist),
             trailing: IconButton(
-              tooltip: 'Stop Apple Music',
+              tooltip: 'Stop',
               onPressed: _stopAppleMusic,
               icon: const AppIcon(Symbols.stop_rounded),
             ),
