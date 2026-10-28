@@ -168,6 +168,10 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
   /// Whether this instance drives the audio-only core.
   final bool audioOnly;
 
+  /// The dedicated music core exists; optional PCM APIs are negotiated by
+  /// the visualization controller, independently of this ownership signal.
+  bool get isAudioCoreReady => audioOnly && initialized && !disposed;
+
   @override
   final MethodChannel methodChannel;
 

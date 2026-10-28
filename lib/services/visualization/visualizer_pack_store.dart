@@ -218,6 +218,13 @@ class VisualizerPackStore {
         }
       }
     }
+    final imports = Directory(p.join(root.path, 'imports'));
+    if (await imports.exists()) {
+      final partialName = RegExp(r'^[a-f0-9]{64}-.*\.(milk|milk2)\.partial$', caseSensitive: false);
+      await for (final file in imports.list(followLinks: false)) {
+        if (file is File && partialName.hasMatch(p.basename(file.path))) await file.delete();
+      }
+    }
     return root;
   }
 

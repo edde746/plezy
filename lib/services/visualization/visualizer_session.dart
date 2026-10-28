@@ -27,6 +27,7 @@ class VisualizerSession extends ChangeNotifier {
   double transitionSeconds = 3;
   String _state = 'idle', _reason = '';
   bool _hasFrame = false;
+  int _droppedFrames = 0, _renderWidth = 0, _renderHeight = 0;
   VisualizerPresetFile? _preset;
 
   int? get textureId => _textureId;
@@ -35,6 +36,13 @@ class VisualizerSession extends ChangeNotifier {
   String get reason => _reason;
   bool get hasFrame => _hasFrame && (_state == 'rendering' || _state == 'paused');
   bool get active => _preset != null;
+  String get diagnostics => [
+    'Engine: projectM 4.1.8', 'State: $_state',
+    if (_reason.isNotEmpty) _reason,
+    if (_renderWidth > 0) 'Render size: $_renderWidth × $_renderHeight',
+    'Dropped analysis frames: $_droppedFrames',
+    'Native playback and visual fidelity are not yet qualified.',
+  ].join('\n\n');
   String get statusLabel => switch (_state) {
     'loading' || 'starting' => 'Loading preset…',
     'rendering' => 'Live music audio · projectM',
@@ -140,7 +148,11 @@ class VisualizerSession extends ChangeNotifier {
         final state = status['state'] as String? ?? 'failed';
         final reason = status['reason'] as String? ?? '';
         final hasFrame = status['hasFrame'] == true;
-        if (_state != state || _reason != reason || _hasFrame != hasFrame) {
+        final dropped = status['droppedFrames'] as int? ?? 0;
+        final width = status['width'] as int? ?? 0, height = status['height'] as int? ?? 0;
+        if (_state != state || _reason != reason || _hasFrame != hasFrame ||
+            _droppedFrames != dropped || _renderWidth != width || _renderHeight != height) {
+          _droppedFrames = dropped; _renderWidth = width; _renderHeight = height;
           _state = state; _reason = reason; _hasFrame = hasFrame; _changed();
         }
       } finally { _polling = false; }
@@ -156,6 +168,7 @@ class VisualizerSession extends ChangeNotifier {
       }
     }
     _sessionId = null; _textureId = null; _hasFrame = false;
+    _droppedFrames = 0; _renderWidth = 0; _renderHeight = 0;
   }
 
   Future<void> stop() => _enqueue(() async {

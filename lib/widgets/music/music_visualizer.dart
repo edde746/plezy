@@ -116,6 +116,8 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       unawaited(_native.stop());
       oldWidget.service.removeListener(_onServiceChanged);
       widget.service.addListener(_onServiceChanged);
+      unawaited(_reducedMotionPositionSubscription?.cancel());
+      _reducedMotionPositionSubscription = null;
       _syncReducedMotionPositionListener();
     }
     if (sourceChanged) {
@@ -463,12 +465,12 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
                       ),
-                      Text(
+                      Tooltip(message: status, child: Text(
                         status,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.labelSmall?.copyWith(color: tk.textMuted, height: 1.1),
-                      ),
+                      )),
                     ],
                   ),
                 ),
@@ -510,6 +512,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
                       CheckedPopupMenuItem(value: 'transition:$seconds', checked: _native.transitionSeconds == seconds,
                         child: Text(seconds == 0 ? 'Instant transitions' : '$seconds second transitions')),
                     const PopupMenuItem(value: 'retry', child: Text('Reload preset')),
+                    const PopupMenuItem(value: 'diagnostics', child: Text('Playback details')),
                   ],
                   const PopupMenuItem(value: 'fullscreen', child: Text('Fullscreen')),
                 ],
@@ -534,6 +537,14 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
   }
 
   void _option(String action) {
+    if (action == 'diagnostics') {
+      showDialog<void>(context: context, builder: (context) => AlertDialog(
+        title: const Text('Visualization playback'),
+        content: SingleChildScrollView(child: SelectableText(_native.diagnostics)),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      ));
+      return;
+    }
     if (action == 'original') { unawaited(_originalScenes()); return; }
     if (action == 'fullscreen') { unawaited(_showFullscreen()); return; }
     if (action == 'retry' && _native.preset != null) {

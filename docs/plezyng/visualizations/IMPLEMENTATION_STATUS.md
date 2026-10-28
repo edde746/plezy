@@ -27,6 +27,7 @@ Updated: 2026-10-28. Source work is on [PlezyNG PR #55](https://github.com/snape
 - Standard numbered shader keys and additional object-key families parse into their intended scopes. Initialization handling, UTF-8/read diagnostics, blank-preset rejection and report denominators have been corrected in source. Render/fidelity stages remain explicitly unassessed.
 - Targeted EEL fixes cover lazy branches, boolean thresholds/operators, power/remainder operations and bounded memory helpers. Assignment destinations are resolved once, avoiding duplicate side effects; integer remainder handles signed-minimum overflow without panicking. Regression source is committed but unrun.
 - Two-state frame construction resolves each preset's shader/texture data independently. Separate warp/composite rendering and saved `.milk2` blend semantics remain blockers; the intermediate frame container does not close either.
+- The report also blocks composite-only shaders and warp shaders that the current per-pixel mesh path bypasses. WebGPU subset status includes unsupported equation calls, and incomplete one-state `.milk2` files cannot evade the saved-blend blocker.
 - A deterministic `.rmpack` builder requires a redistribution basis, per-asset provenance and shipped notices. One CC0 fixture archive is published on an immutable repository commit. Historical `NOASSERTION` collections remain link/import sources in PlezyNG.
 
 ## Completion gates
