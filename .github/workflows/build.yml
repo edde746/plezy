@@ -918,6 +918,23 @@ jobs:
           cp -r build/ios/iphoneos/Plezy.app Payload/
           zip -r plezy-ios-unsigned.ipa Payload
 
+      - name: Prepare a default keychain for Xcode cloud signing
+        if: steps.ios-signing.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/plezyng-ios-cloud-signing.keychain-db"
+          if [[ -e "$keychain_path" || -L "$keychain_path" ]]; then
+            echo "Refusing to reuse an existing iOS signing keychain: $keychain_path" >&2
+            exit 1
+          fi
+          keychain_password="$(/usr/bin/uuidgen)"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          security default-keychain -d user -s "$keychain_path"
+
       - name: Build signed iOS App Store IPA
         if: steps.ios-signing.outputs.configured == 'true'
         env:
@@ -967,6 +984,16 @@ jobs:
             exit 1
           fi
           cp "$ipa_path" plezyng-ios-appstore.ipa
+
+      - name: Remove the temporary iOS signing keychain
+        if: always() && steps.ios-signing.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/plezyng-ios-cloud-signing.keychain-db"
+          if [[ -e "$keychain_path" || -L "$keychain_path" ]]; then
+            security delete-keychain "$keychain_path"
+          fi
 
       - name: Copy iOS packages to the workflow workspace
         working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
@@ -2145,8 +2172,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+          python3 scripts/retry_flatpak.py remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          python3 scripts/retry_flatpak.py install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
 
       - name: Build Flatpak bundle
         shell: bash

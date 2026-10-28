@@ -18,6 +18,20 @@ import 'player_state.dart';
 import 'player_stream_controllers.dart';
 import 'player_streams.dart';
 
+/// Optional capability for player implementations that can apply the
+/// device-local ten-band equalizer.
+abstract interface class AudioEqualizerCapable {
+  Future<void> setAudioEqualizer(List<double> bandGains);
+}
+
+typedef PlayerAudioEffects = ({double stereoWidth, bool spatializer, double pitchSemitones});
+
+/// MPV-only audio effects that require decoded PCM and may be absent from a
+/// particular bundled FFmpeg filter set.
+abstract interface class AudioEffectsCapable {
+  Future<void> setAudioEffects(PlayerAudioEffects effects);
+}
+
 /// Optional native control for excluding a muted workspace session from the
 /// device's app-wide audio-focus arbitration.
 abstract interface class PlayerAudioFocusControl {
@@ -41,7 +55,9 @@ extension PlayerAudioFocusOwnership on Player {
 /// - Property change handlers
 /// - Track parsing and selection
 /// - Common lifecycle methods
-abstract class PlayerBase with PlayerStreamControllersMixin implements Player, AudioEqualizerCapable {
+abstract class PlayerBase
+    with PlayerStreamControllersMixin
+    implements Player, AudioEqualizerCapable, AudioEffectsCapable {
   PlayerState _state = const PlayerState();
 
   @override
@@ -337,6 +353,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
     ('speed', 'double'),
     ('aid', 'string'),
     ('sid', 'string'),
+    ('vid', 'string'),
   ];
 
   /// Register [corePropertyObservations] plus `track-list` in the
@@ -495,6 +512,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
           if (result.selectedAudioId != null) {
             updateSelectedAudioTrack(result.selectedAudioId);
           }
+          if (result.selectedVideoId != null) {
+            updateSelectedVideoTrack(result.selectedVideoId);
+          }
           if (result.selectedSubtitleId != null) {
             updateSelectedSubtitleTrack(result.selectedSubtitleId);
           }
@@ -513,6 +533,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
 
       case 'sid':
         updateSelectedSubtitleTrack(value);
+        break;
+
+      case 'vid':
+        updateSelectedVideoTrack(value);
         break;
 
       case 'secondary-sid':
@@ -778,10 +802,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
     };
   }
 
-  ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId, String? selectedSecondarySubtitleId})
+  ({
+    Tracks tracks,
+    String? selectedVideoId,
+    String? selectedAudioId,
+    String? selectedSubtitleId,
+    String? selectedSecondarySubtitleId,
+  })
   parseTrackList(List trackList) {
+    final videoTracks = <VideoTrack>[];
     final audioTracks = <AudioTrack>[];
     final subtitleTracks = <SubtitleTrack>[];
+    String? selectedVideoId;
     String? selectedAudioId;
     String? selectedSubtitleId;
     String? selectedSecondarySubtitleId;
@@ -797,7 +829,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
       final id = rawId is String || rawId is num ? rawId.toString() : '';
       final selected = track['selected'] == true;
 
-      if (type == 'audio') {
+      if (type == 'video' && track['albumart'] != true) {
+        if (selected) selectedVideoId = id;
+        videoTracks.add(
+          VideoTrack(
+            id: id,
+            title: cleanTrackMetadataValue(track['title'] is String ? track['title'] as String : null),
+            language: cleanTrackMetadataValue(track['lang'] is String ? track['lang'] as String : null),
+            codec: track['codec'] is String ? track['codec'] as String : null,
+            width: _finiteInt(track['demux-w'] ?? track['w']),
+            height: _finiteInt(track['demux-h'] ?? track['h']),
+            isDefault: track['default'] == true,
+            isSelected: selected,
+            isExternal: track['external'] == true,
+          ),
+        );
+      } else if (type == 'audio') {
         final rawExternalFilename = track['external-filename'];
         final externalFilename = rawExternalFilename is String ? rawExternalFilename : null;
         final externalMetadata = externalFilename == null ? null : _externalSubtitleMetadataByUri[externalFilename];
@@ -877,11 +924,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
     }
 
     return (
-      tracks: Tracks(audio: audioTracks, subtitle: subtitleTracks),
+      tracks: Tracks(video: videoTracks, audio: audioTracks, subtitle: subtitleTracks),
+      selectedVideoId: selectedVideoId,
       selectedAudioId: selectedAudioId,
       selectedSubtitleId: selectedSubtitleId,
       selectedSecondarySubtitleId: selectedSecondarySubtitleId,
     );
+  }
+
+  void updateSelectedVideoTrack(dynamic trackId) {
+    final id = trackId?.toString();
+    if (id != null && id != 'no' && !_state.tracks.video.any((track) => track.id == id)) return;
+    final tracks = _state.tracks.copyWith(
+      video: _state.tracks.video.map((track) => track.copyWith(isSelected: id == track.id)).toList(growable: false),
+    );
+    _state = _state.copyWith(tracks: tracks);
+    tracksController.add(tracks);
   }
 
   void updateSelectedAudioTrack(dynamic trackId) {
@@ -1412,10 +1470,35 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
   static const String _androidNormalizationFilter =
       'acompressor=threshold=-34dB:ratio=4:knee=6dB:attack=30:release=300:makeup=15dB:link=maximum,'
       'alimiter=limit=-3dB:attack=1:release=60:level=false';
+  static const String _spectrumAnalysisFilter = '@plezy_spectrum:lavfi=[aspectralstats=measure=centroid+flatness]';
 
-  static const List<int> _audioEqualizerFrequencies = [60, 250, 1000, 4000, 12000];
+  static const List<int> _audioEqualizerFrequencies = [60, 125, 250, 500, 1000, 2000, 4000, 8000, 12000, 16000];
   List<double> _audioEqualizerBandGains = List<double>.filled(_audioEqualizerFrequencies.length, 0);
+  PlayerAudioEffects _audioEffects = (stereoWidth: 0, spatializer: false, pitchSemitones: 0);
   bool _audioNormalizationEnabled = false;
+  bool _audioSpectrumAnalysisEnabled = false;
+
+  /// Adds the optional derived-statistics filter after user-requested effects.
+  /// The native audio-only backend serializes this with passthrough changes.
+  Future<bool> setAudioSpectrumAnalysis(bool enabled) async {
+    if (playerType != 'mpv') return false;
+    if (_audioSpectrumAnalysisEnabled == enabled) return true;
+    final previous = _audioSpectrumAnalysisEnabled;
+    _audioSpectrumAnalysisEnabled = enabled;
+    try {
+      await _applyAudioFilters();
+      return true;
+    } catch (error, stackTrace) {
+      _audioSpectrumAnalysisEnabled = previous;
+      appLogger.d('MPV: optional audio analysis filter is unavailable', error: error, stackTrace: stackTrace);
+      try {
+        await _applyAudioFilters();
+      } catch (_) {
+        // Keep the optional analysis failure away from normal playback.
+      }
+      return false;
+    }
+  }
 
   @override
   Future<void> setAudioNormalization(bool enabled) async {
@@ -1432,6 +1515,28 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
     await _applyAudioFilters();
   }
 
+  @override
+  Future<void> setAudioEffects(PlayerAudioEffects effects) async {
+    if (playerType != 'mpv') return;
+    final previous = _audioEffects;
+    _audioEffects = (
+      stereoWidth: effects.stereoWidth.isFinite ? effects.stereoWidth.clamp(0.0, 1.0).toDouble() : 0.0,
+      spatializer: effects.spatializer,
+      pitchSemitones: effects.pitchSemitones.isFinite ? effects.pitchSemitones.clamp(-12.0, 12.0).toDouble() : 0.0,
+    );
+    try {
+      await _applyAudioFilters();
+    } catch (_) {
+      _audioEffects = previous;
+      try {
+        await _applyAudioFilters();
+      } catch (_) {
+        // Retain the original filter error; rollback is best-effort.
+      }
+      rethrow;
+    }
+  }
+
   Future<void> _applyAudioFilters() async {
     if (Platform.isAndroid && playerType != 'mpv') return;
     final filters = <String>[];
@@ -1440,9 +1545,26 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
       if (gain.abs() < 0.05) continue;
       filters.add('equalizer=f=${_audioEqualizerFrequencies[index]}:t=q:w=1:g=${gain.toStringAsFixed(1)}');
     }
+    if (_audioEffects.stereoWidth >= 0.01) {
+      final amount = _audioEffects.stereoWidth;
+      filters.add(
+        'stereowiden=delay=20:feedback=${(0.25 * amount).toStringAsFixed(3)}:'
+        'crossfeed=${(0.3 * amount).toStringAsFixed(3)}:drymix=0.8',
+      );
+    }
+    if (_audioEffects.spatializer) {
+      // A short, quiet set of reflections gives the room ambience effect
+      // without the long tails or volume jump of the filter's defaults.
+      filters.add('aecho=0.8:0.9:35|55:0.18|0.12');
+    }
+    if (_audioEffects.pitchSemitones.abs() >= 0.05) {
+      final pitch = math.pow(2, _audioEffects.pitchSemitones / 12).toStringAsFixed(5);
+      filters.add('rubberband=pitch=$pitch:tempo=1:formant=preserved');
+    }
     if (_audioNormalizationEnabled) {
       filters.add(Platform.isAndroid ? _androidNormalizationFilter : _loudnormFilter);
     }
+    if (_audioSpectrumAnalysisEnabled) filters.add(_spectrumAnalysisFilter);
     await setProperty('af', filters.join(','));
   }
 

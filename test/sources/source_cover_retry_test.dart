@@ -22,6 +22,7 @@ void main() {
     await controller.ready;
     controller.profileId = 'alice';
     controller.blocked = false;
+    controller.loading = false;
     controller.sources = [
       FileSource(id: 'local', profileId: 'alice', kind: FileSourceKind.local, name: 'Local', root: root.path),
     ];

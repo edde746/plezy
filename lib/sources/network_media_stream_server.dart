@@ -137,6 +137,8 @@ class NetworkMediaStreamServer {
         'zerolatency',
         '-crf',
         '24',
+        '-force_key_frames',
+        'expr:gte(t,n_forced*4)',
         '-pix_fmt',
         'yuv420p',
         '-c:a',

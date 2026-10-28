@@ -450,11 +450,11 @@ jobs:
       - name: Set ThreadSanitizer-compatible ASLR entropy
         if: matrix.sanitizer == 'thread'
         run: |
-          current_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          current_bits="$(sudo -n sysctl -n vm.mmap_rnd_bits)"
           if [ "$current_bits" -gt 28 ]; then
-            sudo sysctl -w vm.mmap_rnd_bits=28
+            sudo -n sysctl -w vm.mmap_rnd_bits=28
           fi
-          configured_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          configured_bits="$(sudo -n sysctl -n vm.mmap_rnd_bits)"
           if [ "$configured_bits" -gt 28 ]; then
             echo "ThreadSanitizer requires vm.mmap_rnd_bits <= 28; found $configured_bits" >&2
             exit 1
