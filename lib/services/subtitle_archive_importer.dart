@@ -90,7 +90,14 @@ abstract final class SubtitleArchiveImporter {
       if (entry.isSymbolicLink) {
         throw const FormatException('ZIP archives containing symbolic links are not supported.');
       }
-      if (entry.isDirectory) continue;
+      if (entry.isDirectory) {
+        final directoryName = entry.name.replaceAll('\\', '/');
+        final withoutTrailingSeparator = directoryName.endsWith('/')
+            ? directoryName.substring(0, directoryName.length - 1)
+            : directoryName;
+        _validateEntryName(withoutTrailingSeparator);
+        continue;
+      }
       final safeName = _validateEntryName(entry.name);
       final identity = safeName.toLowerCase();
       if (byName.containsKey(identity)) {
