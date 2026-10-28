@@ -30,7 +30,7 @@ class AndroidSdkTests(unittest.TestCase):
         packages = MODULE.required_packages(self.root)
         self.assertEqual(packages, ["build-tools;37.0.0", "cmake;3.22.1", "cmake;4.1.2",
                                     "ndk;29.0.14206865", "platform-tools",
-                                    "platforms;android-36", "platforms;android-37"])
+                                    "platforms;android-36", "platforms;android-37.0"])
         (self.root / "android/steam/build.gradle").write_text("cmake { version '4.2.0' }\n")
         updated = MODULE.required_packages(self.root)
         self.assertIn("cmake;4.2.0", updated)
@@ -38,7 +38,7 @@ class AndroidSdkTests(unittest.TestCase):
 
     def test_real_source_includes_steam_and_libass_toolchains(self):
         packages = MODULE.required_packages(MODULE.ROOT)
-        for expected in ("cmake;3.22.1", "cmake;4.1.2", "platforms;android-36", "platforms;android-37"):
+        for expected in ("cmake;3.22.1", "cmake;4.1.2", "platforms;android-36", "platforms;android-37.0"):
             self.assertIn(expected, packages)
 
     def test_sdk_java_and_gradle_both_receive_proxy_before_downloads(self):
