@@ -2953,7 +2953,21 @@
     "scrobble": "वास्तविक समय स्क्रबबलिंग",
     "scrobbleDescription": "प्लेबैक के दौरान प्लेबैक, ब्रेक, और स्टॉप घटनाओं को Trakt पर भेजें।",
     "watchedSync": "सिंक्रनाइज़ेशन की स्थिति",
-    "watchedSyncDescription": "जब आप PlezyNG में देखे गए आइटम को चिह्नित करते हैं, तो वे Trakt में देखे गए आइटम को भी चिह्नित करते हैं।"
+    "watchedSyncDescription": "जब आप PlezyNG में देखे गए आइटम को चिह्नित करते हैं, तो वे Trakt में देखे गए आइटम को भी चिह्नित करते हैं।",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

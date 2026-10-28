@@ -2953,7 +2953,21 @@
     "scrobble": "Gerçek zamanlı scrobble",
     "scrobbleDescription": "Oynatma sırasında Trakt'a oynatma, duraklatma ve durdurma olayları gönderin.",
     "watchedSync": "İzleme durumunu eşitle",
-    "watchedSyncDescription": "PlezyNG'de ögeleri izlendi olarak işaretlediğinizde, Trakt üzerinde de izlendi olarak işaretlenir."
+    "watchedSyncDescription": "PlezyNG'de ögeleri izlendi olarak işaretlediğinizde, Trakt üzerinde de izlendi olarak işaretlenir.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

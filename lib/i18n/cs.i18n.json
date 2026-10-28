@@ -2989,7 +2989,21 @@
     "scrobble": "Reálný scrobbling",
     "scrobbleDescription": "Pošlete si hraní, přestávku a zastavení událostí na adresu Trakt během přehrávání.",
     "watchedSync": "Sync sledovaný status",
-    "watchedSyncDescription": "Pokud označíte položky podle zobrazení v čísle PlezyNG, označují se také podle zobrazení v čísle Trakt."
+    "watchedSyncDescription": "Pokud označíte položky podle zobrazení v čísle PlezyNG, označují se také podle zobrazení v čísle Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

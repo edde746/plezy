@@ -2932,7 +2932,21 @@
     "scrobble": "Thời gian thực scrobbling",
     "scrobbleDescription": "Gửi game, nghỉ ngơi, và dừng các sự kiện đến Trakt trong khi chơi lại.",
     "watchedSync": "Sync theo dõi trạng thái",
-    "watchedSyncDescription": "Khi bạn đánh dấu các mục như được xem ở PlezyNG, chúng cũng được đánh dấu như được xem ở Trakt."
+    "watchedSyncDescription": "Khi bạn đánh dấu các mục như được xem ở PlezyNG, chúng cũng được đánh dấu như được xem ở Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

@@ -2953,7 +2953,21 @@
     "scrobble": "Real vaqt rejimida kuzatish",
     "scrobbleDescription": "Ijro paytida Trakt-ga maʼlumot yuborish.",
     "watchedSync": "Koʻrish holatini sinxronlash",
-    "watchedSyncDescription": "PlezyNG-da belgilanganda Trakt-da ham belgilanadi."
+    "watchedSyncDescription": "PlezyNG-da belgilanganda Trakt-da ham belgilanadi.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

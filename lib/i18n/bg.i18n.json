@@ -2953,7 +2953,21 @@
     "scrobble": "Скроблиране в реално време",
     "scrobbleDescription": "Изпращай събития за пускане, пауза и спиране към Trakt по време на възпроизвеждане.",
     "watchedSync": "Синхронизирай статус гледано",
-    "watchedSyncDescription": "Когато маркирате елементи като гледани в PlezyNG, те се маркират и в Trakt."
+    "watchedSyncDescription": "Когато маркирате елементи като гледани в PlezyNG, те се маркират и в Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

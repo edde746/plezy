@@ -2956,7 +2956,21 @@
     "scrobble": "Scrobbling in tempo reale",
     "scrobbleDescription": "Invia eventi di riproduzione, pausa e arresto a Trakt durante la riproduzione.",
     "watchedSync": "Sincronizza lo stato di visione",
-    "watchedSyncDescription": "Quando contrassegni un elemento come visto in PlezyNG, viene contrassegnato come visto anche su Trakt."
+    "watchedSyncDescription": "Quando contrassegni un elemento come visto in PlezyNG, viene contrassegnato come visto anche su Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

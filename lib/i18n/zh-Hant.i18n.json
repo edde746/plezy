@@ -2949,7 +2949,21 @@
     "scrobble": "即時同步記錄（Scrobble）",
     "scrobbleDescription": "在播放時向 Trakt 傳送播放、暫停和停止等狀態。",
     "watchedSync": "同步已觀看狀態",
-    "watchedSyncDescription": "在 PlezyNG 中將項目標記為已觀看時，也會在 Trakt 上標記為已觀看。"
+    "watchedSyncDescription": "在 PlezyNG 中將項目標記為已觀看時，也會在 Trakt 上標記為已觀看。",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

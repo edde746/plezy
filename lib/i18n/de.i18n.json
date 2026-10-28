@@ -2953,7 +2953,21 @@
     "scrobble": "Echtzeit-Scrobbling",
     "scrobbleDescription": "Sende Play-, Pause- und Stopp-Ereignisse während der Wiedergabe an Trakt.",
     "watchedSync": "Gesehen-Status synchronisieren",
-    "watchedSyncDescription": "Wenn du Inhalte in PlezyNG als gesehen markierst, werden sie auch auf Trakt markiert."
+    "watchedSyncDescription": "Wenn du Inhalte in PlezyNG als gesehen markierst, werden sie auch auf Trakt markiert.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

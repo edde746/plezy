@@ -2953,7 +2953,21 @@
     "scrobble": "Realtime scrobblen",
     "scrobbleDescription": "Stuur tijdens het afspelen gebeurtenissen voor afspelen, pauzeren en stoppen naar Trakt.",
     "watchedSync": "Kijkstatus synchroniseren",
-    "watchedSyncDescription": "Wanneer je items in PlezyNG als bekeken markeert, worden ze op Trakt ook als bekeken gemarkeerd."
+    "watchedSyncDescription": "Wanneer je items in PlezyNG als bekeken markeert, worden ze op Trakt ook als bekeken gemarkeerd.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

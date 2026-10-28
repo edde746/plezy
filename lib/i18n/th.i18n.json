@@ -2932,7 +2932,21 @@
     "scrobble": "ระยะเวลาจริง scrobbling",
     "scrobbleDescription": "ส่งการเล่นหยุดและหยุดกิจกรรมไปยัง Trakt ในระหว่างการเล่น",
     "watchedSync": "สภาพที่สังเกต",
-    "watchedSyncDescription": "เมื่อคุณทําเครื่องหมายรายการตามที่ดูใน PlezyNG พวกเขาจะทําเครื่องหมายตามที่ดูใน Trakt"
+    "watchedSyncDescription": "เมื่อคุณทําเครื่องหมายรายการตามที่ดูใน PlezyNG พวกเขาจะทําเครื่องหมายตามที่ดูใน Trakt",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

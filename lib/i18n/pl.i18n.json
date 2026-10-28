@@ -2995,7 +2995,21 @@
     "scrobble": "Śledzenie odtwarzania w czasie rzeczywistym",
     "scrobbleDescription": "Wysyłaj do serwisu Trakt zdarzenia odtwarzania, wstrzymania i zatrzymania.",
     "watchedSync": "Synchronizuj stan obejrzenia",
-    "watchedSyncDescription": "Gdy oznaczysz element jako obejrzany w PlezyNG, zostanie on również oznaczony jako obejrzany w serwisie Trakt."
+    "watchedSyncDescription": "Gdy oznaczysz element jako obejrzany w PlezyNG, zostanie on również oznaczony jako obejrzany w serwisie Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

@@ -3037,7 +3037,21 @@
     "scrobble": "في الوقت الحقيقي Scrobbling",
     "scrobbleDescription": "إرسال لعبة، وقف، وقف الأحداث إلى Trakt أثناء تشغيل.",
     "watchedSync": "سينك مراقبة الوضع",
-    "watchedSyncDescription": "عند وضع علامة على العناصر كما تم مشاهدتها في PlezyNG، يتم وضع علامة على العناصر كما تم مشاهدتها في Trakt."
+    "watchedSyncDescription": "عند وضع علامة على العناصر كما تم مشاهدتها في PlezyNG، يتم وضع علامة على العناصر كما تم مشاهدتها في Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

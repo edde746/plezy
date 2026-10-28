@@ -2953,7 +2953,21 @@
     "scrobble": "Realtidsspårning",
     "scrobbleDescription": "Skicka händelser för uppspelning, paus och stopp till Trakt under uppspelningen.",
     "watchedSync": "Synkronisera seddstatus",
-    "watchedSyncDescription": "När du markerar objekt som sedda i PlezyNG markeras de även som sedda på Trakt."
+    "watchedSyncDescription": "När du markerar objekt som sedda i PlezyNG markeras de även som sedda på Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

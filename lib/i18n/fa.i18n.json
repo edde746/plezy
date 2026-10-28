@@ -2953,7 +2953,21 @@
     "scrobble": "زمان واقعی Scrobbling",
     "scrobbleDescription": "ارسال بازی، استراحت و توقف رویدادهای به Trakt در هنگام پخش.",
     "watchedSync": "Sync وضعیت مشاهده شده",
-    "watchedSyncDescription": "هنگامی که شما آیتم ها را به عنوان مشاهده شده در PlezyNG نشان می دهید، آنها نیز به عنوان مشاهده شده در Trakt نشان داده می شوند."
+    "watchedSyncDescription": "هنگامی که شما آیتم ها را به عنوان مشاهده شده در PlezyNG نشان می دهید، آنها نیز به عنوان مشاهده شده در Trakt نشان داده می شوند.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

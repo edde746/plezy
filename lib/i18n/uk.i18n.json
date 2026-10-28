@@ -2989,7 +2989,21 @@
     "scrobble": "Реальний час Скрипаль",
     "scrobbleDescription": "Надіслати відгуки, перерви та зупинки подій на номер Trakt під час перегляду.",
     "watchedSync": "Синхен спостерігається статус",
-    "watchedSyncDescription": "Коли ви відзначаєте елементи, як спостерігалося в PlezyNG, вони також відзначаються як спостерігалося в Trakt."
+    "watchedSyncDescription": "Коли ви відзначаєте елементи, як спостерігалося в PlezyNG, вони також відзначаються як спостерігалося в Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

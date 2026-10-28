@@ -2953,7 +2953,21 @@
     "scrobble": "Нақты уақытта бақылау",
     "scrobbleDescription": "Ойнату кезінде Trakt-қа деректер жіберу.",
     "watchedSync": "Көру мәртебесін синхрондау",
-    "watchedSyncDescription": "PlezyNG-де белгіленгенде Trakt-та да белгіленеді."
+    "watchedSyncDescription": "PlezyNG-де белгіленгенде Trakt-та да белгіленеді.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

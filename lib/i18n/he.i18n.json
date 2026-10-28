@@ -2957,7 +2957,21 @@
     "scrobble": "זמן אמיתי Scrobbling",
     "scrobbleDescription": "שלח משחקים, הפסקות, ולעצור אירועים ל- Trakt במהלך הצפייה.",
     "watchedSync": "סינכרון מצב צופה",
-    "watchedSyncDescription": "כאשר אתה מסמן פריטים כפי שנצפה ב- PlezyNG, הם מסומנים גם כפי שנצפה ב- Trakt."
+    "watchedSyncDescription": "כאשר אתה מסמן פריטים כפי שנצפה ב- PlezyNG, הם מסומנים גם כפי שנצפה ב- Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

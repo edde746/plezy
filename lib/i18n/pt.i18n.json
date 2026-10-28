@@ -2956,7 +2956,21 @@
     "scrobble": "Scrobbling em tempo real",
     "scrobbleDescription": "Envia eventos de reprodução, pausa e parada ao Trakt durante a exibição.",
     "watchedSync": "Sincronizar status de assistido",
-    "watchedSyncDescription": "Ao marcar itens como assistidos no PlezyNG, eles também serão marcados no Trakt."
+    "watchedSyncDescription": "Ao marcar itens como assistidos no PlezyNG, eles também serão marcados no Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

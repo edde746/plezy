@@ -2995,7 +2995,21 @@
     "scrobble": "Скробблинг в реальном времени",
     "scrobbleDescription": "Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.",
     "watchedSync": "Синхронизация статуса просмотра",
-    "watchedSyncDescription": "Когда вы отмечаете элементы как просмотренные в PlezyNG, они отмечаются и в Trakt."
+    "watchedSyncDescription": "Когда вы отмечаете элементы как просмотренные в PlezyNG, они отмечаются и в Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

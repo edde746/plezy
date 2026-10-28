@@ -2953,7 +2953,21 @@
     "scrobble": "Realtids-scrobbling",
     "scrobbleDescription": "Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.",
     "watchedSync": "Synkroniser set-status",
-    "watchedSyncDescription": "Når du markerer elementer som set i PlezyNG, markeres de også på Trakt."
+    "watchedSyncDescription": "Når du markerer elementer som set i PlezyNG, markeres de også på Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

@@ -2953,7 +2953,21 @@
     "scrobble": "Real vaxt rejimində izləmə",
     "scrobbleDescription": "Oynatma zamanı Trakt-a məlumat göndər.",
     "watchedSync": "Baxış statusunu eyniləşdir",
-    "watchedSyncDescription": "PlezyNG-də baxıldı işarələdikdə Trakt-da da işarələnsin."
+    "watchedSyncDescription": "PlezyNG-də baxıldı işarələdikdə Trakt-da da işarələnsin.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

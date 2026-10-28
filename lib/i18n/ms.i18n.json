@@ -2932,7 +2932,21 @@
     "scrobble": "Pengeluaran masa nyata scrobbling",
     "scrobbleDescription": "Hantar permainan, istirahat, dan menghentikan peristiwa kepada Trakt semasa pemutaran.",
     "watchedSync": "Sinkronkan status yang dilihat",
-    "watchedSyncDescription": "Apabila anda menandakan item seperti yang dilihat di PlezyNG, mereka juga ditandakan seperti yang dilihat di Trakt."
+    "watchedSyncDescription": "Apabila anda menandakan item seperti yang dilihat di PlezyNG, mereka juga ditandakan seperti yang dilihat di Trakt.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

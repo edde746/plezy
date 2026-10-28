@@ -2953,7 +2953,21 @@
     "scrobble": "Valós idejű scrobbling",
     "scrobbleDescription": "Lejátszási, szüneteltetési és leállítási események küldése a Traktnak lejátszás közben.",
     "watchedSync": "Megtekintési állapot szinkronizálása",
-    "watchedSyncDescription": "Ha egy elemet megtekintettként jelölsz meg a Plezyben, a Trakt is megtekintettként jelöli."
+    "watchedSyncDescription": "Ha egy elemet megtekintettként jelölsz meg a Plezyben, a Trakt is megtekintettként jelöli.",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

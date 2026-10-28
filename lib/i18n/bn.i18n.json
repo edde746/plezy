@@ -2953,7 +2953,21 @@
     "scrobble": "বাস্তব সময়ের স্ক্রোবিলিং",
     "scrobbleDescription": "খেলা, pause, এবং stop events পাঠান Trakt Playback সময়।",
     "watchedSync": "সিন্ক দেখানো অবস্থা",
-    "watchedSyncDescription": "যখন আপনি PlezyNG এর অনুসন্ধানের মত পণ্যগুলি চিহ্নিত করেন, তখন তারা Trakt এর অনুসন্ধানের মতও চিহ্নিত হয়।"
+    "watchedSyncDescription": "যখন আপনি PlezyNG এর অনুসন্ধানের মত পণ্যগুলি চিহ্নিত করেন, তখন তারা Trakt এর অনুসন্ধানের মতও চিহ্নিত হয়।",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",

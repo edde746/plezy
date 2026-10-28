@@ -2953,7 +2953,21 @@
     "scrobble": "Real-time scrobbling",
     "scrobbleDescription": "Send play, pause, and stop events to Trakt during playback.",
     "watchedSync": "Sync watched status",
-    "watchedSyncDescription": "When you mark items as watched in PlezyNG, they are also marked as watched on Trakt."
+    "watchedSyncDescription": "When you mark items as watched in PlezyNG, they are also marked as watched on Trakt.",
+    "historyExport": "Export to Letterboxd",
+    "historyExportDescription": "Create a local CSV from Trakt movie history. Nothing is uploaded.",
+    "historyExportLoading": "Loading Trakt movie history…",
+    "historyExportReviewTitle": "Export movie history",
+    "historyExportReview": "This will save ${plays} movie watch entries covering ${movies} movies in ${files} Letterboxd import CSV file(s). Files include available TMDB/IMDb IDs, titles, years, and watched dates using this device's local calendar date. TV episodes and ratings are excluded; nothing is uploaded. Letterboxd may combine repeat watches on the same date. Each file stays below Letterboxd's 1 MB import limit.",
+    "historyExportSkipped": "${count} incomplete entries could not be included.",
+    "historyExportNoHistory": "No exportable movie history was found in Trakt.",
+    "historyExportFailed": "Couldn't load Trakt movie history. Try again.",
+    "historyExportSave": "Save CSV",
+    "historyExportPart": "Save Letterboxd file ${part} of ${total}",
+    "historyExportSaved": "Saved ${count} Letterboxd CSV file(s).",
+    "historyExportPartial": "Export stopped after saving ${saved} of ${total} files.",
+    "historyExportSaveFailed": "Couldn't save the CSV file. Try again.",
+    "historyExportTooLarge": "This history is too large to package here. Use Trakt's own data export to split very large histories."
   },
   "seerr": {
     "title": "Seerr",

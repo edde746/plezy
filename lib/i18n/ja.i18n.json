@@ -2949,7 +2949,21 @@
     "scrobble": "リアルタイムのスクロブル",
     "scrobbleDescription": "再生中に再生・一時停止・停止の各イベントをTraktに送信します。",
     "watchedSync": "視聴済みステータスを同期",
-    "watchedSyncDescription": "Plezyで項目を視聴済みにすると、Traktでも視聴済みになります。"
+    "watchedSyncDescription": "Plezyで項目を視聴済みにすると、Traktでも視聴済みになります。",
+    "historyExport": "",
+    "historyExportDescription": "",
+    "historyExportLoading": "",
+    "historyExportReviewTitle": "",
+    "historyExportReview": "",
+    "historyExportSkipped": "",
+    "historyExportNoHistory": "",
+    "historyExportFailed": "",
+    "historyExportSave": "",
+    "historyExportPart": "",
+    "historyExportSaved": "",
+    "historyExportPartial": "",
+    "historyExportSaveFailed": "",
+    "historyExportTooLarge": ""
   },
   "seerr": {
     "title": "Seerr",
