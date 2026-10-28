@@ -97,6 +97,7 @@ class StandaloneVideoMetadataClient {
     var title = media.title?.trim() ?? query.title;
     final identifiers = <String, String>{
       'trakt': traktId.toString(),
+      'plezyMediaType': isShow ? 'show' : 'movie',
       if (media.ids.tmdb != null) 'tmdb': media.ids.tmdb.toString(),
       if (media.ids.imdb != null) 'imdb': media.ids.imdb!,
       if (media.ids.tvdb != null) 'tvdb': media.ids.tvdb.toString(),

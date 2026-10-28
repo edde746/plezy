@@ -12,8 +12,15 @@ import '../services/credential_vault.dart';
 import 'publication_shelf.dart';
 import 'source_models.dart';
 
-String _entrySearchText(SourceEntry entry) =>
-    '${entry.title} ${entry.author} ${entry.narrator} ${entry.series}'.toLowerCase();
+String _entrySearchText(SourceEntry entry) => [
+  entry.title,
+  entry.displayTitle,
+  entry.onlineTitle,
+  entry.author,
+  entry.narrator,
+  entry.series,
+  ...entry.identifiers.entries.expand((value) => [value.key, value.value]),
+].whereType<String>().join(' ').toLowerCase();
 
 /// Separate versioned database: installing file sources does not rewrite or
 /// reinterpret the existing server, watched-state or download schemas.
@@ -25,7 +32,7 @@ class SourceDatabase extends GeneratedDatabase {
   }
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
   @override
@@ -127,6 +134,26 @@ class SourceDatabase extends GeneratedDatabase {
         }
       }
       if (from < 9) await _createEntrySearchIndex();
+      if (from < 10) {
+        // Search now includes explicit online identity metadata so a cloud
+        // file can join a library item by a verified external id without
+        // scanning every file row in every connected account.
+        final rows = await customSelect('SELECT profile,source,id,payload FROM entries').get();
+        for (final row in rows) {
+          var search = '';
+          try {
+            search = _entrySearchText(SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload')))));
+          } on Object {
+            // Preserve corrupt cache rows while keeping them out of search.
+          }
+          await customStatement('UPDATE entries SET search=? WHERE profile=? AND source=? AND id=?', [
+            search,
+            row.read<String>('profile'),
+            row.read<String>('source'),
+            row.read<String>('id'),
+          ]);
+        }
+      }
       if (from < 8) {
         await customStatement("ALTER TABLE downloads ADD COLUMN source_id TEXT NOT NULL DEFAULT ''");
         await customStatement("ALTER TABLE downloads ADD COLUMN file_payload TEXT NOT NULL DEFAULT '{}'");

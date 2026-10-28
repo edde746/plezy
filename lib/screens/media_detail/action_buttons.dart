@@ -319,11 +319,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     Future<void> onWatchWithServicesPressed() async {
       if (!_canUseDetail || !context.mounted) return;
       final streaming = context.read<RemoteStreamingProvider>();
-      if (streaming.addons.where((addon) => addon.enabled).isEmpty) {
+      bool hasConnectedOption() =>
+          streaming.addons.any((addon) => addon.enabled) || streaming.accounts.isNotEmpty;
+      if (!hasConnectedOption()) {
         await Navigator.push(context, MaterialPageRoute(builder: (_) => const RemoteStreamingSettingsScreen()));
-        if (!context.mounted || streaming.addons.where((addon) => addon.enabled).isEmpty) {
-          return;
-        }
+        if (!context.mounted || !hasConnectedOption()) return;
       }
       final MediaItem? playbackItem = metadata.isShow
           ? _showPlayEpisode()
@@ -364,7 +364,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         final request = RemoteStreamRequest(
           type: playbackItem.isEpisode ? 'series' : 'movie',
           id: '$titleId$episodeSuffix',
-          title: playbackItem.title ?? metadata.title ?? '',
+          title: playbackItem.isEpisode
+              ? playbackItem.grandparentTitle ?? playbackItem.parentTitle ?? metadata.title ?? ''
+              : playbackItem.title ?? metadata.title ?? '',
           year: playbackItem.year,
           season: playbackItem.isEpisode ? playbackItem.parentIndex : null,
           episode: playbackItem.isEpisode ? playbackItem.index : null,

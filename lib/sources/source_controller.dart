@@ -28,6 +28,7 @@ import 'source_oauth.dart';
 import '../services/standalone_video_metadata_client.dart';
 import '../services/remote_streams/remote_stream_models.dart';
 import '../services/remote_streams/remote_streaming_provider.dart';
+import '../utils/search_relevance.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
 import 'sync/publication_sync.dart';
@@ -862,6 +863,107 @@ class SourceController extends ChangeNotifier {
         for (final entry in page)
           if (entry.kind == SourceItemKind.video && !entry.unavailable && seen.add(entry.key)) entry,
     ].take(boundedLimit).toList(growable: false);
+  }
+
+  /// Finds only cloud files that already carry a verified external id from
+  /// the user's optional metadata lookup. This keeps the detail-screen merge
+  /// local, bounded, and safe from title-only false positives.
+  Future<List<SourceEntry>> matchRemoteCloudEntries({
+    required String title,
+    required String mediaType,
+    required Map<String, String> identifiers,
+    int? year,
+    int limit = 8,
+  }) async {
+    await ready;
+    requireSession();
+    if (!const {'movie', 'show'}.contains(mediaType)) return const [];
+    final normalizedTitle = normalizeSearchText(title);
+    if (normalizedTitle.length < 3) return const [];
+    final ids = <String, String>{};
+    for (final key in const ['imdb', 'tmdb', 'tvdb']) {
+      final raw = identifiers[key]?.trim().toLowerCase();
+      if (raw == null || raw.isEmpty || raw.length > 100) continue;
+      final value = raw.startsWith('$key:') ? raw.substring(key.length + 1) : raw;
+      if (value.isNotEmpty) ids[key] = value;
+    }
+    if (ids.isEmpty) return const [];
+
+    final epoch = generation;
+    final profile = profileId!;
+    final boundedLimit = limit.clamp(1, 12).toInt();
+    final targetIds = ids.entries.toList(growable: false);
+    final matches = <String, SourceEntry>{};
+    final cloudSources = sources
+        .where((source) => source.kind == FileSourceKind.remoteCloud && source.profileId == profile)
+        .take(20)
+        .toList(growable: false);
+
+    bool isMatch(SourceEntry entry) {
+      if (entry.kind != SourceItemKind.video || entry.unavailable) return false;
+      final indexedType = entry.identifiers['plezyMediaType'];
+      if (indexedType != null && indexedType != mediaType) return false;
+      final hasExactId = targetIds.any((candidate) {
+        final value = entry.identifiers[candidate.key]?.trim().toLowerCase();
+        return value == candidate.value;
+      });
+      if (!hasExactId) return false;
+      final candidateTitle = normalizeSearchText(entry.onlineTitle ?? entry.displayTitle);
+      final titleMatches = candidateTitle == normalizedTitle ||
+          (mediaType == 'show' && candidateTitle.startsWith('$normalizedTitle '));
+      if (!titleMatches) return false;
+      if (mediaType == 'movie' && year != null && entry.releaseYear != null) {
+        if ((year - entry.releaseYear!).abs() > 1) return false;
+      }
+      return true;
+    }
+
+    for (final source in cloudSources) {
+      for (final identifier in targetIds) {
+        final page = await repository.entriesPage(
+          profile,
+          source: source.id,
+          shelf: PublicationShelf.videos,
+          query: identifier.value,
+          limit: 50,
+        );
+        requireSession(epoch);
+        for (final entry in page.items) {
+          if (entry.sourceId == source.id && isMatch(entry)) matches[entry.key] = entry;
+        }
+      }
+    }
+    requireSession(epoch);
+    final ordered = matches.values.toList()
+      ..sort((a, b) {
+        final byTitle = normalizeSearchText(a.displayTitle).compareTo(normalizeSearchText(b.displayTitle));
+        return byTitle != 0 ? byTitle : a.key.compareTo(b.key);
+      });
+    return ordered.take(boundedLimit).toList(growable: false);
+  }
+
+  /// Reacquires the same remote-cloud file without persisting its signed URL.
+  /// Playback renewal calls this again with the same source entry and file id.
+  Future<ContentLease> resolveRemoteCloudFile(SourceEntry entry, PublicationFile file) async {
+    await ready;
+    requireSession();
+    final epoch = generation;
+    final profile = profileId!;
+    final source = sources.where((value) => value.id == entry.sourceId).firstOrNull;
+    if (source == null ||
+        source.profileId != profile ||
+        source.kind != FileSourceKind.remoteCloud ||
+        entry.kind != SourceItemKind.video ||
+        entry.files.where((value) => value.id == file.id).isEmpty) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final fresh = await hydrate(entry);
+    requireSession(epoch);
+    final freshFile = fresh.files.where((value) => value.id == file.id).firstOrNull;
+    if (freshFile == null) throw const SourceException(SourceFailure.unavailable);
+    final lease = await adapter(source.id).resolve(freshFile);
+    requireSession(epoch);
+    return lease;
   }
 
   Future<SourceEntry> hydrate(SourceEntry entry) async {

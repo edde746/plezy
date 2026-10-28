@@ -54,6 +54,10 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   re-resolution of the same add-on candidate or provider job. Resume offsets
   are durably queued for the owning server without sending an active “now
   playing” session for an external stream.
+- Show a cloud-file result in that same “Watch with services” flow when the
+  file already has matching external IDs plus a compatible title and year.
+  Keep the match local and profile-scoped; play it in the server queue when
+  that server is online and renew the same account/file lease after expiry.
 - Keep provider credentials and add-on URLs encrypted and scoped to the active
   profile; use the existing source-player surface and local resume journal for
   catalog-only playback and standalone cloud files.

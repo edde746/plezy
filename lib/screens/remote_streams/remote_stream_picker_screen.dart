@@ -50,6 +50,8 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
   String? _loadedProfileId;
   bool _profileReloadQueued = false;
   String? _busyCandidate;
+  String? _busyCloudMatch;
+  List<SourceEntry> _cloudMatches = const [];
   final Map<String, RemoteSubtitle> _selectedSubtitles = {};
 
   @override
@@ -67,15 +69,30 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     final provider = context.read<RemoteStreamingProvider>();
     final profileId = provider.profileId;
     try {
-      final result = await provider.streamsFor(widget.request);
+      final sourceController = context.read<SourceController?>();
+      final cloudMatchesFuture = widget.playbackItem == null || sourceController == null
+          ? Future<List<SourceEntry>>.value(const [])
+          : sourceController
+                .matchRemoteCloudEntries(
+                  title: widget.request.title,
+                  mediaType: widget.request.type == 'series' ? 'show' : widget.request.type,
+                  identifiers: widget.identifiers,
+                  year: widget.request.year,
+                )
+                .catchError((Object _) => const <SourceEntry>[]);
+      final resultFuture = provider.streamsFor(widget.request);
+      final result = await resultFuture;
+      final cloudMatches = await cloudMatchesFuture;
       if (!mounted) return;
-      if (provider.profileId != profileId) {
+      if (provider.profileId != profileId ||
+          (sourceController != null && sourceController.profileId != profileId)) {
         setState(() => _loading = false);
         return;
       }
       setState(() {
         _loadedProfileId = profileId;
         _result = result;
+        _cloudMatches = cloudMatches;
         _loading = false;
       });
     } on Object {
@@ -83,12 +100,13 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       setState(() {
         _loading = false;
         _error = provider.profileId == profileId;
+        _cloudMatches = const [];
       });
     }
   }
 
   Future<void> _play(RemoteStreamCandidate candidate, {bool viaProvider = false}) async {
-    if (_busyCandidate != null) return;
+    if (_busyCandidate != null || _busyCloudMatch != null) return;
     final streaming = context.read<RemoteStreamingProvider>();
     final startingProfile = streaming.profileId;
     if (startingProfile == null || !streaming.isReady) return;
@@ -241,6 +259,81 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     RemoteStreamService.premiumize => t.streaming.premiumize,
     RemoteStreamService.torbox => t.streaming.torbox,
   };
+
+  Future<void> _playCloudMatch(SourceEntry entry) async {
+    if (_busyCloudMatch != null || _busyCandidate != null || !mounted) return;
+    final sources = context.read<SourceController?>();
+    final profileId = sources?.profileId;
+    if (sources == null || profileId == null || sources.blocked) return;
+    final generation = sources.generation;
+    setState(() => _busyCloudMatch = entry.key);
+    try {
+      final freshEntry = await sources.hydrate(entry);
+      if (!mounted || sources.blocked || sources.profileId != profileId || !sources.current(generation)) return;
+      final file = freshEntry.files.firstOrNull;
+      final playbackItem = widget.playbackItem;
+      if (file == null || playbackItem == null) throw const SourceException(SourceFailure.unavailable);
+
+      final serverId = playbackItem.serverId;
+      final manager = context.read<MultiServerProvider>().serverManager;
+      final serverKey = serverId == null ? null : ServerId(serverId);
+      final serverOnline = serverKey != null && manager.isClientOnline(serverKey) && manager.getClient(serverKey) != null;
+      if (serverOnline) {
+        final lease = await sources.resolveRemoteCloudFile(freshEntry, file);
+        if (!mounted || sources.blocked || sources.profileId != profileId || !sources.current(generation)) return;
+        Future<({Uri uri, Map<String, String> headers})> renewCloudFile() async {
+          if (sources.blocked || sources.profileId != profileId || !sources.current(generation)) {
+            throw const SourceException(SourceFailure.cancelled);
+          }
+          final renewed = await sources.resolveRemoteCloudFile(freshEntry, file);
+          if (sources.blocked || sources.profileId != profileId || !sources.current(generation)) {
+            throw const SourceException(SourceFailure.cancelled);
+          }
+          return (uri: renewed.uri, headers: renewed.headers);
+        }
+        final descriptor = ExternalPlaybackSource(
+          mediaGlobalKey: playbackItem.globalKey,
+          profileId: profileId,
+          uri: lease.uri,
+          headers: lease.headers,
+          renew: renewCloudFile,
+        );
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'video-player-cloud-file'),
+            builder: (_) => VideoPlayerScreen(metadata: playbackItem, externalPlaybackSource: descriptor),
+          ),
+        );
+      } else {
+        await context.read<SourcePlayback>().start(
+          freshEntry,
+          [file],
+          playbackMode: PublicationMode.watching,
+          persistProgress: true,
+        );
+        if (!mounted || sources.blocked || sources.profileId != profileId || !sources.current(generation)) return;
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'remote-cloud-source-player'),
+            builder: (_) => const SourcePlayerScreen(),
+          ),
+        );
+      }
+    } on SourceException catch (error) {
+      if (mounted && error.reason != SourceFailure.cancelled) {
+        showAppSnackBar(
+          context,
+          error.reason == SourceFailure.authentication ? t.streaming.streamNeedsProvider : t.streaming.streamPrepareFailed,
+        );
+      }
+    } on Object {
+      if (mounted) showAppSnackBar(context, t.streaming.streamPrepareFailed);
+    } finally {
+      if (mounted) setState(() => _busyCloudMatch = null);
+    }
+  }
 
   Future<void> _openPlayer(
     RemoteStreamCandidate candidate,
@@ -551,7 +644,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
               ),
             ),
           )
-        else if (result.candidates.isEmpty)
+        else if (result.candidates.isEmpty && _cloudMatches.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
@@ -587,6 +680,14 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         else
           SliverList(
             delegate: SliverChildListDelegate([
+              if (_cloudMatches.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
+                  child: Text(t.streaming.cloudFiles, style: Theme.of(context).textTheme.titleMedium),
+                ),
+                for (final entry in _cloudMatches) _cloudMatchTile(entry),
+                const Divider(height: 24),
+              ],
               if (result.failedAddons > 0)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -603,6 +704,21 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
             ]),
           ),
       ],
+    );
+  }
+
+  Widget _cloudMatchTile(SourceEntry entry) {
+    final sources = context.read<SourceController?>();
+    final sourceName = sources?.sources.where((source) => source.id == entry.sourceId).firstOrNull?.name;
+    final busy = _busyCloudMatch == entry.key;
+    return FocusableListTile(
+      leading: const AppIcon(Symbols.cloud_rounded, fill: 1),
+      title: Text(entry.displayTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+      subtitle: Text(sourceName?.isNotEmpty == true ? sourceName! : t.streaming.cloudFiles),
+      trailing: busy
+          ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
+          : const AppIcon(Symbols.play_arrow_rounded),
+      onTap: busy ? null : () => _playCloudMatch(entry),
     );
   }
 
