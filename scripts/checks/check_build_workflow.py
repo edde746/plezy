@@ -125,8 +125,7 @@ require(
 )
 require(
     '"group":"packer-windows"' in windows
-    and '"Windows","ARM64"' in windows
-    and '"ng-shared-main-plezyng"' in windows
+    and '"Windows","ARM64","on-demand","packer-windows","PlezyNG"' in windows
     and "matrix.arch == 'x64'" in windows,
     "Windows ARM64 must use its private JIT route",
 )

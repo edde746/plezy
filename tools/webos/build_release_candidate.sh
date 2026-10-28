@@ -254,6 +254,13 @@ ln -s -- "$PYTHON_BIN" "$HOST_TOOLS/python3"
 
 (
   cd -- "$SDK_ROOT/flutter"
+  # Flutter's monorepo DEPS uses engine/src paths relative to this root.
+  # The pinned standard template keeps this patched checkout unmanaged.
+  if [[ -e .gclient || -L .gclient ]]; then
+    echo "Refusing to overwrite an existing gclient configuration." >&2
+    exit 1
+  fi
+  install -m 600 -- engine/scripts/standard.gclient .gclient
   gclient sync --no-history --shallow -j 8
 )
 

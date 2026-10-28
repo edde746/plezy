@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Provision checksum- and publisher-verified NuGet and Inno Setup before Windows builds, and route ARM64 jobs through the existing PC runner pool.
+
+- Initialize webOS engine dependencies from Flutter's pinned checkout template, and build Snap packages in a digest-pinned Ubuntu 24.04 container on each native private runner architecture.
+
 - Provision Android toolchains from every module's Gradle pins and configure both Java and Gradle downloads for the private runner proxy before SDK setup.
 
 - Retain checksum-verified webOS candidates and their exact source/run receipts in private storage after ephemeral runners exit, so device qualification can use the built package.
