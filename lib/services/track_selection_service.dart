@@ -714,6 +714,7 @@ class TrackSelectionService {
   final MediaItem metadata;
   final MediaSourceInfo? plexMediaInfo;
   final bool alwaysShowSubtitlesOnDevice;
+  final List<String> preferredSubtitleLanguages;
 
   TrackSelectionService({
     this.player,
@@ -721,6 +722,7 @@ class TrackSelectionService {
     required this.metadata,
     this.plexMediaInfo,
     this.alwaysShowSubtitlesOnDevice = false,
+    this.preferredSubtitleLanguages = const [],
   });
 
   /// The profile's preferred language for one track kind, or null when unset.
@@ -734,6 +736,17 @@ class TrackSelectionService {
   /// Matching goes through [languageMatches] (exact, region-code, and
   /// ISO 639 variation parity) - never prefix comparison, which would let
   /// e.g. an `est` (Estonian) track satisfy an `es` (Spanish) preference.
+  List<String> _subtitleLanguageOrder(MediaServerUserProfile? profile) {
+    final ordered = <String>{};
+    final serverLanguage = profile == null ? null : _preferredLanguage(profile, isAudio: false);
+    if (serverLanguage != null && serverLanguage.trim().isNotEmpty) ordered.add(serverLanguage.trim());
+    for (final language in preferredSubtitleLanguages) {
+      final normalized = language.trim();
+      if (normalized.isNotEmpty) ordered.add(normalized);
+    }
+    return ordered.toList(growable: false);
+  }
+
   T? _findTrackByPreferredLanguage<T>(List<T> tracks, String preferredLanguage, String? Function(T) getLanguage) {
     for (final track in tracks) {
       if (languageMatches(getLanguage(track), preferredLanguage)) {
@@ -794,9 +807,11 @@ class TrackSelectionService {
   }) {
     final candidates = forcedOnly ? availableTracks.where((track) => track.effectiveForced).toList() : availableTracks;
     if (candidates.isEmpty) return null;
-    final preferredLanguage = _preferredLanguage(profile, isAudio: false);
-    if (preferredLanguage == null) return null;
-    return _findTrackByPreferredLanguage<SubtitleTrack>(candidates, preferredLanguage, (track) => track.language);
+    for (final preferredLanguage in _subtitleLanguageOrder(profile)) {
+      final match = _findTrackByPreferredLanguage<SubtitleTrack>(candidates, preferredLanguage, (track) => track.language);
+      if (match != null) return match;
+    }
+    return null;
   }
 
   SubtitleTrack? _findDefaultSubtitleTrack(List<SubtitleTrack> availableTracks) {
@@ -812,8 +827,7 @@ class TrackSelectionService {
         profileSettings?.subtitleMode == SubtitlePlaybackMode.none) {
       return null;
     }
-    final preferredLanguage = profileSettings?.defaultSubtitleLanguage;
-    if (preferredLanguage != null && preferredLanguage.isNotEmpty) {
+    for (final preferredLanguage in _subtitleLanguageOrder(profileSettings)) {
       final preferred = _findTrackByPreferredLanguage(availableTracks, preferredLanguage, (track) => track.language);
       if (preferred != null) return preferred;
     }

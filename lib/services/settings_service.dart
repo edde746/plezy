@@ -861,6 +861,8 @@ class SettingsService extends BaseSharedPreferencesService {
     transform: (value) => value.isFinite && value >= 0.8 && value <= 1.25 ? value : 1.0,
   );
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
+  /// Ordered device-local subtitle language fallbacks; server profile language remains first.
+  static const subtitleLanguageOrder = StringListPref('subtitle_language_order');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
   static const subtitleFontSize = IntPref('subtitle_font_size', defaultValue: 38);
@@ -2041,6 +2043,7 @@ class SettingsService extends BaseSharedPreferencesService {
     secondarySubtitleSyncOffset,
     subtitleSyncRate,
     subtitleSearchLanguage,
+    subtitleLanguageOrder,
     volume,
     subtitleFontSize,
     subtitleTextColor,
