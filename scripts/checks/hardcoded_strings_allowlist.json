@@ -85,5 +85,8 @@
     "Repair offered: ${repairable ? 'yes' : 'no'}": "English bug-report diagnostic",
     "Message: $message": "English bug-report diagnostic",
     "Stack trace:": "English bug-report diagnostic"
+  },
+  "lib/screens/sources/capture_share_screen.dart": {
+    "python3 tools/plezyctl search --manifest path/to/extension.json \"ambient\" --open": "Executable CLI syntax; keep the command example unchanged across locales."
   }
 }

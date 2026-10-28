@@ -240,8 +240,8 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
   if (message == WM_COPYDATA && deep_link_channel_) {
     constexpr ULONG_PTR kPlezyLinkTag = 0x504C5A59;
     const auto* data = reinterpret_cast<const COPYDATASTRUCT*>(lparam);
-    if (!data || data->dwData != kPlezyLinkTag || !data->lpData ||
-        data->cbData < sizeof(wchar_t) || data->cbData > 16 * 1024 || data->cbData % sizeof(wchar_t) != 0) {
+    if (!data || data->dwData != kPlezyLinkTag || !data->lpData || data->cbData < sizeof(wchar_t) ||
+        data->cbData > 16 * 1024 || data->cbData % sizeof(wchar_t) != 0) {
       return FALSE;
     }
     const auto* wide = static_cast<const wchar_t*>(data->lpData);
@@ -257,8 +257,7 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
     if (!IsOpenMediaLink(url)) return FALSE;
     flutter::EncodableMap arguments;
     arguments.emplace(flutter::EncodableValue("url"), flutter::EncodableValue(url));
-    deep_link_channel_->InvokeMethod(
-        "onLink", std::make_unique<flutter::EncodableValue>(std::move(arguments)));
+    deep_link_channel_->InvokeMethod("onLink", std::make_unique<flutter::EncodableValue>(std::move(arguments)));
     return TRUE;
   }
 
@@ -286,8 +285,7 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
 
 void FlutterWindow::RegisterDeepLinkChannel() {
   deep_link_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-      flutter_controller_->engine()->messenger(), "com.plezy/deep_link",
-      &flutter::StandardMethodCodec::GetInstance());
+      flutter_controller_->engine()->messenger(), "com.plezy/deep_link", &flutter::StandardMethodCodec::GetInstance());
   deep_link_channel_->SetMethodCallHandler([](const auto& call, auto result) {
     if (call.method_name() == "getInitialLink") {
       result->Success();

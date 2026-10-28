@@ -49,15 +49,16 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
         const int character_count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, link->c_str(), -1, nullptr, 0);
         if (character_count > 1 && character_count <= 8192) {
           std::wstring wide_link(static_cast<size_t>(character_count), L'\0');
-          if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, link->c_str(), -1, wide_link.data(), character_count) > 0) {
+          if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, link->c_str(), -1, wide_link.data(), character_count) >
+              0) {
             COPYDATASTRUCT data{};
             data.dwData = 0x504C5A59;
             data.cbData = static_cast<DWORD>(wide_link.size() * sizeof(wchar_t));
             data.lpData = wide_link.data();
             DWORD_PTR delivered = 0;
             SendMessageTimeoutW(
-                existing, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&data),
-                SMTO_ABORTIFHUNG | SMTO_BLOCK, 5000, &delivered);
+                existing, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&data), SMTO_ABORTIFHUNG | SMTO_BLOCK, 5000,
+                &delivered);
           }
         }
       }

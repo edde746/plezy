@@ -25,6 +25,9 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_widgets.dart';
 
+// This is executable CLI syntax, so keep it unchanged across locales.
+const _cliCommandExample = 'python3 tools/plezyctl search --manifest path/to/extension.json "ambient" --open';
+
 enum _MediaToolMode { capture, share, extensions }
 
 class MediaToolsScreen extends StatefulWidget {
@@ -912,20 +915,11 @@ class _MediaToolsScreenState extends State<MediaToolsScreen> with WidgetsBinding
             padding: const EdgeInsetsDirectional.only(start: 12, top: 8, end: 4, bottom: 8),
             child: Row(
               children: [
-                Expanded(
-                  child: SelectableText(
-                    'python3 tools/plezyctl search --manifest path/to/extension.json "ambient" --open',
-                    textDirection: TextDirection.ltr,
-                  ),
-                ),
+                Expanded(child: SelectableText(_cliCommandExample, textDirection: TextDirection.ltr)),
                 IconButton(
                   tooltip: t.universalMedia.cliCopyExample,
                   onPressed: () async {
-                    await Clipboard.setData(
-                      const ClipboardData(
-                        text: 'python3 tools/plezyctl search --manifest path/to/extension.json "ambient" --open',
-                      ),
-                    );
+                    await Clipboard.setData(const ClipboardData(text: _cliCommandExample));
                     if (mounted) showSnackBar(context, t.universalMedia.cliCopied);
                   },
                   icon: const AppIcon(Symbols.content_copy_rounded),

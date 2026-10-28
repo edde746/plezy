@@ -154,7 +154,7 @@ void _registerTvosPlatformPlugins() {
   // Store-backed access and lifetime purchases reach only in SUPPORTER_MODE=iap builds.
 }
 
-void main(List<String> args) {
+void main([List<String> args = const <String>[]]) {
   final binding = PlezyWidgetsBinding.ensureInitialized();
   for (final argument in args) {
     final normalized = argument.toLowerCase();
