@@ -1,6 +1,6 @@
 # Validation and qualification plan
 
-Status: qualification remains outstanding. This branch adds title-search handoffs and public Google Books search, but does not certify provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
+Status: qualification remains outstanding. This branch adds title-search handoffs, public Google Books search, OpenSubsonic/Subsonic music sources, and podcast RSS/Atom with OPML, but does not certify provider availability, entitlement, playback or affiliate behavior across territories and platforms. **High confidence:** the following boundary checks remain necessary because failure can misstate access, leak profile data or dispatch unwanted provider actions.
 
 ## Functional acceptance matrix
 
@@ -93,6 +93,6 @@ Start disabled behind provider/capability/distribution flags. Enable an internal
 
 This assessment must not trigger CI, enroll partner accounts or deploy a gateway. Runtime implementation PRs use the current required checks and private ephemeral JIT policy. Manual releases remain separate owner actions.
 
-## Validation performed for this planning PR
+## Validation performed for this implementation branch
 
-The final PR description records the actual documentation checks run. Planned runtime test cases above are not executed claims. No Flutter/native build, live paid-service login, partner sandbox circulation or storefront conversion was performed for this audit.
+Static review and `git diff --check` were performed. Dart and Flutter SDKs are unavailable in the current workspace, so no formatter, analyzer, localization generation, platform build or tests were run. No live music-server/feed device playback, paid-service login, partner sandbox circulation or storefront conversion was performed. Planned runtime cases above are not executed claims.

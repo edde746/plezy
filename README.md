@@ -242,6 +242,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Trakt, MyAnimeList, AniList, and Simkl — ratings, watched sync, and real-time scrobbling[^rt]
 - Scores from connected trackers on detail pages — Trakt, Simkl, MyAnimeList, and AniList, plus Rotten Tomatoes, Metacritic, Letterboxd, IMDb, and TMDB through MDBList
 - Plezy Remote — control desktop and TV from mobile
+- Official storefront and rental handoffs, Google Books public catalog search, OpenSubsonic music servers, and podcast RSS/Atom subscriptions
 - Watch Next row and tvOS Top Shelf[^shelf]
 - Android automation links for media launch, active-video controls, and profile selection
 - [`plezy://` links](#plezy-links) to open a profile, play a title, or tune a channel from Home Assistant, launchers, or an NFC tag; any movie, show, or episode menu shows its link[^links]

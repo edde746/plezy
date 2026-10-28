@@ -18,6 +18,8 @@ import 'adapters/local_source.dart';
 import 'adapters/nfs_source.dart';
 import 'adapters/sftp_source.dart';
 import 'adapters/opds_source.dart';
+import 'adapters/open_subsonic_source.dart';
+import 'adapters/podcast_rss_source.dart';
 import 'adapters/s3_source.dart';
 import 'adapters/smb_source.dart';
 import 'adapters/webdav_source.dart';
@@ -28,6 +30,7 @@ import 'source_oauth.dart';
 import '../services/standalone_video_metadata_client.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
+import 'podcast_opml.dart';
 import 'sync/publication_sync.dart';
 import 'sync/sync_store.dart';
 import 'sync/sync_document.dart';
@@ -58,6 +61,9 @@ Uri? _trustedOnlineTrailerUri(String? value) {
   }
   return null;
 }
+
+String _publicationCoverCacheKey(String profile, SourceEntry entry) =>
+    sourceKey(profile, jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]));
 
 class SourceController extends ChangeNotifier {
   SourceController({SourceRepository? repository}) {
@@ -507,6 +513,83 @@ class SourceController extends ChangeNotifier {
     await reload();
   }
 
+  Future<int> importPodcastSubscriptions(List<PodcastSubscription> feeds) async {
+    if (feeds.isEmpty || feeds.length > PodcastOpml.maxFeeds) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final known = <String>{};
+    for (final source in sources.where((item) => item.kind == FileSourceKind.podcastRss)) {
+      try {
+        final saved = await repository.credentials(source);
+        final url = saved['feedUrl'];
+        if (url != null) known.add(sourceDigest(url));
+      } on Object {
+        // A damaged vault entry must not prevent importing other feeds.
+      }
+      requireSession(epoch);
+    }
+    final additions = <(FileSource, Map<String, String>)>[];
+    for (final feed in feeds) {
+      final uri = feed.url;
+      if (uri.scheme != 'https' ||
+          uri.host.isEmpty ||
+          uri.userInfo.isNotEmpty ||
+          uri.hasFragment ||
+          uri.toString().length > 8192) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      final key = sourceDigest(uri.toString());
+      if (!known.add(key)) continue;
+      final title = feed.title.trim();
+      final displayName = title.isEmpty ? uri.host : title;
+      final source = FileSource(
+        id: const Uuid().v4(),
+        profileId: profile,
+        kind: FileSourceKind.podcastRss,
+        name: displayName.length > 200 ? displayName.substring(0, 200) : displayName,
+        endpoint: sourceOrigin(uri),
+        options: const {'allowHttp': 'false', 'shelves': 'music', 'onlineMetadata': 'false'},
+      );
+      additions.add((source, {'feedUrl': uri.toString()}));
+    }
+    requireSession(epoch);
+    if (additions.isEmpty) return 0;
+    await repository.saveSources(additions);
+    requireSession(epoch);
+    await reload();
+    requireSession(epoch);
+    return additions.length;
+  }
+
+  Future<List<PodcastSubscription>> podcastSubscriptions() async {
+    await ready;
+    requireSession();
+    final epoch = generation;
+    final result = <PodcastSubscription>[];
+    for (final source in sources.where((item) => item.kind == FileSourceKind.podcastRss)) {
+      try {
+        final saved = await repository.credentials(source);
+        final value = saved['feedUrl'] ?? '';
+        final uri = Uri.tryParse(value);
+        if (uri == null ||
+            uri.host.isEmpty ||
+            !const {'https', 'http'}.contains(uri.scheme) ||
+            uri.userInfo.isNotEmpty ||
+            uri.hasFragment) {
+          continue;
+        }
+        result.add(PodcastSubscription(title: source.name, url: uri));
+      } on Object {
+        // A locked or damaged feed does not block exporting the other feeds.
+      }
+      requireSession(epoch);
+    }
+    return result;
+  }
+
   Future<void> reconnect(String id) async {
     _adapters.remove(id)?.close();
     _sourceSyncSucceeded(id);
@@ -584,6 +667,8 @@ class SourceController extends ChangeNotifier {
       FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
       FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
       FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
+      FileSourceKind.openSubsonic => OpenSubsonicSourceAdapter(source, transport, credentials),
+      FileSourceKind.podcastRss => PodcastRssSourceAdapter(source, transport, credentials),
     };
   }
 
@@ -868,7 +953,7 @@ class SourceController extends ChangeNotifier {
   Future<File?> cover(SourceEntry entry, {bool refresh = false}) {
     final profile = profileId;
     if (profile == null || blocked) return Future.value();
-    final cacheKey = sourceKey(profile, entry.key);
+    final cacheKey = _publicationCoverCacheKey(profile, entry);
     if (refresh) _covers.remove(cacheKey);
     return _covers.putIfAbsent(cacheKey, () async {
       await ready;
@@ -933,7 +1018,7 @@ class SourceController extends ChangeNotifier {
       if (await file.exists()) await file.delete();
       throw const SourceException(SourceFailure.cancelled);
     }
-    _covers[sourceKey(owner, entry.key)] = Future.value(file);
+    _covers[_publicationCoverCacheKey(owner, entry)] = Future.value(file);
     return file;
   }
 

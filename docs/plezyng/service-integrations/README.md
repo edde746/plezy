@@ -1,6 +1,6 @@
 # PlezyNG service integration audit and Luna handoff
 
-Prepared **2026-10-27, America/Regina**. Scope and implementation update **2026-10-28**: the three explicitly excluded streaming services are removed from PlezyNG's provider directory and catalog-launch surface. This branch adds broad official-site handoffs and an in-app Google Books search; it does not create partner accounts or affiliate tracking.
+Prepared **2026-10-27, America/Regina**. Scope and implementation update **2026-10-28**: the three explicitly excluded streaming services are removed from PlezyNG's provider directory and catalog-launch surface. The code now includes broad official-site handoffs, an in-app Google Books search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom playback, and OPML import/export. It does not create partner accounts or affiliate tracking.
 
 **Recommendation — high confidence:** make PlezyNG the place to find a title, see the copies/subscriptions/loans/offers available to the active profile, and choose the right way to use it. Implement native playback where a supported content API or SDK permits it; use official app/site handoff elsewhere. Keep the current navigation, artwork-led presentation, profiles, readers and player owners.
 
@@ -13,7 +13,7 @@ Prepared **2026-10-27, America/Regina**. Scope and implementation update **2026-
 | Amazon/Kindle/Audible? | Eligible Kindle DRM-free purchases now have an EPUB/PDF export path. Ordinary protected Kindle/Audible content stays in provider apps. Use Creators API for approved product-catalog work, not deprecated PA-API 5. Associates distribution restrictions make desktop/TV monetization a blocker under standard terms. | High; exact marketplace/product eligibility needs confirmation |
 | Indigo? | Offer Canadian print-book commerce and verified ebook offers. Current Indigo ebooks are Kobo fulfilled. Model seller and fulfillment provider separately. Affiliate participation is a commercial lead; PlezyNG-specific app approval and payout are unverified. | High for Kobo fulfillment; moderate for affiliate lead |
 | Best near-term paid integrations? | Libro.fm, Kobo, Apple Performance Partners, eBooks.com, Bookshop.org where regionally available; GOG/Fanatical for the existing Games surface. Approve the specific app/channel before adding tracking. | Moderate prioritization; no revenue forecast |
-| Best integrations without commission? | Finish OverDrive qualification; expand approved Hoopla/Palace/regional-library access; improve OPDS/Audiobookshelf; add OpenSubsonic, podcasts/RSS, book tracking and licensed streaming availability. | High architectural fit; access and effort differ |
+| Best integrations without commission? | Qualify OverDrive; expand approved Hoopla/Palace/regional-library access; improve OPDS/Audiobookshelf; add book-tracker imports and licensed streaming availability. OpenSubsonic and podcasts/RSS now have initial code slices. | High architectural fit; access and effort differ |
 
 Sources and precise limits are in [PROVIDERS.md](PROVIDERS.md), [COMMERCIAL.md](COMMERCIAL.md) and [SOURCES.md](SOURCES.md). “No public route established” is a research result, not a claim that a private agreement can never exist.
 
@@ -34,6 +34,7 @@ Sources and precise limits are in [PROVIDERS.md](PROVIDERS.md), [COMMERCIAL.md](
 - Explore details, media details, source-backed book/audio/video/comic details, game context menus and Settings → Services link into the same directory.
 - Catalog-supplied streaming links to the excluded services are filtered. Native server/file playback and existing library flows retain their own state and actions.
 - The existing public library catalogue can switch between Open Library and the unauthenticated Google Books public catalogue API. Google sale metadata is shown only when the API supplies a provider purchase link, price and currency; purchase opens Google Books.
+- OpenSubsonic/Subsonic-compatible servers now appear as music sources with artist, album, recent-album and search browsing, streaming through the existing audio player, and profile-local resume progress (optionally synced through a configured WebDAV state folder). Podcast RSS/Atom feeds can be added directly or transferred in bulk through OPML; private feed URLs and Basic credentials stay encrypted at rest. Neither adapter claims provider-side scrobbling or universal server/device qualification.
 - No third-party provider account, entitlement, playback, live price comparison, affiliate attribution or commission is claimed by the handoff directory.
 
 ## Product rules to carry into implementation

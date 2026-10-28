@@ -1,6 +1,6 @@
 # Architecture and integration contracts
 
-Status: broader architecture proposed. This branch implements a curated external-destination directory and Google Books public search; the access-option, account, offer persistence and partner contracts below remain guidance for follow-up work. **High-confidence design recommendation:** add capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
+Status: partner/account/offer architecture remains proposed. Shipped code now includes a curated external-destination directory, Google Books public search, OpenSubsonic/Subsonic music sources, podcast RSS/Atom sources, and OPML transfer through existing source, profile, player and progress owners. **High-confidence design recommendation:** continue adding capabilities and projections around existing owners; avoid a new universal player or wholesale database rewrite.
 
 ## Boundaries
 

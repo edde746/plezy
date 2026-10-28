@@ -59,7 +59,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     SourceItemKind.ebook => const [ExternalAccessCategory.books, ExternalAccessCategory.audiobooks],
     SourceItemKind.audiobook => const [ExternalAccessCategory.audiobooks, ExternalAccessCategory.books],
     SourceItemKind.comic => const [ExternalAccessCategory.comics, ExternalAccessCategory.books],
-    SourceItemKind.music => const [ExternalAccessCategory.music],
+    SourceItemKind.music => _entry.identifiers.containsKey('feed') ? const [] : const [ExternalAccessCategory.music],
     SourceItemKind.video => const [ExternalAccessCategory.video, ExternalAccessCategory.rentals],
     SourceItemKind.folder || SourceItemKind.unknown => const [],
   };

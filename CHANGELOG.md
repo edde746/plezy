@@ -5,6 +5,7 @@
 - Apply the coral ribbon identity across native launchers, store artwork and in-app branding, with light/dark marks, matching wordmarks and simplified small-size icons.
 
 - Add a searchable, region-aware directory of official video, rental, book, audiobook, comics, music and game storefronts to Services and title details; add Google Books catalog search with country-specific sale metadata and official purchase handoff.
+- Add OpenSubsonic music-server browsing and playback, plus RSS/Atom podcast subscriptions with encrypted feed URLs and OPML import/export in the existing Files and books experience.
 - Keep file-source activation profile-scoped through download and shelf reconciliation, and stop cloud settings backup or restore when the initiating profile session changes.
 - Require every release-critical CI job, including each native platform matrix row, to pass for the exact release commit; keep implementation and qualification claims in a source-linked capability ledger.
 - Add household readiness checks and a QR support flow that drafts a privacy-safe GitHub issue, with optional redacted log upload.

@@ -172,7 +172,7 @@ Twitch: [video and clips embeds](https://dev.twitch.tv/docs/embed/video-and-clip
 
 ## S42
 
-OpenSubsonic: [API reference](https://opensubsonic.netlify.app/docs/api-reference/). Versioned common protocol and auth variants; implementations/extensions require server tests. High protocol evidence.
+OpenSubsonic: [API reference and authentication](https://opensubsonic.netlify.app/docs/api-reference/), [artists](https://opensubsonic.netlify.app/docs/endpoints/getartists/), [artist](https://opensubsonic.netlify.app/docs/endpoints/getartist/), [album](https://opensubsonic.netlify.app/docs/endpoints/getalbum/), [search](https://opensubsonic.netlify.app/docs/endpoints/search3/), [stream](https://opensubsonic.netlify.app/docs/endpoints/stream/), and [API-key authentication](https://opensubsonic.netlify.app/docs/extensions/apikeyauth/). Versioned protocol and auth variants; implementations/extensions require server tests. High protocol evidence.
 
 ## S43
 
@@ -265,6 +265,10 @@ Booklore: [official OPDS/Komga-compatible API documentation](https://github.com/
 ## S65
 
 OpenSubtitles: [getting started](https://opensubtitles.tawk.help/article/getting-started), [official API reference](https://ai.opensubtitles.com/api-docs). Current REST API key and user-token distinction. High.
+
+## S66
+
+Podcast formats: [RSS 2.0 specification](https://www.rssboard.org/rss-specification), [Atom syndication format (RFC 4287)](https://www.rfc-editor.org/rfc/rfc4287), and [OPML 2.0 specification](https://opml.org/spec2.opml). These describe feed/subscription formats, not rights to replay every linked enclosure. High format evidence.
 
 ## Conflicts and unresolved research
 

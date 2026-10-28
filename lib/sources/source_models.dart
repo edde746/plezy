@@ -18,6 +18,8 @@ enum FileSourceKind {
   opds,
   audiobookshelf,
   komga,
+  openSubsonic,
+  podcastRss,
 }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
@@ -48,6 +50,7 @@ class SourceException implements Exception {
 
 String sourceKey(String sourceId, String itemId) => jsonEncode([sourceId, itemId]);
 String sourceDigest(String value) => sha256.convert(utf8.encode(value)).toString();
+String sourceOrigin(Uri uri) => Uri(scheme: uri.scheme, host: uri.host, port: uri.hasPort ? uri.port : null).toString();
 
 Map<String, dynamic> sourceMap(Object? value) => value is Map ? Map<String, dynamic>.from(value) : {};
 List<dynamic> sourceList(Object? value) => value is List ? value : const [];
