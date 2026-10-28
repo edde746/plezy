@@ -9,3 +9,9 @@ const String plezyComicCommerceBaseUrl = String.fromEnvironment(
   'PLEZY_COMIC_COMMERCE_BASE_URL',
   defaultValue: plezyServerBaseUrl,
 );
+
+/// Watchmode availability is served by the configured Plezy relay; the provider key stays on that server.
+const String plezyWatchmodeAvailabilityBaseUrl = String.fromEnvironment(
+  'PLEZY_WATCHMODE_AVAILABILITY_BASE_URL',
+  defaultValue: plezyServerBaseUrl,
+);
