@@ -16,7 +16,13 @@ import '../../widgets/settings_section.dart';
 import 'logs_screen.dart';
 
 class IssueReportScreen extends StatefulWidget {
-  const IssueReportScreen({super.key});
+  const IssueReportScreen({super.key, this.startupPhase, this.startupErrorType});
+
+  /// Stable, non-user-controlled diagnostic identifiers from the startup
+  /// failure record. Raw messages and stack traces are intentionally excluded
+  /// from the QR payload.
+  final String? startupPhase;
+  final String? startupErrorType;
 
   @override
   State<IssueReportScreen> createState() => _IssueReportScreenState();
@@ -44,6 +50,12 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
       if (_logId != null) '- Uploaded log ID: $_logId',
       '',
       '### What happened?',
+      if (widget.startupPhase != null || widget.startupErrorType != null) ...[
+        'Startup diagnostic context (phase and error type only):',
+        '- Phase: ${_safeDiagnosticId(widget.startupPhase)}',
+        '- Error type: ${_safeDiagnosticId(widget.startupErrorType)}',
+        '',
+      ],
       '[Describe what happened and what you expected.]',
       '',
       '### Steps to reproduce',
@@ -53,6 +65,11 @@ class _IssueReportScreenState extends State<IssueReportScreen> {
       'title': '[PlezyNG] Bug report',
       'body': body,
     });
+  }
+
+  String _safeDiagnosticId(String? value) {
+    final safe = (value ?? 'unknown').replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '');
+    return safe.isEmpty ? 'unknown' : String.fromCharCodes(safe.runes.take(64));
   }
 
   Future<void> _openIssue(Uri uri) async {

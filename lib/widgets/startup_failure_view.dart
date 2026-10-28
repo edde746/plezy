@@ -255,14 +255,24 @@ class _StartupFailureViewState extends State<StartupFailureView> {
                   FocusableButton(
                     onPressed: enabled
                         ? () => Navigator.of(context).push<void>(
-                            MaterialPageRoute<void>(builder: (_) => const IssueReportScreen()),
+                            MaterialPageRoute<void>(
+                              builder: (_) => IssueReportScreen(
+                                startupPhase: widget.failure.phaseId,
+                                startupErrorType: widget.failure.errorType,
+                              ),
+                            ),
                           )
                         : null,
                     child: OutlinedButton.icon(
                       key: startupFailureReportKey,
                       onPressed: enabled
                           ? () => Navigator.of(context).push<void>(
-                              MaterialPageRoute<void>(builder: (_) => const IssueReportScreen()),
+                              MaterialPageRoute<void>(
+                                builder: (_) => IssueReportScreen(
+                                  startupPhase: widget.failure.phaseId,
+                                  startupErrorType: widget.failure.errorType,
+                                ),
+                              ),
                             )
                           : null,
                       icon: const AppIcon(Symbols.qr_code_2_rounded),
