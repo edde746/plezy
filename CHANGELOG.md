@@ -28,6 +28,8 @@
 - Bind release builds and configured publication workflows to the exact main commit, and resolve pinned Apple packages before native CI tests.
 - Attach the validated ARM Tizen tester handoff to versioned releases and fail closed if its package, checksum, provenance or toolchain files are missing.
 - Retain previous server results when a new search is cancelled, while preserving indexed Files and Seerr results.
+- Route Windows x64 native CI through the private Packer JIT workflow allowlist.
+- Lock iOS, macOS and tvOS CocoaPods dependencies for CI, and retain root dependency overrides when resolving tvOS packages.
 
 ## [3.0.0] - 2026-10-27
 
