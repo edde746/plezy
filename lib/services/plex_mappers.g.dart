@@ -92,6 +92,7 @@ PlexMetadataDto _$PlexMetadataDtoFromJson(Map<String, dynamic> json) =>
       ratingKey: _readMetadataRatingKey(json, 'ratingKey') as String? ?? '',
       key: json['key'] as String?,
       guid: json['guid'] as String?,
+      guids: json['Guid'] as List<dynamic>?,
       studio: json['studio'] as String?,
       type: json['type'] as String?,
       title: json['title'] as String?,

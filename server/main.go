@@ -2689,6 +2689,7 @@ func main() {
 	mux.HandleFunc("/posters/", srv.handleGetPosters)
 	registerOAuthRoutes(mux, srv.oauth)
 	registerComicCommerceRoutes(mux, clientIPs)
+	registerWatchmodeAvailabilityRoutes(mux, clientIPs)
 
 	httpSrv := newHTTPServer(*addr, mux)
 

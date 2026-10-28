@@ -16,6 +16,24 @@ class _DownloadButtonSpec {
 }
 
 extension _MediaDetailActionButtons on _MediaDetailScreenState {
+  ExternalIds _externalIdsForAvailability(MediaItem metadata) {
+    var ids = const ExternalIds();
+    final raw = metadata.raw;
+    final guids = raw?['Guid'];
+    if (guids is List) ids = ids.fillFrom(ExternalIds.fromGuids(guids));
+
+    final providerIds = raw?['ProviderIds'];
+    if (providerIds is Map) {
+      final normalized = <String, Object?>{};
+      for (final entry in providerIds.entries) {
+        final key = entry.key;
+        if (key is String) normalized[key] = entry.value;
+      }
+      ids = ids.fillFrom(ExternalIds.fromJellyfinProviderIds(normalized));
+    }
+    return ids.fillFrom(ExternalIds.fromLegacyPlexGuid(metadata.guid));
+  }
+
   Widget _buildActionButtons(MediaItem metadata) {
     // Tie asynchronous playback prompts to the actionable subtree, not the
     // route's State: a deleted first-route detail intentionally stays mounted.
@@ -746,6 +764,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                   MaterialPageRoute<void>(
                     builder: (_) => ExternalAccessScreen(
                       title: metadata.displayTitle,
+                      tmdbType: switch (metadata.kind) {
+                        MediaKind.movie => 'movie',
+                        MediaKind.show => 'tv',
+                        _ => null,
+                      },
+                      tmdbId: _externalIdsForAvailability(metadata).tmdb,
                       categories: const [ExternalAccessCategory.video, ExternalAccessCategory.rentals],
                     ),
                   ),
