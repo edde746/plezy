@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package org.snapetech.plezyng.games.steam;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
@@ -9,9 +12,6 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.SystemClock;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import java.nio.ByteBuffer;
@@ -27,6 +27,7 @@ final class SteamDecoder implements AutoCloseable {
     void size(int width, int height);
     void failed();
     void pyrowaveFailed();
+    void hevcFailed();
     void audioFailed();
     void firstFrame();
   }
@@ -38,7 +39,10 @@ final class SteamDecoder implements AutoCloseable {
   private static final class Audio {
     final short[] samples;
     final AudioTrack output;
-    Audio(short[] samples, AudioTrack output) { this.samples = samples; this.output = output; }
+    Audio(short[] samples, AudioTrack output) {
+      this.samples = samples;
+      this.output = output;
+    }
   }
   private final long handle;
   private final Surface surface;
@@ -48,6 +52,7 @@ final class SteamDecoder implements AutoCloseable {
   private final ArrayBlockingQueue<Audio> audio = new ArrayBlockingQueue<>(8);
   private final AtomicBoolean lost = new AtomicBoolean();
   private final AtomicBoolean pyrowaveFallback = new AtomicBoolean();
+  private final AtomicBoolean hevcFallback = new AtomicBoolean();
   private final AtomicBoolean audioFallback = new AtomicBoolean();
   private volatile boolean closed;
   private final Thread videoThread, audioThread;
@@ -56,6 +61,7 @@ final class SteamDecoder implements AutoCloseable {
   private volatile float audioVolume = 1.0f;
   private boolean shown;
   private volatile boolean pyrowaveActive;
+  private volatile int videoCodec;
   private volatile int decoderKind; // 0 unknown, 1 hardware, 2 software, 3 Vulkan readback.
   private Bitmap pyrowaveBitmap;
   private final Paint pyrowavePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
@@ -81,8 +87,8 @@ final class SteamDecoder implements AutoCloseable {
   public boolean onVideo(int codec, int width, int height, byte[] extra) {
     if (closed)
       return false;
-    if ((codec != 4 && codec != 5 && codec != 9) || width < 1 || height < 1 || width > 1920 || height > 1080 ||
-        extra == null || extra.length > 65536) {
+    if ((codec != 4 && codec != 5 && codec != 9) || width < 1 || height < 1 || width > 1920 || height > 1080
+        || extra == null || extra.length > 65536) {
       if (codec == 9)
         rejectPyrowave();
       return false;
@@ -114,12 +120,14 @@ final class SteamDecoder implements AutoCloseable {
     try {
       synchronized (audioLock) {
         releaseAudio();
-        int mask = channels == 6 ? AudioFormat.CHANNEL_OUT_5POINT1 : channels == 4 ? AudioFormat.CHANNEL_OUT_QUAD :
-            channels == 2 ? AudioFormat.CHANNEL_OUT_STEREO : AudioFormat.CHANNEL_OUT_MONO;
+        int mask = channels == 6 ? AudioFormat.CHANNEL_OUT_5POINT1
+            : channels == 4      ? AudioFormat.CHANNEL_OUT_QUAD
+            : channels == 2      ? AudioFormat.CHANNEL_OUT_STEREO
+                                 : AudioFormat.CHANNEL_OUT_MONO;
         int minimum = AudioTrack.getMinBufferSize(rate, mask, AudioFormat.ENCODING_PCM_16BIT);
-        if (minimum <= 0) return false;
-        int buffer =
-            Math.max(minimum, rate * channels / 25 * 2);
+        if (minimum <= 0)
+          return false;
+        int buffer = Math.max(minimum, rate * channels / 25 * 2);
         AudioTrack.Builder builder = new AudioTrack.Builder()
                                          .setAudioAttributes(new AudioAttributes.Builder()
                                                                  .setUsage(AudioAttributes.USAGE_GAME)
@@ -144,14 +152,19 @@ final class SteamDecoder implements AutoCloseable {
         return true;
       }
     } catch (RuntimeException e) {
-      synchronized (audioLock) { releaseAudio(); }
+      synchronized (audioLock) {
+        releaseAudio();
+      }
       return false;
     }
   }
   public void onAudioUnavailable() {
-    if (!closed && audioFallback.compareAndSet(false, true)) events.audioFailed();
+    if (!closed && audioFallback.compareAndSet(false, true))
+      events.audioFailed();
   }
-  boolean consumeAudioFallback() { return audioFallback.getAndSet(false); }
+  boolean consumeAudioFallback() {
+    return audioFallback.getAndSet(false);
+  }
   void setVolume(float volume) {
     audioVolume = Math.max(0.0f, Math.min(1.0f, volume));
     synchronized (audioLock) {
@@ -160,18 +173,24 @@ final class SteamDecoder implements AutoCloseable {
     }
   }
   public void onSamples(short[] samples) {
-    if (closed || samples.length > 5760 * 6) return;
+    if (closed || samples.length > 5760 * 6)
+      return;
     synchronized (audioLock) {
-      if (track == null) return;
+      if (track == null)
+        return;
       Audio packet = new Audio(samples, track);
-      if (!audio.offer(packet)) { audio.poll(); audio.offer(packet); }
+      if (!audio.offer(packet)) {
+        audio.poll();
+        audio.offer(packet);
+      }
     }
   }
   private void audioLoop() {
     try {
       while (!closed) {
         Audio packet = audio.poll(20, TimeUnit.MILLISECONDS);
-        if (packet == null) continue;
+        if (packet == null)
+          continue;
         short[] samples = packet.samples;
         AudioTrack selected = packet.output;
         // AudioTrack may consume only part of a packet. Retry on this worker,
@@ -199,7 +218,7 @@ final class SteamDecoder implements AutoCloseable {
     } catch (InterruptedException ignored) {
       Thread.currentThread().interrupt();
     } catch (RuntimeException e) {
-      failure();
+      onAudioUnavailable();
     } finally {
       synchronized (audioLock) {
         releaseAudio();
@@ -227,6 +246,7 @@ final class SteamDecoder implements AutoCloseable {
       while (!closed) {
         Video item = video.poll(3, TimeUnit.MILLISECONDS);
         if (item != null && item.codec != 0) {
+          videoCodec = item.codec;
           if (decoder != null) {
             decoder.stop();
             decoder.release();
@@ -254,10 +274,28 @@ final class SteamDecoder implements AutoCloseable {
           String mime = item.codec == 5 ? MediaFormat.MIMETYPE_VIDEO_HEVC : MediaFormat.MIMETYPE_VIDEO_AVC;
           MediaFormat format = MediaFormat.createVideoFormat(mime, item.width, item.height);
           format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 2 * 1024 * 1024);
+          format.setInteger(MediaFormat.KEY_MAX_WIDTH, 1920);
+          format.setInteger(MediaFormat.KEY_MAX_HEIGHT, 1080);
           if (Build.VERSION.SDK_INT >= 30)
             format.setInteger(MediaFormat.KEY_LOW_LATENCY, 1);
-          if (item.bytes.length > 0)
-            format.setByteBuffer("csd-0", ByteBuffer.wrap(item.bytes));
+          byte[][] parameters = NativeSteam.h26xStart(handle, item.codec, item.bytes);
+          if (parameters == null || parameters.length != 3)
+            throw new IllegalStateException("Invalid video configuration");
+          if (item.codec == 4) {
+            // Android requires separate SPS/PPS buffers, including start codes.
+            if (parameters[0].length > 0)
+              format.setByteBuffer("csd-0", ByteBuffer.wrap(parameters[0]));
+            if (parameters[1].length > 0)
+              format.setByteBuffer("csd-1", ByteBuffer.wrap(parameters[1]));
+          } else {
+            int size = parameters[0].length + parameters[1].length + parameters[2].length;
+            if (size > 0) {
+              ByteBuffer data = ByteBuffer.allocate(size);
+              for (byte[] parameter : parameters) data.put(parameter);
+              data.flip();
+              format.setByteBuffer("csd-0", data);
+            }
+          }
           decoder = MediaCodec.createDecoderByType(mime);
           decoder.configure(format, surface, null, 0);
           decoder.start();
@@ -288,6 +326,13 @@ final class SteamDecoder implements AutoCloseable {
             events.firstFrame();
           }
         } else if (item != null) {
+          item.bytes = NativeSteam.h26xFrame(handle, item.bytes);
+          if (item.bytes == null)
+            throw new IllegalStateException("Invalid video frame");
+          if (item.bytes.length == 0) {
+            NativeSteam.frameComplete(handle, item.id, false);
+            continue;
+          }
           int input = decoder == null ? -1 : decoder.dequeueInputBuffer(2000);
           if (input < 0) {
             NativeSteam.frameComplete(handle, item.id, false);
@@ -314,9 +359,27 @@ final class SteamDecoder implements AutoCloseable {
             // This confirms submission to the display surface, not measured scanout.
             if (id != null)
               NativeSteam.frameComplete(handle, id, true);
-            if (!shown) {
+            if (id != null && !shown) {
               shown = true;
               events.firstFrame();
+            }
+          }
+          if (output == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+            MediaFormat actual = decoder.getOutputFormat();
+            int width = actual.getInteger(MediaFormat.KEY_WIDTH);
+            int height = actual.getInteger(MediaFormat.KEY_HEIGHT);
+            if (width < 1 || width > 1920 || height < 1 || height > 1088)
+              throw new IllegalStateException("Decoder dimensions exceed the receiver limit");
+            if (Build.VERSION.SDK_INT >= 24) {
+              int transfer = actual.containsKey(MediaFormat.KEY_COLOR_TRANSFER)
+                  ? actual.getInteger(MediaFormat.KEY_COLOR_TRANSFER)
+                  : 0;
+              int standard = actual.containsKey(MediaFormat.KEY_COLOR_STANDARD)
+                  ? actual.getInteger(MediaFormat.KEY_COLOR_STANDARD)
+                  : 0;
+              if (transfer == MediaFormat.COLOR_TRANSFER_ST2084 || transfer == MediaFormat.COLOR_TRANSFER_HLG
+                  || standard == MediaFormat.COLOR_STANDARD_BT2020)
+                throw new IllegalStateException("HDR was not negotiated for this surface");
             }
           }
         }
@@ -353,17 +416,15 @@ final class SteamDecoder implements AutoCloseable {
       if (item.codec == 0)
         NativeSteam.frameComplete(handle, item.id, false);
   }
-  private void failure() {
-    if (!closed) {
-      events.failed();
-      NativeSteam.cancel(handle);
-    }
-  }
   private void videoFailure() {
     if (closed)
       return;
     if (pyrowaveActive) {
       rejectPyrowave();
+      return;
+    } else if (videoCodec == 5) {
+      if (hevcFallback.compareAndSet(false, true))
+        events.hevcFailed();
       return;
     } else {
       events.failed();
@@ -374,7 +435,12 @@ final class SteamDecoder implements AutoCloseable {
     if (pyrowaveFallback.compareAndSet(false, true))
       events.pyrowaveFailed();
   }
-  boolean consumePyrowaveFallback() { return pyrowaveFallback.getAndSet(false); }
+  boolean consumePyrowaveFallback() {
+    return pyrowaveFallback.getAndSet(false);
+  }
+  boolean consumeHevcFallback() {
+    return hevcFallback.getAndSet(false);
+  }
   void requestPyrowaveFallback() {
     if (closed || !pyrowaveActive || !pyrowaveFallback.compareAndSet(false, true))
       return;
@@ -385,11 +451,11 @@ final class SteamDecoder implements AutoCloseable {
     closed = true;
     videoThread.interrupt();
     audioThread.interrupt();
-    try {
-      videoThread.join(500);
-      audioThread.join(500);
-    } catch (InterruptedException ignored) {
-      Thread.currentThread().interrupt();
-    }
+  }
+  // Never called on the UI thread. A replacement must not acquire the old
+  // Surface or destroy the native runtime while its decoder still uses them.
+  void awaitTermination() {
+    SteamWorker.await(videoThread);
+    SteamWorker.await(audioThread);
   }
 }

@@ -1,0 +1,136 @@
+diff --git a/src/ihs_timer.c b/src/ihs_timer.c
+--- a/src/ihs_timer.c
++++ b/src/ihs_timer.c
+@@ -24,9 +24,8 @@
+  */
+
+ #include <stdbool.h>
+-#include <time.h>
++#include "ihs_clock.h"
+ #include <assert.h>
+-#include <unistd.h>
+
+ #include "ihs_timer.h"
+ #include "ihs_thread.h"
+@@ -218,11 +217,7 @@
+ }
+
+ uint64_t IHS_TimerNow() {
+-    struct timespec tp;
+-    clock_gettime(CLOCK_MONOTONIC, &tp);
+-    // Cast to uint64_t before multiply: on platforms where time_t is 32-bit,
+-    // `tp.tv_sec * 1000` overflows at ~2.4M seconds of monotonic uptime.
+-    return (uint64_t) tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
++    return IHS_MonotonicNanos() / 1000000;
+ }
+
+ static void TimerThreadWorker() {
+@@ -232,7 +227,7 @@
+         iterated = IHS_QueuePollEach(state.timers, (IHS_QueuePredicateFunction *) TimerExecute, NULL,
+                                      (IHS_QueueConsumerFunction *) TimerDestroy, NULL);
+         IHS_MutexUnlock(state.lock);
+-        usleep(1000);
++        IHS_SleepMicros(1000);
+     } while (iterated > 0);
+ }
+
+diff --git a/src/session/packet.c b/src/session/packet.c
+--- a/src/session/packet.c
++++ b/src/session/packet.c
+@@ -24,7 +24,7 @@
+  */
+
+ #include <memory.h>
+-#include <time.h>
++#include "ihs_clock.h"
+
+ #include "packet.h"
+ #include "endianness.h"
+@@ -140,9 +140,8 @@
+      * packet headers, ACK echoes, frame-stats events — use this unit. The
+      * earlier epoch-ms formats put the host's stream clock arithmetic out of
+      * base and inflated SessionStats network time to ~58.5M ms. */
+-    struct timespec tp;
+-    clock_gettime(CLOCK_MONOTONIC, &tp);
+-    uint64_t secs = (uint64_t) tp.tv_sec;
+-    uint64_t frac = ((uint64_t) tp.tv_nsec * 65536) / 1000000000ull;
++    uint64_t nanos = IHS_MonotonicNanos();
++    uint64_t secs = nanos / 1000000000ull;
++    uint64_t frac = ((nanos % 1000000000ull) * 65536) / 1000000000ull;
+     return (uint32_t) ((secs << 16) | (frac & 0xffffu));
+ }
+diff --git a/src/session/channels/control/control_hid.c b/src/session/channels/control/control_hid.c
+--- a/src/session/channels/control/control_hid.c
++++ b/src/session/channels/control/control_hid.c
+@@ -35,7 +35,7 @@
+ #include "ihs_enumeration.h"
+
+ #include <stdlib.h>
+-#include <unistd.h>
++#include "ihs_clock.h"
+
+ static void HandleDeviceOpen(IHS_SessionChannel *channel, IHS_HIDManager *manager, const CHIDMessageToRemote *message);
+
+@@ -376,7 +376,7 @@
+     for (int attempt = 0; attempt < 50; attempt++) {
+         ret = IHS_HIDDeviceSendFeatureReport(managed->device, cmd->data.data, cmd->data.len);
+         if (ret >= 0) break;
+-        usleep(2000);
++        IHS_SleepMicros(2000);
+     }
+     if (ret < 0) {
+         IHS_SessionLog(channel->session, IHS_LogLevelWarn, "HID",
+diff --git a/src/base.h b/src/base.h
+--- a/src/base.h
++++ b/src/base.h
+@@ -89,7 +89,11 @@
+ void IHS_BaseSetRunCallbacks(IHS_Base *base, const IHS_BaseRunCallbacks *callbacks, void *context);
+
+ void IHS_BaseLog(IHS_Base *base, IHS_LogLevel level, const char *tag,
+-                 const char *fmt, ...) __attribute__ ((format (printf, 4, 5)));
++                 const char *fmt, ...)
++#if defined(__GNUC__) || defined(__clang__)
++    __attribute__ ((format (printf, 4, 5)))
++#endif
++    ;
+
+ bool IHS_BaseStartWorker(IHS_Base *base, const char *name);
+
+diff --git a/src/ihs_clock.h b/src/ihs_clock.h
+new file mode 100644
+--- /dev/null
++++ b/src/ihs_clock.h
+@@ -0,0 +1,33 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++#pragma once
++#include <stdint.h>
++#ifdef _WIN32
++#ifndef WIN32_LEAN_AND_MEAN
++#define WIN32_LEAN_AND_MEAN
++#endif
++#include <windows.h>
++// QPC is monotonic and independent of wall-clock adjustments. Split the integer
++// division before scaling so the counter does not overflow after long uptimes.
++static inline uint64_t IHS_MonotonicNanos(void) {
++    LARGE_INTEGER ticks, frequency;
++    QueryPerformanceCounter(&ticks);
++    QueryPerformanceFrequency(&frequency);
++    uint64_t value = (uint64_t) ticks.QuadPart, rate = (uint64_t) frequency.QuadPart;
++    return (value / rate) * 1000000000ull + (uint64_t) ((double) (value % rate) * 1000000000.0 / (double) rate);
++}
++static inline void IHS_SleepMicros(uint32_t micros) {
++    Sleep((DWORD) (((uint64_t) micros + 999) / 1000));
++}
++#else
++#include <time.h>
++#include <errno.h>
++static inline uint64_t IHS_MonotonicNanos(void) {
++    struct timespec now;
++    clock_gettime(CLOCK_MONOTONIC, &now);
++    return (uint64_t) now.tv_sec * 1000000000ull + (uint64_t) now.tv_nsec;
++}
++static inline void IHS_SleepMicros(uint32_t micros) {
++    struct timespec delay = {micros / 1000000, (micros % 1000000) * 1000};
++    while (nanosleep(&delay, &delay) != 0 && errno == EINTR) {}
++}
++#endif

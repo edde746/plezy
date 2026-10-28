@@ -1,14 +1,32 @@
 import 'dart:async';
 import 'dart:math';
 
-enum SteamHostAction { launch, install, library, downloads }
+enum SteamHostAction { launch, install, library, downloads, inputConfiguration, properties }
+
+/// Older version-one peers advertised only the four original actions. An
+/// explicit list is authoritative: unknown or malformed capabilities never
+/// grant a new action. This is discovery, not a substitute for host permission.
+Set<SteamHostAction> steamHostActionCapabilities(Object? value) {
+  if (value == null) {
+    return {SteamHostAction.launch, SteamHostAction.install, SteamHostAction.library, SteamHostAction.downloads};
+  }
+  if (value is! List || value.length > 32 || value.any((item) => item is! String || item.length > 40)) return {};
+  return SteamHostAction.values.where((action) => value.contains(action.name)).toSet();
+}
 
 enum SteamHostActionResult { submitted, denied, unavailable }
 
 Uri steamHostActionUri(SteamHostAction action, int? appId) {
-  if (action == SteamHostAction.launch || action == SteamHostAction.install) {
+  if (action != SteamHostAction.library && action != SteamHostAction.downloads) {
     if (appId == null || appId < 1 || appId > 0xffffffff) throw const FormatException('Invalid Steam AppID');
-    return Uri.parse('steam://${action == SteamHostAction.launch ? 'rungameid' : 'install'}/$appId');
+    final verb = switch (action) {
+      SteamHostAction.launch => 'rungameid',
+      SteamHostAction.install => 'install',
+      SteamHostAction.inputConfiguration => 'controllerconfig',
+      SteamHostAction.properties => 'gameproperties',
+      _ => throw const FormatException('Invalid action'),
+    };
+    return Uri.parse('steam://$verb/$appId');
   }
   if (appId != null) throw const FormatException('Unexpected Steam AppID');
   return Uri.parse(action == SteamHostAction.library ? 'steam://open/games' : 'steam://open/downloads');

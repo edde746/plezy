@@ -397,7 +397,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     if (paired == true) await c.refreshGames(selected);
   }).then<void>((_) {});
   Future<void> _open(GameHost host, StreamGame game) async {
-    if (Platform.isAndroid && host.protocol == GameProtocol.steam) {
+    if (PlatformDetector.supportsEmbeddedGameStreaming() && host.protocol == GameProtocol.steam) {
       await _openInWorkspace(host, game, fullscreen: true);
       return;
     }
@@ -509,6 +509,20 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                             label: t.games.installOnComputer,
                             icon: Symbols.download_rounded,
                           ),
+                          if (context.read<CompanionRemoteProvider>().supportsGameAction(
+                            SteamHostAction.inputConfiguration,
+                          ))
+                            AppMenuItem(
+                              value: SteamHostAction.inputConfiguration,
+                              label: t.games.inputOnComputer,
+                              icon: Symbols.sports_esports_rounded,
+                            ),
+                          if (context.read<CompanionRemoteProvider>().supportsGameAction(SteamHostAction.properties))
+                            AppMenuItem(
+                              value: SteamHostAction.properties,
+                              label: t.games.propertiesOnComputer,
+                              icon: Symbols.settings_rounded,
+                            ),
                         ],
                         onSelected: (action) async {
                           Navigator.pop(dialogContext);
@@ -577,7 +591,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
   Future<void> _openInWorkspace(GameHost host, StreamGame game, {bool fullscreen = false}) => _run((c) async {
     final capability = await c.client.capabilities(host);
     if (!mounted || !c.current) return;
-    if (!capability.embeddedSurface || host.protocol != GameProtocol.steam || !Platform.isAndroid) {
+    if (!capability.embeddedSurface ||
+        host.protocol != GameProtocol.steam ||
+        !PlatformDetector.supportsEmbeddedGameStreaming()) {
       await _engineUnavailable(host);
       return;
     }
@@ -739,7 +755,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     final snapshot = c.library.inventories.where((i) => i.hostKey == host.key).firstOrNull;
     final peer = remote.gameActionPeerId;
     // A discovered name or matching IP cannot authorize a remote command.
-    if (snapshot == null || peer == null || snapshot.peerId != peer) {
+    if (snapshot == null || peer == null || snapshot.peerId != peer || !remote.supportsGameAction(action)) {
       showErrorSnackBar(context, t.games.hostActionPairingHelp);
       return;
     }
@@ -748,6 +764,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       SteamHostAction.install => t.games.installOnComputer,
       SteamHostAction.library => t.games.hostLibrary,
       SteamHostAction.downloads => t.games.hostDownloads,
+      SteamHostAction.inputConfiguration => t.games.inputOnComputer,
+      SteamHostAction.properties => t.games.propertiesOnComputer,
     };
     final confirmed = await showConfirmDialog(
       context,
@@ -1184,7 +1202,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                     options: [for (var count = 1; count <= 4; count++) DialogOption(value: count, title: '$count')],
                   ),
                 ],
-                if (_profile != null && defaultTargetPlatform == TargetPlatform.android)
+                if (_profile != null &&
+                    {TargetPlatform.android, TargetPlatform.iOS, TargetPlatform.macOS}.contains(defaultTargetPlatform))
                   SettingSwitchTile(
                     pref: SettingsService.gamePyrowaveForProfile(_profile!),
                     icon: Symbols.speed_rounded,

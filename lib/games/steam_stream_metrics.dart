@@ -46,7 +46,7 @@ class SteamStreamMetrics {
         values['targetBitrate']! > 1000000000) {
       throw const FormatException('Stream measurement out of range');
     }
-    for (final entry in {'decoderKind': 3, 'videoQueue': 4, 'audioQueue': 8}.entries) {
+    for (final entry in {'decoderKind': 4, 'chromaFormat': 2, 'videoQueue': 4, 'audioQueue': 8}.entries) {
       final value = input[entry.key] ?? 0;
       if (value is! int || value < 0 || value > entry.value) throw const FormatException('Invalid decoder measurement');
       values[entry.key] = value;
@@ -88,6 +88,7 @@ class SteamStreamMetrics {
   int get hidPending => _values['hidPending']!;
   int get hidInFlight => _values['hidInFlight']!;
   int get decoderKind => _values['decoderKind']!;
+  int get chromaFormat => _values['chromaFormat']!;
   int get videoQueue => _values['videoQueue']!;
   int get audioQueue => _values['audioQueue']!;
 }

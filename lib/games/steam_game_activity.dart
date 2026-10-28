@@ -78,7 +78,7 @@ class SteamPlayingFriend {
   }
 }
 
-enum SteamDestination { store, community, workshop, news }
+enum SteamDestination { store, community, workshop, news, cloudFiles, families }
 
 Uri steamDestination(int appId, SteamDestination destination) {
   if (appId < 1 || appId > 0xffffffff) throw const FormatException('Invalid Steam AppID');
@@ -87,5 +87,9 @@ Uri steamDestination(int appId, SteamDestination destination) {
     SteamDestination.community => Uri.https('steamcommunity.com', '/app/$appId/'),
     SteamDestination.workshop => Uri.https('steamcommunity.com', '/app/$appId/workshop/'),
     SteamDestination.news => Uri.https('store.steampowered.com', '/news/app/$appId'),
+    SteamDestination.cloudFiles => Uri.https('store.steampowered.com', '/account/remotestorageapp/', {
+      'appid': '$appId',
+    }),
+    SteamDestination.families => Uri.https('store.steampowered.com', '/account/familymanagement'),
   };
 }

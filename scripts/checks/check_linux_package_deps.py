@@ -30,6 +30,7 @@ BUNDLED_MODULES = {"mpv"}
 # pkg-config module -> runtime package name for each distro.
 RUNTIME_PACKAGES = {
     "gtk+-3.0": {"deb": "libgtk-3-0", "rpm": "gtk3", "pacman": "gtk3"},
+    "libsecret-1": {"deb": "libsecret-1-0", "rpm": "libsecret", "pacman": "libsecret"},
     "epoxy": {"deb": "libepoxy0", "rpm": "libepoxy", "pacman": "libepoxy"},
     # Reached through the `flutter` INTERFACE target.
     "glib-2.0": {"deb": "libglib2.0-0", "rpm": "glib2", "pacman": "glib2"},

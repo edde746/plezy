@@ -63,6 +63,7 @@ env:
   TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
   LINUX_APT_PACKAGES: >
     clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libsecret-1-dev libevdev-dev liblzma-dev
+    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-good
     libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
     libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
     libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
@@ -557,7 +558,7 @@ jobs:
             df -h "$RUNNER_TEMP" >&2
             exit 1
           fi
-          packages=(build-essential clang cmake curl file git-lfs libgtk-3-dev liblzma-dev ninja-build pkg-config unzip)
+          packages=(build-essential clang cmake curl file git-lfs libgtk-3-dev libsecret-1-dev liblzma-dev ninja-build pkg-config unzip libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-good)
           for attempt in 1 2 3; do
             if sudo apt-get update -o Acquire::Retries=3 \
               && sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 "${packages[@]}"; then
@@ -744,6 +745,14 @@ jobs:
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-ios-pods-${{ hashFiles('**/Podfile.lock') }}
+
+      - name: Ensure CMake for the embedded Steam receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version
 
       - name: Install CocoaPods
         shell: bash
@@ -1023,6 +1032,14 @@ jobs:
           path: ~/.cache/flutter-tvos-engine
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-tvos-engine-${{ hashFiles('tvos/engine.version', 'tvos/engine.sha256') }}
 
+      - name: Ensure CMake for the embedded Steam receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version
+
       - name: Install CocoaPods
         shell: bash
         run: |
@@ -1239,6 +1256,14 @@ jobs:
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
+
+      - name: Ensure CMake for the embedded Steam receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version
 
       - name: Install CocoaPods
         shell: bash

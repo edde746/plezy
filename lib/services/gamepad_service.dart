@@ -510,16 +510,19 @@ class GamepadService with WindowListener, WidgetsBindingObserver {
   }
 
   void _registerNativeKeyHandler() {
-    if (_nativeKeyHandlerRegistered || !_steamInputInjectsKeys()) return;
+    if (_nativeKeyHandlerRegistered || Platform.isAndroid) return;
     HardwareKeyboard.instance.addHandler(_handleNativeKeyEvent);
     _nativeKeyHandlerRegistered = true;
   }
 
   bool _handleNativeKeyEvent(KeyEvent event) {
     final owner = _workspaceInputOwner;
-    if (owner != null && _steamInputInjectsKeys()) {
+    // Shift+Escape always belongs to the workspace so a keyboard user can
+    // leave game input and reach its menus without a pointing device.
+    if (event.logicalKey == LogicalKeyboardKey.escape && HardwareKeyboard.instance.isShiftPressed) return false;
+    if (owner != null && _windowFocused && !_nativeTextInputFocused && !Platform.isAndroid) {
       final workspaceKey = _workspaceSyntheticKeyForNativeKey(event.logicalKey);
-      if (workspaceKey != null) {
+      if (workspaceKey != null && _steamInputInjectsKeys()) {
         if (_workspaceRawKeysHeld.contains(workspaceKey)) return true;
         final lastRawEvent = _workspaceRawKeyEvents[workspaceKey];
         if (lastRawEvent != null && DateTime.now().difference(lastRawEvent) <= _duplicateInputGuard.suppressionWindow) {
@@ -538,6 +541,15 @@ class GamepadService with WindowListener, WidgetsBindingObserver {
         // Prevent desktop-layout keys from navigating the app while an
         // interactive surface owns input. If that surface only consumes raw
         // controller events, its matching raw event still passes through.
+        return true;
+      }
+      final nativeKeyHandler = _workspaceInputHandlers[owner]?.onNativeKeyEvent;
+      if (nativeKeyHandler != null) {
+        try {
+          nativeKeyHandler(event);
+        } catch (error, stackTrace) {
+          appLogger.e('GamepadService: Workspace keyboard handler failed', error: error, stackTrace: stackTrace);
+        }
         return true;
       }
     }

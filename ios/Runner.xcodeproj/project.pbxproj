@@ -36,6 +36,10 @@
 /* Begin GeneratedLocale PBXBuildFile */
 		989D0ABE60F8A08D2DEE908B /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E6610D5A27F5C44FEA3668D1 /* InfoPlist.strings */; };
 /* End GeneratedLocale PBXBuildFile */
+		1021CB6E8E0685EA4AC63414 /* PlezySteamPlugin.mm in Sources */ = {isa = PBXBuildFile; fileRef = 033708A3CBDB415B198D74A9 /* PlezySteamPlugin.mm */; };
+		68F6609B54431AA25E2FE1EF /* SteamAppleSink.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9C26C03DE0F5EA3AECC0A0BD /* SteamAppleSink.mm */; };
+		C61618A9A6964330675A85F9 /* SteamAppleSinkTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8C3100BAD8B07A9BD33AD1EA /* SteamAppleSinkTests.mm */; };
+		EC1ACBD5E50F2B0424192ABE /* SteamMetalPyrowave.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5AFFB04FBF8AAEC7D71BD346 /* SteamMetalPyrowave.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +144,13 @@
 		2F9C033B9E3FF7E7C3F538A3 /* zh */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh"; path = "Runner/zh.lproj/InfoPlist.strings"; sourceTree = SOURCE_ROOT; };
 		0294C67B8158E8C448A8A393 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "Runner/zh-Hant.lproj/InfoPlist.strings"; sourceTree = SOURCE_ROOT; };
 /* End GeneratedLocale PBXFileReference */
+		033708A3CBDB415B198D74A9 /* PlezySteamPlugin.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/PlezySteamPlugin.mm"; sourceTree = SOURCE_ROOT; };
+		9C26C03DE0F5EA3AECC0A0BD /* SteamAppleSink.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamAppleSink.mm"; sourceTree = SOURCE_ROOT; };
+		8CBB51169DAB7122DC7FFE2E /* PlezySteamPlugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/PlezySteamPlugin.h"; sourceTree = SOURCE_ROOT; };
+		8CB3F33283D904245748691E /* SteamAppleSink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/SteamAppleSink.h"; sourceTree = SOURCE_ROOT; };
+		8C3100BAD8B07A9BD33AD1EA /* SteamAppleSinkTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamAppleSinkTests.mm"; sourceTree = SOURCE_ROOT; };
+		5AFFB04FBF8AAEC7D71BD346 /* SteamMetalPyrowave.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "../native/games/apple/SteamMetalPyrowave.mm"; sourceTree = SOURCE_ROOT; };
+		1460329AB3E70ABB55F4CFB2 /* SteamMetalPyrowave.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "../native/games/apple/SteamMetalPyrowave.h"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -247,6 +258,14 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				8C3100BAD8B07A9BD33AD1EA /* SteamAppleSinkTests.mm */,
+				033708A3CBDB415B198D74A9 /* PlezySteamPlugin.mm */,
+				9C26C03DE0F5EA3AECC0A0BD /* SteamAppleSink.mm */,
+				5AFFB04FBF8AAEC7D71BD346 /* SteamMetalPyrowave.mm */,
+				1460329AB3E70ABB55F4CFB2 /* SteamMetalPyrowave.h */,
+				8CBB51169DAB7122DC7FFE2E /* PlezySteamPlugin.h */,
+				8CB3F33283D904245748691E /* SteamAppleSink.h */,
+
 				E6610D5A27F5C44FEA3668D1 /* InfoPlist.strings */,
 				6A8A46242EDB370C0057B88C /* MpvPlayer */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
@@ -296,6 +315,7 @@
 			buildPhases = (
 				6838C6976E568CE05DBDE228 /* [CP] Check Pods Manifest.lock */,
 				9740EEB61CF901F6004384FC /* Run Script */,
+				B25A4304F35A568B01A14182 /* Build Steam transport */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
@@ -507,6 +527,18 @@
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
 		};
+		B25A4304F35A568B01A14182 /* Build Steam transport */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = ();
+			name = "Build Steam transport";
+			inputPaths = ();
+			outputPaths = ("$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a",);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\npython3 \"$SRCROOT/../scripts/games/build_steam_apple.py\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -514,6 +546,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C61618A9A6964330675A85F9 /* SteamAppleSinkTests.mm in Sources */,
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -522,6 +555,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1021CB6E8E0685EA4AC63414 /* PlezySteamPlugin.mm in Sources */,
+				68F6609B54431AA25E2FE1EF /* SteamAppleSink.mm in Sources */,
+				EC1ACBD5E50F2B0424192ABE /* SteamMetalPyrowave.mm in Sources */,
+
 				B1D51A6A2F00110000000001 /* MpvPlayerCoreBase.swift in Sources */,
 				B1D51A6A2F00110000000005 /* MpvPlayerPluginShared.swift in Sources */,
 				B1D51A6A2F0011000000000C /* MpvAudioPlayerCore.swift in Sources */,
@@ -690,6 +727,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.snapetech.plezyng;
 				PRODUCT_NAME = Plezy;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -699,6 +740,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 28ABDA890783B15438AA8137 /* Pods-RunnerTests.debug.xcconfig */;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -717,6 +761,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3A9EF9720208222F20B1495D /* Pods-RunnerTests.release.xcconfig */;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -733,6 +780,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 792502911151E64A2B752567 /* Pods-RunnerTests.profile.xcconfig */;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -878,6 +928,10 @@
 				PRODUCT_NAME = Plezy;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -905,6 +959,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.snapetech.plezyng;
 				PRODUCT_NAME = Plezy;
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				HEADER_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../native/games/steam", "$(SRCROOT)/../.dart_tool/games/steam/ihslib/include", "$(SRCROOT)/../.dart_tool/games/steam/opus/include", "$(SRCROOT)/../.dart_tool/games/steam/pyrowave/metal");
+				OTHER_LDFLAGS = ("$(inherited)", "$(DERIVED_FILE_DIR)/plezy-steam/libplezy_steam.a", "-framework", VideoToolbox, "-framework", AudioToolbox, "-framework", CoreMedia, "-framework", CoreVideo, "-framework", AVFoundation, "-framework", Security, "-framework", Network, "-framework", Metal, "-framework", IOSurface);
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};

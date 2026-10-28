@@ -520,6 +520,14 @@ jobs:
           cache: true
           pub-cache: false
 
+      - name: Ensure CMake for the embedded Steam receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version
+
       - name: Install CocoaPods
         shell: bash
         run: |

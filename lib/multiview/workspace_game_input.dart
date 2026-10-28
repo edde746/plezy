@@ -8,11 +8,12 @@ import 'workspace_controller.dart';
 ///
 /// The service's synthesized app-navigation mapping is suspended while this
 /// binding owns the controller. Matching Steam Input key mirrors are
-/// de-duplicated against raw controller events. On Windows and Linux, mapped
-/// native keys are captured while this binding owns input; provide
+/// de-duplicated against raw controller events. Native keys are captured while
+/// this binding owns input; provide
 /// [onNativeKeyEvent] to route keyboard controls into the game. Without that
 /// callback, raw controller events still arrive once and mapped native keys
-/// are kept out of app navigation. Use [onInputReset] to release held game
+/// are kept out of app navigation on Windows and Linux. Shift+Escape remains
+/// available to release input through the workspace. Use [onInputReset] to release held game
 /// controls when focus, the controller connection, or this binding's lease
 /// changes.
 class WorkspaceGameInputBinding {

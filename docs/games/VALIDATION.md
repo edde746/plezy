@@ -1,10 +1,13 @@
 # Games validation and release gates
 
-For current PR #46 completion status, see
+For current follow-up PR #54 completion status, see
 [CONNECTED_EXPERIENCE.md](CONNECTED_EXPERIENCE.md#scope-and-acceptance).
 Historical builds below do not validate the current branch.
 
-Recorded 2026-10-26. This is an experimental implementation, not a claim of certified streaming support.
+Historical evidence begins on 2026-10-26; PR #54 follow-up records appear below.
+The earlier platform/codec descriptions are snapshots, not the current support
+matrix. Use [ARCHITECTURE.md](ARCHITECTURE.md#platform-matrix) for current source
+coverage. This is experimental implementation, not certified streaming support.
 
 ## Evidence
 
@@ -163,3 +166,151 @@ No external streaming-app handoff is used.
   stream still accepts its first physical pad after TV-remote input; composite
   device removal releases both paths without clearing another player's state.
 - Android SurfaceView compilation and physical TV input remain release gates.
+
+### Linux receiver and multichannel audio
+
+The local Debug native suite now includes a dedicated GStreamer H.264 decoder
+fixture (real encoded frames, RGBA pixel values, audio reconfiguration and
+teardown), and Opus mono/stereo/quad/5.1 speaker-isolation tests. Android Java
+sources were type-checked against API 36 with resource-name constants generated
+from the module's actual XML; this is **not** an APK/Gradle/resource packaging
+build, and the project still targets compileSdk 37. JNI strict compilation passes.
+Linux Flutter adapter translation units compile with `-Wall -Wextra -Werror`.
+
+The native CI recipe enables GStreamer tests on its existing private JIT job.
+No private JIT run, live Steam host, speaker/AVR, Linux full-runner release,
+Flatpak keyring, Apple SDK or Windows receiver validation has run locally.
+
+The Linux/texture follow-up passed 154 Dart/widget tests and 40 native Debug
+tests, plus strict Linux adapter compilation. The isolated GStreamer queue/
+decoder test also passed AddressSanitizer and UndefinedBehaviorSanitizer. Local
+LeakSanitizer could not inspect `/proc` under this environment, so leak detection
+remains enabled in private JIT and is not claimed as locally passed. Workflow
+security, action-pin and architecture checks passed; no runner routing changed.
+
+### Configuration/account affordances — PR #54
+
+- 50 focused Flutter action, metadata, large-text RTL menu and companion-provider
+  tests passed. New tests reject malformed capability lists and AppIDs, preserve
+  older peers' action set, and verify that Cloud/Families destinations are fixed.
+- Localization checks passed for 37 locales / 3,725 messages; the new messages
+  and the surround-audio copy explicitly use reviewed English fallback until
+  translations are available.
+- Live Steam Input/properties URI behavior, browser sign-in and account changes
+  were not exercised. No cloud save was written and no family membership changed.
+
+
+### Apple source and texture-input follow-up
+
+- Portable native Debug build with Vulkan/GStreamer enabled: **41 tests pass**,
+  including the new H.264/HEVC framing parser, real encoded H.264 fixture,
+  malformed-input bounds and transactional parameter-set updates.
+- Portable build with Vulkan disabled: 40 tests passed before the shared pointer
+  additions; this validates the transport/parser dependency split, not Apple
+  system frameworks.
+- Focused shared input/texture/platform tests: **43 Dart/widget tests pass**.
+  They cover full keyboard routing, inactive lease suppression, Shift+Escape,
+  pointer bounds, physical usage codes, texture retention and reconnect after
+  a channel has been retired.
+- Xcode project structure is checked locally; a VideoToolbox XCTest is added
+  to each RunnerTests target. Apple SDK compile, Swift/Objective-C++ linkage,
+  simulator test execution, real host pairing, color correctness, performance,
+  HDR output and surround speaker routing have **not** been run here.
+- The Apple source uses a direct CVPixelBuffer texture path for conventional
+  SDR codecs. Direct Pyrowave, HDR/4:4:4, Windows receivers and automatic
+  internet traversal remain separate unfinished work.
+
+
+### Metal Pyrowave source follow-up
+
+The pinned Metal library, app-owned GPU conversion and texture adapter are
+wired into all Apple targets. Source/project checks verify compilation inputs,
+framework linkage and archive wiring. Portable parser tests now cover opt-in
+4:4:4, siting, legacy 4:2:0 rejection, conflicting sequence headers and HDR
+rejection. This does not validate Metal shader compilation or GPU execution.
+The checked-in Apple XCTest must run on compatible Apple private-JIT hardware.
+The Intel/simulator skip is explicit and is not a successful GPU test.
+
+Local follow-up checks: all **41 native tests** and **20 focused Dart/widget
+tests** passed after these changes, including the narrow RTL diagnostics view
+with Metal/chroma labels. Focused Dart analysis reports no issues. Structural
+localization checks pass for 37 locales and 3,728 messages. These counts do not
+include the Apple-only decoder tests.
+
+
+### Touch assistance and ownership
+
+The shared Apple/Linux overlay uses the existing theme and connection toolbar.
+Native runtime tests verify that assistance shares player one without consuming
+a controller seat, and that hiding touch controls or unplugging a controller
+does not clear another input source. Multi-touch widget tests cover simultaneous
+buttons, cancellation, 48-pixel semantics targets at double text size in RTL,
+clamped sticks, stick clicks and resizing guidance. Apple GPU and device checks
+remain outstanding; Flutter gesture tests do not validate an iOS touch driver.
+
+After fixing late pointer cancellation during disposal, **27 focused
+touch/texture/workspace/gamepad tests pass**, including removal of a held
+control when its input lease is revoked. Focused Dart analysis is clean. The
+portable runtime test passes the separate assistance/physical-pad merge cases,
+and the Linux adapter passes strict compilation against Flutter's headers.
+
+### Combined PR #54 verification after merging main
+
+- Merged main `574e5420`, preserving the media-player work, reviewed locale
+  translations, private ephemeral JIT routing and manual workflow triggers.
+- **192 Games/Multiview/gamepad/companion Dart and widget tests passed**.
+  After the final accessibility-label changes, all six focused touch/texture
+  regressions passed again. Counts overlap; they are not additive.
+- **41 portable native Debug tests passed**, with Vulkan and GStreamer enabled,
+  after formatting and fixing Pyrowave's required Vulkan-header include order.
+  Strict Linux Steam adapter compilation passed against Flutter 3.47.1 headers.
+- **46 packaging/workflow tests passed**, plus two source-preparation tests.
+  These are packaging contracts, not a full Linux application/package build.
+- Focused Dart analysis is clean. Source hashes and placeholders pass for
+  37 locales / 3,790 messages. New control labels use explicit English fallback;
+  they are not presented as reviewed translations.
+- Touch layouts were rendered at 800×400 and 390×750, with RTL and double-sized
+  text, for visual inspection. Existing theme and icon assets are reused.
+- Xcode project structure verifies all three Apple source sets, archive build
+  order, framework links and test inclusion; existing minimum OS versions are
+  unchanged. This is not SDK compilation or GPU execution.
+- Current-head private-JIT CI has **not** run. Workflow dispatch is unavailable
+  through the connected GitHub API, and the available browser is not signed in.
+  Apple SDK/device validation and full platform build/release gates remain open.
+
+To run the existing private workflow from an authenticated maintainer session:
+
+```sh
+gh workflow run ci.yml --repo snapetech-org/PlezyNG \
+  --ref codex/steam-receivers-and-controls \
+  -f action=ci -f runner_pool=private -f build_linux_packages=true
+```
+
+Verify the run's head matches the PR head. A rerun of an older workflow revision
+does not validate these sources. No hosted fallback is authorized.
+
+
+### Windows receiver source and cross-compilation — 2026-10-28
+
+- The shared transport, Windows Media Foundation/XAudio2 adapter and five
+  Windows test executables compile and link with MinGW-w64 GCC 13.2. The
+  Flutter Windows plugin passes `-Wall -Wextra -Werror` syntax/type checking
+  against Flutter 3.47.1 headers. This is **not MSVC or Windows execution**.
+- The new tests exercise actual loopback UDP, oversized datagram rejection,
+  receive timeouts, recursive locks/conditions, pairing cancellation and a
+  real 64×64 H.264 red-pixel fixture. Their Windows execution is still pending.
+- All three native source patches replay cleanly against the pinned IHS
+  revision and reproduce the prepared source. Shared IHS compilation also
+  succeeds with variable-length arrays rejected, for MSVC portability.
+- **41 Linux native tests passed across the run and targeted rerun**. Two
+  rebuilt test binaries initially lacked executable permissions; restoring
+  those local generated-file permissions allowed both to run and pass.
+  The later Annex-B normalization regression passes independently.
+- **24 focused Flutter tests passed** for workspace/session lifecycle,
+  textures, native capability behavior and accessible touch controls. Focused
+  Dart analysis is clean. These overlap the earlier 192-test suite.
+- **46 packaging/workflow contract tests passed** after the workflow extension.
+- Private Windows CI now builds and runs the Steam tests alongside existing
+  native checks, preserving x64/ARM64 private JIT routing and manual dispatch.
+  Current-head CI, Apple SDK builds, Windows N startup, Windows audio devices,
+  actual host playback and GPU/HDR qualification remain open.

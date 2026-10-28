@@ -2,6 +2,7 @@
 #include "steam_runtime.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 namespace plezy::steam {
@@ -34,7 +35,12 @@ bool Runtime::hostInfo(const Host& host, IHS_HostInfo& out) {
   return true;
 }
 void Runtime::cancel() {
-  cancelled_ = true;
+  // Synchronize with the wait predicate; notification alone can be lost between
+  // testing an atomic flag and entering an unbounded condition-variable wait.
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    cancelled_ = true;
+  }
   condition_.notify_all();
 }
 void Runtime::finish(int result) {
@@ -47,6 +53,18 @@ int Runtime::wait(std::chrono::seconds timeout) {
   std::unique_lock<std::mutex> lock(mutex_);
   if (!condition_.wait_for(lock, timeout, [&] { return done_ || cancelled_; })) return -3;
   return cancelled_ ? -2 : result_;
+}
+int Runtime::awaitSession(std::chrono::milliseconds connectTimeout, std::chrono::milliseconds frameTimeout) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  if (!condition_.wait_for(lock, connectTimeout, [&] { return connected_ || disconnected_ || cancelled_; })) return -3;
+  if (cancelled_) return -2;
+  if (!connected_) return -1;
+  if (!condition_.wait_for(lock, frameTimeout, [&] { return firstFramePresented_ || disconnected_ || cancelled_; }))
+    return -4;
+  if (cancelled_) return -2;
+  if (!firstFramePresented_) return -1;
+  condition_.wait(lock, [&] { return disconnected_ || cancelled_; });
+  return cancelled_ ? -2 : 0;
 }
 void Runtime::closeClient(IHS_Client* client) {
   IHS_ClientStop(client);
@@ -192,19 +210,7 @@ int Runtime::run(
     std::lock_guard<std::mutex> lock(apiMutex_);
     session_ = session;
   }
-  if (IHS_SessionConnect(session)) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    bool ready =
-        condition_.wait_for(lock, std::chrono::seconds(30), [&] { return connected_ || disconnected_ || cancelled_; });
-    if (!ready)
-      result = -3;
-    else if (connected_)
-      condition_.wait(lock, [&] { return disconnected_ || cancelled_; });
-    else
-      result = -1;
-    if (cancelled_) result = -2;
-  } else
-    result = -1;
+  result = IHS_SessionConnect(session) ? awaitSession(std::chrono::seconds(30), std::chrono::seconds(12)) : -1;
   // Stop accepting input before teardown, but never hold apiMutex_ while joining
   // a callback thread: renderer completion can arrive during shutdown.
   {
@@ -237,7 +243,7 @@ void Runtime::videoFramerate(IHS_Session*, uint32_t numerator, uint32_t denomina
   std::lock_guard<std::mutex> lock(self->frameMutex_);
   self->metrics_.fpsNumerator = numerator;
   self->metrics_.fpsDenominator = denominator;
-  self->metrics_.fpsReasons = reasons & 0x5f; // Ignore unknown host flags and private game timing.
+  self->metrics_.fpsReasons = reasons & 0x5f;  // Ignore unknown host flags and private game timing.
 }
 void Runtime::videoBitrate(IHS_Session*, int32_t bitrate, void* ctx) {
   if (bitrate < 0 || bitrate > 1000000000) return;
@@ -248,11 +254,17 @@ void Runtime::videoBitrate(IHS_Session*, int32_t bitrate, void* ctx) {
 bool Runtime::startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength) {
   return pyrowave_.start(width, height, initial, initialLength);
 }
-PyrowaveDecodeStatus Runtime::decodePyrowave(
-    const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb) {
+PyrowaveDecodeStatus Runtime::decodePyrowave(const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb) {
   return pyrowave_.decode(bytes, length, argb);
 }
 void Runtime::stopPyrowave() { pyrowave_.reset(); }
+bool Runtime::configureH26x(int codec, const uint8_t* bytes, size_t length) {
+  return h26x_.configure(codec, bytes, length);
+}
+const std::array<std::vector<uint8_t>, 3>& Runtime::h26xParameters() const { return h26x_.parameters(); }
+bool Runtime::normalizeH26x(const uint8_t* bytes, size_t length, std::vector<uint8_t>& output) {
+  return h26x_.annexB(bytes, length, output);
+}
 IHS_StreamVideoSubmitResult Runtime::videoSubmit(
     IHS_Session*, const IHS_VideoEpochInfo*, uint16_t, IHS_FrameTicket* ticket, IHS_Buffer* b,
     IHS_StreamVideoFrameFlag flags, bool* taken, void* ctx) {
@@ -316,9 +328,7 @@ void Runtime::audioStop(IHS_Session*, void* ctx) {
   std::lock_guard<std::mutex> lock(self->frameMutex_);
   self->metrics_.audioChannels = 0;
 }
-void Runtime::pad(const std::array<int16_t, 6>& axes, uint32_t buttons) {
-  padSeat(0, axes, buttons);
-}
+void Runtime::pad(const std::array<int16_t, 6>& axes, uint32_t buttons) { padSeat(0, axes, buttons); }
 void Runtime::padSeat(unsigned seat, const std::array<int16_t, 6>& axes, uint32_t buttons) {
   if (seat >= pads_.size()) return;
   const auto& pad = pads_[seat];
@@ -337,6 +347,7 @@ void Runtime::key(uint32_t usage, bool down) {
   }
 }
 void Runtime::mouse(float x, float y, int button, bool down) {
+  if (!std::isfinite(x) || !std::isfinite(y)) return;
   std::lock_guard<std::mutex> lock(apiMutex_);
   if (!session_) return;
   IHS_SessionSendMousePosition(session_, std::clamp(x, 0.f, 1.f), std::clamp(y, 0.f, 1.f));
@@ -346,6 +357,11 @@ void Runtime::mouse(float x, float y, int button, bool down) {
     else
       IHS_SessionSendMouseUp(session_, static_cast<IHS_StreamInputMouseButton>(button));
   }
+}
+void Runtime::mouseWheel(int direction) {
+  if (direction < IHS_MOUSE_WHEEL_UP || direction > IHS_MOUSE_WHEEL_RIGHT) return;
+  std::lock_guard<std::mutex> lock(apiMutex_);
+  if (session_) IHS_SessionSendMouseWheel(session_, static_cast<IHS_StreamInputMouseWheelDirection>(direction));
 }
 void Runtime::text(const std::string& text) {
   std::lock_guard<std::mutex> lock(apiMutex_);
@@ -360,8 +376,10 @@ void Runtime::frameComplete(uint32_t id, bool displayed) {
     ticket = it->second.ticket;
     metrics_.completionTotalUs += nowUs() - it->second.receivedUs;
     ++metrics_.completedFrames;
-    if (displayed) ++metrics_.presentedFrames;
-    else ++metrics_.droppedFrames;
+    if (displayed)
+      ++metrics_.presentedFrames;
+    else
+      ++metrics_.droppedFrames;
     frames_.erase(it);
   }
   IHS_FrameTicketDecodeStage(ticket, true, nowUs());
@@ -371,6 +389,13 @@ void Runtime::frameComplete(uint32_t id, bool displayed) {
   outcome.result = displayed ? IHS_VideoFrameResultDisplayed : IHS_VideoFrameResultDroppedDecodeSlow;
   IHS_FrameTicketComplete(ticket, &outcome);
   IHS_FrameTicketRelease(ticket);
+  if (displayed) {
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      firstFramePresented_ = true;
+    }
+    condition_.notify_all();
+  }
 }
 void Runtime::clearFrames() {
   std::lock_guard<std::mutex> lock(frameMutex_);

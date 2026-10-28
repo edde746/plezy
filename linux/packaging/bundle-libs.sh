@@ -159,6 +159,33 @@ if [[ -n "$GTK_LIBDIR" ]]; then
     bundle_module_dir "$PRINT_MODULE_DIR" "$PRINT_DEST"
 fi
 
+# Dedicated Steam decoder plugins. Bundle only the fixed pipelines we use,
+# with the matching scanner, rather than loading a different distro's plugins
+# against the bundled GStreamer libraries. The final dependency walk includes
+# their FFmpeg/audio dependencies. Builds without Steam do not need these.
+if compgen -G "$LIB_DIR/libgstreamer-1.0.so*" > /dev/null; then
+    STEAM_GST_PLUGINS="$(pkg-config --variable=pluginsdir gstreamer-1.0)"
+    STEAM_GST_SCANNER="$(pkg-config --variable=pluginscannerdir gstreamer-1.0)/gst-plugin-scanner"
+    mkdir -p "$LIB_DIR/gstreamer-1.0" "$LIB_DIR/gstreamer-tools"
+    for module in app coreelements videoparsersbad libav videoconvertscale audioconvert audioresample volume autodetect pulseaudio; do
+        source="$STEAM_GST_PLUGINS/libgst$module.so"
+        # GStreamer 1.20 used a separate videoconvert module.
+        if [[ "$module" == "videoconvertscale" && ! -f "$source" ]]; then
+            source="$STEAM_GST_PLUGINS/libgstvideoconvert.so"
+        fi
+        if [[ ! -f "$source" ]]; then
+            echo "Error: Steam decoder plugin is missing: libgst$module.so" >&2
+            exit 1
+        fi
+        cp -L "$source" "$LIB_DIR/gstreamer-1.0/"
+    done
+    if [[ ! -x "$STEAM_GST_SCANNER" ]]; then
+        echo "Error: Steam decoder plugin scanner is missing" >&2
+        exit 1
+    fi
+    cp -L "$STEAM_GST_SCANNER" "$LIB_DIR/gstreamer-tools/gst-plugin-scanner"
+fi
+
 # ── Resolve transitive deps of modules ────────────────────────────────────
 # Module bundling above only resolves one level of deps. Re-run the iterative
 # walk over everything now in lib/ to catch deeper transitive deps (e.g.

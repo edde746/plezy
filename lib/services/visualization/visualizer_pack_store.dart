@@ -515,7 +515,7 @@ class VisualizerPackStore {
             if (pixels > VisualizerContentLimits.maxPackImagePixels) throw const FormatException('Folder textures exceed 32 megapixels.');
           }
         } on FormatException catch (error) { throw VisualizerPackException('$relative: ${error.message}'); }
-        final destination = File(p.join(stage.path, 'source', ...relative.split('/')));
+        final destination = File(p.joinAll([stage.path, 'source', ...relative.split('/')]));
         await destination.parent.create(recursive: true);
         await destination.writeAsBytes(bytes, flush: true);
         bytesCopied += bytes.length;

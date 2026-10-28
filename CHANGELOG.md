@@ -11,9 +11,26 @@
 
 - Clear Watchmode availability rows and loading state when the title Links screen changes profiles.
 
+- Bound Steam startup and first-frame waits; retry unsupported HEVC with H.264, normalize Android/Linux codec framing, and wait for decoder shutdown before reconnecting. Serialize native source preparation and include transitive crypto archives in Apple builds.
+
+- Add an experimental Windows Steam receiver with Credential Manager pairing, cancellable DNS, Media Foundation video, bounded XAudio2 surround audio, retained workspace textures and shared input controls. Windows SDK and device qualification remain required; missing Media Feature Pack support keeps library browsing available.
+
+- Clarify the experimental Steam receiver coverage in Games help and give touch controls descriptive screen-reader labels; preserve existing theme, icon and controller geometry conventions.
+
+- Add themed multi-touch controls to Apple/Linux Steam surfaces, including dual sticks, independent buttons and triggers, compact landscape layout and player-one assistance that preserves physical controller seats.
+
+- Add opt-in Apple Metal Pyrowave source integration with direct GPU conversion, bounded 4:2:0/4:4:4 SDR textures, observed-chroma diagnostics and conventional-codec fallback; retain explicit HDR rejection pending a qualified HDR surface.
+- Route normal Linux and Apple Steam launches into the retained workspace receiver as well as supporting the window action.
+
+- Add Apple Steam receiver source and Xcode integration using VideoToolbox pixel-buffer textures, Keychain pairing, bounded multichannel Core Audio and acknowledged teardown; add a real H.264 decoder test for Apple runners. SDK builds and device playback remain qualification gates.
+- Route desktop/Apple Steam pointer, scroll and full keyboard input through workspace ownership; release held controls on focus changes and provide Shift+Escape to return to workspace menus.
+
+- Add capability-negotiated Steam Input and game-properties actions on paired computers, plus confirmed Cloud files and Families destinations in the existing adaptive Steam menu.
+
+- Add an embedded Linux Steam receiver with OS-keyring pairing, dedicated H.264/HEVC and PCM decoding, retained Flutter textures, controller seats, connection details and acknowledged reconnect; bundle its fixed GStreamer plugins with Linux releases.
+
 - Add normalized provider, evidence, and licensed-offer contracts with bounded, no-cache availability lookup; keep offers non-actionable until approval and exclude generic OPDS purchase links from local-file access.
 - Make a single tap or click toggle playback by default across platforms, with a preference to show the playback controls instead.
-
 - Add signed visualizer catalog support with release-pinned Ed25519 keys, quorum verification, explicit refresh, revocation and rollback protection, and durable install receipts. Remote updates remain disabled until release keys are configured.
 
 - Verify the pinned Windows installer compiler by running its version probe, supporting Inno Setup's zeroed executable version metadata without weakening signature or payload checks.

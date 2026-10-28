@@ -154,10 +154,12 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   int _gameActionVersion = 0;
+  Set<SteamHostAction> _gameActionKinds = {};
   bool get supportsGameActions => isRemote && isConnected && _gameActionVersion == 1;
+  bool supportsGameAction(SteamHostAction action) => supportsGameActions && _gameActionKinds.contains(action);
   String? get gameActionPeerId => supportsGameActions ? _peerService?.selectedHostClientId : null;
   Future<SteamHostActionResult> requestGameAction(SteamHostAction action, {int? appId}) {
-    if (!supportsGameActions || _gameActions == null) return Future.value(SteamHostActionResult.unavailable);
+    if (!supportsGameAction(action) || _gameActions == null) return Future.value(SteamHostActionResult.unavailable);
     return _gameActions!.request(action, appId: appId);
   }
 
@@ -1009,7 +1011,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
               SettingsService.instance.read(SettingsService.allowSteamInstallForProfile(profileId))),
       execute: (action, appId, current) async {
         if (!current()) return false;
-        if (action == SteamHostAction.launch) {
+        if (action == SteamHostAction.launch ||
+            action == SteamHostAction.inputConfiguration ||
+            action == SteamHostAction.properties) {
           final inventory = await SteamLocalInventory().scan(
             root: profileId == null
                 ? null
@@ -1150,6 +1154,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   void _handleDeviceInfo(RemoteCommand command) {
     _gameSessionVersion = command.data?['gameSessionVersion'] == 1 ? 1 : 0;
     _gameActionVersion = command.data?['gameActionVersion'] == 1 ? 1 : 0;
+    _gameActionKinds = steamHostActionCapabilities(command.data?['gameActionKinds']);
     _gameInventoryVersion = command.data?['gameInventoryVersion'] == 1 ? 1 : 0;
     if (command.data != null) {
       final id = command.data!['id'] as String? ?? 'unknown';
@@ -1181,6 +1186,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _gameActions?.close();
     _gameActions = null;
     _gameActionVersion = 0;
+    _gameActionKinds = {};
     _gameInventory?.close();
     _gameInventory = null;
     _gameInventoryVersion = 0;
