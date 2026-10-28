@@ -23,6 +23,12 @@ abstract interface class MusicLoudnessProfileService {
   Future<AudioLoudnessProfile?> loadCurrentTrackLoudnessProfile();
 }
 
+/// Identifies the playback-owned native music core. Native dependency/format
+/// availability is negotiated separately; this never promises live FFT data.
+abstract interface class MusicVisualizationAudioService {
+  bool get hasNativeVisualizationAudio;
+}
+
 /// Outcome of [MusicPlaybackService.playInstantMix]. Fetch failures throw
 /// instead of surfacing here; [superseded] means a newer play request claimed
 /// the session while the mix was loading, so the caller must stay silent.

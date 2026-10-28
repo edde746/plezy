@@ -14,8 +14,9 @@ import 'visualizer_preset_browser.dart';
 /// In-app entry point for license-cleared pack downloads and user-owned imports.
 /// Link-only historical collections are never rehosted by PlezyNG.
 class VisualizerLibrarySheet extends StatefulWidget {
-  const VisualizerLibrarySheet({super.key, this.profileId});
+  const VisualizerLibrarySheet({super.key, this.profileId, this.hasMusicPcmSource = false});
   final String? profileId;
+  final bool hasMusicPcmSource;
 
   @override
   State<VisualizerLibrarySheet> createState() => _VisualizerLibrarySheetState();
@@ -47,7 +48,8 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   }
 
   Future<void> _checkRenderer() async {
-    final capability = await VisualizerSession.capabilities();
+    final capability = widget.hasMusicPcmSource ? await VisualizerSession.capabilities()
+        : const VisualizerCapabilities(available: false, reason: 'This music playback source has no native visualization audio.');
     if (mounted) setState(() => _capability = capability);
   }
 
@@ -296,7 +298,8 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
   @override
   Widget build(BuildContext context) {
     final tk = tokens(context);
-    final installedIds = _installed.map((pack) => pack.entry.id).toSet();
+    final installedIds = _installed.where((pack) => pack.isCurrent).map((pack) => pack.entry.id).toSet();
+    final olderIds = _installed.where((pack) => !pack.isCurrent).map((pack) => pack.entry.id).toSet();
     final visibleEntries = VisualizerPackCatalogEntry.available.where((entry) {
       final favorite = _favorites.contains(_packFavoriteKey(entry.id, entry.version));
       return (!_favoritesOnly || favorite) &&
@@ -440,6 +443,8 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(entry.description, style: Theme.of(context).textTheme.bodyMedium),
+                                    if (olderIds.contains(entry.id) && !installedIds.contains(entry.id))
+                                      const Text('Update available. Previous versions stay available in Installed presets.'),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Content notice: ${entry.contentNotice}',
@@ -462,7 +467,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                         if (installedIds.contains(entry.id))
                                           FilledButton.icon(
                                             onPressed: _busy ? null : () => _browse(packPath:
-                                                _installed.firstWhere((pack) => pack.entry.id == entry.id).path),
+                                                _installed.firstWhere((pack) => pack.entry.id == entry.id && pack.isCurrent).path),
                                             icon: const Icon(Icons.grid_view_rounded, size: 18),
                                             label: const Text('Browse presets'),
                                           ),
@@ -482,7 +487,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                           FilledButton.icon(
                                             onPressed: _busy || !_store.isStorageSupported ? null : () => _install(entry),
                                             icon: const AppIcon(Symbols.download_rounded, size: 18),
-                                            label: Text(_workingPackId == entry.id ? 'Downloading…' : t.downloads.downloadNow),
+                                            label: Text(olderIds.contains(entry.id) ? 'Download update' : t.downloads.downloadNow),
                                           ),
                                         IconButton(
                                           tooltip: _favorites.contains(_packFavoriteKey(entry.id, entry.version))

@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <cctype>
+#include <cmath>
 #include <condition_variable>
 #include <filesystem>
 #include <mutex>
@@ -82,6 +83,9 @@ struct ProjectMApi {
   void (*pcm)(void*, const float*, unsigned int, int) = nullptr;
   unsigned int (*max_samples)() = nullptr;
   int (*render)(void*, unsigned int) = nullptr;
+  void (*pause)(void*, bool) = nullptr;
+  void (*soft_cut)(void*, double) = nullptr;
+  void (*fps)(void*, int32_t) = nullptr;
 
   ProjectMApi() {
     library = dlopen("libprojectM-4.so.4", RTLD_NOW | RTLD_LOCAL);
@@ -99,6 +103,9 @@ struct ProjectMApi {
     LOAD(pcm, "projectm_pcm_add_float")
     LOAD(max_samples, "projectm_pcm_get_max_samples")
     LOAD(render, "projectm_plezy_render_frame_fbo")
+    LOAD(pause, "projectm_plezy_set_paused")
+    LOAD(soft_cut, "projectm_set_soft_cut_duration")
+    LOAD(fps, "projectm_set_fps")
 #undef LOAD
     int major = 0, minor = 0, patch = 0;
     version(&major, &minor, &patch);
@@ -185,6 +192,7 @@ struct VisualizerSession::Impl {
   std::thread worker;
   bool stopping = false, paused = true;
   int width = 768, height = 432;
+  double transition_seconds = 3;
   std::string path, root, state = "starting", error;
   uint64_t preset_serial = 0;
   uint32_t dropped = 0;
@@ -243,12 +251,15 @@ struct VisualizerSession::Impl {
         auto started = Clock::now();
         std::string requested_path, requested_root;
         uint64_t serial; int w, h;
+        double transition;
         {
           std::unique_lock<std::mutex> lock(mutex);
+          if (paused && engine.instance) Api().pause(engine.instance, true);
           condition.wait(lock, [this] { return stopping || (!paused && !path.empty()); });
           if (stopping) break;
           requested_path = path; requested_root = root; serial = preset_serial;
           w = width; h = height;
+          transition = transition_seconds;
         }
         graphics.Resize(w, h);
         mpv_plezy_audio_block block{};
@@ -273,6 +284,7 @@ struct VisualizerSession::Impl {
               *static_cast<std::string*>(target) = message ? message : "Preset loading failed.";
             }, &load_error);
             Api().lock(engine.instance, true);
+            Api().fps(engine.instance, 30);
           }
           Api().resize(engine.instance, w, h);
           if (loaded_serial != serial) {
@@ -280,7 +292,8 @@ struct VisualizerSession::Impl {
             const char* roots[] = {requested_root.c_str(), textures.c_str()};
             Api().paths(engine.instance, roots, 2);
             load_error.clear();
-            Api().load(engine.instance, requested_path.c_str(), loaded_serial != 0);
+            Api().soft_cut(engine.instance, std::max(0.01, transition));
+            Api().load(engine.instance, requested_path.c_str(), loaded_serial != 0 && transition > 0);
             if (!load_error.empty()) throw std::runtime_error(load_error);
             loaded_serial = serial;
           }
@@ -300,6 +313,7 @@ struct VisualizerSession::Impl {
         }
         if (audio_received) audio_at = Clock::now();
         if (engine.instance && loaded_serial == serial && Clock::now() - audio_at < std::chrono::milliseconds(250)) {
+          Api().pause(engine.instance, false);
           Api().resize(engine.instance, w, h);
           if (Api().render(engine.instance, graphics.framebuffer) != 0)
             throw std::runtime_error("projectM failed to render this preset.");
@@ -318,6 +332,7 @@ struct VisualizerSession::Impl {
           frames->serial.fetch_add(1);
           State("rendering");
         } else {
+          if (engine.instance) Api().pause(engine.instance, true);
           std::lock_guard<std::mutex> lock(mutex);
           if (state != "unavailable") { state = "waiting-audio"; error.clear(); }
         }
@@ -335,8 +350,11 @@ VisualizerSession::VisualizerSession(FlTextureRegistrar* registrar, AudioReader 
     : impl_(std::make_unique<Impl>(registrar, std::move(reader))) {}
 VisualizerSession::~VisualizerSession() = default;
 int64_t VisualizerSession::texture_id() const { return fl_texture_get_id(FL_TEXTURE(impl_->texture)); }
-bool VisualizerSession::LoadPreset(const std::string& path, const std::string& root, std::string* error) {
+bool VisualizerSession::LoadPreset(const std::string& path, const std::string& root, double transition_seconds,
+                                  std::string* error) {
   try {
+    if (!std::isfinite(transition_seconds) || transition_seconds < 0 || transition_seconds > 10)
+      throw std::runtime_error("Transition duration must be between 0 and 10 seconds.");
     const auto base = std::filesystem::canonical(root);
     const auto file = std::filesystem::canonical(path);
     const auto relative = file.lexically_relative(base);
@@ -349,6 +367,7 @@ bool VisualizerSession::LoadPreset(const std::string& path, const std::string& r
       if (impl_->state == "failed" || impl_->stopping)
         throw std::runtime_error("Create a new visualization session to retry this preset.");
       impl_->path = file.string(); impl_->root = base.string(); ++impl_->preset_serial;
+      impl_->transition_seconds = transition_seconds;
       impl_->error.clear(); impl_->state = "loading";
     }
     impl_->condition.notify_all();

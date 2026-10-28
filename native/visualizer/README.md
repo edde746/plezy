@@ -20,6 +20,10 @@ The caller owns the GL context, framebuffer completeness, dimensions, texture
 lifetime and thread. All projectM operations for a session belong on that
 context's thread. A failed preset must surface its callback diagnostic.
 
+`projectm_plezy_set_paused()` suspends equation and transition clocks without
+discarding feedback. Both clocks use monotonic time. The worker pauses them
+while hidden, paused, in reduced motion, or waiting for fresh playback audio.
+
 ## Playback PCM tap
 
 The tap copies frames after mpv's audio filter chain, immediately before the
@@ -51,12 +55,15 @@ symbol negotiation. ABI 1 is required; stock libmpv remains usable for music.
 On an authorized private JIT runner, prepare clean dependency sources with:
 
 ```sh
-python3 native/visualizer/prepare_sources.py --destination /path/to/visualizer-sources
+python3 native/visualizer/prepare_sources.py --platform linux --destination /path/to/visualizer-sources
 ```
 
-This command prepares source only. The mpv patch must be composed with the
-platform patch series in the exact mpv-build revision recorded in the lock,
-reviewed there, and built for every affected architecture. Do not replace
+This command prepares source only. It checks out the pinned mpv-build tree,
+checks its mpv source revision, applies `series.common` and the requested
+platform series, then adds the PCM patch. Use a separate clean destination for
+each platform. The Linux source composition was performed with all 23 existing
+patches; no compiler or test was invoked. Other platforms need source composition
+and native host implementation as well as artifact qualification. Do not replace
 `mpv-build.lock.json` with invented checksums or unproduced artifact URLs.
 
 Build projectM as a shared library with GLES 3 for the Linux offscreen host:
@@ -75,7 +82,43 @@ notices here cover upstream projectM and mpv; their dependency notices must
 also accompany actual built distributions. PlezyNG and preset-content licenses
 remain separate.
 
-Promotion still requires patch-series composition, all-platform artifact
+The Linux CMake bundle accepts `PLEZY_VISUALIZER_PROJECTM_LIBRARY` pointing to
+the resulting shared library and installs it with the source lock and notices.
+The app also needs a libmpv artifact containing the PCM extension. Its existing
+binary lock is unchanged because no such artifact has been produced here.
+
+## Linux host and app contract
+
+`linux/runner/visualizer/` owns a surfaceless Mesa EGL/GLES 3 worker, a projectM
+instance, an FBO, and a Flutter pixel-buffer texture. Each RGBA snapshot remains
+alive through Flutter's copy callback. Rendering and PCM ingestion stay native;
+the Dart controller sends control commands and polls status at 2 Hz. Sessions
+have monotonic leases so stale widget disposal cannot destroy a newer session.
+
+The renderer requests at most 1280×720 at 30 FPS. It performs GPU readback and
+a native copy, not GPU texture sharing. This is a provisional integration path
+whose cost must be measured before acceptance. Mesa surfaceless EGL is required;
+drivers without it report unavailable. There is no universal Linux GPU claim.
+
+PCM is downmixed by named channel layout and resampled to 44.1 kHz stereo on
+the worker. Generation changes recreate preset/equation/feedback state;
+discontinuities reset interpolation history. The native music player's observed
+time-pos gates blocks, with no synchronous per-frame mpv property request.
+
+Controls on `com.plezy/mpv_audio_player` are `visualizerCapabilities`, `Create`,
+`Load`, `Resize`, `SetPaused`, `Status`, and `Dispose` (all use the `visualizer`
+prefix). Create returns separate `sessionId` and `textureId` values. Every later
+operation requires the session lease. Loading requires a bounded `.milk` file
+under its installed asset root. `.milk2` remains explicitly unavailable.
+
+The controller serializes loads and disposal, handles missing plugins, and
+shows original scenes while a native preset has no current frame or has failed.
+Player/profile teardown stops the worker before detaching the PCM tap. A native
+driver or compiler hang is **not contained** by this in-process worker: joining
+it can block teardown. Process isolation/watchdog behavior remains a release gate
+for arbitrary community inputs. Exceptions are not a substitute for that gate.
+
+Promotion still requires other-platform patch composition, all-platform artifact
 builds, native rendering with actual playback audio, seek/pause/gapless/format
 changes, overload tests, passthrough preservation, and device/performance
 qualification. No such results are claimed by these patches.

@@ -24,6 +24,7 @@ class VisualizerSession extends ChangeNotifier {
   bool _polling = false;
   bool _paused = true;
   int _width = 768, _height = 432;
+  double transitionSeconds = 3;
   String _state = 'idle', _reason = '';
   bool _hasFrame = false;
   VisualizerPresetFile? _preset;
@@ -103,7 +104,8 @@ class VisualizerSession extends ChangeNotifier {
       if (_closed) return; // dispose is queued and owns the new lease.
     }
     await _call<void>('visualizerResize', {'width': _width, 'height': _height});
-    await _call<void>('visualizerLoad', {'path': preset.path, 'root': preset.root});
+    await _call<void>('visualizerLoad', {'path': preset.path, 'root': preset.root,
+      'transitionSeconds': transitionSeconds.clamp(0, 10).toDouble()});
     await _call<void>('visualizerSetPaused', {'paused': _paused});
     _poll ??= Timer.periodic(const Duration(milliseconds: 500), (_) => _pollStatus());
     _changed();

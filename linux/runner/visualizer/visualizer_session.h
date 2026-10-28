@@ -19,7 +19,7 @@ class VisualizerSession {
   VisualizerSession(const VisualizerSession&) = delete;
   VisualizerSession& operator=(const VisualizerSession&) = delete;
   int64_t texture_id() const;
-  bool LoadPreset(const std::string& path, const std::string& root, std::string* error);
+  bool LoadPreset(const std::string& path, const std::string& root, double transition_seconds, std::string* error);
   void Resize(int width, int height);
   void SetPaused(bool paused);
   FlValue* Status() const;

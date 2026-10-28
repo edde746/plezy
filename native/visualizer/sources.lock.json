@@ -9,7 +9,7 @@
       "vendor/projectm-eval": "e8c311e86f4d8c082e96e02b6a33525034eee6d4"
     },
     "patch": "patches/projectm-4.1.8-output-fbo.patch",
-    "patchSha256": "997a9ca754668da0bbbe116b3c781c95f7342d03f24e5ac9d79aace0bbb624bb"
+    "patchSha256": "a1da62083afdc9676878dab6bfad3e1f09055632459fd6ea6544124797f3ee8d"
   },
   "mpv": {
     "repository": "https://github.com/mpv-player/mpv.git",
@@ -21,6 +21,6 @@
   "appMpvBuild": {
     "repository": "https://github.com/edde746/mpv-build",
     "commit": "3b9f38affe3c4171f8e6bc47331feffd3d13be1d",
-    "integrationStatus": "must-compose-with-platform-patch-series-before-artifact-promotion"
+    "integrationStatus": "linux-source-series-composed; native-artifacts-unbuilt"
   }
 }

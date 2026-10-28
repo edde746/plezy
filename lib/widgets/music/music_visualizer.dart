@@ -69,6 +69,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
   int _intervalSeconds = 30;
   double _resolutionScale = 1;
   final math.Random _random = math.Random();
+  ModalRoute<void>? _fullscreenRoute;
 
   @override
   void initState() {
@@ -137,6 +138,10 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
 
   @override
   void dispose() {
+    final route = _fullscreenRoute;
+    if (route != null) WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (route.isActive) route.navigator?.removeRoute(route);
+    });
     WidgetsBinding.instance.removeObserver(this);
     widget.service.removeListener(_onServiceChanged);
     _reducedMotionPositionSubscription?.cancel();
@@ -156,6 +161,11 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       widget.service.status != MusicPlaybackStatus.idle &&
       widget.service.status != MusicPlaybackStatus.error;
 
+  bool get _nativeSourceReady {
+    final service = widget.service;
+    return service is MusicVisualizationAudioService && service.hasNativeVisualizationAudio;
+  }
+
   void _syncTicker() {
     final visible = _fullscreen || TickerMode.of(context);
     final shouldAnimate = !_reduceMotion && _appResumed && visible && !_native.hasFrame;
@@ -166,7 +176,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       _ticker.stop();
       _lastElapsed = null;
     }
-    _native.setPaused(_reduceMotion || !_appResumed || !visible || !widget.service.isPlaying || !_sourceReady);
+    _native.setPaused(_reduceMotion || !_appResumed || !visible || !widget.service.isPlaying || !_sourceReady || !_nativeSourceReady);
     _syncPresetTimer();
   }
 
@@ -200,6 +210,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       _locked = prefs['locked'] != false;
       _intervalSeconds = prefs['interval'] is int ? (prefs['interval'] as int).clamp(10, 600).toInt() : 30;
       _resolutionScale = prefs['quality'] == 'low' ? 0.5 : 1;
+      _native.transitionSeconds = prefs['transition'] is num ? (prefs['transition'] as num).clamp(0, 10).toDouble() : 3;
       final savedQueue = prefs['playlist'];
       final byPath = {for (final file in files) file.libraryPath: file};
       _playlist = savedQueue is List
@@ -210,7 +221,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
         if (preset.name == original) widget.onPresetChanged(preset);
       }
       final selected = byPath[prefs['selected']];
-      if (selected != null && selected.supportsProjectM) {
+      if (selected != null && selected.supportsProjectM && _nativeSourceReady) {
         if (!_playlist.any((file) => file.id == selected.id)) _playlist.add(selected);
         await _native.load(selected);
       }
@@ -225,13 +236,16 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
   void _savePreferences() {
     final store = _store;
     if (store == null) return;
-    _optionsRevision.value++;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _optionsRevision.value++;
+    });
     unawaited(store.savePreferences({
       'selected': _native.preset?.libraryPath,
       'original': widget.preset.name,
       'playlist': _playlist.take(2500).map((file) => file.libraryPath).toList(),
       'shuffle': _shuffle, 'locked': _locked, 'interval': _intervalSeconds,
       'quality': _resolutionScale < 1 ? 'low' : 'balanced',
+      'transition': _native.transitionSeconds,
     }).catchError((Object error) {
       if (mounted) ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text('Could not save visualization choices: $error')));
     }));
@@ -247,6 +261,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
   }
 
   Future<void> _selectPreset(VisualizerSelection selection) async {
+    if (!_nativeSourceReady) return;
     ++_preferenceGeneration; // A late restore must not replace a user selection.
     _playlist = selection.playlist;
     _syncTicker();
@@ -341,6 +356,13 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
 
   static double _energyFromDb(double db) => ((db + 72) / 62).clamp(0.04, 1.0).toDouble();
 
+  void _resizeNative(BoxConstraints constraints, double pixelRatio) {
+    final width = constraints.maxWidth * pixelRatio, height = constraints.maxHeight * pixelRatio;
+    if (!width.isFinite || !height.isFinite || width <= 0 || height <= 0) return;
+    final scale = math.min(1.0, math.min(1280 / width, 720 / height)) * _resolutionScale;
+    _native.resize(width * scale, height * scale);
+  }
+
   @override
   Widget build(BuildContext context) {
     final tk = tokens(context);
@@ -366,8 +388,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       child: ClipRRect(
         borderRadius: BorderRadius.circular(tk.radiusLg),
         child: LayoutBuilder(builder: (context, constraints) {
-          final scale = MediaQuery.devicePixelRatioOf(context) * _resolutionScale;
-          if (!_fullscreen) _native.resize(constraints.maxWidth * scale, constraints.maxHeight * scale);
+          if (!_fullscreen) _resizeNative(constraints, MediaQuery.devicePixelRatioOf(context));
           return Stack(
           fit: StackFit.expand,
           children: [
@@ -485,6 +506,9 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
                       CheckedPopupMenuItem(value: 'interval:$seconds', checked: _intervalSeconds == seconds,
                         child: Text('Change every $seconds seconds')),
                     CheckedPopupMenuItem(value: 'quality', checked: _resolutionScale < 1, child: const Text('Lower resolution')),
+                    for (final seconds in [0, 3, 8])
+                      CheckedPopupMenuItem(value: 'transition:$seconds', checked: _native.transitionSeconds == seconds,
+                        child: Text(seconds == 0 ? 'Instant transitions' : '$seconds second transitions')),
                     const PopupMenuItem(value: 'retry', child: Text('Reload preset')),
                   ],
                   const PopupMenuItem(value: 'fullscreen', child: Text('Fullscreen')),
@@ -498,14 +522,15 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
   }
 
   Future<void> _showLibrary(BuildContext context) async {
+    final profileId = _profileId;
     final selection = await showModalBottomSheet<VisualizerSelection>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => VisualizerLibrarySheet(profileId: _profileId),
+      builder: (_) => VisualizerLibrarySheet(profileId: profileId, hasMusicPcmSource: _nativeSourceReady),
     );
-    if (mounted && selection != null) await _selectPreset(selection);
+    if (mounted && profileId == _profileId && selection != null) await _selectPreset(selection);
   }
 
   void _option(String action) {
@@ -519,6 +544,7 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
       if (action == 'shuffle') _shuffle = !_shuffle;
       if (action == 'quality') _resolutionScale = _resolutionScale < 1 ? 1 : 0.5;
       if (action.startsWith('interval:')) _intervalSeconds = int.parse(action.split(':').last);
+      if (action.startsWith('transition:')) _native.transitionSeconds = double.parse(action.split(':').last);
     });
     _presetTimer?.cancel(); _presetTimer = null;
     _savePreferences(); _syncTicker();
@@ -528,8 +554,10 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
     if (_fullscreen) return;
     setState(() => _fullscreen = true);
     _syncTicker();
-    await showDialog<void>(context: context, useSafeArea: false, builder: (dialogContext) =>
-      Dialog.fullscreen(child: CallbackShortcuts(
+    await showDialog<void>(context: context, useSafeArea: false, builder: (dialogContext) {
+      if (!mounted) return const SizedBox.shrink();
+      _fullscreenRoute = ModalRoute.of<void>(dialogContext);
+      return Dialog.fullscreen(child: CallbackShortcuts(
         bindings: {
           const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.pop(dialogContext),
           const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _stepPreset(-1),
@@ -537,9 +565,8 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
         },
         child: Focus(autofocus: true, child: AnimatedBuilder(
           animation: Listenable.merge([_native, _optionsRevision]),
-          builder: (context, _) => LayoutBuilder(builder: (context, constraints) {
-            final scale = MediaQuery.devicePixelRatioOf(context) * _resolutionScale;
-            _native.resize(constraints.maxWidth * scale, constraints.maxHeight * scale);
+          builder: (context, _) => !mounted ? const SizedBox.shrink() : LayoutBuilder(builder: (context, constraints) {
+            _resizeNative(constraints, MediaQuery.devicePixelRatioOf(context));
             final tk = tokens(context);
             return Stack(fit: StackFit.expand, children: [
               if (_native.hasFrame && _native.textureId != null)
@@ -558,8 +585,9 @@ class _MusicVisualizerState extends State<MusicVisualizer> with TickerProviderSt
             ]);
           }),
         )),
-      )),
+      )); },
     );
+    _fullscreenRoute = null;
     if (mounted) { setState(() => _fullscreen = false); _syncTicker(); }
   }
 

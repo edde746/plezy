@@ -201,16 +201,28 @@ Keep the existing six original scenes and feed live features where supported. Pr
 Work in reviewable PR-sized packages, use private JIT runners only, and keep a progress ledger with implemented/tested/qualified/released evidence. Do not claim all presets work from static parser reports, and do not stop at scaffolding. If a platform or external distribution requirement blocks completion, finish independent work and record the exact remaining dependency and next action.
 ```
 
-## Implementation checkpoint — 2026-10-28
+## Current implementation ledger — 2026-10-28
 
-MilkRust PR #20 now includes commit [fc6625c](https://github.com/snapetech-org/MilkRust/commit/fc6625ca28e9084004f120dba4b787fa1e66f7dd), which updates both expression evaluators against the official [projectM EEL syntax](https://github.com/projectM-visualizer/projectm-eval/blob/master/docs/Expression-Syntax.md) and [reference grammar](https://github.com/projectM-visualizer/projectm-eval/blob/master/projectm-eval/Compiler.y). It corrects left-associative power precedence, boolean helpers and zero tolerance, lazy logical/conditional evaluation, integer remainder, common compound assignments, `invsqrt`, bounded `memset`, the documented no-op `freembuf`, and simple `if()` lvalue passthrough; `bxor` is no longer claimed as a built-in. Regression cases were added to both crates but have not been run.
+The audit and completion contract above are retained as the original plan.
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) is the current source and
+qualification ledger; [USER_GUIDE.md](USER_GUIDE.md) documents the implemented
+workflow. The draft PRs carry the original plan and incremental source commits.
 
-This closes a targeted EEL semantics slice, not the MilkRust compatibility gate. Reference-valued results for memory helpers, RNG fidelity, memory-index edge cases, remaining expression traces, full renderer behavior and corpus coverage remain open. PlezyNG still has no decoded PCM tap or native MilkDrop renderer, and the native integration probe records the current pinned API blockers. Keep the original package gates and qualification requirements above unchanged; no build, test, CI, visual render or device qualification was run.
+V1/V2 now have a Linux host implementation: pinned projectM FBO/pause-clock
+patches, a bounded same-player PCM extension, native resampling, worker-owned
+EGL rendering, leased Flutter texture sessions, and Dart selection/control.
+The PCM patch has been composed with the 23 existing common/Linux patches from
+the locked mpv-build revision. There are still no new native binary artifacts.
 
-## Implementation checkpoint — 2026-10-28 (memory-reference follow-up)
+V6–V8 now include preset selection, profile-scoped favorites/display choices,
+named playlists and reference import/export, ordering, shuffle/lock/timing,
+transition length, quality reduction, fullscreen, download cancellation,
+version-aware updates, serialized mutations and startup replacement recovery.
+These are source implementations, not executed user-flow or renderer results.
 
-MilkRust PR #20 now includes commit [521beb4](https://github.com/snapetech-org/MilkRust/commit/521beb41275cf94d4145d142c7c693323c270adc). Both EEL evaluators preserve the destination-buffer lvalue for simple `memcpy(...) = value` and `memset(...) = value` assignment targets. Regression cases were added but not run. This closes those direct assignment forms only; generic reference propagation through nested function results and arithmetic, full memory-index semantics, RNG traces and the remaining engine/rendering gates are still open. No build, test, CI, rendering or device qualification was run.
-
-## Implementation checkpoint — 2026-10-28 (library organization)
-
-PlezyNG commit [44c7ecc](https://github.com/snapetech-org/PlezyNG/commit/44c7ecca4973e9c88f91590204f79b67a4d47ffc) adds local search across pinned pack metadata, imported pack authors/preset titles/tags, and imported loose-preset filenames. Favorites persist on the device for catalog pack entries, imported packs and loose preset imports. They are not profile-specific, and presets inside packs do not yet have per-preset controls. This is library organization only: MilkDrop content remains non-playable until renderer and PCM integration. Search/favorites do not close the V8 UX package or the catalog, renderer or qualification gates. No tests/build/CI/render/device work was run.
+The full completion contract remains open. In particular, a complete native
+MilkRust renderer, faithful shader/.milk2 handling, other platform hosts,
+broader cleared content and signed catalog publication, bounded compiler/GPU
+hang containment, and real artifact/device/conformance evidence are not done.
+No tests, builds, CI, render captures or device qualification were run in this
+session. Source preparation is recorded separately from those checks.

@@ -17,13 +17,17 @@ class PcmResampler {
     if (block.frames > MPV_PLEZY_AUDIO_TAP_FRAMES || block.channels < 1 ||
         block.channels > MPV_PLEZY_AUDIO_TAP_CHANNELS ||
         block.sample_rate < 8000 || block.sample_rate > 384000) return false;
-    if (generation_ != block.generation || rate_ != block.sample_rate) {
+    if (!std::isfinite(block.pts) || !std::isfinite(block.seconds_per_frame) || block.seconds_per_frame <= 0) return false;
+    const bool discontinuity = have_previous_ && std::abs(block.pts - expected_pts_) >
+        std::max(0.001, block.seconds_per_frame * 2);
+    if (generation_ != block.generation || rate_ != block.sample_rate || discontinuity) {
       generation_ = block.generation;
       rate_ = block.sample_rate;
       index_ = 0;
       next_ = 0;
       have_previous_ = false;
     }
+    expected_pts_ = block.pts + block.frames * block.seconds_per_frame;
     // At 8 kHz one block expands to fewer than 3000 stereo frames.
     output->reserve(6000);
     for (uint32_t n = 0; n < block.frames; ++n) {
@@ -75,6 +79,7 @@ class PcmResampler {
   uint32_t generation_ = 0, rate_ = 0;
   uint64_t index_ = 0;
   double next_ = 0;
+  double expected_pts_ = 0;
   bool have_previous_ = false;
   float previous_left_ = 0, previous_right_ = 0;
 };

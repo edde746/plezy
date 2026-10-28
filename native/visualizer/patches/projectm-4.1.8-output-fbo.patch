@@ -1,8 +1,8 @@
 diff --git a/src/api/include/projectM-4/render_opengl.h b/src/api/include/projectM-4/render_opengl.h
-index 0a061f7..37b642e 100644
+index 0a061f7..4d4d452 100644
 --- a/src/api/include/projectM-4/render_opengl.h
 +++ b/src/api/include/projectM-4/render_opengl.h
-@@ -41,6 +41,13 @@ extern "C" {
+@@ -41,6 +41,17 @@ extern "C" {
   */
  PROJECTM_EXPORT void projectm_opengl_render_frame(projectm_handle instance);
  
@@ -12,15 +12,19 @@ index 0a061f7..37b642e 100644
 + * The existing framebuffer-0 API and its ABI remain unchanged.
 + */
 +PROJECTM_EXPORT int projectm_plezy_render_frame_fbo(projectm_handle instance, unsigned int framebuffer);
++/* Call on the renderer thread around a render suspension. Preserves equation
++ * and transition time instead of advancing it through hidden/paused intervals.
++ */
++PROJECTM_EXPORT void projectm_plezy_set_paused(projectm_handle instance, bool paused);
 +
  #ifdef __cplusplus
  } // extern "C"
  #endif
 diff --git a/src/libprojectM/ProjectM.cpp b/src/libprojectM/ProjectM.cpp
-index 88fa014..146f88b 100644
+index 88fa014..e76bdde 100644
 --- a/src/libprojectM/ProjectM.cpp
 +++ b/src/libprojectM/ProjectM.cpp
-@@ -91,6 +91,11 @@ void ProjectM::ResetTextures()
+@@ -91,6 +91,17 @@ void ProjectM::ResetTextures()
  }
  
  void ProjectM::RenderFrame()
@@ -28,11 +32,17 @@ index 88fa014..146f88b 100644
 +    RenderFrameToFramebuffer(0);
 +}
 +
++void ProjectM::SetRenderPaused(bool paused)
++{
++    m_timeKeeper->SetPaused(paused);
++    if (m_transition) m_transition->SetPaused(paused);
++}
++
 +void ProjectM::RenderFrameToFramebuffer(uint32_t framebuffer)
  {
      // Don't render if window area is zero.
      if (m_windowWidth == 0 || m_windowHeight == 0)
-@@ -166,15 +171,14 @@ void ProjectM::RenderFrame()
+@@ -166,15 +177,14 @@ void ProjectM::RenderFrame()
      // ToDo: Call the to-be-implemented render method in Renderer
      m_activePreset->RenderFrame(audioData, renderContext);
  
@@ -51,22 +61,23 @@ index 88fa014..146f88b 100644
  #endif
  
 diff --git a/src/libprojectM/ProjectM.hpp b/src/libprojectM/ProjectM.hpp
-index b84e293..12961d7 100644
+index b84e293..7f8b135 100644
 --- a/src/libprojectM/ProjectM.hpp
 +++ b/src/libprojectM/ProjectM.hpp
-@@ -102,6 +102,7 @@ public:
+@@ -102,6 +102,8 @@ public:
      void ResetTextures();
  
      void RenderFrame();
 +    void RenderFrameToFramebuffer(uint32_t framebuffer);
++    void SetRenderPaused(bool paused);
  
      void SetBeatSensitivity(float sensitivity);
  
 diff --git a/src/libprojectM/ProjectMCWrapper.cpp b/src/libprojectM/ProjectMCWrapper.cpp
-index d58f123..06d5ff5 100644
+index d58f123..326f4ec 100644
 --- a/src/libprojectM/ProjectMCWrapper.cpp
 +++ b/src/libprojectM/ProjectMCWrapper.cpp
-@@ -171,6 +171,17 @@ void projectm_opengl_render_frame(projectm_handle instance)
+@@ -171,6 +171,22 @@ void projectm_opengl_render_frame(projectm_handle instance)
      projectMInstance->RenderFrame();
  }
  
@@ -81,6 +92,152 @@ index d58f123..06d5ff5 100644
 +    }
 +}
 +
++void projectm_plezy_set_paused(projectm_handle instance, bool paused)
++{
++    if (instance) handle_to_instance(instance)->SetRenderPaused(paused);
++}
++
  void projectm_set_beat_sensitivity(projectm_handle instance, float sensitivity)
  {
      auto projectMInstance = handle_to_instance(instance);
+@@ -374,4 +390,4 @@ auto projectm_pcm_add_uint8(projectm_handle instance, const uint8_t* samples, un
+ auto projectm_write_debug_image_on_next_frame(projectm_handle, const char*) -> void
+ {
+     // UNIMPLEMENTED
+-}
+\ No newline at end of file
++}
+diff --git a/src/libprojectM/Renderer/PresetTransition.cpp b/src/libprojectM/Renderer/PresetTransition.cpp
+index 2a27f00..cb76932 100644
+--- a/src/libprojectM/Renderer/PresetTransition.cpp
++++ b/src/libprojectM/Renderer/PresetTransition.cpp
+@@ -35,10 +35,23 @@ void PresetTransition::InitVertexAttrib()
+ 
+ auto PresetTransition::IsDone() const -> bool
+ {
+-    const auto secondsSinceStart = std::chrono::duration<double>(std::chrono::system_clock::now() - m_transitionStartTime).count();
++    const auto now = m_paused ? m_pausedAt : std::chrono::steady_clock::now();
++    const auto secondsSinceStart = std::chrono::duration<double>(now - m_transitionStartTime).count();
+     return m_durationSeconds <= 0.0 || secondsSinceStart >= m_durationSeconds;
+ }
+ 
++void PresetTransition::SetPaused(bool paused)
++{
++    if (paused == m_paused) return;
++    const auto now = std::chrono::steady_clock::now();
++    if (paused) m_pausedAt = now;
++    else {
++        m_transitionStartTime += now - m_pausedAt;
++        m_lastFrameTime += now - m_pausedAt;
++    }
++    m_paused = paused;
++}
++
+ void PresetTransition::Draw(const Preset& oldPreset,
+                             const Preset& newPreset,
+                             const RenderContext& context,
+@@ -54,7 +67,7 @@ void PresetTransition::Draw(const Preset& oldPreset,
+     std::mt19937 rand32(m_randomDevice());
+ 
+     // Calculate progress values
+-    const auto secondsSinceStart = std::chrono::duration<double>(std::chrono::system_clock::now() - m_transitionStartTime).count();
++    const auto secondsSinceStart = std::chrono::duration<double>(std::chrono::steady_clock::now() - m_transitionStartTime).count();
+ 
+     // If duration is zero,
+     double linearProgress{1.0};
+@@ -81,7 +94,7 @@ void PresetTransition::Draw(const Preset& oldPreset,
+                                                             m_durationSeconds});
+ 
+     m_transitionShader->SetUniformFloat2("timeParams", {secondsSinceStart,
+-                                                        std::chrono::duration<float>(std::chrono::system_clock::now() - m_lastFrameTime).count()});
++                                                        std::chrono::duration<float>(std::chrono::steady_clock::now() - m_lastFrameTime).count()});
+ 
+     m_transitionShader->SetUniformInt4("iRandStatic", m_staticRandomValues);
+ 
+@@ -130,7 +143,7 @@ void PresetTransition::Draw(const Preset& oldPreset,
+     Shader::Unbind();
+ 
+     // Update last frame time.
+-    m_lastFrameTime = std::chrono::system_clock::now();
++    m_lastFrameTime = std::chrono::steady_clock::now();
+ }
+ 
+ } // namespace Renderer
+diff --git a/src/libprojectM/Renderer/PresetTransition.hpp b/src/libprojectM/Renderer/PresetTransition.hpp
+index 2623324..3ce8bf0 100644
+--- a/src/libprojectM/Renderer/PresetTransition.hpp
++++ b/src/libprojectM/Renderer/PresetTransition.hpp
+@@ -31,6 +31,7 @@ public:
+      * @return false if the transition is still in progress, true if it's done.
+      */
+     auto IsDone() const -> bool;
++    void SetPaused(bool paused);
+ 
+     /**
+      * @brief Updates the transition variables and renders the shader quad to the current FBO.
+@@ -60,8 +61,10 @@ private:
+     std::shared_ptr<Sampler> m_presetSampler{std::make_shared<Sampler>(GL_CLAMP_TO_EDGE, GL_LINEAR)}; //!< Sampler for preset textures. Uses bilinear interpolation and no repeat.
+ 
+     double m_durationSeconds{3.0};                                                                              //!< Transition duration in seconds.
+-    std::chrono::time_point<std::chrono::system_clock> m_transitionStartTime{std::chrono::system_clock::now()}; //!< Start time of this transition. Duration is measured from this point.
+-    std::chrono::time_point<std::chrono::system_clock> m_lastFrameTime{std::chrono::system_clock::now()};       //!< Time when the previous frame was rendered.
++    std::chrono::steady_clock::time_point m_transitionStartTime{std::chrono::steady_clock::now()};
++    std::chrono::steady_clock::time_point m_lastFrameTime{std::chrono::steady_clock::now()};
++    std::chrono::steady_clock::time_point m_pausedAt{};
++    bool m_paused{false};
+ 
+     glm::ivec4 m_staticRandomValues{}; //!< Four random integers, remaining static during the whole transition.
+ 
+diff --git a/src/libprojectM/TimeKeeper.cpp b/src/libprojectM/TimeKeeper.cpp
+index 612b0ab..26285c2 100644
+--- a/src/libprojectM/TimeKeeper.cpp
++++ b/src/libprojectM/TimeKeeper.cpp
+@@ -16,7 +16,8 @@ TimeKeeper::TimeKeeper(double presetDuration, double smoothDuration, double hard
+ 
+ void TimeKeeper::UpdateTimers()
+ {
+-    auto currentTime = std::chrono::high_resolution_clock::now();
++    if (m_paused) return;
++    auto currentTime = std::chrono::steady_clock::now();
+ 
+     double currentFrameTime = std::chrono::duration<double>(currentTime - m_startTime).count();
+     m_secondsSinceLastFrame = currentFrameTime - m_currentTime;
+@@ -25,6 +26,15 @@ void TimeKeeper::UpdateTimers()
+     m_presetFrameB++;
+ }
+ 
++void TimeKeeper::SetPaused(bool paused)
++{
++    if (paused == m_paused) return;
++    const auto now = std::chrono::steady_clock::now();
++    if (paused) m_pausedAt = now;
++    else m_startTime += now - m_pausedAt;
++    m_paused = paused;
++}
++
+ void TimeKeeper::StartPreset()
+ {
+     m_isSmoothing = false;
+diff --git a/src/libprojectM/TimeKeeper.hpp b/src/libprojectM/TimeKeeper.hpp
+index 23d17df..8016528 100644
+--- a/src/libprojectM/TimeKeeper.hpp
++++ b/src/libprojectM/TimeKeeper.hpp
+@@ -12,6 +12,7 @@ public:
+     TimeKeeper(double presetDuration, double smoothDuration, double hardcutDuration, double easterEgg);
+ 
+     void UpdateTimers();
++    void SetPaused(bool paused);
+ 
+     void StartPreset();
+ 
+@@ -88,7 +89,9 @@ public:
+ 
+ private:
+     /* The first ticks value of the application */
+-    std::chrono::high_resolution_clock::time_point m_startTime{std::chrono::high_resolution_clock::now()};
++    std::chrono::steady_clock::time_point m_startTime{std::chrono::steady_clock::now()};
++    std::chrono::steady_clock::time_point m_pausedAt{};
++    bool m_paused{false};
+ 
+     std::random_device m_randomDevice{};
+     std::mt19937 m_randomGenerator{m_randomDevice()};

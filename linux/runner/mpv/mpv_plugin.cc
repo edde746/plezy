@@ -1208,7 +1208,10 @@ static FlMethodResponse* visualizer_method(MpvPlugin* self, const char* method, 
     if (!path || !root || fl_value_get_type(path) != FL_VALUE_TYPE_STRING || fl_value_get_type(root) != FL_VALUE_TYPE_STRING)
       return failure("INVALID_ARGS", "A preset path and installed asset root are required.");
     std::string error;
-    if (!self->visualizer->LoadPreset(fl_value_get_string(path), fl_value_get_string(root), &error))
+    auto* duration = arg("transitionSeconds");
+    const double seconds = duration && fl_value_get_type(duration) == FL_VALUE_TYPE_FLOAT
+        ? fl_value_get_float(duration) : 3.0;
+    if (!self->visualizer->LoadPreset(fl_value_get_string(path), fl_value_get_string(root), seconds, &error))
       return failure("VISUALIZER_PRESET", error);
   } else if (strcmp(method, "visualizerResize") == 0) {
     const int64_t width = integer("width", 0), height = integer("height", 0);

@@ -1,8 +1,15 @@
 # Native integration probe — 2026-10-28
 
-## Result
+## Current result
 
-The Linux native-renderer integration is not implemented. The released renderer API was checked before adding a Flutter adapter.
+The source gaps described below have now been addressed for a provisional Linux
+host. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for the current
+ledger. Patched dependency binaries and the V1/V2 runtime exit evidence remain
+outstanding; the initial probe is retained as the rationale for the patches.
+
+## Initial API findings
+
+The released renderer API was checked before adding a Flutter adapter.
 
 Flutter's Linux FlTextureGL contract calls populate with Flutter's OpenGL context current and expects the plugin to return a GL texture name, target, width, and height. projectM's latest released version is 4.1.8 (released 2026-10-06). Its released render_opengl.h exports projectm_opengl_render_frame(), and the v4.1.8 implementation binds GL_DRAW_FRAMEBUFFER to 0. It therefore cannot directly render into the texture owned by a Flutter external texture using its released C API.
 
@@ -14,9 +21,9 @@ PlezyNG's music player owns a dedicated libmpv audio-only core. The existing Dar
 
 The implementation path must add a bounded PCM tap to the same pinned native playback core and feed it to the renderer. It must not start another decoder or synthesize PCM/FFT data. Preserve the existing output path and passthrough; if the active output mode cannot provide PCM, report the visualizer as unavailable for that session.
 
-## Gate and next action
+## Initial gate
 
-V1 (native rendering) and V2 (playback PCM) remain unimplemented. The first vertical slice can proceed when the native dependency build can provide both a stable user-FBO render entry point and a same-player PCM tap. It must then be checked with a real local preset, actual playback PCM, resize/pause/dispose, clean failure fallback, and a capture on a supported Linux GPU. No build, test, CI run, rendering capture, or device qualification was performed for this probe.
+The probe identified the stable user-FBO entry point and same-player PCM tap as prerequisites for V1/V2. Their source implementations now exist. The slice still needs a real local preset, actual playback PCM, resize/pause/dispose, clean failure fallback, and capture evidence on a supported Linux GPU. No build, test, CI run, rendering capture, or device qualification was performed.
 
 ## Source references
 
@@ -32,6 +39,14 @@ both boundaries: an explicit projectM 4.1.8 framebuffer extension and an
 optional mpv 0.41.0 playback PCM tap. The latter copies post-filter frames into
 a bounded native ring with PTS, sample rate, channel layout and reset generation;
 compressed output remains untouched and reports unavailable analysis. Neither
-patch has been built or qualified, and the tap still needs composition with
-the active mpv-build platform patch series before its artifacts can replace
-app dependency pins. This closes the source-design gap, not the V1/V2 exit gates.
+patch has been built or qualified. The tap has been composed after all 23
+common/Linux patches from the locked mpv-build source revision. Other platform
+composition and actual artifacts remain outstanding.
+
+The Linux host now owns a worker EGL context and FBO and publishes native RGBA
+snapshots through Flutter's `FlPixelBufferTexture`. This avoids assuming shared
+Flutter GL contexts, but incurs GPU readback/native-copy costs that must be
+measured. A pause-clock extension freezes both equation and transition clocks.
+The Dart controller, music-service capability, library selection and profile
+preferences connect that host to Now Playing. This is implemented source, not
+proof that the V1/V2 exit gates passed.

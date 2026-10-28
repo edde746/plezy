@@ -1,42 +1,62 @@
 # Visualizer implementation status
 
-Updated: 2026-10-28
+Updated: 2026-10-28. Source work is on [PlezyNG PR #55](https://github.com/snapetech-org/PlezyNG/pull/55) and [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The [original plan](COMPLETION_PLAN.md) and its completion gates remain authoritative. **The end-to-end plan is not complete and neither PR is release-qualified.**
 
-This delivery is tracked by [PlezyNG PR #55](https://github.com/snapetech-org/PlezyNG/pull/55) and [MilkRust PR #20](https://github.com/snapetech-org/MilkRust/pull/20). The original end-to-end plan remains in [`COMPLETION_PLAN.md`](COMPLETION_PLAN.md).
+## Implemented source
 
-## Implemented on the PR branches
+### Native playback and renderer
 
-- PlezyNG keeps the six existing original scenes and now exposes a theme-styled Visualizer Library sheet from their on-screen controls.
-- The sheet can download the versioned CC0 MilkRust fixture pack from an immutable commit URL and SHA-256, verify its package and per-file integrity indexes, enforce archive size/path/file-count limits, validate per-asset author/license/source/notice coverage, show the pack's content notice, cancel downloads, remove canceled partials, and activate completed packs atomically.
-- The sheet can batch import user-provided `.milk` and `.milk2` files into a separate local-import area. Batch count/total bytes and per-file sizes are bounded, and failures are reported without discarding successful imports.
-- The sheet can import `.rmpack` archives from local storage. Archive and expanded sizes are bounded; installation verifies safe paths, every indexed digest, complete attribution coverage, allowlisted redistributable licenses, shipped notices and HTTPS provenance before an atomic install or replacement. Imported packs can be removed from the library.
-- The library now searches pinned-pack metadata, imported pack names/authors/preset titles/tags, and imported loose-preset filenames. Device-local favorites are available for catalog pack entries, imported packs and loose imports; they are not profile-specific and do not make stored presets playable.
-- The sheet exposes upstream links for historical projectM collections whose repository catalog records `NOASSERTION`; PlezyNG does not rehost those packs.
-- MilkRust's compatibility parser recognizes the classic numbered `warp_N` and `comp_N` shader keys and several community indexed-object key forms. The CLI retains files it cannot decode and reports them as unsupported.
-- Both MilkRust expression evaluators now preserve `&&` / `||` short-circuiting and lazy `if()` / ternary branches, apply the reference evaluator's 1e-5 boolean threshold, distinguish boolean `band` / `bor` / `bnot` from bitwise `&` / `|`, and treat `^` as left-associative power. They also implement `invsqrt`, integer `%` / `mod`, `^=` / `%=` / `&=` / `|=`, simple variable/megabuf `if()` lvalue passthrough, `memcpy`/`memset` destination-reference assignment targets, bounded `memset` and the documented no-op `freembuf`; unsupported `bxor` was removed from the claimed MilkDrop function set. Regression cases are committed on MilkRust PR #20 but unrun.
-- The community CLI report now exposes per-file read/parse/current-subset status and per-preset diagnostics, with render and visual-fidelity stages explicitly unassessed. It marks presets that need separate warp/composite stages or MilkDrop 3 saved `.milk2` blend state as blocked by current renderer gaps. Generated pack summaries include a deterministic source-corpus SHA-256.
-- MilkRust's import and compatibility gates reject blank or comments-only preset files instead of treating the absence of unsupported syntax as proof of compatibility.
-- MilkRust's intermediate two-state frame set now resolves shader sources and texture samplers for each preset independently.
-- MilkRust now has a deterministic `.rmpack` builder which refuses packs without explicit redistributable status, per-asset author/license/source records, complete content-file coverage and shipped license notices. The first catalog archive contains only the small CC0-authored sample fixtures.
-- Root npm scripts use the checked-in tool filenames. The stale gap audit was replaced with a source-linked remaining-work inventory.
+- Pinned mpv 0.41.0 and projectM 4.1.8 patches add a bounded same-player PCM tap, caller-owned framebuffer output, and pause-aware monotonic equation/transition clocks. Source revisions, patch digests and upstream notices are committed under `native/visualizer/`.
+- The PCM patch composes after all 23 common/Linux patches in the app's locked mpv-build revision. This was source preparation only. The app's binary dependency lock remains unchanged; no replacement artifact or checksum has been invented.
+- The Linux host negotiates the optional APIs at runtime, uses playback-clock timestamps, preserves original sample rate/channel layout in the tap, downmixes/resamples on a worker, and resets engine state across audio generations. It does not change audio output or open another decoder.
+- The worker owns surfaceless Mesa EGL/GLES 3, projectM, an FBO and RGBA snapshots supplied to a Flutter pixel-buffer texture. PCM and pixels do not cross Dart channels. Rendering is capped at 1280×720 and approximately 30 FPS; this copy/readback path is unmeasured and provisional.
+- Native session leases protect against stale controls/disposal. The controller serializes operations and polls status at 2 Hz. Original scenes remain visible during startup, missing audio, unsupported dependencies and failures. Hidden, paused and reduced-motion states suspend native rendering; profile/player disposal stops its reader before destroying the player.
 
-## Native renderer feasibility probe
+### Library, packs and controls
 
-Read [NATIVE_INTEGRATION_PROBE.md](NATIVE_INTEGRATION_PROBE.md) for the 2026-10-28 API check. Flutter's Linux external-texture API expects a GL texture, while projectM 4.1.8's released API renders to framebuffer 0; projectM's user-FBO entry point is marked for 4.2.0 and is not yet in the released version. The dedicated libmpv music core also exposes no PCM stream through PlezyNG's existing Dart bridge. V1/V2 therefore remain unimplemented pending a pinned native dependency path for both user-FBO rendering and a same-player PCM tap. No test/build/CI was run.
+- The library exposes the immutable CC0 sample-pack download, local `.milk`/`.milk2` import, validated local `.rmpack` import, upstream links for unresolved historical collections, and selectable installed presets when a native renderer is available.
+- Archive/digest, path/case/symlink, expanded-size, file-count, attribution, license and notice checks precede activation. Local archive imports first take a bounded private snapshot. Store mutations are serialized; canceled downloads are checked again before activation. Interrupted replacements restore the previous directory on startup, and partial downloads restart cleanly.
+- Pinned catalog updates can retain previous installed versions and expose Download update when the app ships a newer entry. The catalog remains compiled into the app; this is not a signed remote catalog or resumable transfer service.
+- The browser searches title, author, pack and tags; shows license/content notices; distinguishes `.milk` candidates from unavailable `.milk2` playback; and provides per-preset favorites.
+- Favorites, selection, current list, quality, shuffle/lock, interval and transition choices are scoped by profile. Named playlists support creation, ordering, deletion and bounded JSON import/export of references only. Export does not redistribute preset files or artwork.
+- Previous/next, shuffle, lock, timed changes, transition duration, lower resolution, reload, original-scene selection and fullscreen controls are implemented. Fullscreen reuses the native texture/session; it does not start a second decoder or renderer. Keyboard left/right and Escape are wired. Touch, TV, focus and accessibility behavior remain unqualified.
+- Preference writes are serialized and keep a recovery copy. Asset files are shared at device level. Missing or removed preset references are not automatically downloaded.
 
-## Still open; no release claim
+### MilkRust
 
-- PlezyNG has not integrated a MilkDrop renderer. The downloaded and imported `.milk` files are stored locally and shown in the library, but cannot be selected for playback. The six original scenes remain the only playback visualizers.
-- The current audio path does not expose decoded PCM or live FFT to the visualizer. Plex analyzed loudness and ambient animation remain the existing inputs; neither is reported as live spectrum.
-- MilkRust's expression and shader support is partial. The targeted EEL fixes in PR #20 do not complete generic reference propagation through nested calls/arithmetic, RNG fidelity, complete memory-index edge cases, HLSL semantics, separate warp/composite rendering, feedback/transition behavior, or MilkDrop 3 `.milk2` double-preset behavior.
-- The repo's historical community packs remain `NOASSERTION` and separated from the redistributable fixture. The sample archive is a packaging demonstration, not the requested complete community library.
-- A signed remote catalog, broader cleared community downloads, per-preset favorites/playlists, thumbnails/previews, and app-side compatibility diagnostics remain open. Local `.rmpack` import validates the package's own index and rights metadata but does not authenticate the pack author; it cannot establish MilkDrop compatibility or playback support.
-- Web storage is explicitly unsupported by this first pack store. Native platform builds, actual renderer fidelity, audio latency, memory/performance, TV navigation and physical-device qualification have not been established.
+- Standard numbered shader keys and additional object-key families parse into their intended scopes. Initialization handling, UTF-8/read diagnostics, blank-preset rejection and report denominators have been corrected in source. Render/fidelity stages remain explicitly unassessed.
+- Targeted EEL fixes cover lazy branches, boolean thresholds/operators, power/remainder operations and bounded memory helpers. Assignment destinations are resolved once, avoiding duplicate side effects; integer remainder handles signed-minimum overflow without panicking. Regression source is committed but unrun.
+- Two-state frame construction resolves each preset's shader/texture data independently. Separate warp/composite rendering and saved `.milk2` blend semantics remain blockers; the intermediate frame container does not close either.
+- A deterministic `.rmpack` builder requires a redistribution basis, per-asset provenance and shipped notices. One CC0 fixture archive is published on an immutable repository commit. Historical `NOASSERTION` collections remain link/import sources in PlezyNG.
 
-## Commit and qualification record
+## Completion gates
 
-The source and packaging changes are committed on the draft PR branches. No checks or CI were run, consistent with the current project constraint. The private ephemeral JIT runners and required device/GPU matrix remain the qualification path when enabled. Neither PR is ready to merge as a completed MilkDrop feature until the open engine, audio, licensing and platform gates above are addressed.
+| Package | Current source state | Remaining exit evidence or work |
+| --- | --- | --- |
+| V0 Audit/harness | Identified false-positive and denominator paths repaired | Regenerate the full corpus ledger, account for every original omission, reference/negative-control runs |
+| V1 Native integration | Linux worker/texture/control path implemented | Built shader-preset playback, resize/dispose/context recovery; Apple and other native hosts |
+| V2 Audio | Optional patched PCM ABI and Linux consumer implemented | Patched artifacts on each platform; timing, seeks, gapless, layout/rate/speed, passthrough and overload qualification; live analysis for original scenes |
+| V3 Parser/VM | Targeted syntax/EEL fixes | Full state/reference/RNG/encoding conformance; bounded parser/evaluator coverage |
+| V4 MilkRust rendering | Existing partial web/headless paths | Production native renderer/ABI, complete HLSL and distinct stages, feedback/transition fidelity, `.milk2`, other supported formats |
+| V5 Packaging/catalog | Reproducible builder, one cleared fixture, pinned app catalog | Broader rights-cleared packs, dependencies, real thumbnails, signed remote catalog and key/revocation operations |
+| V6 Local management | Bounded install/import, serialization and crash recovery | Executed hostile/interrupted-input cases, image/compile-time budgets, cache/dependency accounting, migration and broader folder/archive workflows |
+| V7 Downloads | Install/cancel/retry/update/remove source and offline browsing | Actual fresh-install download/play/offline/update flows; persisted transfer metadata/resume policy evidence |
+| V8 UI | Selection, profile preferences, favorites/playlists and controls | Interaction/accessibility/platform review, translations, previews, diagnostics, optional beat switching and content export policy |
+| V9 Qualification | Regression source and concrete gates recorded | Private JIT builds/tests and physical GPU/audio/platform evidence; no cells passed |
+| V10 Release | Draft PRs with plan/source/notices | Produced and verified artifacts, complete corresponding source/dependency notices, release catalog and installed-release checks |
 
-### EEL memory-reference follow-up
+## Native boundaries that prevent a release claim
 
-MilkRust PR #20 now also preserves the destination reference for `memcpy(...) = value` and `memset(...) = value` assignment targets in both expression evaluators. Targeted regression cases cover these forms and remain unrun. Generic references through nested calls/arithmetic and full memory semantics remain open.
+The Linux host requires the patched dependencies and Mesa surfaceless EGL. Default binary artifacts have not gained these extensions. Windows, macOS, iOS/tvOS, Android/TV, webOS and Tizen do not have this native host implementation. Storage/import availability and engine availability are separate.
+
+The in-process renderer catches exceptions, but cannot contain a hung shader compiler or GPU driver. Teardown joins the worker and can therefore block in that case. Process isolation/watchdog behavior, resource budgets and driver recovery remain required work before claiming arbitrary community inputs are safely supported.
+
+A selected `.milk` file is a candidate, not evidence of fidelity. Missing textures and legacy format semantics need explicit corpus validation. `.milk2` is stored but not played by this adapter. Butterchurn JSON, `.shape`/`.wave` fragments and other corpus formats are not completed by this host.
+
+Disclaimers preserve provenance; they do not establish redistribution rights. The two authored fixture presets are not the complete community library. No unsupported family, platform or license state is counted as complete.
+
+## Validation record
+
+Source was inspected and dependency revisions/APIs were read from pinned upstream files. The Linux mpv patch series was composed into a separate clean source checkout. Controller regression source covers disposal during creation, stale leases, missing PCM capability and double-preset rejection.
+
+**No tests, compiler builds, CI jobs, render captures, benchmarks or device qualification ran in this session.** Do not convert source preparation into a test-pass claim. All executable qualification must use compatible private ephemeral JIT runners and the required device matrix under the repository policy. Both PRs remain draft.
