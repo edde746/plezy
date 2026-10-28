@@ -6,9 +6,12 @@ import 'dart:isolate';
 import 'package:archive/archive_io.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+import 'visualizer_content_limits.dart';
 
 /// A pack whose archive and digest are pinned in the application binary.
 /// Runtime catalog URLs are intentionally not trusted to authorize new content.
@@ -27,6 +30,7 @@ class VisualizerPackCatalogEntry {
     required this.presetCount,
     required this.sourceUrl,
     this.searchText = '',
+    this.bundledAsset,
   });
 
   final String id;
@@ -42,6 +46,7 @@ class VisualizerPackCatalogEntry {
   final int presetCount;
   final String sourceUrl;
   final String searchText;
+  final String? bundledAsset;
 
   String get fileName => '$id-$version.rmpack';
 
@@ -62,6 +67,7 @@ class VisualizerPackCatalogEntry {
       sourceUrl:
           'https://github.com/snapetech-org/MilkRust/tree/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/examples/sample-pack',
       searchText: 'Warm Scope Blue Shape scope geometry shape fixture',
+      bundledAsset: 'assets/visualizer/milkrust-sample-pack-0.1.0.rmpack',
     ),
   ];
 }
@@ -145,6 +151,7 @@ class VisualizerPackStore {
   static const maxPresetImportBatchBytes = 64 * 1024 * 1024;
   static const maxLocalPackArchiveBytes = 32 * 1024 * 1024;
   static const maxLocalPackExpandedBytes = 64 * 1024 * 1024;
+  static const maxLibraryBytes = 512 * 1024 * 1024;
 
   static const _redistributableLicenses = <String>{
     '0BSD',
@@ -189,6 +196,28 @@ class VisualizerPackStore {
     final result = _assetTail.then((_) => action());
     _assetTail = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
     return result;
+  }
+
+  Future<void> _reserveLibraryBytes(int addedBytes, {String? replacing}) async {
+    final root = await _root();
+    var total = addedBytes, count = 0;
+    Future<void> countDirectory(Directory directory) async {
+      if (!await directory.exists()) return;
+      await for (final item in directory.list(followLinks: false)) {
+        if (++count > 100000) throw const VisualizerPackException('The preset library contains too many files.');
+        final name = p.basename(item.path);
+        if (name.startsWith('.stage-') || name.endsWith('.partial') || name.endsWith('.previous') ||
+            item.path == replacing) continue;
+        if (item is Directory) await countDirectory(item);
+        else if (item is File) total += await item.length();
+        if (total > maxLibraryBytes) {
+          throw const VisualizerPackException('The preset library would exceed 512 MB. Remove unused packs or older versions first.');
+        }
+      }
+    }
+    for (final lane in ['packs', 'community-packs', 'imports']) {
+      await countDirectory(Directory(p.join(root.path, lane)));
+    }
   }
 
   Future<Directory> _createRoot() async {
@@ -500,6 +529,7 @@ class VisualizerPackStore {
       }
       final summary = await _validatePack(stage, extracted);
       final target = Directory(p.join(packsRoot.path, summary.id, summary.version));
+      await _reserveLibraryBytes(expandedBytes, replacing: target.path);
       final backup = Directory('${target.path}.previous');
       await target.parent.create(recursive: true);
       if (await backup.exists()) await backup.delete(recursive: true);
@@ -559,6 +589,27 @@ class VisualizerPackStore {
     void Function(double progress)? onProgress,
   }) => _assetOperation(() => _install(entry, cancellation: cancellation, onProgress: onProgress));
 
+  /// Activate the small, pinned starter archive without a network request.
+  /// The receipt survives removal so reopening the library respects that choice.
+  /// A failed/interrupted first install retries on the next library opening.
+  Future<void> ensureStarterPack() => _assetOperation(() async {
+    if (!isStorageSupported) return;
+    final root = await _root();
+    for (final entry in VisualizerPackCatalogEntry.available) {
+      if (entry.bundledAsset == null) continue;
+      final receipt = File(p.join(root.path, '${entry.id}-${entry.version}.bundled'));
+      if (await receipt.exists()) continue;
+      final target = Directory(p.join(root.path, 'packs', entry.id, entry.version));
+      var valid = false;
+      try {
+        final manifest = await _readPackManifest(target);
+        valid = manifest['id'] == entry.id && manifest['version'] == entry.version;
+      } on Object { /* Install or repair only the application-owned starter. */ }
+      if (!valid) await _install(entry);
+      await receipt.writeAsString(entry.sha256, flush: true);
+    }
+  });
+
   Future<void> _install(
     VisualizerPackCatalogEntry entry, {
     VisualizerPackInstallCancellation? cancellation,
@@ -580,40 +631,49 @@ class VisualizerPackStore {
     if (await stage.exists()) await stage.delete(recursive: true);
 
     try {
-      final uri = Uri.parse(entry.archiveUrl);
-      if (uri.scheme != 'https' || uri.host != 'raw.githubusercontent.com') {
-        throw const VisualizerPackException('The pack catalog contains an untrusted download host.');
-      }
-      final request = http.AbortableRequest('GET', uri, abortTrigger: cancellation == null
-          ? requestAbort.abortTrigger : Future.any([requestAbort.abortTrigger, cancellation.abortTrigger]));
-      request.followRedirects = false; // The app pins the origin as well as the digest.
-      final response = await _client.send(request).timeout(const Duration(seconds: 30));
-      if (response.statusCode != HttpStatus.ok) {
-        throw VisualizerPackException('Pack download failed with HTTP ${response.statusCode}.');
-      }
-      final announcedLength = response.contentLength;
-      if (announcedLength != null &&
-          (announcedLength != entry.archiveBytes || announcedLength > maxArchiveBytes)) {
-        throw const VisualizerPackException('The downloaded pack size does not match its catalog entry.');
-      }
-      final sink = download.openWrite();
-      var received = 0;
-      try {
-        await for (final chunk in response.stream.timeout(const Duration(seconds: 30))) {
-          checkCancellation();
-          received += chunk.length;
-          if (received > maxArchiveBytes || received > entry.archiveBytes) {
-            throw const VisualizerPackException('The pack archive exceeds its size limit.');
-          }
-          sink.add(chunk);
-          if (entry.archiveBytes > 0) onProgress?.call(received / entry.archiveBytes);
+      if (entry.bundledAsset != null) {
+        final data = await rootBundle.load(entry.bundledAsset!);
+        checkCancellation();
+        if (data.lengthInBytes != entry.archiveBytes || data.lengthInBytes > maxArchiveBytes) {
+          throw const VisualizerPackException('The bundled pack size does not match its catalog entry.');
         }
-        await sink.flush();
-      } finally {
-        await sink.close();
-      }
-      if (received != entry.archiveBytes) {
-        throw const VisualizerPackException('The downloaded pack is incomplete.');
+        await download.writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), flush: true);
+      } else {
+        final uri = Uri.parse(entry.archiveUrl);
+        if (uri.scheme != 'https' || uri.host != 'raw.githubusercontent.com') {
+          throw const VisualizerPackException('The pack catalog contains an untrusted download host.');
+        }
+        final request = http.AbortableRequest('GET', uri, abortTrigger: cancellation == null
+            ? requestAbort.abortTrigger : Future.any([requestAbort.abortTrigger, cancellation.abortTrigger]));
+        request.followRedirects = false; // The app pins the origin as well as the digest.
+        final response = await _client.send(request).timeout(const Duration(seconds: 30));
+        if (response.statusCode != HttpStatus.ok) {
+          throw VisualizerPackException('Pack download failed with HTTP ${response.statusCode}.');
+        }
+        final announcedLength = response.contentLength;
+        if (announcedLength != null &&
+            (announcedLength != entry.archiveBytes || announcedLength > maxArchiveBytes)) {
+          throw const VisualizerPackException('The downloaded pack size does not match its catalog entry.');
+        }
+        final sink = download.openWrite();
+        var received = 0;
+        try {
+          await for (final chunk in response.stream.timeout(const Duration(seconds: 30))) {
+            checkCancellation();
+            received += chunk.length;
+            if (received > maxArchiveBytes || received > entry.archiveBytes) {
+              throw const VisualizerPackException('The pack archive exceeds its size limit.');
+            }
+            sink.add(chunk);
+            if (entry.archiveBytes > 0) onProgress?.call(received / entry.archiveBytes);
+          }
+          await sink.flush();
+        } finally {
+          await sink.close();
+        }
+        if (received != entry.archiveBytes) {
+          throw const VisualizerPackException('The downloaded pack is incomplete.');
+        }
       }
       final digest = await sha256.bind(download.openRead()).first;
       checkCancellation();
@@ -628,6 +688,7 @@ class VisualizerPackStore {
         throw const VisualizerPackException('The expanded pack size does not match its pinned catalog.');
       }
       await _validatePack(stage, extracted, expectedEntry: entry);
+      await _reserveLibraryBytes(entry.expandedBytes, replacing: target.path);
       checkCancellation();
 
       await target.parent.create(recursive: true);
@@ -682,6 +743,8 @@ class VisualizerPackStore {
     if (extension != '.milk' && extension != '.milk2') {
       throw const VisualizerPackException('Choose a .milk or .milk2 preset file.');
     }
+    try { VisualizerContentLimits.checkPreset(bytes); }
+    on FormatException catch (error) { throw VisualizerPackException(error.message); }
     final safeName = p.basename(name).replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_');
     if (safeName == '.' || safeName == '..' || safeName.isEmpty) {
       throw const VisualizerPackException('The preset filename is not valid.');
@@ -691,6 +754,7 @@ class VisualizerPackStore {
     await root.create(recursive: true);
     final shortName = safeName.length > 160 ? '${safeName.substring(0, 150)}$extension' : safeName;
     final target = File(p.join(root.path, '$digest-$shortName'));
+    await _reserveLibraryBytes(bytes.length, replacing: target.path);
     final stage = File('${target.path}.partial');
     await stage.writeAsBytes(bytes, flush: true);
     await stage.rename(target.path);
@@ -724,12 +788,16 @@ class VisualizerPackStore {
   void dispose() => _client.close();
 
   static String safeArchivePath(String value) {
+    final parts = value.split('/');
     if (value.isEmpty ||
+        value.length > 512 ||
         value.startsWith('/') ||
         value.contains('\\') ||
         value.contains(':') ||
-        value.contains('\x00') ||
-        value.split('/').any((part) => part == '..' || part == '.')) {
+        RegExp(r'[\x00-\x1f\x7f<>"|?*]').hasMatch(value) ||
+        parts.any((part) => part.isEmpty || part == '..' || part == '.' ||
+            part.length > 240 || part.endsWith(' ') || part.endsWith('.') ||
+            RegExp(r'^(con|prn|aux|nul|com[0-9]|lpt[0-9])($|\.)', caseSensitive: false).hasMatch(part))) {
       throw const VisualizerPackException('The pack contains an unsafe file path.');
     }
     return value;
@@ -747,11 +815,20 @@ class VisualizerPackStore {
       }
       var declaredTotal = 0;
       final seenPaths = <String>{};
+      final pathSpellings = <String, String>{};
       for (final header in centralDirectory.fileHeaders) {
         final file = header.file!;
-        final name = safeArchivePath(file.filename);
-        final normalizedHeaderName = safeArchivePath(header.filename);
+        // Directory entries in ordinary ZIPs have one trailing slash.
+        String path(String name) => safeArchivePath(name.endsWith('/') ? name.substring(0, name.length - 1) : name);
+        final name = path(file.filename);
+        final normalizedHeaderName = path(header.filename);
         final folded = name.toLowerCase();
+        final components = name.split('/');
+        for (var i = 1; i <= components.length; i++) {
+          final prefix = components.take(i).join('/');
+          final prior = pathSpellings.putIfAbsent(prefix.toLowerCase(), () => prefix);
+          if (prior != prefix) throw const VisualizerPackException('Pack paths disagree on directory or filename casing.');
+        }
         if (name != normalizedHeaderName ||
             !seenPaths.add(folded) ||
             file.uncompressedSize < 0 ||
@@ -933,6 +1010,43 @@ class VisualizerPackStore {
     final expectedAssets = listedFiles.where((path) => path != 'manifest.json' && !licensePaths.contains(path)).toSet();
     if (assetPaths.length != expectedAssets.length || !assetPaths.containsAll(expectedAssets)) {
       throw const VisualizerPackException('The pack attribution list does not cover every content file.');
+    }
+    // A self-contained pack is the supported unit. Missing external dependencies
+    // must not activate as a supposedly ready preset library.
+    final dependencies = parsed['dependencies'];
+    if (dependencies != null && (dependencies is! List || dependencies.isNotEmpty)) {
+      throw const VisualizerPackException('This pack requires external dependencies. Import a self-contained pack.');
+    }
+    var imagePixels = 0;
+    for (final relative in listedFiles) {
+      try {
+        VisualizerContentLimits.checkAssetPath(relative, isNotice: licensePaths.contains(relative));
+        final extension = p.extension(relative).toLowerCase();
+        if (VisualizerContentLimits.imageExtensions.contains(extension)) {
+          final bytes = await File(p.join(directory.path, ...relative.split('/'))).readAsBytes();
+          imagePixels += VisualizerContentLimits.imagePixels(extension, bytes);
+          if (imagePixels > VisualizerContentLimits.maxPackImagePixels) {
+            throw const FormatException('Pack textures exceed the combined 32 megapixel budget.');
+          }
+        } else if (extension == '.milk' || extension == '.milk2') {
+          final file = File(p.join(directory.path, ...relative.split('/')));
+          if (await file.length() > VisualizerContentLimits.maxPresetBytes) {
+            throw const FormatException('A preset exceeds 2 MB.');
+          }
+          VisualizerContentLimits.checkPreset(await file.readAsBytes());
+        }
+      } on FormatException catch (error) { throw VisualizerPackException('$relative: ${error.message}'); }
+    }
+    final textures = parsed['textures'];
+    if (textures != null) {
+      if (textures is! List) throw const VisualizerPackException('Invalid texture list.');
+      for (final texture in textures) {
+        if (texture is! Map || texture['file'] is! String ||
+            !listedFiles.contains(safeArchivePath(texture['file'] as String)) ||
+            !VisualizerContentLimits.imageExtensions.contains(p.extension(texture['file'] as String).toLowerCase())) {
+          throw const VisualizerPackException('A declared texture is missing or unsupported.');
+        }
+      }
     }
     final presets = parsed['presets'];
     if (presets is! List || presets.isEmpty ||

@@ -87,6 +87,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
       return;
     }
     try {
+      await _store.ensureStarterPack();
       final results = await Future.wait([
         _store.installedPacks(),
         _store.importedPresets(),
@@ -415,7 +416,7 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                               child: Text('No matching packs or imported presets.'),
                             ),
-                          _sectionTitle(context, 'License-cleared downloads'),
+                          _sectionTitle(context, 'Included packs and downloads'),
                           for (final entry in visibleEntries)
                             Card(
                               child: Padding(
@@ -443,6 +444,8 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(entry.description, style: Theme.of(context).textTheme.bodyMedium),
+                                    if (entry.bundledAsset != null)
+                                      const Text('Included with the app. Installation and restoration work offline.'),
                                     if (olderIds.contains(entry.id) && !installedIds.contains(entry.id))
                                       const Text('Update available. Previous versions stay available in Installed presets.'),
                                     const SizedBox(height: 4),
@@ -481,13 +484,14 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                           OutlinedButton.icon(
                                             onPressed: _installCancellation?.cancel,
                                             icon: const AppIcon(Symbols.close_rounded, size: 18),
-                                            label: const Text('Cancel download'),
+                                            label: const Text('Cancel installation'),
                                           )
                                         else
                                           FilledButton.icon(
                                             onPressed: _busy || !_store.isStorageSupported ? null : () => _install(entry),
                                             icon: const AppIcon(Symbols.download_rounded, size: 18),
-                                            label: Text(olderIds.contains(entry.id) ? 'Download update' : t.downloads.downloadNow),
+                                            label: Text(entry.bundledAsset != null ? 'Restore included pack'
+                                                : olderIds.contains(entry.id) ? 'Download update' : t.downloads.downloadNow),
                                           ),
                                         IconButton(
                                           tooltip: _favorites.contains(_packFavoriteKey(entry.id, entry.version))

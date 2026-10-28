@@ -4,7 +4,9 @@ Open Now Playing, enable the visualizer, then choose the library button. The six
 
 ## Get presets
 
-The Downloads section offers the authored CC0 MilkRust sample pack. Installation verifies the pinned archive and its contents before making the directory active. Cancel stops installation even if the transfer has finished and verification is still running. Retry starts a fresh transfer. When a future app catalog pins a newer version, Download update keeps previous complete versions available in Installed presets.
+The library installs the small authored CC0 MilkRust sample pack from the app bundle when first opened; no download is needed. Removing it is remembered, and Restore included pack reinstalls it offline. The unmodified archive retains its source and notices, which also appear in app acknowledgements. It is a fixture pack whose rendering fidelity remains unqualified.
+
+Installation verifies the pinned archive and its contents before making the directory active. Remote entries use the same verification path; Cancel stops installation even if transfer has finished and verification is still running. Retry starts a fresh transfer. When a future app catalog pins a newer version, Download update keeps previous complete versions available in Installed presets.
 
 Use Import .milk or .milk2 for loose files, or Import .rmpack for a packaged collection with its integrity index, provenance and license notices. Files stay on the device and work offline. A `.milk2` import is stored for future engine support; this renderer cannot play it. Historical collections with unresolved redistribution status have source links rather than app-hosted downloads.
 
@@ -16,12 +18,14 @@ Favorites and display choices belong to the active profile. Filter a list, save 
 
 ## Playback controls
 
-The options menu provides Original scenes, preset lock, shuffle, automatic-change interval, transition duration, lower resolution, reload and fullscreen. Lock prevents timed changes. In fullscreen, left/right changes the preset, Escape or Exit fullscreen closes the view, and music continues. Fullscreen reuses the same renderer.
+The options menu provides Original scenes, preset lock, shuffle, automatic-change interval, transition duration, lower resolution, reload, playback details and fullscreen. Lock prevents timed changes. In fullscreen, left/right changes the preset, Escape or Exit fullscreen closes the view, and music continues. Fullscreen reuses the same renderer.
 
 Native rendering pauses with music, backgrounding, a hidden view, or reduced motion. Presets may contain rapid flashes or intense movement. When a preset fails or fresh audio is unavailable, the original scene appears with the status reason; Reload retries with a new worker after an engine failure.
 
 Remove a pack or loose import in the library manager. Removing a pinned pack removes its installed versions; playlist references can remain and are skipped when their files are missing. Downloading or importing files does not alter the six original scenes.
 
 ## Current limits
+
+Imports reject executable asset types, shader includes, ambiguous portable paths, unsupported image layouts and missing declared dependencies. Texture headers are checked before activation: 4096 pixels per side, 8 megapixels per image and 32 megapixels per pack. The installed library is capped at 512 MB; remove unused packs or older versions to make room. These checks do not establish native decoder/driver isolation.
 
 The Linux integration uses native pixel-buffer readback at up to 1280×720 and about 30 FPS; performance and driver behavior have not been qualified. Native hosts for other platforms, a complete custom MilkRust renderer, full shader/`.milk2` fidelity, signed remote catalog updates, broader cleared community packs, previews and physical-device validation remain open. The implementation status document records the complete remaining gates.

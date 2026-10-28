@@ -14,8 +14,8 @@ Updated: 2026-10-28. Source work is on [PlezyNG PR #55](https://github.com/snape
 
 ### Library, packs and controls
 
-- The library exposes the immutable CC0 sample-pack download, local `.milk`/`.milk2` import, validated local `.rmpack` import, upstream links for unresolved historical collections, and selectable installed presets when a native renderer is available.
-- Archive/digest, path/case/symlink, expanded-size, file-count, attribution, license and notice checks precede activation. Local archive imports first take a bounded private snapshot. Store mutations are serialized; canceled downloads are checked again before activation. Interrupted replacements restore the previous directory on startup, and partial downloads restart cleanly.
+- The library bundles the unmodified, immutable CC0 sample archive for first-open offline activation and explicit restoration after removal, alongside remote catalog installation, local `.milk`/`.milk2` import, validated local `.rmpack` import, upstream links for unresolved historical collections, and selectable installed presets when a native renderer is available.
+- Archive/digest, portable path/case/symlink, expanded-size, file-count, attribution, license and notice checks precede activation. Executable asset types and shader includes are rejected. Header checks bound supported textures to 4096 pixels per side, 8 MP per image and 32 MP per pack; a 512 MB device-library budget prevents unlimited installed growth. Declared missing textures/dependencies fail activation. Local archive imports first take a bounded private snapshot. Store mutations are serialized; canceled downloads are checked again before activation. Interrupted replacements restore the previous directory on startup, and partial downloads restart cleanly.
 - Pinned catalog updates can retain previous installed versions and expose Download update when the app ships a newer entry. The catalog remains compiled into the app; this is not a signed remote catalog or resumable transfer service.
 - The browser searches title, author, pack and tags; shows license/content notices; distinguishes `.milk` candidates from unavailable `.milk2` playback; and provides per-preset favorites.
 - Favorites, selection, current list, quality, shuffle/lock, interval and transition choices are scoped by profile. Named playlists support creation, ordering, deletion and bounded JSON import/export of references only. Export does not redistribute preset files or artwork.
@@ -39,10 +39,10 @@ Updated: 2026-10-28. Source work is on [PlezyNG PR #55](https://github.com/snape
 | V2 Audio | Optional patched PCM ABI and Linux consumer implemented | Patched artifacts on each platform; timing, seeks, gapless, layout/rate/speed, passthrough and overload qualification; live analysis for original scenes |
 | V3 Parser/VM | Targeted syntax/EEL fixes | Full state/reference/RNG/encoding conformance; bounded parser/evaluator coverage |
 | V4 MilkRust rendering | Existing partial web/headless paths | Production native renderer/ABI, complete HLSL and distinct stages, feedback/transition fidelity, `.milk2`, other supported formats |
-| V5 Packaging/catalog | Reproducible builder, one cleared fixture, pinned app catalog | Broader rights-cleared packs, dependencies, real thumbnails, signed remote catalog and key/revocation operations |
-| V6 Local management | Bounded install/import, serialization and crash recovery | Executed hostile/interrupted-input cases, image/compile-time budgets, cache/dependency accounting, migration and broader folder/archive workflows |
+| V5 Packaging/catalog | Reproducible builder, bundled cleared fixture with acknowledgements, pinned app catalog | Broader rights-cleared packs, dependencies, real thumbnails, signed remote catalog and key/revocation operations |
+| V6 Local management | Bounded install/import, serialization and crash recovery | Executed hostile/interrupted-input cases, compile-time budgets, shared dependency accounting, migration and broader folder/archive workflows |
 | V7 Downloads | Install/cancel/retry/update/remove source and offline browsing | Actual fresh-install download/play/offline/update flows; persisted transfer metadata/resume policy evidence |
-| V8 UI | Selection, profile preferences, favorites/playlists and controls | Interaction/accessibility/platform review, translations, previews, diagnostics, optional beat switching and content export policy |
+| V8 UI | Selection, profile preferences, favorites/playlists and controls | Interaction/accessibility/platform review, translations, previews, richer per-preset diagnostics, optional beat switching and content export policy |
 | V9 Qualification | Regression source and concrete gates recorded | Private JIT builds/tests and physical GPU/audio/platform evidence; no cells passed |
 | V10 Release | Draft PRs with plan/source/notices | Produced and verified artifacts, complete corresponding source/dependency notices, release catalog and installed-release checks |
 
@@ -58,6 +58,6 @@ Disclaimers preserve provenance; they do not establish redistribution rights. Th
 
 ## Validation record
 
-Source was inspected and dependency revisions/APIs were read from pinned upstream files. The Linux mpv patch series was composed into a separate clean source checkout. Controller regression source covers disposal during creation, stale leases, missing PCM capability and double-preset rejection.
+Source was inspected and dependency revisions/APIs were read from pinned upstream files. The Linux mpv patch series was composed into a separate clean source checkout. Controller regression source covers disposal during creation, stale leases, missing PCM capability and double-preset rejection. Import-limit regression source covers path aliases, shader includes, executable assets and oversized/truncated texture headers. Both suites remain unrun.
 
 **No tests, compiler builds, CI jobs, render captures, benchmarks or device qualification ran in this session.** Do not convert source preparation into a test-pass claim. All executable qualification must use compatible private ephemeral JIT runners and the required device matrix under the repository policy. Both PRs remain draft.

@@ -218,7 +218,7 @@ V6–V8 now include preset selection, profile-scoped favorites/display choices,
 named playlists and reference import/export, ordering, shuffle/lock/timing,
 transition length, quality reduction, fullscreen, download cancellation,
 version-aware updates, serialized mutations and startup replacement recovery.
-These are source implementations, not executed user-flow or renderer results.
+The existing CC0 fixture archive is also bundled for offline installation, with app acknowledgements, portable-path and texture-header budgets, and a bounded library size. These are source implementations, not executed user-flow or renderer results.
 
 The full completion contract remains open. In particular, a complete native
 MilkRust renderer, faithful shader/.milk2 handling, other platform hosts,
