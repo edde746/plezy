@@ -194,26 +194,49 @@ class SourceController extends ChangeNotifier {
               if (!current(epoch)) return;
               final config = await cloudSync.config(id);
               if (!current(epoch)) return;
-              // Keep source/config state as one profile-scoped snapshot. A
-              // slower load from the previous profile must never overwrite it.
-              sources = loadedSources.where((source) => source.profileId == id).toList(growable: false);
-              cloudSync.resetStatus();
-              syncConfig = config;
-              await downloads.restoreProfile(id, (sourceId) {
-                if (!current(epoch) || !sources.any((source) => source.id == sourceId)) return null;
-                try {
-                  return adapter(sourceId);
-                } on Object {
-                  return null;
+              final profileSources = loadedSources
+                  .where((source) => source.profileId == id)
+                  .toList(growable: false);
+              final stagedAdapters = <String, SourceAdapter>{};
+              var committed = false;
+              try {
+                SourceAdapter? resolveStagedAdapter(String sourceId) {
+                  if (!current(epoch)) return null;
+                  final source = profileSources.where((candidate) => candidate.id == sourceId).firstOrNull;
+                  if (source == null || source.profileId != id) return null;
+                  return stagedAdapters.putIfAbsent(sourceId, () => _createAdapter(source, epoch));
                 }
-              });
-              if (!current(epoch)) return;
-              for (final imported in sources.where((source) => source.options['imported'] == 'true')) {
-                await downloads.reconcileImportedFiles(id, imported);
+
+                await downloads.restoreProfile(id, resolveStagedAdapter);
                 if (!current(epoch)) return;
+                for (final imported in profileSources.where((source) => source.options['imported'] == 'true')) {
+                  await downloads.reconcileImportedFiles(id, imported);
+                  if (!current(epoch)) return;
+                }
+                final profileShelves = await _loadShelves(id, profileSources, epoch);
+                if (!current(epoch)) return;
+
+                // Publish the complete snapshot only after its dependent
+                // downloads, imports, and shelf state have been reconciled.
+                sources = profileSources;
+                cloudSync.resetStatus();
+                syncConfig = config;
+                _adapters.addAll(stagedAdapters);
+                shelves = profileShelves;
+                committed = true;
+                scheduleSync();
+              } finally {
+                if (!committed) {
+                  // restoreProfile may have requeued transfers before an
+                  // imported-file or shelf reconciliation failed. Keep those
+                  // jobs paused and wait for their writers before retiring
+                  // adapters staged for this snapshot.
+                  if (current(epoch)) await downloads.settleCancelled();
+                  for (final adapter in stagedAdapters.values) {
+                    adapter.close();
+                  }
+                }
               }
-              await _shelves(id, epoch);
-              scheduleSync();
             }
             if (current(epoch)) {
               loading = false;
@@ -330,13 +353,16 @@ class SourceController extends ChangeNotifier {
   Future<void> reload() async {
     await ready;
     requireSession();
-    final epoch = generation;
-    final result = await repository.sources(profileId!);
-    if (current(epoch)) {
-      sources = result;
-      await _shelves(profileId!, epoch);
-      _notify();
-    }
+    final epoch = generation, profile = profileId!;
+    final result = (await repository.sources(profile))
+        .where((source) => source.profileId == profile)
+        .toList(growable: false);
+    if (!current(epoch)) return;
+    final nextShelves = await _loadShelves(profile, result, epoch);
+    if (!current(epoch)) return;
+    sources = result;
+    shelves = nextShelves;
+    _notify();
   }
 
   Future<void> forgetProfile(String profile) async {
@@ -355,14 +381,23 @@ class SourceController extends ChangeNotifier {
   }
 
   Future<void> _shelves(String profile, int epoch) async {
+    final nextShelves = await _loadShelves(profile, sources, epoch);
+    if (current(epoch)) shelves = nextShelves;
+  }
+
+  Future<Set<PublicationShelf>> _loadShelves(
+    String profile,
+    List<FileSource> profileSources,
+    int epoch,
+  ) async {
     final cached = await Future.wait(
       PublicationShelf.values.map((shelf) => repository.hasShelfEntries(profile, shelf)),
     );
-    if (!current(epoch)) return;
-    shelves = {
+    if (!current(epoch)) return const {};
+    return {
       for (var index = 0; index < PublicationShelf.values.length; index++)
         if (cached[index] ||
-            sources.any((source) {
+            profileSources.any((source) {
               final configured = source.options['shelves']?.split(',');
               final enabled = configured ?? defaultPublicationShelves(source.kind).map((s) => s.name).toList();
               return enabled.contains(PublicationShelf.values[index].name);
@@ -499,47 +534,57 @@ class SourceController extends ChangeNotifier {
 
   SourceAdapter adapter(String id) {
     requireSession();
+    if (loading) throw const SourceException(SourceFailure.cancelled);
     final epoch = generation;
-    return _adapters.putIfAbsent(id, () {
-      final source = sources.where((s) => s.id == id).firstOrNull;
-      if (source == null || source.profileId != profileId) {
-        throw const SourceException(SourceFailure.authentication);
-      }
-      final transport = SourceTransport(allowHttp: source.options['allowHttp'] == 'true');
-      Future<Map<String, String>> credentials() async {
-        requireSession(epoch);
-        if (source.profileId != profileId) throw const SourceException(SourceFailure.cancelled);
-        final value = await repository.credentials(source);
-        requireSession(epoch);
-        return value;
-      }
+    final source = sources.where((candidate) => candidate.id == id).firstOrNull;
+    if (source == null || source.profileId != profileId) {
+      throw const SourceException(SourceFailure.authentication);
+    }
+    return _adapters.putIfAbsent(id, () => _createAdapter(source, epoch));
+  }
 
-      Future<String> token({bool refresh = false}) async {
-        requireSession(epoch);
-        if (source.profileId != profileId) throw const SourceException(SourceFailure.cancelled);
-        final value = await oauth.accessToken(source, refresh: refresh);
-        requireSession(epoch);
-        return value;
+  SourceAdapter _createAdapter(FileSource source, int epoch) {
+    if (!current(epoch) || blocked || source.profileId != profileId) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    final transport = SourceTransport(allowHttp: source.options['allowHttp'] == 'true');
+    void checkOwner() {
+      if (!current(epoch) || blocked || source.profileId != profileId) {
+        throw const SourceException(SourceFailure.cancelled);
       }
+    }
 
-      Future<Map<String, String>> backgroundCredentials() => credentials();
-      return switch (source.kind) {
-        FileSourceKind.local => LocalSourceAdapter(source, transport),
-        FileSourceKind.webdav => WebDavSourceAdapter(source, transport, credentials),
-        FileSourceKind.googleDrive => GoogleDriveSourceAdapter(source, transport, token, backgroundCredentials),
-        FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token, backgroundCredentials),
-        FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token, backgroundCredentials),
-        FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
-        FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
-        FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
-        FileSourceKind.sftp => SftpSourceAdapter(source, transport, credentials),
-        FileSourceKind.nfs => NfsSourceAdapter(source, transport, credentials),
-        FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
-        FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
-        FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
-        FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
-      };
-    });
+    Future<Map<String, String>> credentials() async {
+      checkOwner();
+      final value = await repository.credentials(source);
+      checkOwner();
+      return value;
+    }
+
+    Future<String> token({bool refresh = false}) async {
+      checkOwner();
+      final value = await oauth.accessToken(source, refresh: refresh);
+      checkOwner();
+      return value;
+    }
+
+    Future<Map<String, String>> backgroundCredentials() => credentials();
+    return switch (source.kind) {
+      FileSourceKind.local => LocalSourceAdapter(source, transport),
+      FileSourceKind.webdav => WebDavSourceAdapter(source, transport, credentials),
+      FileSourceKind.googleDrive => GoogleDriveSourceAdapter(source, transport, token, backgroundCredentials),
+      FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token, backgroundCredentials),
+      FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token, backgroundCredentials),
+      FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
+      FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
+      FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
+      FileSourceKind.sftp => SftpSourceAdapter(source, transport, credentials),
+      FileSourceKind.nfs => NfsSourceAdapter(source, transport, credentials),
+      FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
+      FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
+      FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
+      FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
+    };
   }
 
   Future<SourcePage> browse(String source, {String? parent, String? cursor, String? query}) async {

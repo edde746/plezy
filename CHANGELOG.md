@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Keep file-source activation profile-scoped through download and shelf reconciliation, and stop cloud settings backup or restore when the initiating profile session changes.
 - Add household readiness checks and a QR support flow that drafts a privacy-safe GitHub issue, with optional redacted log upload.
 - Keep Files search accessible during server outages and index identified video titles as well as original filenames, with a bounded migration of existing search data.
 - Rank library copies by verified offline access, reachability, complete parts, device codec acceptance and local/remote/cellular quality limits before resolution, updating the existing copy list when connectivity changes.
