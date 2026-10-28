@@ -417,6 +417,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
       if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
     };
+    final libraryMatches = (_matches ?? const <MediaItem>[]).where((match) => match.isMovie).toList();
     try {
       await Navigator.push(
         context,
@@ -426,6 +427,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
             request: RemoteStreamRequest(type: 'movie', id: id, title: item.title, year: item.year),
             identifiers: identifiers,
             durationMs: item.runtimeMinutes == null ? null : Duration(minutes: item.runtimeMinutes!).inMilliseconds,
+            playbackItem: libraryMatches.length == 1 ? libraryMatches.single : null,
           ),
         ),
       );

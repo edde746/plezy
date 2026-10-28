@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../media/ids.dart';
+import '../../media/media_item.dart';
+import '../../providers/multi_server_provider.dart';
+import '../../services/playback_context.dart';
 import '../../services/remote_streams/real_debrid_client.dart';
 import '../../services/remote_streams/remote_stream_models.dart';
 import '../../services/remote_streams/remote_streaming_provider.dart';
@@ -11,6 +15,7 @@ import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/source_transport.dart';
+import '../../screens/video_player_screen.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -26,11 +31,13 @@ class RemoteStreamPickerScreen extends StatefulWidget {
     required this.request,
     required this.identifiers,
     this.durationMs,
+    this.playbackItem,
   });
 
   final RemoteStreamRequest request;
   final Map<String, String> identifiers;
   final int? durationMs;
+  final MediaItem? playbackItem;
 
   @override
   State<RemoteStreamPickerScreen> createState() => _RemoteStreamPickerScreenState();
@@ -125,7 +132,17 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         throw const RealDebridException(RealDebridFailure.unsupported);
       }
       if (!mounted) return;
-      await _openPlayer(candidate, uri, headers, fileName, size, _selectedSubtitles[_candidateKey(candidate)]);
+      await _openPlayer(
+        candidate,
+        uri,
+        headers,
+        fileName,
+        size,
+        _selectedSubtitles[_candidateKey(candidate)],
+        viaProvider: viaProvider,
+        service: service,
+        profileId: startingProfile,
+      );
     } on RemoteProviderException catch (error) {
       if (mounted && error.reason != RemoteProviderFailure.cancelled) {
         showAppSnackBar(
@@ -231,14 +248,18 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     Map<String, String> headers,
     String fileName,
     int? size,
-    RemoteSubtitle? subtitle,
-  ) async {
+    RemoteSubtitle? subtitle, {
+    required bool viaProvider,
+    required RemoteStreamService? service,
+    required String profileId,
+  }) async {
     final profile = context.read<SourceController>().profileId;
-    if (profile == null || context.read<RemoteStreamingProvider>().profileId != profile) {
+    if (profile == null || profile != profileId || context.read<RemoteStreamingProvider>().profileId != profile) {
       throw const SourceException(SourceFailure.cancelled);
     }
+    final request = widget.request;
     final fileId = sourceDigest(
-      '${candidate.addonId}\u0000${widget.request.id}\u0000${candidate.label}\u0000${candidate.infoHash ?? ''}'
+      '${candidate.addonId}\u0000${request.id}\u0000${candidate.label}\u0000${candidate.infoHash ?? ''}'
       '\u0000${candidate.fileIndex ?? ''}\u0000${candidate.url == null ? '' : sourceDigest(candidate.url.toString())}'
       '\u0000${candidate.externalUrl == null ? '' : sourceDigest(candidate.externalUrl.toString())}',
     );
@@ -252,14 +273,102 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     );
     final entry = SourceEntry(
       sourceId: 'stremio:${candidate.addonId}',
-      id: widget.request.id,
-      title: widget.request.title,
+      id: request.id,
+      title: request.title,
       kind: SourceItemKind.video,
       files: [file],
       identifiers: widget.identifiers,
-      releaseYear: widget.request.year,
-      onlineTitle: widget.request.title,
+      releaseYear: request.year,
+      onlineTitle: request.title,
     );
+    final playbackItem = widget.playbackItem;
+    final serverId = playbackItem?.serverId;
+    if (playbackItem != null && serverId != null) {
+      final manager = context.read<MultiServerProvider>().serverManager;
+      final serverKey = ServerId(serverId);
+      if (manager.isClientOnline(serverKey) && manager.getClient(serverKey) != null) {
+        final streaming = context.read<RemoteStreamingProvider>();
+        Future<({Uri uri, Map<String, String> headers})> renewStream() async {
+          if (streaming.profileId != profileId || !streaming.isReady) {
+            throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+          }
+          late final Uri renewedUri;
+          late final Map<String, String> renewedHeaders;
+          if (viaProvider && candidate.url != null) {
+            final provider = service;
+            if (provider == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
+            final renewed = await streaming.resolveHosterLink(candidate.url!, service: provider);
+            renewedUri = renewed.uri;
+            renewedHeaders = const {};
+          } else if (candidate.url == null && candidate.infoHash != null) {
+            final renewed = await streaming.resolveTorrent(candidate, service: service, request: request);
+            renewedUri = renewed.uri;
+            renewedHeaders = const {};
+          } else {
+            final refreshed = await streaming.streamsFor(request);
+            final current = refreshed.candidates
+                .where(
+                  (row) =>
+                      row.addonId == candidate.addonId &&
+                      row.label == candidate.label &&
+                      row.infoHash == candidate.infoHash &&
+                      row.fileIndex == candidate.fileIndex,
+                )
+                .firstOrNull;
+            if (current?.url == null) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+            renewedUri = current!.url!;
+            renewedHeaders = current.headers;
+          }
+          if (streaming.profileId != profileId || !streaming.isReady) {
+            throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+          }
+          return (uri: renewedUri, headers: renewedHeaders);
+        }
+
+        Future<({Uri uri, Map<String, String> headers})>? renewSubtitle;
+        if (subtitle != null) {
+          renewSubtitle = () async {
+            if (streaming.profileId != profileId || !streaming.isReady) {
+              throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+            }
+            final refreshed = await streaming.streamsFor(request);
+            final current = refreshed.candidates
+                .where(
+                  (row) =>
+                      row.addonId == candidate.addonId &&
+                      row.label == candidate.label &&
+                      row.infoHash == candidate.infoHash &&
+                      row.fileIndex == candidate.fileIndex,
+                )
+                .firstOrNull;
+            final currentSubtitle = current?.subtitles.where((row) => row.id == subtitle.id).firstOrNull;
+            if (currentSubtitle == null || streaming.profileId != profileId || !streaming.isReady) {
+              throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+            }
+            return (uri: currentSubtitle.url, headers: const <String, String>{});
+          };
+        }
+        final descriptor = ExternalPlaybackSource(
+          mediaGlobalKey: playbackItem.globalKey,
+          profileId: profile,
+          uri: uri,
+          headers: headers,
+          renew: renewStream,
+          subtitleUri: subtitle?.url,
+          subtitleTitle: subtitle == null ? null : _subtitleLabel(subtitle),
+          subtitleLanguage: subtitle?.lang,
+          subtitleRenew: renewSubtitle,
+        );
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            settings: const RouteSettings(name: 'video-player-remote-stream'),
+            builder: (_) => VideoPlayerScreen(metadata: playbackItem, externalPlaybackSource: descriptor),
+          ),
+        );
+        return;
+      }
+    }
     await context.read<SourcePlayback>().start(
       entry,
       [file],

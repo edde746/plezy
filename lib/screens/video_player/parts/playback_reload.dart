@@ -569,34 +569,49 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
         await stoppedProgressFuture;
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
-        var playbackContext = await playbackResolver.resolve(
-          PlaybackInitializationOptions(
-            metadata: metadata,
-            selectedMediaIndex: targetMediaIndex,
-            selectedMediaSourceId: selectedMediaSourceId,
-            preferredVersionSignature: preferredVersionSignature,
-            preferredVersionName: preferredVersionName,
-            qualityPreset: targetQualityPreset,
-            selectedAudioStreamId: targetAudioStreamId,
-            preferredAudioTrack: initializationAudioTrack,
-            preferredSubtitleTrack: initializationSubtitleTrack,
-            sessionIdentifier: _playbackSessionIdentifier,
-            transcodeSessionId: _playbackTranscodeSessionId,
-            startPosition: openResumePosition,
-            requestCompatibleDolbyVisionRendition: true,
-            supportedNativeDolbyVisionProfiles: forceServerPlayback
-                ? const {}
-                : VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
-            allowExperimentalDolbyVisionProfile7:
-                !forceServerPlayback &&
-                (Platform.isWindows || Platform.isLinux) &&
-                !PlatformDetector.isWebOSBuild() &&
-                (SettingsService.instanceOrNull?.read(SettingsService.experimentalDolbyVision) ?? false),
-            forceServerPlayback: !_offlineLibraryMode && forceServerPlayback,
-          ),
-          offlineLibraryMode: _offlineLibraryMode,
-          downloadOutranksQuality: downloadOutranksQuality,
-        );
+        final requestedExternalSource = widget.externalPlaybackSource;
+        final shouldUseExternalSource =
+            !_offlineLibraryMode &&
+            !forceServerPlayback &&
+            requestedExternalSource != null &&
+            requestedExternalSource.mediaGlobalKey == metadata.globalKey;
+        final activeExternalSource = shouldUseExternalSource ? _externalSourceFor(metadata) : null;
+        if (shouldUseExternalSource && activeExternalSource == null) {
+          throw StateError('The selected remote stream is no longer available in this profile.');
+        }
+        final PlaybackContext playbackContext;
+        if (activeExternalSource != null) {
+          playbackContext = await _resolveExternalPlaybackContext(metadata, activeExternalSource);
+        } else {
+          playbackContext = await playbackResolver.resolve(
+            PlaybackInitializationOptions(
+              metadata: metadata,
+              selectedMediaIndex: targetMediaIndex,
+              selectedMediaSourceId: selectedMediaSourceId,
+              preferredVersionSignature: preferredVersionSignature,
+              preferredVersionName: preferredVersionName,
+              qualityPreset: targetQualityPreset,
+              selectedAudioStreamId: targetAudioStreamId,
+              preferredAudioTrack: initializationAudioTrack,
+              preferredSubtitleTrack: initializationSubtitleTrack,
+              sessionIdentifier: _playbackSessionIdentifier,
+              transcodeSessionId: _playbackTranscodeSessionId,
+              startPosition: openResumePosition,
+              requestCompatibleDolbyVisionRendition: true,
+              supportedNativeDolbyVisionProfiles: forceServerPlayback
+                  ? const {}
+                  : VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
+              allowExperimentalDolbyVisionProfile7:
+                  !forceServerPlayback &&
+                  (Platform.isWindows || Platform.isLinux) &&
+                  !PlatformDetector.isWebOSBuild() &&
+                  (SettingsService.instanceOrNull?.read(SettingsService.experimentalDolbyVision) ?? false),
+              forceServerPlayback: !_offlineLibraryMode && forceServerPlayback,
+            ),
+            offlineLibraryMode: _offlineLibraryMode,
+            downloadOutranksQuality: downloadOutranksQuality,
+          );
+        }
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         var result = playbackContext.result;
         final mediaClient = playbackContext.reportingClient;

@@ -332,7 +332,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // Versions/mediaInfo come from the committed session; rebuild so the
           // controls pick them up.
           if (!mounted) return false;
-          final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
+          final mediaClient = _playbackContext?.recordsLocalProgress == true
+              ? null
+              : context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
           mediaClientForTracks = mediaClient;
           _resetScrubPreviewForNewItem(
             metadata: _currentMetadata,

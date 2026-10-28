@@ -381,6 +381,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                 if (ids.tvdb != null) 'tvdb': '${ids.tvdb}',
               },
               durationMs: playbackItem.durationMs,
+              playbackItem: playbackItem,
             ),
           ),
         );

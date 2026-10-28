@@ -494,7 +494,22 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Local media still reports live when its server is online; only queue
     // locally when no reporting client is reachable.
-    if (mediaClient != null) {
+    if (_playbackContext?.recordsLocalProgress == true) {
+      bool externalProgressOwnerIsCurrent() =>
+          _externalStreamGatewayValid && _externalSourceFor(metadata) != null;
+
+      _progressTracker = PlaybackProgressTracker(
+        client: null,
+        metadata: metadata,
+        player: currentPlayer,
+        localOnly: true,
+        offlineWatchService: offlineWatchService,
+        canReportPlayback: () =>
+            _firstFrame.rendered && !_hasFatalPlaybackError && externalProgressOwnerIsCurrent(),
+        hasRenderedPlayback: () => _firstFrame.rendered && externalProgressOwnerIsCurrent(),
+      );
+      _progressTracker!.startTracking();
+    } else if (mediaClient != null) {
       // Captured now (synchronously); resolved at scrobble time because the
       // play queue holding the siblings is created fire-and-forget and may
       // not exist yet when the tracker is wired.
@@ -585,7 +600,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Get a live reporting client when possible. Downloaded/local playback
     // still uses this path when the server is reachable.
-    final mediaClient = _playbackContext?.reportingClient ?? _getOnlineMediaServerClient(context);
+    final mediaClient = _playbackContext?.recordsLocalProgress == true
+        ? null
+        : _playbackContext?.reportingClient ?? _getOnlineMediaServerClient(context);
     // Live never reports progress, so it neither queues offline updates nor
     // needs the provider that owns them.
     final offlineWatchService = widget.isLive ? null : context.read<OfflineWatchSyncService>();
@@ -655,6 +672,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         // Live reports through [_sendLiveTimeline] alone; Discord and the
         // trackers were never started for it.
         if (widget.isLive) return;
+        if (_playbackContext?.recordsLocalProgress == true) return;
         DiscordRPCService.instance.updatePosition(position);
         TrackerCoordinator.instance.updatePosition(position);
         // Keep the trackers' known duration current — mpv only emits on the
@@ -668,6 +686,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       // Listen to playback rate changes for Discord Rich Presence
       _mediaControlSubscriptions.add(
         currentPlayer.streams.rate.listen((rate) {
+          if (_playbackContext?.recordsLocalProgress == true) return;
           DiscordRPCService.instance.updatePlaybackSpeed(rate);
         }),
       );
@@ -823,12 +842,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _mediaControls.pushPlaybackState();
 
     // Update Discord Rich Presence + real-time trackers
-    if (isPlaying) {
-      DiscordRPCService.instance.resumePlayback();
-      TrackerCoordinator.instance.resumePlayback();
-    } else {
-      DiscordRPCService.instance.pausePlayback();
-      TrackerCoordinator.instance.pausePlayback();
+    if (_playbackContext?.recordsLocalProgress != true) {
+      if (isPlaying) {
+        DiscordRPCService.instance.resumePlayback();
+        TrackerCoordinator.instance.resumePlayback();
+      } else {
+        DiscordRPCService.instance.pausePlayback();
+        TrackerCoordinator.instance.pausePlayback();
+      }
     }
 
     // Update auto-PiP readiness

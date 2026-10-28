@@ -47,8 +47,16 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 - Play direct HTTP streams, select add-on subtitles, open explicit external
   links, or resolve supported hash/file-host candidates through a selected
   connected provider.
+- When a Stremio result is launched from a uniquely matched server movie or
+  episode, use the regular video player and its existing queue, next-item
+  flow, subtitle controls and PiP. Signed stream URLs and headers stay behind
+  the session loopback gateway. Expired primary links get one single-flight
+  re-resolution of the same add-on candidate or provider job. Resume offsets
+  are durably queued for the owning server without sending an active “now
+  playing” session for an external stream.
 - Keep provider credentials and add-on URLs encrypted and scoped to the active
-  profile; use the existing source-player surface and local resume journal.
+  profile; use the existing source-player surface and local resume journal for
+  catalog-only playback and standalone cloud files.
   Unreadable saved settings remain intact until the user explicitly clears
   them to reconnect; a temporarily locked device uses a retry path.
 - Read the authorization QR's service label and copy the activation code with
@@ -65,11 +73,13 @@ stores a signed stream URL. TorBox recovery polls the saved torrent ID and does
 not create a replacement. Transient failures receive a capped retry with
 backoff. It runs in the app runtime, so OS suspension can pause it; this is not
 an OS-scheduled background worker, and jobs without a reusable provider ID
-still need a user action. Cloud progress stays in the profile-local Files and
-books journal and is not reported to Plex/Jellyfin/Emby. This does not add an
-always-running preparation worker, unified server playback queue, native
-torrent engine, or platform P2P packages. Home's cloud poster row is not
-currently shown in the dedicated TV spotlight composition.
+still need a user action. A Stremio choice from a matched server item now uses
+the normal video player and queue, with resume offsets reconciled through the
+existing watch queue. This does not merge cloud files into server library
+cards or make the standalone source player queue-aware. Preparation remains
+app-runtime work, not an always-running OS worker. A native torrent engine
+and platform P2P packages are absent. Home's cloud poster row is not currently
+shown in the dedicated TV spotlight composition.
 
 ## Target experience after full completion
 

@@ -44,6 +44,12 @@ class PlaybackProgressTracker {
   /// Whether playback is in offline mode
   final bool isOffline;
 
+  /// The selected source belongs to a library item, but this playback must
+  /// not open an active server playback session. Progress is queued through
+  /// the local watch queue so resume state remains durable without claiming
+  /// that the server supplied the stream.
+  final bool localOnly;
+
   /// Service for queuing offline progress updates
   final OfflineWatchSyncService? offlineWatchService;
 
@@ -217,6 +223,7 @@ class PlaybackProgressTracker {
     required this.metadata,
     required this.player,
     this.isOffline = false,
+    this.localOnly = false,
     this.offlineWatchService,
     this.queueOnOnlineFailure = false,
     this.playMethod,
@@ -230,9 +237,11 @@ class PlaybackProgressTracker {
     this.burnedSubtitleStreamIndex,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
-       assert(isOffline || client != null, 'client is required when isOffline is false') {
+       assert(!localOnly || offlineWatchService != null, 'offlineWatchService is required for local-only progress'),
+       assert(localOnly || isOffline || client != null, 'client is required when reporting is online'),
+       assert(!localOnly || client == null, 'local-only progress must not report to a server session') {
     final reportingClient = client;
-    _reportSession = isOffline || reportingClient == null
+    _reportSession = isOffline || localOnly || reportingClient == null
         ? null
         : PlaybackReportSession(
             client: reportingClient,
@@ -259,7 +268,7 @@ class PlaybackProgressTracker {
       return;
     }
 
-    if (!isOffline) {
+    if (!isOffline && !localOnly) {
       _trackSelectionSubscription = player.streams.track.listen((_) {
         if (!player.state.isActive && (_reportSession?.isIdle ?? true)) return;
         final state = player.state.isActive ? 'playing' : 'paused';
@@ -292,7 +301,9 @@ class PlaybackProgressTracker {
       }
     });
 
-    appLogger.d('Started progress tracking (interval: ${updateInterval.inSeconds}s, offline: $isOffline)');
+    appLogger.d(
+      'Started progress tracking (interval: ${updateInterval.inSeconds}s, offline: $isOffline, local-only: $localOnly)',
+    );
   }
 
   /// One paused keepalive at a time. Reports already go one at a time through
@@ -445,7 +456,11 @@ class PlaybackProgressTracker {
         return;
       }
 
-      if (isOffline) {
+      if (localOnly) {
+        if (!canCommitStoppedProgress) return;
+        await _sendOfflineProgress(position, duration);
+        _notifyProgressIfNeeded(position, duration, force: state == 'stopped', serverAcknowledged: false);
+      } else if (isOffline) {
         // There is no backend session to terminate offline. Do not turn a
         // resume offset into a fresh queued update when this run rendered
         // nothing.
@@ -488,7 +503,7 @@ class PlaybackProgressTracker {
         );
       }
     } catch (e) {
-      if (!isOffline) {
+      if (!isOffline && !localOnly) {
         _recordProgressFailure(e);
         await _queueOnlineFailureProgress(
           attemptedPosition ?? player.state.position,

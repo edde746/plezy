@@ -62,6 +62,7 @@ import '../services/playback_coordinator.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_context.dart';
+import '../services/playback_initialization_types.dart';
 import '../services/local_playback_history.dart';
 import '../services/playback_session.dart';
 import '../services/playback_subtitle_resolver.dart';
@@ -76,6 +77,8 @@ import '../services/media_control_router.dart';
 import '../services/player_sync_offsets.dart';
 import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
+import '../sources/content_access.dart';
+import '../sources/source_controller.dart';
 import '../services/settings_service.dart';
 import '../services/video_decode_capabilities.dart';
 import '../services/storage_service.dart';
@@ -481,6 +484,7 @@ TrackSelectionMemoryEnabler _mediaBrowserTrackMemoryEnabler(
 
 class VideoPlayerScreen extends StatefulWidget {
   final MediaItem metadata;
+  final ExternalPlaybackSource? externalPlaybackSource;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
   final SubtitleTrack? preferredSecondarySubtitleTrack;
@@ -526,6 +530,7 @@ class VideoPlayerScreen extends StatefulWidget {
   const VideoPlayerScreen({
     super.key,
     required this.metadata,
+    this.externalPlaybackSource,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
     this.preferredSecondarySubtitleTrack,
@@ -788,6 +793,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // through its own path). The getters below denormalize it for the many
   // existing read sites.
   PlaybackSession? _playbackSession;
+  SourceController? _externalSourceController;
+  SourceStreamGateway? _externalStreamGateway;
+  bool _externalStreamGatewayValid = true;
+  bool _externalProfileExitQueued = false;
 
   /// Prevent repeated provider searches for the same media source and language
   /// during track-driven reloads in one player session.
@@ -1094,6 +1103,80 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final manager = context.read<MultiServerProvider>().serverManager;
     if (!manager.isClientOnline(ServerId(id))) return null;
     return manager.getClient(ServerId(id));
+  }
+
+  ExternalPlaybackSource? _externalSourceFor(MediaItem metadata) {
+    final source = widget.externalPlaybackSource;
+    if (source == null || source.mediaGlobalKey != metadata.globalKey) return null;
+    final controller = _externalSourceController;
+    if (controller == null || controller.blocked || controller.profileId != source.profileId) return null;
+    return source;
+  }
+
+  Future<PlaybackContext> _resolveExternalPlaybackContext(
+    MediaItem metadata,
+    ExternalPlaybackSource source,
+  ) async {
+    if (_externalSourceFor(metadata) != source || !_externalStreamGatewayValid) {
+      throw StateError('The selected remote stream is no longer available in this profile.');
+    }
+    final gateway = _externalStreamGateway ??= SourceStreamGateway(
+      valid: () => _externalStreamGatewayValid && mounted,
+    );
+    final streamUri = await gateway.registerUri(source.uri, headers: source.headers, renew: source.renew);
+    final sidecars = <PlaybackSubtitleSidecar>[];
+    final subtitleUri = source.subtitleUri;
+    if (subtitleUri != null) {
+      final localSubtitleUri = await gateway.registerUri(subtitleUri, renew: source.subtitleRenew);
+      final path = subtitleUri.pathSegments.isEmpty ? '' : subtitleUri.pathSegments.last;
+      final extension = path.contains('.') ? path.substring(path.lastIndexOf('.') + 1).toLowerCase() : null;
+      final title = source.subtitleTitle?.trim();
+      sidecars.add(
+        PlaybackSubtitleSidecar(
+          sourceStreamId: null,
+          preload: true,
+          track: SubtitleTrack.uri(
+            localSubtitleUri.toString(),
+            title: title == null || title.isEmpty ? source.subtitleLanguage : title,
+            language: source.subtitleLanguage,
+            codec: extension,
+            isDefault: true,
+          ),
+        ),
+      );
+    }
+    if (_externalSourceFor(metadata) != source || !_externalStreamGatewayValid) {
+      throw StateError('The selected remote stream is no longer available in this profile.');
+    }
+    return PlaybackContext(
+      metadata: metadata,
+      result: PlaybackInitializationResult(
+        availableVersions: const [],
+        videoUrl: streamUri.toString(),
+        subtitleSidecars: sidecars,
+        isTranscoding: false,
+        playMethod: 'DirectPlay',
+      ),
+      sourceKind: PlaybackSourceKind.remoteDirect,
+      reportingMode: PlaybackReportingMode.localOnly,
+    );
+  }
+
+  void _handleExternalProfileChanged() {
+    final source = widget.externalPlaybackSource;
+    final controller = _externalSourceController;
+    if (source == null || controller == null ||
+        (!controller.blocked && controller.profileId == source.profileId)) {
+      return;
+    }
+    _externalStreamGatewayValid = false;
+    final gateway = _externalStreamGateway;
+    if (gateway != null) unawaited(gateway.close());
+    if (_externalProfileExitQueued || !mounted) return;
+    _externalProfileExitQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_handleBackButton());
+    });
   }
 
   // Denormalized views over the committed [PlaybackSession]. Read sites
@@ -1407,6 +1490,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
+    if (widget.externalPlaybackSource != null) {
+      try {
+        _externalSourceController = context.read<SourceController?>();
+        _externalSourceController?.addListener(_handleExternalProfileChanged);
+      } on Object {
+        _externalSourceController = null;
+      }
+    }
     PlaybackCoordinator.instance.registerVideoSession(
       shutdown: _shutdownVideo,
       stopAndExit: _stopVideoAndExit,
@@ -1424,7 +1515,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     );
     // Downloads join too: a download of a server that is online is the
     // server's file, which the room can share and follow.
-    if (!widget.isLive) {
+    if (!widget.isLive && widget.externalPlaybackSource == null) {
       try {
         _watchTogetherProvider = context.read<WatchTogetherProvider?>();
       } catch (_) {
@@ -1844,75 +1935,88 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Skipped for live TV (has its own tune path — only the quality preset
       // is resolved below) and offline (its own branch in _startPlayback).
       if (!widget.isLive && !_offlineLibraryMode) {
-        // Backend-neutral lookup so Jellyfin items also flow through here.
-        // Plex-specific transcoder caching is gated on capabilities below;
-        // Jellyfin's `streamHeaders` is empty because it embeds api_key in
-        // the query string, while Plex returns the X-Plex-* identity headers.
-        final genericClient = _getMediaServerClient(context);
-        if (genericClient == null) {
-          throw StateError('No client registered for ${_currentMetadata.serverId}');
-        }
-        // Single source of truth for showing quality controls and applying the
-        // saved startup quality. An explicit per-play pick wins; otherwise the
-        // saved default applies, which on a cellular-only connection is the
-        // cellular one when set. The connection type piggybacks on the app's
-        // single connectivity subscription in OfflineModeProvider.
-        _serverSupportsTranscoding = genericClient.capabilities.videoTranscoding;
-        _selectedQualityPreset =
-            widget.selectedQualityPreset ??
-            TranscodeQualityPreset.resolveStartupDefault(
-              serverSupportsTranscoding: _serverSupportsTranscoding,
-              onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
-              cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
-              generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
-              onRemoteConnection: context.read<MultiServerProvider>().serverManager.isRemoteConnection(
-                genericClient.serverId,
+        final requestedExternalSource = widget.externalPlaybackSource;
+        if (requestedExternalSource != null &&
+            requestedExternalSource.mediaGlobalKey == _currentMetadata.globalKey) {
+          final externalSource = _externalSourceFor(_currentMetadata);
+          if (externalSource == null) {
+            throw StateError('The selected remote stream is no longer available in this profile.');
+          }
+          _serverSupportsTranscoding = false;
+          _selectedQualityPreset = TranscodeQualityPreset.original;
+          _playbackDataFuture = _resolveExternalPlaybackContext(_currentMetadata, externalSource);
+          _playbackDataFuture!.ignore();
+        } else {
+          // Backend-neutral lookup so Jellyfin items also flow through here.
+          // Plex-specific transcoder caching is gated on capabilities below;
+          // Jellyfin's `streamHeaders` is empty because it embeds api_key in
+          // the query string, while Plex returns the X-Plex-* identity headers.
+          final genericClient = _getMediaServerClient(context);
+          if (genericClient == null) {
+            throw StateError('No client registered for ${_currentMetadata.serverId}');
+          }
+          // Single source of truth for showing quality controls and applying the
+          // saved startup quality. An explicit per-play pick wins; otherwise the
+          // saved default applies, which on a cellular-only connection is the
+          // cellular one when set. The connection type piggybacks on the app's
+          // single connectivity subscription in OfflineModeProvider.
+          _serverSupportsTranscoding = genericClient.capabilities.videoTranscoding;
+          _selectedQualityPreset =
+              widget.selectedQualityPreset ??
+              TranscodeQualityPreset.resolveStartupDefault(
+                serverSupportsTranscoding: _serverSupportsTranscoding,
+                onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
+                cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
+                generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
+                onRemoteConnection: context.read<MultiServerProvider>().serverManager.isRemoteConnection(
+                  genericClient.serverId,
+                ),
+                remoteDefault: settingsService.read(SettingsService.remoteQualityPreset),
+              );
+          final playbackResolver = PlaybackSourceResolver(
+            serverManager: context.read<MultiServerProvider>().serverManager,
+            database: context.read<AppDatabase>(),
+          );
+          _playbackDataFuture = playbackResolver.resolve(
+            PlaybackInitializationOptions(
+              metadata: _currentMetadata,
+              selectedMediaIndex: _effectiveSelectedMediaIndex,
+              selectedMediaSourceId: _requestedMediaSourceId,
+              preferredVersionName: widget.preferredVersionName,
+              preferredVersionSignature: widget.preferredVersionSignature,
+              qualityPreset: _selectedQualityPreset,
+              selectedAudioStreamId: _selectedAudioStreamId,
+              preferredAudioTrack: _preferredAudioTrack,
+              preferredSubtitleTrack: _preferredSubtitleTrack,
+              sessionIdentifier: _playbackSessionIdentifier,
+              transcodeSessionId: _playbackTranscodeSessionId,
+              // The backend applies this only to identified DV whose exact
+              // profile is not reported by this platform's playback path. That
+              // makes the decision before local decoding can produce a valid
+              // open with invalid colors.
+              requestCompatibleDolbyVisionRendition: true,
+              supportedNativeDolbyVisionProfiles: VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
+              allowExperimentalDolbyVisionProfile7:
+                  (Platform.isWindows || Platform.isLinux) &&
+                  !PlatformDetector.isWebOSBuild() &&
+                  settingsService.read(SettingsService.experimentalDolbyVision),
+              // The same resume the open will land on (see
+              // _resolveOpenResumePosition): a stacked item opens the file
+              // holding it.
+              startPosition: resolveOpenResumePosition(
+                requested: widget.initialPosition,
+                shuffleFromBeginning: widget.initialPosition == null && _opensShuffledFromBeginning(settingsService),
+                viewOffsetMs: _currentMetadata.viewOffsetMs,
               ),
-              remoteDefault: settingsService.read(SettingsService.remoteQualityPreset),
-            );
-        final playbackResolver = PlaybackSourceResolver(
-          serverManager: context.read<MultiServerProvider>().serverManager,
-          database: context.read<AppDatabase>(),
-        );
-        _playbackDataFuture = playbackResolver.resolve(
-          PlaybackInitializationOptions(
-            metadata: _currentMetadata,
-            selectedMediaIndex: _effectiveSelectedMediaIndex,
-            selectedMediaSourceId: _requestedMediaSourceId,
-            preferredVersionName: widget.preferredVersionName,
-            preferredVersionSignature: widget.preferredVersionSignature,
-            qualityPreset: _selectedQualityPreset,
-            selectedAudioStreamId: _selectedAudioStreamId,
-            preferredAudioTrack: _preferredAudioTrack,
-            preferredSubtitleTrack: _preferredSubtitleTrack,
-            sessionIdentifier: _playbackSessionIdentifier,
-            transcodeSessionId: _playbackTranscodeSessionId,
-            // The backend applies this only to identified DV whose exact
-            // profile is not reported by this platform's playback path. That
-            // makes the decision before local decoding can produce a valid
-            // open with invalid colors.
-            requestCompatibleDolbyVisionRendition: true,
-            supportedNativeDolbyVisionProfiles: VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
-            allowExperimentalDolbyVisionProfile7:
-                (Platform.isWindows || Platform.isLinux) &&
-                !PlatformDetector.isWebOSBuild() &&
-                settingsService.read(SettingsService.experimentalDolbyVision),
-            // The same resume the open will land on (see
-            // _resolveOpenResumePosition): a stacked item opens the file
-            // holding it.
-            startPosition: resolveOpenResumePosition(
-              requested: widget.initialPosition,
-              shuffleFromBeginning: widget.initialPosition == null && _opensShuffledFromBeginning(settingsService),
-              viewOffsetMs: _currentMetadata.viewOffsetMs,
             ),
-          ),
-          offlineLibraryMode: false,
-          downloadOutranksQuality: _downloadOutranksQuality,
-        );
-        // If MPV setup below throws before `_startPlayback` awaits this,
-        // tell Dart we've "handled" the future so it's not reported as an
-        // unhandled async error. The later `await` still receives the error.
-        _playbackDataFuture!.ignore();
+            offlineLibraryMode: false,
+            downloadOutranksQuality: _downloadOutranksQuality,
+          );
+          // If MPV setup below throws before `_startPlayback` awaits this,
+          // tell Dart we've "handled" the future so it's not reported as an
+          // unhandled async error. The later `await` still receives the error.
+          _playbackDataFuture!.ignore();
+        }
       }
       if (widget.isLive) {
         // Live TV skips the resolver but honors the same saved quality
@@ -2630,6 +2734,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
+    _externalSourceController?.removeListener(_handleExternalProfileChanged);
+    _externalSourceController = null;
+    _externalStreamGatewayValid = false;
+    final externalGateway = _externalStreamGateway;
+    _externalStreamGateway = null;
+    if (externalGateway != null) unawaited(externalGateway.close());
     final workspaceSessionId = _workspaceSessionId;
     if (workspaceSessionId != null) {
       _workspaceController?.unregister(workspaceSessionId);

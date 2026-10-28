@@ -1929,6 +1929,8 @@ class _DownloadTask {
 /// A session-owned loopback gateway keeps provider credentials away from
 /// native player logging, redirects and OS metadata. It only serves explicitly
 /// registered files, renews expired leases, and streams with backpressure.
+typedef SourceUriRenewal = Future<({Uri uri, Map<String, String> headers})> Function();
+
 class SourceStreamGateway {
   SourceStreamGateway({required this.valid});
   final bool Function() valid;
@@ -1936,8 +1938,10 @@ class SourceStreamGateway {
   final _secret = SourceOAuthService.randomSecret();
   final Map<String, ({SourceAdapter adapter, PublicationFile file})> _files = {};
   final Map<String, ContentLease> _leases = {};
-  final LinkedHashMap<String, ({Uri uri, Map<String, String> headers})> _directUris = LinkedHashMap();
+  final LinkedHashMap<String, ({Uri uri, Map<String, String> headers, SourceUriRenewal? renew})> _directUris =
+      LinkedHashMap();
   final Map<String, String> _directIdsByUri = {};
+  final Map<String, Future<({Uri uri, Map<String, String> headers})>> _directRenewals = {};
   var _directCounter = 0;
   final _abort = Completer<void>();
 
@@ -1959,7 +1963,11 @@ class SourceStreamGateway {
   /// capability. The native player sees only localhost; credentials and
   /// signed query strings stay in this in-memory proxy and are never logged by
   /// the player or written to the source database.
-  Future<Uri> registerUri(Uri uri, {Map<String, String> headers = const {}}) async {
+  Future<Uri> registerUri(
+    Uri uri, {
+    Map<String, String> headers = const {},
+    SourceUriRenewal? renew,
+  }) async {
     if (!valid()) throw const SourceException(SourceFailure.cancelled);
     if (uri.hasFragment || uri.userInfo.isNotEmpty || !const {'http', 'https'}.contains(uri.scheme)) {
       throw const SourceException(SourceFailure.permission);
@@ -1974,9 +1982,15 @@ class SourceStreamGateway {
       ]),
     );
     final existing = _directIdsByUri[uriText];
-    if (existing != null) return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$existing');
+    if (existing != null) {
+      final registered = _directUris[existing];
+      if (registered != null && registered.renew == null && renew != null) {
+        _directUris[existing] = (uri: registered.uri, headers: registered.headers, renew: renew);
+      }
+      return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$existing');
+    }
     final id = sourceDigest('direct:$_secret:${_directCounter++}');
-    _directUris[id] = (uri: uri, headers: safeHeaders);
+    _directUris[id] = (uri: uri, headers: safeHeaders, renew: renew);
     _directIdsByUri[uriText] = id;
     while (_directUris.length > 4096) {
       final oldest = _directUris.keys.first;
@@ -2017,6 +2031,64 @@ class SourceStreamGateway {
     return Map.unmodifiable(safe);
   }
 
+  bool _sameDirectHeaders(Map<String, String> a, Map<String, String> b) =>
+      a.length == b.length && a.entries.every((entry) => b[entry.key] == entry.value);
+
+  Future<({Uri uri, Map<String, String> headers, SourceUriRenewal? renew})> _renewDirectUri(
+    String id, {
+    required Uri expiredUri,
+    required Map<String, String> expiredHeaders,
+    required SourceUriRenewal renew,
+  }) async {
+    final current = _directUris[id];
+    if (current == null) throw const SourceException(SourceFailure.cancelled);
+    if (current.uri != expiredUri || !_sameDirectHeaders(current.headers, expiredHeaders)) return current;
+
+    final inFlight = _directRenewals[id];
+    if (inFlight != null) {
+      await inFlight;
+      return _directUris[id] ?? (throw const SourceException(SourceFailure.cancelled));
+    }
+
+    final pending = renew();
+    _directRenewals[id] = pending;
+    try {
+      final refreshed = await pending;
+      if (!valid() ||
+          !const {'http', 'https'}.contains(refreshed.uri.scheme) ||
+          refreshed.uri.host.isEmpty ||
+          refreshed.uri.userInfo.isNotEmpty ||
+          refreshed.uri.hasFragment) {
+        throw const SourceException(SourceFailure.permission);
+      }
+      final safeHeaders = _validateDirectHeaders(refreshed.headers);
+      final latest = _directUris[id];
+      if (latest == null) throw const SourceException(SourceFailure.cancelled);
+      // A newer concurrent renewal owns the slot; do not overwrite it with an
+      // older callback result that happened to complete later.
+      if (latest.uri != expiredUri || !_sameDirectHeaders(latest.headers, expiredHeaders)) return latest;
+      final key = sourceDigest(
+        jsonEncode([
+          refreshed.uri.toString(),
+          safeHeaders.entries.map((entry) => [entry.key.toLowerCase(), entry.value]).toList(),
+        ]),
+      );
+      final expiredKey = sourceDigest(
+        jsonEncode([
+          expiredUri.toString(),
+          expiredHeaders.entries.map((entry) => [entry.key.toLowerCase(), entry.value]).toList(),
+        ]),
+      );
+      final next = (uri: refreshed.uri, headers: safeHeaders, renew: renew);
+      _directUris[id] = next;
+      if (_directIdsByUri[expiredKey] == id) _directIdsByUri.remove(expiredKey);
+      _directIdsByUri.putIfAbsent(key, () => id);
+      return next;
+    } finally {
+      if (identical(_directRenewals[id], pending)) _directRenewals.remove(id);
+    }
+  }
+
   Future<void> _serve(HttpRequest request) async {
     try {
       final segments = request.uri.pathSegments;
@@ -2037,7 +2109,7 @@ class SourceStreamGateway {
           request.response.statusCode = 404;
           return;
         }
-        await _serveDirect(request, direct.uri, headers: direct.headers);
+        await _serveDirect(request, id: segments[1], uri: direct.uri, headers: direct.headers, renew: direct.renew);
         return;
       }
       final range = request.headers.value(HttpHeaders.rangeHeader);
@@ -2185,7 +2257,13 @@ class SourceStreamGateway {
     return lines.join('\n');
   }
 
-  Future<void> _serveDirect(HttpRequest request, Uri uri, {Map<String, String> headers = const {}}) async {
+  Future<void> _serveDirect(
+    HttpRequest request, {
+    required String id,
+    required Uri uri,
+    Map<String, String> headers = const {},
+    SourceUriRenewal? renew,
+  }) async {
     final range = request.headers.value(HttpHeaders.rangeHeader);
     if (range != null && !RegExp(r'^bytes=(\d+-\d*|-\d+)$').hasMatch(range)) {
       request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
@@ -2193,13 +2271,35 @@ class SourceStreamGateway {
     }
     final transport = SourceTransport(allowHttp: uri.scheme == 'http');
     try {
-      final upstream = await transport.send(
+      var currentUri = uri;
+      var currentHeaders = headers;
+      var upstream = await transport.send(
         request.method,
-        uri,
-        headers: {...headers, HttpHeaders.rangeHeader: ?range},
+        currentUri,
+        headers: {...currentHeaders, HttpHeaders.rangeHeader: ?range},
         redirects: true,
         abort: _abort.future,
       );
+      if (const {HttpStatus.unauthorized, HttpStatus.forbidden}.contains(upstream.statusCode) && renew != null) {
+        await upstream.stream.drain<void>();
+        if (!valid()) throw const SourceException(SourceFailure.cancelled);
+        final refreshed = await _renewDirectUri(
+          id,
+          expiredUri: currentUri,
+          expiredHeaders: currentHeaders,
+          renew: renew,
+        );
+        currentUri = refreshed.uri;
+        currentHeaders = refreshed.headers;
+        transport.validate(currentUri);
+        upstream = await transport.send(
+          request.method,
+          currentUri,
+          headers: {...currentHeaders, HttpHeaders.rangeHeader: ?range},
+          redirects: true,
+          abort: _abort.future,
+        );
+      }
       request.response.statusCode = upstream.statusCode;
       request.response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
       for (final name in [
@@ -2219,7 +2319,7 @@ class SourceStreamGateway {
       }
 
       final contentType = upstream.headers[HttpHeaders.contentTypeHeader]?.toLowerCase() ?? '';
-      final isHls = uri.path.toLowerCase().endsWith('.m3u8') || contentType.contains('mpegurl');
+      final isHls = currentUri.path.toLowerCase().endsWith('.m3u8') || contentType.contains('mpegurl');
       if (!isHls || upstream.statusCode < 200 || upstream.statusCode >= 300) {
         await request.response.addStream(
           upstream.stream.timeout(const Duration(seconds: 45)).map((bytes) {
@@ -2237,8 +2337,8 @@ class SourceStreamGateway {
         bytes.addAll(chunk);
       }
       final manifest = utf8.decode(bytes, allowMalformed: true);
-      final manifestBase = upstream.request?.url ?? uri;
-      final manifestHeaders = sameSourceOrigin(uri, manifestBase) ? headers : const <String, String>{};
+      final manifestBase = upstream.request?.url ?? currentUri;
+      final manifestHeaders = sameSourceOrigin(currentUri, manifestBase) ? currentHeaders : const <String, String>{};
       final rewritten = utf8.encode(await _rewriteHlsManifest(manifest, manifestBase, manifestHeaders));
       request.response.headers.set(HttpHeaders.contentLengthHeader, rewritten.length);
       await request.response.addStream(Stream<List<int>>.value(rewritten));
@@ -2252,6 +2352,7 @@ class SourceStreamGateway {
     _leases.clear();
     _directUris.clear();
     _directIdsByUri.clear();
+    _directRenewals.clear();
     if (!_abort.isCompleted) _abort.complete();
     await _server?.close(force: true);
     _server = null;
