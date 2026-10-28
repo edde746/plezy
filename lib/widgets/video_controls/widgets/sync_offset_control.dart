@@ -76,6 +76,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   late double _confirmedOffset;
   late double _currentSubtitleRate;
   late double _confirmedSubtitleRate;
+  SubtitleSyncCalibration? _undoSubtitleCalibration;
   int _writeGeneration = 0;
   int _bindingGeneration = 0;
   Timer? _longPressTimer;
@@ -102,6 +103,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
       _confirmedOffset = _currentOffset;
       _currentSubtitleRate = widget.initialSubtitleRate;
       _confirmedSubtitleRate = _currentSubtitleRate;
+      _undoSubtitleCalibration = null;
     }
   }
 
@@ -138,7 +140,12 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             // A write may finish successfully after a newer intent was queued.
             // Keep it as the rollback baseline without replacing the newer
             // optimistic value currently shown by the control.
-            _confirmedOffset = offsetMs;
+            setState(() {
+              _confirmedOffset = offsetMs;
+              if (propertyName == PlayerSyncOffsets.subtitleProperty) {
+                _undoSubtitleCalibration = null;
+              }
+            });
           }
         });
         if (!committed ||
@@ -201,6 +208,9 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             PlayerSyncOffsets.of(targetPlayer).recordApplied(propertyName, offsetMs);
             await persistOffset(offsetMs);
             _confirmedOffset = offsetMs.toDouble();
+            if (propertyName == PlayerSyncOffsets.subtitleProperty) {
+              _undoSubtitleCalibration = null;
+            }
           } catch (_) {
             try {
               await targetPlayer.setProperty(propertyName, (rollbackOffset / 1000.0).toString());
@@ -428,7 +438,34 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
       _currentOffset = calibration.delayMs.toDouble();
       _currentSubtitleRate = calibration.timestampMultiplier;
     });
+    await _saveSubtitleCalibrationWithUndo(calibration);
+  }
+
+  Future<void> _saveSubtitleCalibrationWithUndo(SubtitleSyncCalibration calibration) async {
+    final previous = SubtitleSyncCalibration(
+      timestampMultiplier: _confirmedSubtitleRate,
+      delayMs: _confirmedOffset.round(),
+    );
+    final changed =
+        previous.delayMs != calibration.delayMs ||
+        (previous.timestampMultiplier - calibration.timestampMultiplier).abs() > 0.001;
     await _applySubtitleCalibration(calibration);
+    if (!mounted) return;
+    final applied =
+        _confirmedOffset.round() == calibration.delayMs &&
+        (_confirmedSubtitleRate - calibration.timestampMultiplier).abs() <= 0.001;
+    setState(() => _undoSubtitleCalibration = changed && applied ? previous : null);
+  }
+
+  Future<void> _undoLastSubtitleCalibration() async {
+    final previous = _undoSubtitleCalibration;
+    if (previous == null) return;
+    await _applySubtitleCalibration(previous);
+    if (!mounted) return;
+    final restored =
+        _confirmedOffset.round() == previous.delayMs &&
+        (_confirmedSubtitleRate - previous.timestampMultiplier).abs() <= 0.001;
+    if (restored) setState(() => _undoSubtitleCalibration = null);
   }
 
   Future<bool> _previewSubtitleCalibration(SubtitleSyncCalibration calibration) async {
@@ -691,6 +728,36 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     );
   }
 
+  Widget _buildUndoSubtitleDriftButton() {
+    final label = _subtitleDriftText('subtitleDriftUndo');
+    return FocusableWrapper(
+      onSelect: _undoLastSubtitleCalibration,
+      borderRadius: 8,
+      autoScroll: false,
+      useBackgroundFocus: true,
+      child: Tooltip(
+        message: label,
+        child: Semantics(
+          button: true,
+          label: label,
+          child: GestureDetector(
+            onTap: _undoLastSubtitleCalibration,
+            child: Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
+              ),
+              child: AppIcon(Symbols.undo_rounded, color: tokens(context).text, size: 20),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSubtitleStepButton({required bool previous}) {
     final label = previous ? t.shortcuts.subtitleDelayIncrease : t.shortcuts.subtitleDelayDecrease;
     return FocusableWrapper(
@@ -746,7 +813,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
         _currentOffset = 0;
         _currentSubtitleRate = 1.0;
       });
-      unawaited(_applySubtitleCalibration(reset));
+      unawaited(_saveSubtitleCalibrationWithUndo(reset));
       return;
     }
     setState(() {
@@ -1002,6 +1069,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                   _buildSubtitleStepButton(previous: true),
                   _buildSubtitleStepButton(previous: false),
                   if (_supportsSubtitleDriftCalibration) _buildSubtitleDriftButton(),
+                  if (_undoSubtitleCalibration != null) _buildUndoSubtitleDriftButton(),
                 ],
               ),
             ),

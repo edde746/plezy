@@ -2639,6 +2639,7 @@
       "subtitleDriftPreview": "Preview correction",
       "subtitleDriftPreviewActive": "Preview active. Save to keep this correction, or cancel to restore the previous timing.",
       "subtitleDriftPreviewFailed": "The player could not preview this correction. The previous timing was restored.",
+      "subtitleDriftUndo": "Undo drift calibration",
       "subtitleCueTimeAnchor1": "Subtitle cue 1 time",
       "subtitlePlaybackTimeAnchor1": "Playback position for cue 1",
       "subtitleCueTimeAnchor2": "Subtitle cue 2 time",

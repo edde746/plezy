@@ -14954,6 +14954,7 @@ extension on Translations {
 			'videoSettings.subtitleDriftPreview' => 'Preview correction',
 			'videoSettings.subtitleDriftPreviewActive' => 'Preview active. Save to keep this correction, or cancel to restore the previous timing.',
 			'videoSettings.subtitleDriftPreviewFailed' => 'The player could not preview this correction. The previous timing was restored.',
+			'videoSettings.subtitleDriftUndo' => 'Undo drift calibration',
 			'videoSettings.subtitleCueTimeAnchor1' => 'Subtitle cue 1 time',
 			'videoSettings.subtitlePlaybackTimeAnchor1' => 'Playback position for cue 1',
 			'videoSettings.subtitleCueTimeAnchor2' => 'Subtitle cue 2 time',
