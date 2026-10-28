@@ -88,6 +88,9 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
   @override
   bool get supportsSubtitleStyleControls => !audioOnly;
 
+  @override
+  bool get supportsSubtitleStepSync => !audioOnly;
+
   /// Whether this session intends to hardware-decode; carried on
   /// `initialize` for the Android core's vo decision.
   final bool _hardwareDecoding;

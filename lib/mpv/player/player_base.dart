@@ -1382,6 +1382,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
   bool get supportsSubtitleStyleControls => false;
 
   @override
+  bool get supportsSubtitleStepSync => false;
+
+  @override
   bool get detectsFpsAfterRender => false;
 
   @override
