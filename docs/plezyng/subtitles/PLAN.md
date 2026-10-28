@@ -2,7 +2,7 @@
 
 Prepared for Keith on October 28, 2026, UTC. Audited source baseline: `snapetech-org/PlezyNG` main at `9e64808223fb67d509d806a46eedc20a1ad02a5c`; current main is `7c27c543aacd988258d6964c4b2046707a5b737c`, whose intervening merge applies branding assets and themes without changing the subtitle code mapped below. This is a source-grounded implementation handoff. Source presence is not device qualification; performance targets below are proposed acceptance gates, not measured results.
 
-The catalogue contains **132 tracked requirements across ten implementation stages**, with existing-code mappings, competitor evidence, native-backend choices, and release gates. ASR means speech recognition; VAD means voice activity detection; SDH means subtitles for deaf and hard-of-hearing viewers; PTS means media presentation timestamps. RTF is processing time divided by audio duration, so lower is faster.
+The catalogue contains **132 tracked requirements across ten work packages**, with existing-code mappings, competitor evidence, native-backend choices, and release gates. All requirements are in scope for this implementation effort; the work-package order records technical dependencies, not deferred approval phases. ASR means speech recognition; VAD means voice activity detection; SDH means subtitles for deaf and hard-of-hearing viewers; PTS means media presentation timestamps. RTF is processing time divided by audio duration, so lower is faster.
 
 **Recommendation — confidence high:** extend PlezyNG's existing subtitle selection, rendering, download, and timing code. Add a shared subtitle session and document model, automatic synchronization, local transcription, translation, and optional companion processing. Preserve existing playback and UI ownership. Start with reliable timing and track identity, then CPU generation, Radeon acceleration, translation, and platform expansion.
 
@@ -270,11 +270,11 @@ Budget priorities: audio/video deadlines first; subtitle display next; live ASR 
 
 # 9 Full feature catalogue
 
-All entries below are target requirements unless explicitly marked Existing. Existing behavior still needs regression coverage. M0–M9 refer to the delivery stages in section 11. Each row is a bounded requirement that Luna can track independently.
+All entries below are target requirements unless explicitly marked Existing. Existing behavior still needs regression coverage. M0–M9 identify the dependency-aware work packages in section 11. Each row is a bounded requirement that Luna can track independently.
 
 ## Selection discovery and everyday controls
 
-| ID | Requirement and acceptance condition | Stage |
+| ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
 | Q01 | Existing primary/secondary selection survives migration, including explicit Off and episode transitions. | M0 |
 | Q02 | Expose an explicit secondary selector; long press remains an optional shortcut. | M1 |
@@ -297,11 +297,11 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 ## Timing and repair
 
-| ID | Requirement and acceptance condition | Stage |
+| ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
 | S01 | Existing manual delay retains 50 ms granularity, scope behavior, rollback on failed writes, and correct displayed value. | M0 |
 | S02 | Primary and secondary delays are independent; changing one leaves the other unchanged. | M1 |
-| S03 | Extend timing range through deliberate advanced entry; no arbitrary short slider becomes the data-model limit. | M1 |
+| S03 | Extend timing range through deliberate advanced entry; no arbitrary short slider becomes the data-model limit. Exact signed millisecond entry is implemented in this branch (PR #53, commit `cebd801`). | M1 |
 | S04 | One-anchor align-this-line-now workflow previews the resulting shift. | M2 |
 | S05 | Two-anchor drift correction computes and previews affine mapping. | M2 |
 | S06 | Automatic global alignment uses selected-audio VAD and a separate validation window. | M3 |
@@ -320,7 +320,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 ## Translation and localization
 
-| ID | Requirement and acceptance condition | Stage |
+| ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
 | L01 | Translate an existing text track into a distinct selectable derivative with source correspondence. | M5 |
 | L02 | Generate source transcript once and reuse it for multiple target languages. | M5 |
@@ -343,7 +343,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 ## Speech generation and analysis
 
-| ID | Requirement and acceptance condition | Stage |
+| ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
 | A01 | CPU-only full-title transcription produces a valid timed asset without a GPU dependency. | M4 |
 | A02 | VOD read-ahead emits a bounded cue stream and reprioritizes after seeks. | M4 |
@@ -368,7 +368,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 ## Rendering formats and accessibility
 
-| ID | Requirement and acceptance condition | Stage |
+| ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
 | R01 | Preserve SRT/VTT/ASS/SSA and embedded/sidecar paths already supported by each engine. | M0 |
 | R02 | Qualify mov_text, TTML/DFXP/IMSC, SAMI, MicroDVD, DVB, teletext, CEA-608/708 and other formats individually; convert when appropriate. | M8 |
@@ -389,7 +389,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 ## Learning editing and personal viewing
 
-| ID | Requirement and acceptance condition | Stage |
+| ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
 | X01 | Searchable transcript seeks to the correct source time and optionally hides future dialogue. | M3 |
 | X02 | Copy/select text and dictionary lookup operate on text-backed cues; bitmap tracks offer OCR explicitly. | M7 |
@@ -408,7 +408,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 ## Persistence export and operations
 
-| ID | Requirement and acceptance condition | Stage |
+| ID | Requirement and acceptance condition | Work package |
 | --- | --- | --- |
 | O01 | Immutable original plus derived revisions survive crashes; commit files and metadata atomically. | M2 |
 | O02 | Attach derived assets durably to server and standalone-source editions without requiring server write access. | M2 |
@@ -429,7 +429,7 @@ All entries below are target requirements unless explicitly marked Existing. Exi
 
 ## Advanced research and optional features
 
-| ID | Experiment and honest completion boundary | Stage |
+| ID | Experiment and honest completion boundary | Work package |
 | --- | --- | --- |
 | E01 | OCR PGS/VobSub into editable text while preserving cue images and allowing uncertainty correction. | M7 |
 | E02 | Extract burned-in captions using crop/detection, temporal tracking, OCR, and deduplication. | M9 |
@@ -466,11 +466,11 @@ Any custom assembly/kernel implementation keeps a portable reference path and di
 
 A ground-up alternative remains possible: implement feature extraction, tokenizer, encoder/decoder, quantized tensor runtime, VAD, alignment, translation, OCR, renderer, and model distribution. It is a much larger program and still requires trained weights and quality evaluation. Keep this as an escalation route for demonstrated deficiencies, not a dependency for the first usable release.
 
-# 11 Staged implementation for Luna
+# 11 Dependency-aware execution map
 
-M0–M4 are the first product sequence. M5 adds localization. M6 expands hardware/platform reach. M7–M9 remain explicit follow-on scope. Ship complete vertical slices; do not mark a phase complete because interfaces or settings compile. Complexity describes engineering scope, not a calendar promise. Confidence in ordering is high; duration is unknown before M0 and native extraction spikes.
+M0–M9 describe the full authorized scope. Their ordering records technical dependencies and reduces rework; it is not a release plan, a gate to defer later requirements, or a request for separate approval. Work should continue across packages in parallel wherever interfaces permit, with commits grouped by complete, reviewable behavior. Complexity describes engineering scope, not a calendar promise. Confidence in the dependency order is high; implementation duration is unknown before native extraction and model-runtime spikes.
 
-| Stage | Concrete output | Dependencies and exit gate | Complexity |
+| Work package | Concrete output | Dependencies and exit gate | Complexity |
 | --- | --- | --- | --- |
 | M0 Source reconciliation and regression baseline | Rebase the inventory to current main; reconcile PRs #40/#43; write capability matrix; identify actual mpv/native build revisions; establish fixtures and baseline tests. | No feature claims based only on README. Existing source/server/secondary/offset paths remain intact. | Medium |
 | M1 Existing feature completion | Explicit secondary selector, per-track timing where supported, shared full style sheet, role metadata, accessible controls, truthful unsupported states. | Build on current track and preference owners. Validate state rollback, scope reset, large text and TV focus. | Medium |
@@ -485,7 +485,7 @@ M0–M4 are the first product sequence. M5 adds localization. M6 expands hardwar
 
 ## Concrete change map
 
-Proposed new paths below are names to create after M0, not claims that they already exist.
+Proposed new paths below are names to create, not claims that they already exist.
 
 | Work package | Existing owners to modify | Proposed additions | Completion demonstration |
 | --- | --- | --- | --- |
@@ -507,7 +507,7 @@ For a companion, define `capabilities`, `createJob`, `appendAudio`, `events`, `c
 
 ## First vertical slice
 
-After M0, the first implementation PR should make a known SRT on an mpv VOD source support explicit primary/secondary selection, independent manual offset, persistent edition-bound correction, preview/undo, and export. The next slice adds VAD alignment on a local file using the same document and correction representation. The first ASR slice then turns a selected local audio stream into a reusable timed asset on CPU, followed by Vulkan qualification. These slices expose the difficult clock/identity/renderer boundaries early.
+The initial integrated slice should make a known SRT on an mpv VOD source support explicit primary/secondary selection, independent manual offset, persistent edition-bound correction, preview/undo, and export. In parallel, the analysis path should add VAD alignment on a local file using the same document and correction representation. CPU ASR then turns selected audio into a reusable timed asset, with Vulkan qualification and platform adapters proceeding against the same job/asset contracts. These connected work streams expose the difficult clock/identity/renderer boundaries early without narrowing the overall scope.
 
 Do not start with NPU dispatch, OCR, or a large language-model editor. Those features depend on the same correct subtitle document, source clock, and job lifecycle.
 
@@ -543,7 +543,7 @@ No silent success from an unsupported backend. No silent cloud fallback. No unbo
 
 # 13 Copyable implementation brief for Luna
 
-> Implement this plan against current `snapetech-org/PlezyNG`, reconciling the pinned baseline and open PRs before changing shared playback code. Start with M0, then complete M1–M4 as working vertical slices. Preserve `TrackManager`, `TrackSelectionService`, `PlaybackSubtitleResolver`, `SubtitlePreference`, scoped offsets, existing rendering, downloads, server selection, and source playback ownership. Add shared subtitle assets/session identity and explicit backend capabilities; then manual/automatic timing repair, CPU ASR, and Vulkan ASR. Use the existing Tracks/Subtitles and Settings flows. Do not rebuild already implemented dual-track selection, preferred-language downloading, local import, or styling. Keep corrections edition/audio/subtitle-qualified, preserve originals, guard all asynchronous results by session/revision, and keep audio/video deadlines ahead of inference. Respect private-JIT runner policy. Maintain requirement status and evidence as work proceeds. Carry M5–M9 forward explicitly; do not mark them complete from scaffolding or replace difficult work with silent no-ops. After each stage, report implemented behavior, meaningful test results, actual device qualification, and remaining blockers. Commit coherent stages under the repository's current working convention; repository publication/merge follows the authorization in the implementation session.
+> Implement all requirements in this plan against current `snapetech-org/PlezyNG`, reconciling the pinned baseline and open PRs before changing shared playback code. Treat M0–M9 as concurrent work streams wherever their interfaces permit, and continue all work without separate phase approval. Preserve `TrackManager`, `TrackSelectionService`, `PlaybackSubtitleResolver`, `SubtitlePreference`, scoped offsets, existing rendering, downloads, server selection, and source playback ownership. Add shared subtitle assets/session identity and explicit backend capabilities; then manual/automatic timing repair, CPU ASR, and Vulkan ASR. Use the existing Tracks/Subtitles and Settings flows. Do not rebuild already implemented dual-track selection, preferred-language downloading, local import, or styling. Keep corrections edition/audio/subtitle-qualified, preserve originals, guard all asynchronous results by session/revision, and keep audio/video deadlines ahead of inference. Respect private-JIT runner policy. Maintain requirement status and evidence as work proceeds. Do not defer M5–M9 or mark them complete from scaffolding; implement each with working behavior and evidence instead of silent no-ops. Report implemented behavior, meaningful test results, actual device qualification, and remaining blockers as work proceeds. Commit coherent changes frequently on the authorized PR branch; repository publication is already authorized for this task.
 
 # 14 Source register
 
