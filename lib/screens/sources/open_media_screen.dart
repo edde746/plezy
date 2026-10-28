@@ -93,6 +93,7 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
   _OpenChoice _choice = _OpenChoice.stream;
   bool _audio = false;
   bool _allowHttp = false;
+  bool _allowFtp = false;
   bool _live = true;
   bool _busy = false;
   Object? _failure;
@@ -230,13 +231,22 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
     });
   }
 
-  Future<void> _openAddress({String? value, String? title, bool? audio, bool? allowHttp, bool? live}) async {
+  Future<void> _openAddress({
+    String? value,
+    String? title,
+    bool? audio,
+    bool? allowHttp,
+    bool? allowFtp,
+    bool? live,
+  }) async {
     final useAudio = audio ?? _audio;
     final httpAllowed = allowHttp ?? _allowHttp;
+    final ftpAllowed = allowFtp ?? _allowFtp;
     final uri = UniversalMediaAddress.parse(
       value ?? _url.text,
       allowHttp: httpAllowed,
       allowMpvProtocols: _mpvProtocolsAvailable,
+      allowFtp: ftpAllowed,
     );
     final name = (title ?? _name.text).trim();
     await _startItems(
@@ -300,6 +310,7 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
           base: uri,
           allowHttp: _allowHttp,
           allowMpvProtocols: _mpvProtocolsAvailable,
+          allowFtp: _allowFtp,
         );
         if (playlist.skipped > 0 && mounted) {
           showSnackBar(context, t.universalMedia.skippedEntries(n: playlist.skipped, count: playlist.skipped));
@@ -368,17 +379,68 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
         }
         return;
       }
+      final path = file.path?.isNotEmpty == true ? file.path : null;
       final playlist = UniversalMediaPlaylistParser.parse(
         text,
         fallbackTitle: p.basenameWithoutExtension(file.name),
+        base: path == null ? null : Directory(p.dirname(path)).uri,
         allowHttp: _allowHttp,
         allowMpvProtocols: _mpvProtocolsAvailable,
+        allowFtp: _allowFtp,
+        allowLocalRelative: path != null,
       );
-      if (playlist.skipped > 0 && mounted) {
-        showSnackBar(context, t.universalMedia.skippedEntries(n: playlist.skipped, count: playlist.skipped));
+      final resolved = path == null ? playlist : await _validateLocalPlaylistFiles(playlist, p.dirname(path));
+      if (resolved.skipped > 0 && mounted) {
+        showSnackBar(context, t.universalMedia.skippedEntries(n: resolved.skipped, count: resolved.skipped));
       }
-      await _startItems(playlist.items, playlist.title, audio: _audio, live: playlist.live);
+      await _startItems(resolved.items, resolved.title, audio: _audio, live: resolved.live);
     });
+  }
+
+  Future<UniversalMediaPlaylist> _validateLocalPlaylistFiles(UniversalMediaPlaylist playlist, String rootPath) async {
+    final root = await Directory(rootPath).resolveSymbolicLinks();
+    final resolved = <UniversalMediaItem>[];
+    var skipped = playlist.skipped;
+    for (final item in playlist.items) {
+      if (item.uri.scheme != 'file') {
+        resolved.add(item);
+        continue;
+      }
+      try {
+        final path = await File.fromUri(item.uri).resolveSymbolicLinks();
+        if (!p.isWithin(root, path)) {
+          skipped++;
+          continue;
+        }
+        final file = File(path);
+        if ((await file.stat()).type != FileSystemEntityType.file) {
+          skipped++;
+          continue;
+        }
+        final kind = classifySourceFile(p.basename(path));
+        if (kind != SourceItemKind.video && kind != SourceItemKind.music && kind != SourceItemKind.audiobook) {
+          skipped++;
+          continue;
+        }
+        resolved.add(
+          UniversalMediaItem(
+            title: item.title,
+            uri: File(path).uri,
+            group: item.group,
+            durationSeconds: item.durationSeconds,
+          ),
+        );
+      } on FileSystemException {
+        skipped++;
+      }
+    }
+    if (resolved.isEmpty) throw const SourceException(SourceFailure.invalidData);
+    return UniversalMediaPlaylist(
+      title: playlist.title,
+      items: List.unmodifiable(resolved),
+      skipped: skipped,
+      live: playlist.live,
+    );
   }
 
   Future<File> _writeTemporaryManifest(String name, String content) async {
@@ -521,8 +583,10 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
   Widget _streamForm() {
     final typedUri = Uri.tryParse(_url.text.trim());
     final isHttp = typedUri?.scheme.toLowerCase() == 'http';
+    final isFtp = typedUri?.scheme.toLowerCase() == 'ftp';
     final canFavorite =
         typedUri != null &&
+        !isFtp &&
         (typedUri.scheme.toLowerCase() != 'http' || _allowHttp) &&
         UniversalMediaAddress.canSaveFavorite(typedUri);
     return Column(
@@ -559,6 +623,14 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
             subtitle: Text(t.universalMedia.allowHttpHelp),
             value: _allowHttp,
             onChanged: _busy ? null : (value) => setState(() => _allowHttp = value),
+          ),
+        if (isFtp && _mpvProtocolsAvailable)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(t.universalMedia.allowFtp),
+            subtitle: Text(t.universalMedia.allowFtpHelp),
+            value: _allowFtp,
+            onChanged: _busy ? null : (value) => setState(() => _allowFtp = value),
           ),
         if (_mpvProtocolsAvailable)
           Padding(
@@ -787,7 +859,7 @@ class _OpenMediaScreenState extends State<OpenMediaScreen> {
                   if (PlatformDetector.isDesktopOS()) ...[
                     SourceTile(
                       title: t.universalMedia.converterTitle,
-                      subtitle: t.universalMedia.converterHelp,
+                      subtitle: t.universalMedia.converterIntro,
                       icon: Symbols.swap_horiz_rounded,
                       onTap: _busy
                           ? null

@@ -1242,6 +1242,30 @@ class _Translations$videoControls$ms extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Tajuk : Off';
 	@override String osdSubtitles({required Object track}) => 'Tajuk : ${track}';
 	@override String osdAudio({required Object track}) => 'Perbincangan : ${track}';
+	@override String get segmentLoopHelp => 'Setkan A, kemudian setkan B kemudian dalam garis masa.';
+	@override String get setLoopStart => 'Set loop permulaan (A)';
+	@override String get setLoopEnd => 'Set loop akhir (B)';
+	@override String get clearSegmentLoop => 'Segmen yang jelas';
+	@override String get setLoopStartFirst => 'Set loop permulaan (A) sebelum akhir (B).';
+	@override String get loopEndAfterStart => 'Tarikh akhir mesti lebih lambat daripada permulaan.';
+	@override String get segmentLoopUnavailable => 'Segment looping tidak tersedia untuk playback ini.';
+	@override String get bookmarksHelp => 'Tanda-tanda buku disimpan pada peranti ini. pilih satu untuk pergi ke masa itu.';
+	@override String get bookmarksButton => 'Buku-buku yang';
+	@override String get chaptersAndBookmarks => 'Bab dan Bookmark';
+	@override String get segmentLoop => 'Perbezaan segmen';
+	@override String get addBookmark => 'Menambah Bookmark';
+	@override String get bookmarkName => 'Nama Bookmark';
+	@override String get bookmarkNameHint => 'Sebagai contoh, adegan pembukaan';
+	@override String bookmarkDefaultName({required Object n}) => 'Perpustakaan ${n}';
+	@override String get bookmarkNameRequired => 'Masukkan nama untuk buku ini.';
+	@override String get deleteBookmark => 'Menghapuskan Bookmark';
+	@override String get bookmarkLimitReached => 'Artikel ini sudah mempunyai 100 buku.';
+	@override String get bookmarkUnavailable => 'Saya tidak boleh menyimpan atau menghapuskan buku ini.';
+	@override String get bookmarkSaved => 'Bookmark diselamatkan';
+	@override String get bookmarkDeleted => 'Bookmark telah dihapuskan.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Tarikan titik ${point} Set untuk ${time}.';
+	@override String get noChaptersOrBookmarks => 'Tiada bab atau buku-buku yang tersedia.';
+	@override String get loopPointNotSet => 'Tidak menetapkan';
 	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n,
 		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} penghalang',
 	);
@@ -2411,7 +2435,7 @@ class _Translations$videoSettings$ms extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Audio ruang';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioEqualizer => 'Audio Penyelesaian';
-	@override String get audioEqualizerDescription => 'Menyesuaikan lima jalur frekuensi untuk peranti ini. tersedia pada mpv; EQ aktif mendekodkan audio dan menghalang sambungan.';
+	@override String get audioEqualizerDescription => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.';
 	@override String get audioEqualizerFlat => 'Permukaan';
 	@override String get audioEqualizerActive => 'Khas';
 	@override String get audioEqualizerSaveFailed => 'Tidak boleh menyimpan seting audio equalizer.';
@@ -2419,6 +2443,13 @@ class _Translations$videoSettings$ms extends Translations$videoSettings$en {
 	@override String get backgroundVideoAudioDescription => 'Pastikan video audio dimainkan apabila anda meninggalkan pemain; imej itu tersembunyi sehingga anda kembali. Android menggunakan pemberitahuan pemutaran media.';
 	@override String get audioNormalization => 'Mengatur bunyi bising';
 	@override String get audioNormalizationDisablesPassthrough => 'Memecahkan audio ke PCM; passthrough keluar sementara ini';
+	@override String get audioEffectsDescription => 'Efek menggunakan audio yang dikodkan, jadi passthrough berbalik. persekitaran bilik dan pembesaran stereo bergantung kepada MPV membina dan mengesan.';
+	@override String get audioStereoWidth => 'Pengembangan Stereo';
+	@override String get audioSpatializer => 'Persekitaran bilik';
+	@override String get audioSpatializerDescription => 'Menambah refleksi bilik yang tenang.';
+	@override String get audioPitch => 'Perubahan Pitch';
+	@override String get audioPitchDescription => 'Menukar pitch tanpa mengubah kelajuan. MPV Pembinaan hendaklah termasuk Rubber Band.';
+	@override String get audioEffectUnavailable => 'Kesan ini tidak tersedia untuk trek ini atau MPV membina .';
 }
 
 // Path: performanceOverlay
@@ -3133,7 +3164,7 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get audioCd => 'CD audio';
 	@override String get discAvailability => 'Disk playback memerlukan pembinaan MPV yang kompatibel, cakera disokong, dan kebenaran sistem operasi. ia tidak boleh melebihi perlindungan cakera komersial.';
 	@override String get converterTitle => 'Menukar fail media tempatan';
-	@override String get converterHelp => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.';
+	@override String get converterHelp => 'Menukar fail tempatan atau mengubahnya dengan FFmpeg.';
 	@override String get converterIntro => 'Menukar fail audio atau video tempatan kepada format yang berfungsi pada lebih banyak peranti.';
 	@override String get converterPrivacy => 'FFmpeg mesti dipasang pada komputer ini.Conversion hanya membaca fail tempatan.Ia tidak memuat turun aliran atau menghapuskan DRM.';
 	@override String get converterChooseInput => 'Pilih fail media tempatan';
@@ -3150,7 +3181,7 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Bermula daripada FFmpeg...';
 	@override String get converterProgress => 'Menukar kepada komputer ini ...';
 	@override String get converterComplete => 'Konversi selesai. fail baru telah siap.';
-	@override String get converterFfmpegMissing => 'Instal FFmpeg dengan sokongan H.264, AAC, dan MP3, kemudian cuba lagi.';
+	@override String get converterFfmpegMissing => 'FFmpeg kekurangan atau tidak menyokong format ini.';
 	@override String get converterFailed => 'Periksa bahawa fail sumber boleh dibaca dan destinasi mempunyai ruang percuma yang mencukupi.';
 	@override String get converterCancelled => 'Konversi dibatalkan. hasil yang tidak lengkap telah dihapuskan.';
 	@override String get converterDesktopOnly => 'Konversi tempatan boleh didapati pada komputer desktop dengan FFmpeg dipasang.';
@@ -3163,11 +3194,9 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Mencatat skrin atau kamera anda ke fail MP4 pada komputer ini. FFmpeg perlu dipasang dan termasuk kod H.264.';
 	@override String get captureNoDevices => 'Tiada skrin atau kamera ditemui. semak sokongan penangkapan FFmpeg dan keizinan privasi sistem operasi.';
 	@override String get captureSource => 'skrin atau kamera';
-	@override String get captureScreen => 'skrin';
 	@override String get captureAudioSource => 'Pengenalan audio ( opsional )';
 	@override String get captureAudioHelp => 'Tambah audio daripada mikrofon atau input yang tersedia. pilihan peranti bergantung kepada FFmpeg dan keizinan sistem.';
 	@override String get captureAudioNone => 'Tiada audio';
-	@override String get captureDefaultAudio => 'Pengenalan audio lalai';
 	@override String get captureWaylandHelp => 'Wayland membatasi penangkapan XWayland ini kepada X display. Windows di luar XWayland mungkin tidak muncul.';
 	@override String get captureFrameRate => 'Kadar rakaman';
 	@override String get capturePrivacy => 'Rekod disimpan hanya untuk fail yang anda pilih. penangkapan mikrofon adalah opsional. PlezyNG tidak memuat naik rekod.';
@@ -3192,9 +3221,6 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get shareStopped => 'Perkongsian berhenti. pautan sementara tidak lagi sah.';
 	@override String get shareUrlCopied => 'alamat yang disalin.';
 	@override String get shareOpenUrl => 'Buka alamat ini dalam satu pemain pada peranti lain';
-	@override String get shareQrLabel => 'Kod QR untuk alamat aliran sementara';
-	@override String get shareQrHelp => 'Scan dengan pemain yang kompatibel yang disambungkan ke rangkaian peribadi yang sama.';
-	@override String get shareHttpHint => 'Stream ini menggunakan HTTP yang tidak disulitkan. dalam PlezyNG, biarkan HTTP sebelum membuka.';
 	@override String get shareCopyUrl => 'Menyalin alamat Stream';
 	@override String get shareExpiresLabel => 'Link akan tamat pada';
 	@override String get shareStarting => 'Menyediakan aliran ...';
@@ -3228,6 +3254,13 @@ class _Translations$universalMedia$ms extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Gunakan panduan plezyctl untuk mengesahkan manifesto atau mencari ekstensi yang sama. Ulasan perkhidmatan HTTPS sebelum setiap carian. Hasil dibuka dalam borang media yang sedia ada; pilih butang playback untuk memulakan.';
 	@override String get cliCopyExample => 'Contoh perintah salinan';
 	@override String get cliCopied => 'contoh yang disalin.';
+	@override String get captureScreen => 'skrin';
+	@override String get captureDefaultAudio => 'Pengenalan audio lalai';
+	@override String get shareQrLabel => 'Kod QR untuk alamat aliran sementara';
+	@override String get shareQrHelp => 'Scan dengan pemain yang kompatibel yang disambungkan ke rangkaian peribadi yang sama.';
+	@override String get shareHttpHint => 'Stream ini menggunakan HTTP yang tidak disulitkan. dalam PlezyNG, biarkan HTTP sebelum membuka.';
+	@override String get allowFtp => 'membenarkan FTP';
+	@override String get allowFtpHelp => 'FTP menghantar media tanpa penyulitan. gunakan hanya pada rangkaian yang dipercayai.';
 }
 
 // Path: fileSources
@@ -5981,6 +6014,30 @@ extension on TranslationsMs {
 			'videoControls.osdSubtitlesOff' => 'Tajuk : Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Tajuk : ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Perbincangan : ${track}',
+			'videoControls.segmentLoopHelp' => 'Setkan A, kemudian setkan B kemudian dalam garis masa.',
+			'videoControls.setLoopStart' => 'Set loop permulaan (A)',
+			'videoControls.setLoopEnd' => 'Set loop akhir (B)',
+			'videoControls.clearSegmentLoop' => 'Segmen yang jelas',
+			'videoControls.setLoopStartFirst' => 'Set loop permulaan (A) sebelum akhir (B).',
+			'videoControls.loopEndAfterStart' => 'Tarikh akhir mesti lebih lambat daripada permulaan.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping tidak tersedia untuk playback ini.',
+			'videoControls.bookmarksHelp' => 'Tanda-tanda buku disimpan pada peranti ini. pilih satu untuk pergi ke masa itu.',
+			'videoControls.bookmarksButton' => 'Buku-buku yang',
+			'videoControls.chaptersAndBookmarks' => 'Bab dan Bookmark',
+			'videoControls.segmentLoop' => 'Perbezaan segmen',
+			'videoControls.addBookmark' => 'Menambah Bookmark',
+			'videoControls.bookmarkName' => 'Nama Bookmark',
+			'videoControls.bookmarkNameHint' => 'Sebagai contoh, adegan pembukaan',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Perpustakaan ${n}',
+			'videoControls.bookmarkNameRequired' => 'Masukkan nama untuk buku ini.',
+			'videoControls.deleteBookmark' => 'Menghapuskan Bookmark',
+			'videoControls.bookmarkLimitReached' => 'Artikel ini sudah mempunyai 100 buku.',
+			'videoControls.bookmarkUnavailable' => 'Saya tidak boleh menyimpan atau menghapuskan buku ini.',
+			'videoControls.bookmarkSaved' => 'Bookmark diselamatkan',
+			'videoControls.bookmarkDeleted' => 'Bookmark telah dihapuskan.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Tarikan titik ${point} Set untuk ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Tiada bab atau buku-buku yang tersedia.',
+			'videoControls.loopPointNotSet' => 'Tidak menetapkan',
 			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ms'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} penghalang', ), 
 			'videoControls.trackSelectionTitle' => 'Pilih trek sebelum playback',
 			'videoControls.trackSelectionAuto' => 'Pemilihan automatik',
@@ -6429,6 +6486,8 @@ extension on TranslationsMs {
 			'libraries.hideLibrary' => 'Perpustakaan tersembunyi',
 			'libraries.libraryOptions' => 'Pilihan Perpustakaan',
 			'libraries.content' => 'Perpustakaan kandungan',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Pilih Perpustakaan',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filter (${count})',
 			'libraries.noRecommendations' => 'Tiada cadangan yang tersedia',
@@ -6453,8 +6512,6 @@ extension on TranslationsMs {
 			'libraries.filterCategories.year' => 'Tahun yang',
 			'libraries.filterCategories.contentRating' => 'Penilaian Kandungan',
 			'libraries.filterCategories.tag' => 'Tag',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'tidak diperhatikan',
 			'libraries.filterCategories.unplayed' => 'Tidak Bermain',
 			'libraries.filterCategories.favorites' => 'Kegemaran',
@@ -6943,6 +7000,8 @@ extension on TranslationsMs {
 			'watchTogether.shareInvite' => 'Memberi jemputan',
 			'watchTogether.inviteCopied' => 'Sila rujuk. masukkan ke dalam mesej.',
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Bergabunglah dengan Bilik Bersama saya di PlezyNG: buka Bilik Bersama, pilih Bilik Bersama dan masukkan ${code}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.openSessionControls' => 'Open Watch Bersama-sama kawalan sesi',
 			'watchTogether.reconnecting' => 'Menghubungkan semula...',
 			'watchTogether.reconnectingDescription' => 'sambungan hilang. anda menyertai bilik secara automatik.',
@@ -6967,8 +7026,6 @@ extension on TranslationsMs {
 			'watchTogether.playAnyway' => 'Bermain bagaimanapun',
 			'watchTogether.chooseAnotherCopy' => 'Pilih salinan lain',
 			'watchTogether.dontPlay' => 'Jangan Bermain',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Anda tidak mempunyai video ini',
 			'watchTogether.unavailableDescription' => 'PlezyNG tidak dapat menemukannya dalam perpustakaan anda. pilih salinan sendiri atau cari lagi.',
 			'watchTogether.chooseCopy' => 'Pilih salinan',
@@ -7329,7 +7386,7 @@ extension on TranslationsMs {
 			'videoSettings.audioOutputSpatial' => 'Audio ruang',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioEqualizer' => 'Audio Penyelesaian',
-			'videoSettings.audioEqualizerDescription' => 'Menyesuaikan lima jalur frekuensi untuk peranti ini. tersedia pada mpv; EQ aktif mendekodkan audio dan menghalang sambungan.',
+			'videoSettings.audioEqualizerDescription' => '10 band equalizer untuk MPVFilter audio menggunakan audio yang dikodkan dan mematikan passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Permukaan',
 			'videoSettings.audioEqualizerActive' => 'Khas',
 			'videoSettings.audioEqualizerSaveFailed' => 'Tidak boleh menyimpan seting audio equalizer.',
@@ -7337,6 +7394,13 @@ extension on TranslationsMs {
 			'videoSettings.backgroundVideoAudioDescription' => 'Pastikan video audio dimainkan apabila anda meninggalkan pemain; imej itu tersembunyi sehingga anda kembali. Android menggunakan pemberitahuan pemutaran media.',
 			'videoSettings.audioNormalization' => 'Mengatur bunyi bising',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Memecahkan audio ke PCM; passthrough keluar sementara ini',
+			'videoSettings.audioEffectsDescription' => 'Efek menggunakan audio yang dikodkan, jadi passthrough berbalik. persekitaran bilik dan pembesaran stereo bergantung kepada MPV membina dan mengesan.',
+			'videoSettings.audioStereoWidth' => 'Pengembangan Stereo',
+			'videoSettings.audioSpatializer' => 'Persekitaran bilik',
+			'videoSettings.audioSpatializerDescription' => 'Menambah refleksi bilik yang tenang.',
+			'videoSettings.audioPitch' => 'Perubahan Pitch',
+			'videoSettings.audioPitchDescription' => 'Menukar pitch tanpa mengubah kelajuan. MPV Pembinaan hendaklah termasuk Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Kesan ini tidak tersedia untuk trek ini atau MPV membina .',
 			'performanceOverlay.color' => 'warna',
 			'performanceOverlay.performance' => 'prestasi',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -7450,6 +7514,8 @@ extension on TranslationsMs {
 			'metadataEdit.notSet' => 'Tidak menetapkan',
 			'metadataEdit.libraryDefault' => 'Perpustakaan kekurangan',
 			'metadataEdit.accountDefault' => 'Akaun yang tidak sah',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'Serangkaian default',
 			'metadataEdit.episodeSorting' => 'Perbezaan Episod',
 			'metadataEdit.oldestFirst' => 'Yang Tertua Pertama',
@@ -7481,8 +7547,6 @@ extension on TranslationsMs {
 			'metadataEdit.shownWithForeignAudio' => 'Diterbitkan dengan audio asing',
 			'metadataEdit.alwaysEnabled' => 'Selalu dibenarkan',
 			'metadataEdit.tags' => 'Tag :',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Tambah tag',
 			'metadataEdit.genre' => 'Jenis',
 			'metadataEdit.director' => 'Pengarah',
@@ -7914,7 +7978,7 @@ extension on TranslationsMs {
 			'universalMedia.audioCd' => 'CD audio',
 			'universalMedia.discAvailability' => 'Disk playback memerlukan pembinaan MPV yang kompatibel, cakera disokong, dan kebenaran sistem operasi. ia tidak boleh melebihi perlindungan cakera komersial.',
 			'universalMedia.converterTitle' => 'Menukar fail media tempatan',
-			'universalMedia.converterHelp' => 'Gunakan FFmpeg untuk membuat MP4, M4A, atau MP3 salinan.',
+			'universalMedia.converterHelp' => 'Menukar fail tempatan atau mengubahnya dengan FFmpeg.',
 			'universalMedia.converterIntro' => 'Menukar fail audio atau video tempatan kepada format yang berfungsi pada lebih banyak peranti.',
 			'universalMedia.converterPrivacy' => 'FFmpeg mesti dipasang pada komputer ini.Conversion hanya membaca fail tempatan.Ia tidak memuat turun aliran atau menghapuskan DRM.',
 			'universalMedia.converterChooseInput' => 'Pilih fail media tempatan',
@@ -7931,7 +7995,7 @@ extension on TranslationsMs {
 			'universalMedia.converterStarting' => 'Bermula daripada FFmpeg...',
 			'universalMedia.converterProgress' => 'Menukar kepada komputer ini ...',
 			'universalMedia.converterComplete' => 'Konversi selesai. fail baru telah siap.',
-			'universalMedia.converterFfmpegMissing' => 'Instal FFmpeg dengan sokongan H.264, AAC, dan MP3, kemudian cuba lagi.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg kekurangan atau tidak menyokong format ini.',
 			'universalMedia.converterFailed' => 'Periksa bahawa fail sumber boleh dibaca dan destinasi mempunyai ruang percuma yang mencukupi.',
 			'universalMedia.converterCancelled' => 'Konversi dibatalkan. hasil yang tidak lengkap telah dihapuskan.',
 			'universalMedia.converterDesktopOnly' => 'Konversi tempatan boleh didapati pada komputer desktop dengan FFmpeg dipasang.',
@@ -7944,11 +8008,9 @@ extension on TranslationsMs {
 			'universalMedia.captureIntro' => 'Mencatat skrin atau kamera anda ke fail MP4 pada komputer ini. FFmpeg perlu dipasang dan termasuk kod H.264.',
 			'universalMedia.captureNoDevices' => 'Tiada skrin atau kamera ditemui. semak sokongan penangkapan FFmpeg dan keizinan privasi sistem operasi.',
 			'universalMedia.captureSource' => 'skrin atau kamera',
-			'universalMedia.captureScreen' => 'skrin',
 			'universalMedia.captureAudioSource' => 'Pengenalan audio ( opsional )',
 			'universalMedia.captureAudioHelp' => 'Tambah audio daripada mikrofon atau input yang tersedia. pilihan peranti bergantung kepada FFmpeg dan keizinan sistem.',
 			'universalMedia.captureAudioNone' => 'Tiada audio',
-			'universalMedia.captureDefaultAudio' => 'Pengenalan audio lalai',
 			'universalMedia.captureWaylandHelp' => 'Wayland membatasi penangkapan XWayland ini kepada X display. Windows di luar XWayland mungkin tidak muncul.',
 			'universalMedia.captureFrameRate' => 'Kadar rakaman',
 			'universalMedia.capturePrivacy' => 'Rekod disimpan hanya untuk fail yang anda pilih. penangkapan mikrofon adalah opsional. PlezyNG tidak memuat naik rekod.',
@@ -7966,6 +8028,8 @@ extension on TranslationsMs {
 			'universalMedia.sharePrivacy' => 'Sesiapa sahaja di rangkaian tempatan anda yang menerima pautan peribadi boleh menonton sementara ia aktif. pautan tamat tempoh selepas 60 minit. berhenti berkongsi untuk menutup pelayan dan membatalkan pautan.',
 			'universalMedia.shareChooseFile' => 'Pilih fail media',
 			'universalMedia.shareChooseHelp' => 'Pilih fail audio atau video tempatan. fail itu kekal pada komputer ini.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg atau kod H.264/AAC tidak tersedia.Memasang FFmpeg dengan sokongan kod H.264 dan AAC.',
 			'universalMedia.shareFailed' => 'Aliran tidak boleh bermula atau berhenti secara tidak dijangka. semak FFmpeg dan akses rangkaian.',
 			'universalMedia.shareActive' => 'Stream bersedia di rangkaian peribadi anda.',
@@ -7973,9 +8037,6 @@ extension on TranslationsMs {
 			'universalMedia.shareStopped' => 'Perkongsian berhenti. pautan sementara tidak lagi sah.',
 			'universalMedia.shareUrlCopied' => 'alamat yang disalin.',
 			'universalMedia.shareOpenUrl' => 'Buka alamat ini dalam satu pemain pada peranti lain',
-			'universalMedia.shareQrLabel' => 'Kod QR untuk alamat aliran sementara',
-			'universalMedia.shareQrHelp' => 'Scan dengan pemain yang kompatibel yang disambungkan ke rangkaian peribadi yang sama.',
-			'universalMedia.shareHttpHint' => 'Stream ini menggunakan HTTP yang tidak disulitkan. dalam PlezyNG, biarkan HTTP sebelum membuka.',
 			'universalMedia.shareCopyUrl' => 'Menyalin alamat Stream',
 			'universalMedia.shareExpiresLabel' => 'Link akan tamat pada',
 			'universalMedia.shareStarting' => 'Menyediakan aliran ...',
@@ -7995,8 +8056,6 @@ extension on TranslationsMs {
 			'universalMedia.extensionInstallTitle' => 'Menambah perkhidmatan carian ini?',
 			'universalMedia.extensionReplaceTitle' => 'Memperbaharui perkhidmatan carian ini?',
 			'universalMedia.extensionService' => 'Perkhidmatan',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS titik akhir',
 			'universalMedia.extensionConsent' => 'Teks carian anda dihantar ke perkhidmatan ini. manifesto tidak mengandungi kod yang boleh dijalankan. teruskan hanya jika anda mempercayai titik akhir ini.',
 			'universalMedia.extensionInstall' => 'menambah perkhidmatan',
@@ -8011,6 +8070,13 @@ extension on TranslationsMs {
 			'universalMedia.cliHelp' => 'Gunakan panduan plezyctl untuk mengesahkan manifesto atau mencari ekstensi yang sama. Ulasan perkhidmatan HTTPS sebelum setiap carian. Hasil dibuka dalam borang media yang sedia ada; pilih butang playback untuk memulakan.',
 			'universalMedia.cliCopyExample' => 'Contoh perintah salinan',
 			'universalMedia.cliCopied' => 'contoh yang disalin.',
+			'universalMedia.captureScreen' => 'skrin',
+			'universalMedia.captureDefaultAudio' => 'Pengenalan audio lalai',
+			'universalMedia.shareQrLabel' => 'Kod QR untuk alamat aliran sementara',
+			'universalMedia.shareQrHelp' => 'Scan dengan pemain yang kompatibel yang disambungkan ke rangkaian peribadi yang sama.',
+			'universalMedia.shareHttpHint' => 'Stream ini menggunakan HTTP yang tidak disulitkan. dalam PlezyNG, biarkan HTTP sebelum membuka.',
+			'universalMedia.allowFtp' => 'membenarkan FTP',
+			'universalMedia.allowFtpHelp' => 'FTP menghantar media tanpa penyulitan. gunakan hanya pada rangkaian yang dipercayai.',
 			'fileSources.title' => 'fail dan buku',
 			'fileSources.subtitle' => 'Membaca, mendengarkan, dan menonton daripada fail anda sendiri.',
 			'fileSources.add' => 'Menambah sumber',
@@ -8476,6 +8542,8 @@ extension on TranslationsMs {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
+			_ => null,
+		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
@@ -8509,8 +8577,6 @@ extension on TranslationsMs {
 			'deepLinks.noLiveTv' => 'Tiada pelayan TV langsung boleh didapati untuk pautan ini.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Saya tidak boleh menemui saluran "${channel}".',
 			'deepLinks.showLink' => 'Tunjukkan link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Tunjukkan profil link',
 			'deepLinks.dialogTitle' => 'Link yang',
 			'deepLinks.showHint' => 'Membuka pautan ini memainkan episod seterusnya.Tambah &mode=shuffle untuk bermain persembahan pada shuffle.',

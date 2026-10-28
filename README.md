@@ -47,7 +47,7 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 | Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
 | Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in PlezyNG |
 | Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Configured cinema intros work on Plex, Jellyfin, and Emby; local pre-rolls, detail-page theme songs, and home spotlight music are implemented |
-| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A five-band device-local equalizer is available in mpv, and opt-in intro fallback is implemented. |
+| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A ten-band device-local equalizer plus MPV stereo widening, room ambience, and pitch shift are available where the build and track support them; opt-in intro fallback is implemented. |
 | Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in PlezyNG |
 | Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search, random movie selection, and shuffled playback of movie and TV libraries are implemented across connected servers; detail-page finish time is shown on media details |
 | Home screen | Configurable rows, merged library and collection rows, organizer controls, and Plex account layout sync (#1652/#2203) | Implemented; Plex account sync applies to Plex profiles. Custom rows can combine selected libraries across connected servers |
@@ -185,18 +185,19 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Playback speed from 0.25x to 8x, audio sync offset, sleep timer (fixed durations or end of video)
 - Video zoom 50-200% with pinch, presets, and hotkeys
 - Audio passthrough[^pass], output channel limit (5.1 or stereo, with center-channel boost), and loudness normalization
-- Five-band device-local audio equalizer for mpv playback
+- Ten-band device-local equalizer plus MPV stereo widening, room ambience and pitch shift; active filters decode audio and turn passthrough off
+- Named device-local playback bookmarks for server media and Open media, plus temporary MPV A/B segment looping in existing playback controls
 - File Info sheet — every version, file, and stream the server reports
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]
 - Refresh-rate matching[^rrm]
 - External player launch (VLC, MX Player, etc.) with progress sync back[^android]
-- **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists, profile-local safe favorites, and temporary local file queues
-- Advanced RTSP/RTMP/RTMPS/UDP/RTP inputs, optical-disc/ISO playback, and Wi-Fi file transfer on supported builds
+- **Open media** — session-only HTTP(S) streams, HLS and M3U/PLS playlists (including safe same-folder local entries), profile-local safe favorites, and temporary local file queues
+- Advanced RTSP/RTMP/RTMPS/UDP/RTP inputs, opt-in unencrypted FTP streams, optical-disc/ISO playback, and Wi-Fi file transfer on supported builds
 - MPV picture adjustments and optional 360° flat view; desktop MPV live-stream recording
 - Desktop screen/camera recording with optional audio, plus temporary HLS sharing over a private IPv4 network
 - Data-only HTTPS search extensions and the `tools/plezyctl` CLI, with results handed to the existing Open media form
-- Desktop local conversion to MP4 (H.264/AAC), M4A, or MP3 with user-installed FFmpeg
+- Desktop local conversion/remux to MP4/MKV, M4A, MP3, FLAC, WAV, Ogg Opus, or WebM when the user-installed FFmpeg has the required encoders and output containers
 - Direct HTTP(S) playback uses a session-owned loopback gateway; recognized credential/signature parameters cannot be saved. Platform boundaries and transfer limits are in the [Open media guide](docs/UNIVERSAL_MEDIA.md).
 
 ### <img src="assets/readme_icons/music.svg" height="20" alt="" align="center" /> Music

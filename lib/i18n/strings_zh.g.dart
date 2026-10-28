@@ -1258,6 +1258,30 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get skipAds => '滑雪广告';
 	@override String get tapToUnlock => '点按以解锁';
 	@override String get tapAgainToUnlock => '再次点按以解锁';
+	@override String get segmentLoopHelp => '在此播放过程中运行一个部分. 设置 A,然后在时间线中设置 B。';
+	@override String get setLoopStart => '设置路径开始(A)';
+	@override String get setLoopEnd => '设置路径结束(B)';
+	@override String get clearSegmentLoop => '清晰的分区';
+	@override String get setLoopStartFirst => '设置路径开始(A)之前的结局(B)。';
+	@override String get loopEndAfterStart => '旋转的结局必须比开始更晚。';
+	@override String get segmentLoopUnavailable => '该分区路由不适用于此播放。';
+	@override String get bookmarksHelp => '图标存储在此设备上. 选择一个到那个时间去。';
+	@override String get bookmarksButton => '图标';
+	@override String get chaptersAndBookmarks => '章节和书标';
+	@override String get segmentLoop => '分区路径';
+	@override String get addBookmark => '添加 Bookmark';
+	@override String get bookmarkName => 'Bookmark 名称';
+	@override String get bookmarkNameHint => '例如,开幕式';
+	@override String bookmarkDefaultName({required Object n}) => '图标 ${n}';
+	@override String get bookmarkNameRequired => '请输入本书标志的名称。';
+	@override String get deleteBookmark => '删除 Bookmark';
+	@override String get bookmarkLimitReached => '这个项目已经有100个字符。';
+	@override String get bookmarkUnavailable => '无法保存或删除此图标。';
+	@override String get bookmarkSaved => 'Bookmark 已保存';
+	@override String get bookmarkDeleted => 'Bookmark 已删除';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop 点 ${point} 设置在 ${time}是';
+	@override String get noChaptersOrBookmarks => '没有章节或图标可用。';
+	@override String get loopPointNotSet => '不设置';
 }
 
 // Path: messages
@@ -2426,7 +2450,7 @@ class Translations$videoSettings$zh extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => '空间音频';
 	@override String get audioOutputStereo => '立体声';
 	@override String get audioEqualizer => '音频平衡器';
-	@override String get audioEqualizerDescription => '适用于此设备的五个频率带;可在mpv上;一个活跃的EQ音频解码,并禁用匹配。';
+	@override String get audioEqualizerDescription => '10 带平衡器 MPV. 音频过滤器使用解码的音频,并关闭 passthrough。';
 	@override String get audioEqualizerFlat => '平板';
 	@override String get audioEqualizerActive => '自定义';
 	@override String get audioEqualizerSaveFailed => '无法保存音频平衡器设置。';
@@ -2434,6 +2458,13 @@ class Translations$videoSettings$zh extends Translations$videoSettings$en {
 	@override String get backgroundVideoAudioDescription => '离开播放器后继续播放视频音频；返回前画面将被隐藏。Android 会显示媒体播放通知。';
 	@override String get audioNormalization => '响度标准化';
 	@override String get audioNormalizationDisablesPassthrough => '将音频解码为 PCM；开启时直通关闭';
+	@override String get audioEffectsDescription => '效果使用解码的音频,所以 passthrough 转动。 MPV 建造和跟踪。';
+	@override String get audioStereoWidth => '斯特里奥扩展';
+	@override String get audioSpatializer => '房间环境';
+	@override String get audioSpatializerDescription => '添加安静的房间反思。';
+	@override String get audioPitch => 'Pitch 交换';
+	@override String get audioPitchDescription => '改變地點,不改變速度。 MPV 建筑必须包括 Rubber Band是';
+	@override String get audioEffectUnavailable => '此效应不适用于此轨道或 MPV 建造。';
 }
 
 // Path: performanceOverlay
@@ -3151,7 +3182,7 @@ class Translations$universalMedia$zh extends Translations$universalMedia$en {
 	@override String get audioCd => '音频CD';
 	@override String get discAvailability => '磁盘播放需要兼容的MPV构建、支持的驱动器和操作系统许可,不能超越商业磁盘保护。';
 	@override String get converterTitle => '转换本地媒体文件';
-	@override String get converterHelp => '使用 FFmpeg 创建 MP4, M4A 或 MP3 副本。';
+	@override String get converterHelp => '转换一个本地文件或重复它与 FFmpeg是';
 	@override String get converterIntro => '将本地音频或视频文件转换为多个设备上运行的格式。';
 	@override String get converterPrivacy => 'FFmpeg 必须安装在此计算机上. 转换只读取本地文件. 不下载流或删除 DRM。';
 	@override String get converterChooseInput => '选择本地媒体文件';
@@ -3168,7 +3199,7 @@ class Translations$universalMedia$zh extends Translations$universalMedia$en {
 	@override String get converterStarting => '開始 FFmpeg...';
 	@override String get converterProgress => '转换到这个计算机......';
 	@override String get converterComplete => '转换完成,新文件已准备好。';
-	@override String get converterFfmpegMissing => 'FFmpeg 无法找到所需的编码器. 使用 H.264, AAC 和 MP3 支持安装 FFmpEG,然后再次尝试。';
+	@override String get converterFfmpegMissing => 'FFmpeg 缺席或不支持此格式。';
 	@override String get converterFailed => '转换失败:检查源文件可以阅读,目的地有足够的免费空间。';
 	@override String get converterCancelled => '转换取消了,不完整的输出被删除。';
 	@override String get converterDesktopOnly => '本地转换可在桌面计算机上使用 FFmpeg 安装。';
@@ -3181,11 +3212,9 @@ class Translations$universalMedia$zh extends Translations$universalMedia$en {
 	@override String get captureIntro => '在此计算机上记录屏幕或相机到 MP4 文件. FFmpeg 必须安装并包含 H.264 编码器。';
 	@override String get captureNoDevices => '没有屏幕或相机被发现 查看 FFmpeg 捕捉支持和操作系统隐私许可证。';
 	@override String get captureSource => '屏幕或相机';
-	@override String get captureScreen => '屏幕';
 	@override String get captureAudioSource => '音频输入(可选)';
 	@override String get captureAudioHelp => '添加来自微型或可用的输入的音频 设备选项取决于 FFmpeg 和系统许可。';
 	@override String get captureAudioNone => '没有音频';
-	@override String get captureDefaultAudio => '默认音频输入';
 	@override String get captureWaylandHelp => 'Wayland 限制此 XWayland 捕获到 X display. XWayland 以外的 Windows 可能不会出现。';
 	@override String get captureFrameRate => '记录框率';
 	@override String get capturePrivacy => '录制仅存储到您选择的文件。 微型录制是可选的. PlezyNG 不会上传录制。';
@@ -3210,9 +3239,6 @@ class Translations$universalMedia$zh extends Translations$universalMedia$en {
 	@override String get shareStopped => '分享停止了,暂时链接不再有效。';
 	@override String get shareUrlCopied => '流地址复制。';
 	@override String get shareOpenUrl => '在另一台设备上的一个播放器中打开此地址';
-	@override String get shareQrLabel => '临时流地址的QR代码';
-	@override String get shareQrHelp => '扫描与同一私人网络连接的兼容播放器。';
-	@override String get shareHttpHint => '此流使用未加密的 HTTP. 在 PlezyNG 中,允许 HTTP 在打开它之前。';
 	@override String get shareCopyUrl => '复制流地址';
 	@override String get shareExpiresLabel => '链接终止';
 	@override String get shareStarting => '准备流...';
@@ -3246,6 +3272,13 @@ class Translations$universalMedia$zh extends Translations$universalMedia$en {
 	@override String get cliHelp => '使用 plezyctl 指南来验证一个显明或搜索相同的扩展. 每次搜索之前,查看 HTTPS 服务. 结果在现有媒体格式中打开; 选择播放按钮开始。';
 	@override String get cliCopyExample => '复制命令示例';
 	@override String get cliCopied => '命令例子复制';
+	@override String get captureScreen => '屏幕';
+	@override String get captureDefaultAudio => '默认音频输入';
+	@override String get shareQrLabel => '临时流地址的QR代码';
+	@override String get shareQrHelp => '扫描与同一私人网络连接的兼容播放器。';
+	@override String get shareHttpHint => '此流使用未加密的 HTTP. 在 PlezyNG 中,允许 HTTP 在打开它之前。';
+	@override String get allowFtp => '允许 FTP';
+	@override String get allowFtpHelp => 'FTP 会发送无加密的媒体,仅在可靠网络上使用。';
 }
 
 // Path: fileSources
@@ -6011,6 +6044,30 @@ extension on TranslationsZh {
 			'videoControls.skipAds' => '滑雪广告',
 			'videoControls.tapToUnlock' => '点按以解锁',
 			'videoControls.tapAgainToUnlock' => '再次点按以解锁',
+			'videoControls.segmentLoopHelp' => '在此播放过程中运行一个部分. 设置 A,然后在时间线中设置 B。',
+			'videoControls.setLoopStart' => '设置路径开始(A)',
+			'videoControls.setLoopEnd' => '设置路径结束(B)',
+			'videoControls.clearSegmentLoop' => '清晰的分区',
+			'videoControls.setLoopStartFirst' => '设置路径开始(A)之前的结局(B)。',
+			'videoControls.loopEndAfterStart' => '旋转的结局必须比开始更晚。',
+			'videoControls.segmentLoopUnavailable' => '该分区路由不适用于此播放。',
+			'videoControls.bookmarksHelp' => '图标存储在此设备上. 选择一个到那个时间去。',
+			'videoControls.bookmarksButton' => '图标',
+			'videoControls.chaptersAndBookmarks' => '章节和书标',
+			'videoControls.segmentLoop' => '分区路径',
+			'videoControls.addBookmark' => '添加 Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark 名称',
+			'videoControls.bookmarkNameHint' => '例如,开幕式',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => '图标 ${n}',
+			'videoControls.bookmarkNameRequired' => '请输入本书标志的名称。',
+			'videoControls.deleteBookmark' => '删除 Bookmark',
+			'videoControls.bookmarkLimitReached' => '这个项目已经有100个字符。',
+			'videoControls.bookmarkUnavailable' => '无法保存或删除此图标。',
+			'videoControls.bookmarkSaved' => 'Bookmark 已保存',
+			'videoControls.bookmarkDeleted' => 'Bookmark 已删除',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop 点 ${point} 设置在 ${time}是',
+			'videoControls.noChaptersOrBookmarks' => '没有章节或图标可用。',
+			'videoControls.loopPointNotSet' => '不设置',
 			'messages.markedAsWatched' => '已标记为已观看',
 			'messages.markedAsUnwatched' => '已标记为未观看',
 			'messages.markedAsWatchedOffline' => '已标记为已观看（将在联网时同步）',
@@ -6449,6 +6506,8 @@ extension on TranslationsZh {
 			'libraries.hideLibrary' => '隐藏媒体库',
 			'libraries.libraryOptions' => '媒体库选项',
 			'libraries.content' => '媒体库内容',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => '选择媒体库',
 			'libraries.filtersWithCount' => ({required Object count}) => '筛选器（${count}）',
 			'libraries.noRecommendations' => '暂无推荐',
@@ -6473,8 +6532,6 @@ extension on TranslationsZh {
 			'libraries.filterCategories.year' => '年份',
 			'libraries.filterCategories.contentRating' => '内容分级',
 			'libraries.filterCategories.tag' => '标签',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => '未观看',
 			'libraries.filterCategories.unplayed' => '未播放',
 			'libraries.filterCategories.favorites' => '收藏夹',
@@ -6963,6 +7020,8 @@ extension on TranslationsZh {
 			'watchTogether.shareInvite' => '分享邀请',
 			'watchTogether.inviteCopied' => '邀请已复制。请将其粘贴到消息中。',
 			'watchTogether.inviteMessage' => ({required Object code}) => '加入我在 PlezyNG 中的“一起看”房间：打开“一起看”，选择“加入房间”，然后输入 ${code}。',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.openSessionControls' => '打开“一起看”会话控制',
 			'watchTogether.reconnecting' => '正在重新连接…',
 			'watchTogether.reconnectingDescription' => '连接已中断。你将自动重新加入房间。',
@@ -6987,8 +7046,6 @@ extension on TranslationsZh {
 			'watchTogether.playAnyway' => '仍要播放',
 			'watchTogether.chooseAnotherCopy' => '选择其他副本',
 			'watchTogether.dontPlay' => '不播放',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => '你没有此视频',
 			'watchTogether.unavailableDescription' => 'PlezyNG 在你的媒体库中找不到它。请自行选择副本或重新搜索。',
 			'watchTogether.chooseCopy' => '选择副本',
@@ -7349,7 +7406,7 @@ extension on TranslationsZh {
 			'videoSettings.audioOutputSpatial' => '空间音频',
 			'videoSettings.audioOutputStereo' => '立体声',
 			'videoSettings.audioEqualizer' => '音频平衡器',
-			'videoSettings.audioEqualizerDescription' => '适用于此设备的五个频率带;可在mpv上;一个活跃的EQ音频解码,并禁用匹配。',
+			'videoSettings.audioEqualizerDescription' => '10 带平衡器 MPV. 音频过滤器使用解码的音频,并关闭 passthrough。',
 			'videoSettings.audioEqualizerFlat' => '平板',
 			'videoSettings.audioEqualizerActive' => '自定义',
 			'videoSettings.audioEqualizerSaveFailed' => '无法保存音频平衡器设置。',
@@ -7357,6 +7414,13 @@ extension on TranslationsZh {
 			'videoSettings.backgroundVideoAudioDescription' => '离开播放器后继续播放视频音频；返回前画面将被隐藏。Android 会显示媒体播放通知。',
 			'videoSettings.audioNormalization' => '响度标准化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '将音频解码为 PCM；开启时直通关闭',
+			'videoSettings.audioEffectsDescription' => '效果使用解码的音频,所以 passthrough 转动。 MPV 建造和跟踪。',
+			'videoSettings.audioStereoWidth' => '斯特里奥扩展',
+			'videoSettings.audioSpatializer' => '房间环境',
+			'videoSettings.audioSpatializerDescription' => '添加安静的房间反思。',
+			'videoSettings.audioPitch' => 'Pitch 交换',
+			'videoSettings.audioPitchDescription' => '改變地點,不改變速度。 MPV 建筑必须包括 Rubber Band是',
+			'videoSettings.audioEffectUnavailable' => '此效应不适用于此轨道或 MPV 建造。',
 			'performanceOverlay.color' => '颜色',
 			'performanceOverlay.performance' => '性能',
 			'performanceOverlay.buffer' => '缓冲',
@@ -7470,6 +7534,8 @@ extension on TranslationsZh {
 			'metadataEdit.notSet' => '未设置',
 			'metadataEdit.libraryDefault' => '媒体库默认',
 			'metadataEdit.accountDefault' => '账户默认',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => '剧集默认',
 			'metadataEdit.episodeSorting' => '剧集排序',
 			'metadataEdit.oldestFirst' => '最旧优先',
@@ -7501,8 +7567,6 @@ extension on TranslationsZh {
 			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
 			'metadataEdit.alwaysEnabled' => '始终启用',
 			'metadataEdit.tags' => '标签',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => '添加标签',
 			'metadataEdit.genre' => '类型',
 			'metadataEdit.director' => '导演',
@@ -7934,7 +7998,7 @@ extension on TranslationsZh {
 			'universalMedia.audioCd' => '音频CD',
 			'universalMedia.discAvailability' => '磁盘播放需要兼容的MPV构建、支持的驱动器和操作系统许可,不能超越商业磁盘保护。',
 			'universalMedia.converterTitle' => '转换本地媒体文件',
-			'universalMedia.converterHelp' => '使用 FFmpeg 创建 MP4, M4A 或 MP3 副本。',
+			'universalMedia.converterHelp' => '转换一个本地文件或重复它与 FFmpeg是',
 			'universalMedia.converterIntro' => '将本地音频或视频文件转换为多个设备上运行的格式。',
 			'universalMedia.converterPrivacy' => 'FFmpeg 必须安装在此计算机上. 转换只读取本地文件. 不下载流或删除 DRM。',
 			'universalMedia.converterChooseInput' => '选择本地媒体文件',
@@ -7951,7 +8015,7 @@ extension on TranslationsZh {
 			'universalMedia.converterStarting' => '開始 FFmpeg...',
 			'universalMedia.converterProgress' => '转换到这个计算机......',
 			'universalMedia.converterComplete' => '转换完成,新文件已准备好。',
-			'universalMedia.converterFfmpegMissing' => 'FFmpeg 无法找到所需的编码器. 使用 H.264, AAC 和 MP3 支持安装 FFmpEG,然后再次尝试。',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg 缺席或不支持此格式。',
 			'universalMedia.converterFailed' => '转换失败:检查源文件可以阅读,目的地有足够的免费空间。',
 			'universalMedia.converterCancelled' => '转换取消了,不完整的输出被删除。',
 			'universalMedia.converterDesktopOnly' => '本地转换可在桌面计算机上使用 FFmpeg 安装。',
@@ -7964,11 +8028,9 @@ extension on TranslationsZh {
 			'universalMedia.captureIntro' => '在此计算机上记录屏幕或相机到 MP4 文件. FFmpeg 必须安装并包含 H.264 编码器。',
 			'universalMedia.captureNoDevices' => '没有屏幕或相机被发现 查看 FFmpeg 捕捉支持和操作系统隐私许可证。',
 			'universalMedia.captureSource' => '屏幕或相机',
-			'universalMedia.captureScreen' => '屏幕',
 			'universalMedia.captureAudioSource' => '音频输入(可选)',
 			'universalMedia.captureAudioHelp' => '添加来自微型或可用的输入的音频 设备选项取决于 FFmpeg 和系统许可。',
 			'universalMedia.captureAudioNone' => '没有音频',
-			'universalMedia.captureDefaultAudio' => '默认音频输入',
 			'universalMedia.captureWaylandHelp' => 'Wayland 限制此 XWayland 捕获到 X display. XWayland 以外的 Windows 可能不会出现。',
 			'universalMedia.captureFrameRate' => '记录框率',
 			'universalMedia.capturePrivacy' => '录制仅存储到您选择的文件。 微型录制是可选的. PlezyNG 不会上传录制。',
@@ -7986,6 +8048,8 @@ extension on TranslationsZh {
 			'universalMedia.sharePrivacy' => '您的本地网络的任何人,谁接收私人链接可以观看,而它是活跃的. 链接结束后60分钟. 停止共享,关闭服务器并取消链接。',
 			'universalMedia.shareChooseFile' => '选择媒体文件',
 			'universalMedia.shareChooseHelp' => '选择一个本地的音频或视频文件. 该文件留在此计算机上。',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg 或 H.264/AAC 编码器不适用. 安装 FFmpeg 与 H.264 和 AAC 编码支持。',
 			'universalMedia.shareFailed' => '流量无法意外地开始或停止。 查看 FFmpeg 和网络访问。',
 			'universalMedia.shareActive' => '流在您的私人网络上已经准备好了。',
@@ -7993,9 +8057,6 @@ extension on TranslationsZh {
 			'universalMedia.shareStopped' => '分享停止了,暂时链接不再有效。',
 			'universalMedia.shareUrlCopied' => '流地址复制。',
 			'universalMedia.shareOpenUrl' => '在另一台设备上的一个播放器中打开此地址',
-			'universalMedia.shareQrLabel' => '临时流地址的QR代码',
-			'universalMedia.shareQrHelp' => '扫描与同一私人网络连接的兼容播放器。',
-			'universalMedia.shareHttpHint' => '此流使用未加密的 HTTP. 在 PlezyNG 中,允许 HTTP 在打开它之前。',
 			'universalMedia.shareCopyUrl' => '复制流地址',
 			'universalMedia.shareExpiresLabel' => '链接终止',
 			'universalMedia.shareStarting' => '准备流...',
@@ -8015,8 +8076,6 @@ extension on TranslationsZh {
 			'universalMedia.extensionInstallTitle' => '添加此搜索服务?',
 			'universalMedia.extensionReplaceTitle' => '更新此搜索服务?',
 			'universalMedia.extensionService' => '服务',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS 终点',
 			'universalMedia.extensionConsent' => '您的搜索文本被发送到此服务. 该示文稿不包含执行代码. 继续只有如果你信任这个终点。',
 			'universalMedia.extensionInstall' => '添加服务',
@@ -8031,6 +8090,13 @@ extension on TranslationsZh {
 			'universalMedia.cliHelp' => '使用 plezyctl 指南来验证一个显明或搜索相同的扩展. 每次搜索之前,查看 HTTPS 服务. 结果在现有媒体格式中打开; 选择播放按钮开始。',
 			'universalMedia.cliCopyExample' => '复制命令示例',
 			'universalMedia.cliCopied' => '命令例子复制',
+			'universalMedia.captureScreen' => '屏幕',
+			'universalMedia.captureDefaultAudio' => '默认音频输入',
+			'universalMedia.shareQrLabel' => '临时流地址的QR代码',
+			'universalMedia.shareQrHelp' => '扫描与同一私人网络连接的兼容播放器。',
+			'universalMedia.shareHttpHint' => '此流使用未加密的 HTTP. 在 PlezyNG 中,允许 HTTP 在打开它之前。',
+			'universalMedia.allowFtp' => '允许 FTP',
+			'universalMedia.allowFtpHelp' => 'FTP 会发送无加密的媒体,仅在可靠网络上使用。',
 			'fileSources.title' => '文件和书籍',
 			'fileSources.subtitle' => '阅读、听、从自己的文件中观看。',
 			'fileSources.add' => '添加源',
@@ -8496,6 +8562,8 @@ extension on TranslationsZh {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
+			_ => null,
+		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
@@ -8529,8 +8597,6 @@ extension on TranslationsZh {
 			'deepLinks.noLiveTv' => '没有现场电视服务器可用于此链接。',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '我找不到“${channel}”频道。',
 			'deepLinks.showLink' => '显示链接',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => '显示个人资料链接',
 			'deepLinks.dialogTitle' => '链接',
 			'deepLinks.showHint' => '打开此链接将播放下一集。要随机播放整部剧集，请在末尾添加 &mode=shuffle。',

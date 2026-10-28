@@ -1258,6 +1258,30 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get skipAds => '스키 광고';
 	@override String get tapToUnlock => '잠금을 해제하려면 탭하세요';
 	@override String get tapAgainToUnlock => '잠금을 해제하려면 다시 탭하세요';
+	@override String get segmentLoopHelp => '이 재생 중에 섹션을 움직이십시오.A를 설정하고 나중에 B를 타임 라인에 설정합니다.';
+	@override String get setLoopStart => '세트 루프 시작 (A)';
+	@override String get setLoopEnd => '세트 루프 끝 (B)';
+	@override String get clearSegmentLoop => '분명한 세그먼트 루프';
+	@override String get setLoopStartFirst => '롤 시작 (A) 전에 끝 (B)을 설정합니다.';
+	@override String get loopEndAfterStart => '롤 끝은 시작보다 나중에 있어야합니다.';
+	@override String get segmentLoopUnavailable => '세그먼트 루핑은 이 플레이백을 위해 사용할 수 없습니다.';
+	@override String get bookmarksHelp => '책표는 이 장치에 저장됩니다.이 시간에 가기 위해 하나를 선택합니다.';
+	@override String get bookmarksButton => '책표';
+	@override String get chaptersAndBookmarks => '장 및 책표';
+	@override String get segmentLoop => '세그먼트 루프';
+	@override String get addBookmark => 'Bookmark 추가하기';
+	@override String get bookmarkName => 'Bookmark 이름';
+	@override String get bookmarkNameHint => '예를 들어, 개방 장면';
+	@override String bookmarkDefaultName({required Object n}) => '책표 ${n}';
+	@override String get bookmarkNameRequired => '이 책자에 대한 이름을 입력합니다.';
+	@override String get deleteBookmark => 'Bookmark 삭제';
+	@override String get bookmarkLimitReached => '이 항목은 이미 100 개의 책표를 가지고 있습니다.';
+	@override String get bookmarkUnavailable => '이 책을 저장하거나 제거할 수는 없습니다.';
+	@override String get bookmarkSaved => '도서관이 저장되었습니다.';
+	@override String get bookmarkDeleted => 'Bookmark 삭제됨';
+	@override String loopPointSet({required Object point, required Object time}) => '로프 포인트 ${point} 세트 에 ${time}그리고';
+	@override String get noChaptersOrBookmarks => '장이나 책표가 없습니다.';
+	@override String get loopPointNotSet => '설정하지 않는';
 }
 
 // Path: messages
@@ -2426,7 +2450,7 @@ class _Translations$videoSettings$ko extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => '공간 음향';
 	@override String get audioOutputStereo => '스테레오';
 	@override String get audioEqualizer => '오디오 균형';
-	@override String get audioEqualizerDescription => '이 장치에 대해 5개의 주파수 밴드를 조정합니다. mpv에서 사용할 수 있으며, 활성 EQ가 오디오를 해독하고 균형을 끄는 것을 방해합니다.';
+	@override String get audioEqualizerDescription => '10 밴드 평등기 MPV. 오디오 필터는 해독 된 오디오를 사용하고 passthrough를 끄십시오.';
 	@override String get audioEqualizerFlat => '플랫';
 	@override String get audioEqualizerActive => '사용자 지정';
 	@override String get audioEqualizerSaveFailed => '오디오 평등기 설정을 저장할 수 없었습니다.';
@@ -2434,6 +2458,13 @@ class _Translations$videoSettings$ko extends Translations$videoSettings$en {
 	@override String get backgroundVideoAudioDescription => '플레이어를 떠날 때 비디오 오디오 재생을 유지; 사진이 돌아올 때까지 숨겨져 있습니다. Android은 미디어 재생 알림을 사용합니다.';
 	@override String get audioNormalization => '음량 정규화';
 	@override String get audioNormalizationDisablesPassthrough => '오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다';
+	@override String get audioEffectsDescription => '효과는 해독 된 오디오를 사용하여, 그래서 passthrough가 꺼집니다. 방 환경과 스테레오 확장은 MPV 건설 및 트랙';
+	@override String get audioStereoWidth => '스테레오 확장';
+	@override String get audioSpatializer => '방 환경';
+	@override String get audioSpatializerDescription => '조용한 방 반응을 추가하십시오.';
+	@override String get audioPitch => '피치 스위트';
+	@override String get audioPitchDescription => '속도를 바꾸지 않고 플레이트를 변경합니다. MPV 건설은 포함되어야 합니다. Rubber Band그리고';
+	@override String get audioEffectUnavailable => '이 효과는이 트랙에 사용할 수 없습니다 또는 MPV 건설하기';
 }
 
 // Path: performanceOverlay
@@ -3151,7 +3182,7 @@ class _Translations$universalMedia$ko extends Translations$universalMedia$en {
 	@override String get audioCd => '오디오 CD';
 	@override String get discAvailability => '디스크 재생에는 호환되는 MPV 구축, 지원된 드라이브 및 운영 체제 허가가 필요합니다.그것은 상업적인 디스크 보호를 초과할 수 없습니다.';
 	@override String get converterTitle => '현지 미디어 파일을 변환';
-	@override String get converterHelp => 'FFmpeg를 사용하여 MP4, M4A 또는 MP3 복사본을 만들 수 있습니다.';
+	@override String get converterHelp => '현지 파일을 변환하거나 로컬 파일로 재구성하십시오. FFmpeg그리고';
 	@override String get converterIntro => '지역 오디오 또는 비디오 파일을 여러 장치에서 작동하는 형식으로 변환합니다.';
 	@override String get converterPrivacy => 'FFmpeg는이 컴퓨터에 설치되어야합니다.Conversion은 로컬 파일만 읽습니다.그것은 스트림을 다운로드하거나 DRM을 제거하지 않습니다.';
 	@override String get converterChooseInput => '지역 미디어 파일 선택';
@@ -3168,7 +3199,7 @@ class _Translations$universalMedia$ko extends Translations$universalMedia$en {
 	@override String get converterStarting => 'FFmpeg를 시작합니다.';
 	@override String get converterProgress => '이 컴퓨터로 변환하는 ...';
 	@override String get converterComplete => '변환이 완료되었습니다.새 파일은 준비되어 있습니다.';
-	@override String get converterFfmpegMissing => 'H.264, AAC 및 MP3 지원을 사용하여 FFmpeg를 설치하고 다시 시도하십시오.';
+	@override String get converterFfmpegMissing => 'FFmpeg 이 포맷이 없거나 지원되지 않습니다.';
 	@override String get converterFailed => '변환이 실패했습니다.원본 파일이 읽을 수 있는지 확인하고 목적지가 충분한 공간을 갖추고 있음을 확인합니다.';
 	@override String get converterCancelled => '변환이 취소되었습니다 불완전한 출력은 제거되었습니다.';
 	@override String get converterDesktopOnly => '현지 변환은 FFmpeg 설치를 가진 데스크톱 컴퓨터에서 사용할 수 있습니다.';
@@ -3181,11 +3212,9 @@ class _Translations$universalMedia$ko extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.';
 	@override String get captureNoDevices => '스크린이나 카메라가 찾을 수 없습니다. FFmpeg 캡처 지원 및 운영 체제 개인 정보 보호 허가를 확인합니다.';
 	@override String get captureSource => '스크린 또는 카메라';
-	@override String get captureScreen => '스크린';
 	@override String get captureAudioSource => '오디오 입력 (옵션)';
 	@override String get captureAudioHelp => '마이크 또는 사용 가능한 입력에서 오디오를 추가합니다. 장치 선택은 FFmpeg 및 시스템 허가에 따라 달라집니다.';
 	@override String get captureAudioNone => '오디오 없음';
-	@override String get captureDefaultAudio => '기본 오디오 입력';
 	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
 	@override String get captureFrameRate => '녹음 프레임 속도';
 	@override String get capturePrivacy => '녹음은 선택한 파일에만 저장됩니다.마이크로폰 캡처는 선택적입니다.PlezyNG은 녹음을 업로드하지 않습니다.';
@@ -3210,9 +3239,6 @@ class _Translations$universalMedia$ko extends Translations$universalMedia$en {
 	@override String get shareStopped => '공유 중단되었습니다.시용 링크는 더 이상 유효하지 않습니다.';
 	@override String get shareUrlCopied => '흐름 주소 복사';
 	@override String get shareOpenUrl => '다른 장치에서 플레이어에서 이 주소를 열어';
-	@override String get shareQrLabel => '임시 스트림 주소에 대한 QR 코드';
-	@override String get shareQrHelp => '동일한 개인 네트워크에 연결된 호환 플레이어를 사용하여 스캔합니다.';
-	@override String get shareHttpHint => '이 스트림은 암호화되지 않은 HTTP을 사용합니다. PlezyNG에서는 HTTP을 열기 전에 허용합니다.';
 	@override String get shareCopyUrl => '스트림 주소 복사';
 	@override String get shareExpiresLabel => '링크가 끝나고';
 	@override String get shareStarting => '흐름을 준비하는 ...';
@@ -3246,6 +3272,13 @@ class _Translations$universalMedia$ko extends Translations$universalMedia$en {
 	@override String get cliHelp => 'plezyctl 가이드를 사용하여 마니플을 확인하거나 동일한 확장을 검색합니다. 각 검색 전에 HTTPS 서비스를 검토합니다. 결과는 기존 미디어 양식에서 열립니다. 시작할 재생 버튼을 선택합니다.';
 	@override String get cliCopyExample => '코멘트 복사본 예제';
 	@override String get cliCopied => '명령 사례 복사.';
+	@override String get captureScreen => '스크린';
+	@override String get captureDefaultAudio => '기본 오디오 입력';
+	@override String get shareQrLabel => '임시 스트림 주소에 대한 QR 코드';
+	@override String get shareQrHelp => '동일한 개인 네트워크에 연결된 호환 플레이어를 사용하여 스캔합니다.';
+	@override String get shareHttpHint => '이 스트림은 암호화되지 않은 HTTP을 사용합니다. PlezyNG에서는 HTTP을 열기 전에 허용합니다.';
+	@override String get allowFtp => 'FTP 허용';
+	@override String get allowFtpHelp => 'FTP는 암호화 없이 미디어를 보내고 신뢰할 수 있는 네트워크에서만 사용합니다.';
 }
 
 // Path: fileSources
@@ -6011,6 +6044,30 @@ extension on TranslationsKo {
 			'videoControls.skipAds' => '스키 광고',
 			'videoControls.tapToUnlock' => '잠금을 해제하려면 탭하세요',
 			'videoControls.tapAgainToUnlock' => '잠금을 해제하려면 다시 탭하세요',
+			'videoControls.segmentLoopHelp' => '이 재생 중에 섹션을 움직이십시오.A를 설정하고 나중에 B를 타임 라인에 설정합니다.',
+			'videoControls.setLoopStart' => '세트 루프 시작 (A)',
+			'videoControls.setLoopEnd' => '세트 루프 끝 (B)',
+			'videoControls.clearSegmentLoop' => '분명한 세그먼트 루프',
+			'videoControls.setLoopStartFirst' => '롤 시작 (A) 전에 끝 (B)을 설정합니다.',
+			'videoControls.loopEndAfterStart' => '롤 끝은 시작보다 나중에 있어야합니다.',
+			'videoControls.segmentLoopUnavailable' => '세그먼트 루핑은 이 플레이백을 위해 사용할 수 없습니다.',
+			'videoControls.bookmarksHelp' => '책표는 이 장치에 저장됩니다.이 시간에 가기 위해 하나를 선택합니다.',
+			'videoControls.bookmarksButton' => '책표',
+			'videoControls.chaptersAndBookmarks' => '장 및 책표',
+			'videoControls.segmentLoop' => '세그먼트 루프',
+			'videoControls.addBookmark' => 'Bookmark 추가하기',
+			'videoControls.bookmarkName' => 'Bookmark 이름',
+			'videoControls.bookmarkNameHint' => '예를 들어, 개방 장면',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => '책표 ${n}',
+			'videoControls.bookmarkNameRequired' => '이 책자에 대한 이름을 입력합니다.',
+			'videoControls.deleteBookmark' => 'Bookmark 삭제',
+			'videoControls.bookmarkLimitReached' => '이 항목은 이미 100 개의 책표를 가지고 있습니다.',
+			'videoControls.bookmarkUnavailable' => '이 책을 저장하거나 제거할 수는 없습니다.',
+			'videoControls.bookmarkSaved' => '도서관이 저장되었습니다.',
+			'videoControls.bookmarkDeleted' => 'Bookmark 삭제됨',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => '로프 포인트 ${point} 세트 에 ${time}그리고',
+			'videoControls.noChaptersOrBookmarks' => '장이나 책표가 없습니다.',
+			'videoControls.loopPointNotSet' => '설정하지 않는',
 			'messages.markedAsWatched' => '시청 완료로 표시됨',
 			'messages.markedAsUnwatched' => '미시청으로 표시됨',
 			'messages.markedAsWatchedOffline' => '시청 완료로 표시됨 (연결 시 동기화됨)',
@@ -6449,6 +6506,8 @@ extension on TranslationsKo {
 			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
 			'libraries.libraryOptions' => '미디어 라이브러리 옵션',
 			'libraries.content' => '미디어 라이브러리 콘텐츠',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => '미디어 라이브러리 선택',
 			'libraries.filtersWithCount' => ({required Object count}) => '필터 (${count})',
 			'libraries.noRecommendations' => '추천 없음',
@@ -6473,8 +6532,6 @@ extension on TranslationsKo {
 			'libraries.filterCategories.year' => '연도',
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => '미시청',
 			'libraries.filterCategories.unplayed' => '재생하지 않음',
 			'libraries.filterCategories.favorites' => '즐겨찾기',
@@ -6963,6 +7020,8 @@ extension on TranslationsKo {
 			'watchTogether.shareInvite' => '초대 공유',
 			'watchTogether.inviteCopied' => '초대 메시지가 복사되었습니다. 메시지에 붙여넣으세요.',
 			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG 함께 보기 방에 초대합니다. \'함께 보기\'를 열고 \'방 참여\'를 선택한 다음 ${code} 코드를 입력하세요.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.openSessionControls' => '함께 보기 세션 제어 열기',
 			'watchTogether.reconnecting' => '재연결 중...',
 			'watchTogether.reconnectingDescription' => '연결이 끊어졌습니다. 자동으로 방에 다시 참여합니다.',
@@ -6987,8 +7046,6 @@ extension on TranslationsKo {
 			'watchTogether.playAnyway' => '그래도 재생',
 			'watchTogether.chooseAnotherCopy' => '다른 사본 선택',
 			'watchTogether.dontPlay' => '재생 안 함',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => '이 비디오가 없습니다',
 			'watchTogether.unavailableDescription' => 'Plezy가 라이브러리에서 이 비디오를 찾지 못했습니다. 직접 사본을 선택하거나 다시 검색하세요.',
 			'watchTogether.chooseCopy' => '사본 선택',
@@ -7349,7 +7406,7 @@ extension on TranslationsKo {
 			'videoSettings.audioOutputSpatial' => '공간 음향',
 			'videoSettings.audioOutputStereo' => '스테레오',
 			'videoSettings.audioEqualizer' => '오디오 균형',
-			'videoSettings.audioEqualizerDescription' => '이 장치에 대해 5개의 주파수 밴드를 조정합니다. mpv에서 사용할 수 있으며, 활성 EQ가 오디오를 해독하고 균형을 끄는 것을 방해합니다.',
+			'videoSettings.audioEqualizerDescription' => '10 밴드 평등기 MPV. 오디오 필터는 해독 된 오디오를 사용하고 passthrough를 끄십시오.',
 			'videoSettings.audioEqualizerFlat' => '플랫',
 			'videoSettings.audioEqualizerActive' => '사용자 지정',
 			'videoSettings.audioEqualizerSaveFailed' => '오디오 평등기 설정을 저장할 수 없었습니다.',
@@ -7357,6 +7414,13 @@ extension on TranslationsKo {
 			'videoSettings.backgroundVideoAudioDescription' => '플레이어를 떠날 때 비디오 오디오 재생을 유지; 사진이 돌아올 때까지 숨겨져 있습니다. Android은 미디어 재생 알림을 사용합니다.',
 			'videoSettings.audioNormalization' => '음량 정규화',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다',
+			'videoSettings.audioEffectsDescription' => '효과는 해독 된 오디오를 사용하여, 그래서 passthrough가 꺼집니다. 방 환경과 스테레오 확장은 MPV 건설 및 트랙',
+			'videoSettings.audioStereoWidth' => '스테레오 확장',
+			'videoSettings.audioSpatializer' => '방 환경',
+			'videoSettings.audioSpatializerDescription' => '조용한 방 반응을 추가하십시오.',
+			'videoSettings.audioPitch' => '피치 스위트',
+			'videoSettings.audioPitchDescription' => '속도를 바꾸지 않고 플레이트를 변경합니다. MPV 건설은 포함되어야 합니다. Rubber Band그리고',
+			'videoSettings.audioEffectUnavailable' => '이 효과는이 트랙에 사용할 수 없습니다 또는 MPV 건설하기',
 			'performanceOverlay.color' => '색상',
 			'performanceOverlay.performance' => '성능',
 			'performanceOverlay.buffer' => '버퍼',
@@ -7470,6 +7534,8 @@ extension on TranslationsKo {
 			'metadataEdit.notSet' => '설정되지 않음',
 			'metadataEdit.libraryDefault' => '라이브러리 기본값',
 			'metadataEdit.accountDefault' => '계정 기본값',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => '시리즈 기본값',
 			'metadataEdit.episodeSorting' => '에피소드 정렬',
 			'metadataEdit.oldestFirst' => '오래된 순',
@@ -7501,8 +7567,6 @@ extension on TranslationsKo {
 			'metadataEdit.shownWithForeignAudio' => '외국어 오디오 시 표시',
 			'metadataEdit.alwaysEnabled' => '항상 활성화',
 			'metadataEdit.tags' => '태그',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => '태그 추가',
 			'metadataEdit.genre' => '장르',
 			'metadataEdit.director' => '감독',
@@ -7934,7 +7998,7 @@ extension on TranslationsKo {
 			'universalMedia.audioCd' => '오디오 CD',
 			'universalMedia.discAvailability' => '디스크 재생에는 호환되는 MPV 구축, 지원된 드라이브 및 운영 체제 허가가 필요합니다.그것은 상업적인 디스크 보호를 초과할 수 없습니다.',
 			'universalMedia.converterTitle' => '현지 미디어 파일을 변환',
-			'universalMedia.converterHelp' => 'FFmpeg를 사용하여 MP4, M4A 또는 MP3 복사본을 만들 수 있습니다.',
+			'universalMedia.converterHelp' => '현지 파일을 변환하거나 로컬 파일로 재구성하십시오. FFmpeg그리고',
 			'universalMedia.converterIntro' => '지역 오디오 또는 비디오 파일을 여러 장치에서 작동하는 형식으로 변환합니다.',
 			'universalMedia.converterPrivacy' => 'FFmpeg는이 컴퓨터에 설치되어야합니다.Conversion은 로컬 파일만 읽습니다.그것은 스트림을 다운로드하거나 DRM을 제거하지 않습니다.',
 			'universalMedia.converterChooseInput' => '지역 미디어 파일 선택',
@@ -7951,7 +8015,7 @@ extension on TranslationsKo {
 			'universalMedia.converterStarting' => 'FFmpeg를 시작합니다.',
 			'universalMedia.converterProgress' => '이 컴퓨터로 변환하는 ...',
 			'universalMedia.converterComplete' => '변환이 완료되었습니다.새 파일은 준비되어 있습니다.',
-			'universalMedia.converterFfmpegMissing' => 'H.264, AAC 및 MP3 지원을 사용하여 FFmpeg를 설치하고 다시 시도하십시오.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg 이 포맷이 없거나 지원되지 않습니다.',
 			'universalMedia.converterFailed' => '변환이 실패했습니다.원본 파일이 읽을 수 있는지 확인하고 목적지가 충분한 공간을 갖추고 있음을 확인합니다.',
 			'universalMedia.converterCancelled' => '변환이 취소되었습니다 불완전한 출력은 제거되었습니다.',
 			'universalMedia.converterDesktopOnly' => '현지 변환은 FFmpeg 설치를 가진 데스크톱 컴퓨터에서 사용할 수 있습니다.',
@@ -7964,11 +8028,9 @@ extension on TranslationsKo {
 			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.',
 			'universalMedia.captureNoDevices' => '스크린이나 카메라가 찾을 수 없습니다. FFmpeg 캡처 지원 및 운영 체제 개인 정보 보호 허가를 확인합니다.',
 			'universalMedia.captureSource' => '스크린 또는 카메라',
-			'universalMedia.captureScreen' => '스크린',
 			'universalMedia.captureAudioSource' => '오디오 입력 (옵션)',
 			'universalMedia.captureAudioHelp' => '마이크 또는 사용 가능한 입력에서 오디오를 추가합니다. 장치 선택은 FFmpeg 및 시스템 허가에 따라 달라집니다.',
 			'universalMedia.captureAudioNone' => '오디오 없음',
-			'universalMedia.captureDefaultAudio' => '기본 오디오 입력',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
 			'universalMedia.captureFrameRate' => '녹음 프레임 속도',
 			'universalMedia.capturePrivacy' => '녹음은 선택한 파일에만 저장됩니다.마이크로폰 캡처는 선택적입니다.PlezyNG은 녹음을 업로드하지 않습니다.',
@@ -7986,6 +8048,8 @@ extension on TranslationsKo {
 			'universalMedia.sharePrivacy' => '귀하의 지역 네트워크에 있는 개인 링크를 받는 사람은 개인 링크가 활성화되는 동안 관찰할 수 있습니다. 링크는 60분 후에 만료됩니다. 공유를 중단하여 서버를 닫고 링크를 취소합니다.',
 			'universalMedia.shareChooseFile' => '미디어 파일 선택',
 			'universalMedia.shareChooseHelp' => '지역 오디오 또는 비디오 파일을 선택합니다.이 파일은이 컴퓨터에 남아 있습니다.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg 또는 H.264/AAC 암호가 사용할 수 없습니다. FFmpeg을 H.264 및 AAC 암호 지원으로 설치합니다.',
 			'universalMedia.shareFailed' => '흐름은 예기치 않게 시작되거나 중지되지 않았습니다. FFmpeg 및 네트워크 액세스를 확인하십시오.',
 			'universalMedia.shareActive' => '스트림은 개인 네트워크에서 준비되어 있습니다.',
@@ -7993,9 +8057,6 @@ extension on TranslationsKo {
 			'universalMedia.shareStopped' => '공유 중단되었습니다.시용 링크는 더 이상 유효하지 않습니다.',
 			'universalMedia.shareUrlCopied' => '흐름 주소 복사',
 			'universalMedia.shareOpenUrl' => '다른 장치에서 플레이어에서 이 주소를 열어',
-			'universalMedia.shareQrLabel' => '임시 스트림 주소에 대한 QR 코드',
-			'universalMedia.shareQrHelp' => '동일한 개인 네트워크에 연결된 호환 플레이어를 사용하여 스캔합니다.',
-			'universalMedia.shareHttpHint' => '이 스트림은 암호화되지 않은 HTTP을 사용합니다. PlezyNG에서는 HTTP을 열기 전에 허용합니다.',
 			'universalMedia.shareCopyUrl' => '스트림 주소 복사',
 			'universalMedia.shareExpiresLabel' => '링크가 끝나고',
 			'universalMedia.shareStarting' => '흐름을 준비하는 ...',
@@ -8015,8 +8076,6 @@ extension on TranslationsKo {
 			'universalMedia.extensionInstallTitle' => '이 검색 서비스를 추가하십시오?',
 			'universalMedia.extensionReplaceTitle' => '이 검색 서비스 업데이트?',
 			'universalMedia.extensionService' => '서비스',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS 최종 포인트',
 			'universalMedia.extensionConsent' => '귀하의 검색 텍스트가 이 서비스에 전송됩니다. 메니지에는 실행 가능한 코드가 없습니다.이 끝점에 신뢰하는 경우에만 계속하십시오.',
 			'universalMedia.extensionInstall' => '서비스 추가',
@@ -8031,6 +8090,13 @@ extension on TranslationsKo {
 			'universalMedia.cliHelp' => 'plezyctl 가이드를 사용하여 마니플을 확인하거나 동일한 확장을 검색합니다. 각 검색 전에 HTTPS 서비스를 검토합니다. 결과는 기존 미디어 양식에서 열립니다. 시작할 재생 버튼을 선택합니다.',
 			'universalMedia.cliCopyExample' => '코멘트 복사본 예제',
 			'universalMedia.cliCopied' => '명령 사례 복사.',
+			'universalMedia.captureScreen' => '스크린',
+			'universalMedia.captureDefaultAudio' => '기본 오디오 입력',
+			'universalMedia.shareQrLabel' => '임시 스트림 주소에 대한 QR 코드',
+			'universalMedia.shareQrHelp' => '동일한 개인 네트워크에 연결된 호환 플레이어를 사용하여 스캔합니다.',
+			'universalMedia.shareHttpHint' => '이 스트림은 암호화되지 않은 HTTP을 사용합니다. PlezyNG에서는 HTTP을 열기 전에 허용합니다.',
+			'universalMedia.allowFtp' => 'FTP 허용',
+			'universalMedia.allowFtpHelp' => 'FTP는 암호화 없이 미디어를 보내고 신뢰할 수 있는 네트워크에서만 사용합니다.',
 			'fileSources.title' => '파일 및 책',
 			'fileSources.subtitle' => '읽고, 듣고, 자신의 파일에서 관찰합니다.',
 			'fileSources.add' => '출처 추가',
@@ -8496,6 +8562,8 @@ extension on TranslationsKo {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
+			_ => null,
+		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
@@ -8529,8 +8597,6 @@ extension on TranslationsKo {
 			'deepLinks.noLiveTv' => '이 링크를 위해 라이브 TV 서버가 없습니다.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '채널 "${channel}"을 찾을 수 없었습니다.',
 			'deepLinks.showLink' => '링크 보기',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => '프로필 링크 보기',
 			'deepLinks.dialogTitle' => '링크',
 			'deepLinks.showHint' => '이 링크를 열면 다음 에피소드를 재생합니다. shuffle에서 쇼를 재생하려면 &mode=shuffle을 추가합니다.',

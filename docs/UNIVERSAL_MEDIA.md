@@ -14,19 +14,19 @@ HTTP(S) requests run through a short-lived, loopback-only stream gateway owned b
 
 The player title uses the address host unless a display name is supplied. A “live” switch hides the seek bar, skip, and go-to-time controls and disables seek actions in system media controls. Turn it off for a seekable recording. An explicit live/session cue explains what is and is not saved.
 
-RTSP, RTMP, RTMPS, UDP, and RTP are advanced inputs shown only when the current device uses an MPV backend. These protocols are passed directly to MPV because the HTTP gateway cannot proxy them. They are session-only and cannot be saved as favorites. Build options and protocol support vary by platform.
+RTSP, RTMP, RTMPS, UDP, and RTP are advanced inputs shown only when the current device uses an MPV backend. These protocols are passed directly to MPV because the HTTP gateway cannot proxy them. They are session-only and cannot be saved as favorites. Build options and protocol support vary by platform. Direct FTP URLs have a separate opt-in because FTP is unencrypted; use them only on a trusted network. FTP URLs are session-only and cannot be saved as favorites. FTP and FTPS file sources remain available through the authenticated source browser, where credentials are kept in the account vault rather than pasted into a stream URL.
 
 ### Playlists and radio
 
-Choose a local `.m3u`, `.m3u8`, or `.pls` file, or enter an HTTP(S) playlist address. Entries are bounded to 1,000 and 2 MiB total; overlong or unsupported entries are skipped with a count cue. Relative entries in remote playlists resolve against the playlist address. HLS manifests are played as adaptive streams rather than expanded into fixed segment queues. Negative M3U/PLS lengths are treated as live. HLS media playlists without `#EXT-X-ENDLIST` are treated as live unless marked `#EXT-X-PLAYLIST-TYPE:VOD`. Master playlists do not say whether their variants are live or on demand, so PlezyNG leaves their seeking behavior to the player.
+Choose a local `.m3u`, `.m3u8`, or `.pls` file, or enter an HTTP(S) playlist address. Entries are bounded to 1,000 and 2 MiB total; overlong or unsupported entries are skipped with a count cue. Relative network entries resolve against the playlist address. A locally selected M3U/PLS may also point to media files in its own folder. PlezyNG rejects absolute paths, parent traversal, encoded separators, and symlinks that leave that folder; platforms that provide no stable local playlist path can still play network entries but cannot resolve local siblings. HLS manifests are played as adaptive streams rather than expanded into fixed segment queues. Negative M3U/PLS lengths are treated as live. HLS media playlists without `#EXT-X-ENDLIST` are treated as live unless marked `#EXT-X-PLAYLIST-TYPE:VOD`. Master playlists do not say whether their variants are live or on demand, so PlezyNG leaves their seeking behavior to the player.
 
-Playlist directives are not interpreted as player options. Local playlist paths are not followed, except when an HLS `.m3u8` file is opened directly by the player. Save a direct credential-free HTTP(S) station as a favorite from the Stream address form. Favorites are profile-local, capped at 100, and reject user info and credential/signature query keys. They are opt-in; opening a URL or playlist never saves it automatically.
+Playlist directives are not interpreted as player options. Only recognized audio/video sibling files are queued. Save a direct credential-free HTTP(S) station as a favorite from the Stream address form. Favorites are profile-local, capped at 100, and reject user info and credential/signature query keys. They are opt-in; opening a URL or playlist never saves it automatically.
 
 ### Device files and disc images
 
 Choose audio or video files for a temporary queue, or select an ISO image where the platform’s player supports it. The file picker gives PlezyNG the selected file access; transient selections do not create a catalog item, bookmark, or progress record. Local files normally open by file URI. If the platform returns a read stream without a usable file path, PlezyNG makes a temporary copy and removes it when playback ends.
 
-Local `.m3u`/`.pls` entries that name sibling files are currently skipped; use a direct local file selection, or an HLS `.m3u8` file instead. Playlist file paths are deliberately not treated as permission to open arbitrary filesystem paths.
+Local `.m3u`/`.pls` playlists can name supported media files in the selected playlist's own folder. PlezyNG rejects absolute paths, parent traversal, encoded separators, symlinks that leave that folder, and unsupported file types. On platforms that provide no stable local playlist path, network entries still work and local siblings are skipped.
 
 The desktop MPV menu can also request a DVD, Blu-ray, or audio CD from the computer’s optical drive. This depends on the MPV build, device path, drive, and operating-system permissions. It does not bypass commercial disc protection. Opening an ISO from Device files is the portable alternative when supported by the local player.
 
@@ -38,9 +38,21 @@ Desktop MPV live streams can be recorded to MKV or MPEG-TS video, or MKA/MKV aud
 
 ## Local conversion
 
-Desktop users can convert a local audio/video file to MP4 (H.264/AAC), M4A (AAC), or MP3 (LAME). The screen uses `ffprobe` when available for duration feedback and runs `ffmpeg` with argument-list process invocation, not a shell. The output is written beside the destination as a temporary file and published only after a successful conversion. Replacing an existing destination requires an explicit confirmation and keeps a recoverable backup until the new file is in place.
+Desktop users can convert local files to MP4 or MKV (H.264/AAC), MP4 or MKV stream-copy remuxes, M4A (AAC), MP3 (LAME), FLAC, WAV/PCM, Ogg Opus, or WebM (VP9/Opus). Available profiles are probed from the user's FFmpeg encoders and output containers; unsupported choices stay disabled. Copy/remux keeps the source codecs and does not transcode, so MP4 compatibility depends on the codecs already in the source. WAV is uncompressed and can use substantially more disk space; WebM/VP9 encoding can take longer than H.264.
 
-Install FFmpeg on the computer and make `ffmpeg` available on `PATH`; include the H.264/AAC/MP3 encoders shown in the format labels. PlezyNG does not bundle FFmpeg, download remote media for conversion, remove DRM, or transcode a protected source. Conversion works on files the user can already open locally.
+The screen uses `ffprobe` when available for duration feedback and runs `ffmpeg` with argument-list process invocation, not a shell. The output is written beside the destination as a temporary file and published only after a successful conversion. Replacing an existing destination requires an explicit confirmation and keeps a recoverable backup until the new file is in place.
+
+Install FFmpeg on the computer and make `ffmpeg` available on `PATH`. PlezyNG does not bundle FFmpeg, download remote media for conversion, remove DRM, or transcode a protected source. Conversion works on files the user can already open locally.
+
+## Audio effects
+
+The existing playback settings sheet keeps audio tuning in one place. MPV playback now offers a ten-band equalizer, stereo widening, a subtle room-ambience effect, and pitch shift. These filters operate on decoded audio, so enabling one turns passthrough off; restoring neutral values allows the saved passthrough preference to apply again. Stereo widening may only work with stereo tracks, and pitch shift requires the optional Rubber Band filter in that MPV build. If a filter is unavailable for the build or current track, PlezyNG reports the failure and keeps playback running.
+
+The equalizer bands and effect values are saved on this device. The equalizer remains device-local and MPV-only; native TV players and Android ExoPlayer do not show these controls.
+
+## Segment loop
+
+Open the existing **Chapters and bookmarks** sheet to save a named mark for a server-backed media item or return to it. One-off local files and direct streams keep named marks in the existing chapter area; their local path or URL is represented by a digest, never written as bookmark text. Bookmarks stay on this device, are not included in settings export/reset, and do not change server resume progress. MPV playback also offers loop point A and point B in its existing chapter sheet or source-player playback-options menu; the segment repeats until cleared or playback changes. Live inputs and sources without a seekable timeline do not offer bookmarks or segment looping.
 
 ## Capture a screen or camera
 
@@ -95,7 +107,7 @@ The new interface strings use the repository’s documented machine-translation 
 | Capability | Availability |
 | --- | --- |
 | Direct HTTP(S) and HTTP playlists | All builds with source playback and a working native media player; codec and container support still depends on that player. |
-| RTSP/RTMP/RTMPS/UDP/RTP | MPV builds only; not webOS/Tizen native TV or Android ExoPlayer. |
+| RTSP/RTMP/RTMPS/UDP/RTP and direct FTP | MPV builds only; FTP additionally needs explicit opt-in and is unencrypted. Not available on webOS/Tizen native TV or Android ExoPlayer. |
 | Local files, temporary queues, ISO images | File-picker platforms; ISO playback depends on the native player. |
 | Picture adjustments and 360° flat view | MPV video only; 360° also requires the v360 filter. |
 | Stream recording | Desktop MPV live sessions only. |
@@ -109,8 +121,8 @@ The new interface strings use the repository’s documented machine-translation 
 
 ## Scope boundaries
 
-This guide covers the full VLC comparison gaps selected for this client: desktop screen/camera capture, outgoing local-network streaming, search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, playlists, local files, optical-disc inputs on supported desktops, conversion, live-stream recording, MPV picture/effect/audio controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
+This guide covers the full VLC comparison gaps selected for this client: safe local media references in M3U/PLS playlists, additional FFmpeg conversion and remux profiles, ten-band MPV equalization and common audio effects, named device-local bookmarks, temporary A/B segment loops, desktop screen/camera capture, outgoing local-network streaming, declarative search extensions, and a CLI entry point. It complements capabilities already present in PlezyNG such as direct media inputs, playlists, local files, optical-disc inputs on supported desktops, live-stream recording, MPV picture controls, subtitle tools, Google Cast handoff, and external-player launch. See the [comparison matrix](VLC_FEATURE_PARITY.md) for the feature-by-feature status and remaining platform limits.
 
-The additions intentionally fit the existing Open media pane and use the app’s standard player and navigation. They do not claim full VLC parity: the stream-out path is bounded HLS file sharing; extensions are declarative search mappings rather than executable Lua modules; and `plezyctl` handles those manifests rather than controlling arbitrary playback sessions.
+The additions fit the existing Open media pane, playback settings, and chapter areas, using PlezyNG’s standard player, focus handling, and navigation. They do not claim full VLC parity: the stream-out path is bounded HLS file sharing; extensions are declarative search mappings rather than executable Lua modules; and `plezyctl` handles those manifests rather than controlling arbitrary playback sessions.
 
 New localized strings belong in `lib/i18n/en.i18n.json`; run the repository’s localization and Slang generation workflow after editing the catalog. Platform checks and FFmpeg/disc requirements should remain explicit in future UI and release notes.

@@ -1,190 +1,212 @@
 {
   "locales": {
     "ar": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 148
     },
     "az": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 187
+      "sameAsEnglish": 223
     },
     "bg": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 147
     },
     "bn": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 146
     },
     "cs": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 191
+      "sameAsEnglish": 192
     },
     "da": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 264
+      "sameAsEnglish": 265
     },
     "de": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 285
+      "sameAsEnglish": 287
     },
     "en": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 3593
+      "sameAsEnglish": 3626
     },
     "es": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 214
     },
     "es-419": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": "es",
       "sameAsEnglish": 208
     },
     "fa": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 150
     },
     "fr": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 252
     },
     "fr-CA": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": "fr",
       "sameAsEnglish": 245
     },
     "he": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 154
+      "sameAsEnglish": 155
     },
     "hi": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 141
     },
     "hu": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 188
     },
     "id": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 192
+      "sameAsEnglish": 193
     },
     "it": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 246
     },
     "ja": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 161
     },
     "kk": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 164
+      "sameAsEnglish": 200
     },
     "ko": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 163
     },
     "ms": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 179
     },
     "nb": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 227
+      "sameAsEnglish": 230
     },
     "nl": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 289
+      "sameAsEnglish": 291
     },
     "pl": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 202
+      "sameAsEnglish": 203
     },
     "pt": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 224
     },
     "pt-BR": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": "pt",
       "sameAsEnglish": 212
     },
     "pt-PT": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": "pt",
       "sameAsEnglish": 213
     },
     "ru": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 144
     },
     "sv": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 235
+      "sameAsEnglish": 236
     },
     "th": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 150
+      "sameAsEnglish": 151
     },
     "tr": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 177
     },
     "uk": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 138
     },
     "uz": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
-      "sameAsEnglish": 200
+      "sameAsEnglish": 236
     },
     "vi": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 168
     },
     "zh": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 149
     },
     "zh-Hant": {
-      "messages": 3593,
+      "messages": 3626,
       "inheritedFrom": null,
       "sameAsEnglish": 145
     }
   },
-  "errors": []
+  "errors": [
+    "English source changed: 36 messages need translation review. Run --record-source after review.",
+    "  source: universalMedia.allowFtp",
+    "  source: universalMedia.allowFtpHelp",
+    "  source: universalMedia.converterFfmpegMissing",
+    "  source: universalMedia.converterHelp",
+    "  source: videoControls.addBookmark",
+    "  source: videoControls.bookmarkDefaultName",
+    "  source: videoControls.bookmarkDeleted",
+    "  source: videoControls.bookmarkLimitReached",
+    "  source: videoControls.bookmarkName",
+    "  source: videoControls.bookmarkNameHint",
+    "  source: videoControls.bookmarkNameRequired",
+    "  source: videoControls.bookmarkSaved",
+    "  source: videoControls.bookmarkUnavailable",
+    "  source: videoControls.bookmarksButton",
+    "  source: videoControls.bookmarksHelp",
+    "  source: videoControls.chaptersAndBookmarks",
+    "  source: videoControls.clearSegmentLoop",
+    "  source: videoControls.deleteBookmark",
+    "  source: videoControls.loopEndAfterStart",
+    "  source: videoControls.loopPointNotSet"
+  ]
 }

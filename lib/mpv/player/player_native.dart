@@ -22,14 +22,33 @@ typedef _AudioStateRequest = ({
   int downmixCenterBoostDb,
   bool downmixNormalize,
   List<double> equalizerGains,
+  PlayerAudioEffects effects,
   double rate,
 });
 
-typedef _AudioStateGenerations = ({int passthrough, int normalization, int downmix, int equalizer, int rate});
+typedef _AudioStateGenerations = ({
+  int passthrough,
+  int normalization,
+  int downmix,
+  int equalizer,
+  int effects,
+  int rate,
+});
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFocusControl {
+  bool _hasSeenSegmentLoopSource = false;
   ({int left, int top, int right, int bottom, double devicePixelRatio})? _pendingVideoRect;
+
+  Future<void> _clearTransientSegmentLoop() async {
+    for (final property in const ['ab-loop-a', 'ab-loop-b']) {
+      try {
+        await setProperty(property, 'no');
+      } on Object catch (error, stackTrace) {
+        appLogger.d('MPV: could not clear transient segment loop', error: error, stackTrace: stackTrace);
+      }
+    }
+  }
 
   @override
   Future<void> setVideoRect({
@@ -442,6 +461,11 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     if (_nativeCoreUnavailable) return null;
     await _ensureInitialized();
     if (_nativeCoreUnavailable) return null;
+    // MPV retains A/B points when it advances to another file. They are
+    // playback-local controls in PlezyNG, so clear both before every explicit
+    // replacement load and keep a failed optional-property write from
+    // interrupting playback.
+    await _clearTransientSegmentLoop();
     // `loadfile replace` (below) clears the native playlist, dropping any
     // gapless entry armed via setNext — settle its content-fd claim first.
     // No transition is surfaced: the caller is replacing playback anyway.
@@ -807,6 +831,10 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   @override
   void handlePlayerEvent(String name, Map? data) {
+    if (name == 'start-file' && !audioOnly) {
+      if (_hasSeenSegmentLoopSource) unawaited(_clearTransientSegmentLoop());
+      _hasSeenSegmentLoopSource = true;
+    }
     if (audioOnly && name == 'file-loaded') _handleAudioFileLoaded();
     super.handlePlayerEvent(name, data);
   }
@@ -969,6 +997,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
           downmixCenterBoostDb: accepted.downmixCenterBoostDb,
           downmixNormalize: accepted.downmixNormalize,
           equalizerGains: accepted.equalizerGains,
+          effects: accepted.effects,
           rate: rate,
         );
       } else {
@@ -1085,6 +1114,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
   static const int _downmixAudioField = 1 << 2;
   static const int _rateAudioField = 1 << 3;
   static const int _equalizerAudioField = 1 << 4;
+  static const int _effectsAudioField = 1 << 5;
 
   bool _passthroughRequested = false;
   bool _passthroughActive = false;
@@ -1096,13 +1126,16 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
   int _activeDownmixCenterBoostDb = 0;
   bool _downmixNormalize = false;
   bool _activeDownmixNormalize = false;
-  List<double> _equalizerGainsRequested = const [0, 0, 0, 0, 0];
-  List<double> _activeEqualizerGains = const [0, 0, 0, 0, 0];
+  List<double> _equalizerGainsRequested = const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  List<double> _activeEqualizerGains = const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  PlayerAudioEffects _effectsRequested = (stereoWidth: 0, spatializer: false, pitchSemitones: 0);
+  PlayerAudioEffects _activeEffects = (stereoWidth: 0, spatializer: false, pitchSemitones: 0);
   double _currentRate = 1.0;
   int _passthroughGeneration = 0;
   int _normalizationGeneration = 0;
   int _downmixGeneration = 0;
   int _equalizerGeneration = 0;
+  int _effectsGeneration = 0;
   int _rateGeneration = 0;
   _AudioStateRequest _acceptedAudioState = const (
     passthrough: false,
@@ -1110,7 +1143,8 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     channelLimit: AudioChannelLimit.original,
     downmixCenterBoostDb: 0,
     downmixNormalize: false,
-    equalizerGains: [0, 0, 0, 0, 0],
+    equalizerGains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    effects: (stereoWidth: 0, spatializer: false, pitchSemitones: 0),
     rate: 1.0,
   );
 
@@ -1150,6 +1184,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     downmixCenterBoostDb: _downmixCenterBoostDb,
     downmixNormalize: _downmixNormalize,
     equalizerGains: _equalizerGainsRequested,
+    effects: _effectsRequested,
     rate: _requestedRate,
   );
 
@@ -1162,6 +1197,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
         : accepted.downmixCenterBoostDb,
     downmixNormalize: fields & _downmixAudioField != 0 ? requested.downmixNormalize : accepted.downmixNormalize,
     equalizerGains: fields & _equalizerAudioField != 0 ? requested.equalizerGains : accepted.equalizerGains,
+    effects: fields & _effectsAudioField != 0 ? requested.effects : accepted.effects,
     rate: fields & _rateAudioField != 0 ? requested.rate : accepted.rate,
   );
 
@@ -1180,6 +1216,9 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     if (fields & _equalizerAudioField != 0 && generations.equalizer == _equalizerGeneration) {
       _equalizerGainsRequested = previous.equalizerGains;
     }
+    if (fields & _effectsAudioField != 0 && generations.effects == _effectsGeneration) {
+      _effectsRequested = previous.effects;
+    }
     if (fields & _rateAudioField != 0 && generations.rate == _rateGeneration) {
       _requestedRate = previous.rate;
     }
@@ -1191,12 +1230,14 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     if (fields & _normalizationAudioField != 0) ++_normalizationGeneration;
     if (fields & _downmixAudioField != 0) ++_downmixGeneration;
     if (fields & _equalizerAudioField != 0) ++_equalizerGeneration;
+    if (fields & _effectsAudioField != 0) ++_effectsGeneration;
     if (fields & _rateAudioField != 0) ++_rateGeneration;
     final generations = (
       passthrough: _passthroughGeneration,
       normalization: _normalizationGeneration,
       downmix: _downmixGeneration,
       equalizer: _equalizerGeneration,
+      effects: _effectsGeneration,
       rate: _rateGeneration,
     );
     final operation = _audioStateTail.then((_) => _reconcileAudioState(requested, fields, generations));
@@ -1223,6 +1264,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
           forceDownmix: fields & _downmixAudioField != 0,
           forceNormalization: fields & _downmixAudioField != 0,
           forceEqualizer: fields & _equalizerAudioField != 0,
+          forceEffects: fields & _effectsAudioField != 0,
         );
       } catch (rollbackError, rollbackStackTrace) {
         appLogger.e(
@@ -1241,6 +1283,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     bool forceDownmix = false,
     bool forceNormalization = false,
     bool forceEqualizer = false,
+    bool forceEffects = false,
   }) async {
     if (_nativeCoreUnavailable) return;
     // Normalization wins over passthrough: it is an audio filter and filters
@@ -1255,7 +1298,10 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
         target.rate == 1.0 &&
         target.channelLimit != AudioChannelLimit.stereo &&
         !target.normalization &&
-        !target.equalizerGains.any((gain) => gain.abs() >= 0.05);
+        !target.equalizerGains.any((gain) => gain.abs() >= 0.05) &&
+        target.effects.stereoWidth < 0.01 &&
+        !target.effects.spatializer &&
+        target.effects.pitchSemitones.abs() < 0.05;
     final normalizationShouldBeActive = target.normalization;
 
     // Ordering keeps the normalization filter off a bitstream in both
@@ -1290,6 +1336,10 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     if (forceEqualizer || !listEquals(_activeEqualizerGains, target.equalizerGains)) {
       await super.setAudioEqualizer(target.equalizerGains);
       _activeEqualizerGains = List<double>.unmodifiable(target.equalizerGains);
+    }
+    if (forceEffects || _activeEffects != target.effects) {
+      await super.setAudioEffects(target.effects);
+      _activeEffects = target.effects;
     }
     if (passthroughShouldBeActive && !_passthroughActive) {
       await _applyPassthrough(true);
@@ -1344,11 +1394,22 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
 
   @override
   Future<void> setAudioEqualizer(List<double> bandGains) {
-    if (_nativeCoreUnavailable || bandGains.length != 5) return Future<void>.value();
+    if (_nativeCoreUnavailable || bandGains.length != 10) return Future<void>.value();
     _equalizerGainsRequested = List<double>.unmodifiable(
       bandGains.map((gain) => gain.isFinite ? gain.clamp(-12.0, 12.0).toDouble() : 0.0),
     );
     return _enqueueAudioStateReconciliation(_equalizerAudioField);
+  }
+
+  @override
+  Future<void> setAudioEffects(PlayerAudioEffects effects) {
+    if (_nativeCoreUnavailable) return Future<void>.value();
+    _effectsRequested = (
+      stereoWidth: effects.stereoWidth.isFinite ? effects.stereoWidth.clamp(0.0, 1.0).toDouble() : 0.0,
+      spatializer: effects.spatializer,
+      pitchSemitones: effects.pitchSemitones.isFinite ? effects.pitchSemitones.clamp(-12.0, 12.0).toDouble() : 0.0,
+    );
+    return _enqueueAudioStateReconciliation(_effectsAudioField);
   }
 
   @override

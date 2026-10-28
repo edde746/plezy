@@ -14,6 +14,7 @@ import '../../focus/focusable_slider.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../mpv/mpv.dart';
+import '../../models/video_bookmark.dart';
 import '../../multiview/source_playback_workspace_surface.dart';
 import '../../multiview/workspace_controller.dart';
 import '../../multiview/workspace_models.dart';
@@ -30,6 +31,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../services/fullscreen_state_manager.dart';
+import '../../services/video_bookmark_service.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/music/mini_player.dart';
@@ -53,6 +55,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   bool _workspaceDetached = false;
   bool _autoJoinScheduled = false;
   bool _full = false;
+  String? _sourceLoopFileIdentity;
+  int? _sourceLoopStartMs;
+  int? _sourceLoopEndMs;
+  bool _bookmarkBusy = false;
   double? _dragPosition;
   final _fullscreen = FullscreenStateManager();
 
@@ -165,6 +171,18 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     final playback = _session;
     if (!mounted || playback == null) return;
     var workspaceChanged = false;
+    final fileIdentity = playback.fileIndex >= 0 && playback.fileIndex < playback.files.length
+        ? '${identityHashCode(playback.player)}:${playback.progress?.key ?? playback.entry?.key}:${playback.files[playback.fileIndex].id}'
+        : null;
+    var loopChanged = false;
+    if (_sourceLoopFileIdentity != fileIdentity) {
+      _sourceLoopFileIdentity = fileIdentity;
+      if (_sourceLoopStartMs != null || _sourceLoopEndMs != null) {
+        _sourceLoopStartMs = null;
+        _sourceLoopEndMs = null;
+        loopChanged = true;
+      }
+    }
     if (!playback.active && _workspaceSessionId != null) {
       final id = _workspaceSessionId!;
       _workspace?.unregister(id);
@@ -175,7 +193,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       workspaceChanged = true;
     }
     _scheduleWorkspaceAutoJoin();
-    if (workspaceChanged && mounted) setState(() {});
+    if ((workspaceChanged || loopChanged) && mounted) setState(() {});
   }
 
   void _toggleSourceWorkspace() {
@@ -349,6 +367,104 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       );
     } finally {
       client.close();
+    }
+  }
+
+  Future<void> _addTransientVideoBookmark(SourcePlayback s) async {
+    final mediaKey = s.localVideoBookmarkKey;
+    if (mediaKey == null || _bookmarkBusy) return;
+    final current = VideoBookmarkService.forMedia(mediaKey);
+    final label = await showTextInputDialog(
+      context,
+      title: t.videoControls.addBookmark,
+      labelText: t.videoControls.bookmarkName,
+      hintText: t.videoControls.bookmarkNameHint,
+      initialValue: t.videoControls.bookmarkDefaultName(n: current.length + 1),
+      validator: (value) => value.trim().isEmpty ? t.videoControls.bookmarkNameRequired : null,
+    );
+    if (!mounted || label == null || s.localVideoBookmarkKey != mediaKey) return;
+    setState(() => _bookmarkBusy = true);
+    try {
+      await VideoBookmarkService.add(mediaKey, label, s.currentFilePositionMs);
+      if (!mounted) return;
+      setState(() {});
+      showSnackBar(context, t.videoControls.bookmarkSaved, type: SnackBarType.success);
+    } on VideoBookmarkLimitException {
+      if (mounted) showSnackBar(context, t.videoControls.bookmarkLimitReached);
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t.videoControls.bookmarkUnavailable);
+    } finally {
+      if (mounted) setState(() => _bookmarkBusy = false);
+    }
+  }
+
+  Future<void> _removeTransientVideoBookmark(String mediaKey, VideoBookmark bookmark) async {
+    if (_bookmarkBusy) return;
+    setState(() => _bookmarkBusy = true);
+    try {
+      await VideoBookmarkService.remove(mediaKey, bookmark.id);
+      if (mounted) {
+        setState(() {});
+        showSnackBar(context, t.videoControls.bookmarkDeleted);
+      }
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t.videoControls.bookmarkUnavailable);
+    } finally {
+      if (mounted) setState(() => _bookmarkBusy = false);
+    }
+  }
+
+  Future<void> _seekTransientVideoBookmark(SourcePlayback playback, String mediaKey, VideoBookmark bookmark) async {
+    if (playback.localVideoBookmarkKey != mediaKey) return;
+    final offset = playback.positionMs - playback.currentFilePositionMs;
+    await playback.seek(offset + bookmark.positionMs);
+  }
+
+  Future<void> _setSourceSegmentLoop(SourcePlayback playback, int action) async {
+    final player = playback.player;
+    if (player == null || player.playerType != 'mpv' || playback.isLiveInput || !player.state.seekable) return;
+    try {
+      if (action == 0) {
+        await player.setProperty('ab-loop-b', 'no');
+        await player.setProperty('ab-loop-a', (playback.currentFilePositionMs / 1000).toStringAsFixed(3));
+        if (!mounted) return;
+        setState(() {
+          _sourceLoopStartMs = playback.currentFilePositionMs;
+          _sourceLoopEndMs = null;
+        });
+        showSnackBar(
+          context,
+          t.videoControls.loopPointSet(point: 'A', time: sourceTime(playback.currentFilePositionMs)),
+        );
+        return;
+      }
+      if (action == 1) {
+        final start = double.tryParse(await player.getProperty('ab-loop-a') ?? '');
+        if (!mounted) return;
+        if (start == null || !start.isFinite || start < 0) {
+          showSnackBar(context, t.videoControls.setLoopStartFirst);
+          return;
+        }
+        final position = playback.currentFilePositionMs;
+        if (position <= (start * 1000).round()) {
+          showSnackBar(context, t.videoControls.loopEndAfterStart);
+          return;
+        }
+        await player.setProperty('ab-loop-b', (position / 1000).toStringAsFixed(3));
+        if (!mounted) return;
+        setState(() => _sourceLoopEndMs = position);
+        showSnackBar(context, t.videoControls.loopPointSet(point: 'B', time: sourceTime(position)));
+        return;
+      }
+      await player.setProperty('ab-loop-a', 'no');
+      await player.setProperty('ab-loop-b', 'no');
+      if (!mounted) return;
+      setState(() {
+        _sourceLoopStartMs = null;
+        _sourceLoopEndMs = null;
+      });
+    } on Object {
+      if (mounted) showErrorSnackBar(context, t.videoControls.segmentLoopUnavailable);
     }
   }
 
@@ -548,6 +664,34 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               }
             },
           ),
+          if (s.video &&
+              !s.isLiveInput &&
+              s.player?.state.seekable == true &&
+              s.currentFileDurationMs > 0 &&
+              s.player?.playerType == 'mpv')
+            AppMenuButton<int>(
+              icon: AppIcon(
+                Symbols.repeat_one_rounded,
+                fill: _sourceLoopStartMs == null ? 0 : 1,
+                color: _sourceLoopStartMs == null ? null : Theme.of(context).colorScheme.primary,
+              ),
+              tooltip: t.videoControls.segmentLoop,
+              adaptiveSheet: true,
+              entriesBuilder: (_) => [
+                AppMenuItem(
+                  value: 0,
+                  label: t.videoControls.setLoopStart,
+                  subtitle: _sourceLoopStartMs == null ? null : sourceTime(_sourceLoopStartMs!),
+                ),
+                AppMenuItem(
+                  value: 1,
+                  label: t.videoControls.setLoopEnd,
+                  subtitle: _sourceLoopEndMs == null ? null : sourceTime(_sourceLoopEndMs!),
+                ),
+                AppMenuItem(value: 2, label: t.videoControls.clearSegmentLoop),
+              ],
+              onSelected: (action) => unawaited(_setSourceSegmentLoop(s, action)),
+            ),
           if (!s.isLiveInput)
             IconButton(
               tooltip: t.audiobook.undoSeek,
@@ -713,6 +857,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       );
     }
     final core = s.player;
+    final localVideoBookmarkKey = s.localVideoBookmarkKey;
+    final localVideoBookmarks = localVideoBookmarkKey == null
+        ? const <VideoBookmark>[]
+        : VideoBookmarkService.forMedia(localVideoBookmarkKey);
     final video = s.video && core != null
         ? _workspaceDetached
               ? AspectRatio(
@@ -875,13 +1023,18 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                 ],
                               ),
                             ),
-                          if (s.chapters.isNotEmpty)
+                          if (s.chapters.isNotEmpty || localVideoBookmarkKey != null)
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 24),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(t.fileSources.chapters, style: Theme.of(context).textTheme.titleLarge),
+                                  Text(
+                                    localVideoBookmarkKey == null
+                                        ? t.fileSources.chapters
+                                        : t.videoControls.chaptersAndBookmarks,
+                                    style: Theme.of(context).textTheme.titleLarge,
+                                  ),
                                   const SizedBox(height: 12),
                                   for (var i = 0; i < s.chapters.length; i++)
                                     SourceTile(
@@ -889,9 +1042,55 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                       subtitle: sourceTime(s.chapters[i].startMs),
                                       icon: Symbols.format_list_numbered_rounded,
                                       index: i,
-                                      count: s.chapters.length,
+                                      count:
+                                          s.chapters.length +
+                                          localVideoBookmarks.length +
+                                          (localVideoBookmarkKey == null ? 0 : 1),
                                       onTap: () => sourceAction(context, () => s.seekChapter(i)),
                                     ),
+                                  if (localVideoBookmarkKey != null)
+                                    SourceTile(
+                                      title: t.videoControls.addBookmark,
+                                      icon: Symbols.bookmark_add_rounded,
+                                      index: s.chapters.length,
+                                      count: s.chapters.length + localVideoBookmarks.length + 1,
+                                      onTap: _bookmarkBusy ? null : () => unawaited(_addTransientVideoBookmark(s)),
+                                    ),
+                                  if (localVideoBookmarkKey != null && localVideoBookmarks.isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Text(t.videoControls.bookmarksHelp),
+                                    )
+                                  else if (localVideoBookmarkKey != null)
+                                    for (var i = 0; i < localVideoBookmarks.length; i++)
+                                      SourceTile(
+                                        key: ValueKey('local-video-bookmark-${localVideoBookmarks[i].id}'),
+                                        title: localVideoBookmarks[i].label,
+                                        subtitle: sourceTime(localVideoBookmarks[i].positionMs),
+                                        icon: Symbols.bookmark_rounded,
+                                        index: s.chapters.length + i + 1,
+                                        count: s.chapters.length + localVideoBookmarks.length + 1,
+                                        onTap: () => sourceAction(
+                                          context,
+                                          () => _seekTransientVideoBookmark(
+                                            s,
+                                            localVideoBookmarkKey,
+                                            localVideoBookmarks[i],
+                                          ),
+                                        ),
+                                        trailing: IconButton(
+                                          tooltip: t.videoControls.deleteBookmark,
+                                          onPressed: _bookmarkBusy
+                                              ? null
+                                              : () => unawaited(
+                                                  _removeTransientVideoBookmark(
+                                                    localVideoBookmarkKey,
+                                                    localVideoBookmarks[i],
+                                                  ),
+                                                ),
+                                          icon: const AppIcon(Symbols.delete_outline_rounded),
+                                        ),
+                                      ),
                                 ],
                               ),
                             ),

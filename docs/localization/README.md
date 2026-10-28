@@ -70,6 +70,10 @@ additions cannot silently inherit language approval. The [merge QA overlay](LANG
 records the subsequently reviewed swipe hints and retains newer messages without
 extending semantic approval to them.
 
+The [VLC feature parity addendum](LANGUAGE_QA_VLC_PARITY.md) records the 36
+playback and converter messages, the explicit English fallbacks, and the review
+limits for those drafts.
+
 `sources.json` records source blob identifiers, model provenance and licenses.
 `translation-provenance.json` records message origins and review status;
 `coverage.json` is a reproducible structural report. Bundled attribution appears

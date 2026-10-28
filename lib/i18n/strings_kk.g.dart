@@ -1260,6 +1260,30 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get skipAds => 'Ауызды';
 	@override String get tapToUnlock => 'Құлпын ашу үшін түртіңіз';
 	@override String get tapAgainToUnlock => 'Құлпын ашу үшін қайта түртіңіз';
+	@override String get segmentLoopHelp => 'Loop a section during this playback. Set A, then set B later in the timeline.';
+	@override String get setLoopStart => 'Set loop start (A)';
+	@override String get setLoopEnd => 'Set loop end (B)';
+	@override String get clearSegmentLoop => 'Clear segment loop';
+	@override String get setLoopStartFirst => 'Set loop start (A) before the end (B).';
+	@override String get loopEndAfterStart => 'The loop end must be later than the start.';
+	@override String get segmentLoopUnavailable => 'Segment looping isn\'t available for this playback.';
+	@override String get bookmarksHelp => 'Bookmarks are saved on this device. Select one to go to that time.';
+	@override String get bookmarksButton => 'Bookmarks';
+	@override String get chaptersAndBookmarks => 'Chapters and bookmarks';
+	@override String get segmentLoop => 'Segment loop';
+	@override String get addBookmark => 'Add bookmark';
+	@override String get bookmarkName => 'Bookmark name';
+	@override String get bookmarkNameHint => 'For example, Opening scene';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark ${n}';
+	@override String get bookmarkNameRequired => 'Enter a name for this bookmark.';
+	@override String get deleteBookmark => 'Delete bookmark';
+	@override String get bookmarkLimitReached => 'This item already has 100 bookmarks.';
+	@override String get bookmarkUnavailable => 'Couldn\'t save or remove this bookmark.';
+	@override String get bookmarkSaved => 'Bookmark saved.';
+	@override String get bookmarkDeleted => 'Bookmark deleted.';
+	@override String loopPointSet({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.';
+	@override String get noChaptersOrBookmarks => 'No chapters or bookmarks available.';
+	@override String get loopPointNotSet => 'Not set';
 }
 
 // Path: messages
@@ -2430,7 +2454,7 @@ class _Translations$videoSettings$kk extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Кеңістіктік дыбыс';
 	@override String get audioOutputStereo => 'Стерео';
 	@override String get audioEqualizer => 'Аудиолық эквиваленттер';
-	@override String get audioEqualizerDescription => 'Бұл үшін 5 фреквенция барды өтінеміз. mpv жылы қаталған; активация EQ аудіо-декоды және паралтын ұзақтығы.';
+	@override String get audioEqualizerDescription => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.';
 	@override String get audioEqualizerFlat => 'Өткен';
 	@override String get audioEqualizerActive => 'Жеке';
 	@override String get audioEqualizerSaveFailed => 'Бұл үшін аудіо-еквализаторлық настройки бар.';
@@ -2438,6 +2462,13 @@ class _Translations$videoSettings$kk extends Translations$videoSettings$en {
 	@override String get backgroundVideoAudioDescription => 'Бұл жануарлардың ең айқын көргенде, бұл видео-аудио-искеріне көреген, сенің көреген. Android медиа-искеткемен көреген';
 	@override String get audioNormalization => 'Дыбыс деңгейін нормалау';
 	@override String get audioNormalizationDisablesPassthrough => 'Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі';
+	@override String get audioEffectsDescription => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.';
+	@override String get audioStereoWidth => 'Stereo widening';
+	@override String get audioSpatializer => 'Room ambience';
+	@override String get audioSpatializerDescription => 'Add quiet room reflections.';
+	@override String get audioPitch => 'Pitch shift';
+	@override String get audioPitchDescription => 'Change pitch without changing speed. The MPV build must include Rubber Band.';
+	@override String get audioEffectUnavailable => 'This effect isn\'t available for this track or MPV build.';
 }
 
 // Path: performanceOverlay
@@ -3155,7 +3186,7 @@ class _Translations$universalMedia$kk extends Translations$universalMedia$en {
 	@override String get audioCd => 'Аудиолық CD';
 	@override String get discAvailability => 'Диск-плейбак үшін компатибильный MPV конструкция, поддержан дискі және операционно-системдық разрешение бар.';
 	@override String get converterTitle => 'Менеджменттің медыяфайлы';
-	@override String get converterHelp => 'Қандай MP4, M4A, немесе MP3 копиясы бар.';
+	@override String get converterHelp => 'Convert a local file or remux it with FFmpeg.';
 	@override String get converterIntro => 'Аудио және видео файлы мен мультимедийдық конвертациясы, сондай-ақ басқа да көптеген сезімдердің форматы бар.';
 	@override String get converterPrivacy => 'Қандай-ақ, «Мендекс» және «Миндекс», «Корпорация», «Тұлтшылды» және т.б., «Жеңінен танымал», «ДРМ» деп хабарлады.';
 	@override String get converterChooseInput => 'Менеджменттің медыяфайлы';
@@ -3172,7 +3203,7 @@ class _Translations$universalMedia$kk extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Құрметті ФФМ...';
 	@override String get converterProgress => 'Қазіргі таңда бүкіл әлемдік компьютер...';
 	@override String get converterComplete => 'Өзі сүйікті келді, бірақ танымал файл бар.';
-	@override String get converterFfmpegMissing => 'Қандай-ақ, қаңтар мен жабдықтаушы бар. Қанды-қатты бар: Қанда, Қандан, Қардан, Шанда және Қандам.';
+	@override String get converterFfmpegMissing => 'FFmpeg is missing or does not support this format.';
 	@override String get converterFailed => 'Өзі сүйікті жабдықтардан тұрады.Серіктің қабығы бір-бірімен таныстырып келді.';
 	@override String get converterCancelled => 'Өзі сүйікті жасайды.Аяқтық қабырға айналады.';
 	@override String get converterDesktopOnly => 'Қазіргі уақытта «Форма» АҚ-ның топтық конверсиялары бар.';
@@ -3185,11 +3216,9 @@ class _Translations$universalMedia$kk extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.';
 	@override String get captureNoDevices => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.';
 	@override String get captureSource => 'Камера мен экран';
-	@override String get captureScreen => 'Серіктің';
 	@override String get captureAudioSource => 'Аудиолық аудит (апциялық)';
 	@override String get captureAudioHelp => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.';
 	@override String get captureAudioNone => 'Аудиолық';
-	@override String get captureDefaultAudio => 'Аудиолық аудіолық';
 	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
 	@override String get captureFrameRate => 'Серіктің қабығы';
 	@override String get capturePrivacy => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.';
@@ -3214,9 +3243,6 @@ class _Translations$universalMedia$kk extends Translations$universalMedia$en {
 	@override String get shareStopped => 'Өзі сүйікті жарысы: «Жеңірмен танымал» деп ойлаймын.';
 	@override String get shareUrlCopied => 'Қолдақтарлық адресы бар.';
 	@override String get shareOpenUrl => '«Жеңіске үлес қосқандар», «Жеңіске үлес қосқандар»';
-	@override String get shareQrLabel => 'КР-кодтің қағидалар мен қағидалар';
-	@override String get shareQrHelp => '«Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске».';
-	@override String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
 	@override String get shareCopyUrl => 'Қайталы қабырғасы';
 	@override String get shareExpiresLabel => 'Қаншалықты ұзақтығы';
 	@override String get shareStarting => 'Қандайды құбырды...';
@@ -3250,6 +3276,13 @@ class _Translations$universalMedia$kk extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.';
 	@override String get cliCopyExample => 'Команданың қосылы';
 	@override String get cliCopied => 'Қазіргі уақытта командасы копиялы.';
+	@override String get captureScreen => 'Серіктің';
+	@override String get captureDefaultAudio => 'Аудиолық аудіолық';
+	@override String get shareQrLabel => 'КР-кодтің қағидалар мен қағидалар';
+	@override String get shareQrHelp => '«Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске».';
+	@override String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
+	@override String get allowFtp => 'Allow FTP';
+	@override String get allowFtpHelp => 'FTP sends media without encryption. Use only on trusted networks.';
 }
 
 // Path: fileSources
@@ -6016,6 +6049,30 @@ extension on TranslationsKk {
 			'videoControls.skipAds' => 'Ауызды',
 			'videoControls.tapToUnlock' => 'Құлпын ашу үшін түртіңіз',
 			'videoControls.tapAgainToUnlock' => 'Құлпын ашу үшін қайта түртіңіз',
+			'videoControls.segmentLoopHelp' => 'Loop a section during this playback. Set A, then set B later in the timeline.',
+			'videoControls.setLoopStart' => 'Set loop start (A)',
+			'videoControls.setLoopEnd' => 'Set loop end (B)',
+			'videoControls.clearSegmentLoop' => 'Clear segment loop',
+			'videoControls.setLoopStartFirst' => 'Set loop start (A) before the end (B).',
+			'videoControls.loopEndAfterStart' => 'The loop end must be later than the start.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping isn\'t available for this playback.',
+			'videoControls.bookmarksHelp' => 'Bookmarks are saved on this device. Select one to go to that time.',
+			'videoControls.bookmarksButton' => 'Bookmarks',
+			'videoControls.chaptersAndBookmarks' => 'Chapters and bookmarks',
+			'videoControls.segmentLoop' => 'Segment loop',
+			'videoControls.addBookmark' => 'Add bookmark',
+			'videoControls.bookmarkName' => 'Bookmark name',
+			'videoControls.bookmarkNameHint' => 'For example, Opening scene',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark ${n}',
+			'videoControls.bookmarkNameRequired' => 'Enter a name for this bookmark.',
+			'videoControls.deleteBookmark' => 'Delete bookmark',
+			'videoControls.bookmarkLimitReached' => 'This item already has 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Couldn\'t save or remove this bookmark.',
+			'videoControls.bookmarkSaved' => 'Bookmark saved.',
+			'videoControls.bookmarkDeleted' => 'Bookmark deleted.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Loop point ${point} set at ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'No chapters or bookmarks available.',
+			'videoControls.loopPointNotSet' => 'Not set',
 			'messages.markedAsWatched' => 'Көрілді деп белгіленді',
 			'messages.markedAsUnwatched' => 'Көрілмеді деп белгіленді',
 			'messages.markedAsWatchedOffline' => 'Көрілді деп белгіленді (онлайн болғанда синхрондалады)',
@@ -6454,6 +6511,8 @@ extension on TranslationsKk {
 			'libraries.hideLibrary' => 'Кітапхананы жасыру',
 			'libraries.libraryOptions' => 'Кітапхана параметрлері',
 			'libraries.content' => 'кітапхана мазмұны',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Кітапхананы таңдау',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Фильтрлер (${count})',
 			'libraries.noRecommendations' => 'Ұсыныстар жоқ',
@@ -6478,8 +6537,6 @@ extension on TranslationsKk {
 			'libraries.filterCategories.year' => 'Жыл',
 			'libraries.filterCategories.contentRating' => 'Мазмұн рейтингі',
 			'libraries.filterCategories.tag' => 'Тег',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Көрілмеген',
 			'libraries.filterCategories.unplayed' => 'Ойнатылмаған',
 			'libraries.filterCategories.favorites' => 'Таңдаулылар',
@@ -6968,6 +7025,8 @@ extension on TranslationsKk {
 			'watchTogether.shareInvite' => 'Шақыру жіберу',
 			'watchTogether.inviteCopied' => 'Шақыру көшірілді. Оны хабарламаға қойыңыз.',
 			'watchTogether.inviteMessage' => ({required Object code}) => 'PlezyNG-дегі «Бірге көру» бөлмеме қосылыңыз: «Бірге көру» бөлімін ашып, «Бөлмеге қосылу» түймесін таңдаңыз да, ${code} кодын енгізіңіз.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.openSessionControls' => 'Басқару элементтерін ашу',
 			'watchTogether.reconnecting' => 'Қайта қосылуда...',
 			'watchTogether.reconnectingDescription' => 'Байланыс үзілді. Бөлмеге автоматты түрде қайта қосыласыз.',
@@ -6992,8 +7051,6 @@ extension on TranslationsKk {
 			'watchTogether.playAnyway' => 'Сонда да ойнату',
 			'watchTogether.chooseAnotherCopy' => 'Басқа көшірмені таңдау',
 			'watchTogether.dontPlay' => 'Ойнатпау',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Сізде бұл видео жоқ',
 			'watchTogether.unavailableDescription' => 'PlezyNG оны кітапханаларыңыздан таба алмады. Көшірмені өзіңіз таңдаңыз немесе қайта іздеңіз.',
 			'watchTogether.chooseCopy' => 'Көшірмені таңдау',
@@ -7354,7 +7411,7 @@ extension on TranslationsKk {
 			'videoSettings.audioOutputSpatial' => 'Кеңістіктік дыбыс',
 			'videoSettings.audioOutputStereo' => 'Стерео',
 			'videoSettings.audioEqualizer' => 'Аудиолық эквиваленттер',
-			'videoSettings.audioEqualizerDescription' => 'Бұл үшін 5 фреквенция барды өтінеміз. mpv жылы қаталған; активация EQ аудіо-декоды және паралтын ұзақтығы.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer for MPV. Audio filters use decoded audio and turn off passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Өткен',
 			'videoSettings.audioEqualizerActive' => 'Жеке',
 			'videoSettings.audioEqualizerSaveFailed' => 'Бұл үшін аудіо-еквализаторлық настройки бар.',
@@ -7362,6 +7419,13 @@ extension on TranslationsKk {
 			'videoSettings.backgroundVideoAudioDescription' => 'Бұл жануарлардың ең айқын көргенде, бұл видео-аудио-искеріне көреген, сенің көреген. Android медиа-искеткемен көреген',
 			'videoSettings.audioNormalization' => 'Дыбыс деңгейін нормалау',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі',
+			'videoSettings.audioEffectsDescription' => 'Effects use decoded audio, so passthrough turns off. Room ambience and stereo widening depend on the MPV build and track.',
+			'videoSettings.audioStereoWidth' => 'Stereo widening',
+			'videoSettings.audioSpatializer' => 'Room ambience',
+			'videoSettings.audioSpatializerDescription' => 'Add quiet room reflections.',
+			'videoSettings.audioPitch' => 'Pitch shift',
+			'videoSettings.audioPitchDescription' => 'Change pitch without changing speed. The MPV build must include Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'This effect isn\'t available for this track or MPV build.',
 			'performanceOverlay.color' => 'Түс',
 			'performanceOverlay.performance' => 'Өнімділік',
 			'performanceOverlay.buffer' => 'Буфер',
@@ -7475,6 +7539,8 @@ extension on TranslationsKk {
 			'metadataEdit.notSet' => 'Орнатылмаған',
 			'metadataEdit.libraryDefault' => 'Кітапхана әдепкісі',
 			'metadataEdit.accountDefault' => 'Тіркелгі әдепкісі',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'Сериал әдепкісі',
 			'metadataEdit.episodeSorting' => 'Бөлімдерді сұрыптау',
 			'metadataEdit.oldestFirst' => 'Басында ескілері',
@@ -7506,8 +7572,6 @@ extension on TranslationsKk {
 			'metadataEdit.shownWithForeignAudio' => 'Шетелдік аудио кезінде көрсетіледі',
 			'metadataEdit.alwaysEnabled' => 'Әрдайым қосулы',
 			'metadataEdit.tags' => 'Тегтер',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'Тег қосу',
 			'metadataEdit.genre' => 'Жанр',
 			'metadataEdit.director' => 'Режиссер',
@@ -7939,7 +8003,7 @@ extension on TranslationsKk {
 			'universalMedia.audioCd' => 'Аудиолық CD',
 			'universalMedia.discAvailability' => 'Диск-плейбак үшін компатибильный MPV конструкция, поддержан дискі және операционно-системдық разрешение бар.',
 			'universalMedia.converterTitle' => 'Менеджменттің медыяфайлы',
-			'universalMedia.converterHelp' => 'Қандай MP4, M4A, немесе MP3 копиясы бар.',
+			'universalMedia.converterHelp' => 'Convert a local file or remux it with FFmpeg.',
 			'universalMedia.converterIntro' => 'Аудио және видео файлы мен мультимедийдық конвертациясы, сондай-ақ басқа да көптеген сезімдердің форматы бар.',
 			'universalMedia.converterPrivacy' => 'Қандай-ақ, «Мендекс» және «Миндекс», «Корпорация», «Тұлтшылды» және т.б., «Жеңінен танымал», «ДРМ» деп хабарлады.',
 			'universalMedia.converterChooseInput' => 'Менеджменттің медыяфайлы',
@@ -7956,7 +8020,7 @@ extension on TranslationsKk {
 			'universalMedia.converterStarting' => 'Құрметті ФФМ...',
 			'universalMedia.converterProgress' => 'Қазіргі таңда бүкіл әлемдік компьютер...',
 			'universalMedia.converterComplete' => 'Өзі сүйікті келді, бірақ танымал файл бар.',
-			'universalMedia.converterFfmpegMissing' => 'Қандай-ақ, қаңтар мен жабдықтаушы бар. Қанды-қатты бар: Қанда, Қандан, Қардан, Шанда және Қандам.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg is missing or does not support this format.',
 			'universalMedia.converterFailed' => 'Өзі сүйікті жабдықтардан тұрады.Серіктің қабығы бір-бірімен таныстырып келді.',
 			'universalMedia.converterCancelled' => 'Өзі сүйікті жасайды.Аяқтық қабырға айналады.',
 			'universalMedia.converterDesktopOnly' => 'Қазіргі уақытта «Форма» АҚ-ның топтық конверсиялары бар.',
@@ -7969,11 +8033,9 @@ extension on TranslationsKk {
 			'universalMedia.captureIntro' => 'Record your screen or a camera to an MP4 file on this computer. FFmpeg must be installed and include the H.264 encoder.',
 			'universalMedia.captureNoDevices' => 'No screen or camera was found. Check FFmpeg capture support and operating-system privacy permissions.',
 			'universalMedia.captureSource' => 'Камера мен экран',
-			'universalMedia.captureScreen' => 'Серіктің',
 			'universalMedia.captureAudioSource' => 'Аудиолық аудит (апциялық)',
 			'universalMedia.captureAudioHelp' => 'Add audio from a microphone or available input. Device choices depend on FFmpeg and system permissions.',
 			'universalMedia.captureAudioNone' => 'Аудиолық',
-			'universalMedia.captureDefaultAudio' => 'Аудиолық аудіолық',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
 			'universalMedia.captureFrameRate' => 'Серіктің қабығы',
 			'universalMedia.capturePrivacy' => 'The recording is saved only to the file you choose. Microphone capture is optional. PlezyNG does not upload the recording.',
@@ -7991,6 +8053,8 @@ extension on TranslationsKk {
 			'universalMedia.sharePrivacy' => 'Қаланың тұрақты тұрғындарының тұрақты тұрғындарының саны 60 адамды құрайды және адамды құрайды және адамды құрайды.',
 			'universalMedia.shareChooseFile' => 'Медыяфайлы',
 			'universalMedia.shareChooseHelp' => 'Аудио және видео файлы бар. Файлтің қабығы бұл компьютере бар.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg or the H.264/AAC encoders are unavailable. Install FFmpeg with H.264 and AAC encoder support.',
 			'universalMedia.shareFailed' => 'The stream could not start or stopped unexpectedly. Check FFmpeg and network access.',
 			'universalMedia.shareActive' => 'Ауызды және басқа да оның сетінің сезімдер.',
@@ -7998,9 +8062,6 @@ extension on TranslationsKk {
 			'universalMedia.shareStopped' => 'Өзі сүйікті жарысы: «Жеңірмен танымал» деп ойлаймын.',
 			'universalMedia.shareUrlCopied' => 'Қолдақтарлық адресы бар.',
 			'universalMedia.shareOpenUrl' => '«Жеңіске үлес қосқандар», «Жеңіске үлес қосқандар»',
-			'universalMedia.shareQrLabel' => 'КР-кодтің қағидалар мен қағидалар',
-			'universalMedia.shareQrHelp' => '«Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске».',
-			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
 			'universalMedia.shareCopyUrl' => 'Қайталы қабырғасы',
 			'universalMedia.shareExpiresLabel' => 'Қаншалықты ұзақтығы',
 			'universalMedia.shareStarting' => 'Қандайды құбырды...',
@@ -8020,8 +8081,6 @@ extension on TranslationsKk {
 			'universalMedia.extensionInstallTitle' => 'Қаланың ең айқын көргенде?',
 			'universalMedia.extensionReplaceTitle' => 'Қаланың ең айқын көргенде?',
 			'universalMedia.extensionService' => 'Ақыттық',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS endpoint',
 			'universalMedia.extensionConsent' => 'Сіздің текстіңізді бұл қызмет көрсетуге ескерту.Манифесттің жоқты коды бар.Серіңізді сіздің контенттермен танысуға болады.',
 			'universalMedia.extensionInstall' => 'Үлдік қызмет',
@@ -8036,6 +8095,13 @@ extension on TranslationsKk {
 			'universalMedia.cliHelp' => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.',
 			'universalMedia.cliCopyExample' => 'Команданың қосылы',
 			'universalMedia.cliCopied' => 'Қазіргі уақытта командасы копиялы.',
+			'universalMedia.captureScreen' => 'Серіктің',
+			'universalMedia.captureDefaultAudio' => 'Аудиолық аудіолық',
+			'universalMedia.shareQrLabel' => 'КР-кодтің қағидалар мен қағидалар',
+			'universalMedia.shareQrHelp' => '«Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске» АҚШ-ның «Жеңіске».',
+			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
+			'universalMedia.allowFtp' => 'Allow FTP',
+			'universalMedia.allowFtpHelp' => 'FTP sends media without encryption. Use only on trusted networks.',
 			'fileSources.title' => 'Бібліотекасы және файлы',
 			'fileSources.subtitle' => 'Бұл үшін, бізге сіздің файлсы мен файлсы мен қараңыз.',
 			'fileSources.add' => 'Қайталық',
@@ -8501,6 +8567,8 @@ extension on TranslationsKk {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
+			_ => null,
+		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
@@ -8534,8 +8602,6 @@ extension on TranslationsKk {
 			'deepLinks.noLiveTv' => 'Бұл сілтеме үшін қолжетімді Live TV сервері жоқ.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => '«${channel}» арнасы табылмады.',
 			'deepLinks.showLink' => 'Сілтемені көрсету',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Профиль сілтемесін көрсету',
 			'deepLinks.dialogTitle' => 'Сілтеме',
 			'deepLinks.showHint' => 'Бұл сілтемені ашқанда келесі эпизод ойнатылады. Сериалды аралас ретпен ойнату үшін соңына &mode=shuffle қосыңыз.',

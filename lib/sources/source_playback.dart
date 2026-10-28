@@ -255,6 +255,24 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool get hasCompleteTimeline => List.generate(files.length, (i) => _durations[i] ?? 0).every((d) => d > 0);
   int get durationMs => List.generate(files.length, (i) => _durations[i] ?? 0).fold(0, (a, b) => a + b);
   int get positionMs => _offset + (player?.currentPosition.inMilliseconds ?? 0);
+
+  /// Stable, non-reversible local key for a temporary direct-media item.
+  /// The URL or filesystem path itself is never stored in bookmark settings.
+  String? get localVideoBookmarkKey {
+    if (!video ||
+        !isTransientInput ||
+        isLiveInput ||
+        player?.state.seekable != true ||
+        _fileIndex < 0 ||
+        _fileIndex >= files.length ||
+        currentFileDurationMs <= 0) {
+      return null;
+    }
+    final uri = _localOverrides[files[_fileIndex].id];
+    if (uri == null) return null;
+    return 'open-media:${sourceDigest(uri.toString())}';
+  }
+
   BookChapter? get currentChapter =>
       chapters.where((c) => positionMs >= c.startMs && (c.endMs <= c.startMs || positionMs < c.endMs)).lastOrNull;
   bool get _valid =>
@@ -447,6 +465,11 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
             unawaited(_wakelock.setEnabled(video && playing));
             _notify();
           }
+        }),
+      );
+      _subscriptions.add(
+        native.streams.seekable.listen((_) {
+          if (current()) _notify();
         }),
       );
       _subscriptions.add(

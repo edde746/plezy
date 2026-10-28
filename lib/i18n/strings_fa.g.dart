@@ -1247,6 +1247,30 @@ class _Translations$videoControls$fa extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'بایگانی برچسب ها: Off';
 	@override String osdSubtitles({required Object track}) => 'برچسب ها: ${track}';
 	@override String osdAudio({required Object track}) => 'صدا : ${track}';
+	@override String get segmentLoopHelp => 'یک بخش را در طول این بازی باز کنید: A را تنظیم کنید، سپس B را بعداً در خط زمانی قرار دهید.';
+	@override String get setLoopStart => 'راهکارهایی برای شروع (A)';
+	@override String get setLoopEnd => 'تنظیم لوله پایان (ب)';
+	@override String get clearSegmentLoop => 'مشخصات segment loop';
+	@override String get setLoopStartFirst => 'شروع (A) را قبل از پایان (B) تنظیم کنید.';
+	@override String get loopEndAfterStart => 'پایان حلقه باید بعد از شروع باشد.';
+	@override String get segmentLoopUnavailable => 'لوله بندی بخش برای این بازی در دسترس نیست.';
+	@override String get bookmarksHelp => 'برچسب ها در این دستگاه ذخیره می شوند. یکی را انتخاب کنید تا به آن زمان بروید.';
+	@override String get bookmarksButton => 'برچسب ها Bookmark';
+	@override String get chaptersAndBookmarks => 'فصل ها و کتاب نشانه ها';
+	@override String get segmentLoop => 'بخش لوله';
+	@override String get addBookmark => 'اضافه کردن Bookmark';
+	@override String get bookmarkName => 'Bookmark نام';
+	@override String get bookmarkNameHint => 'به عنوان مثال، صحنه باز';
+	@override String bookmarkDefaultName({required Object n}) => 'برچسب ها ${n}';
+	@override String get bookmarkNameRequired => 'نام این کتاب را وارد کنید.';
+	@override String get deleteBookmark => 'حذف Bookmark';
+	@override String get bookmarkLimitReached => 'این مقاله در حال حاضر دارای 100 دفترچه یادداشت است.';
+	@override String get bookmarkUnavailable => 'نمی توانم این کتاب را ذخیره یا حذف کنم.';
+	@override String get bookmarkSaved => 'کتاب را نجات داد.';
+	@override String get bookmarkDeleted => 'برچسب حذف شده است.';
+	@override String loopPointSet({required Object point, required Object time}) => 'نقطه عطف ${point} تنظیم در ${time}.';
+	@override String get noChaptersOrBookmarks => 'هیچ فصل و کتابی در دسترس نیست.';
+	@override String get loopPointNotSet => 'نه تنظیم';
 	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n,
 		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فریم',
 		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فریم',
@@ -2430,7 +2454,7 @@ class _Translations$videoSettings$fa extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'فضای صوتی';
 	@override String get audioOutputStereo => 'استریو';
 	@override String get audioEqualizer => 'صدا معادل';
-	@override String get audioEqualizerDescription => 'تنظیم پنج نوار فرکانس برای این دستگاه در دسترس در mpv؛ یک EQ فعال صدا را از بین می برد و به سختی می تواند از بین برود.';
+	@override String get audioEqualizerDescription => 'معادل 10 باند برای MPVفیلترهای صوتی از صدا های رمزگذاری شده استفاده می کنند و به طور مناسب خاموش می شوند.';
 	@override String get audioEqualizerFlat => 'مسطح';
 	@override String get audioEqualizerActive => 'سفارشی';
 	@override String get audioEqualizerSaveFailed => 'نمی توانم تنظیمات معادل صوتی را ذخیره کنم.';
@@ -2438,6 +2462,13 @@ class _Translations$videoSettings$fa extends Translations$videoSettings$en {
 	@override String get backgroundVideoAudioDescription => 'بازی ویدئویی را در هنگام ترک پخش کننده نگه دارید؛ تصویر تا زمانی که بازگردید پنهان است. Android از یک اطلاعیه پخش رسانه استفاده می کند.';
 	@override String get audioNormalization => 'صدا را عادی کنید';
 	@override String get audioNormalizationDisablesPassthrough => 'دکود صوتی به PCM؛ passthrough در حالی که این در';
+	@override String get audioEffectsDescription => 'اثرات از صدا رمزگذاری شده استفاده می کنند، بنابراین passthrough از بین می رود. فضای اتاق و گسترش استریو بستگی به MPV ساخت و ردیابی';
+	@override String get audioStereoWidth => 'استریو گسترش';
+	@override String get audioSpatializer => 'فضای اتاق';
+	@override String get audioSpatializerDescription => 'بازخورد اتاق آرام را اضافه کنید.';
+	@override String get audioPitch => 'پیتزا تغییر';
+	@override String get audioPitchDescription => 'تغییر مسیر بدون تغییر سرعت MPV ساخت باید شامل Rubber Band.';
+	@override String get audioEffectUnavailable => 'این اثر برای این مسیر در دسترس نیست یا MPV ساختن .';
 }
 
 // Path: performanceOverlay
@@ -3155,7 +3186,7 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get audioCd => 'CD صوتی';
 	@override String get discAvailability => 'پخش دیسک نیاز به ساخت MPV سازگار، درایو پشتیبانی شده و مجوز سیستم عامل دارد.';
 	@override String get converterTitle => 'تبدیل یک فایل رسانه محلی';
-	@override String get converterHelp => 'از FFmpeg برای ایجاد یک کپی MP4، M4A یا MP3 استفاده کنید.';
+	@override String get converterHelp => 'یک فایل محلی را تبدیل کنید یا آن را با FFmpeg.';
 	@override String get converterIntro => 'تبدیل یک فایل صوتی یا ویدئویی محلی به فرمتی که بر روی دستگاه های مختلف کار می کند.';
 	@override String get converterPrivacy => 'FFmpeg باید بر روی این کامپیوتر نصب شود.Conversion فقط فایل های محلی را می خواند.این جریان ها را دانلود نمی کند یا DRM را حذف نمی کند.';
 	@override String get converterChooseInput => 'انتخاب فایل رسانه ای محلی';
@@ -3172,7 +3203,7 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get converterStarting => 'شروع به استفاده از FFmpeg...';
 	@override String get converterProgress => 'با استفاده از این کامپیوتر...';
 	@override String get converterComplete => 'فایلهای جدید آماده است.';
-	@override String get converterFfmpegMissing => 'نصب FFmpeg با پشتیبانی از H.264، AAC و MP3، سپس دوباره آن را امتحان کنید.';
+	@override String get converterFfmpegMissing => 'FFmpeg از دست رفته است یا از این فرمت پشتیبانی نمی کند.';
 	@override String get converterFailed => 'بررسی کنید که فایل منبع قابل خواندن است و مقصد به اندازه کافی فضای رایگان دارد.';
 	@override String get converterCancelled => 'تبدیل لغو شد خروجی نامناسب حذف شد.';
 	@override String get converterDesktopOnly => 'تبدیل محلی در کامپیوترهای دسکتاپ با نصب FFmpeg در دسترس است.';
@@ -3185,11 +3216,9 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get captureIntro => 'صفحه نمایش یا دوربین خود را به یک فایل MP4 در این کامپیوتر ضبط کنید. FFmpeg باید نصب شود و کدگذاری H.264 را شامل شود.';
 	@override String get captureNoDevices => 'هیچ صفحه نمایش و یا دوربین یافت نشد. بررسی FFmpeg پشتیبانی از ضبط و اجازه های حفظ حریم خصوصی سیستم عامل.';
 	@override String get captureSource => 'صفحه نمایش یا دوربین';
-	@override String get captureScreen => 'صفحه نمایش';
 	@override String get captureAudioSource => 'ورودی صوتی (اختیاری)';
 	@override String get captureAudioHelp => 'اضافه کردن صدا از یک میکروفون یا ورودی در دسترس. انتخاب دستگاه بستگی به FFmpeg و مجوزهای سیستم دارد.';
 	@override String get captureAudioNone => 'بدون صدا';
-	@override String get captureDefaultAudio => 'واردات صوتی پیش فرض';
 	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
 	@override String get captureFrameRate => 'نرخ ضبط فریم';
 	@override String get capturePrivacy => 'ضبط فقط به فایل انتخاب شده ذخیره می شود. ضبط میکروفون اختیاری است. PlezyNG ضبط را بارگذاری نمی کند.';
@@ -3214,9 +3243,6 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get shareStopped => 'به اشتراک گذاری متوقف شده است لینک موقت دیگر معتبر نیست.';
 	@override String get shareUrlCopied => 'آدرس جریان کپی شده است';
 	@override String get shareOpenUrl => 'این آدرس را در یک بازیکن در دستگاه دیگر باز کنید.';
-	@override String get shareQrLabel => 'کد QR برای آدرس جریان موقت';
-	@override String get shareQrHelp => 'اسکن با یک بازیکن سازگار متصل به همان شبکه خصوصی.';
-	@override String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
 	@override String get shareCopyUrl => 'کپی آدرس جریان';
 	@override String get shareExpiresLabel => 'لینک به پایان می رسد';
 	@override String get shareStarting => 'در حال آماده سازی جریان...';
@@ -3250,6 +3276,13 @@ class _Translations$universalMedia$fa extends Translations$universalMedia$en {
 	@override String get cliHelp => 'از راهنمای plezyctl برای تأیید یک مانیفست یا جستجو برای همان افزونه استفاده کنید. قبل از هر جستجو، خدمات HTTPS خود را بررسی کنید. نتایج در فرم رسانه های موجود باز می شود.';
 	@override String get cliCopyExample => 'کپی دستور نمونه';
 	@override String get cliCopied => 'دستور نمونه کپی شده است.';
+	@override String get captureScreen => 'صفحه نمایش';
+	@override String get captureDefaultAudio => 'واردات صوتی پیش فرض';
+	@override String get shareQrLabel => 'کد QR برای آدرس جریان موقت';
+	@override String get shareQrHelp => 'اسکن با یک بازیکن سازگار متصل به همان شبکه خصوصی.';
+	@override String get shareHttpHint => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.';
+	@override String get allowFtp => 'اجازه FTP';
+	@override String get allowFtpHelp => 'FTP رسانه ها را بدون رمزگذاری ارسال می کند.فقط در شبکه های قابل اعتماد استفاده کنید.';
 }
 
 // Path: fileSources
@@ -6006,6 +6039,30 @@ extension on TranslationsFa {
 			'videoControls.osdSubtitlesOff' => 'بایگانی برچسب ها: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'برچسب ها: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'صدا : ${track}',
+			'videoControls.segmentLoopHelp' => 'یک بخش را در طول این بازی باز کنید: A را تنظیم کنید، سپس B را بعداً در خط زمانی قرار دهید.',
+			'videoControls.setLoopStart' => 'راهکارهایی برای شروع (A)',
+			'videoControls.setLoopEnd' => 'تنظیم لوله پایان (ب)',
+			'videoControls.clearSegmentLoop' => 'مشخصات segment loop',
+			'videoControls.setLoopStartFirst' => 'شروع (A) را قبل از پایان (B) تنظیم کنید.',
+			'videoControls.loopEndAfterStart' => 'پایان حلقه باید بعد از شروع باشد.',
+			'videoControls.segmentLoopUnavailable' => 'لوله بندی بخش برای این بازی در دسترس نیست.',
+			'videoControls.bookmarksHelp' => 'برچسب ها در این دستگاه ذخیره می شوند. یکی را انتخاب کنید تا به آن زمان بروید.',
+			'videoControls.bookmarksButton' => 'برچسب ها Bookmark',
+			'videoControls.chaptersAndBookmarks' => 'فصل ها و کتاب نشانه ها',
+			'videoControls.segmentLoop' => 'بخش لوله',
+			'videoControls.addBookmark' => 'اضافه کردن Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark نام',
+			'videoControls.bookmarkNameHint' => 'به عنوان مثال، صحنه باز',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'برچسب ها ${n}',
+			'videoControls.bookmarkNameRequired' => 'نام این کتاب را وارد کنید.',
+			'videoControls.deleteBookmark' => 'حذف Bookmark',
+			'videoControls.bookmarkLimitReached' => 'این مقاله در حال حاضر دارای 100 دفترچه یادداشت است.',
+			'videoControls.bookmarkUnavailable' => 'نمی توانم این کتاب را ذخیره یا حذف کنم.',
+			'videoControls.bookmarkSaved' => 'کتاب را نجات داد.',
+			'videoControls.bookmarkDeleted' => 'برچسب حذف شده است.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'نقطه عطف ${point} تنظیم در ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'هیچ فصل و کتابی در دسترس نیست.',
+			'videoControls.loopPointNotSet' => 'نه تنظیم',
 			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fa'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فریم', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} فریم', ), 
 			'videoControls.trackSelectionTitle' => 'انتخاب مسیر قبل از بازی',
 			'videoControls.trackSelectionAuto' => 'انتخاب اتوماتیک',
@@ -6454,6 +6511,8 @@ extension on TranslationsFa {
 			'libraries.hideLibrary' => 'کتابخانه پنهان',
 			'libraries.libraryOptions' => 'گزینه های کتابخانه',
 			'libraries.content' => 'محتوای کتابخانه',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'انتخاب کتابخانه',
 			'libraries.filtersWithCount' => ({required Object count}) => 'فیلترها (${count})',
 			'libraries.noRecommendations' => 'بدون توصیه در دسترس',
@@ -6478,8 +6537,6 @@ extension on TranslationsFa {
 			'libraries.filterCategories.year' => 'سال',
 			'libraries.filterCategories.contentRating' => 'محتوای رتبه بندی',
 			'libraries.filterCategories.tag' => 'برچسب',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'ناشناخته',
 			'libraries.filterCategories.unplayed' => 'پخش نشده',
 			'libraries.filterCategories.favorites' => 'مورد علاقه‌ها',
@@ -6968,6 +7025,8 @@ extension on TranslationsFa {
 			'watchTogether.shareInvite' => 'دعوت به اشتراک گذاری',
 			'watchTogether.inviteCopied' => 'کپی کنید، آن را در یک پیام قرار دهید.',
 			'watchTogether.inviteMessage' => ({required Object code}) => 'به اتاق Watch Together من در PlezyNG بپیوندید، اتاق Watch Together را انتخاب کنید و به اتاق Watch Together ${code} وارد شوید.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.openSessionControls' => 'Open Watch با هم کنترل جلسه',
 			'watchTogether.reconnecting' => 'دوباره اتصال...',
 			'watchTogether.reconnectingDescription' => 'اتصال قطع شده است شما به طور خودکار به اتاق می روید.',
@@ -6992,8 +7051,6 @@ extension on TranslationsFa {
 			'watchTogether.playAnyway' => 'بازی به هر حال',
 			'watchTogether.chooseAnotherCopy' => 'انتخاب کپی دیگر',
 			'watchTogether.dontPlay' => 'بازی نکنید',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'شما این ویدئو را ندارید',
 			'watchTogether.unavailableDescription' => 'PlezyNG نمی توانست آن را در کتابخانه های شما پیدا کند. یک کپی را خودتان انتخاب کنید یا دوباره جستجو کنید.',
 			'watchTogether.chooseCopy' => 'انتخاب کپی',
@@ -7354,7 +7411,7 @@ extension on TranslationsFa {
 			'videoSettings.audioOutputSpatial' => 'فضای صوتی',
 			'videoSettings.audioOutputStereo' => 'استریو',
 			'videoSettings.audioEqualizer' => 'صدا معادل',
-			'videoSettings.audioEqualizerDescription' => 'تنظیم پنج نوار فرکانس برای این دستگاه در دسترس در mpv؛ یک EQ فعال صدا را از بین می برد و به سختی می تواند از بین برود.',
+			'videoSettings.audioEqualizerDescription' => 'معادل 10 باند برای MPVفیلترهای صوتی از صدا های رمزگذاری شده استفاده می کنند و به طور مناسب خاموش می شوند.',
 			'videoSettings.audioEqualizerFlat' => 'مسطح',
 			'videoSettings.audioEqualizerActive' => 'سفارشی',
 			'videoSettings.audioEqualizerSaveFailed' => 'نمی توانم تنظیمات معادل صوتی را ذخیره کنم.',
@@ -7362,6 +7419,13 @@ extension on TranslationsFa {
 			'videoSettings.backgroundVideoAudioDescription' => 'بازی ویدئویی را در هنگام ترک پخش کننده نگه دارید؛ تصویر تا زمانی که بازگردید پنهان است. Android از یک اطلاعیه پخش رسانه استفاده می کند.',
 			'videoSettings.audioNormalization' => 'صدا را عادی کنید',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'دکود صوتی به PCM؛ passthrough در حالی که این در',
+			'videoSettings.audioEffectsDescription' => 'اثرات از صدا رمزگذاری شده استفاده می کنند، بنابراین passthrough از بین می رود. فضای اتاق و گسترش استریو بستگی به MPV ساخت و ردیابی',
+			'videoSettings.audioStereoWidth' => 'استریو گسترش',
+			'videoSettings.audioSpatializer' => 'فضای اتاق',
+			'videoSettings.audioSpatializerDescription' => 'بازخورد اتاق آرام را اضافه کنید.',
+			'videoSettings.audioPitch' => 'پیتزا تغییر',
+			'videoSettings.audioPitchDescription' => 'تغییر مسیر بدون تغییر سرعت MPV ساخت باید شامل Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'این اثر برای این مسیر در دسترس نیست یا MPV ساختن .',
 			'performanceOverlay.color' => 'رنگ ها',
 			'performanceOverlay.performance' => 'کارایی',
 			'performanceOverlay.buffer' => 'بوفری',
@@ -7475,6 +7539,8 @@ extension on TranslationsFa {
 			'metadataEdit.notSet' => 'نه تنظیم',
 			'metadataEdit.libraryDefault' => 'کتابخانه های ناشناخته',
 			'metadataEdit.accountDefault' => 'حساب های جعلی',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'سری دیپلماسی',
 			'metadataEdit.episodeSorting' => 'قسمت دسته بندی',
 			'metadataEdit.oldestFirst' => 'قدیمی ترین اول',
@@ -7506,8 +7572,6 @@ extension on TranslationsFa {
 			'metadataEdit.shownWithForeignAudio' => 'نمایش با صدا خارجی',
 			'metadataEdit.alwaysEnabled' => 'همیشه امکان پذیر',
 			'metadataEdit.tags' => 'برچسب‌ها',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'اضافه کردن Tag',
 			'metadataEdit.genre' => 'ژانر',
 			'metadataEdit.director' => 'کارگردان',
@@ -7939,7 +8003,7 @@ extension on TranslationsFa {
 			'universalMedia.audioCd' => 'CD صوتی',
 			'universalMedia.discAvailability' => 'پخش دیسک نیاز به ساخت MPV سازگار، درایو پشتیبانی شده و مجوز سیستم عامل دارد.',
 			'universalMedia.converterTitle' => 'تبدیل یک فایل رسانه محلی',
-			'universalMedia.converterHelp' => 'از FFmpeg برای ایجاد یک کپی MP4، M4A یا MP3 استفاده کنید.',
+			'universalMedia.converterHelp' => 'یک فایل محلی را تبدیل کنید یا آن را با FFmpeg.',
 			'universalMedia.converterIntro' => 'تبدیل یک فایل صوتی یا ویدئویی محلی به فرمتی که بر روی دستگاه های مختلف کار می کند.',
 			'universalMedia.converterPrivacy' => 'FFmpeg باید بر روی این کامپیوتر نصب شود.Conversion فقط فایل های محلی را می خواند.این جریان ها را دانلود نمی کند یا DRM را حذف نمی کند.',
 			'universalMedia.converterChooseInput' => 'انتخاب فایل رسانه ای محلی',
@@ -7956,7 +8020,7 @@ extension on TranslationsFa {
 			'universalMedia.converterStarting' => 'شروع به استفاده از FFmpeg...',
 			'universalMedia.converterProgress' => 'با استفاده از این کامپیوتر...',
 			'universalMedia.converterComplete' => 'فایلهای جدید آماده است.',
-			'universalMedia.converterFfmpegMissing' => 'نصب FFmpeg با پشتیبانی از H.264، AAC و MP3، سپس دوباره آن را امتحان کنید.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg از دست رفته است یا از این فرمت پشتیبانی نمی کند.',
 			'universalMedia.converterFailed' => 'بررسی کنید که فایل منبع قابل خواندن است و مقصد به اندازه کافی فضای رایگان دارد.',
 			'universalMedia.converterCancelled' => 'تبدیل لغو شد خروجی نامناسب حذف شد.',
 			'universalMedia.converterDesktopOnly' => 'تبدیل محلی در کامپیوترهای دسکتاپ با نصب FFmpeg در دسترس است.',
@@ -7969,11 +8033,9 @@ extension on TranslationsFa {
 			'universalMedia.captureIntro' => 'صفحه نمایش یا دوربین خود را به یک فایل MP4 در این کامپیوتر ضبط کنید. FFmpeg باید نصب شود و کدگذاری H.264 را شامل شود.',
 			'universalMedia.captureNoDevices' => 'هیچ صفحه نمایش و یا دوربین یافت نشد. بررسی FFmpeg پشتیبانی از ضبط و اجازه های حفظ حریم خصوصی سیستم عامل.',
 			'universalMedia.captureSource' => 'صفحه نمایش یا دوربین',
-			'universalMedia.captureScreen' => 'صفحه نمایش',
 			'universalMedia.captureAudioSource' => 'ورودی صوتی (اختیاری)',
 			'universalMedia.captureAudioHelp' => 'اضافه کردن صدا از یک میکروفون یا ورودی در دسترس. انتخاب دستگاه بستگی به FFmpeg و مجوزهای سیستم دارد.',
 			'universalMedia.captureAudioNone' => 'بدون صدا',
-			'universalMedia.captureDefaultAudio' => 'واردات صوتی پیش فرض',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
 			'universalMedia.captureFrameRate' => 'نرخ ضبط فریم',
 			'universalMedia.capturePrivacy' => 'ضبط فقط به فایل انتخاب شده ذخیره می شود. ضبط میکروفون اختیاری است. PlezyNG ضبط را بارگذاری نمی کند.',
@@ -7991,6 +8053,8 @@ extension on TranslationsFa {
 			'universalMedia.sharePrivacy' => 'هر کسی در شبکه محلی شما که لینک خصوصی را دریافت می کند می تواند در حالی که فعال است تماشا کند. لینک پس از 60 دقیقه به پایان می رسد. توقف به اشتراک گذاری برای بستن سرور و لغو لینک.',
 			'universalMedia.shareChooseFile' => 'انتخاب فایل های رسانه ای',
 			'universalMedia.shareChooseHelp' => 'یک فایل صوتی یا ویدئویی محلی را انتخاب کنید.این فایل در این کامپیوتر باقی می ماند.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg یا رمزگذاری های H.264/AAC در دسترس نیست. نصب FFmpeg با پشتیبانی از رمزگذاری H.264 و AAC.',
 			'universalMedia.shareFailed' => 'جریان نمی توانست به طور غیرمنتظره شروع یا متوقف شود. بررسی FFmpeg و دسترسی به شبکه.',
 			'universalMedia.shareActive' => 'جریان در شبکه خصوصی شما آماده است.',
@@ -7998,9 +8062,6 @@ extension on TranslationsFa {
 			'universalMedia.shareStopped' => 'به اشتراک گذاری متوقف شده است لینک موقت دیگر معتبر نیست.',
 			'universalMedia.shareUrlCopied' => 'آدرس جریان کپی شده است',
 			'universalMedia.shareOpenUrl' => 'این آدرس را در یک بازیکن در دستگاه دیگر باز کنید.',
-			'universalMedia.shareQrLabel' => 'کد QR برای آدرس جریان موقت',
-			'universalMedia.shareQrHelp' => 'اسکن با یک بازیکن سازگار متصل به همان شبکه خصوصی.',
-			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
 			'universalMedia.shareCopyUrl' => 'کپی آدرس جریان',
 			'universalMedia.shareExpiresLabel' => 'لینک به پایان می رسد',
 			'universalMedia.shareStarting' => 'در حال آماده سازی جریان...',
@@ -8020,8 +8081,6 @@ extension on TranslationsFa {
 			'universalMedia.extensionInstallTitle' => 'این سرویس جستجو را اضافه کنید؟',
 			'universalMedia.extensionReplaceTitle' => 'این سرویس جستجو را به روز کنید؟',
 			'universalMedia.extensionService' => 'خدمات',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS نقطه نهایی',
 			'universalMedia.extensionConsent' => 'متن جستجوی شما به این سرویس ارسال می شود.این مانیفست هیچ کد اجرا نمی شود.با ادامه فقط اگر به این نقطه نهایی اعتماد کنید.',
 			'universalMedia.extensionInstall' => 'اضافه کردن خدمات',
@@ -8036,6 +8095,13 @@ extension on TranslationsFa {
 			'universalMedia.cliHelp' => 'از راهنمای plezyctl برای تأیید یک مانیفست یا جستجو برای همان افزونه استفاده کنید. قبل از هر جستجو، خدمات HTTPS خود را بررسی کنید. نتایج در فرم رسانه های موجود باز می شود.',
 			'universalMedia.cliCopyExample' => 'کپی دستور نمونه',
 			'universalMedia.cliCopied' => 'دستور نمونه کپی شده است.',
+			'universalMedia.captureScreen' => 'صفحه نمایش',
+			'universalMedia.captureDefaultAudio' => 'واردات صوتی پیش فرض',
+			'universalMedia.shareQrLabel' => 'کد QR برای آدرس جریان موقت',
+			'universalMedia.shareQrHelp' => 'اسکن با یک بازیکن سازگار متصل به همان شبکه خصوصی.',
+			'universalMedia.shareHttpHint' => 'This stream uses unencrypted HTTP. In PlezyNG, allow HTTP before opening it.',
+			'universalMedia.allowFtp' => 'اجازه FTP',
+			'universalMedia.allowFtpHelp' => 'FTP رسانه ها را بدون رمزگذاری ارسال می کند.فقط در شبکه های قابل اعتماد استفاده کنید.',
 			'fileSources.title' => 'فایل ها و کتاب ها',
 			'fileSources.subtitle' => 'خواندن، گوش دادن و تماشای از فایل های خود را.',
 			'fileSources.add' => 'منبع اضافه کنید',
@@ -8501,6 +8567,8 @@ extension on TranslationsFa {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
+			_ => null,
+		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
@@ -8534,8 +8602,6 @@ extension on TranslationsFa {
 			'deepLinks.noLiveTv' => 'هیچ سرور تلویزیونی زنده برای این لینک در دسترس نیست.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'من نمی توانم کانال "${channel}" پیدا کنم.',
 			'deepLinks.showLink' => 'نمایش لینک',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'نمایش پروفایل لینک',
 			'deepLinks.dialogTitle' => 'لینک',
 			'deepLinks.showHint' => 'باز کردن این لینک قسمت بعدی را بازی می کند. اضافه کنید &mode=shuffle برای پخش نمایش در shuffle.',

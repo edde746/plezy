@@ -1249,6 +1249,30 @@ class _Translations$videoControls$he extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'תגית: Off';
 	@override String osdSubtitles({required Object track}) => 'תגית: ${track}';
 	@override String osdAudio({required Object track}) => 'אודיו: ${track}';
+	@override String get segmentLoopHelp => 'הגדר A, ולאחר מכן הגדר B מאוחר יותר בשורה הזמנית.';
+	@override String get setLoopStart => 'הגדרת קובץ התחלה (א)';
+	@override String get setLoopEnd => 'הגדרת קצה הקוטב (B)';
+	@override String get clearSegmentLoop => 'סגנון ברור';
+	@override String get setLoopStartFirst => 'הקלד את ההתחלה (A) לפני הסוף (B).';
+	@override String get loopEndAfterStart => 'הסוף חייב להיות מאוחר יותר מההתחלה.';
+	@override String get segmentLoopUnavailable => 'ה-Segment Looping אינו זמין עבור המשחק הזה.';
+	@override String get bookmarksHelp => 'מילות המפתח מאוחסנות במכשיר זה, בחר אחד כדי להגיע לזמן הזה.';
+	@override String get bookmarksButton => 'ספרות';
+	@override String get chaptersAndBookmarks => 'פרקים וספריות';
+	@override String get segmentLoop => 'סגמנט לואי';
+	@override String get addBookmark => 'להוסיף bookmark';
+	@override String get bookmarkName => 'Bookmark שם';
+	@override String get bookmarkNameHint => 'לדוגמה, פתיחת סצנה';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark ${n}';
+	@override String get bookmarkNameRequired => 'הקלד שם עבור ספר זה.';
+	@override String get deleteBookmark => 'הסרת ספרייה';
+	@override String get bookmarkLimitReached => 'הפוסט הזה כבר מכיל 100 ספרות.';
+	@override String get bookmarkUnavailable => 'לא הצלחתי לשמור או להסיר את החותם הזה.';
+	@override String get bookmarkSaved => 'הספר נשמר.';
+	@override String get bookmarkDeleted => 'Bookmark נמחק.';
+	@override String loopPointSet({required Object point, required Object time}) => 'לופ נקודה ${point} סדנאות ב ${time}→';
+	@override String get noChaptersOrBookmarks => 'אין פרקים או ספרי ספרים זמינים.';
+	@override String get loopPointNotSet => 'לא קבע';
 	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n,
 		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} מסגרת',
 		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} פרמטרים',
@@ -2434,7 +2458,7 @@ class _Translations$videoSettings$he extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'חלל אודיו';
 	@override String get audioOutputStereo => 'סטריאו';
 	@override String get audioEqualizer => 'אודיו Equalizer';
-	@override String get audioEqualizerDescription => 'זמין ב- mpv; EQ פעיל מעודד אודיו ומפחיד את התאמה.';
+	@override String get audioEqualizerDescription => 'שווה ערך 10 ל MPVמסנני אודיו משתמשים באודיו מעודכן והפסיקו לעמוד.';
 	@override String get audioEqualizerFlat => 'שטוח';
 	@override String get audioEqualizerActive => 'מותאם אישית';
 	@override String get audioEqualizerSaveFailed => 'לא יכולתי לשמור את ההגדרות של שווה אודיו.';
@@ -2442,6 +2466,13 @@ class _Translations$videoSettings$he extends Translations$videoSettings$en {
 	@override String get backgroundVideoAudioDescription => 'שמור על שידור אודיו וידאו כאשר אתה עוזב את השחקן; התמונה מוסתרת עד שאתה חוזר. Android משתמש בהודעה לשחק מדיה.';
 	@override String get audioNormalization => 'נורמליזציה צליל';
 	@override String get audioNormalizationDisablesPassthrough => 'להוריד את האודיו ל- PCM; passthrough נעלם בעוד זה';
+	@override String get audioEffectsDescription => 'אפקטים משתמשים אודיו מעודכן, כך passthrough הופך.אווירה בחדר והרחבה סטריאו תלויים MPV לבנות ולעקוב.';
+	@override String get audioStereoWidth => 'סטריאו הרחבה';
+	@override String get audioSpatializer => 'סביבת החדר';
+	@override String get audioSpatializerDescription => 'להוסיף מחשבות בחדר שקט.';
+	@override String get audioPitch => 'פיץ \'שינוי';
+	@override String get audioPitchDescription => 'לשנות את המסלול ללא שינוי מהירות. MPV הבנייה חייבת לכלול Rubber Band→';
+	@override String get audioEffectUnavailable => 'השפעה זו אינה זמינה עבור מסלול זה או MPV לבנות';
 }
 
 // Path: performanceOverlay
@@ -3162,7 +3193,7 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get audioCd => 'אודיו CD';
 	@override String get discAvailability => 'משחקי דיסק זקוקים לבניית MPV תואמת, כונן נתמך והרשאה למערכת ההפעלה.';
 	@override String get converterTitle => 'להמיר קובץ מדיה מקומי';
-	@override String get converterHelp => 'השתמש FFmpeg כדי ליצור MP4, M4A, או MP3 עותק.';
+	@override String get converterHelp => 'להמיר קובץ מקומי או לשחזר אותו עם FFmpeg→';
 	@override String get converterIntro => 'להפוך קובץ אודיו או וידאו מקומי לתבנית שעובדת על יותר מכשירים.';
 	@override String get converterPrivacy => 'FFmpeg חייב להיות מותקן במחשב זה.Conversion קורא רק קבצים מקומיים.זה לא הורד זרמים או להסיר DRM.';
 	@override String get converterChooseInput => 'בחר קובץ מדיה מקומי';
@@ -3179,7 +3210,7 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get converterStarting => 'התחלנו עם FFmpeg.';
 	@override String get converterProgress => 'כדי להפוך את המחשב הזה ...';
 	@override String get converterComplete => 'הקובץ החדש כבר מוכן.';
-	@override String get converterFfmpegMissing => 'התקנת FFmpeg עם תמיכה H.264, AAC, ו- MP3 ולאחר מכן נסה שוב.';
+	@override String get converterFfmpegMissing => 'FFmpeg הוא חסר או לא תומך בפורמט זה.';
 	@override String get converterFailed => 'בדוק כי קובץ המקור ניתן לקרוא והמטרה יש מספיק מקום חינם.';
 	@override String get converterCancelled => 'המהפכה בוטלה, התוצאה הבלתי מלאה הוסרה.';
 	@override String get converterDesktopOnly => 'ההמרה המקומית זמינה במחשבים שולחניים עם FFmpeg מותקן.';
@@ -3192,11 +3223,9 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get captureIntro => 'להקליט את המסך שלך או מצלמה לקובץ MP4 במחשב זה. FFmpeg חייב להיות מותקן ולהכיל את הקודר H.264.';
 	@override String get captureNoDevices => 'לא נמצאו מסך או מצלמה.בדוק FFmpeg תמיכה בקלטות והרשאות הפרטיות של מערכת ההפעלה.';
 	@override String get captureSource => 'מסך או מצלמה';
-	@override String get captureScreen => 'מסך';
 	@override String get captureAudioSource => 'כניסה אודיו (אופציונלית)';
 	@override String get captureAudioHelp => 'הוסף אודיו ממיקרופון או כניסה זמינה.בחירות המכשיר תלויות ב- FFmpeg והרשאות המערכת.';
 	@override String get captureAudioNone => 'אין אודיו';
-	@override String get captureDefaultAudio => 'כניסה אודיו';
 	@override String get captureWaylandHelp => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.';
 	@override String get captureFrameRate => 'שיעור הקלטת';
 	@override String get capturePrivacy => 'ההקלטה מאוחסנת רק לקובץ שבחרת.הקלטת המיקרופון היא אופציונלית.PlezyNG אינו מעלה את ההקלטה.';
@@ -3221,9 +3250,6 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get shareStopped => 'קישור זמני כבר לא בתוקף.';
 	@override String get shareUrlCopied => 'כתובת זרם עותק.';
 	@override String get shareOpenUrl => 'פתח את הכתובת הזאת במשחק אחד במכשיר אחר';
-	@override String get shareQrLabel => 'קוד QR עבור כתובת זרם זמנית';
-	@override String get shareQrHelp => 'סריקה עם שחקן תואם מחובר לאותו רשת פרטית.';
-	@override String get shareHttpHint => 'זרם זה משתמש HTTP לא מוצפן. ב PlezyNG, תן HTTP לפני פתיחתו.';
 	@override String get shareCopyUrl => 'כתובת Stream Address';
 	@override String get shareExpiresLabel => 'קישור נעלם';
 	@override String get shareStarting => 'להכין את הזרם...';
@@ -3257,6 +3283,13 @@ class _Translations$universalMedia$he extends Translations$universalMedia$en {
 	@override String get cliHelp => 'השתמש במדריך plezyctl כדי לאמת מונדיאל או לחפש את אותה הרחבה.הצג את שירות HTTPS שלה לפני כל חיפוש.תוצאות פותחות בטופס התקשורת הקיימים; בחר את כפתור הצפייה כדי להתחיל.';
 	@override String get cliCopyExample => 'דוגמאות להורדה';
 	@override String get cliCopied => 'דוגמה של העתקה.';
+	@override String get captureScreen => 'מסך';
+	@override String get captureDefaultAudio => 'כניסה אודיו';
+	@override String get shareQrLabel => 'קוד QR עבור כתובת זרם זמנית';
+	@override String get shareQrHelp => 'סריקה עם שחקן תואם מחובר לאותו רשת פרטית.';
+	@override String get shareHttpHint => 'זרם זה משתמש HTTP לא מוצפן. ב PlezyNG, תן HTTP לפני פתיחתו.';
+	@override String get allowFtp => 'אישור FTP';
+	@override String get allowFtpHelp => 'FTP שולח מדיה ללא הצפנה.להשתמש רק ברשתות אמינות.';
 }
 
 // Path: fileSources
@@ -6014,6 +6047,30 @@ extension on TranslationsHe {
 			'videoControls.osdSubtitlesOff' => 'תגית: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'תגית: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'אודיו: ${track}',
+			'videoControls.segmentLoopHelp' => 'הגדר A, ולאחר מכן הגדר B מאוחר יותר בשורה הזמנית.',
+			'videoControls.setLoopStart' => 'הגדרת קובץ התחלה (א)',
+			'videoControls.setLoopEnd' => 'הגדרת קצה הקוטב (B)',
+			'videoControls.clearSegmentLoop' => 'סגנון ברור',
+			'videoControls.setLoopStartFirst' => 'הקלד את ההתחלה (A) לפני הסוף (B).',
+			'videoControls.loopEndAfterStart' => 'הסוף חייב להיות מאוחר יותר מההתחלה.',
+			'videoControls.segmentLoopUnavailable' => 'ה-Segment Looping אינו זמין עבור המשחק הזה.',
+			'videoControls.bookmarksHelp' => 'מילות המפתח מאוחסנות במכשיר זה, בחר אחד כדי להגיע לזמן הזה.',
+			'videoControls.bookmarksButton' => 'ספרות',
+			'videoControls.chaptersAndBookmarks' => 'פרקים וספריות',
+			'videoControls.segmentLoop' => 'סגמנט לואי',
+			'videoControls.addBookmark' => 'להוסיף bookmark',
+			'videoControls.bookmarkName' => 'Bookmark שם',
+			'videoControls.bookmarkNameHint' => 'לדוגמה, פתיחת סצנה',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark ${n}',
+			'videoControls.bookmarkNameRequired' => 'הקלד שם עבור ספר זה.',
+			'videoControls.deleteBookmark' => 'הסרת ספרייה',
+			'videoControls.bookmarkLimitReached' => 'הפוסט הזה כבר מכיל 100 ספרות.',
+			'videoControls.bookmarkUnavailable' => 'לא הצלחתי לשמור או להסיר את החותם הזה.',
+			'videoControls.bookmarkSaved' => 'הספר נשמר.',
+			'videoControls.bookmarkDeleted' => 'Bookmark נמחק.',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'לופ נקודה ${point} סדנאות ב ${time}→',
+			'videoControls.noChaptersOrBookmarks' => 'אין פרקים או ספרי ספרים זמינים.',
+			'videoControls.loopPointNotSet' => 'לא קבע',
 			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('he'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} מסגרת', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} פרמטרים', ), 
 			'videoControls.trackSelectionTitle' => 'בחר רצועות לפני המשחק',
 			'videoControls.trackSelectionAuto' => 'בחירה אוטומטית',
@@ -6462,6 +6519,8 @@ extension on TranslationsHe {
 			'libraries.hideLibrary' => 'להסתיר את הספרייה',
 			'libraries.libraryOptions' => 'אפשרויות ספרייה',
 			'libraries.content' => 'ספרייה תוכן',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'בחר ספרייה',
 			'libraries.filtersWithCount' => ({required Object count}) => 'מסננים (${count})',
 			'libraries.noRecommendations' => 'אין המלצות זמינות',
@@ -6486,8 +6545,6 @@ extension on TranslationsHe {
 			'libraries.filterCategories.year' => 'שנה',
 			'libraries.filterCategories.contentRating' => 'תוכן דירוג',
 			'libraries.filterCategories.tag' => 'תגית',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'לא צופה',
 			'libraries.filterCategories.unplayed' => 'לא נוגן',
 			'libraries.filterCategories.favorites' => 'מועדפים',
@@ -6976,6 +7033,8 @@ extension on TranslationsHe {
 			'watchTogether.shareInvite' => 'שיתוף הזמנה',
 			'watchTogether.inviteCopied' => 'תנו לו להוסיף את ההודעה, תנו לו להוסיף הודעה.',
 			'watchTogether.inviteMessage' => ({required Object code}) => 'הצטרף לחדר השעון שלי ב- PlezyNG: פתח את השעון יחד, בחר לחדר השעון הצטרף והכנס ל- ${code}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.openSessionControls' => 'Open Watch יחד בדיקת ישיבה',
 			'watchTogether.reconnecting' => 'חיבור מחדש...',
 			'watchTogether.reconnectingDescription' => 'הקשר נעלם, אתה נכנס לחדר באופן אוטומטי.',
@@ -7000,8 +7059,6 @@ extension on TranslationsHe {
 			'watchTogether.playAnyway' => 'לשחק בכל מקרה',
 			'watchTogether.chooseAnotherCopy' => 'בחר עותק נוסף',
 			'watchTogether.dontPlay' => 'אל תשחק',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'אין לך וידאו זה',
 			'watchTogether.unavailableDescription' => 'PlezyNG לא מצא את זה בספריות שלך.קח עותק בעצמך או לחפש שוב.',
 			'watchTogether.chooseCopy' => 'בחר עותק',
@@ -7362,7 +7419,7 @@ extension on TranslationsHe {
 			'videoSettings.audioOutputSpatial' => 'חלל אודיו',
 			'videoSettings.audioOutputStereo' => 'סטריאו',
 			'videoSettings.audioEqualizer' => 'אודיו Equalizer',
-			'videoSettings.audioEqualizerDescription' => 'זמין ב- mpv; EQ פעיל מעודד אודיו ומפחיד את התאמה.',
+			'videoSettings.audioEqualizerDescription' => 'שווה ערך 10 ל MPVמסנני אודיו משתמשים באודיו מעודכן והפסיקו לעמוד.',
 			'videoSettings.audioEqualizerFlat' => 'שטוח',
 			'videoSettings.audioEqualizerActive' => 'מותאם אישית',
 			'videoSettings.audioEqualizerSaveFailed' => 'לא יכולתי לשמור את ההגדרות של שווה אודיו.',
@@ -7370,6 +7427,13 @@ extension on TranslationsHe {
 			'videoSettings.backgroundVideoAudioDescription' => 'שמור על שידור אודיו וידאו כאשר אתה עוזב את השחקן; התמונה מוסתרת עד שאתה חוזר. Android משתמש בהודעה לשחק מדיה.',
 			'videoSettings.audioNormalization' => 'נורמליזציה צליל',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'להוריד את האודיו ל- PCM; passthrough נעלם בעוד זה',
+			'videoSettings.audioEffectsDescription' => 'אפקטים משתמשים אודיו מעודכן, כך passthrough הופך.אווירה בחדר והרחבה סטריאו תלויים MPV לבנות ולעקוב.',
+			'videoSettings.audioStereoWidth' => 'סטריאו הרחבה',
+			'videoSettings.audioSpatializer' => 'סביבת החדר',
+			'videoSettings.audioSpatializerDescription' => 'להוסיף מחשבות בחדר שקט.',
+			'videoSettings.audioPitch' => 'פיץ \'שינוי',
+			'videoSettings.audioPitchDescription' => 'לשנות את המסלול ללא שינוי מהירות. MPV הבנייה חייבת לכלול Rubber Band→',
+			'videoSettings.audioEffectUnavailable' => 'השפעה זו אינה זמינה עבור מסלול זה או MPV לבנות',
 			'performanceOverlay.color' => 'צבע',
 			'performanceOverlay.performance' => 'ביצועים',
 			'performanceOverlay.buffer' => 'בופר',
@@ -7483,6 +7547,8 @@ extension on TranslationsHe {
 			'metadataEdit.notSet' => 'לא קבע',
 			'metadataEdit.libraryDefault' => 'ספרייה פגום',
 			'metadataEdit.accountDefault' => 'חשבונאות מזויפת',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'סדרת דפוק',
 			'metadataEdit.episodeSorting' => 'סדרה פרק',
 			'metadataEdit.oldestFirst' => 'ראשונים ישנים',
@@ -7514,8 +7580,6 @@ extension on TranslationsHe {
 			'metadataEdit.shownWithForeignAudio' => 'תגיות: אודיו זר',
 			'metadataEdit.alwaysEnabled' => 'תמיד אפשרי',
 			'metadataEdit.tags' => 'מילות מפתח',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'הוסף תגית',
 			'metadataEdit.genre' => 'ז\'אנר',
 			'metadataEdit.director' => 'במאי',
@@ -7947,7 +8011,7 @@ extension on TranslationsHe {
 			'universalMedia.audioCd' => 'אודיו CD',
 			'universalMedia.discAvailability' => 'משחקי דיסק זקוקים לבניית MPV תואמת, כונן נתמך והרשאה למערכת ההפעלה.',
 			'universalMedia.converterTitle' => 'להמיר קובץ מדיה מקומי',
-			'universalMedia.converterHelp' => 'השתמש FFmpeg כדי ליצור MP4, M4A, או MP3 עותק.',
+			'universalMedia.converterHelp' => 'להמיר קובץ מקומי או לשחזר אותו עם FFmpeg→',
 			'universalMedia.converterIntro' => 'להפוך קובץ אודיו או וידאו מקומי לתבנית שעובדת על יותר מכשירים.',
 			'universalMedia.converterPrivacy' => 'FFmpeg חייב להיות מותקן במחשב זה.Conversion קורא רק קבצים מקומיים.זה לא הורד זרמים או להסיר DRM.',
 			'universalMedia.converterChooseInput' => 'בחר קובץ מדיה מקומי',
@@ -7964,7 +8028,7 @@ extension on TranslationsHe {
 			'universalMedia.converterStarting' => 'התחלנו עם FFmpeg.',
 			'universalMedia.converterProgress' => 'כדי להפוך את המחשב הזה ...',
 			'universalMedia.converterComplete' => 'הקובץ החדש כבר מוכן.',
-			'universalMedia.converterFfmpegMissing' => 'התקנת FFmpeg עם תמיכה H.264, AAC, ו- MP3 ולאחר מכן נסה שוב.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg הוא חסר או לא תומך בפורמט זה.',
 			'universalMedia.converterFailed' => 'בדוק כי קובץ המקור ניתן לקרוא והמטרה יש מספיק מקום חינם.',
 			'universalMedia.converterCancelled' => 'המהפכה בוטלה, התוצאה הבלתי מלאה הוסרה.',
 			'universalMedia.converterDesktopOnly' => 'ההמרה המקומית זמינה במחשבים שולחניים עם FFmpeg מותקן.',
@@ -7977,11 +8041,9 @@ extension on TranslationsHe {
 			'universalMedia.captureIntro' => 'להקליט את המסך שלך או מצלמה לקובץ MP4 במחשב זה. FFmpeg חייב להיות מותקן ולהכיל את הקודר H.264.',
 			'universalMedia.captureNoDevices' => 'לא נמצאו מסך או מצלמה.בדוק FFmpeg תמיכה בקלטות והרשאות הפרטיות של מערכת ההפעלה.',
 			'universalMedia.captureSource' => 'מסך או מצלמה',
-			'universalMedia.captureScreen' => 'מסך',
 			'universalMedia.captureAudioSource' => 'כניסה אודיו (אופציונלית)',
 			'universalMedia.captureAudioHelp' => 'הוסף אודיו ממיקרופון או כניסה זמינה.בחירות המכשיר תלויות ב- FFmpeg והרשאות המערכת.',
 			'universalMedia.captureAudioNone' => 'אין אודיו',
-			'universalMedia.captureDefaultAudio' => 'כניסה אודיו',
 			'universalMedia.captureWaylandHelp' => 'Wayland limits this XWayland capture to the X display. Windows outside XWayland may not appear.',
 			'universalMedia.captureFrameRate' => 'שיעור הקלטת',
 			'universalMedia.capturePrivacy' => 'ההקלטה מאוחסנת רק לקובץ שבחרת.הקלטת המיקרופון היא אופציונלית.PlezyNG אינו מעלה את ההקלטה.',
@@ -7999,6 +8061,8 @@ extension on TranslationsHe {
 			'universalMedia.sharePrivacy' => 'כל מי ברשת המקומית שלך שמקבל את הקישור הפרטי יכול לצפות בו בזמן שהוא פעיל.הקישור נגמר לאחר 60 דקות.',
 			'universalMedia.shareChooseFile' => 'בחר קובץ מדיה',
 			'universalMedia.shareChooseHelp' => 'בחר קובץ אודיו או וידאו מקומי.הקובץ נשאר במחשב זה.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg או הקודרים של H.264/AAC אינם זמינים.התקנה של FFmpeg עם H.264 ותמיכה בקוד AAC.',
 			'universalMedia.shareFailed' => 'זרם לא יכול להתחיל או לעצור באופן בלתי צפוי.צפה FFmpeg וגישה לרשת.',
 			'universalMedia.shareActive' => 'המשתמש מוכן ברשת הפרטית שלך.',
@@ -8006,9 +8070,6 @@ extension on TranslationsHe {
 			'universalMedia.shareStopped' => 'קישור זמני כבר לא בתוקף.',
 			'universalMedia.shareUrlCopied' => 'כתובת זרם עותק.',
 			'universalMedia.shareOpenUrl' => 'פתח את הכתובת הזאת במשחק אחד במכשיר אחר',
-			'universalMedia.shareQrLabel' => 'קוד QR עבור כתובת זרם זמנית',
-			'universalMedia.shareQrHelp' => 'סריקה עם שחקן תואם מחובר לאותו רשת פרטית.',
-			'universalMedia.shareHttpHint' => 'זרם זה משתמש HTTP לא מוצפן. ב PlezyNG, תן HTTP לפני פתיחתו.',
 			'universalMedia.shareCopyUrl' => 'כתובת Stream Address',
 			'universalMedia.shareExpiresLabel' => 'קישור נעלם',
 			'universalMedia.shareStarting' => 'להכין את הזרם...',
@@ -8028,8 +8089,6 @@ extension on TranslationsHe {
 			'universalMedia.extensionInstallTitle' => 'להוסיף שירות חיפוש זה?',
 			'universalMedia.extensionReplaceTitle' => 'עדכון שירות החיפוש הזה?',
 			'universalMedia.extensionService' => 'שירות',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS נקודת סיום',
 			'universalMedia.extensionConsent' => 'טקסט החיפוש שלך נשלח לשירות זה.המניין אינו מכיל קוד מבוצע.המשך רק אם אתה סומך על נקודת המוצא הזו.',
 			'universalMedia.extensionInstall' => 'להוסיף שירות',
@@ -8044,6 +8103,13 @@ extension on TranslationsHe {
 			'universalMedia.cliHelp' => 'השתמש במדריך plezyctl כדי לאמת מונדיאל או לחפש את אותה הרחבה.הצג את שירות HTTPS שלה לפני כל חיפוש.תוצאות פותחות בטופס התקשורת הקיימים; בחר את כפתור הצפייה כדי להתחיל.',
 			'universalMedia.cliCopyExample' => 'דוגמאות להורדה',
 			'universalMedia.cliCopied' => 'דוגמה של העתקה.',
+			'universalMedia.captureScreen' => 'מסך',
+			'universalMedia.captureDefaultAudio' => 'כניסה אודיו',
+			'universalMedia.shareQrLabel' => 'קוד QR עבור כתובת זרם זמנית',
+			'universalMedia.shareQrHelp' => 'סריקה עם שחקן תואם מחובר לאותו רשת פרטית.',
+			'universalMedia.shareHttpHint' => 'זרם זה משתמש HTTP לא מוצפן. ב PlezyNG, תן HTTP לפני פתיחתו.',
+			'universalMedia.allowFtp' => 'אישור FTP',
+			'universalMedia.allowFtpHelp' => 'FTP שולח מדיה ללא הצפנה.להשתמש רק ברשתות אמינות.',
 			'fileSources.title' => 'קבצים וספרים',
 			'fileSources.subtitle' => 'קרא, הקשיב, והצפה מהקבצים שלך.',
 			'fileSources.add' => 'הוסף מקור',
@@ -8509,6 +8575,8 @@ extension on TranslationsHe {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
+			_ => null,
+		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
@@ -8542,8 +8610,6 @@ extension on TranslationsHe {
 			'deepLinks.noLiveTv' => 'אין שרת טלוויזיה חי זמין עבור קישור זה.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'לא מצאתי ערוץ "${channel}".',
 			'deepLinks.showLink' => 'הצג קישור',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'הצג פרופיל קישור',
 			'deepLinks.dialogTitle' => 'קישור',
 			'deepLinks.showHint' => 'פתיחת הקישור הזה משחק את הפרק הבא.הוסף &mode=shuffle לשחק את ההצגה על shuffle.',

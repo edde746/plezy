@@ -1242,6 +1242,30 @@ class _Translations$videoControls$vi extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Chủ đề: Off';
 	@override String osdSubtitles({required Object track}) => 'Đánh giá: ${track}';
 	@override String osdAudio({required Object track}) => 'Âm thanh: ${track}';
+	@override String get segmentLoopHelp => 'Đặt A, sau đó đặt B sau đó trong dòng thời gian.';
+	@override String get setLoopStart => 'Cài đặt loop bắt đầu (A)';
+	@override String get setLoopEnd => 'Thiết lập vòng tròn kết thúc (B)';
+	@override String get clearSegmentLoop => 'Chi tiết Segment Loop';
+	@override String get setLoopStartFirst => 'Cài đặt vòng bắt đầu (A) trước khi kết thúc (B).';
+	@override String get loopEndAfterStart => 'Kết thúc vòng tròn phải là muộn hơn khởi đầu.';
+	@override String get segmentLoopUnavailable => 'Segment looping không có sẵn cho playback này.';
+	@override String get bookmarksHelp => 'Bookmarks được lưu trên thiết bị này. chọn một để đi đến thời điểm đó.';
+	@override String get bookmarksButton => 'Bookmarks Đánh giá';
+	@override String get chaptersAndBookmarks => 'Chương và Bookmark';
+	@override String get segmentLoop => 'phân đoạn loop';
+	@override String get addBookmark => 'Thêm Bookmark';
+	@override String get bookmarkName => 'Bookmark tên';
+	@override String get bookmarkNameHint => 'Ví dụ: Mở cảnh';
+	@override String bookmarkDefaultName({required Object n}) => 'Bookmark Đề ${n}';
+	@override String get bookmarkNameRequired => 'Nhập tên cho bookmark này.';
+	@override String get deleteBookmark => 'xóa bookmark';
+	@override String get bookmarkLimitReached => 'Bài viết này đã có 100 bookmarks.';
+	@override String get bookmarkUnavailable => 'Không thể lưu hoặc xóa sổ này.';
+	@override String get bookmarkSaved => 'Bookmark được tiết kiệm';
+	@override String get bookmarkDeleted => 'Bookmark bị xóa';
+	@override String loopPointSet({required Object point, required Object time}) => 'Điểm Loop ${point} Set tại ${time}.';
+	@override String get noChaptersOrBookmarks => 'Không có chương hoặc bảng chữ cái có sẵn.';
+	@override String get loopPointNotSet => 'Không đặt';
 	@override String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
 		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung',
 	);
@@ -2411,7 +2435,7 @@ class _Translations$videoSettings$vi extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'âm thanh không gian';
 	@override String get audioOutputStereo => 'Âm Thanh Nổi';
 	@override String get audioEqualizer => 'âm thanh equalizer';
-	@override String get audioEqualizerDescription => 'Tùy chỉnh 5 tần số cho thiết bị này. có sẵn trên mpv; một EQ hoạt động giải mã âm thanh và chặn phù hợp.';
+	@override String get audioEqualizerDescription => '10-band equalizer cho MPVCác bộ lọc âm thanh sử dụng âm thanh giải mã và tắt passthrough.';
 	@override String get audioEqualizerFlat => 'Đơn giản';
 	@override String get audioEqualizerActive => 'Tùy chọn';
 	@override String get audioEqualizerSaveFailed => 'Không thể tiết kiệm các thiết lập Audio Equalizer.';
@@ -2419,6 +2443,13 @@ class _Translations$videoSettings$vi extends Translations$videoSettings$en {
 	@override String get backgroundVideoAudioDescription => 'Giữ video chơi âm thanh khi bạn rời chơi; hình ảnh được ẩn cho đến khi bạn trở về. Android sử dụng thông báo phát lại phương tiện truyền thông.';
 	@override String get audioNormalization => 'bình thường tiếng ồn';
 	@override String get audioNormalizationDisablesPassthrough => 'Xóa âm thanh đến PCM; passthrough đang tắt trong khi điều này đang';
+	@override String get audioEffectsDescription => 'Hiệu ứng sử dụng âm thanh giải mã, do đó passthrough xoay. không gian phòng và mở rộng stereo phụ thuộc vào MPV xây dựng và theo dõi.';
+	@override String get audioStereoWidth => 'Stereo mở rộng';
+	@override String get audioSpatializer => 'Môi trường phòng';
+	@override String get audioSpatializerDescription => 'Thêm phản ánh phòng yên tĩnh.';
+	@override String get audioPitch => 'Pitch thay đổi';
+	@override String get audioPitchDescription => 'Thay đổi vị trí mà không thay đổi tốc độ. MPV xây dựng phải bao gồm Rubber Band.';
+	@override String get audioEffectUnavailable => 'Hiệu ứng này không có sẵn cho con đường này hoặc MPV xây dựng';
 }
 
 // Path: performanceOverlay
@@ -3133,7 +3164,7 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get audioCd => 'CD âm thanh';
 	@override String get discAvailability => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.';
 	@override String get converterTitle => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương';
-	@override String get converterHelp => 'Sử dụng FFmpeg để tạo bản sao MP4, M4A hoặc MP3.';
+	@override String get converterHelp => 'Chuyển đổi một tệp địa phương hoặc sửa lại nó với FFmpeg.';
 	@override String get converterIntro => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.';
 	@override String get converterPrivacy => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.';
 	@override String get converterChooseInput => 'Chọn một tập tin phương tiện truyền thông địa phương';
@@ -3150,7 +3181,7 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get converterStarting => 'Bắt đầu FFmpeg...';
 	@override String get converterProgress => 'Chuyển đổi vào máy tính này...';
 	@override String get converterComplete => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.';
-	@override String get converterFfmpegMissing => 'Cài đặt FFmpeg với hỗ trợ H.264, AAC, và MP3, sau đó thử lại.';
+	@override String get converterFfmpegMissing => 'FFmpeg thiếu hoặc không hỗ trợ định dạng này.';
 	@override String get converterFailed => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.';
 	@override String get converterCancelled => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.';
 	@override String get converterDesktopOnly => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.';
@@ -3163,11 +3194,9 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get captureIntro => 'Ghi lại màn hình hoặc máy ảnh của bạn vào một tệp MP4 trên máy tính này. FFmpeg phải được cài đặt và bao gồm mã hóa H.264.';
 	@override String get captureNoDevices => 'Không tìm thấy màn hình hoặc máy ảnh. kiểm tra hỗ trợ chụp FFmpeg và quyền riêng tư hệ điều hành.';
 	@override String get captureSource => 'màn hình hoặc camera';
-	@override String get captureScreen => 'màn hình';
 	@override String get captureAudioSource => 'Audio input (tùy chọn)';
 	@override String get captureAudioHelp => 'Thêm âm thanh từ microphone hoặc input có sẵn. lựa chọn thiết bị phụ thuộc vào FFmpeg và quyền hệ thống.';
 	@override String get captureAudioNone => 'Không có Audio';
-	@override String get captureDefaultAudio => 'Lập trình Audio Input';
 	@override String get captureWaylandHelp => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.';
 	@override String get captureFrameRate => 'Tỷ lệ ghi âm frame rate';
 	@override String get capturePrivacy => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.';
@@ -3192,9 +3221,6 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get shareStopped => 'Chia sẻ dừng lại. liên kết tạm thời không còn hợp lệ.';
 	@override String get shareUrlCopied => 'Địa chỉ dòng được sao chép.';
 	@override String get shareOpenUrl => 'Mở địa chỉ này trong một người chơi trên thiết bị khác';
-	@override String get shareQrLabel => 'Mã QR cho địa chỉ dòng tạm thời';
-	@override String get shareQrHelp => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.';
-	@override String get shareHttpHint => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.';
 	@override String get shareCopyUrl => 'Bản sao Stream Address';
 	@override String get shareExpiresLabel => 'Link kết thúc tại';
 	@override String get shareStarting => 'Chuẩn bị dòng chảy...';
@@ -3228,6 +3254,13 @@ class _Translations$universalMedia$vi extends Translations$universalMedia$en {
 	@override String get cliHelp => 'Sử dụng hướng dẫn plezyctl để xác nhận một biểu hiện hoặc tìm kiếm cùng một phần mở rộng. Xem lại dịch vụ HTTPS của nó trước mỗi tìm kiếm. Kết quả mở trong biểu mẫu phương tiện hiện có; chọn nút playback để bắt đầu.';
 	@override String get cliCopyExample => 'copy command ví dụ';
 	@override String get cliCopied => 'Lệnh ví dụ sao chép.';
+	@override String get captureScreen => 'màn hình';
+	@override String get captureDefaultAudio => 'Lập trình Audio Input';
+	@override String get shareQrLabel => 'Mã QR cho địa chỉ dòng tạm thời';
+	@override String get shareQrHelp => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.';
+	@override String get shareHttpHint => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.';
+	@override String get allowFtp => 'Khả năng FTP';
+	@override String get allowFtpHelp => 'FTP gửi các phương tiện truyền thông mà không có mã hóa. sử dụng chỉ trên mạng tin cậy.';
 }
 
 // Path: fileSources
@@ -5981,6 +6014,30 @@ extension on TranslationsVi {
 			'videoControls.osdSubtitlesOff' => 'Chủ đề: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Đánh giá: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Âm thanh: ${track}',
+			'videoControls.segmentLoopHelp' => 'Đặt A, sau đó đặt B sau đó trong dòng thời gian.',
+			'videoControls.setLoopStart' => 'Cài đặt loop bắt đầu (A)',
+			'videoControls.setLoopEnd' => 'Thiết lập vòng tròn kết thúc (B)',
+			'videoControls.clearSegmentLoop' => 'Chi tiết Segment Loop',
+			'videoControls.setLoopStartFirst' => 'Cài đặt vòng bắt đầu (A) trước khi kết thúc (B).',
+			'videoControls.loopEndAfterStart' => 'Kết thúc vòng tròn phải là muộn hơn khởi đầu.',
+			'videoControls.segmentLoopUnavailable' => 'Segment looping không có sẵn cho playback này.',
+			'videoControls.bookmarksHelp' => 'Bookmarks được lưu trên thiết bị này. chọn một để đi đến thời điểm đó.',
+			'videoControls.bookmarksButton' => 'Bookmarks Đánh giá',
+			'videoControls.chaptersAndBookmarks' => 'Chương và Bookmark',
+			'videoControls.segmentLoop' => 'phân đoạn loop',
+			'videoControls.addBookmark' => 'Thêm Bookmark',
+			'videoControls.bookmarkName' => 'Bookmark tên',
+			'videoControls.bookmarkNameHint' => 'Ví dụ: Mở cảnh',
+			'videoControls.bookmarkDefaultName' => ({required Object n}) => 'Bookmark Đề ${n}',
+			'videoControls.bookmarkNameRequired' => 'Nhập tên cho bookmark này.',
+			'videoControls.deleteBookmark' => 'xóa bookmark',
+			'videoControls.bookmarkLimitReached' => 'Bài viết này đã có 100 bookmarks.',
+			'videoControls.bookmarkUnavailable' => 'Không thể lưu hoặc xóa sổ này.',
+			'videoControls.bookmarkSaved' => 'Bookmark được tiết kiệm',
+			'videoControls.bookmarkDeleted' => 'Bookmark bị xóa',
+			'videoControls.loopPointSet' => ({required Object point, required Object time}) => 'Điểm Loop ${point} Set tại ${time}.',
+			'videoControls.noChaptersOrBookmarks' => 'Không có chương hoặc bảng chữ cái có sẵn.',
+			'videoControls.loopPointNotSet' => 'Không đặt',
 			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} khung', ), 
 			'videoControls.trackSelectionTitle' => 'Lựa chọn đường trước khi playback',
 			'videoControls.trackSelectionAuto' => 'Tự động Selection',
@@ -6429,6 +6486,8 @@ extension on TranslationsVi {
 			'libraries.hideLibrary' => 'ẩn thư viện',
 			'libraries.libraryOptions' => 'Tùy chọn thư viện',
 			'libraries.content' => 'Thư viện Content',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.selectLibrary' => 'Chọn thư viện',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Bộ lọc (${count})',
 			'libraries.noRecommendations' => 'Không có khuyến nghị có sẵn',
@@ -6453,8 +6512,6 @@ extension on TranslationsVi {
 			'libraries.filterCategories.year' => 'Năm',
 			'libraries.filterCategories.contentRating' => 'Content Đánh giá',
 			'libraries.filterCategories.tag' => 'Nhãn',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unwatched' => 'Không quan sát',
 			'libraries.filterCategories.unplayed' => 'Chưa Phát',
 			'libraries.filterCategories.favorites' => 'Yêu Thích',
@@ -6943,6 +7000,8 @@ extension on TranslationsVi {
 			'watchTogether.shareInvite' => 'Chia sẻ mời',
 			'watchTogether.inviteCopied' => 'Gửi tin nhắn, gửi nó vào một tin nhắn.',
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Tham gia phòng đồng hồ của tôi tại PlezyNG: mở phòng đồng hồ, chọn phòng đồng hồ và nhập phòng đồng hồ ${code}.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.openSessionControls' => 'Open Watch Cùng kiểm soát phiên',
 			'watchTogether.reconnecting' => 'Kết nối lại...',
 			'watchTogether.reconnectingDescription' => 'Kết nối bị hỏng. bạn sẽ tự động vào phòng.',
@@ -6967,8 +7026,6 @@ extension on TranslationsVi {
 			'watchTogether.playAnyway' => 'Chơi bất cứ',
 			'watchTogether.chooseAnotherCopy' => 'Chọn một bản sao khác',
 			'watchTogether.dontPlay' => 'Đừng chơi',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.unavailableTitle' => 'Bạn không có video này',
 			'watchTogether.unavailableDescription' => 'PlezyNG không thể tìm thấy nó trong thư viện của bạn. chọn bản sao cho chính mình hoặc tìm kiếm lại.',
 			'watchTogether.chooseCopy' => 'Chọn một bản sao',
@@ -7329,7 +7386,7 @@ extension on TranslationsVi {
 			'videoSettings.audioOutputSpatial' => 'âm thanh không gian',
 			'videoSettings.audioOutputStereo' => 'Âm Thanh Nổi',
 			'videoSettings.audioEqualizer' => 'âm thanh equalizer',
-			'videoSettings.audioEqualizerDescription' => 'Tùy chỉnh 5 tần số cho thiết bị này. có sẵn trên mpv; một EQ hoạt động giải mã âm thanh và chặn phù hợp.',
+			'videoSettings.audioEqualizerDescription' => '10-band equalizer cho MPVCác bộ lọc âm thanh sử dụng âm thanh giải mã và tắt passthrough.',
 			'videoSettings.audioEqualizerFlat' => 'Đơn giản',
 			'videoSettings.audioEqualizerActive' => 'Tùy chọn',
 			'videoSettings.audioEqualizerSaveFailed' => 'Không thể tiết kiệm các thiết lập Audio Equalizer.',
@@ -7337,6 +7394,13 @@ extension on TranslationsVi {
 			'videoSettings.backgroundVideoAudioDescription' => 'Giữ video chơi âm thanh khi bạn rời chơi; hình ảnh được ẩn cho đến khi bạn trở về. Android sử dụng thông báo phát lại phương tiện truyền thông.',
 			'videoSettings.audioNormalization' => 'bình thường tiếng ồn',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Xóa âm thanh đến PCM; passthrough đang tắt trong khi điều này đang',
+			'videoSettings.audioEffectsDescription' => 'Hiệu ứng sử dụng âm thanh giải mã, do đó passthrough xoay. không gian phòng và mở rộng stereo phụ thuộc vào MPV xây dựng và theo dõi.',
+			'videoSettings.audioStereoWidth' => 'Stereo mở rộng',
+			'videoSettings.audioSpatializer' => 'Môi trường phòng',
+			'videoSettings.audioSpatializerDescription' => 'Thêm phản ánh phòng yên tĩnh.',
+			'videoSettings.audioPitch' => 'Pitch thay đổi',
+			'videoSettings.audioPitchDescription' => 'Thay đổi vị trí mà không thay đổi tốc độ. MPV xây dựng phải bao gồm Rubber Band.',
+			'videoSettings.audioEffectUnavailable' => 'Hiệu ứng này không có sẵn cho con đường này hoặc MPV xây dựng',
 			'performanceOverlay.color' => 'Màu sắc',
 			'performanceOverlay.performance' => 'Hiệu suất',
 			'performanceOverlay.buffer' => 'Bộ đệm',
@@ -7450,6 +7514,8 @@ extension on TranslationsVi {
 			'metadataEdit.notSet' => 'Không đặt',
 			'metadataEdit.libraryDefault' => 'Thư viện thất bại',
 			'metadataEdit.accountDefault' => 'Tài khoản default',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.seriesDefault' => 'Lập trình default',
 			'metadataEdit.episodeSorting' => 'Episode Đánh giá',
 			'metadataEdit.oldestFirst' => 'Lớn nhất đầu tiên',
@@ -7481,8 +7547,6 @@ extension on TranslationsVi {
 			'metadataEdit.shownWithForeignAudio' => 'Hiển thị bằng âm thanh nước ngoài',
 			'metadataEdit.alwaysEnabled' => 'Luôn có khả năng',
 			'metadataEdit.tags' => 'Thẻ',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.addTag' => 'thêm tag',
 			'metadataEdit.genre' => 'Thể loại',
 			'metadataEdit.director' => 'Đạo Diễn',
@@ -7914,7 +7978,7 @@ extension on TranslationsVi {
 			'universalMedia.audioCd' => 'CD âm thanh',
 			'universalMedia.discAvailability' => 'Đĩa playback cần một cấu trúc MPV tương thích, ổ đĩa được hỗ trợ và giấy phép hệ điều hành. nó không thể vượt qua bảo vệ đĩa thương mại.',
 			'universalMedia.converterTitle' => 'Chuyển đổi một tập tin phương tiện truyền thông địa phương',
-			'universalMedia.converterHelp' => 'Sử dụng FFmpeg để tạo bản sao MP4, M4A hoặc MP3.',
+			'universalMedia.converterHelp' => 'Chuyển đổi một tệp địa phương hoặc sửa lại nó với FFmpeg.',
 			'universalMedia.converterIntro' => 'Chuyển đổi một tệp âm thanh hoặc video địa phương sang định dạng hoạt động trên nhiều thiết bị.',
 			'universalMedia.converterPrivacy' => 'FFmpeg phải được cài đặt trên máy tính này. chuyển đổi chỉ đọc các tập tin địa phương. nó không tải về dòng hoặc loại bỏ DRM.',
 			'universalMedia.converterChooseInput' => 'Chọn một tập tin phương tiện truyền thông địa phương',
@@ -7931,7 +7995,7 @@ extension on TranslationsVi {
 			'universalMedia.converterStarting' => 'Bắt đầu FFmpeg...',
 			'universalMedia.converterProgress' => 'Chuyển đổi vào máy tính này...',
 			'universalMedia.converterComplete' => 'Chuyển đổi hoàn thành. file mới đã sẵn sàng.',
-			'universalMedia.converterFfmpegMissing' => 'Cài đặt FFmpeg với hỗ trợ H.264, AAC, và MP3, sau đó thử lại.',
+			'universalMedia.converterFfmpegMissing' => 'FFmpeg thiếu hoặc không hỗ trợ định dạng này.',
 			'universalMedia.converterFailed' => 'Chuyển đổi thất bại. kiểm tra rằng tệp nguồn có thể được đọc và điểm đến có đủ không gian miễn phí.',
 			'universalMedia.converterCancelled' => 'Chuyển đổi đã bị hủy; Kết quả không đầy đủ đã được loại bỏ.',
 			'universalMedia.converterDesktopOnly' => 'Chuyển đổi địa phương có sẵn trên máy tính bảng với FFmpeg cài đặt.',
@@ -7944,11 +8008,9 @@ extension on TranslationsVi {
 			'universalMedia.captureIntro' => 'Ghi lại màn hình hoặc máy ảnh của bạn vào một tệp MP4 trên máy tính này. FFmpeg phải được cài đặt và bao gồm mã hóa H.264.',
 			'universalMedia.captureNoDevices' => 'Không tìm thấy màn hình hoặc máy ảnh. kiểm tra hỗ trợ chụp FFmpeg và quyền riêng tư hệ điều hành.',
 			'universalMedia.captureSource' => 'màn hình hoặc camera',
-			'universalMedia.captureScreen' => 'màn hình',
 			'universalMedia.captureAudioSource' => 'Audio input (tùy chọn)',
 			'universalMedia.captureAudioHelp' => 'Thêm âm thanh từ microphone hoặc input có sẵn. lựa chọn thiết bị phụ thuộc vào FFmpeg và quyền hệ thống.',
 			'universalMedia.captureAudioNone' => 'Không có Audio',
-			'universalMedia.captureDefaultAudio' => 'Lập trình Audio Input',
 			'universalMedia.captureWaylandHelp' => 'Wayland giới hạn thu thập XWayland này đến X display. Windows bên ngoài XWayland có thể không xuất hiện.',
 			'universalMedia.captureFrameRate' => 'Tỷ lệ ghi âm frame rate',
 			'universalMedia.capturePrivacy' => 'Ghi âm được lưu chỉ cho tệp bạn chọn. microphone capture là tùy chọn. PlezyNG không tải lên ghi âm.',
@@ -7966,6 +8028,8 @@ extension on TranslationsVi {
 			'universalMedia.sharePrivacy' => 'Bất cứ ai trên mạng địa phương của bạn nhận được liên kết tư nhân có thể xem trong khi nó hoạt động. liên kết hết hạn sau 60 phút. ngừng chia sẻ để đóng máy chủ và vô hiệu hóa liên kết.',
 			'universalMedia.shareChooseFile' => 'Chọn file media',
 			'universalMedia.shareChooseHelp' => 'Chọn một tệp âm thanh hoặc video địa phương. tệp vẫn ở trên máy tính này.',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.shareFfmpegMissing' => 'FFmpeg hoặc các mã hóa H.264/AAC không sẵn dùng. cài đặt FFmpeg với hỗ trợ mã hóa H.264 và AAC.',
 			'universalMedia.shareFailed' => 'Stream không thể bắt đầu hoặc dừng lại bất ngờ. kiểm tra FFmpeg và truy cập mạng.',
 			'universalMedia.shareActive' => 'Stream đã sẵn sàng trên mạng riêng của bạn.',
@@ -7973,9 +8037,6 @@ extension on TranslationsVi {
 			'universalMedia.shareStopped' => 'Chia sẻ dừng lại. liên kết tạm thời không còn hợp lệ.',
 			'universalMedia.shareUrlCopied' => 'Địa chỉ dòng được sao chép.',
 			'universalMedia.shareOpenUrl' => 'Mở địa chỉ này trong một người chơi trên thiết bị khác',
-			'universalMedia.shareQrLabel' => 'Mã QR cho địa chỉ dòng tạm thời',
-			'universalMedia.shareQrHelp' => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.',
-			'universalMedia.shareHttpHint' => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.',
 			'universalMedia.shareCopyUrl' => 'Bản sao Stream Address',
 			'universalMedia.shareExpiresLabel' => 'Link kết thúc tại',
 			'universalMedia.shareStarting' => 'Chuẩn bị dòng chảy...',
@@ -7995,8 +8056,6 @@ extension on TranslationsVi {
 			'universalMedia.extensionInstallTitle' => 'Thêm dịch vụ tìm kiếm này?',
 			'universalMedia.extensionReplaceTitle' => 'Cập nhật dịch vụ tìm kiếm này?',
 			'universalMedia.extensionService' => 'Dịch vụ',
-			_ => null,
-		} ?? switch (path) {
 			'universalMedia.extensionEndpoint' => 'HTTPS điểm cuối',
 			'universalMedia.extensionConsent' => 'Văn bản tìm kiếm của bạn được gửi đến dịch vụ này.Manifest không chứa mã thực hiện.Hãy tiếp tục chỉ nếu bạn tin tưởng vào điểm kết thúc này.',
 			'universalMedia.extensionInstall' => 'thêm dịch vụ',
@@ -8011,6 +8070,13 @@ extension on TranslationsVi {
 			'universalMedia.cliHelp' => 'Sử dụng hướng dẫn plezyctl để xác nhận một biểu hiện hoặc tìm kiếm cùng một phần mở rộng. Xem lại dịch vụ HTTPS của nó trước mỗi tìm kiếm. Kết quả mở trong biểu mẫu phương tiện hiện có; chọn nút playback để bắt đầu.',
 			'universalMedia.cliCopyExample' => 'copy command ví dụ',
 			'universalMedia.cliCopied' => 'Lệnh ví dụ sao chép.',
+			'universalMedia.captureScreen' => 'màn hình',
+			'universalMedia.captureDefaultAudio' => 'Lập trình Audio Input',
+			'universalMedia.shareQrLabel' => 'Mã QR cho địa chỉ dòng tạm thời',
+			'universalMedia.shareQrHelp' => 'Scan với một người chơi tương thích kết nối với cùng một mạng tư nhân.',
+			'universalMedia.shareHttpHint' => 'Stream này sử dụng HTTP không được mã hóa. trong PlezyNG, cho phép HTTP trước khi mở nó.',
+			'universalMedia.allowFtp' => 'Khả năng FTP',
+			'universalMedia.allowFtpHelp' => 'FTP gửi các phương tiện truyền thông mà không có mã hóa. sử dụng chỉ trên mạng tin cậy.',
 			'fileSources.title' => 'File và sách',
 			'fileSources.subtitle' => 'Đọc, lắng nghe, và xem từ các tệp của riêng bạn.',
 			'fileSources.add' => 'thêm nguồn',
@@ -8476,6 +8542,8 @@ extension on TranslationsVi {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
+			_ => null,
+		} ?? switch (path) {
 			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
@@ -8509,8 +8577,6 @@ extension on TranslationsVi {
 			'deepLinks.noLiveTv' => 'Không có máy chủ TV trực tiếp có sẵn cho liên kết này.',
 			'deepLinks.channelNotFound' => ({required Object channel}) => 'Không thể tìm thấy kênh "${channel}".',
 			'deepLinks.showLink' => 'Hiển thị link',
-			_ => null,
-		} ?? switch (path) {
 			'deepLinks.showProfileLink' => 'Hiển thị profile link',
 			'deepLinks.dialogTitle' => 'liên kết',
 			'deepLinks.showHint' => 'Mở liên kết này chơi phần tiếp theo. Thêm &mode=shuffle để chơi chương trình trên shuffle.',
