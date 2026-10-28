@@ -122,6 +122,28 @@ void main() {
     item.audio,
     localOverrides: {'one': Uri.file('${directory.path}/one'), 'two': Uri.file('${directory.path}/two')},
   );
+  Future<_RecordingMpvPlayer> startLiveVideo() async {
+    final player = _RecordingMpvPlayer();
+    native = player;
+    const liveFile = PublicationFile(id: 'live-recording', name: 'Live.ts', mimeType: 'video/mp2t', streamOnly: true);
+    const liveEntry = SourceEntry(
+      sourceId: 'open:session',
+      id: 'live-session',
+      title: 'Live channel',
+      kind: SourceItemKind.video,
+      files: [liveFile],
+    );
+    await playback.start(
+      liveEntry,
+      const [liveFile],
+      playbackMode: PublicationMode.watching,
+      localOverrides: {'live-recording': Uri.parse('https://radio.example/live.ts')},
+      persistProgress: false,
+      liveInput: true,
+    );
+    return player;
+  }
+
   test('retry preserves the last reliable position after decoder reset and EOF', () async {
     await start();
     native.setPosition(const Duration(seconds: 47));
@@ -198,6 +220,52 @@ void main() {
     native.setPosition(const Duration(seconds: 20));
     await playback.pause();
     expect(await sources.repository.allProgress('alice'), isEmpty);
+  });
+  test('live MPV recording writes privately, then publishes the finished file on stop', () async {
+    final player = await startLiveVideo();
+    final target = File('${directory.path}/recording.mkv');
+
+    await playback.startStreamRecording(target, replaceExisting: false);
+
+    expect(playback.isRecordingStream, isTrue);
+    final partialPath = player.properties['file-local-options/stream-record']!;
+    final partial = File(partialPath);
+    expect(partial.parent.path, directory.path);
+    expect(partial.uri.pathSegments.last, startsWith('.recording.plezy-recording-'));
+    await partial.writeAsBytes([1, 2, 3]);
+
+    expect((await playback.stopStreamRecording())?.path, target.path);
+    expect(await target.readAsBytes(), [1, 2, 3]);
+    expect(playback.isRecordingStream, isFalse);
+    expect(partial.existsSync(), isFalse);
+    expect(player.propertyWrites, [
+      ('file-local-options/stream-record', partial.path),
+      ('file-local-options/stream-record', ''),
+    ]);
+  });
+  test('live recording preserves an existing file without consent and restores it after empty output', () async {
+    final player = await startLiveVideo();
+    final target = File('${directory.path}/recording.ts')..writeAsBytesSync([9, 8, 7]);
+
+    await expectLater(
+      playback.startStreamRecording(target, replaceExisting: false),
+      throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.conflict)),
+    );
+    expect(await target.readAsBytes(), [9, 8, 7]);
+
+    await playback.startStreamRecording(target, replaceExisting: true);
+    final partial = File(player.properties['file-local-options/stream-record']!);
+    expect(target.existsSync(), isFalse);
+    await partial.writeAsBytes(const []);
+
+    await expectLater(
+      playback.stopStreamRecording(),
+      throwsA(isA<SourceException>().having((error) => error.reason, 'reason', SourceFailure.invalidData)),
+    );
+    expect(await target.readAsBytes(), [9, 8, 7]);
+    expect(partial.existsSync(), isFalse);
+    expect(playback.isRecordingStream, isFalse);
+    expect(playback.active, isTrue);
   });
   test('duplicate completion advances one part and persists source-relative resume', () async {
     await start();
