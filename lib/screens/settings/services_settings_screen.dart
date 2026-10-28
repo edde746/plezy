@@ -148,6 +148,7 @@ class ServicesSettingsScreen extends StatelessWidget {
                   SettingSwitchTile(
                     pref: SettingsService.enableDiscordRPC,
                     icon: Symbols.chat_rounded,
+                    secondary: ConnectorBrandMark(providerId: 'discord', name: 'Discord'),
                     title: t.settings.discordRichPresence,
                     subtitle: t.settings.discordRichPresenceDescription,
                   ),

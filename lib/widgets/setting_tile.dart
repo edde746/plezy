@@ -68,6 +68,7 @@ class _SettingRow extends StatelessWidget {
 class SettingSwitchTile extends StatelessWidget {
   final Pref<bool> pref;
   final IconData icon;
+  final Widget? secondary;
   final String title;
   final String subtitle;
   final FutureOr<void> Function(bool)? onAfterWrite;
@@ -78,6 +79,7 @@ class SettingSwitchTile extends StatelessWidget {
     super.key,
     required this.pref,
     required this.icon,
+    this.secondary,
     required this.title,
     this.subtitle = '',
     this.onAfterWrite,
@@ -91,7 +93,7 @@ class SettingSwitchTile extends StatelessWidget {
       valueListenable: SettingsService.instance.listenable(pref),
       builder: (_, value, _) => FocusableSwitchListTile(
         focusNode: focusNode,
-        secondary: AppIcon(icon, fill: 1),
+        secondary: secondary ?? AppIcon(icon, fill: 1),
         title: Text(title),
         subtitle: SettingsHelpHint(text: subtitle),
         value: value,

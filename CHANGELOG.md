@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add attributed Amazon and Xbox marks to their matching external destinations.
+- Show the Discord brand mark on its rich-presence integration switch.
 - Add opt-in experimental motion processing across MPV, Apple VideoToolbox, Android LiteRT/QNN, and desktop PME, with capability reporting and platform qualification limits documented separately.
 - Add experimental native MilkRust visualization hosts across Linux, Windows, Apple and Android, with same-player PCM routing, profile-scoped engine selection, and optional SHA-256-checked desktop runtime/source packaging with notices; compiled engines are not in current releases and platform behavior remains unqualified.
 
