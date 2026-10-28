@@ -4109,6 +4109,20 @@
     "readLists": "Listy czytelnicze",
     "collections": "Kolekcje"
   },
+  "comics": {
+    "fitHeight": "Dopasuj do wysokości",
+    "readingMode": "Tryb czytania",
+    "paged": "Strony",
+    "webtoon": "Ciągłe przewijanie",
+    "coverAlone": "Pokaż okładkę osobno",
+    "splitWide": "Podziel szerokie strony",
+    "splitWideHelp": "Pokaż każdą połowę osobno, w kolejności czytania. Gdy opcja jest włączona, strony nie są wyświetlane parami.",
+    "thumbnails": "Miniatury stron",
+    "controlsHelp": "Przesuń palcem, aby zmienić stronę. Dotknij dwukrotnie, aby zmienić dopasowanie. Przy ciągłym przewijaniu przesuwaj pionowo lub używaj Page Up i Page Down.",
+    "savedForComic": "Ustawienia wyświetlania są zapamiętywane dla tego komiksu w tym profilu.",
+    "readLists": "Listy czytelnicze",
+    "collections": "Kolekcje"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

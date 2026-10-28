@@ -4159,6 +4159,20 @@
     "readLists": "قوائم القراءة",
     "collections": "مجموعات"
   },
+  "comics": {
+    "fitHeight": "ملاءمة الارتفاع",
+    "readingMode": "وضع القراءة",
+    "paged": "صفحات",
+    "webtoon": "تمرير مستمر",
+    "coverAlone": "عرض الغلاف منفردًا",
+    "splitWide": "تقسيم الصفحات العريضة",
+    "splitWideHelp": "اعرض كل نصف على حدة بترتيب القراءة. يتوقف عرض الصفحتين معًا عند تفعيل هذا الخيار.",
+    "thumbnails": "صور مصغرة للصفحات",
+    "controlsHelp": "اسحب لتقليب الصفحات. انقر مرتين لتغيير الملاءمة. في التمرير المستمر، اسحب عموديًا أو استخدم Page Up وPage Down.",
+    "savedForComic": "تُحفظ إعدادات العرض لهذه القصة المصورة في هذا الملف الشخصي.",
+    "readLists": "قوائم القراءة",
+    "collections": "مجموعات"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

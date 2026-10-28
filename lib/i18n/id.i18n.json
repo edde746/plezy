@@ -4034,6 +4034,20 @@
     "readLists": "Daftar bacaan",
     "collections": "Koleksi"
   },
+  "comics": {
+    "fitHeight": "Sesuaikan tinggi",
+    "readingMode": "Mode baca",
+    "paged": "Halaman",
+    "webtoon": "Gulir berkelanjutan",
+    "coverAlone": "Tampilkan sampul sendiri",
+    "splitWide": "Bagi halaman lebar",
+    "splitWideHelp": "Tampilkan setiap bagian secara terpisah sesuai urutan baca. Tampilan dua halaman berdampingan dijeda saat opsi ini aktif.",
+    "thumbnails": "Thumbnail halaman",
+    "controlsHelp": "Geser untuk membalik halaman. Ketuk dua kali untuk mengubah penyesuaian. Dalam gulir berkelanjutan, geser vertikal atau gunakan Page Up dan Page Down.",
+    "savedForComic": "Pengaturan tampilan diingat untuk komik ini dalam profil ini.",
+    "readLists": "Daftar bacaan",
+    "collections": "Koleksi"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

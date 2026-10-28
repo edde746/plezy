@@ -15,6 +15,8 @@ add_executable(${BINARY_NAME} WIN32
   "runner.exe.manifest"
 )
 
+add_subdirectory("${CMAKE_SOURCE_DIR}/../shared/cpp/plezy_motion_engine" plezy_motion_engine)
+
 apply_standard_settings(${BINARY_NAME})
 
 target_precompile_headers(${BINARY_NAME} PRIVATE "pch.h")
@@ -35,11 +37,35 @@ target_compile_options(simdutf PRIVATE /W0)
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app flutter_wrapper_plugin)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "comctl32.lib" "dxgi.lib" "advapi32.lib")
 target_link_libraries(${BINARY_NAME} PRIVATE "${MPV_LIB_DIR}/libmpv.dll.a")
-target_link_libraries(${BINARY_NAME} PRIVATE simdutf opengl32 windowscodecs ole32)
+target_link_libraries(${BINARY_NAME} PRIVATE simdutf opengl32 windowscodecs ole32 plezy_motion_engine)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${MPV_INCLUDE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
+
+# The Flutter desktop loader resolves PME beside the executable. Bundle the
+# matching Windows ML runtime and manifest there as well; provider EPs remain
+# device-specific and are acquired through Windows ML when Neural is enabled.
+add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "$<TARGET_FILE:plezy_motion_engine>" "$<TARGET_FILE_DIR:${BINARY_NAME}>"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${WINML_BINARY_DIR}/onnxruntime.dll" "$<TARGET_FILE_DIR:${BINARY_NAME}>"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${WINML_BINARY_DIR}/Microsoft.Windows.AI.MachineLearning.dll" "$<TARGET_FILE_DIR:${BINARY_NAME}>"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${WINML_DIRECTML_DLL}" "$<TARGET_FILE_DIR:${BINARY_NAME}>"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${PLEZY_WINML_PACKAGE_ROOT}/license.txt"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/WindowsML-License.txt"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${PLEZY_WINML_PACKAGE_ROOT}/ThirdPartyNotices.txt"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/WindowsML-ThirdPartyNotices.txt"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_SOURCE_DIR}/../shared/cpp/plezy_motion_engine/providers.windows.tsv"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>"
+  VERBATIM
+)
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)

@@ -299,6 +299,10 @@ class MpvPlayerCore private constructor(
   /** The `vo` a software session last wrote; see [applySoftwareDvReshapeOutput]. */
   @Volatile private var softwareVideoOutput: String = initialVideoOutput(hardwareDecoding = false)
 
+  /** Motion renderer requested for software-decoded sessions; written on the
+   * MPV write queue and reapplied after per-file Dolby Vision routing. */
+  @Volatile private var motionProcessingRenderer: String? = null
+
   /** Per-file reasons holding hwdec at `no` (DV P5 reshaping or unsupported
    * hardware decoding); the session's own hwdec value is parked in
    * [parkedHwdec] while any is active. Written under itself. */
@@ -939,6 +943,8 @@ class MpvPlayerCore private constructor(
         activeGpuVoTarget = null
       }
       appliedGpuVoTarget = null
+      motionProcessingRenderer = null
+      softwareVideoOutput = initialVideoOutput(hardwareDecoding = false)
       synchronized(hwdecHoldReasons) {
         hwdecHoldReasons.clear()
         hwdecHeld = false
@@ -1173,6 +1179,7 @@ class MpvPlayerCore private constructor(
                   val track = pendingVideoTrack(p)
                   applyDvReshapePolicy(p, track)
                   applySoftwareDecodePolicy(p, track)
+                  applyMotionProcessingDecodePolicy(p)
                   applyDecoderOperatingRate(track)
                   applyFramedropPolicy()
                 }
@@ -1529,6 +1536,83 @@ class MpvPlayerCore private constructor(
   }
 
   /**
+   * Requests the renderer through the native output policy: hardware sessions
+   * use the surface and VO arbiter shared with shaders and Dolby Vision, while
+   * software sessions serialize the VO update with per-file routing. Directly
+   * writing `vo` from Dart bypasses that ownership protocol. Completion waits
+   * until the requested renderer is installed.
+   */
+  fun setMotionProcessingRenderer(renderer: String?, onComplete: (Result<Boolean>) -> Unit) {
+    if (!isInitialized || disposing || !scope.isActive) {
+      onComplete(Result.failure(CancellationException("MPV core unavailable")))
+      return
+    }
+    if (renderer != null && renderer !in setOf("gpu", "gpu-next")) {
+      onComplete(Result.failure(IllegalArgumentException("Unsupported motion renderer: $renderer")))
+      return
+    }
+
+    if (!usesMediaCodecVo) {
+      submitMpvOperation(writeOperations, "motion renderer", onComplete) {
+        motionProcessingRenderer = renderer
+        val needsDvReshaping = GpuVoPolicy.needsDvReshaping(
+          dvProfile = pendingDvProfile,
+          conversionMode = dvRouting().conversionMode,
+          canPlayP5Natively = false
+        )
+        val output = when {
+          needsDvReshaping -> "gpu-next"
+          renderer != null -> renderer
+          else -> initialVideoOutput(hardwareDecoding = false)
+        }
+        if (output != softwareVideoOutput) {
+          writeProperty("vo", output)
+          softwareVideoOutput = output
+        }
+        true
+      }
+      return
+    }
+
+    motionProcessingRenderer = renderer
+    var switching = false
+    val desiredTarget = synchronized(gpuVoReasons) {
+      gpuVoReasons.remove(GpuVoPolicy.REASON_MOTION_SMOOTHING)
+      gpuVoReasons.remove(GpuVoPolicy.REASON_MOTION_NEURAL)
+      when (renderer) {
+        "gpu" -> gpuVoReasons.add(GpuVoPolicy.REASON_MOTION_SMOOTHING)
+        "gpu-next" -> gpuVoReasons.add(GpuVoPolicy.REASON_MOTION_NEURAL)
+      }
+      val desired = GpuVoPolicy.targetFor(gpuVoReasons)
+      switching = desired != activeGpuVoTarget
+      if (switching) activeGpuVoTarget = desired
+      desired
+    }
+    emitLog(
+      "info",
+      "video-route",
+      "motion renderer=${renderer ?: "default"} target=${desiredTarget ?: "mediacodec"} switching=$switching"
+    )
+    if (switching) applyGpuVoTarget()
+
+    scope.launch {
+      val installed = withTimeoutOrNull(5_000L) {
+        while (true) {
+          val requestStillCurrent = synchronized(gpuVoReasons) {
+            activeGpuVoTarget == desiredTarget && GpuVoPolicy.targetFor(gpuVoReasons) == desiredTarget
+          }
+          if (!requestStillCurrent || videoOutputFailure != null) return@withTimeoutOrNull false
+          if (appliedGpuVoTarget == desiredTarget) return@withTimeoutOrNull true
+          delay(16L)
+        }
+        @Suppress("UNREACHABLE_CODE")
+        false
+      } ?: false
+      onComplete(Result.success(installed))
+    }
+  }
+
+  /**
    * Prepare views without holding [videoOutputMutex]: destroying a Surface
    * synchronously waits for that mutex. Return to the plane only after its OSD
    * Surface exists, and hide the outgoing OSD only after native ownership ends.
@@ -1719,9 +1803,10 @@ class MpvPlayerCore private constructor(
   /**
    * Software-session counterpart of [applyDvReshapePolicy]: nothing here
    * decodes P5 natively, so a P5 file under `auto` renders on gpu-next,
-   * which reshapes the RPU (#1902), and any other file goes back to
-   * [initialVideoOutput]. Written from on_preloaded, where this file has no
-   * decoder or video chain yet, so the vo write rebuilds nothing live.
+   * which reshapes the RPU (#1902). Otherwise, honor the active motion renderer
+   * before returning to [initialVideoOutput]. Written from on_preloaded, where
+   * this file has no decoder or video chain yet, so the vo write rebuilds
+   * nothing live.
    */
   private suspend fun applySoftwareDvReshapeOutput(track: org.json.JSONObject?) {
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
@@ -1749,7 +1834,11 @@ class MpvPlayerCore private constructor(
         )
       )
     }
-    val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
+    val output = when {
+      needs -> "gpu-next"
+      motionProcessingRenderer != null -> motionProcessingRenderer!!
+      else -> initialVideoOutput(hardwareDecoding = false)
+    }
     if (output == softwareVideoOutput) return
     val decision = "profile=$profile mode=$mode felFilter=${if (felActive) "active" else "unavailable"} " +
       "path=software decode, vo=$output${if (needsP7Fel) " (P7 FEL graph unqualified)" else ""}"
@@ -1778,6 +1867,15 @@ class MpvPlayerCore private constructor(
       Log.i(TAG, "$codec profile=$codecProfile without hardware support: native software decode on the GL vo")
     }
     setGpuVoRequirement(GpuVoPolicy.REASON_CODEC_SW_DECODE, needs)
+  }
+
+  /** ANVIL consumes software-decoded H.264 motion vectors. Keep that decoder
+   * requirement synchronized with the Neural renderer on every file open. */
+  private suspend fun applyMotionProcessingDecodePolicy(p: MpvPlayer) {
+    val needs = motionProcessingRenderer == "gpu-next"
+    if (holdHwdec(p, GpuVoPolicy.REASON_MOTION_NEURAL, needs) && needs) {
+      Log.i(TAG, "Motion Neural path: software decode with exported motion vectors")
+    }
   }
 
   /**
@@ -3124,6 +3222,23 @@ class MpvPlayerCore private constructor(
       stats["video-params/max-fall"] = readProperty("video-params/max-fall")
       stats["video-params/aspect-name"] = readProperty("video-params/aspect-name")
       stats["video-params/rotate"] = readProperty("video-params/rotate")
+      // The Plezy ANVIL filter exposes runtime metadata through mpv's
+      // vf-metadata property. These fields describe the executed provider;
+      // the selected UI mode alone is not evidence of HTP inference.
+      stats["anvil-provider"] = readProperty("vf-metadata/plezy-anvil/provider")
+      stats["anvil-provider-vendor"] = readProperty("vf-metadata/plezy-anvil/provider-vendor")
+      stats["anvil-power-mode"] = readProperty("vf-metadata/plezy-anvil/power-mode")
+      stats["anvil-active"] = readProperty("vf-metadata/plezy-anvil/active")
+      stats["anvil-inference-ms"] = readProperty("vf-metadata/plezy-anvil/inference-ms")
+      stats["anvil-inference-p95-ms"] = readProperty("vf-metadata/plezy-anvil/inference-p95-ms")
+      stats["anvil-generated-frames"] = readProperty("vf-metadata/plezy-anvil/generated-frames")
+      stats["anvil-source-frames"] = readProperty("vf-metadata/plezy-anvil/source-frames")
+      stats["anvil-scene-cut-bypasses"] = readProperty("vf-metadata/plezy-anvil/scene-cut-bypasses")
+      stats["anvil-deadline-misses"] = readProperty("vf-metadata/plezy-anvil/deadline-misses")
+      stats["anvil-deadline-governor"] = readProperty("vf-metadata/plezy-anvil/deadline-governor")
+      stats["anvil-deadline-backoffs"] = readProperty("vf-metadata/plezy-anvil/deadline-backoffs")
+      stats["anvil-deadline-bypass-frames"] = readProperty("vf-metadata/plezy-anvil/deadline-bypass-frames")
+      stats["anvil-gpu"] = readProperty("vf-metadata/plezy-anvil/gpu")
       // What decodes a Dolby Vision file (#2534): the DV decoder, the bare
       // base layer, or gpu-next reshaping. The track's profile is the
       // bitstream's DOVI record, so a file without one reports nothing.

@@ -597,6 +597,7 @@ class JellyfinMappers {
           hdr: isVideo && jellyfinVideoStreamIsHdr(source ?? const <String, dynamic>{}, s),
           dolbyVision: isDolbyVision,
           dolbyVisionProfile: isDolbyVision ? jellyfinDolbyVisionProfile(s) : null,
+          interlaced: isVideo ? flexibleBoolNullable(s['IsInterlaced']) : null,
           forced: f.isForced,
           sidecarPath: f.isExternalFile ? f.deliveryUrl : null,
         ),

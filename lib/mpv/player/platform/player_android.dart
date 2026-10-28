@@ -28,6 +28,7 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
   bool _tunnelingEnabled = false;
   String _dvConversionMode = 'auto';
   bool _audioNormalizationEnabled = false;
+  bool _videoUpscalingEnabled = false;
   bool _audioPassthroughEnabled = false;
   bool _downmixEnabled = false;
   int _downmixCenterBoostDb = 0;
@@ -182,6 +183,7 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
         'centerBoostDb': _downmixCenterBoostDb,
         'normalize': _downmixNormalize,
       });
+      await invoke('setVideoUpscaling', {'enabled': _videoUpscalingEnabled});
       if (disposed) throw StateError('Player was disposed during initialization');
 
       initialized = true;
@@ -349,6 +351,14 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioF
         break;
       case 'speed':
         await setRate(double.tryParse(value) ?? 1.0);
+        break;
+      case 'exo-video-upscaling':
+        final enabled = value == 'yes';
+        _videoUpscalingEnabled = enabled;
+        await _applyWhenInitialized(
+          () => invoke('setVideoUpscaling', {'enabled': enabled}),
+          () => _videoUpscalingEnabled == enabled,
+        );
         break;
       // Not an mpv property. mpv takes the Buffer Size setting as demuxer-max-bytes, which the
       // fallback replay carries; this tier is

@@ -4034,6 +4034,20 @@
     "readLists": "Danh sách đọc",
     "collections": "Bộ sưu tập"
   },
+  "comics": {
+    "fitHeight": "Vừa chiều cao",
+    "readingMode": "Chế độ đọc",
+    "paged": "Trang",
+    "webtoon": "Cuộn liên tục",
+    "coverAlone": "Hiển thị bìa riêng",
+    "splitWide": "Chia trang rộng",
+    "splitWideHelp": "Hiển thị riêng từng nửa theo thứ tự đọc. Tạm dừng hiển thị hai trang cạnh nhau khi bật tùy chọn này.",
+    "thumbnails": "Hình thu nhỏ của trang",
+    "controlsHelp": "Vuốt để lật trang. Chạm hai lần để đổi cách vừa trang. Khi cuộn liên tục, vuốt dọc hoặc dùng Page Up và Page Down.",
+    "savedForComic": "Cài đặt hiển thị được ghi nhớ cho truyện tranh này trong hồ sơ này.",
+    "readLists": "Danh sách đọc",
+    "collections": "Bộ sưu tập"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

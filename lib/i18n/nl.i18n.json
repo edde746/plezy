@@ -4059,6 +4059,20 @@
     "readLists": "Leeslijsten",
     "collections": "Verzamelingen"
   },
+  "comics": {
+    "fitHeight": "Aan hoogte aanpassen",
+    "readingMode": "Leesmodus",
+    "paged": "Pagina’s",
+    "webtoon": "Doorlopend scrollen",
+    "coverAlone": "Omslag afzonderlijk tonen",
+    "splitWide": "Brede pagina’s splitsen",
+    "splitWideHelp": "Toon elke helft afzonderlijk in leesvolgorde. Zolang dit aanstaat, worden pagina’s niet naast elkaar weergegeven.",
+    "thumbnails": "Paginaminiaturen",
+    "controlsHelp": "Veeg om te bladeren. Tik dubbel om de aanpassing te wijzigen. Veeg bij doorlopend scrollen verticaal of gebruik Page Up en Page Down.",
+    "savedForComic": "De weergave-instellingen worden voor deze strip in dit profiel onthouden.",
+    "readLists": "Leeslijsten",
+    "collections": "Verzamelingen"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

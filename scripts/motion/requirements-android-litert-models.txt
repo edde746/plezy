@@ -1,0 +1,9 @@
+# Linux x86_64, CPU-only model export environment. The exporter must not use a
+# workstation GPU; CPU PyTorch also keeps generated packs independent of the
+# local accelerator. litert-torch 0.10.0 pins the matching LiteRT 2.3.x and AI
+# Edge Quantizer 0.10.x API families. Pin the CPU-only Python 3.11 x86_64
+# wheel directly so model export cannot select a workstation accelerator.
+litert-torch==0.10.0
+ai-edge-quantizer==0.10.0
+torch @ https://download-r2.pytorch.org/whl/cpu/torch-2.14.1%2Bcpu-cp311-cp311-manylinux_2_28_x86_64.whl#sha256=5e38154c8896d426a5df58bf2276b603e82184dfae4f54d77dbb212f36e34f37
+numpy>=2.0,<3.0

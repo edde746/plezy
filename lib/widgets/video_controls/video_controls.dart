@@ -1631,6 +1631,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               active: performanceOverlayVisible,
                               isTranscoding: widget.isLive || widget.isOfflinePlayback ? null : widget.isTranscoding,
                               sourceDisplayCriteria: widget.sourceDisplayCriteria,
+                              isLive: widget.isLive,
                             ),
                           ),
                         ),

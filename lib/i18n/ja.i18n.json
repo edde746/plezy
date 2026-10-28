@@ -4054,6 +4054,20 @@
     "readLists": "読書リスト",
     "collections": "コレクション"
   },
+  "comics": {
+    "fitHeight": "高さに合わせる",
+    "readingMode": "読書モード",
+    "paged": "ページ表示",
+    "webtoon": "連続スクロール",
+    "coverAlone": "表紙を単独で表示",
+    "splitWide": "横長のページを分割",
+    "splitWideHelp": "各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。",
+    "thumbnails": "ページのサムネイル",
+    "controlsHelp": "スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。",
+    "savedForComic": "このプロフィールで、このコミックの表示設定を保存します。",
+    "readLists": "読書リスト",
+    "collections": "コレクション"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

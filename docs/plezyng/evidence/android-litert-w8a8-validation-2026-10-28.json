@@ -1,0 +1,1257 @@
+{
+  "comparison": "CPU LiteRT interpreter synthesized-frame fidelity; compare the clamped two-frame blend plus each model's residual, float32 reference vs calibrated W8A8",
+  "device_execution_claim": false,
+  "format": 1,
+  "model_output_semantics": "residual_to_add_to_pair_blend",
+  "quantization_calibration": {
+    "metadata": {
+      "format": 1,
+      "samples": {
+        "1080p": {
+          "height": 1080,
+          "pairs": [
+            {
+              "file": "pair-000.f32",
+              "first_frame": 275,
+              "first_timestamp_seconds": 11.458333,
+              "second_frame": 276,
+              "second_timestamp_seconds": 11.5,
+              "sha256": "725b27432f3da1790df77c74243922a32bb755cf951252f45787cacd0a35db5a"
+            },
+            {
+              "file": "pair-002.f32",
+              "first_frame": 1377,
+              "first_timestamp_seconds": 57.375,
+              "second_frame": 1378,
+              "second_timestamp_seconds": 57.416667,
+              "sha256": "f794e2a5f17050184c4aa6dded5ff5d61fdccd08cb4efca626b3953ac6a1967e"
+            },
+            {
+              "file": "pair-004.f32",
+              "first_frame": 2478,
+              "first_timestamp_seconds": 103.25,
+              "second_frame": 2479,
+              "second_timestamp_seconds": 103.291667,
+              "sha256": "99af3420a95e3abef2cdd5ad8be8813206d071ceb0ed7c9cf082234b7bb11429"
+            },
+            {
+              "file": "pair-006.f32",
+              "first_frame": 3579,
+              "first_timestamp_seconds": 149.125,
+              "second_frame": 3580,
+              "second_timestamp_seconds": 149.166667,
+              "sha256": "1bd518e9c3c8fc49209efb61452734629ade779d62c49dc5b1d2aabda75f9ba6"
+            },
+            {
+              "file": "pair-008.f32",
+              "first_frame": 4680,
+              "first_timestamp_seconds": 195.0,
+              "second_frame": 4681,
+              "second_timestamp_seconds": 195.041667,
+              "sha256": "38cfae5dd6a7afebcf55afb9086c0bc3dc3646885e1bb77a93f7afd157457ab5"
+            },
+            {
+              "file": "pair-010.f32",
+              "first_frame": 5782,
+              "first_timestamp_seconds": 240.916667,
+              "second_frame": 5783,
+              "second_timestamp_seconds": 240.958333,
+              "sha256": "066ed0141a156fa9465a0a3a86e2dc5b941854b55562f045b0c7cf997bffb69d"
+            },
+            {
+              "file": "pair-012.f32",
+              "first_frame": 6883,
+              "first_timestamp_seconds": 286.791667,
+              "second_frame": 6884,
+              "second_timestamp_seconds": 286.833333,
+              "sha256": "d78a1b9de41dcb3f6124bc2e4a7688b8c45f6a57f4e1231c057ce069b4906b11"
+            },
+            {
+              "file": "pair-014.f32",
+              "first_frame": 7984,
+              "first_timestamp_seconds": 332.666667,
+              "second_frame": 7985,
+              "second_timestamp_seconds": 332.708333,
+              "sha256": "b9967ebf66af48f95440b47a992585ba8c6c0f093a913ecb5d95278b0a84fb15"
+            },
+            {
+              "file": "pair-016.f32",
+              "first_frame": 9085,
+              "first_timestamp_seconds": 378.541667,
+              "second_frame": 9086,
+              "second_timestamp_seconds": 378.583333,
+              "sha256": "2d008108ecf6d5d2501d687b571c8352ffb9453ef0c1bcf2327fcc3fe37445f9"
+            },
+            {
+              "file": "pair-018.f32",
+              "first_frame": 10187,
+              "first_timestamp_seconds": 424.458333,
+              "second_frame": 10188,
+              "second_timestamp_seconds": 424.5,
+              "sha256": "55226c9a235e8e6c8c16aaaede6bcf2362e1483549545a9bb9a9ae05451aa945"
+            },
+            {
+              "file": "pair-020.f32",
+              "first_frame": 11288,
+              "first_timestamp_seconds": 470.333333,
+              "second_frame": 11289,
+              "second_timestamp_seconds": 470.375,
+              "sha256": "6b82e73dd3215246a39c747727fee55a71053b2f42cc57a13a9c6ef3c7855b0d"
+            },
+            {
+              "file": "pair-022.f32",
+              "first_frame": 12389,
+              "first_timestamp_seconds": 516.208333,
+              "second_frame": 12390,
+              "second_timestamp_seconds": 516.25,
+              "sha256": "76759680720359901312c05228965e89467fe0b0184f67049e18bedd8048789b"
+            },
+            {
+              "file": "pair-024.f32",
+              "first_frame": 13490,
+              "first_timestamp_seconds": 562.083333,
+              "second_frame": 13491,
+              "second_timestamp_seconds": 562.125,
+              "sha256": "656bbc907ca14af1e1a3f164d38efa4cec07b290b55ffc15d25fe7f692bec146"
+            },
+            {
+              "file": "pair-026.f32",
+              "first_frame": 14592,
+              "first_timestamp_seconds": 608.0,
+              "second_frame": 14593,
+              "second_timestamp_seconds": 608.041667,
+              "sha256": "caeffd7eb5347f4936c2540fc26bc025385933d4e1de71f95cd4156c3b4d530a"
+            },
+            {
+              "file": "pair-028.f32",
+              "first_frame": 15693,
+              "first_timestamp_seconds": 653.875,
+              "second_frame": 15694,
+              "second_timestamp_seconds": 653.916667,
+              "sha256": "e122c7e08dde56c76f4111445698969882ef2597fc8e4052198de4ecaafd44c5"
+            },
+            {
+              "file": "pair-030.f32",
+              "first_frame": 16794,
+              "first_timestamp_seconds": 699.75,
+              "second_frame": 16795,
+              "second_timestamp_seconds": 699.791667,
+              "sha256": "e817c3a43e25df6312f58885e5995f31c74f0b991f9a87f2a2d19f9771ef38c6"
+            }
+          ],
+          "resize": "FFmpeg swscale area; aspect-preserving fit with centered black bars",
+          "width": 1920
+        },
+        "720p": {
+          "height": 720,
+          "pairs": [
+            {
+              "file": "pair-000.f32",
+              "first_frame": 275,
+              "first_timestamp_seconds": 11.458333,
+              "second_frame": 276,
+              "second_timestamp_seconds": 11.5,
+              "sha256": "6032a80368570a1bde9fa3e4acc2ff876bd9f7a4f2f3d9a7e72edf19673cf068"
+            },
+            {
+              "file": "pair-002.f32",
+              "first_frame": 1377,
+              "first_timestamp_seconds": 57.375,
+              "second_frame": 1378,
+              "second_timestamp_seconds": 57.416667,
+              "sha256": "2c1feaa41e7aaecb59b49add763eacca3ea0e46a3e846721008828c11bd18a4b"
+            },
+            {
+              "file": "pair-004.f32",
+              "first_frame": 2478,
+              "first_timestamp_seconds": 103.25,
+              "second_frame": 2479,
+              "second_timestamp_seconds": 103.291667,
+              "sha256": "ce249d33a37dd003f31c18e5250aa5c247be69eef44da60763311f6ccf5ae1bf"
+            },
+            {
+              "file": "pair-006.f32",
+              "first_frame": 3579,
+              "first_timestamp_seconds": 149.125,
+              "second_frame": 3580,
+              "second_timestamp_seconds": 149.166667,
+              "sha256": "71bf60d0cda7f7774f6df6fc707b7a0af349a181e60a4c348b3d13fc7588ba42"
+            },
+            {
+              "file": "pair-008.f32",
+              "first_frame": 4680,
+              "first_timestamp_seconds": 195.0,
+              "second_frame": 4681,
+              "second_timestamp_seconds": 195.041667,
+              "sha256": "4ac4d29288bf05420fc7526dc082e097d13f32283147fbb8c2f9d29f7ec0f97a"
+            },
+            {
+              "file": "pair-010.f32",
+              "first_frame": 5782,
+              "first_timestamp_seconds": 240.916667,
+              "second_frame": 5783,
+              "second_timestamp_seconds": 240.958333,
+              "sha256": "01d3c27d9de3306a78554070ffe4142cf742bb26fdb397c8ff8d73b7a5718cd3"
+            },
+            {
+              "file": "pair-012.f32",
+              "first_frame": 6883,
+              "first_timestamp_seconds": 286.791667,
+              "second_frame": 6884,
+              "second_timestamp_seconds": 286.833333,
+              "sha256": "65867a596a27a79ceddb8e0a0067a44e7e827055699ce977cd478c3e6606fd19"
+            },
+            {
+              "file": "pair-014.f32",
+              "first_frame": 7984,
+              "first_timestamp_seconds": 332.666667,
+              "second_frame": 7985,
+              "second_timestamp_seconds": 332.708333,
+              "sha256": "2321dc20a3ee67aeb26f4d9db80c591f1ace243e40884a71c2ab61ce528f1833"
+            },
+            {
+              "file": "pair-016.f32",
+              "first_frame": 9085,
+              "first_timestamp_seconds": 378.541667,
+              "second_frame": 9086,
+              "second_timestamp_seconds": 378.583333,
+              "sha256": "9ea7d841129a41d1cde8a01084b5b126844f62d77121648e4e542038a6a135da"
+            },
+            {
+              "file": "pair-018.f32",
+              "first_frame": 10187,
+              "first_timestamp_seconds": 424.458333,
+              "second_frame": 10188,
+              "second_timestamp_seconds": 424.5,
+              "sha256": "661ccee88fe66868603350e686e1d4eeff5127e6a599bf06f68b059eaeb196de"
+            },
+            {
+              "file": "pair-020.f32",
+              "first_frame": 11288,
+              "first_timestamp_seconds": 470.333333,
+              "second_frame": 11289,
+              "second_timestamp_seconds": 470.375,
+              "sha256": "162a1015c563b34de7dee76bbe70140962affb8c77070536b537efaf933c7709"
+            },
+            {
+              "file": "pair-022.f32",
+              "first_frame": 12389,
+              "first_timestamp_seconds": 516.208333,
+              "second_frame": 12390,
+              "second_timestamp_seconds": 516.25,
+              "sha256": "0e219513d7ba5fe596ef778cf144597f68959e973b1353285ff64e10c8cfb82f"
+            },
+            {
+              "file": "pair-024.f32",
+              "first_frame": 13490,
+              "first_timestamp_seconds": 562.083333,
+              "second_frame": 13491,
+              "second_timestamp_seconds": 562.125,
+              "sha256": "2e65f79c4d9f6865db370fc061a0b91b4290c53dffd2a08b2f2b4a52353d5678"
+            },
+            {
+              "file": "pair-026.f32",
+              "first_frame": 14592,
+              "first_timestamp_seconds": 608.0,
+              "second_frame": 14593,
+              "second_timestamp_seconds": 608.041667,
+              "sha256": "77056662a57f63f1995f1190da49083ea76ddf4caedf048e1c7cea2471c2d271"
+            },
+            {
+              "file": "pair-028.f32",
+              "first_frame": 15693,
+              "first_timestamp_seconds": 653.875,
+              "second_frame": 15694,
+              "second_timestamp_seconds": 653.916667,
+              "sha256": "0afd27bc48349fbebe212422eebefab99bb7f7e82cf27314b2574491732c0b20"
+            },
+            {
+              "file": "pair-030.f32",
+              "first_frame": 16794,
+              "first_timestamp_seconds": 699.75,
+              "second_frame": 16795,
+              "second_timestamp_seconds": 699.791667,
+              "sha256": "cfba44e64e43288ccbc14fcc3f227ce666b843bb66cdf7aa24532ba519a6a8a3"
+            }
+          ],
+          "resize": "FFmpeg swscale area; aspect-preserving fit with centered black bars",
+          "width": 1280
+        }
+      },
+      "sampling": {
+        "held_out_from_quantization": false,
+        "pair_count": 16,
+        "policy": "evenly spaced consecutive frame pairs across the full source duration",
+        "split": "even pair indices"
+      },
+      "source": {
+        "attribution": "Tears of Steel, Blender Foundation, 2012",
+        "bytes": 583774083,
+        "color_primaries": "unknown",
+        "color_space": "unknown",
+        "color_transfer": "unknown",
+        "filename": "tears_of_steel_1080p.mov",
+        "frame_count": 17620,
+        "frame_rate": "24/1",
+        "height": 800,
+        "license": "CC BY 3.0",
+        "pixel_format": "yuv420p",
+        "sha256": "99486359be7e3681168a0fe94e1cbb0284c48b57b2a3ce7df4fa75e185987a15",
+        "untagged_sdr_explicitly_accepted": true,
+        "url": "https://download.blender.org/demo/movies/ToS/tears_of_steel_1080p.mov.zip",
+        "width": 1920
+      },
+      "tensor": {
+        "channels": [
+          "previous.R",
+          "previous.G",
+          "previous.B",
+          "current.R",
+          "current.G",
+          "current.B"
+        ],
+        "dtype": "float32",
+        "layout": "NCHW",
+        "normalization": "RGB samples divided by 255 into [0, 1]",
+        "pair_alignment": "decoded consecutive frames; playback motion-vector prealignment is not reproduced",
+        "shape": "[1, 6, height, width]"
+      }
+    },
+    "metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98"
+  },
+  "reference_is_ground_truth": false,
+  "results": [
+    {
+      "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+      "float_model": "anvil-s-720p.tflite",
+      "float_sha256": "b3b9084659890557cafd9245e4f45925b1578c023895bfbffb234cfdfb140ac8",
+      "input_dtype": "<class 'numpy.int8'>",
+      "input_shape": [
+        1,
+        720,
+        1280,
+        6
+      ],
+      "mae": 0.002084647086678829,
+      "max_absolute_error": 0.3744356036186218,
+      "model": "anvil-s",
+      "operator_counts": {
+        "ADD": 17,
+        "CONV_2D": 32,
+        "DELEGATE": 1,
+        "PAD": 4,
+        "TRANSPOSE_CONV": 4
+      },
+      "output_dtype": "<class 'numpy.int8'>",
+      "output_shape": [
+        1,
+        720,
+        1280,
+        3
+      ],
+      "per_sample": [
+        {
+          "mae": 0.0007684007205150289,
+          "max_absolute_error": 0.033718645572662354,
+          "psnr_db": 55.954503202450134,
+          "rmse": 0.0015932166628311324,
+          "sample": "pair-001.f32"
+        },
+        {
+          "mae": 0.0014210676505851984,
+          "max_absolute_error": 0.028529755771160126,
+          "psnr_db": 52.742743835289126,
+          "rmse": 0.0023060186122582822,
+          "sample": "pair-003.f32"
+        },
+        {
+          "mae": 0.0015496812872671639,
+          "max_absolute_error": 0.041669659316539764,
+          "psnr_db": 51.41316329519008,
+          "rmse": 0.0026874589250199346,
+          "sample": "pair-005.f32"
+        },
+        {
+          "mae": 0.0010401873580246654,
+          "max_absolute_error": 0.04208272695541382,
+          "psnr_db": 54.29948360438963,
+          "rmse": 0.0019276395122745614,
+          "sample": "pair-007.f32"
+        },
+        {
+          "mae": 0.0012438667862717547,
+          "max_absolute_error": 0.08640259504318237,
+          "psnr_db": 52.646508273483974,
+          "rmse": 0.0023317102741310966,
+          "sample": "pair-009.f32"
+        },
+        {
+          "mae": 0.0011289751122810672,
+          "max_absolute_error": 0.04428452253341675,
+          "psnr_db": 53.929412189969185,
+          "rmse": 0.002011543323040589,
+          "sample": "pair-011.f32"
+        },
+        {
+          "mae": 0.0013471713157595271,
+          "max_absolute_error": 0.025100290775299072,
+          "psnr_db": 52.80082746382835,
+          "rmse": 0.002290649422982785,
+          "sample": "pair-013.f32"
+        },
+        {
+          "mae": 0.0011250742839052882,
+          "max_absolute_error": 0.022512182593345642,
+          "psnr_db": 54.2648241228769,
+          "rmse": 0.001935346778302894,
+          "sample": "pair-015.f32"
+        },
+        {
+          "mae": 0.0012313424605292632,
+          "max_absolute_error": 0.04092729091644287,
+          "psnr_db": 53.40458653408092,
+          "rmse": 0.0021368334489261158,
+          "sample": "pair-017.f32"
+        },
+        {
+          "mae": 0.001381562858312125,
+          "max_absolute_error": 0.04902225732803345,
+          "psnr_db": 52.427326204200995,
+          "rmse": 0.0023912979403642046,
+          "sample": "pair-019.f32"
+        },
+        {
+          "mae": 0.005736784513854206,
+          "max_absolute_error": 0.3332383632659912,
+          "psnr_db": 38.1319225362791,
+          "rmse": 0.012399491441902407,
+          "sample": "pair-021.f32"
+        },
+        {
+          "mae": 0.009491852315739693,
+          "max_absolute_error": 0.3202466070652008,
+          "psnr_db": 34.552617202248356,
+          "rmse": 0.018722728512304474,
+          "sample": "pair-023.f32"
+        },
+        {
+          "mae": 0.0017514095324849565,
+          "max_absolute_error": 0.0931546688079834,
+          "psnr_db": 50.739202625655594,
+          "rmse": 0.002904289259216179,
+          "sample": "pair-025.f32"
+        },
+        {
+          "mae": 0.0005951469817037713,
+          "max_absolute_error": 0.3744356036186218,
+          "psnr_db": 44.499828411452285,
+          "rmse": 0.005956739108684496,
+          "sample": "pair-027.f32"
+        },
+        {
+          "mae": 0.0026811267362681856,
+          "max_absolute_error": 0.3254997134208679,
+          "psnr_db": 41.28255774912691,
+          "rmse": 0.008627244623756329,
+          "sample": "pair-029.f32"
+        },
+        {
+          "mae": 0.0008607034733593725,
+          "max_absolute_error": 0.024387240409851074,
+          "psnr_db": 55.84513805019424,
+          "rmse": 0.0016134038817366642,
+          "sample": "pair-031.f32"
+        }
+      ],
+      "psnr_db": 43.76238850979833,
+      "quantized_tensor_dtype_counts": {
+        "<class 'numpy.int32'>": 41,
+        "<class 'numpy.int8'>": 94
+      },
+      "resolution": "720p",
+      "rmse": 0.006484560918044041,
+      "sample_count": 16,
+      "w8a8_model": "anvil-s-720p-w8a8.tflite",
+      "w8a8_sha256": "bbdce7001042f7b9318968638546ec534ba5f23e27c96b899999be3ca04c3eca"
+    },
+    {
+      "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+      "float_model": "anvil-s-1080p.tflite",
+      "float_sha256": "316a6cb65ebc7d3f34742fa6903b2d56b747543dd45c2f483682eb97743a26df",
+      "input_dtype": "<class 'numpy.int8'>",
+      "input_shape": [
+        1,
+        1080,
+        1920,
+        6
+      ],
+      "mae": 0.002526096182595166,
+      "max_absolute_error": 0.4078815281391144,
+      "model": "anvil-s",
+      "operator_counts": {
+        "ADD": 17,
+        "CONV_2D": 32,
+        "DELEGATE": 1,
+        "MIRROR_PAD": 1,
+        "PAD": 4,
+        "SLICE": 1,
+        "TRANSPOSE_CONV": 4
+      },
+      "output_dtype": "<class 'numpy.int8'>",
+      "output_shape": [
+        1,
+        1080,
+        1920,
+        3
+      ],
+      "per_sample": [
+        {
+          "mae": 0.0012903819272375304,
+          "max_absolute_error": 0.04931396245956421,
+          "psnr_db": 52.56344296533362,
+          "rmse": 0.002354115960244136,
+          "sample": "pair-001.f32"
+        },
+        {
+          "mae": 0.0017694186576780815,
+          "max_absolute_error": 0.030690550804138184,
+          "psnr_db": 51.02960121795565,
+          "rmse": 0.002808794325710884,
+          "sample": "pair-003.f32"
+        },
+        {
+          "mae": 0.0016435258215567274,
+          "max_absolute_error": 0.03765040636062622,
+          "psnr_db": 51.06825464609184,
+          "rmse": 0.0027963225678072335,
+          "sample": "pair-005.f32"
+        },
+        {
+          "mae": 0.0015035712887897011,
+          "max_absolute_error": 0.036669179797172546,
+          "psnr_db": 52.002082766074196,
+          "rmse": 0.0025112841852382565,
+          "sample": "pair-007.f32"
+        },
+        {
+          "mae": 0.0016244657378466016,
+          "max_absolute_error": 0.1043054461479187,
+          "psnr_db": 50.95202958414659,
+          "rmse": 0.0028339913529159956,
+          "sample": "pair-009.f32"
+        },
+        {
+          "mae": 0.0015898423646273085,
+          "max_absolute_error": 0.037513405084609985,
+          "psnr_db": 51.609285573044986,
+          "rmse": 0.002627457629762361,
+          "sample": "pair-011.f32"
+        },
+        {
+          "mae": 0.001737857361939066,
+          "max_absolute_error": 0.029737234115600586,
+          "psnr_db": 51.04718136500995,
+          "rmse": 0.0028031151055337915,
+          "sample": "pair-013.f32"
+        },
+        {
+          "mae": 0.00145986808894085,
+          "max_absolute_error": 0.03254103660583496,
+          "psnr_db": 52.290741256403194,
+          "rmse": 0.002429198124684358,
+          "sample": "pair-015.f32"
+        },
+        {
+          "mae": 0.0015430215562771,
+          "max_absolute_error": 0.03756910562515259,
+          "psnr_db": 51.89261701564949,
+          "rmse": 0.0025431334441404917,
+          "sample": "pair-017.f32"
+        },
+        {
+          "mae": 0.0015430091857359211,
+          "max_absolute_error": 0.06178712844848633,
+          "psnr_db": 51.5803469987454,
+          "rmse": 0.0026362260672629038,
+          "sample": "pair-019.f32"
+        },
+        {
+          "mae": 0.006639558409746655,
+          "max_absolute_error": 0.26780813932418823,
+          "psnr_db": 36.798655424439005,
+          "rmse": 0.01445663542116104,
+          "sample": "pair-021.f32"
+        },
+        {
+          "mae": 0.010491941402595517,
+          "max_absolute_error": 0.4078815281391144,
+          "psnr_db": 33.09745085238635,
+          "rmse": 0.0221374430720041,
+          "sample": "pair-023.f32"
+        },
+        {
+          "mae": 0.0020554368568385974,
+          "max_absolute_error": 0.08193656802177429,
+          "psnr_db": 49.5993201554186,
+          "rmse": 0.003311570401297605,
+          "sample": "pair-025.f32"
+        },
+        {
+          "mae": 0.0007780507604986339,
+          "max_absolute_error": 0.3434215784072876,
+          "psnr_db": 42.81376194991217,
+          "rmse": 0.007232890703482268,
+          "sample": "pair-027.f32"
+        },
+        {
+          "mae": 0.003372091396422065,
+          "max_absolute_error": 0.3591078519821167,
+          "psnr_db": 38.013438743045135,
+          "rmse": 0.01256979117910352,
+          "sample": "pair-029.f32"
+        },
+        {
+          "mae": 0.001375498104792291,
+          "max_absolute_error": 0.022165261209011078,
+          "psnr_db": 52.58810874685718,
+          "rmse": 0.0023474403353336377,
+          "sample": "pair-031.f32"
+        }
+      ],
+      "psnr_db": 42.06070038591258,
+      "quantized_tensor_dtype_counts": {
+        "<class 'numpy.int32'>": 44,
+        "<class 'numpy.int8'>": 96
+      },
+      "resolution": "1080p",
+      "rmse": 0.007887965105199905,
+      "sample_count": 16,
+      "w8a8_model": "anvil-s-1080p-w8a8.tflite",
+      "w8a8_sha256": "f4943c0a455a168913144a6181c201262a3bb2c504ee21219a8f8f48fdddeb4a"
+    },
+    {
+      "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+      "float_model": "anvil-m-720p.tflite",
+      "float_sha256": "209fc5a65c7efa6f6b71a31210b36476acd93a78a6d48bb90929f54023a5fa79",
+      "input_dtype": "<class 'numpy.int8'>",
+      "input_shape": [
+        1,
+        720,
+        1280,
+        6
+      ],
+      "mae": 0.0021317555957637365,
+      "max_absolute_error": 0.5043321251869202,
+      "model": "anvil-m",
+      "operator_counts": {
+        "ADD": 22,
+        "CONV_2D": 42,
+        "DELEGATE": 1,
+        "PAD": 4,
+        "TRANSPOSE_CONV": 4
+      },
+      "output_dtype": "<class 'numpy.int8'>",
+      "output_shape": [
+        1,
+        720,
+        1280,
+        3
+      ],
+      "per_sample": [
+        {
+          "mae": 0.000580047720588676,
+          "max_absolute_error": 0.02049773931503296,
+          "psnr_db": 57.29696292547985,
+          "rmse": 0.001365060354868109,
+          "sample": "pair-001.f32"
+        },
+        {
+          "mae": 0.0011666922456873231,
+          "max_absolute_error": 0.03217935562133789,
+          "psnr_db": 54.05601817475497,
+          "rmse": 0.0019824356147288423,
+          "sample": "pair-003.f32"
+        },
+        {
+          "mae": 0.0012512585031169044,
+          "max_absolute_error": 0.03305879235267639,
+          "psnr_db": 53.16160718003736,
+          "rmse": 0.0021974532328345444,
+          "sample": "pair-005.f32"
+        },
+        {
+          "mae": 0.0008573976363771441,
+          "max_absolute_error": 0.030603855848312378,
+          "psnr_db": 55.49030433318403,
+          "rmse": 0.0016806790376287697,
+          "sample": "pair-007.f32"
+        },
+        {
+          "mae": 0.001047223075845427,
+          "max_absolute_error": 0.07184004783630371,
+          "psnr_db": 53.88915534370958,
+          "rmse": 0.002020887942976271,
+          "sample": "pair-009.f32"
+        },
+        {
+          "mae": 0.0009314802422917281,
+          "max_absolute_error": 0.024082154035568237,
+          "psnr_db": 55.17938237984305,
+          "rmse": 0.0017419307309729747,
+          "sample": "pair-011.f32"
+        },
+        {
+          "mae": 0.0011618725099014073,
+          "max_absolute_error": 0.020939528942108154,
+          "psnr_db": 54.0270225688159,
+          "rmse": 0.0019890645238483133,
+          "sample": "pair-013.f32"
+        },
+        {
+          "mae": 0.000918427961394373,
+          "max_absolute_error": 0.015989482402801514,
+          "psnr_db": 55.601885517526426,
+          "rmse": 0.0016592266863528918,
+          "sample": "pair-015.f32"
+        },
+        {
+          "mae": 0.0011515278241983702,
+          "max_absolute_error": 0.02633523941040039,
+          "psnr_db": 54.06466519069298,
+          "rmse": 0.001980463033544293,
+          "sample": "pair-017.f32"
+        },
+        {
+          "mae": 0.0011956207993649684,
+          "max_absolute_error": 0.03174775838851929,
+          "psnr_db": 53.42480361674945,
+          "rmse": 0.002131865586914922,
+          "sample": "pair-019.f32"
+        },
+        {
+          "mae": 0.00639968765654367,
+          "max_absolute_error": 0.26072150468826294,
+          "psnr_db": 37.557104282842644,
+          "rmse": 0.01324783120107951,
+          "sample": "pair-021.f32"
+        },
+        {
+          "mae": 0.010930802892511285,
+          "max_absolute_error": 0.5043321251869202,
+          "psnr_db": 32.3948318794027,
+          "rmse": 0.024002606538079736,
+          "sample": "pair-023.f32"
+        },
+        {
+          "mae": 0.0015277503029943764,
+          "max_absolute_error": 0.050156280398368835,
+          "psnr_db": 51.83096710978086,
+          "rmse": 0.002561248072119318,
+          "sample": "pair-025.f32"
+        },
+        {
+          "mae": 0.0013927410427597168,
+          "max_absolute_error": 0.39119744300842285,
+          "psnr_db": 45.38529487819395,
+          "rmse": 0.00537941755735673,
+          "sample": "pair-027.f32"
+        },
+        {
+          "mae": 0.0028682739778105267,
+          "max_absolute_error": 0.3954138159751892,
+          "psnr_db": 41.12840907080701,
+          "rmse": 0.00878171920524289,
+          "sample": "pair-029.f32"
+        },
+        {
+          "mae": 0.0007272851408338907,
+          "max_absolute_error": 0.02489793300628662,
+          "psnr_db": 56.896962093379535,
+          "rmse": 0.001429393804329507,
+          "sample": "pair-031.f32"
+        }
+      ],
+      "psnr_db": 42.48898150823784,
+      "quantized_tensor_dtype_counts": {
+        "<class 'numpy.int32'>": 51,
+        "<class 'numpy.int8'>": 119
+      },
+      "resolution": "720p",
+      "rmse": 0.007508460918175499,
+      "sample_count": 16,
+      "w8a8_model": "anvil-m-720p-w8a8.tflite",
+      "w8a8_sha256": "0ece5a1b5fde37b050fdfec1ede20a9df1a0b515c5468b8f93a72de03f357dec"
+    },
+    {
+      "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+      "float_model": "anvil-m-1080p.tflite",
+      "float_sha256": "dcc8b7a23132ef07e1f11a209cf25f7d7ebd830fb1b5021175ab7ab3329aff93",
+      "input_dtype": "<class 'numpy.int8'>",
+      "input_shape": [
+        1,
+        1080,
+        1920,
+        6
+      ],
+      "mae": 0.0023036891470120677,
+      "max_absolute_error": 0.675528883934021,
+      "model": "anvil-m",
+      "operator_counts": {
+        "ADD": 22,
+        "CONV_2D": 42,
+        "DELEGATE": 1,
+        "MIRROR_PAD": 1,
+        "PAD": 4,
+        "SLICE": 1,
+        "TRANSPOSE_CONV": 4
+      },
+      "output_dtype": "<class 'numpy.int8'>",
+      "output_shape": [
+        1,
+        1080,
+        1920,
+        3
+      ],
+      "per_sample": [
+        {
+          "mae": 0.0006772584299923884,
+          "max_absolute_error": 0.03553801774978638,
+          "psnr_db": 56.3585805368992,
+          "rmse": 0.001520796040544004,
+          "sample": "pair-001.f32"
+        },
+        {
+          "mae": 0.0013290238016668776,
+          "max_absolute_error": 0.02377873659133911,
+          "psnr_db": 53.03973826945915,
+          "rmse": 0.002228502299366463,
+          "sample": "pair-003.f32"
+        },
+        {
+          "mae": 0.0012953031795492399,
+          "max_absolute_error": 0.032148897647857666,
+          "psnr_db": 52.89273360718948,
+          "rmse": 0.002266539643703613,
+          "sample": "pair-005.f32"
+        },
+        {
+          "mae": 0.0008334145609790216,
+          "max_absolute_error": 0.030787482857704163,
+          "psnr_db": 55.51677910748522,
+          "rmse": 0.001675564091764796,
+          "sample": "pair-007.f32"
+        },
+        {
+          "mae": 0.001172601019573694,
+          "max_absolute_error": 0.06596845388412476,
+          "psnr_db": 52.977118742970205,
+          "rmse": 0.0022446263809729147,
+          "sample": "pair-009.f32"
+        },
+        {
+          "mae": 0.001065974820757583,
+          "max_absolute_error": 0.03832799196243286,
+          "psnr_db": 54.12245111602353,
+          "rmse": 0.0019673310400668545,
+          "sample": "pair-011.f32"
+        },
+        {
+          "mae": 0.0013005894872159616,
+          "max_absolute_error": 0.02653747797012329,
+          "psnr_db": 53.34174526777517,
+          "rmse": 0.002152349216778294,
+          "sample": "pair-013.f32"
+        },
+        {
+          "mae": 0.0010308433146777954,
+          "max_absolute_error": 0.02058553695678711,
+          "psnr_db": 54.78688385823594,
+          "rmse": 0.0018224507765853743,
+          "sample": "pair-015.f32"
+        },
+        {
+          "mae": 0.0012349152978702316,
+          "max_absolute_error": 0.04290628433227539,
+          "psnr_db": 53.56516976931786,
+          "rmse": 0.0020976909837548802,
+          "sample": "pair-017.f32"
+        },
+        {
+          "mae": 0.00121911345396388,
+          "max_absolute_error": 0.05308742821216583,
+          "psnr_db": 53.105145526106774,
+          "rmse": 0.002211784059257349,
+          "sample": "pair-019.f32"
+        },
+        {
+          "mae": 0.0075217810496936086,
+          "max_absolute_error": 0.4132847785949707,
+          "psnr_db": 35.68200165887366,
+          "rmse": 0.01643992822243506,
+          "sample": "pair-021.f32"
+        },
+        {
+          "mae": 0.011590733804749362,
+          "max_absolute_error": 0.675528883934021,
+          "psnr_db": 30.945267401059958,
+          "rmse": 0.028361985453792492,
+          "sample": "pair-023.f32"
+        },
+        {
+          "mae": 0.0017174044257621294,
+          "max_absolute_error": 0.09006279706954956,
+          "psnr_db": 50.78839052488769,
+          "rmse": 0.0028878888486888344,
+          "sample": "pair-025.f32"
+        },
+        {
+          "mae": 0.0006075701028721911,
+          "max_absolute_error": 0.3415933847427368,
+          "psnr_db": 43.42616275299466,
+          "rmse": 0.006740496109278141,
+          "sample": "pair-027.f32"
+        },
+        {
+          "mae": 0.0034826029502776547,
+          "max_absolute_error": 0.38914984464645386,
+          "psnr_db": 37.55201393931378,
+          "rmse": 0.013255597334296616,
+          "sample": "pair-029.f32"
+        },
+        {
+          "mae": 0.0007798966525914678,
+          "max_absolute_error": 0.02285340428352356,
+          "psnr_db": 56.34443429046826,
+          "rmse": 0.0015232748982044562,
+          "sample": "pair-031.f32"
+        }
+      ],
+      "psnr_db": 40.74475969259502,
+      "quantized_tensor_dtype_counts": {
+        "<class 'numpy.int32'>": 54,
+        "<class 'numpy.int8'>": 121
+      },
+      "resolution": "1080p",
+      "rmse": 0.009178295065693273,
+      "sample_count": 16,
+      "w8a8_model": "anvil-m-1080p-w8a8.tflite",
+      "w8a8_sha256": "6d3cf0b03926a9ef5b33e898af92fc13da2834bbd814a5b79fbc4ac3953647ca"
+    }
+  ],
+  "validation_source": {
+    "metadata": {
+      "format": 1,
+      "samples": {
+        "1080p": {
+          "height": 1080,
+          "pairs": [
+            {
+              "file": "pair-001.f32",
+              "first_frame": 826,
+              "first_timestamp_seconds": 34.416667,
+              "second_frame": 827,
+              "second_timestamp_seconds": 34.458333,
+              "sha256": "5d25ceb31d76f0fffb0910369ef2cfc581b851130b511a428ec47009507dac73"
+            },
+            {
+              "file": "pair-003.f32",
+              "first_frame": 1927,
+              "first_timestamp_seconds": 80.291667,
+              "second_frame": 1928,
+              "second_timestamp_seconds": 80.333333,
+              "sha256": "071b7bceb4c8180f8a20ad64049811102b0e3ee773646250d3affbfd24f272c5"
+            },
+            {
+              "file": "pair-005.f32",
+              "first_frame": 3028,
+              "first_timestamp_seconds": 126.166667,
+              "second_frame": 3029,
+              "second_timestamp_seconds": 126.208333,
+              "sha256": "a0b7f29c9ed39a7b9f4be8b48845cb4b4ea09037298e6556be8c2053e55e9457"
+            },
+            {
+              "file": "pair-007.f32",
+              "first_frame": 4130,
+              "first_timestamp_seconds": 172.083333,
+              "second_frame": 4131,
+              "second_timestamp_seconds": 172.125,
+              "sha256": "6cd1ae46dfd0bf0ddb7498f70d7afecb7d0af598ae547133e90893555a2c0f47"
+            },
+            {
+              "file": "pair-009.f32",
+              "first_frame": 5231,
+              "first_timestamp_seconds": 217.958333,
+              "second_frame": 5232,
+              "second_timestamp_seconds": 218.0,
+              "sha256": "0bc86b5094a51b4a2efeace71fb0483f6157af07693c14500945509b2c87b885"
+            },
+            {
+              "file": "pair-011.f32",
+              "first_frame": 6332,
+              "first_timestamp_seconds": 263.833333,
+              "second_frame": 6333,
+              "second_timestamp_seconds": 263.875,
+              "sha256": "ecb4a5aada0483431dc53d913653e854a13413dfffe44f83f1265814b7b26f10"
+            },
+            {
+              "file": "pair-013.f32",
+              "first_frame": 7433,
+              "first_timestamp_seconds": 309.708333,
+              "second_frame": 7434,
+              "second_timestamp_seconds": 309.75,
+              "sha256": "6a4d01eb47d2514011aff1f0128c6671649b4f64011f583205d9f8ab16579794"
+            },
+            {
+              "file": "pair-015.f32",
+              "first_frame": 8535,
+              "first_timestamp_seconds": 355.625,
+              "second_frame": 8536,
+              "second_timestamp_seconds": 355.666667,
+              "sha256": "50fb4bd0f937f9143ae2dedb785ad1bc4d22e4541d0a25510d8ee1b63737910e"
+            },
+            {
+              "file": "pair-017.f32",
+              "first_frame": 9636,
+              "first_timestamp_seconds": 401.5,
+              "second_frame": 9637,
+              "second_timestamp_seconds": 401.541667,
+              "sha256": "b941583b69b378933a420b87598a9fcfdc463ac637a8c4d59b4b5b273829405f"
+            },
+            {
+              "file": "pair-019.f32",
+              "first_frame": 10737,
+              "first_timestamp_seconds": 447.375,
+              "second_frame": 10738,
+              "second_timestamp_seconds": 447.416667,
+              "sha256": "b0bf247756912ab0d267aceaca3cd8edcc1d48abac8be396df3d797446d5a16c"
+            },
+            {
+              "file": "pair-021.f32",
+              "first_frame": 11838,
+              "first_timestamp_seconds": 493.25,
+              "second_frame": 11839,
+              "second_timestamp_seconds": 493.291667,
+              "sha256": "2642e70c10bc87b935329276b67be42d53849b4d22ca2ddeace72351ddb2fc48"
+            },
+            {
+              "file": "pair-023.f32",
+              "first_frame": 12940,
+              "first_timestamp_seconds": 539.166667,
+              "second_frame": 12941,
+              "second_timestamp_seconds": 539.208333,
+              "sha256": "89bc1f2677fec14af495f7d63cde6a6588f754d56aa96c38b3b16d6716993f42"
+            },
+            {
+              "file": "pair-025.f32",
+              "first_frame": 14041,
+              "first_timestamp_seconds": 585.041667,
+              "second_frame": 14042,
+              "second_timestamp_seconds": 585.083333,
+              "sha256": "42b4c4fa2ff40d263eaba3edb58d5250a27c21c71ae9428e6678ba4bb3ac5823"
+            },
+            {
+              "file": "pair-027.f32",
+              "first_frame": 15142,
+              "first_timestamp_seconds": 630.916667,
+              "second_frame": 15143,
+              "second_timestamp_seconds": 630.958333,
+              "sha256": "f0ae2388d49b65c8dda57e2c2843a5e11bd30ab3353122bc9ce635a7ae732634"
+            },
+            {
+              "file": "pair-029.f32",
+              "first_frame": 16243,
+              "first_timestamp_seconds": 676.791667,
+              "second_frame": 16244,
+              "second_timestamp_seconds": 676.833333,
+              "sha256": "8cd6ca27d22fab2187d6b413c5aa25dd1c205e94e6c7a82d64670f9892e8fc85"
+            },
+            {
+              "file": "pair-031.f32",
+              "first_frame": 17345,
+              "first_timestamp_seconds": 722.708333,
+              "second_frame": 17346,
+              "second_timestamp_seconds": 722.75,
+              "sha256": "f97afb8c53c187c54d91cb7b8dad5fc413389363a3b0aaba04101ca9373f02f3"
+            }
+          ],
+          "resize": "FFmpeg swscale area; aspect-preserving fit with centered black bars",
+          "width": 1920
+        },
+        "720p": {
+          "height": 720,
+          "pairs": [
+            {
+              "file": "pair-001.f32",
+              "first_frame": 826,
+              "first_timestamp_seconds": 34.416667,
+              "second_frame": 827,
+              "second_timestamp_seconds": 34.458333,
+              "sha256": "b3b4b3d1911d919eebfafe13c17821c26fb4ab49e289efef486c244a78cd0510"
+            },
+            {
+              "file": "pair-003.f32",
+              "first_frame": 1927,
+              "first_timestamp_seconds": 80.291667,
+              "second_frame": 1928,
+              "second_timestamp_seconds": 80.333333,
+              "sha256": "803308edf3f0adb45609865b58ce5700b5ce518268b0a7e2c389e31f6f295545"
+            },
+            {
+              "file": "pair-005.f32",
+              "first_frame": 3028,
+              "first_timestamp_seconds": 126.166667,
+              "second_frame": 3029,
+              "second_timestamp_seconds": 126.208333,
+              "sha256": "ac1c3c80e7ad9e1be5fd82c99a58cae4091bb199731ab569bdc428aaf4ce9cf3"
+            },
+            {
+              "file": "pair-007.f32",
+              "first_frame": 4130,
+              "first_timestamp_seconds": 172.083333,
+              "second_frame": 4131,
+              "second_timestamp_seconds": 172.125,
+              "sha256": "72bba1b007cc232dbd95cd11f95a81c6a7e8e0bee1a47f9f16aef6fbe93e5570"
+            },
+            {
+              "file": "pair-009.f32",
+              "first_frame": 5231,
+              "first_timestamp_seconds": 217.958333,
+              "second_frame": 5232,
+              "second_timestamp_seconds": 218.0,
+              "sha256": "469b17ce85239cf460f0394c0ae92dfd05e0c520d0e0b59824822db319aa392b"
+            },
+            {
+              "file": "pair-011.f32",
+              "first_frame": 6332,
+              "first_timestamp_seconds": 263.833333,
+              "second_frame": 6333,
+              "second_timestamp_seconds": 263.875,
+              "sha256": "04e4feeef26b0636fb446b79d9da4911d10c15d8e6e302439178b05b02947714"
+            },
+            {
+              "file": "pair-013.f32",
+              "first_frame": 7433,
+              "first_timestamp_seconds": 309.708333,
+              "second_frame": 7434,
+              "second_timestamp_seconds": 309.75,
+              "sha256": "25d878445eefc81fc6afd2f4b7d8d588929ea3960bda6cb910b65f931e2bac4c"
+            },
+            {
+              "file": "pair-015.f32",
+              "first_frame": 8535,
+              "first_timestamp_seconds": 355.625,
+              "second_frame": 8536,
+              "second_timestamp_seconds": 355.666667,
+              "sha256": "b0652ae614524fbebdfb1e93e1f78356bb04c1bb1761bf1f9d4bcca07b9672ca"
+            },
+            {
+              "file": "pair-017.f32",
+              "first_frame": 9636,
+              "first_timestamp_seconds": 401.5,
+              "second_frame": 9637,
+              "second_timestamp_seconds": 401.541667,
+              "sha256": "3cf4c3f4fdfa90335c0832b84639d6c86096ab645114aed38ba0a69430efb696"
+            },
+            {
+              "file": "pair-019.f32",
+              "first_frame": 10737,
+              "first_timestamp_seconds": 447.375,
+              "second_frame": 10738,
+              "second_timestamp_seconds": 447.416667,
+              "sha256": "285548b21fdc300a15a5367f4286f4024d3851ae4fed96b1fa4b4b91ca4848f5"
+            },
+            {
+              "file": "pair-021.f32",
+              "first_frame": 11838,
+              "first_timestamp_seconds": 493.25,
+              "second_frame": 11839,
+              "second_timestamp_seconds": 493.291667,
+              "sha256": "377185b14da2f9d261176dbd277f1b4f0663fce184659b4969a501fdb848872c"
+            },
+            {
+              "file": "pair-023.f32",
+              "first_frame": 12940,
+              "first_timestamp_seconds": 539.166667,
+              "second_frame": 12941,
+              "second_timestamp_seconds": 539.208333,
+              "sha256": "e8215805232e049328e6ac3af1304da27726986a2461b22d5238032e2ae06e44"
+            },
+            {
+              "file": "pair-025.f32",
+              "first_frame": 14041,
+              "first_timestamp_seconds": 585.041667,
+              "second_frame": 14042,
+              "second_timestamp_seconds": 585.083333,
+              "sha256": "3850f7ea6d4532a566a397b75e166ac766ac2da60136d3a508e32d98d13bd585"
+            },
+            {
+              "file": "pair-027.f32",
+              "first_frame": 15142,
+              "first_timestamp_seconds": 630.916667,
+              "second_frame": 15143,
+              "second_timestamp_seconds": 630.958333,
+              "sha256": "7bcb7c7eabc1ebdb03ffa7d1ef4f4ffc6fed604421b4cb6c00c62cdc469c9e9e"
+            },
+            {
+              "file": "pair-029.f32",
+              "first_frame": 16243,
+              "first_timestamp_seconds": 676.791667,
+              "second_frame": 16244,
+              "second_timestamp_seconds": 676.833333,
+              "sha256": "6dca515a2156da2f8d99021d66747d0a2a37edef491ac67f394e8b82e4578022"
+            },
+            {
+              "file": "pair-031.f32",
+              "first_frame": 17345,
+              "first_timestamp_seconds": 722.708333,
+              "second_frame": 17346,
+              "second_timestamp_seconds": 722.75,
+              "sha256": "4145d27eac95238b3a6f7ec0bdcbc6b710aa404620b97f841c9d087437d8aa09"
+            }
+          ],
+          "resize": "FFmpeg swscale area; aspect-preserving fit with centered black bars",
+          "width": 1280
+        }
+      },
+      "sampling": {
+        "held_out_from_quantization": true,
+        "pair_count": 16,
+        "policy": "evenly spaced consecutive frame pairs across the full source duration",
+        "split": "odd pair indices"
+      },
+      "source": {
+        "attribution": "Tears of Steel, Blender Foundation, 2012",
+        "bytes": 583774083,
+        "color_primaries": "unknown",
+        "color_space": "unknown",
+        "color_transfer": "unknown",
+        "filename": "tears_of_steel_1080p.mov",
+        "frame_count": 17620,
+        "frame_rate": "24/1",
+        "height": 800,
+        "license": "CC BY 3.0",
+        "pixel_format": "yuv420p",
+        "sha256": "99486359be7e3681168a0fe94e1cbb0284c48b57b2a3ce7df4fa75e185987a15",
+        "untagged_sdr_explicitly_accepted": true,
+        "url": "https://download.blender.org/demo/movies/ToS/tears_of_steel_1080p.mov.zip",
+        "width": 1920
+      },
+      "tensor": {
+        "channels": [
+          "previous.R",
+          "previous.G",
+          "previous.B",
+          "current.R",
+          "current.G",
+          "current.B"
+        ],
+        "dtype": "float32",
+        "layout": "NCHW",
+        "normalization": "RGB samples divided by 255 into [0, 1]",
+        "pair_alignment": "decoded consecutive frames; playback motion-vector prealignment is not reproduced",
+        "shape": "[1, 6, height, width]"
+      }
+    },
+    "metadata_sha256": "86878c38f7884a0f478a8bc24a3c68dd5f555709138d5183d35b7e361f0240f2"
+  }
+}

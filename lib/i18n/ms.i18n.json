@@ -4034,6 +4034,20 @@
     "readLists": "Senarai bacaan",
     "collections": "Koleksi"
   },
+  "comics": {
+    "fitHeight": "Muatkan mengikut tinggi",
+    "readingMode": "Mod bacaan",
+    "paged": "Halaman",
+    "webtoon": "Tatal berterusan",
+    "coverAlone": "Paparkan kulit buku secara berasingan",
+    "splitWide": "Bahagikan halaman lebar",
+    "splitWideHelp": "Paparkan setiap separuh secara berasingan mengikut urutan bacaan. Paparan dua halaman bersebelahan dijeda semasa pilihan ini aktif.",
+    "thumbnails": "Lakaran kecil halaman",
+    "controlsHelp": "Leret untuk menyelak halaman. Ketik dua kali untuk menukar padanan. Dalam tatal berterusan, leret menegak atau gunakan Page Up dan Page Down.",
+    "savedForComic": "Tetapan paparan diingati untuk komik ini dalam profil ini.",
+    "readLists": "Senarai bacaan",
+    "collections": "Koleksi"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

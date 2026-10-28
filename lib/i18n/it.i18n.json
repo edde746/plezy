@@ -4066,6 +4066,20 @@
     "readLists": "Liste di lettura",
     "collections": "Raccolte"
   },
+  "comics": {
+    "fitHeight": "Adatta all’altezza",
+    "readingMode": "Modalità di lettura",
+    "paged": "Pagine",
+    "webtoon": "Scorrimento continuo",
+    "coverAlone": "Mostra la copertina da sola",
+    "splitWide": "Dividi le pagine larghe",
+    "splitWideHelp": "Mostra ogni metà separatamente, nell’ordine di lettura. La visualizzazione di due pagine affiancate viene sospesa quando questa opzione è attiva.",
+    "thumbnails": "Miniature delle pagine",
+    "controlsHelp": "Scorri con il dito per voltare pagina. Tocca due volte per cambiare l’adattamento. Nello scorrimento continuo, scorri verticalmente o usa Pagina su e Pagina giù.",
+    "savedForComic": "Le impostazioni di visualizzazione vengono memorizzate per questo fumetto in questo profilo.",
+    "readLists": "Liste di lettura",
+    "collections": "Raccolte"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

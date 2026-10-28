@@ -4103,6 +4103,20 @@
     "readLists": "Seznamy četby",
     "collections": "Kolekce"
   },
+  "comics": {
+    "fitHeight": "Přizpůsobit výšce",
+    "readingMode": "Režim čtení",
+    "paged": "Stránky",
+    "webtoon": "Plynulé posouvání",
+    "coverAlone": "Zobrazit obálku samostatně",
+    "splitWide": "Rozdělit široké stránky",
+    "splitWideHelp": "Zobrazí každou polovinu samostatně v pořadí čtení. Při zapnutí se stránky nezobrazují ve dvojicích.",
+    "thumbnails": "Náhledy stránek",
+    "controlsHelp": "Přejetím otočíte stránku. Dvojitým klepnutím změníte přizpůsobení. Při plynulém posouvání přejeďte svisle nebo použijte Page Up a Page Down.",
+    "savedForComic": "Nastavení zobrazení se pro tento komiks ukládá v tomto profilu.",
+    "readLists": "Seznamy četby",
+    "collections": "Kolekce"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

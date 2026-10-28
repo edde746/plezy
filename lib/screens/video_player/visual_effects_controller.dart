@@ -58,9 +58,10 @@ class VisualEffectsController {
       final shaderProvider = _shaderProvider();
       await SettingsService.getInstance();
       final presetId = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.shaderPreset, _metadata());
-      final preset =
+      final requestedPreset =
           (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ??
           ShaderPreset.none;
+      final preset = shaderService.supportsPreset(requestedPreset) ? requestedPreset : ShaderPreset.none;
       await shaderService.applyPreset(preset);
       if (!_isMounted()) return;
       shaderProvider.setCurrentPreset(preset);

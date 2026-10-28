@@ -27,6 +27,7 @@ class PlayerPerformanceOverlay extends StatefulWidget {
   /// has no server play method (live TV, offline playback).
   final bool? isTranscoding;
   final MediaDisplayCriteria? sourceDisplayCriteria;
+  final bool isLive;
 
   const PlayerPerformanceOverlay({
     super.key,
@@ -34,6 +35,7 @@ class PlayerPerformanceOverlay extends StatefulWidget {
     required this.active,
     this.isTranscoding,
     this.sourceDisplayCriteria,
+    this.isLive = false,
   });
 
   @override
@@ -51,6 +53,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       widget.player,
       sourceDisplayCriteria: widget.sourceDisplayCriteria,
       isTranscoding: widget.isTranscoding,
+      isLive: widget.isLive,
     );
     _statsService.statsStream.listen((stats) {
       if (mounted) {
@@ -72,6 +75,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         isTranscoding: widget.isTranscoding,
       );
     }
+    _statsService.isLive = widget.isLive;
     if (widget.active == oldWidget.active) return;
     // The last values stay on the card while it fades out; only the polling
     // stops.
@@ -96,6 +100,8 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       _buildSection(Symbols.videocam_rounded, t.fileInfo.video, [
         _metric(t.fileInfo.codec, _stats.videoCodec ?? t.common.notAvailable),
         _metric(t.fileInfo.resolution, _stats.resolution),
+        if (_stats.playbackCapabilityReport?.sourceIsHdr case final sourceIsHdr?)
+          _metric(t.videoSettings.hdr, sourceIsHdr ? t.common.yes : t.common.no),
         if (_stats.hasValidVideoFps) _metric(t.performanceOverlay.fps, _stats.videoFpsFormatted),
         if (_stats.hasValidVideoBitrate) _metric(t.fileInfo.bitrate, _stats.videoBitrateFormatted),
         _metric(t.performanceOverlay.decoder, _stats.hwdecFormatted),
@@ -130,6 +136,17 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         if (isMpv) _metric(t.performanceOverlay.renderFps, _stats.actualFpsFormatted),
         if (isMpv) _metric(t.performanceOverlay.displayFps, _stats.displayFpsFormatted),
         if (isMpv) _metric(t.performanceOverlay.avSync, _stats.avsyncFormatted),
+        if (isMpv && _stats.currentVideoOutput != null)
+          _metric(t.performanceOverlay.videoOutput, _stats.currentVideoOutput!),
+        if (_stats.motionProcessingFormatted != null)
+          _metric(t.settings.motionSmoothing, _stats.motionProcessingFormatted!),
+        if (_stats.playbackCapabilityReport?.thermalStatus case final status?)
+          _metric(t.performanceOverlay.thermalStatus, status),
+        if (_stats.videoUpscalingFormatted != null)
+          _metric(t.shaders.lanczosUpscaling, _stats.videoUpscalingFormatted!),
+        if (isMpv && _stats.motionInterpolationActive != null)
+          _metric(t.performanceOverlay.motionInterpolation, _stats.motionInterpolationFormatted),
+        if (isMpv && _stats.videoSync != null) _metric(t.performanceOverlay.videoSync, _stats.videoSync!),
         _metric(t.performanceOverlay.dropped, _stats.droppedFramesFormatted),
         if (_stats.dvConversionActive) _metric(t.performanceOverlay.dvRpus, _stats.dvRpuCountFormatted),
         if (_stats.dvConversionActive) _metric(t.performanceOverlay.dvRpuAverage, _stats.dvAvgRpuConversionFormatted),

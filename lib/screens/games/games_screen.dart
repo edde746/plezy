@@ -93,6 +93,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
 
   Future<void> _load(String? id, int epoch) async {
     if (!mounted || epoch != _epoch || id == null) return;
+    if (!PlatformDetector.supportsEmbeddedGameStreaming()) {
+      setState(() => _loading = false);
+      return;
+    }
     final sources = context.read<SourceController>();
     try {
       await sources.ready;

@@ -403,7 +403,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
               }
             }
 
-            // Shader Service (MPV only)
+            // Video-processing presets: MPV GLSL plus ExoPlayer's Media3 GL resampler.
             _shaderService = ShaderService(currentPlayer);
             if (_shaderService!.isSupported) {
               // Ambient Lighting Service

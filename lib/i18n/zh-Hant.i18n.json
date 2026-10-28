@@ -4054,6 +4054,20 @@
     "readLists": "閱讀清單",
     "collections": "合集"
   },
+  "comics": {
+    "fitHeight": "符合高度",
+    "readingMode": "閱讀模式",
+    "paged": "分頁",
+    "webtoon": "連續捲動",
+    "coverAlone": "單獨顯示封面",
+    "splitWide": "分割寬頁",
+    "splitWideHelp": "依閱讀順序分別顯示每一半。開啟後暫停雙頁並排顯示。",
+    "thumbnails": "頁面縮圖",
+    "controlsHelp": "滑動翻頁，點兩下切換顯示比例。連續捲動時，垂直滑動或使用 Page Up 和 Page Down。",
+    "savedForComic": "此個人檔案會記住這部漫畫的顯示設定。",
+    "readLists": "閱讀清單",
+    "collections": "合集"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

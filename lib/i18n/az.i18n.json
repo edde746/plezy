@@ -4059,6 +4059,20 @@
     "readLists": "Oxu siyahıları",
     "collections": "Kolleksiyalar"
   },
+  "comics": {
+    "fitHeight": "Hündürlüyə uyğunlaşdır",
+    "readingMode": "Oxu rejimi",
+    "paged": "Səhifələr",
+    "webtoon": "Davamlı sürüşdürmə",
+    "coverAlone": "Üz qabığını ayrıca göstər",
+    "splitWide": "Geniş səhifələri böl",
+    "splitWideHelp": "Hər yarını oxu ardıcıllığı ilə ayrıca göstər. Bu seçim aktiv olduqda iki səhifənin birlikdə göstərilməsi dayandırılır.",
+    "thumbnails": "Səhifə miniatürləri",
+    "controlsHelp": "Səhifələri çevirmək üçün sürüşdürün. Uyğunlaşdırmanı dəyişmək üçün iki dəfə toxunun. Davamlı sürüşdürmədə şaquli sürüşdürün və ya Page Up və Page Down istifadə edin.",
+    "savedForComic": "Görüntü ayarları bu profildə bu komiks üçün yadda saxlanılır.",
+    "readLists": "Oxu siyahıları",
+    "collections": "Kolleksiyalar"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

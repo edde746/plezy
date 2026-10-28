@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.21)
 project(plezy LANGUAGES CXX)
 
 # libmpv comes from our unified build repository
@@ -123,6 +123,50 @@ if(NOT EXISTS "${VULKAN_RT_DIR}/vulkan-1.dll" OR NOT EXISTS "${VULKAN_RT_DIR}/Vu
   file(REMOVE "${VULKAN_RT_ZIP}")
 endif()
 
+# Consume the stable, self-contained Windows ML C/C++ package. It supplies the
+# ORT 1.27.1 runtime and the provider catalog API; certified hardware EPs are
+# selected and made ready at runtime by the user's explicit Neural setting.
+set(PLEZY_WINML_VERSION "2.4.89")
+set(PLEZY_WINML_SHA256 "5c68ecfb947223267abf159a023f5192ad42725e4e9cc995e7c1470dd54dff63a")
+set(PLEZY_WINML_PACKAGE_ROOT "" CACHE PATH "Optional pre-extracted Windows ML NuGet package root")
+if(PLEZY_WINML_PACKAGE_ROOT)
+  if(NOT EXISTS "${PLEZY_WINML_PACKAGE_ROOT}/build/cmake")
+    message(FATAL_ERROR "PLEZY_WINML_PACKAGE_ROOT must contain the extracted Windows ML package")
+  endif()
+else()
+  set(PLEZY_WINML_PACKAGE_DIR "${CMAKE_BINARY_DIR}/windowsml/${PLEZY_WINML_VERSION}")
+  set(PLEZY_WINML_PACKAGE_ROOT "${PLEZY_WINML_PACKAGE_DIR}/Microsoft.Windows.AI.MachineLearning")
+  if(NOT EXISTS "${PLEZY_WINML_PACKAGE_ROOT}/build/cmake")
+    file(MAKE_DIRECTORY "${PLEZY_WINML_PACKAGE_ROOT}")
+    set(PLEZY_WINML_ARCHIVE "${PLEZY_WINML_PACKAGE_DIR}/Microsoft.Windows.AI.MachineLearning.${PLEZY_WINML_VERSION}.nupkg")
+    message(STATUS "Downloading Windows ML ${PLEZY_WINML_VERSION} SDK/runtime...")
+    file(DOWNLOAD
+      "https://api.nuget.org/v3-flatcontainer/microsoft.windows.ai.machinelearning/${PLEZY_WINML_VERSION}/microsoft.windows.ai.machinelearning.${PLEZY_WINML_VERSION}.nupkg"
+      "${PLEZY_WINML_ARCHIVE}"
+      EXPECTED_HASH "SHA256=${PLEZY_WINML_SHA256}"
+      STATUS PLEZY_WINML_DOWNLOAD_STATUS
+    )
+    list(GET PLEZY_WINML_DOWNLOAD_STATUS 0 PLEZY_WINML_DOWNLOAD_RESULT)
+    if(NOT PLEZY_WINML_DOWNLOAD_RESULT EQUAL 0)
+      file(REMOVE "${PLEZY_WINML_ARCHIVE}")
+      message(FATAL_ERROR "Failed to download Windows ML package: ${PLEZY_WINML_DOWNLOAD_STATUS}")
+    endif()
+    execute_process(
+      COMMAND "${CMAKE_COMMAND}" -E tar xf "${PLEZY_WINML_ARCHIVE}"
+      WORKING_DIRECTORY "${PLEZY_WINML_PACKAGE_ROOT}"
+      RESULT_VARIABLE PLEZY_WINML_EXTRACT_RESULT
+    )
+    file(REMOVE "${PLEZY_WINML_ARCHIVE}")
+    if(NOT PLEZY_WINML_EXTRACT_RESULT EQUAL 0 OR NOT EXISTS "${PLEZY_WINML_PACKAGE_ROOT}/build/cmake")
+      message(FATAL_ERROR "Failed to extract the pinned Windows ML package")
+    endif()
+  endif()
+endif()
+find_package(microsoft.windows.ai.machinelearning CONFIG REQUIRED
+  PATHS "${PLEZY_WINML_PACKAGE_ROOT}/build/cmake"
+  NO_DEFAULT_PATH
+)
+
 # Fetch simdutf for SIMD-accelerated UTF-8 validation.
 # mpv strings are not guaranteed to be valid UTF-8; invalid bytes sent through
 # Flutter's StandardMessageCodec cause FormatException crashes.
@@ -139,7 +183,7 @@ set(BINARY_NAME "plezy")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
-cmake_policy(VERSION 3.19...3.25)
+cmake_policy(VERSION 3.21...3.25)
 
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)

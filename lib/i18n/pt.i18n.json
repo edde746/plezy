@@ -4066,6 +4066,20 @@
     "readLists": "Listas de leitura",
     "collections": "Coleções"
   },
+  "comics": {
+    "fitHeight": "Ajustar à altura",
+    "readingMode": "Modo de leitura",
+    "paged": "Páginas",
+    "webtoon": "Deslocamento contínuo",
+    "coverAlone": "Mostrar a capa sozinha",
+    "splitWide": "Dividir páginas largas",
+    "splitWideHelp": "Mostra cada metade separadamente, na ordem de leitura. A apresentação de duas páginas lado a lado fica suspensa enquanto esta opção estiver ativa.",
+    "thumbnails": "Miniaturas das páginas",
+    "controlsHelp": "Deslize para mudar de página. Toque duas vezes para alterar o ajuste. No deslocamento contínuo, deslize na vertical ou use Page Up e Page Down.",
+    "savedForComic": "As definições de apresentação são guardadas para esta banda desenhada neste perfil.",
+    "readLists": "Listas de leitura",
+    "collections": "Coleções"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

@@ -4059,6 +4059,20 @@
     "readLists": "Læselister",
     "collections": "Samlinger"
   },
+  "comics": {
+    "fitHeight": "Tilpas til højden",
+    "readingMode": "Læsetilstand",
+    "paged": "Sider",
+    "webtoon": "Kontinuerlig rulning",
+    "coverAlone": "Vis omslaget alene",
+    "splitWide": "Opdel brede sider",
+    "splitWideHelp": "Vis hver halvdel separat i læserækkefølgen. Visning af to sider sammen sættes på pause, mens dette er slået til.",
+    "thumbnails": "Sideminiaturer",
+    "controlsHelp": "Stryg for at skifte side. Tryk to gange for at ændre tilpasningen. Ved kontinuerlig rulning skal du stryge lodret eller bruge Page Up og Page Down.",
+    "savedForComic": "Visningsindstillingerne huskes for denne tegneserie i denne profil.",
+    "readLists": "Læselister",
+    "collections": "Samlinger"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

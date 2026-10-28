@@ -269,6 +269,7 @@ class ShaderAssetLoader {
   static Future<List<String>> getShadersForPreset(ShaderPreset preset) async {
     switch (preset.type) {
       case ShaderPresetType.none:
+      case ShaderPresetType.lanczos:
         return [];
       case ShaderPresetType.nvscaler:
         return getNVScalerShaders();

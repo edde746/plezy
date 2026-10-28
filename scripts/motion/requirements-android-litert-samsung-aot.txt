@@ -1,0 +1,6 @@
+# Samsung E9965 AOT export adds the Samsung backend shipped with LiteRT 2.3.0.
+# Supply the LiteCore SDK separately through --samsung-litecore-root; installing
+# the SDK wheel is intentionally avoided because its post-install fetch relies
+# on a vendor portal URL that may require account access and acceptance.
+-r requirements-android-litert-models.txt
+ai-edge-litert==2.3.0

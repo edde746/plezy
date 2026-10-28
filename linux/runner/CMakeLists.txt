@@ -12,6 +12,8 @@ add_executable(${BINARY_NAME}
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 
+add_subdirectory("${CMAKE_SOURCE_DIR}/../shared/cpp/plezy_motion_engine" plezy_motion_engine)
+
 apply_standard_settings(${BINARY_NAME})
 
 # apply_standard_settings asks for cxx_std_14, which current compilers satisfy
@@ -71,7 +73,7 @@ target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::WAYLAND_EGL)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::EGL)
 target_link_libraries(${BINARY_NAME} PRIVATE wayland_protocols)
 target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
-target_link_libraries(${BINARY_NAME} PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+target_link_libraries(${BINARY_NAME} PRIVATE Threads::Threads ${CMAKE_DL_LIBS} plezy_motion_engine)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")

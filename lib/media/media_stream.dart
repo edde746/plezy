@@ -31,6 +31,11 @@ class MediaStream {
   final bool dolbyVision;
   final int? dolbyVisionProfile;
 
+  /// Whether a video stream is interlaced. Null means the server did not
+  /// report scan type; frame-processing paths that require progressive input
+  /// must treat that as unknown rather than assuming progressive.
+  final bool? interlaced;
+
   // Subtitle
   final bool forced;
 
@@ -55,6 +60,7 @@ class MediaStream {
     this.hdr = false,
     this.dolbyVision = false,
     this.dolbyVisionProfile,
+    this.interlaced,
     this.forced = false,
     this.sidecarPath,
   });

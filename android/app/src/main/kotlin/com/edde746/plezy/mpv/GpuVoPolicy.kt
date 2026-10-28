@@ -430,7 +430,7 @@ internal object GpuVoPolicy {
    */
   fun targetFor(reasons: Set<String>): String? = when {
     reasons.isEmpty() -> null
-    REASON_DV_RESHAPE in reasons -> "gpu-next"
+    REASON_DV_RESHAPE in reasons || REASON_MOTION_NEURAL in reasons -> "gpu-next"
     else -> "gpu"
   }
 
@@ -439,4 +439,6 @@ internal object GpuVoPolicy {
   const val REASON_FORMAT_REJECTED = "format-rejected"
   const val REASON_HDR_SDR = "hdr-sdr"
   const val REASON_CODEC_SW_DECODE = "codec-sw-decode"
+  const val REASON_MOTION_SMOOTHING = "motion-smoothing"
+  const val REASON_MOTION_NEURAL = "motion-neural"
 }

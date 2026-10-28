@@ -4059,6 +4059,20 @@
     "readLists": "O‘qish ro‘yxatlari",
     "collections": "To‘plamlar"
   },
+  "comics": {
+    "fitHeight": "Balandlikka moslash",
+    "readingMode": "O‘qish rejimi",
+    "paged": "Sahifalar",
+    "webtoon": "Uzluksiz aylantirish",
+    "coverAlone": "Muqovani alohida ko‘rsatish",
+    "splitWide": "Keng sahifalarni bo‘lish",
+    "splitWideHelp": "Har bir yarmini o‘qish tartibida alohida ko‘rsatadi. Bu yoqilganda ikki sahifani yonma-yon ko‘rsatish to‘xtatiladi.",
+    "thumbnails": "Sahifa eskizlari",
+    "controlsHelp": "Sahifani almashtirish uchun suring. Moslashni o‘zgartirish uchun ikki marta bosing. Uzluksiz aylantirishda tik suring yoki Page Up va Page Down dan foydalaning.",
+    "savedForComic": "Bu profilda ushbu komiksning ko‘rsatish sozlamalari saqlanadi.",
+    "readLists": "O‘qish ro‘yxatlari",
+    "collections": "To‘plamlar"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

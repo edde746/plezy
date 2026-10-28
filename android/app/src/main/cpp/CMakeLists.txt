@@ -4,6 +4,8 @@ project(plezy_native)
 option(DOVI_ENABLE_LIBDOVI "Link real libdovi" ON)
 set(DOVI_LIBDOVI_PREBUILT_ROOT "" CACHE PATH "Path to prebuilt libdovi")
 set(MPV_FFMPEG_ROOT "" CACHE PATH "Path to libmpv's FFmpeg headers and shared libraries")
+set(LITERT_CC_SDK_ROOT "" CACHE PATH "Path to the LiteRT C API headers")
+set(LITERT_ANDROID_RUNTIME_ROOT "" CACHE PATH "Path to staged LiteRT Android shared libraries")
 
 add_library(dovi_bridge SHARED dovi_bridge.cpp)
 
@@ -43,3 +45,15 @@ target_link_libraries(ffmpegJNI
 add_library(plezy_milkrust_host SHARED milkrust_host.cpp)
 target_compile_features(plezy_milkrust_host PRIVATE cxx_std_17)
 target_link_libraries(plezy_milkrust_host PRIVATE android jnigraphics EGL dl log)
+
+set(LITERT_RUNTIME_LIBRARY "${LITERT_ANDROID_RUNTIME_ROOT}/${ANDROID_ABI}/libLiteRt.so")
+if(EXISTS "${LITERT_RUNTIME_LIBRARY}" AND EXISTS "${LITERT_CC_SDK_ROOT}/litert/c/litert_compiled_model.h")
+    add_library(litert_runtime SHARED IMPORTED)
+    set_target_properties(litert_runtime PROPERTIES
+        IMPORTED_LOCATION "${LITERT_RUNTIME_LIBRARY}")
+
+    add_library(plezy_litert_motion SHARED plezy_litert_motion.cpp)
+    target_compile_features(plezy_litert_motion PRIVATE cxx_std_17)
+    target_include_directories(plezy_litert_motion PRIVATE "${LITERT_CC_SDK_ROOT}")
+    target_link_libraries(plezy_litert_motion litert_runtime android log)
+endif()

@@ -4067,6 +4067,20 @@
     "readLists": "רשימות קריאה",
     "collections": "אוספים"
   },
+  "comics": {
+    "fitHeight": "התאמה לגובה",
+    "readingMode": "מצב קריאה",
+    "paged": "עמודים",
+    "webtoon": "גלילה רציפה",
+    "coverAlone": "הצגת הכריכה בנפרד",
+    "splitWide": "פיצול עמודים רחבים",
+    "splitWideHelp": "כל חצי מוצג בנפרד לפי סדר הקריאה. כשהאפשרות פעילה, תצוגת שני עמודים יחד מושהית.",
+    "thumbnails": "תמונות ממוזערות של עמודים",
+    "controlsHelp": "החליקו כדי להפוך עמוד. הקישו פעמיים לשינוי ההתאמה. בגלילה רציפה, החליקו אנכית או השתמשו ב־Page Up וב־Page Down.",
+    "savedForComic": "הגדרות התצוגה נשמרות לקומיקס הזה בפרופיל הזה.",
+    "readLists": "רשימות קריאה",
+    "collections": "אוספים"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

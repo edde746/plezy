@@ -4066,6 +4066,20 @@
     "readLists": "Listes de lecture",
     "collections": "Collections"
   },
+  "comics": {
+    "fitHeight": "Ajuster à la hauteur",
+    "readingMode": "Mode de lecture",
+    "paged": "Pages",
+    "webtoon": "Défilement continu",
+    "coverAlone": "Afficher la couverture seule",
+    "splitWide": "Diviser les pages larges",
+    "splitWideHelp": "Affiche chaque moitié séparément, dans l’ordre de lecture. L’affichage de deux pages côte à côte est suspendu lorsque cette option est activée.",
+    "thumbnails": "Miniatures des pages",
+    "controlsHelp": "Balayez pour tourner les pages. Touchez deux fois pour modifier l’ajustement. En défilement continu, balayez verticalement ou utilisez Page précédente et Page suivante.",
+    "savedForComic": "Les réglages d’affichage sont mémorisés pour cette BD dans ce profil.",
+    "readLists": "Listes de lecture",
+    "collections": "Collections"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

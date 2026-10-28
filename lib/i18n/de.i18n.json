@@ -4059,6 +4059,20 @@
     "readLists": "Leselisten",
     "collections": "Sammlungen"
   },
+  "comics": {
+    "fitHeight": "An Höhe anpassen",
+    "readingMode": "Lesemodus",
+    "paged": "Seiten",
+    "webtoon": "Fortlaufendes Scrollen",
+    "coverAlone": "Cover einzeln anzeigen",
+    "splitWide": "Breite Seiten teilen",
+    "splitWideHelp": "Zeigt jede Hälfte einzeln in Leserichtung an. Solange dies aktiviert ist, werden Seiten nicht als Doppelseiten angezeigt.",
+    "thumbnails": "Seitenvorschauen",
+    "controlsHelp": "Zum Umblättern wischen. Doppeltippen ändert die Anpassung. Beim fortlaufenden Scrollen senkrecht wischen oder Bild auf und Bild ab verwenden.",
+    "savedForComic": "Die Anzeigeeinstellungen werden für diesen Comic in diesem Profil gespeichert.",
+    "readLists": "Leselisten",
+    "collections": "Sammlungen"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

@@ -1,0 +1,5 @@
+# Provider name<TAB>device kind<TAB>plugin library path relative to this file, or builtin
+OpenVINOExecutionProvider	NPU	libonnxruntime_providers_openvino_plugin.so
+MIGraphXExecutionProvider	GPU	builtin-migraphx
+OpenVINOExecutionProvider	GPU	libonnxruntime_providers_openvino_plugin.so
+CUDAExecutionProvider	GPU	builtin

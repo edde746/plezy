@@ -6,7 +6,9 @@ import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import android.os.ParcelFileDescriptor
+import android.os.PowerManager
 import android.util.Log
 import com.edde746.plezy.exoplayer.supportedMpvSpdifCodecs
 import com.edde746.plezy.shared.PlayerChannelBinding
@@ -17,8 +19,29 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
+import java.io.FileOutputStream
+import java.security.MessageDigest
 import java.util.concurrent.CancellationException
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.zip.ZipFile
+
+private const val LITERT_RUNTIME_VERSION = "2.3.0"
+private val LITERT_OPENVINO_RUNTIME_LIBRARIES = listOf(
+  "libopenvino.so",
+  "libopenvino_intel_npu_plugin.so",
+  "libopenvino_ir_frontend.so",
+  "libopenvino_tensorflow_lite_frontend.so",
+  "libtbb.so"
+)
+private const val LITERT_SAMSUNG_LITECORE_ASSET_DIR = "litert/samsung/litecore/lib/arm64-v8a"
+private const val LITERT_SAMSUNG_MANIFEST_ASSET = "litert/samsung/SHA256SUMS"
+private val LITERT_SAMSUNG_LITECORE_REQUIRED_LIBRARIES = setOf(
+  "libgraph_wrapper.so",
+  "libgraphgen_api.so"
+)
 
 /**
  * [failureDetails] travels as the error's `details`; the message stays fixed so
@@ -64,6 +87,38 @@ open class MpvPlayerPlugin(
   com.edde746.plezy.shared.PlayerDelegate {
 
   private val tag = if (audioOnly) "MpvAudioPlayerPlugin" else "MpvPlayerPlugin"
+  private val motionRuntimeExecutor = Executors.newSingleThreadExecutor { task ->
+    Thread(task, "$tag-motion-runtime").apply { isDaemon = true }
+  }
+
+  private data class AndroidHtpTarget(
+    val socModel: String,
+    val version: String,
+    val socId: Int,
+    val resolution: String
+  ) {
+    val architecture: String get() = version.lowercase()
+    val stubLibrary: String get() = "libQnnHtp${version}Stub.so"
+    val skelLibrary: String get() = "libQnnHtp${version}Skel.so"
+  }
+
+  // Qualcomm's supported-device table supplies the exact HTP architecture and
+  // SoC ID used for context preparation. ANVIL has measured SM8650, SM8550,
+  // and SM7475; the same fixed-shape context path also covers the other
+  // documented mobile targets below. Contexts remain keyed by exact SoC.
+  private val androidHtpTargets = mapOf(
+    "SM8850" to AndroidHtpTarget("SM8850", "V81", 87, "1080p"),
+    "SM8750" to AndroidHtpTarget("SM8750", "V79", 69, "1080p"),
+    "SM8650" to AndroidHtpTarget("SM8650", "V75", 57, "1080p"),
+    "SM8550" to AndroidHtpTarget("SM8550", "V73", 43, "1080p"),
+    "SM8475" to AndroidHtpTarget("SM8475", "V69", 42, "720p"),
+    "SM8450" to AndroidHtpTarget("SM8450", "V69", 36, "720p"),
+    "SM7475" to AndroidHtpTarget("SM7475", "V69", 41, "720p"),
+    "SM7450" to AndroidHtpTarget("SM7450", "V69", 41, "720p"),
+    "SM8350P" to AndroidHtpTarget("SM8350P", "V68", 30, "720p"),
+    "SM8350" to AndroidHtpTarget("SM8350", "V68", 30, "720p"),
+    "SM7325" to AndroidHtpTarget("SM7325", "V68", 35, "720p"),
+  )
 
   private val channels = PlayerChannelBinding(channelBase, this, this, tag)
   private var playerCore: MpvPlayerCore? = null
@@ -112,6 +167,50 @@ open class MpvPlayerPlugin(
 
   /** Same semantics as Activity.runOnUiThread, without needing an Activity. */
   private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
+
+  /**
+   * LiteRT/QNN capability discovery and model/runtime staging read APKs,
+   * hash model packs, and copy native libraries. Keep that IO away from the
+   * platform thread; serialize it so concurrent Neural requests cannot race
+   * while promoting the same app-private files. Flutter channel replies are
+   * marshaled back to the platform thread.
+   */
+  private fun executeMotionRuntimePreparation(
+    result: MethodChannel.Result,
+    operation: (MethodChannel.Result) -> Unit
+  ) {
+    val mainThreadResult = object : MethodChannel.Result {
+      private val completed = AtomicBoolean(false)
+
+      private fun complete(reply: () -> Unit) {
+        if (completed.compareAndSet(false, true)) runOnMain(reply)
+      }
+
+      override fun success(value: Any?) = complete { result.success(value) }
+
+      override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) =
+        complete { result.error(errorCode, errorMessage, errorDetails) }
+
+      override fun notImplemented() = complete { result.notImplemented() }
+    }
+
+    try {
+      motionRuntimeExecutor.execute {
+        try {
+          operation(mainThreadResult)
+        } catch (error: Exception) {
+          Log.w(tag, "Android motion runtime preparation failed", error)
+          mainThreadResult.error(
+            "MOTION_RUNTIME_PREPARE_FAILED",
+            "Android motion runtime preparation failed",
+            null
+          )
+        }
+      }
+    } catch (_: RejectedExecutionException) {
+      result.error("MOTION_RUNTIME_UNAVAILABLE", "Android motion runtime is shutting down", null)
+    }
+  }
 
   // Pending `MethodChannel.Result`s for an init that is currently in flight.
   // Concurrent `invoke('initialize')` calls share the same outcome instead
@@ -165,6 +264,7 @@ open class MpvPlayerPlugin(
     // dead messenger.
     binding.applicationContext.unregisterComponentCallbacks(memoryCallbacks)
     disposeCoreForTeardown()
+    motionRuntimeExecutor.shutdown()
     activity = null
     activityBinding = null
     applicationContext = null
@@ -306,6 +406,17 @@ open class MpvPlayerPlugin(
         val am = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         result.success(am?.largeMemoryClass ?: 0)
       }
+      "getAndroidMotionRuntimeCapabilities" -> executeMotionRuntimePreparation(result) {
+        handleGetAndroidMotionRuntimeCapabilities(it)
+      }
+      "getAndroidThermalStatus" -> handleGetAndroidThermalStatus(result)
+      "prepareAndroidAnvilRuntime" -> executeMotionRuntimePreparation(result) {
+        handlePrepareAndroidAnvilRuntime(call, it)
+      }
+      "prepareAndroidLiteRtMotionRuntime" -> executeMotionRuntimePreparation(result) {
+        handlePrepareAndroidLiteRtMotionRuntime(call, it)
+      }
+      "setAndroidMotionProcessingRenderer" -> handleSetAndroidMotionProcessingRenderer(call, result)
       "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
       "setLogLevel" -> handleSetLogLevel(call, result)
       else -> result.notImplemented()
@@ -320,6 +431,741 @@ open class MpvPlayerPlugin(
   private fun handleGetAudioSpdifCodecs(result: MethodChannel.Result) {
     val context: Context? = activity ?: applicationContext
     result.success(context?.let(::supportedMpvSpdifCodecs) ?: "")
+  }
+
+  private fun handleGetAndroidMotionRuntimeCapabilities(result: MethodChannel.Result) {
+    val context = applicationContext
+    if (context == null) {
+      result.success(mapOf("available" to false, "reason" to "application-context-unavailable"))
+      return
+    }
+    result.success(getAndroidMotionRuntimeCapabilities(context))
+  }
+
+  private fun handleGetAndroidThermalStatus(result: MethodChannel.Result) {
+    val context = applicationContext
+    if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+      result.success(null)
+      return
+    }
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+    val status = powerManager?.currentThermalStatus
+    result.success(
+      when (status) {
+        PowerManager.THERMAL_STATUS_NONE -> "none"
+        PowerManager.THERMAL_STATUS_LIGHT -> "light"
+        PowerManager.THERMAL_STATUS_MODERATE -> "moderate"
+        PowerManager.THERMAL_STATUS_SEVERE -> "severe"
+        PowerManager.THERMAL_STATUS_CRITICAL -> "critical"
+        PowerManager.THERMAL_STATUS_EMERGENCY -> "emergency"
+        PowerManager.THERMAL_STATUS_SHUTDOWN -> "shutdown"
+        else -> null
+      }
+    )
+  }
+
+  private fun handleSetAndroidMotionProcessingRenderer(call: MethodCall, result: MethodChannel.Result) {
+    val renderer = call.argument<String>("renderer")
+    val core = playerCore
+    if (core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
+      return
+    }
+
+    val gen = sessionGeneration
+    core.setMotionProcessingRenderer(renderer) { outcome ->
+      if (gen != sessionGeneration || playerCore !== core) {
+        result.success(false)
+      } else {
+        outcome.fold(
+          onSuccess = { installed -> result.success(installed) },
+          onFailure = { error -> result.error("MOTION_RENDERER_FAILED", error.message, null) }
+        )
+      }
+    }
+  }
+
+  private fun handlePrepareAndroidAnvilRuntime(call: MethodCall, result: MethodChannel.Result) {
+    val context = applicationContext
+    if (context == null) {
+      result.error("MOTION_RUNTIME_UNAVAILABLE", "Android application context is unavailable", null)
+      return
+    }
+    val contextPath = call.argument<String>("contextPath")
+    val modelId = call.argument<String>("modelId")
+    if (modelId == null || modelId !in setOf("anvil-s-720p", "anvil-m-720p", "anvil-s-1080p", "anvil-m-1080p")) {
+      result.error("INVALID_ARGS", "Unknown ANVIL model context", null)
+      return
+    }
+
+    try {
+      val capabilities = getAndroidMotionRuntimeCapabilities(context)
+      if (capabilities["qnnHtpAvailable"] != true) {
+        result.error("MOTION_RUNTIME_UNAVAILABLE", "A compatible Qualcomm HTP runtime is unavailable", capabilities)
+        return
+      }
+      val target = androidHtpTarget(context)
+        ?: throw IllegalStateException("No supported Qualcomm HTP target was identified")
+      val requiredResolution = target.resolution
+      if (!modelId.endsWith(requiredResolution)) {
+        result.error(
+          "MOTION_MODEL_UNAVAILABLE",
+          "${target.version} ANVIL contexts are built for $requiredResolution input",
+          capabilities
+        )
+        return
+      }
+
+      val availableModels = capabilities["anvilContextIds"] as? List<*>
+      val remoteV75Performance = target.architecture == "v75" && modelId == "anvil-s-1080p"
+      if (!remoteV75Performance && availableModels?.contains(modelId) != true) {
+        result.error("MOTION_MODEL_UNAVAILABLE", "The matching ANVIL context is not packaged", capabilities)
+        return
+      }
+
+      val appFiles = context.filesDir.canonicalFile
+      val directory: File
+      val modelContext: File
+      if (!contextPath.isNullOrBlank()) {
+        val provided = File(contextPath).canonicalFile
+        if (
+          provided.name != "context.serialized.bin" ||
+          !provided.path.startsWith(appFiles.path + File.separator) ||
+          !provided.isFile
+        ) {
+          result.error("INVALID_ARGS", "ANVIL context must be installed inside app storage", null)
+          return
+        }
+        directory = provided.parentFile
+          ?: throw IllegalArgumentException("ANVIL context directory is missing")
+        modelContext = provided
+      } else {
+        directory = File(appFiles, "anvil/${target.architecture}/$modelId")
+        if (!directory.isDirectory && !directory.mkdirs()) {
+          throw IllegalStateException("Could not create ANVIL runtime directory")
+        }
+        modelContext = File(directory, "context.serialized.bin")
+        val assetPath = "anvil/contexts/${target.socModel.lowercase()}/$modelId/context.serialized.bin"
+        if (!verifyAnvilContextAsset(context, target, modelId, assetPath)) {
+          result.error("MOTION_MODEL_INTEGRITY_FAILED", "The ANVIL context manifest or checksum is invalid", null)
+          return
+        }
+        copyAnvilAsset(context, assetPath, modelContext)
+      }
+
+      copyAnvilAsset(context, "anvil/htp/${target.skelLibrary}", File(directory, target.skelLibrary))
+      result.success(directory.absolutePath)
+    } catch (error: Exception) {
+      Log.w(tag, "Failed to prepare the Android neural runtime", error)
+      result.error("MOTION_RUNTIME_PREPARE_FAILED", "Android neural runtime could not be prepared", null)
+    }
+  }
+
+  private fun handlePrepareAndroidLiteRtMotionRuntime(call: MethodCall, result: MethodChannel.Result) {
+    val context = applicationContext
+    if (context == null) {
+      result.error("MOTION_RUNTIME_UNAVAILABLE", "Android application context is unavailable", null)
+      return
+    }
+    val modelId = call.argument<String>("modelId")
+    if (modelId == null || modelId !in setOf("anvil-s-720p", "anvil-m-720p", "anvil-s-1080p", "anvil-m-1080p")) {
+      result.error("INVALID_ARGS", "Unknown LiteRT ANVIL model", null)
+      return
+    }
+
+    try {
+      val capabilities = getAndroidMotionRuntimeCapabilities(context)
+      val gpuAvailable = capabilities["litertGpuAvailable"] == true
+      val npuProviders = capabilities["litertNpuProviders"] as? List<*> ?: emptyList<Any>()
+      if (!gpuAvailable && npuProviders.isEmpty()) {
+        result.error("MOTION_RUNTIME_UNAVAILABLE", "No LiteRT hardware provider is packaged", capabilities)
+        return
+      }
+
+      val manifestText = context.assets.open("litert/models/manifest.json")
+        .bufferedReader()
+        .use { it.readText() }
+      val manifest = org.json.JSONObject(manifestText)
+      val modelKey = modelId.substringBeforeLast('-')
+      val resolution = modelId.substringAfterLast('-')
+      val providers = manifest.getJSONObject("models")
+        .getJSONObject(modelKey)
+        .getJSONObject("variants")
+        .getJSONObject(resolution)
+
+      val directory = File(context.filesDir, "motion-models/litert/$modelId")
+      if (!directory.isDirectory && !directory.mkdirs()) {
+        throw IllegalStateException("Could not create the LiteRT model directory")
+      }
+
+      val currentSocModel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        normalizeSocModel(Build.SOC_MODEL).removePrefix("S5")
+      } else {
+        ""
+      }
+      val samsungNpuRecord = if (npuProviders.contains("samsung")) {
+        providers.optJSONObject("samsung")?.takeIf { record ->
+          val target = normalizeSocModel(record.optString("soc_model")).removePrefix("S5")
+          target in setOf("E9955", "E9965") && target == currentSocModel
+        }
+      } else {
+        null
+      }
+      val googleTensorNpuRecord = if (npuProviders.contains("google-tensor")) {
+        val keys = providers.keys()
+        var matchingRecord: org.json.JSONObject? = null
+        while (keys.hasNext() && matchingRecord == null) {
+          val record = providers.optJSONObject(keys.next()) ?: continue
+          if (
+            record.optString("backend") == "google-tensor" &&
+            record.optString("execution") == "aot" &&
+            normalizeSocModel(record.optString("soc_model")) == normalizeSocModel(Build.SOC_MODEL)
+          ) {
+            matchingRecord = record
+          }
+        }
+        matchingRecord
+      } else {
+        null
+      }
+      val hasGenericJitProvider = npuProviders.any { it != "google-tensor" && it != "samsung" }
+      val npuRecord = samsungNpuRecord ?: googleTensorNpuRecord ?: if (hasGenericJitProvider) {
+        providers.optJSONObject("npu")
+      } else {
+        null
+      }
+      val npuExecution = npuRecord?.optString("execution", "jit")
+      val npuModel = if (
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && npuRecord != null &&
+        (npuRecord.optString("backend") != "google-tensor" || npuExecution == "aot")
+      ) {
+        installLiteRtModelAsset(context, npuRecord, directory)
+      } else {
+        null
+      }
+      val gpuModel = if (gpuAvailable) {
+        providers.optJSONObject("gpu")?.let { installLiteRtModelAsset(context, it, directory) }
+      } else {
+        null
+      }
+      if (npuModel == null && gpuModel == null) {
+        result.error("MOTION_MODEL_UNAVAILABLE", "No model variant matches the installed LiteRT providers", capabilities)
+        return
+      }
+
+      val cacheDirectory = File(context.filesDir, "motion-models/litert-cache")
+      if (!cacheDirectory.isDirectory && !cacheDirectory.mkdirs()) {
+        throw IllegalStateException("Could not create the LiteRT compilation cache")
+      }
+      val processAbi = if (android.os.Process.is64Bit()) {
+        Build.SUPPORTED_ABIS.firstOrNull { it == "arm64-v8a" || it == "x86_64" }
+      } else {
+        Build.SUPPORTED_ABIS.firstOrNull { it == "armeabi-v7a" || it == "x86" }
+      } ?: throw IllegalStateException("LiteRT has no runtime libraries for this process ABI")
+      val libraryDirectory = stageLiteRtRuntimeLibraries(
+        context,
+        processAbi,
+        includeSamsungLiteCore = npuProviders.contains("samsung")
+      )
+      val npuModelBackend = npuRecord?.optString("backend")?.takeIf { it.isNotBlank() }
+        ?: npuProviders.firstOrNull()?.toString()?.takeIf { npuModel != null }
+      result.success(
+        mapOf(
+          "modelId" to modelId,
+          "npuModelPath" to npuModel?.absolutePath,
+          "gpuModelPath" to gpuModel?.absolutePath,
+          "npuModelExecution" to npuExecution,
+          "npuModelBackend" to npuModelBackend,
+          "npuModelTarget" to npuRecord?.optString("soc_model")?.takeIf { it.isNotBlank() },
+          // LiteRT discovers compiler and dispatch plugins by scanning this
+          // filesystem directory. APK-stored JNI libraries are not guaranteed
+          // to be extracted into nativeLibraryDir on modern Android builds.
+          "libraryDir" to libraryDirectory.absolutePath,
+          "cacheDir" to cacheDirectory.absolutePath,
+          "npuProviders" to npuProviders.filter { provider ->
+            provider != "google-tensor" || googleTensorNpuRecord != null && npuExecution == "aot"
+          }
+        )
+      )
+    } catch (error: Exception) {
+      Log.w(tag, "Failed to prepare the Android LiteRT motion runtime", error)
+      result.error("MOTION_RUNTIME_PREPARE_FAILED", "LiteRT motion runtime could not be prepared", null)
+    }
+  }
+
+  private fun getAndroidMotionRuntimeCapabilities(context: Context): Map<String, Any?> {
+    val socModel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL else ""
+    val socManufacturer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MANUFACTURER else ""
+    val target = androidHtpTarget(context)
+    val nativeDir = File(context.applicationInfo.nativeLibraryDir)
+    val requiredLibraries = listOf(
+      "libQnnHtp.so",
+      "libQnnSystem.so",
+      "libQnnHtpPrepare.so"
+    ) + listOfNotNull(target?.stubLibrary)
+    val packagedLibraries = requiredLibraries.filterTo(mutableSetOf()) { File(nativeDir, it).isFile }
+    val abi = if (android.os.Process.is64Bit()) {
+      Build.SUPPORTED_ABIS.firstOrNull { it == "arm64-v8a" }
+    } else {
+      null
+    }
+    if (abi != null) {
+      val apkPaths = listOf(context.applicationInfo.sourceDir) + context.applicationInfo.splitSourceDirs.orEmpty()
+      for (apkPath in apkPaths) {
+        try {
+          ZipFile(apkPath).use { apk ->
+            for (library in requiredLibraries) {
+              if (apk.getEntry("lib/$abi/$library") != null) packagedLibraries += library
+            }
+          }
+        } catch (_: Exception) {
+          // A split can disappear during an update. Other package locations
+          // are still checked, and the missing-library report stays precise.
+        }
+      }
+    }
+    val missingLibraries = requiredLibraries.filterNot(packagedLibraries::contains)
+    val skelAssetPresent = target != null && assetExists(context, "anvil/htp/${target.skelLibrary}")
+    val supportedSoc = target != null && android.os.Process.is64Bit()
+    val available = supportedSoc && missingLibraries.isEmpty() && skelAssetPresent
+    val contextResolution = target?.resolution ?: "1080p"
+    val modelIds = listOf("anvil-s-$contextResolution", "anvil-m-$contextResolution")
+      .filter { modelId ->
+        target != null && assetExists(
+          context,
+          "anvil/contexts/${target.socModel.lowercase()}/$modelId/context.serialized.bin"
+        )
+      }
+    val liteRtBaseLibraries = listOf("libLiteRt.so", "libplezy_litert_motion.so")
+    val liteRtGpuLibraries = listOf("libLiteRtClGlAccelerator.so")
+    val liteRtProviders = linkedMapOf(
+      "qualcomm" to listOf("libLiteRtCompilerPlugin_Qualcomm.so", "libLiteRtDispatch_Qualcomm.so"),
+      "mediatek" to listOf("libLiteRtCompilerPlugin_MediaTek.so", "libLiteRtDispatch_MediaTek.so"),
+      "google-tensor" to listOf("libLiteRtCompilerPlugin_google_tensor.so", "libLiteRtDispatch_GoogleTensor.so"),
+      "intel-openvino" to listOf("libLiteRtCompilerPlugin_IntelOpenvino.so", "libLiteRtDispatch_IntelOpenvino.so"),
+      "samsung" to listOf("libLiteRtCompilerPlugin_Samsung.so", "libLiteRtDispatch_Samsung.so")
+    )
+    val processAbi = if (android.os.Process.is64Bit()) {
+      Build.SUPPORTED_ABIS.firstOrNull { it == "arm64-v8a" || it == "x86_64" }
+    } else {
+      Build.SUPPORTED_ABIS.firstOrNull { it == "armeabi-v7a" || it == "x86" }
+    }
+    fun hasNativeLibrary(name: String): Boolean {
+      if (File(nativeDir, name).isFile) return true
+      if (processAbi == null) return false
+      val apkPaths = listOf(context.applicationInfo.sourceDir) + context.applicationInfo.splitSourceDirs.orEmpty()
+      return apkPaths.any { apkPath ->
+        try {
+          ZipFile(apkPath).use { apk -> apk.getEntry("lib/$processAbi/$name") != null }
+        } catch (_: Exception) {
+          false
+        }
+      }
+    }
+    val liteRtOpenVinoRuntimeAvailable = processAbi == "x86_64" &&
+      LITERT_OPENVINO_RUNTIME_LIBRARIES.all(::hasNativeLibrary)
+    val liteRtBaseAvailable = liteRtBaseLibraries.all(::hasNativeLibrary)
+    val liteRtGpuAvailable = liteRtBaseAvailable && liteRtGpuLibraries.all(::hasNativeLibrary)
+    val samsungLiteCoreLibraries = context.assets.list(LITERT_SAMSUNG_LITECORE_ASSET_DIR)
+      .orEmpty()
+      .filter { it.endsWith(".so") }
+      .toSet()
+    val samsungLiteCoreAvailable = assetExists(context, LITERT_SAMSUNG_MANIFEST_ASSET) &&
+      samsungLiteCoreLibraries.containsAll(LITERT_SAMSUNG_LITECORE_REQUIRED_LIBRARIES)
+    val litertNpuProviders = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      liteRtProviders.mapNotNull { (provider, libraries) ->
+        val abiSupported = when (provider) {
+          "intel-openvino" -> liteRtOpenVinoRuntimeAvailable
+          else -> processAbi == "arm64-v8a"
+        }
+        val normalizedSocModel = normalizeSocModel(socModel)
+        val normalizedSocManufacturer = socManufacturer.trim().uppercase()
+        val deviceSupported = when (provider) {
+          "qualcomm" -> normalizedSocManufacturer.contains("QUALCOMM") ||
+            normalizedSocManufacturer == "QTI" ||
+            normalizedSocModel.matches(Regex("^(SM|QCM|QCS)\\d+.*")) ||
+            normalizedSocModel.contains("SNAPDRAGON")
+          "mediatek" -> normalizedSocManufacturer.contains("MEDIATEK") ||
+            normalizedSocModel.matches(Regex("^MT\\d+.*"))
+          "google-tensor" -> normalizedSocModel in setOf("TENSORG5", "TENSORG6")
+          "intel-openvino" -> processAbi == "x86_64" &&
+            (normalizedSocManufacturer.contains("INTEL") || normalizedSocModel.contains("INTEL"))
+          "samsung" -> samsungLiteCoreAvailable && Build.VERSION.SDK_INT >= 36 &&
+            normalizedSocModel.removePrefix("S5") in setOf("E9955", "E9965")
+          else -> false
+        }
+        if (liteRtBaseAvailable && abiSupported && deviceSupported && libraries.all(::hasNativeLibrary)) {
+          provider
+        } else {
+          null
+        }
+      }
+    } else {
+      emptyList()
+    }
+    val liteRtModelManifestPresent = assetExists(context, "litert/models/manifest.json")
+    return mapOf(
+      "platform" to "android-mpv",
+      "manufacturer" to Build.MANUFACTURER,
+      "socManufacturer" to socManufacturer,
+      "device" to Build.DEVICE,
+      "socModel" to socModel,
+      "provider" to if (available) "qnn-htp-${target!!.architecture}" else "unavailable",
+      "qnnHtpAvailable" to available,
+      "qnnHtpArchitecture" to target?.architecture,
+      "qnnHtpVersion" to target?.version,
+      "qnnHtpSocId" to target?.socId,
+      "qnnHtpResolution" to target?.resolution,
+      "qnnHtpV75Available" to (available && target?.architecture == "v75"),
+      "anvilContextIds" to modelIds,
+      "litertAvailable" to liteRtBaseAvailable,
+      "litertGpuAvailable" to liteRtGpuAvailable,
+      "litertNpuAvailable" to litertNpuProviders.isNotEmpty(),
+      "litertNpuProviders" to litertNpuProviders,
+      "litertModelManifestPresent" to liteRtModelManifestPresent,
+      "missingLibraries" to missingLibraries,
+      "skelAssetPresent" to skelAssetPresent,
+      "reason" to when {
+        !supportedSoc -> "unsupported-soc"
+        missingLibraries.isNotEmpty() -> "qnn-runtime-not-packaged"
+        !skelAssetPresent -> "qnn-skel-not-packaged"
+        else -> null
+      }
+    )
+  }
+
+  private fun normalizeSocModel(value: String): String =
+    value.trim().uppercase().filter { it.isLetterOrDigit() }
+
+  private fun installLiteRtModelAsset(context: Context, record: org.json.JSONObject, directory: File): File {
+    val filename = record.optString("file")
+    val expectedBytes = record.optLong("bytes", -1)
+    val expectedSha256 = record.optString("sha256")
+    if (
+      filename.isBlank() || File(filename).name != filename || !filename.endsWith(".tflite") ||
+      expectedBytes <= 0 || expectedSha256.length != 64
+    ) {
+      throw IllegalArgumentException("LiteRT model manifest entry is invalid")
+    }
+
+    val assetPath = "litert/models/$filename"
+    val destination = File(directory, filename)
+    if (destination.isFile && destination.length() == expectedBytes &&
+      sha256(destination).equals(expectedSha256, ignoreCase = true)
+    ) {
+      return destination
+    }
+
+    val temporary = File(directory, "$filename.partial")
+    try {
+      context.assets.open(assetPath).use { input ->
+        FileOutputStream(temporary).use { output ->
+          val digest = MessageDigest.getInstance("SHA-256")
+          val buffer = ByteArray(64 * 1024)
+          var totalBytes = 0L
+          while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            totalBytes += count
+            if (totalBytes > expectedBytes) throw IllegalStateException("LiteRT model exceeds its manifest size")
+            digest.update(buffer, 0, count)
+            output.write(buffer, 0, count)
+          }
+          output.fd.sync()
+          val actualSha256 = digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+          if (totalBytes != expectedBytes || !actualSha256.equals(expectedSha256, ignoreCase = true)) {
+            throw IllegalStateException("LiteRT model size or SHA-256 does not match its manifest")
+          }
+        }
+      }
+      if (destination.exists() && !destination.delete()) {
+        throw IllegalStateException("Could not replace LiteRT model ${destination.name}")
+      }
+      if (!temporary.renameTo(destination)) {
+        throw IllegalStateException("Could not install LiteRT model $filename")
+      }
+      return destination
+    } finally {
+      if (temporary.exists()) temporary.delete()
+    }
+  }
+
+  private fun stageLiteRtRuntimeLibraries(
+    context: Context,
+    abi: String,
+    includeSamsungLiteCore: Boolean
+  ): File {
+    val directory = File(context.filesDir, "motion-runtime/litert-$LITERT_RUNTIME_VERSION/$abi")
+    if (!directory.isDirectory && !directory.mkdirs()) {
+      throw IllegalStateException("Could not create the LiteRT runtime plugin directory")
+    }
+    fun isRuntimeLibrary(name: String): Boolean =
+      name.endsWith(".so") && (
+        name.startsWith("libLiteRt") ||
+          name == "libplezy_litert_motion.so" ||
+          name in LITERT_OPENVINO_RUNTIME_LIBRARIES
+        )
+
+    val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
+    val nativeLibraries = nativeDirectory.listFiles()
+      .orEmpty()
+      .filter { it.isFile && isRuntimeLibrary(it.name) }
+      .associateBy { it.name }
+    val apkLibraries = linkedMapOf<String, Pair<File, String>>()
+    val apkPaths = (listOf(context.applicationInfo.sourceDir) +
+      context.applicationInfo.splitSourceDirs.orEmpty()).map { File(it) }
+    for (apkPath in apkPaths) {
+      try {
+        ZipFile(apkPath).use { apk ->
+          val entries = apk.entries()
+          while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            val prefix = "lib/$abi/"
+            if (
+              entry.isDirectory || !entry.name.startsWith(prefix) ||
+              !isRuntimeLibrary(entry.name.removePrefix(prefix))
+            ) {
+              continue
+            }
+            val libraryName = entry.name.removePrefix(prefix)
+            if (!apkLibraries.containsKey(libraryName)) {
+              apkLibraries[libraryName] = apkPath to entry.name
+            }
+          }
+        }
+      } catch (_: Exception) {
+        // A split can disappear during an update; available APKs are still
+        // checked, then the required runtime library check below reports it.
+      }
+    }
+
+    val libraryNames = (nativeLibraries.keys + apkLibraries.keys).toSortedSet()
+    val requiredLibraries = setOf("libLiteRt.so", "libplezy_litert_motion.so")
+    val missingLibraries = requiredLibraries - libraryNames
+    if (missingLibraries.isNotEmpty()) {
+      throw IllegalStateException("LiteRT runtime libraries are missing for $abi: ${missingLibraries.joinToString()}")
+    }
+    if (!directory.setReadable(true, true) || !directory.setExecutable(true, true)) {
+      throw IllegalStateException("Could not make the LiteRT plugin directory readable")
+    }
+    for (name in libraryNames) {
+      val destination = File(directory, name)
+      val nativeSource = nativeLibraries[name]
+      val apkSource = apkLibraries[name]
+      val expectedBytes = nativeSource?.length() ?: apkSource?.let { (apkPath, entryName) ->
+        ZipFile(apkPath).use { it.getEntry(entryName)?.size ?: -1L }
+      } ?: -1L
+      if (expectedBytes < 0) throw IllegalStateException("Could not read the packaged LiteRT library size for $name")
+      if (destination.isFile && destination.length() == expectedBytes) {
+        if (!destination.setReadable(true, true) || !destination.setExecutable(true, true) ||
+          !destination.setWritable(false, true)
+        ) {
+          throw IllegalStateException("Could not set executable permissions on LiteRT library $name")
+        }
+        continue
+      }
+
+      val temporary = File(directory, "$name.partial")
+      try {
+        FileOutputStream(temporary).use { output ->
+          if (nativeSource != null) {
+            nativeSource.inputStream().use { it.copyTo(output) }
+          } else {
+            val (apkPath, entryName) = apkSource
+              ?: throw IllegalStateException("The packaged LiteRT library is missing: $name")
+            ZipFile(apkPath).use { apk ->
+              val entry = apk.getEntry(entryName)
+                ?: throw IllegalStateException("The packaged LiteRT library disappeared: $name")
+              apk.getInputStream(entry).use { it.copyTo(output) }
+            }
+          }
+          output.fd.sync()
+        }
+        if (temporary.length() != expectedBytes) {
+          throw IllegalStateException("The staged LiteRT library has the wrong size: $name")
+        }
+        if (!temporary.setReadable(true, true) || !temporary.setExecutable(true, true) ||
+          !temporary.setWritable(false, true)
+        ) {
+          throw IllegalStateException("Could not set executable permissions on LiteRT library $name")
+        }
+        if (destination.exists() && !destination.delete()) {
+          throw IllegalStateException("Could not replace staged LiteRT library $name")
+        }
+        if (!temporary.renameTo(destination)) {
+          throw IllegalStateException("Could not install staged LiteRT library $name")
+        }
+      } finally {
+        if (temporary.exists()) temporary.delete()
+      }
+    }
+    if (includeSamsungLiteCore) {
+      val manifestText = context.assets.open(LITERT_SAMSUNG_MANIFEST_ASSET)
+        .bufferedReader()
+        .use { it.readText() }
+      val expectedHashes = manifestText.lineSequence().filter(String::isNotBlank).associate { line ->
+        val match = Regex("^([0-9a-fA-F]{64})\\s+\\*?(.+)$").matchEntire(line)
+          ?: throw IllegalStateException("Samsung LiteCore checksum manifest is invalid")
+        match.groupValues[2].removePrefix("./") to match.groupValues[1]
+      }
+      val assetNames = context.assets.list(LITERT_SAMSUNG_LITECORE_ASSET_DIR)
+        .orEmpty()
+        .filter { it.endsWith(".so") }
+        .sorted()
+      if (!assetNames.containsAll(LITERT_SAMSUNG_LITECORE_REQUIRED_LIBRARIES)) {
+        throw IllegalStateException("Samsung LiteCore runtime assets are incomplete")
+      }
+      val liteCoreRoot = File(directory, "litecore")
+      val liteCoreLibraryDirectory = File(liteCoreRoot, "lib/arm64-v8a")
+      val manifestMarker = File(directory, "samsung-litecore.sha256")
+      val runtimeIsCurrent = manifestMarker.isFile && manifestMarker.readText() == manifestText &&
+        assetNames.all { name ->
+          val library = File(liteCoreLibraryDirectory, name)
+          library.isFile && library.length() > 0
+        }
+      if (!runtimeIsCurrent) {
+        val stagingRoot = File(directory, "litecore.staging-${System.nanoTime()}")
+        val stagingLibraryDirectory = File(stagingRoot, "lib/arm64-v8a")
+        try {
+          if (!stagingLibraryDirectory.mkdirs()) {
+            throw IllegalStateException("Could not create the Samsung LiteCore staging directory")
+          }
+          for (name in assetNames) {
+            val relativePath = "litecore/lib/arm64-v8a/$name"
+            val expectedHash = expectedHashes[relativePath]
+              ?: throw IllegalStateException("Samsung LiteCore manifest is missing $relativePath")
+            val assetPath = "$LITERT_SAMSUNG_LITECORE_ASSET_DIR/$name"
+            val destination = File(stagingLibraryDirectory, name)
+            context.assets.open(assetPath).use { input ->
+              FileOutputStream(destination).use { output ->
+                input.copyTo(output)
+                output.fd.sync()
+              }
+            }
+            if (!sha256(destination).equals(expectedHash, ignoreCase = true)) {
+              throw IllegalStateException("Samsung LiteCore library $name failed SHA-256 verification")
+            }
+            if (!destination.setReadable(true, true) || !destination.setExecutable(true, true) ||
+              !destination.setWritable(false, true)
+            ) {
+              throw IllegalStateException("Could not set permissions on Samsung LiteCore library $name")
+            }
+          }
+          for (parent in listOf(stagingRoot, File(stagingRoot, "lib"), stagingLibraryDirectory)) {
+            if (!parent.setReadable(true, true) || !parent.setExecutable(true, true)) {
+              throw IllegalStateException("Could not set permissions on the Samsung LiteCore runtime directory")
+            }
+          }
+          if (liteCoreRoot.exists() && !liteCoreRoot.deleteRecursively()) {
+            throw IllegalStateException("Could not replace the previous Samsung LiteCore runtime")
+          }
+          if (!stagingRoot.renameTo(liteCoreRoot)) {
+            throw IllegalStateException("Could not install the Samsung LiteCore runtime")
+          }
+          val markerTemporary = File(directory, "samsung-litecore.sha256.partial")
+          markerTemporary.writeText(manifestText)
+          if (manifestMarker.exists() && !manifestMarker.delete()) {
+            throw IllegalStateException("Could not replace the Samsung LiteCore checksum marker")
+          }
+          if (!markerTemporary.renameTo(manifestMarker)) {
+            throw IllegalStateException("Could not install the Samsung LiteCore checksum marker")
+          }
+        } finally {
+          if (stagingRoot.exists()) stagingRoot.deleteRecursively()
+        }
+      }
+    }
+    return directory
+  }
+
+  private fun sha256(file: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().use { input ->
+      val buffer = ByteArray(64 * 1024)
+      while (true) {
+        val count = input.read(buffer)
+        if (count < 0) break
+        digest.update(buffer, 0, count)
+      }
+    }
+    return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+  }
+
+  private fun androidHtpTarget(context: Context): AndroidHtpTarget? {
+    if (!android.os.Process.is64Bit() || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
+    return androidHtpTargets[Build.SOC_MODEL.trim().uppercase()]
+  }
+
+  private fun assetExists(context: Context, path: String): Boolean = try {
+    context.assets.open(path).use { true }
+  } catch (_: Exception) {
+    false
+  }
+
+  private fun verifyAnvilContextAsset(
+    context: Context,
+    target: AndroidHtpTarget,
+    modelId: String,
+    assetPath: String
+  ): Boolean = try {
+    val manifestText = context.assets.open("anvil/contexts/manifest.json")
+      .bufferedReader()
+      .use { it.readText() }
+    val entries = org.json.JSONObject(manifestText).getJSONArray("contexts")
+    val expectedPath = "${target.socModel.lowercase()}/$modelId/context.serialized.bin"
+    val model = modelId.substringBeforeLast('-')
+    val resolution = modelId.substringAfterLast('-')
+    var expectedSha256: String? = null
+    for (index in 0 until entries.length()) {
+      val entry = entries.getJSONObject(index)
+      if (
+        entry.optString("target") == target.socModel.lowercase() &&
+        entry.optString("model") == model &&
+        entry.optString("resolution") == resolution &&
+        entry.optString("context_path") == expectedPath
+      ) {
+        expectedSha256 = entry.optString("context_sha256")
+        break
+      }
+    }
+    if (expectedSha256.isNullOrBlank() || expectedSha256.length != 64) {
+      false
+    } else {
+      val digest = MessageDigest.getInstance("SHA-256")
+      context.assets.open(assetPath).use { input ->
+        val buffer = ByteArray(64 * 1024)
+        while (true) {
+          val count = input.read(buffer)
+          if (count < 0) break
+          digest.update(buffer, 0, count)
+        }
+      }
+      val actualSha256 = digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
+      actualSha256.equals(expectedSha256, ignoreCase = true)
+    }
+  } catch (_: Exception) {
+    false
+  }
+
+  private fun copyAnvilAsset(context: Context, assetPath: String, destination: File) {
+    val temporary = File(destination.parentFile, "${destination.name}.partial")
+    destination.parentFile?.mkdirs()
+    try {
+      context.assets.open(assetPath).use { input ->
+        FileOutputStream(temporary).use { output ->
+          input.copyTo(output)
+          output.fd.sync()
+        }
+      }
+      if (destination.exists() && !destination.delete()) {
+        throw IllegalStateException("Could not replace ANVIL asset ${destination.name}")
+      }
+      if (!temporary.renameTo(destination)) {
+        throw IllegalStateException("Could not install ANVIL asset $assetPath")
+      }
+    } finally {
+      if (temporary.exists()) temporary.delete()
+    }
   }
 
   private fun handleInitialize(call: MethodCall, result: MethodChannel.Result) {

@@ -1539,6 +1539,50 @@ class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFo
     await invoke('clearVideoFrameRate');
   }
 
+  /// Describes the runtime libraries and accelerator generation packaged for
+  /// the Android MPV process. The report is device/runtime-specific and does
+  /// not claim that inference has executed; the filter reports its provider
+  /// after a successful HTP graph call.
+  Future<Map<Object?, Object?>?> getAndroidMotionRuntimeCapabilities() async {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isAndroid) return null;
+    final value = await invoke<Object?>('getAndroidMotionRuntimeCapabilities');
+    return value is Map ? Map<Object?, Object?>.from(value) : null;
+  }
+
+  /// Current OS thermal-pressure tier, when Android or Apple reports one.
+  /// Unknown or unsupported devices remain eligible for normal policy.
+  Future<String?> getMotionProcessingThermalStatus() async {
+    if (_nativeCoreUnavailable || audioOnly) return null;
+    if (Platform.isAndroid) return invoke<String>('getAndroidThermalStatus');
+    if (Platform.isIOS || Platform.isMacOS) return invoke<String>('getAppleThermalStatus');
+    return null;
+  }
+
+  /// Copies the licensed, SDK-built HTP skeleton from APK assets next to the
+  /// verified ANVIL context file and returns the directory used by QNN.
+  Future<String?> prepareAndroidAnvilRuntime({String? contextPath, required String modelId}) async {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isAndroid) return null;
+    return invoke<String>('prepareAndroidAnvilRuntime', {
+      if (contextPath != null) 'contextPath': contextPath,
+      'modelId': modelId,
+    });
+  }
+
+  /// Installs the verified LiteRT model variants used by Android's ANVIL
+  /// filter and returns paths for the runtime to try in NPU-then-GPU order.
+  Future<Map<Object?, Object?>?> prepareAndroidLiteRtMotionRuntime({required String modelId}) async {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isAndroid) return null;
+    final value = await invoke<Object?>('prepareAndroidLiteRtMotionRuntime', {'modelId': modelId});
+    return value is Map ? Map<Object?, Object?>.from(value) : null;
+  }
+
+  /// Routes the Android MPV core through its output policy so motion
+  /// processing receives the right GL renderer and owned surfaces.
+  Future<bool> setAndroidMotionProcessingRenderer(String? renderer) async {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isAndroid) return false;
+    return await invoke<bool>('setAndroidMotionProcessingRenderer', {'renderer': renderer}) ?? false;
+  }
+
   @override
   Future<void> setAudioFocusEnabled(bool enabled) async {
     if (_nativeCoreUnavailable || !Platform.isAndroid) return;

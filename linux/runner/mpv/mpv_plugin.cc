@@ -455,6 +455,10 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
           g_warning("MPV video plane: eglSwapBuffers failed: 0x%x", eglGetError());
           return false;
         }
+        // libmpv cannot observe the Wayland plane's presentation clock itself.
+        // Report each successful swap so display-synchronized modes can track
+        // the actual compositor cadence instead of guessing from video frames.
+        player->ReportSwap();
         return true;
       },
       [self, generation](bool swapped) {

@@ -1,0 +1,6 @@
+# Google Tensor G5/G6 AOT model export for LiteRT 2.3.0.
+# Obtain Google's authorized Tensor SDK Beta compiler archive and set
+# GOOGLE_TENSOR_SDK_BETA to its path before installing this file.
+-r requirements-android-litert-models.txt
+ai-edge-litert==2.3.0
+ai-edge-litert-sdk-google-tensor-nightly==2.3.0.dev20261001

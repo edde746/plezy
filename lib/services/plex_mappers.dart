@@ -139,6 +139,7 @@ List<MediaStream> _mediaStreamsFromPlexPart(Object? raw, {Map<String, dynamic>? 
         hdr: isHdr,
         dolbyVision: isDolbyVision,
         dolbyVisionProfile: doviProfile,
+        interlaced: kind == MediaStreamKind.video ? _plexStreamIsInterlaced(stream) : null,
         forced: flexibleBool(stream['forced']),
         sidecarPath: kind == MediaStreamKind.subtitle ? stream['key']?.toString() : null,
       ),
@@ -240,6 +241,16 @@ bool _isDolbyVisionStream(Map<String, dynamic> stream, {Map<String, dynamic>? me
       tokens.contains('dv') ||
       tokens.contains('dvhe') ||
       tokens.contains('dvh1');
+}
+
+bool? _plexStreamIsInterlaced(Map<String, dynamic> stream) {
+  final explicit = flexibleBoolNullable(stream['interlaced']);
+  if (explicit != null) return explicit;
+  return switch (stream['scanType']?.toString().trim().toLowerCase()) {
+    'interlaced' => true,
+    'progressive' => false,
+    _ => null,
+  };
 }
 
 Object? _readPartKey(Map json, String _) => _partKeyFromJson(json['Part']);

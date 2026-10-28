@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   auto_updater_windows
+  battery_plus
   connectivity_plus
   disk_usage
   flutter_inappwebview_windows

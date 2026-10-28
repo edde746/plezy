@@ -39,6 +39,7 @@ export 'base_shared_preferences_service.dart'
 import '../models/audio_channel_limit.dart';
 import '../models/motion_clarity.dart';
 import '../models/audio_quality_preset.dart';
+import '../models/motion_processing_mode.dart';
 import '../models/transcode_quality_preset.dart';
 import '../models/home_section_config.dart';
 import '../models/plex/plex_managed_hub.dart';
@@ -449,6 +450,25 @@ class LegacyBoolEnumPref<T extends Enum> extends EnumPref<T> {
     }
     return super.readFrom(svc);
   }
+}
+
+/// Reads the pre-release motion smoothing profiles as the single supported
+/// MPV mode, so preferences created during development keep their intent.
+class _MotionProcessingModePref extends EnumPref<MotionProcessingMode> {
+  const _MotionProcessingModePref()
+    : super('motion_smoothing_preset', values: MotionProcessingMode.values, defaultValue: MotionProcessingMode.off);
+
+  @override
+  MotionProcessingMode fromJson(Object? value) => switch (value) {
+    'natural' || 'balanced' || 'smooth' => MotionProcessingMode.mpv,
+    _ => super.fromJson(value),
+  };
+
+  @override
+  MotionProcessingMode readFrom(BaseSharedPreferencesService svc) => switch (svc.readNullableString(key)) {
+    'natural' || 'balanced' || 'smooth' => MotionProcessingMode.mpv,
+    _ => super.readFrom(svc),
+  };
 }
 
 /// Migrates from the legacy `auto_skip_*` booleans: on → [SkipMarkerMode.auto],
@@ -1127,6 +1147,24 @@ class SettingsService extends BaseSharedPreferencesService {
     legacyTrue: DeinterlaceMode.video,
     legacyFalse: DeinterlaceMode.off,
   );
+
+  /// Device-local renderer or neural interpolation request. The active player
+  /// resolves it against its live output path and uses the strongest connected
+  /// provider while keeping ordinary playback available as the final fallback.
+  static const EnumPref<MotionProcessingMode> motionProcessingMode = _MotionProcessingModePref();
+
+  /// Neural interpolation quality preference. Providers map these tiers to
+  /// their own model and processing scale; MPV fallback does not consume it.
+  static const neuralInterpolationPreset = EnumPref<NeuralInterpolationPreset>(
+    'neural_interpolation_preset',
+    values: NeuralInterpolationPreset.values,
+    defaultValue: NeuralInterpolationPreset.balanced,
+  );
+
+  /// Keep Neural interpolation off while a device reports battery operation.
+  /// Unknown power status remains eligible so battery-less desktops and TV
+  /// platforms are not mistaken for unplugged devices.
+  static const neuralOnlyWhenPluggedIn = BoolPref('neural_only_when_plugged_in', defaultValue: true);
 
   /// Remembered state of the player's always-on-top toggle (#931). The window
   /// flag itself is only held while a player is open; this pref re-applies it
@@ -2125,6 +2163,9 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberedBrightnessLevel,
     refusedVideoCodecs,
     audioOutputDevice,
+    motionProcessingMode,
+    neuralInterpolationPreset,
+    neuralOnlyWhenPluggedIn,
   ];
 
   /// Settings that "Reset All Settings" actually resets.

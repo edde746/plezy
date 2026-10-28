@@ -4059,6 +4059,20 @@
     "readLists": "Olvasási listák",
     "collections": "Gyűjtemények"
   },
+  "comics": {
+    "fitHeight": "Magassághoz igazítás",
+    "readingMode": "Olvasási mód",
+    "paged": "Oldalak",
+    "webtoon": "Folyamatos görgetés",
+    "coverAlone": "Borító külön megjelenítése",
+    "splitWide": "Széles oldalak felosztása",
+    "splitWideHelp": "A két felet külön, olvasási sorrendben jeleníti meg. Bekapcsolva az oldalpárok megjelenítése szünetel.",
+    "thumbnails": "Oldalak bélyegképei",
+    "controlsHelp": "Lapozáshoz húzza el az ujját. Az igazítás módosításához koppintson duplán. Folyamatos görgetésnél húzza függőlegesen, vagy használja a Page Up és Page Down billentyűket.",
+    "savedForComic": "A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.",
+    "readLists": "Olvasási listák",
+    "collections": "Gyűjtemények"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

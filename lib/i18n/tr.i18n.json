@@ -4059,6 +4059,20 @@
     "readLists": "Okuma listeleri",
     "collections": "Koleksiyonlar"
   },
+  "comics": {
+    "fitHeight": "Yüksekliğe sığdır",
+    "readingMode": "Okuma modu",
+    "paged": "Sayfalar",
+    "webtoon": "Sürekli kaydırma",
+    "coverAlone": "Kapağı tek başına göster",
+    "splitWide": "Geniş sayfaları böl",
+    "splitWideHelp": "Her yarıyı okuma sırasıyla ayrı gösterir. Bu seçenek açıkken iki sayfanın yan yana gösterimi duraklatılır.",
+    "thumbnails": "Sayfa küçük resimleri",
+    "controlsHelp": "Sayfa çevirmek için kaydırın. Sığdırmayı değiştirmek için çift dokunun. Sürekli kaydırmada dikey kaydırın veya Page Up ve Page Down kullanın.",
+    "savedForComic": "Görüntü ayarları bu profilde bu çizgi roman için hatırlanır.",
+    "readLists": "Okuma listeleri",
+    "collections": "Koleksiyonlar"
+  },
   "games": {
     "title": "Games",
     "enable": "Show Games for this profile",

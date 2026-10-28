@@ -1,0 +1,9 @@
+# Provider registration name<TAB>device kind<TAB>plugin library path relative to this file, or provider-specific builtin marker
+QNN	NPU	windows-ml
+OpenVINO	NPU	windows-ml
+VitisAI	NPU	windows-ml
+QNN	GPU	windows-ml
+NvTensorRtRtx	GPU	windows-ml
+MIGraphX	GPU	windows-ml
+OpenVINO	GPU	windows-ml
+DmlExecutionProvider	GPU	builtin-dml

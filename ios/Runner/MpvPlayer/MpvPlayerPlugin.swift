@@ -129,6 +129,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       result(Self.audioRenderingMode())
     case "getAudioSpdifCodecs":
       result(MpvPlayerCoreBase.audioSpdifCodecs)
+    case "getAppleThermalStatus":
+      result(Self.thermalStatus())
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -163,6 +165,23 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       out["name"] = "unavailable"
     }
     return out
+  }
+
+  /// Maps Apple's process thermal tiers into the shared motion governor
+  /// vocabulary. Unknown future enum values remain unknown and fail open.
+  private static func thermalStatus() -> String? {
+    switch ProcessInfo.processInfo.thermalState {
+    case .nominal:
+      return "none"
+    case .fair:
+      return "light"
+    case .serious:
+      return "moderate"
+    case .critical:
+      return "critical"
+    @unknown default:
+      return nil
+    }
   }
 
   // MARK: - PiP

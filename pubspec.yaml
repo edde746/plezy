@@ -34,6 +34,7 @@ dependencies:
     git:
       url: https://github.com/yj-labs/disk_usage
       ref: a2d6244e45db6f48760bd79c18445d32ecf2e77e
+  battery_plus: ^7.1.2
   provider: ^6.1.2
   flex_color_picker: ^3.8.0
   qr_flutter: ^4.1.0
@@ -261,6 +262,7 @@ flutter:
     - assets/licenses/JellyfinWebTranslations.txt
     - assets/licenses/MilkRust_Sample_Pack.txt
     - assets/visualizer/milkrust-sample-pack-0.1.0.rmpack
+    - assets/licenses/ANVIL_MIT_LICENSE.txt
     - assets/plezy.png
     - assets/branding/plezyng-compact.png
     - assets/branding/plezyng-mark-light.png
@@ -289,6 +291,7 @@ flutter:
     - assets/shaders/artcnn/
     - assets/shaders/anime4k/
     - assets/player_icons/
+    - assets/motion_models/
     - assets/rating_icons/
     # App icon picker thumbnails; scripts/codegen/generate_app_icons.py renders them from
     # assets/app_icons/source, which stays out of the bundle.

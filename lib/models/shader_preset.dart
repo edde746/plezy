@@ -4,7 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'shader_preset.freezed.dart';
 part 'shader_preset.g.dart';
 
-enum ShaderPresetType { none, nvscaler, artcnn, anime4k, custom }
+enum ShaderPresetType { none, nvscaler, artcnn, anime4k, custom, lanczos }
 
 /// ArtCNN real-time model sizes.
 enum ArtCNNModel {
@@ -137,6 +137,13 @@ class ShaderPreset {
     nvscalerConfig: NVScalerConfig(),
   );
 
+  /// ExoPlayer's optional GL resampler for content smaller than the output.
+  static const lanczosUpscaling = ShaderPreset(
+    id: 'lanczos-upscaling',
+    name: 'Lanczos upscaling',
+    type: ShaderPresetType.lanczos,
+  );
+
   static ShaderPreset artcnnPreset(ArtCNNModel model, ArtCNNVariant variant) => ShaderPreset(
     id: 'artcnn_${model.name}_${variant.slug}',
     name: variant == ArtCNNVariant.neutral ? 'ArtCNN ${model.label}' : 'ArtCNN ${model.label} ${variant.label}',
@@ -161,6 +168,7 @@ class ShaderPreset {
 
   static final List<ShaderPreset> _builtInPresets = List.unmodifiable([
     none,
+    lanczosUpscaling,
     nvscalerDefault,
     artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.neutral),
     artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoise),

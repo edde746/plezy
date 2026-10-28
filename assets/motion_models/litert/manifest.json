@@ -1,0 +1,542 @@
+{
+  "calibration": {
+    "metadata": {
+      "format": 1,
+      "samples": {
+        "1080p": {
+          "height": 1080,
+          "pairs": [
+            {
+              "file": "pair-000.f32",
+              "first_frame": 275,
+              "first_timestamp_seconds": 11.458333,
+              "second_frame": 276,
+              "second_timestamp_seconds": 11.5,
+              "sha256": "725b27432f3da1790df77c74243922a32bb755cf951252f45787cacd0a35db5a"
+            },
+            {
+              "file": "pair-002.f32",
+              "first_frame": 1377,
+              "first_timestamp_seconds": 57.375,
+              "second_frame": 1378,
+              "second_timestamp_seconds": 57.416667,
+              "sha256": "f794e2a5f17050184c4aa6dded5ff5d61fdccd08cb4efca626b3953ac6a1967e"
+            },
+            {
+              "file": "pair-004.f32",
+              "first_frame": 2478,
+              "first_timestamp_seconds": 103.25,
+              "second_frame": 2479,
+              "second_timestamp_seconds": 103.291667,
+              "sha256": "99af3420a95e3abef2cdd5ad8be8813206d071ceb0ed7c9cf082234b7bb11429"
+            },
+            {
+              "file": "pair-006.f32",
+              "first_frame": 3579,
+              "first_timestamp_seconds": 149.125,
+              "second_frame": 3580,
+              "second_timestamp_seconds": 149.166667,
+              "sha256": "1bd518e9c3c8fc49209efb61452734629ade779d62c49dc5b1d2aabda75f9ba6"
+            },
+            {
+              "file": "pair-008.f32",
+              "first_frame": 4680,
+              "first_timestamp_seconds": 195.0,
+              "second_frame": 4681,
+              "second_timestamp_seconds": 195.041667,
+              "sha256": "38cfae5dd6a7afebcf55afb9086c0bc3dc3646885e1bb77a93f7afd157457ab5"
+            },
+            {
+              "file": "pair-010.f32",
+              "first_frame": 5782,
+              "first_timestamp_seconds": 240.916667,
+              "second_frame": 5783,
+              "second_timestamp_seconds": 240.958333,
+              "sha256": "066ed0141a156fa9465a0a3a86e2dc5b941854b55562f045b0c7cf997bffb69d"
+            },
+            {
+              "file": "pair-012.f32",
+              "first_frame": 6883,
+              "first_timestamp_seconds": 286.791667,
+              "second_frame": 6884,
+              "second_timestamp_seconds": 286.833333,
+              "sha256": "d78a1b9de41dcb3f6124bc2e4a7688b8c45f6a57f4e1231c057ce069b4906b11"
+            },
+            {
+              "file": "pair-014.f32",
+              "first_frame": 7984,
+              "first_timestamp_seconds": 332.666667,
+              "second_frame": 7985,
+              "second_timestamp_seconds": 332.708333,
+              "sha256": "b9967ebf66af48f95440b47a992585ba8c6c0f093a913ecb5d95278b0a84fb15"
+            },
+            {
+              "file": "pair-016.f32",
+              "first_frame": 9085,
+              "first_timestamp_seconds": 378.541667,
+              "second_frame": 9086,
+              "second_timestamp_seconds": 378.583333,
+              "sha256": "2d008108ecf6d5d2501d687b571c8352ffb9453ef0c1bcf2327fcc3fe37445f9"
+            },
+            {
+              "file": "pair-018.f32",
+              "first_frame": 10187,
+              "first_timestamp_seconds": 424.458333,
+              "second_frame": 10188,
+              "second_timestamp_seconds": 424.5,
+              "sha256": "55226c9a235e8e6c8c16aaaede6bcf2362e1483549545a9bb9a9ae05451aa945"
+            },
+            {
+              "file": "pair-020.f32",
+              "first_frame": 11288,
+              "first_timestamp_seconds": 470.333333,
+              "second_frame": 11289,
+              "second_timestamp_seconds": 470.375,
+              "sha256": "6b82e73dd3215246a39c747727fee55a71053b2f42cc57a13a9c6ef3c7855b0d"
+            },
+            {
+              "file": "pair-022.f32",
+              "first_frame": 12389,
+              "first_timestamp_seconds": 516.208333,
+              "second_frame": 12390,
+              "second_timestamp_seconds": 516.25,
+              "sha256": "76759680720359901312c05228965e89467fe0b0184f67049e18bedd8048789b"
+            },
+            {
+              "file": "pair-024.f32",
+              "first_frame": 13490,
+              "first_timestamp_seconds": 562.083333,
+              "second_frame": 13491,
+              "second_timestamp_seconds": 562.125,
+              "sha256": "656bbc907ca14af1e1a3f164d38efa4cec07b290b55ffc15d25fe7f692bec146"
+            },
+            {
+              "file": "pair-026.f32",
+              "first_frame": 14592,
+              "first_timestamp_seconds": 608.0,
+              "second_frame": 14593,
+              "second_timestamp_seconds": 608.041667,
+              "sha256": "caeffd7eb5347f4936c2540fc26bc025385933d4e1de71f95cd4156c3b4d530a"
+            },
+            {
+              "file": "pair-028.f32",
+              "first_frame": 15693,
+              "first_timestamp_seconds": 653.875,
+              "second_frame": 15694,
+              "second_timestamp_seconds": 653.916667,
+              "sha256": "e122c7e08dde56c76f4111445698969882ef2597fc8e4052198de4ecaafd44c5"
+            },
+            {
+              "file": "pair-030.f32",
+              "first_frame": 16794,
+              "first_timestamp_seconds": 699.75,
+              "second_frame": 16795,
+              "second_timestamp_seconds": 699.791667,
+              "sha256": "e817c3a43e25df6312f58885e5995f31c74f0b991f9a87f2a2d19f9771ef38c6"
+            }
+          ],
+          "resize": "FFmpeg swscale area; aspect-preserving fit with centered black bars",
+          "width": 1920
+        },
+        "720p": {
+          "height": 720,
+          "pairs": [
+            {
+              "file": "pair-000.f32",
+              "first_frame": 275,
+              "first_timestamp_seconds": 11.458333,
+              "second_frame": 276,
+              "second_timestamp_seconds": 11.5,
+              "sha256": "6032a80368570a1bde9fa3e4acc2ff876bd9f7a4f2f3d9a7e72edf19673cf068"
+            },
+            {
+              "file": "pair-002.f32",
+              "first_frame": 1377,
+              "first_timestamp_seconds": 57.375,
+              "second_frame": 1378,
+              "second_timestamp_seconds": 57.416667,
+              "sha256": "2c1feaa41e7aaecb59b49add763eacca3ea0e46a3e846721008828c11bd18a4b"
+            },
+            {
+              "file": "pair-004.f32",
+              "first_frame": 2478,
+              "first_timestamp_seconds": 103.25,
+              "second_frame": 2479,
+              "second_timestamp_seconds": 103.291667,
+              "sha256": "ce249d33a37dd003f31c18e5250aa5c247be69eef44da60763311f6ccf5ae1bf"
+            },
+            {
+              "file": "pair-006.f32",
+              "first_frame": 3579,
+              "first_timestamp_seconds": 149.125,
+              "second_frame": 3580,
+              "second_timestamp_seconds": 149.166667,
+              "sha256": "71bf60d0cda7f7774f6df6fc707b7a0af349a181e60a4c348b3d13fc7588ba42"
+            },
+            {
+              "file": "pair-008.f32",
+              "first_frame": 4680,
+              "first_timestamp_seconds": 195.0,
+              "second_frame": 4681,
+              "second_timestamp_seconds": 195.041667,
+              "sha256": "4ac4d29288bf05420fc7526dc082e097d13f32283147fbb8c2f9d29f7ec0f97a"
+            },
+            {
+              "file": "pair-010.f32",
+              "first_frame": 5782,
+              "first_timestamp_seconds": 240.916667,
+              "second_frame": 5783,
+              "second_timestamp_seconds": 240.958333,
+              "sha256": "01d3c27d9de3306a78554070ffe4142cf742bb26fdb397c8ff8d73b7a5718cd3"
+            },
+            {
+              "file": "pair-012.f32",
+              "first_frame": 6883,
+              "first_timestamp_seconds": 286.791667,
+              "second_frame": 6884,
+              "second_timestamp_seconds": 286.833333,
+              "sha256": "65867a596a27a79ceddb8e0a0067a44e7e827055699ce977cd478c3e6606fd19"
+            },
+            {
+              "file": "pair-014.f32",
+              "first_frame": 7984,
+              "first_timestamp_seconds": 332.666667,
+              "second_frame": 7985,
+              "second_timestamp_seconds": 332.708333,
+              "sha256": "2321dc20a3ee67aeb26f4d9db80c591f1ace243e40884a71c2ab61ce528f1833"
+            },
+            {
+              "file": "pair-016.f32",
+              "first_frame": 9085,
+              "first_timestamp_seconds": 378.541667,
+              "second_frame": 9086,
+              "second_timestamp_seconds": 378.583333,
+              "sha256": "9ea7d841129a41d1cde8a01084b5b126844f62d77121648e4e542038a6a135da"
+            },
+            {
+              "file": "pair-018.f32",
+              "first_frame": 10187,
+              "first_timestamp_seconds": 424.458333,
+              "second_frame": 10188,
+              "second_timestamp_seconds": 424.5,
+              "sha256": "661ccee88fe66868603350e686e1d4eeff5127e6a599bf06f68b059eaeb196de"
+            },
+            {
+              "file": "pair-020.f32",
+              "first_frame": 11288,
+              "first_timestamp_seconds": 470.333333,
+              "second_frame": 11289,
+              "second_timestamp_seconds": 470.375,
+              "sha256": "162a1015c563b34de7dee76bbe70140962affb8c77070536b537efaf933c7709"
+            },
+            {
+              "file": "pair-022.f32",
+              "first_frame": 12389,
+              "first_timestamp_seconds": 516.208333,
+              "second_frame": 12390,
+              "second_timestamp_seconds": 516.25,
+              "sha256": "0e219513d7ba5fe596ef778cf144597f68959e973b1353285ff64e10c8cfb82f"
+            },
+            {
+              "file": "pair-024.f32",
+              "first_frame": 13490,
+              "first_timestamp_seconds": 562.083333,
+              "second_frame": 13491,
+              "second_timestamp_seconds": 562.125,
+              "sha256": "2e65f79c4d9f6865db370fc061a0b91b4290c53dffd2a08b2f2b4a52353d5678"
+            },
+            {
+              "file": "pair-026.f32",
+              "first_frame": 14592,
+              "first_timestamp_seconds": 608.0,
+              "second_frame": 14593,
+              "second_timestamp_seconds": 608.041667,
+              "sha256": "77056662a57f63f1995f1190da49083ea76ddf4caedf048e1c7cea2471c2d271"
+            },
+            {
+              "file": "pair-028.f32",
+              "first_frame": 15693,
+              "first_timestamp_seconds": 653.875,
+              "second_frame": 15694,
+              "second_timestamp_seconds": 653.916667,
+              "sha256": "0afd27bc48349fbebe212422eebefab99bb7f7e82cf27314b2574491732c0b20"
+            },
+            {
+              "file": "pair-030.f32",
+              "first_frame": 16794,
+              "first_timestamp_seconds": 699.75,
+              "second_frame": 16795,
+              "second_timestamp_seconds": 699.791667,
+              "sha256": "cfba44e64e43288ccbc14fcc3f227ce666b843bb66cdf7aa24532ba519a6a8a3"
+            }
+          ],
+          "resize": "FFmpeg swscale area; aspect-preserving fit with centered black bars",
+          "width": 1280
+        }
+      },
+      "sampling": {
+        "held_out_from_quantization": false,
+        "pair_count": 16,
+        "policy": "evenly spaced consecutive frame pairs across the full source duration",
+        "split": "even pair indices"
+      },
+      "source": {
+        "attribution": "Tears of Steel, Blender Foundation, 2012",
+        "bytes": 583774083,
+        "color_primaries": "unknown",
+        "color_space": "unknown",
+        "color_transfer": "unknown",
+        "filename": "tears_of_steel_1080p.mov",
+        "frame_count": 17620,
+        "frame_rate": "24/1",
+        "height": 800,
+        "license": "CC BY 3.0",
+        "pixel_format": "yuv420p",
+        "sha256": "99486359be7e3681168a0fe94e1cbb0284c48b57b2a3ce7df4fa75e185987a15",
+        "untagged_sdr_explicitly_accepted": true,
+        "url": "https://download.blender.org/demo/movies/ToS/tears_of_steel_1080p.mov.zip",
+        "width": 1920
+      },
+      "tensor": {
+        "channels": [
+          "previous.R",
+          "previous.G",
+          "previous.B",
+          "current.R",
+          "current.G",
+          "current.B"
+        ],
+        "dtype": "float32",
+        "layout": "NCHW",
+        "normalization": "RGB samples divided by 255 into [0, 1]",
+        "pair_alignment": "decoded consecutive frames; playback motion-vector prealignment is not reproduced",
+        "shape": "[1, 6, height, width]"
+      }
+    },
+    "metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98"
+  },
+  "converter": {
+    "name": "litert-torch",
+    "quantizer_version": "0.10.0",
+    "torch_version": "2.14.1+cpu",
+    "version": "0.10.0"
+  },
+  "format": 1,
+  "license": "MIT",
+  "models": {
+    "anvil-m": {
+      "checkpoint": {
+        "bytes": 32193921,
+        "path": "checkpoints/D-unet-v3bm-nomv/best.pt",
+        "sha256": "469851d37818e06e851409a46976fe4b26465179b94299a939dc7892bf67346a"
+      },
+      "variants": {
+        "1080p": {
+          "gpu": {
+            "bytes": 10708864,
+            "file": "anvil-m-1080p.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              1080,
+              1920,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              1080,
+              1920,
+              3
+            ],
+            "precision": "float32",
+            "sha256": "dcc8b7a23132ef07e1f11a209cf25f7d7ebd830fb1b5021175ab7ab3329aff93"
+          },
+          "npu": {
+            "bytes": 2829440,
+            "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+            "execution": "jit",
+            "file": "anvil-m-1080p-w8a8.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              1080,
+              1920,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              1080,
+              1920,
+              3
+            ],
+            "precision": "int8-w8a8",
+            "quantization_recipe": "static_wi8_ai8",
+            "sha256": "6d3cf0b03926a9ef5b33e898af92fc13da2834bbd814a5b79fbc4ac3953647ca"
+          }
+        },
+        "720p": {
+          "gpu": {
+            "bytes": 10707640,
+            "file": "anvil-m-720p.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              720,
+              1280,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              720,
+              1280,
+              3
+            ],
+            "precision": "float32",
+            "sha256": "209fc5a65c7efa6f6b71a31210b36476acd93a78a6d48bb90929f54023a5fa79"
+          },
+          "npu": {
+            "bytes": 2828160,
+            "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+            "execution": "jit",
+            "file": "anvil-m-720p-w8a8.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              720,
+              1280,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              720,
+              1280,
+              3
+            ],
+            "precision": "int8-w8a8",
+            "quantization_recipe": "static_wi8_ai8",
+            "sha256": "0ece5a1b5fde37b050fdfec1ede20a9df1a0b515c5468b8f93a72de03f357dec"
+          }
+        }
+      }
+    },
+    "anvil-s": {
+      "checkpoint": {
+        "bytes": 10412983,
+        "path": "checkpoints/D-unet-v3bs-nomv/best.pt",
+        "sha256": "574297dcad27e601c813c3cab514a8d2b237eef30f40d9e4a6f600720808fefa"
+      },
+      "variants": {
+        "1080p": {
+          "gpu": {
+            "bytes": 3464436,
+            "file": "anvil-s-1080p.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              1080,
+              1920,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              1080,
+              1920,
+              3
+            ],
+            "precision": "float32",
+            "sha256": "316a6cb65ebc7d3f34742fa6903b2d56b747543dd45c2f483682eb97743a26df"
+          },
+          "npu": {
+            "bytes": 959312,
+            "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+            "execution": "jit",
+            "file": "anvil-s-1080p-w8a8.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              1080,
+              1920,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              1080,
+              1920,
+              3
+            ],
+            "precision": "int8-w8a8",
+            "quantization_recipe": "static_wi8_ai8",
+            "sha256": "f4943c0a455a168913144a6181c201262a3bb2c504ee21219a8f8f48fdddeb4a"
+          }
+        },
+        "720p": {
+          "gpu": {
+            "bytes": 3463252,
+            "file": "anvil-s-720p.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              720,
+              1280,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              720,
+              1280,
+              3
+            ],
+            "precision": "float32",
+            "sha256": "b3b9084659890557cafd9245e4f45925b1578c023895bfbffb234cfdfb140ac8"
+          },
+          "npu": {
+            "bytes": 958080,
+            "calibration_metadata_sha256": "8dbf87a78255f28a19bf81afa600e1271304f2540aa70e5e62e718cef7628a98",
+            "execution": "jit",
+            "file": "anvil-s-720p-w8a8.tflite",
+            "input_layout": "NHWC",
+            "input_shape": [
+              1,
+              720,
+              1280,
+              6
+            ],
+            "output_layout": "NHWC",
+            "output_semantics": "residual_to_add_to_pair_blend",
+            "output_shape": [
+              1,
+              720,
+              1280,
+              3
+            ],
+            "precision": "int8-w8a8",
+            "quantization_recipe": "static_wi8_ai8",
+            "sha256": "bbdce7001042f7b9318968638546ec534ba5f23e27c96b899999be3ca04c3eca"
+          }
+        }
+      }
+    }
+  },
+  "source": {
+    "repository": "https://github.com/NihilDigit/anvil",
+    "revision": "f701fd9b01b9fbb20822637b5d82cac626079e5f"
+  },
+  "weights": {
+    "repository": "https://huggingface.co/NihilDigit/anvil",
+    "revision": "fa97e30f6aabe897bd4f6f82d971ad607f5d61fa"
+  }
+}

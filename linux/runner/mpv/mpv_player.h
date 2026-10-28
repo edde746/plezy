@@ -129,6 +129,10 @@ class MpvPlayer {
   /// @return true if the frame was rendered.
   bool RenderToSurface(EGLSurface surface, int width, int height);
 
+  /// Reports that the last rendered frame was presented by the embedder.
+  /// Required for libmpv's display-synchronized timing to learn the swap cadence.
+  void ReportSwap();
+
   /// Disposes mpv and releases resources.
   void Dispose();
 

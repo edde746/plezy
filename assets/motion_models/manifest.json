@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "models": {
+    "anvil-s-540p": {
+      "source": "https://github.com/NihilDigit/anvil",
+      "sourceRevision": "f701fd9b01b9fbb20822637b5d82cac626079e5f",
+      "weightsRevision": "fa97e30f6aabe897bd4f6f82d971ad607f5d61fa",
+      "checkpoint": {
+        "bytes": 10412983,
+        "sha256": "574297dcad27e601c813c3cab514a8d2b237eef30f40d9e4a6f600720808fefa"
+      },
+      "file": "anvil-s-540p.onnx",
+      "bytes": 3431923,
+      "sha256": "6b599d7b13c848ce7608d5e6fa1de8ec0adea8477d29a57be69d71daf808ce84",
+      "input": [1, 6, 540, 960],
+      "output": [1, 3, 540, 960],
+      "format": "ONNX",
+      "opset": 17,
+      "license": "MIT",
+      "licenseFile": "assets/licenses/ANVIL_MIT_LICENSE.txt"
+    }
+  }
+}

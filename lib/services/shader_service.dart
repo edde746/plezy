@@ -8,7 +8,7 @@ import '../utils/app_logger.dart';
 import 'ambient_lighting_service.dart';
 import 'shader_asset_loader.dart';
 
-/// Service for applying GLSL shaders to the MPV video player.
+/// Applies MPV GLSL presets and the Android ExoPlayer Lanczos GL resampler.
 ///
 /// Handles shader chain building, HDR detection, and runtime switching.
 /// When ambient lighting is active, the ambient lighting shader is always appended last
@@ -37,11 +37,24 @@ class ShaderService {
   static bool? debugPlatformSupported;
 
   /// GLSL shaders need mpv's gpu VOs; iOS/tvOS and macOS render through
-  /// vo=avfoundation, which has no shader stage.
+  /// vo=avfoundation, which has no shader stage. Android ExoPlayer has a
+  /// separate Media3 GL effect path for the Lanczos spatial resampler.
   static bool get isPlatformSupported => debugPlatformSupported ?? (!Platform.isIOS && !Platform.isMacOS);
 
-  /// Check if the player is MPV (shaders are MPV-only)
-  bool get isSupported => _player.playerType == 'mpv' && isPlatformSupported;
+  /// Whether this player has any video-processing controls.
+  bool get isSupported => supportsCustomPresets || (Platform.isAndroid && _player.playerType == 'exoplayer');
+
+  /// Custom GLSL imports remain an MPV-only feature.
+  bool get supportsCustomPresets => _player.playerType == 'mpv' && isPlatformSupported;
+
+  /// Filter the shared preset catalog to the actual renderer contract.
+  bool supportsPreset(ShaderPreset preset) {
+    if (preset.type == ShaderPresetType.none) return true;
+    if (_player.playerType == 'exoplayer') {
+      return Platform.isAndroid && preset.type == ShaderPresetType.lanczos;
+    }
+    return supportsCustomPresets && preset.type != ShaderPresetType.lanczos;
+  }
 
   /// Apply a shader preset to the video player.
   ///
@@ -51,13 +64,18 @@ class ShaderService {
   /// flow, an in-place swap) decides on stale or absent params;
   /// [reapplyForContent] settles it once a frame exists.
   Future<void> applyPreset(ShaderPreset preset) async {
-    if (!isSupported) {
-      appLogger.d('ShaderService: Shaders not supported on ${_player.playerType}');
+    if (!supportsPreset(preset)) {
+      appLogger.d('ShaderService: ${preset.type.name} is not supported on ${_player.playerType}');
       return;
     }
 
     _requestedPreset = preset;
     try {
+      if (_player.playerType == 'exoplayer') {
+        await _player.setProperty('exo-video-upscaling', preset.type == ShaderPresetType.lanczos ? 'yes' : 'no');
+        _currentPreset = preset;
+        return;
+      }
       if (_skipsOnHdr(preset) && await _isHdrContent()) {
         appLogger.d('ShaderService: Skipping NVScaler on HDR content');
         await _applyChain(ShaderPreset.none);
@@ -75,7 +93,7 @@ class ShaderService {
   /// is a no-op. Returns whether the applied preset changed.
   Future<bool> reapplyForContent() async {
     final requested = _requestedPreset;
-    if (!isSupported || !_skipsOnHdr(requested)) return false;
+    if (!supportsPreset(requested) || !_skipsOnHdr(requested)) return false;
 
     try {
       final target = await _isHdrContent() ? ShaderPreset.none : requested;

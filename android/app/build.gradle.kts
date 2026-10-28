@@ -1,6 +1,8 @@
 import java.io.FileInputStream
+import java.net.URL
 import java.util.Properties
 import java.util.UUID
+import org.gradle.api.file.RelativePath
 import java.util.zip.ZipFile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -65,6 +67,10 @@ repositories {
       }
     }
     filter { includeModule("edde746", "mpv-android") }
+  }
+  exclusiveContent {
+    forRepository { maven { url = uri("https://jitpack.io") } }
+    filter { includeGroup("com.github.cgutman") }
   }
 }
 // A locally built FEL AAR is selected only by an explicit Gradle property and
@@ -177,6 +183,311 @@ val mpvAarNatives = configurations.create("mpvAarNatives") {
   isCanBeConsumed = false
 }
 val mpvNativeDir = layout.buildDirectory.dir("mpv-android").get().asFile
+val qairtSdkRoot = providers.environmentVariable("QAIRT_SDK_ROOT").orNull
+  ?.takeIf(String::isNotBlank)
+  ?.let { File(it) }
+val androidAnvilContextsRoot = providers.environmentVariable("PLEZY_ANVIL_CONTEXT_ROOT").orNull
+  ?.takeIf(String::isNotBlank)
+  ?.let { File(it) }
+val androidLiteRtModelRoot = providers.environmentVariable("PLEZY_LITERT_MODEL_ROOT").orNull
+  ?.takeIf(String::isNotBlank)
+  ?.let { File(it) }
+  ?: rootProject.file("../assets/motion_models/litert")
+val androidLiteRtSamsungRuntimeRoot = providers.environmentVariable("PLEZY_LITERT_SAMSUNG_RUNTIME_ROOT").orNull
+  ?.takeIf(String::isNotBlank)
+  ?.let { File(it) }
+val androidHtpVersions = listOf("V68", "V69", "V73", "V75", "V79", "V81")
+val androidAnvilContextTargets = linkedMapOf(
+  "sm7325" to "720p",
+  "sm8350" to "720p",
+  "sm8350p" to "720p",
+  "sm7450" to "720p",
+  "sm7475" to "720p",
+  "sm8450" to "720p",
+  "sm8475" to "720p",
+  "sm8550" to "1080p",
+  "sm8650" to "1080p",
+  "sm8750" to "1080p",
+  "sm8850" to "1080p"
+)
+val androidAnvilRuntimeDir = layout.buildDirectory.dir("plezy-anvil-runtime").get().asFile
+val stageAndroidAnvilRuntime = tasks.register<Sync>("stageAndroidAnvilRuntime") {
+  qairtSdkRoot?.let { sdk ->
+    from(sdk.resolve("lib/aarch64-android")) {
+      include("libQnnHtp.so", "libQnnSystem.so", "libQnnHtpPrepare.so")
+      into("jniLibs/arm64-v8a")
+    }
+    androidHtpVersions.forEach { version ->
+      from(sdk.resolve("lib/aarch64-android/libQnnHtp${version}Stub.so")) {
+        into("jniLibs/arm64-v8a")
+      }
+      from(sdk.resolve("lib/hexagon-${version.lowercase()}/unsigned/libQnnHtp${version}Skel.so")) {
+        into("assets/anvil/htp")
+      }
+    }
+  }
+  androidAnvilContextsRoot?.let { contextRoot ->
+    from(contextRoot) {
+      include("**/context.serialized.bin", "manifest.json")
+      into("assets/anvil/contexts")
+    }
+  }
+  into(androidAnvilRuntimeDir)
+  onlyIf { qairtSdkRoot != null || androidAnvilContextsRoot != null }
+  doFirst {
+    val sdk = qairtSdkRoot ?: run {
+      if (androidAnvilContextsRoot != null) {
+        throw GradleException("PLEZY_ANVIL_CONTEXT_ROOT requires QAIRT_SDK_ROOT for the HTP runtime libraries")
+      }
+      return@doFirst
+    }
+    val required = listOf(
+      sdk.resolve("include/QNN/QnnInterface.h"),
+      sdk.resolve("lib/aarch64-android/libQnnHtp.so"),
+      sdk.resolve("lib/aarch64-android/libQnnSystem.so"),
+      sdk.resolve("lib/aarch64-android/libQnnHtpPrepare.so")
+    ) + androidHtpVersions.flatMap { version ->
+      listOf(
+        sdk.resolve("lib/aarch64-android/libQnnHtp${version}Stub.so"),
+        sdk.resolve("lib/hexagon-${version.lowercase()}/unsigned/libQnnHtp${version}Skel.so")
+      )
+    }
+    val missing = required.filterNot(File::isFile)
+    if (missing.isNotEmpty()) {
+      throw GradleException("QAIRT SDK is incomplete for the Android ANVIL V68/V69/V73/V75/V79/V81 runtimes: ${missing.joinToString()}")
+    }
+    androidAnvilContextsRoot?.let { root ->
+      val requiredContexts = androidAnvilContextTargets.flatMap { (soc, resolution) ->
+        listOf("anvil-s-$resolution", "anvil-m-$resolution").map { model ->
+          root.resolve("$soc/$model/context.serialized.bin")
+        }
+      }
+      val missingContexts = requiredContexts.filterNot(File::isFile)
+      if (missingContexts.isNotEmpty()) {
+        throw GradleException("Android ANVIL context set is incomplete: ${missingContexts.joinToString()}")
+      }
+    }
+  }
+}
+
+// LiteRT CompiledModel C API and the vendor plugins are pinned to one Maven
+// release and checksum-verified before extraction. NPU runtimes remain
+// optional at execution time; the APK carries the available provider plugins
+// and LiteRT reports which accelerator actually compiled the graph.
+val liteRtVersion = "2.3.0"
+// Keep this Android runtime on the OpenVINO release pinned by LiteRT 2.3.0's
+// third_party/intel_openvino/openvino_version.bzl. The LiteRT provider AAR
+// contains the adapter but intentionally omits these OpenVINO runtime .so files.
+val openVinoAndroidVersion = "2026.3.1"
+val openVinoAndroidBuild = "22476.56d9685302d"
+val openVinoAndroidArchive = "openvino-android-$openVinoAndroidVersion.tgz"
+val openVinoAndroidRoot = "openvino_toolkit_android_${openVinoAndroidVersion}.${openVinoAndroidBuild}_x86_64"
+val androidLiteRtArtifactDir = layout.buildDirectory.dir("plezy-litert-downloads").get().asFile
+val androidLiteRtRuntimeDir = layout.buildDirectory.dir("plezy-litert-runtime").get().asFile
+val androidLiteRtModelAssetsDir = layout.buildDirectory.dir("plezy-litert-model-assets").get().asFile
+val androidLiteRtArtifacts = linkedMapOf(
+  "litert_cc_sdk.zip" to Pair(
+    "https://github.com/google-ai-edge/LiteRT/releases/download/v$liteRtVersion/litert_cc_sdk.zip",
+    "44ebb188ae1a510f233639fa499928fdaaba46436a153a2dbfbb9d87d59728d2"
+  ),
+  "litert-$liteRtVersion.aar" to Pair(
+    "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/$liteRtVersion/litert-$liteRtVersion.aar",
+    "9508c6e9142646f0f2bc1fe68b3925fb470ee7ddd29114540339a04a8ab189dc"
+  ),
+  "litert-gpu-$liteRtVersion.aar" to Pair(
+    "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-gpu/$liteRtVersion/litert-gpu-$liteRtVersion.aar",
+    "173a4c3813601f7e9542f4e6a49e237775e2f9ce1e0948f35407098bffb1824f"
+  ),
+  "litert-npu-runtime-qualcomm-$liteRtVersion.aar" to Pair(
+    "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-qualcomm/$liteRtVersion/litert-npu-runtime-qualcomm-$liteRtVersion.aar",
+    "55aa22e89b7decb9e2f56548188b9e8c42cc8f7a828e2ec4a17715079b313679"
+  ),
+  "litert-npu-runtime-mediatek-$liteRtVersion.aar" to Pair(
+    "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-mediatek/$liteRtVersion/litert-npu-runtime-mediatek-$liteRtVersion.aar",
+    "949fcd3a40d597f07473eb8d6b4d89ab6343b5a8fd2d21c118e2855e613c4587"
+  ),
+  "litert-npu-runtime-google-tensor-$liteRtVersion.aar" to Pair(
+    "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-google-tensor/$liteRtVersion/litert-npu-runtime-google-tensor-$liteRtVersion.aar",
+    "5f38ab3de4b99ef75edf13c595cf0c090b10a82d9697f5b55703409757e786f7"
+  ),
+  "litert-npu-runtime-intel-openvino-$liteRtVersion.aar" to Pair(
+    "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-intel-openvino/$liteRtVersion/litert-npu-runtime-intel-openvino-$liteRtVersion.aar",
+    "ea5eb69272b3579e6480b527cf1f8d1f1703f789df130fff34ea93997f674f93"
+  ),
+  openVinoAndroidArchive to Pair(
+    "https://storage.openvinotoolkit.org/repositories/openvino/packages/$openVinoAndroidVersion/linux/openvino_toolkit_android_${openVinoAndroidVersion}.${openVinoAndroidBuild}_x86_64.tgz",
+    "757eb8140039c9060a9e2668dc3885ab0daf24fabe7adf71a8e9e81da148049c"
+  )
+)
+val downloadAndroidLiteRtArtifacts = tasks.register("downloadAndroidLiteRtArtifacts") {
+  outputs.files(androidLiteRtArtifacts.keys.map { File(androidLiteRtArtifactDir, it) })
+  doLast {
+    androidLiteRtArtifactDir.mkdirs()
+    androidLiteRtArtifacts.forEach { (name, artifact) ->
+      val (sourceUrl, expectedSha256) = artifact
+      val destination = File(androidLiteRtArtifactDir, name)
+      if (destination.isFile) {
+        try {
+          verifySha256(destination, expectedSha256, "LiteRT $name")
+          return@forEach
+        } catch (_: GradleException) {
+          destination.delete()
+        }
+      }
+      val partial = File(destination.parentFile, "${destination.name}.partial")
+      try {
+        URL(sourceUrl).openStream().use { input ->
+          partial.outputStream().use { output -> input.copyTo(output) }
+        }
+        verifySha256(partial, expectedSha256, "LiteRT $name")
+        if (!partial.renameTo(destination)) {
+          throw GradleException("Could not promote downloaded LiteRT artifact $name")
+        }
+      } catch (error: Exception) {
+        partial.delete()
+        throw GradleException("Could not stage pinned LiteRT artifact $name", error)
+      }
+    }
+  }
+}
+val stageAndroidLiteRtArtifacts = tasks.register<Sync>("stageAndroidLiteRtArtifacts") {
+  dependsOn(downloadAndroidLiteRtArtifacts)
+  from(provider { zipTree(File(androidLiteRtArtifactDir, "litert_cc_sdk.zip")) }) {
+    include("litert_cc_sdk/litert/**")
+    eachFile {
+      relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+    }
+    into("sdk/litert_cc_sdk")
+  }
+  androidLiteRtArtifacts.keys.filter { it.endsWith(".aar") }.forEach { aarName ->
+    from(provider { zipTree(File(androidLiteRtArtifactDir, aarName)) }) {
+      include("jni/**/*.so")
+      exclude("jni/**/libc++_shared.so")
+      eachFile {
+        relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+      }
+      into("jniLibs")
+    }
+  }
+  from(provider {
+    tarTree(resources.gzip(File(androidLiteRtArtifactDir, openVinoAndroidArchive)))
+  }) {
+    include(
+      "$openVinoAndroidRoot/runtime/lib/intel64/libopenvino.so",
+      "$openVinoAndroidRoot/runtime/lib/intel64/libopenvino_intel_npu_plugin.so",
+      "$openVinoAndroidRoot/runtime/lib/intel64/libopenvino_ir_frontend.so",
+      "$openVinoAndroidRoot/runtime/lib/intel64/libopenvino_tensorflow_lite_frontend.so",
+      "$openVinoAndroidRoot/runtime/3rdparty/tbb/lib/libtbb.so"
+    )
+    eachFile { relativePath = RelativePath(true, "x86_64", name) }
+    into("jniLibs")
+  }
+  androidLiteRtSamsungRuntimeRoot?.let { runtimeRoot ->
+    inputs.file(runtimeRoot.resolve("BUILD_INFO.txt"))
+    inputs.file(runtimeRoot.resolve("SHA256SUMS"))
+    from(runtimeRoot) {
+      include(
+        "arm64-v8a/libLiteRtCompilerPlugin_Samsung.so",
+        "arm64-v8a/libLiteRtDispatch_Samsung.so"
+      )
+      into("jniLibs")
+    }
+    from(runtimeRoot.resolve("litecore")) {
+      include("lib/arm64-v8a/*.so")
+      into("assets/litert/samsung/litecore")
+    }
+    from(runtimeRoot) {
+      include("BUILD_INFO.txt", "SHA256SUMS")
+      into("assets/litert/samsung")
+    }
+  }
+  includeEmptyDirs = false
+  into(androidLiteRtRuntimeDir)
+  doFirst {
+    androidLiteRtSamsungRuntimeRoot?.let { runtimeRoot ->
+      val required = listOf(
+        runtimeRoot.resolve("arm64-v8a/libLiteRtCompilerPlugin_Samsung.so"),
+        runtimeRoot.resolve("arm64-v8a/libLiteRtDispatch_Samsung.so"),
+        runtimeRoot.resolve("litecore/lib/arm64-v8a/libgraph_wrapper.so"),
+        runtimeRoot.resolve("litecore/lib/arm64-v8a/libgraphgen_api.so")
+      )
+      val missing = required.filterNot(File::isFile)
+      val sdkLibraries = runtimeRoot.resolve("litecore/lib/arm64-v8a")
+        .listFiles()
+        ?.filter { it.isFile && it.name.endsWith(".so") }
+        .orEmpty()
+      if (missing.isNotEmpty() || sdkLibraries.size < 2) {
+        throw GradleException(
+          "PLEZY_LITERT_SAMSUNG_RUNTIME_ROOT must contain both LiteRT plugins and the LiteCore " +
+            "Android runtime under litecore/lib/arm64-v8a; missing: ${missing.joinToString()}"
+        )
+      }
+      val buildInfo = runtimeRoot.resolve("BUILD_INFO.txt")
+      if (!buildInfo.isFile || !buildInfo.readText().contains("LiteRT source tag: v2.3.0")) {
+        throw GradleException("Samsung runtime output must be built from LiteRT v2.3.0")
+      }
+      val checksums = runtimeRoot.resolve("SHA256SUMS")
+      if (!checksums.isFile) {
+        throw GradleException("Samsung runtime output is missing its SHA256SUMS file")
+      }
+      val expectedHashes = checksums.readLines().associate { line ->
+        val match = Regex("^([0-9a-fA-F]{64})\\s+\\*?(.+)$").matchEntire(line)
+          ?: throw GradleException("Samsung runtime SHA256SUMS has an invalid line: $line")
+        match.groupValues[2].removePrefix("./") to match.groupValues[1]
+      }
+      (required + sdkLibraries).forEach { library ->
+        val relativePath = runtimeRoot.toPath().relativize(library.toPath()).toString()
+        val expectedHash = expectedHashes[relativePath]
+          ?: throw GradleException("Samsung runtime SHA256SUMS has no entry for $relativePath")
+        verifySha256(library, expectedHash, "Samsung runtime $relativePath")
+      }
+    }
+  }
+}
+val stageAndroidLiteRtModels = tasks.register<Sync>("stageAndroidLiteRtModels") {
+  androidLiteRtModelRoot?.let { root ->
+    from(root) {
+      include("manifest.json", "*.tflite")
+      into("litert/models")
+    }
+  }
+  onlyIf { androidLiteRtModelRoot != null }
+  doFirst {
+    val root = androidLiteRtModelRoot ?: return@doFirst
+    val manifestFile = root.resolve("manifest.json")
+    if (!manifestFile.isFile) throw GradleException("PLEZY_LITERT_MODEL_ROOT is missing manifest.json")
+    @Suppress("UNCHECKED_CAST")
+    val manifest = groovy.json.JsonSlurper().parse(manifestFile) as Map<String, Any?>
+    @Suppress("UNCHECKED_CAST")
+    val models = manifest["models"] as? Map<String, Map<String, Any?>>
+      ?: throw GradleException("LiteRT model manifest has no models map")
+    if (models.isEmpty()) throw GradleException("LiteRT model manifest contains no model packs")
+    models.forEach { (modelId, modelEntry) ->
+      @Suppress("UNCHECKED_CAST")
+      val variants = modelEntry["variants"] as? Map<String, Map<String, Map<String, Any?>>>
+        ?: throw GradleException("LiteRT model $modelId has no variants")
+      variants.forEach { (resolution, providers) ->
+        providers.forEach { (provider, record) ->
+          val filename = record["file"] as? String
+            ?: throw GradleException("LiteRT $modelId/$resolution/$provider has no filename")
+          if (File(filename).name != filename || !filename.endsWith(".tflite")) {
+            throw GradleException("LiteRT model filename is not a safe .tflite basename: $filename")
+          }
+          val modelFile = root.resolve(filename)
+          val expectedBytes = (record["bytes"] as? Number)?.toLong()
+            ?: throw GradleException("LiteRT model $filename has no byte count")
+          if (!modelFile.isFile || modelFile.length() != expectedBytes) {
+            throw GradleException("LiteRT model $filename is missing or has the wrong size")
+          }
+          val expectedSha256 = record["sha256"] as? String
+            ?: throw GradleException("LiteRT model $filename has no SHA-256")
+          verifySha256(modelFile, expectedSha256, "LiteRT model $filename")
+        }
+      }
+    }
+  }
+  into(androidLiteRtModelAssetsDir)
+}
 val mpvFfmpegJniDir = File(mpvNativeDir, "ffmpeg/jni")
 val mpvLibcxxJniDir = File(mpvNativeDir, "libcxx/jni")
 val extractMpvNatives = tasks.register<Sync>("extractMpvNatives") {
@@ -500,7 +811,9 @@ android {
         arguments += listOf(
           "-DDOVI_ENABLE_LIBDOVI=ON",
           "-DDOVI_LIBDOVI_PREBUILT_ROOT=${doviDir.absolutePath}",
-          "-DMPV_FFMPEG_ROOT=${mpvFfmpegDevelopmentDir.absolutePath}"
+          "-DMPV_FFMPEG_ROOT=${mpvFfmpegDevelopmentDir.absolutePath}",
+          "-DLITERT_CC_SDK_ROOT=${File(androidLiteRtRuntimeDir, "sdk/litert_cc_sdk").absolutePath}",
+          "-DLITERT_ANDROID_RUNTIME_ROOT=${File(androidLiteRtRuntimeDir, "jniLibs").absolutePath}"
         )
       }
     }
@@ -593,6 +906,11 @@ android {
       // while older native consumers remain ABI-compatible.
       pickFirsts.add("lib/*/libc++_shared.so")
     }
+    resources {
+      // Bouncy Castle publishes the same license text in bcprov, bcpkix, and
+      // bcutil. Keep one copy in the APK instead of dropping the notice.
+      pickFirsts.add("META-INF/LICENSE.md")
+    }
   }
 
   sourceSets {
@@ -602,6 +920,17 @@ android {
       // is extractMpvNatives' output (the AAR's 16 KB-capable libc++), wired
       // below via the JniLibFolders dependency.
       jniLibs.srcDir(mpvLibcxxJniDir)
+      jniLibs.srcDir(File(androidLiteRtRuntimeDir, "jniLibs"))
+      assets.srcDir(androidLiteRtModelAssetsDir)
+      assets.srcDir(File(androidLiteRtRuntimeDir, "assets"))
+      // QAIRT files remain in the private SDK and are copied into this staged
+      // tree only when QAIRT_SDK_ROOT is supplied by the build environment.
+      if (qairtSdkRoot != null) {
+        jniLibs.srcDir(File(androidAnvilRuntimeDir, "jniLibs"))
+      }
+      if (qairtSdkRoot != null || androidAnvilContextsRoot != null) {
+        assets.srcDir(File(androidAnvilRuntimeDir, "assets"))
+      }
     }
   }
 
@@ -654,6 +983,7 @@ flutter {
 
 tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative") }.configureEach {
   dependsOn(downloadLibdovi, prepareMpvFfmpegDevelopment)
+  dependsOn(stageAndroidLiteRtArtifacts)
 }
 
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
@@ -663,6 +993,13 @@ tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.config
 // extracted libc++ directory present during input discovery.
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
   dependsOn(extractMpvNatives)
+  dependsOn(stageAndroidAnvilRuntime)
+  dependsOn(stageAndroidLiteRtArtifacts)
+}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+  dependsOn(stageAndroidAnvilRuntime)
+  dependsOn(stageAndroidLiteRtArtifacts)
+  dependsOn(stageAndroidLiteRtModels)
 }
 
 dependencies {
@@ -687,6 +1024,8 @@ dependencies {
   implementation("androidx.media3:media3-decoder:$media3Version")
   implementation("androidx.media3:media3-exoplayer:$media3Version")
   implementation("androidx.media3:media3-exoplayer-hls:$media3Version")
+  // ExoPlayer's GPU frame-effects pipeline (used for opt-in Lanczos upscaling).
+  implementation("androidx.media3:media3-effect:$media3Version")
   implementation("androidx.media3:media3-ui:$media3Version")
   implementation("androidx.media3:media3-common:$media3Version")
 

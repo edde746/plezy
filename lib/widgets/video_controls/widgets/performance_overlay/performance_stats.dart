@@ -1,6 +1,8 @@
 import 'package:plezy/i18n/presentation_formats.dart';
 import '../../../../i18n/strings.g.dart';
 import '../../../../media/dolby_vision_playback.dart';
+import '../../../../models/motion_processing_mode.dart';
+import '../../../../models/playback_capability_report.dart';
 import '../../../../utils/codec_utils.dart';
 
 /// Dolby Vision routes exposed by the player diagnostics.
@@ -78,6 +80,24 @@ class PerformanceStats {
   final double? actualFps;
   final double? avsyncChange;
   final double? displayFps;
+  final String? currentVideoOutput;
+  final String? videoSync;
+  final bool? motionInterpolationActive;
+  final String? motionProviderStatus;
+  final MotionProcessingResolution? motionProcessingResolution;
+  final PlaybackCapabilityReport? playbackCapabilityReport;
+  final String? neuralProvider;
+  final String? neuralProviderVendor;
+  final double? neuralInferenceMs;
+  final double? neuralInferenceP95Ms;
+  final int? neuralGeneratedFrames;
+  final int? neuralSceneCutBypasses;
+  final int? neuralDeadlineMisses;
+  final String? neuralGpuProvider;
+  final bool videoUpscalingRequested;
+  final bool videoUpscalingConfigured;
+  final String? videoUpscalingStatus;
+  final String? videoUpscalingProvider;
   final int? frameDropCount;
   final int? decoderFrameDropCount;
 
@@ -135,6 +155,24 @@ class PerformanceStats {
     this.actualFps,
     this.avsyncChange,
     this.displayFps,
+    this.currentVideoOutput,
+    this.videoSync,
+    this.motionInterpolationActive,
+    this.motionProviderStatus,
+    this.motionProcessingResolution,
+    this.playbackCapabilityReport,
+    this.neuralProvider,
+    this.neuralProviderVendor,
+    this.neuralInferenceMs,
+    this.neuralInferenceP95Ms,
+    this.neuralGeneratedFrames,
+    this.neuralSceneCutBypasses,
+    this.neuralDeadlineMisses,
+    this.neuralGpuProvider,
+    this.videoUpscalingRequested = false,
+    this.videoUpscalingConfigured = false,
+    this.videoUpscalingStatus,
+    this.videoUpscalingProvider,
     this.frameDropCount,
     this.decoderFrameDropCount,
     this.cacheUsed,
@@ -260,6 +298,195 @@ class PerformanceStats {
     if (displayFps == null) return t.common.notAvailable;
     return formatDecimal(displayFps!, minimumDecimals: 0, maximumDecimals: 0);
   }
+
+  String get motionInterpolationFormatted {
+    if (motionProviderStatus == 'active') return t.common.on;
+    if (motionInterpolationActive == null) return t.common.notAvailable;
+    return motionInterpolationActive! ? t.common.on : t.common.off;
+  }
+
+  /// Reports the requested path separately from runtime provider state.
+  /// Provider readiness and observed generated frames remain distinct, so a
+  /// loaded model is not described as active inference.
+  String? get motionProcessingFormatted {
+    final resolution = motionProcessingResolution;
+    if (resolution == null || resolution.requested == MotionProcessingMode.off) return null;
+    final neuralRequest = resolution.requestedPreset == null
+        ? t.settings.neuralInterpolation
+        : '${t.settings.neuralInterpolation} · ${_neuralPresetLabel(resolution.requestedPreset!)}';
+    if (resolution.fallback == MotionProcessingFallback.livePlayback) {
+      final request = resolution.requested == MotionProcessingMode.neural
+          ? neuralRequest
+          : t.settings.motionSmoothingMpv;
+      return '$request · ${t.settings.motionSmoothingLiveUnavailableDescription}';
+    }
+    if (resolution.fallback == MotionProcessingFallback.powerLimited) {
+      return '$neuralRequest · ${t.settings.neuralPowerLimited}';
+    }
+    if (resolution.fallback == MotionProcessingFallback.thermalLimited) {
+      return '$neuralRequest · ${t.settings.neuralThermalLimited}';
+    }
+    if (resolution.requested == MotionProcessingMode.neural &&
+        const {'mpv-bypass', 'recovery-probe'}.contains(playbackCapabilityReport?.neuralDeadlineGovernor)) {
+      final misses = neuralDeadlineMisses;
+      return '$neuralRequest → ${t.settings.motionSmoothingMpv}'
+          '${misses == null ? '' : ' · $misses ${t.performanceOverlay.deadlineMisses}'}';
+    }
+    if (resolution.provider == MotionProcessingProvider.neural) {
+      final provider = _neuralProviderLabel;
+      if (provider != null) {
+        final latency = neuralInferenceP95Ms ?? neuralInferenceMs;
+        final latencyText = latency == null ? null : formatDecimal(latency, minimumDecimals: 1, maximumDecimals: 1);
+        final latencyLabel = latencyText == null || neuralInferenceP95Ms == null
+            ? latencyText
+            : '${t.performanceOverlay.neuralP95} $latencyText';
+        final generated = neuralGeneratedFrames;
+        final sourceFrames = playbackCapabilityReport?.neuralSourceFrames;
+        final sceneCutBypasses = neuralSceneCutBypasses;
+        final deadlineMisses = neuralDeadlineMisses;
+        final vendor = playbackCapabilityReport?.neuralProviderVendor ?? neuralProviderVendor;
+        final providerLabel =
+            vendor != null && vendor.isNotEmpty && !provider.toLowerCase().contains(vendor.toLowerCase())
+            ? '$vendor · $provider'
+            : provider;
+        final neuralPowerMode = _neuralPowerModeLabel;
+        final synthesisRatio = generated != null && sourceFrames != null && sourceFrames > 0
+            ? generated / sourceFrames
+            : null;
+        final detail = [
+          if (generated != null && generated > 0) '$generated frames',
+          if (synthesisRatio != null) '${synthesisRatio.toStringAsFixed(2)} synth/source',
+          if (latencyLabel != null && latency! > 0) '$latencyLabel ms',
+          if (neuralGpuProvider != null && neuralGpuProvider!.isNotEmpty) 'Compute $neuralGpuProvider',
+          if (neuralPowerMode != null) neuralPowerMode,
+          if (sceneCutBypasses != null && sceneCutBypasses > 0)
+            '$sceneCutBypasses ${t.performanceOverlay.sceneCutBypasses}',
+          if (deadlineMisses != null && deadlineMisses > 0) '$deadlineMisses ${t.performanceOverlay.deadlineMisses}',
+        ].join(' · ');
+        final readiness =
+            playbackCapabilityReport?.neuralProviderReady == true &&
+                playbackCapabilityReport?.hasObservedNeuralOutput != true &&
+                provider != 'VideoToolbox ready' &&
+                provider != 'VideoToolbox initializing'
+            ? ' · ready'
+            : '';
+        return '$neuralRequest · $providerLabel$readiness${detail.isEmpty ? '' : ' · $detail'}';
+      }
+      return switch (motionProviderStatus) {
+        'active' => '$neuralRequest · VideoToolbox',
+        'initializing' => '$neuralRequest · VideoToolbox initializing',
+        'ready' => '$neuralRequest · VideoToolbox ready',
+        _ => neuralRequest,
+      };
+    }
+    if (resolution.provider == MotionProcessingProvider.off) {
+      return resolution.requested == MotionProcessingMode.neural
+          ? '$neuralRequest · ${t.settings.neuralInterpolationUnavailable}'
+          : '${t.settings.motionSmoothingMpv} · ${t.settings.motionSmoothingUnavailableDescription}';
+    }
+    final isActive = motionInterpolationActive == true && videoSync == 'display-resample';
+    if (resolution.requested == MotionProcessingMode.neural) {
+      final providerStatus = (playbackCapabilityReport?.neuralProvider ?? neuralProvider)?.toLowerCase();
+      if (providerStatus == 'initializing' || providerStatus?.endsWith('-initializing') == true) {
+        return '$neuralRequest · initializing${isActive ? ' → ${t.settings.motionSmoothingMpv}' : ''}';
+      }
+      if (resolution.fallback == MotionProcessingFallback.neuralUnavailable ||
+          providerStatus == 'unavailable' ||
+          providerStatus == 'failed' ||
+          providerStatus == 'error') {
+        return '$neuralRequest · ${t.settings.neuralInterpolationUnavailable}'
+            '${isActive ? ' → ${t.settings.motionSmoothingMpv}' : ''}';
+      }
+      return isActive
+          ? '$neuralRequest → ${t.settings.motionSmoothingMpv}'
+          : '$neuralRequest · ${t.settings.motionSmoothingNotActiveDescription}';
+    }
+    return isActive
+        ? t.settings.motionSmoothingMpv
+        : '${t.settings.motionSmoothingMpv} · ${t.settings.motionSmoothingNotActiveDescription}';
+  }
+
+  /// Reports the requested spatial resampling separately from the provider's
+  /// configuration result; a requested effect may be unavailable for DRM or
+  /// when playback has fallen back to MPV.
+  String? get videoUpscalingFormatted {
+    if (!videoUpscalingRequested) return null;
+    if (videoUpscalingConfigured) {
+      return '${videoUpscalingProvider ?? t.common.notAvailable} · ${t.common.on}';
+    }
+    final status = videoUpscalingStatus;
+    return '${t.shaders.lanczosUpscaling} · ${status == null || status.isEmpty ? t.common.notAvailable : status}';
+  }
+
+  String? get _neuralProviderLabel {
+    final provider = playbackCapabilityReport?.neuralProvider ?? neuralProvider;
+    final normalizedProvider = provider?.trim().toLowerCase();
+    if (normalizedProvider == 'videotoolbox') {
+      return switch (playbackCapabilityReport?.nativeInterpolationStatus ?? motionProviderStatus) {
+        'active' => 'VideoToolbox',
+        'initializing' => 'VideoToolbox initializing',
+        'ready' => 'VideoToolbox ready',
+        _ => 'VideoToolbox',
+      };
+    }
+    if (normalizedProvider == null ||
+        normalizedProvider.isEmpty ||
+        normalizedProvider == 'unavailable' ||
+        normalizedProvider == 'initializing') {
+      return switch (motionProviderStatus) {
+        'active' => 'VideoToolbox',
+        'initializing' => 'VideoToolbox initializing',
+        'ready' => 'VideoToolbox ready',
+        _ => null,
+      };
+    }
+    final providerName = normalizedProvider.endsWith('-ready')
+        ? normalizedProvider.substring(0, normalizedProvider.length - '-ready'.length)
+        : normalizedProvider;
+    final qnn = RegExp(r'^qnn-htp-v(\d+)$').firstMatch(providerName);
+    if (qnn != null) return 'Qualcomm HTP V${qnn.group(1)}';
+    return switch (providerName) {
+      'qnn-htp' => 'Qualcomm HTP',
+      'qnn-npu' => 'QNN · NPU',
+      'qnn-gpu' => 'QNN · GPU',
+      'litert-npu' => 'LiteRT · NPU',
+      'litert-gpu' => 'LiteRT · GPU',
+      'openvino-npu' => 'OpenVINO NPU',
+      'openvino-gpu' => 'OpenVINO GPU',
+      'openvino-cpu' => 'OpenVINO CPU',
+      'openvino' => 'OpenVINO',
+      'cuda-gpu' => 'CUDA GPU',
+      'vitisai-npu' => 'Vitis AI NPU',
+      'nvtensorrtrtx-gpu' => 'TensorRT RTX GPU',
+      'migraphx-gpu' => 'MIGraphX GPU',
+      'directml-gpu' => 'DirectML GPU',
+      'winml-npu' => 'Windows ML NPU',
+      'winml-gpu' => 'Windows ML GPU',
+      'winml-cpu' => 'Windows ML CPU',
+      'winml' => 'Windows ML',
+      'videotoolbox' => 'VideoToolbox',
+      _ => provider,
+    };
+  }
+
+  String? get _neuralPowerModeLabel {
+    final provider = (playbackCapabilityReport?.neuralProvider ?? neuralProvider)?.toLowerCase();
+    if (provider == null || !provider.startsWith('qnn-htp')) return null;
+    return switch (playbackCapabilityReport?.neuralPowerMode?.trim().toLowerCase()) {
+      'burst' => 'HTP burst',
+      'balanced' => 'HTP balanced',
+      'sustained' => 'HTP sustained',
+      'sustained_high_performance' => 'HTP sustained high performance',
+      'power_saver' => 'HTP power saver',
+      _ => null,
+    };
+  }
+
+  String _neuralPresetLabel(NeuralInterpolationPreset preset) => switch (preset) {
+    NeuralInterpolationPreset.performance => t.settings.neuralInterpolationPresetPerformance,
+    NeuralInterpolationPreset.balanced => t.settings.neuralInterpolationPresetBalanced,
+    NeuralInterpolationPreset.quality => t.settings.neuralInterpolationPresetQuality,
+  };
 
   /// Format dropped frames count.
   ///

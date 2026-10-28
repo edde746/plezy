@@ -134,8 +134,28 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     case "setLogLevel":
       handleSetLogLevel(call: call, result: result)
 
+    case "getAppleThermalStatus":
+      result(Self.thermalStatus())
+
     default:
       result(FlutterMethodNotImplemented)
+    }
+  }
+
+  /// Maps Apple's process thermal tiers into the shared motion governor
+  /// vocabulary. Unknown future enum values remain unknown and fail open.
+  private static func thermalStatus() -> String? {
+    switch ProcessInfo.processInfo.thermalState {
+    case .nominal:
+      return "none"
+    case .fair:
+      return "light"
+    case .serious:
+      return "moderate"
+    case .critical:
+      return "critical"
+    @unknown default:
+      return nil
     }
   }
 

@@ -1,0 +1,2 @@
+# Provider name<TAB>device kind<TAB>plugin library path relative to this file, or builtin
+MIGraphXExecutionProvider	GPU	builtin-migraphx

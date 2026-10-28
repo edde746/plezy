@@ -413,6 +413,9 @@ class Translations$common$en {
 	/// en: 'OK'
 	String get ok => 'OK';
 
+	/// en: 'On'
+	String get on => 'On';
+
 	/// en: 'Off'
 	String get off => 'Off';
 
@@ -1451,6 +1454,75 @@ class Translations$settings$en {
 
 	/// en: 'Match display refresh rate in fullscreen'
 	String get matchRefreshRateDescription => 'Match display refresh rate in fullscreen';
+
+	/// en: 'Motion processing'
+	String get motionProcessing => 'Motion processing';
+
+	/// en: 'Motion smoothing'
+	String get motionSmoothing => 'Motion smoothing';
+
+	/// en: 'Display-synchronized frame resampling on supported MPV GPU outputs; fast motion can look soft or show artifacts.'
+	String get motionSmoothingDescription => 'Display-synchronized frame resampling on supported MPV GPU outputs; fast motion can look soft or show artifacts.';
+
+	/// en: 'If this player has no display-synchronized GPU renderer, MPV smoothing is skipped and playback continues normally.'
+	String get motionSmoothingUnavailableDescription => 'If this player has no display-synchronized GPU renderer, MPV smoothing is skipped and playback continues normally.';
+
+	/// en: 'The player could not apply motion smoothing. Playback will continue unchanged.'
+	String get motionSmoothingApplyFailed => 'The player could not apply motion smoothing. Playback will continue unchanged.';
+
+	/// en: 'Motion smoothing is disabled for live playback to preserve stream timing.'
+	String get motionSmoothingLiveUnavailableDescription => 'Motion smoothing is disabled for live playback to preserve stream timing.';
+
+	/// en: 'MPV has not activated display-synchronized interpolation for this session.'
+	String get motionSmoothingNotActiveDescription => 'MPV has not activated display-synchronized interpolation for this session.';
+
+	/// en: 'Saved for the next video. The player prepares its motion processor when playback starts.'
+	String get motionSmoothingNextPlayback => 'Saved for the next video. The player prepares its motion processor when playback starts.';
+
+	/// en: 'Off'
+	String get motionSmoothingOff => 'Off';
+
+	/// en: 'Keep the player’s existing display and frame cadence.'
+	String get motionSmoothingOffDescription => 'Keep the player’s existing display and frame cadence.';
+
+	/// en: 'MPV'
+	String get motionSmoothingMpv => 'MPV';
+
+	/// en: 'Use MPV’s display-synchronized temporal interpolation. On Android, eligible SDR 24/30 fps video uses the GPU renderer while keeping the decoder setting. This does not generate motion with a neural model.'
+	String get motionSmoothingMpvDescription => 'Use MPV’s display-synchronized temporal interpolation. On Android, eligible SDR 24/30 fps video uses the GPU renderer while keeping the decoder setting. This does not generate motion with a neural model.';
+
+	/// en: 'Neural interpolation'
+	String get neuralInterpolation => 'Neural interpolation';
+
+	/// en: 'Presets'
+	String get neuralInterpolationPresets => 'Presets';
+
+	/// en: 'Neural unavailable'
+	String get neuralInterpolationUnavailable => 'Neural unavailable';
+
+	/// en: 'Generate intermediate frames on the device. Apple uses VideoToolbox; Android tries Qualcomm HTP, then LiteRT NPU or GPU; Windows and Linux use the Plezy Motion Engine with a matching model and runtime. Playback diagnostics show the provider that actually ran. Unsupported video uses MPV smoothing when available. Choose Performance, Balanced, or Quality.'
+	String get neuralInterpolationUnavailableDescription => 'Generate intermediate frames on the device. Apple uses VideoToolbox; Android tries Qualcomm HTP, then LiteRT NPU or GPU; Windows and Linux use the Plezy Motion Engine with a matching model and runtime. Playback diagnostics show the provider that actually ran. Unsupported video uses MPV smoothing when available. Choose Performance, Balanced, or Quality.';
+
+	/// en: 'Performance'
+	String get neuralInterpolationPresetPerformance => 'Performance';
+
+	/// en: 'Balanced'
+	String get neuralInterpolationPresetBalanced => 'Balanced';
+
+	/// en: 'Quality'
+	String get neuralInterpolationPresetQuality => 'Quality';
+
+	/// en: 'Only when plugged in'
+	String get neuralOnlyWhenPluggedIn => 'Only when plugged in';
+
+	/// en: 'Pause Neural processing when running on battery. MPV smoothing stays available where supported; Neural resumes on the next video while connected to external power.'
+	String get neuralOnlyWhenPluggedInDescription => 'Pause Neural processing when running on battery. MPV smoothing stays available where supported; Neural resumes on the next video while connected to external power.';
+
+	/// en: 'Paused on battery; MPV smoothing remains available where supported.'
+	String get neuralPowerLimited => 'Paused on battery; MPV smoothing remains available where supported.';
+
+	/// en: 'Paused at elevated device temperature; MPV smoothing remains available where supported.'
+	String get neuralThermalLimited => 'Paused at elevated device temperature; MPV smoothing remains available where supported.';
 
 	/// en: 'Match Dynamic Range'
 	String get matchDynamicRange => 'Match Dynamic Range';
@@ -6492,6 +6564,12 @@ class Translations$shaders$en {
 	/// en: 'NVIDIA image scaling for sharper video'
 	String get nvscalerDescription => 'NVIDIA image scaling for sharper video';
 
+	/// en: 'Lanczos upscaling'
+	String get lanczosUpscaling => 'Lanczos upscaling';
+
+	/// en: 'GPU resampling for video smaller than the display; unavailable with DRM or tunneled playback.'
+	String get lanczosUpscalingDescription => 'GPU resampling for video smaller than the display; unavailable with DRM or tunneled playback.';
+
 	/// en: 'Neutral'
 	String get artcnnVariantNeutral => 'Neutral';
 
@@ -7003,6 +7081,27 @@ class Translations$performanceOverlay$en {
 
 	/// en: 'Display FPS'
 	String get displayFps => 'Display FPS';
+
+	/// en: 'Video Output'
+	String get videoOutput => 'Video Output';
+
+	/// en: 'Interpolation'
+	String get motionInterpolation => 'Interpolation';
+
+	/// en: 'Thermal'
+	String get thermalStatus => 'Thermal';
+
+	/// en: 'p95'
+	String get neuralP95 => 'p95';
+
+	/// en: 'scene cut bypasses'
+	String get sceneCutBypasses => 'scene cut bypasses';
+
+	/// en: 'deadline misses'
+	String get deadlineMisses => 'deadline misses';
+
+	/// en: 'Video Sync'
+	String get videoSync => 'Video Sync';
 
 	/// en: 'A/V Sync'
 	String get avSync => 'A/V Sync';
@@ -14083,6 +14182,7 @@ extension on Translations {
 			'common.settings' => 'Settings',
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
+			'common.on' => 'On',
 			'common.off' => 'Off',
 			'common.options' => 'Options',
 			'common.seasonNumber' => ({required Object number}) => 'Season ${number}',
@@ -14442,6 +14542,29 @@ extension on Translations {
 			'settings.matchContentResolutionDescription' => 'Switch the display to the video\'s native resolution so your TV handles upscaling. Menus and subtitles are upscaled too during playback',
 			'settings.matchRefreshRate' => 'Match Refresh Rate',
 			'settings.matchRefreshRateDescription' => 'Match display refresh rate in fullscreen',
+			'settings.motionProcessing' => 'Motion processing',
+			'settings.motionSmoothing' => 'Motion smoothing',
+			'settings.motionSmoothingDescription' => 'Display-synchronized frame resampling on supported MPV GPU outputs; fast motion can look soft or show artifacts.',
+			'settings.motionSmoothingUnavailableDescription' => 'If this player has no display-synchronized GPU renderer, MPV smoothing is skipped and playback continues normally.',
+			'settings.motionSmoothingApplyFailed' => 'The player could not apply motion smoothing. Playback will continue unchanged.',
+			'settings.motionSmoothingLiveUnavailableDescription' => 'Motion smoothing is disabled for live playback to preserve stream timing.',
+			'settings.motionSmoothingNotActiveDescription' => 'MPV has not activated display-synchronized interpolation for this session.',
+			'settings.motionSmoothingNextPlayback' => 'Saved for the next video. The player prepares its motion processor when playback starts.',
+			'settings.motionSmoothingOff' => 'Off',
+			'settings.motionSmoothingOffDescription' => 'Keep the player’s existing display and frame cadence.',
+			'settings.motionSmoothingMpv' => 'MPV',
+			'settings.motionSmoothingMpvDescription' => 'Use MPV’s display-synchronized temporal interpolation. On Android, eligible SDR 24/30 fps video uses the GPU renderer while keeping the decoder setting. This does not generate motion with a neural model.',
+			'settings.neuralInterpolation' => 'Neural interpolation',
+			'settings.neuralInterpolationPresets' => 'Presets',
+			'settings.neuralInterpolationUnavailable' => 'Neural unavailable',
+			'settings.neuralInterpolationUnavailableDescription' => 'Generate intermediate frames on the device. Apple uses VideoToolbox; Android tries Qualcomm HTP, then LiteRT NPU or GPU; Windows and Linux use the Plezy Motion Engine with a matching model and runtime. Playback diagnostics show the provider that actually ran. Unsupported video uses MPV smoothing when available. Choose Performance, Balanced, or Quality.',
+			'settings.neuralInterpolationPresetPerformance' => 'Performance',
+			'settings.neuralInterpolationPresetBalanced' => 'Balanced',
+			'settings.neuralInterpolationPresetQuality' => 'Quality',
+			'settings.neuralOnlyWhenPluggedIn' => 'Only when plugged in',
+			'settings.neuralOnlyWhenPluggedInDescription' => 'Pause Neural processing when running on battery. MPV smoothing stays available where supported; Neural resumes on the next video while connected to external power.',
+			'settings.neuralPowerLimited' => 'Paused on battery; MPV smoothing remains available where supported.',
+			'settings.neuralThermalLimited' => 'Paused at elevated device temperature; MPV smoothing remains available where supported.',
 			'settings.matchDynamicRange' => 'Match Dynamic Range',
 			'settings.matchDynamicRangeDescription' => 'Switch HDR on for HDR content, then back to SDR',
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
@@ -14461,6 +14584,8 @@ extension on Translations {
 			'settings.audioChannelLimitStereo' => 'Stereo',
 			'settings.audioChannelLimitStereoDescription' => 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.',
 			'settings.downmixCenterBoost' => 'Center Channel Boost',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Boost (dB)',
 			'settings.downmixCenterBoostShort' => 'dB',
@@ -14485,8 +14610,6 @@ extension on Translations {
 			'settings.dvExperimentDiagnosticsDescription' => 'Enable detailed player logs on the next playback.',
 			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
@@ -14975,6 +15098,8 @@ extension on Translations {
 			'videoControls.playbackResumed' => 'Playing',
 			'videoControls.loadingVideo' => 'Loading video',
 			'videoControls.showPlaybackControls' => 'Show playback controls',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.hidePlaybackControls' => 'Hide playback controls',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => 'Seek backward ${seconds} seconds',
 			'videoControls.seekForwardButton' => ({required Object seconds}) => 'Seek forward ${seconds} seconds',
@@ -14999,8 +15124,6 @@ extension on Translations {
 			'videoControls.bookmarksButton' => 'Bookmarks',
 			'videoControls.chaptersAndBookmarks' => 'Chapters and bookmarks',
 			'videoControls.segmentLoop' => 'Segment loop',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.addBookmark' => 'Add bookmark',
 			'videoControls.bookmarkName' => 'Bookmark name',
 			'videoControls.bookmarkNameHint' => 'For example, Opening scene',
@@ -15489,6 +15612,8 @@ extension on Translations {
 			'accountPreferences.displayMissingEpisodes' => 'Show missing episodes',
 			'accountPreferences.displayMissingEpisodesDescription' => 'List episodes the server knows about but has no file for.',
 			'accountPreferences.hidePlayedInLatest' => 'Hide watched items in Latest',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.hidePlayedInLatestDescription' => 'Leave items you have already watched out of the server\'s Latest rows.',
 			'accountPreferences.displayCollectionsView' => 'Show the Collections view',
 			'accountPreferences.displayCollectionsViewDescription' => 'Offer the server\'s Collections view alongside your libraries.',
@@ -15513,8 +15638,6 @@ extension on Translations {
 			'accountPreferences.mediaReviewsOptions.criticsOnlyDescription' => 'Show critic ratings and reviews.',
 			'accountPreferences.mediaReviewsOptions.nobodyDescription' => 'Hide ratings and reviews.',
 			'accountPreferences.preferredAudioLanguageDescription' => 'Prefer audio tracks in this language when the server or player selects a track automatically.',
-			_ => null,
-		} ?? switch (path) {
 			'accountPreferences.preferredSubtitleLanguageDescription' => 'Prefer subtitle tracks in this language when subtitles are selected automatically.',
 			'accountPreferences.subtitleAccessibilityDescription' => 'Choose whether SDH captions are preferred or required during automatic subtitle selection.',
 			'accountPreferences.forcedSubtitleDescription' => 'Choose whether forced subtitle tracks are preferred or required during automatic selection.',
@@ -16003,6 +16126,8 @@ extension on Translations {
 			'explore.detail.originalTitle' => 'Original title',
 			'explore.detail.alsoKnownAs' => 'Also known as',
 			'explore.detail.studios' => 'Studios',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.country' => 'Country',
 			'explore.detail.language' => 'Language',
 			'explore.detail.released' => 'Released',
@@ -16027,8 +16152,6 @@ extension on Translations {
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} result', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} results', ), 
@@ -16516,6 +16639,10 @@ extension on Translations {
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
+			'shaders.lanczosUpscaling' => 'Lanczos upscaling',
+			_ => null,
+		} ?? switch (path) {
+			'shaders.lanczosUpscalingDescription' => 'GPU resampling for video smaller than the display; unavailable with DRM or tunneled playback.',
 			'shaders.artcnnVariantNeutral' => 'Neutral',
 			'shaders.artcnnVariantDenoise' => 'Denoise',
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
@@ -16541,8 +16668,6 @@ extension on Translations {
 			'companionRemote.session.usePhoneToControl' => 'Use your mobile device to control this app',
 			'companionRemote.session.startServer' => 'Start Server',
 			'companionRemote.session.stopServer' => 'Stop Server',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.minimize' => 'Minimize',
 			'companionRemote.session.manualAddressHint' => 'Manual connection address:',
 			'companionRemote.pairing.discoveryDescription' => 'PlezyNG devices with the same Plex account appear here',
@@ -16747,6 +16872,13 @@ extension on Translations {
 			'performanceOverlay.transfer' => 'Transfer',
 			'performanceOverlay.renderFps' => 'Render FPS',
 			'performanceOverlay.displayFps' => 'Display FPS',
+			'performanceOverlay.videoOutput' => 'Video Output',
+			'performanceOverlay.motionInterpolation' => 'Interpolation',
+			'performanceOverlay.thermalStatus' => 'Thermal',
+			'performanceOverlay.neuralP95' => 'p95',
+			'performanceOverlay.sceneCutBypasses' => 'scene cut bypasses',
+			'performanceOverlay.deadlineMisses' => 'deadline misses',
+			'performanceOverlay.videoSync' => 'Video Sync',
 			'performanceOverlay.avSync' => 'A/V Sync',
 			'performanceOverlay.dropped' => 'Dropped',
 			'performanceOverlay.dvRpus' => 'DV RPUs',
@@ -17022,6 +17154,8 @@ extension on Translations {
 			'streaming.settingsLoadFailed' => 'Couldn\'t unlock the saved streaming settings. Unlock the device, then try again before changing connections.',
 			'streaming.settingsUnreadable' => 'These saved connections can\'t be unlocked. Clear them to reconnect services.',
 			'streaming.clearUnreadableSettings' => 'Clear saved settings',
+			_ => null,
+		} ?? switch (path) {
 			'streaming.clearUnreadableSettingsConfirm' => 'Clear saved streaming settings?',
 			'streaming.clearUnreadableSettingsBody' => 'This removes every saved provider account and add-on address from this profile. It can\'t be undone.',
 			'streaming.clearUnreadableSettingsFailed' => 'Couldn\'t clear the saved streaming settings. Unlock the device and try again.',
@@ -17055,8 +17189,6 @@ extension on Translations {
 			'streaming.allowHttpDescription' => 'Use only for a trusted add-on on your private network.',
 			'streaming.installAddon' => 'Connect add-on',
 			'streaming.addonInstalled' => 'Add-on connected',
-			_ => null,
-		} ?? switch (path) {
 			'streaming.addonRemoved' => 'Add-on removed',
 			'streaming.addonToggle' => 'Enable add-on',
 			'streaming.addonEmpty' => 'No add-ons connected yet',
@@ -17536,6 +17668,8 @@ extension on Translations {
 			'universalMedia.cliTitle' => 'Command line',
 			'universalMedia.cliHelp' => 'Use the plezyctl guide to validate a manifest or search the same extension. Review its HTTPS service before each search. Results open in the existing media form; choose the playback button to start.',
 			'universalMedia.cliCopyExample' => 'Copy command example',
+			_ => null,
+		} ?? switch (path) {
 			'universalMedia.cliCopied' => 'Command example copied.',
 			'fileSources.title' => 'Files and books',
 			'fileSources.subtitle' => 'Read, listen, and watch from your own files.',
@@ -17569,8 +17703,6 @@ extension on Translations {
 			'fileSources.removeSource' => 'Disconnect source',
 			'fileSources.disconnectMessage' => 'Disconnect this source? Downloaded files and your reading and listening history will stay on this device.',
 			'fileSources.localFolder' => 'Choose folder',
-			_ => null,
-		} ?? switch (path) {
 			'fileSources.empty' => 'Nothing here yet',
 			'fileSources.emptyHint' => 'Add a source or import a book, audiobook, music, or video.',
 			'fileSources.search' => 'Search this folder',
@@ -18050,6 +18182,8 @@ extension on Translations {
 			'games.shareLibraryHelp' => 'Allow paired Companion Remote devices in this profile to read the names and installation state of games on this computer. Steam sign-in data and file paths stay here. Enable the Companion Remote server to connect.',
 			'games.steamInstallFolder' => 'Steam installation folder',
 			'games.automaticFolder' => 'Find automatically',
+			_ => null,
+		} ?? switch (path) {
 			'games.streamQuality' => 'Steam stream quality',
 			'games.controllerSeats' => 'Steam controllers',
 			'games.allowSessionControl' => 'Allow companion game session controls',
@@ -18083,8 +18217,6 @@ extension on Translations {
 			'games.streamLimitDecoder' => 'Receiver decoder',
 			'games.streamLimitBurst' => 'Burst throttling',
 			'games.streamPresentedFps' => 'Frames submitted to the display',
-			_ => null,
-		} ?? switch (path) {
 			'games.streamReceivedBitrate' => 'Received video payload',
 			'games.streamCompletionTime' => 'Average receiver frame completion',
 			'games.streamDroppedFrames' => 'Receiver-dropped frames this session',

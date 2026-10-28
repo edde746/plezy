@@ -739,6 +739,16 @@ bool MpvPlayer::RenderToSurface(EGLSurface surface, int width, int height) {
   return true;
 }
 
+void MpvPlayer::ReportSwap() {
+  mpv_render_context* render_context = nullptr;
+  {
+    std::lock_guard<std::mutex> lock(native_mutex_);
+    if (disposed_ || !mpv_gl_) return;
+    render_context = mpv_gl_;
+  }
+  mpv_render_context_report_swap(render_context);
+}
+
 void MpvPlayer::Dispose() {
   if (disposed_.exchange(true)) {
     return;

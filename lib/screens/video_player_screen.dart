@@ -2998,6 +2998,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final playerToDispose = player;
     player = null;
     if (playerToDispose != null) {
+      unawaited(MotionProcessingService.stopPowerSourceMonitoring(playerToDispose));
       // Keep the native display mode (tvOS HDMI criteria) across a
       // player→player handoff; the replacement screen primes its own.
       // Not before the room's commands on it have finished (SDK.md §11.2).

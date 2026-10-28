@@ -48,6 +48,7 @@ open class ExoPlayerPlugin(
   private var coreInstanceId: Long? = null
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
+  @Volatile private var videoUpscalingRequested: Boolean = false
   private var fallbackInProgress: Boolean = false
   private var backendSwitchPending: Boolean = false
   private var activity: Activity? = null
@@ -172,6 +173,7 @@ open class ExoPlayerPlugin(
     coreInstanceId = null
     mpvCore = null
     usingMpvFallback = false
+    videoUpscalingRequested = false
     fallbackInProgress = false
     backendSwitchPending = false
     mpvForwardGeneration = null
@@ -254,6 +256,7 @@ open class ExoPlayerPlugin(
       "updateFrame" -> handleUpdateFrame(result)
       "setVideoRect" -> handleSetVideoRect(call, result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
+      "setVideoUpscaling" -> handleSetVideoUpscaling(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
       "setAudioFocusEnabled" -> handleSetAudioFocusEnabled(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
@@ -1229,6 +1232,36 @@ open class ExoPlayerPlugin(
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 
+  private fun handleSetVideoUpscaling(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    if (usingMpvFallback) {
+      videoUpscalingRequested = enabled
+      result.success(
+        mapOf(
+          "videoUpscalingRequested" to enabled,
+          "videoUpscalingConfigured" to false,
+          "videoUpscalingStatus" to if (enabled) "mpv-fallback" else "off",
+          "videoUpscalingProvider" to null
+        )
+      )
+      return
+    }
+    val currentActivity = activity
+    currentActivity?.runOnUiThread {
+      val core = playerCore
+      if (core == null || !core.isInitialized) {
+        result.error("NOT_INITIALIZED", "ExoPlayer is not initialized", null)
+      } else {
+        videoUpscalingRequested = enabled
+        result.success(core.setVideoUpscaling(enabled))
+      }
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+  }
+
   private fun handleSetAudioNormalization(call: MethodCall, result: MethodChannel.Result) {
     val enabled = call.argument<Boolean>("enabled")
     if (enabled == null) {
@@ -1351,7 +1384,15 @@ open class ExoPlayerPlugin(
    * Queries relevant MPV properties and returns them in a map format
    * compatible with the performance overlay.
    */
-  private fun getMpvStats(): Map<String, Any?> = mpvCore?.getStats() ?: mapOf("playerType" to "mpv")
+  private fun getMpvStats(): Map<String, Any?> {
+    val stats = mpvCore?.getStats() ?: mapOf("playerType" to "mpv")
+    return stats + mapOf(
+      "videoUpscalingRequested" to videoUpscalingRequested,
+      "videoUpscalingConfigured" to false,
+      "videoUpscalingStatus" to if (videoUpscalingRequested) "mpv-fallback" else "off",
+      "videoUpscalingProvider" to null
+    )
+  }
 
   // PiP Mode handling
 
