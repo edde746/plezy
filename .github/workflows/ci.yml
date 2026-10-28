@@ -432,6 +432,21 @@ jobs:
             experimental_render_api_test \
             plane_render_executor_test
 
+      # Older TSan runtimes reject randomized mappings when Linux uses more
+      # than 28 bits of mmap entropy. This only changes the disposable JIT VM.
+      - name: Set ThreadSanitizer-compatible ASLR entropy
+        if: matrix.sanitizer == 'thread'
+        run: |
+          current_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          if [ "$current_bits" -gt 28 ]; then
+            sudo sysctl -w vm.mmap_rnd_bits=28
+          fi
+          configured_bits="$(cat /proc/sys/vm/mmap_rnd_bits)"
+          if [ "$configured_bits" -gt 28 ]; then
+            echo "ThreadSanitizer requires vm.mmap_rnd_bits <= 28; found $configured_bits" >&2
+            exit 1
+          fi
+
       - name: Run Linux native reliability tests
         run: |
           ctest --test-dir build/linux-native-${{ matrix.sanitizer }} \
