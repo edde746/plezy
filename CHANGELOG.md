@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Let subtitle AI review save the edited or generated result as a separate SRT file without attaching it to playback or modifying the source.
+
 - Show SDH/closed-caption role markers in playback track labels and identify AI-generated, translated, and synchronized local tracks.
 
 - Explain when burned-in captions remain part of the video image and when the active player cannot receive generated SRT subtitles.

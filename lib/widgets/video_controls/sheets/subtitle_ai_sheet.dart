@@ -30,8 +30,8 @@ import 'base_video_control_sheet.dart';
 
 /// Reviewable local subtitle operations. The source file is never modified;
 /// every generated, translated, or synchronized result is written to a new
-/// temporary SRT and attached as a separate external track.
-enum _SubtitleReviewChoice { discard, player, serverAndPlayer }
+/// SRT that viewers may export or attach as a separate external track.
+enum _SubtitleReviewChoice { discard, exportSrt, player, serverAndPlayer }
 
 class SubtitleAiSheet extends StatefulWidget {
   const SubtitleAiSheet({
@@ -896,6 +896,10 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                       ],
                     ),
                   ),
+                Text(
+                  'Save SRT exports the reviewed result without changing the active track or source subtitle.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 TextButton.icon(
                   onPressed: () => unawaited(
                     _showFullCueEditor(
@@ -993,6 +997,11 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                 icon: const Icon(Icons.undo),
                 label: Text('Undo (${undoHistory.length})'),
               ),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.exportSrt),
+              icon: const Icon(Icons.save_alt_outlined),
+              label: const Text('Save SRT'),
+            ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(_SubtitleReviewChoice.discard),
               child: const Text('Discard'),
@@ -1018,6 +1027,22 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     }
     final bytes = SubtitleSyncService.writeSrt(reviewedCues);
     final originToken = _originTokenForOperation(operationLabel);
+    if (choice == _SubtitleReviewChoice.exportSrt) {
+      final exportPath = await FilePickerService.instance.saveFile(
+        dialogTitle: 'Save reviewed subtitle',
+        fileName: 'PlezyNG_${originToken}_${DateTime.now().microsecondsSinceEpoch}.srt',
+        bytes: bytes,
+        type: FileType.custom,
+        allowedExtensions: const ['srt'],
+      );
+      if (!mounted) return false;
+      if (exportPath == null) {
+        setState(() => _status = 'SRT export was cancelled; the active track and source subtitle are unchanged.');
+        return false;
+      }
+      setState(() => _status = 'Reviewed subtitle exported as SRT.');
+      return false;
+    }
     if (choice == _SubtitleReviewChoice.serverAndPlayer) {
       final languageCode = uploadLanguage;
       if (languageCode == null) throw StateError('The result language could not be identified for server upload.');
