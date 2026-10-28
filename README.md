@@ -19,6 +19,8 @@ The [capability and qualification ledger](docs/maintainers/capability-manifest.j
 
 The [debrid, Stremio and remote-streaming implementation plan](docs/plezyng/remote-streams/README.md) documents the proposed provider integrations, native PlezyNG flows, architecture, and Luna delivery/validation handoff.
 
+The [Discord client and PiP feasibility plan](docs/plezyng/discord/README.md) preserves an optional future design, its research, architecture, and validation gates. It is deferred; no client implementation or delivery commitment is implied.
+
 ## Dolby Vision experiments
 
 PlezyNG has developed genuine Profile 7 FEL reconstruction alongside native and
