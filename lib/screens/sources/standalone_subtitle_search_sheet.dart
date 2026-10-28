@@ -472,8 +472,10 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                                   if (result.codec?.isNotEmpty == true) 'Format ${result.codec!.toUpperCase()}',
                                   if (result.providerTitle?.trim().isNotEmpty == true)
                                     'Provider ${result.providerTitle!.trim()}',
-                                  if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
-                                  if (result.forced) t.fileInfo.flagForced,
+                                  if (result.hearingImpaired || titleSaysHearingImpaired(result.title) || titleSaysHearingImpaired(result.displayTitle))
+                                    t.fileInfo.flagHearingImpaired,
+                                  if (result.forced || titleSaysForced(result.title) || titleSaysForced(result.displayTitle))
+                                    t.fileInfo.flagForced,
                                   if (result.score != null)
                                     t.sourceSetup.subtitleRating(rating: formatDecimal(result.score!, maximumDecimals: 1)),
                                   if (ignored) 'Ignored revision',

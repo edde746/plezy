@@ -515,8 +515,9 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
               );
               final detailParts = <String>[
                 if (languageDisplay != null) languageDisplay,
-                if (result.forced) t.fileInfo.flagForced,
-                if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
+                if (result.forced || titleSaysForced(result.title) || titleSaysForced(result.displayTitle)) t.fileInfo.flagForced,
+                if (result.hearingImpaired || titleSaysHearingImpaired(result.title) || titleSaysHearingImpaired(result.displayTitle))
+                  t.fileInfo.flagHearingImpaired,
                 if (result.codec?.trim().isNotEmpty == true) 'Format ${result.codec!.toUpperCase()}',
                 if (result.providerTitle?.trim().isNotEmpty == true) 'Provider ${result.providerTitle!.trim()}',
                 if (result.displayTitle?.trim().isNotEmpty == true &&
