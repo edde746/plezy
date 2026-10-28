@@ -221,15 +221,22 @@ final class SubtitleAiService {
     SubtitleInferenceProvider provider = SubtitleInferenceProvider.cpu,
     int numThreads = 2,
     bool translateToEnglish = false,
+    String? languageCode,
     void Function(String phase, int received, int total)? onProgress,
   }) async {
     if (!supportedPlatform) throw UnsupportedError('Local speech generation is unavailable on this platform.');
     final requested = availableProviderRequests.contains(provider) ? provider : SubtitleInferenceProvider.cpu;
+    final rawLanguage = languageCode?.trim().toLowerCase().split(RegExp(r'[-_]')).first;
+    final languageOverride = rawLanguage == null || rawLanguage.isEmpty || rawLanguage == 'auto' ? null : rawLanguage;
+    if (languageOverride != null && !RegExp(r'^[a-z]{2,3}$').hasMatch(languageOverride)) {
+      throw ArgumentError.value(languageCode, 'languageCode', 'Use a two or three letter language code or auto.');
+    }
     if (requested == SubtitleInferenceProvider.cpu || requested == SubtitleInferenceProvider.desktopGpu) {
       final whisperResult = await SubtitleWhisperCppService.instance.transcribeWav(
         wavPath,
         requestGpu: requested == SubtitleInferenceProvider.desktopGpu,
         translateToEnglish: translateToEnglish,
+        languageCode: languageOverride,
         onProgress: onProgress,
       );
       return SubtitleTranscriptionResult(
@@ -241,6 +248,9 @@ final class SubtitleAiService {
         detectedLanguage: whisperResult.detectedLanguage,
         translatedToEnglish: whisperResult.translatedToEnglish,
       );
+    }
+    if (languageOverride != null && languageOverride != 'en') {
+      throw UnsupportedError('The installed accelerator speech model is English-only; choose English or Auto-detect.');
     }
     if (translateToEnglish) {
       throw UnsupportedError('Speech translation uses the multilingual CPU/GPU Whisper model. Select CPU or desktop GPU.');

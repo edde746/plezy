@@ -77,9 +77,15 @@ abstract final class SubtitleWhisperCppService {
     String wavPath, {
     required bool requestGpu,
     bool translateToEnglish = false,
+    String? languageCode,
     void Function(String phase, int received, int total)? onProgress,
   }) async {
     if (!supportedPlatform) throw UnsupportedError('Local Whisper inference is unavailable on this platform.');
+    final normalizedLanguageCode = languageCode?.trim().toLowerCase().split(RegExp(r'[-_]')).first ?? '';
+    final selectedLanguage = normalizedLanguageCode.isEmpty || normalizedLanguageCode == 'auto' ? 'auto' : normalizedLanguageCode;
+    if (selectedLanguage != 'auto' && !RegExp(r'^[a-z]{2,3}$').hasMatch(selectedLanguage)) {
+      throw ArgumentError.value(languageCode, 'languageCode', 'Use a two or three letter language code or auto.');
+    }
     final durationMs = await _WavDurationReader.readDurationMs(wavPath);
     if (durationMs <= 0 || durationMs > _maximumAudioHours * 60 * 60 * 1000) {
       throw const FormatException('WAV duration must be between one millisecond and eight hours.');
@@ -106,6 +112,7 @@ abstract final class SubtitleWhisperCppService {
         onProgress: onProgress,
         runtimeProvider: 'CPU (no compiled GPU device detected)',
         fellBackToCpu: true,
+        languageCode: selectedLanguage,
       );
     }
 
@@ -122,6 +129,7 @@ abstract final class SubtitleWhisperCppService {
         onProgress: onProgress,
         runtimeProvider: selectedDevice?.name ?? 'CPU',
         fellBackToCpu: false,
+        languageCode: selectedLanguage,
       );
     } catch (error) {
       if (selectedDevice == null) rethrow;
@@ -136,6 +144,7 @@ abstract final class SubtitleWhisperCppService {
         onProgress: onProgress,
         runtimeProvider: 'CPU (GPU fallback)',
         fellBackToCpu: true,
+        languageCode: selectedLanguage,
       );
     }
   }
@@ -149,6 +158,7 @@ abstract final class SubtitleWhisperCppService {
     required bool translated,
     required String runtimeProvider,
     required bool fellBackToCpu,
+    required String languageCode,
     void Function(String phase, int received, int total)? onProgress,
   }) async {
     final session = await whisper.FlutterWhisper.loadModel(
@@ -165,7 +175,7 @@ abstract final class SubtitleWhisperCppService {
       final result = await session.transcribeFile(
         wavPath,
         config: whisper.WhisperTranscribeConfig(
-          language: 'auto',
+          language: languageCode,
           translate: translated,
           threads: Platform.numberOfProcessors.clamp(1, 8).toInt(),
           noSpeechThreshold: 0.6,

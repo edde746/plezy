@@ -47,6 +47,7 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
   String? _status;
   Object? _lastError;
   String _detectedLanguage = 'auto';
+  String _languageCode = 'auto';
   double? _streamStartMs;
   int? _nextExpectedPtsUs;
   int? _lastSampleRate;
@@ -67,8 +68,14 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
 
   Future<void> start(
     PlayerAndroid player, {
+    String? languageCode,
     void Function(String phase, int received, int total)? onProgress,
   }) async {
+    final requestedLanguage = languageCode?.trim().toLowerCase().split(RegExp(r'[-_]')).first ?? '';
+    final selectedLanguage = requestedLanguage.isEmpty ? 'auto' : requestedLanguage;
+    if (selectedLanguage != 'auto' && !RegExp(r'^[a-z]{2,3}$').hasMatch(selectedLanguage)) {
+      throw ArgumentError.value(languageCode, 'languageCode', 'Use a two or three letter language code or auto.');
+    }
     if (_starting || _running || _session != null) {
       throw StateError('A live subtitle capture session is already active.');
     }
@@ -87,7 +94,8 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
     try {
       _setStatus('Loading the local Whisper model…');
       _lastError = null;
-      _detectedLanguage = 'auto';
+      _languageCode = selectedLanguage;
+      _detectedLanguage = selectedLanguage;
       _samples.clear();
       _cues.clear();
       _streamStartMs = null;
@@ -430,8 +438,8 @@ final class SubtitlePlaybackTranscriptionService extends ChangeNotifier {
     if (samples.length < _minimumFinalSamples) return;
     final result = await session.transcribe(
       samples,
-      config: const whisper.WhisperTranscribeConfig(
-        language: 'auto',
+      config: whisper.WhisperTranscribeConfig(
+        language: _languageCode,
         threads: 2,
         splitOnWord: true,
         noSpeechThreshold: 0.6,

@@ -64,6 +64,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   String? _status;
   String? _error;
   SubtitleInferenceProvider _provider = SubtitleInferenceProvider.cpu;
+  String _speechLanguageCode = 'auto';
   TranslateLanguage _sourceLanguage = TranslateLanguage.english;
   TranslateLanguage _targetLanguage = TranslateLanguage.spanish;
 
@@ -195,6 +196,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
       wavPath,
       provider: _provider,
       translateToEnglish: translateToEnglish,
+      languageCode: _speechLanguageCode == 'auto' ? null : _speechLanguageCode,
       onProgress: (phase, received, total) {
         if (!mounted) return;
         final percent = total == 0 ? '' : ' (${(received * 100 / total).round()}%)';
@@ -225,6 +227,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     final transcription = await SubtitleAiService.instance.transcribeWav(
       wavPath,
       provider: _provider,
+      languageCode: _speechLanguageCode == 'auto' ? null : _speechLanguageCode,
       onProgress: (phase, received, total) {
         if (!mounted) return;
         final percent = total == 0 ? '' : ' (${(received * 100 / total).round()}%)';
@@ -269,6 +272,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     }
     await service.start(
       player,
+      languageCode: _speechLanguageCode == 'auto' ? null : _speechLanguageCode,
       onProgress: (phase, received, total) {
         if (!mounted) return;
         final percent = total == 0 ? '' : ' (' + (received * 100 / total).round().toString() + '%)';
@@ -967,6 +971,59 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   }
 
   @override
+  Map<String, TranslateLanguage> _whisperLanguagesByCode() {
+    final languages = <String, TranslateLanguage>{};
+    for (final language in SubtitleTranslationService.languages) {
+      final code = language.bcpCode.toLowerCase().split(RegExp(r'[-_]')).first;
+      if (RegExp(r'^[a-z]{2,3}$').hasMatch(code)) languages.putIfAbsent(code, () => language);
+    }
+    return languages;
+  }
+
+  Widget _speechLanguageSelector() {
+    final supportsOverride =
+        _provider == SubtitleInferenceProvider.cpu || _provider == SubtitleInferenceProvider.desktopGpu;
+    final languages = _whisperLanguagesByCode();
+    final selected = languages.containsKey(_speechLanguageCode) ? _speechLanguageCode : 'auto';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InputDecorator(
+          decoration: const InputDecoration(labelText: 'Speech language', border: OutlineInputBorder()),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: selected,
+              isExpanded: true,
+              items: [
+                const DropdownMenuItem(value: 'auto', child: Text('Auto-detect')),
+                ...languages.entries.map(
+                  (entry) => DropdownMenuItem(
+                    value: entry.key,
+                    child: Text(
+                      '${SubtitleTranslationService.languageLabel(entry.value)} (${entry.key.toUpperCase()})',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: _busy || !supportsOverride
+                  ? null
+                  : (value) => setState(() => _speechLanguageCode = value ?? 'auto'),
+            ),
+          ),
+        ),
+        if (!supportsOverride)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'The selected accelerator uses an English-only model. Choose Whisper CPU or desktop GPU to override language.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget build(BuildContext context) {
     final providers = SubtitleAiService.availableProviderRequests;
     if (!providers.contains(_provider)) _provider = SubtitleInferenceProvider.cpu;
@@ -1001,6 +1058,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                         if (_provider != SubtitleInferenceProvider.cpu &&
                             _provider != SubtitleInferenceProvider.desktopGpu) {
                           _translateSpeechToEnglish = false;
+                           _speechLanguageCode = 'auto';
                         }
                       }),
               ),
@@ -1014,6 +1072,8 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
+          _speechLanguageSelector(),
+          const SizedBox(height: 10),
           if (_busy) const LinearProgressIndicator(),
           if (_status != null) ...[
             const SizedBox(height: 8),
