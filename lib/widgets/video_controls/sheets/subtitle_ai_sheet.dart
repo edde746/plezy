@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show File;
+import 'dart:io' show File, Platform;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -10,11 +10,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
 import '../../../mpv/mpv.dart';
+import '../../../mpv/player/platform/player_android.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/subtitle_ai_service.dart';
 import '../../../services/subtitle_retimer.dart';
 import '../../../services/subtitle_sync_service.dart';
 import '../../../services/subtitle_translation_service.dart';
+import '../../../services/subtitle_playback_transcription_service.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -37,6 +39,8 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
   bool _translateSpeechToEnglish = false;
   bool _translationSupported = false;
   bool _allowMobileData = false;
+  bool _requestTranslationCuda = false;
+  bool _playbackCaptureSupported = false;
   String? _status;
   String? _error;
   SubtitleInferenceProvider _provider = SubtitleInferenceProvider.cpu;
@@ -51,13 +55,19 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
 
   Future<void> _refreshCapabilityState() async {
     var translationSupported = false;
+    final androidPlayer = widget.player is PlayerAndroid ? widget.player as PlayerAndroid : null;
+    final playbackCaptureSupported = androidPlayer != null && !androidPlayer.usingMpvFallback && !androidPlayer.isLivePlayback;
     try {
-      translationSupported = await SubtitleTranslationService.isSupportedOnCurrentDevice();
+      translationSupported = SubtitleTranslationService.desktopPlatformSupported ||
+          await SubtitleTranslationService.isSupportedOnCurrentDevice();
     } catch (_) {
       translationSupported = false;
     }
     if (!mounted) return;
-    setState(() => _translationSupported = translationSupported);
+    setState(() {
+      _translationSupported = translationSupported;
+      _playbackCaptureSupported = playbackCaptureSupported;
+    });
   }
 
   Future<void> _run(Future<void> Function() operation) async {
@@ -210,29 +220,91 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
     await _showApplied();
   });
 
-  Future<void> _translate() => _run(() async {
-    if (!await SubtitleTranslationService.isSupportedOnCurrentDevice()) {
-      throw UnsupportedError('On-device translation is available on phones and tablets only.');
+  Future<void> _captureLivePlayback() => _run(() async {
+    final player = widget.player;
+    if (player is! PlayerAndroid) {
+      throw UnsupportedError('Live subtitle capture is available only through Android ExoPlayer.');
+    }
+    final service = SubtitlePlaybackTranscriptionService.instance;
+    if (service.isRunning || service.hasActiveSession) {
+      await service.stop();
+      if (!mounted) return;
+      setState(() => _status = service.status);
+      return;
+    }
+    await service.start(
+      player,
+      onProgress: (phase, received, total) {
+        if (!mounted) return;
+        final percent = total == 0 ? '' : ' (' + (received * 100 / total).round().toString() + '%)';
+        setState(() => _status = phase + percent);
+      },
+    );
+    if (!mounted) return;
+    setState(() => _status = service.status);
+  });
+
+  Future<void> _synchronizeCapturedPlayback({required bool repairCuts}) => _run(() async {
+    final transcript = SubtitlePlaybackTranscriptionService.instance.recentTranscript;
+    if (transcript == null || transcript.cues.length < 3) {
+      throw const FormatException('Capture at least three speech cues before synchronizing.');
     }
     final selected = await _pickSubtitleCues();
     if (selected == null || !mounted) return;
-    setState(() => _status = 'Preparing on-device language models…');
-    final translated = await SubtitleTranslationService.translateCues(
+    final playerDuration = widget.player.state.duration.inMilliseconds;
+    final durationMs = playerDuration > 0 ? playerDuration : transcript.durationMs;
+    setState(() => _status = 'Matching the captured speech against subtitle text…');
+    final aligned = SubtitleSyncService.synchronize(
+      subtitleCues: selected.$1,
+      speechCues: transcript.cues,
+      mediaDurationMs: durationMs,
+      repairCuts: repairCuts,
+      preserveUnmatchedOutsideEvidence: repairCuts,
+    );
+    await _writeAndApply(aligned.cues);
+    if (!mounted) return;
+    final percent = (aligned.meanMatchConfidence * 100).round();
+    setState(() {
+      _status = 'Captured-playback ' + (repairCuts ? 'cut repair' : 'sync') +
+          ' applied to ' + aligned.matchedCueCount.toString() + ' of ' + aligned.totalCueCount.toString() +
+          ' cues (' + percent.toString() + '% match confidence). ' +
+          aligned.discontinuityCount.toString() + ' timing discontinuities detected. ' +
+          (repairCuts ? 'Cues outside captured evidence kept their original timing. ' : '') +
+          'Original: ' + selected.$2 + '.';
+    });
+    await _showApplied();
+  });
+
+  Future<void> _translate() => _run(() async {
+    if (!await SubtitleTranslationService.isSupportedOnCurrentDevice()) {
+      throw UnsupportedError(
+        SubtitleTranslationService.desktopPlatformSupported
+            ? 'Install Argos Translate in Python and the selected language pair to translate locally on desktop.'
+            : 'On-device translation is available on supported phones and tablets only.',
+      );
+    }
+    final selected = await _pickSubtitleCues();
+    if (selected == null || !mounted) return;
+    setState(() => _status = SubtitleTranslationService.desktopPlatformSupported
+        ? 'Starting local translation…'
+        : 'Preparing on-device language models…');
+    final result = await SubtitleTranslationService.translateCues(
       cues: selected.$1,
       sourceLanguage: _sourceLanguage,
       targetLanguage: _targetLanguage,
       allowMobileData: _allowMobileData,
+      requestDesktopCuda: _requestTranslationCuda,
       onProgress: (completed, total) {
         if (mounted) setState(() => _status = 'Translating cue $completed of $total on this device…');
       },
     );
-    await _writeAndApply(translated);
+    await _writeAndApply(result.cues);
     if (!mounted) return;
     setState(() {
-      _status = 'Translated ${translated.length} cues from '
+      _status = 'Translated ${result.cues.length} cues from '
           '${SubtitleTranslationService.languageLabel(_sourceLanguage)} to '
           '${SubtitleTranslationService.languageLabel(_targetLanguage)}. '
-          'Timing and original subtitle file were preserved.';
+          'Timing and original subtitle file were preserved. ${result.backendLabel}.';
     });
     await _showApplied();
   });
@@ -296,7 +368,7 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         children: [
           Text(
-            'Choose a 16-bit PCM WAV exported from the same title and audio track. CPU transcription uses multilingual Whisper. Apple Core ML and Android QNN/RKNN requests use an English Moonshine model. Sync needs subtitles in the spoken language; the playing video does not expose raw audio to this feature.',
+            'WAV transcription and sync use a 16-bit PCM WAV from the same title and audio track. Android ExoPlayer also supports an opt-in, local CPU caption tap while watching VOD; it covers only the portion played. MPV fallback and other players do not expose decoded audio.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -341,6 +413,54 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
             const SizedBox(height: 8),
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
+          if (_playbackCaptureSupported) ...[
+            const Divider(height: 24),
+            Text('Live captions from playback', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Android ExoPlayer copies a bounded PCM window after decoding. The local Whisper model runs on CPU. Audio is not saved; captions arrive with a short delay and may be unavailable during tunneling, audio offload, or unsupported output formats.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 6),
+            AnimatedBuilder(
+              animation: SubtitlePlaybackTranscriptionService.instance,
+              builder: (context, _) {
+                final service = SubtitlePlaybackTranscriptionService.instance;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (service.status != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(service.status!, style: Theme.of(context).textTheme.bodySmall),
+                      ),
+                    FocusableListTile(
+                      leading: AppIcon((service.isRunning || service.hasActiveSession) ? Symbols.stop_circle_rounded : Symbols.closed_caption_rounded),
+                      title: Text((service.isRunning || service.hasActiveSession) ? 'Stop live capture' : 'Start live captions'),
+                      subtitle: Text((service.isRunning || service.hasActiveSession)
+                          ? 'Stop capture and retain the transcript for sync'
+                          : 'VOD on Android ExoPlayer; downloads the local Whisper model on first use'),
+                      onTap: _busy ? null : () => unawaited(_captureLivePlayback()),
+                    ),
+                    if (service.hasRecentTranscript && !service.isRunning) ...[
+                      FocusableListTile(
+                        leading: const AppIcon(Symbols.sync_rounded),
+                        title: const Text('Sync from captured playback'),
+                        subtitle: const Text('Aligns the watched portion against an existing subtitle'),
+                        onTap: _busy ? null : () => unawaited(_synchronizeCapturedPlayback(repairCuts: false)),
+                      ),
+                      FocusableListTile(
+                        leading: const AppIcon(Symbols.content_cut_rounded),
+                        title: const Text('Repair cuts from captured playback'),
+                        subtitle: const Text('Preserves cue timing outside speech-matched evidence'),
+                        onTap: _busy ? null : () => unawaited(_synchronizeCapturedPlayback(repairCuts: true)),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ],
           const Divider(height: 24),
           if (_provider == SubtitleInferenceProvider.cpu || _provider == SubtitleInferenceProvider.desktopGpu)
             SwitchListTile(
@@ -372,7 +492,14 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
           ),
           if (_translationSupported) ...[
             const Divider(height: 24),
-            Text('On-device translation', style: Theme.of(context).textTheme.titleMedium),
+            Text('Local subtitle translation', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              SubtitleTranslationService.desktopPlatformSupported
+                  ? 'Desktop uses optional local Argos Translate. Install its Python package and the source-to-target language model; set PLEZY_ARGOS_PYTHON if python/python3 is not on PATH.'
+                  : 'Mobile translation uses on-device ML Kit models.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -389,14 +516,28 @@ class _SubtitleAiSheetState extends State<SubtitleAiSheet> {
                 ),
               ],
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Allow language-model downloads over mobile data'),
-              value: _allowMobileData,
-              onChanged: _busy ? null : (value) => setState(() => _allowMobileData = value),
-            ),
+            if (SubtitleTranslationService.mobilePlatformSupported)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Allow language-model downloads over mobile data'),
+                value: _allowMobileData,
+                onChanged: _busy ? null : (value) => setState(() => _allowMobileData = value),
+              ),
+            if (SubtitleTranslationService.desktopPlatformSupported &&
+                (Platform.isWindows || Platform.isLinux))
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Request Argos CUDA'),
+                subtitle: const Text(
+                  'Requires a CUDA-enabled Argos/CTranslate2 install and an NVIDIA driver. If the request fails, translation retries on CPU; actual per-operation placement is not reported.',
+                ),
+                value: _requestTranslationCuda,
+                onChanged: _busy ? null : (value) => setState(() => _requestTranslationCuda = value),
+              ),
             Text(
-              'Translation runs locally through the platform runtime. Its CPU/GPU choice is not exposed by the provider.',
+              SubtitleTranslationService.desktopPlatformSupported
+                  ? 'Subtitle text stays local. Argos does not report per-cue hardware placement; GPU requests are best-effort.'
+                  : 'Translation runs locally through ML Kit. Its CPU/GPU choice is not exposed by the provider.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             FocusableListTile(

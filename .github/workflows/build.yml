@@ -50,6 +50,15 @@ on:
         required: true
         type: boolean
         default: true
+      subtitle_gpu_backend:
+        description: Opt-in Whisper backend; Vulkan builds Windows/Linux x64, CUDA builds Windows x64; release publishing stays CPU-only
+        required: true
+        type: choice
+        options:
+          - cpu
+          - vulkan
+          - cuda
+        default: cpu
       prepare_homebrew_cask:
         description: Require signed and notarized macOS validation; on release runs, also generate a Homebrew Cask candidate
         required: true
@@ -108,11 +117,13 @@ jobs:
           INCLUDE_WEBOS_RELEASE_INPUT: ${{ inputs.include_webos_release }}
           INCLUDE_TIZEN_BUILD_INPUT: ${{ inputs.include_tizen_build }}
           PREPARE_HOMEBREW_CASK_INPUT: ${{ inputs.prepare_homebrew_cask }}
+          SUBTITLE_GPU_BACKEND_INPUT: ${{ inputs.subtitle_gpu_backend }}
         run: |
           set -euo pipefail
           ACTION="$ACTION_INPUT"
           RUNNER_POOL="$RUNNER_POOL_INPUT"
           MODE="$MODE_INPUT"
+          SUBTITLE_GPU_BACKEND="$SUBTITLE_GPU_BACKEND_INPUT"
           INCLUDE_WEBOS_BUILD="$INCLUDE_WEBOS_BUILD_INPUT"
           INCLUDE_WEBOS_RELEASE="$INCLUDE_WEBOS_RELEASE_INPUT"
           INCLUDE_TIZEN_BUILD="$INCLUDE_TIZEN_BUILD_INPUT"
@@ -123,6 +134,18 @@ jobs:
           fi
           if [[ "$RUNNER_POOL" != "private" ]]; then
             echo "This workflow currently supports only the private runner pool." >&2
+            exit 1
+          fi
+          if [[ "$SUBTITLE_GPU_BACKEND" != "cpu" && "$SUBTITLE_GPU_BACKEND" != "vulkan" && "$SUBTITLE_GPU_BACKEND" != "cuda" ]]; then
+            echo "Unsupported subtitle_gpu_backend: $SUBTITLE_GPU_BACKEND" >&2
+            exit 1
+          fi
+          if [[ "$ACTION" == "release" && "$SUBTITLE_GPU_BACKEND" != "cpu" ]]; then
+            echo "Release publishing uses the CPU Whisper baseline; GPU backends are available only to build runs." >&2
+            exit 1
+          fi
+          if [[ "$MODE" != "release" && "$SUBTITLE_GPU_BACKEND" != "cpu" ]]; then
+            echo "GPU subtitle backends are available only in full build mode." >&2
             exit 1
           fi
           if [[ "$MODE" != "release" && "$MODE" != "webos-validation" && "$MODE" != "macos-validation" ]]; then
@@ -1594,6 +1617,58 @@ jobs:
         if: matrix.flutter_setup == 'git'
         uses: ./.github/actions/setup-flutter-git
 
+      - name: Install pinned NVIDIA CUDA Toolkit (Windows x64)
+        if: inputs.subtitle_gpu_backend == 'cuda' && matrix.arch == 'x64'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'cuda_13.4.3_windows_network.exe'
+          Invoke-WebRequest -Uri 'https://developer.download.nvidia.com/compute/cuda/13.4.3/network_installers/cuda_13.4.3_windows_network.exe' -OutFile $installer
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'NVIDIA Corporation') {
+            throw "CUDA installer signature is not valid for NVIDIA Corporation: $($signature.Status)"
+          }
+          $arguments = @('-s', '-n', 'nvcc_13.4', 'cublas_13.4', 'cublas_dev_13.4', 'cudart_13.4')
+          $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "CUDA Toolkit installer failed with exit code $($process.ExitCode)"
+          }
+
+          $cudaRoot = Join-Path $env:ProgramFiles 'NVIDIA GPU Computing Toolkit\CUDA\v13.4'
+          foreach ($requiredPath in @('bin\nvcc.exe', 'include\cublas_v2.h', 'lib\x64\cublas.lib')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $cudaRoot $requiredPath) -PathType Leaf)) {
+              throw "CUDA Toolkit component is missing: $requiredPath"
+            }
+          }
+          "CUDA_PATH=$cudaRoot" >> $env:GITHUB_ENV
+          (Join-Path $cudaRoot 'bin') >> $env:GITHUB_PATH
+
+      - name: Install pinned LunarG Vulkan SDK (Windows x64)
+        if: inputs.subtitle_gpu_backend == 'vulkan' && matrix.arch == 'x64'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'vulkansdk-windows-X64-1.4.363.0.exe'
+          $sdkRoot = Join-Path $env:RUNNER_TEMP 'vulkan-sdk\1.4.363.0'
+          Invoke-WebRequest -Uri 'https://sdk.lunarg.com/sdk/download/1.4.363.0/windows/vulkan_sdk.exe?Human=true' -OutFile $installer
+          $expected = '94a82d378f7a5e3e54c9db7d2fb7016af136e14ac0a18dbf0f2f67a36352d141'
+          $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $installer).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) {
+            throw "Vulkan SDK SHA-256 mismatch: $actual"
+          }
+
+          $process = Start-Process -FilePath $installer -ArgumentList @(
+            '--root', $sdkRoot, '--accept-licenses', '--default-answer',
+            '--confirm-command', 'install', 'copy_only=1'
+          ) -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Vulkan SDK installer failed with exit code $($process.ExitCode)"
+          }
+          $compiler = Join-Path $sdkRoot 'Bin\glslc.exe'
+          if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) {
+            throw "Vulkan SDK did not install glslc: $compiler"
+          }
+          "VULKAN_SDK=$sdkRoot" >> $env:GITHUB_ENV
+          (Join-Path $sdkRoot 'Bin') >> $env:GITHUB_PATH
+
       - name: Cache Pub dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
@@ -1620,6 +1695,8 @@ jobs:
 
       - name: Build Windows ${{ matrix.arch }}
         shell: pwsh
+        env:
+          FLUTTER_WHISPER_GPU_BACKEND: ${{ inputs.subtitle_gpu_backend == 'vulkan' && matrix.arch == 'x64' && 'VULKAN' || inputs.subtitle_gpu_backend == 'cuda' && matrix.arch == 'x64' && 'CUDA' || 'CPU' }}
         run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} ${{ env.NATIVE_UPDATER_DEFINE }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/windows-${{ matrix.arch }}
 
       - name: Verify Windows bundle contents
@@ -1990,6 +2067,32 @@ jobs:
 
           exit 1
 
+      - name: Install pinned LunarG Vulkan SDK (Linux x64)
+        if: inputs.subtitle_gpu_backend == 'vulkan' && matrix.arch == 'x64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_archive="$RUNNER_TEMP/vulkansdk-linux-x86_64-1.4.363.0.tar.xz"
+          curl -fL --retry 5 --retry-all-errors \
+            "https://sdk.lunarg.com/sdk/download/1.4.363.0/linux/vulkan_sdk.tar.xz?Human=true" \
+            -o "$sdk_archive"
+          echo "197962f5cbf80baf2775a03336a01cee7c8745686c65aaa70d3f751ade4d7e43  $sdk_archive" | sha256sum --check
+          sdk_extract="$RUNNER_TEMP/vulkan-sdk"
+          mkdir -p "$sdk_extract"
+          tar -xf "$sdk_archive" -C "$sdk_extract"
+          # LunarG ships setup-env.sh with the tarball; export its toolchain for later steps.
+          source "$sdk_extract/1.4.363.0/setup-env.sh"
+          test -x "$VULKAN_SDK/bin/glslc"
+          {
+            echo "VULKAN_SDK=$VULKAN_SDK"
+            echo "PATH=$PATH"
+            echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+            echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+            echo "CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
+            echo "VK_ADD_LAYER_PATH=$VK_ADD_LAYER_PATH"
+            echo "FLUTTER_WHISPER_GPU_BACKEND=VULKAN"
+          } >> "$GITHUB_ENV"
+
       - name: Cache libmpv prefix
         id: libmpv-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -2032,8 +2135,14 @@ jobs:
 
       - name: Build Linux ${{ matrix.arch }}
         shell: bash
-        run: flutter build linux --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/linux-${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          if [[ -n ${VULKAN_SDK:-} ]]; then
+            export PKG_CONFIG_PATH="$VULKAN_SDK/share/pkgconfig:$VULKAN_SDK/lib/pkgconfig:$PKG_CONFIG_PATH"
+          fi
+          flutter build linux --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/linux-${{ matrix.arch }}
         env:
+          FLUTTER_WHISPER_GPU_BACKEND: ${{ inputs.subtitle_gpu_backend == 'vulkan' && matrix.arch == 'x64' && 'VULKAN' || 'CPU' }}
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/${{ matrix.pkg_config_arch }}/pkgconfig
 
       - name: Resolve bundle directory
