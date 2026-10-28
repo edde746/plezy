@@ -131,6 +131,16 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
     }
   }
 
+  Future<void> _checkPackUpdates() async {
+    setState(() { _busy = true; _failure = null; });
+    try {
+      await _store.refreshCatalog();
+      await _refresh();
+    } on Object catch (error) {
+      if (mounted) setState(() => _failure = 'Could not update pack catalog: $error');
+    } finally { if (mounted) setState(() => _busy = false); }
+  }
+
   Future<void> _install(VisualizerPackCatalogEntry entry) async {
     final cancellation = VisualizerPackInstallCancellation();
     setState(() {
@@ -321,7 +331,9 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
     final tk = tokens(context);
     final installedIds = _installed.where((pack) => pack.isCurrent).map((pack) => pack.entry.id).toSet();
     final olderIds = _installed.where((pack) => !pack.isCurrent).map((pack) => pack.entry.id).toSet();
-    final visibleEntries = VisualizerPackCatalogEntry.available.where((entry) {
+    final entries = {for (final pack in _installed) pack.entry.id: pack.entry,
+      for (final entry in _store.catalogEntries) entry.id: entry};
+    final visibleEntries = entries.values.where((entry) {
       final favorite = _favorites.contains(_packFavoriteKey(entry.id, entry.version));
       return (!_favoritesOnly || favorite) &&
           _matches('${entry.name} ${entry.searchText} ${entry.version} ${entry.license} ${entry.description} ${entry.contentNotice}');
@@ -437,6 +449,11 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                               child: Text('No matching packs or imported presets.'),
                             ),
                           _sectionTitle(context, 'Included packs and downloads'),
+                          Text(_store.catalogStatus, style: Theme.of(context).textTheme.bodySmall),
+                          Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+                            onPressed: _busy || !_store.catalogConfigured ? null : _checkPackUpdates,
+                            icon: const Icon(Icons.refresh_rounded), label: const Text('Check for pack updates'),
+                          )),
                           for (final entry in visibleEntries)
                             Card(
                               child: Padding(
@@ -466,7 +483,9 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                     Text(entry.description, style: Theme.of(context).textTheme.bodyMedium),
                                     if (entry.bundledAsset != null)
                                       const Text('Included with the app. Installation and restoration work offline.'),
-                                    if (olderIds.contains(entry.id) && !installedIds.contains(entry.id))
+                                    if (!_store.canDownload(entry))
+                                      const Text('Download unavailable. Installed presets can still be browsed and removed.'),
+                                    if (_store.canDownload(entry) && olderIds.contains(entry.id) && !installedIds.contains(entry.id))
                                       const Text('Update available. Previous versions stay available in Installed presets.'),
                                     const SizedBox(height: 4),
                                     Text(
@@ -494,21 +513,21 @@ class _VisualizerLibrarySheetState extends State<VisualizerLibrarySheet> {
                                             icon: const Icon(Icons.grid_view_rounded, size: 18),
                                             label: const Text('Browse presets'),
                                           ),
-                                        if (installedIds.contains(entry.id))
+                                        if (installedIds.contains(entry.id) || olderIds.contains(entry.id))
                                           OutlinedButton.icon(
                                             onPressed: _busy ? null : () => _remove(entry),
                                             icon: const AppIcon(Symbols.delete_rounded, size: 18),
                                             label: Text(t.common.delete),
-                                          )
-                                        else if (_workingPackId == entry.id)
+                                          ),
+                                        if (!installedIds.contains(entry.id) && _workingPackId == entry.id)
                                           OutlinedButton.icon(
                                             onPressed: _installCancellation?.cancel,
                                             icon: const AppIcon(Symbols.close_rounded, size: 18),
                                             label: const Text('Cancel installation'),
                                           )
-                                        else
+                                        else if (!installedIds.contains(entry.id))
                                           FilledButton.icon(
-                                            onPressed: _busy || !_store.isStorageSupported ? null : () => _install(entry),
+                                            onPressed: _busy || !_store.isStorageSupported || !_store.canDownload(entry) ? null : () => _install(entry),
                                             icon: const AppIcon(Symbols.download_rounded, size: 18),
                                             label: Text(entry.bundledAsset != null ? 'Restore included pack'
                                                 : olderIds.contains(entry.id) ? 'Download update' : t.downloads.downloadNow),

@@ -13,65 +13,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'visualizer_content_limits.dart';
+import 'visualizer_catalog_entry.dart';
+import 'visualizer_signed_catalog.dart';
 
-/// A pack whose archive and digest are pinned in the application binary.
-/// Runtime catalog URLs are intentionally not trusted to authorize new content.
-class VisualizerPackCatalogEntry {
-  const VisualizerPackCatalogEntry({
-    required this.id,
-    required this.name,
-    required this.version,
-    required this.license,
-    required this.description,
-    required this.contentNotice,
-    required this.archiveUrl,
-    required this.sha256,
-    required this.archiveBytes,
-    required this.expandedBytes,
-    required this.presetCount,
-    required this.sourceUrl,
-    this.searchText = '',
-    this.bundledAsset,
-  });
-
-  final String id;
-  final String name;
-  final String version;
-  final String license;
-  final String description;
-  final String contentNotice;
-  final String archiveUrl;
-  final String sha256;
-  final int archiveBytes;
-  final int expandedBytes;
-  final int presetCount;
-  final String sourceUrl;
-  final String searchText;
-  final String? bundledAsset;
-
-  String get fileName => '$id-$version.rmpack';
-
-  static const available = <VisualizerPackCatalogEntry>[
-    VisualizerPackCatalogEntry(
-      id: 'milkrust-sample-pack',
-      name: 'MilkRust Sample Pack',
-      version: '0.1.0',
-      license: 'CC0-1.0',
-      description: 'Two MilkRust-authored sample presets. No third-party assets.',
-      contentNotice: 'MilkRust-authored sample content dedicated under CC0-1.0. No third-party presets or textures are included.',
-      archiveUrl:
-          'https://raw.githubusercontent.com/snapetech-org/MilkRust/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/content/downloads/milkrust-sample-pack-0.1.0.rmpack',
-      sha256: '175a042deb4edb224055a6334f67a1c492f32e447dc3c90a54f22849c43a27df',
-      archiveBytes: 2927,
-      expandedBytes: 5467,
-      presetCount: 2,
-      sourceUrl:
-          'https://github.com/snapetech-org/MilkRust/tree/de41e50c9d04c0b7c2de03f472c71720e1e9fda0/examples/sample-pack',
-      searchText: 'Warm Scope Blue Shape scope geometry shape fixture',
-      bundledAsset: 'assets/visualizer/milkrust-sample-pack-0.1.0.rmpack',
-    ),
-  ];
-}
+export 'visualizer_catalog_entry.dart';
 
 class VisualizerInstalledPack {
   const VisualizerInstalledPack({required this.entry, required this.path});
@@ -144,7 +89,8 @@ class VisualizerPackInstallCancellation {
 }
 
 class VisualizerPackStore {
-  VisualizerPackStore({http.Client? client, this.profileId}) : _client = client ?? http.Client();
+  VisualizerPackStore({http.Client? client, VisualizerSignedCatalog? catalog, this.profileId})
+      : _client = client ?? http.Client(), _catalog = catalog ?? VisualizerSignedCatalog.shared;
 
   static const maxArchiveBytes = 32 * 1024 * 1024;
   static const maxExpandedBytes = 64 * 1024 * 1024;
@@ -156,29 +102,14 @@ class VisualizerPackStore {
   static const maxLocalPackExpandedBytes = 64 * 1024 * 1024;
   static const maxLibraryBytes = 512 * 1024 * 1024;
 
-  static const _redistributableLicenses = <String>{
-    '0BSD',
-    'Apache-2.0',
-    'BSD-2-Clause',
-    'BSD-3-Clause',
-    'CC-BY-3.0',
-    'CC-BY-4.0',
-    'CC-BY-SA-3.0',
-    'CC-BY-SA-4.0',
-    'CC0-1.0',
-    'GPL-2.0-only',
-    'GPL-2.0-or-later',
-    'GPL-3.0-only',
-    'GPL-3.0-or-later',
-    'ISC',
-    'LGPL-2.1-only',
-    'LGPL-2.1-or-later',
-    'LGPL-3.0-only',
-    'LGPL-3.0-or-later',
-    'MIT',
-    'Unlicense',
-    'Zlib',
-  };
+  static const _redistributableLicenses = VisualizerPackCatalogEntry.redistributableLicenses;
+  static const _catalogReceipt = '.catalog-receipt.json';
+  final VisualizerSignedCatalog _catalog;
+  List<VisualizerPackCatalogEntry> get catalogEntries => _catalog.entries;
+  String get catalogStatus => _catalog.status;
+  bool get catalogConfigured => _catalog.configured;
+  bool canDownload(VisualizerPackCatalogEntry entry) => _catalog.authorizes(entry);
+  Future<void> refreshCatalog() => _catalog.refresh();
 
   final http.Client _client;
   final String? profileId;
@@ -438,22 +369,40 @@ class VisualizerPackStore {
   }
 
   Future<List<VisualizerInstalledPack>> installedPacks() async {
+    await _catalog.loadCached();
     final root = Directory(p.join((await _root()).path, 'packs'));
     if (!await root.exists()) return const [];
     final installed = <VisualizerInstalledPack>[];
-    for (final entry in VisualizerPackCatalogEntry.available) {
-      final versions = Directory(p.join(root.path, entry.id));
-      if (!await versions.exists()) continue;
+    final known = {for (final entry in _catalog.knownEntries) entry.identity: entry};
+    final current = {for (final entry in _catalog.entries) entry.id: entry};
+    var visited = 0;
+    await for (final versions in root.list(followLinks: false)) {
+      if (versions is! Directory || !_isSafePackIdentifier(p.basename(versions.path))) continue;
+      if (++visited > 2500) throw const VisualizerPackException('Too many installed pack directories.');
       await for (final directory in versions.list(followLinks: false)) {
-        if (directory is! Directory || directory.path.endsWith('.previous')) continue;
+        if (++visited > 5000) throw const VisualizerPackException('Too many installed pack versions.');
+        if (directory is! Directory || !_isSafePackIdentifier(p.basename(directory.path))) continue;
         try {
           final manifest = await _readPackManifest(directory);
-          if (manifest['id'] == entry.id && manifest['version'] == p.basename(directory.path)) {
-            installed.add(VisualizerInstalledPack(entry: entry, path: directory.path));
+          final id = p.basename(versions.path), version = p.basename(directory.path);
+          if (manifest['id'] != id || manifest['version'] != version) continue;
+          var entry = current[id] ?? known['$id@$version'];
+          // A receipt is display metadata, never download authorization. It
+          // keeps removed/expired catalog versions usable and removable offline.
+          if (entry == null) {
+            final receipt = File(p.join(directory.path, _catalogReceipt));
+            if (await FileSystemEntity.type(receipt.path, followLinks: false) != FileSystemEntityType.file ||
+                await receipt.length() > 32 * 1024) continue;
+            final data = jsonDecode(await receipt.readAsString());
+            if (data is! Map<String, dynamic> || data['schemaVersion'] != 1 || data['entry'] is! Map<String, dynamic>) continue;
+            entry = VisualizerPackCatalogEntry.fromJson(data['entry'] as Map<String, dynamic>);
+            if (entry.id != id || entry.version != version) continue;
           }
-        } on Object { /* A damaged copy is not offered for playback; downloading repairs it. */ }
+          installed.add(VisualizerInstalledPack(entry: entry, path: directory.path));
+        } on Object { /* Damaged metadata is not offered for playback. */ }
       }
     }
+    installed.sort((a, b) => '${a.entry.name}/${a.version}'.compareTo('${b.entry.name}/${b.version}'));
     return installed;
   }
 
@@ -715,7 +664,9 @@ class VisualizerPackStore {
   Future<void> ensureStarterPack() => _assetOperation(() async {
     if (!isStorageSupported) return;
     final root = await _root();
+    await _catalog.loadCached();
     for (final entry in VisualizerPackCatalogEntry.available) {
+      if (!_catalog.authorizes(entry)) continue;
       if (entry.bundledAsset == null) continue;
       final receipt = File(p.join(root.path, '${entry.id}-${entry.version}.bundled'));
       if (await receipt.exists()) continue;
@@ -739,6 +690,13 @@ class VisualizerPackStore {
       if (cancellation?.isCanceled ?? false) throw const VisualizerPackCanceledException();
     }
     checkCancellation();
+    await _catalog.loadCached();
+    void checkAuthorization() {
+      if (!_catalog.authorizes(entry)) {
+        throw const VisualizerPackException('This pack is not authorized by the current catalog. Check for updates.');
+      }
+    }
+    checkAuthorization();
     final requestAbort = VisualizerPackInstallCancellation();
     final root = await _root();
     final packsRoot = Directory(p.join(root.path, 'packs'));
@@ -808,8 +766,15 @@ class VisualizerPackStore {
         throw const VisualizerPackException('The expanded pack size does not match its pinned catalog.');
       }
       await _validatePack(stage, extracted, expectedEntry: entry);
-      await _reserveLibraryBytes(entry.expandedBytes, replacing: target.path);
+      if (extracted.containsKey(_catalogReceipt)) {
+        throw const VisualizerPackException('The archive uses a reserved application receipt path.');
+      }
+      final receipt = utf8.encode(jsonEncode({'schemaVersion': 1, 'entry': entry.toJson()}));
+      if (receipt.length > 32 * 1024) throw const VisualizerPackException('Catalog receipt exceeds its limit.');
+      await File(p.join(stage.path, _catalogReceipt)).writeAsBytes(receipt, flush: true);
+      await _reserveLibraryBytes(entry.expandedBytes + receipt.length, replacing: target.path);
       checkCancellation();
+      checkAuthorization();
 
       await target.parent.create(recursive: true);
       if (await backup.exists()) await backup.delete(recursive: true);
@@ -837,6 +802,7 @@ class VisualizerPackStore {
   Future<void> remove(VisualizerPackCatalogEntry entry) => _assetOperation(() => _remove(entry));
 
   Future<void> _remove(VisualizerPackCatalogEntry entry) async {
+    if (!_isSafePackIdentifier(entry.id)) throw const VisualizerPackException('Invalid pack identity.');
     final root = Directory(p.join((await _root()).path, 'packs', entry.id));
     if (await root.exists()) await root.delete(recursive: true);
   }
