@@ -215,7 +215,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     final client = context.tryGetMediaClientForServer(serverIdOrNull(metadata.serverId));
     if (client == null) return (result: result, streamId: null);
-    final attemptKey = '${metadata.globalKey}:${source.mediaSourceId ?? result.selectedMediaIndex}:$language';
+    final languagesToSearch = orderedLanguages.take(3).toList(growable: false);
+    final attemptKey = '${metadata.globalKey}:${source.mediaSourceId ?? result.selectedMediaIndex}:${languagesToSearch.join(',')}';
     if (!_autoSubtitleFetchAttempts.add(attemptKey)) return (result: result, streamId: null);
 
     final activePlayer = player;
@@ -223,52 +224,71 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     bool isCurrent() => mounted && !_shuttingDown && player == activePlayer && _transitionGate.generation == generation;
 
     try {
-      final results = await client
-          .searchSubtitles(
-            metadata.id,
-            language: language,
-            title: metadata.title,
-            mediaIndex: result.selectedMediaIndex,
-            mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
-          )
-          .timeout(const Duration(seconds: 8));
+      final searchBatches = await Future.wait<List<SubtitleSearchResult>>(
+        languagesToSearch.map((searchLanguage) async {
+          try {
+            return await client
+                .searchSubtitles(
+                  metadata.id,
+                  language: searchLanguage,
+                  title: metadata.title,
+                  mediaIndex: result.selectedMediaIndex,
+                  mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
+                )
+                .timeout(const Duration(seconds: 8));
+          } catch (error) {
+            appLogger.d('Automatic subtitle search failed for $searchLanguage', error: error);
+            return const <SubtitleSearchResult>[];
+          }
+        }),
+      );
       if (!isCurrent()) return (result: result, streamId: null);
 
-      final candidates = results
-          .where(
-            (candidate) =>
-                candidate.key.isNotEmpty &&
-                matchesLanguage(candidate.languageCode, candidate.language) &&
-                !SubtitleRejectionService.isRejected(
-                  settings,
-                  serverId: metadata.serverId!,
-                  itemId: metadata.id,
-                  mediaIndex: result.selectedMediaIndex,
-                  result: candidate,
-                ),
-          )
-          .toList();
-      candidates.sort((a, b) {
-        final perfect = (b.perfectMatch ? 1 : 0).compareTo(a.perfectMatch ? 1 : 0);
-        if (perfect != 0) return perfect;
-        final forced = (a.forced ? 1 : 0).compareTo(b.forced ? 1 : 0);
-        if (forced != 0) return forced;
-        final hearingImpaired = (a.hearingImpaired ? 1 : 0).compareTo(b.hearingImpaired ? 1 : 0);
-        if (hearingImpaired != 0) return hearingImpaired;
-        return (b.score ?? -1).compareTo(a.score ?? -1);
-      });
-      final candidate = candidates.firstOrNull;
-      if (candidate == null) return (result: result, streamId: null);
+      SubtitleSearchResult? candidate;
+      var candidateLanguage = language;
+      for (var languageIndex = 0; languageIndex < searchBatches.length; languageIndex++) {
+        final searchLanguage = languagesToSearch[languageIndex];
+        final candidates = searchBatches[languageIndex]
+            .where(
+              (candidate) =>
+                  candidate.key.isNotEmpty &&
+                  matchesLanguageFor(searchLanguage, candidate.languageCode, candidate.language) &&
+                  !SubtitleRejectionService.isRejected(
+                    settings,
+                    serverId: metadata.serverId!,
+                    itemId: metadata.id,
+                    mediaIndex: result.selectedMediaIndex,
+                    result: candidate,
+                  ),
+            )
+            .toList();
+        candidates.sort((a, b) {
+          final perfect = (b.perfectMatch ? 1 : 0).compareTo(a.perfectMatch ? 1 : 0);
+          if (perfect != 0) return perfect;
+          final forced = (a.forced ? 1 : 0).compareTo(b.forced ? 1 : 0);
+          if (forced != 0) return forced;
+          final hearingImpaired = (a.hearingImpaired ? 1 : 0).compareTo(b.hearingImpaired ? 1 : 0);
+          if (hearingImpaired != 0) return hearingImpaired;
+          return (b.score ?? -1).compareTo(a.score ?? -1);
+        });
+        final bestForLanguage = candidates.firstOrNull;
+        if (bestForLanguage == null) continue;
+        candidate = bestForLanguage;
+        candidateLanguage = searchLanguage;
+        break;
+      }
+      final chosenCandidate = candidate;
+      if (chosenCandidate == null) return (result: result, streamId: null);
 
       final downloaded = await client
           .downloadSubtitle(
             metadata.id,
-            key: candidate.key,
-            codec: candidate.codec,
-            language: candidate.languageCode ?? language,
-            hearingImpaired: candidate.hearingImpaired,
-            forced: candidate.forced,
-            providerTitle: candidate.providerTitle,
+            key: chosenCandidate.key,
+            codec: chosenCandidate.codec,
+            language: chosenCandidate.languageCode ?? candidateLanguage,
+            hearingImpaired: chosenCandidate.hearingImpaired,
+            forced: chosenCandidate.forced,
+            providerTitle: chosenCandidate.providerTitle,
             mediaIndex: result.selectedMediaIndex,
             mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
           )

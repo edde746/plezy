@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Automatic preferred subtitle downloads now check the first three ordered languages concurrently and use the highest-priority language with an eligible provider result.
+
 - Show language/script, format, provider, and forced/SDH metadata in server and standalone subtitle search results.
 
 - Remember rejected server and standalone subtitle revisions for 180 days; hide or restore them in search and skip rejected server results during automatic preferred-language downloads.
