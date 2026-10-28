@@ -65,8 +65,8 @@
     {
       "area": "Find your next",
       "status": "partial",
-      "evidence": ["docs/plezyng/swipe/DELIVERY.md", "lib/discovery"],
-      "open": "The bounded mixed-media deck, searchable profile-local saved picks with a no-fetch Home entry, medium/time/source/metadata-backed genre filters with quick chips and searchable full source/genre pickers, direct reset on no matches, canonical actions, Undo, timestamped profile-local decision history with per-item Retry into the deck, and non-launching saved-pick Shuffle are implemented. Genre/source filtering, history, Retry, Shuffle, saved search and filter recovery have not run their feature acceptance suite. Isolated samples, verified adaptation matching, shortlist comparison, mood/familiarity filters, discovery cloud sync, lending candidates, AI reranking, and physical-device qualification remain open. No research-cohort feature is in scope."
+      "evidence": ["docs/plezyng/swipe/DELIVERY.md", "lib/discovery", "lib/sources/adapters/opds_source.dart", "lib/screens/catalog_item_detail_screen.dart", "lib/screens/discovery/find_next_screen.dart", "lib/screens/discovery/discovery_shortlist_vote_screen.dart", "lib/screens/lending/public_libraries_screen.dart"],
+      "open": "The bounded mixed-media deck, profile-local Saved picks/history, exact filters, mood/familiarity filtering, explicit local taste controls, per-pick hide/restore/reset, capped isolated OPDS samples, exact-public-ID adaptation matching, two-to-three-item comparison, private co-present shortlist voting, and opt-in encrypted Saved-pick sync are implemented. Optional AI reranking uses opaque IDs and bounded metadata with deterministic fallback. Open Library adds browse-only catalog records; when the existing OverDrive gate is enabled, connected borrower catalogs can add local-only candidates that are revalidated by exact library and book IDs before opening. OverDrive remains disabled by default and availability is checked only in its existing detail flow. Feature acceptance, provider exercises, native builds and physical-device qualification have not run for this slice. No research-cohort feature is in scope."
     },
     {
       "area": "Comics",
@@ -85,6 +85,12 @@
       "status": "isolated",
       "evidence": ["docs/plezyng/multiview/README.md", "docs/plezyng/multiview/DELIVERY.md"],
       "open": "Keep the workspace branch isolated. Per-session native ownership, concurrent decoder limits, composition, accessibility, and device acceptance are not release-qualified."
+    },
+    {
+      "area": "MilkDrop-compatible music visualizer",
+      "status": "partial",
+      "evidence": ["lib/widgets/music/music_visualizer.dart", "lib/services/visualization/visualizer_session.dart", "lib/services/visualization/visualizer_pack_store.dart", "linux/runner/visualizer/visualizer_session.cc", "native/visualizer/sources.lock.json", "docs/plezyng/visualizations/IMPLEMENTATION_STATUS.md"],
+      "open": "The Linux projectM host and same-player PCM extension are implemented in source and require patched native dependencies that are not in the current binary lock. The library includes a bundled/pinned CC0 fixture, local preset/pack import, per-profile favorites/playlists and playback controls. Native artifacts, full MilkRust rendering, shader/.milk2 fidelity, other platform hosts, a broader cleared download library, signed catalog updates, web storage and device qualification remain open."
     },
     {
       "area": "Dolby Vision and FEL",
@@ -249,6 +255,15 @@
       "confidence": "high",
       "evidence": ["lib/screens/sources/add_source_screen.dart", "lib/screens/sources/source_detail_screen.dart", "PRIVACY.md", "docs/FILES_AND_BOOKS.md"],
       "qualification": "Metadata lookup defaults off. The privacy notice identifies the title/year/episode/NFO identifier sent to Trakt when opted in and states that file bytes, full paths, and source credentials are excluded. Request-capture acceptance was not run on this branch."
+    },
+    {
+      "id": "F17",
+      "title": "MilkDrop visualizer and preset pack workflow",
+      "priority": "P1",
+      "implementationStatus": "partial",
+      "confidence": "high",
+      "evidence": ["lib/widgets/music/visualizer_library_sheet.dart", "lib/services/visualization/visualizer_session.dart", "lib/services/visualization/visualizer_pack_store.dart", "linux/runner/visualizer/visualizer_session.cc", "docs/plezyng/visualizations/IMPLEMENTATION_STATUS.md"],
+      "qualification": "Source implements the bounded verified pack workflow, offline bundled starter, local imports, profile controls, and Linux classic .milk playback through pinned projectM/PCM patches. Default artifacts still lack those APIs; playback is capability-gated. .milk2 is stored but unavailable, user archives are not author-authenticated, and unresolved community sources remain link-only. No tests, CI, native builds, rendering captures or device qualification ran. Source patch composition does not count as runtime evidence."
     }
   ]
 }

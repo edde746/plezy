@@ -3569,7 +3569,6 @@ class _Translations$audiobook$bn extends Translations$audiobook$en {
 	@override String get addSyncSource => 'প্রথমেই ফাইল এবং বইগুলিতে Google ড্রাইভ, OneDrive, ড্রপবক্স, WebDAV বা S3 যোগ করুন।';
 	@override String get syncDestination => 'সিনক স্টোরেজ অ্যাকাউন্ট';
 	@override String get syncFolder => 'সিন্ক ফোল্ডার বা প্রফেক্স';
-	@override String get syncFolderHelp => 'আপনার WebDAV সূত্রের মধ্যে একটি নির্দিষ্ট অ্যাপ্লিকেশন ব্যবহার করুন, অথবা একটি নির্দিষ্ট S3 পূর্বাভাস ব্যবহার করুন. বই ফাইলগুলি কখনো পরিবর্তন হয় না।';
 	@override String get syncCode => 'ব্যক্তিগত সিন্ক কোড';
 	@override String get syncCodeHelp => 'আপনার প্রথম ডিভাইসে একটি কোড তৈরি করুন, তারপর আপনার অন্যান্য ডিভাইসে সেই কোড লিখুন. একটি ব্যক্তিগত কপি রাখুন: এটি আপনার সক্রিপ্ট অবস্থার চিঠি।';
 	@override String get showCode => 'সিন্ক কোড প্রদর্শন বা লুকিয়ে রাখুন';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$bn extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'এই সূত্রটি মুছে ফেলুন, এখানে পড়ার এবং শুনার সনাকশন বন্ধ হবে. ক্রিপ্ট সনাকশন ফাইলগুলি সরবরাহকারী মধ্যে থাকবে।';
 	@override String get syncReconnect => 'সংরক্ষণ অ্যাকাউন্ট পুনরায়';
 	@override String lastSynced({required Object time}) => 'শেষ সমন্বয় ${time}';
-	@override String get syncPrivacy => 'শুধু সক্রিপ্ট প্রসেস এবং নোট সংরক্ষণ করা হয়. অডিও এবং ইবুক ফাইল, অ্যাকাউন্ট টোকেন এবং পাসওয়ার্ড আপলোড করা হয় না. Google ড্রাইভ এবং OneDrive অ্যাপ স্টোরেজ ব্যবহার করে; ড্রপবক্স PlezyNG সিন্ক ব্যবহার করে. সিন্ক অনুমোদন আরও লিখিত অ্যাক্সেস প্রয়োজন হতে পারে. সক্রিপ্ট করা হলেও, এই লক্ষ্য প্রসেস সিন্ক মালিক; সার্ভার প্রসেস আলাদা থাকে. সিন্ক বন্ধ করে স্থানীয় ইতিহাস এবং আলাদা অবস্থা সংরক্ষণ করে।';
 	@override String get syncConflicts => 'জেনে নিন কোথায় ফিরে আসতে হবে';
 	@override String get conflictHelp => 'এই পরিবর্তনগুলি স্বাধীনভাবে করা হয়. রাখার জন্য অবস্থান বা বুকমার্ক সংস্করণ নির্বাচন করুন. একটি পরবর্তী সময়সীমা বা একটি উচ্চ প্রয়োগ স্বয়ংক্রিয়ভাবে জিতবে না।';
 	@override String syncDevice({required Object device}) => 'ডিভাইস ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsBn {
 			'audiobook.addSyncSource' => 'প্রথমেই ফাইল এবং বইগুলিতে Google ড্রাইভ, OneDrive, ড্রপবক্স, WebDAV বা S3 যোগ করুন।',
 			'audiobook.syncDestination' => 'সিনক স্টোরেজ অ্যাকাউন্ট',
 			'audiobook.syncFolder' => 'সিন্ক ফোল্ডার বা প্রফেক্স',
-			'audiobook.syncFolderHelp' => 'আপনার WebDAV সূত্রের মধ্যে একটি নির্দিষ্ট অ্যাপ্লিকেশন ব্যবহার করুন, অথবা একটি নির্দিষ্ট S3 পূর্বাভাস ব্যবহার করুন. বই ফাইলগুলি কখনো পরিবর্তন হয় না।',
 			'audiobook.syncCode' => 'ব্যক্তিগত সিন্ক কোড',
 			'audiobook.syncCodeHelp' => 'আপনার প্রথম ডিভাইসে একটি কোড তৈরি করুন, তারপর আপনার অন্যান্য ডিভাইসে সেই কোড লিখুন. একটি ব্যক্তিগত কপি রাখুন: এটি আপনার সক্রিপ্ট অবস্থার চিঠি।',
 			'audiobook.showCode' => 'সিন্ক কোড প্রদর্শন বা লুকিয়ে রাখুন',
@@ -8401,7 +8398,6 @@ extension on TranslationsBn {
 			'audiobook.syncSourceDisconnect' => 'এই সূত্রটি মুছে ফেলুন, এখানে পড়ার এবং শুনার সনাকশন বন্ধ হবে. ক্রিপ্ট সনাকশন ফাইলগুলি সরবরাহকারী মধ্যে থাকবে।',
 			'audiobook.syncReconnect' => 'সংরক্ষণ অ্যাকাউন্ট পুনরায়',
 			'audiobook.lastSynced' => ({required Object time}) => 'শেষ সমন্বয় ${time}',
-			'audiobook.syncPrivacy' => 'শুধু সক্রিপ্ট প্রসেস এবং নোট সংরক্ষণ করা হয়. অডিও এবং ইবুক ফাইল, অ্যাকাউন্ট টোকেন এবং পাসওয়ার্ড আপলোড করা হয় না. Google ড্রাইভ এবং OneDrive অ্যাপ স্টোরেজ ব্যবহার করে; ড্রপবক্স PlezyNG সিন্ক ব্যবহার করে. সিন্ক অনুমোদন আরও লিখিত অ্যাক্সেস প্রয়োজন হতে পারে. সক্রিপ্ট করা হলেও, এই লক্ষ্য প্রসেস সিন্ক মালিক; সার্ভার প্রসেস আলাদা থাকে. সিন্ক বন্ধ করে স্থানীয় ইতিহাস এবং আলাদা অবস্থা সংরক্ষণ করে।',
 			'audiobook.syncConflicts' => 'জেনে নিন কোথায় ফিরে আসতে হবে',
 			'audiobook.conflictHelp' => 'এই পরিবর্তনগুলি স্বাধীনভাবে করা হয়. রাখার জন্য অবস্থান বা বুকমার্ক সংস্করণ নির্বাচন করুন. একটি পরবর্তী সময়সীমা বা একটি উচ্চ প্রয়োগ স্বয়ংক্রিয়ভাবে জিতবে না।',
 			'audiobook.syncDevice' => ({required Object device}) => 'ডিভাইস ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsBn {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

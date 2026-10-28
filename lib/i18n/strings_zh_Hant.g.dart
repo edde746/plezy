@@ -3565,7 +3565,6 @@ class _Translations$audiobook$zh_Hant extends Translations$audiobook$zh {
 	@override String get addSyncSource => '首先將 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 新增到檔案和書籍中。';
 	@override String get syncDestination => '同步儲存帳戶';
 	@override String get syncFolder => '同步資料夾或預定';
-	@override String get syncFolderHelp => '在 WebDAV 源內使用一個單獨的現有資料夾,或一個專門的 S3 預定。';
 	@override String get syncCode => '個人同步程式碼';
 	@override String get syncCodeHelp => '在您的第一臺裝置上建立一個程式碼,然後在您的其他裝置上輸入該程式碼. 保持一個私人副本:它是您的加密狀態的關鍵。';
 	@override String get showCode => '顯示或隱藏同步程式碼';
@@ -3575,7 +3574,6 @@ class _Translations$audiobook$zh_Hant extends Translations$audiobook$zh {
 	@override String get syncSourceDisconnect => '移除此來源會停用此裝置上的閱讀與聆聽同步。加密的同步檔案仍會保留在儲存服務供應商端。';
 	@override String get syncReconnect => '重新連線儲存帳戶';
 	@override String lastSynced({required Object time}) => '上一篇: ${time}';
-	@override String get syncPrivacy => '僅儲存加密的進度和筆記。音訊檔案、電子書檔案、帳戶權杖和密碼不會上傳。Google Drive 和 OneDrive 使用應用程式專用儲存空間；Dropbox 使用 PlezyNG Sync。啟用同步時，可能會要求額外的寫入權限。啟用後，進度同步由此儲存目標負責，伺服器進度維持獨立。關閉同步後，本機歷史記錄和遠端狀態仍會保留。';
 	@override String get syncConflicts => '選擇重定向的地方';
 	@override String get conflictHelp => '這些變更是各自獨立進行的。請選擇要保留的進度位置或書籤版本。時間戳記較新或進度百分比較高的版本不會自動優先保留。';
 	@override String syncDevice({required Object device}) => '裝置 ${device}';
@@ -8387,7 +8385,6 @@ extension on TranslationsZhHant {
 			'audiobook.addSyncSource' => '首先將 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 新增到檔案和書籍中。',
 			'audiobook.syncDestination' => '同步儲存帳戶',
 			'audiobook.syncFolder' => '同步資料夾或預定',
-			'audiobook.syncFolderHelp' => '在 WebDAV 源內使用一個單獨的現有資料夾,或一個專門的 S3 預定。',
 			'audiobook.syncCode' => '個人同步程式碼',
 			'audiobook.syncCodeHelp' => '在您的第一臺裝置上建立一個程式碼,然後在您的其他裝置上輸入該程式碼. 保持一個私人副本:它是您的加密狀態的關鍵。',
 			'audiobook.showCode' => '顯示或隱藏同步程式碼',
@@ -8397,7 +8394,6 @@ extension on TranslationsZhHant {
 			'audiobook.syncSourceDisconnect' => '移除此來源會停用此裝置上的閱讀與聆聽同步。加密的同步檔案仍會保留在儲存服務供應商端。',
 			'audiobook.syncReconnect' => '重新連線儲存帳戶',
 			'audiobook.lastSynced' => ({required Object time}) => '上一篇: ${time}',
-			'audiobook.syncPrivacy' => '僅儲存加密的進度和筆記。音訊檔案、電子書檔案、帳戶權杖和密碼不會上傳。Google Drive 和 OneDrive 使用應用程式專用儲存空間；Dropbox 使用 PlezyNG Sync。啟用同步時，可能會要求額外的寫入權限。啟用後，進度同步由此儲存目標負責，伺服器進度維持獨立。關閉同步後，本機歷史記錄和遠端狀態仍會保留。',
 			'audiobook.syncConflicts' => '選擇重定向的地方',
 			'audiobook.conflictHelp' => '這些變更是各自獨立進行的。請選擇要保留的進度位置或書籤版本。時間戳記較新或進度百分比較高的版本不會自動優先保留。',
 			'audiobook.syncDevice' => ({required Object device}) => '裝置 ${device}',
@@ -8598,10 +8594,10 @@ extension on TranslationsZhHant {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

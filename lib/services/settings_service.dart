@@ -37,6 +37,7 @@ export 'base_shared_preferences_service.dart'
         NullableEnumPref,
         JsonPref;
 import '../models/audio_channel_limit.dart';
+import '../models/motion_clarity.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../models/home_section_config.dart';
@@ -797,6 +798,17 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
+  static JsonPref<Map<String, int>> iptvRecentChannelsForProfile(String profileId) => JsonPref<Map<String, int>>(
+    profileScopedPrefsKey(profileId, 'iptv_recent_channels'),
+    defaultValue: const {},
+    encode: jsonEncode,
+    decode: (value) => value is Map
+        ? <String, int>{
+            for (final entry in value.entries)
+              if (entry.key is String && entry.value is int) entry.key as String: entry.value as int,
+          }
+        : const {},
+  );
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'notify_new_episodes'), defaultValue: false);
   static StringPref newEpisodeSnapshotForProfile(String profileId, String serverId, String libraryId) => StringPref(
@@ -833,6 +845,8 @@ class SettingsService extends BaseSharedPreferencesService {
   /// (see HomeLayoutSyncService). Off by default; a device left off keeps
   /// its own layout and neither sends nor receives changes.
   static const homeLayoutSyncEnabled = BoolPref('home_layout_sync_enabled', defaultValue: false);
+  /// Optional Plex account sync for IPTV VOD watch positions only.
+  static const iptvVodProgressSyncEnabled = BoolPref('iptv_vod_progress_sync_enabled', defaultValue: false);
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
   static const hideEmptyLibraries = BoolPref('hide_empty_libraries', defaultValue: false);
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
@@ -955,6 +969,42 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const matchContentResolution = BoolPref('match_content_resolution');
+  static const motionClarityPreset = EnumPref<MotionClarityPreset>(
+    'motion_clarity_preset',
+    values: MotionClarityPreset.values,
+    defaultValue: MotionClarityPreset.original,
+  );
+  /// Preset restored when the player-bar motion toggle is turned back on.
+  static const motionClarityLastPreset = EnumPref<MotionClarityPreset>(
+    'motion_clarity_last_preset',
+    values: MotionClarityPreset.values,
+    defaultValue: MotionClarityPreset.balanced,
+  );
+  static const motionClarityKernel = EnumPref<MotionTemporalKernel>(
+    'motion_clarity_kernel',
+    values: MotionTemporalKernel.values,
+    defaultValue: MotionTemporalKernel.linear,
+  );
+  static final motionClarityThreshold = IntPref(
+    'motion_clarity_threshold_percent',
+    defaultValue: 1,
+    transform: (value) => value.clamp(0, 10).toInt(),
+  );
+  static const motionClarityEngine = EnumPref<MotionClarityEngine>(
+    'motion_clarity_engine',
+    values: MotionClarityEngine.values,
+    defaultValue: MotionClarityEngine.temporalBlend,
+  );
+  static const motionClarityOutputRate = EnumPref<MotionClarityOutputRate>(
+    'motion_clarity_output_rate',
+    values: MotionClarityOutputRate.values,
+    defaultValue: MotionClarityOutputRate.currentDisplay,
+  );
+  static const motionClarityMciQuality = EnumPref<MotionClarityMciQuality>(
+    'motion_clarity_mci_quality',
+    values: MotionClarityMciQuality.values,
+    defaultValue: MotionClarityMciQuality.balanced,
+  );
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: false);
   static const dvConversionMode = EnumPref<DvConversionModePreference>(
     'dv_conversion_mode',
@@ -1246,6 +1296,15 @@ class SettingsService extends BaseSharedPreferencesService {
   static final playbackSpeedScope = PlayerSettingScopePref('playback_speed_scope', [defaultPlaybackSpeed]);
   static final shaderPresetScope = PlayerSettingScopePref('shader_preset_scope', [globalShaderPreset]);
   static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
+  static final motionClarityScope = PlayerSettingScopePref('motion_clarity_scope', [
+    motionClarityPreset,
+    motionClarityLastPreset,
+    motionClarityKernel,
+    motionClarityThreshold,
+    motionClarityEngine,
+    motionClarityOutputRate,
+    motionClarityMciQuality,
+  ]);
 
   /// One scope for both sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
@@ -1906,6 +1965,14 @@ class SettingsService extends BaseSharedPreferencesService {
     for (final s in TrackerService.values) scrobblePref(s),
     matchContentFrameRate,
     matchContentResolution,
+    motionClarityPreset,
+    motionClarityLastPreset,
+    motionClarityKernel,
+    motionClarityThreshold,
+    motionClarityEngine,
+    motionClarityOutputRate,
+    motionClarityMciQuality,
+    motionClarityScope,
     tunneledPlayback,
     dvConversionMode,
     disableDolbyVision,
@@ -2087,6 +2154,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'rewind_on_resume' || 'display_switch_delay' => (0, 10),
     'sleep_timer_duration' => (5, 240),
     'play_next_countdown' => (0, 30),
+    'motion_clarity_threshold_percent' => (0, 10),
     'auto_skip_delay' => (1, 30),
     'subtitle_font_size' => (10, 80),
     'subtitle_border_size' => (0, 5),

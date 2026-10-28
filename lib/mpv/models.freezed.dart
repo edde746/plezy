@@ -202,7 +202,7 @@ return $default(_that.start,_that.end);case _:
 
 class _BufferRange implements BufferRange {
   const _BufferRange({required this.start, required this.end});
-  
+
 
 @override final  Duration start;
 @override final  Duration end;
@@ -452,7 +452,7 @@ return $default(_that.message,_that.cause);case _:
 
 class _PlayerError extends PlayerError {
   const _PlayerError(this.message, {this.cause}): super._();
-  
+
 
 @override final  String message;
 @override final  String? cause;
@@ -713,7 +713,7 @@ return $default(_that.id,_that.title,_that.language,_that.codec,_that.codecProfi
 
 class _AudioTrack extends AudioTrack {
   const _AudioTrack({required this.id, this.title, this.language, this.codec, this.codecProfile, this.channels, this.sampleRate, this.bitrate, this.isDefault = false, this.isForced = false}): super._();
-  
+
 
 @override final  String id;
 @override final  String? title;
@@ -993,7 +993,7 @@ return $default(_that.id,_that.title,_that.language,_that.codec,_that.isDefault,
 
 class _SubtitleTrack extends SubtitleTrack {
   const _SubtitleTrack({required this.id, this.title, this.language, this.codec, this.isDefault = false, this.isForced = false, this.isExternal = false, this.isContainer = false, this.uri}): super._();
-  
+
 
 @override final  String id;
 @override final  String? title;
@@ -1264,7 +1264,7 @@ return $default(_that.id,_that.title,_that.language,_that.codec,_that.width,_tha
 
 class _VideoTrack extends VideoTrack {
   const _VideoTrack({required this.id, this.title, this.language, this.codec, this.width, this.height, this.isDefault = false, this.isSelected = false, this.isExternal = false}): super._();
-  
+
 
 @override final  String id;
 @override final  String? title;
@@ -1525,7 +1525,7 @@ return $default(_that.video,_that.audio,_that.subtitle);case _:
 
 class _Tracks extends Tracks {
   const _Tracks({final  List<VideoTrack> video = const <VideoTrack>[], final  List<AudioTrack> audio = const <AudioTrack>[], final  List<SubtitleTrack> subtitle = const <SubtitleTrack>[]}): _video = video,_audio = audio,_subtitle = subtitle,super._();
-  
+
 
  final  List<VideoTrack> _video;
 @override@JsonKey() List<VideoTrack> get video {
@@ -1832,7 +1832,7 @@ return $default(_that.audio,_that.subtitle,_that.secondarySubtitle);case _:
 
 class _TrackSelection implements TrackSelection {
   const _TrackSelection({this.audio, this.subtitle, this.secondarySubtitle});
-  
+
 
 @override final  AudioTrack? audio;
 @override final  SubtitleTrack? subtitle;
@@ -2124,7 +2124,7 @@ return $default(_that.name,_that.description);case _:
 
 class _AudioDevice implements AudioDevice {
   const _AudioDevice({required this.name, this.description = ''});
-  
+
 
 @override final  String name;
 @override@JsonKey() final  String description;
@@ -2375,7 +2375,7 @@ return $default(_that.level,_that.prefix,_that.text);case _:
 
 class _PlayerLog extends PlayerLog {
   const _PlayerLog({required this.level, required this.prefix, required this.text}): super._();
-  
+
 
 @override final  PlayerLogLevel level;
 @override final  String prefix;
@@ -2628,7 +2628,7 @@ return $default(_that.uri,_that.headers,_that.start);case _:
 
 class _Media implements Media {
   const _Media(this.uri, {final  Map<String, String>? headers, this.start}): _headers = headers;
-  
+
 
 @override final  String uri;
  final  Map<String, String>? _headers;

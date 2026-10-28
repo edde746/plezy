@@ -85,7 +85,13 @@ class _PendingResume {
 /// progress stop the session with [MusicPlaybackStatus.error].
 class MusicPlaybackServiceImpl extends MusicPlaybackService
     with WidgetsBindingObserver
-    implements MusicLoudnessProfileService, MusicAudioSpectrumService {
+    implements MusicLoudnessProfileService, MusicAudioSpectrumService, MusicVisualizationAudioService {
+  @override
+  bool get hasNativeVisualizationAudio {
+    final player = _player;
+    return !_disposed && player is PlayerNative && player.isAudioCoreReady;
+  }
+
   MusicPlaybackServiceImpl({
     required MultiServerManager serverManager,
     AppDatabase? database,

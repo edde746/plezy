@@ -1,0 +1,362 @@
+diff --git a/include/mpv/plezy_audio_tap.h b/include/mpv/plezy_audio_tap.h
+new file mode 100644
+index 0000000..0be930a
+--- /dev/null
++++ b/include/mpv/plezy_audio_tap.h
+@@ -0,0 +1,46 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later
++ * PlezyNG optional visualization extension. This is not an upstream mpv API.
++ */
++#ifndef MPV_PLEZY_AUDIO_TAP_H
++#define MPV_PLEZY_AUDIO_TAP_H
++#include <stddef.h>
++#include <stdint.h>
++#include "client.h"
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define MPV_PLEZY_AUDIO_TAP_ABI 1
++#define MPV_PLEZY_AUDIO_UNSUPPORTED (-1001)
++#define MPV_PLEZY_AUDIO_TAP_FRAMES 512
++#define MPV_PLEZY_AUDIO_TAP_CHANNELS 8
++
++typedef struct mpv_plezy_audio_block {
++    uint32_t generation;
++    uint32_t frames;
++    uint32_t sample_rate;
++    uint32_t channels;
++    uint32_t dropped_frames;
++    uint8_t speaker_ids[MPV_PLEZY_AUDIO_TAP_CHANNELS];
++    double pts;
++    double seconds_per_frame;
++    float samples[MPV_PLEZY_AUDIO_TAP_FRAMES * MPV_PLEZY_AUDIO_TAP_CHANNELS];
++} mpv_plezy_audio_block;
++
++MPV_EXPORT int mpv_plezy_audio_tap_version(void);
++/* One owner per playback core. Allocate only when enabling; disable before
++ * disposing the reader. All functions are safe against concurrent reads.
++ * Normal mpv handle destruction also detaches the tap.
++ */
++MPV_EXPORT int mpv_plezy_audio_tap_enable(mpv_handle *ctx, int enabled);
++/* Native consumer supplies the current playback PTS, not decoder PTS. Return
++ * 1 for a block due for presentation, 0 while waiting, MPV_PLEZY_AUDIO_UNSUPPORTED for an unsupported
++ * output format/layout, or a negative mpv error. Never waits for the producer.
++ * Reads are serialized per handle. No samples cross the Dart channel.
++ */
++MPV_EXPORT int mpv_plezy_audio_tap_read(mpv_handle *ctx, double playback_pts,
++                                      mpv_plezy_audio_block *out, size_t size);
++#ifdef __cplusplus
++}
++#endif
++#endif
+diff --git a/meson.build b/meson.build
+index fb10be5..e6118a7 100644
+--- a/meson.build
++++ b/meson.build
+@@ -162,6 +162,7 @@ sources = files(
+     ## Player
+     'player/audio.c',
+     'player/client.c',
++    'player/plezy_audio_tap.c',
+     'player/command.c',
+     'player/configfiles.c',
+     'player/external_files.c',
+@@ -1796,7 +1797,8 @@ if get_option('libmpv')
+                  description: 'mpv media player client library')
+ 
+     headers = ['include/mpv/client.h', 'include/mpv/render.h',
+-               'include/mpv/render_gl.h', 'include/mpv/stream_cb.h']
++               'include/mpv/render_gl.h', 'include/mpv/stream_cb.h',
++               'include/mpv/plezy_audio_tap.h']
+     install_headers(headers, subdir: 'mpv')
+ 
+     # Allow projects to build with libmpv by cloning into ./subprojects/mpv
+diff --git a/player/audio.c b/player/audio.c
+index b3e975d..6db29bf 100644
+--- a/player/audio.c
++++ b/player/audio.c
+@@ -39,6 +39,7 @@
+ 
+ #include "core.h"
+ #include "command.h"
++#include "plezy_audio_tap.h"
+ 
+ enum {
+     AD_OK = 0,
+@@ -229,6 +230,7 @@ static void ao_chain_reset_state(struct ao_chain *ao_c)
+ 
+ void reset_audio_state(struct MPContext *mpctx)
+ {
++    mp_plezy_audio_tap_reset(mpctx->visualizer_audio_tap);
+     if (mpctx->ao_chain) {
+         ao_chain_reset_state(mpctx->ao_chain);
+         struct track *t = mpctx->ao_chain->track;
+@@ -748,6 +750,7 @@ static void ao_process(struct mp_filter *f)
+             MP_VERBOSE(mpctx, "previous audio still playing; continuing\n");
+         }
+ 
++        mp_plezy_audio_tap_submit(mpctx->visualizer_audio_tap, af, mpctx->audio_speed);
+         mp_pin_in_write(ao_c->queue_filter->pins[0], frame);
+     } else if (frame.type == MP_FRAME_EOF) {
+         MP_VERBOSE(mpctx, "audio filter EOF\n");
+diff --git a/player/client.c b/player/client.c
+index e23b98b..96d9711 100644
+--- a/player/client.c
++++ b/player/client.c
+@@ -46,6 +46,7 @@
+ #include "command.h"
+ #include "core.h"
+ #include "client.h"
++#include "plezy_audio_tap.h"
+ 
+ /*
+  * Locking hierarchy:
+@@ -117,6 +118,7 @@ struct mpv_handle {
+     struct observe_property *cur_property;
+ 
+     mp_mutex lock;
++    struct mp_plezy_audio_tap *audio_tap; // protected by lock; owned by this handle
+ 
+     mp_mutex wakeup_lock;
+     mp_cond wakeup;
+@@ -389,6 +391,43 @@ static void unlock_core(mpv_handle *ctx)
+     mp_dispatch_unlock(ctx->mpctx->dispatch);
+ }
+ 
++int mpv_plezy_audio_tap_version(void) { return MPV_PLEZY_AUDIO_TAP_ABI; }
++
++int mpv_plezy_audio_tap_enable(mpv_handle *ctx, int enabled)
++{
++    if (!ctx) return MPV_ERROR_INVALID_PARAMETER;
++    int result = 0;
++    lock_core(ctx);
++    mp_mutex_lock(&ctx->lock);
++    if (enabled) {
++        if (ctx->mpctx->visualizer_audio_tap &&
++            ctx->mpctx->visualizer_audio_tap != ctx->audio_tap) {
++            result = MPV_ERROR_PROPERTY_UNAVAILABLE;
++        } else if (!ctx->audio_tap) {
++            ctx->audio_tap = mp_plezy_audio_tap_new();
++            if (!ctx->audio_tap) result = MPV_ERROR_NOMEM;
++            else ctx->mpctx->visualizer_audio_tap = ctx->audio_tap;
++        }
++    } else if (ctx->audio_tap) {
++        ctx->mpctx->visualizer_audio_tap = NULL;
++        mp_plezy_audio_tap_free(ctx->audio_tap);
++        ctx->audio_tap = NULL;
++    }
++    mp_mutex_unlock(&ctx->lock);
++    unlock_core(ctx);
++    return result;
++}
++
++int mpv_plezy_audio_tap_read(mpv_handle *ctx, double pts,
++                           mpv_plezy_audio_block *out, size_t size)
++{
++    if (!ctx || !out || size != sizeof(*out)) return MPV_ERROR_INVALID_PARAMETER;
++    mp_mutex_lock(&ctx->lock);
++    int result = mp_plezy_audio_tap_read(ctx->audio_tap, pts, out);
++    mp_mutex_unlock(&ctx->lock);
++    return result;
++}
++
+ void mpv_wait_async_requests(mpv_handle *ctx)
+ {
+     mp_mutex_lock(&ctx->lock);
+@@ -426,6 +465,8 @@ static void mp_destroy_client(mpv_handle *ctx, bool terminate)
+     if (!ctx)
+         return;
+ 
++    mpv_plezy_audio_tap_enable(ctx, 0);
++
+     struct MPContext *mpctx = ctx->mpctx;
+     struct mp_client_api *clients = ctx->clients;
+ 
+diff --git a/player/core.h b/player/core.h
+index eb7f508..079f0a6 100644
+--- a/player/core.h
++++ b/player/core.h
+@@ -324,6 +324,7 @@ typedef struct MPContext {
+     struct ao *ao;
+     struct mp_aframe *ao_filter_fmt; // for weak gapless audio check
+     struct ao_chain *ao_chain;
++    struct mp_plezy_audio_tap *visualizer_audio_tap; // playback-thread producer
+ 
+     struct vo_chain *vo_chain;
+ 
+diff --git a/player/plezy_audio_tap.c b/player/plezy_audio_tap.c
+new file mode 100644
+index 0000000..8d34c84
+--- /dev/null
++++ b/player/plezy_audio_tap.c
+@@ -0,0 +1,149 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later
++ * Read-only, bounded SPSC analysis transport. The playback thread only copies
++ * samples; it never waits, allocates, invokes application code or calls Dart.
++ */
++#include <math.h>
++#include <stdatomic.h>
++#include <stdlib.h>
++#include <string.h>
++#include "audio/aframe.h"
++#include "audio/chmap.h"
++#include "audio/format.h"
++#include "common/common.h"
++#include "plezy_audio_tap.h"
++
++#define TAP_SLOTS 32u
++#define TAP_SUBMIT_LIMIT (MPV_PLEZY_AUDIO_TAP_FRAMES * 8)
++struct mp_plezy_audio_tap {
++    atomic_uint read_index, write_index, generation, dropped_frames;
++    atomic_int status;
++    int rate, format, channels;
++    uint8_t speakers[MPV_PLEZY_AUDIO_TAP_CHANNELS];
++    mpv_plezy_audio_block slots[TAP_SLOTS];
++};
++
++struct mp_plezy_audio_tap *mp_plezy_audio_tap_new(void)
++{
++    struct mp_plezy_audio_tap *tap = calloc(1, sizeof(*tap));
++    if (!tap) return NULL;
++    atomic_init(&tap->read_index, 0);
++    atomic_init(&tap->write_index, 0);
++    atomic_init(&tap->generation, 1);
++    atomic_init(&tap->dropped_frames, 0);
++    atomic_init(&tap->status, 0);
++    if (!atomic_is_lock_free(&tap->read_index) ||
++        !atomic_is_lock_free(&tap->status)) {
++        free(tap);
++        return NULL;
++    }
++    return tap;
++}
++
++void mp_plezy_audio_tap_free(struct mp_plezy_audio_tap *tap) { free(tap); }
++
++void mp_plezy_audio_tap_reset(struct mp_plezy_audio_tap *tap)
++{
++    if (!tap) return;
++    atomic_fetch_add_explicit(&tap->generation, 1, memory_order_release);
++    atomic_store_explicit(&tap->status, 0, memory_order_release);
++}
++
++static float sample_at(const uint8_t *data, int format)
++{
++    // memcpy avoids alignment and strict-aliasing assumptions about AVFrame.
++    double result = 0;
++    switch (format) {
++    case AF_FORMAT_U8: result = ((int)*data - 128) / 128.0; break;
++    case AF_FORMAT_S16: { int16_t x; memcpy(&x, data, sizeof x); result = x / 32768.0; break; }
++    case AF_FORMAT_S32: { int32_t x; memcpy(&x, data, sizeof x); result = x / 2147483648.0; break; }
++    case AF_FORMAT_S64: { int64_t x; memcpy(&x, data, sizeof x); result = x / 9223372036854775808.0; break; }
++    case AF_FORMAT_FLOAT: { float x; memcpy(&x, data, sizeof x); result = x; break; }
++    case AF_FORMAT_DOUBLE: { double x; memcpy(&x, data, sizeof x); result = x; break; }
++    }
++    return isfinite(result) ? fmax(-1.0, fmin(1.0, result)) : 0;
++}
++
++void mp_plezy_audio_tap_submit(struct mp_plezy_audio_tap *tap,
++                             struct mp_aframe *frame, double speed)
++{
++    if (!tap) return;
++    int format = mp_aframe_get_format(frame);
++    int rate = mp_aframe_get_rate(frame);
++    int scalar_format = af_fmt_from_planar(format);
++    struct mp_chmap map = {0};
++    mp_aframe_get_chmap(frame, &map);
++    uint8_t **data = mp_aframe_get_data_ro(frame);
++    if (scalar_format < AF_FORMAT_U8 || scalar_format > AF_FORMAT_DOUBLE ||
++        !af_fmt_is_pcm(format) || rate <= 0 || map.num < 1 ||
++        map.num > MPV_PLEZY_AUDIO_TAP_CHANNELS || !data ||
++        !isfinite(speed) || speed <= 0) {
++        if (atomic_exchange_explicit(&tap->status, MPV_PLEZY_AUDIO_UNSUPPORTED, memory_order_acq_rel) != MPV_PLEZY_AUDIO_UNSUPPORTED)
++            atomic_fetch_add_explicit(&tap->generation, 1, memory_order_release);
++        return;
++    }
++    if (tap->rate != rate || tap->format != format || tap->channels != map.num ||
++        memcmp(tap->speakers, map.speaker, map.num)) {
++        mp_plezy_audio_tap_reset(tap);
++        tap->rate = rate; tap->format = format; tap->channels = map.num;
++        memcpy(tap->speakers, map.speaker, map.num);
++    }
++    atomic_store_explicit(&tap->status, 1, memory_order_release);
++    int total = mp_aframe_get_size(frame);
++    int limit = MPMIN(total, TAP_SUBMIT_LIMIT);
++    int bytes = af_fmt_to_bytes(format);
++    bool planar = af_fmt_is_planar(format);
++    unsigned int generation = atomic_load_explicit(&tap->generation, memory_order_acquire);
++    double pts = mp_aframe_get_pts(frame);
++    int offset = 0;
++    for (; offset < limit;) {
++        unsigned int write = atomic_load_explicit(&tap->write_index, memory_order_relaxed);
++        unsigned int read = atomic_load_explicit(&tap->read_index, memory_order_acquire);
++        if (write - read >= TAP_SLOTS) break; // Drop analysis; never delay audio.
++        mpv_plezy_audio_block *block = &tap->slots[write % TAP_SLOTS];
++        int count = MPMIN(limit - offset, MPV_PLEZY_AUDIO_TAP_FRAMES);
++        block->generation = generation;
++        block->frames = count;
++        block->sample_rate = rate;
++        block->channels = map.num;
++        block->dropped_frames = atomic_load_explicit(&tap->dropped_frames, memory_order_relaxed);
++        memset(block->speaker_ids, 0, sizeof block->speaker_ids);
++        memcpy(block->speaker_ids, map.speaker, map.num);
++        block->seconds_per_frame = speed / rate;
++        block->pts = pts == MP_NOPTS_VALUE ? pts : pts + offset * block->seconds_per_frame;
++        for (int n = 0; n < count; n++) {
++            for (int ch = 0; ch < map.num; ch++) {
++                size_t index = planar ? offset + n : (offset + n) * map.num + ch;
++                block->samples[n * map.num + ch] = sample_at(
++                    data[planar ? ch : 0] + index * bytes, scalar_format);
++            }
++        }
++        atomic_store_explicit(&tap->write_index, write + 1, memory_order_release);
++        offset += count;
++    }
++    if (total > offset)
++        atomic_fetch_add_explicit(&tap->dropped_frames, total - offset, memory_order_relaxed);
++}
++
++int mp_plezy_audio_tap_read(struct mp_plezy_audio_tap *tap, double pts,
++                          mpv_plezy_audio_block *out)
++{
++    if (!tap || !isfinite(pts) || pts == MP_NOPTS_VALUE) return 0;
++    int status = atomic_load_explicit(&tap->status, memory_order_acquire);
++    if (status <= 0) return status;
++    for (unsigned int n = 0; n < TAP_SLOTS; n++) {
++        unsigned int read = atomic_load_explicit(&tap->read_index, memory_order_relaxed);
++        unsigned int write = atomic_load_explicit(&tap->write_index, memory_order_acquire);
++        if (read == write) return 0;
++        const mpv_plezy_audio_block *block = &tap->slots[read % TAP_SLOTS];
++        unsigned int generation = atomic_load_explicit(&tap->generation, memory_order_acquire);
++        bool valid = block->generation == generation && isfinite(block->pts) &&
++                     block->pts != MP_NOPTS_VALUE &&
++                     block->pts + block->frames * block->seconds_per_frame >= pts - 0.10;
++        if (valid && block->pts > pts) return 0; // Keep future audio queued.
++        if (valid) memcpy(out, block, sizeof(*out));
++        atomic_store_explicit(&tap->read_index, read + 1, memory_order_release);
++        if (valid && generation == atomic_load_explicit(&tap->generation, memory_order_acquire))
++            return 1;
++    }
++    return 0;
++}
+diff --git a/player/plezy_audio_tap.h b/player/plezy_audio_tap.h
+new file mode 100644
+index 0000000..92b8cff
+--- /dev/null
++++ b/player/plezy_audio_tap.h
+@@ -0,0 +1,14 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++#ifndef MP_PLEZY_AUDIO_TAP_H
++#define MP_PLEZY_AUDIO_TAP_H
++#include "mpv/plezy_audio_tap.h"
++struct mp_aframe;
++struct mp_plezy_audio_tap;
++struct mp_plezy_audio_tap *mp_plezy_audio_tap_new(void);
++void mp_plezy_audio_tap_free(struct mp_plezy_audio_tap *tap);
++void mp_plezy_audio_tap_reset(struct mp_plezy_audio_tap *tap);
++void mp_plezy_audio_tap_submit(struct mp_plezy_audio_tap *tap,
++                             struct mp_aframe *frame, double speed);
++int mp_plezy_audio_tap_read(struct mp_plezy_audio_tap *tap, double pts,
++                          mpv_plezy_audio_block *out);
++#endif

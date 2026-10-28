@@ -3546,7 +3546,6 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 ke File & Buku terlebih dahulu.';
 	@override String get syncDestination => 'Sinkronisasi akun penyimpanan';
 	@override String get syncFolder => 'Sinkron folder atau prefix';
-	@override String get syncFolderHelp => 'Gunakan folder terpisah yang ada di dalam sumber WebDAV Anda, atau prefix S3 khusus. file buku tidak pernah diubah.';
 	@override String get syncCode => 'Kode Sinkronisasi';
 	@override String get syncCodeHelp => 'Buat kode pada perangkat pertama Anda, kemudian masukkan kode itu pada perangkat lain Anda. simpan salinan pribadi: itu adalah kunci untuk status enkripsi Anda. Gunakan kode yang berbeda untuk setiap orang.';
 	@override String get showCode => 'Menampilkan atau menyembunyikan kode sink';
@@ -3556,7 +3555,6 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Menghapus sumber ini akan mematikan membaca dan mendengarkan sync di sini. file sync tersulit akan tetap di penyedia.';
 	@override String get syncReconnect => 'Menghubungkan kembali akun penyimpanan';
 	@override String lastSynced({required Object time}) => 'Terakhir disinkronkan di ${time}';
-	@override String get syncPrivacy => 'Hanya kemajuan dan catatan yang disulitkan disimpan. file audio dan ebook, token akun dan kata sandi tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan dapat meminta akses penulisan tambahan. Sementara diaktifkan, tujuan ini memiliki penyegerakan kemajuan; kemajuan server tetap terpisah. Mengalihkan penyegerakan mengekalkan sejarah lokal dan keadaan remote.';
 	@override String get syncConflicts => 'Pilih tempat untuk kembali';
 	@override String get conflictHelp => 'Perubahan-perubahan ini dilakukan secara independen. pilih posisi atau bookmark versi untuk tetap. timestamp kemudian atau peratusan yang lebih tinggi tidak secara otomatis menang.';
 	@override String syncDevice({required Object device}) => 'Perangkat ${device}';
@@ -8366,7 +8364,6 @@ extension on TranslationsId {
 			'audiobook.addSyncSource' => 'Tambah Google Drive, OneDrive, Dropbox, WebDAV atau S3 ke File & Buku terlebih dahulu.',
 			'audiobook.syncDestination' => 'Sinkronisasi akun penyimpanan',
 			'audiobook.syncFolder' => 'Sinkron folder atau prefix',
-			'audiobook.syncFolderHelp' => 'Gunakan folder terpisah yang ada di dalam sumber WebDAV Anda, atau prefix S3 khusus. file buku tidak pernah diubah.',
 			'audiobook.syncCode' => 'Kode Sinkronisasi',
 			'audiobook.syncCodeHelp' => 'Buat kode pada perangkat pertama Anda, kemudian masukkan kode itu pada perangkat lain Anda. simpan salinan pribadi: itu adalah kunci untuk status enkripsi Anda. Gunakan kode yang berbeda untuk setiap orang.',
 			'audiobook.showCode' => 'Menampilkan atau menyembunyikan kode sink',
@@ -8376,7 +8373,6 @@ extension on TranslationsId {
 			'audiobook.syncSourceDisconnect' => 'Menghapus sumber ini akan mematikan membaca dan mendengarkan sync di sini. file sync tersulit akan tetap di penyedia.',
 			'audiobook.syncReconnect' => 'Menghubungkan kembali akun penyimpanan',
 			'audiobook.lastSynced' => ({required Object time}) => 'Terakhir disinkronkan di ${time}',
-			'audiobook.syncPrivacy' => 'Hanya kemajuan dan catatan yang disulitkan disimpan. file audio dan ebook, token akun dan kata sandi tidak dimuat naik. Google Drive dan OneDrive menggunakan penyimpanan aplikasi; Dropbox menggunakan PlezyNG Sync. Membolehkan penyegerakan dapat meminta akses penulisan tambahan. Sementara diaktifkan, tujuan ini memiliki penyegerakan kemajuan; kemajuan server tetap terpisah. Mengalihkan penyegerakan mengekalkan sejarah lokal dan keadaan remote.',
 			'audiobook.syncConflicts' => 'Pilih tempat untuk kembali',
 			'audiobook.conflictHelp' => 'Perubahan-perubahan ini dilakukan secara independen. pilih posisi atau bookmark versi untuk tetap. timestamp kemudian atau peratusan yang lebih tinggi tidak secara otomatis menang.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Perangkat ${device}',
@@ -8577,10 +8573,10 @@ extension on TranslationsId {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

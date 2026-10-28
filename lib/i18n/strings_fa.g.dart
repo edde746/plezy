@@ -3569,7 +3569,6 @@ class _Translations$audiobook$fa extends Translations$audiobook$en {
 	@override String get addSyncSource => 'در ابتدا Google Drive، OneDrive، Dropbox، WebDAV یا S3 را به فایل ها و کتاب ها اضافه کنید.';
 	@override String get syncDestination => 'حساب ذخیره سازی Sync';
 	@override String get syncFolder => 'فاکتور یا پیش فرض';
-	@override String get syncFolderHelp => 'از یک پوشه جداگانه موجود در منبع WebDAV یا یک پیش فرض اختصاص داده شده S3 استفاده کنید.';
 	@override String get syncCode => 'کد همگام خصوصی';
 	@override String get syncCodeHelp => 'یک کد را در دستگاه اول خود ایجاد کنید، سپس آن کد را در دستگاه های دیگر خود وارد کنید. یک کپی خصوصی نگه دارید: این کلید وضعیت رمزگذاری شده شماست.';
 	@override String get showCode => 'نمایش یا پنهان کردن کد همگام سازی';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$fa extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'حذف این منبع در اینجا خواندن و گوش دادن به همگام سازی را خاموش می کند.فایلهای همگام سازی رمزگذاری شده در ارائه دهنده باقی می ماند.';
 	@override String get syncReconnect => 'بازگرداندن حساب ذخیره سازی';
 	@override String lastSynced({required Object time}) => 'آخرین ارسال شده در ${time}';
-	@override String get syncPrivacy => 'فقط پیشرفت های رمزگذاری شده و یادداشت ها ذخیره می شود. فایل های صوتی و کتاب الکترونیکی، توکن های حساب و رمز عبور بارگذاری نمی شود. Google Drive و OneDrive از ذخیره سازی برنامه استفاده می کنند؛ Dropbox از PlezyNG Sync استفاده می کند. اجازه دادن به همگام سازی ممکن است دسترسی نوشتاری اضافی را درخواست کند. در حالی که فعال است، این مقصد دارای همگام سازی پیشرفت است؛ پیشرفت سرور جداگانه باقی می ماند.';
 	@override String get syncConflicts => 'انتخاب کنید که کجا بازگردانید';
 	@override String get conflictHelp => 'این تغییرات به صورت مستقل انجام شده است. گزینه ای را انتخاب کنید که موقعیت یا نسخه برچسب را برای نگه داشتن داشته باشید. یک زمان بندی بعدی یا درصد بالاتر به طور خودکار برنده نمی شود.';
 	@override String syncDevice({required Object device}) => 'تجهیزات ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsFa {
 			'audiobook.addSyncSource' => 'در ابتدا Google Drive، OneDrive، Dropbox، WebDAV یا S3 را به فایل ها و کتاب ها اضافه کنید.',
 			'audiobook.syncDestination' => 'حساب ذخیره سازی Sync',
 			'audiobook.syncFolder' => 'فاکتور یا پیش فرض',
-			'audiobook.syncFolderHelp' => 'از یک پوشه جداگانه موجود در منبع WebDAV یا یک پیش فرض اختصاص داده شده S3 استفاده کنید.',
 			'audiobook.syncCode' => 'کد همگام خصوصی',
 			'audiobook.syncCodeHelp' => 'یک کد را در دستگاه اول خود ایجاد کنید، سپس آن کد را در دستگاه های دیگر خود وارد کنید. یک کپی خصوصی نگه دارید: این کلید وضعیت رمزگذاری شده شماست.',
 			'audiobook.showCode' => 'نمایش یا پنهان کردن کد همگام سازی',
@@ -8401,7 +8398,6 @@ extension on TranslationsFa {
 			'audiobook.syncSourceDisconnect' => 'حذف این منبع در اینجا خواندن و گوش دادن به همگام سازی را خاموش می کند.فایلهای همگام سازی رمزگذاری شده در ارائه دهنده باقی می ماند.',
 			'audiobook.syncReconnect' => 'بازگرداندن حساب ذخیره سازی',
 			'audiobook.lastSynced' => ({required Object time}) => 'آخرین ارسال شده در ${time}',
-			'audiobook.syncPrivacy' => 'فقط پیشرفت های رمزگذاری شده و یادداشت ها ذخیره می شود. فایل های صوتی و کتاب الکترونیکی، توکن های حساب و رمز عبور بارگذاری نمی شود. Google Drive و OneDrive از ذخیره سازی برنامه استفاده می کنند؛ Dropbox از PlezyNG Sync استفاده می کند. اجازه دادن به همگام سازی ممکن است دسترسی نوشتاری اضافی را درخواست کند. در حالی که فعال است، این مقصد دارای همگام سازی پیشرفت است؛ پیشرفت سرور جداگانه باقی می ماند.',
 			'audiobook.syncConflicts' => 'انتخاب کنید که کجا بازگردانید',
 			'audiobook.conflictHelp' => 'این تغییرات به صورت مستقل انجام شده است. گزینه ای را انتخاب کنید که موقعیت یا نسخه برچسب را برای نگه داشتن داشته باشید. یک زمان بندی بعدی یا درصد بالاتر به طور خودکار برنده نمی شود.',
 			'audiobook.syncDevice' => ({required Object device}) => 'تجهیزات ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsFa {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

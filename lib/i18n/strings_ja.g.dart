@@ -3564,7 +3564,6 @@ class _Translations$audiobook$ja extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Google ドライブ、OneDrive、Dropbox、WebDAV、または S3 をファイルと本に最初に追加します。';
 	@override String get syncDestination => 'シンクストレージアカウント';
 	@override String get syncFolder => 'シンクフォルダーまたはプレフィックス';
-	@override String get syncFolderHelp => 'WebDAV ソース内の別々の既存のフォルダー、または専用の S3 プレフィックスを使用します。';
 	@override String get syncCode => 'プライベートシンクコード';
 	@override String get syncCodeHelp => '最初のデバイスでコードを作成し、そのコードを他のデバイスで入力します。プライベートコピーを保管します:それは暗号化状態の鍵です。';
 	@override String get showCode => 'シンクコードを表示または隠す';
@@ -3574,7 +3573,6 @@ class _Translations$audiobook$ja extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'このソースを削除すると、このデバイスでの読書と音声再生の同期が無効になります。暗号化された同期ファイルはストレージサービスに残ります。';
 	@override String get syncReconnect => 'ストレージアカウント再接続';
 	@override String lastSynced({required Object time}) => '最後に ${time} で同期';
-	@override String get syncPrivacy => '暗号化された進歩およびノートのみが保存されます. オーディオおよび電子書籍ファイル、アカウントのトークンおよびパスワードはアップロードされません. Google ドライブおよび OneDrive はアプリストレージを使用します. Dropbox は PlezyNG Sync を使用します. 同期を有効にするには追加の書き込みアクセスが要求される可能性があります. 有効にしている間、この目的地は進歩同期を所有しています. サーバーの進歩は別々に残ります. 回転同期は地元の歴史と遠隔状態を維持します。';
 	@override String get syncConflicts => '再開する場所を選択する';
 	@override String get conflictHelp => 'これらの変更は独立して行われました. 保持するポジションまたはブックマークのバージョンを選択します. 遅いタイムストンプまたはより高い割合は自動的に勝てません。';
 	@override String syncDevice({required Object device}) => 'デバイス ${device}';
@@ -8386,7 +8384,6 @@ extension on TranslationsJa {
 			'audiobook.addSyncSource' => 'Google ドライブ、OneDrive、Dropbox、WebDAV、または S3 をファイルと本に最初に追加します。',
 			'audiobook.syncDestination' => 'シンクストレージアカウント',
 			'audiobook.syncFolder' => 'シンクフォルダーまたはプレフィックス',
-			'audiobook.syncFolderHelp' => 'WebDAV ソース内の別々の既存のフォルダー、または専用の S3 プレフィックスを使用します。',
 			'audiobook.syncCode' => 'プライベートシンクコード',
 			'audiobook.syncCodeHelp' => '最初のデバイスでコードを作成し、そのコードを他のデバイスで入力します。プライベートコピーを保管します:それは暗号化状態の鍵です。',
 			'audiobook.showCode' => 'シンクコードを表示または隠す',
@@ -8396,7 +8393,6 @@ extension on TranslationsJa {
 			'audiobook.syncSourceDisconnect' => 'このソースを削除すると、このデバイスでの読書と音声再生の同期が無効になります。暗号化された同期ファイルはストレージサービスに残ります。',
 			'audiobook.syncReconnect' => 'ストレージアカウント再接続',
 			'audiobook.lastSynced' => ({required Object time}) => '最後に ${time} で同期',
-			'audiobook.syncPrivacy' => '暗号化された進歩およびノートのみが保存されます. オーディオおよび電子書籍ファイル、アカウントのトークンおよびパスワードはアップロードされません. Google ドライブおよび OneDrive はアプリストレージを使用します. Dropbox は PlezyNG Sync を使用します. 同期を有効にするには追加の書き込みアクセスが要求される可能性があります. 有効にしている間、この目的地は進歩同期を所有しています. サーバーの進歩は別々に残ります. 回転同期は地元の歴史と遠隔状態を維持します。',
 			'audiobook.syncConflicts' => '再開する場所を選択する',
 			'audiobook.conflictHelp' => 'これらの変更は独立して行われました. 保持するポジションまたはブックマークのバージョンを選択します. 遅いタイムストンプまたはより高い割合は自動的に勝てません。',
 			'audiobook.syncDevice' => ({required Object device}) => 'デバイス ${device}',
@@ -8597,10 +8593,10 @@ extension on TranslationsJa {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

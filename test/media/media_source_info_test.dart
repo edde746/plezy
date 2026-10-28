@@ -69,6 +69,7 @@ void main() {
         ],
         markers: [commercial],
         classifier: classifier,
+        introPatternStr: r'^Intro$',
         forceChapterFallback: true,
       );
 

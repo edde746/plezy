@@ -8,6 +8,7 @@ add_executable(${BINARY_NAME}
   "mpv/mpv_plugin.cc"
   "mpv/plane_render_executor.cc"
   "mpv/wayland_video_surface.cc"
+  "visualizer/visualizer_session.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 
@@ -30,6 +31,7 @@ pkg_check_modules(WAYLAND_EGL REQUIRED IMPORTED_TARGET wayland-egl)
 pkg_check_modules(EGL REQUIRED IMPORTED_TARGET egl)
 pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
 pkg_check_modules(EPOXY REQUIRED IMPORTED_TARGET epoxy)
+find_package(Threads REQUIRED)
 
 # Vendored wayland-scanner output for color-management-v1 (staging), which backs
 # HDR on the native video plane. Built separately because it is C (the runner is
@@ -69,6 +71,7 @@ target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::WAYLAND_EGL)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::EGL)
 target_link_libraries(${BINARY_NAME} PRIVATE wayland_protocols)
 target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
+target_link_libraries(${BINARY_NAME} PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
@@ -119,6 +122,7 @@ if(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS)
   target_link_libraries(mpv_player_lifecycle_test PRIVATE PkgConfig::EPOXY)
   target_link_libraries(mpv_player_lifecycle_test PRIVATE simdutf)
   target_link_libraries(mpv_player_lifecycle_test PRIVATE Threads::Threads)
+  target_link_libraries(mpv_player_lifecycle_test PRIVATE ${CMAKE_DL_LIBS})
   target_include_directories(mpv_player_lifecycle_test PRIVATE "${CMAKE_SOURCE_DIR}")
   target_include_directories(mpv_player_lifecycle_test PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
 
@@ -140,6 +144,7 @@ if(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS)
   target_link_libraries(mpv_player_hdr_output_test PRIVATE PkgConfig::EPOXY)
   target_link_libraries(mpv_player_hdr_output_test PRIVATE simdutf)
   target_link_libraries(mpv_player_hdr_output_test PRIVATE Threads::Threads)
+  target_link_libraries(mpv_player_hdr_output_test PRIVATE ${CMAKE_DL_LIBS})
   target_include_directories(mpv_player_hdr_output_test PRIVATE "${CMAKE_SOURCE_DIR}")
   target_include_directories(mpv_player_hdr_output_test PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
 

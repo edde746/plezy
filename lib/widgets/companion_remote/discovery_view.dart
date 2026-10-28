@@ -29,9 +29,18 @@ String companionRemotePairingErrorMessage(Object error) {
       PeerErrorType.timeout => t.companionRemote.pairing.connectionTimedOut,
       PeerErrorType.connectionFailed || PeerErrorType.invalidSession => t.companionRemote.pairing.sessionNotFound,
       PeerErrorType.authFailed => t.companionRemote.pairing.authFailed,
-      PeerErrorType.networkError => t.companionRemote.pairing.failedToConnect(error: t.errors.reasonUnreachable),
-      PeerErrorType.serverError => t.companionRemote.errors.serverStartFailed(error: t.errors.reasonUnexpected),
-      _ => t.companionRemote.pairing.failedToConnect(error: t.errors.reasonUnexpected),
+      PeerErrorType.networkError =>
+        error.message.trim().isNotEmpty
+            ? error.message
+            : t.companionRemote.pairing.failedToConnect(error: t.errors.reasonUnreachable),
+      PeerErrorType.serverError =>
+        error.message.trim().isNotEmpty
+            ? error.message
+            : t.companionRemote.errors.serverStartFailed(error: t.errors.reasonUnexpected),
+      _ =>
+        error.message.trim().isNotEmpty
+            ? error.message
+            : t.companionRemote.pairing.failedToConnect(error: t.errors.reasonUnexpected),
     };
   }
 

@@ -3569,7 +3569,6 @@ class _Translations$audiobook$nl extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Voeg eerst Google Drive, OneDrive, Dropbox, WebDAV of S3 toe in bestanden en boeken.';
 	@override String get syncDestination => 'Sync opslagaccount';
 	@override String get syncFolder => 'Synchronisatie map of prefix';
-	@override String get syncFolderHelp => 'Gebruik een afzonderlijke bestaande map binnen uw WebDAV-bron, of een toegewijde S3-prefix.';
 	@override String get syncCode => 'Privé sync code';
 	@override String get syncCodeHelp => 'Creëer een code op je eerste apparaat, voer dan die code in op je andere apparaten. Houd een privé-copy: het is de sleutel tot je gecodeerde toestand. Gebruik een andere code voor elke persoon.';
 	@override String get showCode => 'Toon of verbergen sync code';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$nl extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Het verwijderen van deze bron zal het lezen en luisteren sync hier uitschakelen. versleutelde sync bestanden zullen in de provider blijven.';
 	@override String get syncReconnect => 'herverbinding van het opslagaccount';
 	@override String lastSynced({required Object time}) => 'Laatste synchronisatie bij ${time}';
-	@override String get syncPrivacy => 'Alleen versleutelde vooruitgang en notities worden opgeslagen. Audio en ebook bestanden, account tokens en wachtwoorden worden niet geüpload. Google Drive en OneDrive gebruiken app opslag; Dropbox gebruikt PlezyNG Sync. Toegeleverd sync kan aanvullende schriftelijke toegang vragen. Terwijl geactiveerd, deze bestemming bezit vooruitgang sync; server vooruitgang blijft gescheiden. Turn sync off behoudt lokale geschiedenis en afstandsstatus.';
 	@override String get syncConflicts => 'Kies waar te herstellen';
 	@override String get conflictHelp => 'Deze wijzigingen zijn onafhankelijk gemaakt.Kies de positie of bookmark versie om te houden.Een latere timestamp of een hoger percentage wint niet automatisch.';
 	@override String syncDevice({required Object device}) => 'Gebruik ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsNl {
 			'audiobook.addSyncSource' => 'Voeg eerst Google Drive, OneDrive, Dropbox, WebDAV of S3 toe in bestanden en boeken.',
 			'audiobook.syncDestination' => 'Sync opslagaccount',
 			'audiobook.syncFolder' => 'Synchronisatie map of prefix',
-			'audiobook.syncFolderHelp' => 'Gebruik een afzonderlijke bestaande map binnen uw WebDAV-bron, of een toegewijde S3-prefix.',
 			'audiobook.syncCode' => 'Privé sync code',
 			'audiobook.syncCodeHelp' => 'Creëer een code op je eerste apparaat, voer dan die code in op je andere apparaten. Houd een privé-copy: het is de sleutel tot je gecodeerde toestand. Gebruik een andere code voor elke persoon.',
 			'audiobook.showCode' => 'Toon of verbergen sync code',
@@ -8401,7 +8398,6 @@ extension on TranslationsNl {
 			'audiobook.syncSourceDisconnect' => 'Het verwijderen van deze bron zal het lezen en luisteren sync hier uitschakelen. versleutelde sync bestanden zullen in de provider blijven.',
 			'audiobook.syncReconnect' => 'herverbinding van het opslagaccount',
 			'audiobook.lastSynced' => ({required Object time}) => 'Laatste synchronisatie bij ${time}',
-			'audiobook.syncPrivacy' => 'Alleen versleutelde vooruitgang en notities worden opgeslagen. Audio en ebook bestanden, account tokens en wachtwoorden worden niet geüpload. Google Drive en OneDrive gebruiken app opslag; Dropbox gebruikt PlezyNG Sync. Toegeleverd sync kan aanvullende schriftelijke toegang vragen. Terwijl geactiveerd, deze bestemming bezit vooruitgang sync; server vooruitgang blijft gescheiden. Turn sync off behoudt lokale geschiedenis en afstandsstatus.',
 			'audiobook.syncConflicts' => 'Kies waar te herstellen',
 			'audiobook.conflictHelp' => 'Deze wijzigingen zijn onafhankelijk gemaakt.Kies de positie of bookmark versie om te houden.Een latere timestamp of een hoger percentage wint niet automatisch.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Gebruik ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsNl {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

@@ -1,4 +1,6 @@
 import '../media/media_kind.dart';
+import '../integrations/integration_contracts.dart';
+import 'book_identifiers.dart';
 
 /// Types of title-aware provider lookups that can be handed off to an
 /// official provider site. A lookup is not an availability or entitlement
@@ -14,6 +16,10 @@ class ExternalAccessDestination {
     this.path = '/',
     this.queryParameter,
     this.fixedQuery = const {},
+    this.accessModels = const {},
+    this.affiliateHosts = const {},
+    this.commerceProviderId,
+    this.offerNote,
   });
 
   final String id;
@@ -24,12 +30,42 @@ class ExternalAccessDestination {
   final String? queryParameter;
   final Map<String, String> fixedQuery;
 
-  Uri searchUri(String title, {String creator = '', String region = 'CA'}) {
+  /// Broad provider-level access models for directory organization only.
+  /// These are not title availability, territory support, user entitlement,
+  /// or a claim that PlezyNG can play the provider's content.
+  final Set<ProviderAccessModel> accessModels;
+
+  /// Server-side broker route for affiliate links; null means direct handoff.
+  final String? commerceProviderId;
+
+  /// Optional provider-specific note shown beside the destination.
+  final String? offerNote;
+
+  /// Exact tracking hosts approved for affiliate links.
+  final Set<String> affiliateHosts;
+
+  Uri searchUri(
+    String title, {
+    String creator = '',
+    String region = 'CA',
+    Map<String, String> identifiers = const {},
+    Map<String, String> gamePlatformIds = const {},
+  }) {
     final upperRegion = region.toUpperCase();
     final safeRegion = RegExp(r'^[A-Z]{2}$').hasMatch(upperRegion) ? upperRegion.toLowerCase() : 'ca';
     final cleanTitle = _cleanQuery(title);
     final cleanCreator = _cleanQuery(creator);
-    final term = [cleanTitle, if (cleanCreator.isNotEmpty) cleanCreator].join(' ');
+    final isbn = category == ExternalAccessCategory.books ? BookIdentifiers.preferred(identifiers) : null;
+    final term = isbn ?? [cleanTitle, if (cleanCreator.isNotEmpty) cleanCreator].join(' ');
+    if (id == 'steam-store') {
+      final appId = gamePlatformIds['steam'];
+      if (appId != null && RegExp(r'^[1-9]\d{0,9}$').hasMatch(appId)) {
+        final parsed = int.tryParse(appId);
+        if (parsed != null && parsed <= 0xffffffff) {
+          return Uri.https(host, '/app/$parsed/');
+        }
+      }
+    }
     return Uri.https(hostForRegion(safeRegion), pathForRegion(safeRegion), {
       ...fixedQuery,
       if (id == 'google-play-books') 'gl': safeRegion.toUpperCase(),
@@ -48,6 +84,24 @@ class ExternalAccessDestination {
         'us' => 'www.amazon.com',
         'gb' => 'www.amazon.co.uk',
         'au' => 'www.amazon.com.au',
+        'be' => 'www.amazon.com.be',
+        'br' => 'www.amazon.com.br',
+        'de' => 'www.amazon.de',
+        'eg' => 'www.amazon.eg',
+        'es' => 'www.amazon.es',
+        'fr' => 'www.amazon.fr',
+        'ie' => 'www.amazon.ie',
+        'in' => 'www.amazon.in',
+        'it' => 'www.amazon.it',
+        'jp' => 'www.amazon.co.jp',
+        'mx' => 'www.amazon.com.mx',
+        'nl' => 'www.amazon.nl',
+        'pl' => 'www.amazon.pl',
+        'sa' => 'www.amazon.sa',
+        'sg' => 'www.amazon.sg',
+        'se' => 'www.amazon.se',
+        'tr' => 'www.amazon.com.tr',
+        'ae' => 'www.amazon.ae',
         _ => 'www.amazon.ca',
       };
     }
@@ -76,17 +130,47 @@ class ExternalAccessDestination {
   }
 
   String pathForRegion(String region) {
+    if (id == 'ebooks-comics') return region == 'ca' ? '/en-ca/searchall' : '/en-us/searchall';
     if (id == 'apple-books' || id == 'apple-tv-plus' || id == 'apple-tv-store' || id == 'apple-music') {
       return '/$region/search';
     }
     if (id == 'xbox-store') return '/en-${region.toUpperCase()}/Search/Results';
     return path;
   }
+
+  ProviderDefinition integrationDefinition(String region) {
+    final normalizedRegion = RegExp(r'^[a-z]{2}$').hasMatch(region) ? region : 'ca';
+    final entityKinds = switch (category) {
+      ExternalAccessCategory.video || ExternalAccessCategory.rentals => const {
+        IntegrationEntityKind.movie,
+        IntegrationEntityKind.series,
+        IntegrationEntityKind.season,
+        IntegrationEntityKind.episode,
+      },
+      ExternalAccessCategory.books => const {IntegrationEntityKind.bookWork, IntegrationEntityKind.bookEdition},
+      ExternalAccessCategory.audiobooks => const {
+        IntegrationEntityKind.bookWork,
+        IntegrationEntityKind.audiobookEdition,
+      },
+      ExternalAccessCategory.comics => const {IntegrationEntityKind.comicSeries, IntegrationEntityKind.comicIssue},
+      ExternalAccessCategory.music => const {IntegrationEntityKind.musicRelease, IntegrationEntityKind.musicRecording},
+      ExternalAccessCategory.games => const {IntegrationEntityKind.game, IntegrationEntityKind.gameEdition},
+    };
+    return ProviderDefinition(
+      id: id,
+      displayName: name,
+      officialHosts: {host.toLowerCase(), hostForRegion(normalizedRegion).toLowerCase()},
+      entityKinds: entityKinds,
+      capabilities: const {ProviderCapability.officialHandoff},
+      accessModels: accessModels,
+      affiliateHosts: affiliateHosts,
+    );
+  }
 }
 
-/// Curated official destinations for title-level handoff. There are no
-/// affiliate tags, scraped prices, credentials, or playback URLs here.
-/// Partner approval and licensed catalog data are separate integration work.
+/// Curated official destinations for title-level handoff. Approved affiliate
+/// tags are injected only by the server-side broker; credentials, scraped
+/// prices, and playback URLs never enter this directory.
 abstract final class ExternalAccessDirectory {
   static const List<ExternalAccessDestination> all = [
     // Subscription and ad-supported video services outside the excluded scope.
@@ -209,6 +293,7 @@ abstract final class ExternalAccessDirectory {
       host: 'tubitv.com',
       path: '/search',
       queryParameter: 'query',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'pluto-tv',
@@ -217,6 +302,7 @@ abstract final class ExternalAccessDirectory {
       host: 'pluto.tv',
       path: '/search',
       queryParameter: 'q',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'cbc-gem',
@@ -241,6 +327,11 @@ abstract final class ExternalAccessDirectory {
       host: 'watch.plex.tv',
       path: '/search',
       queryParameter: 'q',
+      accessModels: {
+        ProviderAccessModel.freeAdSupported,
+        ProviderAccessModel.subscription,
+        ProviderAccessModel.transactional,
+      },
     ),
     ExternalAccessDestination(
       id: 'youtube',
@@ -353,6 +444,14 @@ abstract final class ExternalAccessDirectory {
       host: 'therokuchannel.roku.com',
       path: '/search',
       queryParameter: 'query',
+      accessModels: {ProviderAccessModel.freeAdSupported, ProviderAccessModel.subscription},
+    ),
+    ExternalAccessDestination(
+      id: 'samsung-tv-plus',
+      name: 'Samsung TV Plus',
+      category: ExternalAccessCategory.video,
+      host: 'www.samsungtvplus.com',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'xumo-play',
@@ -361,6 +460,7 @@ abstract final class ExternalAccessDirectory {
       host: 'play.xumo.com',
       path: '/search',
       queryParameter: 'q',
+      accessModels: {ProviderAccessModel.freeAdSupported},
     ),
     ExternalAccessDestination(
       id: 'dazn',
@@ -639,7 +739,7 @@ abstract final class ExternalAccessDirectory {
       queryParameter: 'q',
     ),
 
-    // Comic services use official catalog/reader destinations only.
+    // Comic subscriptions, transactional stores, creator shops, and library access.
     ExternalAccessDestination(
       id: 'globalcomix',
       name: 'GlobalComix',
@@ -647,6 +747,117 @@ abstract final class ExternalAccessDirectory {
       host: 'globalcomix.com',
       path: '/search',
       queryParameter: 'keyword',
+      accessModels: {ProviderAccessModel.subscription, ProviderAccessModel.transactional},
+      offerNote: 'Subscription, PDF sales, and creator monetization; no PlezyNG referral commission.',
+    ),
+    ExternalAccessDestination(
+      id: 'globalcomix-publish',
+      name: 'GlobalComix for Creators',
+      category: ExternalAccessCategory.comics,
+      host: 'globalcomix.com',
+      path: '/publish',
+      offerNote: 'Publisher path for paid access, PDF sales, and creator revenue share.',
+    ),
+    ExternalAccessDestination(
+      id: 'drive-thru-comics',
+      name: 'DriveThruComics',
+      category: ExternalAccessCategory.comics,
+      host: 'www.drivethrucomics.com',
+      path: '/en/browse',
+      accessModels: {ProviderAccessModel.transactional},
+      commerceProviderId: 'drivethru-comics',
+      affiliateHosts: {'www.drivethrucomics.com'},
+      offerNote: 'Digital and print purchases. Affiliate tracking activates only after approval.',
+    ),
+    ExternalAccessDestination(
+      id: 'renta-comics',
+      name: 'Renta!',
+      category: ExternalAccessCategory.comics,
+      host: 'www.ebookrenta.com',
+      path: '/renta/sc/frm/',
+      accessModels: {ProviderAccessModel.transactional},
+      commerceProviderId: 'renta-comics',
+      affiliateHosts: {'track.flexlinkspro.com', 'track.flexlinks.com'},
+      offerNote: '48-hour rental or unlimited access where the publisher offers it; Renta! is 18+.',
+    ),
+    ExternalAccessDestination(
+      id: 'fanatical-comics',
+      name: 'Fanatical Comics & Bundles',
+      category: ExternalAccessCategory.comics,
+      host: 'www.fanatical.com',
+      path: '/en/search',
+      queryParameter: 'search',
+      accessModels: {ProviderAccessModel.transactional},
+      commerceProviderId: 'fanatical-comics',
+      affiliateHosts: {'www.awin1.com', 'awin1.com'},
+      offerNote: 'Comic and book bundles change over time; link tracking requires approved Awin access.',
+    ),
+    ExternalAccessDestination(
+      id: 'ebooks-comics',
+      name: 'eBooks.com Comics',
+      category: ExternalAccessCategory.comics,
+      host: 'www.ebooks.com',
+      path: '/en-us/searchall',
+      queryParameter: 'term',
+      commerceProviderId: 'ebooks-comics',
+      affiliateHosts: {'www.ebooks.com'},
+      offerNote: 'ISBN-specific affiliate links are supported after eBooks.com approval.',
+    ),
+    ExternalAccessDestination(
+      id: 'humble-comics',
+      name: 'Humble Book Bundles',
+      category: ExternalAccessCategory.comics,
+      host: 'www.humblebundle.com',
+      path: '/books',
+      accessModels: {ProviderAccessModel.transactional},
+      commerceProviderId: 'humble-comics',
+      affiliateHosts: {'track.flexlinkspro.com', 'track.flexlinks.com'},
+      offerNote: 'Book and comic bundles are time-limited; no fixed commission is assumed.',
+    ),
+    ExternalAccessDestination(
+      id: 'gumroad-comics',
+      name: 'Gumroad Creator Shops',
+      category: ExternalAccessCategory.comics,
+      host: 'gumroad.com',
+      path: '/discover',
+      queryParameter: 'query',
+      accessModels: {ProviderAccessModel.transactional},
+      commerceProviderId: 'gumroad-comics',
+      affiliateHosts: {'gumroad.com', 'www.gumroad.com', '*.gumroad.com'},
+      offerNote: 'Tracked links require a Gumroad-issued Discover link or creator-approved product link.',
+    ),
+    ExternalAccessDestination(
+      id: 'comics-plus-library',
+      name: 'Comics Plus (School or Library)',
+      category: ExternalAccessCategory.comics,
+      host: 'librarypass.com',
+      path: '/',
+      accessModels: {ProviderAccessModel.publicService},
+      offerNote: 'Access is arranged by a participating school or library; no PlezyNG referral commission.',
+    ),
+    ExternalAccessDestination(
+      id: 'bookshop-comics',
+      name: 'Bookshop.org Graphic Novels',
+      category: ExternalAccessCategory.comics,
+      host: 'bookshop.org',
+      path: '/search',
+      queryParameter: 'keywords',
+      accessModels: {ProviderAccessModel.transactional},
+      commerceProviderId: 'bookshop-comics',
+      affiliateHosts: {'bookshop.org'},
+      offerNote: 'Bookshop.org ISBN affiliate links are issued after affiliate approval.',
+    ),
+    ExternalAccessDestination(
+      id: 'kobo-comics',
+      name: 'Kobo Comics',
+      category: ExternalAccessCategory.comics,
+      host: 'www.kobo.com',
+      path: '/search',
+      queryParameter: 'query',
+      accessModels: {ProviderAccessModel.transactional},
+      commerceProviderId: 'kobo-comics',
+      affiliateHosts: {'click.linksynergy.com'},
+      offerNote: 'Rakuten deep linking is enabled only for an approved Kobo partnership.',
     ),
     ExternalAccessDestination(
       id: 'marvel-unlimited',
@@ -655,6 +866,7 @@ abstract final class ExternalAccessDirectory {
       host: 'www.marvel.com',
       path: '/comics/search',
       queryParameter: 'q',
+      accessModels: {ProviderAccessModel.subscription},
     ),
     ExternalAccessDestination(
       id: 'dc-universe-infinite',
@@ -663,6 +875,7 @@ abstract final class ExternalAccessDirectory {
       host: 'www.dcuniverseinfinite.com',
       path: '/comics',
       queryParameter: 'search',
+      accessModels: {ProviderAccessModel.subscription},
     ),
     ExternalAccessDestination(
       id: 'manga-plus',
@@ -671,6 +884,7 @@ abstract final class ExternalAccessDirectory {
       host: 'mangaplus.shueisha.co.jp',
       path: '/titles',
       queryParameter: 'title',
+      accessModels: {ProviderAccessModel.freeAdSupported, ProviderAccessModel.subscription},
     ),
     ExternalAccessDestination(
       id: 'viz',
@@ -679,6 +893,7 @@ abstract final class ExternalAccessDirectory {
       host: 'www.viz.com',
       path: '/search',
       queryParameter: 'search',
+      accessModels: {ProviderAccessModel.transactional, ProviderAccessModel.subscription},
     ),
     ExternalAccessDestination(
       id: 'comixology',
@@ -688,6 +903,7 @@ abstract final class ExternalAccessDirectory {
       path: '/s',
       queryParameter: 'k',
       fixedQuery: {'i': 'digital-text'},
+      accessModels: {ProviderAccessModel.transactional, ProviderAccessModel.subscription},
     ),
     ExternalAccessDestination(
       id: 'webtoon',
@@ -696,6 +912,7 @@ abstract final class ExternalAccessDirectory {
       host: 'www.webtoons.com',
       path: '/en/search',
       queryParameter: 'keyword',
+      accessModels: {ProviderAccessModel.freeAdSupported, ProviderAccessModel.subscription},
     ),
 
     // Music catalogs and creator stores; playback remains owned by the
@@ -830,6 +1047,9 @@ abstract final class ExternalAccessDirectory {
       host: 'www.fanatical.com',
       path: '/en/search',
       queryParameter: 'search',
+      commerceProviderId: 'fanatical-games',
+      affiliateHosts: {'awin1.com', 'www.awin1.com'},
+      offerNote: 'Game search tracking requires separate Fanatical/Awin approval.',
     ),
     ExternalAccessDestination(
       id: 'humble-store',
@@ -883,6 +1103,18 @@ abstract final class ExternalAccessDirectory {
 
   static List<ExternalAccessDestination> forCategory(ExternalAccessCategory category) =>
       all.where((destination) => destination.category == category).toList(growable: false);
+
+  /// The directory entries that identify services with a general free,
+  /// ad-supported offering. This is deliberately provider-level metadata; the
+  /// destination must still confirm a title's availability in the selected
+  /// country and whether it is free for the user.
+  static List<ExternalAccessDestination> get freeAdSupportedVideo => all
+      .where(
+        (destination) =>
+            destination.category == ExternalAccessCategory.video &&
+            destination.accessModels.contains(ProviderAccessModel.freeAdSupported),
+      )
+      .toList(growable: false);
 
   /// Catalog providers may return third-party streaming links. Keep these
   /// three services outside PlezyNG's discovery and launch surface.

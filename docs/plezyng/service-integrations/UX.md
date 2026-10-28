@@ -1,6 +1,6 @@
 # Fit with PlezyNG's existing flow and style
 
-Status: proposed behavior. **High confidence:** the existing design and navigation contracts are suitable. No new visual identity or top-level store/provider dashboard is needed.
+Status: design fit with partial code delivery. Settings → Services now routes to the searchable official-provider directory, Hardcover settings and reversible catalog-to-server matches. The directory stores profile-scoped country and preferred-provider ordering and optional plan notes; a favorite only changes ordering, and a plan note never links an account or verifies a subscription. Global Search includes connected catalog sources with the existing local/server/Files and Seerr results; Find Next samples all connected catalog providers within bounded requests, while Explore retains its existing selected-source model. **High confidence:** the existing design and navigation contracts are suitable. No new visual identity or top-level store/provider dashboard is needed.
 
 ## Screen mapping
 
@@ -10,7 +10,7 @@ Status: proposed behavior. **High confidence:** the existing design and navigati
 | Libraries → Files and books | Existing connected sources and import actions; clear shortcuts to public libraries and supported file providers | Existing library picker, shelves, reader/player routes and hidden empty shelves |
 | Public libraries | Library cards/connections, loans/holds and official handoffs; provider-specific statuses | OverDrive Coming soon, explicit circulation confirmations and due-date semantics |
 | Media/book detail | Compact access section below existing primary controls: Your copies, Your libraries, Your services, Buy or rent; show only applicable groups | Artwork, metadata, current Play/Read action, existing adaptive source/versions picker |
-| Search | Progressive local/server results plus opt-in remote catalogs/offers, with source and media-kind distinction | Debounce, stable focus, independent errors and existing filters |
+| Search | Progressive local/server/Files results, Seerr requests and connected-catalog search, with source and media-kind distinction | Debounce, stable focus, independent errors and existing filters; licensed availability offers are not included |
 | Explore | Optional catalog/availability rows from enabled providers and saved picks | Existing poster/cover rows; no wall of provider tiles |
 | Home | Actual native Continue Watching/Listening/Reading; optional due-soon loans and recent external launches as separately named rows | User-configured row order, offline-first copies, no assumed external progress |
 | Find your next | Eligible catalog candidates with access hint and canonical detail route | Save/Not now/Undo only; a swipe never borrows, buys or starts a trial |
@@ -21,7 +21,7 @@ Status: proposed behavior. **High confidence:** the existing design and navigati
 
 ### Official provider handoff
 
-Open **Links** from a media/source detail or Settings → Services → Integrations. Search the provider list, then choose a region-appropriate official destination. Title details prefill the provider search with the title (and creator for books/audio); the directory is not an account connector and does not save a subscription preference.
+Open **Links** from a media/source detail or Settings → Services → Integrations. Search the provider list, then choose a region-appropriate official destination. Title details prefill the provider search with the title (and creator for books/audio); the directory is not an account connector. Country and preferred-provider ordering are saved per profile; they do not verify a subscription or entitlement.
 
 The provider performs sign-in, territory, entitlement and final catalog search. Do not label a provider “connected,” infer that the exact title is available, or treat an external launch as playback. Netflix, Prime Video and Disney+ are out of this delivery scope.
 

@@ -3,6 +3,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/plex_auth_service.dart';
+import 'package:plezy/utils/certificate_trust.dart';
+
+import '../test_helpers/local_tls.dart';
 
 Map<String, dynamic> _serverJson(Map<String, dynamic> connection) => _serverJsonWithConnections([connection]);
 
@@ -34,7 +37,7 @@ Map<String, dynamic> _connectionJson({
 
 /// Loopback stand-in for a PMS root endpoint; [delay] shapes measured latency.
 Future<HttpServer> _startPlexRoot({Duration delay = Duration.zero}) async {
-  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  final server = await HttpServer.bindSecure(InternetAddress.loopbackIPv4, 0, localTlsServer());
   server.listen((request) async {
     if (delay > Duration.zero) await Future<void>.delayed(delay);
     request.response
@@ -52,6 +55,22 @@ Future<int> _closedPort() async {
   final port = server.port;
   await server.close(force: true);
   return port;
+}
+
+class _LocalTlsHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) => localTlsClient();
+}
+
+void _testWithLocalTls(String description, Future<void> Function() body) {
+  test(description, () async {
+    CertificateTrust.debugSetUserAuthoritiesForTesting(localTlsAuthorityContext());
+    try {
+      await HttpOverrides.runWithHttpOverrides(body, _LocalTlsHttpOverrides());
+    } finally {
+      CertificateTrust.debugReset();
+    }
+  });
 }
 
 void main() {
@@ -92,7 +111,7 @@ void main() {
       expect(urls, ['https://whereyaat.duckdns.org:32400']);
     });
 
-    test('adds HTTP fallbacks only for local, non-relay connections on private addresses', () {
+    test('does not add HTTP fallbacks to Plex account connections', () {
       const localPlexDirect = 'https://192-168-1-50.abc.plex.direct:32400';
       const remotePlexDirect = 'https://203-0-113-10.abc.plex.direct:32400';
       const relayPlexDirect = 'https://198-51-100-7.abc.plex.direct:8443';
@@ -116,17 +135,8 @@ void main() {
 
       final urls = server.prioritizedEndpointUrls();
 
-      expect(urls, [
-        localPlexDirect,
-        publicLocalPlexDirect,
-        remotePlexDirect,
-        relayPlexDirect,
-        'http://192.168.1.50:32400',
-        'http://192-168-1-50.abc.plex.direct:32400',
-      ]);
-      expect(server.connections.where((c) => c.protocol == 'http').map((c) => c.uri), [
-        'http://192-168-1-50.abc.plex.direct:32400',
-      ]);
+      expect(urls, [localPlexDirect, publicLocalPlexDirect, remotePlexDirect, relayPlexDirect]);
+      expect(server.connections.every((connection) => connection.protocol == 'https'), isTrue);
       for (final url in [
         'http://203.0.113.10:32400',
         'http://198.51.100.7:8443',
@@ -184,16 +194,15 @@ void main() {
       expect(PlexServer.fromJson(server.toJson()).connections.map((c) => c.uri), expected);
     });
 
-    test('keeps a server-published cleartext remote connection', () {
-      // A server with secure connections disabled only publishes http.
-      final server = PlexServer.fromJson(
-        _serverJson(
-          _connectionJson(protocol: 'http', address: '203.0.113.10', port: 32400, uri: 'http://203.0.113.10:32400'),
+    test('rejects a server-published cleartext remote connection', () {
+      expect(
+        () => PlexServer.fromJson(
+          _serverJson(
+            _connectionJson(protocol: 'http', address: '203.0.113.10', port: 32400, uri: 'http://203.0.113.10:32400'),
+          ),
         ),
+        throwsFormatException,
       );
-
-      expect(server.prioritizedEndpointUrls(), ['http://203.0.113.10:32400']);
-      expect(server.networkClassForUrl('http://203.0.113.10:32400'), PlexNetworkClass.remote);
     });
 
     test('does not add HTTP fallback for standard HTTPS reverse proxy hostname', () {
@@ -332,17 +341,7 @@ void main() {
 
       final urls = server.prioritizedEndpointUrls();
 
-      expect(urls, [
-        ipv4PlexDirect,
-        flaggedPlexDirect,
-        unflaggedPlexDirect,
-        'http://192.168.1.50:32400',
-        'http://192-168-1-50.abc.plex.direct:32400',
-        'http://[fd21::1]:32400',
-        'http://fd21-0-0-0-0-0-0-1.abc.plex.direct:32400',
-        'http://[fd21::2]:32400',
-        'http://fd21-0-0-0-0-0-0-2.abc.plex.direct:32400',
-      ]);
+      expect(urls, [ipv4PlexDirect, flaggedPlexDirect, unflaggedPlexDirect]);
     });
 
     test('persisting and re-parsing a server does not grow its expanded connection list', () {
@@ -363,65 +362,59 @@ void main() {
         ),
       ]);
 
-      // The synthetic plex.direct HTTP alias and the advertised raw-IP HTTP row are different
-      // endpoints, so both survive; neither may be duplicated by a later parse.
-      const expanded = [
-        'https://192-168-1-50.abc.plex.direct:32400',
-        'http://192-168-1-50.abc.plex.direct:32400',
-        'http://192.168.1.50:32400',
-      ];
+      const secure = ['https://192-168-1-50.abc.plex.direct:32400'];
 
       final parsed = PlexServer.fromJson(json);
       final reparsed = PlexServer.fromJson(parsed.toJson());
       final rereparsed = PlexServer.fromJson(reparsed.toJson());
 
-      expect(parsed.connections.map((c) => c.uri), expanded);
-      expect(reparsed.connections.map((c) => c.uri), expanded);
-      expect(rereparsed.connections.map((c) => c.uri), expanded);
-      expect(reparsed.connections.map((c) => c.local), [true, true, true]);
+      expect(parsed.connections.map((c) => c.uri), secure);
+      expect(reparsed.connections.map((c) => c.uri), secure);
+      expect(rereparsed.connections.map((c) => c.uri), secure);
+      expect(reparsed.connections.map((c) => c.local), [true]);
       expect(reparsed.prioritizedEndpointUrls(), parsed.prioritizedEndpointUrls());
     });
   });
 
   group('PlexServer connection discovery', () {
-    test('keeps a slower IPv4 endpoint over a faster IPv6 sibling in both race phases', () async {
+    _testWithLocalTls('keeps a slower IPv4 endpoint over a faster IPv6 sibling in both race phases', () async {
       final ipv4 = await _startPlexRoot(delay: const Duration(milliseconds: 100));
       final ipv6 = await _startPlexRoot();
       addTearDown(() => ipv4.close(force: true));
       addTearDown(() => ipv6.close(force: true));
-      final ipv4Uri = 'http://127.0.0.1:${ipv4.port}';
-      final ipv6Uri = 'http://127.0.0.1:${ipv6.port}';
+      final ipv4Uri = 'https://127.0.0.1:${ipv4.port}';
+      final ipv6Uri = 'https://127.0.0.1:${ipv6.port}';
       final server = PlexServer.fromJson(
         _serverJsonWithConnections([
-          _connectionJson(protocol: 'http', address: '::1', port: ipv6.port, uri: ipv6Uri, local: true, ipv6: true),
-          _connectionJson(protocol: 'http', address: '127.0.0.1', port: ipv4.port, uri: ipv4Uri, local: true),
+          _connectionJson(protocol: 'https', address: '::1', port: ipv6.port, uri: ipv6Uri, local: true, ipv6: true),
+          _connectionJson(protocol: 'https', address: '127.0.0.1', port: ipv4.port, uri: ipv4Uri, local: true),
         ]),
       );
 
-      final emitted = await server.findBestWorkingConnection().map((c) => c.uri).toList();
+      final emitted = await server.findBestWorkingConnection().map((connection) => connection.uri).toList();
 
       expect(emitted, [ipv4Uri]);
     });
 
-    test('accepts an IPv6 endpoint once every IPv4 sibling has failed', () async {
+    _testWithLocalTls('accepts an IPv6 endpoint once every IPv4 sibling has failed', () async {
       final ipv6 = await _startPlexRoot();
       addTearDown(() => ipv6.close(force: true));
       final ipv4Port = await _closedPort();
-      final ipv6Uri = 'http://127.0.0.1:${ipv6.port}';
+      final ipv6Uri = 'https://127.0.0.1:${ipv6.port}';
       final server = PlexServer.fromJson(
         _serverJsonWithConnections([
-          _connectionJson(protocol: 'http', address: '::1', port: ipv6.port, uri: ipv6Uri, local: true, ipv6: true),
+          _connectionJson(protocol: 'https', address: '::1', port: ipv6.port, uri: ipv6Uri, local: true, ipv6: true),
           _connectionJson(
-            protocol: 'http',
+            protocol: 'https',
             address: '127.0.0.1',
             port: ipv4Port,
-            uri: 'http://127.0.0.1:$ipv4Port',
+            uri: 'https://127.0.0.1:$ipv4Port',
             local: true,
           ),
         ]),
       );
 
-      final emitted = await server.findBestWorkingConnection().map((c) => c.uri).toList();
+      final emitted = await server.findBestWorkingConnection().map((connection) => connection.uri).toList();
 
       expect(emitted, [ipv6Uri]);
     });

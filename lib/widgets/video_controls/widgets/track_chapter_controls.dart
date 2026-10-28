@@ -1,9 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../../focus/dpad_navigator.dart';
 import '../../../mpv/mpv.dart';
+import '../../../models/motion_clarity.dart';
+import '../../../models/player_setting_scope.dart';
+import '../../../services/motion_clarity_service.dart';
+import '../../../services/scoped_player_prefs.dart';
+import '../../../services/settings_service.dart';
 import '../../../media/media_source_info.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
@@ -20,6 +27,7 @@ import '../video_control_button.dart';
 
 /// Row of track and chapter control buttons for the video player
 class TrackChapterControls extends StatelessWidget {
+  static final Expando<bool> _motionToggleInFlight = Expando<bool>('motion-clarity-toggle');
   final Player player;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
@@ -112,6 +120,7 @@ class TrackChapterControls extends StatelessWidget {
     String? semanticValue,
     bool? checked,
     bool isActive = false,
+    VoidCallback? onLongPress,
   }) {
     return VideoControlButton(
       icon: icon,
@@ -126,7 +135,145 @@ class TrackChapterControls extends StatelessWidget {
           : null,
       onFocusChange: onFocusChange,
       onPressed: onPressed,
+      onLongPress: onLongPress,
     );
+  }
+
+
+  void _openMotionClaritySheet(BuildContext context) {
+    final state = trackControlsState;
+    state.onCancelAutoHide?.call();
+    OverlaySheetController.of(context)
+        .show(
+          builder: (_) => VideoSettingsSheet(
+            player: player,
+            trackControlsState: state,
+            openMotionClarity: true,
+          ),
+        )
+        .whenComplete(() => state.onStartAutoHide?.call());
+  }
+
+  Future<void> _toggleMotionClarity(BuildContext context) async {
+    final state = trackControlsState;
+    final service = MotionClarityService.forPlayer(player);
+    final metadata = state.metadata;
+    if (_motionToggleInFlight[player] == true) return;
+    _motionToggleInFlight[player] = true;
+
+    try {
+      final status = await service.inspect();
+      if (!context.mounted) return;
+      if (!status.isSupported) {
+        _openMotionClaritySheet(context);
+        return;
+      }
+
+      final currentPreset = service.currentPreset;
+      if (currentPreset.interpolationEnabled && status.isComparisonBypass) {
+        final result = await service.setComparisonBypass(false);
+        if (context.mounted && result.isComparisonBypass) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t.videoSettings.motionClarityCompareFailed)),
+          );
+        }
+        return;
+      }
+
+      final scope = SettingsService.instance.read(SettingsService.motionClarityScope);
+      final sessionOnly = scope == PlayerSettingScope.off;
+      final manualKernel = sessionOnly
+          ? service.currentKernel
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityKernel, metadata);
+      final manualThreshold = sessionOnly
+          ? service.currentThresholdPercent
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityThreshold, metadata);
+      final engine = sessionOnly
+          ? service.currentEngine
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityEngine, metadata);
+      final outputRate = sessionOnly
+          ? service.currentOutputRate
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityOutputRate, metadata);
+      final quality = sessionOnly
+          ? service.currentMciQuality
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityMciQuality, metadata);
+      final lastPreset = sessionOnly
+          ? service.lastEnabledPreset
+          : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityLastPreset, metadata);
+      final targetPreset = currentPreset.interpolationEnabled
+          ? MotionClarityPreset.original
+          : lastPreset.interpolationEnabled
+              ? lastPreset
+              : MotionClarityPreset.balanced;
+      final keepManualControls =
+          targetPreset == MotionClarityPreset.custom || targetPreset == MotionClarityPreset.original;
+      final kernel = keepManualControls ? manualKernel : targetPreset.defaultKernel;
+      final threshold = keepManualControls ? manualThreshold : targetPreset.defaultThresholdPercent;
+
+      final result = await service.configure(
+        preset: targetPreset,
+        kernel: kernel,
+        thresholdPercent: threshold,
+        beforeSourceOpen: false,
+        engine: engine,
+        outputRate: outputRate,
+        mciQuality: quality,
+      );
+      if (!context.mounted) return;
+      if (!result.isSupported || (targetPreset.interpolationEnabled && !result.isConfigured)) {
+        _openMotionClaritySheet(context);
+        return;
+      }
+
+      try {
+        if (currentPreset.interpolationEnabled) {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityLastPreset, metadata, currentPreset);
+        } else if (targetPreset.interpolationEnabled) {
+          await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityLastPreset, metadata, targetPreset);
+        }
+        await ScopedPlayerPrefs.write(ScopedPlayerPrefs.motionClarityPreset, metadata, targetPreset);
+      } catch (_) {
+        final restoreKernel =
+            currentPreset == MotionClarityPreset.custom ? manualKernel : currentPreset.defaultKernel;
+        final restoreThreshold = currentPreset == MotionClarityPreset.custom
+            ? manualThreshold
+            : currentPreset.defaultThresholdPercent;
+        await service.configure(
+          preset: currentPreset,
+          kernel: restoreKernel,
+          thresholdPercent: restoreThreshold,
+          beforeSourceOpen: false,
+          engine: engine,
+          outputRate: outputRate,
+          mciQuality: quality,
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t.videoSettings.motionClaritySaveFailed)),
+          );
+        }
+        return;
+      }
+
+      if (result.requiresSourceReload && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.videoSettings.motionClarityRestartRequired)),
+        );
+      } else if (targetPreset.interpolationEnabled &&
+          (targetPreset == MotionClarityPreset.oled || engine == MotionClarityEngine.motionCompensated) &&
+          result.effectiveEngine != MotionClarityEngine.motionCompensated) {
+        _openMotionClaritySheet(context);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.videoSettings.motionClaritySaveFailed)),
+        );
+      }
+    } finally {
+      _motionToggleInFlight[player] = false;
+      if (context.mounted) state.onMotionClarityChanged?.call();
+    }
   }
 
   @override
@@ -156,12 +303,17 @@ class TrackChapterControls extends StatelessWidget {
                 final isShaderActive =
                     shaderService != null && shaderService.isSupported && shaderService.currentPreset.isEnabled;
                 final isZoomActive = (state.videoZoomScale - 1.0).abs() > 0.0001;
+                final isMotionConfigured =
+                    player.playerType == 'mpv' &&
+                    ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.motionClarityPreset, state.metadata) !=
+                        MotionClarityPreset.original;
                 final isActive =
                     sleepTimer.isActive ||
                     state.audioSyncOffset != 0 ||
                     state.subtitleSyncOffset != 0 ||
                     isShaderActive ||
-                    isZoomActive;
+                    isZoomActive ||
+                    isMotionConfigured;
                 return _buildTrackButton(
                   buttonIndex: 0,
                   icon: Symbols.tune_rounded,
@@ -184,6 +336,28 @@ class TrackChapterControls extends StatelessWidget {
             ),
           );
           buttonIndex++;
+
+          if (player.playerType == 'mpv' && !isMobile) {
+            final currentIndex = buttonIndex;
+            final motionService = MotionClarityService.forPlayer(player);
+            final isMotionActive = motionService.isMotionProcessingActive;
+            buttons.add(
+              _buildTrackButton(
+                buttonIndex: currentIndex,
+                icon: Symbols.blur_on_rounded,
+                isActive: isMotionActive,
+                checked: isMotionActive,
+                tooltip: isMotionActive
+                    ? t.videoSettings.motionClarityQuickToggleOn
+                    : t.videoSettings.motionClarityQuickToggleOff,
+                semanticLabel: t.videoSettings.motionClarityQuickToggle,
+                buttons: buttons,
+                onPressed: () => unawaited(_toggleMotionClarity(context)),
+                onLongPress: () => _openMotionClaritySheet(context),
+              ),
+            );
+            buttonIndex++;
+          }
 
           {
             final currentIndex = buttonIndex;

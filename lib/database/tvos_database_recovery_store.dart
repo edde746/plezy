@@ -378,7 +378,7 @@ final class TvosDatabaseRecoveryStore {
         return null;
       }
 
-      final identity = _decodePayload(identityRaw, _identityRowKeys);
+      final identity = _decodePayload(identityRaw, _identityRowKeys, compatibleKeys: [_legacyIdentityRowKeys]);
       final pending = _decodePayload(pendingRaw, _pendingRowKeys);
       if (identity == null || pending == null) return null;
       return TvosDatabaseRecoverySnapshot(identity: identity, pending: pending);
@@ -499,25 +499,36 @@ final class TvosDatabaseRecoveryStore {
     );
   }
 
-  static const Set<String> _identityRowKeys = {'connections', 'profiles', 'profileConnections'};
+  static const Set<String> _identityRowKeys = {
+    'connections',
+    'profiles',
+    'profileConnections',
+    'iptvSources',
+    'iptvChannelOverrides',
+  };
+  static const Set<String> _legacyIdentityRowKeys = {'connections', 'profiles', 'profileConnections'};
   static const Set<String> _pendingRowKeys = {'offlineWatchProgress'};
   static const Map<String, Object?> _emptyPendingRows = {'offlineWatchProgress': <Object?>[]};
 
   static String _encodePayload(Map<String, Object?> rows) =>
       jsonEncode({'version': recoveryFormatVersion, 'rows': rows});
 
-  static Map<String, Object?>? _decodePayload(String raw, Set<String> expectedKeys) {
+  static Map<String, Object?>? _decodePayload(
+    String raw,
+    Set<String> expectedKeys, {
+    List<Set<String>> compatibleKeys = const [],
+  }) {
     final decoded = jsonDecode(raw);
     if (decoded is! Map<String, dynamic> || decoded.length != 2 || decoded['version'] != recoveryFormatVersion) {
       return null;
     }
     final rows = decoded['rows'];
-    if (rows is! Map<String, dynamic> ||
-        rows.keys.toSet().difference(expectedKeys).isNotEmpty ||
-        rows.length != expectedKeys.length) {
+    final rowKeys = rows is Map<String, dynamic> ? rows.keys.toSet() : <String>{};
+    final acceptedShapes = [expectedKeys, ...compatibleKeys];
+    if (rows is! Map<String, dynamic> || !acceptedShapes.any((keys) => rowKeys.length == keys.length && rowKeys.containsAll(keys))) {
       return null;
     }
-    for (final key in expectedKeys) {
+    for (final key in rowKeys) {
       final value = rows[key];
       if (value is! List || value.any((row) => row is! Map<String, dynamic>)) return null;
     }

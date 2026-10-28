@@ -3661,7 +3661,6 @@ class _Translations$audiobook$ar extends Translations$audiobook$en {
 	@override String get addSyncSource => 'إضافة Google Drive، OneDrive، Dropbox، WebDAV أو S3 في الملفات والكتب أولاً.';
 	@override String get syncDestination => 'حساب التخزين المتزامن';
 	@override String get syncFolder => 'المجلد أو المجلد السابق';
-	@override String get syncFolderHelp => 'استخدم مجلدًا منفصلًا موجودًا داخل مصدر WebDAV الخاص بك، أو مقدمة S3 مخصصة.';
 	@override String get syncCode => 'رمز المزامنة الخاص';
 	@override String get syncCodeHelp => 'قم بإنشاء رمز على جهازك الأول، ثم أدخل هذا الرمز على أجهزتك الأخرى.حافظ على نسخة خاصة: هو المفتاح للحالة المشفرة الخاصة بك.استخدم رمزًا مختلفًا لكل شخص.';
 	@override String get showCode => 'عرض أو إخفاء رمز التزامن';
@@ -3671,7 +3670,6 @@ class _Translations$audiobook$ar extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'إزالة هذا المصدر سيتم إيقاف القراءة والاستماع المزامنة هنا.';
 	@override String get syncReconnect => 'إعادة توصيل حساب التخزين';
 	@override String lastSynced({required Object time}) => 'آخر تصنيف في ${time}';
-	@override String get syncPrivacy => 'يتم تخزين التقدم المشفر والملاحظات فقط. لا يتم تحميل ملفات الصوت والكتب الإلكترونية والرموز الحساب وكلمات المرور. يستخدم Google Drive و OneDrive تخزين التطبيقات؛ يستخدم Dropbox PlezyNG Sync. يسمح التزامن قد يطلب إضافية إمكانية الوصول إلى الكتابة. في حين تم تشغيله، هذا الوجهة يمتلك التقدم التزامن؛ يبقى التقدم الخادم منفصلة. يمنع التزامن يحافظ على التاريخ المحلي والحالة البعيدة.';
 	@override String get syncConflicts => 'اقرأ أين تستعيد';
 	@override String get conflictHelp => 'تم إجراء هذه التغييرات بشكل مستقل.اختر الموقف أو نسخة علامة التبويب للحفاظ عليها. لا تفوز تلقائيًا بضعة ساعات متأخرة أو نسبة أعلى.';
 	@override String syncDevice({required Object device}) => 'جهاز ${device}';
@@ -8491,7 +8489,6 @@ extension on TranslationsAr {
 			'audiobook.addSyncSource' => 'إضافة Google Drive، OneDrive، Dropbox، WebDAV أو S3 في الملفات والكتب أولاً.',
 			'audiobook.syncDestination' => 'حساب التخزين المتزامن',
 			'audiobook.syncFolder' => 'المجلد أو المجلد السابق',
-			'audiobook.syncFolderHelp' => 'استخدم مجلدًا منفصلًا موجودًا داخل مصدر WebDAV الخاص بك، أو مقدمة S3 مخصصة.',
 			'audiobook.syncCode' => 'رمز المزامنة الخاص',
 			'audiobook.syncCodeHelp' => 'قم بإنشاء رمز على جهازك الأول، ثم أدخل هذا الرمز على أجهزتك الأخرى.حافظ على نسخة خاصة: هو المفتاح للحالة المشفرة الخاصة بك.استخدم رمزًا مختلفًا لكل شخص.',
 			'audiobook.showCode' => 'عرض أو إخفاء رمز التزامن',
@@ -8501,7 +8498,6 @@ extension on TranslationsAr {
 			'audiobook.syncSourceDisconnect' => 'إزالة هذا المصدر سيتم إيقاف القراءة والاستماع المزامنة هنا.',
 			'audiobook.syncReconnect' => 'إعادة توصيل حساب التخزين',
 			'audiobook.lastSynced' => ({required Object time}) => 'آخر تصنيف في ${time}',
-			'audiobook.syncPrivacy' => 'يتم تخزين التقدم المشفر والملاحظات فقط. لا يتم تحميل ملفات الصوت والكتب الإلكترونية والرموز الحساب وكلمات المرور. يستخدم Google Drive و OneDrive تخزين التطبيقات؛ يستخدم Dropbox PlezyNG Sync. يسمح التزامن قد يطلب إضافية إمكانية الوصول إلى الكتابة. في حين تم تشغيله، هذا الوجهة يمتلك التقدم التزامن؛ يبقى التقدم الخادم منفصلة. يمنع التزامن يحافظ على التاريخ المحلي والحالة البعيدة.',
 			'audiobook.syncConflicts' => 'اقرأ أين تستعيد',
 			'audiobook.conflictHelp' => 'تم إجراء هذه التغييرات بشكل مستقل.اختر الموقف أو نسخة علامة التبويب للحفاظ عليها. لا تفوز تلقائيًا بضعة ساعات متأخرة أو نسبة أعلى.',
 			'audiobook.syncDevice' => ({required Object device}) => 'جهاز ${device}',
@@ -8702,10 +8698,10 @@ extension on TranslationsAr {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

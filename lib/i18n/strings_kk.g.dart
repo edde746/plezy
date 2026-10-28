@@ -3569,7 +3569,6 @@ class _Translations$audiobook$kk extends Translations$audiobook$en {
 	@override String get addSyncSource => '«Google Drive», «OneDrive», «Dropbox», «WebDAV» немесе «S3» бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы»';
 	@override String get syncDestination => 'Серіктің қағидалары';
 	@override String get syncFolder => 'Қандай-қаттылық қағидалар мен қағидалар';
-	@override String get syncFolderHelp => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.';
 	@override String get syncCode => 'Серіктік код';
 	@override String get syncCodeHelp => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.';
 	@override String get showCode => 'Қандай-қатты бар, сенің кодектері';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$kk extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды, 1 адамды құрайды және 1 адамды құрайды.';
 	@override String get syncReconnect => 'Серіктің бір-бірімен бір-бірімен';
 	@override String lastSynced({required Object time}) => 'Қазіргі таңда ${time}';
-	@override String get syncPrivacy => 'Тек шифрланған оқу мен тыңдау барысы және жазбалар сақталады. Аудио және электрондық кітап файлдары, аккаунт токендері мен құпиясөздер серверге жіберілмейді. Google Drive және OneDrive қолданбаға арналған сақтау орнын, ал Dropbox PlezyNG Sync орнын пайдаланады. Синхрондауды қосқанда қосымша жазу рұқсаты сұралуы мүмкін. Синхрондау қосулы кезде оқу мен тыңдау барысы осы сақтау орны арқылы синхрондалады; сервердегі барыс бөлек қалады. Синхрондауды өшірсеңіз де, жергілікті тарих пен қашықтағы күй деректері сақталады.';
 	@override String get syncConflicts => 'Ақпараттың арнайы серверлерде сақталуы';
 	@override String get conflictHelp => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.';
 	@override String syncDevice({required Object device}) => 'Өнімдер ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsKk {
 			'audiobook.addSyncSource' => '«Google Drive», «OneDrive», «Dropbox», «WebDAV» немесе «S3» бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы мен бағдарламасы»',
 			'audiobook.syncDestination' => 'Серіктің қағидалары',
 			'audiobook.syncFolder' => 'Қандай-қаттылық қағидалар мен қағидалар',
-			'audiobook.syncFolderHelp' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.',
 			'audiobook.syncCode' => 'Серіктік код',
 			'audiobook.syncCodeHelp' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.',
 			'audiobook.showCode' => 'Қандай-қатты бар, сенің кодектері',
@@ -8401,7 +8398,6 @@ extension on TranslationsKk {
 			'audiobook.syncSourceDisconnect' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды, 1 адамды құрайды және 1 адамды құрайды.',
 			'audiobook.syncReconnect' => 'Серіктің бір-бірімен бір-бірімен',
 			'audiobook.lastSynced' => ({required Object time}) => 'Қазіргі таңда ${time}',
-			'audiobook.syncPrivacy' => 'Тек шифрланған оқу мен тыңдау барысы және жазбалар сақталады. Аудио және электрондық кітап файлдары, аккаунт токендері мен құпиясөздер серверге жіберілмейді. Google Drive және OneDrive қолданбаға арналған сақтау орнын, ал Dropbox PlezyNG Sync орнын пайдаланады. Синхрондауды қосқанда қосымша жазу рұқсаты сұралуы мүмкін. Синхрондау қосулы кезде оқу мен тыңдау барысы осы сақтау орны арқылы синхрондалады; сервердегі барыс бөлек қалады. Синхрондауды өшірсеңіз де, жергілікті тарих пен қашықтағы күй деректері сақталады.',
 			'audiobook.syncConflicts' => 'Ақпараттың арнайы серверлерде сақталуы',
 			'audiobook.conflictHelp' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды және 1 адамды құрайды және 1 адамды құрайды.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Өнімдер ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsKk {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

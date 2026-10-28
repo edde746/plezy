@@ -3577,7 +3577,6 @@ class _Translations$audiobook$he extends Translations$audiobook$en {
 	@override String get addSyncSource => 'הוסף Google Drive, OneDrive, Dropbox, WebDAV או S3 בקבצים וספרים קודם.';
 	@override String get syncDestination => 'חשבונות אחסון Sync';
 	@override String get syncFolder => 'סינכרון קובץ או Prefix';
-	@override String get syncFolderHelp => 'השתמש בתיקיה קיימת נפרדת בתוך מקור WebDAV שלך, או תיקיה מוקדמת S3.';
 	@override String get syncCode => 'קוד סינכרון פרטי';
 	@override String get syncCodeHelp => 'יצירת קוד על המכשיר הראשון שלך, ולאחר מכן הקלד את הקוד על המכשירים האחרים שלך.שמור עותק פרטי: זה המפתח למצב הצפנה שלך.';
 	@override String get showCode => 'הצג או להסתיר קוד סינכרון';
@@ -3587,7 +3586,6 @@ class _Translations$audiobook$he extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'הסרת מקור זה יפסיק לקרוא ולהקשיב סינכרון כאן.';
 	@override String get syncReconnect => 'חיבור מחדש לחשבון אחסון';
 	@override String lastSynced({required Object time}) => 'תגית: ${time}';
-	@override String get syncPrivacy => 'רק התקדמות מוצפנת והערות מאוחסנות. קבצי אודיו וספרים אלקטרוניים, טוקנים של חשבון וסיסמאות אינם מועברים. Google Drive ו- OneDrive משתמשים אחסון אפליקציות; Dropbox משתמשת ב- PlezyNG Sync. מאפשרת סינקה עשויה לבקש גישה כתיבה נוספת. בעוד מאוחסנת, יעד זה מחזיק ב- Progress Sync; התקדמות השרת נשארת נפרדת.';
 	@override String get syncConflicts => 'בחר איפה להחזיר';
 	@override String get conflictHelp => 'שינויים אלה נעשו באופן עצמאי.בחרו את המיקום או גרסת הסימון כדי לשמור.זמן מאוחר יותר או אחוז גבוה יותר לא מנצח באופן אוטומטי.';
 	@override String syncDevice({required Object device}) => 'מכשיר ${device}';
@@ -8399,7 +8397,6 @@ extension on TranslationsHe {
 			'audiobook.addSyncSource' => 'הוסף Google Drive, OneDrive, Dropbox, WebDAV או S3 בקבצים וספרים קודם.',
 			'audiobook.syncDestination' => 'חשבונות אחסון Sync',
 			'audiobook.syncFolder' => 'סינכרון קובץ או Prefix',
-			'audiobook.syncFolderHelp' => 'השתמש בתיקיה קיימת נפרדת בתוך מקור WebDAV שלך, או תיקיה מוקדמת S3.',
 			'audiobook.syncCode' => 'קוד סינכרון פרטי',
 			'audiobook.syncCodeHelp' => 'יצירת קוד על המכשיר הראשון שלך, ולאחר מכן הקלד את הקוד על המכשירים האחרים שלך.שמור עותק פרטי: זה המפתח למצב הצפנה שלך.',
 			'audiobook.showCode' => 'הצג או להסתיר קוד סינכרון',
@@ -8409,7 +8406,6 @@ extension on TranslationsHe {
 			'audiobook.syncSourceDisconnect' => 'הסרת מקור זה יפסיק לקרוא ולהקשיב סינכרון כאן.',
 			'audiobook.syncReconnect' => 'חיבור מחדש לחשבון אחסון',
 			'audiobook.lastSynced' => ({required Object time}) => 'תגית: ${time}',
-			'audiobook.syncPrivacy' => 'רק התקדמות מוצפנת והערות מאוחסנות. קבצי אודיו וספרים אלקטרוניים, טוקנים של חשבון וסיסמאות אינם מועברים. Google Drive ו- OneDrive משתמשים אחסון אפליקציות; Dropbox משתמשת ב- PlezyNG Sync. מאפשרת סינקה עשויה לבקש גישה כתיבה נוספת. בעוד מאוחסנת, יעד זה מחזיק ב- Progress Sync; התקדמות השרת נשארת נפרדת.',
 			'audiobook.syncConflicts' => 'בחר איפה להחזיר',
 			'audiobook.conflictHelp' => 'שינויים אלה נעשו באופן עצמאי.בחרו את המיקום או גרסת הסימון כדי לשמור.זמן מאוחר יותר או אחוז גבוה יותר לא מנצח באופן אוטומטי.',
 			'audiobook.syncDevice' => ({required Object device}) => 'מכשיר ${device}',
@@ -8610,10 +8606,10 @@ extension on TranslationsHe {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

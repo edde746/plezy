@@ -3569,7 +3569,6 @@ class _Translations$audiobook$de extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Zunächst Google Drive, OneDrive, Dropbox, WebDAV oder S3 in Dateien und Bücher hinzufügen.';
 	@override String get syncDestination => 'Sync Speicherkonto';
 	@override String get syncFolder => 'Synchronisierung von Ordnern oder Prefix';
-	@override String get syncFolderHelp => 'Verwenden Sie eine separate bestehende Ordner innerhalb Ihrer WebDAV-Quelle oder eine dedizierte S3 Vorwahl. Buchdateien werden nie geändert.';
 	@override String get syncCode => 'Private Synchronisierungscode';
 	@override String get syncCodeHelp => 'Erstellen Sie einen Code auf Ihrem ersten Gerät, dann geben Sie diesen Code auf Ihren anderen Geräten ein. Halten Sie eine private Kopie: Es ist der Schlüssel zu Ihrem verschlüsselten Zustand. Verwenden Sie für jede Person einen anderen Code.';
 	@override String get showCode => 'Zeigen oder verstecken Sie Sync-Code';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$de extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Wenn Sie diese Quelle entfernen, wird das Lesen und Hören von Sync hier ausgeschaltet. Verschlüsselte Sync-Dateien bleiben im Anbieter.';
 	@override String get syncReconnect => 'Wiederverbindung des Speicherkontoes';
 	@override String lastSynced({required Object time}) => 'Letzte Synchronisierung bei ${time}';
-	@override String get syncPrivacy => 'Nur verschlüsselte Fortschritte und Notizen werden gespeichert. Audio- und E-Book-Dateien, Konto-Token und Passwörter werden nicht hochgeladen. Google Drive und OneDrive verwenden App-Speicher; Dropbox verwendet PlezyNG Sync. Sync ermöglichen kann zusätzliche Schreibzugang verlangen. Während aktiviert, besitzt dieses Ziel Fortschritt Sync; Server Fortschritt bleibt getrennt. Sync-Off-Speicher hält die lokale Geschichte und Entfernung-Status.';
 	@override String get syncConflicts => 'Wählen Sie, wo Sie wiederholen';
 	@override String get conflictHelp => 'Diese Änderungen wurden unabhängig durchgeführt. Wählen Sie die Position oder Buchmarke Version zu halten. Eine spätere Timestamp oder ein höheres Prozentsatz gewinnt nicht automatisch.';
 	@override String syncDevice({required Object device}) => 'Gerät ${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsDe {
 			'audiobook.addSyncSource' => 'Zunächst Google Drive, OneDrive, Dropbox, WebDAV oder S3 in Dateien und Bücher hinzufügen.',
 			'audiobook.syncDestination' => 'Sync Speicherkonto',
 			'audiobook.syncFolder' => 'Synchronisierung von Ordnern oder Prefix',
-			'audiobook.syncFolderHelp' => 'Verwenden Sie eine separate bestehende Ordner innerhalb Ihrer WebDAV-Quelle oder eine dedizierte S3 Vorwahl. Buchdateien werden nie geändert.',
 			'audiobook.syncCode' => 'Private Synchronisierungscode',
 			'audiobook.syncCodeHelp' => 'Erstellen Sie einen Code auf Ihrem ersten Gerät, dann geben Sie diesen Code auf Ihren anderen Geräten ein. Halten Sie eine private Kopie: Es ist der Schlüssel zu Ihrem verschlüsselten Zustand. Verwenden Sie für jede Person einen anderen Code.',
 			'audiobook.showCode' => 'Zeigen oder verstecken Sie Sync-Code',
@@ -8401,7 +8398,6 @@ extension on TranslationsDe {
 			'audiobook.syncSourceDisconnect' => 'Wenn Sie diese Quelle entfernen, wird das Lesen und Hören von Sync hier ausgeschaltet. Verschlüsselte Sync-Dateien bleiben im Anbieter.',
 			'audiobook.syncReconnect' => 'Wiederverbindung des Speicherkontoes',
 			'audiobook.lastSynced' => ({required Object time}) => 'Letzte Synchronisierung bei ${time}',
-			'audiobook.syncPrivacy' => 'Nur verschlüsselte Fortschritte und Notizen werden gespeichert. Audio- und E-Book-Dateien, Konto-Token und Passwörter werden nicht hochgeladen. Google Drive und OneDrive verwenden App-Speicher; Dropbox verwendet PlezyNG Sync. Sync ermöglichen kann zusätzliche Schreibzugang verlangen. Während aktiviert, besitzt dieses Ziel Fortschritt Sync; Server Fortschritt bleibt getrennt. Sync-Off-Speicher hält die lokale Geschichte und Entfernung-Status.',
 			'audiobook.syncConflicts' => 'Wählen Sie, wo Sie wiederholen',
 			'audiobook.conflictHelp' => 'Diese Änderungen wurden unabhängig durchgeführt. Wählen Sie die Position oder Buchmarke Version zu halten. Eine spätere Timestamp oder ein höheres Prozentsatz gewinnt nicht automatisch.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Gerät ${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsDe {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

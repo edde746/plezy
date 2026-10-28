@@ -8,7 +8,8 @@ Required PR merge-conflict resolution preserves the later main snapshot
 
 ## Explicit English fallback entries
 
-`lib/i18n/english_fallbacks.json` lists the Steam connected-experience messages
+`lib/i18n/english_fallbacks.json` lists Steam connected-experience,
+service-integration, discovery, cloud-sync privacy and Trakt export messages
 that intentionally remain empty in non-English catalogs until their translations
 are reviewed. `slang.yaml` uses `base_locale_empty_string`, so those entries
 resolve to the English source text at runtime. `check_localizations.py` reports

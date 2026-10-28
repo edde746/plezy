@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/screens/settings/tv_row_organizer_screen.dart';
+import 'package:plezy/theme/mono_theme.dart';
 
 void main() {
   late List<String> order;
@@ -46,6 +47,7 @@ void main() {
   Future<void> pump(WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        theme: monoTheme(MonoPalette.dark),
         home: TvRowOrganizerScreen(title: 'Organize', entries: entries, onReorder: (keys) async => reordered = keys),
       ),
     );

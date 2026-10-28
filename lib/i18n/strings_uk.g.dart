@@ -3611,7 +3611,6 @@ class _Translations$audiobook$uk extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Перш за все, додайте Google Drive, OneDrive, Dropbox, WebDAV або S3 до файлів і книг.';
 	@override String get syncDestination => 'Синхронізація облікового запису';
 	@override String get syncFolder => 'Завантажити папку або префікс';
-	@override String get syncFolderHelp => 'Використовуйте окрему існуючу папку в межах свого джерела WebDAV, або присвячений S3 заздалегідь.';
 	@override String get syncCode => 'Приватний код синхронізації';
 	@override String get syncCodeHelp => 'Створіть код на першому пристрої, а потім введіть цей код на інших пристроях. Зберігайте приватну копію: це ключ до вашого зашифрованого стану.';
 	@override String get showCode => 'Показати або приховати код синхронізації';
@@ -3621,7 +3620,6 @@ class _Translations$audiobook$uk extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Видалення цього джерела вимкне читання і слухання синхронізації тут. шифровані синхронізовані файли залишаться в провайдері.';
 	@override String get syncReconnect => 'Відновлення облікового запису';
 	@override String lastSynced({required Object time}) => 'Останній синхронізований на ${time}';
-	@override String get syncPrivacy => 'Тільки зашифровані прогрес і записи зберігаються. аудіо- і електронні файли, токенів облікового запису та паролі не завантажуються. Google Drive і OneDrive використовують приклад зберігання; Dropbox використовує PlezyNG Sync. дозволяючи синхронування може вимагати додаткового письмового доступу. Хоча включено, ця дестинація володіє синхроном прогресу; прогрес сервера залишається окремим.';
 	@override String get syncConflicts => 'Виберіть, де відновити';
 	@override String get conflictHelp => 'Ці зміни були зроблені самостійно. виберіть позицію або версію знака, щоб зберегти. Пізній час або більш високий відсоток не автоматично виграє.';
 	@override String syncDevice({required Object device}) => 'Створення ${device}';
@@ -8435,7 +8433,6 @@ extension on TranslationsUk {
 			'audiobook.addSyncSource' => 'Перш за все, додайте Google Drive, OneDrive, Dropbox, WebDAV або S3 до файлів і книг.',
 			'audiobook.syncDestination' => 'Синхронізація облікового запису',
 			'audiobook.syncFolder' => 'Завантажити папку або префікс',
-			'audiobook.syncFolderHelp' => 'Використовуйте окрему існуючу папку в межах свого джерела WebDAV, або присвячений S3 заздалегідь.',
 			'audiobook.syncCode' => 'Приватний код синхронізації',
 			'audiobook.syncCodeHelp' => 'Створіть код на першому пристрої, а потім введіть цей код на інших пристроях. Зберігайте приватну копію: це ключ до вашого зашифрованого стану.',
 			'audiobook.showCode' => 'Показати або приховати код синхронізації',
@@ -8445,7 +8442,6 @@ extension on TranslationsUk {
 			'audiobook.syncSourceDisconnect' => 'Видалення цього джерела вимкне читання і слухання синхронізації тут. шифровані синхронізовані файли залишаться в провайдері.',
 			'audiobook.syncReconnect' => 'Відновлення облікового запису',
 			'audiobook.lastSynced' => ({required Object time}) => 'Останній синхронізований на ${time}',
-			'audiobook.syncPrivacy' => 'Тільки зашифровані прогрес і записи зберігаються. аудіо- і електронні файли, токенів облікового запису та паролі не завантажуються. Google Drive і OneDrive використовують приклад зберігання; Dropbox використовує PlezyNG Sync. дозволяючи синхронування може вимагати додаткового письмового доступу. Хоча включено, ця дестинація володіє синхроном прогресу; прогрес сервера залишається окремим.',
 			'audiobook.syncConflicts' => 'Виберіть, де відновити',
 			'audiobook.conflictHelp' => 'Ці зміни були зроблені самостійно. виберіть позицію або версію знака, щоб зберегти. Пізній час або більш високий відсоток не автоматично виграє.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Створення ${device}',
@@ -8646,10 +8642,10 @@ extension on TranslationsUk {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',

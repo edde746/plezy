@@ -45,9 +45,10 @@ class LiveTimelineUpdate {
   bool get isEmpty => captureBuffer == null && playbackStream == null;
 }
 
-/// Optional absolute-time capability, currently supplied by Plex. Existing
-/// backends retain their playback-session contract and need no stub adapter.
-/// Capture snapshots remain at the session boundary, never in timeline UI.
+/// Optional absolute-time capability. Plex supplies server DVR ranges; native
+/// IPTV playback can supply a local MPV cache window. Other backends retain
+/// their playback-session contract and need no stub adapter. Capture snapshots
+/// remain at the session boundary, never in timeline UI.
 abstract interface class LiveTvTimeshiftSession {
   LiveTvSeekWindow? seekWindow(CaptureBuffer buffer);
 
@@ -63,7 +64,10 @@ abstract interface class LiveTvTimeshiftSession {
 class LiveTvSeekRequest {
   final String url;
   final double? effectiveTargetEpoch;
-  const LiveTvSeekRequest({required this.url, this.effectiveTargetEpoch});
+  /// Local MPV position for seekable cache windows that do not expose a
+  /// server-side offset URL. When present, the active source stays open.
+  final Duration? localPosition;
+  const LiveTvSeekRequest({required this.url, this.effectiveTargetEpoch, this.localPosition});
 }
 
 /// One live-TV playback session, produced by [LiveTvSupport.startPlayback].
@@ -79,6 +83,8 @@ class LiveTvSeekRequest {
 /// - **Jellyfin** negotiates one HLS transcode URL up front; no time-shift,
 ///   heartbeats go through `/Sessions/Playing*`, and [recover] re-uses the
 ///   same URL.
+/// - **IPTV** plays a direct source URL with local-only guide and seek state;
+///   native MPV may expose a bounded seekable cache, but has no server DVR.
 ///
 /// Sessions are immutable handles: every operation that changes the playable
 /// stream returns a URL or a fresh session for the caller to adopt, so the

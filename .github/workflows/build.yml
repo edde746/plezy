@@ -356,95 +356,18 @@ jobs:
 
       - name: Configure Java downloads for the private JIT proxy
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
-          if [[ -z "$proxy" ]]; then
-            echo "The private JIT HTTPS proxy is required for Android toolchain downloads." >&2
-            exit 1
-          fi
-          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
-          import sys
-          from urllib.parse import urlsplit
-
-          raw = sys.argv[1]
-          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT proxy URL is invalid for Android toolchain downloads.")
-          print(parsed.hostname)
-          print(parsed.port)
-          PY
-          )
-          if (( ${#proxy_parts[@]} != 2 )); then
-            echo "Could not parse the private JIT proxy for Java downloads." >&2
-            exit 1
-          fi
-          proxy_options=(
-            "-Dhttp.proxyHost=${proxy_parts[0]}"
-            "-Dhttp.proxyPort=${proxy_parts[1]}"
-            "-Dhttps.proxyHost=${proxy_parts[0]}"
-            "-Dhttps.proxyPort=${proxy_parts[1]}"
-            "-Dhttp.nonProxyHosts=localhost|127.*|[::1]"
-          )
-          if [[ -n "${JAVA_TOOL_OPTIONS:-}" ]]; then
-            proxy_options+=("$JAVA_TOOL_OPTIONS")
-          fi
-          printf 'JAVA_TOOL_OPTIONS=%s\n' "${proxy_options[*]}" >> "$GITHUB_ENV"
+        run: python3 scripts/prepare_android_sdk.py proxy
 
       - name: Setup Android SDK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: '15859902'
+          log-accepted-android-sdk-licenses: false
 
       - name: Install the pinned Android SDK, NDK, and CMake
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
-          if [[ -z "$sdk_root" || ! -d "$sdk_root/cmdline-tools" ]]; then
-            echo "Android command-line tools were not provisioned by setup-android." >&2
-            exit 1
-          fi
-          sdkmanager="$(find "$sdk_root/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          if [[ -z "$sdkmanager" ]]; then
-            echo "Could not locate sdkmanager under $sdk_root/cmdline-tools." >&2
-            exit 1
-          fi
-          proxy="${HTTPS_PROXY:-${https_proxy:-}}"
-          if [[ -z "$proxy" ]]; then
-            echo "The private JIT HTTPS proxy is required for Android SDK downloads." >&2
-            exit 1
-          fi
-          mapfile -t proxy_parts < <(python3 - "$proxy" <<'PY'
-          import sys
-          from urllib.parse import urlsplit
-
-          raw = sys.argv[1]
-          parsed = urlsplit(raw if "://" in raw else f"http://{raw}")
-          if not parsed.hostname or not parsed.port or parsed.username or parsed.password:
-              raise SystemExit("The private JIT proxy URL is invalid for Android SDK downloads.")
-          print(parsed.hostname)
-          print(parsed.port)
-          PY
-          )
-          if (( ${#proxy_parts[@]} != 2 )); then
-            echo "Could not parse the private JIT proxy for Android SDK downloads." >&2
-            exit 1
-          fi
-          proxy_args=(--proxy=http --proxy_host="${proxy_parts[0]}" --proxy_port="${proxy_parts[1]}")
-          packages=("platform-tools" "platforms;android-37" "build-tools;37.0.0" "ndk;29.0.14206865" "cmake;4.1.2")
-          set +o pipefail
-          yes | "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --channel=3 --licenses
-          license_status="${PIPESTATUS[1]}"
-          set -o pipefail
-          if (( license_status != 0 )); then exit "$license_status"; fi
-          "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --channel=3 --install "${packages[@]}"
-          test -f "$sdk_root/platforms/android-37/android.jar"
-          test -x "$sdk_root/build-tools/37.0.0/aapt2"
-          test -f "$sdk_root/ndk/29.0.14206865/source.properties"
-          test -x "$sdk_root/cmake/4.1.2/bin/cmake"
-          java -version
+        run: python3 scripts/prepare_android_sdk.py install
 
       - name: Setup Flutter
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' }}
@@ -614,6 +537,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify private WebOS output storage
+        run: python3 tools/webos/retain_private_candidate.py --preflight
+
       - name: Test WebOS packaging and release gates
         env:
           PLEZY_WEBOS_TEST_TMP: ${{ runner.temp }}/plezy-webos-tests
@@ -680,6 +606,16 @@ jobs:
         env:
           PLEZYNG_WEBOS_TASK_ROOT: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}
           PLEZY_WEBOS_RELEASE_BUILD: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
+
+      - name: Retain verified WebOS candidate for private device testing
+        env:
+          OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/webos/retain_private_candidate.py \
+            --source-dir "$OUTPUT_DIR" \
+            --version "$(python3 scripts/pubspec_version.py pubspec.yaml)"
 
       - name: Verify the exact approved WebOS IPK
         if: ${{ needs.validate-trusted-ref.outputs.mode == 'release' && needs.validate-trusted-ref.outputs.include_webos_release == 'true' }}
@@ -1638,7 +1574,7 @@ jobs:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -1655,6 +1591,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1
+          .\windows\tool\prepare-build-toolchain.ps1 -VerifyOnly
 
       - name: Cache Windows native dependencies
         id: windows-native-cache
@@ -1791,6 +1733,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Provision and verify pinned Windows build tools
+        shell: pwsh
+        run: |
+          .\windows\tool\prepare-build-toolchain.ps1 -IncludeInstaller
+          .\windows\tool\prepare-build-toolchain.ps1 -IncludeInstaller -VerifyOnly
+
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
@@ -1870,7 +1818,7 @@ jobs:
               if ($null -ne $signtoolFile) { $signtoolPath = $signtoolFile.FullName }
             }
             if ($null -eq $signtoolPath) { throw 'Could not find signtool.exe on the Windows runner.' }
-            & $signtoolPath sign /fd SHA256 /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD /tr https://timestamp.digicert.com /td SHA256 plezy-windows-installer.exe
+            & $signtoolPath sign /fd SHA256 /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD /tr http://timestamp.digicert.com /td SHA256 plezy-windows-installer.exe
             if ($LASTEXITCODE -ne 0) { throw "Authenticode signing failed with exit code $LASTEXITCODE" }
             & $signtoolPath verify /pa /all plezy-windows-installer.exe
             if ($LASTEXITCODE -ne 0) { throw "Authenticode signature verification failed with exit code $LASTEXITCODE" }
@@ -2197,8 +2145,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+          python3 scripts/retry_flatpak.py remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          python3 scripts/retry_flatpak.py install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
 
       - name: Build Flatpak bundle
         shell: bash
@@ -2221,10 +2169,8 @@ jobs:
 
       - name: Build Snap package
         id: snap
-        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1
-        with:
-          path: linux/packaging/snap
-          snapcraft-args: --build-for=${{ matrix.snap_arch }}
+        shell: bash
+        run: bash scripts/build_private_snap.sh '${{ matrix.snap_arch }}'
 
       - name: Name Snap artifact
         env:

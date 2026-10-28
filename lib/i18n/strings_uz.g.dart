@@ -3569,7 +3569,6 @@ class _Translations$audiobook$uz extends Translations$audiobook$en {
 	@override String get addSyncSource => 'Google Drive, OneDrive, Dropbox, WebDAV o S3\'i fillar və kitablar qoladi.';
 	@override String get syncDestination => 'Sync bilan bilan bilan';
 	@override String get syncFolder => 'Filmi ya prefix.';
-	@override String get syncFolderHelp => 'WebDAV kaynağınızda, ya da dedikadi S3 prefix\'i bir separat bilan folder kullan. Book files is never changed.';
 	@override String get syncCode => 'Sink kodlar';
 	@override String get syncCodeHelp => 'Bir kod o‘ziz, sonra o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘z.';
 	@override String get showCode => 'Sink-kodni koʻyadi koʻyadi.';
@@ -3579,7 +3578,6 @@ class _Translations$audiobook$uz extends Translations$audiobook$en {
 	@override String get syncSourceDisconnect => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.';
 	@override String get syncReconnect => 'Saqlash xizmati hisobini qayta ulash';
 	@override String lastSynced({required Object time}) => '${time}\'da sonda sinqizdi';
-	@override String get syncPrivacy => 'Faqat o‘qish va tinglash qayergacha yetgani haqidagi ma’lumotlar hamda qaydlar shifrlangan holda saqlanadi. Audio va elektron kitob fayllari, hisob tokenlari hamda parollar serverga yuborilmaydi. Google Drive va OneDrive ilovaga ajratilgan saqlash joyidan, Dropbox esa PlezyNG Sync’dan foydalanadi. Sinxronlashni yoqish qo‘shimcha yozish ruxsatini talab qilishi mumkin. Sinxronlash yoqilganda, o‘qish va tinglash holati shu manzil orqali sinxronlanadi; serverdagi holat alohida qoladi. Sinxronlash o‘chirilganda ham mahalliy tarix va masofadagi holat saqlanadi.';
 	@override String get syncConflicts => 'Onda qaytarga qaytarga.';
 	@override String get conflictHelp => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi';
 	@override String syncDevice({required Object device}) => '${device}';
@@ -8391,7 +8389,6 @@ extension on TranslationsUz {
 			'audiobook.addSyncSource' => 'Google Drive, OneDrive, Dropbox, WebDAV o S3\'i fillar və kitablar qoladi.',
 			'audiobook.syncDestination' => 'Sync bilan bilan bilan',
 			'audiobook.syncFolder' => 'Filmi ya prefix.',
-			'audiobook.syncFolderHelp' => 'WebDAV kaynağınızda, ya da dedikadi S3 prefix\'i bir separat bilan folder kullan. Book files is never changed.',
 			'audiobook.syncCode' => 'Sink kodlar',
 			'audiobook.syncCodeHelp' => 'Bir kod o‘ziz, sonra o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘z.',
 			'audiobook.showCode' => 'Sink-kodni koʻyadi koʻyadi.',
@@ -8401,7 +8398,6 @@ extension on TranslationsUz {
 			'audiobook.syncSourceDisconnect' => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.',
 			'audiobook.syncReconnect' => 'Saqlash xizmati hisobini qayta ulash',
 			'audiobook.lastSynced' => ({required Object time}) => '${time}\'da sonda sinqizdi',
-			'audiobook.syncPrivacy' => 'Faqat o‘qish va tinglash qayergacha yetgani haqidagi ma’lumotlar hamda qaydlar shifrlangan holda saqlanadi. Audio va elektron kitob fayllari, hisob tokenlari hamda parollar serverga yuborilmaydi. Google Drive va OneDrive ilovaga ajratilgan saqlash joyidan, Dropbox esa PlezyNG Sync’dan foydalanadi. Sinxronlashni yoqish qo‘shimcha yozish ruxsatini talab qilishi mumkin. Sinxronlash yoqilganda, o‘qish va tinglash holati shu manzil orqali sinxronlanadi; serverdagi holat alohida qoladi. Sinxronlash o‘chirilganda ham mahalliy tarix va masofadagi holat saqlanadi.',
 			'audiobook.syncConflicts' => 'Onda qaytarga qaytarga.',
 			'audiobook.conflictHelp' => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi',
 			'audiobook.syncDevice' => ({required Object device}) => '${device}',
@@ -8602,10 +8598,10 @@ extension on TranslationsUz {
 			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
 			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
 			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
-			_ => null,
-		} ?? switch (path) {
 			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
 			'games.touchControls' => 'On-screen controller',
+			_ => null,
+		} ?? switch (path) {
 			'games.touchDescription' => 'Show the on-screen controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
 			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
