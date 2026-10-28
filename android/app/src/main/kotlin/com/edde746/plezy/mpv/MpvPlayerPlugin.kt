@@ -117,7 +117,7 @@ open class MpvPlayerPlugin(
     "SM7450" to AndroidHtpTarget("SM7450", "V69", 41, "720p"),
     "SM8350P" to AndroidHtpTarget("SM8350P", "V68", 30, "720p"),
     "SM8350" to AndroidHtpTarget("SM8350", "V68", 30, "720p"),
-    "SM7325" to AndroidHtpTarget("SM7325", "V68", 35, "720p"),
+    "SM7325" to AndroidHtpTarget("SM7325", "V68", 35, "720p")
   )
 
   private val channels = PlayerChannelBinding(channelBase, this, this, tag)
@@ -188,8 +188,7 @@ open class MpvPlayerPlugin(
 
       override fun success(value: Any?) = complete { result.success(value) }
 
-      override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) =
-        complete { result.error(errorCode, errorMessage, errorDetails) }
+      override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) = complete { result.error(errorCode, errorMessage, errorDetails) }
 
       override fun notImplemented() = complete { result.notImplemented() }
     }
@@ -333,7 +332,8 @@ open class MpvPlayerPlugin(
 
   private fun disposeVisualizer() {
     ++visualizerSessionId
-    val old = visualizer; visualizer = null
+    val old = visualizer
+    visualizer = null
     old?.close()
   }
 
@@ -346,7 +346,8 @@ open class MpvPlayerPlugin(
     try {
       if (call.method == "visualizerCapabilities") {
         val reason = unavailable()
-        result.success(mapOf("available" to reason.isEmpty(), "reason" to reason, "engine" to "milkrust-native-abi1", "audioTap" to reason.isEmpty())); return
+        result.success(mapOf("available" to reason.isEmpty(), "reason" to reason, "engine" to "milkrust-native-abi1", "audioTap" to reason.isEmpty()))
+        return
       }
       if (call.method == "visualizerCreate") {
         val reason = unavailable()
@@ -354,12 +355,15 @@ open class MpvPlayerPlugin(
         val registry = checkNotNull(textureRegistry) { "Flutter texture registry is unavailable." }
         val player = checkNotNull(playerCore?.visualizationSessionId()) { "Music session ended." }
         disposeVisualizer()
-        val created = MilkRustVisualizer(registry, player); visualizer = created
-        result.success(mapOf("sessionId" to visualizerSessionId, "textureId" to created.textureId)); return
+        val created = MilkRustVisualizer(registry, player)
+        visualizer = created
+        result.success(mapOf("sessionId" to visualizerSessionId, "textureId" to created.textureId))
+        return
       }
       val current = visualizer
       if (current == null || call.argument<Number>("sessionId")?.toLong() != visualizerSessionId) {
-        result.error("VISUALIZER_STALE", "This visualization session has ended.", null); return
+        result.error("VISUALIZER_STALE", "This visualization session has ended.", null)
+        return
       }
       when (call.method) {
         "visualizerDispose" -> disposeVisualizer()
@@ -371,15 +375,26 @@ open class MpvPlayerPlugin(
           current.resize(width.toInt(), height.toInt())
         }
         "visualizerSetPaused" -> current.pause(checkNotNull(call.argument<Boolean>("paused")))
-        "visualizerStatus" -> { result.success(current.status()); return }
-        else -> { result.notImplemented(); return }
+        "visualizerStatus" -> {
+          result.success(current.status())
+          return
+        }
+        else -> {
+          result.notImplemented()
+          return
+        }
       }
       result.success(null)
-    } catch (error: Exception) { result.error("VISUALIZER_NATIVE", error.message ?: "Native visualization failed.", null) }
+    } catch (error: Exception) {
+      result.error("VISUALIZER_NATIVE", error.message ?: "Native visualization failed.", null)
+    }
   }
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-    if (call.method.startsWith("visualizer")) { handleVisualizer(call, result); return }
+    if (call.method.startsWith("visualizer")) {
+      handleVisualizer(call, result)
+      return
+    }
     when (call.method) {
       "initialize" -> handleInitialize(call, result)
       "dispose" -> handleDispose(call, result)
@@ -636,7 +651,8 @@ open class MpvPlayerPlugin(
       }
       val npuExecution = npuRecord?.optString("execution", "jit")
       val npuModel = if (
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && npuRecord != null &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        npuRecord != null &&
         (npuRecord.optString("backend") != "google-tensor" || npuExecution == "aot")
       ) {
         installLiteRtModelAsset(context, npuRecord, directory)
@@ -731,10 +747,11 @@ open class MpvPlayerPlugin(
     val contextResolution = target?.resolution ?: "1080p"
     val modelIds = listOf("anvil-s-$contextResolution", "anvil-m-$contextResolution")
       .filter { modelId ->
-        target != null && assetExists(
-          context,
-          "anvil/contexts/${target.socModel.lowercase()}/$modelId/context.serialized.bin"
-        )
+        target != null &&
+          assetExists(
+            context,
+            "anvil/contexts/${target.socModel.lowercase()}/$modelId/context.serialized.bin"
+          )
       }
     val liteRtBaseLibraries = listOf("libLiteRt.so", "libplezy_litert_motion.so")
     val liteRtGpuLibraries = listOf("libLiteRtClGlAccelerator.so")
@@ -788,10 +805,13 @@ open class MpvPlayerPlugin(
           "mediatek" -> normalizedSocManufacturer.contains("MEDIATEK") ||
             normalizedSocModel.matches(Regex("^MT\\d+.*"))
           "google-tensor" -> normalizedSocModel in setOf("TENSORG5", "TENSORG6")
-          "intel-openvino" -> processAbi == "x86_64" &&
-            (normalizedSocManufacturer.contains("INTEL") || normalizedSocModel.contains("INTEL"))
-          "samsung" -> samsungLiteCoreAvailable && Build.VERSION.SDK_INT >= 36 &&
-            normalizedSocModel.removePrefix("S5") in setOf("E9955", "E9965")
+          "intel-openvino" ->
+            processAbi == "x86_64" &&
+              (normalizedSocManufacturer.contains("INTEL") || normalizedSocModel.contains("INTEL"))
+          "samsung" ->
+            samsungLiteCoreAvailable &&
+              Build.VERSION.SDK_INT >= 36 &&
+              normalizedSocModel.removePrefix("S5") in setOf("E9955", "E9965")
           else -> false
         }
         if (liteRtBaseAvailable && abiSupported && deviceSupported && libraries.all(::hasNativeLibrary)) {
@@ -834,23 +854,26 @@ open class MpvPlayerPlugin(
     )
   }
 
-  private fun normalizeSocModel(value: String): String =
-    value.trim().uppercase().filter { it.isLetterOrDigit() }
+  private fun normalizeSocModel(value: String): String = value.trim().uppercase().filter { it.isLetterOrDigit() }
 
   private fun installLiteRtModelAsset(context: Context, record: org.json.JSONObject, directory: File): File {
     val filename = record.optString("file")
     val expectedBytes = record.optLong("bytes", -1)
     val expectedSha256 = record.optString("sha256")
     if (
-      filename.isBlank() || File(filename).name != filename || !filename.endsWith(".tflite") ||
-      expectedBytes <= 0 || expectedSha256.length != 64
+      filename.isBlank() ||
+      File(filename).name != filename ||
+      !filename.endsWith(".tflite") ||
+      expectedBytes <= 0 ||
+      expectedSha256.length != 64
     ) {
       throw IllegalArgumentException("LiteRT model manifest entry is invalid")
     }
 
     val assetPath = "litert/models/$filename"
     val destination = File(directory, filename)
-    if (destination.isFile && destination.length() == expectedBytes &&
+    if (destination.isFile &&
+      destination.length() == expectedBytes &&
       sha256(destination).equals(expectedSha256, ignoreCase = true)
     ) {
       return destination
@@ -899,8 +922,8 @@ open class MpvPlayerPlugin(
     if (!directory.isDirectory && !directory.mkdirs()) {
       throw IllegalStateException("Could not create the LiteRT runtime plugin directory")
     }
-    fun isRuntimeLibrary(name: String): Boolean =
-      name.endsWith(".so") && (
+    fun isRuntimeLibrary(name: String): Boolean = name.endsWith(".so") &&
+      (
         name.startsWith("libLiteRt") ||
           name == "libplezy_litert_motion.so" ||
           name in LITERT_OPENVINO_RUNTIME_LIBRARIES
@@ -912,8 +935,10 @@ open class MpvPlayerPlugin(
       .filter { it.isFile && isRuntimeLibrary(it.name) }
       .associateBy { it.name }
     val apkLibraries = linkedMapOf<String, Pair<File, String>>()
-    val apkPaths = (listOf(context.applicationInfo.sourceDir) +
-      context.applicationInfo.splitSourceDirs.orEmpty()).map { File(it) }
+    val apkPaths = (
+      listOf(context.applicationInfo.sourceDir) +
+        context.applicationInfo.splitSourceDirs.orEmpty()
+      ).map { File(it) }
     for (apkPath in apkPaths) {
       try {
         ZipFile(apkPath).use { apk ->
@@ -922,7 +947,8 @@ open class MpvPlayerPlugin(
             val entry = entries.nextElement()
             val prefix = "lib/$abi/"
             if (
-              entry.isDirectory || !entry.name.startsWith(prefix) ||
+              entry.isDirectory ||
+              !entry.name.startsWith(prefix) ||
               !isRuntimeLibrary(entry.name.removePrefix(prefix))
             ) {
               continue
@@ -957,7 +983,8 @@ open class MpvPlayerPlugin(
       } ?: -1L
       if (expectedBytes < 0) throw IllegalStateException("Could not read the packaged LiteRT library size for $name")
       if (destination.isFile && destination.length() == expectedBytes) {
-        if (!destination.setReadable(true, true) || !destination.setExecutable(true, true) ||
+        if (!destination.setReadable(true, true) ||
+          !destination.setExecutable(true, true) ||
           !destination.setWritable(false, true)
         ) {
           throw IllegalStateException("Could not set executable permissions on LiteRT library $name")
@@ -984,7 +1011,8 @@ open class MpvPlayerPlugin(
         if (temporary.length() != expectedBytes) {
           throw IllegalStateException("The staged LiteRT library has the wrong size: $name")
         }
-        if (!temporary.setReadable(true, true) || !temporary.setExecutable(true, true) ||
+        if (!temporary.setReadable(true, true) ||
+          !temporary.setExecutable(true, true) ||
           !temporary.setWritable(false, true)
         ) {
           throw IllegalStateException("Could not set executable permissions on LiteRT library $name")
@@ -1018,7 +1046,8 @@ open class MpvPlayerPlugin(
       val liteCoreRoot = File(directory, "litecore")
       val liteCoreLibraryDirectory = File(liteCoreRoot, "lib/arm64-v8a")
       val manifestMarker = File(directory, "samsung-litecore.sha256")
-      val runtimeIsCurrent = manifestMarker.isFile && manifestMarker.readText() == manifestText &&
+      val runtimeIsCurrent = manifestMarker.isFile &&
+        manifestMarker.readText() == manifestText &&
         assetNames.all { name ->
           val library = File(liteCoreLibraryDirectory, name)
           library.isFile && library.length() > 0
@@ -1045,7 +1074,8 @@ open class MpvPlayerPlugin(
             if (!sha256(destination).equals(expectedHash, ignoreCase = true)) {
               throw IllegalStateException("Samsung LiteCore library $name failed SHA-256 verification")
             }
-            if (!destination.setReadable(true, true) || !destination.setExecutable(true, true) ||
+            if (!destination.setReadable(true, true) ||
+              !destination.setExecutable(true, true) ||
               !destination.setWritable(false, true)
             ) {
               throw IllegalStateException("Could not set permissions on Samsung LiteCore library $name")

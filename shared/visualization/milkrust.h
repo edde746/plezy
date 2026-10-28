@@ -28,8 +28,9 @@ size_t milkrust_texture_names(milkrust_handle handle, uint8_t* output, size_t ca
 /* Host resolves/decodes relative assets under its verified pack root. Uploads
  * are tightly packed, top-down RGBA8. No files or URLs are opened by the engine.
  */
-int milkrust_texture(milkrust_handle handle, const uint8_t* name, size_t name_length,
-                     uint32_t width, uint32_t height, const uint8_t* rgba, size_t length);
+int milkrust_texture(
+    milkrust_handle handle, const uint8_t* name, size_t name_length, uint32_t width, uint32_t height,
+    const uint8_t* rgba, size_t length);
 /* Interleaved float stereo at 44100 Hz. At most 4096 frames/call. A new generation
  * discards pre-seek audio. Call from the render consumer, never the real-time AO.
  */
@@ -38,13 +39,13 @@ int milkrust_pcm(milkrust_handle handle, const float* stereo, size_t frames, uin
  * are capped at 4096 and total pixels at 8 Mi. Time must be finite, monotonic,
  * and paused by the host while hidden. Output is not implicitly presented.
  */
-int milkrust_render(milkrust_handle handle, uint32_t framebuffer, uint32_t width,
-                    uint32_t height, double elapsed_seconds);
+int milkrust_render(
+    milkrust_handle handle, uint32_t framebuffer, uint32_t width, uint32_t height, double elapsed_seconds);
 /* Equivalent offscreen render with engine-owned FBO and synchronous readback.
  * output is exactly width*height*4 writable bytes, returned top-down RGBA8.
  */
-int milkrust_render_rgba(milkrust_handle handle, uint32_t width, uint32_t height,
-                         double elapsed_seconds, uint8_t* output, size_t length);
+int milkrust_render_rgba(
+    milkrust_handle handle, uint32_t width, uint32_t height, double elapsed_seconds, uint8_t* output, size_t length);
 int milkrust_destroy(milkrust_handle handle);
 /* Returns required UTF-8 bytes including NUL, copies at most capacity-1 bytes.
  * A null output is valid only with capacity=0. Error text is thread-local.

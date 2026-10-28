@@ -38,15 +38,20 @@ struct VisualizationTapApi {
   decltype(&mpv_plezy_audio_tap_read) read = nullptr;
   VisualizationTapApi() {
     HMODULE module = nullptr;
-    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-        reinterpret_cast<LPCWSTR>(&mpv_client_api_version), &module)) return;
+    if (!GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCWSTR>(&mpv_client_api_version), &module))
+      return;
     version = reinterpret_cast<decltype(version)>(GetProcAddress(module, "mpv_plezy_audio_tap_version"));
     enable = reinterpret_cast<decltype(enable)>(GetProcAddress(module, "mpv_plezy_audio_tap_enable"));
     read = reinterpret_cast<decltype(read)>(GetProcAddress(module, "mpv_plezy_audio_tap_read"));
   }
   bool available() const { return version && enable && read && version() == MPV_PLEZY_AUDIO_TAP_ABI; }
 };
-VisualizationTapApi& TapApi() { static VisualizationTapApi api; return api; }
+VisualizationTapApi& TapApi() {
+  static VisualizationTapApi api;
+  return api;
+}
 
 // Whether any GPU on this system is a Qualcomm Adreno.
 //
@@ -758,9 +763,12 @@ void MpvPlayer::Dispose() {
   // block in demuxer/network teardown, so only the detached handle crosses to
   // the worker; it must not retain this player, callbacks, or HWNDs.
   mpv_handle* handle = nullptr;
-  { std::lock_guard<std::mutex> lock(visualization_mutex_);
-    handle = mpv_; mpv_ = nullptr;
-    visualization_pts_.store(std::numeric_limits<double>::quiet_NaN()); }
+  {
+    std::lock_guard<std::mutex> lock(visualization_mutex_);
+    handle = mpv_;
+    mpv_ = nullptr;
+    visualization_pts_.store(std::numeric_limits<double>::quiet_NaN());
+  }
 
   // The input subclass must stop referencing this player generation before
   // either the host HWND or the player object can be destroyed.
@@ -1119,7 +1127,8 @@ void MpvPlayer::EventLoop() {
 }
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
-  if (event->event_id == MPV_EVENT_START_FILE || event->event_id == MPV_EVENT_END_FILE || event->event_id == MPV_EVENT_SEEK)
+  if (event->event_id == MPV_EVENT_START_FILE || event->event_id == MPV_EVENT_END_FILE ||
+      event->event_id == MPV_EVENT_SEEK)
     visualization_pts_.store(std::numeric_limits<double>::quiet_NaN());
   if (plezy::mpv_common::DispatchReplyEvent(
           pending_requests_, event, [](const char* value) { return SanitizeUtf8(value); })) {
@@ -1154,7 +1163,8 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       auto* prop = static_cast<mpv_event_property*>(event->data);
       mpv_node node = plezy::mpv_common::ExtractPropertyNode(prop);
       if (event->reply_userdata == kVisualizationTimeUserdata) {
-        visualization_pts_.store(node.format == MPV_FORMAT_DOUBLE ? node.u.double_ : std::numeric_limits<double>::quiet_NaN());
+        visualization_pts_.store(
+            node.format == MPV_FORMAT_DOUBLE ? node.u.double_ : std::numeric_limits<double>::quiet_NaN());
         break;
       }
 

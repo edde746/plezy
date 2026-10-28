@@ -2,8 +2,8 @@ import java.io.FileInputStream
 import java.net.URL
 import java.util.Properties
 import java.util.UUID
-import org.gradle.api.file.RelativePath
 import java.util.zip.ZipFile
+import org.gradle.api.file.RelativePath
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -281,7 +281,7 @@ val liteRtVersion = "2.3.0"
 val openVinoAndroidVersion = "2026.3.1"
 val openVinoAndroidBuild = "22476.56d9685302d"
 val openVinoAndroidArchive = "openvino-android-$openVinoAndroidVersion.tgz"
-val openVinoAndroidRoot = "openvino_toolkit_android_${openVinoAndroidVersion}.${openVinoAndroidBuild}_x86_64"
+val openVinoAndroidRoot = "openvino_toolkit_android_$openVinoAndroidVersion.${openVinoAndroidBuild}_x86_64"
 val androidLiteRtArtifactDir = layout.buildDirectory.dir("plezy-litert-downloads").get().asFile
 val androidLiteRtRuntimeDir = layout.buildDirectory.dir("plezy-litert-runtime").get().asFile
 val androidLiteRtModelAssetsDir = layout.buildDirectory.dir("plezy-litert-model-assets").get().asFile
@@ -315,7 +315,7 @@ val androidLiteRtArtifacts = linkedMapOf(
     "ea5eb69272b3579e6480b527cf1f8d1f1703f789df130fff34ea93997f674f93"
   ),
   openVinoAndroidArchive to Pair(
-    "https://storage.openvinotoolkit.org/repositories/openvino/packages/$openVinoAndroidVersion/linux/openvino_toolkit_android_${openVinoAndroidVersion}.${openVinoAndroidBuild}_x86_64.tgz",
+    "https://storage.openvinotoolkit.org/repositories/openvino/packages/$openVinoAndroidVersion/linux/openvino_toolkit_android_$openVinoAndroidVersion.${openVinoAndroidBuild}_x86_64.tgz",
     "757eb8140039c9060a9e2668dc3885ab0daf24fabe7adf71a8e9e81da148049c"
   )
 )
@@ -369,9 +369,11 @@ val stageAndroidLiteRtArtifacts = tasks.register<Sync>("stageAndroidLiteRtArtifa
       into("jniLibs")
     }
   }
-  from(provider {
-    tarTree(resources.gzip(File(androidLiteRtArtifactDir, openVinoAndroidArchive)))
-  }) {
+  from(
+    provider {
+      tarTree(resources.gzip(File(androidLiteRtArtifactDir, openVinoAndroidArchive)))
+    }
+  ) {
     include(
       "$openVinoAndroidRoot/runtime/lib/intel64/libopenvino.so",
       "$openVinoAndroidRoot/runtime/lib/intel64/libopenvino_intel_npu_plugin.so",
@@ -458,6 +460,7 @@ val stageAndroidLiteRtModels = tasks.register<Sync>("stageAndroidLiteRtModels") 
     if (!manifestFile.isFile) throw GradleException("PLEZY_LITERT_MODEL_ROOT is missing manifest.json")
     @Suppress("UNCHECKED_CAST")
     val manifest = groovy.json.JsonSlurper().parse(manifestFile) as Map<String, Any?>
+
     @Suppress("UNCHECKED_CAST")
     val models = manifest["models"] as? Map<String, Map<String, Any?>>
       ?: throw GradleException("LiteRT model manifest has no models map")

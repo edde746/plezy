@@ -8,9 +8,9 @@
 #include <new>
 #include <optional>
 
+#include "../visualizer/visualizer_session.h"
 #include "plane_render_executor.h"
 #include "wayland_video_surface.h"
-#include "../visualizer/visualizer_session.h"
 
 using PlayerPtr = std::unique_ptr<mpv::MpvPlayer>;
 using VideoSurfacePtr = std::unique_ptr<mpv::WaylandVideoSurface>;
@@ -1173,12 +1173,14 @@ static FlMethodResponse* visualizer_method(MpvPlugin* self, const char* method, 
   };
   const auto* requested_engine = arg("engine");
   const std::string engine = requested_engine && fl_value_get_type(requested_engine) == FL_VALUE_TYPE_STRING
-      ? fl_value_get_string(requested_engine) : "projectm";
+                                 ? fl_value_get_string(requested_engine)
+                                 : "projectm";
   if (strcmp(method, "visualizerCapabilities") == 0) {
     const std::string reason = visualization_unavailable(self, engine);
     g_autoptr(FlValue) result = fl_value_new_map();
     fl_value_set_string_take(result, "available", fl_value_new_bool(reason.empty()));
-    fl_value_set_string_take(result, "engine", fl_value_new_string(engine == "milkrust" ? "milkrust-native-abi1" : "projectm-4.1.8"));
+    fl_value_set_string_take(
+        result, "engine", fl_value_new_string(engine == "milkrust" ? "milkrust-native-abi1" : "projectm-4.1.8"));
     fl_value_set_string_take(result, "reason", fl_value_new_string(reason.c_str()));
     fl_value_set_string_take(result, "audioTap", fl_value_new_bool(mpv::MpvPlayer::VisualizationTapAvailable()));
     return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
@@ -1211,13 +1213,15 @@ static FlMethodResponse* visualizer_method(MpvPlugin* self, const char* method, 
     ++self->visualizer_session_id;
     if (self->player) self->player->SetVisualizationTap(false);
   } else if (strcmp(method, "visualizerLoad") == 0) {
-    auto* path = arg("path"); auto* root = arg("root");
-    if (!path || !root || fl_value_get_type(path) != FL_VALUE_TYPE_STRING || fl_value_get_type(root) != FL_VALUE_TYPE_STRING)
+    auto* path = arg("path");
+    auto* root = arg("root");
+    if (!path || !root || fl_value_get_type(path) != FL_VALUE_TYPE_STRING ||
+        fl_value_get_type(root) != FL_VALUE_TYPE_STRING)
       return failure("INVALID_ARGS", "A preset path and installed asset root are required.");
     std::string error;
     auto* duration = arg("transitionSeconds");
-    const double seconds = duration && fl_value_get_type(duration) == FL_VALUE_TYPE_FLOAT
-        ? fl_value_get_float(duration) : 3.0;
+    const double seconds =
+        duration && fl_value_get_type(duration) == FL_VALUE_TYPE_FLOAT ? fl_value_get_float(duration) : 3.0;
     if (!self->visualizer->LoadPreset(fl_value_get_string(path), fl_value_get_string(root), seconds, &error))
       return failure("VISUALIZER_PRESET", error);
   } else if (strcmp(method, "visualizerResize") == 0) {

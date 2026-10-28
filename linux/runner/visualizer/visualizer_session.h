@@ -1,9 +1,11 @@
 #pragma once
 
 #include <flutter_linux/flutter_linux.h>
+
 #include <functional>
 #include <memory>
 #include <string>
+
 #include "../../../shared/visualization/plezy_audio_tap.h"
 
 namespace plezy::visualization {
@@ -28,4 +30,4 @@ class VisualizerSession {
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
-} // namespace plezy::visualization
+}  // namespace plezy::visualization

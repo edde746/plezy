@@ -48,6 +48,7 @@ open class ExoPlayerPlugin(
   private var coreInstanceId: Long? = null
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
+
   @Volatile private var videoUpscalingRequested: Boolean = false
   private var fallbackInProgress: Boolean = false
   private var backendSwitchPending: Boolean = false

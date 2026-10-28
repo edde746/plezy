@@ -31,8 +31,8 @@
 #endif
 
 #if defined(_WIN32) && defined(PME_HAVE_WINML)
-#include <WinMLEpCatalog.h>
 #include <WinMLAsync.h>
+#include <WinMLEpCatalog.h>
 #endif
 
 struct pme_runtime_session {
@@ -85,9 +85,8 @@ struct PmeOrtDmlDeviceOptions {
   int32_t preference;
   uint32_t filter;
 };
-using OrtDmlApiMethod = OrtStatus*(ORT_API_CALL*)(void*, void*) NO_EXCEPTION;
-using OrtDmlAppendProviderDml2Fn =
-    OrtStatus*(ORT_API_CALL*)(OrtSessionOptions*, PmeOrtDmlDeviceOptions*) NO_EXCEPTION;
+using OrtDmlApiMethod = OrtStatus*(ORT_API_CALL*)(void*, void*)NO_EXCEPTION;
+using OrtDmlAppendProviderDml2Fn = OrtStatus*(ORT_API_CALL*)(OrtSessionOptions*, PmeOrtDmlDeviceOptions*)NO_EXCEPTION;
 struct OrtDmlApiPrefix {
   OrtDmlApiMethod append_dml;
   OrtDmlApiMethod append_dml1;
@@ -136,8 +135,7 @@ void* load_symbol(void* library, const char* name) { return dlsym(library, name)
 bool valid_string(const char* value) { return value && value[0] != '\0'; }
 
 bool valid_qnn_performance_mode(const char* value) {
-  return !valid_string(value) || std::strcmp(value, "burst") == 0 ||
-         std::strcmp(value, "balanced") == 0 ||
+  return !valid_string(value) || std::strcmp(value, "burst") == 0 || std::strcmp(value, "balanced") == 0 ||
          std::strcmp(value, "sustained_high_performance") == 0;
 }
 
@@ -192,8 +190,7 @@ std::string expected_ep_name(const char* provider_name) {
 }
 
 bool is_winml_catalog_provider(const std::string& name) {
-  return name == "QNN" || name == "OpenVINO" || name == "VitisAI" || name == "MIGraphX" ||
-         name == "NvTensorRtRtx";
+  return name == "QNN" || name == "OpenVINO" || name == "VitisAI" || name == "MIGraphX" || name == "NvTensorRtRtx";
 }
 
 #if defined(_WIN32) && defined(PME_HAVE_WINML)
@@ -220,8 +217,7 @@ void CALLBACK winml_ready_completed(WinMLAsyncBlock* async) {
   wait->condition.notify_one();
 }
 
-bool ensure_winml_provider_ready(
-    WinMLEpHandle provider, const pme_runtime_config* config, std::string* error) {
+bool ensure_winml_provider_ready(WinMLEpHandle provider, const pme_runtime_config* config, std::string* error) {
   if (runtime_cancelled(config)) {
     *error = "Windows ML provider setup was cancelled";
     return false;
@@ -329,8 +325,7 @@ bool resolve_winml_provider_library(
 }
 #endif
 
-bool read_provider_manifest(
-    const char* path, std::vector<ManifestProvider>* providers, std::string* error) {
+bool read_provider_manifest(const char* path, std::vector<ManifestProvider>* providers, std::string* error) {
   std::ifstream manifest(path);
   if (!manifest) {
     *error = "Could not open motion provider manifest";
@@ -350,7 +345,8 @@ bool read_provider_manifest(
         first_separator == std::string::npos ? std::string::npos : line.find('\t', first_separator + 1);
     if (first_separator == std::string::npos || second_separator == std::string::npos ||
         line.find('\t', second_separator + 1) != std::string::npos) {
-      *error = "Motion provider manifest line " + std::to_string(line_number) + " must contain three tab-separated fields";
+      *error =
+          "Motion provider manifest line " + std::to_string(line_number) + " must contain three tab-separated fields";
       return false;
     }
 
@@ -359,7 +355,8 @@ bool read_provider_manifest(
     const std::string kind = trim(line.substr(first_separator + 1, second_separator - first_separator - 1));
     provider.library_path = trim(line.substr(second_separator + 1));
     if (provider.name.empty() || provider.library_path.empty() || !parse_device_kind(kind, &provider.device_kind)) {
-      *error = "Motion provider manifest line " + std::to_string(line_number) + " has an invalid provider name, device kind, or library path";
+      *error = "Motion provider manifest line " + std::to_string(line_number) +
+               " has an invalid provider name, device kind, or library path";
       return false;
     }
     if (provider.library_path == "builtin") {
@@ -414,8 +411,7 @@ bool config_has_builtin_migraphx(const pme_runtime_config* config) {
   for (size_t i = 0; i < config->provider_count; ++i) {
     const pme_provider_candidate& candidate = config->providers[i];
     if (candidate.struct_size >= sizeof(pme_provider_candidate) && candidate.provider_name &&
-        candidate.provider_library_path &&
-        candidate.device_kind == PME_DEVICE_GPU &&
+        candidate.provider_library_path && candidate.device_kind == PME_DEVICE_GPU &&
         std::strcmp(candidate.provider_name, "MIGraphXExecutionProvider") == 0 &&
         std::strcmp(candidate.provider_library_path, "builtin-migraphx") == 0) {
       return true;
@@ -427,8 +423,7 @@ bool config_has_builtin_migraphx(const pme_runtime_config* config) {
 // ROCm's published monolithic MIGraphX wheel is based on ORT 1.23.2. Its
 // built-in provider API is present in C API v23; the compatibility fallback is
 // restricted to this provider, while every other provider path requires v27.
-bool load_runtime(
-    pme_runtime_session* session, const char* path, bool allow_legacy_migraphx_api, std::string* error) {
+bool load_runtime(pme_runtime_session* session, const char* path, bool allow_legacy_migraphx_api, std::string* error) {
 #if defined(_WIN32)
   std::wstring runtime_path = utf8_to_wide(path);
   if (valid_string(path) && runtime_path.empty()) {
@@ -465,8 +460,8 @@ bool load_runtime(
     return false;
   }
   const char* runtime_version = session->api_base->GetVersionString();
-  const bool pinned_ort_123_migraphx = allow_legacy_migraphx_api && runtime_version &&
-                                       std::strncmp(runtime_version, "1.23.", 5) == 0;
+  const bool pinned_ort_123_migraphx =
+      allow_legacy_migraphx_api && runtime_version && std::strncmp(runtime_version, "1.23.", 5) == 0;
   if (pinned_ort_123_migraphx) {
     session->api = session->api_base->GetApi(PME_ORT_LEGACY_MIGRAPHX_API_VERSION);
     if (session->api) {
@@ -486,9 +481,8 @@ bool load_runtime(
       return true;
     }
   }
-  *error = allow_legacy_migraphx_api
-               ? "ONNX Runtime exposes neither C API v27 nor v23 for built-in MIGraphX"
-               : "ONNX Runtime library does not provide C API v27 or newer";
+  *error = allow_legacy_migraphx_api ? "ONNX Runtime exposes neither C API v27 nor v23 for built-in MIGraphX"
+                                     : "ONNX Runtime library does not provide C API v27 or newer";
   return false;
 }
 
@@ -686,8 +680,7 @@ bool try_accelerator_candidate(
   const std::string expected_provider_name = expected_ep_name(candidate.provider_name);
   for (size_t i = 0; i < device_count; ++i) {
     const char* ep_name = api->EpDevice_EpName(devices[i]);
-    if (ep_name && expected_provider_name == ep_name &&
-        device_matches(api, devices[i], candidate.device_kind)) {
+    if (ep_name && expected_provider_name == ep_name && device_matches(api, devices[i], candidate.device_kind)) {
       selected_device = devices[i];
       break;
     }
@@ -704,8 +697,7 @@ bool try_accelerator_candidate(
   // assigned to it. If any operator would fall back to CPU, session creation
   // fails and the caller tries the next provider.
   const bool configure_qnn_power =
-      expected_provider_name == "QNNExecutionProvider" &&
-      valid_string(config->htp_performance_mode);
+      expected_provider_name == "QNNExecutionProvider" && valid_string(config->htp_performance_mode);
   const char* qnn_option_keys[] = {"htp_performance_mode"};
   const char* qnn_option_values[] = {config->htp_performance_mode};
   if (!call_status(
@@ -714,10 +706,8 @@ bool try_accelerator_candidate(
       !call_status(
           api,
           api->SessionOptionsAppendExecutionProvider_V2(
-              options, session->env, &selected_device, 1,
-              configure_qnn_power ? qnn_option_keys : nullptr,
-              configure_qnn_power ? qnn_option_values : nullptr,
-              configure_qnn_power ? 1 : 0),
+              options, session->env, &selected_device, 1, configure_qnn_power ? qnn_option_keys : nullptr,
+              configure_qnn_power ? qnn_option_values : nullptr, configure_qnn_power ? 1 : 0),
           error, "SessionOptionsAppendExecutionProvider_V2")) {
     api->ReleaseSessionOptions(options);
     return false;
@@ -919,13 +909,11 @@ bool try_builtin_dml_candidate(
   PmeOrtDmlDeviceOptions device_options{1, 1};  // HighPerformance, GPU
   if (!call_status(api, api->DisableMemPattern(options), error, "Disable DirectML memory pattern") ||
       !call_status(
-          api, api->SetSessionExecutionMode(options, ORT_SEQUENTIAL), error,
-          "Set DirectML sequential execution") ||
+          api, api->SetSessionExecutionMode(options, ORT_SEQUENTIAL), error, "Set DirectML sequential execution") ||
       !call_status(
           api, api->AddSessionConfigEntry(options, "session.disable_cpu_ep_fallback", "1"), error,
           "Disable CPU execution provider fallback") ||
-      !call_status(
-          api, dml_api.append_dml2(options, &device_options), error, "Append DirectML execution provider")) {
+      !call_status(api, dml_api.append_dml2(options, &device_options), error, "Append DirectML execution provider")) {
     api->ReleaseSessionOptions(options);
     return false;
   }
@@ -1125,23 +1113,19 @@ extern "C" PME_RUNTIME_API int pme_runtime_open(
                                    std::strcmp(candidate.provider_name, "VitisAIExecutionProvider") == 0 &&
                                    std::strcmp(candidate.provider_library_path, "builtin-vitisai") == 0;
       if (session->api_version < PME_ORT_API_VERSION && !builtin_migraphx) {
-        last_provider_error =
-            std::string(candidate.provider_name ? candidate.provider_name : "unnamed provider") +
-            ": ONNX Runtime C API v23 compatibility is restricted to built-in MIGraphX";
+        last_provider_error = std::string(candidate.provider_name ? candidate.provider_name : "unnamed provider") +
+                              ": ONNX Runtime C API v23 compatibility is restricted to built-in MIGraphX";
         continue;
       }
       const bool opened_candidate =
-          builtin_cuda ? try_builtin_cuda_candidate(session, config, candidate, &candidate_error)
-                       : (builtin_migraphx ? try_builtin_migraphx_candidate(
-                                                 session, config, candidate, &candidate_error)
-                                           : (builtin_dml ? try_builtin_dml_candidate(
-                                                                session, config, candidate, &candidate_error)
-                                                          : (builtin_vitisai ? try_builtin_vitisai_candidate(
-                                                                                   session, config, candidate,
-                                                                                   &candidate_error)
-                                                                             : try_accelerator_candidate(
-                                                                                   session, config, candidate,
-                                                                                   &candidate_error))));
+          builtin_cuda
+              ? try_builtin_cuda_candidate(session, config, candidate, &candidate_error)
+              : (builtin_migraphx
+                     ? try_builtin_migraphx_candidate(session, config, candidate, &candidate_error)
+                     : (builtin_dml ? try_builtin_dml_candidate(session, config, candidate, &candidate_error)
+                                    : (builtin_vitisai
+                                           ? try_builtin_vitisai_candidate(session, config, candidate, &candidate_error)
+                                           : try_accelerator_candidate(session, config, candidate, &candidate_error))));
       if (opened_candidate) {
         opened = true;
       } else {

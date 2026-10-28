@@ -17,9 +17,9 @@
 #include <queue>
 #include <string>
 
+#include "../visualizer/visualizer_session.h"
 #include "display_mode_manager.h"
 #include "mpv_player.h"
-#include "../visualizer/visualizer_session.h"
 
 // C-style registration functions for the video and audio-only plugin
 // instances.
@@ -52,7 +52,8 @@ class MpvPlayerPlugin : public flutter::Plugin {
   void PostToPlatformThread(std::function<void()> task);
   void DrainPlatformTasks();
 
-  void HandleVisualizerMethod(const flutter::MethodCall<flutter::EncodableValue>& call,
+  void HandleVisualizerMethod(
+      const flutter::MethodCall<flutter::EncodableValue>& call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   void DisposeVisualizer();
   HWND GetWindow();

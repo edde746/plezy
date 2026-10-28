@@ -1,3 +1,8 @@
+#include <android/log.h>
+#include <dirent.h>
+#include <dlfcn.h>
+#include <sys/stat.h>
+
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
@@ -6,15 +11,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <dirent.h>
-#include <dlfcn.h>
 #include <mutex>
 #include <new>
 #include <string>
-#include <sys/stat.h>
 #include <vector>
-
-#include <android/log.h>
 
 #include "litert/c/litert_compiled_model.h"
 #include "litert/c/litert_environment.h"
@@ -57,8 +57,7 @@ struct MotionSession {
 };
 
 void LogStatus(const char* operation, LiteRtStatus status) {
-  __android_log_print(ANDROID_LOG_WARN, kLogTag, "%s failed: LiteRT status %d", operation,
-                      static_cast<int>(status));
+  __android_log_print(ANDROID_LOG_WARN, kLogTag, "%s failed: LiteRT status %d", operation, static_cast<int>(status));
 }
 
 bool Check(LiteRtStatus status, const char* operation) {
@@ -79,8 +78,7 @@ bool GetQuantization(LiteRtTensor tensor, LiteRtQuantizationPerTensor* quant) {
   LiteRtQuantizationTypeId type = kLiteRtQuantizationNone;
   if (!Check(LiteRtGetQuantizationTypeId(tensor, &type), "LiteRtGetQuantizationTypeId")) return false;
   if (type != kLiteRtQuantizationPerTensor) return false;
-  return Check(LiteRtGetPerTensorQuantization(tensor, quant), "LiteRtGetPerTensorQuantization") &&
-         quant->scale > 0.0f;
+  return Check(LiteRtGetPerTensorQuantization(tensor, quant), "LiteRtGetPerTensorQuantization") && quant->scale > 0.0f;
 }
 
 size_t ElementBytes(LiteRtElementType type) {
@@ -120,11 +118,10 @@ bool AllocateAligned(size_t alignment, size_t size, void** address) {
   return posix_memalign(address, alignment, size) == 0 && *address != nullptr;
 }
 
-void PreloadOpenVinoDependencies(const char* library_dir,
-                                 std::vector<void*>* handles) {
+void PreloadOpenVinoDependencies(const char* library_dir, std::vector<void*>* handles) {
   if (!library_dir || !library_dir[0]) return;
   const std::string core_path = std::string(library_dir) + "/libopenvino.so";
-  struct stat core_info {};
+  struct stat core_info{};
   if (stat(core_path.c_str(), &core_info) != 0 || !S_ISREG(core_info.st_mode)) return;
 
   // LiteRT's Intel provider AAR has DT_NEEDED references to OpenVINO and its
@@ -145,9 +142,8 @@ void PreloadOpenVinoDependencies(const char* library_dir,
       continue;
     }
 
-    __android_log_print(ANDROID_LOG_WARN, kLogTag,
-                        "Could not preload optional OpenVINO library %s: %s",
-                        name, dlerror());
+    __android_log_print(
+        ANDROID_LOG_WARN, kLogTag, "Could not preload optional OpenVINO library %s: %s", name, dlerror());
     for (auto it = handles->rbegin(); it != handles->rend(); ++it) dlclose(*it);
     handles->clear();
     return;
@@ -161,21 +157,19 @@ bool PrepareSamsungLiteCore(const char* library_dir, std::vector<void*>* handles
   const char* required[] = {"libgraph_wrapper.so", "libgraphgen_api.so"};
   for (const char* name : required) {
     const std::string path = litecore_library_dir + "/" + name;
-    struct stat info {};
+    struct stat info{};
     if (stat(path.c_str(), &info) != 0 || !S_ISREG(info.st_mode)) return false;
   }
 
   if (setenv("EXYNOS_AI_LITECORE_ROOT", litecore_root.c_str(), 1) != 0) {
-    __android_log_print(ANDROID_LOG_WARN, kLogTag,
-                        "Could not set EXYNOS_AI_LITECORE_ROOT: %s", std::strerror(errno));
+    __android_log_print(ANDROID_LOG_WARN, kLogTag, "Could not set EXYNOS_AI_LITECORE_ROOT: %s", std::strerror(errno));
     return false;
   }
 
   DIR* directory = opendir(litecore_library_dir.c_str());
   if (!directory) {
-    __android_log_print(ANDROID_LOG_WARN, kLogTag,
-                        "Could not open Samsung LiteCore library directory: %s",
-                        std::strerror(errno));
+    __android_log_print(
+        ANDROID_LOG_WARN, kLogTag, "Could not open Samsung LiteCore library directory: %s", std::strerror(errno));
     return false;
   }
   std::vector<std::string> libraries;
@@ -213,33 +207,31 @@ bool PrepareSamsungLiteCore(const char* library_dir, std::vector<void*>* handles
   for (const char* name : required) {
     const auto it = std::find(libraries.begin(), libraries.end(), name);
     if (it == libraries.end() || !loaded[static_cast<size_t>(it - libraries.begin())]) {
-      __android_log_print(ANDROID_LOG_WARN, kLogTag,
-                          "Samsung LiteCore library %s could not be loaded", name);
+      __android_log_print(ANDROID_LOG_WARN, kLogTag, "Samsung LiteCore library %s could not be loaded", name);
       return false;
     }
   }
   return true;
 }
 
-bool TensorBufferRequirements(LiteRtCompiledModel compiled, bool input,
-                              size_t* alignment, size_t* buffer_bytes) {
+bool TensorBufferRequirements(LiteRtCompiledModel compiled, bool input, size_t* alignment, size_t* buffer_bytes) {
   LiteRtTensorBufferRequirements requirements = nullptr;
-  const LiteRtStatus status = input
-      ? LiteRtGetCompiledModelInputBufferRequirements(compiled, 0, 0, &requirements)
-      : LiteRtGetCompiledModelOutputBufferRequirements(compiled, 0, 0, &requirements);
+  const LiteRtStatus status = input ? LiteRtGetCompiledModelInputBufferRequirements(compiled, 0, 0, &requirements)
+                                    : LiteRtGetCompiledModelOutputBufferRequirements(compiled, 0, 0, &requirements);
   if (!Check(status, input ? "input buffer requirements" : "output buffer requirements")) return false;
-  const bool aligned = Check(LiteRtGetTensorBufferRequirementsAlignment(requirements, alignment),
-                             "tensor buffer alignment");
-  const bool sized = Check(LiteRtGetTensorBufferRequirementsBufferSize(requirements, buffer_bytes),
-                           "tensor buffer size");
+  const bool aligned =
+      Check(LiteRtGetTensorBufferRequirementsAlignment(requirements, alignment), "tensor buffer alignment");
+  const bool sized =
+      Check(LiteRtGetTensorBufferRequirementsBufferSize(requirements, buffer_bytes), "tensor buffer size");
   // Requirements returned by CompiledModel are borrowed and stay owned by
   // that model. Destroying this handle here invalidates the runtime's buffer
   // contract before inference starts.
   return aligned && sized;
 }
 
-bool BuildEnvironment(const char* plugin_dir, const char* dispatch_dir, const char* runtime_dir,
-                      const char* cache_dir, LiteRtEnvironment* environment) {
+bool BuildEnvironment(
+    const char* plugin_dir, const char* dispatch_dir, const char* runtime_dir, const char* cache_dir,
+    LiteRtEnvironment* environment) {
   LiteRtEnvOption options[4]{};
   int count = 0;
   if (plugin_dir && plugin_dir[0])
@@ -281,33 +273,33 @@ void DestroySession(MotionSession* session) {
   if (!session) return;
   ClearCompiledAttempt(session);
   if (session->environment) LiteRtDestroyEnvironment(session->environment);
-  for (auto it = session->provider_dependencies.rbegin();
-       it != session->provider_dependencies.rend(); ++it) {
+  for (auto it = session->provider_dependencies.rbegin(); it != session->provider_dependencies.rend(); ++it) {
     dlclose(*it);
   }
   delete session;
 }
 
-bool CreateCompiledModel(MotionSession* session, LiteRtHwAccelerators accelerator,
-                         int32_t expected_width, int32_t expected_height) {
+bool CreateCompiledModel(
+    MotionSession* session, LiteRtHwAccelerators accelerator, int32_t expected_width, int32_t expected_height) {
   LiteRtOptions options = nullptr;
   if (!Check(LiteRtCreateOptions(&options), "LiteRtCreateOptions")) return false;
   const int accelerator_mask = static_cast<int>(accelerator);
-  const bool selected = Check(
-      LiteRtSetOptionsHardwareAccelerators(options, accelerator_mask),
-      "LiteRtSetOptionsHardwareAccelerators");
-  const LiteRtStatus create_status = selected
-      ? LiteRtCreateCompiledModel(session->environment, session->model, options, &session->compiled)
-      : kLiteRtStatusErrorRuntimeFailure;
+  const bool selected =
+      Check(LiteRtSetOptionsHardwareAccelerators(options, accelerator_mask), "LiteRtSetOptionsHardwareAccelerators");
+  const LiteRtStatus create_status =
+      selected ? LiteRtCreateCompiledModel(session->environment, session->model, options, &session->compiled)
+               : kLiteRtStatusErrorRuntimeFailure;
   LiteRtDestroyOptions(options);
   if (!Check(create_status, "LiteRtCreateCompiledModel")) return false;
 
   bool fully_hardware = false;
-  if (!Check(LiteRtCompiledModelIsNonCpuFullyAccelerated(session->compiled, &fully_hardware),
-             "LiteRtCompiledModelIsNonCpuFullyAccelerated") || !fully_hardware) {
-    __android_log_print(ANDROID_LOG_INFO, kLogTag,
-                        "LiteRT rejected %s session because it would use a CPU subgraph",
-                        accelerator == kLiteRtHwAcceleratorNpu ? "NPU" : "GPU");
+  if (!Check(
+          LiteRtCompiledModelIsNonCpuFullyAccelerated(session->compiled, &fully_hardware),
+          "LiteRtCompiledModelIsNonCpuFullyAccelerated") ||
+      !fully_hardware) {
+    __android_log_print(
+        ANDROID_LOG_INFO, kLogTag, "LiteRT rejected %s session because it would use a CPU subgraph",
+        accelerator == kLiteRtHwAcceleratorNpu ? "NPU" : "GPU");
     LiteRtDestroyCompiledModel(session->compiled);
     session->compiled = nullptr;
     return false;
@@ -330,17 +322,14 @@ bool CreateCompiledModel(MotionSession* session, LiteRtHwAccelerators accelerato
       !Check(LiteRtGetRankedTensorType(output_tensor, &session->output_type), "output type")) {
     return false;
   }
-  const auto has_image_shape = [expected_width, expected_height](
-                                   const LiteRtRankedTensorType& type, int32_t channels) {
-    return type.layout.rank == 4 && type.layout.dimensions[0] == 1 &&
-           type.layout.dimensions[1] == expected_height &&
-           type.layout.dimensions[2] == expected_width &&
-           type.layout.dimensions[3] == channels;
+  const auto has_image_shape = [expected_width, expected_height](const LiteRtRankedTensorType& type, int32_t channels) {
+    return type.layout.rank == 4 && type.layout.dimensions[0] == 1 && type.layout.dimensions[1] == expected_height &&
+           type.layout.dimensions[2] == expected_width && type.layout.dimensions[3] == channels;
   };
   if (!has_image_shape(session->input_type, 6) || !has_image_shape(session->output_type, 3)) {
-    __android_log_print(ANDROID_LOG_WARN, kLogTag,
-                        "LiteRT model shape mismatch for %dx%d ANVIL tensors",
-                        expected_width, expected_height);
+    __android_log_print(
+        ANDROID_LOG_WARN, kLogTag, "LiteRT model shape mismatch for %dx%d ANVIL tensors", expected_width,
+        expected_height);
     return false;
   }
   session->input_element = session->input_type.element_type;
@@ -352,22 +341,17 @@ bool CreateCompiledModel(MotionSession* session, LiteRtHwAccelerators accelerato
 
   size_t input_alignment = 0;
   size_t output_alignment = 0;
-  if (!TensorBufferRequirements(session->compiled, true, &input_alignment,
-                                &session->input_buffer_bytes) ||
-      !TensorBufferRequirements(session->compiled, false, &output_alignment,
-                                &session->output_buffer_bytes)) {
+  if (!TensorBufferRequirements(session->compiled, true, &input_alignment, &session->input_buffer_bytes) ||
+      !TensorBufferRequirements(session->compiled, false, &output_alignment, &session->output_buffer_bytes)) {
     return false;
   }
   const size_t input_element_bytes = ElementBytes(session->input_element);
   const size_t output_element_bytes = ElementBytes(session->output_element);
-  if ((session->input_element != kLiteRtElementTypeFloat32 &&
-       session->input_element != kLiteRtElementTypeInt8 &&
+  if ((session->input_element != kLiteRtElementTypeFloat32 && session->input_element != kLiteRtElementTypeInt8 &&
        session->input_element != kLiteRtElementTypeUInt8) ||
-      (session->output_element != kLiteRtElementTypeFloat32 &&
-       session->output_element != kLiteRtElementTypeInt8 &&
+      (session->output_element != kLiteRtElementTypeFloat32 && session->output_element != kLiteRtElementTypeInt8 &&
        session->output_element != kLiteRtElementTypeUInt8) ||
-      !input_element_bytes || !output_element_bytes ||
-      session->input_elements > SIZE_MAX / input_element_bytes ||
+      !input_element_bytes || !output_element_bytes || session->input_elements > SIZE_MAX / input_element_bytes ||
       session->output_elements > SIZE_MAX / output_element_bytes) {
     return false;
   }
@@ -381,33 +365,33 @@ bool CreateCompiledModel(MotionSession* session, LiteRtHwAccelerators accelerato
   }
   std::memset(session->input_memory, 0, session->input_bytes);
   std::memset(session->output_memory, 0, session->output_bytes);
-  if (!Check(LiteRtCreateTensorBufferFromHostMemory(&session->input_type, session->input_memory,
-                                                    session->input_buffer_bytes, nullptr,
-                                                    &session->input_buffer),
-             "LiteRtCreateTensorBufferFromHostMemory(input)") ||
-      !Check(LiteRtCreateTensorBufferFromHostMemory(&session->output_type, session->output_memory,
-                                                    session->output_buffer_bytes, nullptr,
-                                                    &session->output_buffer),
-             "LiteRtCreateTensorBufferFromHostMemory(output)")) {
+  if (!Check(
+          LiteRtCreateTensorBufferFromHostMemory(
+              &session->input_type, session->input_memory, session->input_buffer_bytes, nullptr,
+              &session->input_buffer),
+          "LiteRtCreateTensorBufferFromHostMemory(input)") ||
+      !Check(
+          LiteRtCreateTensorBufferFromHostMemory(
+              &session->output_type, session->output_memory, session->output_buffer_bytes, nullptr,
+              &session->output_buffer),
+          "LiteRtCreateTensorBufferFromHostMemory(output)")) {
     return false;
   }
-  if (session->input_element == kLiteRtElementTypeInt8 ||
-      session->input_element == kLiteRtElementTypeUInt8) {
+  if (session->input_element == kLiteRtElementTypeInt8 || session->input_element == kLiteRtElementTypeUInt8) {
     if (!GetQuantization(input_tensor, &session->input_quant)) return false;
   }
-  if (session->output_element == kLiteRtElementTypeInt8 ||
-      session->output_element == kLiteRtElementTypeUInt8) {
+  if (session->output_element == kLiteRtElementTypeInt8 || session->output_element == kLiteRtElementTypeUInt8) {
     if (!GetQuantization(output_tensor, &session->output_quant)) return false;
   }
   session->provider = accelerator == kLiteRtHwAcceleratorNpu ? "litert-npu" : "litert-gpu";
-  __android_log_print(ANDROID_LOG_INFO, kLogTag, "ANVIL model opened with %s",
-                      session->provider.c_str());
+  __android_log_print(ANDROID_LOG_INFO, kLogTag, "ANVIL model opened with %s", session->provider.c_str());
   return true;
 }
 
 template <typename T>
-void Quantize(const float* source, T* destination, size_t count,
-              const LiteRtQuantizationPerTensor& quant, int64_t low, int64_t high) {
+void Quantize(
+    const float* source, T* destination, size_t count, const LiteRtQuantizationPerTensor& quant, int64_t low,
+    int64_t high) {
   const float inverse_scale = 1.0f / quant.scale;
   for (size_t i = 0; i < count; ++i) {
     const int64_t value = static_cast<int64_t>(std::lrint(source[i] * inverse_scale)) + quant.zero_point;
@@ -416,8 +400,7 @@ void Quantize(const float* source, T* destination, size_t count,
 }
 
 template <typename T>
-void Dequantize(const T* source, float* destination, size_t count,
-                const LiteRtQuantizationPerTensor& quant) {
+void Dequantize(const T* source, float* destination, size_t count, const LiteRtQuantizationPerTensor& quant) {
   for (size_t i = 0; i < count; ++i) {
     destination[i] = (static_cast<int64_t>(source[i]) - quant.zero_point) * quant.scale;
   }
@@ -429,12 +412,12 @@ bool WriteInput(MotionSession* session, const float* input) {
       std::memcpy(session->input_memory, input, session->input_bytes);
       return true;
     case kLiteRtElementTypeInt8:
-      Quantize(input, static_cast<int8_t*>(session->input_memory), session->input_elements,
-               session->input_quant, -128, 127);
+      Quantize(
+          input, static_cast<int8_t*>(session->input_memory), session->input_elements, session->input_quant, -128, 127);
       return true;
     case kLiteRtElementTypeUInt8:
-      Quantize(input, static_cast<uint8_t*>(session->input_memory), session->input_elements,
-               session->input_quant, 0, 255);
+      Quantize(
+          input, static_cast<uint8_t*>(session->input_memory), session->input_elements, session->input_quant, 0, 255);
       return true;
     default:
       return false;
@@ -447,12 +430,12 @@ bool ReadOutput(MotionSession* session, float* output) {
       std::memcpy(output, session->output_memory, session->output_bytes);
       return true;
     case kLiteRtElementTypeInt8:
-      Dequantize(static_cast<const int8_t*>(session->output_memory), output,
-                 session->output_elements, session->output_quant);
+      Dequantize(
+          static_cast<const int8_t*>(session->output_memory), output, session->output_elements, session->output_quant);
       return true;
     case kLiteRtElementTypeUInt8:
-      Dequantize(static_cast<const uint8_t*>(session->output_memory), output,
-                 session->output_elements, session->output_quant);
+      Dequantize(
+          static_cast<const uint8_t*>(session->output_memory), output, session->output_elements, session->output_quant);
       return true;
     default:
       return false;
@@ -463,26 +446,23 @@ bool ReadOutput(MotionSession* session, float* output) {
 
 extern "C" {
 
-void* plezy_litert_motion_open(const char* model_path, const char* gpu_model_path,
-                               const char* library_dir,
-                               const char* cache_dir, int32_t expected_width,
-                               int32_t expected_height, char* provider,
-                               size_t provider_capacity) {
+void* plezy_litert_motion_open(
+    const char* model_path, const char* gpu_model_path, const char* library_dir, const char* cache_dir,
+    int32_t expected_width, int32_t expected_height, char* provider, size_t provider_capacity) {
   if ((!model_path || !model_path[0]) && (!gpu_model_path || !gpu_model_path[0])) return nullptr;
   MotionSession* session = new (std::nothrow) MotionSession();
   if (!session) return nullptr;
   PrepareSamsungLiteCore(library_dir, &session->provider_dependencies);
   PreloadOpenVinoDependencies(library_dir, &session->provider_dependencies);
-  if (!BuildEnvironment(library_dir, library_dir, library_dir, cache_dir,
-                       &session->environment)) {
+  if (!BuildEnvironment(library_dir, library_dir, library_dir, cache_dir, &session->environment)) {
     DestroySession(session);
     return nullptr;
   }
 
   const auto try_provider = [&](const char* candidate, LiteRtHwAccelerators accelerator) {
     if (!candidate || !candidate[0]) return false;
-    if (!Check(LiteRtCreateModelFromFile(session->environment, candidate, &session->model),
-               "LiteRtCreateModelFromFile")) {
+    if (!Check(
+            LiteRtCreateModelFromFile(session->environment, candidate, &session->model), "LiteRtCreateModelFromFile")) {
       ClearCompiledAttempt(session);
       return false;
     }
@@ -513,16 +493,14 @@ int plezy_litert_motion_run(void* opaque_session, const float* input, float* out
   if (!session || !input || !output) return 0;
   std::lock_guard<std::mutex> lock(session->run_mutex);
   if (!WriteInput(session, input)) return 0;
-  if (!Check(LiteRtRunCompiledModel(session->compiled, 0, 1, &session->input_buffer,
-                                    1, &session->output_buffer),
-             "LiteRtRunCompiledModel")) {
+  if (!Check(
+          LiteRtRunCompiledModel(session->compiled, 0, 1, &session->input_buffer, 1, &session->output_buffer),
+          "LiteRtRunCompiledModel")) {
     return 0;
   }
   return ReadOutput(session, output) ? 1 : 0;
 }
 
-void plezy_litert_motion_close(void* opaque_session) {
-  DestroySession(static_cast<MotionSession*>(opaque_session));
-}
+void plezy_litert_motion_close(void* opaque_session) { DestroySession(static_cast<MotionSession*>(opaque_session)); }
 
 }  // extern "C"

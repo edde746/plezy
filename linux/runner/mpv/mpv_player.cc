@@ -21,12 +21,13 @@
 #define EGL_CONTEXT_MINOR_VERSION 0x30FB
 #endif
 
+#include <dlfcn.h>
+
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <dlfcn.h>
 
 #include "experimental_render_api.h"
 #include "sanitize_utf8.h"
@@ -70,7 +71,10 @@ struct VisualizationTapApi {
   }
   bool available() const { return version && enable && read && version() == MPV_PLEZY_AUDIO_TAP_ABI; }
 };
-VisualizationTapApi& TapApi() { static VisualizationTapApi api; return api; }
+VisualizationTapApi& TapApi() {
+  static VisualizationTapApi api;
+  return api;
+}
 
 // Parses the string reply of a `time-pos` read: the whole string must be one
 // finite number. Anything else — an empty reply, "inf"/"nan", trailing text —
@@ -1235,8 +1239,8 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       if (!prop || !prop->name) break;
       mpv_node node = plezy::mpv_common::ExtractPropertyNode(prop);
       if (event->reply_userdata == kVisualizationTimeUserdata) {
-        visualization_pts_.store(node.format == MPV_FORMAT_DOUBLE ? node.u.double_ :
-                                 std::numeric_limits<double>::quiet_NaN());
+        visualization_pts_.store(
+            node.format == MPV_FORMAT_DOUBLE ? node.u.double_ : std::numeric_limits<double>::quiet_NaN());
         break;
       }
 

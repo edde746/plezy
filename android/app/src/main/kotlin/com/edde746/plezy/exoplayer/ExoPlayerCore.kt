@@ -45,6 +45,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cronet.CronetDataSource
+import androidx.media3.effect.LanczosResample
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -60,7 +61,6 @@ import androidx.media3.exoplayer.source.FilteringMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
-import androidx.media3.effect.LanczosResample
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
@@ -1856,7 +1856,7 @@ class ExoPlayerCore(private val activity: Activity) :
     "videoUpscalingStatus" to videoUpscalingStatus,
     "videoUpscalingOutputWidth" to videoUpscalingOutputSize?.first,
     "videoUpscalingOutputHeight" to videoUpscalingOutputSize?.second,
-    "videoUpscalingProvider" to if (videoUpscalingConfigured) "Media3 GL · Lanczos" else null,
+    "videoUpscalingProvider" to if (videoUpscalingConfigured) "Media3 GL · Lanczos" else null
   )
 
   private fun updateVideoUpscaling() {
@@ -1898,7 +1898,7 @@ class ExoPlayerCore(private val activity: Activity) :
       videoUpscalingConfigured = true
       videoUpscalingOutputSize = resolvedSize
       videoUpscalingStatus = "configured"
-      emitLog("info", "upscaling", "Lanczos GL resampling configured for ${targetWidth}x${targetHeight}")
+      emitLog("info", "upscaling", "Lanczos GL resampling configured for ${targetWidth}x$targetHeight")
     } catch (error: Exception) {
       try {
         player.setVideoEffects(emptyList())
@@ -3822,8 +3822,7 @@ class ExoPlayerCore(private val activity: Activity) :
     return true
   }
 
-  fun drainSubtitlePcmCapture(): List<Map<String, Any>> =
-    renderersFactory?.subtitlePcmCaptureBuffer?.drain() ?: emptyList()
+  fun drainSubtitlePcmCapture(): List<Map<String, Any>> = renderersFactory?.subtitlePcmCaptureBuffer?.drain() ?: emptyList()
 
   fun setAudioPassthrough(enabled: Boolean) {
     if (audioPassthroughEnabled == enabled) return

@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -20,7 +21,6 @@
 
 #include "../../../shared/mpv/mpv_player_common.h"
 #include "../../../shared/visualization/plezy_audio_tap.h"
-#include <limits>
 
 namespace mpv {
 struct InnerWindowSubclassState;
