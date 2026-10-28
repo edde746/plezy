@@ -62,13 +62,13 @@ intentional and documented below.
 
 ## Work completed in the comparison branch
 
-PR #42 already adds desktop capture, temporary HLS sharing, data-only media search extensions, and the `plezyctl` CLI. PR #43 adds safe sibling media references in local playlists, additional FFmpeg output and remux profiles, MPV audio effects, named device-local bookmarks, and temporary A/B looping. This follow-up adds reusable local M3U export, MPV alternate video-track selection, direct-input File Info, MPV edition/disc-title selection, and a live capture preview action after checking the remaining VLC menu capabilities against PlezyNG’s supported player paths.
+PR #42 adds desktop capture, temporary HLS sharing, data-only media search extensions, and the `plezyctl` CLI. The comparison branch adds safe sibling media references in local playlists, additional FFmpeg output and remux profiles, MPV audio effects, named device-local bookmarks, temporary A/B looping, reusable local M3U export, MPV alternate video-track selection, direct-input File Info, MPV edition/disc-title selection, and a live capture preview action. This continuation rounds out direct-file use with bounded desktop folder queues and named bookmarks for seekable local audio as well as video, while keeping both in the existing Open media and player flows.
 
 The additions stay in the current **Files and books → Open media → Media tools** and existing playback-settings/chapter sheets. They reuse PlezyNG’s source tiles, mono palette, focus handling, shared dialogs, player lifecycle, and semantic feedback. No new top-level navigation section or standalone settings window is added. See the [Open media and local media tools guide](UNIVERSAL_MEDIA.md) for operating details and exact platform behavior.
 
 ### Headless QA coverage
 
-The regression checks exercise the source-player flow and narrow-screen navigation, including direct-input File Info privacy, edition refresh and selection, alternate video tracks, MPV audio effects, A/B loop actions, local playlist export boundaries, transient bookmark identity, capture-preview argument validation, and live-recording finalization. Recording tests verify private partial-file startup, nonempty publication, overwrite consent, and restoration after empty output. The Media tools screen check opens the capture, local sharing, and search-extension flows and verifies their phone layouts use the shared scrolling form, source tiles, palette, and accessible labels. A local FFmpeg integration test generates a short H.264/AAC sample, then checks that temporary sharing publishes an HLS media segment, rejects an invalid token and unsupported methods, and releases its listener when stopped. Encoder and network-interface prerequisites are detected and skipped explicitly. The new playback and capture strings are translated into the supported locale catalogs, with placeholder and source-catalog checks.
+The regression checks exercise the source-player flow and narrow-screen navigation, including bounded folder scanning, hidden-file and symlink handling, direct-input File Info privacy, edition refresh and selection, alternate video tracks, MPV audio effects, A/B loop actions, local playlist export boundaries, seekable-audio bookmark identity, capture-preview argument validation, and live-recording finalization. Recording tests verify private partial-file startup, nonempty publication, overwrite consent, and restoration after empty output. Source-flow screenshots cover the compact folder/file actions and the audio bookmark row and dialog; the Media tools screen check opens capture, local sharing, and search-extension flows and verifies their phone layouts use the shared scrolling form, source tiles, palette, and accessible labels. A local FFmpeg integration test generates a short H.264/AAC sample, then checks that temporary sharing publishes an HLS media segment, rejects an invalid token and unsupported methods, and releases its listener when stopped. Encoder and network-interface prerequisites are detected and skipped explicitly. New playback and capture strings use the supported locale catalogs or the documented explicit English-fallback mechanism, with placeholder and source-catalog checks.
 
 Run the source and focused playback checks with:
 
@@ -78,7 +78,8 @@ flutter test --no-pub test/media/media_playlist_test.dart
 flutter test --no-pub test/mpv/player_native_bridge_test.dart
 flutter test --no-pub test/widgets/video_settings_sheet_test.dart
 flutter test --no-pub test/widgets/source_direct_player_features_test.dart
-flutter test --no-pub test/services/video_bookmark_service_test.dart
+flutter test --no-pub test/services/media_bookmark_service_test.dart
+flutter test --no-pub test/sources/universal_media_folder_test.dart
 python3 -m unittest test/tools/plezyctl_test.py
 python3 scripts/checks/clean_translations.py --check --strict
 python3 scripts/checks/check_localizations.py
