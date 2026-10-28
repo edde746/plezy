@@ -114,7 +114,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         size = resolved.size;
         headers = const {};
       } else if (candidate.url == null && candidate.infoHash != null) {
-        final resolved = await streaming.resolveTorrent(candidate, service: service);
+        final resolved = await streaming.resolveTorrent(candidate, service: service, request: widget.request);
         uri = resolved.uri;
         fileName = resolved.fileName;
         size = resolved.size;
@@ -483,7 +483,13 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                   child: Text(t.streaming.streamLookupPartial, style: Theme.of(context).textTheme.bodySmall),
                 ),
-              for (final candidate in result.candidates) _candidateTile(candidate, hasDebrid, hasHosterResolver),
+              for (final candidate in result.candidates)
+                _candidateTile(
+                  candidate,
+                  hasDebrid,
+                  hasHosterResolver,
+                  _preparationFor(candidate, streaming),
+                ),
               const SizedBox(height: 24),
             ]),
           ),
@@ -491,7 +497,22 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     );
   }
 
-  Widget _candidateTile(RemoteStreamCandidate candidate, bool hasDebrid, bool hasHosterResolver) {
+  RemotePreparationJob? _preparationFor(RemoteStreamCandidate candidate, RemoteStreamingProvider streaming) =>
+      streaming.preparationJobs
+          .where(
+            (job) =>
+                job.requestId == widget.request.id &&
+                job.infoHash.toLowerCase() == candidate.infoHash?.toLowerCase() &&
+                job.fileIndex == candidate.fileIndex,
+          )
+          .firstOrNull;
+
+  Widget _candidateTile(
+    RemoteStreamCandidate candidate,
+    bool hasDebrid,
+    bool hasHosterResolver,
+    RemotePreparationJob? preparation,
+  ) {
     final busy = _busyCandidate == '${candidate.addonId}${candidate.label}';
     final selectedSubtitle = _selectedSubtitles[_candidateKey(candidate)];
     final canPlay = candidate.url != null || candidate.infoHash != null && hasDebrid;
@@ -499,6 +520,10 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       candidate.addonName,
       if (candidate.description?.isNotEmpty == true) candidate.description!,
       if (candidate.infoHash != null && !hasDebrid) t.streaming.streamNeedsProvider,
+      if (preparation?.state == RemotePreparationState.preparing) t.streaming.streamPrepare,
+      if (preparation?.state == RemotePreparationState.failed ||
+          preparation?.state == RemotePreparationState.interrupted)
+        t.streaming.streamPrepareFailed,
       if (candidate.subtitles.isNotEmpty) t.streaming.subtitleTracks(count: candidate.subtitles.length),
       if (selectedSubtitle != null) _subtitleLabel(selectedSubtitle),
     ].join(' · ');

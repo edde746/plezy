@@ -1,13 +1,14 @@
 # Luna implementation and remaining work register
 
-This register now tracks the code on
-`codex/debrid-stremio-integration-20261028`. The branch implements connected
-debrid accounts, an on-demand cloud-file browser, Stremio account linking and
-add-on import, catalog browsing in Explore, and stream choices within existing
-title-detail flows. It does **not** complete the full R01–R16 product plan:
-cloud files are not indexed as poster rows; native P2P, background lease
-renewal, downloads and unified cross-surface media merging remain separate
-packages below. Keep those limits explicit in release notes and UI.
+This register tracks the feature branch
+`codex/debrid-stremio-integration-20261028`. The working code includes connected
+debrid accounts, Stremio account linking/catalogs/stream choices, virtual cloud
+sources, a bounded cloud-video index and Home poster row, durable preparation
+checkpoints, local downloads with encrypted mobile lease renewal, and shared
+source-player playback with local progress. It does **not** complete the full
+R01–R16 product plan: native P2P engine/package support, merged server/cloud
+media identities, and one server-and-source playback queue/chrome remain
+incomplete. Do not describe this branch as publish-ready.
 
 The owner requested implementation on a PR branch. Commit and push only to that
 branch; do not dispatch GitHub Actions or use hosted runners. The repository
@@ -20,40 +21,35 @@ requires private ephemeral JIT runners for any later authorized build/CI work.
 | Profile ownership and secrets | `RemoteStreamingProvider` follows `ActiveProfileProvider`; accounts, signed manifest URLs and descriptors are protected by `CredentialVault` in profile-scoped preferences. Browsed cloud file metadata uses the existing profile-scoped source index; signed playback links remain memory-only. Unreadable ciphertext is preserved until the user explicitly clears it. | Cloud inventory is fetched on demand and account credentials remain in the remote-stream store. OS keychain lock errors use the retry path; unrecoverable ciphertext loss requires explicit clearing and reconnect. |
 | Connection setup | Real-Debrid device authorization and AllDebrid PIN flow use the shared QR/code dialog. Premiumize and TorBox API keys are validated with their account endpoints before encrypted save. | Premiumize uses API-key setup because PlezyNG does not yet have a registered OAuth client. TorBox device flow is not wired. |
 | Stremio add-ons | HTTPS manifest validation, manual install, first-party QR account link and read-only installed-add-on import preview; catalog and stream resources, catalog search/paging, required catalog filters (including finite choice limits and free-text extras), title metadata, per-installation enable/remove, explicit manifest update check and confirmation, external links, HTTPS streams, hash/file index, request headers and subtitles. Both current per-extra `isRequired` declarations and legacy catalog-level `extraRequired` are recognized. Imported account keys are memory-only; imported manifest URLs are revalidated before encrypted profile save. Update review preserves installation identity and refuses a changed manifest ID. | Add-on configuration pages, account add-on ordering, background manifest checks, and native JavaScript add-ons are not implemented. HTTP add-ons require manual setup with explicit opt-in. |
-| Playback | Stream choices open the existing standalone `SourcePlayback`/`SourcePlayerScreen`, retain the title's external identifiers and duration, and persist local resume progress. Subtitle selection downloads a bounded file and uses the existing external-subtitle path. | This does not join the server video queue/player chrome or report remote playback to a Plex/Jellyfin/Emby server. PiP/multiview and background playback qualification are outstanding. |
-| Resolver services | Real-Debrid, AllDebrid and Premiumize resolve v1 hashes and supported file-host links. TorBox resolves cached v1 torrents only and only creates items with `add_only_if_cached`. All four providers expose on-demand video-file browsing. Real-Debrid and TorBox use their documented offset/limit controls; the focused browser exposes an accessible Load more action. When multiple services are connected, the picker asks which account to use. | AllDebrid status and Premiumize folder browsing currently consume the provider response as returned; no persisted inventory or background scan. No v2 hash resolution, uncached TorBox jobs, durable operation ledger or same-copy lease renewal. A generated CDN link can expire during long playback. |
+| Playback | Stremio streams and cloud files enter the existing `SourcePlayback`/`SourcePlayerScreen` surface. Stable source/file identity, title identifiers, duration, subtitle import and profile-local resume are retained. | This remains a separate source player from the Plex/Jellyfin/Emby video queue/chrome and does not report playback to those servers. Shared server/source queue, next episode, PiP/multiview, casting and background playback are unqualified. |
+| Resolver services | Real-Debrid, AllDebrid, Premiumize and TorBox expose cloud files and supported v1 hash or file-host resolution. TorBox hash resolution is cached-only. Torrent preparations persist provider job IDs/stages and reconcile a saved job on the next user action. | The journal is not an always-running poll/cancel worker; some providers can only find a prior job by hash. No v2 hash resolution or local P2P fallback. Provider APIs/live accounts are not qualified here. |
 | Network boundary | Add-on request headers are bounded and validated, then held in memory behind the loopback media gateway. HTTP is opt-in per add-on. HLS children inherit headers only on the same origin; redirect policy prevents HTTPS downgrade and strips sensitive headers on cross-origin redirects. | Provider-specific DNS/IP egress blocking, DASH nested-resource handling and native-engine fetch auditing remain unqualified. |
-| App integration | The existing Services hub manages accounts and add-ons; Explore loads enabled Stremio catalogs and search; Stremio catalog titles resolve metadata and movie stream options; supported library title details offer contextual stream discovery; Files and books remains one destination in the picker and nested Libraries rail. Each debrid account is a virtual file source in that browser, and the stream picker opens the same source browser once account reconciliation has completed. Cached folder identities restore nested cloud navigation after relaunch without persisting signed links. The short account-reconciliation fallback uses the same account, item and edition identities so its resume progress rejoins the shared source browser. Browsed videos enter the existing metadata index, appear in Search, open through the regular detail/player flow, and use the existing profile-local progress journal. Cloud browsing has refresh, empty/error recovery, and a path back to connection management. Shared authorization QR, copyable codes, catalog source marks, keyboard focus, and loading/error cues reuse existing UI contracts. | Inventory is discovered on demand and cloud titles do not become poster rows in Home or Libraries. Remote playback does not write progress to a Plex/Jellyfin/Emby server; the native player/P2P engine remains separate. |
+| Downloads and cloud posters | Cloud files are downloadable through the existing Files and books flow. Android/iOS native tasks persist encrypted renewal recipes that reacquire the same provider item and validate file size/revision. Other targets use the existing app-managed transfer path. Bounded background indexing populates the existing Videos shelf, Search and non-TV Home cloud poster rail. Optional Trakt metadata matching is controlled by the existing privacy disclosure. | Native background task behavior and every provider endpoint need fixture/device qualification. The index is bounded/recent and not a complete universal catalog. Home TV spotlight does not show the cloud rail. Downloads remain local copies and do not imply provider-side deletion. |
+| App integration | Existing Services, Explore, Search, Files and books, details, and source-player surfaces are reused. Each debrid account is a virtual source. Folder/file identities survive relaunch without persisting signed URLs. Source cards use the current poster cache and profile-local progress journal. | Cloud and Plex/Jellyfin/Emby entries are not deduplicated into one canonical media identity; source progress is not sent to those servers. The server player queue and source player are not unified. |
 
-On 2026-10-28, 125 focused service, provider, filter-sheet, Explore, and
-catalog-detail tests passed, including Stremio request/filter fixtures,
-manifest-update profile-boundary coverage, and Real-Debrid/TorBox cloud-page
-boundaries. The latest focused Search, source-screen, remote-cloud-adapter and
-cloud-paging run also passed all 53 tests. Whole-repository `dart analyze`
-reports no warnings or errors; one pre-existing style info remains in
-`real_debrid_client.dart`. Localization source coverage and generated output
-checks pass. No packaged app build, live account linking, imported descriptor
-fixture, provider playback, or packaged-device behavior has been qualified.
-The repository requires private ephemeral JIT runners for any authorized
-CI/build work; do not dispatch hosted CI.
+Earlier branch work had focused service/provider/UI tests and analysis recorded
+by its then-current implementation. The present working changes for durable
+preparation, cloud renewal, poster indexing, and metadata opt-in have not been
+run through Dart analysis, tests, or packaged builds in this turn. No live
+account, provider playback, background transfer, or device behavior is
+qualified. The repository requires private ephemeral JIT runners for any
+authorized CI/build work; do not dispatch hosted CI.
 
 ## Start here
 
-1. Read this folder and current `AGENTS.md`; inspect the current PR branch.
-   Current code is authoritative over this design baseline.
-2. Before implementing a remaining package, inspect its profile-binding,
-   startup, source, catalog, playback, download, PiP and multiview contracts.
-   Use existing dependency injection, HTTP factories, clocks and platform
-   abstractions.
-3. Extend the provider fixture coverage in
-   `test/services/remote_streams/remote_cloud_paging_test.dart` with synthetic
-   public test media and sanitized protocol shapes. Keep live accounts out of
-   unit tests.
-4. Promote the on-demand provider inventory into existing source/catalog
-   queries with stable account and file identities. The current Stremio
-   catalog/account-import slice is a compatibility baseline; add fixture
-   coverage for its exact first-party and add-on response shapes before
-   broadening it. Do not rewrite server clients or the entire player at once.
+1. Read current `AGENTS.md` and inspect the feature branch before extending it.
+2. Treat the following as the main remaining engineering packages: a qualified
+   native P2P engine and target packaging; a server/source shared video session
+   and queue; TV Home cloud-row composition; and tests/device qualification for
+   the new durable/download/metadata paths.
+3. Extend existing provider fixtures in
+   `test/services/remote_streams/remote_cloud_paging_test.dart` and add focused
+   tests for preparation recovery, same-file lease renewal, metadata consent,
+   profile transitions, and download restoration. Keep live account secrets
+   out of fixtures.
+4. Do not turn the source inventory into an unbounded crawl or merge titles
+   into server libraries without stable external identity evidence. Do not
+   rewrite server clients or the whole player at once.
 
 ## Current implementation map
 
@@ -66,6 +62,9 @@ CI/build work; do not dispatch hosted CI.
 | `lib/screens/settings/remote_streaming_settings_screen.dart` | Nested QR account import, selection preview and manual manifest install in the existing settings screen |
 | `lib/screens/catalog_item_detail_screen.dart` | Contextual movie streams and an accessible episode list for Stremio catalog entries, using the existing stream picker/player |
 | `lib/models/catalog/catalog_item.dart` | Optional add-on installation/item identity carried through existing catalog routes |
+| `lib/services/remote_streams/remote_streaming_provider.dart` and `remote_stream_models.dart` | Profile-encrypted preparation journal, provider job checkpoint recovery and stable cloud file reacquisition |
+| `lib/sources/content_access.dart` and `source_controller.dart` | Existing durable queue, encrypted provider-specific mobile lease renewal, bounded inventory warmup, and opt-in online metadata |
+| `lib/screens/discovery/remote_cloud_home_rail.dart` and `source_widgets.dart` | Home poster rail and metadata-enriched source cards using existing cover cache, detail route and player |
 
 Catalog source identity remains one `CatalogSourceId.stremio` value for the
 existing source contract. An item's originating installation ID and item ID
@@ -109,17 +108,17 @@ installation keys rather than shoehorning all manifests into one enum value.
 | R01 | Contracts and fixtures; none | Domain types, fake clock/HTTP harness, read-only versus mutation boundaries, safe diagnostics | Malformed response and secret-redaction fixtures pass; unknown capability stays unknown |
 | R02 | Persistence/profile lifecycle; R01 | Additive SourceDatabase migration, account registry, vault records, profile-generation cancellation | Upgrade/restart/key-loss/profile-switch tests; existing source/server data unchanged |
 | R03 | Connection UI/auth; R02 | Generic auth driver, native provider auth adapters, existing dialog integration, account detail and shortcut routes | QR/code expiry/cancel/reconnect tests; no duplicate callback/account; no hardcoded shared secrets |
-| R04 | Real-Debrid vertical slice; R03 | Cloud adapter, paged files, targeted file mapping, same-copy resolution/renewal and source progress | A fixture-backed end-to-end play/resume path plus live qualification when credentials exist |
-| R05 | Shared video presentation; R04 | Typed playback target, common chrome/controls, source/reporting adapters, next episode and slot lifecycle | Server and standalone regressions; remote subtitles/PiP/multiview tests; no fake server client |
+| R04 | Real-Debrid vertical slice; R03 | Implemented: cloud adapter, paged files, targeted file mapping, same-copy resolution/renewal and source progress | Fixture-backed end-to-end play/resume and live qualification remain outstanding |
+| R05 | Shared video presentation; R04 | Not complete: source playback uses its existing player surface; server/source common chrome, queue, reporting adapters and next-episode slot lifecycle remain | Server and standalone regressions; remote subtitles/PiP/multiview tests; no fake server client |
 | R06 | Dynamic catalog identity; R02 | Partial: one composite Stremio catalog source with per-item installation identity; broader dynamic source-key migration and episode capability | Two installations with identical manifest IDs coexist; legacy preferences still select correctly |
 | R07 | Stremio protocol; R01/R06 | Partial: HTTPS manifest/catalog/meta/stream/subtitles, bounded search/paging, current and legacy required extras, existing filter-sheet UI and finite choice limits | Focused request/filter/paging tests pass; broader protocol corpus, account ordering, configured-prefix fixture breadth and timeout isolation remain |
 | R08 | Stremio account import; R03/R07 | Partial: current first-party QR link, read-only descriptor fetch, secure selected-add-on preview; no Stremio auth key is persisted; optional history import is not included | Actual serialization fixtures; QR/sign-in live check; no remote collection/progress mutations |
-| R09 | Identity and queries; R04/R06/R07 | Identity/copy index, progressive Search/Home/Libraries/Explore projections, manual match/undo; cached debrid video entries appear in Search when no media server is connected | Duplicate and conflicting-ID cases; uncached cloud-only discovery; no forced Plex sign-in |
-| R10 | Source selection and preparation; R05/R07/R09 | Adaptive source sheet, ranking, explicit preparation authority, durable queue/reconciliation | Lost-POST response cannot duplicate work; episode packs select correctly; unknown cache is truthful |
+| R09 | Identity and queries; R04/R06/R07 | Partial: profile/account/file identities, cached cloud rows in Search and Videos shelf, bounded non-TV Home rail, optional Trakt poster matching | Cloud files are not merged with server libraries or shown in TV Spotlight; bounded warmup is not a complete catalog; ambiguous title matches remain separate |
+| R10 | Source selection and preparation; R05/R07/R09 | Partial: contextual provider selection, durable encrypted-store job checkpoints, stage/status UI, Real-Debrid/AllDebrid saved-ID recovery and TorBox hash reconciliation | No autonomous queue/cancel worker; Premiumize has no reusable provider job ID in this flow; lost-POST idempotency needs provider-specific evidence |
 | R11 | Remaining core providers; R03/R04/R10 | AllDebrid, Premiumize and TorBox using the same contracts | Provider-specific auth/envelope/file mapping/delayed/limit tests and account smoke evidence |
-| R12 | Downloads, progress and sync; R05/R09/R10/R11 | Shared queue presentation, qualified background renewal, one progress writer, tracker acknowledgements | Process-death/renewal/quota tests; existing sync unchanged; no plaintext native task descriptors |
+| R12 | Downloads, progress and sync; R05/R09/R10/R11 | Partial: cloud files use the existing local download queue; Android/iOS native callbacks hold encrypted service credentials and renew the same item; profile-local playback progress remains the source player’s writer | Provider fixture, process-death, task descriptor confidentiality, quota and device qualification are outstanding; no remote-provider progress reporting or cross-server progress merge |
 | R13 | Ecosystem adapters; R07/R11 | put.io/Debrid-Link/Seedr when contracts obtained; aggregator and file/Usenet-bridge fixtures | Per-provider capability matrix; unsupported fields produce actionable typed results |
-| R14 | Native P2P; R05/R10 | Engine selection evidence, native bridge, piece scheduling, quotas, lifecycle, packaging | Controlled swarm playback/seek tests and real target evidence; no default P2P fallback |
+| R14 | Native P2P; R05/R10 | Not implemented: choose and package a real bounded torrent engine behind a range-capable source adapter; add piece scheduling, quotas, lifecycle, and network policy | Controlled swarm playback/seek tests plus Android, iOS/tvOS, desktop, webOS and Tizen package evidence; no default P2P fallback |
 | R15 | Complete UX integration; R08/R09/R10/R12 | Find Next, existing version/quality sheet, source visibility, help, localization and accessibility | Cross-surface profile gating; D-pad/RTL/large-text checks; zero duplicate settings stores |
 | R16 | Full qualification and docs; preceding packages | Completed validation matrix, setup/troubleshooting guide, changelog/README feature entry, measured budgets | Exact commit/build/target results and explicitly enumerated external dependencies |
 

@@ -37,6 +37,8 @@ class RemoteStreamingProvider extends ChangeNotifier {
   bool get isReady => !loading && !loadFailed && _profileId != null;
   List<RemoteStreamAccount> get accounts => _snapshot.accounts;
   List<StremioAddonInstallation> get addons => _snapshot.addons;
+  List<RemotePreparationJob> get preparationJobs => _snapshot.preparations;
+  final Map<String, Future<ResolvedRemoteStream>> _activeTorrentPreparations = {};
 
   RemoteStreamAccount? accountFor(RemoteStreamService service) =>
       accounts.where((account) => account.service == service).firstOrNull;
@@ -69,7 +71,24 @@ class RemoteStreamingProvider extends ChangeNotifier {
     try {
       final snapshot = await RemoteStreamStore.load(profileId);
       if (!_current(profileId, generation)) return;
-      _snapshot = snapshot;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final recovered = snapshot.preparations
+          .map(
+            (job) => job.state == RemotePreparationState.preparing
+                ? job.copyWith(state: RemotePreparationState.interrupted, stage: 'interrupted', updatedAt: now)
+                : job,
+          )
+          .toList(growable: false);
+      final restored = snapshot.copyWith(preparations: recovered);
+      if (snapshot.preparations.any((job) => job.state == RemotePreparationState.preparing)) {
+        try {
+          await RemoteStreamStore.save(profileId, restored);
+        } on Object {
+          // A read-only settings store must not hide valid provider accounts.
+        }
+      }
+      if (!_current(profileId, generation)) return;
+      _snapshot = restored;
       loadFailed = false;
       settingsUnreadable = false;
     } on Object catch (error) {
@@ -139,7 +158,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
           manifest: manifest,
           allowHttp: allowHttp,
         );
-        return RemoteStreamSnapshot(addons: [...current.addons, installed], accounts: current.accounts);
+        return current.copyWith(addons: [...current.addons, installed]);
       });
       return installed;
     } finally {
@@ -205,12 +224,11 @@ class RemoteStreamingProvider extends ChangeNotifier {
         enabled: saved.enabled,
         allowHttp: saved.allowHttp,
       );
-      return RemoteStreamSnapshot(
+      return current.copyWith(
         addons: [
           for (final addon in current.addons)
             if (addon.id == saved.id) replacement else addon,
         ],
-        accounts: current.accounts,
       );
     });
   }
@@ -221,7 +239,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       final next = current.addons
           .map((addon) => addon.id == id ? addon.copyWith(enabled: enabled) : addon)
           .toList(growable: false);
-      return RemoteStreamSnapshot(addons: next, accounts: current.accounts);
+      return current.copyWith(addons: next);
     });
   }
 
@@ -230,10 +248,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
     await _commit(
       profile,
       generation,
-      (current) => RemoteStreamSnapshot(
-        addons: current.addons.where((addon) => addon.id != id).toList(growable: false),
-        accounts: current.accounts,
-      ),
+      (current) => current.copyWith(addons: current.addons.where((addon) => addon.id != id).toList(growable: false)),
     );
   }
 
@@ -241,7 +256,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
     final (profile, generation) = _requireProfile();
     await _commit(profile, generation, (current) {
       final next = [...current.accounts.where((saved) => saved.service != account.service), account];
-      return RemoteStreamSnapshot(addons: current.addons, accounts: next);
+      return current.copyWith(accounts: next);
     });
   }
 
@@ -250,8 +265,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
     await _commit(
       profile,
       generation,
-      (current) => RemoteStreamSnapshot(
-        addons: current.addons,
+      (current) => current.copyWith(
         accounts: current.accounts.where((account) => account.service != service).toList(growable: false),
       ),
     );
@@ -268,8 +282,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
       if (current.accounts.where((account) => account.service == updated.service).firstOrNull?.id != accountId) {
         return current;
       }
-      return RemoteStreamSnapshot(
-        addons: current.addons,
+      return current.copyWith(
         accounts: [
           for (final account in current.accounts)
             if (account.service != updated.service) account,
@@ -279,15 +292,20 @@ class RemoteStreamingProvider extends ChangeNotifier {
     });
   }
 
-  Future<ResolvedRemoteStream> resolveTorrent(RemoteStreamCandidate candidate, {RemoteStreamService? service}) async {
+  Future<ResolvedRemoteStream> resolveTorrent(
+    RemoteStreamCandidate candidate, {
+    RemoteStreamService? service,
+    RemoteStreamRequest? request,
+  }) async {
     final hash = candidate.infoHash;
-    if (hash == null) throw const RealDebridException(RealDebridFailure.unsupported);
+    if (hash == null ||
+        !RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(hash) ||
+        (candidate.fileIndex != null && (candidate.fileIndex! < 0 || candidate.fileIndex! > 1000000))) {
+      throw const RealDebridException(RealDebridFailure.unsupported);
+    }
     final profile = _profileId;
     final generation = _generation;
     if (profile == null || loading) throw const RealDebridException(RealDebridFailure.cancelled);
-    // One provider receives each preparation request. A failed provider call
-    // may have created a remote job, so silently fanning out to every account
-    // would create duplicate transfers and consume multiple quotas.
     final orderedServices = [
       RemoteStreamService.realDebrid,
       RemoteStreamService.allDebrid,
@@ -298,54 +316,203 @@ class RemoteStreamingProvider extends ChangeNotifier {
     if (selectedService == null) throw const RealDebridException(RealDebridFailure.authentication);
     final account = accountFor(selectedService);
     if (account == null) throw const RealDebridException(RealDebridFailure.authentication);
-    switch (selectedService) {
-      case RemoteStreamService.realDebrid:
-        final client = RealDebridClient(
-          account: account,
-          onAccountRefreshed: (updated) => _persistRefreshedAccount(profile, generation, account.id, updated),
-        );
-        try {
-          return await client.resolveTorrentHash(
-            hash,
-            fileIndex: candidate.fileIndex,
-            shouldCancel: () => !_current(profile, generation),
+
+    final requestKey = sourceDigest(jsonEncode([profile, account.id, hash.toLowerCase(), candidate.fileIndex]));
+    final existing = _activeTorrentPreparations[requestKey];
+    if (existing != null) return existing;
+    final preparation = _resolveTorrentWithJournal(
+      candidate,
+      hash: hash,
+      selectedService: selectedService,
+      account: account,
+      profile: profile,
+      generation: generation,
+      request: request,
+    );
+    _activeTorrentPreparations[requestKey] = preparation;
+    try {
+      return await preparation;
+    } finally {
+      if (identical(_activeTorrentPreparations[requestKey], preparation)) {
+        _activeTorrentPreparations.remove(requestKey);
+      }
+    }
+  }
+
+  Future<ResolvedRemoteStream> _resolveTorrentWithJournal(
+    RemoteStreamCandidate candidate, {
+    required String hash,
+    required RemoteStreamService selectedService,
+    required RemoteStreamAccount account,
+    required String profile,
+    required int generation,
+    required RemoteStreamRequest? request,
+  }) async {
+    final previous = _snapshot.preparations
+        .where(
+          (job) =>
+              job.service == selectedService &&
+              job.accountId == account.id &&
+              job.infoHash.toLowerCase() == hash.toLowerCase() &&
+              job.fileIndex == candidate.fileIndex &&
+              job.state != RemotePreparationState.cancelled &&
+              job.state != RemotePreparationState.failed &&
+              job.providerJobId != null,
+        )
+        .firstOrNull;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final job = RemotePreparationJob(
+      id: const Uuid().v4(),
+      accountId: account.id,
+      service: selectedService,
+      infoHash: hash.toLowerCase(),
+      title: _journalText(request?.title ?? candidate.label, 512, 'Video'),
+      requestId: _journalText(request?.id ?? hash.toLowerCase(), 512, hash.toLowerCase()),
+      requestType: _journalText(request?.type ?? 'torrent', 16, 'torrent'),
+      addonId: _journalText(candidate.addonId, 128, 'addon'),
+      label: _journalText(candidate.label, 512, 'Video'),
+      state: RemotePreparationState.preparing,
+      stage: 'starting',
+      createdAt: now,
+      updatedAt: now,
+      fileIndex: candidate.fileIndex,
+      providerJobId: previous?.providerJobId,
+    );
+    await _commit(profile, generation, (current) {
+      final retained = current.preparations.where((old) => now - old.updatedAt < const Duration(days: 14).inMilliseconds);
+      return current.copyWith(preparations: [job, ...retained.take(19)]);
+    });
+
+    String? lastStage = 'starting';
+    String? lastProviderJobId = job.providerJobId;
+    Future<void> onProgress({required String stage, String? providerJobId}) async {
+      if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      final normalized = stage.trim();
+      final safeStage = normalized.isEmpty
+          ? 'preparing'
+          : normalized.substring(0, normalized.length.clamp(0, 64).toInt());
+      if (providerJobId != null &&
+          (providerJobId.isEmpty || providerJobId.length > 128 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(providerJobId))) {
+        throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+      }
+      if (safeStage == lastStage && (providerJobId == null || providerJobId == lastProviderJobId)) return;
+      lastStage = safeStage;
+      if (providerJobId != null) lastProviderJobId = providerJobId;
+      final updatedAt = DateTime.now().millisecondsSinceEpoch;
+      await _commit(profile, generation, (current) => current.copyWith(
+        preparations: [
+          for (final old in current.preparations)
+            if (old.id == job.id)
+              old.copyWith(stage: safeStage, updatedAt: updatedAt, providerJobId: providerJobId)
+            else
+              old,
+        ],
+      ));
+    }
+
+    try {
+      late final ResolvedRemoteStream resolved;
+      switch (selectedService) {
+        case RemoteStreamService.realDebrid:
+          final client = RealDebridClient(
+            account: account,
+            onAccountRefreshed: (updated) => _persistRefreshedAccount(profile, generation, account.id, updated),
           );
-        } finally {
-          client.close();
-        }
-      case RemoteStreamService.allDebrid:
-        final client = AllDebridClient(account: account);
+          try {
+            resolved = await client.resolveTorrentHash(
+              hash,
+              fileIndex: candidate.fileIndex,
+              shouldCancel: () => !_current(profile, generation),
+              onProgress: onProgress,
+              existingJobId: job.providerJobId,
+            );
+          } finally {
+            client.close();
+          }
+          break;
+        case RemoteStreamService.allDebrid:
+          final client = AllDebridClient(account: account);
+          try {
+            resolved = await client.resolveTorrentHash(
+              hash,
+              fileIndex: candidate.fileIndex,
+              shouldCancel: () => !_current(profile, generation),
+              onProgress: onProgress,
+              existingJobId: job.providerJobId,
+            );
+          } finally {
+            client.close();
+          }
+          break;
+        case RemoteStreamService.premiumize:
+          final client = PremiumizeClient(account: account);
+          try {
+            resolved = await client.resolveTorrentHash(
+              hash,
+              fileIndex: candidate.fileIndex,
+              shouldCancel: () => !_current(profile, generation),
+              onProgress: onProgress,
+            );
+          } finally {
+            client.close();
+          }
+          break;
+        case RemoteStreamService.torbox:
+          final client = TorBoxClient(account: account);
+          try {
+            resolved = await client.resolveTorrentHash(
+              hash,
+              fileIndex: candidate.fileIndex,
+              shouldCancel: () => !_current(profile, generation),
+              onProgress: onProgress,
+            );
+          } finally {
+            client.close();
+          }
+          break;
+      }
+      if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      final completedAt = DateTime.now().millisecondsSinceEpoch;
+      await _commit(profile, generation, (current) => current.copyWith(
+        preparations: [
+          for (final old in current.preparations)
+            if (old.id == job.id)
+              old.copyWith(state: RemotePreparationState.ready, stage: 'ready', updatedAt: completedAt)
+            else
+              old,
+        ],
+      ));
+      return resolved;
+    } on Object catch (error) {
+      if (_current(profile, generation)) {
+        final cancelled = (error is RemoteProviderException && error.reason == RemoteProviderFailure.cancelled) ||
+            (error is RealDebridException && error.reason == RealDebridFailure.cancelled);
+        final failedAt = DateTime.now().millisecondsSinceEpoch;
+        final code = error is RemoteProviderException
+            ? error.reason.name
+            : error is RealDebridException
+            ? error.reason.name
+            : 'unavailable';
         try {
-          return await client.resolveTorrentHash(
-            hash,
-            fileIndex: candidate.fileIndex,
-            shouldCancel: () => !_current(profile, generation),
-          );
-        } finally {
-          client.close();
+          await _commit(profile, generation, (current) => current.copyWith(
+            preparations: [
+              for (final old in current.preparations)
+                if (old.id == job.id)
+                  old.copyWith(
+                    state: cancelled ? RemotePreparationState.cancelled : RemotePreparationState.failed,
+                    stage: cancelled ? 'cancelled' : 'failed',
+                    updatedAt: failedAt,
+                    errorCode: code,
+                  )
+                else
+                  old,
+            ],
+          ));
+        } on Object {
+          // Preserve the provider failure even if the profile store is closing.
         }
-      case RemoteStreamService.premiumize:
-        final client = PremiumizeClient(account: account);
-        try {
-          return await client.resolveTorrentHash(
-            hash,
-            fileIndex: candidate.fileIndex,
-            shouldCancel: () => !_current(profile, generation),
-          );
-        } finally {
-          client.close();
-        }
-      case RemoteStreamService.torbox:
-        final client = TorBoxClient(account: account);
-        try {
-          return await client.resolveTorrentHash(
-            hash,
-            fileIndex: candidate.fileIndex,
-            shouldCancel: () => !_current(profile, generation),
-          );
-        } finally {
-          client.close();
-        }
+      }
+      rethrow;
     }
   }
 
@@ -393,7 +560,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
     }
     if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
     return RemoteCloudPage(
-      items: List.unmodifiable(page.items.map((item) => item.withAccountId(account.id))),
+      items: List.unmodifiable(page.items.map((item) => item.withAccountId(account.id, parentProviderId: parentId))),
       nextCursor: page.nextCursor,
     );
   }
@@ -412,10 +579,31 @@ class RemoteStreamingProvider extends ChangeNotifier {
     final account = accountFor(item.service);
     if (account == null) throw const RemoteProviderException(RemoteProviderFailure.authentication);
     if (item.accountId != account.id) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+    // Cloud rows and cached source entries deliberately contain no signed
+    // links. Re-list the same provider folder each time a lease is requested
+    // so an open, resume, or gateway 401/403 retry receives a fresh link for
+    // the same provider file rather than reusing an expired URL.
+    final currentPage = await browseCloud(item.service, parentId: item.parentProviderId);
+    if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+    final currentItem = currentPage.items
+        .where(
+          (candidate) =>
+              candidate.accountId == account.id &&
+              candidate.service == item.service &&
+              candidate.kind == RemoteCloudItemKind.file &&
+              candidate.id == item.id &&
+              candidate.providerId == item.providerId &&
+              candidate.providerFileId == item.providerFileId,
+        )
+        .firstOrNull;
+    if (currentItem == null ||
+        (item.size != null && currentItem.size != null && item.size != currentItem.size)) {
+      throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+    }
     late final ResolvedRemoteStream resolved;
     switch (item.service) {
       case RemoteStreamService.realDebrid:
-        final link = item.uri;
+        final link = currentItem.uri;
         if (link == null) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
         final client = RealDebridClient(
           account: account,
@@ -428,7 +616,7 @@ class RemoteStreamingProvider extends ChangeNotifier {
         }
         break;
       case RemoteStreamService.allDebrid:
-        final link = item.uri;
+        final link = currentItem.uri;
         if (link == null) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
         final client = AllDebridClient(account: account);
         try {
@@ -438,16 +626,16 @@ class RemoteStreamingProvider extends ChangeNotifier {
         }
         break;
       case RemoteStreamService.premiumize:
-        final link = item.uri;
+        final link = currentItem.uri;
         if (link == null || link.scheme != 'https' || link.host.isEmpty || link.userInfo.isNotEmpty) {
           throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
         }
-        resolved = ResolvedRemoteStream(uri: link, fileName: item.name, size: item.size);
+        resolved = ResolvedRemoteStream(uri: link, fileName: currentItem.name, size: currentItem.size);
         break;
       case RemoteStreamService.torbox:
         final client = TorBoxClient(account: account);
         try {
-          resolved = await client.resolveCloudFile(item);
+          resolved = await client.resolveCloudFile(currentItem);
         } finally {
           client.close();
         }
@@ -544,6 +732,12 @@ class RemoteStreamingProvider extends ChangeNotifier {
   }
 
   String _canonicalManifest(Map<String, dynamic> manifest) => jsonEncode(_canonicalJson(manifest));
+
+  String _journalText(String value, int maxLength, String fallback) {
+    final clean = value.replaceAll(RegExp(r'[\x00-\x1f\x7f]'), '').trim();
+    if (clean.isEmpty) return fallback;
+    return clean.length <= maxLength ? clean : clean.substring(0, maxLength);
+  }
 
   Object? _canonicalJson(Object? value) {
     if (value is Map) {

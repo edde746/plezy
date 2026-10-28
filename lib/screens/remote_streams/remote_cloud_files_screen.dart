@@ -196,7 +196,6 @@ class _RemoteCloudFilesScreenState extends State<RemoteCloudFilesScreen> {
         name: item.name,
         mimeType: _safeMimeType(item.mimeType, item.name),
         size: item.size,
-        streamOnly: true,
       );
       final entry = SourceEntry(
         sourceId: 'remote-cloud:${item.accountId}',

@@ -1,12 +1,14 @@
 # Debrid, Stremio and remote streaming
 
 Status: the connected-stream feature is on
-`codex/debrid-stremio-integration-20261028`. It includes debrid account setup,
-on-demand cloud files, Stremio QR add-on import, add-on catalog browsing in
-Explore, and contextual stream choices on supported title details. It is not a
-native P2P engine or a unified cloud library. See
-[IMPLEMENTATION.md](IMPLEMENTATION.md) for implemented behavior and remaining
-packages.
+`codex/debrid-stremio-integration-20261028`. The working tree now also includes
+a durable cloud-file source, a bounded cloud-video index and Home poster row,
+encrypted background download renewal, and a persisted debrid preparation
+journal. The branch is not publish-ready: an embedded native P2P engine and
+platform packaging are absent, and remote viewing still uses the separate
+`SourcePlayback` player contract rather than Plezy's server video queue/chrome.
+See [IMPLEMENTATION.md](IMPLEMENTATION.md) for the exact implementation and
+qualification boundary.
 
 Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
 `a7b172b00ff437eb431fb5d3e7b8b758f4a5c422` on `main`.
@@ -28,6 +30,10 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   appears as a virtual source in that same browser. Browsed video metadata is
   cached without signed URLs, searchable from Search, and reopened through the
   existing detail and player flow.
+- Cached cloud videos appear in the existing Videos shelf and Search. Home gets
+  a bounded Cloud files poster row after background indexing; Trakt title/year
+  matching is opt-in under the existing online-metadata privacy control. TV's
+  dedicated spotlight layout does not yet include this row.
 - Browse supported Stremio add-on catalogs in the existing Explore source
   switcher; search catalogs and use each catalog's required choice or text
   filters from the existing View All filter sheet. Open installation-scoped
@@ -42,20 +48,23 @@ Prepared 2026-10-27 (America/Regina). The planning baseline was inspected at
   links, or resolve supported hash/file-host candidates through a selected
   connected provider.
 - Keep provider credentials and add-on URLs encrypted and scoped to the active
-  profile; use the existing standalone video player and local resume journal.
+  profile; use the existing source-player surface and local resume journal.
   Unreadable saved settings remain intact until the user explicitly clears
   them to reconnect; a temporarily locked device uses a retry path.
 - Read the authorization QR's service label and copy the activation code with
   assistive technology; use the Services/settings hub to manage connections.
 
-Cloud inventory is fetched on demand. Search includes videos already browsed
-into the local metadata index; cloud titles are not poster rows in Libraries or
-Home, and do not appear in Downloads until a supported download flow is used.
-Signed playback URLs are memory-only and refreshed when a cached video is
-opened. Remote playback progress stays in the profile-local Files and books
-journal and is not reported to the connected Plex/Jellyfin/Emby server. Remote
-job management, renewable/background leases, broad add-on configuration and
-an embedded P2P engine are not part of this implementation.
+Cloud inventory is browsed on demand and warmed through a bounded background
+index; signed playback URLs remain memory-only. Eligible files use the existing
+durable Downloads queue. Android/iOS native transfers store an encrypted
+provider recipe and request the same provider file again after link expiry.
+Torrent preparation jobs persist non-secret provider checkpoints so a later
+user action can reconcile an interrupted request without blindly submitting a
+second one. Cloud progress stays in the profile-local Files and books journal
+and is not reported to Plex/Jellyfin/Emby. This does not add an always-running
+preparation worker, unified server playback queue, native torrent engine, or
+platform P2P packages. Home's cloud poster row is not currently shown in the
+dedicated TV spotlight composition.
 
 ## Target experience after full completion
 
@@ -123,9 +132,8 @@ help sentence at setup, rather than requiring users to learn the architecture.
 
 | Completion level | Required outcome |
 | --- | --- |
-| Implemented vertical slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud file browsing; Stremio QR add-on import and manual manifest connection; Explore catalog/search and catalog metadata; direct, hash, file-host and subtitle choices; existing standalone player and local resume |
-| First useful vertical slice still needed | Unified cloud source rows, source metadata, durable cloud identity, server-style player integration, profile teardown evidence and same-copy expired-link recovery |
-| Core integration | Cloud catalog rows, shared Home/Search/details, source choice, preparation queue, next episode and all regression gates; the current Stremio catalog/account slice is implemented but still needs live and fixture qualification |
+| Implemented connected-source slice | Real-Debrid device sign-in, AllDebrid PIN sign-in, Premiumize/TorBox API-key validation; profile-scoped settings; on-demand cloud files and virtual sources; Stremio QR add-on import and manual manifest connection; Explore catalog/search and metadata; direct, hash, file-host and subtitle choices; source player and local resume; durable preparation checkpoints; cloud downloads with encrypted Android/iOS lease renewal; bounded Search/Videos shelf/Home poster integration with opt-in metadata |
+| Remaining core integration | Shared server/source player queue and chrome, canonical media identity and matching into server Libraries, TV spotlight composition, autonomous preparation polling/cancellation, and all regression gates; Stremio catalog/account, provider APIs, downloads, and background callbacks still need fixture, live, and device qualification |
 | Ecosystem breadth | put.io, Debrid-Link and Seedr qualification; user-configured aggregators; seedboxes and Usenet bridges through the existing file/HTTP adapters; capability-aware downloads and casting |
 | Native P2P | An actual bounded streaming engine, byte-range bridge, seek scheduling, native builds and device tests; a `magnet:` parser is not completion |
 | Full handoff scope | All preceding work packages either implemented and evidenced, or explicitly recorded with the exact external credential/device/API dependency; no placeholder success states |

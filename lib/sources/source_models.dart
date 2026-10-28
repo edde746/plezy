@@ -483,7 +483,7 @@ class ContentLease {
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
         uri.toString().length > 8192 ||
-        !const {'s3', 'googleDrive', 'oneDrive', 'dropbox'}.contains(refresh['provider'])) {
+        !const {'s3', 'googleDrive', 'oneDrive', 'dropbox', 'remoteCloud'}.contains(refresh['provider'])) {
       return false;
     }
     try {

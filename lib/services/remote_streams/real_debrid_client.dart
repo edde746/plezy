@@ -174,29 +174,56 @@ class RealDebridClient {
     }
   }
 
-  Future<ResolvedRemoteStream> resolveTorrentHash(String hash, {int? fileIndex, bool Function()? shouldCancel}) async {
+  Future<ResolvedRemoteStream> resolveTorrentHash(
+    String hash, {
+    int? fileIndex,
+    bool Function()? shouldCancel,
+    RemotePreparationProgress? onProgress,
+    String? existingJobId,
+  }) async {
     if (!RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(hash)) {
       throw const RealDebridException(RealDebridFailure.unsupported);
     }
     if (_account.service != RemoteStreamService.realDebrid) {
       throw const RealDebridException(RealDebridFailure.authentication);
     }
-    final magnet = 'magnet:?xt=urn:btih:${hash.toLowerCase()}';
-    final created = await _apiPost('/torrents/addMagnet', {'magnet': magnet});
-    final rawTorrentId = created['id'];
-    final torrentId = rawTorrentId is String ? rawTorrentId : rawTorrentId is num ? '$rawTorrentId' : '';
+    var torrentId = existingJobId ?? '';
     if (torrentId.isEmpty) {
+      final magnet = 'magnet:?xt=urn:btih:${hash.toLowerCase()}';
+      final created = await _apiPost('/torrents/addMagnet', {'magnet': magnet});
+      final rawTorrentId = created['id'];
+      torrentId = rawTorrentId is String ? rawTorrentId : rawTorrentId is num ? '$rawTorrentId' : '';
+    }
+    if (!RegExp(r'^\d{1,32}$').hasMatch(torrentId)) {
       throw const RealDebridException(RealDebridFailure.invalidResponse);
     }
+    await onProgress?.call(stage: 'provider_job_created', providerJobId: torrentId);
 
     final deadline = DateTime.now().add(const Duration(minutes: 8));
     var selectedName = '';
     int? selectedSize;
     var filesSelected = false;
+    String? lastStatus;
     while (DateTime.now().isBefore(deadline)) {
       if (shouldCancel?.call() == true) throw const RealDebridException(RealDebridFailure.cancelled);
       final info = await _apiGet('/torrents/info/${Uri.encodeComponent(torrentId)}');
+      final remoteHash = info['hash'];
+      if (remoteHash is! String || remoteHash.toLowerCase() != hash.toLowerCase()) {
+        throw const RealDebridException(RealDebridFailure.preparationFailed);
+      }
       final status = info['status'];
+      if (status is String && status != lastStatus) {
+        lastStatus = status;
+        await onProgress?.call(
+          stage: switch (status) {
+            'waiting_files_selection' => 'selecting_files',
+            'downloading' || 'queued' => 'preparing',
+            'downloaded' => 'ready',
+            _ => 'provider_processing',
+          },
+          providerJobId: torrentId,
+        );
+      }
       final files = _fileList(info['files']);
       if (!filesSelected && files.isNotEmpty && status == 'waiting_files_selection') {
         final selected = _chooseFile(files, fileIndex);
@@ -206,19 +233,24 @@ class RealDebridClient {
         selectedSize = (selected['bytes'] as num?)?.toInt();
         await _apiPost('/torrents/selectFiles/${Uri.encodeComponent(torrentId)}', {'files': '$chosenId'});
         filesSelected = true;
+        await onProgress?.call(stage: 'file_selected', providerJobId: torrentId);
         continue;
       }
       if (status == 'downloaded') {
-        if (!filesSelected && files.isNotEmpty) {
-          final selected = _chooseFile(files, fileIndex);
-          selectedName = selected['path'] as String? ?? 'Video';
-          selectedSize = (selected['bytes'] as num?)?.toInt();
-        }
+        final selectedFiles = files.where((file) => file['selected'] == 1).toList(growable: false);
+        if (selectedFiles.isEmpty) throw const RealDebridException(RealDebridFailure.preparationFailed);
+        final requestedFile = fileIndex == null ? _chooseFile(selectedFiles, null) : _chooseFile(files, fileIndex);
+        final selected = selectedFiles.where((file) => '${file['id']}' == '${requestedFile['id']}').firstOrNull;
+        if (selected == null) throw const RealDebridException(RealDebridFailure.preparationFailed);
+        final linkIndex = selectedFiles.indexWhere((file) => '${file['id']}' == '${selected['id']}');
+        if (linkIndex < 0) throw const RealDebridException(RealDebridFailure.preparationFailed);
+        selectedName = (selected['path'] as String?) ?? (selectedName.isNotEmpty ? selectedName : 'Video');
+        selectedSize = (selected['bytes'] as num?)?.toInt() ?? selectedSize;
         final links = info['links'];
-        if (links is! List || links.isEmpty || links.first is! String) {
+        if (links is! List || linkIndex >= links.length || links[linkIndex] is! String) {
           throw const RealDebridException(RealDebridFailure.invalidResponse);
         }
-        final unrestricted = await _apiPost('/unrestrict/link', {'link': links.first as String});
+        final unrestricted = await _apiPost('/unrestrict/link', {'link': links[linkIndex] as String});
         final download = unrestricted['download'];
         final uri = download is String ? Uri.tryParse(download) : null;
         if (uri == null || uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) {

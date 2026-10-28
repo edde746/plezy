@@ -804,7 +804,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
         ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          sliver: widget.shelf != null
+          sliver: widget.shelf != null || widget.source?.kind == FileSourceKind.remoteCloud
               ? SliverLayoutBuilder(
                   builder: (context, constraints) {
                     final scaler = MediaQuery.textScalerOf(context);

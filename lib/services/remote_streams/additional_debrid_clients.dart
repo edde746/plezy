@@ -93,21 +93,34 @@ class AllDebridClient {
     }
   }
 
-  Future<ResolvedRemoteStream> resolveTorrentHash(String hash, {int? fileIndex, bool Function()? shouldCancel}) async {
+  Future<ResolvedRemoteStream> resolveTorrentHash(
+    String hash, {
+    int? fileIndex,
+    bool Function()? shouldCancel,
+    RemotePreparationProgress? onProgress,
+    String? existingJobId,
+  }) async {
     if (!RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(hash)) {
       throw const RemoteProviderException(RemoteProviderFailure.unsupported);
     }
-    final uploaded = await _api('POST', '/v4/magnet/upload', fields: {'magnets[]': hash.toLowerCase()});
-    final magnets = uploaded['magnets'];
-    if (magnets is! List || magnets.isEmpty || magnets.first is! Map) {
+    var id = existingJobId ?? '';
+    if (id.isEmpty) {
+      final uploaded = await _api('POST', '/v4/magnet/upload', fields: {'magnets[]': hash.toLowerCase()});
+      final magnets = uploaded['magnets'];
+      if (magnets is! List || magnets.isEmpty || magnets.first is! Map) {
+        throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+      }
+      final rawId = (magnets.first as Map)['id'];
+      id = rawId?.toString() ?? '';
+    }
+    if (!RegExp(r'^\d{1,16}$').hasMatch(id)) {
       throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
     }
-    final rawId = (magnets.first as Map)['id'];
-    final id = rawId?.toString() ?? '';
-    if (id.isEmpty || id.length > 32) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+    await onProgress?.call(stage: 'provider_job_created', providerJobId: id);
 
     final deadline = DateTime.now().add(const Duration(minutes: 8));
     var ready = false;
+    Object? lastStatus;
     while (DateTime.now().isBefore(deadline)) {
       if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
       final status = await _api('POST', '/v4.1/magnet/status', fields: {'id': id});
@@ -116,6 +129,13 @@ class AllDebridClient {
         throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
       }
       final statusCode = (rows.first as Map)['statusCode'];
+      if (statusCode != lastStatus) {
+        lastStatus = statusCode;
+        await onProgress?.call(
+          stage: statusCode == 4 ? 'ready' : statusCode is num && statusCode >= 5 ? 'failed' : 'preparing',
+          providerJobId: id,
+        );
+      }
       if (statusCode == 4) {
         ready = true;
         break;
@@ -127,6 +147,7 @@ class AllDebridClient {
     }
     if (!ready) throw const RemoteProviderException(RemoteProviderFailure.timeout);
 
+    await onProgress?.call(stage: 'files_ready', providerJobId: id);
     final response = await _api('POST', '/v4.1/magnet/files', fields: {'id[]': id});
     final magnetRows = response['magnets'];
     if (magnetRows is! List || magnetRows.isEmpty || magnetRows.first is! Map) {
@@ -136,6 +157,7 @@ class AllDebridClient {
     _flattenAllDebridFiles((magnetRows.first as Map)['files'], '', files, 0);
     if (files.isEmpty) throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
     final selected = _selectFile(files, fileIndex);
+    await onProgress?.call(stage: 'file_selected', providerJobId: id);
     final unlocked = await _api('POST', '/v4/link/unlock', fields: {'link': selected.url.toString()});
     final rawUrl = unlocked['link'];
     final uri = rawUrl is String ? Uri.tryParse(rawUrl) : null;
@@ -205,6 +227,7 @@ class AllDebridClient {
             kind: RemoteCloudItemKind.file,
             size: file.size,
             providerId: magnetId,
+            providerFileId: file.id,
             uri: file.url,
           ),
       ],
@@ -261,11 +284,17 @@ class PremiumizeClient {
     }
   }
 
-  Future<ResolvedRemoteStream> resolveTorrentHash(String hash, {int? fileIndex, bool Function()? shouldCancel}) async {
+  Future<ResolvedRemoteStream> resolveTorrentHash(
+    String hash, {
+    int? fileIndex,
+    bool Function()? shouldCancel,
+    RemotePreparationProgress? onProgress,
+  }) async {
     if (!RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(hash)) {
       throw const RemoteProviderException(RemoteProviderFailure.unsupported);
     }
     if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+    await onProgress?.call(stage: 'provider_request');
     final response = await _http
         .post(
           Uri.parse('$_base/transfer/directdl'),
@@ -277,6 +306,7 @@ class PremiumizeClient {
     if (body['status'] != 'success') throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
     final content = body['content'];
     if (content is! List) throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+    await onProgress?.call(stage: 'files_ready');
     final files = <_DebridFile>[];
     for (final item in content) {
       if (item is! Map) continue;
@@ -292,6 +322,7 @@ class PremiumizeClient {
     }
     if (files.isEmpty) throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
     final selected = _selectFile(files, fileIndex);
+    await onProgress?.call(stage: 'file_selected');
     return ResolvedRemoteStream(uri: selected.url, fileName: selected.name, size: selected.size);
   }
 
@@ -368,6 +399,7 @@ class PremiumizeClient {
         size: _safeSize(row['size']),
         mimeType: row['mime_type'] as String?,
         providerId: id,
+        providerFileId: isFolder ? null : id,
         uri: isFolder ? null : link,
       ));
     }
@@ -415,7 +447,12 @@ class TorBoxClient {
     }
   }
 
-  Future<ResolvedRemoteStream> resolveTorrentHash(String hash, {int? fileIndex, bool Function()? shouldCancel}) async {
+  Future<ResolvedRemoteStream> resolveTorrentHash(
+    String hash, {
+    int? fileIndex,
+    bool Function()? shouldCancel,
+    RemotePreparationProgress? onProgress,
+  }) async {
     if (!RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(hash)) {
       throw const RemoteProviderException(RemoteProviderFailure.unsupported);
     }
@@ -432,6 +469,9 @@ class TorBoxClient {
           ).firstOrNull
         : null;
     var torrent = existing;
+    if (torrent != null) {
+      await onProgress?.call(stage: 'provider_job_found', providerJobId: '${torrent['id']}');
+    }
     if (torrent == null) {
       final created = await _request(
         'POST',
@@ -448,12 +488,14 @@ class TorBoxClient {
         throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
       }
       final id = data['torrent_id'].toString();
+      await onProgress?.call(stage: 'provider_job_created', providerJobId: id);
       torrent = await _loadTorrent(id);
     }
     if (shouldCancel?.call() == true) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
     if (!_isTorBoxReady(torrent)) {
       throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
     }
+    await onProgress?.call(stage: 'files_ready', providerJobId: '${torrent['id']}');
     final rawFiles = torrent['files'];
     final files = <_DebridFile>[];
     if (rawFiles is List) {
@@ -472,6 +514,7 @@ class TorBoxClient {
     }
     if (files.isEmpty) throw const RemoteProviderException(RemoteProviderFailure.preparationFailed);
     final selected = _selectFile(files, fileIndex);
+    await onProgress?.call(stage: 'file_selected', providerJobId: '${torrent['id']}');
     final downloadUri = Uri.parse('$_base/torrents/requestdl').replace(queryParameters: {
       'token': account.accessToken,
       'torrent_id': '${torrent['id']}',

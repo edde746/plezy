@@ -70,6 +70,7 @@ import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
 import 'discovery/find_next_screen.dart';
+import 'discovery/remote_cloud_home_rail.dart';
 import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
@@ -1075,6 +1076,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       slivers: [
         if (!isTv) SliverToBoxAdapter(child: SizedBox(height: topSpacerHeight)),
         if (showLegacyHero) _buildHeroSection(),
+        const SliverToBoxAdapter(child: RemoteCloudHomeRail()),
         if (_isLoading) LoadingIndicatorBox.sliver,
         if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
         if (!_isLoading && _errorMessage == null) ...[

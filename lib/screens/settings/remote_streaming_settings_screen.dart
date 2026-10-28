@@ -13,6 +13,7 @@ import '../../services/remote_streams/remote_stream_models.dart';
 import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../services/remote_streams/stremio_account_client.dart';
 import '../../services/remote_streams/stremio_addon_client.dart';
+import '../../sources/source_controller.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -30,6 +31,10 @@ class RemoteStreamingSettingsScreen extends StatefulWidget {
 
 class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsScreen> {
   bool _connecting = false;
+  bool _cloudMetadataSaving = false;
+  String? _cloudMetadataProfile;
+  SourceController? _cloudMetadataController;
+  Future<bool>? _cloudMetadataFuture;
   final Set<String> _checkingAddonIds = {};
 
   Future<void> _copyAuthorizationCode(String value) async {
@@ -450,6 +455,20 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
     );
   }
 
+  Future<void> _setCloudMetadata(SourceController sources, String profile, bool enabled) async {
+    if (_cloudMetadataSaving) return;
+    setState(() => _cloudMetadataSaving = true);
+    try {
+      await sources.setRemoteCloudMetadataEnabled(enabled);
+      if (!mounted || sources.profileId != profile) return;
+      setState(() => _cloudMetadataFuture = Future.value(enabled));
+    } on Object {
+      if (mounted) showAppSnackBar(context, t.streaming.settingsLoadFailed);
+    } finally {
+      if (mounted) setState(() => _cloudMetadataSaving = false);
+    }
+  }
+
   Widget _providerTile({
     required RemoteStreamService service,
     required String label,
@@ -491,6 +510,15 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
 
   @override
   Widget build(BuildContext context) {
+    final sourceController = context.watch<SourceController>();
+    final currentProfile = sourceController.profileId;
+    if (currentProfile != _cloudMetadataProfile || !identical(_cloudMetadataController, sourceController)) {
+      _cloudMetadataProfile = currentProfile;
+      _cloudMetadataController = sourceController;
+      _cloudMetadataFuture = currentProfile == null
+          ? Future.value(false)
+          : sourceController.remoteCloudMetadataEnabled();
+    }
     return Consumer<RemoteStreamingProvider>(
       builder: (context, streaming, _) {
         final realDebrid = streaming.accountFor(RemoteStreamService.realDebrid);
@@ -616,6 +644,21 @@ class _RemoteStreamingSettingsScreenState extends State<RemoteStreamingSettingsS
                 SettingsGroup(
                   title: t.streaming.providers,
                   children: [
+                    if (streaming.accounts.isNotEmpty && currentProfile != null)
+                      FutureBuilder<bool>(
+                        future: _cloudMetadataFuture,
+                        builder: (context, snapshot) => FocusableSwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                          title: Text(t.sourceSetup.automaticMetadata),
+                          subtitle: Text(t.sourceSetup.metadataPrivacy),
+                          value: snapshot.data ?? false,
+                          onChanged: !snapshot.hasData || _cloudMetadataSaving
+                              ? null
+                              : (enabled) => unawaited(
+                                  _setCloudMetadata(sourceController, currentProfile!, enabled),
+                                ),
+                        ),
+                      ),
                     _providerTile(
                       service: RemoteStreamService.realDebrid,
                       label: t.streaming.realDebrid,

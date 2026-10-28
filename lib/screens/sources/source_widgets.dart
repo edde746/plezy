@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -233,17 +234,109 @@ class _SourceCoverState extends State<SourceCover> {
   );
 }
 
-class SourcePosterCard extends StatelessWidget {
+class SourcePosterCard extends StatefulWidget {
   const SourcePosterCard({super.key, required this.entry, required this.onTap, this.progress});
   final SourceEntry entry;
   final VoidCallback onTap;
   final double? progress;
+
+  @override
+  State<SourcePosterCard> createState() => _SourcePosterCardState();
+}
+
+class _SourcePosterCardState extends State<SourcePosterCard> {
+  late SourceEntry _entry = widget.entry;
+  SourceController? _sources;
+  bool _lookupStarted = false;
+  String? _lookupProfile;
+  String? _metadataSetting;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final sources = context.read<SourceController?>();
+    if (!identical(_sources, sources)) {
+      _sources?.removeListener(_onSourcesChanged);
+      _sources = sources;
+      _sources?.addListener(_onSourcesChanged);
+      _lookupStarted = false;
+      _lookupProfile = null;
+    }
+    _metadataSetting = _currentMetadataSetting;
+    _scheduleMetadataLookup();
+  }
+
+  String? get _currentMetadataSetting => _sources?.sources
+      .where((item) => item.id == _entry.sourceId)
+      .firstOrNull
+      ?.options['onlineMetadata'];
+
+  void _onSourcesChanged() {
+    final profile = _sources?.profileId;
+    if (profile != _lookupProfile) _lookupStarted = false;
+    final metadataSetting = _currentMetadataSetting;
+    if (metadataSetting != _metadataSetting) {
+      _metadataSetting = metadataSetting;
+      if (metadataSetting == 'true') _lookupStarted = false;
+    }
+    _scheduleMetadataLookup();
+  }
+
+  @override
+  void didUpdateWidget(covariant SourcePosterCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.entry.key != widget.entry.key || oldWidget.entry.sourceId != widget.entry.sourceId) {
+      _entry = widget.entry;
+      _lookupStarted = false;
+      _lookupProfile = null;
+      _scheduleMetadataLookup();
+    } else {
+      _entry = widget.entry;
+    }
+  }
+
+  void _scheduleMetadataLookup() {
+    if (_lookupStarted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_identifyMetadata()));
+  }
+
+  Future<void> _identifyMetadata() async {
+    if (!mounted || _lookupStarted) return;
+    final sources = _sources;
+    if (sources == null || sources.blocked || sources.profileId == null) return;
+    final source = sources.sources.where((item) => item.id == _entry.sourceId).firstOrNull;
+    if (source == null || source.options['onlineMetadata'] != 'true' || _entry.kind != SourceItemKind.video) return;
+    _lookupStarted = true;
+    final profile = sources.profileId!;
+    final epoch = sources.generation;
+    _lookupProfile = profile;
+    try {
+      final identified = await sources.identifyOnlineMetadata(_entry);
+      if (mounted &&
+          sources.profileId == profile &&
+          sources.current(epoch) &&
+          _lookupProfile == profile &&
+          identified.key == _entry.key) {
+        setState(() => _entry = identified);
+      }
+    } on Object {
+      // Poster matching is a progressive enhancement; the file title and
+      // fallback artwork remain available when metadata providers are offline.
+    }
+  }
+
+  @override
+  void dispose() {
+    _sources?.removeListener(_onSourcesChanged);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => FocusableWrapper(
-    onSelect: onTap,
+    onSelect: widget.onTap,
     borderRadius: tokens(context).radiusMd,
     child: InkWell(
-      onTap: onTap,
+      onTap: widget.onTap,
       canRequestFocus: false,
       borderRadius: BorderRadius.circular(tokens(context).radiusMd),
       child: Column(
@@ -253,13 +346,13 @@ class SourcePosterCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                SourceCover(entry: entry),
-                if (progress != null)
+                SourceCover(entry: _entry),
+                if (widget.progress != null)
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: LinearProgressIndicator(
-                      value: progress!.clamp(0, 1),
-                      semanticsValue: formatPercent(progress!.clamp(0, 1)),
+                      value: widget.progress!.clamp(0, 1),
+                      semanticsValue: formatPercent(widget.progress!.clamp(0, 1)),
                       minHeight: 3,
                     ),
                   ),
@@ -268,14 +361,14 @@ class SourcePosterCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            isolateDisplayText(entry.displayTitle),
+            isolateDisplayText(_entry.displayTitle),
             style: Theme.of(context).textTheme.titleSmall,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          if (entry.author.isNotEmpty)
+          if (_entry.author.isNotEmpty)
             Text(
-              isolateDisplayText(entry.author),
+              isolateDisplayText(_entry.author),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

@@ -5,6 +5,7 @@ import '../../services/remote_streams/remote_stream_models.dart';
 typedef RemoteCloudPageLoader = Future<RemoteCloudPage> Function({String? parentId, String? cursor});
 typedef RemoteCloudContentResolver = Future<ContentLease> Function(RemoteCloudItem item);
 typedef RemoteCloudParentIdLoader = Future<String?> Function(String entryId);
+typedef RemoteCloudEntryLoader = Future<SourceEntry?> Function(String entryId);
 
 /// Presents one connected debrid account as a virtual file source.
 ///
@@ -19,6 +20,7 @@ class RemoteCloudSourceAdapter extends SourceAdapter {
     required this.loadPage,
     required this.resolveContent,
     this.loadParentProviderId,
+    this.loadEntryById,
   });
 
   final RemoteStreamService service;
@@ -26,6 +28,7 @@ class RemoteCloudSourceAdapter extends SourceAdapter {
   final RemoteCloudPageLoader loadPage;
   final RemoteCloudContentResolver resolveContent;
   final RemoteCloudParentIdLoader? loadParentProviderId;
+  final RemoteCloudEntryLoader? loadEntryById;
 
   final Map<String, RemoteCloudItem> _items = {};
   final Map<String, String> _folderProviderIds = {};
@@ -98,7 +101,7 @@ class RemoteCloudSourceAdapter extends SourceAdapter {
           kind: SourceItemKind.video,
           parentId: parent,
           identifiers: identifiers,
-          files: [PublicationFile(id: item.id, name: item.name, mimeType: mimeType, size: item.size, streamOnly: true)],
+          files: [PublicationFile(id: item.id, name: item.name, mimeType: mimeType, size: item.size)],
         ),
       );
     }
@@ -136,8 +139,17 @@ class RemoteCloudSourceAdapter extends SourceAdapter {
 
   @override
   Future<ContentLease> resolve(PublicationFile file) async {
-    if (!file.streamOnly) throw const SourceException(SourceFailure.unsupported);
-    final item = _items[file.id];
+    if (file.kind != SourceItemKind.video || file.id.isEmpty || file.id.length > 1024) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    var item = _items[file.id];
+    if (item == null) {
+      final cachedEntry = await loadEntryById?.call(file.id);
+      if (cachedEntry != null && cachedEntry.sourceId == source.id && cachedEntry.kind == SourceItemKind.video) {
+        await hydrate(cachedEntry);
+        item = _items[file.id];
+      }
+    }
     if (item == null ||
         item.accountId != accountId ||
         item.service != service ||

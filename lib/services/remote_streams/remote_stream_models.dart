@@ -27,6 +27,7 @@ class RemoteCloudItem {
     this.mimeType,
     this.providerId,
     this.providerFileId,
+    this.parentProviderId,
     this.uri,
     this.accountId,
   });
@@ -39,10 +40,11 @@ class RemoteCloudItem {
   final String? mimeType;
   final String? providerId;
   final String? providerFileId;
+  final String? parentProviderId;
   final Uri? uri;
   final String? accountId;
 
-  RemoteCloudItem withAccountId(String value) => RemoteCloudItem(
+  RemoteCloudItem withAccountId(String value, {String? parentProviderId}) => RemoteCloudItem(
     id: id,
     name: name,
     service: service,
@@ -51,6 +53,7 @@ class RemoteCloudItem {
     mimeType: mimeType,
     providerId: providerId,
     providerFileId: providerFileId,
+    parentProviderId: parentProviderId ?? this.parentProviderId,
     uri: uri,
     accountId: value,
   );
@@ -217,16 +220,166 @@ class StremioAddonUpdateCheck {
   String get latestVersion => latestManifest['version'] as String? ?? '';
 }
 
+enum RemotePreparationState { preparing, ready, failed, cancelled, interrupted }
+
+typedef RemotePreparationProgress = Future<void> Function({required String stage, String? providerJobId});
+
+/// Durable, non-secret checkpoint for one user-requested debrid preparation.
+/// Provider credentials and resolved links never enter this record.
+class RemotePreparationJob {
+  const RemotePreparationJob({
+    required this.id,
+    required this.accountId,
+    required this.service,
+    required this.infoHash,
+    required this.title,
+    required this.requestId,
+    required this.requestType,
+    required this.addonId,
+    required this.label,
+    required this.state,
+    required this.stage,
+    required this.createdAt,
+    required this.updatedAt,
+    this.fileIndex,
+    this.providerJobId,
+    this.errorCode,
+  });
+
+  final String id;
+  final String accountId;
+  final RemoteStreamService service;
+  final String infoHash;
+  final String title;
+  final String requestId;
+  final String requestType;
+  final String addonId;
+  final String label;
+  final RemotePreparationState state;
+  final String stage;
+  final int createdAt;
+  final int updatedAt;
+  final int? fileIndex;
+  final String? providerJobId;
+  final String? errorCode;
+
+  RemotePreparationJob copyWith({
+    RemotePreparationState? state,
+    String? stage,
+    int? updatedAt,
+    String? providerJobId,
+    String? errorCode,
+  }) => RemotePreparationJob(
+    id: id,
+    accountId: accountId,
+    service: service,
+    infoHash: infoHash,
+    title: title,
+    requestId: requestId,
+    requestType: requestType,
+    addonId: addonId,
+    label: label,
+    state: state ?? this.state,
+    stage: stage ?? this.stage,
+    createdAt: createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    fileIndex: fileIndex,
+    providerJobId: providerJobId ?? this.providerJobId,
+    errorCode: errorCode ?? this.errorCode,
+  );
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'accountId': accountId,
+    'service': service.name,
+    'infoHash': infoHash,
+    'title': title,
+    'requestId': requestId,
+    'requestType': requestType,
+    'addonId': addonId,
+    'label': label,
+    'state': state.name,
+    'stage': stage,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'fileIndex': fileIndex,
+    'providerJobId': providerJobId,
+    'errorCode': errorCode,
+  };
+
+  factory RemotePreparationJob.fromJson(Map<String, dynamic> json) => RemotePreparationJob(
+    id: _requiredRemoteText(json, 'id', 128),
+    accountId: _requiredRemoteText(json, 'accountId', 128),
+    service: RemoteStreamService.values.byName(_requiredRemoteText(json, 'service', 32)),
+    infoHash: _requiredRemoteHash(json),
+    title: _requiredRemoteText(json, 'title', 512),
+    requestId: _requiredRemoteText(json, 'requestId', 512),
+    requestType: _requiredRemoteText(json, 'requestType', 16),
+    addonId: _requiredRemoteText(json, 'addonId', 128),
+    label: _requiredRemoteText(json, 'label', 512),
+    state: RemotePreparationState.values.byName(_requiredRemoteText(json, 'state', 32)),
+    stage: _requiredRemoteText(json, 'stage', 64),
+    createdAt: _remoteInt(json['createdAt']),
+    updatedAt: _remoteInt(json['updatedAt']),
+    fileIndex: _optionalRemoteIndex(json['fileIndex']),
+    providerJobId: _optionalRemoteText(json, 'providerJobId', 128),
+    errorCode: _optionalRemoteText(json, 'errorCode', 64),
+  );
+}
+
+String _requiredRemoteText(Map<String, dynamic> json, String key, int maxLength) {
+  final value = json[key];
+  if (value is! String || value.isEmpty || value.length > maxLength || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value)) {
+    throw const FormatException('Invalid remote preparation field');
+  }
+  return value;
+}
+
+int _remoteInt(Object? value) => value is int && value >= 0 ? value : throw const FormatException('Invalid timestamp');
+
+String? _optionalRemoteText(Map<String, dynamic> json, String key, int maxLength) {
+  final value = json[key];
+  if (value == null) return null;
+  if (value is! String || value.isEmpty || value.length > maxLength || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value)) {
+    throw const FormatException('Invalid optional remote preparation field');
+  }
+  return value;
+}
+
+int? _optionalRemoteIndex(Object? value) {
+  if (value == null) return null;
+  if (value is int && value >= 0 && value <= 1000000) return value;
+  throw const FormatException('Invalid file index');
+}
+
+String _requiredRemoteHash(Map<String, dynamic> json) {
+  final value = _requiredRemoteText(json, 'infoHash', 40);
+  if (!RegExp(r'^[0-9a-fA-F]{40}$').hasMatch(value)) throw const FormatException('Invalid preparation hash');
+  return value;
+}
+
 class RemoteStreamSnapshot {
-  const RemoteStreamSnapshot({this.accounts = const [], this.addons = const []});
+  const RemoteStreamSnapshot({this.accounts = const [], this.addons = const [], this.preparations = const []});
 
   final List<RemoteStreamAccount> accounts;
   final List<StremioAddonInstallation> addons;
+  final List<RemotePreparationJob> preparations;
+
+  RemoteStreamSnapshot copyWith({
+    List<RemoteStreamAccount>? accounts,
+    List<StremioAddonInstallation>? addons,
+    List<RemotePreparationJob>? preparations,
+  }) => RemoteStreamSnapshot(
+    accounts: accounts ?? this.accounts,
+    addons: addons ?? this.addons,
+    preparations: preparations ?? this.preparations,
+  );
 
   Map<String, Object?> toJson() => {
     'version': 1,
     'accounts': accounts.map((account) => account.toJson()).toList(),
     'addons': addons.map((addon) => addon.toJson()).toList(),
+    'preparations': preparations.map((job) => job.toJson()).toList(),
   };
 
   String encode() => jsonEncode(toJson());
@@ -237,11 +390,24 @@ class RemoteStreamSnapshot {
     if (json['version'] != 1) throw const FormatException('Unsupported remote-stream snapshot');
     final rawAccounts = json['accounts'] as List? ?? const [];
     final rawAddons = json['addons'] as List? ?? const [];
+    final rawPreparationValue = json['preparations'];
+    final rawPreparations = rawPreparationValue is List ? rawPreparationValue : const [];
     if (rawAccounts.length > RemoteStreamService.values.length || rawAddons.length > 50) {
       throw const FormatException('Remote-stream snapshot has too many entries');
     }
     if (rawAccounts.any((row) => row is! Map) || rawAddons.any((row) => row is! Map)) {
       throw const FormatException('Remote-stream snapshot contains an invalid entry');
+    }
+    // The preparation journal is an optional additive extension. A damaged
+    // checkpoint must not make previously valid account credentials unreadable.
+    final preparations = <RemotePreparationJob>[];
+    for (final row in rawPreparations.take(50)) {
+      if (row is! Map) continue;
+      try {
+        preparations.add(RemotePreparationJob.fromJson(Map<String, dynamic>.from(row)));
+      } on Object {
+        continue;
+      }
     }
     return RemoteStreamSnapshot(
       accounts: rawAccounts
@@ -250,6 +416,7 @@ class RemoteStreamSnapshot {
       addons: rawAddons
           .map((row) => StremioAddonInstallation.fromJson(Map<String, dynamic>.from(row)))
           .toList(growable: false),
+      preparations: preparations,
     );
   }
 }

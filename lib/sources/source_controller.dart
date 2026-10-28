@@ -64,6 +64,8 @@ Uri? _trustedOnlineTrailerUri(String? value) {
   return null;
 }
 
+const _remoteCloudMetadataPreference = 'remote-cloud-online-metadata';
+
 class SourceController extends ChangeNotifier {
   // The public injection name avoids exposing the provider as part of the
   // SourceController interface; the backing dependency stays immutable.
@@ -177,6 +179,9 @@ class SourceController extends ChangeNotifier {
     }
 
     final profile = profileId!;
+    final metadataPreference = await repository.preference(profile, _remoteCloudMetadataPreference);
+    if (!current(epoch) || profileId != profile) return;
+    final onlineMetadata = metadataPreference['enabled'] == 'true' ? 'true' : 'false';
     final remoteSources = [
       for (final account in remote.accounts)
         FileSource(
@@ -185,7 +190,7 @@ class SourceController extends ChangeNotifier {
           kind: FileSourceKind.remoteCloud,
           name: account.displayName,
           endpoint: 'remote-cloud://${account.service.name}/${Uri.encodeComponent(account.id)}',
-          options: {'accountId': account.id, 'service': account.service.name},
+          options: {'accountId': account.id, 'service': account.service.name, 'onlineMetadata': onlineMetadata},
         ),
     ];
     final nextIds = remoteSources.map((source) => source.id).toSet();
@@ -225,12 +230,103 @@ class SourceController extends ChangeNotifier {
               previous.name != source.name ||
               previous.endpoint != source.endpoint ||
               previous.options['service'] != source.options['service'] ||
-              previous.options['accountId'] != source.options['accountId'];
+              previous.options['accountId'] != source.options['accountId'] ||
+              previous.options['onlineMetadata'] != source.options['onlineMetadata'];
         });
     sources = nextSources;
     if (!changed) return;
     await _shelves(profile, epoch);
-    if (current(epoch)) _notify();
+    if (!current(epoch)) return;
+    await downloads.restoreProfile(profile, (sourceId) {
+      if (!current(epoch) || !sources.any((source) => source.id == sourceId)) return null;
+      try {
+        return adapter(sourceId);
+      } on Object {
+        return null;
+      }
+    });
+    if (!current(epoch)) return;
+    _notify();
+    for (final source in remoteSources) {
+      unawaited(_warmRemoteCloudIndex(source, epoch).catchError((Object _) {}));
+    }
+  }
+
+  Future<void> _warmRemoteCloudIndex(FileSource source, int epoch) async {
+    if (!current(epoch) || source.kind != FileSourceKind.remoteCloud || source.profileId != profileId) return;
+    final profile = source.profileId;
+    final preferenceKey = 'remote-cloud-index-warm-v1:${source.id}';
+    final previous = await repository.preference(profile, preferenceKey);
+    if (!current(epoch) || !sources.any((value) => value.id == source.id)) return;
+    final lastIndexedAt = int.tryParse(previous['completedAt'] ?? '');
+    if (lastIndexedAt != null &&
+        DateTime.now().millisecondsSinceEpoch - lastIndexedAt < const Duration(hours: 12).inMilliseconds) {
+      return;
+    }
+
+    // Index one recent page of cloud containers, then only a small number of
+    // their contents. This gives Home and the video shelf useful poster rows
+    // without turning profile startup into an account-wide inventory crawl.
+    final root = await browse(source.id);
+    if (!current(epoch)) return;
+    final folders = <({SourceEntry entry, int depth})>[
+      for (final entry in root.entries.where((entry) => entry.isFolder)) (entry: entry, depth: 1),
+    ];
+    final visited = <String>{};
+    var folderIndex = 0;
+    var indexedEntries = root.entries.length;
+    while (folderIndex < folders.length && folderIndex < 12 && indexedEntries < 1200) {
+      if (!current(epoch) || !sources.any((value) => value.id == source.id)) return;
+      final folder = folders[folderIndex++];
+      if (folder.depth > 4 || !visited.add(folder.entry.id)) continue;
+      final page = await browse(source.id, parent: folder.entry.id);
+      if (!current(epoch)) return;
+      indexedEntries += page.entries.length;
+      for (final child in page.entries.where((entry) => entry.isFolder)) {
+        if (folders.length < 120) folders.add((entry: child, depth: folder.depth + 1));
+      }
+    }
+    if (!current(epoch)) return;
+    await repository.savePreference(profile, preferenceKey, {
+      'completedAt': '${DateTime.now().millisecondsSinceEpoch}',
+      'indexedEntries': '$indexedEntries',
+    });
+  }
+
+  Future<bool> remoteCloudMetadataEnabled() async {
+    await ready;
+    requireSession();
+    final profile = profileId!;
+    final epoch = generation;
+    final preference = await repository.preference(profile, _remoteCloudMetadataPreference);
+    requireSession(epoch);
+    return preference['enabled'] == 'true';
+  }
+
+  Future<void> setRemoteCloudMetadataEnabled(bool enabled) async {
+    await ready;
+    requireSession();
+    final profile = profileId!;
+    final epoch = generation;
+    await repository.savePreference(profile, _remoteCloudMetadataPreference, {'enabled': '$enabled'});
+    requireSession(epoch);
+    final value = enabled ? 'true' : 'false';
+    sources = [
+      for (final source in sources)
+        if (source.kind == FileSourceKind.remoteCloud)
+          FileSource(
+            id: source.id,
+            profileId: source.profileId,
+            kind: source.kind,
+            name: source.name,
+            endpoint: source.endpoint,
+            root: source.root,
+            options: {...source.options, 'onlineMetadata': value},
+          )
+        else
+          source,
+    ];
+    _notify();
   }
 
   void _cancelImports({String? sourceId}) {
@@ -656,7 +752,42 @@ class SourceController extends ChangeNotifier {
       }
       final resolved = await remote.resolveCloudFile(item);
       checkAccount();
-      return ContentLease(resolved.uri, size: resolved.size ?? item.size);
+      final size = resolved.size ?? item.size;
+      final account = remote.accountFor(service);
+      final canRefresh = account != null &&
+          account.id == accountId &&
+          size != null &&
+          size > 0 &&
+          item.providerId != null &&
+          item.providerFileId != null;
+      final backgroundRefresh = canRefresh
+          ? <String, dynamic>{
+              'provider': 'remoteCloud',
+              'service': service.name,
+              'accountId': accountId,
+              'accessToken': account!.accessToken,
+              if (account!.refreshToken != null) 'refreshToken': account.refreshToken,
+              if (account!.clientId != null) 'clientId': account.clientId,
+              if (account!.clientSecret != null) 'clientSecret': account.clientSecret,
+              if (account!.expiresAt != null) 'expiresAt': account.expiresAt,
+              'providerId': item.providerId,
+              'providerFileId': item.providerFileId,
+              if (item.parentProviderId != null) 'parentProviderId': item.parentProviderId,
+              'size': size,
+              'revision': service == RemoteStreamService.premiumize
+                  ? 'premiumize:${item.parentProviderId ?? 'root'}:${item.providerFileId}:$size'
+                  : '${service.name}:${item.providerId}:${item.providerFileId}:$size',
+            }
+          : null;
+      return ContentLease(
+        resolved.uri,
+        size: size,
+        // Treat provider links as short-lived capabilities: native tasks use
+        // the encrypted recipe below to request this exact file again.
+        expiresAt: canRefresh ? DateTime.now().add(const Duration(minutes: 10)) : null,
+        backgroundTransferSafe: canRefresh,
+        backgroundRefresh: backgroundRefresh,
+      );
     }
 
     Future<String?> loadParentProviderId(String entryId) async {
@@ -669,6 +800,13 @@ class SourceController extends ChangeNotifier {
       return providerId;
     }
 
+    Future<SourceEntry?> loadEntryById(String entryId) async {
+      checkAccount();
+      final entry = await repository.entryById(source.profileId, source.id, entryId);
+      checkAccount();
+      return entry;
+    }
+
     return RemoteCloudSourceAdapter(
       source,
       transport,
@@ -677,6 +815,7 @@ class SourceController extends ChangeNotifier {
       loadPage: loadPage,
       resolveContent: resolveContent,
       loadParentProviderId: loadParentProviderId,
+      loadEntryById: loadEntryById,
     );
   }
 
@@ -700,6 +839,29 @@ class SourceController extends ChangeNotifier {
     shelves.addAll(PublicationShelf.values.where((s) => entries.any(s.includes)));
     _notify();
     return SourcePage(entries, next: page.next, title: page.title);
+  }
+
+  /// Bounded, profile-scoped slice for the Home cloud poster rail. This reads
+  /// only files the user has already browsed or indexed; it never fans out to
+  /// provider APIs while Home is building.
+  Future<List<SourceEntry>> recentRemoteCloudVideos({int limit = 12}) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final boundedLimit = limit.clamp(1, 24).toInt();
+    final cloudSources = sources.where((source) => source.kind == FileSourceKind.remoteCloud).toList(growable: false);
+    if (cloudSources.isEmpty) return const [];
+    final pages = await Future.wait([
+      for (final source in cloudSources)
+        repository.recentEntries(profile, source: source.id, limit: boundedLimit * 2),
+    ]);
+    requireSession(epoch);
+    final seen = <String>{};
+    return [
+      for (final page in pages)
+        for (final entry in page)
+          if (entry.kind == SourceItemKind.video && !entry.unavailable && seen.add(entry.key)) entry,
+    ].take(boundedLimit).toList(growable: false);
   }
 
   Future<SourceEntry> hydrate(SourceEntry entry) async {
@@ -800,6 +962,9 @@ class SourceController extends ChangeNotifier {
     try {
       final metadata = await _videoMetadata.identify(current);
       requireSession(epoch);
+      if (!sources.any((item) => item.id == source.id && item.options['onlineMetadata'] == 'true')) {
+        return current;
+      }
       if (metadata == null) {
         final checked = _withSyncIdentity(
           source,
