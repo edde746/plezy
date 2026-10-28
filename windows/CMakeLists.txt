@@ -127,7 +127,7 @@ endif()
 # ORT 1.27.1 runtime and the provider catalog API; certified hardware EPs are
 # selected and made ready at runtime by the user's explicit Neural setting.
 set(PLEZY_WINML_VERSION "2.4.89")
-set(PLEZY_WINML_SHA256 "5c68ecfb947223267abf159a023f5192ad42725e4e9cc995e7c1470dd54dff63a")
+set(PLEZY_WINML_SHA256 "5c68ecfb947223267abf159a023f5192ad42725e4e9cc995e7c1470dd54dff63")
 set(PLEZY_WINML_PACKAGE_ROOT "" CACHE PATH "Optional pre-extracted Windows ML NuGet package root")
 if(PLEZY_WINML_PACKAGE_ROOT)
   if(NOT EXISTS "${PLEZY_WINML_PACKAGE_ROOT}/build/cmake")
