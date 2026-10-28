@@ -28,7 +28,8 @@ prioritize seek targets and bounded read-ahead, and request disk reads only
 after libtorrent reports a verified piece. The defaults cap a lease at 4 GiB
 including boundary-piece allowance, 64 peer connections, eight cached pieces,
 and 256 KiB/s upload. Metadata rejects more than 10,000 files and pieces over
-16 MiB. The app permits two active leases. Each lease owns its session and
+16 MiB. The app permits two active or opening leases; reservation happens
+before any async metadata work. Each lease owns its session and
 private spool; player release, profile change and disabling native playback
 close it. Stale spools are removed on subsequent use.
 
@@ -89,14 +90,22 @@ stale state. Connections use a busy timeout and WAL.
 
 A foreground preparation, manual retry or background recovery must claim the
 profile/job pair with a unique attempt owner. Active attempts renew their claim
-every thirty seconds. Claims expire after ten minutes; release checks the owner so
-an old process cannot release its successor's claim. Two recoveries at most
-run concurrently. Saved Real-Debrid, AllDebrid and TorBox job IDs are reused;
+every thirty seconds. Claims expire after ten minutes. Every checkpoint
+verifies the current owner
+and unexpired claim inside the same SQLite write transaction. Expired owners
+cannot renew or publish after a successor takes over; renewal failure stops
+the old attempt. Release checks the owner. Recovery passes share a single
+bounded two-worker queue, including overlapping refresh/retry requests. Saved
+Real-Debrid, AllDebrid and TorBox job IDs are reused;
 resuming does not create a replacement torrent. A normal long-running provider
 download does not exhaust the transient-error retry allowance. Missing jobs,
 cancelled jobs, removed accounts and profile changes stop polling. Profile
 deletion writes a tombstone so an already-running worker cannot resurrect its
-encrypted account state or canonical records.
+encrypted account state or canonical records. Explicit journal replacement
+also honors the tombstone. Removed/replaced accounts cancel their local jobs;
+orphaned jobs do not keep OS tasks alive. Foreground requests reuse the durable
+job identity and provider checkpoint; live jobs cannot be evicted by history
+trimming. Initial journal creation is covered by claim cleanup as well.
 
 Idle task removal is ordered with journal writes under a SQLite transaction.
 New preparations recheck OS installation; a foreground process cannot rely on
@@ -131,17 +140,46 @@ Home's cloud rail suppresses canonical duplicates and opens the same source
 sheet. Hidden libraries and the active profile remain authoritative. Removing
 a cloud source removes its availability without deleting another copy's card.
 Disconnected server choices cannot be launched as though they were online.
+Search, hidden-library and removed-server filters execute before pagination.
+A complete successful refresh reconciles missing server copies while retaining
+other copies, card IDs and aliases. Partial/offline scans never prune. Normal
+browsing reuses the index for five minutes; explicit refresh invalidates it.
+
+## Shared player and cross-source queues
+
+`SourceVideoSession` routes local files, completed downloads, remote source
+files and multi-file video sequences through `VideoPlayerScreen`. Downloads
+are checked before account access or hydration. File identities and per-file
+resume positions are stable; the source journal still owns progress. Source
+progress holds are reference-counted so a repeat/reload cannot release a newer
+owner's sync protection. Closing a session flushes progress, schedules its
+existing sync path and closes its gateways. Audio and reading keep their
+existing dedicated flows.
+
+Each queued item, including the starting item, has a lazy resolver. Repeat and
+previous navigation reacquire fresh leases and progress owners. Release is
+idempotent; an in-flight resolution returned after queue replacement is closed
+instead of attached to the successor queue. Refreshed metadata retains queue
+membership by its global identity, with separate server IDs kept distinct.
+Offline source queues and replacement player routes preserve this contract.
+
+Exact catalog show matches fill a mixed episode queue from a stable order of
+online server copies; duplicates within a show's coordinates remain excluded.
+A queued server copy uses normal server playback while online and can resolve
+an exact cloud/add-on copy when offline. Native choice persists for subsequent
+hash candidates, and opening native leases count toward the concurrency cap.
+No new top-level navigation entry is added.
 
 ## Verification performed
 
 | Check | Result |
 | --- | --- |
-| Focused Flutter tests | 65 passed: encrypted/concurrent state, independent DB connections, claims/renewal, idle cleanup, profile deletion, schema migration, canonical bridges/conflicts/restart/episode identity, ranges, provider/catalog fixtures and shared-player queue/repeat |
+| Focused Flutter tests | 109 passed: encrypted/concurrent state, expired-owner fencing, idle cleanup, profile tombstones, schema migration, canonical search/visibility/reconciliation/restart/episode identity, ranges, provider/catalog fixtures, offline multi-file video/progress, gateways, downloads, source-player lifecycle, lease cleanup and mixed/shared-player queue navigation/repeat |
 | Pinned native source build | libtorrent 2.0.11 / Boost 1.86 compiled and linked successfully on Linux |
 | Native transfer test | Passed against a local generated fixture/seeder: metadata, single-file selection, explicit file in a multi-file torrent, non-aligned file offsets, tail-first reads, cross-piece reads, backward seeks, verified bytes, EOF and invalid inputs |
 | Tizen package tests | 10 passed |
 | webOS package tests | 5 passed |
-| Targeted Dart analysis | No errors or warnings; one pre-existing RealDebridClient constructor-style informational lint |
+| Targeted Dart analysis | No issues across changed Dart files |
 | Script syntax and patch hygiene | Python compile checks and `git diff --check` pass |
 
 Reproduce the native test with a C++17 toolchain and CMake 3.22+:
@@ -161,7 +199,14 @@ is generated locally; no live provider account or media catalog was used.
 flutter test test/media/canonical_library_test.dart \
   test/services/remote_streams test/sources/source_database_migration_test.dart \
   test/providers/playback_state_provider_test.dart \
-  test/providers/playback_state_provider_repeat_test.dart
+  test/providers/playback_state_provider_repeat_test.dart \
+  test/providers/playback_external_queue_test.dart \
+  test/sources/source_video_session_test.dart \
+  test/services/episode_navigation_service_test.dart \
+  test/sources/content_access_gateway_test.dart \
+  test/sources/source_downloads_test.dart \
+  test/sources/remote_cloud_source_adapter_test.dart \
+  test/sources/source_playback_test.dart
 python -m unittest discover -s scripts/tizen -p test_package.py
 PLEZY_WEBOS_TEST_TMP=/tmp python -m unittest discover \
   -s tools/webos/tests -p test_package_ipk.py
@@ -174,7 +219,7 @@ actual toolchains, and exercise cold-start/termination/expiration recovery,
 locked key stores, power/network constraints and task removal. Verify native
 play/seek/stop and disk cleanup on each supported ABI. Validate TV focus,
 screen readers, large text, real provider leases and background downloads on
-devices. Existing casting/multiview and ambiguous offline queue cases retain
+devices. Existing casting/multiview and live mixed-source transitions retain
 their broader validation requirements in IMPLEMENTATION.md and VALIDATION.md.
 
 Confidence is high for the locally tested engine, persistence and Dart paths;

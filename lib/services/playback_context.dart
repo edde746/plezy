@@ -9,7 +9,7 @@ enum PlaybackReportingMode { online, offlineQueue, onlineWithOfflineFallback, lo
 typedef ExternalPlaybackRenewal = Future<({Uri uri, Map<String, String> headers})> Function();
 typedef ExternalPlaybackProgress = Future<void> Function(String state, Duration position, Duration duration);
 typedef ExternalPlaybackRelease = Future<void> Function();
-typedef ExternalPlaybackSourceResolver = Future<ExternalPlaybackSource> Function(MediaItem metadata);
+typedef ExternalPlaybackSourceResolver = Future<ExternalPlaybackSource?> Function(MediaItem metadata);
 
 /// A short-lived stream selected from a connected provider. The descriptor is
 /// memory-only: signed URLs and request headers must never become part of
@@ -27,8 +27,9 @@ class ExternalPlaybackSource {
     this.subtitleRenew,
     this.onProgress,
     this.initialPosition = Duration.zero,
-    this.onRelease,
-  }) : headers = Map.unmodifiable(headers);
+    ExternalPlaybackRelease? onRelease,
+  }) : headers = Map.unmodifiable(headers),
+       _releaseCallback = onRelease;
 
   final String mediaGlobalKey;
   final String profileId;
@@ -51,7 +52,17 @@ class ExternalPlaybackSource {
 
   /// Releases source-owned progress/session state when this lease stops being
   /// the committed player source.
-  final ExternalPlaybackRelease? onRelease;
+  final ExternalPlaybackRelease? _releaseCallback;
+  Future<void>? _releaseFuture;
+  bool get isReleased => _releaseFuture != null;
+  ExternalPlaybackRelease? get onRelease => release;
+  Future<void> release() => _releaseFuture ??= Future<void>.sync(() async {
+    await _releaseCallback?.call();
+  });
+
+  /// Only local-source adapters and completed downloads produce these URIs.
+  /// Remote add-on/provider parsers continue to accept HTTP(S) only.
+  bool get isLocal => const {'file', 'content'}.contains(uri.scheme);
 
   @override
   String toString() => 'ExternalPlaybackSource(media: $mediaGlobalKey, uri: <redacted>)';

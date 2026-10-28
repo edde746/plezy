@@ -1,4 +1,5 @@
 import '../../sources/source_models.dart' show sourceDigest;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -7,7 +8,9 @@ import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:plezy_torrent/plezy_torrent.dart';
+
 import 'preparation_scheduler.dart';
+
 import 'package:uuid/uuid.dart';
 
 import 'additional_debrid_clients.dart';
@@ -38,6 +41,8 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
   DateTime? _workerDeadline;
   Timer? _journalRefresh;
   final Set<TorrentLease> _nativeLeases = {};
+  int _nativeOpening = 0;
+  int _nativeGeneration = 0;
   bool? scheduledPreparationAvailable;
   bool get nativePeerAvailable => TorrentLease.available;
   bool get nativePeerEnabled => _snapshot.nativePeerEnabled && nativePeerAvailable;
@@ -48,6 +53,7 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
   }
 
   void _closeNativeLeases() {
+    _nativeGeneration++;
     for (final lease in _nativeLeases) {
       unawaited(lease.close());
     }
@@ -60,34 +66,49 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
       throw const RemoteProviderException(RemoteProviderFailure.unsupported);
     }
     _nativeLeases.removeWhere((lease) => lease.isClosed);
-    if (_nativeLeases.length >= 2) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
-    final directory = await getTemporaryDirectory();
-    final cache = Directory(path.join(directory.path, 'plezy-torrents', sourceDigest(profile)));
-    if (_nativeLeases.isEmpty && await cache.exists()) {
-      final cutoff = DateTime.now().subtract(const Duration(days: 1));
-      await for (final entry in cache.list(followLinks: false)) {
-        if (entry is Directory && (await entry.stat()).modified.isBefore(cutoff)) {
-          try {
-            await entry.delete(recursive: true);
-          } on FileSystemException {
-            /* best effort */
+    if (_nativeLeases.length + _nativeOpening >= 2) {
+      throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+    }
+    final nativeGeneration = _nativeGeneration;
+    _nativeOpening++;
+    try {
+      final directory = await getTemporaryDirectory();
+      final cache = Directory(path.join(directory.path, 'plezy-torrents', sourceDigest(profile)));
+      if (_nativeLeases.isEmpty && _nativeOpening == 1 && await cache.exists()) {
+        final cutoff = DateTime.now().subtract(const Duration(days: 1));
+        await for (final entry in cache.list(followLinks: false)) {
+          if (entry is Directory && (await entry.stat()).modified.isBefore(cutoff)) {
+            try {
+              await entry.delete(recursive: true);
+            } on FileSystemException {
+              /* best effort */
+            }
           }
         }
       }
+      final lease = await TorrentLease.open(
+        infoHash: candidate.infoHash!,
+        fileIndex: candidate.fileIndex,
+        trackers: candidate.trackers,
+        shouldCancel: () =>
+            !_current(profile, generation) ||
+            nativeGeneration != _nativeGeneration ||
+            !nativePeerEnabled ||
+            shouldCancel?.call() == true,
+        cacheDirectory: path.join(directory.path, 'plezy-torrents', sourceDigest(profile)),
+      );
+      if (!_current(profile, generation) ||
+          nativeGeneration != _nativeGeneration ||
+          !nativePeerEnabled ||
+          shouldCancel?.call() == true) {
+        await lease.close();
+        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+      }
+      _nativeLeases.add(lease);
+      return lease;
+    } finally {
+      _nativeOpening--;
     }
-    final lease = await TorrentLease.open(
-      infoHash: candidate.infoHash!,
-      fileIndex: candidate.fileIndex,
-      trackers: candidate.trackers,
-      shouldCancel: () => !_current(profile, generation) || !nativePeerEnabled || shouldCancel?.call() == true,
-      cacheDirectory: path.join(directory.path, 'plezy-torrents', sourceDigest(profile)),
-    );
-    if (!_current(profile, generation) || !nativePeerEnabled) {
-      await lease.close();
-      throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-    }
-    _nativeLeases.add(lease);
-    return lease;
   }
 
   @override
@@ -129,12 +150,33 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
     await _recoverInterruptedPreparations(profile, generation, jobs);
   }
 
-  bool _recoverable(RemotePreparationJob job) => job.canRecoverAutomatically;
+  bool _recoverable(RemotePreparationJob job) =>
+      job.canRecoverAutomatically &&
+      _snapshot.accounts.any((account) => account.id == job.accountId && account.service == job.service);
 
-  Timer _keepPreparationClaim(String profile, String job, String owner) =>
-      Timer.periodic(const Duration(seconds: 30), (_) {
-        unawaited(RemoteStreamStore.renewClaim(profile, job, owner).catchError((Object _) {}));
-      });
+  static final Object _claimZoneKey = Object();
+  Future<void>? _recoveryPass;
+
+  Future<T> _withPreparationClaim<T>(String profile, String job, Future<T> Function() action) async {
+    final claim = RemotePreparationClaim(profile, job, const Uuid().v4());
+    if (!await RemoteStreamStore.claim(profile, job, claim.owner)) {
+      throw const RemoteStreamStoreException(RemoteStreamStoreFailure.claimLost);
+    }
+    final heartbeat = Timer.periodic(const Duration(seconds: 30), (_) async {
+      try {
+        if (!await RemoteStreamStore.renewClaim(profile, job, claim.owner)) claim.active = false;
+      } on Object {
+        claim.active = false;
+      }
+    });
+    try {
+      return await runZoned(action, zoneValues: {_claimZoneKey: claim});
+    } finally {
+      claim.active = false;
+      heartbeat.cancel();
+      await RemoteStreamStore.release(profile, job, claim.owner);
+    }
+  }
 
   final StremioAddonClient Function() _stremioAddonClientFactory;
   String? _profileId;
@@ -307,6 +349,20 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
   }
 
   Future<void> _recoverInterruptedPreparations(String profile, int generation, List<RemotePreparationJob> jobs) async {
+    if (_recoveryPass case final active?) {
+      await active;
+      return;
+    }
+    final pass = _runRecoveryPass(profile, generation, jobs);
+    _recoveryPass = pass;
+    try {
+      await pass;
+    } finally {
+      if (identical(_recoveryPass, pass)) _recoveryPass = null;
+    }
+  }
+
+  Future<void> _runRecoveryPass(String profile, int generation, List<RemotePreparationJob> jobs) async {
     // A tiny concurrency cap keeps profile startup responsive and limits
     // provider pressure if several preparation requests were interrupted.
     final newIds = <String>{};
@@ -323,61 +379,64 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
           if (!newIds.contains(job.id)) continue;
           try {
             if (_workerDeadline != null && DateTime.now().isAfter(_workerDeadline!)) return;
-            final owner = const Uuid().v4();
-            if (!await RemoteStreamStore.claim(profile, job.id, owner)) continue;
-            final heartbeat = _keepPreparationClaim(profile, job.id, owner);
-            try {
-              _snapshot = await RemoteStreamStore.load(profile);
-              final fresh = _snapshot.preparations.where((row) => row.id == job.id).firstOrNull;
-              if (fresh == null || !_recoverable(fresh)) continue;
-              await _commit(
-                profile,
-                generation,
-                (current) => current.copyWith(
-                  preparations: [
-                    for (final row in current.preparations)
-                      if (row.id == job.id && _recoverable(row))
-                        row.copyWith(state: RemotePreparationState.interrupted)
-                      else
-                        row,
-                  ],
-                ),
-              );
-              await _recoverWithBackoff(profile, generation, fresh.copyWith(state: RemotePreparationState.interrupted));
-            } finally {
-              heartbeat.cancel();
-              await RemoteStreamStore.release(profile, job.id, owner);
-            }
-          } on Object {
-            if (_current(profile, generation) && !_cancelledPreparationIds.contains(job.id)) {
-              final failedAt = DateTime.now().millisecondsSinceEpoch;
+            await _withPreparationClaim(profile, job.id, () async {
               try {
+                final recovered = await RemoteStreamStore.load(profile);
+                if (!_current(profile, generation)) return;
+                _snapshot = recovered;
+                final fresh = _snapshot.preparations.where((row) => row.id == job.id).firstOrNull;
+                if (fresh == null || !_recoverable(fresh)) return;
                 await _commit(
                   profile,
                   generation,
                   (current) => current.copyWith(
                     preparations: [
-                      for (final candidate in current.preparations)
-                        if (candidate.id == job.id &&
-                            !_cancelledPreparationIds.contains(job.id) &&
-                            (candidate.state == RemotePreparationState.preparing ||
-                                candidate.state == RemotePreparationState.interrupted))
-                          candidate.copyWith(
-                            state: RemotePreparationState.interrupted,
-                            stage: 'resume_failed',
-                            updatedAt: failedAt,
-                            errorCode: 'unavailable',
-                            recoveryAttempts: candidate.recoveryAttempts + 1,
-                          )
+                      for (final row in current.preparations)
+                        if (row.id == job.id && _recoverable(row))
+                          row.copyWith(state: RemotePreparationState.interrupted)
                         else
-                          candidate,
+                          row,
                     ],
                   ),
                 );
+                await _recoverWithBackoff(
+                  profile,
+                  generation,
+                  fresh.copyWith(state: RemotePreparationState.interrupted),
+                );
               } on Object {
-                // Leave the last durable checkpoint for the next profile load.
+                if (_current(profile, generation) && !_cancelledPreparationIds.contains(job.id)) {
+                  final failedAt = DateTime.now().millisecondsSinceEpoch;
+                  try {
+                    await _commit(
+                      profile,
+                      generation,
+                      (current) => current.copyWith(
+                        preparations: [
+                          for (final candidate in current.preparations)
+                            if (candidate.id == job.id &&
+                                !_cancelledPreparationIds.contains(job.id) &&
+                                (candidate.state == RemotePreparationState.preparing ||
+                                    candidate.state == RemotePreparationState.interrupted))
+                              candidate.copyWith(
+                                state: RemotePreparationState.interrupted,
+                                stage: 'resume_failed',
+                                updatedAt: failedAt,
+                                errorCode: 'unavailable',
+                                recoveryAttempts: candidate.recoveryAttempts + 1,
+                              )
+                            else
+                              candidate,
+                        ],
+                      ),
+                    );
+                  } on Object {
+                    // Leave the last durable checkpoint for the next profile load.
+                  }
+                }
               }
-            }
+            });
+          } on Object {
             // Keep draining the bounded queue so one unexpected failure cannot
             // starve later jobs.
           }
@@ -400,9 +459,16 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
         final wait =
             _recoveryBackoff(candidate.recoveryAttempts) -
             DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(candidate.updatedAt));
-        if (wait > Duration.zero) await Future<void>.delayed(wait);
+        if (wait > Duration.zero) {
+          if (backgroundWorker) return;
+          final until = DateTime.now().add(wait);
+          while (DateTime.now().isBefore(until)) {
+            if (_shouldCancelPreparation(profile, generation, job.id)) return;
+            await Future<void>.delayed(const Duration(seconds: 1));
+          }
+        }
       }
-      if (!_current(profile, generation)) return;
+      if (_shouldCancelPreparation(profile, generation, job.id)) return;
       await _recoverInterruptedPreparation(profile, generation, candidate);
       final updated = _snapshot.preparations.where((item) => item.id == candidate.id).firstOrNull;
       if (updated == null ||
@@ -762,7 +828,20 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
     final (profile, generation) = _requireProfile();
     await _commit(profile, generation, (current) {
       final next = [...current.accounts.where((saved) => saved.service != account.service), account];
-      return current.copyWith(accounts: next);
+      return current.copyWith(
+        accounts: next,
+        preparations: [
+          for (final job in current.preparations)
+            if (job.service == account.service && job.accountId != account.id && job.canRecoverAutomatically)
+              job.copyWith(
+                state: RemotePreparationState.cancelled,
+                stage: 'cancelled',
+                updatedAt: DateTime.now().millisecondsSinceEpoch,
+              )
+            else
+              job,
+        ],
+      );
     });
   }
 
@@ -773,6 +852,18 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
       generation,
       (current) => current.copyWith(
         accounts: current.accounts.where((account) => account.service != service).toList(growable: false),
+        preparations: [
+          for (final job in current.preparations)
+            if (job.service == service &&
+                (job.state == RemotePreparationState.preparing || job.state == RemotePreparationState.interrupted))
+              job.copyWith(
+                state: RemotePreparationState.cancelled,
+                stage: 'cancelled',
+                updatedAt: DateTime.now().millisecondsSinceEpoch,
+              )
+            else
+              job,
+        ],
       ),
     );
   }
@@ -854,7 +945,9 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
     required int generation,
     required RemoteStreamRequest? request,
   }) async {
-    final previous = _snapshot.preparations
+    final durable = await RemoteStreamStore.load(profile);
+    if (!_current(profile, generation)) throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+    final previous = durable.preparations
         .where(
           (job) =>
               job.service == selectedService &&
@@ -870,7 +963,7 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
         .firstOrNull;
     final now = DateTime.now().millisecondsSinceEpoch;
     final job = RemotePreparationJob(
-      id: const Uuid().v4(),
+      id: previous?.id ?? sourceDigest(jsonEncode([profile, account.id, hash.toLowerCase(), candidate.fileIndex])),
       accountId: account.id,
       service: selectedService,
       infoHash: hash.toLowerCase(),
@@ -886,176 +979,185 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
       fileIndex: candidate.fileIndex,
       providerJobId: previous?.providerJobId,
     );
-    final owner = const Uuid().v4();
-    await RemoteStreamStore.claim(profile, job.id, owner);
-    await _commit(profile, generation, (current) {
-      final retained = current.preparations.where(
-        (old) => now - old.updatedAt < const Duration(days: 14).inMilliseconds,
-      );
-      return current.copyWith(preparations: [job, ...retained.take(19)]);
-    });
-    final heartbeat = _keepPreparationClaim(profile, job.id, owner);
-
-    String? lastStage = 'starting';
-    String? lastProviderJobId = job.providerJobId;
-    Future<void> onProgress({required String stage, String? providerJobId}) async {
-      if (_shouldCancelPreparation(profile, generation, job.id)) {
-        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-      }
-      final normalized = stage.trim();
-      final safeStage = normalized.isEmpty
-          ? 'preparing'
-          : normalized.substring(0, normalized.length.clamp(0, 64).toInt());
-      if (providerJobId != null &&
-          (providerJobId.isEmpty || providerJobId.length > 128 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(providerJobId))) {
-        throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
-      }
-      if (safeStage == lastStage && (providerJobId == null || providerJobId == lastProviderJobId)) return;
-      lastStage = safeStage;
-      if (providerJobId != null) lastProviderJobId = providerJobId;
-      final updatedAt = DateTime.now().millisecondsSinceEpoch;
-      await _commit(
-        profile,
-        generation,
-        (current) => current.copyWith(
-          preparations: [
-            for (final old in current.preparations)
-              if (old.id == job.id)
-                old.copyWith(stage: safeStage, updatedAt: updatedAt, providerJobId: providerJobId)
-              else
-                old,
-          ],
-        ),
-      );
-    }
-
-    try {
-      late final ResolvedRemoteStream resolved;
-      switch (selectedService) {
-        case RemoteStreamService.realDebrid:
-          final client = RealDebridClient(
-            account: account,
-            onAccountRefreshed: (updated) => _persistRefreshedAccount(profile, generation, account.id, updated),
-          );
-          try {
-            resolved = await client.resolveTorrentHash(
-              hash,
-              fileIndex: candidate.fileIndex,
-              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
-              onProgress: onProgress,
-              existingJobId: job.providerJobId,
-            );
-          } finally {
-            client.close();
-          }
-          break;
-        case RemoteStreamService.allDebrid:
-          final client = AllDebridClient(account: account);
-          try {
-            resolved = await client.resolveTorrentHash(
-              hash,
-              fileIndex: candidate.fileIndex,
-              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
-              onProgress: onProgress,
-              existingJobId: job.providerJobId,
-            );
-          } finally {
-            client.close();
-          }
-          break;
-        case RemoteStreamService.premiumize:
-          final client = PremiumizeClient(account: account);
-          try {
-            resolved = await client.resolveTorrentHash(
-              hash,
-              fileIndex: candidate.fileIndex,
-              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
-              onProgress: onProgress,
-            );
-          } finally {
-            client.close();
-          }
-          break;
-        case RemoteStreamService.torbox:
-          final client = TorBoxClient(account: account);
-          try {
-            resolved = await client.resolveTorrentHash(
-              hash,
-              fileIndex: candidate.fileIndex,
-              shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
-              onProgress: onProgress,
-              existingJobId: job.providerJobId,
-            );
-          } finally {
-            client.close();
-          }
-          break;
-      }
-      if (_shouldCancelPreparation(profile, generation, job.id)) {
-        throw const RemoteProviderException(RemoteProviderFailure.cancelled);
-      }
-      final completedAt = DateTime.now().millisecondsSinceEpoch;
-      await _commit(
-        profile,
-        generation,
-        (current) => current.copyWith(
-          preparations: [
-            for (final old in current.preparations)
-              if (old.id == job.id && !_cancelledPreparationIds.contains(job.id))
-                old.copyWith(state: RemotePreparationState.ready, stage: 'ready', updatedAt: completedAt)
-              else
-                old,
-          ],
-        ),
-      );
-      return resolved;
-    } on Object catch (error) {
-      if (_current(profile, generation) && !_cancelledPreparationIds.contains(job.id)) {
-        final cancelled =
-            (error is RemoteProviderException && error.reason == RemoteProviderFailure.cancelled) ||
-            (error is RealDebridException && error.reason == RealDebridFailure.cancelled);
-        final failedAt = DateTime.now().millisecondsSinceEpoch;
-        final code = error is RemoteProviderException
-            ? error.reason.name
-            : error is RealDebridException
-            ? error.reason.name
-            : 'unavailable';
-        try {
-          await _commit(
-            profile,
-            generation,
-            (current) => current.copyWith(
-              preparations: [
-                for (final old in current.preparations)
-                  if (old.id == job.id)
-                    old.copyWith(
-                      state: cancelled
-                          ? RemotePreparationState.cancelled
-                          : _retryableRecoveryErrors.contains(code)
-                          ? RemotePreparationState.interrupted
-                          : RemotePreparationState.failed,
-                      stage: cancelled
-                          ? 'cancelled'
-                          : _retryableRecoveryErrors.contains(code)
-                          ? 'resume_failed'
-                          : 'failed',
-                      updatedAt: failedAt,
-                      errorCode: code,
-                    )
-                  else
-                    old,
-              ],
-            ),
-          );
-        } on Object {
-          // Preserve the provider failure even if the profile store is closing.
+    _cancelledPreparationIds.remove(job.id);
+    return _withPreparationClaim(profile, job.id, () async {
+      await _commit(profile, generation, (current) {
+        if (!current.accounts.any((saved) => saved.id == account.id && saved.service == selectedService)) {
+          throw const RemoteProviderException(RemoteProviderFailure.cancelled);
         }
+        final retained = current.preparations.where((old) => old.id != job.id).toList();
+        final live = retained
+            .where(
+              (old) => old.state == RemotePreparationState.preparing || old.state == RemotePreparationState.interrupted,
+            )
+            .toList();
+        if (live.length >= 20) throw const RemoteProviderException(RemoteProviderFailure.unavailable);
+        final history = retained.where(
+          (old) => !live.contains(old) && now - old.updatedAt < const Duration(days: 14).inMilliseconds,
+        );
+        return current.copyWith(preparations: [job, ...live, ...history.take(19 - live.length)]);
+      }, restartPreparation: true);
+
+      String? lastStage = 'starting';
+      String? lastProviderJobId = job.providerJobId;
+      Future<void> onProgress({required String stage, String? providerJobId}) async {
+        if (_shouldCancelPreparation(profile, generation, job.id)) {
+          throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+        }
+        final normalized = stage.trim();
+        final safeStage = normalized.isEmpty
+            ? 'preparing'
+            : normalized.substring(0, normalized.length.clamp(0, 64).toInt());
+        if (providerJobId != null &&
+            (providerJobId.isEmpty ||
+                providerJobId.length > 128 ||
+                RegExp(r'[\x00-\x1f\x7f]').hasMatch(providerJobId))) {
+          throw const RemoteProviderException(RemoteProviderFailure.invalidResponse);
+        }
+        if (safeStage == lastStage && (providerJobId == null || providerJobId == lastProviderJobId)) return;
+        lastStage = safeStage;
+        if (providerJobId != null) lastProviderJobId = providerJobId;
+        final updatedAt = DateTime.now().millisecondsSinceEpoch;
+        await _commit(
+          profile,
+          generation,
+          (current) => current.copyWith(
+            preparations: [
+              for (final old in current.preparations)
+                if (old.id == job.id)
+                  old.copyWith(stage: safeStage, updatedAt: updatedAt, providerJobId: providerJobId)
+                else
+                  old,
+            ],
+          ),
+        );
       }
-      rethrow;
-    } finally {
-      heartbeat.cancel();
-      await RemoteStreamStore.release(profile, job.id, owner);
-    }
+
+      try {
+        late final ResolvedRemoteStream resolved;
+        switch (selectedService) {
+          case RemoteStreamService.realDebrid:
+            final client = RealDebridClient(
+              account: account,
+              onAccountRefreshed: (updated) => _persistRefreshedAccount(profile, generation, account.id, updated),
+            );
+            try {
+              resolved = await client.resolveTorrentHash(
+                hash,
+                fileIndex: candidate.fileIndex,
+                shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
+                onProgress: onProgress,
+                existingJobId: job.providerJobId,
+              );
+            } finally {
+              client.close();
+            }
+            break;
+          case RemoteStreamService.allDebrid:
+            final client = AllDebridClient(account: account);
+            try {
+              resolved = await client.resolveTorrentHash(
+                hash,
+                fileIndex: candidate.fileIndex,
+                shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
+                onProgress: onProgress,
+                existingJobId: job.providerJobId,
+              );
+            } finally {
+              client.close();
+            }
+            break;
+          case RemoteStreamService.premiumize:
+            final client = PremiumizeClient(account: account);
+            try {
+              resolved = await client.resolveTorrentHash(
+                hash,
+                fileIndex: candidate.fileIndex,
+                shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
+                onProgress: onProgress,
+              );
+            } finally {
+              client.close();
+            }
+            break;
+          case RemoteStreamService.torbox:
+            final client = TorBoxClient(account: account);
+            try {
+              resolved = await client.resolveTorrentHash(
+                hash,
+                fileIndex: candidate.fileIndex,
+                shouldCancel: () => _shouldCancelPreparation(profile, generation, job.id),
+                onProgress: onProgress,
+                existingJobId: job.providerJobId,
+              );
+            } finally {
+              client.close();
+            }
+            break;
+        }
+        if (_shouldCancelPreparation(profile, generation, job.id)) {
+          throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+        }
+        final completedAt = DateTime.now().millisecondsSinceEpoch;
+        await _commit(
+          profile,
+          generation,
+          (current) => current.copyWith(
+            preparations: [
+              for (final old in current.preparations)
+                if (old.id == job.id && !_cancelledPreparationIds.contains(job.id))
+                  old.copyWith(state: RemotePreparationState.ready, stage: 'ready', updatedAt: completedAt)
+                else
+                  old,
+            ],
+          ),
+        );
+        return resolved;
+      } on Object catch (error) {
+        if (_current(profile, generation) && !_cancelledPreparationIds.contains(job.id)) {
+          final cancelled =
+              (error is RemoteProviderException && error.reason == RemoteProviderFailure.cancelled) ||
+              (error is RealDebridException && error.reason == RealDebridFailure.cancelled);
+          final failedAt = DateTime.now().millisecondsSinceEpoch;
+          final code = error is RemoteProviderException
+              ? error.reason.name
+              : error is RealDebridException
+              ? error.reason.name
+              : 'unavailable';
+          try {
+            await _commit(
+              profile,
+              generation,
+              (current) => current.copyWith(
+                preparations: [
+                  for (final old in current.preparations)
+                    if (old.id == job.id)
+                      old.copyWith(
+                        state: cancelled
+                            ? RemotePreparationState.cancelled
+                            : _retryableRecoveryErrors.contains(code)
+                            ? RemotePreparationState.interrupted
+                            : RemotePreparationState.failed,
+                        stage: cancelled
+                            ? 'cancelled'
+                            : _retryableRecoveryErrors.contains(code)
+                            ? 'resume_failed'
+                            : 'failed',
+                        updatedAt: failedAt,
+                        errorCode: code,
+                      )
+                    else
+                      old,
+                ],
+              ),
+            );
+          } on Object {
+            // Preserve the provider failure even if the profile store is closing.
+          }
+        }
+        rethrow;
+      }
+    });
   }
 
   Future<RemoteCloudPage> browseCloud(RemoteStreamService service, {String? parentId, String? cursor}) async {
@@ -1256,20 +1358,33 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
   Future<void> _commit(
     String profile,
     int generation,
-    RemoteStreamSnapshot Function(RemoteStreamSnapshot current) update,
-  ) => _serializeMutation(() async {
-    if (!_current(profile, generation)) throw const StremioAddonException(StremioAddonFailure.unavailable);
-    final snapshot = await RemoteStreamStore.update(profile, (current) {
-      if (!_current(profile, generation)) return current;
-      return update(current);
+    RemoteStreamSnapshot Function(RemoteStreamSnapshot current) update, {
+    bool restartPreparation = false,
+  }) {
+    final claim = Zone.current[_claimZoneKey] as RemotePreparationClaim?;
+    return _serializeMutation(() async {
+      if (!_current(profile, generation)) throw const StremioAddonException(StremioAddonFailure.unavailable);
+      final snapshot = await RemoteStreamStore.update(profile, (current) {
+        if (!_current(profile, generation)) return current;
+        if (claim != null) {
+          final job = current.preparations.where((job) => job.id == claim.job).firstOrNull;
+          if (job != null &&
+              ((!restartPreparation && job.state == RemotePreparationState.cancelled) ||
+                  !current.accounts.any((account) => account.id == job.accountId && account.service == job.service))) {
+            claim.active = false;
+            throw const RemoteProviderException(RemoteProviderFailure.cancelled);
+          }
+        }
+        return update(current);
+      }, claim: claim);
+      if (!_current(profile, generation)) return;
+      _snapshot = snapshot;
+      if (!backgroundWorker && snapshot.preparations.any(_recoverable)) unawaited(_scheduleRecovery());
+      final retainedIds = snapshot.preparations.map((job) => job.id).toSet();
+      _cancelledPreparationIds.removeWhere((id) => !retainedIds.contains(id));
+      _notify();
     });
-    if (!_current(profile, generation)) return;
-    _snapshot = snapshot;
-    if (!backgroundWorker && snapshot.preparations.any(_recoverable)) unawaited(_scheduleRecovery());
-    final retainedIds = snapshot.preparations.map((job) => job.id).toSet();
-    _cancelledPreparationIds.removeWhere((id) => !retainedIds.contains(id));
-    _notify();
-  });
+  }
 
   Future<T> _serializeMutation<T>(Future<T> Function() operation) {
     final next = _mutationQueue.then((_) => operation());
@@ -1303,6 +1418,8 @@ class RemoteStreamingProvider extends ChangeNotifier with WidgetsBindingObserver
   bool _current(String profile, int generation) => !_disposed && _profileId == profile && _generation == generation;
 
   bool _shouldCancelPreparation(String profile, int generation, String id) {
+    final claim = Zone.current[_claimZoneKey] as RemotePreparationClaim?;
+    if (claim != null && !claim.active) return true;
     if (!_current(profile, generation) || _cancelledPreparationIds.contains(id)) return true;
     if (_workerDeadline != null && DateTime.now().isAfter(_workerDeadline!)) return true;
     final job = _snapshot.preparations.where((job) => job.id == id).firstOrNull;

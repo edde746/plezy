@@ -7,7 +7,13 @@ import '../base_shared_preferences_service.dart';
 import '../credential_vault.dart';
 import 'remote_stream_models.dart';
 
-enum RemoteStreamStoreFailure { unreadable }
+enum RemoteStreamStoreFailure { unreadable, claimLost }
+
+class RemotePreparationClaim {
+  RemotePreparationClaim(this.profile, this.job, this.owner);
+  final String profile, job, owner;
+  bool active = true;
+}
 
 class RemoteStreamStoreException implements Exception {
   const RemoteStreamStoreException(this.reason);
@@ -43,19 +49,14 @@ class RemoteStreamStore {
   }
 
   static Future<void> save(String profile, RemoteStreamSnapshot snapshot) async {
-    final db = await _database;
-    final encrypted = await CredentialVault.protect(snapshot.encode());
-    await db.customStatement(
-      'INSERT INTO remote_stream_state VALUES (?,?) '
-      'ON CONFLICT(profile) DO UPDATE SET payload=excluded.payload',
-      [profile, encrypted],
-    );
+    await update(profile, (_) => snapshot);
   }
 
   static Future<RemoteStreamSnapshot> update(
     String profile,
-    RemoteStreamSnapshot Function(RemoteStreamSnapshot) change,
-  ) async {
+    RemoteStreamSnapshot Function(RemoteStreamSnapshot) change, {
+    RemotePreparationClaim? claim,
+  }) async {
     final db = await _database;
     final prefs = await BaseSharedPreferencesService.sharedCache();
     final legacy = prefs.getString(profileScopedPrefsKey(profile, 'remote_streaming_v1'));
@@ -71,6 +72,23 @@ class RemoteStreamStore {
           .customSelect('SELECT 1 FROM remote_deleted_profiles WHERE profile=?', variables: [Variable(profile)])
           .getSingleOrNull();
       if (removed != null) throw StateError('Profile was removed');
+      if (claim != null) {
+        final ownership = await db
+            .customSelect(
+              'SELECT 1 FROM remote_preparation_claims WHERE profile=? AND job=? AND owner=? AND expires>?',
+              variables: [
+                Variable(profile),
+                Variable(claim.job),
+                Variable(claim.owner),
+                Variable(DateTime.now().millisecondsSinceEpoch),
+              ],
+            )
+            .getSingleOrNull();
+        if (!claim.active || claim.profile != profile || ownership == null) {
+          claim.active = false;
+          throw const RemoteStreamStoreException(RemoteStreamStoreFailure.claimLost);
+        }
+      }
       final next = change(await _decode(row.read<String>('payload')));
       await db.customStatement('UPDATE remote_stream_state SET payload=? WHERE profile=?', [
         await CredentialVault.protect(next.encode()),
@@ -96,7 +114,13 @@ class RemoteStreamStore {
       await db.customStatement('UPDATE remote_stream_state SET payload=payload');
       for (final row in await db.customSelect('SELECT payload FROM remote_stream_state').get()) {
         final snapshot = await _decode(row.read<String>('payload'));
-        if (snapshot.preparations.any((job) => job.canRecoverAutomatically)) return;
+        if (snapshot.preparations.any(
+          (job) =>
+              job.canRecoverAutomatically &&
+              snapshot.accounts.any((account) => account.id == job.accountId && account.service == job.service),
+        )) {
+          return;
+        }
       }
       await cancel();
     });
@@ -107,18 +131,19 @@ class RemoteStreamStore {
     final now = DateTime.now().millisecondsSinceEpoch;
     return db.transaction(() async {
       await db.customStatement(
-        'INSERT INTO remote_preparation_claims VALUES (?,?,?,?) '
+        'INSERT INTO remote_preparation_claims SELECT ?,?,?,? WHERE NOT EXISTS '
+        '(SELECT 1 FROM remote_deleted_profiles WHERE profile=?) '
         'ON CONFLICT(profile,job) DO UPDATE SET owner=excluded.owner,expires=excluded.expires '
         'WHERE remote_preparation_claims.expires<? OR remote_preparation_claims.owner=?',
-        [profile, job, owner, now + const Duration(minutes: 10).inMilliseconds, now, owner],
+        [profile, job, owner, now + const Duration(minutes: 10).inMilliseconds, profile, now, owner],
       );
       final row = await db
           .customSelect(
             'SELECT owner FROM remote_preparation_claims WHERE profile=? AND job=?',
             variables: [Variable(profile), Variable(job)],
           )
-          .getSingle();
-      return row.read<String>('owner') == owner;
+          .getSingleOrNull();
+      return row?.read<String>('owner') == owner;
     });
   }
 
@@ -127,8 +152,18 @@ class RemoteStreamStore {
     [profile, job, owner],
   );
 
-  static Future<void> renewClaim(String profile, String job, String owner) async => (await _database).customStatement(
-    'UPDATE remote_preparation_claims SET expires=? WHERE profile=? AND job=? AND owner=?',
-    [DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch, profile, job, owner],
-  );
+  static Future<bool> renewClaim(String profile, String job, String owner) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final changed = await (await _database).customUpdate(
+      'UPDATE remote_preparation_claims SET expires=? WHERE profile=? AND job=? AND owner=? AND expires>?',
+      variables: [
+        Variable(now + const Duration(minutes: 10).inMilliseconds),
+        Variable(profile),
+        Variable(job),
+        Variable(owner),
+        Variable(now),
+      ],
+    );
+    return changed == 1;
+  }
 }

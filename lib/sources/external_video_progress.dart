@@ -10,15 +10,7 @@ import 'source_models.dart';
 /// video player. It serializes journal writes and never assigns the source a
 /// synthetic server identity.
 class ExternalVideoProgressSession {
-  ExternalVideoProgressSession._({
-    required SourceController sources,
-    required String profileId,
-    required int generation,
-    required PublicationProgress progress,
-  }) : _sources = sources,
-       _profileId = profileId,
-       _generation = generation,
-       _progress = progress;
+  ExternalVideoProgressSession._(this._sources, this._profileId, this._generation, this._progress);
 
   final SourceController _sources;
   final String _profileId;
@@ -47,8 +39,7 @@ class ExternalVideoProgressSession {
     );
     var progress = await sources.openProgress(entry, initial);
     sources.requireSession(generation);
-    if (sources.cloudConflict(initial.key) ||
-        await sources.repository.remoteConflict(profile, initial.key) != null) {
+    if (sources.cloudConflict(initial.key) || await sources.repository.remoteConflict(profile, initial.key) != null) {
       throw const SourceException(SourceFailure.conflict);
     }
 
@@ -62,14 +53,9 @@ class ExternalVideoProgressSession {
         );
       }
       sources.requireSession(generation);
-      return ExternalVideoProgressSession._(
-        sources: sources,
-        profileId: profile,
-        generation: generation,
-        progress: progress,
-      );
+      return ExternalVideoProgressSession._(sources, profile, generation, progress);
     } catch (_) {
-      sources.releaseProgress(progress.key);
+      if (sources.current(generation) && sources.profileId == profile) sources.releaseProgress(progress.key);
       rethrow;
     }
   }
@@ -77,10 +63,7 @@ class ExternalVideoProgressSession {
   Future<void> record(String state, Duration position, Duration duration) {
     if (_closing || _closed) return _writes;
     final write = _writes.then((_) async {
-      if (_closed ||
-          _sources.blocked ||
-          _sources.profileId != _profileId ||
-          !_sources.current(_generation)) {
+      if (_closed || _sources.blocked || _sources.profileId != _profileId || !_sources.current(_generation)) {
         return;
       }
       final durationMs = duration.inMilliseconds;
@@ -90,12 +73,7 @@ class ExternalVideoProgressSession {
       final finished = state == 'stopped' && fraction >= 0.9;
       _progress = await _sources.repository.saveProgress(
         _profileId,
-        _progress.copyWith(
-          positionMs: positionMs,
-          filePositionMs: positionMs,
-          fraction: fraction,
-          finished: finished,
-        ),
+        _progress.copyWith(positionMs: positionMs, filePositionMs: positionMs, fraction: fraction, finished: finished),
         kind: finished ? 'finished' : 'position',
       );
     });
@@ -110,6 +88,9 @@ class ExternalVideoProgressSession {
     _closing = true;
     await _writes;
     _closed = true;
-    _sources.releaseProgress(_progress.key);
+    if (!_sources.blocked && _sources.profileId == _profileId && _sources.current(_generation)) {
+      _sources.releaseProgress(_progress.key);
+      _sources.scheduleSync();
+    }
   }
 }

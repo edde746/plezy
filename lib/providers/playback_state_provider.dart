@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../media/media_item.dart';
 import '../media/play_queue.dart';
 import '../models/plex/play_queue_response.dart';
@@ -97,7 +98,22 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     // its synthetic identity even if a fetched Plex item happens to retain a
     // stale server playQueueItemId from an earlier response.
     if (_playQueueId == -1) {
-      final idx = _loadedItems.indexOf(item);
+      var idx = _loadedItems.indexOf(item);
+      if (idx < 0) {
+        // Fresh metadata and progress updates preserve queue identity. Keep
+        // the current occurrence of a repeated item; otherwise require a
+        // unique global key, never a server-local numeric ID.
+        final cursor = _currentPlayQueueItemID == null ? -1 : _findLoadedIndex(_currentPlayQueueItemID!);
+        if (cursor >= 0 && _loadedItems[cursor].globalKey == item.globalKey) {
+          idx = cursor;
+        } else {
+          for (var i = 0; i < _loadedItems.length; i++) {
+            if (_loadedItems[i].globalKey != item.globalKey) continue;
+            if (idx >= 0) return null;
+            idx = i;
+          }
+        }
+      }
       if (idx < 0 || idx >= _syntheticIds.length) return null;
       return _syntheticIds[idx];
     }
@@ -244,14 +260,20 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     safeNotifyListeners();
   }
 
-  /// Resolve a queue item's external source on demand. Server-backed items
-  /// have no resolver and continue through the normal media-server path.
+  /// Resolve a queue item lazily. Returning null keeps the normal server path;
+  /// a mixed queue can instead return a lease when that server is offline.
   Future<ExternalPlaybackSource?> resolveExternalPlaybackSource(MediaItem item) async {
     if (!isItemInActiveQueue(item)) return null;
     final resolver = _externalSourceResolvers[item.globalKey];
     if (resolver == null) return null;
+    final queueResolvers = _externalSourceResolvers;
     final source = await resolver(item);
-    if (source.mediaGlobalKey != item.globalKey) {
+    if (!identical(queueResolvers, _externalSourceResolvers) || !isItemInActiveQueue(item)) {
+      await source?.release();
+      throw StateError('The playback queue changed while resolving its source.');
+    }
+    if (source != null && source.mediaGlobalKey != item.globalKey) {
+      await source.release();
       throw StateError('The queued source returned a lease for a different media item.');
     }
     return source;

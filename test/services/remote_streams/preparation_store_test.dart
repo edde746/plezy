@@ -47,7 +47,12 @@ void main() {
     final expired = (await database.customSelect('SELECT expires FROM remote_preparation_claims').getSingle())
         .read<int>('expires');
     expect(expired, 0, reason: 'A stale process cannot renew another owner');
-    await RemoteStreamStore.renewClaim('alice', 'job', 'worker');
+    expect(
+      await RemoteStreamStore.renewClaim('alice', 'job', 'worker'),
+      isFalse,
+      reason: 'An expired claim cannot revive itself',
+    );
+    expect(await RemoteStreamStore.claim('alice', 'job', 'worker'), isTrue);
     await RemoteStreamStore.release('alice', 'job', 'foreground');
     expect(await RemoteStreamStore.claim('alice', 'job', 'foreground'), isFalse);
     await RemoteStreamStore.release('alice', 'job', 'worker');
@@ -76,20 +81,75 @@ void main() {
       updatedAt: 0,
       providerJobId: '42',
     );
-    await RemoteStreamStore.update('alice', (state) => state.copyWith(preparations: [job]));
+    final account = RemoteStreamAccount.create(
+      service: RemoteStreamService.realDebrid,
+      displayName: 'Test',
+      accessToken: 'secret',
+    );
+    final ownedJob = RemotePreparationJob.fromJson({...job.toJson(), 'accountId': account.id});
+    await RemoteStreamStore.update('alice', (state) => state.copyWith(accounts: [account], preparations: [ownedJob]));
     await RemoteStreamStore.cancelRecoveryWhenIdle(() async {
       cancellations++;
     });
     expect(cancellations, 1);
     await RemoteStreamStore.update(
       'alice',
-      (state) => state.copyWith(preparations: [job.copyWith(state: RemotePreparationState.ready)]),
+      (state) => state.copyWith(preparations: [ownedJob.copyWith(state: RemotePreparationState.ready)]),
     );
     await RemoteStreamStore.cancelRecoveryWhenIdle(() async {
       cancellations++;
     });
     expect(cancellations, 2);
   });
+  test('lost and expired owners cannot publish checkpoints or resurrect deleted profiles', () async {
+    await RemoteStreamStore.load('alice');
+    expect(await RemoteStreamStore.claim('alice', 'job', 'old'), isTrue);
+    final stale = RemotePreparationClaim('alice', 'job', 'old');
+    await database.customStatement('UPDATE remote_preparation_claims SET expires=0');
+    await expectLater(
+      RemoteStreamStore.update('alice', (state) => state.copyWith(nativePeerEnabled: true), claim: stale),
+      throwsA(isA<RemoteStreamStoreException>()),
+    );
+    expect(stale.active, isFalse);
+    expect(await RemoteStreamStore.claim('alice', 'job', 'new'), isTrue);
+    final successor = RemotePreparationClaim('alice', 'job', 'new');
+    await RemoteStreamStore.update('alice', (state) => state.copyWith(nativePeerEnabled: true), claim: successor);
+    await expectLater(
+      RemoteStreamStore.update('alice', (state) => state.copyWith(nativePeerEnabled: false), claim: stale),
+      throwsA(isA<RemoteStreamStoreException>()),
+    );
+    expect((await RemoteStreamStore.load('alice')).nativePeerEnabled, isTrue);
+    await SourceRepository(database).forgetProfile('alice');
+    expect(await RemoteStreamStore.claim('alice', 'job', 'new'), isFalse);
+    await expectLater(RemoteStreamStore.save('alice', const RemoteStreamSnapshot()), throwsStateError);
+    expect(await RemoteStreamStore.profiles(), isEmpty);
+  });
+
+  test('orphaned jobs do not keep waking the OS scheduler', () async {
+    const orphan = RemotePreparationJob(
+      id: 'job',
+      accountId: 'removed',
+      service: RemoteStreamService.realDebrid,
+      infoHash: '0123456789012345678901234567890123456789',
+      title: 'Video',
+      requestId: 'tt1234567',
+      requestType: 'movie',
+      addonId: 'addon',
+      label: 'Video',
+      state: RemotePreparationState.interrupted,
+      stage: 'preparing',
+      createdAt: 0,
+      updatedAt: 0,
+      providerJobId: '42',
+    );
+    await RemoteStreamStore.save('alice', const RemoteStreamSnapshot(preparations: [orphan]));
+    var cancelled = false;
+    await RemoteStreamStore.cancelRecoveryWhenIdle(() async {
+      cancelled = true;
+    });
+    expect(cancelled, isTrue);
+  });
+
   test('independent worker connections preserve concurrent transactions', () async {
     final directory = await Directory.systemTemp.createTemp('preparation-workers-');
     final file = File('${directory.path}/state.sqlite');

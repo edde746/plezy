@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import '../services/playback_launch_observer.dart';
 import '../media/ids.dart';
+
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -1109,7 +1111,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   ExternalPlaybackSource? _externalSourceFor(MediaItem metadata) {
     final source = _activeExternalPlaybackSource;
-    if (source == null || source.mediaGlobalKey != metadata.globalKey) return null;
+    if (source == null || source.isReleased || source.mediaGlobalKey != metadata.globalKey) return null;
     final controller = _externalSourceController;
     if (controller == null || controller.blocked || controller.profileId != source.profileId) return null;
     return source;
@@ -1123,17 +1125,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         controller.profileId == source.profileId;
   }
 
-  Future<PlaybackContext> _resolveExternalPlaybackContext(
-    MediaItem metadata,
-    ExternalPlaybackSource source,
-  ) async {
+  Future<PlaybackContext> _resolveExternalPlaybackContext(MediaItem metadata, ExternalPlaybackSource source) async {
     if (source.mediaGlobalKey != metadata.globalKey || !_externalSourceProfileIsCurrent(source)) {
       throw StateError('The selected remote stream is no longer available in this profile.');
     }
-    final gateway = _externalStreamGateway ??= SourceStreamGateway(
-      valid: () => _externalStreamGatewayValid && mounted,
-    );
-    final streamUri = await gateway.registerUri(source.uri, headers: source.headers, renew: source.renew);
+    final gateway = _externalStreamGateway ??= SourceStreamGateway(valid: () => _externalStreamGatewayValid && mounted);
+    final streamUri = source.isLocal
+        ? source.uri
+        : await gateway.registerUri(source.uri, headers: source.headers, renew: source.renew);
     final sidecars = <PlaybackSubtitleSidecar>[];
     final subtitleUri = source.subtitleUri;
     if (subtitleUri != null) {
@@ -1165,9 +1164,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         videoUrl: streamUri.toString(),
         subtitleSidecars: sidecars,
         isTranscoding: false,
+        isOffline: source.isLocal,
         playMethod: 'DirectPlay',
       ),
-      sourceKind: PlaybackSourceKind.remoteDirect,
+      sourceKind: source.isLocal ? PlaybackSourceKind.localFile : PlaybackSourceKind.remoteDirect,
       reportingMode: PlaybackReportingMode.localOnly,
     );
   }
@@ -1175,8 +1175,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   void _handleExternalProfileChanged() {
     final source = _activeExternalPlaybackSource ?? _pendingExternalPlaybackSource;
     final controller = _externalSourceController;
-    if (source == null || controller == null ||
-        (!controller.blocked && controller.profileId == source.profileId)) {
+    if (source == null || controller == null || (!controller.blocked && controller.profileId == source.profileId)) {
       return;
     }
     _externalStreamGatewayValid = false;
@@ -1215,10 +1214,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Reload-style flows call this from the open boundary: a failure before
   /// the commit leaves the previous session — and everything derived from
   /// it — untouched, so there is nothing to roll back.
-  void _commitPlaybackSession(
-    PlaybackSession session, {
-    required ExternalPlaybackSource? externalPlaybackSource,
-  }) {
+  void _commitPlaybackSession(PlaybackSession session, {required ExternalPlaybackSource? externalPlaybackSource}) {
     final previousExternalSource = _activeExternalPlaybackSource;
     _activeExternalPlaybackSource = externalPlaybackSource;
     _pendingExternalPlaybackSource = null;
@@ -1956,14 +1952,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // and the reads below.
       // Skipped for live TV (has its own tune path — only the quality preset
       // is resolved below) and offline (its own branch in _startPlayback).
-      if (!widget.isLive && !_offlineLibraryMode) {
-        final externalSource = _externalSourceFor(_currentMetadata);
+      final queueState = context.read<PlaybackStateProvider>();
+      if (!widget.isLive &&
+          (!_offlineLibraryMode ||
+              _externalSourceFor(_currentMetadata) != null ||
+              queueState.hasExternalPlaybackSourceResolver(_currentMetadata))) {
+        var externalSource = _externalSourceFor(_currentMetadata);
+        if (externalSource == null && queueState.hasExternalPlaybackSourceResolver(_currentMetadata)) {
+          externalSource = await queueState.resolveExternalPlaybackSource(_currentMetadata);
+          if (!mounted || !_isPlayerInitializationCurrent(generation)) {
+            await externalSource?.release();
+            return;
+          }
+          if (externalSource != null && !_externalSourceProfileIsCurrent(externalSource)) {
+            await externalSource.release();
+            throw StateError('The selected remote stream is no longer available in this profile.');
+          }
+          _activeExternalPlaybackSource = externalSource;
+        }
         if (externalSource != null) {
           _serverSupportsTranscoding = false;
           _selectedQualityPreset = TranscodeQualityPreset.original;
           _playbackDataFuture = _resolveExternalPlaybackContext(_currentMetadata, externalSource);
           _playbackDataFuture!.ignore();
-        } else {
+        } else if (!_offlineLibraryMode) {
           // Backend-neutral lookup so Jellyfin items also flow through here.
           // Plex-specific transcoder caching is gated on capabilities below;
           // Jellyfin's `streamHeaders` is empty because it embeds api_key in

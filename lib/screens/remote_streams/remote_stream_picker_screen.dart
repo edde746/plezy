@@ -1,4 +1,5 @@
 import 'package:plezy_torrent/plezy_torrent.dart';
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,9 @@ import '../../services/remote_streams/remote_stream_models.dart';
 import '../../services/remote_streams/remote_streaming_provider.dart';
 import '../../sources/external_video_progress.dart';
 import '../../sources/source_controller.dart';
+import '../../sources/source_video_session.dart';
+import '../../providers/multi_server_provider.dart';
+import '../../media/ids.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../screens/video_player_screen.dart';
@@ -288,7 +292,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     final generation = sources.generation;
     setState(() => _busyCloudMatch = entry.key);
     try {
-      final freshEntry = await sources.hydrate(entry);
+      final freshEntry = entry;
       if (!mounted ||
           sources.blocked ||
           sources.profileId != profileId ||
@@ -320,52 +324,14 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           (hasQueue
               ? queueMediaItems[queueStartIndex]
               : _mediaItemForQueueItem(currentQueueItem, durationMs: widget.durationMs));
-      final progress = playbackItem == null && currentQueueItem.serverItem == null
-          ? await ExternalVideoProgressSession.open(sources, freshEntry, file)
-          : null;
+      final session = await SourceVideoSession.open(sources, freshEntry, [file]);
       try {
-        if (!mounted ||
-            sources.blocked ||
-            sources.profileId != profileId ||
-            !sources.current(generation) ||
-            !streaming.isReady) {
-          throw const SourceException(SourceFailure.cancelled);
-        }
-        final lease = await sources.resolveRemoteCloudFile(freshEntry, file);
-        if (!mounted ||
-            sources.blocked ||
-            sources.profileId != profileId ||
-            !sources.current(generation) ||
-            !streaming.isReady) {
-          throw const SourceException(SourceFailure.cancelled);
-        }
-        Future<({Uri uri, Map<String, String> headers})> renewCloudFile() async {
-          if (sources.blocked || sources.profileId != profileId || !sources.current(generation) || !streaming.isReady) {
-            throw const SourceException(SourceFailure.cancelled);
-          }
-          final latestEntry = await sources.hydrate(freshEntry);
-          if (sources.blocked || sources.profileId != profileId || !sources.current(generation) || !streaming.isReady) {
-            throw const SourceException(SourceFailure.cancelled);
-          }
-          final latestFile = latestEntry.files.where((row) => row.fingerprint == file.fingerprint).firstOrNull;
-          if (latestFile == null) throw const SourceException(SourceFailure.unavailable);
-          final renewed = await sources.resolveRemoteCloudFile(latestEntry, latestFile);
-          if (sources.blocked || sources.profileId != profileId || !sources.current(generation) || !streaming.isReady) {
-            throw const SourceException(SourceFailure.cancelled);
-          }
-          return (uri: renewed.uri, headers: renewed.headers);
-        }
-
-        final descriptor = ExternalPlaybackSource(
-          mediaGlobalKey: media.globalKey,
-          profileId: profileId,
-          uri: lease.uri,
-          headers: lease.headers,
-          renew: renewCloudFile,
-          onProgress: progress?.record,
-          initialPosition: Duration(milliseconds: progress?.resumePositionMs ?? 0),
-          onRelease: progress?.close,
+        final descriptor = await session.resolveFile(
+          file,
+          metadata: media,
+          trackProgress: playbackItem == null && currentQueueItem.serverItem == null,
         );
+        if (!mounted || !session.valid || !streaming.isReady) throw const SourceException(SourceFailure.cancelled);
         if (playbackItem == null) {
           final source = sources.sources.where((row) => row.id == freshEntry.sourceId).firstOrNull;
           final serviceName = source?.options['service'];
@@ -396,7 +362,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           ),
         );
       } finally {
-        await progress?.close();
+        await session.close();
       }
     } on SourceException catch (error) {
       if (mounted && error.reason != SourceFailure.cancelled) {
@@ -581,6 +547,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           preferredService: service,
           preferredAddonId: candidate.addonId,
           resolveHosterLinks: viaProvider,
+          preferNative: peer != null,
           sources: sources,
           streaming: streaming,
         );
@@ -644,6 +611,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     required RemoteStreamService? preferredService,
     required String preferredAddonId,
     required bool resolveHosterLinks,
+    bool preferNative = false,
     required SourceController sources,
     required RemoteStreamingProvider streaming,
   }) {
@@ -653,23 +621,33 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
       return;
     }
     final sourceGeneration = sources.generation;
+    final servers = context.read<MultiServerProvider>();
     final resolvers = <String, ExternalPlaybackSourceResolver>{};
     for (var index = 0; index < queueItems.length; index++) {
-      if (index == startIndex) continue;
       final item = queueItems[index];
-      if (item.serverItem != null) continue;
       final queuedMedia = queueMediaItems[index];
-      resolvers[queuedMedia.globalKey] = (metadata) => _RemoteStreamPickerScreenState._resolveQueuedStream(
-        item: item,
-        metadata: metadata,
-        profileId: profileId,
-        sourceGeneration: sourceGeneration,
-        preferredService: preferredService,
-        preferredAddonId: preferredAddonId,
-        resolveHosterLinks: resolveHosterLinks,
-        sources: sources,
-        streaming: streaming,
-      );
+      resolvers[queuedMedia.globalKey] = (metadata) async {
+        // Keep normal server playback when that copy is reachable. The same
+        // stable queue identity can fall back to an exact cloud/add-on copy.
+        final server = item.serverItem?.serverId;
+        if (server != null &&
+            servers.expectedServerIds.contains(server) &&
+            servers.serverManager.isClientOnline(ServerId(server))) {
+          return null;
+        }
+        return _RemoteStreamPickerScreenState._resolveQueuedStream(
+          item: item,
+          metadata: metadata,
+          profileId: profileId,
+          sourceGeneration: sourceGeneration,
+          preferredService: preferredService,
+          preferredAddonId: preferredAddonId,
+          resolveHosterLinks: resolveHosterLinks,
+          preferNative: preferNative,
+          sources: sources,
+          streaming: streaming,
+        );
+      };
     }
     playbackState.setPlaybackFromLocalQueue(
       LocalPlayQueue(items: queueMediaItems, currentIndex: startIndex),
@@ -686,6 +664,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
     required RemoteStreamService? preferredService,
     required String preferredAddonId,
     required bool resolveHosterLinks,
+    bool preferNative = false,
     required SourceController sources,
     required RemoteStreamingProvider streaming,
   }) async {
@@ -716,37 +695,29 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
         requireCurrent();
         for (final entry in cloudMatches) {
           try {
-            final freshEntry = await sources.hydrate(entry);
-            requireCurrent();
-            final file = freshEntry.files.where((row) => row.kind == SourceItemKind.video).firstOrNull;
+            final file = entry.files.where((row) => row.kind == SourceItemKind.video).firstOrNull;
             if (file == null) continue;
-            final progress = await ExternalVideoProgressSession.open(sources, freshEntry, file);
+            final session = await SourceVideoSession.open(sources, entry, [file]);
             try {
-              final lease = await sources.resolveRemoteCloudFile(freshEntry, file);
+              final descriptor = await session.resolveFile(
+                file,
+                metadata: metadata,
+                trackProgress: item.serverItem == null,
+              );
               requireCurrent();
-              Future<({Uri uri, Map<String, String> headers})> renewCloudFile() async {
-                requireCurrent();
-                final latestEntry = await sources.hydrate(freshEntry);
-                requireCurrent();
-                final latestFile = latestEntry.files.where((row) => row.fingerprint == file.fingerprint).firstOrNull;
-                if (latestFile == null) throw const SourceException(SourceFailure.unavailable);
-                final renewed = await sources.resolveRemoteCloudFile(latestEntry, latestFile);
-                requireCurrent();
-                return (uri: renewed.uri, headers: renewed.headers);
-              }
-
+              // The descriptor owns the session and all renewal/progress work.
               return ExternalPlaybackSource(
                 mediaGlobalKey: metadata.globalKey,
                 profileId: profileId,
-                uri: lease.uri,
-                headers: lease.headers,
-                renew: renewCloudFile,
-                onProgress: progress.record,
-                initialPosition: Duration(milliseconds: progress.resumePositionMs),
-                onRelease: progress.close,
+                uri: descriptor.uri,
+                headers: descriptor.headers,
+                renew: descriptor.renew,
+                initialPosition: descriptor.initialPosition,
+                onProgress: descriptor.onProgress,
+                onRelease: session.close,
               );
             } catch (_) {
-              await progress.close();
+              await session.close();
               rethrow;
             }
           } on SourceException catch (error) {
@@ -802,8 +773,12 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           headers = const {};
           resolvedByProvider = true;
         } else if (candidate.url == null && candidate.infoHash != null) {
-          if (streaming.accounts.isEmpty && streaming.nativePeerEnabled) {
-            peer = await streaming.resolveNativeTorrent(candidate);
+          if ((preferNative || streaming.accounts.isEmpty) && streaming.nativePeerEnabled) {
+            peer = await streaming.resolveNativeTorrent(
+              candidate,
+              shouldCancel: () =>
+                  sources.blocked || sources.profileId != profileId || !sources.current(sourceGeneration),
+            );
             uri = peer.uri;
             fileName = peer.fileName;
             size = peer.size;
@@ -844,7 +819,7 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
           releaseYear: item.request.year,
           onlineTitle: item.request.title,
         );
-        final progress = await ExternalVideoProgressSession.open(sources, entry, file);
+        final progress = item.serverItem == null ? await ExternalVideoProgressSession.open(sources, entry, file) : null;
         try {
           requireCurrent();
           Future<({Uri uri, Map<String, String> headers})> renew() async {
@@ -883,15 +858,15 @@ class _RemoteStreamPickerScreenState extends State<RemoteStreamPickerScreen> {
             uri: uri,
             headers: headers,
             renew: renew,
-            onProgress: progress.record,
-            initialPosition: Duration(milliseconds: progress.resumePositionMs),
+            onProgress: progress?.record,
+            initialPosition: Duration(milliseconds: progress?.resumePositionMs ?? 0),
             onRelease: () async {
-              await progress.close();
+              await progress?.close();
               await peer?.close();
             },
           );
         } catch (_) {
-          await progress.close();
+          await progress?.close();
           rethrow;
         }
       } on SourceException catch (error) {

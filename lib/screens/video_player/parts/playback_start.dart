@@ -150,7 +150,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       mediaSourceId: _requestedMediaSourceId,
       qualityPreset: _selectedQualityPreset,
       audioStreamId: _selectedAudioStreamId,
-      resumePosition: widget.initialPosition,
+      resumePosition:
+          (widget.initialPosition ??
+          (_externalSourceFor(_currentMetadata)?.onProgress == null
+              ? null
+              : _externalSourceFor(_currentMetadata)?.initialPosition)),
     );
 
     // Capture providers before async gaps
@@ -164,7 +168,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     try {
       PlaybackContext playbackContext;
 
-      if (_offlineLibraryMode) {
+      if (_offlineLibraryMode && _externalSourceFor(_currentMetadata) == null) {
         final playbackResolver = PlaybackSourceResolver(
           serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
@@ -175,7 +179,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           metadata: _currentMetadata,
           isOffline: true,
           offlineWatchService: offlineWatchService,
-          requested: widget.initialPosition,
+          requested:
+              (widget.initialPosition ??
+              (_externalSourceFor(_currentMetadata)?.onProgress == null
+                  ? null
+                  : _externalSourceFor(_currentMetadata)?.initialPosition)),
         );
         if (!attempt.isCurrent) return;
         playbackContext = await playbackResolver.resolve(
@@ -249,10 +257,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         requestedMediaSourceId: _requestedMediaSourceId,
         subtitleSelection: subtitleSelection,
       );
-      _commitPlaybackSession(
-        session,
-        externalPlaybackSource: _externalSourceFor(session.metadata),
-      );
+      _commitPlaybackSession(session, externalPlaybackSource: _externalSourceFor(session.metadata));
 
       // Display matching: mpv and Apple TV open paused and negotiate from the
       // decoded stream at the first frame; ExoPlayer switches before creating
@@ -313,7 +318,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             metadata: _currentMetadata,
             isOffline: _isOfflinePlayback,
             offlineWatchService: offlineWatchService,
-            requested: widget.initialPosition,
+            requested:
+                (widget.initialPosition ??
+                (_externalSourceFor(_currentMetadata)?.onProgress == null
+                    ? null
+                    : _externalSourceFor(_currentMetadata)?.initialPosition)),
           );
           return mounted && player == currentPlayer;
         },

@@ -146,6 +146,39 @@ void main() {
     );
     expect(await library.cards('alice'), hasLength(2));
   });
+  test('search and visibility apply before paging across the full canonical library', () async {
+    final target = MediaItem.plex(id: 'needle', kind: MediaKind.movie, title: 'Needle in library', serverId: 'plex');
+    await library.recordServerItems('alice', [target], libraryId: 'visible');
+    await library.recordServerItems('alice', [for (var i = 0; i < 125; i++) server('$i', {})], libraryId: 'hidden');
+    final results = await library.cards('alice', query: 'needle', limit: 1, serverIds: {'plex'});
+    expect(results.single.serverItem!.id, 'needle');
+    final visible = await library.cards('alice', limit: 1, serverIds: {'plex'}, hiddenLibraryKeys: {'plex:hidden'});
+    expect(visible.single.serverItem!.id, 'needle');
+    expect(await library.cards('alice', serverIds: {}), isEmpty);
+    final entry = cloud('needle', {'imdb': 'tt1234567'});
+    await sources.cacheEntries('alice', [entry]);
+    expect((await library.cards('alice', serverIds: {})).single.entry!.id, 'needle');
+  });
+
+  test('complete scans prune missing server copies without losing cloud cards or concurrent refreshes', () async {
+    final entry = cloud('one', {'imdb': 'tt1234567'});
+    final missing = server('missing', {'imdb': 'tt1234567'}),
+        retained = server('retained', {}),
+        concurrent = server('concurrent', {});
+    await sources.cacheEntries('alice', [entry]);
+    await library.recordServerItems('alice', [missing, retained, concurrent], libraryId: 'movies');
+    final original = (await library.cardForCopy('alice', CanonicalLibrary.entryKey(entry)))!.id;
+    await db.customStatement('UPDATE canonical_copies SET updated=1');
+    await library.recordServerItems('alice', [concurrent], libraryId: 'movies');
+    await library.reconcileServerLibrary('alice', 'plex', 'movies', {CanonicalLibrary.serverKey(retained)}, 2);
+    final card = (await library.cardForCopy('alice', CanonicalLibrary.entryKey(entry)))!;
+    expect(card.id, original);
+    expect(card.copies, hasLength(1));
+    expect(await library.cardForCopy('alice', CanonicalLibrary.serverKey(missing)), isNull);
+    expect(await library.cardForCopy('alice', CanonicalLibrary.serverKey(concurrent)), isNotNull);
+    expect(await library.cardForCopy('alice', CanonicalLibrary.serverKey(retained)), isNotNull);
+  });
+
   test('canonical card and source choices survive closing and reopening SQLite', () async {
     final directory = await Directory.systemTemp.createTemp('canonical-restart-');
     final file = File('${directory.path}/library.sqlite');

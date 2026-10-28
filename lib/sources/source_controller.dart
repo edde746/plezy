@@ -81,8 +81,22 @@ class SourceController extends ChangeNotifier {
   late PublicationSync cloudSync;
   PublicationSyncConfig? syncConfig;
   final Set<String> activeProgressKeys = {};
-  void holdProgress(String key) => activeProgressKeys.add(key);
-  void releaseProgress(String key) => activeProgressKeys.remove(key);
+  final Map<String, int> _progressHolds = {};
+  void holdProgress(String key) {
+    _progressHolds[key] = (_progressHolds[key] ?? 0) + 1;
+    activeProgressKeys.add(key);
+  }
+
+  void releaseProgress(String key) {
+    final remaining = (_progressHolds[key] ?? 1) - 1;
+    if (remaining > 0) {
+      _progressHolds[key] = remaining;
+    } else {
+      _progressHolds.remove(key);
+      activeProgressKeys.remove(key);
+    }
+  }
+
   bool cloudConflict(String key) => cloudSync.conflicts.values.any(
     (c) => c.values.any((v) {
       final d = sourceMap(v.value['data']);
@@ -368,6 +382,7 @@ class SourceController extends ChangeNotifier {
     _sourceSyncFailures.clear();
     _sourceSyncRetryAt.clear();
     activeProgressKeys.clear();
+    _progressHolds.clear();
     syncConfig = null;
     sources = const [];
     shelves = {};
@@ -756,7 +771,8 @@ class SourceController extends ChangeNotifier {
       checkAccount();
       final size = resolved.size ?? item.size;
       final account = remote.accountFor(service);
-      final canRefresh = account != null &&
+      final canRefresh =
+          account != null &&
           account.id == accountId &&
           size != null &&
           size > 0 &&
@@ -767,11 +783,11 @@ class SourceController extends ChangeNotifier {
               'provider': 'remoteCloud',
               'service': service.name,
               'accountId': accountId,
-              'accessToken': account!.accessToken,
-              if (account!.refreshToken != null) 'refreshToken': account.refreshToken,
-              if (account!.clientId != null) 'clientId': account.clientId,
-              if (account!.clientSecret != null) 'clientSecret': account.clientSecret,
-              if (account!.expiresAt != null) 'expiresAt': account.expiresAt,
+              'accessToken': account.accessToken,
+              if (account.refreshToken != null) 'refreshToken': account.refreshToken,
+              if (account.clientId != null) 'clientId': account.clientId,
+              if (account.clientSecret != null) 'clientSecret': account.clientSecret,
+              if (account.expiresAt != null) 'expiresAt': account.expiresAt,
               'providerId': item.providerId,
               'providerFileId': item.providerFileId,
               if (item.parentProviderId != null) 'parentProviderId': item.parentProviderId,
@@ -854,8 +870,7 @@ class SourceController extends ChangeNotifier {
     final cloudSources = sources.where((source) => source.kind == FileSourceKind.remoteCloud).toList(growable: false);
     if (cloudSources.isEmpty) return const [];
     final pages = await Future.wait([
-      for (final source in cloudSources)
-        repository.recentEntries(profile, source: source.id, limit: boundedLimit * 2),
+      for (final source in cloudSources) repository.recentEntries(profile, source: source.id, limit: boundedLimit * 2),
     ]);
     requireSession(epoch);
     final seen = <String>{};
@@ -923,8 +938,8 @@ class SourceController extends ChangeNotifier {
       }
       if (!canonicalVideoIdentitiesForSourceEntry(entry).any(targetIdentities.contains)) return false;
       final candidateTitle = normalizeSearchText(entry.onlineTitle ?? entry.displayTitle);
-      final titleMatches = candidateTitle == normalizedTitle ||
-          (mediaType == 'show' && candidateTitle.startsWith('$normalizedTitle '));
+      final titleMatches =
+          candidateTitle == normalizedTitle || (mediaType == 'show' && candidateTitle.startsWith('$normalizedTitle '));
       if (!titleMatches) return false;
       if (mediaType == 'movie' && year != null && entry.releaseYear != null) {
         if ((year - entry.releaseYear!).abs() > 1) return false;

@@ -64,6 +64,7 @@ class CanonicalLibrary {
     String profile,
     Iterable<MediaItem> items, {
     Map<String, Set<String>> identities = const {},
+    String? libraryId,
   }) async {
     for (final item in items) {
       final aliases = identities[item.globalKey] ?? canonicalVideoIdentitiesForMediaItem(item);
@@ -100,6 +101,7 @@ class CanonicalLibrary {
         for (final e in json.entries)
           if (keys.contains(e.key)) e.key: e.value,
       };
+      if (libraryId != null) safe['libraryId'] = libraryId;
       for (final key in ['thumbPath', 'artPath']) {
         final value = safe[key];
         final uri = value is String ? Uri.tryParse(value) : null;
@@ -237,19 +239,90 @@ class CanonicalLibrary {
     return row == null ? null : _card(profile, row.read<String>('card'));
   }
 
-  Future<List<CanonicalLibraryCard>> cards(String profile, {int limit = 120, int offset = 0}) async {
-    final rows = await database
-        .customSelect(
-          'SELECT card FROM canonical_copies WHERE profile=? GROUP BY card '
-          'ORDER BY MAX(updated) DESC,card LIMIT ? OFFSET ?',
-          variables: [Variable(profile), Variable(limit), Variable(offset)],
-        )
-        .get();
-    return Future.wait(rows.map((row) => _card(profile, row.read<String>('card'))));
+  static const _copyJoin =
+      "LEFT JOIN entries e ON c.kind='source' AND e.profile=c.profile AND e.source=c.source AND e.id=c.item ";
+
+  String _visibleCopies(List<Variable> variables, Set<String>? serverIds, Set<String> hiddenLibraryKeys) {
+    final server = <String>["c.kind='server'"];
+    if (serverIds != null) {
+      server.add(serverIds.isEmpty ? '0' : 'c.source IN (${List.filled(serverIds.length, '?').join(',')})');
+      variables.addAll(serverIds.map(Variable.new));
+    }
+    if (hiddenLibraryKeys.isNotEmpty) {
+      server.add(
+        "(c.source || ':' || COALESCE(json_extract(c.payload,'\$.libraryId'),'')) NOT IN (${List.filled(hiddenLibraryKeys.length, '?').join(',')})",
+      );
+      variables.addAll(hiddenLibraryKeys.map(Variable.new));
+    }
+    return "((${server.join(' AND ')}) OR (c.kind='source' AND e.payload IS NOT NULL AND COALESCE(json_extract(e.payload,'\$.unavailable'),0)=0))";
   }
 
+  Future<List<CanonicalLibraryCard>> cards(
+    String profile, {
+    int limit = 120,
+    int offset = 0,
+    String query = '',
+    Set<String>? serverIds,
+    Set<String> hiddenLibraryKeys = const {},
+  }) async {
+    final variables = <Variable>[Variable(profile)];
+    final visible = _visibleCopies(variables, serverIds, hiddenLibraryKeys);
+    var search = '';
+    if (query.trim().isNotEmpty) {
+      search =
+          "AND instr(lower(CASE WHEN c.kind='source' THEN e.search ELSE "
+          "COALESCE(json_extract(c.payload,'\$.title'),'') || ' ' || COALESCE(json_extract(c.payload,'\$.grandparentTitle'),'') END),?)>0 ";
+      variables.add(Variable(query.trim().toLowerCase()));
+    }
+    variables.addAll([Variable(limit), Variable(offset)]);
+    final rows = await database
+        .customSelect(
+          'SELECT c.card FROM canonical_copies c $_copyJoin WHERE c.profile=? AND $visible $search '
+          'GROUP BY c.card ORDER BY MAX(c.updated) DESC,c.card LIMIT ? OFFSET ?',
+          variables: variables,
+        )
+        .get();
+    return Future.wait(
+      rows.map(
+        (row) => _card(profile, row.read<String>('card'), serverIds: serverIds, hiddenLibraryKeys: hiddenLibraryKeys),
+      ),
+    );
+  }
+
+  /// Called only after a complete successful library scan. Partial/offline
+  /// scans never delete cached cards; concurrently refreshed copies survive.
+  Future<void> reconcileServerLibrary(
+    String profile,
+    String server,
+    String library,
+    Set<String> seen,
+    int startedAt,
+  ) => database.transaction(() async {
+    final rows = await database
+        .customSelect(
+          "SELECT copy_key FROM canonical_copies WHERE profile=? AND source=? AND kind='server' AND json_extract(payload,'\$.libraryId')=? AND updated<=?",
+          variables: [Variable(profile), Variable(server), Variable(library), Variable(startedAt)],
+        )
+        .get();
+    for (final row in rows) {
+      final key = row.read<String>('copy_key');
+      if (!seen.contains(key)) {
+        await database.customStatement('DELETE FROM canonical_copies WHERE profile=? AND copy_key=? AND updated<=?', [
+          profile,
+          key,
+          startedAt,
+        ]);
+      }
+    }
+  });
+
   Future<CanonicalLibraryCard> card(String profile, String id) => _card(profile, id);
-  Future<CanonicalLibraryCard> _card(String profile, String id) async {
+  Future<CanonicalLibraryCard> _card(
+    String profile,
+    String id, {
+    Set<String>? serverIds,
+    Set<String> hiddenLibraryKeys = const {},
+  }) async {
     final redirect = await database
         .customSelect(
           'SELECT card FROM canonical_redirects WHERE profile=? AND previous=?',
@@ -257,12 +330,13 @@ class CanonicalLibrary {
         )
         .getSingleOrNull();
     id = redirect?.read<String>('card') ?? id;
+    final variables = <Variable>[Variable(profile), Variable(id)];
+    final visible = _visibleCopies(variables, serverIds, hiddenLibraryKeys);
     final rows = await database
         .customSelect(
-          'SELECT c.*,e.payload AS entry_payload FROM canonical_copies c '
-          "LEFT JOIN entries e ON c.kind='source' AND e.profile=c.profile AND e.source=c.source AND e.id=c.item "
-          'WHERE c.profile=? AND c.card=? ORDER BY c.kind,c.source,c.item',
-          variables: [Variable(profile), Variable(id)],
+          'SELECT c.*,e.payload AS entry_payload FROM canonical_copies c $_copyJoin '
+          'WHERE c.profile=? AND c.card=? AND $visible ORDER BY c.kind,c.source,c.item',
+          variables: variables,
         )
         .get();
     final copies = <CanonicalLibraryCopy>[];

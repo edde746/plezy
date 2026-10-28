@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:plezy/i18n/presentation_formats.dart';
 import 'package:plezy/i18n/locale_preferences.dart';
+
 import 'dart:async';
 
 import 'package:collection/collection.dart';
@@ -395,7 +396,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   bool get _hasEpisodes => _episodes.isNotEmpty;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _canWatchWithServices || _hasEpisodes || _hasTrailer;
+  bool get _hasActions =>
+      _watchlistSource != null || _canRequest || _canWatchWithServices || _hasEpisodes || _hasTrailer;
 
   Future<Map<String, MediaItem>> _serverEpisodeQueue(CatalogItem item) async {
     if (item.kind != MediaKind.show) return const {};
@@ -405,38 +407,47 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       final shows = matches
           .where((media) => media.kind == MediaKind.show && (media.serverId?.trim().isNotEmpty ?? false))
           .toList(growable: false);
-      // Never pick an arbitrary server copy. A catalog queue can still mix
-      // add-on and cloud sources when this match is missing or ambiguous.
-      if (shows.length != 1) return const {};
-      final show = shows.single;
-      final serverId = ServerId(show.serverId!);
       final multiServer = context.read<MultiServerProvider>();
-      if (!multiServer.expectedServerIds.contains(show.serverId)) return const {};
       final manager = multiServer.serverManager;
-      if (!manager.isClientOnline(serverId)) return const {};
-      final client = manager.getClient(serverId);
-      if (client == null) return const {};
-      final episodes = await client.fetchClientSideEpisodeQueue(show.id);
-      if (!mounted || episodes == null || !multiServer.expectedServerIds.contains(show.serverId)) return const {};
-
-      String keyFor(int season, int number) => '$season:$number';
-
+      // Exact matches are already verified by the catalog matcher. Keep a
+      // stable server preference across episodes, filling holes from another
+      // verified copy when one library has only part of the series.
+      final ordered = [...shows]..sort((a, b) => a.globalKey.compareTo(b.globalKey));
       final byCoordinates = <String, MediaItem>{};
-      final ambiguous = <String>{};
-      for (final episode in episodes) {
-        if (episode.kind != MediaKind.episode) continue;
-        final season = episode.parentIndex;
-        final number = episode.index;
-        if (season == null || number == null || season < 0 || number < 0) continue;
-        final key = keyFor(season, number);
-        if (byCoordinates.containsKey(key)) {
-          ambiguous.add(key);
-        } else {
-          byCoordinates[key] = episode;
+      for (final show in ordered) {
+        final serverId = ServerId(show.serverId!);
+        if (!multiServer.expectedServerIds.contains(show.serverId) || !manager.isClientOnline(serverId)) continue;
+        final client = manager.getClient(serverId);
+        if (client == null) continue;
+        try {
+          final episodes = await client.fetchClientSideEpisodeQueue(show.id);
+          if (!mounted) return const {};
+          if (episodes == null || !multiServer.expectedServerIds.contains(show.serverId)) continue;
+          final unique = <String, MediaItem>{};
+          final ambiguous = <String>{};
+          for (final episode in episodes) {
+            final season = episode.parentIndex, number = episode.index;
+            if (episode.kind != MediaKind.episode ||
+                episode.serverId != show.serverId ||
+                season == null ||
+                number == null ||
+                season < 0 ||
+                number < 0) {
+              continue;
+            }
+            final key = '$season:$number';
+            if (unique.containsKey(key)) {
+              ambiguous.add(key);
+            } else {
+              unique[key] = episode;
+            }
+          }
+          for (final row in unique.entries) {
+            if (!ambiguous.contains(row.key)) byCoordinates.putIfAbsent(row.key, () => row.value);
+          }
+        } on Object {
+          // Another exact copy can still fill this server's missing episodes.
         }
-      }
-      for (final key in ambiguous) {
-        byCoordinates.remove(key);
       }
       return byCoordinates;
     } on Object catch (error, stackTrace) {
@@ -466,7 +477,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       if (item.ids.tmdb != null) 'tmdb': '${item.ids.tmdb}',
       if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
     };
-    final libraryMatches = (_matches ?? const <MediaItem>[]).where((match) => match.isMovie).toList();
+    final libraryMatches = (_matches ?? const <MediaItem>[]).where((match) => match.kind == MediaKind.movie).toList();
     try {
       await Navigator.push(
         context,
@@ -504,20 +515,21 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       if (item.ids.tvdb != null) 'tvdb': '${item.ids.tvdb}',
     };
     final episodeOrder = {for (var index = 0; index < _episodes.length; index++) _episodes[index].id: index};
-    final orderedEpisodes = List<CatalogEpisode>.of(_episodes)..sort((a, b) {
-      final seasonOrder = (a.seasonNumber ?? -1).compareTo(b.seasonNumber ?? -1);
-      if (seasonOrder != 0) return seasonOrder;
-      final episodeOrderComparison = (a.episodeNumber ?? -1).compareTo(b.episodeNumber ?? -1);
-      if (episodeOrderComparison != 0) return episodeOrderComparison;
-      return (episodeOrder[a.id] ?? 0).compareTo(episodeOrder[b.id] ?? 0);
-    });
+    final orderedEpisodes = List<CatalogEpisode>.of(_episodes)
+      ..sort((a, b) {
+        final seasonOrder = (a.seasonNumber ?? -1).compareTo(b.seasonNumber ?? -1);
+        if (seasonOrder != 0) return seasonOrder;
+        final episodeOrderComparison = (a.episodeNumber ?? -1).compareTo(b.episodeNumber ?? -1);
+        if (episodeOrderComparison != 0) return episodeOrderComparison;
+        return (episodeOrder[a.id] ?? 0).compareTo(episodeOrder[b.id] ?? 0);
+      });
     String episodePlaybackTitle(CatalogEpisode row) {
       final rowSeason = row.seasonNumber;
       final rowNumber = row.episodeNumber;
       final rowPosition = rowSeason != null && rowNumber != null
           ? t.streaming.episodePosition(season: rowSeason, episode: rowNumber)
           : null;
-      return [item.title, if (rowPosition != null) rowPosition, row.title].join(' · ');
+      return [item.title, ?rowPosition, row.title].join(' · ');
     }
 
     List<RemoteStreamQueueItem> queueItemsFor(Map<String, MediaItem> serverEpisodes) => [
@@ -1089,12 +1101,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                     ],
                     if (episode.overview?.trim() case final overview? when overview.isNotEmpty) ...[
                       const SizedBox(height: 5),
-                      Text(
-                        overview,
-                        style: theme.textTheme.bodySmall,
-                        maxLines: 2,
-                        overflow: .ellipsis,
-                      ),
+                      Text(overview, style: theme.textTheme.bodySmall, maxLines: 2, overflow: .ellipsis),
                     ],
                   ],
                 ),
@@ -1927,10 +1934,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             ],
                             const SizedBox(height: 24),
                             _buildLibrarySection(theme),
-                            if (_hasEpisodes) ...[
-                              const SizedBox(height: 28),
-                              _buildEpisodesSection(theme),
-                            ],
+                            if (_hasEpisodes) ...[const SizedBox(height: 28), _buildEpisodesSection(theme)],
                             if (_cast case final List<CatalogCastMember> cast when cast.isNotEmpty) ...[
                               const SizedBox(height: 28),
                               _buildCastSection(theme, cast),

@@ -576,8 +576,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         await stoppedProgressFuture;
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         ExternalPlaybackSource? activeExternalSource;
-        if (!_offlineLibraryMode && !forceServerPlayback) {
-          activeExternalSource = _externalSourceFor(metadata);
+        if (!forceServerPlayback) {
+          if (reason != 'episode navigation' || !playbackState.hasExternalPlaybackSourceResolver(metadata)) {
+            activeExternalSource = _externalSourceFor(metadata);
+          }
           activeExternalSource ??= await playbackState.resolveExternalPlaybackSource(metadata);
           if (activeExternalSource != null && !_externalSourceProfileIsCurrent(activeExternalSource)) {
             throw StateError('The selected remote stream is no longer available in this profile.');
@@ -629,7 +631,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (result.videoUrl == null) {
           throw PlaybackException(t.messages.noVideoUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
-        if (result.isOffline && !_offlineLibraryMode) {
+        if (result.isOffline && !_offlineLibraryMode && activeExternalSource?.onProgress == null) {
           // The pre-resolve lookup assumed an online source; a download won
           // instead, so consult locally tracked progress after all.
           openResumePosition = await _resolveOpenResumePosition(

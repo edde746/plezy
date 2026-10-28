@@ -1,6 +1,5 @@
 import '../../providers/hidden_libraries_provider.dart';
 import '../../media/media_library.dart';
-import '../../utils/global_key_utils.dart';
 import '../../media/canonical_video_identity.dart';
 import '../../utils/external_ids.dart';
 import '../../media/canonical_library.dart';
@@ -11,6 +10,7 @@ import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../widgets/media_card.dart';
 import 'canonical_library_navigation.dart';
+
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
@@ -102,12 +102,18 @@ class _SourcesScreenState extends State<SourcesScreen> {
   int _canonicalLimit = 120;
   bool _canonicalIndexing = false;
   String? _canonicalIndexedProfile;
+  DateTime? _canonicalIndexedAt;
   bool get _mergedVideos => widget.shelf == PublicationShelf.videos && widget.source == null && !widget.offlineOnly;
 
   Future<void> _indexCanonicalServers(SourceController sources) async {
     if (!_mergedVideos || _canonicalIndexing || !mounted) return;
     final profile = sources.profileId, epoch = sources.generation;
-    if (profile == null || _canonicalIndexedProfile == profile) return;
+    if (profile == null ||
+        (_canonicalIndexedProfile == profile &&
+            _canonicalIndexedAt != null &&
+            DateTime.now().difference(_canonicalIndexedAt!) < const Duration(minutes: 5))) {
+      return;
+    }
     final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
     final libraries = visibleMediaLibraries(
       context.read<LibrariesProvider>().libraries,
@@ -126,6 +132,9 @@ class _SourcesScreenState extends State<SourcesScreen> {
         final client = servers.getClientForServer(ServerId(library.serverId!));
         if (client == null) continue;
         var offset = 0;
+        final scanStarted = DateTime.now().millisecondsSinceEpoch;
+        final seen = <String>{};
+        var complete = false;
         String? previousPage;
         try {
           while (mounted && sources.current(epoch) && sources.profileId == profile) {
@@ -139,7 +148,10 @@ class _SourcesScreenState extends State<SourcesScreen> {
               libraryKind: library.kind,
             );
             if (!mounted || !sources.current(epoch) || sources.profileId != profile) return;
-            if (page.items.isEmpty) break;
+            if (page.items.isEmpty) {
+              complete = offset >= page.totalCount;
+              break;
+            }
             final pageIdentity = page.items.map((item) => item.id).join('|');
             if (pageIdentity == previousPage) break;
             previousPage = pageIdentity;
@@ -160,15 +172,27 @@ class _SourcesScreenState extends State<SourcesScreen> {
                 episode: item.index,
               );
             }
-            await identity.recordServerItems(profile, page.items, identities: aliases);
+            await identity.recordServerItems(profile, page.items, identities: aliases, libraryId: library.id);
+            seen.addAll(page.items.map(CanonicalLibrary.serverKey));
             offset += page.items.length;
-            if (offset >= page.totalCount) break;
+            if (offset >= page.totalCount) {
+              complete = true;
+              break;
+            }
+          }
+          if (complete && sources.current(epoch) && sources.profileId == profile) {
+            await identity.reconcileServerLibrary(profile, library.serverId!, library.id, seen, scanStarted);
+          } else {
+            succeeded = false;
           }
         } on Object {
           succeeded = false;
         }
       }
-      if (succeeded && sources.profileId == profile) _canonicalIndexedProfile = profile;
+      if (succeeded && sources.profileId == profile) {
+        _canonicalIndexedProfile = profile;
+        _canonicalIndexedAt = DateTime.now();
+      }
     } finally {
       if (mounted) {
         setState(() => _canonicalIndexing = false);
@@ -244,9 +268,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  Future<void> _load({bool more = false, bool reindex = true}) async {
+  Future<void> _load({bool more = false, bool reindex = true, bool refresh = false}) async {
+    if (refresh) _canonicalIndexedAt = null;
     if (!mounted) return;
     final controller = context.read<SourceController>(), request = ++_request;
+    final servers = context.read<MultiServerProvider>();
     final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
     if (!more && widget.source != null) _usingIndexFallback = false;
     setState(() {
@@ -269,19 +295,20 @@ class _SourcesScreenState extends State<SourcesScreen> {
       List<SourceEntry> items;
       if (_mergedVideos) {
         _canonicalLimit = more ? _canonicalLimit + 120 : 120;
-        final cards = await CanonicalLibrary(controller.repository.database).cards(profile, limit: _canonicalLimit + 1);
+        final cards = await CanonicalLibrary(controller.repository.database).cards(
+          profile,
+          limit: _canonicalLimit + 1,
+          query: _query,
+          serverIds: servers.expectedServerIds.toSet(),
+          hiddenLibraryKeys: hidden,
+        );
+        controller.requireSession(epoch);
+        if (!mounted || request != _request) return;
         _next = cards.length > _canonicalLimit ? 'canonical' : null;
         _canonicalCards.clear();
         items = [];
         for (final card in cards.take(_canonicalLimit)) {
-          final visible = CanonicalLibraryCard(
-            card.id,
-            card.copies.where((copy) {
-              final library = copy.serverItem?.libraryId;
-              return library == null || !hidden.contains(buildGlobalKey(ServerId(copy.source), library));
-            }).toList(),
-            profile: card.profile,
-          );
+          final visible = card;
           final media = visible.serverItem;
           final entry =
               visible.entry ??
@@ -621,9 +648,15 @@ class _SourcesScreenState extends State<SourcesScreen> {
 
   bool downloaded(SourceEntry e) => e.files.any((f) => _offline.contains(sourceKey(e.sourceId, f.id)));
   Widget itemTile(SourceEntry e, int index, int count, {PublicationProgress? progress}) => SourceTile(
-    key: ValueKey('${e.key}:${progress?.mode.name ?? ''}'),
+    key: ValueKey('${_canonicalCards[e.key]?.id ?? e.key}:${progress?.mode.name ?? ''}'),
     title: e.displayTitle,
-    subtitle: [e.author, e.series, if (downloaded(e)) t.fileSources.offline].where((s) => s.isNotEmpty).join(' · '),
+    subtitle: [
+      e.author,
+      e.series,
+      if (downloaded(e)) t.fileSources.offline,
+      if ((_canonicalCards[e.key]?.copies.length ?? 0) > 1)
+        t.streaming.availableCopiesCount(count: _canonicalCards[e.key]!.copies.length),
+    ].where((s) => s.isNotEmpty).join(' · '),
     icon: sourceItemIcon(e.kind),
     onTap: () => _open(e),
     index: index,
@@ -646,7 +679,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
               (widget.shelf == null || widget.shelf!.includes(e)) &&
               (!widget.offlineOnly || downloaded(e)) &&
               (_filter == null || e.kind == _filter) &&
-              ('${e.title} ${e.author} ${e.narrator} ${e.series}').toLowerCase().contains(_query.toLowerCase()),
+              (_mergedVideos ||
+                  ('${e.title} ${e.author} ${e.narrator} ${e.series}').toLowerCase().contains(_query.toLowerCase())),
         )
         .toList();
     final entries = organizePublications(
@@ -749,7 +783,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
             } else if (action == 'manage-streaming-connections') {
               await _manageRemoteStreaming();
             } else if (action == 'refresh') {
-              await _load();
+              await _load(refresh: true);
             }
           },
         ),
@@ -785,7 +819,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
             onPressed: () => sourceAction(context, () async {
               await sources.sync();
               if (context.mounted) showSnackBar(context, t.fileSources.synced);
-              await _load();
+              await _load(refresh: true);
             }),
             icon: const AppIcon(Symbols.sync_rounded),
           ),

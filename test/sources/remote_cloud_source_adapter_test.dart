@@ -48,7 +48,7 @@ void main() {
     resolveContent: resolve ?? (item) async => ContentLease(item.uri!, size: item.size),
   );
 
-  test('projects only video files, retains folders and keeps signed URLs transient', () async {
+  test('projects downloadable videos, retains folders and keeps signed URLs transient', () async {
     final sourceAdapter = adapter(
       page: ({parentId, cursor}) => RemoteCloudPage(
         items: [
@@ -73,7 +73,11 @@ void main() {
     expect(page.entries.map((entry) => entry.id), ['tb:42', 'tb:42:7']);
     expect(page.entries.first.kind, SourceItemKind.folder);
     expect(page.entries.last.kind, SourceItemKind.video);
-    expect(page.entries.last.files.single.streamOnly, isTrue);
+    expect(
+      page.entries.last.files.single.streamOnly,
+      isFalse,
+      reason: 'Connected cloud files support the existing offline download flow',
+    );
     expect(page.entries.last.identifiers['remoteCloudProviderId'], '42');
     expect(page.next, '100');
     expect(page.entries.last.toJson().toString(), isNot(contains('signed/Film.mkv')));

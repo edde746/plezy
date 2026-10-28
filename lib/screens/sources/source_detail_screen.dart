@@ -11,17 +11,15 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
-import '../../media/media_backend.dart';
-import '../../media/media_item.dart';
-import '../../media/media_kind.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
-import '../../services/playback_context.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
-import '../../sources/external_video_progress.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
+import '../../sources/source_video_session.dart';
+import '../../providers/playback_state_provider.dart';
+import '../../media/play_queue.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
@@ -93,10 +91,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             mode: PublicationMode.listening,
             session: const Uuid().v4(),
           ),
-        if (_entry.kind == SourceItemKind.video && _entry.files.isNotEmpty)
+        for (final file in _entry.files.where((file) => file.kind == SourceItemKind.video))
           PublicationProgress(
             entryKey: _entry.key,
-            edition: sourceDigest(jsonEncode(_entry.files.map((f) => f.fingerprint).toList())),
+            edition: sourceDigest(jsonEncode([file.fingerprint])),
             mode: PublicationMode.watching,
             session: const Uuid().v4(),
           ),
@@ -466,9 +464,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   }
 
   Future<void> _play(List<PublicationFile> files) async {
-    if (_entry.kind == SourceItemKind.video && files.length == 1 && files.single.kind == SourceItemKind.video) {
-      final usedSharedPlayer = await _playRemoteCloudVideo(files.single);
-      if (usedSharedPlayer) return;
+    if (files.isEmpty) return;
+    if (files.every((file) => file.kind == SourceItemKind.video)) {
+      await _playSharedVideo(files);
+      return;
     }
     final playback = context.read<SourcePlayback>();
     await playback.start(
@@ -488,83 +487,36 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     if (mounted) await _load();
   }
 
-  /// A single cloud video uses the same video player surface as server
-  /// playback. The signed lease stays in memory behind its loopback gateway;
-  /// source progress is written to the existing profile-scoped publication
-  /// journal rather than pretending the item belongs to a server.
-  Future<bool> _playRemoteCloudVideo(PublicationFile selectedFile) async {
+  Future<void> _playSharedVideo(List<PublicationFile> files) async {
     final sources = context.read<SourceController>();
-    await sources.ready;
-    sources.requireSession();
-    final owner = sources.sources.where((source) => source.id == _entry.sourceId).firstOrNull;
-    if (owner?.kind != FileSourceKind.remoteCloud) return false;
-
-    final epoch = sources.generation;
-    final profile = sources.profileId!;
-    final entry = await sources.hydrate(_entry);
-    sources.requireSession(epoch);
-    final file = entry.files.where((candidate) => candidate.id == selectedFile.id).firstOrNull;
-    if (file == null || file.fingerprint != selectedFile.fingerprint) {
-      throw const SourceException(SourceFailure.conflict);
-    }
-    final lease = await sources.resolveRemoteCloudFile(entry, file);
-    sources.requireSession(epoch);
-    await context.read<SourcePlayback>().stop();
-    sources.requireSession(epoch);
-
-    final progress = await ExternalVideoProgressSession.open(sources, entry, file);
-    if (!sources.current(epoch) || sources.profileId != profile) {
-      await progress.close();
-      throw const SourceException(SourceFailure.cancelled);
-    }
-
-    final media = MediaItem(
-      id: 'remote-source:${sourceDigest(jsonEncode([profile, entry.key, file.fingerprint]))}',
-      backend: MediaBackend.plex,
-      kind: MediaKind.movie,
-      title: entry.onlineTitle ?? entry.displayTitle,
-      summary: entry.description,
-      year: entry.releaseYear,
-      durationMs: file.durationMs,
-      thumbPath: entry.onlinePosterUrl,
-    );
-    Future<({Uri uri, Map<String, String> headers})> renew() async {
-      if (sources.blocked || sources.profileId != profile || !sources.current(epoch)) {
-        throw const SourceException(SourceFailure.cancelled);
-      }
-      final renewed = await sources.resolveRemoteCloudFile(entry, file);
-      sources.requireSession(epoch);
-      return (uri: renewed.uri, headers: renewed.headers);
-    }
-
-    final descriptor = ExternalPlaybackSource(
-      mediaGlobalKey: media.globalKey,
-      profileId: profile,
-      uri: lease.uri,
-      headers: lease.headers,
-      renew: renew,
-      onProgress: progress.record,
-    );
+    final playbackState = context.read<PlaybackStateProvider>();
+    final sourcePlayback = context.read<SourcePlayback>();
+    final session = await SourceVideoSession.open(sources, _entry, files);
     try {
-      if (!mounted || sources.blocked || sources.profileId != profile || !sources.current(epoch)) {
-        throw const SourceException(SourceFailure.cancelled);
-      }
+      await sourcePlayback.stop();
+      final descriptor = await session.resolve(session.items.first);
+      if (!mounted || !session.valid) throw const SourceException(SourceFailure.cancelled);
+      playbackState.setPlaybackFromLocalQueue(
+        LocalPlayQueue(items: session.items, currentIndex: 0),
+        contextKey: session.contextKey,
+        externalSourceResolvers: {for (final item in session.items) item.globalKey: session.resolve},
+      );
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
-          settings: const RouteSettings(name: 'remote-cloud-video-player'),
+          settings: const RouteSettings(name: 'source-video-player'),
           builder: (_) => VideoPlayerScreen(
-            metadata: media,
+            metadata: session.items.first,
             externalPlaybackSource: descriptor,
-            initialPosition: Duration(milliseconds: progress.resumePositionMs),
+            initialPosition: descriptor.initialPosition,
           ),
         ),
       );
     } finally {
-      await progress.close();
+      if (playbackState.shuffleContextKey == session.contextKey) playbackState.clearShuffle();
+      await session.close();
     }
     if (mounted) await _load();
-    return true;
   }
 
   Future<void> _read(PublicationFile file) async {
