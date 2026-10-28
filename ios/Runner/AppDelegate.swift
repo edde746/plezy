@@ -229,7 +229,7 @@ final class AppleMusicKitPlugin: NSObject, FlutterPlugin {
             "id": song.id.rawValue,
             "title": song.title,
             "artist": song.artistName,
-            "album": song.albumTitle as Any
+            "album": song.albumTitle ?? ""
           ] as [String: Any]
         })
       } catch {
@@ -261,7 +261,7 @@ final class AppleMusicKitPlugin: NSObject, FlutterPlugin {
           return
         }
         let request = MusicCatalogResourceRequest<Song>(
-          matching: \\.id,
+          matching: \.id,
           equalTo: MusicItemID(songID)
         )
         let response = try await request.response()
