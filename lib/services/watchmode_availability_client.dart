@@ -33,12 +33,12 @@ class WatchmodeAvailabilitySource {
   final String? androidTvUrl;
 
   String get typeLabel => switch (type) {
-    'sub' => 'SUB',
-    'rent' => 'RENT',
-    'buy' => 'BUY',
-    'free' => 'FREE',
-    'tve' => 'TV',
-    _ => '',
+    'sub' => 'Subscription',
+    'rent' => 'Rent',
+    'buy' => 'Buy',
+    'free' => 'Free',
+    'tve' => 'TV provider',
+    _ => 'Availability',
   };
 
   factory WatchmodeAvailabilitySource.fromJson(Map<String, Object?> json, String region) {
