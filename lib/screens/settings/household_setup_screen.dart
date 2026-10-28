@@ -14,6 +14,7 @@ import '../../widgets/settings_section.dart';
 import '../profile/profile_switch_screen.dart';
 import '../sources/file_sources_setup.dart';
 import 'add_connection_screen.dart';
+import 'issue_report_screen.dart';
 import 'logs_screen.dart';
 
 /// A compact household setup and connection check built from the existing
@@ -111,6 +112,12 @@ class HouseholdSetupScreen extends StatelessWidget {
                       title: t.settings.viewLogs,
                       subtitle: t.settings.viewLogsDescription,
                       destinationBuilder: (_) => const LogsScreen(),
+                    ),
+                    SettingNavigationTile(
+                      icon: Symbols.qr_code_2_rounded,
+                      title: t.issueReport.title,
+                      subtitle: t.issueReport.instructions,
+                      destinationBuilder: (_) => const IssueReportScreen(),
                     ),
                   ],
                 ),
