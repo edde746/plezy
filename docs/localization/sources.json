@@ -179,6 +179,96 @@
         ],
         "corrections": "language_qa_3_0_0_corrections.json",
         "nativeSpeakerReviewed": false
+      },
+      {
+        "scope": "VLC feature parity expansion",
+        "messagesPerBaseLocale": 36,
+        "baseLocales": 32,
+        "modelRevision": "7c1b2620a4e58dacecbd8bf89cfd6da7eb9eb7b0",
+        "decoding": {
+          "beamSize": 4,
+          "repetitionPenalty": 1.15,
+          "noRepeatNgramSize": 3,
+          "maxDecodingLength": 160
+        },
+        "traditionalChinese": "M2M100 zh draft converted with OpenCC s2twp",
+        "nativeSpeakerReviewed": false,
+        "keys": [
+          "universalMedia.allowFtp",
+          "universalMedia.allowFtpHelp",
+          "universalMedia.converterFfmpegMissing",
+          "universalMedia.converterHelp",
+          "videoControls.addBookmark",
+          "videoControls.bookmarkDefaultName",
+          "videoControls.bookmarkDeleted",
+          "videoControls.bookmarkLimitReached",
+          "videoControls.bookmarkName",
+          "videoControls.bookmarkNameHint",
+          "videoControls.bookmarkNameRequired",
+          "videoControls.bookmarkSaved",
+          "videoControls.bookmarkUnavailable",
+          "videoControls.bookmarksButton",
+          "videoControls.bookmarksHelp",
+          "videoControls.chaptersAndBookmarks",
+          "videoControls.clearSegmentLoop",
+          "videoControls.deleteBookmark",
+          "videoControls.loopEndAfterStart",
+          "videoControls.loopPointNotSet",
+          "videoControls.loopPointSet",
+          "videoControls.noChaptersOrBookmarks",
+          "videoControls.segmentLoop",
+          "videoControls.segmentLoopHelp",
+          "videoControls.segmentLoopUnavailable",
+          "videoControls.setLoopEnd",
+          "videoControls.setLoopStart",
+          "videoControls.setLoopStartFirst",
+          "videoSettings.audioEffectUnavailable",
+          "videoSettings.audioEffectsDescription",
+          "videoSettings.audioEqualizerDescription",
+          "videoSettings.audioPitch",
+          "videoSettings.audioPitchDescription",
+          "videoSettings.audioSpatializer",
+          "videoSettings.audioSpatializerDescription",
+          "videoSettings.audioStereoWidth"
+        ],
+        "translationNote": "The follow-up catalogs replace the original English-fallback plan with M2M100 drafts for these locales; drafts are not native-speaker reviewed."
+      },
+      {
+        "scope": "Live audio visualizer status",
+        "messagesPerBaseLocale": 1,
+        "baseLocales": 32,
+        "keys": [
+          "music.visualizerLiveAudio"
+        ],
+        "translationOrigin": "assistant-generated-draft",
+        "nativeSpeakerReviewed": false
+      },
+      {
+        "scope": "VLC local playlist export and alternate video-track messages",
+        "messagesPerBaseLocale": 10,
+        "baseLocales": 32,
+        "keys": [
+          "universalMedia.queuePlaylistFolderRequired",
+          "universalMedia.queuePlaylistSaved",
+          "universalMedia.queuePlaylistUnavailable",
+          "universalMedia.saveQueuePlaylist",
+          "videoSettings.videoTrack",
+          "videoSettings.videoTrackDefault",
+          "videoSettings.videoTrackDescription",
+          "videoSettings.videoTrackFailed",
+          "videoSettings.videoTrackNumber",
+          "videoSettings.videoTrackUnavailable"
+        ],
+        "modelRevision": "7c1b2620a4e58dacecbd8bf89cfd6da7eb9eb7b0",
+        "decoding": {
+          "beamSize": 4,
+          "repetitionPenalty": 1.15,
+          "noRepeatNgramSize": 3,
+          "maxDecodingLength": 160
+        },
+        "traditionalChinese": "M2M100 zh draft converted with OpenCC s2twp",
+        "translationOrigin": "m2m100-draft",
+        "nativeSpeakerReviewed": false
       }
     ]
   },

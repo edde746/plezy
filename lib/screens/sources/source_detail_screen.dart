@@ -157,8 +157,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       _offline.clear();
       for (final file in _entry.files.where((file) => !file.sampleOnly)) {
         if (await sources.downloads.local(profile, _entry.sourceId, file) !=
-            null)
+            null) {
           _offline.add(file.id);
+        }
       }
       sources.requireSession(epoch);
       if (mounted) setState(() => _progress = progresses);
@@ -189,8 +190,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     });
     try {
       final matched = await sources.identifyOnlineMetadata(_entry);
-      if (!mounted || sources.generation != epoch || _entry.key != entryKey)
+      if (!mounted || sources.generation != epoch || _entry.key != entryKey) {
         return;
+      }
       setState(() {
         _entry = matched;
         _metadataLookupPending = false;
@@ -293,8 +295,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                 validator: (value) {
                   final id = value?.trim() ?? '';
                   if (id.isEmpty ||
-                      RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id))
+                      RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id)) {
                     return null;
+                  }
                   return t.sourceSetup.sharedLibraryInvalid;
                 },
                 onFieldSubmitted: (_) {
@@ -545,8 +548,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     if (uri == null ||
         uri.scheme != 'https' ||
         host == null ||
-        uri.userInfo.isNotEmpty)
+        uri.userInfo.isNotEmpty) {
       return null;
+    }
     if (host == 'youtu.be' ||
         host == 'youtube.com' ||
         host.endsWith('.youtube.com') ||
@@ -567,8 +571,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     final sources = context.read<SourceController>();
     final sampleOnly =
         files.isNotEmpty && files.every((file) => file.sampleOnly);
-    if (sampleOnly && files.length != 1)
+    if (sampleOnly && files.length != 1) {
       throw const SourceException(SourceFailure.unsupported);
+    }
     await playback.start(
       _entry,
       files,
@@ -593,8 +598,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   }
 
   Future<void> _read(PublicationFile file) async {
-    if (PlatformDetector.isTV())
+    if (PlatformDetector.isTV()) {
       throw const SourceException(SourceFailure.unsupported);
+    }
     await Navigator.push(
       context,
       PageRouteBuilder<void>(
@@ -615,10 +621,11 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         _entry,
         file,
         onProgress: (done, total) {
-          if (mounted)
+          if (mounted) {
             setState(
               () => _transfers[file.id] = total == null ? null : done / total,
             );
+          }
         },
       );
     } finally {

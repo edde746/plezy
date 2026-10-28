@@ -2330,6 +2330,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // remains active when the custom config also contains an `af` line.
         await (currentPlayer as AudioEqualizerCapable).setAudioEqualizer(audioEqualizer);
       }
+      final audioEffects = (
+        stereoWidth: settingsService.read(SettingsService.audioStereoWidth),
+        spatializer: settingsService.read(SettingsService.audioSpatializer),
+        pitchSemitones: settingsService.read(SettingsService.audioPitchShiftSemitones),
+      );
+      if (currentPlayer.playerType == 'mpv' &&
+          currentPlayer is AudioEffectsCapable &&
+          (audioEffects.stereoWidth >= 0.01 || audioEffects.spatializer || audioEffects.pitchSemitones.abs() >= 0.05)) {
+        try {
+          await (currentPlayer as AudioEffectsCapable).setAudioEffects(audioEffects);
+        } catch (error, stackTrace) {
+          // Filters such as Rubber Band are optional in some MPV builds. A
+          // saved filter setting must never prevent the media from opening.
+          appLogger.w('VideoPlayerScreen: saved MPV audio effect is unavailable', error: error, stackTrace: stackTrace);
+        }
+      }
 
       final maxVolume = settingsService.read(SettingsService.maxVolume);
       try {

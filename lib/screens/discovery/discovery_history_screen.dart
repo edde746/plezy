@@ -51,8 +51,9 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
     try {
       final state = await widget.store.load(widget.profileId);
       if (!mounted ||
-          context.read<ActiveProfileProvider>().active?.id != widget.profileId)
+          context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
         return;
+      }
       setState(() {
         _state = state;
         _loading = false;
@@ -95,8 +96,9 @@ class _DiscoveryHistoryScreenState extends State<DiscoveryHistoryScreen> {
 
   Future<void> _restoreToDeck(DiscoveryChoice choice) async {
     if (_restoring.contains(choice.id) ||
-        context.read<ActiveProfileProvider>().active?.id != widget.profileId)
+        context.read<ActiveProfileProvider>().active?.id != widget.profileId) {
       return;
+    }
     setState(() => _restoring.add(choice.id));
     try {
       await widget.onRestoreToDeck(choice);

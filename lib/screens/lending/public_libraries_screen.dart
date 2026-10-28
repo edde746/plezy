@@ -317,8 +317,9 @@ Future<void> _signIn(
         _SignInDialog(service: service, finished: finished.future),
   );
   service.cancelAuthorization();
-  if (failure != null && context.mounted)
+  if (failure != null && context.mounted) {
     showErrorSnackBar(context, sourceFailureText(failure!));
+  }
 }
 
 /// Reuses the explicit borrower authorization flow from discovery.
@@ -407,8 +408,9 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
         integration: native?['integration'] == true,
         circulation: native?['circulation'] == true,
       );
-      if (library.name.isEmpty)
+      if (library.name.isEmpty) {
         throw const SourceException(SourceFailure.invalidData);
+      }
       await widget.service.save(library);
       if (!mounted) return;
       if (library.native) await _signIn(context, widget.service, library);
@@ -534,8 +536,9 @@ class _AddLibraryScreenState extends State<_AddLibraryScreen> {
                                   try {
                                     final choices = await widget.service
                                         .gatewayLibraries(_gateway.text.trim());
-                                    if (mounted)
+                                    if (mounted) {
                                       setState(() => _available = choices);
+                                    }
                                   } finally {
                                     if (mounted) setState(() => _busy = false);
                                   }
@@ -619,8 +622,9 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
   void initState() {
     super.initState();
     _search.text = widget.initialQuery?.trim() ?? '';
-    if (_search.text.isNotEmpty)
+    if (_search.text.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    }
   }
 
   Future<void> _load({bool more = false}) async {
@@ -780,8 +784,9 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                                     _books = [];
                                     _more = false;
                                   });
-                                  if (_search.text.trim().isNotEmpty)
+                                  if (_search.text.trim().isNotEmpty) {
                                     unawaited(_load());
+                                  }
                                 },
                         ),
                     ],
@@ -998,8 +1003,9 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
         context: context,
         builder: (ctx) {
           void submit() {
-            if (controller.text.contains('@'))
+            if (controller.text.contains('@')) {
               Navigator.pop(ctx, controller.text.trim());
+            }
           }
 
           return AlertDialog(
@@ -1205,11 +1211,12 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                             context: context,
                                             builder: (ctx) {
                                               void submit() {
-                                                if (input.text.contains('@'))
+                                                if (input.text.contains('@')) {
                                                   Navigator.pop(
                                                     ctx,
                                                     input.text.trim(),
                                                   );
+                                                }
                                               }
 
                                               return AlertDialog(
@@ -1311,11 +1318,13 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                                       try {
                                         final value = await widget.service
                                             .availability(library, book);
-                                        if (mounted)
+                                        if (mounted) {
                                           setState(() => _availability = value);
+                                        }
                                       } finally {
-                                        if (mounted)
+                                        if (mounted) {
                                           setState(() => _busy = false);
+                                        }
                                       }
                                     }),
                               primary: true,

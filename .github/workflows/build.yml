@@ -432,15 +432,15 @@ jobs:
             exit 1
           fi
           proxy_args=(--proxy=http --proxy_host="${proxy_parts[0]}" --proxy_port="${proxy_parts[1]}")
-          packages=("platform-tools" "platforms;android-37" "build-tools;36.1.0" "ndk;29.0.14206865" "cmake;4.1.2")
+          packages=("platform-tools" "platforms;android-37" "build-tools;37.0.0" "ndk;29.0.14206865" "cmake;4.1.2")
           set +o pipefail
-          yes | "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --licenses
+          yes | "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --channel=3 --licenses
           license_status="${PIPESTATUS[1]}"
           set -o pipefail
           if (( license_status != 0 )); then exit "$license_status"; fi
-          "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --install "${packages[@]}"
+          "$sdkmanager" --sdk_root="$sdk_root" "${proxy_args[@]}" --channel=3 --install "${packages[@]}"
           test -f "$sdk_root/platforms/android-37/android.jar"
-          test -x "$sdk_root/build-tools/36.1.0/aapt2"
+          test -x "$sdk_root/build-tools/37.0.0/aapt2"
           test -f "$sdk_root/ndk/29.0.14206865/source.properties"
           test -x "$sdk_root/cmake/4.1.2/bin/cmake"
           java -version
@@ -829,10 +829,33 @@ jobs:
           export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
           pod --version
 
+      - name: Prepare short iOS build workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-ios"
+          if [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to reuse existing Apple build path: $short_root" >&2
+            exit 1
+          fi
+          mkdir -m 700 "$short_root"
+          ditto "$GITHUB_WORKSPACE/." "$short_root/"
+          chmod 700 "$short_root"
+          [[ "$(git -C "$short_root" rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          [[ ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]
+          if (( ${#short_root} > 64 )); then
+            echo "Short iOS workspace path is unexpectedly long: $short_root" >&2
+            exit 1
+          fi
+          echo "PLEZYNG_APPLE_WORKSPACE=$short_root" >> "$GITHUB_ENV"
+          echo "Prepared real local build workspace: $short_root (${#short_root} characters)"
+
       - name: Install dependencies
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Refresh pinned mpv Swift packages
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: scripts/refresh_apple_spm.sh ios
 
       - name: Configure optional iOS App Store signing
@@ -885,13 +908,32 @@ jobs:
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Build iOS (no codesign)
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --split-debug-info=debug-info/ios
 
       - name: Create unsigned developer IPA
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Plezy.app Payload/
           zip -r plezy-ios-unsigned.ipa Payload
+
+      - name: Prepare a default keychain for Xcode cloud signing
+        if: steps.ios-signing.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/plezyng-ios-cloud-signing.keychain-db"
+          if [[ -e "$keychain_path" || -L "$keychain_path" ]]; then
+            echo "Refusing to reuse an existing iOS signing keychain: $keychain_path" >&2
+            exit 1
+          fi
+          keychain_password="$(/usr/bin/uuidgen)"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          security default-keychain -d user -s "$keychain_path"
 
       - name: Build signed iOS App Store IPA
         if: steps.ios-signing.outputs.configured == 'true'
@@ -901,6 +943,7 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           EXPORT_OPTIONS_PATH: ${{ steps.ios-signing.outputs.export_options_path }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           flutter build ios --release --no-codesign \
@@ -942,6 +985,25 @@ jobs:
           fi
           cp "$ipa_path" plezyng-ios-appstore.ipa
 
+      - name: Remove the temporary iOS signing keychain
+        if: always() && steps.ios-signing.outputs.configured == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/plezyng-ios-cloud-signing.keychain-db"
+          if [[ -e "$keychain_path" || -L "$keychain_path" ]]; then
+            security delete-keychain "$keychain_path"
+          fi
+
+      - name: Copy iOS packages to the workflow workspace
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          set -euo pipefail
+          cp -f plezy-ios-unsigned.ipa "$GITHUB_WORKSPACE/"
+          if [[ -f plezyng-ios-appstore.ipa ]]; then
+            cp -f plezyng-ios-appstore.ipa "$GITHUB_WORKSPACE/"
+          fi
+
       - name: Attest unsigned developer IPA
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
@@ -972,6 +1034,23 @@ jobs:
             plezy-ios-unsigned.ipa
             plezyng-ios-appstore.ipa
           if-no-files-found: error
+
+      - name: Remove short iOS build workspace
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-ios"
+          if [[ -d "$short_root" && ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]; then
+            if [[ -d "$short_root/ios/Pods" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/ios"
+              ditto "$short_root/ios/Pods" "$GITHUB_WORKSPACE/ios/Pods"
+            fi
+            rm -rf -- "$short_root"
+          elif [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to remove unexpected Apple build path: $short_root" >&2
+            exit 1
+          fi
 
   build-tvos:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}
@@ -1245,10 +1324,33 @@ jobs:
           export PATH="$RUNNER_TEMP/cocoapods-bin:/opt/homebrew/bin:$PATH"
           pod --version
 
+      - name: Prepare short macOS build workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-macos"
+          if [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to reuse existing Apple build path: $short_root" >&2
+            exit 1
+          fi
+          mkdir -m 700 "$short_root"
+          ditto "$GITHUB_WORKSPACE/." "$short_root/"
+          chmod 700 "$short_root"
+          [[ "$(git -C "$short_root" rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          [[ ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]
+          if (( ${#short_root} > 64 )); then
+            echo "Short macOS workspace path is unexpectedly long: $short_root" >&2
+            exit 1
+          fi
+          echo "PLEZYNG_APPLE_WORKSPACE=$short_root" >> "$GITHUB_ENV"
+          echo "Prepared real local build workspace: $short_root (${#short_root} characters)"
+
       - name: Install dependencies
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Refresh pinned mpv Swift packages
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: scripts/refresh_apple_spm.sh macos
 
       - name: Configure repository updater trust root
@@ -1256,12 +1358,15 @@ jobs:
         env:
           SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: dart run scripts/configure_updater.dart
 
       - name: Build macOS
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} ${{ env.NATIVE_UPDATER_DEFINE }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
 
       - name: Verify universal macOS executable
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
@@ -1284,6 +1389,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           REQUIRE_HOMEBREW_CASK: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           set -euo pipefail
           signing_values=("$MACOS_CERTIFICATE_BASE64" "$MACOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PASSWORD")
@@ -1351,6 +1457,7 @@ jobs:
         if: steps.macos-signing.outputs.codesign == 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           # Find the identity
           IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '".*"' | tr -d '"')
@@ -1378,6 +1485,7 @@ jobs:
 
       - name: Verify Signature
         if: steps.macos-signing.outputs.codesign == 'true'
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
           echo "Verifying signature..."
@@ -1395,6 +1503,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           APP_PATH="build/macos/Build/Products/Release/PlezyNG.app"
 
@@ -1420,9 +1529,11 @@ jobs:
 
       - name: Verify Gatekeeper acceptance for Homebrew Cask
         if: ${{ needs.validate-trusted-ref.outputs.prepare_homebrew_cask == 'true' }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: spctl --assess --type execute --verbose=4 build/macos/Build/Products/Release/PlezyNG.app
 
       - name: Create DMG
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           mkdir -p dmg-staging
           cp -R build/macos/Build/Products/Release/PlezyNG.app dmg-staging/
@@ -1433,6 +1544,7 @@ jobs:
         id: sparkle-signing
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           if [[ -n "$SPARKLE_PRIVATE_KEY" ]]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
@@ -1444,6 +1556,7 @@ jobs:
         if: steps.sparkle-signing.outputs.available == 'true'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
         run: |
           printf -- "-----BEGIN ED25519 PRIVATE KEY-----\n%s\n-----END ED25519 PRIVATE KEY-----\n" "$SPARKLE_PRIVATE_KEY" > ed25519_key.pem
           OUTPUT=$(dart run auto_updater:sign_update plezyng-macos.dmg ed25519_key.pem)
@@ -1453,15 +1566,22 @@ jobs:
           echo "MACOS_ED_SIGNATURE=$SIGNATURE" >> $GITHUB_ENV
           echo "MACOS_DMG_SIZE=$(stat -f%z plezyng-macos.dmg)" >> $GITHUB_ENV
 
+      - name: Write macOS signature metadata
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
+          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
+
+      - name: Copy macOS deliverables to the workflow workspace
+        working-directory: ${{ env.PLEZYNG_APPLE_WORKSPACE }}
+        run: |
+          set -euo pipefail
+          cp -f plezyng-macos.dmg macos-ed-signature.txt macos-dmg-size.txt "$GITHUB_WORKSPACE/"
+
       - name: Attest macOS DMG
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: plezyng-macos.dmg
-
-      - name: Write macOS signature metadata
-        run: |
-          echo "${{ env.MACOS_ED_SIGNATURE }}" > macos-ed-signature.txt
-          echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -1471,6 +1591,23 @@ jobs:
             plezyng-macos.dmg
             macos-ed-signature.txt
             macos-dmg-size.txt
+
+      - name: Remove short macOS build workspace
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_root="$HOME/p${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-macos"
+          if [[ -d "$short_root" && ! -L "$short_root" && "$(cd "$short_root" && pwd -P)" == "$short_root" ]]; then
+            if [[ -d "$short_root/macos/Pods" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/macos"
+              ditto "$short_root/macos/Pods" "$GITHUB_WORKSPACE/macos/Pods"
+            fi
+            rm -rf -- "$short_root"
+          elif [[ -e "$short_root" || -L "$short_root" ]]; then
+            echo "Refusing to remove unexpected Apple build path: $short_root" >&2
+            exit 1
+          fi
 
   build-windows:
     if: ${{ inputs.runner_pool == 'private' && (inputs.action == 'build' || inputs.action == 'release') && needs.validate-trusted-ref.outputs.runner_pool == 'private' && (needs.validate-trusted-ref.outputs.action == 'build' || needs.validate-trusted-ref.outputs.action == 'release') && needs.validate-trusted-ref.outputs.mode == 'release' }}

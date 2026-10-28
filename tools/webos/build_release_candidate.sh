@@ -172,7 +172,8 @@ CUSTOM_ENGINE_ROOT="$TASK_ROOT/custom-engine"
 OUTPUT_ROOT="$TASK_ROOT/output"
 BOOTSTRAP_DEPOT_TOOLS="$TASK_ROOT/bootstrap-depot-tools"
 HOST_TOOLS="$TASK_ROOT/host-tools/bin"
-mkdir -m 700 -- "$LOG_ROOT" "$DOWNLOAD_ROOT" "$CUSTOM_ENGINE_ROOT" "$OUTPUT_ROOT" "$HOST_TOOLS"
+mkdir -m 700 -- "$LOG_ROOT" "$DOWNLOAD_ROOT" "$CUSTOM_ENGINE_ROOT" "$OUTPUT_ROOT" "$TASK_ROOT/host-tools"
+mkdir -m 700 -- "$HOST_TOOLS"
 exec > >(tee -a "$LOG_ROOT/build-release-candidate.log") 2>&1
 
 printf 'PlezyNG WebOS release build task: %s\n' "$TASK_ROOT"
