@@ -4454,6 +4454,15 @@ class Translations$watchTogether$en {
 	/// en: 'Share Invite'
 	String get shareInvite => 'Share Invite';
 
+	/// en: 'Copy Link'
+	String get copyLink => 'Copy Link';
+
+	/// en: 'Room link copied'
+	String get linkCopied => 'Room link copied';
+
+	/// en: 'Join my Watch Together room in Plezy: ${link} Or open Watch Together, choose Join Room and enter ${code}.'
+	String inviteLinkMessage({required Object link, required Object code}) => 'Join my Watch Together room in Plezy: ${link}\nOr open Watch Together, choose Join Room and enter ${code}.';
+
 	/// en: 'Invite copied. Paste it into a message.'
 	String get inviteCopied => 'Invite copied. Paste it into a message.';
 
@@ -9744,6 +9753,9 @@ extension on Translations {
 			'watchTogether.copyCode' => 'Copy Code',
 			'watchTogether.codeCopied' => 'Room code copied',
 			'watchTogether.shareInvite' => 'Share Invite',
+			'watchTogether.copyLink' => 'Copy Link',
+			'watchTogether.linkCopied' => 'Room link copied',
+			'watchTogether.inviteLinkMessage' => ({required Object link, required Object code}) => 'Join my Watch Together room in Plezy: ${link}\nOr open Watch Together, choose Join Room and enter ${code}.',
 			'watchTogether.inviteCopied' => 'Invite copied. Paste it into a message.',
 			'watchTogether.inviteMessage' => ({required Object code}) => 'Join my Watch Together room in Plezy: open Watch Together, choose Join Room and enter ${code}.',
 			'watchTogether.openSessionControls' => 'Open Watch Together session controls',
@@ -10149,11 +10161,11 @@ extension on Translations {
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
@@ -18,6 +18,7 @@ import '../../utils/global_key_utils.dart';
 import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/video_player_navigation.dart';
+import '../../watch_together/screens/watch_together_screen.dart';
 import '../catalog/plex_catalog_source.dart';
 import '../data_aggregation_service.dart';
 import '../media_list_playback_launcher.dart';
@@ -37,6 +38,8 @@ Future<void> launchDeepLink(BuildContext context, DeepLink link, {required bool 
       await _launchPlayLink(context, link, isOffline: isOffline);
     case LiveLink():
       await _launchLiveLink(context, link, isOffline: isOffline);
+    case WatchTogetherLink():
+      unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => WatchTogetherScreen(invite: link))));
   }
 }
 
