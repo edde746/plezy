@@ -5,6 +5,7 @@ import '../../profiles/profile.dart';
 import '../../screens/video_player/live_tv_session_args.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/external_ids.dart';
+import '../../watch_together/services/watch_party_relays.dart';
 import '../system_shelf_service.dart';
 
 /// A `plezy://` link. The one grammar for every platform: native code
@@ -16,6 +17,7 @@ import '../system_shelf_service.dart';
 /// plezy://play?type=movie|show&tmdb=<n>|tvdb=<n>|imdb=tt<n>|plex=<hash>[&mode=next|shuffle]
 /// plezy://play?content_id=plezy_<serverId>_<itemId>      (launcher shelf rows)
 /// plezy://live?channel=<channel>[&server=<serverId>][&start=beginning|live]
+/// plezy://watch-together?code=<roomCode>
 /// plezy://external-player/<result>/<session>?...           (external player return links)
 /// ```
 ///
@@ -49,6 +51,7 @@ sealed class DeepLink {
       OpenLink.host => OpenLink(profile: profile),
       PlayLink.host => PlayLink._parse(params, profile),
       LiveLink.host => LiveLink._parse(params, profile),
+      WatchTogetherLink.host => WatchTogetherLink._parse(params, profile),
       ExternalPlayerReturnLink.host => ExternalPlayerReturnLink(uri),
       _ => null,
     };
@@ -71,6 +74,24 @@ final class OpenLink extends DeepLink {
 
   @override
   Uri toUri() => DeepLink._uri(host, _profileParam);
+}
+
+/// `plezy://watch-together`: join a room as if its code were entered.
+final class WatchTogetherLink extends DeepLink {
+  const WatchTogetherLink({required this.code, super.profile});
+
+  static const host = 'watch-together';
+
+  final String code;
+
+  static WatchTogetherLink? _parse(Map<String, String> params, String? profile) {
+    final code = normalizeRoomCode(_param(params, 'code') ?? '');
+    if (code == null) return null;
+    return WatchTogetherLink(code: code, profile: profile);
+  }
+
+  @override
+  Uri toUri() => DeepLink._uri(host, {'code': code, ..._profileParam});
 }
 
 /// How a link to a show or season picks what to play.

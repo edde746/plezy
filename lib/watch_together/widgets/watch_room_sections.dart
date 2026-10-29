@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
+import '../../services/deep_links/deep_link.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -180,9 +181,18 @@ Future<void> copyRoomCode(BuildContext context, String formattedCode) async {
   if (context.mounted) showAppSnackBar(context, t.watchTogether.codeCopied);
 }
 
-/// Puts an invite naming the room code on the clipboard, for a message.
-Future<void> shareRoomInvite(BuildContext context, String formattedCode) async {
-  await Clipboard.setData(ClipboardData(text: t.watchTogether.inviteMessage(code: formattedCode)));
+Future<void> copyRoomLink(BuildContext context, WatchTogetherLink link) async {
+  await Clipboard.setData(ClipboardData(text: link.toUri().toString()));
+  if (context.mounted) showAppSnackBar(context, t.watchTogether.linkCopied);
+}
+
+/// Copies an invite with both the room code and a link that joins it.
+Future<void> shareRoomInvite(BuildContext context, String formattedCode, WatchTogetherLink link) async {
+  await Clipboard.setData(
+    ClipboardData(
+      text: t.watchTogether.inviteLinkMessage(code: formattedCode, link: link.toUri()),
+    ),
+  );
   if (context.mounted) showAppSnackBar(context, t.watchTogether.inviteCopied);
 }
 
@@ -197,6 +207,7 @@ class WatchRoomHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<WatchTogetherProvider>();
     final code = provider.formattedRoomCode ?? '';
+    final link = WatchTogetherLink(code: provider.roomCode ?? '');
     final theme = Theme.of(context);
     final hostName = provider.host?.name;
     return Column(
@@ -224,9 +235,14 @@ class WatchRoomHeader extends StatelessWidget {
               onPressed: () => unawaited(copyRoomCode(context, code)),
             ),
             WatchButton(
+              label: t.watchTogether.copyLink,
+              icon: Symbols.link_rounded,
+              onPressed: () => unawaited(copyRoomLink(context, link)),
+            ),
+            WatchButton(
               label: t.watchTogether.shareInvite,
               icon: Symbols.share_rounded,
-              onPressed: () => unawaited(shareRoomInvite(context, code)),
+              onPressed: () => unawaited(shareRoomInvite(context, code, link)),
             ),
           ],
         ),
