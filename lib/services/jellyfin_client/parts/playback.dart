@@ -536,10 +536,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
             if (!hasLanguage) return explicit;
             final derived = findSourceTrackForIntent(intent!, mediaInfo.subtitleTracks)?.id;
             if (derived != null) return derived;
-            // Two rows the intent cannot tell apart (identical same-language
-            // files): the explicit pick settles it if its own row passes the gates.
+            // Identical same-language files tie: the explicit pick settles it if
+            // its own row passes the gates and no other row matches the intent better.
             final row = mediaInfo.subtitleTracks.firstWhere((row) => row.id == explicit);
-            return findSourceTrackForIntent(intent, [row]) != null ? explicit : null;
+            final outranked = mediaInfo.subtitleTracks.any(
+              (other) => other.id != explicit && findSourceTrackForIntent(intent, [row, other])?.id == other.id,
+            );
+            return !outranked && findSourceTrackForIntent(intent, [row]) != null ? explicit : null;
           }
         }
         return intent == null ? null : findSourceTrackForIntent(intent, mediaInfo.subtitleTracks)?.id;

@@ -1705,59 +1705,49 @@ void main() {
     });
 
     test('getPlaybackInitialization keeps the picked row among identical same-language files', () async {
-      // Two external files in the same language: Jellyfin labels both the
-      // same, so only the index tells them apart.
-      Map<String, Object?> external(int index) => {
-        'Index': index,
-        'Type': 'Subtitle',
-        'Codec': 'subrip',
-        'Language': 'eng',
-        'DisplayTitle': 'English - SUBRIP - External',
-        'IsExternal': true,
-        'DeliveryMethod': 'External',
-        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/$index/0/Stream.srt',
-      };
-      final streams = [
-        external(0),
-        external(2),
-        {'Index': 3, 'Type': 'Video'},
-      ];
-      Uri? playbackInfoUri;
-      final scoped = _clientWithPlaybackInfo(
-        (request) async {
-          playbackInfoUri = request.url;
-          return jsonResponse({
-            'PlaySessionId': 'play-session-direct',
-            'MediaSources': [
-              {'Id': 'src-1', 'Container': 'mp4', 'SupportsDirectPlay': true, 'MediaStreams': streams},
-            ],
-          });
-        },
-        itemSources: [
-          {'Id': 'src-1', 'Container': 'mp4', 'MediaStreams': streams},
-        ],
-      );
-      addTearDown(scoped.close);
-
-      Future<void> initialize(int index) => scoped.getPlaybackInitialization(
-        PlaybackInitializationOptions(
-          metadata: testMediaItem(
-            id: 'item-1',
-            backend: MediaBackend.jellyfin,
-            kind: MediaKind.movie,
-            serverId: 'srv-1',
+      Future<String?> pick(int index, {String title = 'Full'}) async {
+        Uri? playbackInfoUri;
+        final scoped = _clientWithPlaybackInfo(
+          (request) async {
+            playbackInfoUri = request.url;
+            return jsonResponse({
+              'MediaSources': [
+                {'Id': 'src-1'},
+              ],
+            });
+          },
+          itemSources: [
+            {
+              'Id': 'src-1',
+              'MediaStreams': [
+                for (final i in [3, 4])
+                  {'Index': i, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng', 'Title': 'Full'},
+                {'Index': 5, 'Type': 'Subtitle', 'Codec': 'pgs', 'Language': 'eng', 'Title': 'Signs & Songs'},
+              ],
+            },
+          ],
+        );
+        addTearDown(scoped.close);
+        await scoped.getPlaybackInitialization(
+          PlaybackInitializationOptions(
+            metadata: testMediaItem(
+              id: 'item-1',
+              backend: MediaBackend.jellyfin,
+              kind: MediaKind.movie,
+              serverId: 'srv-1',
+            ),
+            selectedMediaIndex: 0,
+            preferredSubtitleTrack: SubtitlePreference.track(
+              SubtitleTrack(id: 'source:$index', title: title, language: 'eng', codec: 'srt'),
+            ),
           ),
-          selectedMediaIndex: 0,
-          preferredSubtitleTrack: SubtitlePreference.track(
-            SubtitleTrack(id: 'source:$index', title: 'English - SUBRIP - External', language: 'eng', codec: 'subrip'),
-          ),
-        ),
-      );
+        );
+        return playbackInfoUri!.queryParameters['SubtitleStreamIndex'];
+      }
 
-      await initialize(2);
-      expect(playbackInfoUri!.queryParameters['SubtitleStreamIndex'], '2');
-      await initialize(0);
-      expect(playbackInfoUri!.queryParameters['SubtitleStreamIndex'], '0');
+      expect(await pick(4), '4');
+      // A stale index whose row the intent ranks below the tied pair still declines.
+      expect(await pick(5), isNull);
     });
 
     test('getPlaybackInitialization maps semantic subtitle preferences to current source rows', () async {
