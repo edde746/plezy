@@ -143,6 +143,66 @@ class MpvPlayerCore private constructor(
     }
 
     /**
+     * [GpuVoPolicy.needsToneMapping] as this app routes it: a display with
+     * any HDR type keeps the plane in every mode, where the library would
+     * check the display's types per transfer and the HDR output setting.
+     * A display without HDR leaves the conversion to the user's mode.
+     */
+    internal fun needsToneMapping(
+      gamma: String?,
+      displayHdrSupported: Boolean,
+      conversionMode: String,
+      sdkInt: Int
+    ): Boolean = !displayHdrSupported &&
+      GpuVoPolicy.needsToneMapping(
+        gamma = gamma,
+        displayHdrTypes = IntArray(0),
+        dolbyVisionDecoder = false,
+        hdrOutput = true,
+        conversionMode = conversionMode,
+        sdkInt = sdkInt
+      )
+
+    /**
+     * [GpuVoPolicy.needsSoftwareDecode] as this app routes it: HEVC Main 10
+     * without a hardware profile stays with the hardware decoder and mpv's
+     * own fallback instead of going to software decode up front.
+     */
+    internal fun needsSoftwareDecode(
+      codec: String?,
+      codecProfile: String?,
+      hardwareHigh10: Boolean,
+      hardwareAv1: Boolean
+    ): Boolean = GpuVoPolicy.needsSoftwareDecode(
+      codec,
+      codecProfile,
+      hardwareHigh10,
+      hardwareHevcMain10 = true,
+      hardwareAv1 = hardwareAv1
+    )
+
+    /**
+     * The options the cheap render tier replaces, each mapped to the value
+     * [current] read for it, which the tier restores on leaving: those of
+     * [GpuVoPolicy.CHEAP_RENDER_OPTIONS] still at mpv's default, so a
+     * user's mpv.conf line wins. The tier changes the scalers and dither;
+     * `tone-mapping` keeps mpv's curve.
+     */
+    internal fun cheapRenderReplacements(current: (String) -> String?): Map<String, String> {
+      val replaced = LinkedHashMap<String, String>()
+      for (option in GpuVoPolicy.CHEAP_RENDER_OPTIONS.keys) {
+        if (option == "tone-mapping") continue
+        val value = current(option)
+        if (value == null || !GpuVoPolicy.isDefaultRenderOption(option, value)) {
+          PlayerDebugLog.d(TAG) { "Render tier keeps $option=$value (not the mpv default)" }
+          continue
+        }
+        replaced[option] = value
+      }
+      return replaced
+    }
+
+    /**
      * The initial `vo` chain, decided by whether this session will hardware-
      * decode.
      *
@@ -1633,8 +1693,7 @@ class MpvPlayerCore private constructor(
     val hardwareHigh10 = MediaCodecQuery.hardwareAvcHigh10
     val hardwareAv1 = MediaCodecQuery.hardwareAv1
     PlayerDebugLog.d(TAG) { "Decode routing: codec=$codec profile=$codecProfile hardwareHigh10=$hardwareHigh10 hardwareAv1=$hardwareAv1" }
-    // HEVC Main 10 stays with the hardware decoder and mpv's own fallback.
-    val needs = GpuVoPolicy.needsSoftwareDecode(codec, codecProfile, hardwareHigh10, hardwareHevcMain10 = true, hardwareAv1 = hardwareAv1)
+    val needs = needsSoftwareDecode(codec, codecProfile, hardwareHigh10, hardwareAv1)
     if (holdHwdec(p, GpuVoPolicy.REASON_CODEC_SW_DECODE, needs) && needs) {
       Log.i(TAG, "$codec profile=$codecProfile without hardware support: native software decode on the GL vo")
     }
@@ -1735,18 +1794,8 @@ class MpvPlayerCore private constructor(
       wanted
     }
     if (transition) {
-      val replaced = LinkedHashMap<String, String>()
-      for ((option, cheap) in GpuVoPolicy.CHEAP_RENDER_OPTIONS) {
-        // The tier changes the scalers and dither; tone-mapping keeps mpv's curve.
-        if (option == "tone-mapping") continue
-        val current = p.getString(option)
-        if (!GpuVoPolicy.isDefaultRenderOption(option, current)) {
-          PlayerDebugLog.d(TAG) { "Render tier keeps $option=$current (not the mpv default)" }
-          continue
-        }
-        replaced[option] = current!!
-        writeProperty(option, cheap)
-      }
+      val replaced = cheapRenderReplacements { p.getString(it) }
+      for (option in replaced.keys) writeProperty(option, GpuVoPolicy.CHEAP_RENDER_OPTIONS.getValue(option))
       synchronized(cheapRenderRestore) { cheapRenderRestore.putAll(replaced) }
       Log.i(TAG, "Cheap render tier (no GL_EXT_texture_norm16): ${replaced.keys.joinToString(",")}")
     } else {
@@ -1896,17 +1945,12 @@ class MpvPlayerCore private constructor(
 
   private fun refreshHdrToneMapRequirement() {
     synchronized(hdrToneMapLock) {
-      // A display with any HDR type keeps the plane in every mode; one
-      // without HDR leaves the conversion to the user's mode.
-      val needsToneMap = !displayHdrSupported &&
-        GpuVoPolicy.needsToneMapping(
-          gamma = videoGamma,
-          displayHdrTypes = IntArray(0),
-          dolbyVisionDecoder = false,
-          hdrOutput = true,
-          conversionMode = hdrSdrConversionMode,
-          sdkInt = Build.VERSION.SDK_INT
-        )
+      val needsToneMap = needsToneMapping(
+        gamma = videoGamma,
+        displayHdrSupported = displayHdrSupported,
+        conversionMode = hdrSdrConversionMode,
+        sdkInt = Build.VERSION.SDK_INT
+      )
       setGpuVoRequirement(GpuVoPolicy.REASON_TONE_MAP, needsToneMap)
     }
   }
