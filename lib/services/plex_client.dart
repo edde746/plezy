@@ -397,7 +397,11 @@ class PlexClient
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
         _PlexMetadataEditMethods
-    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
+    implements
+        MediaServerClient,
+        MediaDeletionPermissionClient,
+        ScopedMediaServerClient,
+        GracefullyCloseable {
   @override
   PlexConfig config;
 
@@ -2228,11 +2232,52 @@ class PlexClient
     throwIfHttpError(response);
   }
 
-  /// Delete a media item from the library
-  /// This permanently removes the item and its associated files from the server
-  /// Returns true if deletion was successful, false otherwise
+  /// Read Plex's live, server-wide media-deletion capability.
+  ///
+  /// The value is deliberately not cached: the owner can change it in Plex Web
+  /// while Plezy is open, and a stale `true` would expose a destructive action
+  /// the owner has since disabled. Missing or unrecognised values return null so
+  /// callers fail closed.
   @override
-  Future<bool> deleteMediaItem(MediaItem item) {
+  Future<bool?> fetchDeletePermission(MediaItem item) async {
+    final abort = AbortController();
+    try {
+      final response = await _http
+          .get(
+            '/',
+            timeout: MediaServerTimeouts.deletePermission,
+            abort: abort,
+            allowEndpointFailover: false,
+          )
+          .namedTimeout(MediaServerTimeouts.deletePermission, operation: 'Plex delete permission');
+      throwIfHttpError(response);
+      return flexibleBoolNullable(_getMediaContainer(response)?['allowMediaDeletion']);
+    } on TimeoutException catch (e) {
+      abort.abort();
+      throw MediaServerHttpException.from(e);
+    }
+  }
+
+  /// Delete a media item and its associated files from the server.
+  ///
+  /// Re-check the live preference here even though the context menu already
+  /// probes it. This closes the confirmation-window race and protects callers
+  /// that invoke the client method without going through that menu.
+  @override
+  Future<bool> deleteMediaItem(MediaItem item) async {
+    try {
+      if (await fetchDeletePermission(item) != true) {
+        appLogger.w('Refusing to delete media because Plex media deletion is disabled or unavailable');
+        return false;
+      }
+    } catch (e, st) {
+      appLogger.w(
+        'Refusing to delete media because the Plex deletion preference could not be verified',
+        error: e,
+        stackTrace: st,
+      );
+      return false;
+    }
     return _wrapBoolApiCall(() => _http.delete('/library/metadata/${item.id}'), 'Failed to delete media item');
   }
 
