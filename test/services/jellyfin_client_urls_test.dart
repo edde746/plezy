@@ -1704,6 +1704,62 @@ void main() {
       expect(subtitleUri.queryParameters['ApiKey'], 'tok-abc');
     });
 
+    test('getPlaybackInitialization keeps the picked row among identical same-language files', () async {
+      // Two external files in the same language: Jellyfin labels both the
+      // same, so only the index tells them apart.
+      Map<String, Object?> external(int index) => {
+        'Index': index,
+        'Type': 'Subtitle',
+        'Codec': 'subrip',
+        'Language': 'eng',
+        'DisplayTitle': 'English - SUBRIP - External',
+        'IsExternal': true,
+        'DeliveryMethod': 'External',
+        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/$index/0/Stream.srt',
+      };
+      final streams = [
+        external(0),
+        external(2),
+        {'Index': 3, 'Type': 'Video'},
+      ];
+      Uri? playbackInfoUri;
+      final scoped = _clientWithPlaybackInfo(
+        (request) async {
+          playbackInfoUri = request.url;
+          return jsonResponse({
+            'PlaySessionId': 'play-session-direct',
+            'MediaSources': [
+              {'Id': 'src-1', 'Container': 'mp4', 'SupportsDirectPlay': true, 'MediaStreams': streams},
+            ],
+          });
+        },
+        itemSources: [
+          {'Id': 'src-1', 'Container': 'mp4', 'MediaStreams': streams},
+        ],
+      );
+      addTearDown(scoped.close);
+
+      Future<void> initialize(int index) => scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          preferredSubtitleTrack: SubtitlePreference.track(
+            SubtitleTrack(id: 'source:$index', title: 'English - SUBRIP - External', language: 'eng', codec: 'subrip'),
+          ),
+        ),
+      );
+
+      await initialize(2);
+      expect(playbackInfoUri!.queryParameters['SubtitleStreamIndex'], '2');
+      await initialize(0);
+      expect(playbackInfoUri!.queryParameters['SubtitleStreamIndex'], '0');
+    });
+
     test('getPlaybackInitialization maps semantic subtitle preferences to current source rows', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
