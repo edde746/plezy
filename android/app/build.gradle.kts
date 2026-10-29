@@ -480,7 +480,8 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders"
 
 dependencies {
   // mpv-build's mpv-android library: libmpv, FFmpeg and the JNI glue with
-  // its Kotlin API (com.edde746.mpv).
+  // its Kotlin API (com.edde746.mpv), including the playback policies the
+  // mpv core routes with (GpuVoPolicy, MediaCodecQuery, VideoRectPolicy).
   implementation(mpvAarDependency)
   mpvAarNatives(mpvAarDependency)
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")

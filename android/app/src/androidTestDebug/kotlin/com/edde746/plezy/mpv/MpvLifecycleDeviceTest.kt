@@ -12,12 +12,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.edde746.mpv.MpvPlaceholderSurface
 import com.edde746.plezy.shared.PlayerDelegate
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -36,7 +36,7 @@ class MpvLifecycleDeviceTest {
 
   @Test
   fun placeholderConsumesFramesWithoutBlockingProducer() {
-    val placeholder = runBlocking { MpvPlaceholderSurface.create() }
+    val placeholder = MpvPlaceholderSurface.create()
     val completed = CountDownLatch(1)
     val failure = AtomicReference<Throwable?>()
     val producer = Thread {
