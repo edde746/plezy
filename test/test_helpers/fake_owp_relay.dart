@@ -95,20 +95,25 @@ final class FakeOwpRelay {
   Map<String, Object?>? get media => _media;
   List<String> get peerIds => [for (final m in _members) m.peerId];
 
+  final List<owp.Relays> requestedRelays = [];
+
   /// A party of `WatchTogetherProvider`'s factory shape that reaches this relay.
   owp.WatchParty<WatchCopy> party({
     required owp.Relays relays,
     required String client,
     required String name,
     required owp.Resolver<WatchCopy>? resolver,
-  }) => owp.WatchParty<WatchCopy>(
-    relays: owp.Relays.at('http://relay.test'),
-    client: client,
-    name: name,
-    resolver: resolver,
-    connect: connect,
-    nowMs: nowMs,
-  );
+  }) {
+    requestedRelays.add(relays);
+    return owp.WatchParty<WatchCopy>(
+      relays: owp.Relays.at('http://relay.test'),
+      client: client,
+      name: name,
+      resolver: resolver,
+      connect: connect,
+      nowMs: nowMs,
+    );
+  }
 
   Future<WebSocket> connect(Uri url) async {
     final (client, server) = fakes();
