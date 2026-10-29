@@ -41,7 +41,15 @@ require(
 
 resolver = job("resolve-release")
 require("gh release view \"$REQUESTED_TAG\"" in resolver, "resolver must validate the tag")
-require("--json tagName,isDraft,publishedAt" in resolver, "resolver must require a published release")
+require(
+    "--json tagName,isDraft,isPrerelease,publishedAt" in resolver,
+    "resolver must require a published stable release",
+)
+require(
+    "if: github.event_name != 'release' || !github.event.release.prerelease" in resolver,
+    "resolver must skip pre-release events so no package job runs",
+)
+require('if [ "$IS_PRERELEASE" != "false" ]; then' in resolver, "resolver must reject a pre-release tag")
 require(
     "tag: ${{ steps.release.outputs.tag }}" in resolver,
     "resolver must expose one validated tag output",
