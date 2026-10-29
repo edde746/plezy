@@ -5,6 +5,7 @@ import 'package:openwatchparty/openwatchparty.dart' as owp;
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/deep_links/deep_link.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:plezy/watch_together/widgets/join_session_dialog.dart';
@@ -160,10 +161,34 @@ void main() {
     }
 
     expect(await pasted(t.watchTogether.inviteMessage(code: 'K7M-Q2X')), 'K7M-Q2X');
+    expect(await pasted('plezy://watch-together?code=K7MQ2X'), 'K7M-Q2X');
+    expect(
+      await pasted(t.watchTogether.inviteLinkMessage(code: 'K7M-Q2X', link: 'plezy://watch-together?code=K7MQ2X')),
+      'K7M-Q2X',
+    );
     expect(await pasted('  k7mq2x\n'), 'K7M-Q2X');
     expect(await pasted('room: K7M\u2011Q2X'), 'K7M-Q2X', reason: 'a non-breaking hyphen is a separator');
     expect(await pasted('Movie starts at 8, the code is k7m-q2x'), 'K7M-Q2X');
     expect(find.text(t.watchTogether.noCodeInClipboard), findsNothing);
+  });
+
+  _dialogTest('pasting a room link uses the configured relay just like entering a code', (tester, world) async {
+    final host = world.host();
+    await world.settle(host.createRoom());
+    const relay = 'https://configured.example.com';
+    final guest = world.member('Ben', relayBaseUrl: relay);
+    final link = const WatchTogetherLink(code: 'K7MQ2X').toUri();
+    mockWatchClipboard(
+      contents: t.watchTogether.inviteLinkMessage(code: 'K7M-Q2X', link: link),
+    );
+    await _openDialog(tester, guest);
+    await tester.tap(_button(t.watchTogether.paste));
+    await tester.pump();
+    await _join(tester);
+    await world.until(() => guest.isConnected, 'the guest joined');
+    expect(guest.customRelayBaseUrl, relay);
+    expect(world.relay.requestedRelays.last.list.single.name, relay);
+    expect(_results, [true]);
   });
 
   _dialogTest('a code that cannot be one is refused inline, without asking the relay', (tester, world) async {

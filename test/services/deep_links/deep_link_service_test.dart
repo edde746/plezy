@@ -94,6 +94,17 @@ void main() {
     expect(session.launched, ['plezy://play?server=s1&id=1']);
   });
 
+  test('a room invite waits for the profile session before delivery', () async {
+    service.host = _FakeHost(activeProfileId: 'parents');
+    const url = 'plezy://watch-together?code=K7MQ2X';
+    expect(await sendFromPlatform(url), isTrue);
+    final session = _Session('parents');
+    service.attach(session.session);
+    await pumpEventQueue();
+    expect(session.launched, [url]);
+    expect(reports, isEmpty);
+  });
+
   test('a newer link replaces one still waiting', () async {
     service.host = _FakeHost(activeProfileId: 'parents');
     service.receive('plezy://play?server=s1&id=1');
