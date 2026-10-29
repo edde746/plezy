@@ -896,7 +896,7 @@
     "subtitleDownloaded": "Subtitr yuklab olindi",
     "subtitleDownloadedNotApplied": "Subtitr yuklab olindi, lekin qoʻllanilmadi",
     "subtitleDownloadFailed": "Subtitrni yuklab boʻlmadi",
-    "subtitleDownloadTimedOut": "",
+    "subtitleDownloadTimedOut": "Subtitr oʻz vaqtida paydo boʻlmadi. Yuklab olish muvaffaqiyatsiz boʻlgan boʻlishi mumkin",
     "searchLanguages": "Tillardan qidirish...",
     "skipIntro": "Kirishni oʻtkazish",
     "skipCredits": "Titrlardan oʻtish",
