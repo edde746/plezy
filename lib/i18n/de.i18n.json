@@ -1187,6 +1187,7 @@
     "addMediaToLibraries": "Medien zur Mediathek hinzufügen",
     "continueWatching": "Weiterschauen",
     "continueWatchingIn": "Weiterschauen in ${library}",
+    "selectVersion": "",
     "nextUp": "Als Nächstes",
     "nextUpIn": "Als Nächstes in ${library}",
     "recentlyAdded": "Kürzlich hinzugefügt",

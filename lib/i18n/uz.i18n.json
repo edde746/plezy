@@ -1187,6 +1187,7 @@
     "addMediaToLibraries": "Kutubxonalaringizga media qoʻshing",
     "continueWatching": "Tomoshani davom ettirish",
     "continueWatchingIn": "${library} ichida tomoshani davom ettirish",
+    "selectVersion": "",
     "nextUp": "Navbatda",
     "nextUpIn": "${library} ichida navbatda",
     "recentlyAdded": "Yaqinda qoʻshilganlar",

@@ -77,6 +77,7 @@ class _FakeAggregationService extends DataAggregationService {
   Set<String> onDeckFailedServerIds = const {};
   Set<String> hubFailedServerIds = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
+  Map<String, List<MediaItem>> onDeckCopies = const {};
   List<MediaHub> Function() hubsResult = () => const [];
   Future<void>? onDeckGate;
   Future<void>? hubGate;
@@ -98,6 +99,7 @@ class _FakeAggregationService extends DataAggregationService {
     final items = onDeckResult();
     return (
       items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
+      copies: onDeckCopies,
       observedItems: [for (final item in items) (item: item, clientScope: null)],
       succeededServerIds: onDeckSucceededServerIds ?? serverIds ?? const {'server_1'},
       cancelledServerIds: onDeckCancelledServerIds,
@@ -454,6 +456,52 @@ void main() {
     expect(shelfSyncs, hasLength(1));
     expect(shelfSyncs.single.$1, 'profile-a');
     expect(shelfSyncs.single.$2.first.viewOffsetMs, 30000);
+  });
+
+  group('copies behind a merged Continue Watching row', () {
+    final hd = _item('movie-hd', kind: MediaKind.movie).copyWith(durationMs: 100000, viewOffsetMs: 10000);
+    final uhd = _item('movie-uhd', kind: MediaKind.movie).copyWith(durationMs: 100000, viewOffsetMs: 20000);
+
+    setUp(() {
+      aggregation.onDeckResult = () => [hd, _item('other')];
+      aggregation.onDeckCopies = {
+        hd.globalKey: [uhd, hd],
+      };
+    });
+
+    test('progress on an absorbed copy swaps it into the row without refetching', () async {
+      await provider.load();
+      await pumpEventQueue();
+      final onDeckCallsBefore = aggregation.onDeckCalls;
+
+      WatchStateNotifier().notifyProgress(item: uhd, viewOffset: 40000, duration: 100000);
+      await pumpEventQueue();
+
+      // The row shows the copy last played on this device, as the next
+      // fetch's dedup would; the copy it replaced stays one pick away.
+      expect(provider.onDeck.map((item) => item.id), ['movie-uhd', 'other']);
+      expect(provider.onDeck.first.viewOffsetMs, 40000);
+      expect(provider.continueWatchingCopiesOf(provider.onDeck.first).map((copy) => (copy.id, copy.viewOffsetMs)), [
+        ('movie-uhd', 40000),
+        ('movie-hd', 10000),
+      ]);
+      expect(aggregation.onDeckCalls, onDeckCallsBefore);
+    });
+
+    test('deleting an absorbed copy takes it out of the row\'s choices at once', () async {
+      await provider.load();
+      expect(provider.continueWatchingCopiesOf(hd).map((copy) => copy.id), ['movie-uhd', 'movie-hd']);
+      // Hold the follow-up refetch so only the immediate reaction is observed.
+      final refetch = Completer<void>();
+      aggregation.onDeckGate = refetch.future;
+
+      DeletionNotifier().notifyDeletedItem(item: uhd);
+      await pumpEventQueue();
+
+      expect(provider.onDeck.map((item) => item.id), ['movie-hd', 'other']);
+      expect(provider.continueWatchingCopiesOf(hd), isEmpty);
+      refetch.complete();
+    });
   });
 
   test('watched-threshold progress refreshes continue watching only', () async {

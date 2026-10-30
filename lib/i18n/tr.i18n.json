@@ -1187,6 +1187,7 @@
     "addMediaToLibraries": "Kitaplıklarınıza biraz medya ekleyin",
     "continueWatching": "İzlemeye Devam Et",
     "continueWatchingIn": "${library} içinde İzlemeye Devam Et",
+    "selectVersion": "",
     "nextUp": "Sıradaki",
     "nextUpIn": "${library} içinde Sıradaki",
     "recentlyAdded": "Son Eklenenler",

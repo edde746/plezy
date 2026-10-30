@@ -21,7 +21,6 @@ import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_rating.dart';
-import '../media/media_version.dart';
 import '../models/catalog/catalog_cast_member.dart';
 import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_labels.dart';
@@ -650,25 +649,11 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
-  /// The technical label of a copy's best version, e.g. "4K HEVC MKV
-  /// (45.0 Mbps)". Library names are user-chosen and need not mention
-  /// resolution, which is exactly the question two copies of one movie pose
-  /// (#1754), so the row states it outright. Omitted when the backend
-  /// reported no resolution at all, rather than showing "Unknown".
-  static String? _libraryMatchQuality(MediaItem match) {
-    MediaVersion? best;
-    for (final version in match.mediaVersions ?? const <MediaVersion>[]) {
-      if (version.resolutionHeight == null) continue;
-      if (best == null || version.resolutionHeight! > best.resolutionHeight!) best = version;
-    }
-    return best?.displayLabel;
-  }
-
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
     // Plex matches carry their library title; MediaBrowser search-based lookup
     // only does when the ancestors call succeeded, so fall back to the server
     // name alone. The subtitle carries whatever else tells two copies apart.
-    final details = [?_libraryMatchQuality(match), ?(match.libraryTitle == null ? null : match.serverName)];
+    final details = [?libraryCopyQualityLabel(match), ?(match.libraryTitle == null ? null : match.serverName)];
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
       leading: BackendBadge(backend: match.backend, size: 24),

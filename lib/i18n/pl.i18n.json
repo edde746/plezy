@@ -1195,6 +1195,7 @@
     "addMediaToLibraries": "Dodaj multimedia do swoich bibliotek",
     "continueWatching": "Kontynuuj oglądanie",
     "continueWatchingIn": "Kontynuuj oglądanie w ${library}",
+    "selectVersion": "",
     "nextUp": "Następny odcinek",
     "nextUpIn": "Następny odcinek w ${library}",
     "recentlyAdded": "Ostatnio dodane",

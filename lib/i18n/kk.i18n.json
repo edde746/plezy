@@ -1187,6 +1187,7 @@
     "addMediaToLibraries": "Кітапханаларыңызға медиа қосыңыз",
     "continueWatching": "Көруді жалғастыру",
     "continueWatchingIn": "${library} ішінде көруді жалғастыру",
+    "selectVersion": "",
     "nextUp": "Келесіде",
     "nextUpIn": "${library} ішінде келесіде",
     "recentlyAdded": "Соңғы қосылғандар",

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../media/media_item_merge.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
+import '../providers/discover_provider.dart';
 import '../screens/actor_media_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import '../screens/main_screen.dart';
@@ -15,6 +18,8 @@ import '../screens/playlist/playlist_detail_screen.dart';
 import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
 import 'catalog_navigation_helper.dart';
+import 'dialogs.dart';
+import 'formatters.dart';
 import 'music_navigation.dart';
 import 'plex_library_section_utils.dart';
 import 'video_player_navigation.dart';
@@ -125,6 +130,31 @@ bool shouldOpenEpisodeDetailsForActivation({
   return episodeAction == EpisodeAction.details;
 }
 
+/// Ask which copy a Continue Watching row should open when the row stands for
+/// several — the same title in a 4K and an HD library, or on two servers.
+/// Returns null when the user dismisses the picker.
+Future<MediaItem?> _pickContinueWatchingCopy(BuildContext context, List<MediaItem> copies) {
+  // Rows say only what tells the copies apart: the episode when the copies
+  // stopped at different ones, the server when they span several.
+  final showEpisode = copies.map((copy) => (copy.parentIndex, copy.index)).toSet().length > 1;
+  final showServer = copies.map((copy) => copy.serverId).toSet().length > 1;
+  String label(MediaItem copy) {
+    final library = copy.libraryTitle;
+    return [
+      if (showEpisode && copy.isEpisode) ?formatSeasonEpisodeLabel(copy.parentIndex, copy.index),
+      library ?? copy.serverName ?? copy.backend.dialect?.productName ?? 'Plex',
+      ?libraryCopyQualityLabel(copy),
+      if (showServer && library != null) ?copy.serverName,
+    ].join(' • ');
+  }
+
+  return showOptionPickerDialog<MediaItem>(
+    context,
+    title: t.discover.selectVersion,
+    options: [for (final copy in copies) (icon: null, label: label(copy), value: copy)],
+  );
+}
+
 /// Navigates to the appropriate screen based on the item type.
 ///
 /// Accepts a [MediaItem] or a [MediaPlaylist] (typed as [Object] because Dart
@@ -149,7 +179,8 @@ bool shouldOpenEpisodeDetailsForActivation({
 ///
 /// Set [playDirectly] to true for Continue Watching / Next Up / On Deck
 /// activation; those surfaces use the Continue Watching action setting instead
-/// of the normal Episode Action setting.
+/// of the normal Episode Action setting. A Continue Watching row that merged
+/// copies from several libraries or servers first asks which one to open.
 ///
 /// Returns a [MediaNavigationResult] indicating what action was taken:
 /// - [MediaNavigationResult.navigated]: Navigation completed, item refresh handled
@@ -173,7 +204,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
   if (item is! MediaItem) {
     return MediaNavigationResult.unsupported;
   }
-  final mi = item;
+  MediaItem mi = item;
 
   // Catalog stand-ins (Explore tab) have no server id — every server-backed
   // route below would break on them. Route to the catalog flow instead.
@@ -183,6 +214,18 @@ Future<MediaNavigationResult> navigateToMediaItem(
     await navigateToCatalogItem(context, catalogItem);
     return MediaNavigationResult.navigated;
   }
+
+  // One Continue Watching row can stand for several copies of a title; it
+  // opens the one the viewer picks, under the row's own activation setting.
+  if (playDirectly && !isOffline) {
+    final copies = context.read<DiscoverProvider?>()?.continueWatchingCopiesOf(mi) ?? const <MediaItem>[];
+    if (copies.length > 1) {
+      final picked = await _pickContinueWatchingCopy(context, copies);
+      if (picked == null || !context.mounted) return MediaNavigationResult.navigated;
+      mi = picked;
+    }
+  }
+
   final settings = SettingsService.instanceOrNull;
   final continueWatchingAction = settings?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play;
   final episodeAction = settings?.read(SettingsService.episodeAction) ?? EpisodeAction.play;

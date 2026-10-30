@@ -1187,6 +1187,7 @@
     "addMediaToLibraries": "Добавете медия към библиотеките си",
     "continueWatching": "Продължи гледането",
     "continueWatchingIn": "Продължи гледането в ${library}",
+    "selectVersion": "",
     "nextUp": "Следва",
     "nextUpIn": "Следва в ${library}",
     "recentlyAdded": "Наскоро добавени",

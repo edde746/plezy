@@ -1187,6 +1187,7 @@
     "addMediaToLibraries": "Tilføj medier til dine biblioteker",
     "continueWatching": "Fortsæt med at se",
     "continueWatchingIn": "Fortsæt med at se i ${library}",
+    "selectVersion": "",
     "nextUp": "Næste afsnit",
     "nextUpIn": "Næste afsnit i ${library}",
     "recentlyAdded": "Nyligt tilføjet",
