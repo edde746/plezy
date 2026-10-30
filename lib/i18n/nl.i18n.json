@@ -1274,6 +1274,7 @@
     "showLibrary": "Bibliotheek tonen",
     "hideLibrary": "Bibliotheek verbergen",
     "libraryOptions": "Bibliotheekopties",
+    "shuffleLibrary": "",
     "content": "bibliotheekinhoud",
     "selectLibrary": "Bibliotheek kiezen",
     "filtersWithCount": "Filters (${count})",

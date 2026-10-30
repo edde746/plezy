@@ -1269,6 +1269,7 @@
     "showLibrary": "미디어 라이브러리 표시",
     "hideLibrary": "미디어 라이브러리 숨기기",
     "libraryOptions": "미디어 라이브러리 옵션",
+    "shuffleLibrary": "",
     "content": "미디어 라이브러리 콘텐츠",
     "selectLibrary": "미디어 라이브러리 선택",
     "filtersWithCount": "필터 (${count})",

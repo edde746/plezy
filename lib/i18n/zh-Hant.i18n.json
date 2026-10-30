@@ -1269,6 +1269,7 @@
     "showLibrary": "顯示媒體庫",
     "hideLibrary": "隱藏媒體庫",
     "libraryOptions": "媒體庫選項",
+    "shuffleLibrary": "",
     "content": "媒體庫內容",
     "selectLibrary": "選擇媒體庫",
     "filtersWithCount": "篩選器（${count}）",

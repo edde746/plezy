@@ -1274,6 +1274,7 @@
     "showLibrary": "Vis bibliotek",
     "hideLibrary": "Skjul bibliotek",
     "libraryOptions": "Bibliotekalternativer",
+    "shuffleLibrary": "",
     "content": "bibliotekinnhold",
     "selectLibrary": "Velg bibliotek",
     "filtersWithCount": "Filtre (${count})",

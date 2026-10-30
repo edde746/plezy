@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
+import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../media/play_queue.dart';
 import '../providers/multi_server_provider.dart';
@@ -17,8 +18,8 @@ import 'jellyfin_client.dart';
 import 'media_list_playback_launcher.dart';
 import 'playlist_items_loader.dart';
 
-/// Backend-neutral launcher for MediaBrowser collections, playlists, and
-/// folders.
+/// Backend-neutral launcher for MediaBrowser collections, playlists, folders,
+/// and whole-library shuffles.
 ///
 /// Jellyfin and Emby have no server-side queue resource — the client fetches
 /// children (collection) or playlist items, applies shuffle locally, and hands
@@ -30,6 +31,13 @@ import 'playlist_items_loader.dart';
 /// The persisted `jellyfin:` queue-id prefix predates Emby support and covers
 /// both dialects. It must remain stable so existing saved queues keep working.
 class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
+  /// How many videos a library shuffle queues. Neither dialect has a server
+  /// queue, and draining a whole library (tens of thousands of episodes)
+  /// into memory would stall the launch, so the server draws this many at
+  /// random instead: about 1.5 MB of rows with media sources, and days of
+  /// playback.
+  static const int libraryShuffleQueueSize = 200;
+
   final BuildContext context;
 
   /// Hook for tests — bypasses [Provider.of] so callers can inject a
@@ -172,6 +180,40 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
         abort.throwIfAborted();
         if (raw == null) return const <MediaItem>[];
         return raw.map((e) => e.copyWith(serverId: serverId, serverName: metadata.serverName ?? e.serverName)).toList();
+      },
+    );
+  }
+
+  @override
+  Future<PlayQueueResult> launchShuffledLibrary({
+    required MediaLibrary library,
+    bool showLoadingIndicator = true,
+  }) async {
+    final serverId = library.serverId;
+    if (serverId == null) {
+      return PlayQueueError(Exception('Library is missing serverId'));
+    }
+
+    return _launchLocalQueue(
+      serverId: serverId,
+      contextKey: library.id,
+      shuffle: true,
+      showLoadingIndicator: showLoadingIndicator,
+      fetchItems: (client, abort) async {
+        if (client is! JellyfinClient) {
+          throw StateError('Library shuffle needs a MediaBrowser client, got ${client.runtimeType}');
+        }
+        final fetched = await client.fetchRandomLibraryVideos(library.id, limit: libraryShuffleQueueSize, abort: abort);
+        abort.throwIfAborted();
+        return [
+          for (final item in fetched)
+            item.copyWith(
+              serverId: item.serverId ?? serverId,
+              serverName: item.serverName ?? library.serverName,
+              libraryId: item.libraryId ?? library.id,
+              libraryTitle: item.libraryTitle ?? library.title,
+            ),
+        ];
       },
     );
   }

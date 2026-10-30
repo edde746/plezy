@@ -1274,6 +1274,7 @@
     "showLibrary": "Visa bibliotek",
     "hideLibrary": "Dölj bibliotek",
     "libraryOptions": "Biblioteksalternativ",
+    "shuffleLibrary": "",
     "content": "bibliotekets innehåll",
     "selectLibrary": "Välj bibliotek",
     "filtersWithCount": "Filter (${count})",

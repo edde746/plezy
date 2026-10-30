@@ -1274,6 +1274,7 @@
     "showLibrary": "Kutubxonani koʻrsatish",
     "hideLibrary": "Kutubxonani yashirish",
     "libraryOptions": "Kutubxona parametrlari",
+    "shuffleLibrary": "",
     "content": "kutubxona tarkibi",
     "selectLibrary": "Kutubxonani tanlash",
     "filtersWithCount": "Filtrlar (${count})",

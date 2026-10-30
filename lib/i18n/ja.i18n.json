@@ -1269,6 +1269,7 @@
     "showLibrary": "ライブラリを表示",
     "hideLibrary": "ライブラリを非表示",
     "libraryOptions": "ライブラリオプション",
+    "shuffleLibrary": "",
     "content": "ライブラリコンテンツ",
     "selectLibrary": "ライブラリを選択",
     "filtersWithCount": "フィルター (${count})",

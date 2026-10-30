@@ -1284,6 +1284,7 @@
     "showLibrary": "Pokaż bibliotekę",
     "hideLibrary": "Ukryj bibliotekę",
     "libraryOptions": "Opcje biblioteki",
+    "shuffleLibrary": "",
     "content": "zawartość biblioteki",
     "selectLibrary": "Wybierz bibliotekę",
     "filtersWithCount": "Filtry (${count})",

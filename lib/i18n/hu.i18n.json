@@ -1274,6 +1274,7 @@
     "showLibrary": "Könyvtár megjelenítése",
     "hideLibrary": "Könyvtár elrejtése",
     "libraryOptions": "Könyvtár beállításai",
+    "shuffleLibrary": "",
     "content": "könyvtár tartalma",
     "selectLibrary": "Könyvtár kiválasztása",
     "filtersWithCount": "Szűrők (${count})",

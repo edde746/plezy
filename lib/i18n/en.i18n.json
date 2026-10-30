@@ -1274,6 +1274,7 @@
     "showLibrary": "Show library",
     "hideLibrary": "Hide library",
     "libraryOptions": "Library options",
+    "shuffleLibrary": "Shuffle library",
     "content": "library content",
     "selectLibrary": "Select library",
     "filtersWithCount": "Filters (${count})",

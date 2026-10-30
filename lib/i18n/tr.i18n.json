@@ -1274,6 +1274,7 @@
     "showLibrary": "Kitaplığı göster",
     "hideLibrary": "Kitaplığı gizle",
     "libraryOptions": "Kitaplık seçenekleri",
+    "shuffleLibrary": "",
     "content": "kitaplık içeriği",
     "selectLibrary": "Kitaplık seç",
     "filtersWithCount": "Filtreler (${count})",

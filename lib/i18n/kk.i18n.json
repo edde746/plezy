@@ -1274,6 +1274,7 @@
     "showLibrary": "Кітапхананы көрсету",
     "hideLibrary": "Кітапхананы жасыру",
     "libraryOptions": "Кітапхана параметрлері",
+    "shuffleLibrary": "",
     "content": "кітапхана мазмұны",
     "selectLibrary": "Кітапхананы таңдау",
     "filtersWithCount": "Фильтрлер (${count})",

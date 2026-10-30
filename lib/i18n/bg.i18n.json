@@ -1274,6 +1274,7 @@
     "showLibrary": "Покажи библиотеката",
     "hideLibrary": "Скрий библиотеката",
     "libraryOptions": "Опции на библиотеката",
+    "shuffleLibrary": "",
     "content": "съдържание на библиотеката",
     "selectLibrary": "Избери библиотека",
     "filtersWithCount": "Филтри (${count})",

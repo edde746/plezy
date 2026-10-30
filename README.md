@@ -99,6 +99,7 @@ sudo moss pad plezy
 
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists — video and audio
+- Shuffle a whole movie or TV library
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
 - Cross-server search across every connected Plex, Jellyfin, and Emby server, including actors and directors
 - Filtering, sorting, and alphabetical jump navigation

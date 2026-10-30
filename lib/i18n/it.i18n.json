@@ -1274,6 +1274,7 @@
     "showLibrary": "Mostra libreria",
     "hideLibrary": "Nascondi libreria",
     "libraryOptions": "Opzioni libreria",
+    "shuffleLibrary": "",
     "content": "contenuto della libreria",
     "selectLibrary": "Seleziona libreria",
     "filtersWithCount": "Filtri (${count})",

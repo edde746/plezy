@@ -1274,6 +1274,7 @@
     "showLibrary": "Kitabxananı göstər",
     "hideLibrary": "Kitabxananı gizlət",
     "libraryOptions": "Kitabxana seçimləri",
+    "shuffleLibrary": "",
     "content": "kitabxana məzmunu",
     "selectLibrary": "Kitabxana seç",
     "filtersWithCount": "Filtrlər (${count})",

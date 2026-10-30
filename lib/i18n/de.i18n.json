@@ -1274,6 +1274,7 @@
     "showLibrary": "Mediathek anzeigen",
     "hideLibrary": "Mediathek ausblenden",
     "libraryOptions": "Mediatheksoptionen",
+    "shuffleLibrary": "",
     "content": "Mediatheksinhalt",
     "selectLibrary": "Mediathek auswählen",
     "filtersWithCount": "Filter (${count})",

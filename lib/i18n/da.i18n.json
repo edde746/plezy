@@ -1274,6 +1274,7 @@
     "showLibrary": "Vis bibliotek",
     "hideLibrary": "Skjul bibliotek",
     "libraryOptions": "Biblioteksindstillinger",
+    "shuffleLibrary": "",
     "content": "biblioteksindhold",
     "selectLibrary": "Vælg bibliotek",
     "filtersWithCount": "Filtre (${count})",
