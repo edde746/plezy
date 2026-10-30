@@ -714,6 +714,7 @@ void main() {
       required bool protected,
       required http.Client httpClient,
       List<PlexServer>? cachedServers,
+      PlexHomePinPrompt? pinPrompt,
     }) async {
       binder.dispose();
       multiServerProvider.dispose();
@@ -727,7 +728,7 @@ void main() {
         profileConnections: profileConnections,
         serverManager: manager,
         multiServerProvider: multiServerProvider,
-        pinPrompt: (_, {String? errorMessage}) async => null,
+        pinPrompt: pinPrompt ?? (_, {String? errorMessage}) async => null,
         shouldDeferInitialBind: (_) async => false,
         plexAuth: PlexAuthService.forTesting(http: MediaServerHttpClient(client: httpClient)),
       );
@@ -818,6 +819,57 @@ void main() {
       // No second connect pass was attempted with the rejected token.
       expect(prepared.manager.refreshCalls, 1);
     });
+
+    test(
+      'flags re-auth when plex.tv rejects the account token on /switch, and a new sign-in recovers (#2904)',
+      () async {
+        var accountToken = 'account-token';
+        final switchTokens = <String>[];
+        final prepared = await preparePlexHomeBind(
+          protected: true,
+          pinPrompt: (_, {String? errorMessage}) async => '1234',
+          // A distinct PMS token keeps the optimistic cached bind from settling,
+          // so the bind awaits plex.tv's 401 and re-mints via /switch.
+          cachedServers: [_server(accessToken: 'shared-server-token')],
+          httpClient: MockClient((request) async {
+            final token = request.url.queryParameters['X-Plex-Token'] ?? request.headers['X-Plex-Token'];
+            const json = {'content-type': 'application/json'};
+            if (request.url.path.endsWith('/home/users/home-user-uuid/switch')) {
+              switchTokens.add(token!);
+              if (token == 'new-account-token') {
+                return http.Response(jsonEncode({'authToken': 'fresh-user-token'}), 201, headers: json);
+              }
+            } else if (token == 'fresh-user-token') {
+              return http.Response(jsonEncode([_serverJson()]), 200, headers: json);
+            }
+            return http.Response('{"errors":[]}', 401, headers: json);
+          }),
+        );
+
+        await binder.rebindActive();
+
+        expect(switchTokens, [accountToken]);
+        expect(multiServerProvider.authErrorServerIds, ['srv-1']);
+        expect(binder.lastBindFailureConnectivityOnly, isFalse);
+        // Startup must not fall back to offline mode for a revoked account.
+        expect(activeProfile.lastBindingSucceeded, isTrue);
+        expect(prepared.manager.refreshCalls, 0);
+
+        // Signing in again replaces the account token; the screen's rebind is
+        // user-initiated, so the protected profile may prompt and re-mint even
+        // though this session has already bound once.
+        accountToken = 'new-account-token';
+        final account = (await connections.getPlexAccount('plex.account'))!;
+        await connections.upsert(account.copyWith(accountToken: accountToken));
+        binder.markUserInitiatedActivation(prepared.profileId);
+        await binder.rebindActive();
+
+        expect(switchTokens.last, accountToken);
+        expect(prepared.manager.refreshCalls, 1);
+        expect(prepared.manager.lastConnection?.servers.single.accessToken, 'server-token');
+        expect((await profileConnections.get(prepared.profileId, 'plex.account'))?.userToken, 'fresh-user-token');
+      },
+    );
 
     test('optimistic cached bind settles without waiting for the resource refresh, then reconciles', () async {
       final fetchGate = Completer<void>();

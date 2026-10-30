@@ -11,6 +11,8 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # Nested git worktrees (other branches' full checkouts), when present.
+    - worktrees/**
 
 linter:
   rules:

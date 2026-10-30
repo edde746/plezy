@@ -124,7 +124,11 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
       usesConnection = pcs.any((pc) => pc.connectionId == connectionId);
     }
     if (!mounted || !usesConnection) return;
-    await context.read<ActiveProfileBinder>().rebindActive();
+    // The user just signed in, so a protected Plex Home profile may ask for
+    // its PIN: minting a token from the new account token needs `/switch`,
+    // which a passive rebind suppresses once the session has bound (#2904).
+    final binder = context.read<ActiveProfileBinder>()..markUserInitiatedActivation(active.id);
+    await binder.rebindActive();
   }
 
   @override
