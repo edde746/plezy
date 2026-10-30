@@ -397,7 +397,26 @@ void main() {
 
     await tester.tap(find.text(t.common.close));
     await tester.pumpAndSettle();
-    await expectLater(result, completes);
+    await expectLater(result, completion(isFalse));
+  });
+
+  testWidgets('server-limit dialog offers a capped quality only when given one', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    final playLabel = t.messages.serverLimitPlayLower(quality: '1080p 8 Mbps');
+
+    final declined = showServerLimitDialog(hostContext, fallbackLabel: '1080p 8 Mbps');
+    await tester.pumpAndSettle();
+    expect(find.text(playLabel), findsOneWidget);
+    await tester.tap(find.text(t.common.close));
+    await tester.pumpAndSettle();
+    await expectLater(declined, completion(isFalse));
+
+    final accepted = showServerLimitDialog(hostContext, fallbackLabel: '1080p 8 Mbps');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(playLabel));
+    await tester.pumpAndSettle();
+    await expectLater(accepted, completion(isTrue));
+    expect(find.byType(AlertDialog), findsNothing);
   });
 }
 
