@@ -21,6 +21,7 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/services/video_decode_capabilities.dart';
 import 'package:plezy/services/settings_service.dart';
 
@@ -2705,6 +2706,49 @@ void main() {
       // av1 cannot ride in a TS segment; flac and truehd cannot either.
       expect(tsTranscode['VideoCodec'], 'hevc,h264');
       expect(tsTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,opus,dts');
+    });
+
+    test('getPlaybackInfo leaves truehd out of the fMP4 copy list only for ExoPlayer on Android', () async {
+      // ExoPlayer cannot read a TrueHD track copied into fMP4 (#2587), so the
+      // server has to re-encode it there.
+      resetSharedPreferencesForTest();
+      await SettingsService.getInstance();
+      addTearDown(() => PlatformDetector.debugSetIsAndroidOverride(null));
+      Future<List<Map<String, dynamic>>> videoTranscodes({required bool android, required bool exoPlayer}) async {
+        PlatformDetector.debugSetIsAndroidOverride(android);
+        await SettingsService.instance.write(SettingsService.useExoPlayer, exoPlayer);
+        String? capturedBody;
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient((request) async {
+            capturedBody = request.body;
+            return jsonResponse({'MediaSources': []});
+          }),
+        );
+        addTearDown(scoped.close);
+        await scoped.getPlaybackInfo('item-1');
+        final profile = (jsonDecode(capturedBody!) as Map<String, dynamic>)['DeviceProfile'] as Map<String, dynamic>;
+        return (profile['TranscodingProfiles'] as List<dynamic>)
+            .map((entry) => entry as Map<String, dynamic>)
+            .where((entry) => entry['Type'] == 'Video')
+            .toList();
+      }
+
+      final exoPlayer = await videoTranscodes(android: true, exoPlayer: true);
+      expect(exoPlayer.map((entry) => entry['Container']), ['mp4', 'ts']);
+      expect(exoPlayer.first['AudioCodec'], 'aac,mp3,ac3,eac3,flac,opus,dts');
+      expect(exoPlayer.first['AudioCodec'], matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')));
+      // flac still separates the lists, so the ts entry stays a strict subset
+      // of the fMP4 one and VOD keeps negotiating fMP4.
+      final mp4Codecs = (exoPlayer.first['AudioCodec'] as String).split(',');
+      final tsCodecs = (exoPlayer.last['AudioCodec'] as String).split(',');
+      expect(mp4Codecs, containsAll(tsCodecs));
+      expect(tsCodecs.length, lessThan(mp4Codecs.length));
+
+      // mpv keeps every codec, and the setting picks a backend only on Android.
+      const everyFmp4AudioCodec = 'aac,mp3,ac3,eac3,flac,opus,dts,truehd';
+      expect((await videoTranscodes(android: true, exoPlayer: false)).first['AudioCodec'], everyFmp4AudioCodec);
+      expect((await videoTranscodes(android: false, exoPlayer: true)).first['AudioCodec'], everyFmp4AudioCodec);
     });
 
     test('the hardware decoder probe narrows both video codec lists', () async {
