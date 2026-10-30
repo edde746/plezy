@@ -785,6 +785,7 @@ class SettingsService extends BaseSharedPreferencesService {
   /// refusing a codec the user's other devices decode fine. Stores the
   /// unchecked codecs so a codec added to the list later starts accepted.
   static const refusedVideoCodecs = StringListPref('refused_video_codecs');
+  static const startupWaitExcludedServers = StringListPref('startup_wait_excluded_servers');
   static const musicQualityPreset = EnumPref<AudioQualityPreset>(
     'music_quality_preset',
     values: AudioQualityPreset.values,
@@ -1625,6 +1626,7 @@ class SettingsService extends BaseSharedPreferencesService {
     companionRemoteLastHostAddress,
     rememberedBrightnessLevel,
     refusedVideoCodecs,
+    startupWaitExcludedServers,
     audioOutputDevice,
   ];
 

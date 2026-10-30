@@ -1391,6 +1391,18 @@ class Translations$settings$en {
 	/// en: 'Startup'
 	String get startup => 'Startup';
 
+	/// en: 'Skip waiting for servers to connect'
+	String get dontWaitForServers => 'Skip waiting for servers to connect';
+
+	/// en: 'Selected servers keep connecting in the background while the app opens.'
+	String get dontWaitForServersDescription => 'Selected servers keep connecting in the background while the app opens.';
+
+	/// en: 'No servers have been added yet.'
+	String get noServersConfigured => 'No servers have been added yet.';
+
+	/// en: 'Servers'
+	String get servers => 'Servers';
+
 	/// en: 'Display'
 	String get display => 'Display';
 
@@ -8563,6 +8575,10 @@ extension on Translations {
 			'settings.generalDescription' => 'Language, startup, and window behavior',
 			'settings.languageAndRegion' => 'Language & Region',
 			'settings.startup' => 'Startup',
+			'settings.dontWaitForServers' => 'Skip waiting for servers to connect',
+			'settings.dontWaitForServersDescription' => 'Selected servers keep connecting in the background while the app opens.',
+			'settings.noServersConfigured' => 'No servers have been added yet.',
+			'settings.servers' => 'Servers',
 			'settings.display' => 'Display',
 			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
@@ -8612,12 +8628,12 @@ extension on Translations {
 			'themeEditor.preview' => 'Preview',
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'From other themes',
@@ -9126,12 +9142,12 @@ extension on Translations {
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
