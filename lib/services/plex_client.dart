@@ -3744,7 +3744,7 @@ class PlexClient
       final sourceCodecRefused = !isTrack && _sourceCodecRefused(data);
       final wantTranscode = isTrack
           ? !audioPreset.isOriginal
-          : sourceCodecRefused || _presetNeedsTranscode(options.qualityPreset, data);
+          : sourceCodecRefused || options.forceTranscode || _presetNeedsTranscode(options.qualityPreset, data);
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -3815,8 +3815,10 @@ class PlexClient
           );
         }
 
+        if (options.forceTranscode) throw _forcedTranscodeUnavailable(result.outcome);
         return _transcodeFallbackResult(data, result.outcome, options, activeAudioStreamId: carriedAudioStreamId);
       }
+      if (options.forceTranscode && !isTrack) throw _forcedTranscodeUnavailable(null);
 
       return PlaybackInitializationResult(
         availableVersions: data.availableVersions,
@@ -3876,6 +3878,17 @@ class PlexClient
 
   MediaVersion? _selectedVersion(PlexVideoPlaybackData data) =>
       data.selectedMediaIndex < data.availableVersions.length ? data.availableVersions[data.selectedMediaIndex] : null;
+
+  /// A forced transcode ([PlaybackInitializationOptions.forceTranscode]) the
+  /// server would not start. The direct-play URL is not an answer here: the
+  /// server already refused that file, so opening it again could only fail the
+  /// same way.
+  PlaybackException _forcedTranscodeUnavailable(TranscodeDecisionOutcome? outcome) {
+    appLogger.w(
+      'Forced transcode unavailable (${outcome?.name ?? 'no transcode session'}); not falling back to the file',
+    );
+    return PlaybackException(t.messages.serverLimitBody, reason: PlaybackFailureReason.noPlayableSource);
+  }
 
   /// Direct-play result for a transcode decision that fell back (failed or
   /// said direct-play only), surfacing the reason so the UI can notify the

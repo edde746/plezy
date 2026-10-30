@@ -1,7 +1,14 @@
+import '../../models/transcode_quality_preset.dart';
 import '../../mpv/models.dart';
 
 /// Highest fallback level the live-TV ladder will climb before giving up.
 const int maxLiveFallbackLevel = 2;
+
+/// Capped preset the HTTP 500 dialog offers when the server refused the raw
+/// file. A server whose upload is shared with other remote viewers can admit
+/// an 8 Mbps encode where it refused a high-bitrate original, and 1080p at
+/// that rate still looks sharp.
+const TranscodeQualityPreset serverLimitFallbackCap = TranscodeQualityPreset.p1080_8mbps;
 
 /// What the player screen should do about one playback error.
 enum PlaybackFailureAction {
@@ -89,4 +96,26 @@ PlaybackFailureAction resolvePlaybackFailureAction({
   }
 
   return PlaybackFailureAction.fatal;
+}
+
+/// The capped preset the HTTP 500 dialog may offer, or null when it offers
+/// none.
+///
+/// The 500 itself stays terminal (see [resolvePlaybackFailureAction]): this
+/// never retries the refused request. It only lets the viewer ask for a
+/// different one, a capped Plex transcode the server's limit may admit where
+/// it refused the raw file. Only an on-demand Plex open at Original quality
+/// qualifies, on a server that can transcode, and only once per item
+/// ([fallbackAlreadyUsed]): a capped request that is refused too is the
+/// server's final answer.
+TranscodeQualityPreset? serverLimitFallbackPreset({
+  required bool isLive,
+  required bool isPlexBacked,
+  required bool serverSupportsTranscoding,
+  required TranscodeQualityPreset requestedPreset,
+  required bool fallbackAlreadyUsed,
+}) {
+  if (isLive || !isPlexBacked || !serverSupportsTranscoding) return null;
+  if (!requestedPreset.isOriginal || fallbackAlreadyUsed) return null;
+  return serverLimitFallbackCap;
 }
