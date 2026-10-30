@@ -22,6 +22,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   private var pipChannel: FlutterMethodChannel?
   private var autoPipEnabled = false
   private var enteredPipViaAuto = false
+  private let displayModes = DisplayModeManager()
 
   // MARK: - FlutterPlugin Registration
 
@@ -104,6 +105,23 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     case "setLogLevel":
       handleSetLogLevel(call: call, result: result)
+
+    // Display mode matching (DisplayModeService): refresh rate only, Match
+    // Dynamic Range is Windows-only.
+    case "isModeChanged":
+      result(displayModes.isModeChanged)
+
+    case "getCurrentDisplayMode":
+      withFlutterWindow(result) { result(self.displayModes.currentMode(on: $0)) }
+
+    case "getDisplayModes":
+      withFlutterWindow(result) { result(self.displayModes.modes(on: $0)) }
+
+    case "setDisplayMode":
+      handleSetDisplayMode(call: call, result: result)
+
+    case "restoreDisplayMode":
+      result(displayModes.restore())
 
     default:
       result(FlutterMethodNotImplemented)
@@ -288,7 +306,31 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     playerCore?.setPaused(!isPlaying)
   }
 
+  private func handleSetDisplayMode(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+      let width = args["width"] as? Int,
+      let height = args["height"] as? Int,
+      let refreshRate = (args["refreshRate"] as? NSNumber)?.doubleValue
+    else {
+      result(FlutterError(code: "INVALID_ARGS", message: "Expected width, height and refreshRate", details: nil))
+      return
+    }
+    withFlutterWindow(result) { window in
+      self.displayModes.setMode(on: window, width: width, height: height, refreshRate: refreshRate) {
+        result($0)
+      }
+    }
+  }
+
   // MARK: - Helpers
+
+  private func withFlutterWindow(_ result: @escaping FlutterResult, _ body: (NSWindow) -> Void) {
+    guard let (window, _, _) = findFlutterWindow() else {
+      result(FlutterError(code: "NO_WINDOW", message: "Could not find Flutter window", details: nil))
+      return
+    }
+    body(window)
+  }
 
   private func findFlutterWindow() -> (NSWindow, NSView, NSView)? {
     for window in NSApplication.shared.windows {
