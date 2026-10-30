@@ -1,9 +1,42 @@
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/serial_future_queue.dart';
 
 void main() {
+  test('an idle queue starts work on the current clock after its previous operation completed', () async {
+    final queue = SerialFutureQueue();
+    await queue.run(() async => 1);
+
+    fakeAsync((clock) {
+      var completed = false;
+      queue.run(() async => 2).then((_) => completed = true);
+      clock.flushMicrotasks();
+      expect(completed, isTrue, reason: 'an idle queue must not retain the previous async zone');
+    });
+  });
+
+  test('an operation detached by reset cannot clear the replacement queue tail', () async {
+    final queue = SerialFutureQueue();
+    final oldRelease = Completer<void>();
+    final newRelease = Completer<void>();
+    final old = queue.run(() => oldRelease.future);
+    queue.reset();
+    final replacement = queue.run(() => newRelease.future);
+    oldRelease.complete();
+    await old;
+
+    var thirdStarted = false;
+    final third = queue.run(() async => thirdStarted = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(thirdStarted, isFalse);
+    newRelease.complete();
+    await replacement;
+    await third;
+    expect(thirdStarted, isTrue);
+  });
+
   test('a failed operation does not poison the next queued operation', () async {
     final queue = SerialFutureQueue();
 
