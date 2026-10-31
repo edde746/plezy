@@ -121,6 +121,9 @@ class JellyfinImageAbsolutizer {
       roles: item.roles
           ?.map((r) => MediaRole(id: r.id, tag: r.tag, role: r.role, thumbPath: absolutize(r.thumbPath)))
           .toList(),
+      directorRoles: item.directorRoles
+          ?.map((r) => MediaRole(id: r.id, tag: r.tag, role: r.role, thumbPath: absolutize(r.thumbPath)))
+          .toList(),
     );
   }
 }
@@ -278,6 +281,7 @@ class JellyfinMappers {
       isFavorite: _userData(item)?['IsFavorite'] as bool?,
       genres: _stringListOrNamePairs(item['Genres'], item['GenreItems']),
       directors: _peopleByType(item['People'], 'Director'),
+      directorRoles: _peopleRoles(item['People'], const {'Director'}),
       writers: _peopleByType(item['People'], 'Writer'),
       producers: _peopleByType(item['People'], 'Producer'),
       countries: _stringList(item['ProductionLocations']),
@@ -503,11 +507,13 @@ class JellyfinMappers {
     return nullIfEmptyList(result);
   }
 
-  static List<MediaRole>? _actors(Object? list) {
+  static List<MediaRole>? _actors(Object? list) => _peopleRoles(list, const {'Actor', 'GuestStar'});
+
+  static List<MediaRole>? _peopleRoles(Object? list, Set<String> types) {
     if (list is! List) return null;
     final result = <MediaRole>[];
     for (final entry in list) {
-      if (entry is Map<String, dynamic> && (entry['Type'] == 'Actor' || entry['Type'] == 'GuestStar')) {
+      if (entry is Map<String, dynamic> && types.contains(entry['Type'])) {
         result.add(
           MediaRole(
             id: entry['Id'] as String?,

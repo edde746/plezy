@@ -631,8 +631,8 @@ class PlexMetadataDto {
   final int? imdbRatingCount;
   @JsonKey(name: 'Genre', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? genre;
-  @JsonKey(name: 'Director', fromJson: _tagListFromJson, includeToJson: false)
-  final List<String>? director;
+  @JsonKey(name: 'Director', includeToJson: false)
+  final List<PlexRoleDto>? director;
   @JsonKey(name: 'Writer', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? writer;
   @JsonKey(name: 'Producer', fromJson: _tagListFromJson, includeToJson: false)
@@ -844,7 +844,7 @@ class PlexMetadataDto {
     List<PlexRatingDto>? ratingSources,
     int? imdbRatingCount,
     List<String>? genre,
-    List<String>? director,
+    List<PlexRoleDto>? director,
     List<String>? writer,
     List<String>? producer,
     List<String>? country,
@@ -1124,7 +1124,8 @@ class PlexMappers {
         imdbVotes: dto.imdbRatingCount,
       ),
       genres: dto.genre,
-      directors: dto.director,
+      directors: dto.director?.map((d) => d.tag).toList(),
+      directorRoles: dto.director?.map(role).toList(),
       writers: dto.writer,
       producers: dto.producer,
       countries: dto.country,
