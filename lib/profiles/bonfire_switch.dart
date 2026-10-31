@@ -79,7 +79,11 @@ Future<BonfireSwitchResult> switchBonfireUserWithPin({
       switch (response.statusCode) {
         case 200:
           final data = response.data;
-          final token = data is Map ? data['activeProfileToken']?.toString() : null;
+          // Jellyfin 12 serializes PascalCase (`ActiveProfileToken`); older
+          // shapes and the docs show camelCase. Accept either.
+          final token = data is Map
+              ? (data['activeProfileToken'] ?? data['ActiveProfileToken'])?.toString()
+              : null;
           if (token == null || token.isEmpty) {
             appLogger.e('switchBonfireUserWithPin: 200 without activeProfileToken${logLabel == null ? '' : ' for $logLabel'}');
             return const BonfireSwitchResult._(BonfireSwitchStatus.failed, null, null);

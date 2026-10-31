@@ -85,7 +85,25 @@ class BonfireProfile {
     required this.masterUserId,
   });
 
-  factory BonfireProfile.fromJson(Map<String, dynamic> json) => _$BonfireProfileFromJson(json);
+  factory BonfireProfile.fromJson(Map<String, dynamic> json) =>
+      _$BonfireProfileFromJson(_camelKeys(json));
+
+  /// Jellyfin 12 serializes plugin JSON PascalCase (`ProfileName`) while the
+  /// Bonfire docs show camelCase (`profileName`). Normalize the leading char
+  /// so either shape parses.
+  static Map<String, dynamic> _camelKeys(Map<String, dynamic> json) {
+    final out = Map<String, dynamic>.from(json);
+    for (final entry in json.entries) {
+      final key = entry.key;
+      if (key.isEmpty) continue;
+      final first = key.codeUnitAt(0);
+      if (first >= 0x41 && first <= 0x5A) {
+        final camel = key[0].toLowerCase() + key.substring(1);
+        if (!out.containsKey(camel)) out[camel] = entry.value;
+      }
+    }
+    return out;
+  }
 
   Map<String, dynamic> toJson() => _$BonfireProfileToJson(this);
 

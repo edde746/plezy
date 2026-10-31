@@ -181,5 +181,13 @@ void main() {
       expect(result.status, BonfireSwitchStatus.failed);
       expect(result.userToken, isNull);
     });
+
+    test('a PascalCase 200 (Jellyfin 12 serialization) still yields the token', () async {
+      final result = await _switch(
+        mock: MockClient((request) async => _json({'ActiveProfileToken': 'scoped-token', 'JellyfinUserId': _guid}, 200)),
+      );
+      expect(result.status, BonfireSwitchStatus.success);
+      expect(result.userToken, 'scoped-token');
+    });
   });
 }

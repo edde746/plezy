@@ -96,4 +96,35 @@ void main() {
       expect(_profile(), isNot(_profile({'allowedDeviceIds': ['device-2']})));
     });
   });
+
+  group('Jellyfin 12 PascalCase payloads', () {
+    // Live capture from a Jellyfin 12 + Bonfire 1.6.6 `/plugins/profiles/list`
+    // response: the server serializes PascalCase even though the plugin docs
+    // show camelCase. Parsing must accept both.
+    test('parses the real server shape', () {
+      final profile = BonfireProfile.fromJson(const {
+        'ProfileUserId': 'e5b69450454d458c883028fb7ecd0a49',
+        'ProfileName': 'Max',
+        'AvatarInitial': 'M',
+        'AvatarColor': '#E50914',
+        'TransparentAvatar': false,
+        'RequiresPin': false,
+        'HasPin': false,
+        'IsMaster': false,
+        'LockoutMinutes': 5,
+        'EnabledFolders': ['a656b907eb3a73532e40e44b968d0225'],
+        'BlockedTags': <String>[],
+        'AllowedTags': <String>[],
+        'BypassPinOnLocalNetwork': false,
+        'AllowedDeviceIds': <String>[],
+        'IsBonfire': false,
+        'MasterUserId': '60aa717550f74bc8b5f4901ab87a29f4',
+      });
+      expect(profile.profileUserId, 'e5b69450454d458c883028fb7ecd0a49');
+      expect(profile.displayName, 'Max');
+      expect(profile.requiresPin, false);
+      expect(profile.isMaster, false);
+      expect(profile.masterUserId, '60aa717550f74bc8b5f4901ab87a29f4');
+    });
+  });
 }
