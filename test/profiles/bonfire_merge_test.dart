@@ -127,5 +127,37 @@ void main() {
       expect(ProfileKind.jellyfinBonfire.id, 'jellyfin_bonfire');
       expect(ProfileKind.fromId('jellyfin_bonfire'), ProfileKind.jellyfinBonfire);
     });
+
+    test('local parent row is hidden when a Bonfire master virtual exists', () {
+      final merged = mergeLocalWithPlexHome(
+        locals: [
+          Profile.local(id: 'local-dal', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1)),
+          Profile.local(id: 'local-multi', displayName: 'Shared', createdAt: DateTime(2026, 1, 1)),
+        ],
+        plexHomeByConnectionId: const {},
+        connectionsById: {'jf-1': _conn('jf-1'), 'jf-2': _conn('jf-2')},
+        bonfireByConnectionId: {
+          'jf-1': [
+            _bonfire(_masterGuid, name: 'dalgibbard', isMaster: true),
+            _bonfire(_kidsGuid, name: 'Max'),
+          ],
+        },
+        localConnectionsByProfile: {
+          'local-dal': [
+            const ProfileConnection(profileId: 'local-dal', connectionId: 'jf-1', userIdentifier: 'master-1'),
+          ],
+          'local-multi': [
+            const ProfileConnection(profileId: 'local-multi', connectionId: 'jf-1', userIdentifier: 'master-1'),
+            const ProfileConnection(profileId: 'local-multi', connectionId: 'jf-2', userIdentifier: 'master-1'),
+          ],
+        },
+      );
+
+      // Duplicate account row gone; the Bonfire master row owns that identity.
+      expect(merged.any((p) => p.id == 'local-dal'), isFalse);
+      // A local borrowing multiple connections keeps its own row.
+      expect(merged.any((p) => p.id == 'local-multi'), isTrue);
+      expect(merged.where((p) => p.isJellyfinBonfire).length, 2);
+    });
   });
 }

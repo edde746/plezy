@@ -332,6 +332,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       plexHomeByConnectionId: _plexHomeUsers,
       connectionsById: _connectionsById,
       bonfireByConnectionId: _bonfireProfiles,
+      localConnectionsByProfile: _connectionsByProfile,
       storage: _storage,
     );
     _avatarUrls = resolveProfileAvatarUrls(

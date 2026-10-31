@@ -37,9 +37,11 @@ List<Profile> mergeLocalWithPlexHome({
   required Map<String, List<PlexHomeUser>> plexHomeByConnectionId,
   required Map<String, Connection> connectionsById,
   Map<String, List<BonfireProfile>> bonfireByConnectionId = const {},
+  Map<String, List<ProfileConnection>> localConnectionsByProfile = const {},
   StorageService? storage,
 }) {
   final out = <Profile>[for (final local in locals) _withLatestStoredLastUsed(local, storage)];
+  final bonfireMasterConnectionIds = <String>{};
   for (final entry in plexHomeByConnectionId.entries) {
     final connectionId = entry.key;
     if (!connectionsById.containsKey(connectionId)) continue;
@@ -61,6 +63,7 @@ List<Profile> mergeLocalWithPlexHome({
     // a non-Jellyfin (or unregistered) connection id can't host them.
     final conn = connectionsById[connectionId];
     if (conn is! JellyfinConnection) continue;
+    if (entry.value.any((p) => p.isMaster)) bonfireMasterConnectionIds.add(connectionId);
     for (final profile in entry.value) {
       out.add(
         Profile.virtualJellyfinBonfire(
@@ -73,6 +76,18 @@ List<Profile> mergeLocalWithPlexHome({
         ),
       );
     }
+  }
+  // The master Bonfire row IS the parent account: a local profile whose only
+  // connection is that parent would render as a duplicate row without
+  // Bonfire's PIN semantics (two "dalgibbard" entries, one padlocked).
+  // Locals that also borrow other connections stay visible.
+  if (bonfireMasterConnectionIds.isNotEmpty) {
+    out.removeWhere((p) {
+      if (p is! LocalProfile) return false;
+      final rows = localConnectionsByProfile[p.id];
+      if (rows == null || rows.length != 1) return false;
+      return bonfireMasterConnectionIds.contains(rows.single.connectionId);
+    });
   }
   return sortProfilesByLastUsed(out);
 }

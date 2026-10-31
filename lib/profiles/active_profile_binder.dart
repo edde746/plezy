@@ -691,7 +691,18 @@ class ActiveProfileBinder {
       // Resume the minted child session — same posture Plex Home uses for
       // cold-start auto-resume and passive rebinds.
       return _bindMediaBrowser(
-        parent.copyWith(accessToken: cachedToken, userId: bonfireUserId, userName: profile.displayName),
+        // Distinct compound id (machineId/userId) per Bonfire profile: the
+        // client manager keys live Jellyfin clients by connection id, so a
+        // copy that keeps the parent's id collides with the parent's live
+        // client and keeps serving the previous profile until a manual
+        // reconnect. Deriving the id mirrors how a second human user on the
+        // same server gets their own connection at auth time.
+        parent.copyWith(
+          id: '${parent.serverMachineId}/$bonfireUserId',
+          accessToken: cachedToken,
+          userId: bonfireUserId,
+          userName: profile.displayName,
+        ),
         profileId: profile.id,
         generation: generation,
       );
@@ -742,7 +753,12 @@ class ActiveProfileBinder {
       '(server=${parent.serverMachineId}, uuid=$bonfireUserId, tokenLen=${minted.length})',
     );
     return _bindMediaBrowser(
-      parent.copyWith(accessToken: minted, userId: bonfireUserId, userName: profile.displayName),
+      parent.copyWith(
+        id: '${parent.serverMachineId}/$bonfireUserId',
+        accessToken: minted,
+        userId: bonfireUserId,
+        userName: profile.displayName,
+      ),
       profileId: profile.id,
       generation: generation,
     );
