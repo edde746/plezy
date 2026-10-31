@@ -213,5 +213,41 @@ void main() {
       expect(merged.any((p) => p.id == 'local-dal'), isFalse);
       expect(merged.where((p) => p.isJellyfinBonfire).length, 2);
     });
+
+    test('a local whose sole join row is the compound host row hides too', () {
+      // On device the local account's join row points at the compound sign-in
+      // row, while the Bonfire master set carries machine ids. A row-keyed
+      // comparison misses the duplicate and the picker shows two dalgibbards.
+      final host = JellyfinConnection(
+        id: 'machine-1/60aa',
+        baseUrl: 'https://jellyfin.example.net',
+        serverName: 'Home Media',
+        serverMachineId: 'machine-1',
+        userId: '60aa',
+        userName: 'dalgibbard',
+        accessToken: 'master-token',
+        deviceId: 'device-1',
+        createdAt: DateTime(2026, 1, 1),
+      );
+      final merged = mergeLocalWithPlexHome(
+        locals: [Profile.local(id: 'local-dal', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1))],
+        plexHomeByConnectionId: const {},
+        connectionsById: {host.id: host},
+        bonfireByConnectionId: {
+          'machine-1': [
+            _bonfire(_masterGuid, name: 'dalgibbard', isMaster: true),
+            _bonfire(_kidsGuid, name: 'Max'),
+          ],
+        },
+        localConnectionsByProfile: const {
+          'local-dal': [
+            ProfileConnection(profileId: 'local-dal', connectionId: 'machine-1/60aa', userIdentifier: '60aa'),
+          ],
+        },
+      );
+
+      expect(merged.any((p) => p.id == 'local-dal'), isFalse);
+      expect(merged.where((p) => p.isJellyfinBonfire).length, 2);
+    });
   });
 }
