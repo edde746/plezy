@@ -189,6 +189,9 @@ abstract class Player {
   /// Get an MPV property value by name.
   Future<String?> getProperty(String name);
 
+  /// Whether video is currently presented on a separate external display.
+  Future<bool> isExternalDisplayActive();
+
   /// Set the native MPV log message level (e.g., "warn", "v", "debug").
   ///
   /// This controls the volume of log messages sent from the native player
