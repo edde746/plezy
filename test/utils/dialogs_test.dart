@@ -394,24 +394,25 @@ void main() {
     expect(find.text(t.messages.serverLimitTitle), findsOneWidget);
     expect(find.textContaining('HTTP 500'), findsOneWidget);
     expect(find.text(t.messages.mediaUnreadableTitle), findsNothing);
+    expect(find.text(t.messages.serverLimitTranscode), findsNothing);
 
     await tester.tap(find.text(t.common.close));
     await tester.pumpAndSettle();
     await expectLater(result, completion(isFalse));
   });
 
-  testWidgets('server-limit dialog offers a capped quality only when given one', (tester) async {
+  testWidgets('server-limit dialog offers a transcode only when asked to', (tester) async {
     final hostContext = await _pumpHost(tester);
-    final playLabel = t.messages.serverLimitPlayLower(quality: '1080p 8 Mbps');
+    final playLabel = t.messages.serverLimitTranscode;
 
-    final declined = showServerLimitDialog(hostContext, fallbackLabel: '1080p 8 Mbps');
+    final declined = showServerLimitDialog(hostContext, offerTranscode: true);
     await tester.pumpAndSettle();
     expect(find.text(playLabel), findsOneWidget);
     await tester.tap(find.text(t.common.close));
     await tester.pumpAndSettle();
     await expectLater(declined, completion(isFalse));
 
-    final accepted = showServerLimitDialog(hostContext, fallbackLabel: '1080p 8 Mbps');
+    final accepted = showServerLimitDialog(hostContext, offerTranscode: true);
     await tester.pumpAndSettle();
     await tester.tap(find.text(playLabel));
     await tester.pumpAndSettle();

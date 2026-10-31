@@ -235,11 +235,11 @@ Future<void> showPlaybackNotAllowedDialog(BuildContext context) async {
 
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
 ///
-/// With [fallbackLabel] (a quality such as "1080p 8 Mbps") it also offers to
-/// play at that quality instead; returns true only when the viewer picks it.
-/// Close keeps the focus, so nothing changes unless the viewer chooses.
-Future<bool> showServerLimitDialog(BuildContext context, {String? fallbackLabel}) async {
-  final playCapped = await showScopedDialog<bool>(
+/// With [offerTranscode] it also offers to have the server transcode the item
+/// instead; returns true only when the viewer picks that. Close keeps the
+/// focus, so nothing changes unless the viewer chooses.
+Future<bool> showServerLimitDialog(BuildContext context, {bool offerTranscode = false}) async {
+  final transcode = await showScopedDialog<bool>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
@@ -250,22 +250,22 @@ Future<bool> showServerLimitDialog(BuildContext context, {String? fallbackLabel}
           autofocus: true,
           onPressed: () => Navigator.of(ctx).pop(false),
           label: t.common.close,
-          isPrimary: fallbackLabel == null,
-          style: fallbackLabel == null
-              ? FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape)
-              : TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+          isPrimary: !offerTranscode,
+          style: offerTranscode
+              ? TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape)
+              : FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
         ),
-        if (fallbackLabel != null)
+        if (offerTranscode)
           DialogActionButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            label: t.messages.serverLimitPlayLower(quality: fallbackLabel),
+            label: t.messages.serverLimitTranscode,
             isPrimary: true,
             style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
           ),
       ],
     ),
   );
-  return playCapped ?? false;
+  return transcode ?? false;
 }
 
 /// Shows the server-side 404 modal: the item exists but the server cannot read

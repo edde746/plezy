@@ -5,7 +5,7 @@ import 'package:plezy/models/transcode_quality_preset.dart';
 import '../../test_helpers/pump.dart';
 import '../../test_helpers/server_limit_harness.dart';
 
-/// The capped transcode is refused with HTTP 500 too: that is the server's
+/// The transcode is refused with HTTP 500 too: that is the server's
 /// final answer, so the dialog comes back without the offer and nothing else
 /// is opened. One test per file (see [installHdrStartupHarness]).
 void main() {
@@ -14,7 +14,7 @@ void main() {
   setUp(harness.setUp);
   tearDown(harness.tearDown);
 
-  testWidgets('a refused capped transcode shows the dialog without the offer and opens nothing more', (tester) async {
+  testWidgets('a refused transcode shows the dialog without the offer and opens nothing more', (tester) async {
     await runServerLimitPlayer(
       tester,
       harness: harness,
@@ -32,14 +32,14 @@ void main() {
           () => run.loadfileUrls.length == 2,
           describe: () => 'loadfiles=${run.loadfileUrls}, no second open',
         );
-        expect(run.loadfileUrls[1], serverLimitTranscodeUrl(TranscodeQualityPreset.p1080_8mbps));
+        expect(run.loadfileUrls[1], serverLimitTranscodeUrl(TranscodeQualityPreset.original));
 
         await pumpUntil(
           tester,
           () => run.dialogTitle.evaluate().isNotEmpty,
-          describe: () => 'no dialog after the capped transcode was refused',
+          describe: () => 'no dialog after the transcode was refused',
         );
-        expect(run.playButton, findsNothing, reason: 'one capped attempt per item');
+        expect(run.playButton, findsNothing, reason: 'one transcode attempt per item');
         for (var i = 0; i < 20; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }

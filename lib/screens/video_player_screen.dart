@@ -93,7 +93,6 @@ import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/quality_preset_labels.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
@@ -381,7 +380,7 @@ class _PlaybackOpenRequest {
   final int? audioStreamId;
   final Duration? resumePosition;
 
-  /// A capped transcode the viewer asked for after the server refused the
+  /// A server transcode the viewer asked for after the server refused the
   /// file itself (HTTP 500); see [PlaybackInitializationOptions.forceTranscode].
   final bool forceTranscode;
 
@@ -2728,7 +2727,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// transient status must never mask the fatal one that follows.
   final Set<int> _fatalHttpStatuses = <int>{};
 
-  /// The HTTP 500 dialog's capped transcode was already tried for the item on
+  /// The HTTP 500 dialog's transcode was already tried for the item on
   /// screen, so a further 500 shows the dialog without it. Cleared when an
   /// in-place reload opens another item.
   bool _serverLimitFallbackUsed = false;

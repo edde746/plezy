@@ -1358,15 +1358,14 @@ void main() {
       await SettingsService.getInstance();
     });
 
-    // A 1080p source at 5.6 Mbps whose worst-case bandwidth the server refused:
-    // the 1080p 8 Mbps preset covers it, so only the force keeps it off the file.
-    const coveredBitrateKbps = 5616;
+    // A 4K source at 32 Mbps the server's remote bandwidth refused as a file.
+    const refusedBitrateKbps = 32123;
 
-    test('skips the covered-source direct play and carries the 8 Mbps cap', () async {
+    test('at Original withholds direct play and leaves the output to the server', () async {
       final run = await initializeCappedPlayback(
-        preset: TranscodeQualityPreset.p1080_8mbps,
-        bitrateKbps: coveredBitrateKbps,
-        height: 1080,
+        preset: TranscodeQualityPreset.original,
+        bitrateKbps: refusedBitrateKbps,
+        height: 2160,
         forceTranscode: true,
       );
 
@@ -1376,14 +1375,17 @@ void main() {
       expect(run.result.videoUrl, isNot(contains('/library/parts/99/file.mkv')));
       final decision = run.decisions.single.queryParameters;
       expect(decision['directPlay'], '0');
-      expect(decision['X-Plex-Client-Profile-Extra'], contains('name=video.bitrate&value=8000&replace=true'));
+      expect(decision['directStream'], '1');
+      expect(decision.containsKey('videoResolution'), isFalse);
+      expect(decision.containsKey('videoQuality'), isFalse);
+      expect(decision['X-Plex-Client-Profile-Extra'], isNot(contains('add-limitation')));
     });
 
     test('throws instead of handing back the file when the server refuses the transcode', () async {
       await expectLater(
         initializeCappedPlayback(
-          preset: TranscodeQualityPreset.p1080_8mbps,
-          bitrateKbps: 49138,
+          preset: TranscodeQualityPreset.original,
+          bitrateKbps: refusedBitrateKbps,
           height: 2160,
           forceTranscode: true,
           transcodeDecisionCode: 4002,
@@ -1392,11 +1394,11 @@ void main() {
       );
     });
 
-    test('leaves an unforced covered source on direct play, as before', () async {
+    test('leaves an unforced Original on direct play, as before', () async {
       final run = await initializeCappedPlayback(
-        preset: TranscodeQualityPreset.p1080_8mbps,
-        bitrateKbps: coveredBitrateKbps,
-        height: 1080,
+        preset: TranscodeQualityPreset.original,
+        bitrateKbps: refusedBitrateKbps,
+        height: 2160,
       );
 
       expect(run.decisions, isEmpty);

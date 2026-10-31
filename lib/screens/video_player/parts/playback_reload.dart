@@ -363,8 +363,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
   /// is still on screen with its (possibly dead) stream; user feedback for
   /// failures is shown here unless [showErrorUi] is false.
   ///
-  /// [forceTranscode] asks for a capped transcode even where the version fits
-  /// under [qualityPreset]; see [PlaybackInitializationOptions.forceTranscode].
+  /// [forceTranscode] asks the server to transcode even where the file itself
+  /// would play; see [PlaybackInitializationOptions.forceTranscode].
   /// When null, a forced open carries over to reloads of the same item at the
   /// same preset (a resume, an audio switch, end-of-stream recovery), so
   /// those never hand back the file the server refused.

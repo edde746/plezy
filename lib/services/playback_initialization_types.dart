@@ -67,10 +67,12 @@ class PlaybackInitializationOptions {
   /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
   final Duration? startPosition;
 
-  /// Transcode at [qualityPreset] even where the selected version already
-  /// fits under it, and fail rather than fall back to the file itself. Set
-  /// when the server refused that file (HTTP 500), so serving it again could
-  /// only fail the same way.
+  /// Have the server transcode at [qualityPreset] with direct play withheld,
+  /// even at Original or where the selected version already fits under the
+  /// preset, and fail rather than fall back to the file itself. At Original
+  /// no cap goes out, so the server picks the output its own limits admit.
+  /// Set when the server refused that file (HTTP 500), so serving it again
+  /// could only fail the same way.
   final bool forceTranscode;
 
   const PlaybackInitializationOptions({

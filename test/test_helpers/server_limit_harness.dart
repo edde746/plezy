@@ -44,12 +44,13 @@ import 'stub_music_playback_service.dart';
 /// The raw part URL the fake Plex client hands out at Original quality.
 const serverLimitRawUrl = 'https://plex.invalid/library/parts/1/file.mkv';
 
-/// The transcode start URL the fake Plex client hands out for a capped preset.
+/// The transcode start URL the fake Plex client hands out for a transcode at
+/// [preset]: a capped preset, or any preset with direct play withheld.
 String serverLimitTranscodeUrl(TranscodeQualityPreset preset) =>
     'https://plex.invalid/video/:/transcode/universal/start.m3u8?preset=${preset.name}';
 
-/// Text of the HTTP 500 dialog's capped-transcode button.
-String get serverLimitPlayLabel => t.messages.serverLimitPlayLower(quality: '1080p 8 Mbps');
+/// Text of the HTTP 500 dialog's transcode button.
+String get serverLimitPlayLabel => t.messages.serverLimitTranscode;
 
 /// Per-file setup for the server-limit widget tests: one player screen per
 /// file, like [installHdrStartupHarness] requires.
@@ -112,9 +113,14 @@ Future<void> runServerLimitPlayer(
   const windowChannel = MethodChannel('window_manager');
   const mediaControlMethods = MethodChannel('com.edde746.os_media_controls/methods');
   const mediaControlEvents = MethodChannel('com.edde746.os_media_controls/events');
+  // Leaving the player on a macOS host restores the window chrome and PiP.
+  const macWindowChannel = MethodChannel('com.plezy/window_utils');
+  const pipChannel = MethodChannel('com.plezy/pip');
   messenger.setMockMethodCallHandler(windowChannel, (call) async => call.method.startsWith('is') ? false : null);
   messenger.setMockMethodCallHandler(mediaControlMethods, (call) async => null);
   messenger.setMockMethodCallHandler(mediaControlEvents, (call) async => null);
+  messenger.setMockMethodCallHandler(macWindowChannel, (call) async => call.method.startsWith('is') ? false : null);
+  messenger.setMockMethodCallHandler(pipChannel, (call) async => null);
   messenger.setMockMessageHandler(_wakelockToggleChannel, (message) async => _wakelockCodec.encodeMessage(<Object?>[]));
   tester.view.physicalSize = const Size(1200, 800);
   tester.view.devicePixelRatio = 1;
@@ -122,6 +128,8 @@ Future<void> runServerLimitPlayer(
     messenger.setMockMethodCallHandler(windowChannel, null);
     messenger.setMockMethodCallHandler(mediaControlMethods, null);
     messenger.setMockMethodCallHandler(mediaControlEvents, null);
+    messenger.setMockMethodCallHandler(macWindowChannel, null);
+    messenger.setMockMethodCallHandler(pipChannel, null);
     messenger.setMockMessageHandler(_wakelockToggleChannel, null);
     tester.view.reset();
     offlineWatch.dispose();
@@ -221,8 +229,9 @@ class _PigeonListCodec extends StandardMessageCodec {
       type >= 128 ? readValue(buffer) : super.readValueOfType(type, buffer);
 }
 
-/// A Plex server that can transcode: Original resolves to the raw part URL,
-/// a capped preset to a transcode start URL. Records every request.
+/// A Plex server that can transcode: Original resolves to the raw part URL
+/// unless the open forces a transcode, a capped preset to a transcode start
+/// URL. Records every request.
 class ServerLimitPlexClient with PlaybackReportRecorder implements MediaServerClient {
   final List<PlaybackInitializationOptions> requests = [];
 
@@ -244,7 +253,7 @@ class ServerLimitPlexClient with PlaybackReportRecorder implements MediaServerCl
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     requests.add(options);
-    final transcodes = !options.qualityPreset.isOriginal;
+    final transcodes = options.forceTranscode || !options.qualityPreset.isOriginal;
     return PlaybackInitializationResult(
       availableVersions: const [],
       videoUrl: transcodes ? serverLimitTranscodeUrl(options.qualityPreset) : serverLimitRawUrl,

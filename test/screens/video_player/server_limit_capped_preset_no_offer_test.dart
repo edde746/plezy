@@ -7,7 +7,7 @@ import '../../test_helpers/server_limit_harness.dart';
 
 /// A request that was already a capped transcode gets today's dialog: the
 /// offer is only for a refused Original file. Live TV is covered by
-/// server_limit_fallback_preset_test.dart. One test per file (see
+/// server_limit_transcode_offer_test.dart. One test per file (see
 /// [installHdrStartupHarness]).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
