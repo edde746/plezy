@@ -176,6 +176,7 @@ Future<BonfireSwitchResult> mintBonfireProfileToken({
   ProfileConnectionRegistry? persistTo,
   String? persistProfileId,
   String? logLabel,
+  @visibleForTesting http.Client? testClient,
 }) async {
   assert((persistTo == null) == (persistProfileId == null), 'persistTo and persistProfileId go together');
   final result = await switchBonfireUserWithPin(
@@ -184,15 +185,19 @@ Future<BonfireSwitchResult> mintBonfireProfileToken({
     requiresPin: requiresPin,
     promptForPin: promptForPin,
     logLabel: logLabel,
+    testClient: testClient,
   );
   if (result.succeeded && persistTo != null && persistProfileId != null) {
     await persistTo.upsert(
       ProfileConnection(
         profileId: persistProfileId,
-        // Bonfire households are server-wide: store the canonical machine id
-        // so the row matches the machine-keyed parentConnectionId the binder
-        // and merge use.
-        connectionId: parentConnection.serverMachineId,
+        // profile_connections.connectionId has an FK to the persisted
+        // connections row — and fresh installs key Jellyfin rows by the
+        // compound machineId/userId id, not the bare machine id. The Bonfire
+        // PROFILE id carries the canonical machine id (stable across
+        // re-binds); the join row must carry the connection's real row id or
+        // every Bonfire join row throws FOREIGN KEY constraint failed.
+        connectionId: parentConnection.id,
         userToken: result.userToken,
         userIdentifier: profileId,
         tokenAcquiredAt: DateTime.now(),

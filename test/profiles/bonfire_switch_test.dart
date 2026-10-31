@@ -1,10 +1,17 @@
 import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/connection/connection_registry.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/profiles/bonfire_switch.dart';
+import 'package:plezy/profiles/profile_connection.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
+
+import '../test_helpers/prefs.dart';
 
 const _guid = 'a90f11cb-42a1-432d-94bb-97cc2d42ef8b';
 
@@ -209,6 +216,58 @@ void main() {
     test('transport failure keeps the cached token (offline cold start)', () async {
       final mock = MockClient((request) async => throw http.ClientException('offline'));
       expect(await bonfireProfileTokenStillValid(_conn(), _guid, 'child-token', testClient: mock), isTrue);
+    });
+  });
+
+  group('mintBonfireProfileToken persistence', () {
+    setUp(() => resetSharedPreferencesForTest());
+
+    // Fresh installs persist Jellyfin connections under the compound
+    // machineId/userId row id, and profile_connections.connectionId carries
+    // an FK to that row. Minted Bonfire tokens must land on the parent's
+    // real row id — a bare machine id throws FOREIGN KEY constraint failed
+    // and every profile switch dies at activation.
+    test('join row references the parent connection row, not the machine id', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final parent = _conn().copyWith(id: 'machine-1/master-1');
+      await ConnectionRegistry(db).upsert(parent);
+      final registry = ProfileConnectionRegistry(db);
+      final mock = MockClient((request) async => _json({'activeProfileToken': 'scoped-token', 'jellyfinUserId': _guid}, 200));
+
+      final result = await mintBonfireProfileToken(
+        parentConnection: parent,
+        profileId: _guid,
+        requiresPin: false,
+        promptForPin: _noPrompt,
+        persistTo: registry,
+        persistProfileId: 'bonfire-machine-1-$_guid',
+        testClient: mock,
+      );
+      expect(result.succeeded, isTrue);
+
+      final rows = await registry.listForProfile('bonfire-machine-1-$_guid');
+      expect(rows.single.connectionId, parent.id);
+      expect(rows.single.connectionId, isNot(parent.serverMachineId));
+      expect(rows.single.userToken, 'scoped-token');
+    });
+
+    test('a join row keyed by the bare machine id violates the connections FK', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await ConnectionRegistry(db).upsert(_conn().copyWith(id: 'machine-1/master-1'));
+      final registry = ProfileConnectionRegistry(db);
+      await expectLater(
+        registry.upsert(
+          ProfileConnection(
+            profileId: 'bonfire-machine-1-$_guid',
+            connectionId: 'machine-1',
+            userToken: 'scoped-token',
+            userIdentifier: _guid,
+          ),
+        ),
+        throwsA(anything),
+      );
     });
   });
 }

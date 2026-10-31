@@ -534,8 +534,9 @@ class ActiveProfileBinder {
     if (profile.isJellyfinBonfire && parentId != null) {
       // A Bonfire profile's reach is exactly its parent server — the plugin
       // scopes libraries server-side; there is no server-membership list to
-      // consult.
-      if (connectionsById[parentId] case final JellyfinConnection conn) {
+      // consult. The parent id is the machine id; the live row may be keyed
+      // by the compound machineId/userId id.
+      if (jellyfinConnectionForServerId(connectionsById, parentId) case final JellyfinConnection conn) {
         expected.add(conn.serverMachineId);
       }
     }
@@ -682,6 +683,15 @@ class ActiveProfileBinder {
       return const _ProfileBindResult.empty();
     }
 
+    // Join rows are keyed by the parent connection's persisted row id (an FK
+    // to Connections), while the Bonfire profile id — and therefore
+    // parentId — carries the canonical machine id. Match through the host.
+    bool belongsToParent(ProfileConnection row) =>
+        row.connectionId == parent.id ||
+        row.connectionId == parentId ||
+        jellyfinConnectionForServerId(connectionsById, row.connectionId)
+            ?.serverMachineId == parentId;
+
     if (profile.bonfireIsMaster) {
       // The master Bonfire profile is the account that signed in: its token
       // already IS the parent connection's token — except after a PIN re-entry
@@ -691,7 +701,7 @@ class ActiveProfileBinder {
       // prefer the switch-issued token when the row holds one.
       ProfileConnection? masterRow;
       for (final row in joinRows) {
-        if (row.connectionId == parentId) {
+        if (belongsToParent(row)) {
           masterRow = row;
           break;
         }
@@ -705,7 +715,7 @@ class ActiveProfileBinder {
 
     ProfileConnection? pc;
     for (final row in joinRows) {
-      if (row.connectionId == parentId) {
+      if (belongsToParent(row)) {
         pc = row;
         break;
       }
@@ -738,7 +748,7 @@ class ActiveProfileBinder {
       appLogger.i(
         'ActiveProfileBinder: cached Bonfire token for ${profile.displayName} is no longer valid — re-minting',
       );
-      await profileConnections.recordToken(profile.id, parentId, '');
+      await profileConnections.recordToken(profile.id, parent.id, '');
     }
 
     if (!allowPinPrompt && profile.bonfireRequiresPin) {
@@ -766,7 +776,7 @@ class ActiveProfileBinder {
       if (result.status == BonfireSwitchStatus.authRejected) {
         // The parent/master token itself is no longer valid — drop the stale
         // child token so the next bind re-mints after the account re-auths.
-        await profileConnections.recordToken(profile.id, parentId, '');
+        await profileConnections.recordToken(profile.id, parent.id, '');
       }
       return const _ProfileBindResult.empty();
     }
@@ -775,7 +785,8 @@ class ActiveProfileBinder {
     await profileConnections.upsert(
       ProfileConnection(
         profileId: profile.id,
-        connectionId: parentId,
+        // FK to the persisted parent connections row — see bonfire_switch.
+        connectionId: parent.id,
         userToken: minted,
         userIdentifier: bonfireUserId,
         tokenAcquiredAt: DateTime.now(),
