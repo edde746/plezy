@@ -659,6 +659,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
+  static const subtitleSearchByFilename = BoolPref('subtitle_search_by_filename');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
   static const subtitleFontSize = IntPref('subtitle_font_size', defaultValue: 38);
@@ -1483,6 +1484,7 @@ class SettingsService extends BaseSharedPreferencesService {
     audioSyncOffset,
     subtitleSyncOffset,
     subtitleSearchLanguage,
+    subtitleSearchByFilename,
     volume,
     subtitleFontSize,
     subtitleTextColor,
