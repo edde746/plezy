@@ -67,6 +67,12 @@ class PlaybackInitializationOptions {
   /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
   final Duration? startPosition;
 
+  /// Transcode at [qualityPreset] even where the selected version already
+  /// fits under it, and fail rather than fall back to the file itself. Set
+  /// when the server refused that file (HTTP 500), so serving it again could
+  /// only fail the same way.
+  final bool forceTranscode;
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -80,6 +86,7 @@ class PlaybackInitializationOptions {
     this.sessionIdentifier,
     this.transcodeSessionId,
     this.startPosition,
+    this.forceTranscode = false,
   });
 }
 

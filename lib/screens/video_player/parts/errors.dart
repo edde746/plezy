@@ -200,6 +200,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       selectedMediaIndex: request.mediaIndex,
       selectedMediaSourceId: request.mediaSourceId,
       qualityPreset: request.qualityPreset,
+      forceTranscode: request.forceTranscode,
       selectedAudioStreamId: request.audioStreamId,
       useCurrentAudioStreamSelection: false,
       resumePosition: request.resumePosition,
@@ -280,10 +281,76 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     if (mounted) unawaited(_handleBackButton());
   }
 
+  /// The HTTP 500 modal. Where [serverLimitFallbackPreset] allows, it also
+  /// offers a capped transcode; picking it reopens the item that way instead
+  /// of leaving the route.
   Future<void> _showServerLimitDialog() async {
     if (!mounted) return;
-    await showServerLimitDialog(context);
-    if (mounted) unawaited(_handleBackButton());
+    final fallbackPreset = serverLimitFallbackPreset(
+      isLive: widget.isLive,
+      isPlexBacked: _currentMetadata.backend == MediaBackend.plex,
+      serverSupportsTranscoding: _serverSupportsTranscoding,
+      requestedPreset: _currentOpenRequest?.qualityPreset ?? _selectedQualityPreset,
+      fallbackAlreadyUsed: _serverLimitFallbackUsed,
+    );
+    final playCapped = await showServerLimitDialog(
+      context,
+      fallbackLabel: fallbackPreset == null ? null : qualityPresetLabel(fallbackPreset),
+    );
+    if (!mounted) return;
+    if (playCapped && fallbackPreset != null) {
+      await _reopenAsServerLimitTranscode(fallbackPreset);
+      return;
+    }
+    unawaited(_handleBackButton());
+  }
+
+  /// Reopen the item the server refused (HTTP 500) as a [preset] transcode,
+  /// once. The raw file is never requested again: the reload forces the
+  /// transcode and fails instead of falling back to the file. A refused
+  /// transcode, before or after its open, brings the dialog back without the
+  /// offer, because [_serverLimitFallbackUsed] is set and the request is no
+  /// longer Original.
+  Future<void> _reopenAsServerLimitTranscode(TranscodeQualityPreset preset) async {
+    final request = _retryRequestForFailure();
+    if (request == null || player == null) {
+      unawaited(_handleBackButton());
+      return;
+    }
+    _serverLimitFallbackUsed = true;
+    // The raw file's 500 must not classify the transcode's own failure.
+    _fatalHttpStatuses.clear();
+    final outcome = await _reloadMediaInPlace(
+      metadata: request.metadata,
+      selectedMediaIndex: request.mediaIndex,
+      selectedMediaSourceId: request.mediaSourceId,
+      qualityPreset: preset,
+      forceTranscode: true,
+      selectedAudioStreamId: request.audioStreamId,
+      useCurrentAudioStreamSelection: false,
+      resumePosition: request.resumePosition,
+      // Same carry as episode navigation: the viewer's launch picks, or what
+      // they chose since, survive the switch to the transcode.
+      preserveCurrentTrackSelection: true,
+      preservedAudioTrack: _sessionAudioPreference ?? _preferredAudioTrack,
+      preservedSubtitleTrack: _sessionSubtitlePreference ?? _preferredSubtitleTrack,
+      preservedSecondarySubtitleTrack: _sessionSecondarySubtitlePreference ?? _preferredSecondarySubtitleTrack,
+      showErrorUi: false,
+      reason: 'server limit capped transcode',
+    );
+    if (!mounted) return;
+    switch (outcome) {
+      // Playing, or a newer transition owns the player now; a failure after
+      // the open arrives through _onPlayerError like any other.
+      case MediaReloadOutcome.opened:
+      case MediaReloadOutcome.superseded:
+      case MediaReloadOutcome.rejected:
+        return;
+      // The server would not start the transcode: its final answer.
+      case MediaReloadOutcome.failed:
+        _latchFatalPlaybackError(PlaybackFailureAction.serverLimitDialog);
+        unawaited(_showServerLimitDialog());
+    }
   }
 
   Future<void> _showMediaUnreadableDialog() async {

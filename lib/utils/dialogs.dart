@@ -234,8 +234,12 @@ Future<void> showPlaybackNotAllowedDialog(BuildContext context) async {
 }
 
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
-Future<void> showServerLimitDialog(BuildContext context) async {
-  await showScopedDialog<void>(
+///
+/// With [fallbackLabel] (a quality such as "1080p 8 Mbps") it also offers to
+/// play at that quality instead; returns true only when the viewer picks it.
+/// Close keeps the focus, so nothing changes unless the viewer chooses.
+Future<bool> showServerLimitDialog(BuildContext context, {String? fallbackLabel}) async {
+  final playCapped = await showScopedDialog<bool>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
@@ -244,14 +248,24 @@ Future<void> showServerLimitDialog(BuildContext context) async {
       actions: [
         DialogActionButton(
           autofocus: true,
-          onPressed: () => Navigator.of(ctx).pop(),
+          onPressed: () => Navigator.of(ctx).pop(false),
           label: t.common.close,
-          isPrimary: true,
-          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+          isPrimary: fallbackLabel == null,
+          style: fallbackLabel == null
+              ? FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape)
+              : TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
         ),
+        if (fallbackLabel != null)
+          DialogActionButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            label: t.messages.serverLimitPlayLower(quality: fallbackLabel),
+            isPrimary: true,
+            style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+          ),
       ],
     ),
   );
+  return playCapped ?? false;
 }
 
 /// Shows the server-side 404 modal: the item exists but the server cannot read
