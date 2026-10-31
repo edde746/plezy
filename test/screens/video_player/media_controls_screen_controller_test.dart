@@ -86,6 +86,7 @@ MediaControlsScreenController _vodController({
     manager: () => manager,
     player: () => player,
     isMounted: () => true,
+    isRouteCurrent: () => true,
     isLive: false,
     hasLiveSeekWindow: () => false,
     hasNextLiveChannel: () => false,
