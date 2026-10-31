@@ -29,6 +29,7 @@ import 'add_local_profile_screen.dart';
 import 'pin_entry_dialog.dart';
 import 'profile_teardown.dart';
 import 'profile_detail_screen.dart';
+import '../../profiles/server_connection_lookup.dart';
 
 /// Flat picker showing every [Profile] in the system — Plex Home users
 /// auto-surfaced from connected accounts, plus user-created locals.
@@ -341,7 +342,9 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     if (profile.isPlexHome || profile.isJellyfinBonfire) {
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
-        final conn = activeProvider.connectionsById[parentId];
+        final conn = profile.isJellyfinBonfire
+            ? jellyfinConnectionForServerId(activeProvider.connectionsById, parentId)
+            : activeProvider.connectionsById[parentId];
         if (conn != null) {
           hasConnections = true;
           if (namesAccount) chips.add(_chipFor(conn, user: profile.displayName, namesAccount: true));

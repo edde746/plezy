@@ -189,7 +189,10 @@ Future<BonfireSwitchResult> mintBonfireProfileToken({
     await persistTo.upsert(
       ProfileConnection(
         profileId: persistProfileId,
-        connectionId: parentConnection.id,
+        // Bonfire households are server-wide: store the canonical machine id
+        // so the row matches the machine-keyed parentConnectionId the binder
+        // and merge use.
+        connectionId: parentConnection.serverMachineId,
         userToken: result.userToken,
         userIdentifier: profileId,
         tokenAcquiredAt: DateTime.now(),

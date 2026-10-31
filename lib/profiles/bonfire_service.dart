@@ -147,7 +147,9 @@ class BonfireProfileService {
     if (_disposed) return;
     for (final conn in await _connections.list()) {
       if (conn is JellyfinConnection && conn.id == connectionId) {
-        await _refreshConnection(conn);
+        final candidates = await _jellyfinConnsByMachine();
+        final machineId = conn.serverMachineId;
+        await _refreshMachine(machineId, candidates[machineId] ?? const []);
         return;
       }
     }
@@ -155,22 +157,65 @@ class BonfireProfileService {
 
   Future<void> _hydrate() async {
     final storage = await _ensureStorage();
-    for (final conn in await _connections.list()) {
-      if (conn is! JellyfinConnection) continue;
-      final raw = storage?.getBonfireProfilesCacheJson(conn.id);
+    for (final machineId in (await _jellyfinConnsByMachine()).keys) {
+      final raw = storage?.getBonfireProfilesCacheJson(machineId);
       if (raw == null || raw.isEmpty) continue;
       try {
         final decoded = jsonDecode(raw);
         if (decoded is! List) continue;
-        _byConnection[conn.id] = [
+        _byConnection[machineId] = [
           for (final item in decoded)
             if (item is Map<String, dynamic>) BonfireProfile.fromJson(item) else null,
         ].nonNulls.toList(growable: false);
       } catch (e) {
-        appLogger.w('BonfireProfileService: cache decode failed for ${conn.id}', error: e);
+        appLogger.w('BonfireProfileService: cache decode failed for $machineId', error: e);
       }
     }
     _emit();
+  }
+
+  /// All connections grouped per Jellyfin *machine*, ranked for the household
+  /// fetch. Bonfire households are server-wide, but Plezy keeps several
+  /// connections per server — upstream keys Jellyfin connections by the
+  /// compound `machineId/userId`, and the binder registers Bonfire children
+  /// under the same shape. Keying the profile snapshot by machine id (not
+  /// connection id) makes profile ids caller-independent, so switching
+  /// A -> B -> C no longer rediscovers C under a new parent and duplicates
+  /// the picker. The fetch vehicle is the connection most likely to hold the
+  /// master token (children hold child-scoped tokens that may not be able to
+  /// list the household).
+  Future<Map<String, List<JellyfinConnection>>> _jellyfinConnsByMachine() async {
+    final byMachine = <String, List<JellyfinConnection>>{};
+    for (final conn in await _connections.list()) {
+      if (conn is! JellyfinConnection) continue;
+      byMachine.putIfAbsent(conn.serverMachineId, () => []).add(conn);
+    }
+    for (final entry in byMachine.entries) {
+      String? cachedMaster;
+      for (final p in _byConnection[entry.key] ?? const <BonfireProfile>[]) {
+        if (p.isMaster) {
+          cachedMaster = p.profileUserId;
+          break;
+        }
+      }
+      entry.value.sort((a, b) {
+        int rank(JellyfinConnection c) {
+          if (c.id == c.serverMachineId) return 0;
+          if (cachedMaster != null && c.userId == cachedMaster) return 1;
+          return 2;
+        }
+
+        final byRank = rank(a).compareTo(rank(b));
+        if (byRank != 0) return byRank;
+        // Tie-break: raw machine ids are shorter than `machineId/userId`
+        // compounds, then lexicographic — makes the ranking deterministic
+        // (Dart's sort is not stable).
+        final byLen = a.id.length.compareTo(b.id.length);
+        if (byLen != 0) return byLen;
+        return a.id.compareTo(b.id);
+      });
+    }
+    return byMachine;
   }
 
   Future<void> _start() async {
@@ -185,38 +230,55 @@ class BonfireProfileService {
 
   Future<void> _onConnectionsChanged(List<Connection> connections) async {
     if (_disposed) return;
-    final jellyfinIds = <String>{
+    final jellyfinMachineIds = <String>{
       for (final c in connections)
-        if (c is JellyfinConnection) c.id,
+        if (c is JellyfinConnection) c.serverMachineId,
     };
-    // Drop connections that went away, along with their cached profiles.
-    _byConnection.removeWhere((id, _) => !jellyfinIds.contains(id));
+    // Drop machines that went away, along with their cached profiles.
+    _byConnection.removeWhere((id, _) => !jellyfinMachineIds.contains(id));
     await _refreshAll();
   }
 
   Future<void> _refreshAll() async {
     if (_disposed) return;
     final futures = <Future<void>>[];
-    for (final conn in await _connections.list()) {
-      if (conn is! JellyfinConnection) continue;
-      futures.add(_refreshConnection(conn));
+    for (final entry in (await _jellyfinConnsByMachine()).entries) {
+      futures.add(_refreshMachine(entry.key, entry.value));
     }
     await Future.wait(futures);
   }
 
-  Future<void> _refreshConnection(JellyfinConnection conn) async {
+  /// Try the ranked vehicles in order. A list that contains the master
+  /// profile proves the vehicle token could address the household; otherwise
+  /// fall back to the first non-null answer (a child-token view of a real
+  /// installation is better than pretending the plugin is absent).
+  Future<void> _refreshMachine(String machineId, List<JellyfinConnection> candidates) async {
     if (_disposed) return;
-    final profiles = await _fetchProfiles(conn);
-    if (_disposed) return;
-    if (profiles == null) {
-      // Plugin absent / unreachable — drop the entry so merge code treats
-      // this connection as plain single-user Jellyfin.
-      _byConnection.remove(conn.id);
-      await _clearCache(conn.id);
-    } else {
-      _byConnection[conn.id] = profiles;
-      await _writeCache(conn.id, profiles);
+    List<BonfireProfile>? fallback;
+    for (final conn in candidates) {
+      final profiles = await _fetchProfiles(conn);
+      if (_disposed) return;
+      if (profiles == null) continue;
+      if (profiles.any((p) => p.isMaster)) {
+        await _storeMachine(machineId, profiles);
+        return;
+      }
+      fallback ??= profiles;
     }
+    if (fallback != null) {
+      await _storeMachine(machineId, fallback);
+      return;
+    }
+    // Plugin absent / unreachable everywhere — drop the entry so merge code
+    // treats these connections as plain single-user Jellyfin.
+    _byConnection.remove(machineId);
+    await _clearCache(machineId);
+    _emit();
+  }
+
+  Future<void> _storeMachine(String machineId, List<BonfireProfile> profiles) async {
+    _byConnection[machineId] = profiles;
+    await _writeCache(machineId, profiles);
     _emit();
   }
 

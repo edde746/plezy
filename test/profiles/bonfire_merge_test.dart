@@ -176,5 +176,42 @@ void main() {
       expect(merged.any((p) => p.id == 'local-fresh'), isFalse);
       expect(merged.any((p) => p.id == 'local-other'), isTrue);
     });
+
+    test('machine-keyed Bonfire entries resolve compound host connections', () {
+      // Live registry rows for a real sign-in carry compound `machineId/userId`
+      // ids; the Bonfire map is keyed by machine id so profile ids stay
+      // caller-independent regardless of which connection minted them.
+      final host = JellyfinConnection(
+        id: 'machine-1/60aa',
+        baseUrl: 'https://jellyfin.example.net',
+        serverName: 'Home Media',
+        serverMachineId: 'machine-1',
+        userId: '60aa',
+        userName: 'dalgibbard',
+        accessToken: 'master-token',
+        deviceId: 'device-1',
+        createdAt: DateTime(2026, 1, 1),
+      );
+      final merged = mergeLocalWithPlexHome(
+        locals: [Profile.local(id: 'local-dal', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1))],
+        plexHomeByConnectionId: const {},
+        connectionsById: {host.id: host},
+        bonfireByConnectionId: {
+          'machine-1': [
+            _bonfire(_masterGuid, name: 'dalgibbard', isMaster: true),
+            _bonfire(_kidsGuid, name: 'Max'),
+          ],
+        },
+        localConnectionsByProfile: const {},
+      );
+
+      final max = merged.singleWhere((p) => p.bonfireUserId == _kidsGuid);
+      expect(max.id, 'bonfire-machine-1-$_kidsGuid');
+      expect(max.parentConnectionId, 'machine-1');
+      // The unrowed local named after the master user hides through the
+      // compound host row too.
+      expect(merged.any((p) => p.id == 'local-dal'), isFalse);
+      expect(merged.where((p) => p.isJellyfinBonfire).length, 2);
+    });
   });
 }

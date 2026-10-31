@@ -25,12 +25,13 @@ JellyfinConnection _jellyfin(String id) {
   );
 }
 
-BonfireProfile _profile(String userId, {bool requiresPin = false}) {
+BonfireProfile _profile(String userId, {bool requiresPin = false, bool isMaster = false}) {
   return BonfireProfile.fromJson({
     'profileUserId': userId,
     'profileName': 'Profile $userId',
     'masterUserId': 'master-1',
     'requiresPin': requiresPin,
+    'isMaster': isMaster,
   });
 }
 
@@ -45,7 +46,7 @@ void main() {
       final storage = await StorageService.getInstance();
       await connections.upsert(_jellyfin('jf-1'));
       await storage.setBonfireProfilesCacheJson(
-        'jf-1',
+        'machine-jf-1',
         jsonEncode(const [
           {'profileUserId': 'u-kids', 'profileName': 'Kids', 'masterUserId': 'm-1', 'requiresPin': true},
           {'profileUserId': 'u-movies', 'profileName': 'Movies', 'masterUserId': 'm-1'},
@@ -65,8 +66,8 @@ void main() {
 
       await service.hydrate();
       expect(fetcherCalls, 0);
-      expect(service.current['jf-1']!.map((p) => p.profileName), ['Kids', 'Movies']);
-      expect(service.current['jf-1']!.first.requiresPin, isTrue);
+      expect(service.current['machine-jf-1']!.map((p) => p.profileName), ['Kids', 'Movies']);
+      expect(service.current['machine-jf-1']!.first.requiresPin, isTrue);
     });
 
     test('refreshConnection fetches live, updates the snapshot, and persists the cache', () async {
@@ -89,8 +90,8 @@ void main() {
 
       await service.refreshConnection('jf-1');
       expect(requested, ['jf-1']);
-      expect(service.current['jf-1']!.length, 2);
-      final cached = storage.getBonfireProfilesCacheJson('jf-1');
+      expect(service.current['machine-jf-1']!.length, 2);
+      final cached = storage.getBonfireProfilesCacheJson('machine-jf-1');
       expect(cached, isNotNull);
       expect(cached!.contains('u-kids'), isTrue);
     });
@@ -101,7 +102,8 @@ void main() {
       final connections = ConnectionRegistry(db);
       final storage = await StorageService.getInstance();
       await connections.upsert(_jellyfin('jf-1'));
-      await storage.setBonfireProfilesCacheJson('jf-1', jsonEncode([{'profileUserId': 'u-old', 'masterUserId': 'm'}]));
+      await storage.setBonfireProfilesCacheJson(
+          'machine-jf-1', jsonEncode([{'profileUserId': 'u-old', 'masterUserId': 'm'}]));
 
       final service = BonfireProfileService(
         connections: connections,
@@ -112,8 +114,8 @@ void main() {
 
       await service.hydrate();
       await service.refreshConnection('jf-1');
-      expect(service.current.containsKey('jf-1'), isFalse);
-      expect(storage.getBonfireProfilesCacheJson('jf-1'), anyOf(isNull, isEmpty));
+      expect(service.current.containsKey('machine-jf-1'), isFalse);
+      expect(storage.getBonfireProfilesCacheJson('machine-jf-1'), anyOf(isNull, isEmpty));
     });
 
     test('non-Jellyfin connections never hit the fetcher', () async {
@@ -163,7 +165,49 @@ void main() {
 
       await service.refreshConnection('jf-1');
       final snapshot = await service.stream.first;
-      expect(snapshot['jf-1']!.single.profileUserId, 'u-kids');
+      expect(snapshot['machine-jf-1']!.single.profileUserId, 'u-kids');
+    });
+
+    test('profile entries are keyed per machine: a Bonfire child connection never forks the list', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final connections = ConnectionRegistry(db);
+      final storage = await StorageService.getInstance();
+      final raw = _jellyfin('jf-1');
+      // The binder registers Bonfire children as compound-id copies of the
+      // parent connection. If those leaked into the snapshot the picker would
+      // rediscover the household under a caller-dependent id on every switch.
+      await connections.upsert(raw);
+      await connections.upsert(
+        raw.copyWith(
+          id: 'jf-1/u-kids',
+          accessToken: 'child-token',
+          userId: 'u-kids',
+          userName: 'Kids',
+        ),
+      );
+
+      final vehicles = <String>[];
+      final service = BonfireProfileService(
+        connections: connections,
+        storage: storage,
+        bonfireProfileFetcher: (conn) async {
+          vehicles.add(conn.id);
+          // Bonfire's /list always includes the master profile; a list that
+          // contains it proves the vehicle token could address the household.
+          return [_profile('u-master', isMaster: true), _profile('u-kids')];
+        },
+      );
+      addTearDown(service.dispose);
+
+      await service.refreshConnection('jf-1');
+      final snapshot = service.current;
+      expect(snapshot.keys, ['machine-jf-1']);
+      expect(snapshot['machine-jf-1']!.map((p) => p.profileUserId), ['u-master', 'u-kids']);
+      // The raw login connection (id == machine id) is the fetch vehicle —
+      // its master token addresses the whole household.
+      await service.start();
+      expect(vehicles.every((id) => id == 'jf-1'), isTrue);
     });
   });
 }

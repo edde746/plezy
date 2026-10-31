@@ -4,6 +4,7 @@ import '../models/plex/plex_home_user.dart';
 import '../services/storage_service.dart';
 import 'profile.dart';
 import 'profile_connection.dart';
+import 'server_connection_lookup.dart';
 
 /// Groups profile-connection rows by profile id, preserving input order.
 Map<String, List<ProfileConnection>> groupConnectionsByProfile(List<ProfileConnection> pcs) {
@@ -60,9 +61,11 @@ List<Profile> mergeLocalWithPlexHome({
   for (final entry in bonfireByConnectionId.entries) {
     final connectionId = entry.key;
     // Bonfire profiles bind through the parent connection's master token, so
-    // a non-Jellyfin (or unregistered) connection id can't host them.
-    final conn = connectionsById[connectionId];
-    if (conn is! JellyfinConnection) continue;
+    // a non-Jellyfin (or unregistered) connection id can't host them. Keys
+    // are machine ids; the host row is usually the compound sign-in
+    // connection on that machine.
+    final conn = jellyfinConnectionForServerId(connectionsById, connectionId);
+    if (conn == null) continue;
     if (entry.value.any((p) => p.isMaster)) bonfireMasterConnectionIds.add(connectionId);
     for (final profile in entry.value) {
       out.add(
@@ -93,8 +96,9 @@ List<Profile> mergeLocalWithPlexHome({
       if (rows == null || rows.isEmpty) {
         final name = p.displayName.trim().toLowerCase();
         for (final id in bonfireMasterConnectionIds) {
-          final conn = connectionsById[id];
-          if (conn is JellyfinConnection && conn.userName.trim().toLowerCase() == name) return true;
+          if (jellyfinConnectionForServerId(connectionsById, id) case final JellyfinConnection conn) {
+            if (conn.userName.trim().toLowerCase() == name) return true;
+          }
         }
       }
       return false;

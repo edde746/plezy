@@ -16,6 +16,7 @@ import 'bonfire_switch.dart';
 import 'plex_home_switch.dart';
 import 'profile.dart';
 import 'profile_connection_registry.dart';
+import 'server_connection_lookup.dart';
 
 /// How a UI-driven activation attempt ended. `cancelled` (user backed out
 /// of a PIN dialog) is not an error and must not surface a failure message.
@@ -336,13 +337,7 @@ Future<BonfireSwitchStatus> _preVerifyBonfirePin(BuildContext context, Profile p
   // Built before the await: capturing the prompt needs a live context.
   final promptForPin = dialogPinPrompt(context, profile.displayName);
   final all = await connections.list();
-  JellyfinConnection? parent;
-  for (final c in all) {
-    if (c.id == parentId && c is JellyfinConnection) {
-      parent = c;
-      break;
-    }
-  }
+  final parent = jellyfinConnectionForServerId({for (final c in all) c.id: c}, parentId);
   if (parent == null) return BonfireSwitchStatus.success;
 
   final result = await mintBonfireProfileToken(

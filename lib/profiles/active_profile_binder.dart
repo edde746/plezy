@@ -16,6 +16,7 @@ import 'plex_home_switch.dart';
 import 'profile.dart';
 import 'profile_connection.dart';
 import 'profile_connection_registry.dart';
+import 'server_connection_lookup.dart';
 
 /// Callback invoked when a Plex Home user PIN is required mid-activation.
 /// Returns the entered PIN, or `null` to abort. The implementation
@@ -29,20 +30,30 @@ class _ProfileBindResult {
     required this.visibleServerIds,
     required this.expectedServerIds,
     this.discoveredMembership = const {},
+    this.boundJellyfinConnectionIds = const {},
   });
 
   const _ProfileBindResult.empty()
     : visibleServerIds = const {},
       expectedServerIds = const {},
-      discoveredMembership = const {};
+      discoveredMembership = const {},
+      boundJellyfinConnectionIds = const {};
 
   _ProfileBindResult.visible(Set<String> ids)
     : visibleServerIds = Set.unmodifiable(ids),
       expectedServerIds = Set.unmodifiable(ids),
-      discoveredMembership = const {};
+      discoveredMembership = const {},
+      boundJellyfinConnectionIds = const {};
 
   final Set<String> visibleServerIds;
   final Set<String> expectedServerIds;
+
+  /// Connection ids of Jellyfin clients registered during this bind pass. A
+  /// Bonfire child binds under a compound id (`machineId/userId`) that is
+  /// ephemeral — it lives on no persisted join row — so the visibility sweep
+  /// must treat it as owned by this profile or it removes the server it just
+  /// bound and the app cold-starts with "No servers available".
+  final Set<String> boundJellyfinConnectionIds;
 
   /// Server ids per Plex connection id, for connections whose plex.tv
   /// resource refresh succeeded in this bind. Authoritative: they replace the
@@ -393,6 +404,7 @@ class ActiveProfileBinder {
       ]);
       if (!_isCurrentBind(profile.id, generation)) return false;
       final visibleServerIds = <String>{};
+      final boundJellyfinConnectionIds = <String>{};
       final discoveredMembership = <String, Set<String>>{for (final result in results) ...result.discoveredMembership};
       // A successful resource refresh is authoritative for its connection:
       // servers plex.tv no longer lists must not stay expected (and so
@@ -411,6 +423,7 @@ class ActiveProfileBinder {
       for (final result in results) {
         visibleServerIds.addAll(result.visibleServerIds);
         expectedServerIds.addAll(result.expectedServerIds);
+        boundJellyfinConnectionIds.addAll(result.boundJellyfinConnectionIds);
       }
 
       // Snapshot before the visibility sweep below: removeServer() clears a
@@ -428,10 +441,24 @@ class ActiveProfileBinder {
       // profile. Always set the filter to the bound set (even when empty) so
       // a profile with no connections shows nothing — falling back to "all
       // visible" on empty would leak servers attached to other profiles.
-      final jellyfinConnectionIds = <String>{
-        for (final pc in joinRows)
-          if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) id,
-      };
+      final jellyfinConnectionIds = <String>{};
+      for (final pc in joinRows) {
+        if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) {
+          jellyfinConnectionIds.add(id);
+          continue;
+        }
+        // Bonfire join rows store the machine id (the household is
+        // server-wide); the live client row is the compound sign-in
+        // connection on that machine.
+        if (jellyfinConnectionForServerId(connectionsById, pc.connectionId) case final JellyfinConnection parent) {
+          jellyfinConnectionIds.add(parent.id);
+        }
+      }
+      // Bonfire children bind under ephemeral compound ids (`machineId/
+      // userId`) carried by no join row; without this the sweep sees the
+      // just-registered child client as "another profile's" and removes the
+      // whole server, cold-starting the app with "No servers available".
+      jellyfinConnectionIds.addAll(boundJellyfinConnectionIds);
       for (final serverId in serverManager.registeredServerIds) {
         final belongs = visibleServerIds.contains(serverId) || expectedServerIds.contains(serverId);
         if (belongs &&
@@ -649,10 +676,7 @@ class ActiveProfileBinder {
       appLogger.w('ActiveProfileBinder: ${profile.displayName} missing parent/uuid metadata');
       return const _ProfileBindResult.empty();
     }
-    final parent = switch (connectionsById[parentId]) {
-      final JellyfinConnection c => c,
-      _ => null,
-    };
+    final parent = jellyfinConnectionForServerId(connectionsById, parentId);
     if (parent == null) {
       appLogger.w('ActiveProfileBinder: parent connection $parentId for ${profile.displayName} not found');
       return const _ProfileBindResult.empty();
@@ -1369,9 +1393,17 @@ class ActiveProfileBinder {
     // filter so the refusal banner can surface it instead of hiding it as if
     // the profile had no server.
     if (ok || serverManager.refusedServerIds.contains(conn.serverMachineId)) {
-      return _ProfileBindResult.visible({conn.serverMachineId});
+      return _ProfileBindResult(
+        visibleServerIds: {conn.serverMachineId},
+        expectedServerIds: {conn.serverMachineId},
+        boundJellyfinConnectionIds: {conn.id},
+      );
     }
-    return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+    return _ProfileBindResult(
+      visibleServerIds: const {},
+      expectedServerIds: {conn.serverMachineId},
+      boundJellyfinConnectionIds: {conn.id},
+    );
   }
 
   bool _isCurrentBind(String profileId, int generation) {

@@ -33,6 +33,7 @@ import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
 import 'profile_teardown.dart';
 import 'profile_name_field.dart';
+import '../../profiles/server_connection_lookup.dart';
 
 /// Manage one [Profile] — rename, change PIN, list/add/remove
 /// connections, set the default connection.
@@ -441,9 +442,10 @@ class _ConnectionsListState extends State<_ConnectionsList> {
                 // of that account / a plugin-managed profile of that server,
                 // so the only removal is signing out of the whole account; it
                 // isn't shown for locals.
-                final parentConn =
-                    (profile.isPlexHome || profile.isJellyfinBonfire)
-                        ? byId[profile.parentConnectionId]
+                final parentConn = profile.isPlexHome
+                    ? byId[profile.parentConnectionId]
+                    : profile.isJellyfinBonfire && profile.parentConnectionId != null
+                        ? jellyfinConnectionForServerId(byId, profile.parentConnectionId!)
                         : null;
                 final visiblePcs = visibleProfileConnections(profile, pcs);
                 if (visiblePcs.isEmpty && parentConn == null) {
