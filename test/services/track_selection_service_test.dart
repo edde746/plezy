@@ -1421,4 +1421,67 @@ void main() {
       expect(match?.id, 20);
     });
   });
+
+  group('playingSourceAudioTrack - identity before ordinal (#2649)', () {
+    test('maps renderer-reordered ExoPlayer DTS-HD MA track to StreamIndex 1, not StreamIndex 8 (Ukrainian)', () {
+      // Jellyfin source tracks in container order (StreamIndex 1..8):
+      // Stream 1 is English DTS-HD Master (default/forced); Stream 8 is Ukrainian DDP5.1.
+      final sourceTracks = [
+        _plexAudio(
+          1,
+          index: 1,
+          languageCode: 'eng',
+          title: 'BTM DTS-HD Master',
+          codec: 'dts',
+          channels: 6,
+          selected: true,
+        ),
+        _plexAudio(2, index: 2, languageCode: 'eng', title: 'BTM DD 5.1', codec: 'ac3', channels: 6),
+        _plexAudio(3, index: 3, languageCode: 'spa', title: 'BTM DD 5.1', codec: 'ac3', channels: 6),
+        _plexAudio(4, index: 4, languageCode: 'fre', title: 'BTM DD 5.1', codec: 'ac3', channels: 6),
+        _plexAudio(5, index: 5, languageCode: 'ger', title: 'BTM DD 5.1', codec: 'ac3', channels: 6),
+        _plexAudio(6, index: 6, languageCode: 'ita', title: 'BTM DD 5.1', codec: 'ac3', channels: 6),
+        _plexAudio(7, index: 7, languageCode: 'rus', title: 'BTM DDP5.1', codec: 'eac3', channels: 6),
+        _plexAudio(8, index: 8, languageCode: 'ukr', title: 'BTM DDP5.1', codec: 'eac3', channels: 6),
+      ];
+
+      // Media3 orders Tracks.groups by renderer: MediaCodecAudioRenderer (AC3/EAC3)
+      // comes before FfmpegAudioRenderer (DTS-HD MA), placing English DTS-HD MA at ordinal 7.
+      final selectedDtsTrack = _audio('1_7', lang: 'en', title: 'BTM DTS-HD Master', channels: 6, isDefault: true);
+      final playerTracks = [
+        _audio('1_0', lang: 'en', title: 'BTM DD 5.1', channels: 6),
+        _audio('1_1', lang: 'es-419', title: 'BTM DD 5.1', channels: 6),
+        _audio('1_2', lang: 'fr', title: 'BTM DD 5.1', channels: 6),
+        _audio('1_3', lang: 'de', title: 'BTM DD 5.1', channels: 6),
+        _audio('1_4', lang: 'it', title: 'BTM DD 5.1', channels: 6),
+        _audio('1_5', lang: 'ru', title: 'BTM DDP5.1', channels: 6),
+        _audio('1_6', lang: 'uk', title: 'BTM DDP5.1', channels: 6),
+        selectedDtsTrack,
+      ];
+
+      final resolved = playingSourceAudioTrack(
+        selectedMpvTrack: selectedDtsTrack,
+        mpvTracks: playerTracks,
+        sourceTracks: sourceTracks,
+      );
+
+      expect(resolved?.id, 1);
+      expect(resolved?.languageCode, 'eng');
+    });
+
+    test('refuses ordinal fallback when player and source track languages contradict', () {
+      final sourceTracks = [
+        _plexAudio(8, index: 8, languageCode: 'ukr', title: 'BTM DDP5.1', codec: 'eac3', channels: 6),
+      ];
+      final selectedTrack = _audio('1_0', lang: 'en', title: 'BTM DTS-HD Master', channels: 6);
+
+      final resolved = playingSourceAudioTrack(
+        selectedMpvTrack: selectedTrack,
+        mpvTracks: [selectedTrack],
+        sourceTracks: sourceTracks,
+      );
+
+      expect(resolved, isNull);
+    });
+  });
 }
