@@ -2022,7 +2022,11 @@ class _MainScreenState extends State<MainScreen>
   Widget build(BuildContext context) {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
-    return _buildContent(context, useSideNav);
+    // A detail page, player or settings screen pushed on the nested navigator
+    // covers this route without unmounting it. Every focus self-heal below
+    // (offline sidebar refocus, library reload, tab claims) is dropped while
+    // covered, and focus returns to where it was when the cover pops (#2915).
+    return CoveredRouteFocusBoundary(child: _buildContent(context, useSideNav));
   }
 
   Widget _buildContent(BuildContext context, bool useSideNav) {

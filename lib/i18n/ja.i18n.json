@@ -893,6 +893,7 @@
     "subtitleDownloaded": "字幕をダウンロードしました",
     "subtitleDownloadedNotApplied": "字幕はダウンロードされましたが、選択できませんでした",
     "subtitleDownloadFailed": "字幕のダウンロードに失敗しました",
+    "subtitleDownloadTimedOut": "字幕が時間内に追加されませんでした。ダウンロードに失敗した可能性があります",
     "searchLanguages": "言語を検索…",
     "skipIntro": "イントロをスキップ",
     "skipCredits": "クレジットをスキップ",

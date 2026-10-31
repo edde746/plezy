@@ -893,6 +893,7 @@
     "subtitleDownloaded": "字幕下載成功",
     "subtitleDownloadedNotApplied": "字幕已下載，但無法套用",
     "subtitleDownloadFailed": "字幕下載失敗",
+    "subtitleDownloadTimedOut": "字幕未及時出現，下載可能已失敗",
     "searchLanguages": "搜尋語言…",
     "skipIntro": "略過片頭",
     "skipCredits": "略過片尾",

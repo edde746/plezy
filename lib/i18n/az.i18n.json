@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Altyazı yükləndi",
     "subtitleDownloadedNotApplied": "Altyazı yükləndi, lakin seçilə bilmədi",
     "subtitleDownloadFailed": "Altyazı yüklənə bilmədi",
+    "subtitleDownloadTimedOut": "Altyazı vaxtında görünmədi. Yükləmə uğursuz olmuş ola bilər",
     "searchLanguages": "Dillərdə axtar...",
     "skipIntro": "Girişi keç",
     "skipCredits": "Titrləri keç",

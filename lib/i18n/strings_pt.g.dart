@@ -1007,6 +1007,7 @@ class _Translations$videoControls$pt extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Legenda baixada';
 	@override String get subtitleDownloadedNotApplied => 'A legenda foi baixada, mas não foi possível selecioná-la';
 	@override String get subtitleDownloadFailed => 'Falha ao baixar legenda';
+	@override String get subtitleDownloadTimedOut => 'A legenda não apareceu a tempo. O download pode ter falhado';
 	@override String get searchLanguages => 'Pesquisar idiomas...';
 	@override String get skipIntro => 'Pular abertura';
 	@override String get skipCredits => 'Pular créditos';
@@ -4231,6 +4232,7 @@ extension on TranslationsPt {
 			'videoControls.subtitleDownloaded' => 'Legenda baixada',
 			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi baixada, mas não foi possível selecioná-la',
 			'videoControls.subtitleDownloadFailed' => 'Falha ao baixar legenda',
+			'videoControls.subtitleDownloadTimedOut' => 'A legenda não apareceu a tempo. O download pode ter falhado',
 			'videoControls.searchLanguages' => 'Pesquisar idiomas...',
 			'videoControls.skipIntro' => 'Pular abertura',
 			'videoControls.skipCredits' => 'Pular créditos',
@@ -4419,9 +4421,9 @@ extension on TranslationsPt {
 			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
 			'connections.sectionTitle' => 'Conexões',
 			'connections.addConnection' => 'Adicionar conexão',
-			'connections.addConnectionSubtitleNoProfile' => 'Entre com Plex ou conecte um servidor Jellyfin ou Emby',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnectionSubtitleNoProfile' => 'Entre com Plex ou conecte um servidor Jellyfin ou Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra conexão de perfil',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessão de ${name} expirada',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessões expiradas em ${count} servidores',
@@ -4933,9 +4935,9 @@ extension on TranslationsPt {
 			'liveTv.recordSettings.keepUpToHint' => '0 mantém todos os episódios',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Começa em ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} às ${time}',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} retornou dados inválidos de reprodução de TV ao Vivo',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} retornou dados inválidos de reprodução de TV ao Vivo',
 			'liveTv.failedToStartChannel' => 'Não foi possível iniciar o canal ao vivo',
 			'liveTv.failedToBuildStreamUrl' => 'Não foi possível gerar a URL da transmissão',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Não foi possível iniciar o canal: ${reason}',
@@ -5447,9 +5449,9 @@ extension on TranslationsPt {
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Ativo',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} com falha)',
-			'externalPlayer.title' => 'Reprodutor externo',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.title' => 'Reprodutor externo',
 			'externalPlayer.useExternalPlayer' => 'Usar reprodutor externo',
 			'externalPlayer.useExternalPlayerDescription' => 'Abrir vídeos em outro app',
 			'externalPlayer.selectPlayer' => 'Selecionar reprodutor',

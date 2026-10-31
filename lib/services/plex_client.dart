@@ -1067,7 +1067,10 @@ class PlexClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _getWithFailover('/', timeout: MediaServerTimeouts.plexProbe);
+      // A dead pooled socket after an Apple TV sleep times out silently; the
+      // in-place retry keeps that from flipping a reachable server offline.
+      final response = await _http.get('/', timeout: MediaServerTimeouts.plexProbe, retryTimeoutInPlace: true);
+      throwIfHttpError(response);
       return response.statusCode == 200 ? HealthStatus.online : HealthStatus.offline;
     } on MediaServerHttpException catch (e) {
       return switch (e.statusCode) {

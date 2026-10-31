@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Legenda baixada",
     "subtitleDownloadedNotApplied": "A legenda foi baixada, mas não foi possível selecioná-la",
     "subtitleDownloadFailed": "Falha ao baixar legenda",
+    "subtitleDownloadTimedOut": "A legenda não apareceu a tempo. O download pode ter falhado",
     "searchLanguages": "Pesquisar idiomas...",
     "skipIntro": "Pular abertura",
     "skipCredits": "Pular créditos",

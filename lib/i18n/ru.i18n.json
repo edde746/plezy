@@ -902,6 +902,7 @@
     "subtitleDownloaded": "Субтитры загружены",
     "subtitleDownloadedNotApplied": "Субтитры загружены, но их не удалось выбрать",
     "subtitleDownloadFailed": "Не удалось загрузить субтитры",
+    "subtitleDownloadTimedOut": "Субтитры не появились вовремя. Возможно, загрузка не удалась",
     "searchLanguages": "Поиск языков...",
     "skipIntro": "Пропустить заставку",
     "skipCredits": "Пропустить титры",

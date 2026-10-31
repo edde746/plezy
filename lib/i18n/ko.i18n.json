@@ -893,6 +893,7 @@
     "subtitleDownloaded": "자막이 다운로드되었습니다",
     "subtitleDownloadedNotApplied": "자막을 다운로드했지만 선택할 수 없습니다",
     "subtitleDownloadFailed": "자막 다운로드에 실패했습니다",
+    "subtitleDownloadTimedOut": "자막이 제시간에 나타나지 않았습니다. 다운로드에 실패했을 수 있습니다",
     "searchLanguages": "언어 검색...",
     "skipIntro": "인트로 건너뛰기",
     "skipCredits": "크레딧 건너뛰기",

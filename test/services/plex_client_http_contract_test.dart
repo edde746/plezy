@@ -9,6 +9,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/artist_discography.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -887,6 +888,38 @@ void main() {
         'POST:plex-fallback.example.com',
       ]);
       expect(client.config.baseUrl, fallback);
+    });
+
+    test('health stays online when the probe times out on a dead pooled socket but the server answers', () async {
+      // After an Apple TV sleep the pooled keep-alive socket can swallow the
+      // probe without an error. The server itself answers a fresh connection,
+      // so it must not be reported offline (#2915).
+      const primary = 'https://plex.example.com';
+      final events = <String>[];
+      var exhausted = 0;
+      var applicationRequests = 0;
+      final client = testPlexClient(
+        serverId: publicServerId,
+        profileScopeId: defaultProfileScopeId,
+        httpClient: MockClient((request) async {
+          events.add('application:${request.url.host}');
+          if (applicationRequests++ == 0) throw TimeoutException('dead pooled socket');
+          return identity('server-id');
+        }),
+        prioritizedEndpoints: const [primary, 'https://plex-fallback.example.com'],
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          events.add('probe:${request.url.host}');
+          return identity('server-id');
+        }),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      addTearDown(client.close);
+
+      expect(await client.checkHealth(), HealthStatus.online);
+
+      expect(events, ['application:plex.example.com', 'probe:plex.example.com', 'application:plex.example.com']);
+      expect(exhausted, 0);
+      expect(client.config.baseUrl, primary);
     });
   });
 

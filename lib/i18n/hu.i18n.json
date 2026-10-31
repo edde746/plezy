@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Felirat letöltve",
     "subtitleDownloadedNotApplied": "Felirat letöltve, de nem sikerült kiválasztani",
     "subtitleDownloadFailed": "Nem sikerült a felirat letöltése",
+    "subtitleDownloadTimedOut": "A felirat nem jelent meg időben. Lehet, hogy a letöltés nem sikerült",
     "searchLanguages": "Nyelvek keresése...",
     "skipIntro": "Főcím átugrása",
     "skipCredits": "Stáblista átugrása",

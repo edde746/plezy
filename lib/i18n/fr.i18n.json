@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Sous-titre téléchargé",
     "subtitleDownloadedNotApplied": "Le sous-titre a été téléchargé, mais n’a pas pu être sélectionné",
     "subtitleDownloadFailed": "Échec du téléchargement du sous-titre",
+    "subtitleDownloadTimedOut": "Le sous-titre n’est pas apparu à temps. Le téléchargement a peut-être échoué",
     "searchLanguages": "Rechercher des langues...",
     "skipIntro": "Passer l’intro",
     "skipCredits": "Passer le générique",

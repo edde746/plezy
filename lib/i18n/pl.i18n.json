@@ -902,6 +902,7 @@
     "subtitleDownloaded": "Napisy pobrane",
     "subtitleDownloadedNotApplied": "Napisy zostały pobrane, ale nie można ich było wybrać",
     "subtitleDownloadFailed": "Nie udało się pobrać napisów",
+    "subtitleDownloadTimedOut": "Napisy nie pojawiły się na czas. Pobieranie mogło się nie udać",
     "searchLanguages": "Szukaj języków...",
     "skipIntro": "Pomiń intro",
     "skipCredits": "Pomiń napisy końcowe",
