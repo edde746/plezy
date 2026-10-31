@@ -79,6 +79,12 @@ class PlayerAndroid extends PlayerBase {
   @override
   bool get audioPassthroughActive => _audioPassthroughEnabled;
 
+  void _resetNativeCoreState() {
+    initialized = false;
+    _initFuture = null;
+    _usingMpvFallback = false;
+  }
+
   @override
   void handlePlayerEvent(String name, Map? data) {
     if (name == 'backend-switched') {
@@ -92,6 +98,14 @@ class PlayerAndroid extends PlayerBase {
       }
       backendSwitchedController.add(null);
       return;
+    }
+
+    if (name == 'end-file' &&
+        data?['reason'] == 'error' &&
+        data?['message'] == 'Compatible player failed to initialize') {
+      // Native fallback tore down ExoPlayer before MPV failed to initialize,
+      // leaving no active native core; force the next operation to re-initialize.
+      _resetNativeCoreState();
     }
 
     super.handlePlayerEvent(name, data);
@@ -197,36 +211,51 @@ class PlayerAndroid extends PlayerBase {
     resetPlaybackProgress(startPosition);
     setSeekable(false);
 
+    final openArgs = <String, dynamic>{
+      'uri': media.uri,
+      'headers': media.headers,
+      'startPositionMs': sourceStart.inMilliseconds,
+      'hasStartPosition': hasStartPosition,
+      'autoPlay': play,
+      'isLive': isLive,
+      if (_contentFrameRate != null) 'contentFrameRate': _contentFrameRate,
+      if (externalSubtitles != null && externalSubtitles.isNotEmpty)
+        'externalSubtitles': externalSubtitles
+            .where((s) => s.uri?.isNotEmpty == true)
+            .map(
+              (s) => {
+                'uri': s.uri,
+                'title': s.title,
+                'language': s.language,
+                'codec': s.codec,
+                'isDefault': s.isDefault,
+                'isForced': s.isForced,
+                'isContainer': s.isContainer,
+              },
+            )
+            .toList(),
+    };
+
     try {
       // Show the video layer
       await setVisible(true);
 
-      await invoke('open', {
-        'uri': media.uri,
-        'headers': media.headers,
-        'startPositionMs': sourceStart.inMilliseconds,
-        'hasStartPosition': hasStartPosition,
-        'autoPlay': play,
-        'isLive': isLive,
-        if (_contentFrameRate != null) 'contentFrameRate': _contentFrameRate,
-        if (externalSubtitles != null && externalSubtitles.isNotEmpty)
-          'externalSubtitles': externalSubtitles
-              .where((s) => s.uri?.isNotEmpty == true)
-              .map(
-                (s) => {
-                  'uri': s.uri,
-                  'title': s.title,
-                  'language': s.language,
-                  'codec': s.codec,
-                  'isDefault': s.isDefault,
-                  'isForced': s.isForced,
-                  'isContainer': s.isContainer,
-                },
-              )
-              .toList(),
-      });
-    } catch (_) {
+      try {
+        await invoke('open', openArgs);
+      } on PlatformException catch (e) {
+        if (e.code != 'NOT_INITIALIZED' || disposed) rethrow;
+        // Native core was torn down (e.g. during a failed fallback transition)
+        // while the Dart wrapper remained initialized; re-initialize and retry once.
+        _resetNativeCoreState();
+        await _ensureInitialized();
+        await setVisible(true);
+        await invoke('open', openArgs);
+      }
+    } catch (e) {
       if (!disposed) {
+        if (e is PlatformException && (e.code == 'FALLBACK_FAILED' || e.code == 'NOT_INITIALIZED')) {
+          _resetNativeCoreState();
+        }
         configureTimeline(duration: previousTimelineDuration, offset: previousTimelineOffset);
         restorePlaybackProgress(previousState, position: previousPosition);
         restoreTracks(previousState);
