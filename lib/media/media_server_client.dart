@@ -1044,6 +1044,17 @@ abstract interface class MediaDeletionPermissionClient {
 /// Jellyfin's Open Subtitles plugin), returning [SubtitleSearchResult] rows.
 /// Offered only while [ServerCapabilities.externalSubtitleSearch] is true.
 abstract interface class ExternalSubtitleSearchClient {
+  /// How long the player waits for a download to show up in the item.
+  Duration get subtitleDownloadTimeout;
+
+  /// Whether a download leaves the item's other stream ids as they were. When
+  /// false the server renumbers them on its rescan, so the player reloads from
+  /// the row [findDownloadedSubtitle] returned rather than from a stream id.
+  bool get subtitleDownloadKeepsStreamIds;
+
+  /// Whether the server's subtitle providers can search items of [kind].
+  bool canSearchSubtitlesFor(MediaKind kind);
+
   /// [language] is an ISO 639-1 code.
   Future<List<SubtitleSearchResult>> searchSubtitles(String ratingKey, {required String language, String? title});
 

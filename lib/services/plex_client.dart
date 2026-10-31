@@ -1460,6 +1460,16 @@ class PlexClient
     );
   }
 
+  // Up to 15 s matches what Plex-web tolerates before giving up.
+  @override
+  Duration get subtitleDownloadTimeout => const Duration(seconds: 15);
+
+  @override
+  bool get subtitleDownloadKeepsStreamIds => true;
+
+  @override
+  bool canSearchSubtitlesFor(MediaKind kind) => true;
+
   /// Search for subtitles from external providers (e.g. OpenSubtitles) via the Plex server.
   /// [language] is an ISO 639-1 two-letter code (e.g. "en", "es").
   @override

@@ -94,13 +94,12 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
       // The server downloads asynchronously: the request returns immediately
       // but the new stream entry shows up in metadata seconds later. Poll until it
-      // appears. Up to 15s matches what Plex-web tolerates before giving up;
-      // Jellyfin lists the file after a rescan that can queue behind library scans.
+      // appears, for as long as the client says its server may take.
       // Snapshot the authoritative source IDs so we can identify the new
       // download without asking mpv to synchronously open its remote URL.
       final existingSourceIds = widget.sourceSubtitleTracks.map((track) => track.id).toSet();
 
-      final deadline = DateTime.now().add(Duration(seconds: widget.metadata.backend == MediaBackend.plex ? 15 : 30));
+      final deadline = DateTime.now().add(client.subtitleDownloadTimeout);
       MediaSubtitleTrack? newTrack;
 
       while (mounted && DateTime.now().isBefore(deadline)) {
@@ -124,11 +123,11 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
       if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
       if (newTrack == null) return SubtitleDownloadApplyOutcome.timedOut;
-      // Plex selects a downloaded subtitle itself, and the reload follows that.
-      // Jellyfin renumbers its streams on the rescan, so the pick travels as
-      // the freshly read row instead of an id from the old catalog.
+      // Where the rescan keeps stream ids (Plex, which also selects the new
+      // subtitle itself) the reload follows the id; where it renumbers them
+      // (Jellyfin), the pick travels as the freshly read row instead.
       final outcome = await switchSource(
-        newSubtitleChoice: widget.metadata.backend == MediaBackend.plex
+        newSubtitleChoice: client.subtitleDownloadKeepsStreamIds
             ? PlaybackSourceSubtitleChoice.source(newTrack.id)
             : PlaybackSourceSubtitleChoice.downloaded(newTrack),
       );

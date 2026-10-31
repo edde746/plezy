@@ -52,6 +52,15 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     }
   }
 
+  /// Its rescan after a download can queue behind library scans.
+  Duration get subtitleDownloadTimeout => const Duration(seconds: 30);
+
+  /// The rescan puts external subtitles first and renumbers every stream.
+  bool get subtitleDownloadKeepsStreamIds => false;
+
+  /// Jellyfin's subtitle providers only search movies and episodes.
+  bool canSearchSubtitlesFor(MediaKind kind) => kind == MediaKind.movie || kind == MediaKind.episode;
+
   /// Jellyfin resolves two- and three-letter [language] codes alike. Its
   /// search takes no title, so [title] filters the rows by name instead.
   Future<List<SubtitleSearchResult>> searchSubtitles(

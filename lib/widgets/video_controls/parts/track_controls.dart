@@ -227,11 +227,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       final serverId = widget.metadata.serverId;
       if (serverId == null) return false;
       final manager = context.read<MultiServerProvider>().serverManager;
-      final c = manager.getClient(ServerId(serverId));
-      // Jellyfin's subtitle providers only search movies and episodes.
-      final kind = widget.metadata.kind;
-      if (c?.backend == MediaBackend.jellyfin && kind != MediaKind.movie && kind != MediaKind.episode) return false;
-      return c?.capabilities.externalSubtitleSearch ?? false;
+      final client = manager.getClient(ServerId(serverId));
+      final search = client is ExternalSubtitleSearchClient ? client as ExternalSubtitleSearchClient : null;
+      return search != null &&
+          client!.capabilities.externalSubtitleSearch &&
+          search.canSearchSubtitlesFor(widget.metadata.kind);
     } catch (_) {
       return false;
     }
