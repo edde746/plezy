@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Undertekst downloadet",
     "subtitleDownloadedNotApplied": "Underteksten blev downloadet, men kunne ikke vælges",
     "subtitleDownloadFailed": "Kunne ikke downloade undertekst",
+    "subtitleDownloadTimedOut": "Underteksten dukkede ikke op i tide. Downloaden er muligvis mislykkedes",
     "searchLanguages": "Søg sprog...",
     "skipIntro": "Spring intro over",
     "skipCredits": "Spring rulletekster over",

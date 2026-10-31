@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Subtítulo descargado",
     "subtitleDownloadedNotApplied": "El subtítulo se descargó, pero no se pudo seleccionar",
     "subtitleDownloadFailed": "Error al descargar subtítulo",
+    "subtitleDownloadTimedOut": "El subtítulo no apareció a tiempo. Es posible que la descarga haya fallado",
     "searchLanguages": "Buscar idiomas...",
     "skipIntro": "Saltar intro",
     "skipCredits": "Saltar créditos",

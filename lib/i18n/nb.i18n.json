@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Undertekst lastet ned",
     "subtitleDownloadedNotApplied": "Underteksten ble lastet ned, men kunne ikke velges",
     "subtitleDownloadFailed": "Kunne ikke laste ned undertekst",
+    "subtitleDownloadTimedOut": "Underteksten dukket ikke opp i tide. Nedlastingen kan ha mislyktes",
     "searchLanguages": "Søk etter språk...",
     "skipIntro": "Hopp over intro",
     "skipCredits": "Hopp over rulletekst",

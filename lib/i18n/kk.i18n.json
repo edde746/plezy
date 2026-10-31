@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Субтитр жүктелді",
     "subtitleDownloadedNotApplied": "Субтитр жүктелді, бірақ қолданылмады",
     "subtitleDownloadFailed": "Субтитрді жүктеу мүмкін болмады",
+    "subtitleDownloadTimedOut": "Субтитр уақытында пайда болмады. Жүктеу сәтсіз болуы мүмкін",
     "searchLanguages": "Тілдерден іздеу...",
     "skipIntro": "Кіріспені өткізу",
     "skipCredits": "Титрлерді өткізу",

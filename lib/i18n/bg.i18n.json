@@ -896,6 +896,7 @@
     "subtitleDownloaded": "Субтитърът е изтеглен",
     "subtitleDownloadedNotApplied": "Субтитрите са изтеглени, но не можаха да бъдат избрани",
     "subtitleDownloadFailed": "Неуспешно изтегляне на субтитър",
+    "subtitleDownloadTimedOut": "Субтитърът не се появи навреме. Изтеглянето може да е неуспешно",
     "searchLanguages": "Търсене на езици...",
     "skipIntro": "Пропусни интрото",
     "skipCredits": "Пропусни надписите",
