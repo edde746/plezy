@@ -53,7 +53,7 @@ import '../media/media_file_info.dart';
 import '../media/media_filter.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
-import '../models/plex/plex_subtitle_search_result.dart';
+import '../media/subtitle_search_result.dart';
 import '../models/plex/plex_match_result.dart';
 import '../utils/codec_utils.dart';
 import '../utils/content_utils.dart';
@@ -397,7 +397,7 @@ class PlexClient
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
         _PlexMetadataEditMethods
-    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
+    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable, ExternalSubtitleSearchClient {
   @override
   PlexConfig config;
 
@@ -1463,14 +1463,15 @@ class PlexClient
 
   /// Search for subtitles from external providers (e.g. OpenSubtitles) via the Plex server.
   /// [language] is an ISO 639-1 two-letter code (e.g. "en", "es").
-  Future<List<PlexSubtitleSearchResult>> searchSubtitles(
+  @override
+  Future<List<SubtitleSearchResult>> searchSubtitles(
     String ratingKey, {
     required String language,
     String? title,
     int hearingImpaired = 0,
     int forced = 0,
   }) async {
-    return _wrapListApiCall<PlexSubtitleSearchResult>(
+    return _wrapListApiCall<SubtitleSearchResult>(
       () => _http.get(
         '/library/metadata/$ratingKey/subtitles',
         queryParameters: {
@@ -1483,7 +1484,7 @@ class PlexClient
       (response) {
         final container = _getMediaContainer(response);
         final streams = container?['Stream'] as List? ?? [];
-        return streams.map((s) => PlexSubtitleSearchResult.fromJson(s as Map<String, dynamic>)).toList();
+        return streams.map((s) => SubtitleSearchResult.fromJson(s as Map<String, dynamic>)).toList();
       },
       'Failed to search subtitles',
     );
@@ -1491,6 +1492,7 @@ class PlexClient
 
   /// Download a subtitle from an external provider and add it to the media item.
   /// The server downloads the file asynchronously; the new stream appears after a short delay.
+  @override
   Future<bool> downloadSubtitle(
     String ratingKey, {
     required String key,
@@ -1514,6 +1516,22 @@ class PlexClient
       ),
       'Failed to download subtitle',
     );
+  }
+
+  @override
+  Future<MediaSubtitleTrack?> findDownloadedSubtitle(
+    String ratingKey, {
+    required Set<int> existingTrackIds,
+    Duration? position,
+  }) async {
+    // forceRefresh: playback start left a fresh /library/metadata row in
+    // the cache (and each network poll would re-stamp it), so a
+    // cache-eligible read here would never observe the new stream.
+    // The position keeps a stacked item on the file that is playing,
+    // whose streams [existingTrackIds] came from.
+    final data = await getVideoPlaybackData(ratingKey, position: position, forceRefresh: true);
+    final mediaInfo = data.mediaInfo;
+    return mediaInfo == null ? null : findNewExternalSubtitleTrack(mediaInfo.subtitleTracks, existingTrackIds);
   }
 
   /// Search across all libraries including individually shared items.

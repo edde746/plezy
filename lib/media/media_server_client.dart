@@ -1,6 +1,7 @@
 import '../exceptions/media_server_exceptions.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
+import 'subtitle_search_result.dart';
 import '../services/api_cache.dart';
 import '../services/playback_initialization_types.dart';
 import '../utils/app_logger.dart';
@@ -1036,6 +1037,33 @@ abstract interface class MediaDeletionPermissionClient {
   /// front of a user who lost the grant. Callers must fail closed on `null`
   /// and on throw.
   Future<bool?> fetchDeletePermission(MediaItem item);
+}
+
+/// Optional capability for clients whose server searches and downloads
+/// subtitles from an external provider (Plex's OpenSubtitles agent,
+/// Jellyfin's Open Subtitles plugin), returning [SubtitleSearchResult] rows.
+/// Offered only while [ServerCapabilities.externalSubtitleSearch] is true.
+abstract interface class ExternalSubtitleSearchClient {
+  /// [language] is an ISO 639-1 code.
+  Future<List<SubtitleSearchResult>> searchSubtitles(String ratingKey, {required String language, String? title});
+
+  Future<bool> downloadSubtitle(
+    String ratingKey, {
+    required String key,
+    required String codec,
+    required String language,
+    required bool hearingImpaired,
+    required bool forced,
+    required String providerTitle,
+  });
+
+  /// The external subtitle track a [downloadSubtitle] added, once the server
+  /// lists it; null until then. [existingTrackIds] are the player's source ids.
+  Future<MediaSubtitleTrack?> findDownloadedSubtitle(
+    String ratingKey, {
+    required Set<int> existingTrackIds,
+    Duration? position,
+  });
 }
 
 /// Bounds how old a cached metadata row may be to be served without a network

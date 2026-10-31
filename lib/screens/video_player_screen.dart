@@ -323,6 +323,8 @@ SubtitlePreference? sessionPreferenceForSourceSubtitleChoice(
   List<MediaSubtitleTrack> rows,
 ) {
   if (choice.isOff) return const SubtitlePreference.off();
+  final downloaded = choice.downloadedTrack;
+  if (downloaded != null) return SubtitlePreference.track(PlaybackSubtitleResolver.subtitleTrackForSource(downloaded));
   for (final row in rows) {
     if (row.id == choice.sourceStreamId) {
       return SubtitlePreference.track(PlaybackSubtitleResolver.subtitleTrackForSource(row));

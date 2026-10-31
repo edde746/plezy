@@ -324,6 +324,39 @@ void main() {
     expect(sessionPreferenceForSourceSubtitleChoice(const PlaybackSourceSubtitleChoice.source(99), rows), isNull);
   });
 
+  test('a downloaded subtitle captures the fresh row it carries, not a stale row with its id', () {
+    // A Jellyfin rescan renumbers streams: the downloaded file's new index can
+    // belong to a different row in the catalog the player still holds.
+    final stale = [
+      MediaSubtitleTrack(
+        id: 2,
+        languageCode: 'fre',
+        displayTitle: 'French',
+        codec: 'subrip',
+        selected: false,
+        forced: false,
+      ),
+    ];
+    final downloaded = MediaSubtitleTrack(
+      id: 2,
+      languageCode: 'eng',
+      displayTitle: 'English - SUBRIP - External',
+      codec: 'subrip',
+      selected: false,
+      forced: false,
+      external: true,
+    );
+
+    final captured = sessionPreferenceForSourceSubtitleChoice(
+      PlaybackSourceSubtitleChoice.downloaded(downloaded),
+      stale,
+    );
+
+    expect(captured, isA<SubtitleTrackPreference>());
+    expect((captured! as SubtitleTrackPreference).track.id, 'source:2');
+    expect((captured as SubtitleTrackPreference).track.language, 'eng');
+  });
+
   test('a secondary-only change keeps the primary declined carry alive (#1785)', () {
     const declined = SubtitlePreference.intent(
       SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),
