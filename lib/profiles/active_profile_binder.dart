@@ -11,6 +11,7 @@ import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';
 import '../utils/app_logger.dart';
 import 'active_profile_provider.dart';
+import 'bonfire_switch.dart';
 import 'plex_home_switch.dart';
 import 'profile.dart';
 import 'profile_connection.dart';
@@ -356,12 +357,21 @@ class ActiveProfileBinder {
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
       final localProfileHasJoinRows = profile.isLocal && joinRows.isNotEmpty;
 
-      // Bind the implicit Plex Home parent and borrowed/extra join rows in
-      // parallel. A slow/offline Plex parent should not add its timeout budget
-      // on top of an otherwise reachable MediaBrowser or borrowed-server bind.
+      // Bind the implicit Plex Home / Bonfire parent and borrowed/extra join
+      // rows in parallel. A slow/offline parent should not add its timeout
+      // budget on top of an otherwise reachable MediaBrowser or borrowed-server
+      // bind.
       final results = await Future.wait([
         if (profile.isPlexHome)
           _bindPlexHome(
+            profile,
+            joinRows: joinRows,
+            connectionsById: connectionsById,
+            allowPinPrompt: allowPinPrompt,
+            generation: generation,
+          ),
+        if (profile.isJellyfinBonfire)
+          _bindJellyfinBonfire(
             profile,
             joinRows: joinRows,
             connectionsById: connectionsById,
@@ -494,6 +504,14 @@ class ActiveProfileBinder {
         expected.addAll(plexMembership(account));
       }
     }
+    if (profile.isJellyfinBonfire && parentId != null) {
+      // A Bonfire profile's reach is exactly its parent server — the plugin
+      // scopes libraries server-side; there is no server-membership list to
+      // consult.
+      if (connectionsById[parentId] case final JellyfinConnection conn) {
+        expected.add(conn.serverMachineId);
+      }
+    }
 
     for (final pc in joinRows) {
       if (parentId != null && pc.connectionId == parentId) continue;
@@ -603,6 +621,115 @@ class ActiveProfileBinder {
           '(account=${account.id}, uuid=$homeUuid, tokenLen=${token.length})',
         );
       },
+    );
+  }
+
+  /// Bind a Jellyfin Bonfire virtual profile against its parent connection.
+  ///
+  /// The parent row stores the master token exactly as it was signed in. A
+  /// master-tied profile binds with that token directly. A child profile gets
+  /// a profile-scoped session token — minted once via Bonfire's
+  /// `POST /plugins/profiles/switch` (PIN-prompted where the profile demands
+  /// one) and persisted on the profile's join row, so cold-start resume
+  /// reattaches the child session without a second PIN round-trip. The live
+  /// client is rebuilt from a token-swapped copy of the connection: the
+  /// plugin scopes libraries server-side, so downstream requests simply obey
+  /// whatever the child token can see. The stored parent row is never
+  /// overwritten — switching back is a matter of choosing the master profile.
+  Future<_ProfileBindResult> _bindJellyfinBonfire(
+    Profile profile, {
+    required List<ProfileConnection> joinRows,
+    required Map<String, Connection> connectionsById,
+    required bool allowPinPrompt,
+    required int generation,
+  }) async {
+    final parentId = profile.parentConnectionId;
+    final bonfireUserId = profile.bonfireUserId;
+    if (parentId == null || bonfireUserId == null) {
+      appLogger.w('ActiveProfileBinder: ${profile.displayName} missing parent/uuid metadata');
+      return const _ProfileBindResult.empty();
+    }
+    final parent = switch (connectionsById[parentId]) {
+      final JellyfinConnection c => c,
+      _ => null,
+    };
+    if (parent == null) {
+      appLogger.w('ActiveProfileBinder: parent connection $parentId for ${profile.displayName} not found');
+      return const _ProfileBindResult.empty();
+    }
+
+    if (profile.bonfireIsMaster) {
+      // The master Bonfire profile is the account that signed in: its token
+      // already IS the parent connection's token. No plugin round-trip.
+      return _bindMediaBrowser(parent, profileId: profile.id, generation: generation);
+    }
+
+    ProfileConnection? pc;
+    for (final row in joinRows) {
+      if (row.connectionId == parentId) {
+        pc = row;
+        break;
+      }
+    }
+    final cachedToken = pc != null && pc.hasToken ? pc.userToken : null;
+    if (cachedToken != null && cachedToken.isNotEmpty) {
+      // Resume the minted child session — same posture Plex Home uses for
+      // cold-start auto-resume and passive rebinds.
+      return _bindMediaBrowser(
+        parent.copyWith(accessToken: cachedToken, userId: bonfireUserId, userName: profile.displayName),
+        profileId: profile.id,
+        generation: generation,
+      );
+    }
+
+    if (!allowPinPrompt && profile.bonfireRequiresPin) {
+      appLogger.i(
+        'ActiveProfileBinder: suppressing PIN-gated Bonfire switch for passive rebind of ${profile.displayName}',
+      );
+      return const _ProfileBindResult.empty();
+    }
+
+    final result = await switchBonfireUserWithPin(
+      parentConnection: parent,
+      profileId: bonfireUserId,
+      requiresPin: profile.bonfireRequiresPin,
+      promptForPin: allowPinPrompt
+          ? ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage)
+          : ({String? errorMessage}) async => null,
+      logLabel: profile.displayName,
+    );
+    if (!_isCurrentBind(profile.id, generation)) return const _ProfileBindResult.empty();
+    final token = result.userToken;
+    if (!result.succeeded || token == null || token.isEmpty) {
+      appLogger.w(
+        'ActiveProfileBinder: Bonfire switch failed for ${profile.displayName}: ${result.status.name} ${result.message ?? ""}',
+      );
+      if (result.status == BonfireSwitchStatus.authRejected) {
+        // The parent/master token itself is no longer valid — drop the stale
+        // child token so the next bind re-mints after the account re-auths.
+        await profileConnections.recordToken(profile.id, parentId, '');
+      }
+      return const _ProfileBindResult.empty();
+    }
+
+    final minted = result.userToken!;
+    await profileConnections.upsert(
+      ProfileConnection(
+        profileId: profile.id,
+        connectionId: parentId,
+        userToken: minted,
+        userIdentifier: bonfireUserId,
+        tokenAcquiredAt: DateTime.now(),
+      ),
+    );
+    appLogger.i(
+      'ActiveProfileBinder: minted Bonfire profile token for ${profile.displayName} '
+      '(server=${parent.serverMachineId}, uuid=$bonfireUserId, tokenLen=${minted.length})',
+    );
+    return _bindMediaBrowser(
+      parent.copyWith(accessToken: minted, userId: bonfireUserId, userName: profile.displayName),
+      profileId: profile.id,
+      generation: generation,
     );
   }
 

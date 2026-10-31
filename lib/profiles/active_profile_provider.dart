@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../models/jellyfin/bonfire_profile.dart';
 import '../models/plex/plex_home_user.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+import 'bonfire_service.dart';
 import 'plex_home_service.dart';
 import 'profile.dart';
 import 'profile_avatar_source.dart';
@@ -30,6 +32,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     required this._plexHome,
     required this._connections,
     required this._profileConnections,
+    this._bonfire,
     this._storage,
     this._activeProfileIdWriter,
   });
@@ -38,6 +41,9 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   final PlexHomeService _plexHome;
   final ConnectionRegistry _connections;
   final ProfileConnectionRegistry _profileConnections;
+
+  /// Optional so single-server tests construct the provider without it.
+  final BonfireProfileService? _bonfire;
   StorageService? _storage;
   final Future<void> Function(String profileId)? _activeProfileIdWriter;
 
@@ -45,6 +51,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   List<Profile> _profiles = const [];
   List<Profile> _localProfiles = const [];
   Map<String, List<PlexHomeUser>> _plexHomeUsers = const {};
+  Map<String, List<BonfireProfile>> _bonfireProfiles = const {};
   Map<String, Connection> _connectionsById = const {};
   Map<String, List<ProfileConnection>> _connectionsByProfile = const {};
   Map<String, String?> _avatarUrls = const {};
@@ -53,6 +60,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   StreamSubscription<List<Connection>>? _connSub;
   StreamSubscription<List<ProfileConnection>>? _pcSub;
   StreamSubscription<Map<String, List<PlexHomeUser>>>? _plexHomeSub;
+  StreamSubscription<Map<String, List<BonfireProfile>>>? _bonfireSub;
   Future<void>? _initializeFuture;
   Future<void>? _reloadFromStorageFuture;
   bool _initialized = false;
@@ -85,6 +93,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   /// name; without it a borrowed Plex connection can only name the account
   /// owner, which reads as the wrong identity.
   Map<String, List<PlexHomeUser>> get plexHomeByConnectionId => _plexHomeUsers;
+  Map<String, List<BonfireProfile>> get bonfireByConnectionId => _bonfireProfiles;
 
   bool get hasMultipleProfiles => _profiles.length > 1;
   bool get isInitialized => _initialized;
@@ -223,6 +232,13 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       _resolveActive();
       safeNotifyListeners();
     });
+    _bonfireSub = _bonfire?.stream.listen((cache) {
+      if (_sameBonfireProfiles(cache, _bonfireProfiles)) return;
+      _bonfireProfiles = cache;
+      _recomputeProfiles();
+      _resolveActive();
+      safeNotifyListeners();
+    });
 
     _initialized = true;
     safeNotifyListeners();
@@ -233,12 +249,14 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     // Hydrate the Plex Home cache before we read it — `_plexHome.current`
     // is only populated after the disk-cache load finishes.
     await _plexHome.hydrate();
+    await _bonfire?.hydrate();
 
     _localProfiles = await _registry.list();
     final initialConns = await _connections.list();
     _connectionsById = {for (final c in initialConns) c.id: c};
     _connectionsByProfile = groupConnectionsByProfile(await _profileConnections.listAll());
     _plexHomeUsers = _plexHome.current;
+    _bonfireProfiles = _bonfire?.current ?? const {};
     _recomputeProfiles();
     _resolveActive();
   }
@@ -299,11 +317,21 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     return true;
   }
 
+  static bool _sameBonfireProfiles(Map<String, List<BonfireProfile>> a, Map<String, List<BonfireProfile>> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !listEquals(entry.value, other)) return false;
+    }
+    return true;
+  }
+
   void _recomputeProfiles() {
     _profiles = mergeLocalWithPlexHome(
       locals: _localProfiles,
       plexHomeByConnectionId: _plexHomeUsers,
       connectionsById: _connectionsById,
+      bonfireByConnectionId: _bonfireProfiles,
       storage: _storage,
     );
     _avatarUrls = resolveProfileAvatarUrls(
@@ -574,14 +602,17 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     await _localSub?.cancel();
     await _connSub?.cancel();
     await _plexHomeSub?.cancel();
+    await _bonfireSub?.cancel();
     await _pcSub?.cancel();
     _localSub = null;
     _connSub = null;
     _plexHomeSub = null;
+    _bonfireSub = null;
     _pcSub = null;
     _profiles = const [];
     _localProfiles = const [];
     _plexHomeUsers = const {};
+    _bonfireProfiles = const {};
     _connectionsById = const {};
     _connectionsByProfile = const {};
     _avatarUrls = const {};
@@ -616,6 +647,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     _localSub?.cancel();
     _connSub?.cancel();
     _plexHomeSub?.cancel();
+    _bonfireSub?.cancel();
     _pcSub?.cancel();
     super.dispose();
   }

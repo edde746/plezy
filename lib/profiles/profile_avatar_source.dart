@@ -48,8 +48,9 @@ String? _avatarForProfile({
   if (own != null && own.isNotEmpty) return own;
   // A Plex Home user with no avatar set keeps its initials. Plex owns that
   // profile's identity end to end, so it must never borrow the picture of a
-  // connection it happens to have been lent.
-  if (profile.isPlexHome) return null;
+  // connection it happens to have been lent. Bonfire profiles the same: the
+  // plugin owns the image, the initials are the honest fallback.
+  if (profile.isPlexHome || profile.isJellyfinBonfire) return null;
 
   ProfileConnection? firstLink;
   Connection? first;

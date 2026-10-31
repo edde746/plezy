@@ -30,6 +30,7 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _prefixLibraryGrouping = 'library_grouping_';
   static const String _prefixLibraryTab = 'library_tab_';
   static const String _prefixPlexHomeUsers = 'plex_home_users_';
+  static const String _prefixBonfireProfiles = 'bonfire_profiles_';
   static const String _prefixProfileLastUsed = 'profile_last_used_';
   // Key groups for bulk clearing
   static const List<String> _credentialKeys = [_keyPlexToken, _keyClientId, _keyCurrentUserUUID];
@@ -525,6 +526,27 @@ class StorageService extends BaseSharedPreferencesService {
 
   Future<void> clearAllPlexHomeUsersCache() async {
     await _clearKeysWithPrefix(_prefixPlexHomeUsers);
+  }
+
+  // Per-connection Bonfire/JellyProfiles cache. Like Plex Home profiles,
+  // Bonfire profiles are not persisted as Profile rows — they're fetched
+  // live by [BonfireProfileService] and cached here so the picker can paint
+  // immediately on cold start. Stored as a JSON list of [BonfireProfile]
+  // payloads, no TTL — the service refreshes in the background.
+  Future<void> setBonfireProfilesCacheJson(String connectionId, String json) async {
+    await prefs.setString('$_prefixBonfireProfiles$connectionId', json);
+  }
+
+  String? getBonfireProfilesCacheJson(String connectionId) {
+    return readNullableString('$_prefixBonfireProfiles$connectionId');
+  }
+
+  Future<void> clearBonfireProfilesCache(String connectionId) async {
+    await prefs.remove('$_prefixBonfireProfiles$connectionId');
+  }
+
+  Future<void> clearAllBonfireProfilesCache() async {
+    await _clearKeysWithPrefix(_prefixBonfireProfiles);
   }
 
   // `lastUsedAt` for ordering and future filtering of profiles by recency

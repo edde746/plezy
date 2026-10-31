@@ -91,12 +91,13 @@ extension ProfilePatterns on Profile {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( LocalProfile value)?  local,TResult Function( PlexHomeProfile value)?  plexHome,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( LocalProfile value)?  local,TResult Function( PlexHomeProfile value)?  plexHome,TResult Function( JellyfinBonfireProfile value)?  jellyfinBonfire,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case LocalProfile() when local != null:
 return local(_that);case PlexHomeProfile() when plexHome != null:
-return plexHome(_that);case _:
+return plexHome(_that);case JellyfinBonfireProfile() when jellyfinBonfire != null:
+return jellyfinBonfire(_that);case _:
   return orElse();
 
 }
@@ -114,12 +115,13 @@ return plexHome(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( LocalProfile value)  local,required TResult Function( PlexHomeProfile value)  plexHome,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( LocalProfile value)  local,required TResult Function( PlexHomeProfile value)  plexHome,required TResult Function( JellyfinBonfireProfile value)  jellyfinBonfire,}){
 final _that = this;
 switch (_that) {
 case LocalProfile():
 return local(_that);case PlexHomeProfile():
-return plexHome(_that);}
+return plexHome(_that);case JellyfinBonfireProfile():
+return jellyfinBonfire(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -133,12 +135,13 @@ return plexHome(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( LocalProfile value)?  local,TResult? Function( PlexHomeProfile value)?  plexHome,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( LocalProfile value)?  local,TResult? Function( PlexHomeProfile value)?  plexHome,TResult? Function( JellyfinBonfireProfile value)?  jellyfinBonfire,}){
 final _that = this;
 switch (_that) {
 case LocalProfile() when local != null:
 return local(_that);case PlexHomeProfile() when plexHome != null:
-return plexHome(_that);case _:
+return plexHome(_that);case JellyfinBonfireProfile() when jellyfinBonfire != null:
+return jellyfinBonfire(_that);case _:
   return null;
 
 }
@@ -155,11 +158,12 @@ return plexHome(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? pinHash,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  local,TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? plexHomeUserUuid,  bool plexRestricted,  bool plexAdmin,  bool plexProtected,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  plexHome,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? pinHash,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  local,TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? plexHomeUserUuid,  bool plexRestricted,  bool plexAdmin,  bool plexProtected,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  plexHome,TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? bonfireUserId,  bool bonfireIsMaster,  bool bonfireIsAdministrator,  bool bonfireRequiresPin,  bool bonfireHasPin,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  jellyfinBonfire,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case LocalProfile() when local != null:
 return local(_that.id,_that.displayName,_that.avatarThumbUrl,_that.pinHash,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case PlexHomeProfile() when plexHome != null:
-return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.plexHomeUserUuid,_that.plexRestricted,_that.plexAdmin,_that.plexProtected,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case _:
+return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.plexHomeUserUuid,_that.plexRestricted,_that.plexAdmin,_that.plexProtected,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case JellyfinBonfireProfile() when jellyfinBonfire != null:
+return jellyfinBonfire(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.bonfireUserId,_that.bonfireIsMaster,_that.bonfireIsAdministrator,_that.bonfireRequiresPin,_that.bonfireHasPin,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case _:
   return orElse();
 
 }
@@ -177,11 +181,12 @@ return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConn
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? pinHash,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)  local,required TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? plexHomeUserUuid,  bool plexRestricted,  bool plexAdmin,  bool plexProtected,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)  plexHome,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? pinHash,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)  local,required TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? plexHomeUserUuid,  bool plexRestricted,  bool plexAdmin,  bool plexProtected,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)  plexHome,required TResult Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? bonfireUserId,  bool bonfireIsMaster,  bool bonfireIsAdministrator,  bool bonfireRequiresPin,  bool bonfireHasPin,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)  jellyfinBonfire,}) {final _that = this;
 switch (_that) {
 case LocalProfile():
 return local(_that.id,_that.displayName,_that.avatarThumbUrl,_that.pinHash,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case PlexHomeProfile():
-return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.plexHomeUserUuid,_that.plexRestricted,_that.plexAdmin,_that.plexProtected,_that.sortOrder,_that.createdAt,_that.lastUsedAt);}
+return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.plexHomeUserUuid,_that.plexRestricted,_that.plexAdmin,_that.plexProtected,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case JellyfinBonfireProfile():
+return jellyfinBonfire(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.bonfireUserId,_that.bonfireIsMaster,_that.bonfireIsAdministrator,_that.bonfireRequiresPin,_that.bonfireHasPin,_that.sortOrder,_that.createdAt,_that.lastUsedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -195,11 +200,12 @@ return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConn
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String displayName,  String? avatarThumbUrl,  String? pinHash,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  local,TResult? Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? plexHomeUserUuid,  bool plexRestricted,  bool plexAdmin,  bool plexProtected,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  plexHome,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String displayName,  String? avatarThumbUrl,  String? pinHash,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  local,TResult? Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? plexHomeUserUuid,  bool plexRestricted,  bool plexAdmin,  bool plexProtected,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  plexHome,TResult? Function( String id,  String displayName,  String? avatarThumbUrl,  String? parentConnectionId,  String? bonfireUserId,  bool bonfireIsMaster,  bool bonfireIsAdministrator,  bool bonfireRequiresPin,  bool bonfireHasPin,  int sortOrder,  DateTime createdAt,  DateTime? lastUsedAt)?  jellyfinBonfire,}) {final _that = this;
 switch (_that) {
 case LocalProfile() when local != null:
 return local(_that.id,_that.displayName,_that.avatarThumbUrl,_that.pinHash,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case PlexHomeProfile() when plexHome != null:
-return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.plexHomeUserUuid,_that.plexRestricted,_that.plexAdmin,_that.plexProtected,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case _:
+return plexHome(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.plexHomeUserUuid,_that.plexRestricted,_that.plexAdmin,_that.plexProtected,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case JellyfinBonfireProfile() when jellyfinBonfire != null:
+return jellyfinBonfire(_that.id,_that.displayName,_that.avatarThumbUrl,_that.parentConnectionId,_that.bonfireUserId,_that.bonfireIsMaster,_that.bonfireIsAdministrator,_that.bonfireRequiresPin,_that.bonfireHasPin,_that.sortOrder,_that.createdAt,_that.lastUsedAt);case _:
   return null;
 
 }
@@ -367,6 +373,106 @@ as String?,plexHomeUserUuid: freezed == plexHomeUserUuid ? _self.plexHomeUserUui
 as String?,plexRestricted: null == plexRestricted ? _self.plexRestricted : plexRestricted // ignore: cast_nullable_to_non_nullable
 as bool,plexAdmin: null == plexAdmin ? _self.plexAdmin : plexAdmin // ignore: cast_nullable_to_non_nullable
 as bool,plexProtected: null == plexProtected ? _self.plexProtected : plexProtected // ignore: cast_nullable_to_non_nullable
+as bool,sortOrder: null == sortOrder ? _self.sortOrder : sortOrder // ignore: cast_nullable_to_non_nullable
+as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,lastUsedAt: freezed == lastUsedAt ? _self.lastUsedAt : lastUsedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class JellyfinBonfireProfile extends Profile {
+  const JellyfinBonfireProfile({required this.id, required this.displayName, this.avatarThumbUrl, this.parentConnectionId, this.bonfireUserId, this.bonfireIsMaster = false, this.bonfireIsAdministrator = false, this.bonfireRequiresPin = false, this.bonfireHasPin = false, this.sortOrder = 0, required this.createdAt, this.lastUsedAt}): super._();
+  
+
+@override final  String id;
+@override final  String displayName;
+@override final  String? avatarThumbUrl;
+/// The parent Jellyfin connection's id (the token that can authorize a
+/// profile switch — usually the master user's connection).
+ final  String? parentConnectionId;
+/// The Bonfire profile's Jellyfin user id (GUID). Used by the binder to
+/// call `POST /plugins/profiles/switch`.
+ final  String? bonfireUserId;
+/// Bonfire's `isMaster` — the household owner profile.
+@JsonKey() final  bool bonfireIsMaster;
+/// Bonfire's `isAdministrator` — a UI warning signal only, never an
+/// authorisation signal.
+@JsonKey() final  bool bonfireIsAdministrator;
+/// Bonfire's `requiresPin` — a PIN must be entered to switch into this
+/// profile right now (already false on the LAN when the server has
+/// `bypassPinOnLocalNetwork`). Drives the prompt.
+@JsonKey() final  bool bonfireRequiresPin;
+/// Bonfire's `hasPin` — a PIN is configured at all. Drives display only
+/// (shield icon); never prompt from this.
+@JsonKey() final  bool bonfireHasPin;
+@override@JsonKey() final  int sortOrder;
+@override final  DateTime createdAt;
+@override final  DateTime? lastUsedAt;
+
+/// Create a copy of Profile
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$JellyfinBonfireProfileCopyWith<JellyfinBonfireProfile> get copyWith => _$JellyfinBonfireProfileCopyWithImpl<JellyfinBonfireProfile>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is JellyfinBonfireProfile&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.avatarThumbUrl, avatarThumbUrl) || other.avatarThumbUrl == avatarThumbUrl)&&(identical(other.parentConnectionId, parentConnectionId) || other.parentConnectionId == parentConnectionId)&&(identical(other.bonfireUserId, bonfireUserId) || other.bonfireUserId == bonfireUserId)&&(identical(other.bonfireIsMaster, bonfireIsMaster) || other.bonfireIsMaster == bonfireIsMaster)&&(identical(other.bonfireIsAdministrator, bonfireIsAdministrator) || other.bonfireIsAdministrator == bonfireIsAdministrator)&&(identical(other.bonfireRequiresPin, bonfireRequiresPin) || other.bonfireRequiresPin == bonfireRequiresPin)&&(identical(other.bonfireHasPin, bonfireHasPin) || other.bonfireHasPin == bonfireHasPin)&&(identical(other.sortOrder, sortOrder) || other.sortOrder == sortOrder)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastUsedAt, lastUsedAt) || other.lastUsedAt == lastUsedAt));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,displayName,avatarThumbUrl,parentConnectionId,bonfireUserId,bonfireIsMaster,bonfireIsAdministrator,bonfireRequiresPin,bonfireHasPin,sortOrder,createdAt,lastUsedAt);
+
+@override
+String toString() {
+  return 'Profile.jellyfinBonfire(id: $id, displayName: $displayName, avatarThumbUrl: $avatarThumbUrl, parentConnectionId: $parentConnectionId, bonfireUserId: $bonfireUserId, bonfireIsMaster: $bonfireIsMaster, bonfireIsAdministrator: $bonfireIsAdministrator, bonfireRequiresPin: $bonfireRequiresPin, bonfireHasPin: $bonfireHasPin, sortOrder: $sortOrder, createdAt: $createdAt, lastUsedAt: $lastUsedAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $JellyfinBonfireProfileCopyWith<$Res> implements $ProfileCopyWith<$Res> {
+  factory $JellyfinBonfireProfileCopyWith(JellyfinBonfireProfile value, $Res Function(JellyfinBonfireProfile) _then) = _$JellyfinBonfireProfileCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String displayName, String? avatarThumbUrl, String? parentConnectionId, String? bonfireUserId, bool bonfireIsMaster, bool bonfireIsAdministrator, bool bonfireRequiresPin, bool bonfireHasPin, int sortOrder, DateTime createdAt, DateTime? lastUsedAt
+});
+
+
+
+
+}
+/// @nodoc
+class _$JellyfinBonfireProfileCopyWithImpl<$Res>
+    implements $JellyfinBonfireProfileCopyWith<$Res> {
+  _$JellyfinBonfireProfileCopyWithImpl(this._self, this._then);
+
+  final JellyfinBonfireProfile _self;
+  final $Res Function(JellyfinBonfireProfile) _then;
+
+/// Create a copy of Profile
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? displayName = null,Object? avatarThumbUrl = freezed,Object? parentConnectionId = freezed,Object? bonfireUserId = freezed,Object? bonfireIsMaster = null,Object? bonfireIsAdministrator = null,Object? bonfireRequiresPin = null,Object? bonfireHasPin = null,Object? sortOrder = null,Object? createdAt = null,Object? lastUsedAt = freezed,}) {
+  return _then(JellyfinBonfireProfile(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,avatarThumbUrl: freezed == avatarThumbUrl ? _self.avatarThumbUrl : avatarThumbUrl // ignore: cast_nullable_to_non_nullable
+as String?,parentConnectionId: freezed == parentConnectionId ? _self.parentConnectionId : parentConnectionId // ignore: cast_nullable_to_non_nullable
+as String?,bonfireUserId: freezed == bonfireUserId ? _self.bonfireUserId : bonfireUserId // ignore: cast_nullable_to_non_nullable
+as String?,bonfireIsMaster: null == bonfireIsMaster ? _self.bonfireIsMaster : bonfireIsMaster // ignore: cast_nullable_to_non_nullable
+as bool,bonfireIsAdministrator: null == bonfireIsAdministrator ? _self.bonfireIsAdministrator : bonfireIsAdministrator // ignore: cast_nullable_to_non_nullable
+as bool,bonfireRequiresPin: null == bonfireRequiresPin ? _self.bonfireRequiresPin : bonfireRequiresPin // ignore: cast_nullable_to_non_nullable
+as bool,bonfireHasPin: null == bonfireHasPin ? _self.bonfireHasPin : bonfireHasPin // ignore: cast_nullable_to_non_nullable
 as bool,sortOrder: null == sortOrder ? _self.sortOrder : sortOrder // ignore: cast_nullable_to_non_nullable
 as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,lastUsedAt: freezed == lastUsedAt ? _self.lastUsedAt : lastUsedAt // ignore: cast_nullable_to_non_nullable

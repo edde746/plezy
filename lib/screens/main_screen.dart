@@ -36,6 +36,7 @@ import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
+import '../profiles/bonfire_service.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
@@ -1389,6 +1390,8 @@ class _MainScreenState extends State<MainScreen>
       // so repeated offline/online transitions are free.
       final plexHome = _plexHomeService ??= context.read<PlexHomeService>();
       unawaited(plexHome.start());
+      // Same lifecycle for Bonfire/JellyProfiles virtual profiles.
+      unawaited(context.read<BonfireProfileService>().start());
       unawaited(() async {
         final mp = context.read<MultiServerProvider>();
         final binder = context.read<ActiveProfileBinder>();

@@ -2494,9 +2494,6 @@ class Translations$videoControls$en {
 	/// en: 'Failed to download subtitle'
 	String get subtitleDownloadFailed => 'Failed to download subtitle';
 
-	/// en: 'The subtitle didn't appear in time. The download may have failed'
-	String get subtitleDownloadTimedOut => 'The subtitle didn\'t appear in time. The download may have failed';
-
 	/// en: 'Search languages...'
 	String get searchLanguages => 'Search languages...';
 
@@ -2688,9 +2685,6 @@ class Translations$messages$en {
 
 	/// en: 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.'
 	String get serverLimitBody => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.';
-
-	/// en: 'Try transcoding'
-	String get serverLimitTranscode => 'Try transcoding';
 
 	/// en: 'File unavailable'
 	String get mediaUnreadableTitle => 'File unavailable';
@@ -2989,6 +2983,12 @@ class Translations$profiles$en {
 	/// en: 'No PIN set. To require one, edit the home user on plex.tv.'
 	String get noPinSetEditOnPlex => 'No PIN set. To require one, edit the home user on plex.tv.';
 
+	/// en: 'PIN managed by the Bonfire plugin on your server.'
+	String get pinManagedByBonfire => 'PIN managed by the Bonfire plugin on your server.';
+
+	/// en: 'No PIN required. To require one, edit the profile in your server's Bonfire plugin settings.'
+	String get noPinRequiredByBonfire => 'No PIN required. To require one, edit the profile in your server\'s Bonfire plugin settings.';
+
 	/// en: 'Set PIN'
 	String get setPin => 'Set PIN';
 
@@ -3024,6 +3024,9 @@ class Translations$profiles$en {
 
 	/// en: 'Plex Home account'
 	String get plexHomeAccount => 'Plex Home account';
+
+	/// en: 'Bonfire master account'
+	String get bonfireAccount => 'Bonfire master account';
 
 	/// en: 'Plex account: ${account}'
 	String plexAccountChip({required Object account}) => 'Plex account: ${account}';
@@ -8949,7 +8952,6 @@ extension on Translations {
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
-			'videoControls.subtitleDownloadTimedOut' => 'The subtitle didn\'t appear in time. The download may have failed',
 			'videoControls.searchLanguages' => 'Search languages...',
 			'videoControls.skipIntro' => 'Skip Intro',
 			'videoControls.skipCredits' => 'Skip Credits',
@@ -9010,7 +9012,6 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
-			'messages.serverLimitTranscode' => 'Try transcoding',
 			'messages.mediaUnreadableTitle' => 'File unavailable',
 			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
 			'messages.serverBusyTitle' => 'Stream unavailable',
@@ -9098,6 +9099,8 @@ extension on Translations {
 			'profiles.pinProtectionLabel' => 'PIN protection',
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
+			'profiles.pinManagedByBonfire' => 'PIN managed by the Bonfire plugin on your server.',
+			'profiles.noPinRequiredByBonfire' => 'No PIN required. To require one, edit the profile in your server\'s Bonfire plugin settings.',
 			'profiles.setPin' => 'Set PIN',
 			'profiles.setPinTitle' => 'Set PIN',
 			'profiles.confirmPinTitle' => 'Confirm PIN',
@@ -9110,6 +9113,7 @@ extension on Translations {
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
+			'profiles.bonfireAccount' => 'Bonfire master account',
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
@@ -9135,9 +9139,9 @@ extension on Translations {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
@@ -9649,9 +9653,9 @@ extension on Translations {
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
-			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
@@ -10163,9 +10167,9 @@ extension on Translations {
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			'performanceOverlay.fps' => 'FPS',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',

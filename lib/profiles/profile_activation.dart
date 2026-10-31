@@ -12,6 +12,7 @@ import '../utils/app_logger.dart';
 import '../services/system_shelf_service.dart';
 import 'active_profile_binder.dart';
 import 'active_profile_provider.dart';
+import 'bonfire_switch.dart';
 import 'plex_home_switch.dart';
 import 'profile.dart';
 import 'profile_connection_registry.dart';
@@ -40,6 +41,11 @@ class _ProfileActivationResult {
 /// failed PIN never flips `_active`. The minted user-token is saved and
 /// the profile is marked pre-verified on the binder, so it reuses the cached
 /// token instead of re-prompting for the same PIN.
+///
+/// [ProfileKind.jellyfinBonfire] profiles take the same posture: when the
+/// plugin says the profile requires a PIN, the PIN rides Bonfire's
+/// `POST /plugins/profiles/switch` up front, and the minted profile token
+/// rides along on the join row for the binder's fast path.
 Future<_ProfileActivationResult> _activateProfileWithPin(BuildContext context, Profile profile) async {
   if (profile.isPlexHome) {
     if (profile.plexProtected) {
@@ -50,6 +56,23 @@ Future<_ProfileActivationResult> _activateProfileWithPin(BuildContext context, P
       if (verified != PlexHomeSwitchStatus.success) {
         return _ProfileActivationResult(
           verified == PlexHomeSwitchStatus.cancelled
+              ? ProfileActivationOutcome.cancelled
+              : ProfileActivationOutcome.failed,
+        );
+      }
+    }
+    return _activateVerifiedProfile(context, profile);
+  }
+
+  if (profile.isJellyfinBonfire) {
+    if (profile.bonfireRequiresPin) {
+      final verified = await _preVerifyBonfirePin(context, profile);
+      if (!context.mounted) {
+        return const _ProfileActivationResult(ProfileActivationOutcome.cancelled);
+      }
+      if (verified != BonfireSwitchStatus.success) {
+        return _ProfileActivationResult(
+          verified == BonfireSwitchStatus.cancelled
               ? ProfileActivationOutcome.cancelled
               : ProfileActivationOutcome.failed,
         );
@@ -293,6 +316,44 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
     logLabel: profile.displayName,
   );
   if (result.succeeded) binder.markPlexHomePreVerified(profile.id);
+  return result.status;
+}
+
+/// Validate [profile]'s PIN with Bonfire via `POST /plugins/profiles/switch`.
+/// On success the minted profile-session token is persisted on the profile's
+/// join row, so [ActiveProfileBinder] binds with the token the user just
+/// authenticated as instead of prompting a second time.
+///
+/// Same "missing metadata → let the binder's empty-bind path handle it"
+/// posture as [_preVerifyPlexHomePin].
+Future<BonfireSwitchStatus> _preVerifyBonfirePin(BuildContext context, Profile profile) async {
+  final parentId = profile.parentConnectionId;
+  final bonfireUserId = profile.bonfireUserId;
+  if (parentId == null || bonfireUserId == null) return BonfireSwitchStatus.success;
+
+  final connections = context.read<ConnectionRegistry>();
+  final pcRegistry = context.read<ProfileConnectionRegistry>();
+  // Built before the await: capturing the prompt needs a live context.
+  final promptForPin = dialogPinPrompt(context, profile.displayName);
+  final all = await connections.list();
+  JellyfinConnection? parent;
+  for (final c in all) {
+    if (c.id == parentId && c is JellyfinConnection) {
+      parent = c;
+      break;
+    }
+  }
+  if (parent == null) return BonfireSwitchStatus.success;
+
+  final result = await mintBonfireProfileToken(
+    parentConnection: parent,
+    profileId: bonfireUserId,
+    requiresPin: true,
+    promptForPin: promptForPin,
+    persistTo: pcRegistry,
+    persistProfileId: profile.id,
+    logLabel: profile.displayName,
+  );
   return result.status;
 }
 
