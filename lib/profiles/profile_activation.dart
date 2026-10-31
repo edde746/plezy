@@ -354,6 +354,20 @@ Future<BonfireSwitchStatus> _preVerifyBonfirePin(BuildContext context, Profile p
     persistProfileId: profile.id,
     logLabel: profile.displayName,
   );
+  if (result.succeeded && profile.bonfireIsMaster) {
+    final token = result.userToken;
+    // The switch re-issued the master token for this device; the connection's
+    // stored login token is now dead. Publish the rotated token onto the
+    // parent connection so every consumer — the binder, the Bonfire service's
+    // master-header calls — uses the live one.
+    if (token != null && token.isNotEmpty && token != parent.accessToken) {
+      try {
+        await connections.upsert(parent.copyWith(accessToken: token), expected: parent);
+      } catch (e) {
+        appLogger.w('Bonfire master switch: could not publish rotated master token: $e');
+      }
+    }
+  }
   return result.status;
 }
 

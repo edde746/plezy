@@ -660,7 +660,22 @@ class ActiveProfileBinder {
 
     if (profile.bonfireIsMaster) {
       // The master Bonfire profile is the account that signed in: its token
-      // already IS the parent connection's token. No plugin round-trip.
+      // already IS the parent connection's token — except after a PIN re-entry
+      // through the plugin, because /plugins/profiles/switch re-issues (rotates)
+      // the master token for this device and the activation row persists the new
+      // one. Binding the connection's older token then 401s every request, so
+      // prefer the switch-issued token when the row holds one.
+      ProfileConnection? masterRow;
+      for (final row in joinRows) {
+        if (row.connectionId == parentId) {
+          masterRow = row;
+          break;
+        }
+      }
+      final rotated = masterRow != null && masterRow.hasToken ? masterRow.userToken : null;
+      if (rotated != null && rotated.isNotEmpty && rotated != parent.accessToken) {
+        return _bindMediaBrowser(parent.copyWith(accessToken: rotated), profileId: profile.id, generation: generation);
+      }
       return _bindMediaBrowser(parent, profileId: profile.id, generation: generation);
     }
 
