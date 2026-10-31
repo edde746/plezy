@@ -85,8 +85,19 @@ List<Profile> mergeLocalWithPlexHome({
     out.removeWhere((p) {
       if (p is! LocalProfile) return false;
       final rows = localConnectionsByProfile[p.id];
-      if (rows == null || rows.length != 1) return false;
-      return bonfireMasterConnectionIds.contains(rows.single.connectionId);
+      if (rows != null && rows.length == 1) {
+        return bonfireMasterConnectionIds.contains(rows.single.connectionId);
+      }
+      // A freshly created account row with no join rows yet still duplicates
+      // the Bonfire master row when it names the same Jellyfin user.
+      if (rows == null || rows.isEmpty) {
+        final name = p.displayName.trim().toLowerCase();
+        for (final id in bonfireMasterConnectionIds) {
+          final conn = connectionsById[id];
+          if (conn is JellyfinConnection && conn.userName.trim().toLowerCase() == name) return true;
+        }
+      }
+      return false;
     });
   }
   return sortProfilesByLastUsed(out);

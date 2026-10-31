@@ -34,6 +34,39 @@ class BonfireSwitchResult {
 /// if the user cancelled.
 typedef BonfireSwitchPinPrompt = Future<String?> Function({String? errorMessage});
 
+/// Check a previously minted scoped session token for [profileUserId] is
+/// still live before resuming it. Bonfire child tokens die when the master
+/// session re-authenticates (e.g. a Quick Connect re-login), and binding a
+/// dead token cold-starts the whole app offline until a manual reconnect.
+/// Only an HTTP answer against the token itself counts as invalid: transport
+/// failures keep the token so an offline cold start doesn't force a PIN
+/// re-mint.
+Future<bool> bonfireProfileTokenStillValid(
+  JellyfinConnection parentConnection,
+  String profileUserId,
+  String profileToken, {
+  @visibleForTesting http.Client? testClient,
+}) async {
+  final client = MediaServerHttpClient(
+    baseUrl: parentConnection.baseUrl,
+    defaultHeaders: {
+      'Authorization': 'MediaBrowser Token="$profileToken"',
+      'X-Emby-Token': profileToken,
+    },
+    client: testClient,
+  );
+  try {
+    final response = await client.get(
+      '/Users/$profileUserId/Views',
+      timeout: MediaServerTimeouts.jellyfinProbe,
+    );
+    return response.statusCode == 200;
+  } catch (e) {
+    appLogger.w('bonfireProfileTokenStillValid: probe failed ($e) — keeping token');
+    return true;
+  }
+}
+
 /// Switch into [profileId] under the household authenticated by
 /// [parentConnection]'s token, looping on the plugin's "incorrect PIN" 400.
 /// Returns the freshly minted scoped profile session token.

@@ -190,4 +190,25 @@ void main() {
       expect(result.userToken, 'scoped-token');
     });
   });
+
+  group('bonfireProfileTokenStillValid', () {
+    test('a live 200 keeps the cached token', () async {
+      final mock = MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url.path, '/Users/$_guid/Views');
+        return http.Response('[]', 200);
+      });
+      expect(await bonfireProfileTokenStillValid(_conn(), _guid, 'child-token', testClient: mock), isTrue);
+    });
+
+    test('a 401 (expired after master re-auth) invalidates the cached token', () async {
+      final mock = MockClient((request) async => http.Response('', 401));
+      expect(await bonfireProfileTokenStillValid(_conn(), _guid, 'child-token', testClient: mock), isFalse);
+    });
+
+    test('transport failure keeps the cached token (offline cold start)', () async {
+      final mock = MockClient((request) async => throw http.ClientException('offline'));
+      expect(await bonfireProfileTokenStillValid(_conn(), _guid, 'child-token', testClient: mock), isTrue);
+    });
+  });
 }

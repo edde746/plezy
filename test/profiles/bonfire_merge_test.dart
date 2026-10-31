@@ -159,5 +159,22 @@ void main() {
       expect(merged.any((p) => p.id == 'local-multi'), isTrue);
       expect(merged.where((p) => p.isJellyfinBonfire).length, 2);
     });
+
+    test('an unrowed local named after the Bonfire master user is also hidden', () {
+      final merged = mergeLocalWithPlexHome(
+        locals: [
+          Profile.local(id: 'local-fresh', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1)),
+          Profile.local(id: 'local-other', displayName: 'Someone Else', createdAt: DateTime(2026, 1, 1)),
+        ],
+        plexHomeByConnectionId: const {},
+        connectionsById: {'jf-1': _conn('jf-1')},
+        bonfireByConnectionId: {
+          'jf-1': [_bonfire(_masterGuid, name: 'dalgibbard', isMaster: true)],
+        },
+      );
+
+      expect(merged.any((p) => p.id == 'local-fresh'), isFalse);
+      expect(merged.any((p) => p.id == 'local-other'), isTrue);
+    });
   });
 }

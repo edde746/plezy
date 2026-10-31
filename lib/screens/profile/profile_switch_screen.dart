@@ -338,7 +338,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     // profile *is* the Home user there, so its own name identifies the user
     // half of the label — and without the account half the chip would only
     // repeat the tile's title.
-    if (profile.isPlexHome) {
+    if (profile.isPlexHome || profile.isJellyfinBonfire) {
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
         final conn = activeProvider.connectionsById[parentId];

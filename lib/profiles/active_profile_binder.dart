@@ -689,8 +689,12 @@ class ActiveProfileBinder {
     final cachedToken = pc != null && pc.hasToken ? pc.userToken : null;
     if (cachedToken != null && cachedToken.isNotEmpty) {
       // Resume the minted child session — same posture Plex Home uses for
-      // cold-start auto-resume and passive rebinds.
-      return _bindMediaBrowser(
+      // cold-start auto-resume and passive rebinds. Validate first: Bonfire
+      // expires child tokens when the master session re-authenticates (a
+      // Quick Connect re-login, for example), and binding a dead token
+      // leaves the whole app offline until the user hits Reconnect.
+      if (await bonfireProfileTokenStillValid(parent, bonfireUserId, cachedToken)) {
+        return _bindMediaBrowser(
         // Distinct compound id (machineId/userId) per Bonfire profile: the
         // client manager keys live Jellyfin clients by connection id, so a
         // copy that keeps the parent's id collides with the parent's live
@@ -705,7 +709,12 @@ class ActiveProfileBinder {
         ),
         profileId: profile.id,
         generation: generation,
+        );
+      }
+      appLogger.i(
+        'ActiveProfileBinder: cached Bonfire token for ${profile.displayName} is no longer valid — re-minting',
       );
+      await profileConnections.recordToken(profile.id, parentId, '');
     }
 
     if (!allowPinPrompt && profile.bonfireRequiresPin) {
