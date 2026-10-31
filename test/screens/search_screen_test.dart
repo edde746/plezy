@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
@@ -19,12 +21,19 @@ import 'package:plezy/media/media_person.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
+import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
+import 'package:plezy/models/seerr/seerr_session.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/actor_media_screen.dart';
 import 'package:plezy/screens/search_screen.dart';
+import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -816,6 +825,116 @@ void main() {
     expect(find.byType(PersonSearchRow), findsNothing);
     expect(find.widgetWithText(FocusableMediaCard, 'Waltz with Bashir'), findsOneWidget);
   });
+
+  group('Seerr', () {
+    testWidgets('titles missing from the server trail the library results with a Request action', (tester) async {
+      final seerr = _fakeSeerrSource(
+        results: [
+          _seerrMovie(1, 'Movie 1', availability: CatalogAvailability.available),
+          _seerrMovie(2, 'Movie 1 Sequel'),
+        ],
+      );
+      await _pumpTvSearchScreen(tester, tv: false, seerr: seerr);
+
+      _searchController(tester).text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      expect(seerr.queries, ['movie']);
+      // The title Seerr reports as available is the library row, not a
+      // second, requestable copy.
+      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
+      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(find.text(t.seerr.title), findsOneWidget);
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Movie 1 Sequel')).dy,
+        greaterThan(tester.getTopLeft(find.text('Movie 1')).dy),
+      );
+    });
+
+    testWidgets('a query only Seerr knows shows its titles instead of No results', (tester) async {
+      final seerr = _fakeSeerrSource(results: [_seerrMovie(2, 'Movie 1 Sequel')]);
+      await _pumpTvSearchScreen(tester, tv: false, items: const [], seerr: seerr);
+
+      _searchController(tester).text = 'sequel';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.messages.noResultsFound), findsNothing);
+      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+    });
+
+    testWidgets('an in-flight request shows its status instead of the Request action', (tester) async {
+      final seerr = _fakeSeerrSource(results: [_seerrMovie(2, 'Movie 1 Sequel', request: CatalogRequestState.pending)]);
+      await _pumpTvSearchScreen(tester, tv: false, seerr: seerr);
+
+      _searchController(tester).text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(find.text(t.explore.badge.pendingApproval), findsOneWidget);
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+
+    testWidgets('no Request action without request permission', (tester) async {
+      final seerr = _fakeSeerrSource(results: [_seerrMovie(2, 'Movie 1 Sequel')], permissions: 0);
+      await _pumpTvSearchScreen(tester, tv: false, seerr: seerr);
+
+      _searchController(tester).text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+
+    testWidgets('TV lists Seerr titles without the off-path Request button', (tester) async {
+      final seerr = _fakeSeerrSource(results: [_seerrMovie(2, 'Movie 1 Sequel')]);
+      await _pumpTvSearchScreen(tester, seerr: seerr);
+
+      _searchController(tester).text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+
+    testWidgets('a failed Seerr lookup leaves the library results intact', (tester) async {
+      final seerr = _fakeSeerrSource(error: StateError('Seerr is down'));
+      await _pumpTvSearchScreen(tester, tv: false, seerr: seerr);
+
+      _searchController(tester).text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      expect(seerr.queries, ['movie']);
+      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
+      expect(find.text(t.seerr.title), findsNothing);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('Seerr titles follow the kind filter', (tester) async {
+      final seerr = _fakeSeerrSource(results: [_seerrMovie(2, 'Paw Patrol: The Mighty Movie')]);
+      await _pumpTvSearchScreen(tester, tv: false, items: _mixedKindItems(), seerr: seerr);
+
+      _searchController(tester).text = 'paw patrol';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FocusableMediaCard, 'Paw Patrol: The Mighty Movie'), findsNothing);
+
+      await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FocusableMediaCard, 'Paw Patrol: The Movie'), findsOneWidget);
+      expect(find.widgetWithText(FocusableMediaCard, 'Paw Patrol: The Mighty Movie'), findsOneWidget);
+    });
+  });
 }
 
 Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(
@@ -831,6 +950,8 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   List<_FakeMediaServerClient> additionalClients = const [],
   HiddenLibrariesProvider? hiddenLibraries,
   List<MediaLibrary> libraries = const [],
+  // A connected Seerr instance; null pumps without one, as most users run.
+  SeerrCatalogSource? seerr,
 }) async {
   TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1.0;
@@ -871,6 +992,9 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   addTearDown(librariesProvider.dispose);
   if (libraries.isNotEmpty) await librariesProvider.updateLibraryOrder(libraries);
 
+  final catalogSources = seerr == null ? null : _FakeCatalogSourcesProvider(seerr);
+  if (catalogSources != null) addTearDown(catalogSources.dispose);
+
   final key = GlobalKey<State<SearchScreen>>();
   await tester.pumpWidget(
     TranslationProvider(
@@ -879,6 +1003,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
           ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
           ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hidden),
           ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+          if (catalogSources != null) ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
         ],
         child: MaterialApp(
           theme: monoTheme(MonoPalette.dark),
@@ -962,6 +1087,72 @@ MediaPerson _christophWaltz() => MediaPerson(
   serverId: ServerId('server_1'),
   serverName: 'Server',
 );
+
+CatalogItem _seerrMovie(int tmdbId, String title, {CatalogAvailability? availability, CatalogRequestState? request}) =>
+    CatalogItem(
+      source: CatalogSourceId.seerr,
+      kind: MediaKind.movie,
+      title: title,
+      ids: CatalogItemIds(tmdb: tmdbId),
+      serverState: availability == null && request == null
+          ? null
+          : CatalogServerState(availability: availability, request: request),
+    );
+
+/// A [SeerrCatalogSource] with a real session (the Request gate reads its
+/// permission bitmask) whose search answers from [results], or throws [error].
+_FakeSeerrSource _fakeSeerrSource({
+  List<CatalogItem> results = const [],
+  Object? error,
+  int permissions = SeerrPermission.request,
+}) {
+  final client = SeerrClient(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: 'pw',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions,
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+    onSessionInvalidated: () {},
+    httpClient: MockClient((request) async => http.Response('unexpected Seerr request', 500)),
+  );
+  final source = _FakeSeerrSource(client, results: results, error: error);
+  addTearDown(() {
+    source.dispose();
+    client.dispose();
+  });
+  return source;
+}
+
+class _FakeSeerrSource extends SeerrCatalogSource {
+  final List<CatalogItem> results;
+  final Object? error;
+  final List<String> queries = [];
+
+  _FakeSeerrSource(super.client, {this.results = const [], this.error});
+
+  @override
+  Future<List<CatalogItem>> search(String query, {int limit = 30}) async {
+    queries.add(query);
+    if (error case final error?) throw error;
+    return results;
+  }
+}
+
+class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
+  final SeerrCatalogSource seerr;
+
+  _FakeCatalogSourcesProvider(this.seerr);
+
+  @override
+  SeerrCatalogSource? get seerrSource => seerr;
+}
 
 TextEditingController _searchController(WidgetTester tester) {
   return tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller;
