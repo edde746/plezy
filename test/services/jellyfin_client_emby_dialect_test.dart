@@ -1199,6 +1199,36 @@ void main() {
       );
       expect(result.cachedValues['contentRating']!.map((value) => value.key).toList(), ['PG']);
     });
+
+    // Unscoped, a Jellyfin 10.11 show library also lists genres no show
+    // carries; each of those tiles would open an empty Browse.
+    test('genres are scoped to the type Browse lists and select by name', () async {
+      final requests = _RequestCapture(
+        (_) => jsonResponse({
+          'Items': [
+            {
+              'Id': 'genre-1',
+              'Name': 'Action',
+              'ImageTags': {'Primary': 'tag 1'},
+            },
+            {'Id': 'genre-2', 'Name': 'Drama', 'ImageTags': <String, Object?>{}},
+          ],
+        }),
+      );
+      final client = testJellyfinClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      final genres = await client.fetchLibraryGenres('lib-1', libraryKind: MediaKind.show);
+
+      final request = requests.requests.single.url;
+      expect(request.path, '/Genres');
+      expect(request.queryParameters, containsPair('ParentId', 'lib-1'));
+      expect(request.queryParameters, containsPair('Recursive', 'true'));
+      expect(request.queryParameters, containsPair('IncludeItemTypes', 'Series'));
+      expect(genres.map((genre) => (genre.title, genre.filterValue)), [('Action', 'Action'), ('Drama', 'Drama')]);
+      expect(genres.first.artPath, '/Items/genre-1/Images/Primary?tag=tag%201');
+      expect(genres.last.artPath, isNull);
+    });
   });
 
   group('MediaBrowser playback session identity', () {

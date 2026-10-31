@@ -1013,6 +1013,7 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Субтитры загружены';
 	@override String get subtitleDownloadedNotApplied => 'Субтитры загружены, но их не удалось выбрать';
 	@override String get subtitleDownloadFailed => 'Не удалось загрузить субтитры';
+	@override String get subtitleDownloadTimedOut => 'Субтитры не появились вовремя. Возможно, загрузка не удалась';
 	@override String get searchLanguages => 'Поиск языков...';
 	@override String get skipIntro => 'Пропустить заставку';
 	@override String get skipCredits => 'Пропустить титры';
@@ -4255,6 +4256,7 @@ extension on TranslationsRu {
 			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
+			'videoControls.subtitleDownloadTimedOut' => 'Субтитры не появились вовремя. Возможно, загрузка не удалась',
 			'videoControls.searchLanguages' => 'Поиск языков...',
 			'videoControls.skipIntro' => 'Пропустить заставку',
 			'videoControls.skipCredits' => 'Пропустить титры',
@@ -4443,9 +4445,9 @@ extension on TranslationsRu {
 			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			'connections.sectionTitle' => 'Подключения',
 			'connections.addConnection' => 'Добавить подключение',
-			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin или Emby',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin или Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сессия истекла для ${count} серверов',
@@ -4957,9 +4959,9 @@ extension on TranslationsRu {
 			'liveTv.recordSettings.keepUpToHint' => '0 — хранить все эпизоды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
 			'liveTv.failedToStartChannel' => 'Не удалось запустить канал в прямом эфире',
 			'liveTv.failedToBuildStreamUrl' => 'Не удалось сформировать URL потока',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Не удалось запустить канал: ${reason}',
@@ -5471,9 +5473,9 @@ extension on TranslationsRu {
 			'performanceOverlay.decoderHardware' => 'Аппаратный',
 			'performanceOverlay.tunnelingActive' => 'Активно',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})',
-			'externalPlayer.title' => 'Внешний плеер',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.title' => 'Внешний плеер',
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео в другом приложении',
 			'externalPlayer.selectPlayer' => 'Выбрать плеер',

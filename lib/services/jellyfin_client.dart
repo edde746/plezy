@@ -12,6 +12,7 @@ import '../media/account_preferences.dart';
 import '../media/artist_discography.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
+import '../media/library_genre.dart';
 import '../media/library_query.dart';
 import 'favorite_channels_repository.dart';
 import 'live_session_tracker.dart';
@@ -566,7 +567,12 @@ class JellyfinClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _http.get(paths.currentUser, timeout: MediaServerTimeouts.jellyfinProbe);
+      // Same dead-pooled-socket case as Plex's probe (#2915).
+      final response = await _http.get(
+        paths.currentUser,
+        timeout: MediaServerTimeouts.jellyfinProbe,
+        retryTimeoutInPlace: true,
+      );
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       if (ok) {
         final data = response.data;

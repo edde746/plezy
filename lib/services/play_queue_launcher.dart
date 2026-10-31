@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
+import '../media/media_library.dart';
 import '../media/media_playlist.dart';
 import '../models/plex/play_queue_response.dart';
 import '../providers/multi_server_provider.dart';
@@ -282,6 +283,50 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           shuffle: shuffle,
           libraryId: libraryId,
           libraryTitle: libraryTitle,
+        );
+      },
+    );
+  }
+
+  /// Shuffle the whole library section. PMS expands a show section to its
+  /// episodes when it builds the queue, so one URI serves movie and show
+  /// libraries alike.
+  @override
+  Future<PlayQueueResult> launchShuffledLibrary({required MediaLibrary library, bool showLoadingIndicator = true}) {
+    final abort = AbortController();
+
+    return executeWithLoading(
+      context: context,
+      showLoading: showLoadingIndicator,
+      actionLabel: t.common.shuffle,
+      abort: abort,
+      execute: (dismissLoading) async {
+        final sectionUri = await client.buildFolderUri('/library/sections/${library.id}/all');
+        abort.throwIfAborted();
+
+        var playQueue = await client.createPlayQueue(
+          uri: sectionUri,
+          type: 'video',
+          shuffle: 1,
+          librarySectionID: library.id,
+          librarySectionTitle: library.title,
+        );
+
+        abort.throwIfAborted();
+        playQueue = await _refetchIfEmpty(playQueue, libraryId: library.id, libraryTitle: library.title);
+        abort.throwIfAborted();
+
+        await dismissLoading();
+        abort.throwIfAborted();
+
+        return _launchFromQueue(
+          playQueue: playQueue,
+          ratingKey: library.id,
+          serverId: serverIdOrNull(library.serverId ?? serverId),
+          serverName: library.serverName ?? serverName,
+          shuffle: true,
+          libraryId: library.id,
+          libraryTitle: library.title,
         );
       },
     );

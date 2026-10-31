@@ -504,6 +504,48 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return LibraryFilterResult(filters: filters, cachedValues: values);
   }
 
+  /// `/Genres` scoped to the library and to the item type its Browse tab
+  /// lists: unscoped, a show library also reports genres no show carries
+  /// (2 of 32 on Jellyfin 10.11), and those tiles would filter Browse down to
+  /// nothing. A genre is selected by name, as in
+  /// [fetchLibraryFiltersWithValues]. Emby serves the same route (see
+  /// [_fetchFilterFacet]).
+  @override
+  Future<List<LibraryGenre>> fetchLibraryGenres(String libraryId, {required MediaKind libraryKind}) async {
+    final rows = await _fetchItemsArray('/Genres', {
+      'UserId': connection.userId,
+      'ParentId': libraryId,
+      'Recursive': 'true',
+      'IncludeItemTypes': ?switch (libraryKind) {
+        MediaKind.movie => 'Movie',
+        MediaKind.show => 'Series',
+        _ => null,
+      },
+      'SortBy': 'SortName',
+      'EnableImageTypes': 'Primary',
+      'ImageTypeLimit': '1',
+      'EnableTotalRecordCount': 'false',
+    });
+    final genres = <LibraryGenre>[];
+    for (final row in rows) {
+      final id = row['Id'];
+      final name = row['Name'];
+      if (name is! String || name.isEmpty) continue;
+      final imageTags = row['ImageTags'];
+      final primaryTag = imageTags is Map<String, dynamic> ? imageTags['Primary'] : null;
+      genres.add(
+        LibraryGenre(
+          title: name,
+          filterValue: name,
+          artPath: id is String && id.isNotEmpty && primaryTag is String && primaryTag.isNotEmpty
+              ? '/Items/${_segment(id)}/Images/Primary?tag=${Uri.encodeComponent(primaryTag)}'
+              : null,
+        ),
+      );
+    }
+    return genres;
+  }
+
   Future<Map<String, dynamic>?> _safeFetchFilterPayload(String libraryId) async {
     if (!dialect.supportsAggregateItemFilters) {
       // Emby 4.9.5 returns 404 for `/Items/Filters`; its three facet routes below are verified 200.
@@ -1227,6 +1269,25 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableFolderDescendantTypes, abort: abort);
   }
 
+  /// Up to [limit] playable videos from library [libraryId], in an order the
+  /// server randomizes (`SortBy=Random`). One request: a random order is not
+  /// stable across pages, so paging would repeat some items and skip others.
+  Future<List<MediaItem>> fetchRandomLibraryVideos(
+    String libraryId, {
+    required int limit,
+    AbortController? abort,
+  }) async {
+    final page = await _fetchPlayableDescendantsPage(
+      libraryId,
+      start: 0,
+      size: limit,
+      abort: abort,
+      includeItemTypes: _playableFolderDescendantTypes,
+      randomOrder: true,
+    );
+    return page.items;
+  }
+
   Future<List<MediaItem>> _fetchAllPlayableDescendants(
     String parentId, {
     required String includeItemTypes,
@@ -1270,6 +1331,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     AbortController? abort,
     required String includeItemTypes,
     bool byAlbumArtist = false,
+    bool randomOrder = false,
   }) async {
     final offset = start ?? 0;
     final pageSize = size ?? _pagedListPageSize;
@@ -1282,6 +1344,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         if (byAlbumArtist) 'AlbumArtistIds': parentId else 'ParentId': parentId,
         'Recursive': 'true',
         'IncludeItemTypes': includeItemTypes,
+        if (randomOrder) 'SortBy': 'Random',
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
         'Fields': _episodeRowFields,

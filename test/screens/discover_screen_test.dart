@@ -753,6 +753,19 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('clicking the Watch Together participant count opens Watch Together (#2846)', (tester) async {
+    await _pumpDiscoverShell(tester, isTv: false, watchTogether: _InSessionWatchTogether(participantCount: 3));
+    final badge = find.descendant(of: find.byType(FocusableActionBar), matching: find.text('3'));
+    expect(badge, findsOneWidget);
+
+    // Click where the badge is drawn; the button underneath must take it.
+    await tester.tapAt(tester.getCenter(badge));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(WatchTogetherScreen), findsOneWidget, reason: 'the badge sits on the button it labels');
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('a pending TV rail focus is dropped once the user has moved to the sidebar', (tester) async {
     // The first load arms "focus the rail when it has hubs"; an empty-items
     // hub keeps it armed because the rail has nothing to render yet. Items
@@ -1028,7 +1041,8 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester, {bool underRootCo
 
 /// Mounts [DiscoverScreen] in the smallest graph both layout branches need, so
 /// one test can compare the TV and non-TV chrome without rebuilding it twice.
-Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async {
+/// Takes ownership of [watchTogether].
+Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv, WatchTogetherProvider? watchTogether}) async {
   TvDetectionService.debugSetAppleTVOverride(isTv);
   await SettingsService.getInstance();
   tester.view.devicePixelRatio = 1.0;
@@ -1043,7 +1057,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
   final multiServerProvider = testMultiServerProvider(manager);
   final hiddenLibrariesProvider = HiddenLibrariesProvider();
   final librariesProvider = LibrariesProvider();
-  final watchTogetherProvider = WatchTogetherProvider();
+  final watchTogetherProvider = watchTogether ?? WatchTogetherProvider();
   final companionRemoteProvider = CompanionRemoteProvider();
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -1232,4 +1246,16 @@ class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {
 
   @override
   Stream<List<ProfileConnection>> watchAll() => Stream.value(const []);
+}
+
+/// A joined room with [participantCount] people, for chrome that only reads
+/// the session summary.
+class _InSessionWatchTogether extends WatchTogetherProvider {
+  _InSessionWatchTogether({required this.participantCount});
+
+  @override
+  final int participantCount;
+
+  @override
+  bool get isInSession => true;
 }

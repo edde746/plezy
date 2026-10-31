@@ -396,6 +396,12 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
       if (!position.maxScrollExtent.isFinite) return;
       final targetOffset = (currentOffset + scrollDelta).clamp(position.minScrollExtent, position.maxScrollExtent);
+      // A scroll that would not move this position is not a no-op inside a
+      // NestedScrollView: an inner animateTo also drives the outer position to
+      // its extent, collapsing a floating header. A grid that fits only while
+      // that header is hidden then alternates between the inner and outer
+      // scrollable on every move and the header bounces (#2916).
+      if ((targetOffset - currentOffset).abs() < 0.5) return;
 
       position.animateTo(targetOffset, duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
     });

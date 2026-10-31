@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
+import '../media/ids.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
+import '../media/media_library.dart';
 import '../media/media_playlist.dart';
 import '../media/play_queue.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/media_server_http_client.dart';
+import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import 'jellyfin_sequential_launcher.dart';
@@ -85,6 +88,45 @@ abstract class MediaListPlaybackLauncher {
     required bool shuffle,
     bool showLoadingIndicator = true,
   });
+
+  /// Launch a shuffled queue of the videos in [library]: movies, or the
+  /// episodes of every show. Plex builds a server-side `/playQueues` over the
+  /// whole section; MediaBrowser asks the server for a random sample (see
+  /// [JellyfinSequentialLauncher.libraryShuffleQueueSize]).
+  Future<PlayQueueResult> launchShuffledLibrary({required MediaLibrary library, bool showLoadingIndicator = true});
+
+  /// Whether [library] can be shuffled with [shuffleLibrary]: a real library
+  /// section (not Plex's shared-items view) whose content is video.
+  static bool canShuffleLibrary(MediaLibrary library) {
+    if (library.isShared) return false;
+    return switch (library.kind) {
+      MediaKind.movie || MediaKind.show || MediaKind.clip => true,
+      _ => library.defaultBrowseKinds.any((kind) => kind == MediaKind.movie || kind == MediaKind.show),
+    };
+  }
+
+  /// Shuffle every video in [library] through the launcher of the server that
+  /// owns it. Unlike [forItem] there is no fallback to another Plex server: a
+  /// section id only means something on its own server.
+  static Future<PlayQueueResult> shuffleLibrary(BuildContext context, MediaLibrary library) {
+    final MediaListPlaybackLauncher launcher;
+    if (library.backend.usesMediaBrowserApi) {
+      launcher = JellyfinSequentialLauncher(context: context);
+    } else {
+      final client = context.tryGetPlexClientForServer(serverIdOrNull(library.serverId));
+      if (client == null) {
+        showErrorSnackBar(context, t.errors.noClientAvailable);
+        return Future.value(PlayQueueError(Exception('No client for library ${library.globalKey}')));
+      }
+      launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: client,
+        serverId: library.serverId,
+        serverName: library.serverName,
+      );
+    }
+    return launcher.launchShuffledLibrary(library: library);
+  }
 
   /// Pick the right implementation for [item]. Reads
   /// [MediaItem.backend] / [MediaPlaylist.backend].

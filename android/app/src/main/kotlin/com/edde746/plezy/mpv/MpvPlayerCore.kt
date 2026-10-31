@@ -5,7 +5,6 @@ import android.app.ActivityManager
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.media.AudioAttributes
-import android.media.MediaCodecList
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -22,8 +21,6 @@ import com.edde746.plezy.NativeModuleCache
 import com.edde746.plezy.exoplayer.DoviBridge
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FrameRateManager
-import com.edde746.plezy.shared.GlCapabilities
-import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.PlayerDebugLog
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.PlayerSurfaceHost
@@ -128,44 +125,81 @@ class MpvPlayerCore private constructor(
     /** `fw-bytes` inside mpv's JSON-serialised `demuxer-cache-state`. */
     private val FORWARD_CACHE_BYTES = Regex("\"fw-bytes\"\\s*:\\s*(\\d+)")
 
-    /** MIME types devices register Dolby Vision decoders under. FFmpeg only
-     * asks for the first; the others are enumerated so the routing log shows
-     * the decoder a device "has" but FFmpeg will never open. */
-    private val DV_MIME_TYPES = setOf(GpuVoPolicy.DV_MIME, "video/hevcdv", "video/dv_hevc")
-
     /**
-     * Every decoder registered under [DV_MIME_TYPES], in MediaCodecList
-     * order, for [GpuVoPolicy.nativeDvDecoder]. One walk per process: the
-     * codec list is static. A type whose capabilities cannot be queried is
-     * dropped, as FFmpeg drops it.
+     * The device's Dolby Vision decoders ([MediaCodecQuery.dvDecoderCandidates]),
+     * logged on first use so the routing log shows every decoder a device
+     * registers, including those FFmpeg never opens.
      */
     private val dvDecoderCandidates: List<GpuVoPolicy.DvDecoderCandidate> by lazy {
-      val candidates = try {
-        MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.filterNot { it.isEncoder }.flatMap { info ->
-          info.supportedTypes.filter { it.lowercase(Locale.ROOT) in DV_MIME_TYPES }.mapNotNull { type ->
-            val profiles = try {
-              info.getCapabilitiesForType(type).profileLevels.map { it.profile }
-            } catch (e: IllegalArgumentException) {
-              Log.w(TAG, "Failed to query ${info.name} capabilities for $type", e)
-              return@mapNotNull null
-            }
-            // isSoftwareOnly exists from API 29; FFmpeg consults it only there too.
-            val softwareOnly = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) info.isSoftwareOnly else false
-            GpuVoPolicy.DvDecoderCandidate(name = info.name, mime = type, profiles = profiles, isSoftwareOnly = softwareOnly)
+      MediaCodecQuery.dvDecoderCandidates.also { candidates ->
+        Log.i(
+          TAG,
+          "Dolby Vision decoders: " + candidates.joinToString(prefix = "[", postfix = "]") {
+            "${it.name} ${it.mime} profiles=${it.profiles.joinToString(",") { p -> "0x${p.toString(16)}" }}" +
+              (if (it.isSoftwareOnly) " software-only" else "")
           }
-        }
-      } catch (e: Exception) {
-        Log.w(TAG, "Failed to enumerate Dolby Vision decoders", e)
-        emptyList()
+        )
       }
-      Log.i(
-        TAG,
-        "Dolby Vision decoders: " + candidates.joinToString(prefix = "[", postfix = "]") {
-          "${it.name} ${it.mime} profiles=${it.profiles.joinToString(",") { p -> "0x${p.toString(16)}" }}" +
-            (if (it.isSoftwareOnly) " software-only" else "")
-        }
+    }
+
+    /**
+     * [GpuVoPolicy.needsToneMapping] as this app routes it: a display with
+     * any HDR type keeps the plane in every mode, where the library would
+     * check the display's types per transfer and the HDR output setting.
+     * A display without HDR leaves the conversion to the user's mode.
+     */
+    internal fun needsToneMapping(
+      gamma: String?,
+      displayHdrSupported: Boolean,
+      conversionMode: String,
+      sdkInt: Int
+    ): Boolean = !displayHdrSupported &&
+      GpuVoPolicy.needsToneMapping(
+        gamma = gamma,
+        displayHdrTypes = IntArray(0),
+        dolbyVisionDecoder = false,
+        hdrOutput = true,
+        conversionMode = conversionMode,
+        sdkInt = sdkInt
       )
-      candidates
+
+    /**
+     * [GpuVoPolicy.needsSoftwareDecode] as this app routes it: HEVC Main 10
+     * without a hardware profile stays with the hardware decoder and mpv's
+     * own fallback instead of going to software decode up front.
+     */
+    internal fun needsSoftwareDecode(
+      codec: String?,
+      codecProfile: String?,
+      hardwareHigh10: Boolean,
+      hardwareAv1: Boolean
+    ): Boolean = GpuVoPolicy.needsSoftwareDecode(
+      codec,
+      codecProfile,
+      hardwareHigh10,
+      hardwareHevcMain10 = true,
+      hardwareAv1 = hardwareAv1
+    )
+
+    /**
+     * The options the cheap render tier replaces, each mapped to the value
+     * [current] read for it, which the tier restores on leaving: those of
+     * [GpuVoPolicy.CHEAP_RENDER_OPTIONS] still at mpv's default, so a
+     * user's mpv.conf line wins. The tier changes the scalers and dither;
+     * `tone-mapping` keeps mpv's curve.
+     */
+    internal fun cheapRenderReplacements(current: (String) -> String?): Map<String, String> {
+      val replaced = LinkedHashMap<String, String>()
+      for (option in GpuVoPolicy.CHEAP_RENDER_OPTIONS.keys) {
+        if (option == "tone-mapping") continue
+        val value = current(option)
+        if (value == null || !GpuVoPolicy.isDefaultRenderOption(option, value)) {
+          PlayerDebugLog.d(TAG) { "Render tier keeps $option=$value (not the mpv default)" }
+          continue
+        }
+        replaced[option] = value
+      }
+      return replaced
     }
 
     /**
@@ -341,7 +375,7 @@ class MpvPlayerCore private constructor(
    * (null when the bitstream carries no DOVI record); set per file by
    * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome
    * and by a mid-file [applyDvConversionMode]. */
-  @Volatile private var pendingDvProfile: Long? = null
+  @Volatile private var pendingDvProfile: Int? = null
 
   /** Whether this core already decided its GL surface colorspace; set by the
    * first `content-color-transfer` announcement ([applyContentColorTransfer]). */
@@ -360,7 +394,7 @@ class MpvPlayerCore private constructor(
 
   @Volatile private var displayDvSupported: Boolean = false
 
-  /** `hdr-sdr-conversion` the app last set; see [GpuVoPolicy.needsHdrToneMapping]. */
+  /** `hdr-sdr-conversion` the app last set; see [GpuVoPolicy.needsToneMapping]. */
   @Volatile private var hdrSdrConversionMode: String = "auto"
 
   /** Latest `video-params/gamma`, kept so a mode change re-decides the live file. */
@@ -1576,24 +1610,25 @@ class MpvPlayerCore private constructor(
    * exclusion that sent every P5 file into software decode.
    */
   private suspend fun applyDvReshapePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
-    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
+    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getInt("dolby-vision-profile")
     pendingDvProfile = profile
     val routing = dvRouting()
     val mode = routing.conversionMode
-    val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
+    val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5)
     val needs = GpuVoPolicy.needsDvReshaping(
-      dvProfile = profile,
+      doviProfile = profile,
       conversionMode = mode,
-      canPlayP5Natively = p5Decoder != null
+      nativeP5Decoder = p5Decoder != null,
+      softwareDecode = false
     )
-    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder != null)
+    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile, nativeP5Decoder = p5Decoder != null)
     writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
       // report is diagnosed from, on the device and in the uploaded log.
       // `decoder` is what FFmpeg would open for this profile were the DV
       // path enabled; `dolby_vision` is whether it is.
-      val fileDecoder = if (profile == 5L) p5Decoder else GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, profile)
+      val fileDecoder = if (profile == 5) p5Decoder else GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, profile)
       val decision = "profile=$profile mode=$mode dvOutput=${if (dvOutputAllowed) "yes" else "no"} " +
         "decoder=${fileDecoder ?: "none"} nativeP5Decoder=${p5Decoder ?: "none"} " +
         "displayDv=$displayDvSupported dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode} " +
@@ -1631,10 +1666,10 @@ class MpvPlayerCore private constructor(
    * decoder or video chain yet, so the vo write rebuilds nothing live.
    */
   private suspend fun applySoftwareDvReshapeOutput(track: org.json.JSONObject?) {
-    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
+    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getInt("dolby-vision-profile")
     pendingDvProfile = profile
     val mode = dvRouting().conversionMode
-    val needs = GpuVoPolicy.needsDvReshaping(profile, mode, canPlayP5Natively = false)
+    val needs = GpuVoPolicy.needsDvReshaping(profile, mode, nativeP5Decoder = false, softwareDecode = true)
     val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
     if (output == softwareVideoOutput) return
     val decision = "profile=$profile mode=$mode path=software decode, vo=$output"
@@ -1655,10 +1690,10 @@ class MpvPlayerCore private constructor(
   private suspend fun applySoftwareDecodePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
     val codec = track?.optString("codec")
     val codecProfile = track?.optString("codec-profile")
-    val hardwareHigh10 = MediaCodecQuery.hardwareAvcHigh10Support()
-    val hardwareAv1 = MediaCodecQuery.hardwareAv1Support()
+    val hardwareHigh10 = MediaCodecQuery.hardwareAvcHigh10
+    val hardwareAv1 = MediaCodecQuery.hardwareAv1
     PlayerDebugLog.d(TAG) { "Decode routing: codec=$codec profile=$codecProfile hardwareHigh10=$hardwareHigh10 hardwareAv1=$hardwareAv1" }
-    val needs = GpuVoPolicy.needsSoftwareDecode(codec, codecProfile, hardwareHigh10, hardwareAv1)
+    val needs = needsSoftwareDecode(codec, codecProfile, hardwareHigh10, hardwareAv1)
     if (holdHwdec(p, GpuVoPolicy.REASON_CODEC_SW_DECODE, needs) && needs) {
       Log.i(TAG, "$codec profile=$codecProfile without hardware support: native software decode on the GL vo")
     }
@@ -1751,7 +1786,7 @@ class MpvPlayerCore private constructor(
   private suspend fun applyRenderTier(p: MpvPlayer, glVoActive: Boolean) {
     val wanted = GpuVoPolicy.needsCheapRenderTier(
       glVoActive = glVoActive,
-      textureNorm16 = GlCapabilities.hasTextureNorm16()
+      textureNorm16 = GlCapabilities.textureNorm16
     )
     val transition: Boolean = synchronized(cheapRenderRestore) {
       if (wanted == cheapRenderTierActive) return
@@ -1759,16 +1794,8 @@ class MpvPlayerCore private constructor(
       wanted
     }
     if (transition) {
-      val replaced = LinkedHashMap<String, String>()
-      for ((option, cheap) in GpuVoPolicy.CHEAP_RENDER_OPTIONS) {
-        val current = p.getString(option)
-        if (!GpuVoPolicy.isDefaultRenderOption(option, current)) {
-          PlayerDebugLog.d(TAG) { "Render tier keeps $option=$current (not the mpv default)" }
-          continue
-        }
-        replaced[option] = current!!
-        writeProperty(option, cheap)
-      }
+      val replaced = cheapRenderReplacements { p.getString(it) }
+      for (option in replaced.keys) writeProperty(option, GpuVoPolicy.CHEAP_RENDER_OPTIONS.getValue(option))
       synchronized(cheapRenderRestore) { cheapRenderRestore.putAll(replaced) }
       Log.i(TAG, "Cheap render tier (no GL_EXT_texture_norm16): ${replaced.keys.joinToString(",")}")
     } else {
@@ -1854,7 +1881,7 @@ class MpvPlayerCore private constructor(
   }
 
   private suspend fun needsParkedRebuild(p: MpvPlayer): Boolean {
-    if (!MediaCodecQuery.hardwareAv1IsBigOcean()) return false
+    if (!MediaCodecQuery.bigOceanAv1) return false
     return GpuVoPolicy.needsParkedRebuild(
       codec = p.getString("current-tracks/video/codec"),
       hwdec = p.getString("hwdec"),
@@ -1909,7 +1936,7 @@ class MpvPlayerCore private constructor(
 
   /**
    * Observed from video-params so the reason follows per-file transfer
-   * changes. Why it matters: [GpuVoPolicy.needsHdrToneMapping].
+   * changes. Why it matters: [GpuVoPolicy.needsToneMapping].
    */
   private fun onHdrToneMapState(gamma: String) {
     videoGamma = gamma
@@ -1918,13 +1945,13 @@ class MpvPlayerCore private constructor(
 
   private fun refreshHdrToneMapRequirement() {
     synchronized(hdrToneMapLock) {
-      val needsToneMap = GpuVoPolicy.needsHdrToneMapping(
+      val needsToneMap = needsToneMapping(
         gamma = videoGamma,
-        displaySupportsHdr = displayHdrSupported,
+        displayHdrSupported = displayHdrSupported,
         conversionMode = hdrSdrConversionMode,
         sdkInt = Build.VERSION.SDK_INT
       )
-      setGpuVoRequirement(GpuVoPolicy.REASON_HDR_SDR, needsToneMap)
+      setGpuVoRequirement(GpuVoPolicy.REASON_TONE_MAP, needsToneMap)
     }
   }
 
@@ -2583,12 +2610,12 @@ class MpvPlayerCore private constructor(
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
       val profile = pendingDvProfile
       val routing = dvRouting()
-      val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
+      val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5)
       val options = GpuVoPolicy.dvDecoderOptions(
         routing.conversionMode,
         routing.displaySupportsDv,
         profile,
-        canPlayP5Natively = p5Decoder != null
+        nativeP5Decoder = p5Decoder != null
       )
       Log.i(
         TAG,
@@ -2601,7 +2628,7 @@ class MpvPlayerCore private constructor(
 
   /**
    * `hdr-sdr-conversion` is an app-level property: who converts HDR for a
-   * display without HDR output ([GpuVoPolicy.needsHdrToneMapping]). It
+   * display without HDR output ([GpuVoPolicy.needsToneMapping]). It
    * re-decides the live file at once, so a change mid-file moves it between
    * the plane and the GL vo like any other routing reason.
    */
@@ -2999,11 +3026,11 @@ class MpvPlayerCore private constructor(
       // What decodes a Dolby Vision file (#2534): the DV decoder, the bare
       // base layer, or gpu-next reshaping. The track's profile is the
       // bitstream's DOVI record, so a file without one reports nothing.
-      val dvProfile = readProperty("current-tracks/video/dolby-vision-profile")?.toLongOrNull()
+      val dvProfile = readProperty("current-tracks/video/dolby-vision-profile")?.toIntOrNull()
       if (dvProfile != null) {
         stats["dvSourceProfile"] = dvProfile
         stats["dvRoute"] = GpuVoPolicy.dvRoute(
-          dvProfile = dvProfile,
+          doviProfile = dvProfile,
           decoderOptions = readProperty("vd-lavc-o"),
           candidates = dvDecoderCandidates,
           hwdecCurrent = stats["hwdec-current"] as String?,

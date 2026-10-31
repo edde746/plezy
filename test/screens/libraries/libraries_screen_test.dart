@@ -9,10 +9,12 @@ import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
+import 'package:plezy/media/library_genre.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -83,6 +85,15 @@ const _musicLibrary = MediaLibrary(
   backend: MediaBackend.jellyfin,
   title: 'Music',
   kind: MediaKind.artist,
+  serverId: 'server-c',
+);
+// A movie library on the live fake server, so its Genres tab and the Browse
+// tab it hands off to both load.
+const _jellyfinMovies = MediaLibrary(
+  id: 'jf-movies',
+  backend: MediaBackend.jellyfin,
+  title: 'Movies',
+  kind: MediaKind.movie,
   serverId: 'server-c',
 );
 
@@ -276,6 +287,46 @@ void main() {
     expect(client.pageRequestCount, greaterThan(loadsBefore));
     // In place: no re-selection churn.
     expect(selected.length, selectionsBefore);
+  });
+
+  testWidgets('opening a genre shows Browse filtered to that genre alone, built or not', (tester) async {
+    final client = _GenresClient();
+    final preferences = _GatedPreferences({
+      'selected_library_key': _jellyfinMovies.globalKey,
+      'library_tab_${_jellyfinMovies.globalKey}': LibraryTabType.genres.name,
+    });
+    final harness = await _Harness.create(preferences, clients: [client], libraryOrder: const [_jellyfinMovies]);
+    addTearDown(harness.dispose);
+    final storage = await StorageService.getInstance();
+    await storage.saveLibraryFilters([
+      LibraryFilter(field: MediaFilterField.year, values: ['1999']),
+    ], sectionId: _jellyfinMovies.globalKey);
+
+    await harness.pump(tester, settle: false);
+    await pumpRequestFrames(tester);
+    expect(client.queries, isEmpty, reason: 'Browse has not been built yet');
+
+    await tester.tap(find.text('Comedy'));
+    await pumpRequestFrames(tester);
+    await pumpRequestFrames(tester);
+
+    expect(harness.controller(tester).index, LibraryTabType.browse.index);
+    expect(client.queries.last.filters, [
+      LibraryFilter(field: MediaFilterField.genre, values: ['Comedy']),
+    ]);
+    expect(storage.getLibraryTab(_jellyfinMovies.globalKey), LibraryTabType.browse.name);
+
+    // Browse is now built and showing Comedy: the next genre must replace it.
+    harness.controller(tester).index = LibraryTabType.genres.index;
+    await pumpRequestFrames(tester);
+    await tester.tap(find.text('Action'));
+    await pumpRequestFrames(tester);
+    await pumpRequestFrames(tester);
+
+    expect(harness.controller(tester).index, LibraryTabType.browse.index);
+    expect(client.queries.last.filters, [
+      LibraryFilter(field: MediaFilterField.genre, values: ['Action']),
+    ]);
   });
   testWidgets('switching through the TV Recommended backdrop keeps sibling tabs mounted', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
@@ -689,6 +740,31 @@ class _PagedClient implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Movie-library client whose Genres tab lists two genres, recording the
+/// queries Browse runs.
+class _GenresClient extends _PagedClient {
+  _GenresClient() : super('server-c');
+
+  final queries = <LibraryQuery>[];
+
+  @override
+  Future<List<LibraryGenre>> fetchLibraryGenres(String libraryId, {required MediaKind libraryKind}) async => const [
+    LibraryGenre(title: 'Action', filterValue: 'Action'),
+    LibraryGenre(title: 'Comedy', filterValue: 'Comedy'),
+  ];
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
+    String libraryId, {
+    required LibraryQuery query,
+    MediaKind? libraryKind,
+    AbortController? abort,
+  }) {
+    queries.add(query);
+    return super.fetchLibraryPagedContent(libraryId, query: query, libraryKind: libraryKind, abort: abort);
+  }
 }
 
 HubSectionState _rowState(WidgetTester tester, String id) =>

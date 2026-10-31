@@ -370,6 +370,7 @@ class _PlaybackOpenRequest {
     required this.qualityPreset,
     required this.audioStreamId,
     required this.resumePosition,
+    this.forceTranscode = false,
   });
 
   final MediaItem metadata;
@@ -379,13 +380,18 @@ class _PlaybackOpenRequest {
   final int? audioStreamId;
   final Duration? resumePosition;
 
+  /// A server transcode the viewer asked for after the server refused the
+  /// file itself (HTTP 500); see [PlaybackInitializationOptions.forceTranscode].
+  final bool forceTranscode;
+
   /// Same item and source selection; where it resumes from is incidental.
   bool sameSourceAs(_PlaybackOpenRequest other) =>
       metadata.globalKey == other.metadata.globalKey &&
       mediaIndex == other.mediaIndex &&
       mediaSourceId == other.mediaSourceId &&
       qualityPreset == other.qualityPreset &&
-      audioStreamId == other.audioStreamId;
+      audioStreamId == other.audioStreamId &&
+      forceTranscode == other.forceTranscode;
 
   _PlaybackOpenRequest resumingAt(Duration? position) => _PlaybackOpenRequest(
     metadata: metadata,
@@ -394,6 +400,7 @@ class _PlaybackOpenRequest {
     qualityPreset: qualityPreset,
     audioStreamId: audioStreamId,
     resumePosition: position,
+    forceTranscode: forceTranscode,
   );
 }
 
@@ -1796,7 +1803,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             );
       }
 
-      if (Platform.isWindows) {
+      if (Platform.isWindows || Platform.isMacOS) {
         initPhase = 'syncing display mode';
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
@@ -2245,7 +2252,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  /// Windows display mode matching service.
+  /// Desktop display mode matching service (Windows, macOS).
   DisplayModeService? _displayModeService;
 
   /// Android display frame-rate matching state (retry counter, applied
@@ -2501,13 +2508,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _releaseFullscreenListener?.call();
     _releaseFullscreenListener = null;
     FullscreenStateManager().endScope();
-    // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
-    // the HDR hint before restoring, which dispose() cannot do. Fire the hint
-    // clear at the still-live player and restore immediately.
-    if (!isReplacingWithVideo &&
-        Platform.isWindows &&
-        _displayModeService != null &&
-        _displayModeService!.anyChangeApplied) {
+    // Not _restoreDisplayMode(): that helper waits 200ms after clearing the
+    // Windows HDR hint before restoring, which dispose() cannot do. Fire the
+    // hint clear at the still-live player and restore immediately.
+    if (!isReplacingWithVideo && _displayModeService != null && _displayModeService!.anyChangeApplied) {
       if (_displayModeService!.hdrStateChanged && player != null) {
         final currentPlayer = player!;
         unawaited(() async {
@@ -2722,6 +2726,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// deliberately retries a 503 (see `_applyNetworkStreamTuning`), and a
   /// transient status must never mask the fatal one that follows.
   final Set<int> _fatalHttpStatuses = <int>{};
+
+  /// The HTTP 500 dialog's transcode was already tried for the item on
+  /// screen, so a further 500 shows the dialog without it. Cleared when an
+  /// in-place reload opens another item.
+  bool _serverLimitFallbackUsed = false;
 
   /// Bounds an open the server keeps answering with HTTP 503 — that loop
   /// otherwise never raises an error (#1830). Armed from [_onPlayerLog],

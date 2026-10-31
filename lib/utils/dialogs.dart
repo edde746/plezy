@@ -234,8 +234,12 @@ Future<void> showPlaybackNotAllowedDialog(BuildContext context) async {
 }
 
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
-Future<void> showServerLimitDialog(BuildContext context) async {
-  await showScopedDialog<void>(
+///
+/// With [offerTranscode] it also offers to have the server transcode the item
+/// instead; returns true only when the viewer picks that. Close keeps the
+/// focus, so nothing changes unless the viewer chooses.
+Future<bool> showServerLimitDialog(BuildContext context, {bool offerTranscode = false}) async {
+  final transcode = await showScopedDialog<bool>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
@@ -244,14 +248,24 @@ Future<void> showServerLimitDialog(BuildContext context) async {
       actions: [
         DialogActionButton(
           autofocus: true,
-          onPressed: () => Navigator.of(ctx).pop(),
+          onPressed: () => Navigator.of(ctx).pop(false),
           label: t.common.close,
-          isPrimary: true,
-          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+          isPrimary: !offerTranscode,
+          style: offerTranscode
+              ? TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape)
+              : FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
         ),
+        if (offerTranscode)
+          DialogActionButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            label: t.messages.serverLimitTranscode,
+            isPrimary: true,
+            style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+          ),
       ],
     ),
   );
+  return transcode ?? false;
 }
 
 /// Shows the server-side 404 modal: the item exists but the server cannot read

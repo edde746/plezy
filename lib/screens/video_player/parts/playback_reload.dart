@@ -362,6 +362,12 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
   /// happened: only [MediaReloadOutcome.failed] means the previous session
   /// is still on screen with its (possibly dead) stream; user feedback for
   /// failures is shown here unless [showErrorUi] is false.
+  ///
+  /// [forceTranscode] asks the server to transcode even where the file itself
+  /// would play; see [PlaybackInitializationOptions.forceTranscode].
+  /// When null, a forced open carries over to reloads of the same item at the
+  /// same preset (a resume, an audio switch, end-of-stream recovery), so
+  /// those never hand back the file the server refused.
   Future<MediaReloadOutcome> _reloadMediaInPlace({
     required MediaItem metadata,
     int? selectedMediaIndex,
@@ -378,6 +384,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     bool startPaused = false,
     bool useCurrentAudioStreamSelection = true,
     bool showErrorUi = true,
+    bool? forceTranscode,
     PlaybackTransitionLease? transitionLease,
     String reason = 'media reload',
   }) async {
@@ -493,6 +500,12 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
       final targetQualityPreset = qualityPreset ?? _selectedQualityPreset;
+      final targetForceTranscode =
+          forceTranscode ??
+          (!isItemChange &&
+              previousOpenRequest != null &&
+              previousOpenRequest.forceTranscode &&
+              previousOpenRequest.qualityPreset == targetQualityPreset);
       final downloadOutranksQuality = _downloadOutranksQuality;
       final targetAudioStreamId = crossesPart
           ? null
@@ -514,6 +527,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         qualityPreset: targetQualityPreset,
         audioStreamId: targetAudioStreamId,
         resumePosition: resumePosition,
+        forceTranscode: targetForceTranscode,
       );
       final preservesRequestedSubtitleSource =
           !isItemChange &&
@@ -580,6 +594,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
             startPosition: openResumePosition,
+            forceTranscode: targetForceTranscode,
           ),
           offlineLibraryMode: _offlineLibraryMode,
           downloadOutranksQuality: downloadOutranksQuality,
@@ -729,6 +744,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             didOpenReplacement = true;
             if (!attempt.isCurrent) return;
             _commitPlaybackSession(session);
+            if (isItemChange) _serverLimitFallbackUsed = false;
           },
         );
         if (!opened) return MediaReloadOutcome.superseded;

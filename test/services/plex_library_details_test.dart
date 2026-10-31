@@ -219,6 +219,50 @@ void main() {
     });
   });
 
+  // The Genres tab opens a tile by saving its value as a `genre` clause, so
+  // the value has to be the id the section's genre filter uses. Payload shape
+  // as PMS 1.43 answers `/library/sections/2/categories`.
+  test('genre categories carry the genre filter id, art and tint of each tile', () async {
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      requests.add(request.url);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'size': 3,
+            'Directory': [
+              {
+                'key': '/library/sections/2/all?genre=239',
+                'title': 'Action',
+                'type': 'directory',
+                'thumb':
+                    '/photo/:/transcode?blendColor=2B717E&width=2560&height=1440'
+                    '&url=%2Flibrary%2Fmetadata%2F9250%2Fart%2F1791086805',
+              },
+              {'key': '/library/sections/2/all?genre=240', 'title': 'Comedy', 'type': 'directory'},
+              // Not a genre filter: nothing a genre clause could select.
+              {'key': '/library/sections/2/all?label=12', 'title': 'Label', 'type': 'directory'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final genres = await client.fetchLibraryGenres('2', libraryKind: MediaKind.show);
+
+    expect(requests.single.path, '/library/sections/2/categories');
+    expect(genres.map((genre) => (genre.title, genre.filterValue)), [('Action', '239'), ('Comedy', '240')]);
+    final action = genres.first;
+    // The composed 2560×1440 tile is split back into its art and tint.
+    expect(action.artPath, '/library/metadata/9250/art/1791086805');
+    expect(action.accentRgb, 0x2B717E);
+    expect(genres.last.artPath, isNull);
+    expect(genres.last.accentRgb, isNull);
+  });
+
   test('appends Date Added, Plays, and User Rating sorts only for video libraries', () async {
     PlexClient clientReturning() => makeClient((request) async {
       if (request.url.path == '/library/sections/1/sorts') {

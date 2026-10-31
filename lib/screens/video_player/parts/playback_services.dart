@@ -118,8 +118,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       await _applyFrameRateMatching();
     }
 
-    if (Platform.isWindows && _displayModeService != null) {
-      await _applyWindowsDisplayMatching();
+    if (_displayModeService != null) {
+      await _applyDisplayModeMatching();
     }
   }
 
