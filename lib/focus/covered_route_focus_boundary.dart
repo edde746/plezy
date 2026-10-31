@@ -4,21 +4,24 @@ import 'package:flutter/widgets.dart';
 /// covered by another route, and hands focus back when it is uncovered.
 ///
 /// Flutter only marks a covered route's scope `skipTraversal`; any descendant
-/// may still call `requestFocus()` and win. That is harmless on a single
-/// navigator, where every screen's `ModalRoute.of(context).isCurrent` guard
-/// tells the truth. It breaks with a nested navigator: a route pushed on the
-/// *root* navigator (the profile picker, the PIN dialog) covers the whole
-/// nested stack, yet each nested route still reports `isCurrent == true` and
-/// its focus self-heals — sidebar reveal, library grid load, TV browse rail —
-/// yank the remote off the visible route, which on tvOS reads as a dead
-/// remote (#2034, #2239).
+/// may still call `requestFocus()` and win. Its focus self-heals — sidebar
+/// reveal, library grid load, TV browse rail — then yank the remote onto a
+/// screen nobody can see, which on tvOS reads as a dead remote: the D-pad
+/// drives the hidden screen and Back never reaches the visible one. A
+/// per-site `ModalRoute.of(context).isCurrent` guard only helps where someone
+/// remembered it (#2915), and under a nested navigator it lies: a route pushed
+/// on the *root* navigator (the profile picker, the PIN dialog) covers the
+/// whole nested stack, yet each nested route still reports `isCurrent == true`
+/// (#2034, #2239).
 ///
-/// The boundary restores the invariant once, at the navigator boundary,
-/// instead of at every reclaim site: while the enclosing route is not current
-/// the subtree is [ExcludeFocus]ed, so every `requestFocus()` below it is a
-/// no-op. Flutter's own restoration cannot hand focus back on uncover, because
-/// the covering route's pop culls the excluded scope from the route scope's
-/// history before the exclusion lifts.
+/// The boundary restores the invariant once, at the route boundary, instead
+/// of at every reclaim site. One wraps the profile session's nested navigator,
+/// for root-navigator covers; one wraps `MainScreen`'s content, for detail
+/// pages pushed over it on the nested navigator. While the enclosing route is
+/// not current the subtree is [ExcludeFocus]ed, so every `requestFocus()` below
+/// it is a no-op. Flutter's own restoration cannot hand focus back on uncover,
+/// because the covering route's pop culls the excluded scope from the route
+/// scope's history before the exclusion lifts.
 ///
 /// So the boundary records the focus path below it when the cover begins and,
 /// on uncover, refocuses the deepest part of that path still in the tree: the
@@ -43,8 +46,8 @@ class CoveredRouteFocusBoundary extends StatefulWidget {
 
   final Widget child;
 
-  /// Requests focus for [node] as the first focus of the subtree below
-  /// [context]: a screen's entry focus after it mounts or first loads.
+  /// Requests focus for [node] as the first focus of the subtree it lives in:
+  /// a screen's entry focus after it mounts or first loads.
   ///
   /// Outside a covered boundary this is `node.requestFocus()`. Under one, the
   /// request is held instead of dropped and replayed after the uncover
@@ -52,18 +55,39 @@ class CoveredRouteFocusBoundary extends StatefulWidget {
   /// cover — a scope requested after one of its descendants still lands on
   /// that descendant. A self-heal that re-takes focus keeps calling
   /// `requestFocus()` directly, so the cover still drops it.
+  ///
+  /// Boundaries nest, and any covered one excludes [node], so the walk starts
+  /// at [node]'s own position ([context] only stands in before it mounts) and
+  /// skips boundaries that are not covered: an uncovered inner boundary must
+  /// not swallow a request that a covered outer one would drop.
   static void requestInitialFocus(BuildContext context, FocusNode node) {
-    final boundary = context.findAncestorStateOfType<_CoveredRouteFocusBoundaryState>();
-    // `_covered` is the exclusion in force, which outlives the route's own
-    // currency until the next frame: a request between a pop and that frame
-    // would still be dropped.
-    if (boundary == null || !boundary._covered) {
+    final nodeContext = node.context;
+    final holder = _coveredBoundaryAbove(nodeContext != null && nodeContext.mounted ? nodeContext : context);
+    if (holder == null) {
       node.requestFocus();
       return;
     }
-    boundary._heldRequests
+    holder._heldRequests
       ..remove(node)
       ..add(node);
+  }
+
+  /// The innermost ancestor boundary of [context] whose exclusion is in force.
+  /// `_covered` outlives the route's own currency until the next frame: a
+  /// request between a pop and that frame would still be dropped.
+  static _CoveredRouteFocusBoundaryState? _coveredBoundaryAbove(BuildContext context) {
+    _CoveredRouteFocusBoundaryState? covered;
+    context.visitAncestorElements((element) {
+      if (element is StatefulElement) {
+        final state = element.state;
+        if (state is _CoveredRouteFocusBoundaryState && state._covered) {
+          covered = state;
+          return false;
+        }
+      }
+      return true;
+    });
+    return covered;
   }
 
   @override
@@ -130,14 +154,16 @@ class _CoveredRouteFocusBoundaryState extends State<CoveredRouteFocusBoundary> {
       _focusPathAtCover = const [];
       // The exclusion lifts in this build's didUpdateWidget, after the pop
       // already parked focus on the route scope; restore once it has, then
-      // replay what the subtree asked for while covered.
+      // replay what the subtree asked for while covered. A replay goes back
+      // through requestInitialFocus so an outer boundary still covered keeps
+      // holding it.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         if (!_scope.hasFocus) _restoreTarget(path).requestFocus();
         final held = List.of(_heldRequests);
         _heldRequests.clear();
         for (final node in held) {
-          if (_isAttachedBelowScope(node)) node.requestFocus();
+          if (_isAttachedBelowScope(node)) CoveredRouteFocusBoundary.requestInitialFocus(context, node);
         }
       });
     }
