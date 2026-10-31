@@ -324,7 +324,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, formatting, tes
 
 ## License
 
-Plezy is licensed under [GPL-3.0](LICENSE).
+Plezy is licensed under [GPL-3.0](LICENSE). The license covers the code, not the Plezy name or logo; forks distributed beyond personal use must follow [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Acknowledgments
 
