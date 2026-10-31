@@ -594,7 +594,13 @@ class _MainScreenState extends State<MainScreen>
       // state already hydrated it when it created the service, so an offline launch
       // keeps its cached Plex Home users without reaching the network.
       // `_handleOfflineStatusChanged` starts it if we come online later.
-      if (!_isOffline) unawaited(_plexHomeService!.start());
+      if (!_isOffline) {
+        unawaited(_plexHomeService!.start());
+        // Same live/network entry point for Bonfire/JellyProfiles virtual
+        // profiles; `_handleOfflineStatusChanged` starts it on a later online
+        // transition, and `start()` is idempotent.
+        unawaited(context.read<BonfireProfileService>().start());
+      }
       final manager = context.read<MultiServerProvider>().serverManager;
       // Read the binder so the Provider's `lazy: false` create has fired for
       // sure. `start()` is idempotent; SetupScreen normally started it already,
