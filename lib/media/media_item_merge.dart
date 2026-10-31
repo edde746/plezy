@@ -67,6 +67,20 @@ int compareLibraryCopies(MediaItem a, MediaItem b) {
   return a.globalKey.compareTo(b.globalKey);
 }
 
+/// The technical label of [copy]'s best version, e.g. "4K HEVC MKV
+/// (45.0 Mbps)". Library names are user-chosen and need not mention
+/// resolution, which is exactly the question two copies of one title pose
+/// (#1754), so a chooser states it outright. Null when the backend reported
+/// no resolution at all, rather than showing "Unknown".
+String? libraryCopyQualityLabel(MediaItem copy) {
+  MediaVersion? best;
+  for (final version in copy.mediaVersions ?? const <MediaVersion>[]) {
+    if (version.resolutionHeight == null) continue;
+    if (best == null || version.resolutionHeight! > best.resolutionHeight!) best = version;
+  }
+  return best?.displayLabel;
+}
+
 /// Fold a re-resolved copy into the one already known for its
 /// [MediaItem.globalKey].
 ///

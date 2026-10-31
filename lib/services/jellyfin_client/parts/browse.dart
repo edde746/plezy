@@ -1269,6 +1269,25 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableFolderDescendantTypes, abort: abort);
   }
 
+  /// Up to [limit] playable videos from library [libraryId], in an order the
+  /// server randomizes (`SortBy=Random`). One request: a random order is not
+  /// stable across pages, so paging would repeat some items and skip others.
+  Future<List<MediaItem>> fetchRandomLibraryVideos(
+    String libraryId, {
+    required int limit,
+    AbortController? abort,
+  }) async {
+    final page = await _fetchPlayableDescendantsPage(
+      libraryId,
+      start: 0,
+      size: limit,
+      abort: abort,
+      includeItemTypes: _playableFolderDescendantTypes,
+      randomOrder: true,
+    );
+    return page.items;
+  }
+
   Future<List<MediaItem>> _fetchAllPlayableDescendants(
     String parentId, {
     required String includeItemTypes,
@@ -1312,6 +1331,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     AbortController? abort,
     required String includeItemTypes,
     bool byAlbumArtist = false,
+    bool randomOrder = false,
   }) async {
     final offset = start ?? 0;
     final pageSize = size ?? _pagedListPageSize;
@@ -1324,6 +1344,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         if (byAlbumArtist) 'AlbumArtistIds': parentId else 'ParentId': parentId,
         'Recursive': 'true',
         'IncludeItemTypes': includeItemTypes,
+        if (randomOrder) 'SortBy': 'Random',
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
         'Fields': _episodeRowFields,

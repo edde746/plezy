@@ -1704,6 +1704,52 @@ void main() {
       expect(subtitleUri.queryParameters['ApiKey'], 'tok-abc');
     });
 
+    test('getPlaybackInitialization keeps the picked row among identical same-language files', () async {
+      Future<String?> pick(int index, {String title = 'Full'}) async {
+        Uri? playbackInfoUri;
+        final scoped = _clientWithPlaybackInfo(
+          (request) async {
+            playbackInfoUri = request.url;
+            return jsonResponse({
+              'MediaSources': [
+                {'Id': 'src-1'},
+              ],
+            });
+          },
+          itemSources: [
+            {
+              'Id': 'src-1',
+              'MediaStreams': [
+                for (final i in [3, 4])
+                  {'Index': i, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng', 'Title': 'Full'},
+                {'Index': 5, 'Type': 'Subtitle', 'Codec': 'pgs', 'Language': 'eng', 'Title': 'Signs & Songs'},
+              ],
+            },
+          ],
+        );
+        addTearDown(scoped.close);
+        await scoped.getPlaybackInitialization(
+          PlaybackInitializationOptions(
+            metadata: testMediaItem(
+              id: 'item-1',
+              backend: MediaBackend.jellyfin,
+              kind: MediaKind.movie,
+              serverId: 'srv-1',
+            ),
+            selectedMediaIndex: 0,
+            preferredSubtitleTrack: SubtitlePreference.track(
+              SubtitleTrack(id: 'source:$index', title: title, language: 'eng', codec: 'srt'),
+            ),
+          ),
+        );
+        return playbackInfoUri!.queryParameters['SubtitleStreamIndex'];
+      }
+
+      expect(await pick(4), '4');
+      // A stale index whose row the intent ranks below the tied pair still declines.
+      expect(await pick(5), isNull);
+    });
+
     test('getPlaybackInitialization maps semantic subtitle preferences to current source rows', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;

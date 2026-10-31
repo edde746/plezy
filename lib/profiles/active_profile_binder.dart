@@ -573,7 +573,7 @@ class ActiveProfileBinder {
           return null;
         }
         appLogger.i('ActiveProfileBinder: minting fresh user-token via /switch for ${profile.displayName}');
-        final result = await switchPlexHomeUserWithPin(
+        return switchPlexHomeUserWithPin(
           auth: auth,
           accountToken: account.accountToken,
           homeUserUuid: homeUuid,
@@ -585,7 +585,6 @@ class ActiveProfileBinder {
               : ({String? errorMessage}) async => null,
           logLabel: profile.displayName,
         );
-        return result.succeeded ? result.userToken : null;
       },
       persistMintedToken: (token) async {
         // Plex Home parents normally have no join row, so create one as the
@@ -691,7 +690,7 @@ class ActiveProfileBinder {
     );
   }
 
-  Future<String?> _mintLocalPlexToken({
+  Future<PlexHomeSwitchResult?> _mintLocalPlexToken({
     required PlexAuthService auth,
     required Profile profile,
     required PlexAccountConnection conn,
@@ -702,7 +701,7 @@ class ActiveProfileBinder {
       appLogger.w('ActiveProfileBinder: ${profile.displayName} has no Plex Home user identifier');
       return null;
     }
-    final result = await switchPlexHomeUserWithPin(
+    return switchPlexHomeUserWithPin(
       auth: auth,
       accountToken: conn.accountToken,
       homeUserUuid: pc.userIdentifier,
@@ -715,12 +714,11 @@ class ActiveProfileBinder {
           : ({String? errorMessage}) async => null,
       logLabel: profile.displayName,
     );
-    if (!result.succeeded) return null;
-    return result.userToken;
   }
 
   /// Apply the common Plex token policy while callers retain ownership of
   /// backend-specific minting, persistence, and post-bind bookkeeping.
+  /// [mintToken] returns null when it did not attempt a `/switch`.
   Future<_ProfileBindResult> _bindPlexWithTokenPolicy({
     required PlexAuthService auth,
     required PlexAccountConnection account,
@@ -729,7 +727,7 @@ class ActiveProfileBinder {
     required int generation,
     required String? cachedToken,
     required Future<void> Function() invalidateCachedToken,
-    required Future<String?> Function() mintToken,
+    required Future<PlexHomeSwitchResult?> Function() mintToken,
     required Future<void> Function(String token) persistMintedToken,
     Future<void> Function()? markUsed,
   }) async {
@@ -740,10 +738,17 @@ class ActiveProfileBinder {
       if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
 
       if (!usingCachedToken) {
-        userToken = await mintToken();
-        if (userToken == null || userToken.isEmpty || !_isCurrentBind(profileId, generation)) {
-          return const _ProfileBindResult.empty();
+        final minted = await mintToken();
+        if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
+        if (minted?.status == PlexHomeSwitchStatus.authRejected) {
+          // plex.tv refused the account token itself (expired or revoked), so
+          // no profile token can be minted. Flag re-auth rather than letting
+          // the empty bind read as a connectivity failure (#2904).
+          appLogger.w('ActiveProfileBinder: account token rejected for $profileLabel — flagging re-auth');
+          return _flagPlexAuthRejected(account, profileId: profileId);
         }
+        userToken = minted?.userToken;
+        if (userToken == null || userToken.isEmpty) return const _ProfileBindResult.empty();
         await persistMintedToken(userToken);
         if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
       }
@@ -840,9 +845,7 @@ class ActiveProfileBinder {
             error: fetched.error,
             stackTrace: fetched.stackTrace,
           );
-          _plexBindTokens.remove(account.id);
-          serverManager.markPlexConnectionAuthError(account, profileId: profileId);
-          return _ProfileBindResult.visible(account.servers.map((server) => server.clientIdentifier).toSet());
+          return _flagPlexAuthRejected(account, profileId: profileId);
         case _ServerFetchStatus.transientFailure:
           appLogger.w(
             'ActiveProfileBinder: resource refresh failed for $profileLabel; using cached metadata',
@@ -879,6 +882,14 @@ class ActiveProfileBinder {
           return const _ProfileBindResult.empty();
       }
     }
+  }
+
+  /// Surface the auth-error banner for every cached server of [account]: the
+  /// servers stay visible, marked as needing a new sign-in.
+  _ProfileBindResult _flagPlexAuthRejected(PlexAccountConnection account, {required String profileId}) {
+    _plexBindTokens.remove(account.id);
+    serverManager.markPlexConnectionAuthError(account, profileId: profileId);
+    return _ProfileBindResult.visible(account.servers.map((server) => server.clientIdentifier).toSet());
   }
 
   /// Account-level server metadata can outlive the Plex Home profile that

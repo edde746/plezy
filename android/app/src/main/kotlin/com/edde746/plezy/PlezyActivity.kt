@@ -27,6 +27,7 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import com.edde746.mpv.MediaCodecQuery
 import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.deeplink.DeepLinkPlugin
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
@@ -34,7 +35,6 @@ import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
 import com.edde746.plezy.shared.AssistiveTechnologyMonitor
 import com.edde746.plezy.shared.DeviceQuirks
-import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.ThemeHelper
 import com.edde746.plezy.watchnext.WatchNextPlugin
 import io.flutter.embedding.android.FlutterActivity
@@ -523,9 +523,13 @@ class PlezyActivity : FlutterActivity() {
 
     // Wrap the content view in a layout that intercepts DPAD key events
     // before the IME input stage, which can consume DPAD direction events
-    // from virtual remotes before they reach Flutter's key handler.
+    // from virtual remotes before they reach Flutter's key handler. Both of
+    // its paths into FlutterView also drop modifier scan codes from
+    // non-modifier keys (see withoutModifierScanCode).
     val content = findViewById<ViewGroup>(android.R.id.content)
     val wrapper = object : FrameLayout(this) {
+      override fun dispatchKeyEvent(event: KeyEvent): Boolean = super.dispatchKeyEvent(event.withoutModifierScanCode())
+
       override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
         if (isDpadKeyCode(event.keyCode)) {
           logTextInputDiag { "preIme received ${describeKeyEvent(event)} ${describeImeState()}" }
@@ -538,7 +542,7 @@ class PlezyActivity : FlutterActivity() {
           KeyEvent.KEYCODE_DPAD_CENTER -> {
             if (shouldForwardDpadBeforeIme()) {
               logTextInputDiag { "preIme forwarding-to-Flutter-and-consuming ${describeKeyEvent(event)}" }
-              super.dispatchKeyEvent(event)
+              super.dispatchKeyEvent(event.withoutModifierScanCode())
               return true
             }
             logTextInputDiag { "preIme letting-IME-handle ${describeKeyEvent(event)}" }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_library.dart';
 
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
@@ -33,6 +34,11 @@ class _StubPlexClient implements PlexClient {
   /// launch's loading dialog is up.
   final Completer<void>? gate;
 
+  final List<({String? uri, int shuffle, String? librarySectionID})> createdQueues = [];
+
+  @override
+  Future<String> buildFolderUri(String folderKey) async => 'server://machine-1/com.plexapp.plugins.library$folderKey';
+
   @override
   Future<PlayQueueResponse> createPlayQueue({
     String? uri,
@@ -45,6 +51,7 @@ class _StubPlexClient implements PlexClient {
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
+    createdQueues.add((uri: uri, shuffle: shuffle, librarySectionID: librarySectionID));
     await gate?.future;
     return response!;
   }
@@ -135,6 +142,44 @@ void main() {
       expect(result, isA<PlayQueueError>());
       final error = (result as PlayQueueError).error;
       expect(error.toString(), contains('collection or playlist'));
+    });
+  });
+
+  group('launchShuffledLibrary', () {
+    testWidgets('queues the whole section shuffled and plays its head', (tester) async {
+      final context = await _pumpContext(tester);
+      final item = const MediaItem.plex(id: 'ep-9', kind: MediaKind.episode, title: 'Episode', playQueueItemId: 41);
+      final client = _StubPlexClient(response: _queueWith(item, shuffled: true));
+      final playbackState = PlaybackStateProvider();
+      final navigated = <MediaItem>[];
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: client,
+        playbackStateForTesting: playbackState,
+        navigateForTesting: (selected) async => navigated.add(selected),
+      );
+      const library = MediaLibrary(
+        id: '2',
+        backend: MediaBackend.plex,
+        title: 'TV Shows',
+        kind: MediaKind.show,
+        serverId: 'plex-1',
+      );
+
+      final result = await launcher.launchShuffledLibrary(library: library, showLoadingIndicator: false);
+
+      expect(result, isA<PlayQueueSuccess>());
+      // PMS expands a section's shows to their episodes; one URI covers both
+      // movie and show libraries.
+      expect(client.createdQueues, [
+        (
+          uri: 'server://machine-1/com.plexapp.plugins.library/library/sections/2/all',
+          shuffle: 1,
+          librarySectionID: '2',
+        ),
+      ]);
+      expect(playbackState.playQueueId, 73);
+      expect(navigated.single.id, 'ep-9');
     });
   });
 

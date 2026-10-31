@@ -154,10 +154,10 @@ void main() {
   });
 
   group('findBestRefreshRate', () {
-    List<Map> modes(List<int> rates) => [
+    List<Map> modes(List<num> rates) => [
       for (final rate in rates) {'width': 3840, 'height': 2160, 'refreshRate': rate},
     ];
-    int best(double fps, List<int> rates) => DisplayModeService.findBestRefreshRate(fps, modes(rates), 3840, 2160);
+    num best(double fps, List<num> rates) => DisplayModeService.findBestRefreshRate(fps, modes(rates), 3840, 2160);
 
     test('reads Windows 23/29/59 Hz modes as their 1000/1001 rates', () {
       expect(best(23.976, [23, 24, 60]), 23);
@@ -173,9 +173,77 @@ void main() {
       expect(best(25, [50, 59, 60]), 50);
       expect(best(60, [59, 60, 120]), 60);
     });
+
+    test('takes macOS rates exactly as reported', () {
+      // A MacBook Pro's built-in display: ProMotion plus its fixed rates,
+      // as CGDisplayMode reports them. ProMotion cannot hold 23.976 fps
+      // evenly (its floor is 24 Hz), so film has to land on a fixed mode.
+      const macBookPro = [120.0, 60.0, 59.93998718261719, 50.0, 48.0, 47.94999694824219];
+      expect(best(23.976, macBookPro), 47.94999694824219);
+      expect(best(24, macBookPro), 48.0);
+      expect(best(25, macBookPro), 50.0);
+      expect(best(29.97, macBookPro), 59.93998718261719);
+      expect(best(30, macBookPro), 60.0);
+      // A double is not a Windows whole-hertz report: 47.0 is not 47.952.
+      expect(best(23.976, [47.0]), 0);
+    });
   });
 
-  test('non-Windows override performs no native work', () async {
+  test('macOS matches the refresh rate and never touches system HDR', () async {
+    service = DisplayModeService.forTesting(
+      SettingsService.instance,
+      FullscreenStateManager(),
+      channel: channel,
+      isWindows: false,
+      isMacOS: true,
+    );
+    await SettingsService.instance.write(SettingsService.matchRefreshRate, true);
+    await SettingsService.instance.write(SettingsService.matchDynamicRange, true);
+    await SettingsService.instance.write(SettingsService.displaySwitchDelay, 2);
+    FullscreenStateManager().setFullscreen(true);
+    addTearDown(() => FullscreenStateManager().setFullscreen(false));
+
+    Object? requestedRate;
+    setHandler((call) async {
+      calls.add(call.method);
+      switch (call.method) {
+        case 'isModeChanged':
+          return false;
+        case 'getCurrentDisplayMode':
+          return {'width': 1512, 'height': 982, 'refreshRate': 120.0};
+        case 'getDisplayModes':
+          return [
+            for (final rate in [120.0, 60.0, 59.93998718261719, 50.0, 48.0, 47.94999694824219])
+              {'width': 1512, 'height': 982, 'refreshRate': rate},
+          ];
+        case 'setDisplayMode':
+          requestedRate = (call.arguments as Map)['refreshRate'];
+          return true;
+        case 'restoreDisplayMode':
+          return true;
+      }
+      throw MissingPluginException('No implementation for ${call.method}');
+    });
+
+    await service.syncWithNative();
+    final delay = await service.applyDisplayMatching(fps: 23.976025, sigPeak: 10);
+    expect(requestedRate, 47.94999694824219);
+    expect(delay, const Duration(seconds: 2));
+    expect(service.anyChangeApplied, isTrue);
+    expect(service.hdrStateChanged, isFalse);
+
+    await service.restoreAll();
+    expect(calls, [
+      'isModeChanged',
+      'getCurrentDisplayMode',
+      'getDisplayModes',
+      'setDisplayMode',
+      'restoreDisplayMode',
+    ]);
+    expect(service.anyChangeApplied, isFalse);
+  });
+
+  test('a platform without a display mode backend performs no native work', () async {
     service = DisplayModeService.forTesting(
       SettingsService.instance,
       FullscreenStateManager(),

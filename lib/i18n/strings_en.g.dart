@@ -3274,6 +3274,9 @@ class Translations$discover$en {
 	/// en: 'Continue Watching in ${library}'
 	String continueWatchingIn({required Object library}) => 'Continue Watching in ${library}';
 
+	/// en: 'Select Version'
+	String get selectVersion => 'Select Version';
+
 	/// en: 'Next Up'
 	String get nextUp => 'Next Up';
 
@@ -3515,6 +3518,9 @@ class Translations$libraries$en {
 
 	/// en: 'Library options'
 	String get libraryOptions => 'Library options';
+
+	/// en: 'Shuffle library'
+	String get shuffleLibrary => 'Shuffle library';
 
 	/// en: 'library content'
 	String get content => 'library content';
@@ -9202,6 +9208,7 @@ extension on Translations {
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
 			'discover.continueWatchingIn' => ({required Object library}) => 'Continue Watching in ${library}',
+			'discover.selectVersion' => 'Select Version',
 			'discover.nextUp' => 'Next Up',
 			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
 			'discover.recentlyAdded' => 'Recently Added',
@@ -9280,6 +9287,7 @@ extension on Translations {
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
+			'libraries.shuffleLibrary' => 'Shuffle library',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
@@ -9639,10 +9647,10 @@ extension on Translations {
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
-			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
-			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
+			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
@@ -10153,10 +10161,10 @@ extension on Translations {
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
-			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',

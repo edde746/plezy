@@ -1796,7 +1796,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             );
       }
 
-      if (Platform.isWindows) {
+      if (Platform.isWindows || Platform.isMacOS) {
         initPhase = 'syncing display mode';
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
@@ -2245,7 +2245,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  /// Windows display mode matching service.
+  /// Desktop display mode matching service (Windows, macOS).
   DisplayModeService? _displayModeService;
 
   /// Android display frame-rate matching state (retry counter, applied
@@ -2501,13 +2501,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _releaseFullscreenListener?.call();
     _releaseFullscreenListener = null;
     FullscreenStateManager().endScope();
-    // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
-    // the HDR hint before restoring, which dispose() cannot do. Fire the hint
-    // clear at the still-live player and restore immediately.
-    if (!isReplacingWithVideo &&
-        Platform.isWindows &&
-        _displayModeService != null &&
-        _displayModeService!.anyChangeApplied) {
+    // Not _restoreDisplayMode(): that helper waits 200ms after clearing the
+    // Windows HDR hint before restoring, which dispose() cannot do. Fire the
+    // hint clear at the still-live player and restore immediately.
+    if (!isReplacingWithVideo && _displayModeService != null && _displayModeService!.anyChangeApplied) {
       if (_displayModeService!.hdrStateChanged && player != null) {
         final currentPlayer = player!;
         unawaited(() async {

@@ -1438,7 +1438,7 @@ packages:
     source: hosted
     version: "1.1.1"
   web_socket:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: web_socket
       sha256: "34d64019aa8e36bf9842ac014bb5d2f5586ca73df5e4d9bf5c936975cae6982c"
