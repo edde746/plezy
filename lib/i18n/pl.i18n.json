@@ -971,6 +971,7 @@
     "switchingToCompatiblePlayer": "Przełączanie na kompatybilny odtwarzacz...",
     "serverLimitTitle": "Odtwarzanie nie powiodło się",
     "serverLimitBody": "Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.",
+    "serverLimitTranscode": "",
     "mediaUnreadableTitle": "Plik niedostępny",
     "mediaUnreadableBody": "Serwer znalazł ten element, ale nie mógł odczytać jego pliku (HTTP 404). Plik został prawdopodobnie przeniesiony, usunięty albo jego pamięć masowa jest niedostępna. Poproś właściciela serwera o sprawdzenie pliku i ponowne przeskanowanie biblioteki.",
     "serverBusyTitle": "Strumień niedostępny",

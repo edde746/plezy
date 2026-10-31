@@ -1230,6 +1230,8 @@ void main() {
     required int bitrateKbps,
     required int height,
     String? videoCodec,
+    bool forceTranscode = false,
+    int transcodeDecisionCode = 1001,
   }) async {
     final paths = <String>[];
     final decisions = <Uri>[];
@@ -1267,7 +1269,7 @@ void main() {
         return http.Response(
           jsonEncode({
             'MediaContainer': {
-              'transcodeDecisionCode': 1001,
+              'transcodeDecisionCode': transcodeDecisionCode,
               'Metadata': [
                 {
                   'Media': [
@@ -1291,6 +1293,7 @@ void main() {
           qualityPreset: preset,
           sessionIdentifier: 'session-id',
           transcodeSessionId: 'transcode-id',
+          forceTranscode: forceTranscode,
         ),
       );
       return (result: result, paths: paths, decisions: decisions);
@@ -1346,6 +1349,75 @@ void main() {
     expect(run.paths, contains('/video/:/transcode/universal/decision'));
     expect(run.result.isTranscoding, isTrue);
     expect(run.result.playMethod, 'Transcode');
+  });
+
+  group('a forced transcode after the server refused the file (HTTP 500)', () {
+    setUp(() async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+    });
+
+    // A 4K source at 32 Mbps the server's remote bandwidth refused as a file.
+    const refusedBitrateKbps = 32123;
+
+    test('at Original withholds direct play and leaves the output to the server', () async {
+      final run = await initializeCappedPlayback(
+        preset: TranscodeQualityPreset.original,
+        bitrateKbps: refusedBitrateKbps,
+        height: 2160,
+        forceTranscode: true,
+      );
+
+      expect(run.result.playMethod, 'Transcode');
+      expect(run.result.isTranscoding, isTrue);
+      expect(run.result.videoUrl, contains('/video/:/transcode/universal/start.m3u8'));
+      expect(run.result.videoUrl, isNot(contains('/library/parts/99/file.mkv')));
+      final decision = run.decisions.single.queryParameters;
+      expect(decision['directPlay'], '0');
+      expect(decision['directStream'], '1');
+      expect(decision.containsKey('videoResolution'), isFalse);
+      expect(decision.containsKey('videoQuality'), isFalse);
+      expect(decision['X-Plex-Client-Profile-Extra'], isNot(contains('add-limitation')));
+    });
+
+    test('throws instead of handing back the file when the server refuses the transcode', () async {
+      await expectLater(
+        initializeCappedPlayback(
+          preset: TranscodeQualityPreset.original,
+          bitrateKbps: refusedBitrateKbps,
+          height: 2160,
+          forceTranscode: true,
+          transcodeDecisionCode: 4002,
+        ),
+        throwsA(isA<PlaybackException>().having((e) => e.reason, 'reason', PlaybackFailureReason.noPlayableSource)),
+      );
+    });
+
+    test('leaves an unforced Original on direct play, as before', () async {
+      final run = await initializeCappedPlayback(
+        preset: TranscodeQualityPreset.original,
+        bitrateKbps: refusedBitrateKbps,
+        height: 2160,
+      );
+
+      expect(run.decisions, isEmpty);
+      expect(run.result.playMethod, 'DirectPlay');
+      expect(run.result.videoUrl, contains('/library/parts/99/file.mkv'));
+    });
+
+    test('an unforced refused transcode still falls back to the file, as before', () async {
+      final run = await initializeCappedPlayback(
+        preset: TranscodeQualityPreset.p1080_8mbps,
+        bitrateKbps: 49138,
+        height: 2160,
+        transcodeDecisionCode: 4002,
+      );
+
+      expect(run.decisions, hasLength(1));
+      expect(run.result.playMethod, 'DirectPlay');
+      expect(run.result.fallbackReason, TranscodeFallbackReason.decisionFailed);
+    });
   });
 
   group('a codec refused in settings (#2443)', () {

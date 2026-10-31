@@ -963,6 +963,7 @@
     "switchingToCompatiblePlayer": "Skifter til kompatibel afspiller...",
     "serverLimitTitle": "Afspilning mislykkedes",
     "serverLimitBody": "Serverfejl (HTTP 500). En båndbredde- eller transkodningsgrænse afviste sandsynligvis sessionen. Bed ejeren om at justere den.",
+    "serverLimitTranscode": "",
     "mediaUnreadableTitle": "Fil utilgængelig",
     "mediaUnreadableBody": "Serveren fandt dette emne, men kunne ikke læse filen (HTTP 404). Filen er sandsynligvis flyttet, slettet, eller dens lager er offline. Bed serverejeren om at kontrollere filen og scanne biblioteket igen.",
     "serverBusyTitle": "Stream er ikke tilgængelig",

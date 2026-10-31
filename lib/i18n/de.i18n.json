@@ -963,6 +963,7 @@
     "switchingToCompatiblePlayer": "Wechsel zu einem kompatiblen Player …",
     "serverLimitTitle": "Wiedergabe fehlgeschlagen",
     "serverLimitBody": "Serverfehler (HTTP 500). Vermutlich hat ein Bandbreiten- oder Transkodierungslimit diese Sitzung abgelehnt. Bitte den Besitzer, das Limit anzupassen.",
+    "serverLimitTranscode": "",
     "mediaUnreadableTitle": "Datei nicht verfügbar",
     "mediaUnreadableBody": "Der Server hat dieses Element gefunden, konnte seine Datei aber nicht lesen (HTTP 404). Die Datei wurde wahrscheinlich verschoben oder gelöscht, oder ihr Speicher ist offline. Bitte den Serverbesitzer, die Datei zu prüfen und die Mediathek neu zu scannen.",
     "serverBusyTitle": "Stream nicht verfügbar",

@@ -370,6 +370,7 @@ class _PlaybackOpenRequest {
     required this.qualityPreset,
     required this.audioStreamId,
     required this.resumePosition,
+    this.forceTranscode = false,
   });
 
   final MediaItem metadata;
@@ -379,13 +380,18 @@ class _PlaybackOpenRequest {
   final int? audioStreamId;
   final Duration? resumePosition;
 
+  /// A server transcode the viewer asked for after the server refused the
+  /// file itself (HTTP 500); see [PlaybackInitializationOptions.forceTranscode].
+  final bool forceTranscode;
+
   /// Same item and source selection; where it resumes from is incidental.
   bool sameSourceAs(_PlaybackOpenRequest other) =>
       metadata.globalKey == other.metadata.globalKey &&
       mediaIndex == other.mediaIndex &&
       mediaSourceId == other.mediaSourceId &&
       qualityPreset == other.qualityPreset &&
-      audioStreamId == other.audioStreamId;
+      audioStreamId == other.audioStreamId &&
+      forceTranscode == other.forceTranscode;
 
   _PlaybackOpenRequest resumingAt(Duration? position) => _PlaybackOpenRequest(
     metadata: metadata,
@@ -394,6 +400,7 @@ class _PlaybackOpenRequest {
     qualityPreset: qualityPreset,
     audioStreamId: audioStreamId,
     resumePosition: position,
+    forceTranscode: forceTranscode,
   );
 }
 
@@ -2719,6 +2726,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// deliberately retries a 503 (see `_applyNetworkStreamTuning`), and a
   /// transient status must never mask the fatal one that follows.
   final Set<int> _fatalHttpStatuses = <int>{};
+
+  /// The HTTP 500 dialog's transcode was already tried for the item on
+  /// screen, so a further 500 shows the dialog without it. Cleared when an
+  /// in-place reload opens another item.
+  bool _serverLimitFallbackUsed = false;
 
   /// Bounds an open the server keeps answering with HTTP 503 — that loop
   /// otherwise never raises an error (#1830). Armed from [_onPlayerLog],

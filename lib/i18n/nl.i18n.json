@@ -963,6 +963,7 @@
     "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler...",
     "serverLimitTitle": "Afspelen mislukt",
     "serverLimitBody": "Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.",
+    "serverLimitTranscode": "",
     "mediaUnreadableTitle": "Bestand niet beschikbaar",
     "mediaUnreadableBody": "De server heeft dit item gevonden maar kon het bestand niet lezen (HTTP 404). Het bestand is waarschijnlijk verplaatst of verwijderd, of de opslag is offline. Vraag de serverbeheerder om het bestand te controleren en de bibliotheek opnieuw te scannen.",
     "serverBusyTitle": "Stream niet beschikbaar",

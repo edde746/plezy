@@ -963,6 +963,7 @@
     "switchingToCompatiblePlayer": "Váltás kompatibilis lejátszóra...",
     "serverLimitTitle": "A lejátszás nem sikerült",
     "serverLimitBody": "Szerverhiba (HTTP 500). A munkamenetet valószínűleg egy sávszélességi vagy átkódolási korlát utasította el. Kérd meg a tulajdonost a korlát módosítására.",
+    "serverLimitTranscode": "",
     "mediaUnreadableTitle": "A fájl nem érhető el",
     "mediaUnreadableBody": "A szerver megtalálta ezt az elemet, de nem tudta beolvasni a fájlját (HTTP 404). A fájl valószínűleg áthelyezésre vagy törlésre került, vagy a tárhelye offline. Kérje meg a szerver tulajdonosát, hogy ellenőrizze a fájlt, és vizsgálja újra a könyvtárat.",
     "serverBusyTitle": "A stream nem érhető el",

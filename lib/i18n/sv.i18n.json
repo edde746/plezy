@@ -963,6 +963,7 @@
     "switchingToCompatiblePlayer": "Byter till kompatibel spelare...",
     "serverLimitTitle": "Uppspelningen misslyckades",
     "serverLimitBody": "Serverfel (HTTP 500). En bandbredds-/transkodningsgräns avvisade troligen sessionen. Be ägaren justera den.",
+    "serverLimitTranscode": "",
     "mediaUnreadableTitle": "Filen är otillgänglig",
     "mediaUnreadableBody": "Servern hittade objektet men kunde inte läsa dess fil (HTTP 404). Filen har troligen flyttats, tagits bort eller så är dess lagring offline. Be serverägaren kontrollera filen och skanna om biblioteket.",
     "serverBusyTitle": "Strömmen är inte tillgänglig",
