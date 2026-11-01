@@ -334,4 +334,94 @@ void main() {
     expect(localProvider.file.path, file.path);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('retains higher-res image when layout shrinks to avoid server re-transcode', (tester) async {
+    final sizeNotifier = ValueNotifier<Size>(const Size(300, 450));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: ValueListenableBuilder<Size>(
+            valueListenable: sizeNotifier,
+            builder: (context, size, _) => SizedBox(
+              width: size.width,
+              height: size.height,
+              child: const OptimizedMediaImage.poster(
+                imagePath: 'https://jf.example/Items/1/Images/Primary?api_key=token',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    var image = tester.widget<Image>(find.byType(Image));
+    var resizeProvider = image.image as ResizeImage;
+    var cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+    final initialUrl = cachedProvider.url;
+
+    // Shrink layout dimensions (e.g. window resized smaller)
+    sizeNotifier.value = const Size(100, 150);
+    await tester.pump();
+
+    image = tester.widget<Image>(find.byType(Image));
+    resizeProvider = image.image as ResizeImage;
+    cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+
+    // URL must not be downgraded to a smaller tier; retains higher-res image!
+    expect(cachedProvider.url, equals(initialUrl));
+  });
+
+  testWidgets('debounces upgrade when layout expands during rapid resize', (tester) async {
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final sizeNotifier = ValueNotifier<Size>(const Size(100, 150));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: ValueListenableBuilder<Size>(
+            valueListenable: sizeNotifier,
+            builder: (context, size, _) => SizedBox(
+              width: size.width,
+              height: size.height,
+              child: const OptimizedMediaImage.poster(
+                imagePath: 'https://jf.example/Items/1/Images/Primary?api_key=token',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    var image = tester.widget<Image>(find.byType(Image));
+    var resizeProvider = image.image as ResizeImage;
+    var cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+    final initialUrl = cachedProvider.url;
+
+    // Enlarge layout dimensions (e.g. window dragging larger)
+    sizeNotifier.value = const Size(300, 450);
+    await tester.pump(); // immediate frame
+
+    image = tester.widget<Image>(find.byType(Image));
+    resizeProvider = image.image as ResizeImage;
+    cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+
+    // Immediately after frame, URL remains stable (no intermediate request)
+    expect(cachedProvider.url, equals(initialUrl));
+
+    // After debounce settles (250ms), upgrades to higher tier
+    await tester.pump(const Duration(milliseconds: 300));
+
+    image = tester.widget<Image>(find.byType(Image));
+    resizeProvider = image.image as ResizeImage;
+    cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+
+    expect(cachedProvider.url, isNot(equals(initialUrl)));
+  });
 }

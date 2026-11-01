@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -54,7 +55,7 @@ Widget _withArtworkDim(Animation<double>? dim, Widget Function(Color? tint) buil
   );
 }
 
-class OptimizedMediaImage extends StatelessWidget {
+class OptimizedMediaImage extends StatefulWidget {
   final MediaServerClient? client;
   final String? imagePath;
   final double? width;
@@ -191,35 +192,56 @@ class OptimizedMediaImage extends StatelessWidget {
          artworkDim: artworkDim,
        );
 
-  /// Whether both width and height are explicitly set to finite positive values,
-  /// meaning we can skip the LayoutBuilder.
-  bool get _hasKnownDimensions =>
-      width != null && width!.isFinite && width! > 0 && height != null && height!.isFinite && height! > 0;
+  @override
+  State<OptimizedMediaImage> createState() => _OptimizedMediaImageState();
+}
 
-  /// Not a constructor parameter: the filter has to follow the fetch density,
-  /// not the call site.
-  FilterQuality _filterQuality(BuildContext context) => MediaImageHelper.artworkFilterQuality(context, imageType);
+class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
+  double? _renderedWidth;
+  double? _renderedHeight;
+  String? _currentImageUrl;
+  int? _currentMemWidth;
+  int? _currentMemHeight;
+  Timer? _debounceTimer;
+  String? _lastThumbPath;
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  bool get _hasKnownDimensions =>
+      widget.width != null &&
+      widget.width!.isFinite &&
+      widget.width! > 0 &&
+      widget.height != null &&
+      widget.height!.isFinite &&
+      widget.height! > 0;
+
+  FilterQuality _filterQuality(BuildContext context) =>
+      MediaImageHelper.artworkFilterQuality(context, widget.imageType);
 
   @override
   Widget build(BuildContext context) {
-    final path = localFilePath;
+    final path = widget.localFilePath;
     if (path == null) {
       return _buildResolved(context, LocalFileResolution.missing, null);
     }
-    return ResolvedLocalFile(path: path, cacheMissing: cacheMissingLocalFile, builder: _buildResolved);
+    return ResolvedLocalFile(path: path, cacheMissing: widget.cacheMissingLocalFile, builder: _buildResolved);
   }
 
   Widget _buildResolved(BuildContext context, LocalFileResolution resolution, File? localFile) {
     if (resolution == LocalFileResolution.pending) {
-      return placeholder == null
+      return widget.placeholder == null
           ? _surfacePlaceholder(context)
-          : _buildPlaceholder(context, imagePath ?? localFilePath ?? '');
+          : _buildPlaceholder(context, widget.imagePath ?? widget.localFilePath ?? '');
     }
     final hasLocal = resolution == LocalFileResolution.present;
 
-    if (!hasLocal && (imagePath == null || imagePath!.isEmpty)) {
-      if (errorWidget != null) {
-        return errorWidget!(context, localFilePath ?? '', UnresolvedImageUrl(localFilePath ?? imagePath ?? ''));
+    if (!hasLocal && (widget.imagePath == null || widget.imagePath!.isEmpty)) {
+      if (widget.errorWidget != null) {
+        return widget.errorWidget!(context, widget.localFilePath ?? '', UnresolvedImageUrl(widget.localFilePath ?? widget.imagePath ?? ''));
       }
       return _buildFallback(context);
     }
@@ -227,16 +249,16 @@ class OptimizedMediaImage extends StatelessWidget {
     if (_hasKnownDimensions) {
       return blurArtwork(
         hasLocal
-            ? _buildLocalFileImage(context, localFile!, width!, height!)
-            : _buildCachedImage(context, width!, height!),
+            ? _buildLocalFileImage(context, localFile!, widget.width!, widget.height!)
+            : _buildCachedImage(context, widget.width!, widget.height!),
       );
     }
 
     return blurArtwork(
       LayoutBuilder(
         builder: (context, constraints) {
-          final effectiveWidth = _resolvedDimension(width, constraints.maxWidth, 300.0);
-          final effectiveHeight = _resolvedDimension(height, constraints.maxHeight, 450.0);
+          final effectiveWidth = _resolvedDimension(widget.width, constraints.maxWidth, 300.0);
+          final effectiveHeight = _resolvedDimension(widget.height, constraints.maxHeight, 450.0);
           return hasLocal
               ? _buildLocalFileImage(context, localFile!, effectiveWidth, effectiveHeight)
               : _buildCachedImage(context, effectiveWidth, effectiveHeight);
@@ -246,37 +268,37 @@ class OptimizedMediaImage extends StatelessWidget {
   }
 
   Widget _buildLocalFileImage(BuildContext context, File file, double effectiveWidth, double effectiveHeight) {
-    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: imageType);
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: widget.imageType);
     final scaledWidth = effectiveWidth * pixelRatio;
     final scaledHeight = effectiveHeight * pixelRatio;
     final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
-      imageType: imageType,
+      imageType: widget.imageType,
     );
     final bounded = MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight);
-    final provider = logoToneTarget == null
+    final provider = widget.logoToneTarget == null
         ? bounded
-        : ToneMappedLogoImage(bounded, target: logoToneTarget!, remapMixed: logoToneRemapMixed);
+        : ToneMappedLogoImage(bounded, target: widget.logoToneTarget!, remapMixed: widget.logoToneRemapMixed);
 
     return _withArtworkDim(
-      artworkDim,
+      widget.artworkDim,
       (tint) => Image(
         image: provider,
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         // Artwork is decorative: the enclosing card exposes one merged node
         // with the title, and a per-image node just grows the semantics tree
         // the TV a11y services make Flutter rebuild every frame.
         excludeFromSemantics: true,
-        fit: fit,
+        fit: widget.fit,
         filterQuality: _filterQuality(context),
-        alignment: alignment,
+        alignment: widget.alignment,
         color: tint,
         colorBlendMode: tint == null ? null : BlendMode.srcATop,
         errorBuilder: (context, error, stackTrace) {
-          if (errorWidget != null) {
-            return errorWidget!(context, file.path, error);
+          if (widget.errorWidget != null) {
+            return widget.errorWidget!(context, file.path, error);
           }
           return _buildErrorWidget(context, error);
         },
@@ -298,56 +320,101 @@ class OptimizedMediaImage extends StatelessWidget {
   }
 
   Widget _buildCachedImage(BuildContext context, double effectiveWidth, double effectiveHeight) {
-    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: imageType);
+    if (widget.imagePath != _lastThumbPath) {
+      _lastThumbPath = widget.imagePath;
+      _debounceTimer?.cancel();
+      _debounceTimer = null;
+      _renderedWidth = null;
+      _renderedHeight = null;
+      _currentImageUrl = null;
+      _currentMemWidth = null;
+      _currentMemHeight = null;
+    }
 
-    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-      client: client,
-      thumbPath: imagePath,
-      maxWidth: effectiveWidth,
-      maxHeight: effectiveHeight,
-      pixelRatio: pixelRatio,
-      imageType: imageType,
-    );
+    double renderWidth = effectiveWidth;
+    double renderHeight = effectiveHeight;
+
+    if (_currentImageUrl != null && _renderedWidth != null && _renderedHeight != null) {
+      if (effectiveWidth <= _renderedWidth! && effectiveHeight <= _renderedHeight!) {
+        // Shrink protection: retain higher-res loaded image when resizing smaller
+        renderWidth = _renderedWidth!;
+        renderHeight = _renderedHeight!;
+      } else {
+        // Upscale expansion: debounce upgrade to avoid transcode storms during window drag
+        final targetW = effectiveWidth;
+        final targetH = effectiveHeight;
+        if (_debounceTimer?.isActive != true) {
+          _debounceTimer = Timer(const Duration(milliseconds: 250), () {
+            if (mounted) {
+              setState(() {
+                _renderedWidth = targetW;
+                _renderedHeight = targetH;
+                _currentImageUrl = null;
+              });
+            }
+          });
+        }
+        renderWidth = _renderedWidth!;
+        renderHeight = _renderedHeight!;
+      }
+    }
+
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: widget.imageType);
+
+    final imageUrl = _currentImageUrl ??
+        MediaImageHelper.getOptimizedImageUrl(
+          client: widget.client,
+          thumbPath: widget.imagePath,
+          maxWidth: renderWidth,
+          maxHeight: renderHeight,
+          pixelRatio: pixelRatio,
+          imageType: widget.imageType,
+        );
 
     if (imageUrl.isEmpty) {
-      // An unresolvable URL (no client, offline, suppressed transcode) is a
-      // load failure from the caller's point of view, so honour its own
-      // failure UI rather than the generic broken-image tile.
-      if (errorWidget != null) {
-        return errorWidget!(context, imagePath ?? '', UnresolvedImageUrl(imagePath ?? ''));
+      if (widget.errorWidget != null) {
+        return widget.errorWidget!(context, widget.imagePath ?? '', UnresolvedImageUrl(widget.imagePath ?? ''));
       }
       return _buildFallback(context);
     }
 
-    final scaledWidth = effectiveWidth * pixelRatio;
-    final scaledHeight = effectiveHeight * pixelRatio;
-    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
-      displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
-      displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
-      imageType: imageType,
-    );
+    final scaledWidth = renderWidth * pixelRatio;
+    final scaledHeight = renderHeight * pixelRatio;
+    final (memWidth, memHeight) = (_currentMemWidth != null && _currentMemHeight != null)
+        ? (_currentMemWidth!, _currentMemHeight!)
+        : MediaImageHelper.getMemCacheDimensions(
+            displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
+            displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
+            imageType: widget.imageType,
+          );
+
+    _renderedWidth = renderWidth;
+    _renderedHeight = renderHeight;
+    _currentImageUrl = imageUrl;
+    _currentMemWidth = memWidth;
+    _currentMemHeight = memHeight;
 
     final resizedProvider = MediaImageHelper.serverArtworkProvider(
       imageUrl: imageUrl,
       memWidth: memWidth,
       memHeight: memHeight,
-      logoToneTarget: logoToneTarget,
-      logoToneRemapMixed: logoToneRemapMixed,
+      logoToneTarget: widget.logoToneTarget,
+      logoToneRemapMixed: widget.logoToneRemapMixed,
     );
 
     // Reduced tier: swap in directly, no fade machinery at all.
     if (DevicePerformance.isReduced) {
       return _withArtworkDim(
-        artworkDim,
+        widget.artworkDim,
         (tint) => Image(
           image: resizedProvider,
-          width: width,
-          height: height,
+          width: widget.width,
+          height: widget.height,
           // Decorative — see the Image.file branch.
           excludeFromSemantics: true,
-          fit: fit,
+          fit: widget.fit,
           filterQuality: _filterQuality(context),
-          alignment: alignment,
+          alignment: widget.alignment,
           color: tint,
           colorBlendMode: tint == null ? null : BlendMode.srcATop,
           errorBuilder: _networkErrorBuilder(imageUrl),
@@ -361,15 +428,15 @@ class OptimizedMediaImage extends StatelessWidget {
 
     return _FadeInNetworkImage(
       image: resizedProvider,
-      width: width,
-      height: height,
-      fit: fit,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
       filterQuality: _filterQuality(context),
-      alignment: alignment,
-      duration: fadeInDuration,
+      alignment: widget.alignment,
+      duration: widget.fadeInDuration,
       placeholderBuilder: (context) => _buildPlaceholder(context, imageUrl),
       errorBuilder: _networkErrorBuilder(imageUrl),
-      artworkDim: artworkDim,
+      artworkDim: widget.artworkDim,
     );
   }
 
@@ -382,8 +449,8 @@ class OptimizedMediaImage extends StatelessWidget {
         _imageFailureCount = 0;
         _lastFailureLog = now;
       }
-      if (errorWidget != null) {
-        return errorWidget!(context, imageUrl, error);
+      if (widget.errorWidget != null) {
+        return widget.errorWidget!(context, imageUrl, error);
       }
       return _buildErrorWidget(context, error);
     };
@@ -394,10 +461,10 @@ class OptimizedMediaImage extends StatelessWidget {
     final baseSurfaceColor = theme.surfaceContainerHighest;
     final baseIconColor = iconColor ?? theme.onSurfaceVariant;
     return _withArtworkDim(
-      artworkDim,
+      widget.artworkDim,
       (tint) => Container(
-        width: fillParent ? null : width,
-        height: fillParent ? null : height,
+        width: fillParent ? null : widget.width,
+        height: fillParent ? null : widget.height,
         color: tint == null ? baseSurfaceColor : Color.alphaBlend(tint, baseSurfaceColor),
         child: icon == null
             ? null
@@ -414,13 +481,13 @@ class OptimizedMediaImage extends StatelessWidget {
   }
 
   Widget _buildPlaceholder(BuildContext context, String imageUrl) {
-    final customPlaceholder = placeholder?.call(context, imageUrl);
+    final customPlaceholder = widget.placeholder?.call(context, imageUrl);
     if (customPlaceholder == null) {
-      return _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
+      return _surfacePlaceholder(context, icon: widget.fallbackIcon, iconColor: Colors.white54);
     }
-    if (artworkDim == null) return customPlaceholder;
+    if (widget.artworkDim == null) return customPlaceholder;
     return _withArtworkDim(
-      artworkDim,
+      widget.artworkDim,
       (tint) => Stack(
         fit: StackFit.passthrough,
         children: [
@@ -436,12 +503,12 @@ class OptimizedMediaImage extends StatelessWidget {
 
   Widget _buildErrorWidget(BuildContext context, dynamic _) => _surfacePlaceholder(
     context,
-    icon: fallbackIcon ?? Symbols.broken_image_rounded,
+    icon: widget.fallbackIcon ?? Symbols.broken_image_rounded,
     fillParent: !_hasKnownDimensions,
   );
 
   Widget _buildFallback(BuildContext context) =>
-      _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.image_not_supported_rounded);
+      _surfacePlaceholder(context, icon: widget.fallbackIcon ?? Symbols.image_not_supported_rounded);
 }
 
 /// Clear-logo artwork for hero and detail headers.
