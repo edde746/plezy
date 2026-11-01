@@ -528,21 +528,22 @@ class StorageService extends BaseSharedPreferencesService {
     await _clearKeysWithPrefix(_prefixPlexHomeUsers);
   }
 
-  // Per-connection Bonfire/JellyProfiles cache. Like Plex Home profiles,
+  // Per-server-machine Bonfire/JellyProfiles cache (keyed by the Jellyfin
+  // machine id, not a connection row id). Like Plex Home profiles,
   // Bonfire profiles are not persisted as Profile rows — they're fetched
   // live by [BonfireProfileService] and cached here so the picker can paint
   // immediately on cold start. Stored as a JSON list of [BonfireProfile]
   // payloads, no TTL — the service refreshes in the background.
-  Future<void> setBonfireProfilesCacheJson(String connectionId, String json) async {
-    await prefs.setString('$_prefixBonfireProfiles$connectionId', json);
+  Future<void> setBonfireProfilesCacheJson(String machineId, String json) async {
+    await prefs.setString('$_prefixBonfireProfiles$machineId', json);
   }
 
-  String? getBonfireProfilesCacheJson(String connectionId) {
-    return readNullableString('$_prefixBonfireProfiles$connectionId');
+  String? getBonfireProfilesCacheJson(String machineId) {
+    return readNullableString('$_prefixBonfireProfiles$machineId');
   }
 
-  Future<void> clearBonfireProfilesCache(String connectionId) async {
-    await prefs.remove('$_prefixBonfireProfiles$connectionId');
+  Future<void> clearBonfireProfilesCache(String machineId) async {
+    await prefs.remove('$_prefixBonfireProfiles$machineId');
   }
 
   Future<void> clearAllBonfireProfilesCache() async {

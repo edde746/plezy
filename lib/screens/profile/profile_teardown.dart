@@ -30,6 +30,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/global_key_utils.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../profiles/bonfire_service.dart';
 import '../auth_screen.dart';
 
 /// The collaborators every teardown flow needs, snapshotted from [context]
@@ -38,6 +39,7 @@ class SessionTeardownScope {
   final ActiveProfileProvider active;
   final ActiveProfileBinder binder;
   final PlexHomeService plexHome;
+  final BonfireProfileService bonfire;
   final ProfileRegistry profileRegistry;
   final ProfileConnectionRegistry profileConnections;
   final ConnectionRegistry connections;
@@ -63,6 +65,7 @@ class SessionTeardownScope {
     : active = context.read<ActiveProfileProvider>(),
       binder = context.read<ActiveProfileBinder>(),
       plexHome = context.read<PlexHomeService>(),
+      bonfire = context.read<BonfireProfileService>(),
       profileRegistry = context.read<ProfileRegistry>(),
       profileConnections = context.read<ProfileConnectionRegistry>(),
       connections = context.read<ConnectionRegistry>(),
@@ -381,6 +384,7 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   await scope.profileRegistry.clear();
   await scope.connections.clear();
   await scope.plexHome.clearAll();
+  await scope.bonfire.clearAll();
   await scope.storage.clearActiveProfileId();
   await scope.storage.clearAllProfileLastUsed();
   await scope.storage.clearAllUserScopedPreferences();

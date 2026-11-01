@@ -212,7 +212,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     final parentId =
         (_profile.isPlexHome || _profile.isJellyfinBonfire) ? _profile.parentConnectionId : null;
     if (parentId != null && parentId != excludingConnectionId) {
-      final parent = byId[parentId];
+      final parent = _profile.isJellyfinBonfire
+          ? jellyfinConnectionForServerId(byId, parentId)
+          : byId[parentId];
       if (parent != null) retained.addAll(_serverIdsForConnection(parent));
     }
     return retained;
@@ -469,16 +471,22 @@ class _ConnectionsListState extends State<_ConnectionsList> {
                         subtitle: Text(
                           profile.isJellyfinBonfire ? t.profiles.bonfireAccount : t.profiles.plexHomeAccount,
                         ),
-                        trailing: FocusablePopupMenuButton<String>(
-                          icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                          tooltip: t.profiles.manage,
-                          onSelected: (value) {
-                            if (value == 'sign_out') {
-                              unawaited(widget.onSignOutParent(parentConn));
-                            }
-                          },
-                          itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
-                        ),
+                        // Only Plex parents can be signed out from here. A
+                        // Bonfire parent is a Jellyfin login the server owns —
+                        // its sign-out lives on the connection's own settings
+                        // screen, so offering it here would be a dead control.
+                        trailing: parentConn is PlexAccountConnection
+                            ? FocusablePopupMenuButton<String>(
+                                icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                                tooltip: t.profiles.manage,
+                                onSelected: (value) {
+                                  if (value == 'sign_out') {
+                                    unawaited(widget.onSignOutParent(parentConn));
+                                  }
+                                },
+                                itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
+                              )
+                            : null,
                       ),
                     for (final pc in visiblePcs)
                       if (byId[pc.connectionId] case final conn?)

@@ -474,6 +474,7 @@ class _MainScreenState extends State<MainScreen>
   /// observe its [ActiveProfileProvider.isBinding] state for the once-only
   /// priming below.
   PlexHomeService? _plexHomeService;
+  BonfireProfileService? _bonfireService;
   ActiveProfileProvider? _activeProfileForListener;
   String? _lastSeenProfileId;
   // Tracks ActiveProfileProvider.isBinding from the previous notification
@@ -599,7 +600,7 @@ class _MainScreenState extends State<MainScreen>
         // Same live/network entry point for Bonfire/JellyProfiles virtual
         // profiles; `_handleOfflineStatusChanged` starts it on a later online
         // transition, and `start()` is idempotent.
-        unawaited(context.read<BonfireProfileService>().start());
+        unawaited((_bonfireService ??= context.read<BonfireProfileService>()).start());
       }
       final manager = context.read<MultiServerProvider>().serverManager;
       // Read the binder so the Provider's `lazy: false` create has fired for
@@ -1397,7 +1398,7 @@ class _MainScreenState extends State<MainScreen>
       final plexHome = _plexHomeService ??= context.read<PlexHomeService>();
       unawaited(plexHome.start());
       // Same lifecycle for Bonfire/JellyProfiles virtual profiles.
-      unawaited(context.read<BonfireProfileService>().start());
+      unawaited((_bonfireService ??= context.read<BonfireProfileService>()).start());
       unawaited(() async {
         final mp = context.read<MultiServerProvider>();
         final binder = context.read<ActiveProfileBinder>();
