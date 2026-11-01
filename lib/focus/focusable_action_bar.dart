@@ -344,7 +344,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
           child:
               customChild ??
               Container(
-                decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: 20),
+                decoration: FocusTheme.focusBackgroundDecoration(context, isFocused: showFocus, borderRadius: 20),
                 child:
                     action.child ??
                     IconButton(

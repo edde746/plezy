@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focus_theme.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/platform_detector.dart';
@@ -46,6 +47,7 @@ class WatchTogetherSessionIndicator extends StatelessWidget {
       descendantsAreFocusable: false,
       borderRadius: 20,
       useBackgroundFocus: true,
+      focusColor: FocusTheme.onMediaFocusFill,
       child: Material(
         color: Colors.black54,
         borderRadius: const BorderRadius.all(Radius.circular(20)),

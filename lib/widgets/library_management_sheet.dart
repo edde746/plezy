@@ -563,7 +563,11 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
           mainAxisSize: .min,
           children: [
             Container(
-              decoration: FocusTheme.focusBackgroundDecoration(isFocused: isVisibilityButtonFocused, borderRadius: 20),
+              decoration: FocusTheme.focusBackgroundDecoration(
+                context,
+                isFocused: isVisibilityButtonFocused,
+                borderRadius: 20,
+              ),
               child: IconButton(
                 icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
                 tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
@@ -572,7 +576,11 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
             ),
             if (_hasLibraryMenu(library))
               Container(
-                decoration: FocusTheme.focusBackgroundDecoration(isFocused: isOptionsButtonFocused, borderRadius: 20),
+                decoration: FocusTheme.focusBackgroundDecoration(
+                  context,
+                  isFocused: isOptionsButtonFocused,
+                  borderRadius: 20,
+                ),
                 child: IconButton(
                   icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
                   tooltip: t.libraries.libraryOptions,

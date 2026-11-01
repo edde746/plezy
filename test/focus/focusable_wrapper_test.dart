@@ -6,8 +6,10 @@ import 'package:flutter/semantics.dart' show SemanticsNode;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/card_focus_scope.dart';
+import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/theme/mono_theme.dart';
 
 void main() {
   Finder chromeIn(Type type) => find.descendant(of: find.byType(FocusableWrapper), matching: find.byType(type));
@@ -257,6 +259,51 @@ void main() {
 
     expect(longPressed, 1);
     expect(selected, 1);
+  });
+
+  Future<Color> focusedFill(WidgetTester tester, MonoPalette palette, {Color? focusColor}) async {
+    final node = FocusNode(debugLabel: 'tile');
+    addTearDown(node.dispose);
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          theme: monoTheme(palette),
+          home: Scaffold(
+            body: FocusableWrapper(
+              focusNode: node,
+              useBackgroundFocus: true,
+              focusColor: focusColor,
+              onSelect: () {},
+              child: const SizedBox(width: 100, height: 40),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    node.requestFocus();
+    await tester.pumpAndSettle();
+
+    return (tester.widget<AnimatedContainer>(chromeIn(AnimatedContainer)).decoration! as BoxDecoration).color!;
+  }
+
+  double contrastOver(Color fill, Color backdrop) =>
+      (Color.alphaBlend(fill, backdrop).computeLuminance() - backdrop.computeLuminance()).abs();
+
+  testWidgets('background focus fill stands out on light and dark card surfaces (#2929)', (tester) async {
+    for (final palette in [MonoPalette.light, MonoPalette.paper, MonoPalette.dark]) {
+      final fill = await focusedFill(tester, palette);
+      expect(
+        contrastOver(fill, palette.surface),
+        greaterThan(0.02),
+        reason: 'focus fill vanished on surface ${palette.surface}',
+      );
+    }
+  });
+
+  testWidgets('on-media background focus stays visible over video under a light theme', (tester) async {
+    final fill = await focusedFill(tester, MonoPalette.light, focusColor: FocusTheme.onMediaFocusFill);
+    expect(contrastOver(fill, Colors.black), greaterThan(0.02));
   });
 
   testWidgets('focus scale animation keeps child semantics geometry stable', (tester) async {
