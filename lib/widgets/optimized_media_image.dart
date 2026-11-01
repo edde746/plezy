@@ -197,13 +197,24 @@ class OptimizedMediaImage extends StatefulWidget {
 }
 
 class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
-  double? _renderedWidth;
-  double? _renderedHeight;
-  String? _currentImageUrl;
-  int? _currentMemWidth;
-  int? _currentMemHeight;
+  double? _committedWidth;
+  double? _committedHeight;
+  (int, int)? _pendingTargetBucket;
   Timer? _debounceTimer;
-  String? _lastThumbPath;
+
+  @override
+  void didUpdateWidget(OptimizedMediaImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imagePath != widget.imagePath ||
+        oldWidget.imageType != widget.imageType ||
+        oldWidget.client != widget.client) {
+      _debounceTimer?.cancel();
+      _debounceTimer = null;
+      _pendingTargetBucket = null;
+      _committedWidth = null;
+      _committedHeight = null;
+    }
+  }
 
   @override
   void dispose() {
@@ -211,6 +222,8 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
     super.dispose();
   }
 
+  /// Whether both width and height are explicitly set to finite positive values,
+  /// meaning we can skip the LayoutBuilder.
   bool get _hasKnownDimensions =>
       widget.width != null &&
       widget.width!.isFinite &&
@@ -219,6 +232,8 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
       widget.height!.isFinite &&
       widget.height! > 0;
 
+  /// Not a constructor parameter: the filter has to follow the fetch density,
+  /// not the call site.
   FilterQuality _filterQuality(BuildContext context) =>
       MediaImageHelper.artworkFilterQuality(context, widget.imageType);
 
@@ -241,7 +256,11 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
 
     if (!hasLocal && (widget.imagePath == null || widget.imagePath!.isEmpty)) {
       if (widget.errorWidget != null) {
-        return widget.errorWidget!(context, widget.localFilePath ?? '', UnresolvedImageUrl(widget.localFilePath ?? widget.imagePath ?? ''));
+        return widget.errorWidget!(
+          context,
+          widget.localFilePath ?? '',
+          UnresolvedImageUrl(widget.localFilePath ?? widget.imagePath ?? ''),
+        );
       }
       return _buildFallback(context);
     }
@@ -320,58 +339,82 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
   }
 
   Widget _buildCachedImage(BuildContext context, double effectiveWidth, double effectiveHeight) {
-    if (widget.imagePath != _lastThumbPath) {
-      _lastThumbPath = widget.imagePath;
-      _debounceTimer?.cancel();
-      _debounceTimer = null;
-      _renderedWidth = null;
-      _renderedHeight = null;
-      _currentImageUrl = null;
-      _currentMemWidth = null;
-      _currentMemHeight = null;
-    }
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: widget.imageType);
 
     double renderWidth = effectiveWidth;
     double renderHeight = effectiveHeight;
 
-    if (_currentImageUrl != null && _renderedWidth != null && _renderedHeight != null) {
-      if (effectiveWidth <= _renderedWidth! && effectiveHeight <= _renderedHeight!) {
-        // Shrink protection: retain higher-res loaded image when resizing smaller
-        renderWidth = _renderedWidth!;
-        renderHeight = _renderedHeight!;
-      } else {
-        // Upscale expansion: debounce upgrade to avoid transcode storms during window drag
-        final targetW = effectiveWidth;
-        final targetH = effectiveHeight;
-        if (_debounceTimer?.isActive != true) {
+    if (DevicePerformance.isReduced) {
+      // Reduced tier: skip shrink retention to preserve tight RAM budgets.
+      _debounceTimer?.cancel();
+      _debounceTimer = null;
+      _pendingTargetBucket = null;
+      _committedWidth = effectiveWidth;
+      _committedHeight = effectiveHeight;
+    } else if (_committedWidth == null || _committedHeight == null) {
+      _committedWidth = effectiveWidth;
+      _committedHeight = effectiveHeight;
+    } else {
+      final (committedBucketWidth, committedBucketHeight) = MediaImageHelper.calculateOptimalDimensions(
+        maxWidth: _committedWidth!,
+        maxHeight: _committedHeight!,
+        pixelRatio: pixelRatio,
+        imageType: widget.imageType,
+      );
+
+      final (targetBucketWidth, targetBucketHeight) = MediaImageHelper.calculateOptimalDimensions(
+        maxWidth: effectiveWidth,
+        maxHeight: effectiveHeight,
+        pixelRatio: pixelRatio,
+        imageType: widget.imageType,
+      );
+
+      if (targetBucketWidth > committedBucketWidth || targetBucketHeight > committedBucketHeight) {
+        // Layout expanded to a larger bucket: debounce the upgrade so live drags
+        // don't hammer the media server with an upgrade on every bucket boundary.
+        final targetBucket = (targetBucketWidth, targetBucketHeight);
+        if (_pendingTargetBucket != targetBucket) {
+          _pendingTargetBucket = targetBucket;
+          _debounceTimer?.cancel();
+          final nextWidth = effectiveWidth;
+          final nextHeight = effectiveHeight;
           _debounceTimer = Timer(const Duration(milliseconds: 250), () {
             if (mounted) {
               setState(() {
-                _renderedWidth = targetW;
-                _renderedHeight = targetH;
-                _currentImageUrl = null;
+                _committedWidth = nextWidth;
+                _committedHeight = nextHeight;
+                _debounceTimer = null;
+                _pendingTargetBucket = null;
               });
             }
           });
         }
-        renderWidth = _renderedWidth!;
-        renderHeight = _renderedHeight!;
+        renderWidth = _committedWidth!;
+        renderHeight = _committedHeight!;
+      } else {
+        // Layout shrunk or stayed in the same bucket: cancel any pending upgrade
+        // and retain the larger committed size.
+        _debounceTimer?.cancel();
+        _debounceTimer = null;
+        _pendingTargetBucket = null;
+        renderWidth = _committedWidth!;
+        renderHeight = _committedHeight!;
       }
     }
 
-    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: widget.imageType);
-
-    final imageUrl = _currentImageUrl ??
-        MediaImageHelper.getOptimizedImageUrl(
-          client: widget.client,
-          thumbPath: widget.imagePath,
-          maxWidth: renderWidth,
-          maxHeight: renderHeight,
-          pixelRatio: pixelRatio,
-          imageType: widget.imageType,
-        );
+    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+      client: widget.client,
+      thumbPath: widget.imagePath,
+      maxWidth: renderWidth,
+      maxHeight: renderHeight,
+      pixelRatio: pixelRatio,
+      imageType: widget.imageType,
+    );
 
     if (imageUrl.isEmpty) {
+      // An unresolvable URL (no client, offline, suppressed transcode) is a
+      // load failure from the caller's point of view, so honour its own
+      // failure UI rather than the generic broken-image tile.
       if (widget.errorWidget != null) {
         return widget.errorWidget!(context, widget.imagePath ?? '', UnresolvedImageUrl(widget.imagePath ?? ''));
       }
@@ -380,19 +423,11 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
 
     final scaledWidth = renderWidth * pixelRatio;
     final scaledHeight = renderHeight * pixelRatio;
-    final (memWidth, memHeight) = (_currentMemWidth != null && _currentMemHeight != null)
-        ? (_currentMemWidth!, _currentMemHeight!)
-        : MediaImageHelper.getMemCacheDimensions(
-            displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
-            displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
-            imageType: widget.imageType,
-          );
-
-    _renderedWidth = renderWidth;
-    _renderedHeight = renderHeight;
-    _currentImageUrl = imageUrl;
-    _currentMemWidth = memWidth;
-    _currentMemHeight = memHeight;
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
+      displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
+      displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
+      imageType: widget.imageType,
+    );
 
     final resizedProvider = MediaImageHelper.serverArtworkProvider(
       imageUrl: imageUrl,
