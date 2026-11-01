@@ -1321,6 +1321,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     newSubtitleChoice: newSubtitleChoice,
   );
 
+  /// A pick in the player's audio list, which the controls make only once a
+  /// live native player has started.
+  @visibleForTesting
+  Future<void> debugPickAudioTrackForTesting(AudioTrack track) => _onAudioTrackChanged(track);
+
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
       _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
