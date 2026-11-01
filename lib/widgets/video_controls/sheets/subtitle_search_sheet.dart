@@ -8,6 +8,7 @@ import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_text_field.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../media/media_version.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
 import '../../../services/settings_service.dart';
@@ -28,6 +29,20 @@ String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Lo
   return LanguageCodes.getIso6391Code(savedLanguageCode ?? '') ??
       LanguageCodes.getIso6391Code(systemLocale.languageCode) ??
       'en';
+}
+
+/// Filename (no directory, no extension) of the part [partId] names, else of
+/// the first part with a known file. Null when Plex hides paths (restricted
+/// users) or the item has no file metadata.
+@visibleForTesting
+String? subtitleSearchFilename(List<MediaVersion> versions, {String? partId}) {
+  final parts = [for (final v in versions) ...v.parts.where((p) => p.file?.isNotEmpty ?? false)];
+  if (parts.isEmpty) return null;
+  final file = parts.firstWhere((p) => p.id == partId, orElse: () => parts.first).file!;
+  // Server paths may be POSIX or Windows, whatever the client platform.
+  final name = file.split(RegExp(r'[/\\]')).last;
+  final dot = name.lastIndexOf('.');
+  return dot > 0 ? name.substring(0, dot) : name;
 }
 
 class SubtitleSearchSheet extends StatefulWidget {
@@ -70,7 +85,27 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   void initState() {
     super.initState();
     _initDefaultLanguage();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _search());
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_initialSearch()));
+  }
+
+  Future<void> _initialSearch() async {
+    if (SettingsService.instanceOrNull?.read(SettingsService.subtitleSearchByFilename) ?? false) {
+      final filename = await _playingFilename();
+      if (filename != null && mounted && _titleController.text.isEmpty) _titleController.text = filename;
+    }
+    await _search();
+  }
+
+  /// Falls back to a title search (null) when the file can't be resolved.
+  Future<String?> _playingFilename() async {
+    try {
+      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
+      if (client == null) return null;
+      final data = await client.getVideoPlaybackData(widget.ratingKey);
+      return subtitleSearchFilename(data.availableVersions, partId: data.mediaInfo?.partId?.toString());
+    } catch (_) {
+      return null;
+    }
   }
 
   void _initDefaultLanguage() {

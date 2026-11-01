@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -34,6 +36,44 @@ void main() {
 
     test('falls back to English when saved and system languages are invalid', () {
       expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'zz', systemLocale: const Locale('xx')), 'en');
+    });
+  });
+
+  group('subtitleSearchFilename', () {
+    MediaVersion version(String id, List<MediaPart> parts) => MediaVersion(id: id, parts: parts);
+
+    test('strips directory and extension from POSIX and Windows paths', () {
+      expect(
+        subtitleSearchFilename([
+          version('1', const [MediaPart(id: '10', file: '/media/Movies/Movie (2020)/Movie.2020.1080p.BluRay.mkv')]),
+        ]),
+        'Movie.2020.1080p.BluRay',
+      );
+      expect(
+        subtitleSearchFilename([
+          version('1', const [MediaPart(id: '10', file: r'D:\TV\Show\Show.S01E02.WEB-DL.mp4')]),
+        ]),
+        'Show.S01E02.WEB-DL',
+      );
+    });
+
+    test('prefers the playing part, else the first part with a file', () {
+      final versions = [
+        version('1', const [MediaPart(id: '10'), MediaPart(id: '11', file: '/a/first.mkv')]),
+        version('2', const [MediaPart(id: '20', file: '/a/second.mkv')]),
+      ];
+      expect(subtitleSearchFilename(versions, partId: '20'), 'second');
+      expect(subtitleSearchFilename(versions, partId: '99'), 'first');
+    });
+
+    test('returns null when no part exposes a file', () {
+      expect(
+        subtitleSearchFilename([
+          version('1', const [MediaPart(id: '10', file: '')]),
+        ]),
+        isNull,
+      );
+      expect(subtitleSearchFilename(const []), isNull);
     });
   });
 
