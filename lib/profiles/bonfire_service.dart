@@ -34,11 +34,13 @@ Future<String> bonfireMasterAuthHeader(JellyfinConnection connection) async {
 }
 
 /// Fetches the Bonfire profile list for one MediaBrowser [connection] using
-/// its master token. Returns `null` when the Bonfire plugin is absent or the
-/// server answers in a shape that is not the plugin's list — the plugin is an
-/// optional install, so "not there" must be a quiet, cacheable outcome rather
-/// than an error. A `401` also maps to `null`: the binder's bind path is what
-/// surfaces token expiry to the user, not discovery.
+/// its master token. The answer distinguishes the two failure kinds the
+/// service must treat differently: an empty list is a *definitive* absence
+/// (the plugin route is not on this server — safe to cache as "no Bonfire"),
+/// while `null` means "no answer" (transport failure, token expiry, a 5xx,
+/// or a body that isn't the plugin's list) and must not evict a cached
+/// installation. Token expiry surfaces to the user through the binder's bind
+/// path, not through discovery.
 Future<List<BonfireProfile>?> fetchBonfireProfiles(JellyfinConnection connection) async {
   final authHeader = await bonfireMasterAuthHeader(connection);
   final client = MediaServerHttpClient(
@@ -47,7 +49,8 @@ Future<List<BonfireProfile>?> fetchBonfireProfiles(JellyfinConnection connection
   );
   try {
     final response = await client.get('/plugins/profiles/list', timeout: MediaServerTimeouts.jellyfinProbe);
-    if (response.statusCode == 404 || response.statusCode >= 500) return null;
+    if (response.statusCode == 404) return const [];
+    // 401/403 (token), 5xx (server hiccup): answerless, not absence.
     if (response.statusCode != 200) return null;
     final data = response.data;
     if (data is! List) return null;
@@ -90,6 +93,9 @@ class BonfireProfileService {
   Timer? _refreshTimer;
   Future<void>? _hydrateFuture;
   Future<void>? _startFuture;
+  // One live refresh per machine at a time: periodic ticks, connection
+  // churn and refreshConnection can otherwise stack identical HTTP fetches.
+  final Map<String, Future<void>> _inFlight = {};
   bool _started = false;
   bool _disposed = false;
 
@@ -252,13 +258,30 @@ class BonfireProfileService {
   /// profile proves the vehicle token could address the household; otherwise
   /// fall back to the first non-null answer (a child-token view of a real
   /// installation is better than pretending the plugin is absent).
-  Future<void> _refreshMachine(String machineId, List<JellyfinConnection> candidates) async {
+  Future<void> _refreshMachine(String machineId, List<JellyfinConnection> candidates) {
+    if (_disposed) return Future.value();
+    final pending = _inFlight[machineId];
+    if (pending != null) return pending;
+    final future = _refreshMachineOnce(machineId, candidates)
+        .whenComplete(() {
+          _inFlight.remove(machineId);
+        });
+    _inFlight[machineId] = future;
+    return future;
+  }
+
+  Future<void> _refreshMachineOnce(String machineId, List<JellyfinConnection> candidates) async {
     if (_disposed) return;
     List<BonfireProfile>? fallback;
+    var definitivelyAbsent = false;
     for (final conn in candidates) {
       final profiles = await _fetchProfiles(conn);
       if (_disposed) return;
-      if (profiles == null) continue;
+      if (profiles == null) continue; // answerless — a retry, not a verdict
+      if (profiles.isEmpty) {
+        definitivelyAbsent = true;
+        continue;
+      }
       if (profiles.any((p) => p.isMaster)) {
         await _storeMachine(machineId, profiles);
         return;
@@ -269,11 +292,17 @@ class BonfireProfileService {
       await _storeMachine(machineId, fallback);
       return;
     }
-    // Plugin absent / unreachable everywhere — drop the entry so merge code
-    // treats these connections as plain single-user Jellyfin.
-    _byConnection.remove(machineId);
-    await _clearCache(machineId);
-    _emit();
+    if (definitivelyAbsent) {
+      // The plugin answered "not installed" on every vehicle — drop the
+      // entry so merge code treats these connections as plain single-user
+      // Jellyfin.
+      _byConnection.remove(machineId);
+      await _clearCache(machineId);
+      _emit();
+    }
+    // Otherwise every attempt was answerless: keep the cached profiles so an
+    // offline or flaky cycle never evicts a real installation (stale
+    // while revalidate, same posture PlexHomeService takes).
   }
 
   Future<void> _storeMachine(String machineId, List<BonfireProfile> profiles) async {
@@ -292,21 +321,49 @@ class BonfireProfileService {
     }
   }
 
-  Future<void> _writeCache(String connectionId, List<BonfireProfile> profiles) async {
+  // Cache slots are keyed by machine id (matching [_byConnection]), not by
+  // any individual connection row id.
+  Future<void> _writeCache(String machineId, List<BonfireProfile> profiles) async {
     final storage = await _ensureStorage();
     if (storage == null) return;
-    await storage.setBonfireProfilesCacheJson(connectionId, jsonEncode(profiles.map((p) => p.toJson()).toList()));
+    try {
+      await storage.setBonfireProfilesCacheJson(machineId, jsonEncode(profiles.map((p) => p.toJson()).toList()));
+    } catch (e) {
+      appLogger.w('BonfireProfileService: cache write failed for $machineId', error: e);
+    }
   }
 
-  Future<void> _clearCache(String connectionId) async {
+  Future<void> _clearCache(String machineId) async {
     final storage = await _ensureStorage();
     if (storage == null) return;
-    await storage.clearBonfireProfilesCache(connectionId);
+    try {
+      await storage.clearBonfireProfilesCache(machineId);
+    } catch (e) {
+      appLogger.w('BonfireProfileService: cache clear failed for $machineId', error: e);
+    }
   }
 
   void _emit() {
     if (_controller.isClosed) return;
     _controller.add(Map.unmodifiable(_byConnection));
+  }
+
+  /// Full sign-out wipe: in-memory snapshot and every stored per-machine
+  /// cache. The next sign-in's connections rebuild it from scratch — a new
+  /// household must never inherit the previous account's profile list.
+  Future<void> clearAll() async {
+    if (_disposed) return;
+    _byConnection.clear();
+    _inFlight.clear();
+    final storage = await _ensureStorage();
+    if (storage != null) {
+      try {
+        await storage.clearAllBonfireProfilesCache();
+      } catch (e) {
+        appLogger.w('BonfireProfileService: cache wipe failed', error: e);
+      }
+    }
+    _emit();
   }
 
   Future<void> dispose() async {
@@ -317,6 +374,7 @@ class BonfireProfileService {
     await _connSub?.cancel();
     _connSub = null;
     _byConnection.clear();
+    _inFlight.clear();
     await _controller.close();
   }
 }

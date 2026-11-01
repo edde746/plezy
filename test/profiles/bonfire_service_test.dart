@@ -18,7 +18,7 @@ JellyfinConnection _jellyfin(String id) {
     serverName: 'Home Media',
     serverMachineId: 'machine-$id',
     userId: 'master-$id',
-    userName: 'dalgibbard',
+    userName: 'Householder',
     accessToken: 'master-token-$id',
     deviceId: 'device-$id',
     createdAt: DateTime(2026, 1, 1),
@@ -96,7 +96,33 @@ void main() {
       expect(cached!.contains('u-kids'), isTrue);
     });
 
-    test('a server without the plugin (fetcher null) yields no profiles and clears stale cache', () async {
+    // An empty list is the plugin answering 404 — definitive absence. null is
+    // the fetch answering nothing (transport failure, expired token, 5xx,
+    // unexpected body): keeping the cache is what lets an offline cold start
+    // paint the picker at all.
+    test('a definitive plugin absence (empty list) clears stale cache', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final connections = ConnectionRegistry(db);
+      final storage = await StorageService.getInstance();
+      await connections.upsert(_jellyfin('jf-1'));
+      await storage.setBonfireProfilesCacheJson(
+          'machine-jf-1', jsonEncode([{'profileUserId': 'u-old', 'masterUserId': 'm'}]));
+
+      final service = BonfireProfileService(
+        connections: connections,
+        storage: storage,
+        bonfireProfileFetcher: (conn) async => const [],
+      );
+      addTearDown(service.dispose);
+
+      await service.hydrate();
+      await service.refreshConnection('jf-1');
+      expect(service.current.containsKey('machine-jf-1'), isFalse);
+      expect(storage.getBonfireProfilesCacheJson('machine-jf-1'), anyOf(isNull, isEmpty));
+    });
+
+    test('an answerless refresh (null) keeps cached profiles for cold starts', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
       final connections = ConnectionRegistry(db);
@@ -114,8 +140,8 @@ void main() {
 
       await service.hydrate();
       await service.refreshConnection('jf-1');
-      expect(service.current.containsKey('machine-jf-1'), isFalse);
-      expect(storage.getBonfireProfilesCacheJson('machine-jf-1'), anyOf(isNull, isEmpty));
+      expect(service.current['machine-jf-1']!.map((p) => p.profileUserId), ['u-old']);
+      expect(storage.getBonfireProfilesCacheJson('machine-jf-1'), contains('u-old'));
     });
 
     test('non-Jellyfin connections never hit the fetcher', () async {
@@ -205,9 +231,10 @@ void main() {
       expect(snapshot.keys, ['machine-jf-1']);
       expect(snapshot['machine-jf-1']!.map((p) => p.profileUserId), ['u-master', 'u-kids']);
       // The raw login connection (id == machine id) is the fetch vehicle —
-      // its master token addresses the whole household.
-      await service.start();
-      expect(vehicles.every((id) => id == 'jf-1'), isTrue);
+      // its master token addresses the whole household. Triggering the same
+      // machine through the child connection must still pick the raw row.
+      await service.refreshConnection('jf-1/u-kids');
+      expect(vehicles, ['jf-1', 'jf-1']);
     });
   });
 }
