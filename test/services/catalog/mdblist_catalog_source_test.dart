@@ -169,10 +169,19 @@ void main() {
         ),
       );
 
+      handlers.add((request) {
+        expect(request.method, 'POST');
+        expect(request.url.path, '/tmdb/movie/');
+        expect(json.decode(request.body), {
+          'ids': [578],
+        });
+        return http.Response('[]', 200);
+      });
       final results = await source.search('  jaws  ');
 
-      expect(requests.single.url.path, '/search/any');
-      expect(requests.single.url.queryParameters['query'], 'jaws');
+      expect(requests, hasLength(2));
+      expect(requests.first.url.path, '/search/any');
+      expect(requests.first.url.queryParameters['query'], 'jaws');
       expect(results, hasLength(1));
       expect(results.single.title, 'Jaws');
       expect(results.single.ids.imdb, 'tt0073195');

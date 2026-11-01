@@ -3,6 +3,7 @@ import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../utils/external_ids.dart';
 import '../../utils/json_utils.dart';
+import '../../utils/app_logger.dart';
 import '../trackers/mdblist/mdblist_client.dart';
 import 'catalog_source.dart';
 import 'catalog_watchlist_machinery.dart';
@@ -83,42 +84,130 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
     final trimmed = query.trim();
     if (trimmed.isEmpty || limit <= 0) return const [];
     final response = await _client.searchCatalog(trimmed, limit: limit);
-    return [
+    final items = [
       for (final entry in flexibleMapList(response['search']))
         if (_kindFor(entry['type']) case final kind?) ?_itemFor(entry, kind),
     ].take(limit).toList(growable: false);
+    final groups = <(String, MediaKind), List<CatalogItem>>{};
+    for (final item in items) {
+      final lookup = _searchLookup(item);
+      if (lookup != null) (groups[(lookup.$1, item.kind)] ??= []).add(item);
+    }
+    final hydrated = <String, CatalogItem>{};
+    await Future.wait(
+      groups.entries.map((group) async {
+        final (provider, kind) = group.key;
+        final ids = {for (final item in group.value) _searchLookup(item)!.$2}.toList();
+        // Normal searches fit one batch per kind. Respect the API ceiling even
+        // when a caller explicitly asks for a larger result set.
+        for (var start = 0; start < ids.length; start += 200) {
+          try {
+            final batch = await _client.getMediaInfoBatch(
+              provider,
+              kind == MediaKind.movie ? 'movie' : 'show',
+              ids.skip(start).take(200).toList(),
+            );
+            for (final info in batch) {
+              if (_kindFor(info.data['type']) != kind) continue;
+              final candidate = _itemFor(info.data, kind, isMediaInfo: true, isBatch: info.isBatch);
+              if (candidate == null) continue;
+              for (final original in group.value) {
+                if (_sameIdentity(original, candidate)) {
+                  hydrated[original.identityKey] = original.enrichedWith(candidate);
+                }
+              }
+            }
+          } catch (error) {
+            // Discovery still works when hydration is unavailable or rate limited.
+            appLogger.d('MDBList: search metadata unavailable', error: error);
+            break;
+          }
+        }
+      }),
+    );
+    return [for (final item in items) hydrated[item.identityKey] ?? item];
   }
 
   @override
-  Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async =>
-      CatalogDetail(item: item);
+  Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async {
+    final lookup = _lookup(item.kind, item.ids);
+    if (lookup == null) return CatalogDetail(item: item);
+    final info = await _client.getMediaInfo(lookup.$1, lookup.$2, lookup.$3, includeRecommendations: true);
+    if (info == null || _kindFor(info.data['type']) != item.kind) return CatalogDetail(item: item);
+    final candidate = _itemFor(info.data, item.kind, isMediaInfo: true);
+    if (candidate == null || !_sameIdentity(item, candidate)) return CatalogDetail(item: item);
+    return CatalogDetail(
+      item: item.enrichedWith(candidate),
+      related: [
+        for (final raw in flexibleMapList(info.data['recommendations']))
+          if (_kindFor(raw['mediatype'] ?? raw['type']) case final kind?) ?_itemFor(raw, kind),
+      ].take(relatedLimit < 0 ? 0 : relatedLimit).toList(),
+    );
+  }
+
+  static (String, Object)? _searchLookup(CatalogItem item) => switch (item.ids) {
+    CatalogItemIds(:final tmdb?) => ('tmdb', tmdb),
+    CatalogItemIds(:final imdb?) => ('imdb', imdb),
+    CatalogItemIds(:final tvdb?) when item.kind == MediaKind.show => ('tvdb', tvdb),
+    _ => null,
+  };
+
+  static bool _sameIdentity(CatalogItem a, CatalogItem b) {
+    if (a.kind != b.kind) return false;
+    var shared = false;
+    for (final pair in [
+      (a.ids.imdb, b.ids.imdb),
+      (a.ids.tmdb, b.ids.tmdb),
+      (a.ids.tvdb, b.ids.tvdb),
+      (a.ids.trakt, b.ids.trakt),
+    ]) {
+      if (pair.$1 == null || pair.$2 == null) continue;
+      if (pair.$1 != pair.$2) return false;
+      shared = true;
+    }
+    return shared;
+  }
 
   /// Every score MDBList aggregates for the title (`/{provider}/{movie|show|any}/{id}`, looked up by IMDb, then
   /// TMDB, a show's TVDB, then MAL id), each moved off its source's scale. MDBList's own `score` is not one.
   @override
   Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids) async {
+    final lookup = _lookup(kind, ids);
+    if (lookup == null) return const [];
+    final info = await _client.getMediaInfo(lookup.$1, lookup.$2, lookup.$3);
+    return info == null ? const [] : _ratingsFor(info.data['ratings'], isBatch: info.isBatch);
+  }
+
+  static (String, String, String)? _lookup(MediaKind kind, CatalogItemIds ids) {
     final type = switch (kind) {
       MediaKind.movie => 'movie',
       MediaKind.show => 'show',
       _ => null,
     };
-    if (type == null) return const [];
-    final lookup = switch (ids) {
+    if (type == null) return null;
+    return switch (ids) {
       CatalogItemIds(:final imdb?) => ('imdb', type, imdb),
       CatalogItemIds(:final tmdb?) => ('tmdb', type, '$tmdb'),
       CatalogItemIds(:final tvdb?) when kind == MediaKind.show => ('tvdb', 'show', '$tvdb'),
       CatalogItemIds(:final mal?) => ('mal', 'any', '$mal'),
       _ => null,
     };
-    if (lookup == null) return const [];
-    final (provider, mediaType, id) = lookup;
+  }
+
+  List<MediaRatingSource> _ratingsFor(Object? raw, {bool isBatch = false}) {
     return [
-      for (final rating in await _client.getMediaRatings(provider, mediaType, id))
+      for (final rating in flexibleMapList(raw))
         if (_ratingSources[rating['source']] case final source?)
           ?MediaRatingSource.fromScale(
             source.key,
-            flexibleDouble(rating['value']),
-            scale: source.scale,
+            flexibleDouble(rating['score']) ?? flexibleDouble(rating['value']),
+            // Batch Letterboxd values are 0–10; single-title values are 0–5.
+            // The normalized 0–100 score is consistent across both endpoints.
+            scale: flexibleDouble(rating['score']) != null
+                ? 100
+                : isBatch && source.key == 'letterboxd'
+                ? 10
+                : source.scale,
             votes: flexibleInt(rating['votes']),
           ),
     ];
@@ -176,9 +265,9 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
     return groups;
   }
 
-  CatalogItem? _itemFor(Map<String, dynamic> entry, MediaKind kind) {
+  CatalogItem? _itemFor(Map<String, dynamic> entry, MediaKind kind, {bool isMediaInfo = false, bool isBatch = false}) {
     final title = _string(entry['title']);
-    final ids = _idsFor(entry);
+    final ids = _idsFor(entry, allowTopLevelId: !isMediaInfo);
     if (title == null || !ids.hasAny) return null;
     final score = flexibleDouble(entry['score']);
     return CatalogItem(
@@ -187,26 +276,51 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
       title: title,
       year: flexibleInt(entry['year'] ?? entry['release_year']),
       overview: _string(entry['description']),
+      // MDBList's show runtime can be a series total, not an episode runtime.
+      runtimeMinutes: kind == MediaKind.movie ? flexibleInt(entry['runtime']) : null,
       rating: score == null || score < 0 || score > 100 ? null : score / 10,
-      genres: flexibleStringList(entry['genres']),
+      ratings: entry['ratings'] == null ? null : _ratingsFor(entry['ratings'], isBatch: isBatch),
+      genres: entry['genres'] == null
+          ? null
+          : flexibleStringList(entry['genres']) ??
+                [for (final genre in flexibleMapList(entry['genres'])) ?_string(genre['title'] ?? genre['name'])],
+      certification: _string(entry['certification']),
+      trailerUrl: _string(entry['trailer']),
+      airStatus: _airStatusFor(entry['status']),
+      network: _string(entry['network']),
+      releaseDate: DateTime.tryParse('${entry['released'] ?? entry['release_date']}'),
       ids: ids,
       posterUrl: _string(entry['poster']),
+      backdropUrl: _string(entry['backdrop']),
       addedAt: entry['watchlist_at'] is String ? DateTime.tryParse(entry['watchlist_at'] as String) : null,
     );
   }
 
-  CatalogItemIds _idsFor(Map<String, dynamic> entry) {
+  CatalogItemIds _idsFor(Map<String, dynamic> entry, {bool allowTopLevelId = true}) {
     final rawIds = entry['ids'];
     final ids = rawIds is Map ? rawIds : const <Object?, Object?>{};
     return CatalogItemIds(
       trakt: flexibleInt(ids['trakt'] ?? ids['traktid']),
       imdb: _string(ids['imdb'] ?? ids['imdbid'] ?? entry['imdb_id']),
-      tmdb: flexibleInt(ids['tmdb'] ?? ids['tmdbid'] ?? entry['id']),
+      tmdb: flexibleInt(ids['tmdb'] ?? ids['tmdbid'] ?? (allowTopLevelId ? entry['id'] : null)),
       tvdb: flexibleInt(ids['tvdb'] ?? ids['tvdbid'] ?? entry['tvdb_id']),
     );
   }
 
   static String? _string(Object? value) => value is String && value.isNotEmpty ? value : null;
+
+  static CatalogAirStatus? _airStatusFor(Object? value) => switch (_string(value)?.trim().toLowerCase()) {
+    'returning series' || 'continuing' => CatalogAirStatus.airing,
+    'ended' => CatalogAirStatus.ended,
+    'canceled' || 'cancelled' => CatalogAirStatus.canceled,
+    'in production' ||
+    'post production' ||
+    'planned' ||
+    'upcoming' ||
+    'pilot' ||
+    'rumored' => CatalogAirStatus.upcoming,
+    _ => null,
+  };
 
   static MediaKind? _kindFor(Object? type) => switch (type) {
     'movie' => MediaKind.movie,
