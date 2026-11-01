@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "No hay dispositivos de audio disponibles",
     "searchSubtitles": "Buscar subtítulos",
     "language": "Idioma",
+    "filterSubtitlesByReleaseName": "Filtrar por nombre del release",
     "noSubtitlesFound": "No se encontraron subtítulos",
     "subtitleDownloaded": "Subtítulo descargado",
     "subtitleDownloadedNotApplied": "El subtítulo se descargó, pero no se pudo seleccionar",

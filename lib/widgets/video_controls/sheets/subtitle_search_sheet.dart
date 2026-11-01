@@ -236,6 +236,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
     final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
     final hasResults = _results != null && _results!.isNotEmpty && !_isSearching && _error == null;
+    final filtersByReleaseName = _searchClient()?.subtitleTitleFiltersByReleaseName ?? false;
 
     return BaseVideoControlSheet(
       title: t.videoControls.searchSubtitles,
@@ -287,8 +288,13 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                     tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     decoration: pillInputDecoration(
                       context,
-                      hintText: widget.mediaTitle ?? t.metadataEdit.title,
-                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
+                      hintText: filtersByReleaseName
+                          ? t.videoControls.filterSubtitlesByReleaseName
+                          : widget.mediaTitle ?? t.metadataEdit.title,
+                      prefixIcon: AppIcon(
+                        filtersByReleaseName ? Symbols.filter_list_rounded : Symbols.search_rounded,
+                        size: 20,
+                      ),
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,

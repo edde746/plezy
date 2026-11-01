@@ -2,10 +2,12 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
@@ -87,6 +89,27 @@ void main() {
     });
 
     tearDown(() => database.close());
+
+    testWidgets('on Plex the title field is a title search', (tester) async {
+      final plex = testPlexClient(
+        serverId: ServerId('server'),
+        handler: (_) async =>
+            http.Response('{"MediaContainer":{}}', 200, headers: {'content-type': 'application/json'}),
+      );
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [plex]).provider);
+      expect(find.text(t.metadataEdit.title), findsOneWidget);
+      expect(find.text(t.videoControls.filterSubtitlesByReleaseName), findsNothing);
+    });
+
+    testWidgets('on Jellyfin the title field says it filters by release name', (tester) async {
+      final jellyfin = JellyfinClient.forTesting(
+        connection: testJellyfinConnection(machineId: 'server'),
+        httpClient: MockClient((_) async => http.Response('[]', 200, headers: {'content-type': 'application/json'})),
+      );
+      addTearDown(jellyfin.close);
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [jellyfin]).provider);
+      expect(find.text(t.videoControls.filterSubtitlesByReleaseName), findsOneWidget);
+    });
 
     testWidgets('HTTP 500 from searchSubtitles shows the sheet error state, not "no subtitles found"', (tester) async {
       final client = testPlexClient(serverId: ServerId('server'), handler: (_) async => http.Response('{}', 500));

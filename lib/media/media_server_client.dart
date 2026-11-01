@@ -1055,6 +1055,10 @@ abstract interface class ExternalSubtitleSearchClient {
   /// Whether the server's subtitle providers can search items of [kind].
   bool canSearchSubtitlesFor(MediaKind kind);
 
+  /// Whether [searchSubtitles]' title narrows the results by release name (true)
+  /// rather than being sent to the server as a title search (false).
+  bool get subtitleTitleFiltersByReleaseName;
+
   /// The item id the other methods take while [mediaSourceId] of [itemId]
   /// plays; it differs where a merged version is an item of its own.
   String subtitleItemIdFor(String itemId, {String? mediaSourceId});

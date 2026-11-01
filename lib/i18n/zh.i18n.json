@@ -889,6 +889,7 @@
     "noAudioDevicesAvailable": "没有可用的音频设备",
     "searchSubtitles": "搜索字幕",
     "language": "语言",
+    "filterSubtitlesByReleaseName": "按发行名称筛选",
     "noSubtitlesFound": "未找到字幕",
     "subtitleDownloaded": "字幕已下载",
     "subtitleDownloadedNotApplied": "字幕已下载，但无法选择",

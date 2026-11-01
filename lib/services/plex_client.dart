@@ -1473,6 +1473,9 @@ class PlexClient
   @override
   String subtitleItemIdFor(String itemId, {String? mediaSourceId}) => itemId;
 
+  @override
+  bool get subtitleTitleFiltersByReleaseName => false;
+
   /// Search for subtitles from external providers (e.g. OpenSubtitles) via the Plex server.
   /// [language] is an ISO 639-1 two-letter code (e.g. "en", "es").
   @override

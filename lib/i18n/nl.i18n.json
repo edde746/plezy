@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "Geen audioapparaten beschikbaar",
     "searchSubtitles": "Ondertitels zoeken",
     "language": "Taal",
+    "filterSubtitlesByReleaseName": "Filteren op releasenaam",
     "noSubtitlesFound": "Geen ondertitels gevonden",
     "subtitleDownloaded": "Ondertitel gedownload",
     "subtitleDownloadedNotApplied": "De ondertiteling is gedownload, maar kon niet worden geselecteerd",

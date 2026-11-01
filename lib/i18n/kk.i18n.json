@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "Қолжетімді аудио құрылғылар жоқ",
     "searchSubtitles": "Субтитр іздеу",
     "language": "Тіл",
+    "filterSubtitlesByReleaseName": "Шығарылым атауы бойынша фильтрлеу",
     "noSubtitlesFound": "Субтитр табылмады",
     "subtitleDownloaded": "Субтитр жүктелді",
     "subtitleDownloadedNotApplied": "Субтитр жүктелді, бірақ қолданылмады",

@@ -889,6 +889,7 @@
     "noAudioDevicesAvailable": "オーディオデバイスがありません",
     "searchSubtitles": "字幕を検索",
     "language": "言語",
+    "filterSubtitlesByReleaseName": "リリース名で絞り込む",
     "noSubtitlesFound": "字幕が見つかりません",
     "subtitleDownloaded": "字幕をダウンロードしました",
     "subtitleDownloadedNotApplied": "字幕はダウンロードされましたが、選択できませんでした",

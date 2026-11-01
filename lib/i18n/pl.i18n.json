@@ -898,6 +898,7 @@
     "noAudioDevicesAvailable": "Brak dostępnych urządzeń audio",
     "searchSubtitles": "Szukaj napisów",
     "language": "Język",
+    "filterSubtitlesByReleaseName": "Filtruj według nazwy wydania",
     "noSubtitlesFound": "Nie znaleziono napisów",
     "subtitleDownloaded": "Napisy pobrane",
     "subtitleDownloadedNotApplied": "Napisy zostały pobrane, ale nie można ich było wybrać",

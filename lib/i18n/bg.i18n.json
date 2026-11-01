@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "Няма налични аудио устройства",
     "searchSubtitles": "Търсене на субтитри",
     "language": "Език",
+    "filterSubtitlesByReleaseName": "Филтриране по име на издание",
     "noSubtitlesFound": "Не са намерени субтитри",
     "subtitleDownloaded": "Субтитърът е изтеглен",
     "subtitleDownloadedNotApplied": "Субтитрите са изтеглени, но не можаха да бъдат избрани",

@@ -898,6 +898,7 @@
     "noAudioDevicesAvailable": "Нет доступных аудиоустройств",
     "searchSubtitles": "Поиск субтитров",
     "language": "Язык",
+    "filterSubtitlesByReleaseName": "Фильтр по названию релиза",
     "noSubtitlesFound": "Субтитры не найдены",
     "subtitleDownloaded": "Субтитры загружены",
     "subtitleDownloadedNotApplied": "Субтитры загружены, но их не удалось выбрать",
