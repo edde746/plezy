@@ -72,6 +72,13 @@
 # artifacts.json entry; a commit published before mpv-build shipped debug
 # files has none, and its omission is noted the same way.
 # scripts/release/upload_symbols.dart downloads, verifies and uploads them.
+# mpv-build uploads each publish run's binaries to a release of its own and
+# records that release as an `assetBase` beside each asset's name, falling
+# back to its group's legacy `assetBase` for assets published before; a
+# library left unchanged keeps the release of the run that built it. The
+# lock's `assetBase` is the one release every asset it records for the group
+# resolves to, and a group whose recorded assets sit in more than one release
+# is refused rather than written with a URL that would 404.
 # Serialization is deterministic: two-space indent, sorted keys, trailing
 # newline. Consumers must fail when their group is missing rather than fall
 # back to an unpinned source.
@@ -501,6 +508,28 @@ def library_symbols(label: str, group: str, library: str, entry: dict) -> dict |
     return copied if len(copied) == len(symbols) else None
 
 
+def release_of(label: str, group_base: object, located: list[dict]) -> str | None:
+    """The one release every asset in located downloads from: each asset's own
+    assetBase, else the group's legacy one. None with an error recorded when an
+    asset has neither or the assets sit in several releases."""
+    bases: list[str] = []
+    for value in located:
+        base = value.get("assetBase", group_base)
+        if not isinstance(base, str) or not base:
+            errors.append(f"{label}: an asset has no assetBase and its group none to fall back to")
+            return None
+        bases.append(base)
+    distinct = sorted(set(bases))
+    if len(distinct) != 1:
+        errors.append(
+            f"{label}: its assets download from {len(distinct)} releases "
+            f"({', '.join(distinct)}); {LOCK_PATH} formatVersion 1 records one "
+            f"assetBase per group; bump the lock format"
+        )
+        return None
+    return distinct[0]
+
+
 def build_lock() -> dict | None:
     """The lock for this commit, or None with errors recorded.
 
@@ -538,26 +567,25 @@ def build_lock() -> dict | None:
         if not isinstance(section, dict):
             errors.append(f"{label}: expected an object")
             continue
-        asset_base = section.get("assetBase")
-        if not isinstance(asset_base, str) or not asset_base:
-            errors.append(f"{label}.assetBase: missing")
-            continue
+        group_base = section.get("assetBase")
         libraries = section.get("libraries")
         if not isinstance(libraries, dict):
             errors.append(f"{label}.libraries: expected an object")
             continue
         if group == "android":
             aar = android_aar(label, libraries)
-            if aar is not None:
-                artifacts[group] = {"aar": aar, "assetBase": asset_base}
-                symbols = library_symbols(
-                    f"{label}.libraries.{ANDROID_LIBRARY}",
-                    group,
-                    ANDROID_LIBRARY,
-                    libraries[ANDROID_LIBRARY],
-                )
-                if symbols is not None:
-                    artifacts[group]["symbols"] = symbols
+            if aar is None:
+                continue
+            entry = libraries[ANDROID_LIBRARY]
+            label = f"{label}.libraries.{ANDROID_LIBRARY}"
+            symbols = library_symbols(label, group, ANDROID_LIBRARY, entry)
+            located = [entry] + (list(entry["symbols"].values()) if symbols is not None else [])
+            asset_base = release_of(label, group_base, located)
+            if asset_base is None:
+                continue
+            artifacts[group] = {"aar": aar, "assetBase": asset_base}
+            if symbols is not None:
+                artifacts[group]["symbols"] = symbols
             continue
         packaged = sorted(
             name
@@ -618,8 +646,12 @@ def build_lock() -> dict | None:
             assets[variant] = {"asset": asset, "checksum": checksum}
         if len(assets) != len(prebuilt):
             continue
-        artifacts[group] = {"assetBase": asset_base, "assets": assets, "key": key}
         symbols = library_symbols(label, group, library, entry)
+        located = list(prebuilt.values()) + (list(entry["symbols"].values()) if symbols is not None else [])
+        asset_base = release_of(label, group_base, located)
+        if asset_base is None:
+            continue
+        artifacts[group] = {"assetBase": asset_base, "assets": assets, "key": key}
         if symbols is not None:
             artifacts[group]["symbols"] = symbols
 
