@@ -1379,6 +1379,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // already fullscreen belongs to the app window (#1624).
     FullscreenStateManager().beginScope();
 
+    // iPhone Duo: horizontal status bar while playing, so the video and its
+    // controls get the full width instead of sharing it with the vertical bar.
+    // Claimed here rather than after startup: a replacement player (next
+    // episode) mounts before the one it replaces is disposed, so the two
+    // claims overlap and the bar never comes back in between.
+    IphoneDuo.instance.disableVerticalBarFor(this);
+
     _playerNavigationCoordinator = PlayerNavigationCoordinator(
       chromeController: _chromeController,
       isPromptOpen: () => _episode.showPlayNextDialog || _showStillWatchingPrompt,
@@ -2208,10 +2215,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           // keeps the activity resumed and lets Android re-show the bars. The
           // guard answers the engine's re-show callback until release.
           ImmersiveModeGuard.acquire(this);
-          // iPhone Duo: horizontal status bar while playing, so the video and
-          // its controls get the full width instead of sharing it with the
-          // vertical bar.
-          IphoneDuo.instance.disableVerticalBarFor(this);
         } catch (e) {
           appLogger.w('Failed to set orientation', error: e);
           // Don't crash if orientation fails - video can still play
