@@ -128,8 +128,10 @@ void main() {
     expect(rail.left, 382);
     expect(rail.width, 84);
 
+    final singleLineHeight = tester.getSize(find.text(tabs.first.getLabel())).height;
     for (final tab in tabs) {
       final label = tester.getRect(find.text(tab.getLabel()));
+      expect(label.height, singleLineHeight, reason: '${tab.getLabel()} stays on one line');
       expect(label.top, greaterThanOrEqualTo(_closedStatusRegion.bottom), reason: tab.getLabel());
       expect(label.bottom, lessThanOrEqualTo(_closedSize.height - 34), reason: tab.getLabel());
       expect(label.left, greaterThanOrEqualTo(382), reason: tab.getLabel());
