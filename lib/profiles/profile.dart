@@ -303,14 +303,15 @@ sealed class Profile with _$Profile {
       :final bonfireIsAdministrator,
       :final bonfireRequiresPin,
       :final bonfireHasPin,
-    ) => {
-      'parentConnectionId': parentConnectionId,
-      'bonfireUserId': bonfireUserId,
-      'bonfireIsMaster': bonfireIsMaster,
-      'bonfireIsAdministrator': bonfireIsAdministrator,
-      'bonfireRequiresPin': bonfireRequiresPin,
-      'bonfireHasPin': bonfireHasPin,
-    },
+    ) =>
+      {
+        'parentConnectionId': parentConnectionId,
+        'bonfireUserId': bonfireUserId,
+        'bonfireIsMaster': bonfireIsMaster,
+        'bonfireIsAdministrator': bonfireIsAdministrator,
+        'bonfireRequiresPin': bonfireRequiresPin,
+        'bonfireHasPin': bonfireHasPin,
+      },
   };
 }
 

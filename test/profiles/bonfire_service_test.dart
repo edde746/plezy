@@ -107,7 +107,11 @@ void main() {
       final storage = await StorageService.getInstance();
       await connections.upsert(_jellyfin('jf-1'));
       await storage.setBonfireProfilesCacheJson(
-          'machine-jf-1', jsonEncode([{'profileUserId': 'u-old', 'masterUserId': 'm'}]));
+        'machine-jf-1',
+        jsonEncode([
+          {'profileUserId': 'u-old', 'masterUserId': 'm'},
+        ]),
+      );
 
       final service = BonfireProfileService(
         connections: connections,
@@ -129,7 +133,11 @@ void main() {
       final storage = await StorageService.getInstance();
       await connections.upsert(_jellyfin('jf-1'));
       await storage.setBonfireProfilesCacheJson(
-          'machine-jf-1', jsonEncode([{'profileUserId': 'u-old', 'masterUserId': 'm'}]));
+        'machine-jf-1',
+        jsonEncode([
+          {'profileUserId': 'u-old', 'masterUserId': 'm'},
+        ]),
+      );
 
       final service = BonfireProfileService(
         connections: connections,
@@ -205,12 +213,7 @@ void main() {
       // rediscover the household under a caller-dependent id on every switch.
       await connections.upsert(raw);
       await connections.upsert(
-        raw.copyWith(
-          id: 'jf-1/u-kids',
-          accessToken: 'child-token',
-          userId: 'u-kids',
-          userName: 'Kids',
-        ),
+        raw.copyWith(id: 'jf-1/u-kids', accessToken: 'child-token', userId: 'u-kids', userName: 'Kids'),
       );
 
       final vehicles = <String>[];

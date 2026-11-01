@@ -37,12 +37,7 @@ void main() {
     });
 
     test('tolerates stringified booleans and ints from drifted servers', () {
-      final profile = _profile({
-        'requiresPin': 'true',
-        'hasPin': 0,
-        'lockoutMinutes': '30',
-        'allowedDeviceIds': null,
-      });
+      final profile = _profile({'requiresPin': 'true', 'hasPin': 0, 'lockoutMinutes': '30', 'allowedDeviceIds': null});
       expect(profile.requiresPin, isTrue);
       expect(profile.hasPin, isFalse);
       expect(profile.lockoutMinutes, 30);
@@ -50,11 +45,7 @@ void main() {
     });
 
     test('missing optional fields fall back to safe defaults', () {
-      final json = BonfireProfile.fromJson({
-        'profileUserId': 'u-1',
-        'profileName': 'Solo',
-        'masterUserId': 'm-1',
-      });
+      final json = BonfireProfile.fromJson({'profileUserId': 'u-1', 'profileName': 'Solo', 'masterUserId': 'm-1'});
       expect(json.requiresPin, isFalse);
       expect(json.profileImage, isNull);
       expect(json.allowedDeviceIds, isEmpty);
@@ -93,7 +84,14 @@ void main() {
 
     test('a changed flag or list is not equal', () {
       expect(_profile(), isNot(_profile({'requiresPin': false})));
-      expect(_profile(), isNot(_profile({'allowedDeviceIds': ['device-2']})));
+      expect(
+        _profile(),
+        isNot(
+          _profile({
+            'allowedDeviceIds': ['device-2'],
+          }),
+        ),
+      );
     });
   });
 

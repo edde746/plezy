@@ -49,17 +49,11 @@ Future<bool> bonfireProfileTokenStillValid(
 }) async {
   final client = MediaServerHttpClient(
     baseUrl: parentConnection.baseUrl,
-    defaultHeaders: {
-      'Authorization': 'MediaBrowser Token="$profileToken"',
-      'X-Emby-Token': profileToken,
-    },
+    defaultHeaders: {'Authorization': 'MediaBrowser Token="$profileToken"', 'X-Emby-Token': profileToken},
     client: testClient,
   );
   try {
-    final response = await client.get(
-      '/Users/$profileUserId/Views',
-      timeout: MediaServerTimeouts.jellyfinProbe,
-    );
+    final response = await client.get('/Users/$profileUserId/Views', timeout: MediaServerTimeouts.jellyfinProbe);
     return response.statusCode == 200;
   } catch (e) {
     appLogger.w('bonfireProfileTokenStillValid: probe failed ($e) — keeping token');
@@ -117,9 +111,7 @@ Future<BonfireSwitchResult> switchBonfireUserWithPin({
           final data = response.data;
           // Jellyfin 12 serializes PascalCase (`ActiveProfileToken`); older
           // shapes and the docs show camelCase. Accept either.
-          final token = data is Map
-              ? (data['activeProfileToken'] ?? data['ActiveProfileToken'])?.toString()
-              : null;
+          final token = data is Map ? (data['activeProfileToken'] ?? data['ActiveProfileToken'])?.toString() : null;
           if (token == null || token.isEmpty) {
             appLogger.e('switchBonfireUserWithPin: 200 without activeProfileToken$labelSuffix');
             return const BonfireSwitchResult._(BonfireSwitchStatus.failed, null, null);

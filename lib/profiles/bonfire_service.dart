@@ -262,10 +262,9 @@ class BonfireProfileService {
     if (_disposed) return Future.value();
     final pending = _inFlight[machineId];
     if (pending != null) return pending;
-    final future = _refreshMachineOnce(machineId, candidates)
-        .whenComplete(() {
-          _inFlight.remove(machineId);
-        });
+    final future = _refreshMachineOnce(machineId, candidates).whenComplete(() {
+      _inFlight.remove(machineId);
+    });
     _inFlight[machineId] = future;
     return future;
   }

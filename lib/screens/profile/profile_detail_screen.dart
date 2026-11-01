@@ -209,12 +209,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       final other = byId[row.connectionId];
       if (other != null) retained.addAll(_serverIdsForConnection(other));
     }
-    final parentId =
-        (_profile.isPlexHome || _profile.isJellyfinBonfire) ? _profile.parentConnectionId : null;
+    final parentId = (_profile.isPlexHome || _profile.isJellyfinBonfire) ? _profile.parentConnectionId : null;
     if (parentId != null && parentId != excludingConnectionId) {
-      final parent = _profile.isJellyfinBonfire
-          ? jellyfinConnectionForServerId(byId, parentId)
-          : byId[parentId];
+      final parent = _profile.isJellyfinBonfire ? jellyfinConnectionForServerId(byId, parentId) : byId[parentId];
       if (parent != null) retained.addAll(_serverIdsForConnection(parent));
     }
     return retained;
@@ -314,7 +311,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
               if (!isLocal)
                 Text(
                   _profile.isJellyfinBonfire
-                      ? (_profile.bonfireRequiresPin ? t.profiles.pinManagedByBonfire : t.profiles.noPinRequiredByBonfire)
+                      ? (_profile.bonfireRequiresPin
+                            ? t.profiles.pinManagedByBonfire
+                            : t.profiles.noPinRequiredByBonfire)
                       : _profile.plexProtected
                       ? t.profiles.pinManagedByPlex
                       : t.profiles.noPinSetEditOnPlex,
@@ -447,8 +446,8 @@ class _ConnectionsListState extends State<_ConnectionsList> {
                 final parentConn = profile.isPlexHome
                     ? byId[profile.parentConnectionId]
                     : profile.isJellyfinBonfire && profile.parentConnectionId != null
-                        ? jellyfinConnectionForServerId(byId, profile.parentConnectionId!)
-                        : null;
+                    ? jellyfinConnectionForServerId(byId, profile.parentConnectionId!)
+                    : null;
                 final visiblePcs = visibleProfileConnections(profile, pcs);
                 if (visiblePcs.isEmpty && parentConn == null) {
                   return Padding(

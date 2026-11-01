@@ -42,7 +42,10 @@ void main() {
         plexHomeByConnectionId: const {},
         connectionsById: {'jf-1': _conn('jf-1')},
         bonfireByConnectionId: {
-          'jf-1': [_bonfire(_masterGuid, name: 'Master', isMaster: true), _bonfire(_kidsGuid, name: 'Kids', requiresPin: true)],
+          'jf-1': [
+            _bonfire(_masterGuid, name: 'Master', isMaster: true),
+            _bonfire(_kidsGuid, name: 'Kids', requiresPin: true),
+          ],
         },
       );
 
@@ -55,10 +58,7 @@ void main() {
       expect(kids.parentConnectionId, 'jf-1');
       expect(kids.isPinProtected, isTrue);
       expect(kids.pinHash, isNull); // server-side PIN, never stored locally
-      expect(
-        kids.avatarThumbUrl,
-        'https://jellyfin.example.net/plugins/profiles/image/$_kidsGuid?v=3&size=thumb',
-      );
+      expect(kids.avatarThumbUrl, 'https://jellyfin.example.net/plugins/profiles/image/$_kidsGuid?v=3&size=thumb');
     });
 
     test('profiles whose connection isn\'t registered are dropped', () {
@@ -66,22 +66,22 @@ void main() {
         locals: const [],
         plexHomeByConnectionId: const {},
         connectionsById: const {},
-        bonfireByConnectionId: {'ghost': [_bonfire(_kidsGuid)]},
+        bonfireByConnectionId: {
+          'ghost': [_bonfire(_kidsGuid)],
+        },
       );
       expect(merged, isEmpty);
     });
 
     test('locals, Plex Home and Bonfire profiles coexist', () {
-      final local = Profile.local(
-        id: 'local-1',
-        displayName: 'Local',
-        createdAt: DateTime(2026, 1, 1),
-      );
+      final local = Profile.local(id: 'local-1', displayName: 'Local', createdAt: DateTime(2026, 1, 1));
       final merged = mergeLocalWithPlexHome(
         locals: [local],
         plexHomeByConnectionId: const {},
         connectionsById: {'jf-1': _conn('jf-1')},
-        bonfireByConnectionId: {'jf-1': [_bonfire(_kidsGuid, name: 'Kids')]},
+        bonfireByConnectionId: {
+          'jf-1': [_bonfire(_kidsGuid, name: 'Kids')],
+        },
       );
       expect(merged.map((p) => p.id), containsAll(['local-1', 'bonfire-jf-1-$_kidsGuid']));
     });
@@ -137,10 +137,7 @@ void main() {
         plexHomeByConnectionId: const {},
         connectionsById: {'jf-1': _conn('jf-1'), 'jf-2': _conn('jf-2')},
         bonfireByConnectionId: {
-          'jf-1': [
-            _bonfire(_masterGuid, name: 'Householder', isMaster: true),
-            _bonfire(_kidsGuid, name: 'Max'),
-          ],
+          'jf-1': [_bonfire(_masterGuid, name: 'Householder', isMaster: true), _bonfire(_kidsGuid, name: 'Max')],
         },
         localConnectionsByProfile: {
           'local-dal': [
@@ -197,10 +194,7 @@ void main() {
         plexHomeByConnectionId: const {},
         connectionsById: {host.id: host},
         bonfireByConnectionId: {
-          'machine-1': [
-            _bonfire(_masterGuid, name: 'Householder', isMaster: true),
-            _bonfire(_kidsGuid, name: 'Max'),
-          ],
+          'machine-1': [_bonfire(_masterGuid, name: 'Householder', isMaster: true), _bonfire(_kidsGuid, name: 'Max')],
         },
         localConnectionsByProfile: const {},
       );
@@ -234,10 +228,7 @@ void main() {
         plexHomeByConnectionId: const {},
         connectionsById: {host.id: host},
         bonfireByConnectionId: {
-          'machine-1': [
-            _bonfire(_masterGuid, name: 'Householder', isMaster: true),
-            _bonfire(_kidsGuid, name: 'Max'),
-          ],
+          'machine-1': [_bonfire(_masterGuid, name: 'Householder', isMaster: true), _bonfire(_kidsGuid, name: 'Max')],
         },
         localConnectionsByProfile: const {
           'local-dal': [

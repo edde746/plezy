@@ -687,11 +687,11 @@ class ActiveProfileBinder {
     // to Connections), while the Bonfire profile id — and therefore
     // parentId — carries the canonical machine id. Match through the host.
     bool belongsToParent(ProfileConnection row) => joinRowBelongsToParent(
-          row,
-          parentConnectionId: parentId,
-          parentConnection: parent,
-          connectionsById: connectionsById,
-        );
+      row,
+      parentConnectionId: parentId,
+      parentConnection: parent,
+      connectionsById: connectionsById,
+    );
 
     ProfileConnection? pc;
     for (final row in joinRows) {
@@ -713,11 +713,13 @@ class ActiveProfileBinder {
       final rotated = pc != null && pc.hasToken ? pc.userToken : null;
       if (rotated != null && rotated.isNotEmpty && rotated != parent.accessToken) {
         if (await bonfireProfileTokenStillValid(parent, bonfireUserId, rotated)) {
-          return _bindMediaBrowser(parent.copyWith(accessToken: rotated), profileId: profile.id, generation: generation);
+          return _bindMediaBrowser(
+            parent.copyWith(accessToken: rotated),
+            profileId: profile.id,
+            generation: generation,
+          );
         }
-        appLogger.i(
-          'ActiveProfileBinder: rotated master token is no longer valid — keeping the connection token',
-        );
+        appLogger.i('ActiveProfileBinder: rotated master token is no longer valid — keeping the connection token');
         await profileConnections.recordToken(profile.id, parent.id, '');
       }
       return _bindMediaBrowser(parent, profileId: profile.id, generation: generation);
@@ -731,20 +733,20 @@ class ActiveProfileBinder {
       // leaves the whole app offline until the user hits Reconnect.
       if (await bonfireProfileTokenStillValid(parent, bonfireUserId, cachedToken)) {
         return _bindMediaBrowser(
-        // Distinct compound id (machineId/userId) per Bonfire profile: the
-        // client manager keys live Jellyfin clients by connection id, so a
-        // copy that keeps the parent's id collides with the parent's live
-        // client and keeps serving the previous profile until a manual
-        // reconnect. Deriving the id mirrors how a second human user on the
-        // same server gets their own connection at auth time.
-        parent.copyWith(
-          id: '${parent.serverMachineId}/$bonfireUserId',
-          accessToken: cachedToken,
-          userId: bonfireUserId,
-          userName: profile.displayName,
-        ),
-        profileId: profile.id,
-        generation: generation,
+          // Distinct compound id (machineId/userId) per Bonfire profile: the
+          // client manager keys live Jellyfin clients by connection id, so a
+          // copy that keeps the parent's id collides with the parent's live
+          // client and keeps serving the previous profile until a manual
+          // reconnect. Deriving the id mirrors how a second human user on the
+          // same server gets their own connection at auth time.
+          parent.copyWith(
+            id: '${parent.serverMachineId}/$bonfireUserId',
+            accessToken: cachedToken,
+            userId: bonfireUserId,
+            userName: profile.displayName,
+          ),
+          profileId: profile.id,
+          generation: generation,
         );
       }
       appLogger.i(

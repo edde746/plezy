@@ -162,7 +162,9 @@ void main() {
     });
 
     test('HTTP 401 is authRejected — about the caller token, never the target', () async {
-      final result = await _switch(mock: MockClient((request) async => jsonResponse({'message': 'expired'}, status: 401)));
+      final result = await _switch(
+        mock: MockClient((request) async => jsonResponse({'message': 'expired'}, status: 401)),
+      );
       expect(result.status, BonfireSwitchStatus.authRejected);
       expect(result.succeeded, isFalse);
     });
@@ -181,14 +183,18 @@ void main() {
     });
 
     test('a 200 without activeProfileToken is a failure', () async {
-      final result = await _switch(mock: MockClient((request) async => jsonResponse({'jellyfinUserId': _guid}, status: 200)));
+      final result = await _switch(
+        mock: MockClient((request) async => jsonResponse({'jellyfinUserId': _guid}, status: 200)),
+      );
       expect(result.status, BonfireSwitchStatus.failed);
       expect(result.userToken, isNull);
     });
 
     test('a PascalCase 200 (Jellyfin 12 serialization) still yields the token', () async {
       final result = await _switch(
-        mock: MockClient((request) async => jsonResponse({'ActiveProfileToken': 'scoped-token', 'JellyfinUserId': _guid}, status: 200)),
+        mock: MockClient(
+          (request) async => jsonResponse({'ActiveProfileToken': 'scoped-token', 'JellyfinUserId': _guid}, status: 200),
+        ),
       );
       expect(result.status, BonfireSwitchStatus.success);
       expect(result.userToken, 'scoped-token');
@@ -202,13 +208,11 @@ void main() {
     test('a non-PIN 400 with no PIN sent yet is final — no phantom prompt', () async {
       var prompted = 0;
       final result = await _switch(
-        mock: MockClient((request) async =>
-            jsonResponse({'message': 'Profile not found'}, status: 400)),
+        mock: MockClient((request) async => jsonResponse({'message': 'Profile not found'}, status: 400)),
         promptForPin: ({String? errorMessage}) async {
           prompted++;
           return '1234';
         },
-
       );
       expect(prompted, 0);
       expect(result.status, BonfireSwitchStatus.failed);
@@ -264,7 +268,9 @@ void main() {
       final parent = _conn().copyWith(id: 'machine-1/master-1');
       await ConnectionRegistry(db).upsert(parent);
       final registry = ProfileConnectionRegistry(db);
-      final mock = MockClient((request) async => jsonResponse({'activeProfileToken': 'scoped-token', 'jellyfinUserId': _guid}, status: 200));
+      final mock = MockClient(
+        (request) async => jsonResponse({'activeProfileToken': 'scoped-token', 'jellyfinUserId': _guid}, status: 200),
+      );
 
       final result = await mintBonfireProfileToken(
         parentConnection: parent,
@@ -297,10 +303,12 @@ void main() {
             userIdentifier: _guid,
           ),
         ),
-        throwsA(predicate(
-          (Object? e) => e.toString().contains('FOREIGN KEY constraint failed'),
-          'FOREIGN KEY constraint failed',
-        )),
+        throwsA(
+          predicate(
+            (Object? e) => e.toString().contains('FOREIGN KEY constraint failed'),
+            'FOREIGN KEY constraint failed',
+          ),
+        ),
       );
     });
   });

@@ -336,8 +336,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     // chip is the only thing distinguishing Bonfire profiles when a device
     // hosts Jellyfin on more than one server.
     final jellyfinHosts = {
-      for (final c in activeProvider.connectionsById.values.whereType<JellyfinConnection>())
-        c.serverMachineId,
+      for (final c in activeProvider.connectionsById.values.whereType<JellyfinConnection>()) c.serverMachineId,
     };
     final namesAccount =
         activeProvider.connectionsById.values.whereType<PlexAccountConnection>().length > 1 ||

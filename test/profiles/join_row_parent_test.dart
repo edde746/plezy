@@ -9,31 +9,27 @@ import 'package:plezy/profiles/server_connection_lookup.dart';
 // machine-id split may carry the bare machine id or a compound host id.
 
 JellyfinConnection _jf(String id, {String machine = 'machine-1'}) => JellyfinConnection(
-      id: id,
-      baseUrl: 'https://jellyfin.example.net',
-      serverName: 'Home Media',
-      serverMachineId: machine,
-      userId: 'u1',
-      userName: 'Owner',
-      accessToken: 'token',
-      deviceId: 'device-1',
-      createdAt: DateTime(2026, 1, 1),
-    );
+  id: id,
+  baseUrl: 'https://jellyfin.example.net',
+  serverName: 'Home Media',
+  serverMachineId: machine,
+  userId: 'u1',
+  userName: 'Owner',
+  accessToken: 'token',
+  deviceId: 'device-1',
+  createdAt: DateTime(2026, 1, 1),
+);
 
 PlexAccountConnection _plex(String id) => PlexAccountConnection(
-      id: id,
-      accountToken: 'plex-token',
-      clientIdentifier: 'cid',
-      accountLabel: 'Remote Plex',
-      createdAt: DateTime(2026, 1, 1),
-    );
+  id: id,
+  accountToken: 'plex-token',
+  clientIdentifier: 'cid',
+  accountLabel: 'Remote Plex',
+  createdAt: DateTime(2026, 1, 1),
+);
 
-ProfileConnection _row(String connectionId) => ProfileConnection(
-      profileId: 'bonfire-p',
-      connectionId: connectionId,
-      userToken: 't',
-      userIdentifier: 'u1',
-    );
+ProfileConnection _row(String connectionId) =>
+    ProfileConnection(profileId: 'bonfire-p', connectionId: connectionId, userToken: 't', userIdentifier: 'u1');
 
 void main() {
   group('joinRowBelongsToParent', () {
@@ -44,12 +40,8 @@ void main() {
       'plex-2': _plex('plex-2'),
     };
 
-    bool belongs(ProfileConnection row) => joinRowBelongsToParent(
-          row,
-          parentConnectionId: 'machine-1',
-          parentConnection: parent,
-          connectionsById: byId,
-        );
+    bool belongs(ProfileConnection row) =>
+        joinRowBelongsToParent(row, parentConnectionId: 'machine-1', parentConnection: parent, connectionsById: byId);
 
     test('a row keyed by the parent connections row id belongs', () {
       expect(belongs(_row(parent.id)), isTrue);

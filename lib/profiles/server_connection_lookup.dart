@@ -39,8 +39,7 @@ bool joinRowBelongsToParent(
 }) {
   if (parentConnection != null && row.connectionId == parentConnection.id) return true;
   if (row.connectionId == parentConnectionId) return true;
-  if (jellyfinConnectionForServerId(connectionsById, row.connectionId)
-          case final JellyfinConnection resolved) {
+  if (jellyfinConnectionForServerId(connectionsById, row.connectionId) case final JellyfinConnection resolved) {
     return resolved.serverMachineId == parentConnectionId || resolved.id == parentConnection?.id;
   }
   return false;

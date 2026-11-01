@@ -85,8 +85,7 @@ class BonfireProfile {
     required this.masterUserId,
   });
 
-  factory BonfireProfile.fromJson(Map<String, dynamic> json) =>
-      _$BonfireProfileFromJson(_camelKeys(json));
+  factory BonfireProfile.fromJson(Map<String, dynamic> json) => _$BonfireProfileFromJson(_camelKeys(json));
 
   /// Jellyfin 12 serializes plugin JSON PascalCase (`ProfileName`) while the
   /// Bonfire docs show camelCase (`profileName`). Normalize the leading char
@@ -165,7 +164,10 @@ class BonfireProfile {
 }
 
 List<String> _stringListOrEmpty(Object? value) => switch (value) {
-  final List<Object?> list => [for (final item in list) if (item != null) item.toString()],
+  final List<Object?> list => [
+    for (final item in list)
+      if (item != null) item.toString(),
+  ],
   _ => const <String>[],
 };
 

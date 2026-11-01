@@ -94,10 +94,8 @@ List<Profile> mergeLocalWithPlexHome({
         // Match either shape.
         final rowConnection = connectionsById[rows.single.connectionId];
         final rowConnId = rows.single.connectionId;
-        final rowMachineId =
-            rowConnection is JellyfinConnection ? rowConnection.serverMachineId : rowConnId;
-        return bonfireMasterConnectionIds.contains(rowConnId) ||
-            bonfireMasterConnectionIds.contains(rowMachineId);
+        final rowMachineId = rowConnection is JellyfinConnection ? rowConnection.serverMachineId : rowConnId;
+        return bonfireMasterConnectionIds.contains(rowConnId) || bonfireMasterConnectionIds.contains(rowMachineId);
       }
       // A freshly created account row with no join rows yet still duplicates
       // the Bonfire master row when it names the same Jellyfin user.
