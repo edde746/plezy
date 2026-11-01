@@ -357,6 +357,39 @@ void main() {
     expect((captured as SubtitleTrackPreference).track.language, 'eng');
   });
 
+  test('an audio pick in the player moves the source stream a reload carries', () {
+    MediaAudioTrack row(int id, String language, {bool isExternal = false}) => MediaAudioTrack(
+      id: id,
+      languageCode: language,
+      codec: 'aac',
+      channels: 2,
+      selected: id == 4,
+      external: isExternal,
+    );
+    const english = AudioTrack(id: '1', language: 'eng', codec: 'aac', channels: 2);
+    const french = AudioTrack(id: '2', language: 'fre', codec: 'aac', channels: 2);
+    int? picked({
+      bool isTranscoding = false,
+      List<AudioTrack> engine = const [english, french],
+      bool external = false,
+    }) => sourceAudioStreamIdForPick(
+      isTranscoding: isTranscoding,
+      pick: french,
+      engineTracks: engine,
+      rows: [
+        row(4, 'eng'),
+        row(5, 'fre', isExternal: external),
+      ],
+    );
+
+    expect(picked(), 5);
+    // A transcode's engine tracks describe the output, not a source stream.
+    expect(picked(isTranscoding: true), isNull);
+    // Where the engine's list does not line up with the rows, keep the committed id.
+    expect(picked(engine: const [french]), isNull);
+    expect(picked(external: true), isNull);
+  });
+
   test('a secondary-only change keeps the primary declined carry alive (#1785)', () {
     const declined = SubtitlePreference.intent(
       SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),
