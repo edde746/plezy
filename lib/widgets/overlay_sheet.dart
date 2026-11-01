@@ -586,7 +586,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
                 ),
               ),
             ),
-            _buildSheet(context),
+            _avoidDisplayFeatures(context, _buildSheet(context)),
           ],
         ],
       ),
@@ -682,6 +682,67 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             ),
           ),
       ],
+    );
+  }
+
+  /// This host's top-left in the coordinate space of [MediaQueryData.displayFeatures]
+  /// (the view), as of the last layout.
+  Offset _hostOrigin() {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return Offset.zero;
+    return box.localToGlobal(Offset.zero);
+  }
+
+  /// Keeps the sheet off a fold or hinge (iPhone Duo held like a book, Android
+  /// foldables), as Flutter's dialogs and modal sheets do through
+  /// [DisplayFeatureSubScreen]: the sheet lays out in the sub-screen nearest
+  /// its anchored edge on the leading side. The barrier, focus scope and back
+  /// handling stay host-wide.
+  Widget _avoidDisplayFeatures(BuildContext context, Widget sheet) {
+    final media = MediaQuery.of(context);
+    final avoid = DisplayFeatureSubScreen.avoidBounds(media).toList();
+    if (avoid.isEmpty) return sheet;
+
+    // Display features are in view coordinates; hosts are usually full-screen
+    // but not always. The origin comes from the previous layout, so re-check
+    // it once this frame has laid out (rotation, a bar changing sides).
+    final origin = _hostOrigin();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isOpen && _hostOrigin() != origin) setState(() {});
+    });
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bounds = Offset.zero & constraints.biggest;
+        final features = [
+          for (final feature in avoid)
+            if (feature.shift(-origin).overlaps(bounds)) feature.shift(-origin),
+        ];
+        if (features.isEmpty) return sheet;
+
+        final isRtl = Directionality.of(context) == TextDirection.rtl;
+        final anchor = Offset(isRtl ? bounds.right : bounds.left, _alignment.y < 0 ? bounds.top : bounds.bottom);
+        double distance(Rect rect) {
+          final dx = math.max(0.0, math.max(rect.left - anchor.dx, anchor.dx - rect.right));
+          final dy = math.max(0.0, math.max(rect.top - anchor.dy, anchor.dy - rect.bottom));
+          return dx * dx + dy * dy;
+        }
+
+        final area = DisplayFeatureSubScreen.subScreensInBounds(bounds, features)
+            .map((rect) => rect.intersect(bounds))
+            .where((rect) => !rect.isEmpty)
+            .fold<Rect?>(null, (best, rect) {
+              return best == null || distance(rect) < distance(best) ? rect : best;
+            });
+        if (area == null || area == bounds) return sheet;
+
+        // Insets only apply on the sides where the area meets the view edge.
+        final inView = area.shift(origin).intersect(Offset.zero & media.size);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(area.left, area.top, bounds.right - area.right, bounds.bottom - area.bottom),
+          child: inView.isEmpty ? sheet : MediaQuery(data: media.removeDisplayFeatures(inView), child: sheet),
+        );
+      },
     );
   }
 

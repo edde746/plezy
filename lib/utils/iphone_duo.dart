@@ -166,8 +166,9 @@ class _IphoneDuoInherited extends InheritedWidget {
 }
 
 /// Publishes [IphoneDuoState] below it and reports the fold as a
-/// [DisplayFeature], so Flutter's dialogs, menus, pickers and bottom sheets
-/// move to one side of the fold like their UIKit counterparts do.
+/// [DisplayFeature], so Flutter's dialogs, menus, pickers and modal sheets,
+/// and Plezy's hosted sheets (`OverlaySheetHost`), move to one side of the
+/// fold like their UIKit counterparts do.
 class IphoneDuoScope extends StatefulWidget {
   const IphoneDuoScope({super.key, required this.child});
 
