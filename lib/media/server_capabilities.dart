@@ -38,8 +38,9 @@ class ServerCapabilities {
   /// playback progress. Plex exposes this directly; Jellyfin does not.
   final bool continueWatchingRemoval;
 
-  /// External subtitle search/marketplace (Plex `/library/metadata/{id}/subtitles`).
-  /// Hides the "Search subtitles" affordance when false.
+  /// External subtitle search/marketplace (Plex `/library/metadata/{id}/subtitles`,
+  /// Jellyfin `/Items/{id}/RemoteSearch/Subtitles` when its Open Subtitles
+  /// plugin is loaded). Hides the "Search subtitles" affordance when false.
   final bool externalSubtitleSearch;
 
   /// Server exposes metadata edit endpoints. Hides edit affordances when false.
@@ -156,11 +157,12 @@ class ServerCapabilities {
     libraryChangeEvents: true,
   );
 
-  /// Every flag here is fixed per backend *kind* except [videoTranscoding],
-  /// which Plex probes per server (`PlexClient.capabilities`) — so that is the
-  /// only override this type needs. Widen the parameter list if another flag
-  /// ever becomes a runtime probe.
-  ServerCapabilities copyWith({bool? videoTranscoding}) {
+  /// Every flag here is fixed per backend *kind* except the runtime probes:
+  /// [videoTranscoding], which Plex probes per server (`PlexClient.capabilities`),
+  /// and [externalSubtitleSearch], which Jellyfin probes per server and user
+  /// (`JellyfinClient.probeRemoteSubtitleSearch`). Widen the parameter list if
+  /// another flag ever becomes a runtime probe.
+  ServerCapabilities copyWith({bool? videoTranscoding, bool? externalSubtitleSearch}) {
     return ServerCapabilities(
       liveTv: liveTv,
       liveTvDvr: liveTvDvr,
@@ -169,7 +171,7 @@ class ServerCapabilities {
       numericUserRating: numericUserRating,
       userFavorites: userFavorites,
       continueWatchingRemoval: continueWatchingRemoval,
-      externalSubtitleSearch: externalSubtitleSearch,
+      externalSubtitleSearch: externalSubtitleSearch ?? this.externalSubtitleSearch,
       richMetadataEdit: richMetadataEdit,
       scrubThumbnails: scrubThumbnails,
       folderGrouping: folderGrouping,

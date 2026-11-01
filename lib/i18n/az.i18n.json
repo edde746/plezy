@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "Səs cihazları əlçatan deyil",
     "searchSubtitles": "Altyazı axtar",
     "language": "Dil",
+    "filterSubtitlesByReleaseName": "Buraxılış adına görə filtrlə",
     "noSubtitlesFound": "Altyazı tapılmadı",
     "subtitleDownloaded": "Altyazı yükləndi",
     "subtitleDownloadedNotApplied": "Altyazı yükləndi, lakin seçilə bilmədi",

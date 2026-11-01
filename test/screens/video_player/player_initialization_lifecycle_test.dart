@@ -324,6 +324,72 @@ void main() {
     expect(sessionPreferenceForSourceSubtitleChoice(const PlaybackSourceSubtitleChoice.source(99), rows), isNull);
   });
 
+  test('a downloaded subtitle captures the fresh row it carries, not a stale row with its id', () {
+    // A Jellyfin rescan renumbers streams: the downloaded file's new index can
+    // belong to a different row in the catalog the player still holds.
+    final stale = [
+      MediaSubtitleTrack(
+        id: 2,
+        languageCode: 'fre',
+        displayTitle: 'French',
+        codec: 'subrip',
+        selected: false,
+        forced: false,
+      ),
+    ];
+    final downloaded = MediaSubtitleTrack(
+      id: 2,
+      languageCode: 'eng',
+      displayTitle: 'English - SUBRIP - External',
+      codec: 'subrip',
+      selected: false,
+      forced: false,
+      external: true,
+    );
+
+    final captured = sessionPreferenceForSourceSubtitleChoice(
+      PlaybackSourceSubtitleChoice.downloaded(downloaded),
+      stale,
+    );
+
+    expect(captured, isA<SubtitleTrackPreference>());
+    expect((captured! as SubtitleTrackPreference).track.id, 'source:2');
+    expect((captured as SubtitleTrackPreference).track.language, 'eng');
+  });
+
+  test('an audio pick in the player moves the source stream a reload carries', () {
+    MediaAudioTrack row(int id, String language, {bool isExternal = false}) => MediaAudioTrack(
+      id: id,
+      languageCode: language,
+      codec: 'aac',
+      channels: 2,
+      selected: id == 4,
+      external: isExternal,
+    );
+    const english = AudioTrack(id: '1', language: 'eng', codec: 'aac', channels: 2);
+    const french = AudioTrack(id: '2', language: 'fre', codec: 'aac', channels: 2);
+    int? picked({
+      bool isTranscoding = false,
+      List<AudioTrack> engine = const [english, french],
+      bool external = false,
+    }) => sourceAudioStreamIdForPick(
+      isTranscoding: isTranscoding,
+      pick: french,
+      engineTracks: engine,
+      rows: [
+        row(4, 'eng'),
+        row(5, 'fre', isExternal: external),
+      ],
+    );
+
+    expect(picked(), 5);
+    // A transcode's engine tracks describe the output, not a source stream.
+    expect(picked(isTranscoding: true), isNull);
+    // Where the engine's list does not line up with the rows, keep the committed id.
+    expect(picked(engine: const [french]), isNull);
+    expect(picked(external: true), isNull);
+  });
+
   test('a secondary-only change keeps the primary declined carry alive (#1785)', () {
     const declined = SubtitlePreference.intent(
       SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),

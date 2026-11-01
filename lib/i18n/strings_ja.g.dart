@@ -1000,6 +1000,7 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get noAudioDevicesAvailable => 'オーディオデバイスがありません';
 	@override String get searchSubtitles => '字幕を検索';
 	@override String get language => '言語';
+	@override String get filterSubtitlesByReleaseName => 'リリース名で絞り込む';
 	@override String get noSubtitlesFound => '字幕が見つかりません';
 	@override String get subtitleDownloaded => '字幕をダウンロードしました';
 	@override String get subtitleDownloadedNotApplied => '字幕はダウンロードされましたが、選択できませんでした';
@@ -4216,6 +4217,7 @@ extension on TranslationsJa {
 			'videoControls.noAudioDevicesAvailable' => 'オーディオデバイスがありません',
 			'videoControls.searchSubtitles' => '字幕を検索',
 			'videoControls.language' => '言語',
+			'videoControls.filterSubtitlesByReleaseName' => 'リリース名で絞り込む',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
 			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
@@ -4408,9 +4410,9 @@ extension on TranslationsJa {
 			'profiles.pinsDontMatch' => 'PINが一致しません',
 			'profiles.tokenIdentityMismatch' => 'Plexプロフィールのトークンから予期しないサーバーが特定されました',
 			'connections.sectionTitle' => '接続',
-			'connections.addConnection' => '接続を追加',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => '接続を追加',
 			'connections.addConnectionSubtitleNoProfile' => 'Plexでサインインするか、JellyfinまたはEmbyサーバーに接続',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
@@ -4922,9 +4924,9 @@ extension on TranslationsJa {
 			'liveTv.recordSettings.keepUpTo' => '保持するエピソード数',
 			'liveTv.recordSettings.keepUpToHint' => '0 ですべてのエピソードを保持',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}から無効なライブTV再生データが返されました',
 			'liveTv.failedToStartChannel' => 'ライブチャンネルを開始できませんでした',
 			'liveTv.failedToBuildStreamUrl' => 'ストリームURLを生成できませんでした',
@@ -5436,9 +5438,9 @@ extension on TranslationsJa {
 			'performanceOverlay.decoderSoftware' => 'ソフトウェア',
 			'performanceOverlay.decoderHardware' => 'ハードウェア',
 			'performanceOverlay.tunnelingActive' => '有効',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			'externalPlayer.title' => '外部プレーヤー',
 			'externalPlayer.useExternalPlayer' => '外部プレーヤーを使用',
 			'externalPlayer.useExternalPlayerDescription' => '動画を別のアプリで開きます',

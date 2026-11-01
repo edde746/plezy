@@ -91,6 +91,7 @@ void main() {
         selectedAudioStreamId: 1,
         sourceSubtitleTracks: [subtitle],
         selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(2),
+        subtitleSearchSupported: true,
       );
 
       expect(result.canSwitch, isFalse);
@@ -101,6 +102,8 @@ void main() {
       expect(result.selectedAudioStreamId, isNull);
       expect(result.sourceSubtitleTracks, isEmpty);
       expect(result.selectedSubtitleChoice, isNull);
+      // The reload would reopen the local copy, which never gets the download.
+      expect(result.subtitleSearchSupported, isFalse);
     });
 
     test('keeps switchable state during online playback', () {
@@ -117,6 +120,7 @@ void main() {
         selectedAudioStreamId: 1,
         sourceSubtitleTracks: [subtitle],
         selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(2),
+        subtitleSearchSupported: true,
       );
 
       expect(result.canSwitch, isTrue);
@@ -127,6 +131,7 @@ void main() {
       expect(result.selectedAudioStreamId, 1);
       expect(result.sourceSubtitleTracks, [subtitle]);
       expect(result.selectedSubtitleChoice, const PlaybackSourceSubtitleChoice.source(2));
+      expect(result.subtitleSearchSupported, isTrue);
     });
   });
 

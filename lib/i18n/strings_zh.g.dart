@@ -1000,6 +1000,7 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get noAudioDevicesAvailable => '没有可用的音频设备';
 	@override String get searchSubtitles => '搜索字幕';
 	@override String get language => '语言';
+	@override String get filterSubtitlesByReleaseName => '按发行名称筛选';
 	@override String get noSubtitlesFound => '未找到字幕';
 	@override String get subtitleDownloaded => '字幕已下载';
 	@override String get subtitleDownloadedNotApplied => '字幕已下载，但无法选择';
@@ -4216,6 +4217,7 @@ extension on TranslationsZh {
 			'videoControls.noAudioDevicesAvailable' => '没有可用的音频设备',
 			'videoControls.searchSubtitles' => '搜索字幕',
 			'videoControls.language' => '语言',
+			'videoControls.filterSubtitlesByReleaseName' => '按发行名称筛选',
 			'videoControls.noSubtitlesFound' => '未找到字幕',
 			'videoControls.subtitleDownloaded' => '字幕已下载',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
@@ -4408,9 +4410,9 @@ extension on TranslationsZh {
 			'profiles.pinsDontMatch' => 'PIN 不匹配',
 			'profiles.tokenIdentityMismatch' => 'Plex 用户资料令牌解析到了非预期服务器',
 			'connections.sectionTitle' => '连接',
-			'connections.addConnection' => '添加连接',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => '添加连接',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登录，或连接 Jellyfin 或 Emby 服务器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的会话已过期',
@@ -4922,9 +4924,9 @@ extension on TranslationsZh {
 			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留全部剧集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
 			'liveTv.failedToStartChannel' => '无法播放直播频道',
 			'liveTv.failedToBuildStreamUrl' => '无法生成视频流 URL',
@@ -5436,9 +5438,9 @@ extension on TranslationsZh {
 			'performanceOverlay.decoderSoftware' => '软件',
 			'performanceOverlay.decoderHardware' => '硬件',
 			'performanceOverlay.tunnelingActive' => '已启用',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他应用中打开视频',

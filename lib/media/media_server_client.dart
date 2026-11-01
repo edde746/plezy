@@ -1,6 +1,7 @@
 import '../exceptions/media_server_exceptions.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
+import 'subtitle_search_result.dart';
 import '../services/api_cache.dart';
 import '../services/playback_initialization_types.dart';
 import '../utils/app_logger.dart';
@@ -1036,6 +1037,47 @@ abstract interface class MediaDeletionPermissionClient {
   /// front of a user who lost the grant. Callers must fail closed on `null`
   /// and on throw.
   Future<bool?> fetchDeletePermission(MediaItem item);
+}
+
+/// Optional capability for clients whose server searches and downloads
+/// subtitles from an external provider (Plex's OpenSubtitles agent,
+/// Jellyfin's Open Subtitles plugin), returning [SubtitleSearchResult] rows.
+/// Offered only while [ServerCapabilities.externalSubtitleSearch] is true.
+abstract interface class ExternalSubtitleSearchClient {
+  /// How long the player waits for a download to show up in the item.
+  Duration get subtitleDownloadTimeout;
+
+  /// Whether a download leaves the item's other stream ids as they were. When
+  /// false the server renumbers them on its rescan, so the player reloads from
+  /// the row [findDownloadedSubtitle] returned rather than from a stream id.
+  bool get subtitleDownloadKeepsStreamIds;
+
+  /// Whether the server's subtitle providers can search items of [kind].
+  bool canSearchSubtitlesFor(MediaKind kind);
+
+  /// Whether [searchSubtitles]' title narrows the results by release name (true)
+  /// rather than being sent to the server as a title search (false).
+  bool get subtitleTitleFiltersByReleaseName;
+
+  /// The item id the other methods take while [mediaSourceId] of [itemId]
+  /// plays; it differs where a merged version is an item of its own.
+  String subtitleItemIdFor(String itemId, {String? mediaSourceId});
+
+  /// [language] is an ISO 639-1 code.
+  Future<List<SubtitleSearchResult>> searchSubtitles(String ratingKey, {required String language, String? title});
+
+  /// Downloads [result], one of the rows [searchSubtitles] returned.
+  Future<bool> downloadSubtitle(String ratingKey, SubtitleSearchResult result);
+
+  /// The external subtitle track a [downloadSubtitle] added, once the server
+  /// lists it; null until then. [existingTrackIds] (the player's source ids)
+  /// and [position] (which file of a stacked item plays) serve a server that
+  /// keeps stream ids; one that renumbers them tracks the download itself.
+  Future<MediaSubtitleTrack?> findDownloadedSubtitle(
+    String ratingKey, {
+    required Set<int> existingTrackIds,
+    Duration? position,
+  });
 }
 
 /// Bounds how old a cached metadata row may be to be served without a network

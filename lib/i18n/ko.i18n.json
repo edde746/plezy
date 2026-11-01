@@ -889,6 +889,7 @@
     "noAudioDevicesAvailable": "사용 가능한 오디오 기기가 없습니다",
     "searchSubtitles": "자막 검색",
     "language": "언어",
+    "filterSubtitlesByReleaseName": "릴리스 이름으로 필터",
     "noSubtitlesFound": "자막을 찾을 수 없습니다",
     "subtitleDownloaded": "자막이 다운로드되었습니다",
     "subtitleDownloadedNotApplied": "자막을 다운로드했지만 선택할 수 없습니다",

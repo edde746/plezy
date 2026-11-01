@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "Mavjud audio qurilmalar yoʻq",
     "searchSubtitles": "Subtitr qidirish",
     "language": "Til",
+    "filterSubtitlesByReleaseName": "Reliz nomi boʻyicha filtrlash",
     "noSubtitlesFound": "Subtitr topilmadi",
     "subtitleDownloaded": "Subtitr yuklab olindi",
     "subtitleDownloadedNotApplied": "Subtitr yuklab olindi, lekin qoʻllanilmadi",

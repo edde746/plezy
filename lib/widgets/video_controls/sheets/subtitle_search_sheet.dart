@@ -8,8 +8,9 @@ import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_text_field.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../media/media_server_client.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
-import '../../../models/plex/plex_subtitle_search_result.dart';
+import '../../../media/subtitle_search_result.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/language_codes.dart';
@@ -58,7 +59,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   final _firstResultFocusNode = FocusNode(debugLabel: 'SubtitleSearch_firstResult');
   Timer? _debounceTimer;
 
-  List<PlexSubtitleSearchResult>? _results;
+  List<SubtitleSearchResult>? _results;
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
@@ -103,7 +104,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     });
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
+      final client = _searchClient();
       if (client == null) {
         if (!mounted || generation != _searchGeneration) return;
         setState(() => _isSearching = false);
@@ -179,26 +180,24 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     _search();
   }
 
-  Future<void> _downloadSubtitle(PlexSubtitleSearchResult result) async {
+  /// Null for a server that is gone, or whose client has no subtitle search.
+  ExternalSubtitleSearchClient? _searchClient() {
+    final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
+    return client is ExternalSubtitleSearchClient ? client as ExternalSubtitleSearchClient : null;
+  }
+
+  Future<void> _downloadSubtitle(SubtitleSearchResult result) async {
     if (_downloadingKey != null) return;
     setState(() => _downloadingKey = result.key);
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
+      final client = _searchClient();
       if (client == null) {
         if (!mounted) return;
         setState(() => _downloadingKey = null);
         return;
       }
-      final success = await client.downloadSubtitle(
-        widget.ratingKey,
-        key: result.key,
-        codec: result.codec ?? 'srt',
-        language: result.languageCode ?? _languageCode,
-        hearingImpaired: result.hearingImpaired,
-        forced: result.forced,
-        providerTitle: result.providerTitle ?? '',
-      );
+      final success = await client.downloadSubtitle(widget.ratingKey, result);
 
       if (!mounted) return;
 
@@ -242,6 +241,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
     final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
     final hasResults = _results != null && _results!.isNotEmpty && !_isSearching && _error == null;
+    final filtersByReleaseName = _searchClient()?.subtitleTitleFiltersByReleaseName ?? false;
 
     return BaseVideoControlSheet(
       title: t.videoControls.searchSubtitles,
@@ -293,8 +293,13 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                     tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     decoration: pillInputDecoration(
                       context,
-                      hintText: widget.mediaTitle ?? t.metadataEdit.title,
-                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
+                      hintText: filtersByReleaseName
+                          ? t.videoControls.filterSubtitlesByReleaseName
+                          : widget.mediaTitle ?? t.metadataEdit.title,
+                      prefixIcon: AppIcon(
+                        filtersByReleaseName ? Symbols.filter_list_rounded : Symbols.search_rounded,
+                        size: 20,
+                      ),
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,

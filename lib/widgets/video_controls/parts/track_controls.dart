@@ -151,6 +151,10 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       selectedAudioStreamId: widget.selectedAudioStreamId,
       sourceSubtitleTracks: widget.sourceSubtitleTracks,
       selectedSubtitleChoice: widget.selectedSubtitleChoice,
+      // Plex proxies OpenSubtitles via its server-side plugin; Jellyfin via
+      // its Open Subtitles plugin once the client's probe found it. The check
+      // uses the registered client for this metadata's serverId.
+      subtitleSearchSupported: _supportsSubtitleSearch(),
     );
     final canSwitchSourceSubtitles = versionQuality.canSwitch && versionQuality.sourceSubtitleTracks.isNotEmpty;
     return TrackControlsState(
@@ -209,31 +213,41 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       subtitlesVisible: _subtitlesVisible,
       showQueueButton: playbackState.isQueueActive && widget.canNavigateMediaItems,
       onQueueItemSelected: playbackState.isQueueActive && widget.canNavigateMediaItems ? _onQueueItemSelected : null,
-      ratingKey: widget.metadata.id,
+      ratingKey: _subtitleItemId(),
       mediaTitle: widget.metadata.title,
       onSubtitleDownloaded: _onSubtitleDownloaded,
-      // Plex proxies OpenSubtitles via its server-side plugin; Jellyfin
-      // doesn't expose an equivalent so the Search Subtitles tile is hidden
-      // for Jellyfin items. The check uses the registered client type for
-      // this metadata's serverId.
-      subtitleSearchSupported: _isPlexBackedMetadata(),
+      subtitleSearchSupported: versionQuality.subtitleSearchSupported,
     );
   }
 
-  /// True when the active server supports external subtitle search (Plex
-  /// today). Requires a server id because the download callback needs the
-  /// Plex client/token for that server.
-  bool _isPlexBackedMetadata() {
+  /// The registered client for this metadata's server, when it searches subtitles.
+  ExternalSubtitleSearchClient? _subtitleSearchClient() {
     try {
       final serverId = widget.metadata.serverId;
-      if (serverId == null) return false;
-      final manager = context.read<MultiServerProvider>().serverManager;
-      final c = manager.getClient(ServerId(serverId));
-      return c?.capabilities.externalSubtitleSearch ?? false;
+      if (serverId == null) return null;
+      final client = context.read<MultiServerProvider>().serverManager.getClient(ServerId(serverId));
+      return client is ExternalSubtitleSearchClient && client!.capabilities.externalSubtitleSearch
+          ? client as ExternalSubtitleSearchClient
+          : null;
     } catch (_) {
-      return false;
+      return null;
     }
   }
+
+  /// The item subtitle search acts on: the playing version's, where the
+  /// server keeps merged versions as items of their own.
+  String _subtitleItemId() {
+    final index = widget.selectedMediaIndex;
+    final versions = widget.availableVersions;
+    final mediaSourceId = index >= 0 && index < versions.length ? versions[index].id : null;
+    return _subtitleSearchClient()?.subtitleItemIdFor(widget.metadata.id, mediaSourceId: mediaSourceId) ??
+        widget.metadata.id;
+  }
+
+  /// True when the active server supports external subtitle search.
+  /// Requires a server id because the download callback needs that server's
+  /// client.
+  bool _supportsSubtitleSearch() => _subtitleSearchClient()?.canSearchSubtitlesFor(widget.metadata.kind) ?? false;
 
   Widget _buildTrackChapterControlsWidget({bool hideChaptersAndQueue = false}) {
     final playbackState = context.watch<PlaybackStateProvider>();

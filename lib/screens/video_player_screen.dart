@@ -323,12 +323,29 @@ SubtitlePreference? sessionPreferenceForSourceSubtitleChoice(
   List<MediaSubtitleTrack> rows,
 ) {
   if (choice.isOff) return const SubtitlePreference.off();
+  final downloaded = choice.downloadedTrack;
+  if (downloaded != null) return SubtitlePreference.track(PlaybackSubtitleResolver.subtitleTrackForSource(downloaded));
   for (final row in rows) {
     if (row.id == choice.sourceStreamId) {
       return SubtitlePreference.track(PlaybackSubtitleResolver.subtitleTrackForSource(row));
     }
   }
   return null;
+}
+
+/// The source audio stream a pick in the player commits, so that a reload
+/// carries it; null keeps the committed one. Under a transcode the engine's
+/// tracks describe the output, and with external rows or a single engine track
+/// its list does not line up with the rows.
+int? sourceAudioStreamIdForPick({
+  required bool isTranscoding,
+  required AudioTrack pick,
+  required List<AudioTrack> engineTracks,
+  required List<MediaAudioTrack> rows,
+}) {
+  if (isTranscoding || rows.any((row) => row.isExternal)) return null;
+  if (engineTracks.where((t) => t.id != AudioTrack.auto.id && t.id != AudioTrack.off.id).length <= 1) return null;
+  return playingSourceAudioTrack(selectedMpvTrack: pick, mpvTracks: engineTracks, sourceTracks: rows)?.id;
 }
 
 enum _SubtitleSelectionSlot { primary, secondary }
@@ -1303,6 +1320,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     newAudioStreamId: newAudioStreamId,
     newSubtitleChoice: newSubtitleChoice,
   );
+
+  /// A pick in the player's audio list, which the controls make only once a
+  /// live native player has started.
+  @visibleForTesting
+  Future<void> debugPickAudioTrackForTesting(AudioTrack track) => _onAudioTrackChanged(track);
+
+  /// The cycle-audio hotkey and the companion remote's audio button.
+  @visibleForTesting
+  void debugCycleAudioTrackForTesting() => _cycleAudioTrack();
 
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
@@ -2773,10 +2799,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Future<void> _onAudioTrackChanged(AudioTrack track) async {
-    if (track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id) {
-      _sessionAudioPreference = track;
-    }
+    _rememberAudioPick(track);
     await _trackManager?.onAudioTrackSelectedByUser(track);
+  }
+
+  /// An audio track the user picked in the player, from the list or by cycling.
+  void _rememberAudioPick(AudioTrack track) {
+    if (track.id == AudioTrack.auto.id || track.id == AudioTrack.off.id) return;
+    _sessionAudioPreference = track;
+    final streamId = sourceAudioStreamIdForPick(
+      isTranscoding: _isTranscoding,
+      pick: track,
+      engineTracks: player?.state.tracks.audio ?? const [],
+      rows: _currentMediaInfo?.audioTracks ?? const [],
+    );
+    if (streamId != null && mounted) setState(() => _selectedAudioStreamId = streamId);
   }
 
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {

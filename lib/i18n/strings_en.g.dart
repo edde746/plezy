@@ -2482,6 +2482,9 @@ class Translations$videoControls$en {
 	/// en: 'Language'
 	String get language => 'Language';
 
+	/// en: 'Filter by release name'
+	String get filterSubtitlesByReleaseName => 'Filter by release name';
+
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
 
@@ -8945,6 +8948,7 @@ extension on Translations {
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
+			'videoControls.filterSubtitlesByReleaseName' => 'Filter by release name',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
@@ -9135,9 +9139,9 @@ extension on Translations {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
@@ -9649,9 +9653,9 @@ extension on Translations {
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
-			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
@@ -10163,9 +10167,9 @@ extension on Translations {
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			'performanceOverlay.fps' => 'FPS',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',

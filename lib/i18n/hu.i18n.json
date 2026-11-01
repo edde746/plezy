@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "Nincsenek elérhető audioeszközök",
     "searchSubtitles": "Feliratok keresése",
     "language": "Nyelv",
+    "filterSubtitlesByReleaseName": "Szűrés kiadásnév szerint",
     "noSubtitlesFound": "Nem találhatók feliratok",
     "subtitleDownloaded": "Felirat letöltve",
     "subtitleDownloadedNotApplied": "Felirat letöltve, de nem sikerült kiválasztani",

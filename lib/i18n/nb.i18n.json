@@ -892,6 +892,7 @@
     "noAudioDevicesAvailable": "Ingen lydenheter tilgjengelig",
     "searchSubtitles": "Søk etter undertekster",
     "language": "Språk",
+    "filterSubtitlesByReleaseName": "Filtrer etter utgivelsesnavn",
     "noSubtitlesFound": "Ingen undertekster funnet",
     "subtitleDownloaded": "Undertekst lastet ned",
     "subtitleDownloadedNotApplied": "Underteksten ble lastet ned, men kunne ikke velges",

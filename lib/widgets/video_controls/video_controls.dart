@@ -34,7 +34,7 @@ import '../../focus/focus_navigation_intent.dart';
 import '../../focus/transport_keys.dart';
 
 import '../../database/app_database.dart';
-import '../../media/media_backend.dart';
+import '../../media/media_server_client.dart';
 import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
 import '../../models/livetv_capture_buffer.dart';
@@ -147,14 +147,6 @@ List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
 }
 
 @visibleForTesting
-MediaSubtitleTrack? findNewExternalSubtitleTrack(List<MediaSubtitleTrack> tracks, Set<int> existingSourceIds) {
-  for (final track in tracks) {
-    if (track.isExternal && !existingSourceIds.contains(track.id)) return track;
-  }
-  return null;
-}
-
-@visibleForTesting
 SubtitleDownloadApplyOutcome subtitleDownloadApplyOutcomeFor(PlaybackSourceChangeOutcome outcome) {
   return switch (outcome) {
     PlaybackSourceChangeOutcome.applied ||
@@ -187,6 +179,7 @@ ShaderPreset resolveShaderTogglePreset({
   List<MediaSubtitleTrack> sourceSubtitleTracks,
   PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
   bool canSwitch,
+  bool subtitleSearchSupported,
 })
 effectiveVersionQualityControls({
   required bool isOfflinePlayback,
@@ -197,6 +190,7 @@ effectiveVersionQualityControls({
   required int? selectedAudioStreamId,
   required List<MediaSubtitleTrack> sourceSubtitleTracks,
   required PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
+  required bool subtitleSearchSupported,
 }) {
   if (isOfflinePlayback) {
     return (
@@ -208,6 +202,8 @@ effectiveVersionQualityControls({
       sourceSubtitleTracks: const <MediaSubtitleTrack>[],
       selectedSubtitleChoice: null,
       canSwitch: false,
+      // A download would land on the server; the reload reopens the local copy.
+      subtitleSearchSupported: false,
     );
   }
   return (
@@ -219,6 +215,7 @@ effectiveVersionQualityControls({
     sourceSubtitleTracks: sourceSubtitleTracks,
     selectedSubtitleChoice: selectedSubtitleChoice,
     canSwitch: true,
+    subtitleSearchSupported: subtitleSearchSupported,
   );
 }
 
