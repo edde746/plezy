@@ -36,6 +36,7 @@ import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
+import '../profiles/bonfire_service.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
@@ -473,6 +474,7 @@ class _MainScreenState extends State<MainScreen>
   /// observe its [ActiveProfileProvider.isBinding] state for the once-only
   /// priming below.
   PlexHomeService? _plexHomeService;
+  BonfireProfileService? _bonfireService;
   ActiveProfileProvider? _activeProfileForListener;
   String? _lastSeenProfileId;
   // Tracks ActiveProfileProvider.isBinding from the previous notification
@@ -593,7 +595,13 @@ class _MainScreenState extends State<MainScreen>
       // state already hydrated it when it created the service, so an offline launch
       // keeps its cached Plex Home users without reaching the network.
       // `_handleOfflineStatusChanged` starts it if we come online later.
-      if (!_isOffline) unawaited(_plexHomeService!.start());
+      if (!_isOffline) {
+        unawaited(_plexHomeService!.start());
+        // Same live/network entry point for Bonfire/JellyProfiles virtual
+        // profiles; `_handleOfflineStatusChanged` starts it on a later online
+        // transition, and `start()` is idempotent.
+        unawaited((_bonfireService ??= context.read<BonfireProfileService>()).start());
+      }
       final manager = context.read<MultiServerProvider>().serverManager;
       // Read the binder so the Provider's `lazy: false` create has fired for
       // sure. `start()` is idempotent; SetupScreen normally started it already,
@@ -1389,6 +1397,8 @@ class _MainScreenState extends State<MainScreen>
       // so repeated offline/online transitions are free.
       final plexHome = _plexHomeService ??= context.read<PlexHomeService>();
       unawaited(plexHome.start());
+      // Same lifecycle for Bonfire/JellyProfiles virtual profiles.
+      unawaited((_bonfireService ??= context.read<BonfireProfileService>()).start());
       unawaited(() async {
         final mp = context.read<MultiServerProvider>();
         final binder = context.read<ActiveProfileBinder>();

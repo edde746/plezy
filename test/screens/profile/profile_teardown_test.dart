@@ -11,6 +11,7 @@ import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/profiles/active_profile_binder.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
+import 'package:plezy/profiles/bonfire_service.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection.dart';
@@ -310,6 +311,12 @@ Future<_Harness> _pumpHarness(
   final profileConnections = ProfileConnectionRegistry(database);
   final storage = await StorageService.getInstance();
   final plexHome = _PlexHome(connections: connections, profileConnections: profileConnections, storage: storage);
+  final bonfire = BonfireProfileService(
+    connections: connections,
+    storage: storage,
+    bonfireProfileFetcher: (_) async => const [],
+  );
+  addTearDown(() async => bonfire.dispose());
   final active = ActiveProfileProvider(
     registry: profileRegistry,
     plexHome: plexHome,
@@ -345,6 +352,7 @@ Future<_Harness> _pumpHarness(
         Provider<ConnectionRegistry>.value(value: connections),
         Provider<ProfileConnectionRegistry>.value(value: profileConnections),
         Provider<PlexHomeService>.value(value: plexHome),
+        Provider<BonfireProfileService>.value(value: bonfire),
         ChangeNotifierProvider<ActiveProfileProvider>.value(value: active),
         Provider<ActiveProfileBinder>.value(value: _Binder(events)),
         ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),

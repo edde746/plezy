@@ -11,10 +11,12 @@ import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';
 import '../utils/app_logger.dart';
 import 'active_profile_provider.dart';
+import 'bonfire_switch.dart';
 import 'plex_home_switch.dart';
 import 'profile.dart';
 import 'profile_connection.dart';
 import 'profile_connection_registry.dart';
+import 'server_connection_lookup.dart';
 
 /// Callback invoked when a Plex Home user PIN is required mid-activation.
 /// Returns the entered PIN, or `null` to abort. The implementation
@@ -28,20 +30,30 @@ class _ProfileBindResult {
     required this.visibleServerIds,
     required this.expectedServerIds,
     this.discoveredMembership = const {},
+    this.boundJellyfinConnectionIds = const {},
   });
 
   const _ProfileBindResult.empty()
     : visibleServerIds = const {},
       expectedServerIds = const {},
-      discoveredMembership = const {};
+      discoveredMembership = const {},
+      boundJellyfinConnectionIds = const {};
 
   _ProfileBindResult.visible(Set<String> ids)
     : visibleServerIds = Set.unmodifiable(ids),
       expectedServerIds = Set.unmodifiable(ids),
-      discoveredMembership = const {};
+      discoveredMembership = const {},
+      boundJellyfinConnectionIds = const {};
 
   final Set<String> visibleServerIds;
   final Set<String> expectedServerIds;
+
+  /// Connection ids of Jellyfin clients registered during this bind pass. A
+  /// Bonfire child binds under a compound id (`machineId/userId`) that is
+  /// ephemeral — it lives on no persisted join row — so the visibility sweep
+  /// must treat it as owned by this profile or it removes the server it just
+  /// bound and the app cold-starts with "No servers available".
+  final Set<String> boundJellyfinConnectionIds;
 
   /// Server ids per Plex connection id, for connections whose plex.tv
   /// resource refresh succeeded in this bind. Authoritative: they replace the
@@ -356,12 +368,21 @@ class ActiveProfileBinder {
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
       final localProfileHasJoinRows = profile.isLocal && joinRows.isNotEmpty;
 
-      // Bind the implicit Plex Home parent and borrowed/extra join rows in
-      // parallel. A slow/offline Plex parent should not add its timeout budget
-      // on top of an otherwise reachable MediaBrowser or borrowed-server bind.
+      // Bind the implicit Plex Home / Bonfire parent and borrowed/extra join
+      // rows in parallel. A slow/offline parent should not add its timeout
+      // budget on top of an otherwise reachable MediaBrowser or borrowed-server
+      // bind.
       final results = await Future.wait([
         if (profile.isPlexHome)
           _bindPlexHome(
+            profile,
+            joinRows: joinRows,
+            connectionsById: connectionsById,
+            allowPinPrompt: allowPinPrompt,
+            generation: generation,
+          ),
+        if (profile.isJellyfinBonfire)
+          _bindJellyfinBonfire(
             profile,
             joinRows: joinRows,
             connectionsById: connectionsById,
@@ -383,6 +404,7 @@ class ActiveProfileBinder {
       ]);
       if (!_isCurrentBind(profile.id, generation)) return false;
       final visibleServerIds = <String>{};
+      final boundJellyfinConnectionIds = <String>{};
       final discoveredMembership = <String, Set<String>>{for (final result in results) ...result.discoveredMembership};
       // A successful resource refresh is authoritative for its connection:
       // servers plex.tv no longer lists must not stay expected (and so
@@ -401,6 +423,7 @@ class ActiveProfileBinder {
       for (final result in results) {
         visibleServerIds.addAll(result.visibleServerIds);
         expectedServerIds.addAll(result.expectedServerIds);
+        boundJellyfinConnectionIds.addAll(result.boundJellyfinConnectionIds);
       }
 
       // Snapshot before the visibility sweep below: removeServer() clears a
@@ -418,10 +441,24 @@ class ActiveProfileBinder {
       // profile. Always set the filter to the bound set (even when empty) so
       // a profile with no connections shows nothing — falling back to "all
       // visible" on empty would leak servers attached to other profiles.
-      final jellyfinConnectionIds = <String>{
-        for (final pc in joinRows)
-          if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) id,
-      };
+      final jellyfinConnectionIds = <String>{};
+      for (final pc in joinRows) {
+        if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) {
+          jellyfinConnectionIds.add(id);
+          continue;
+        }
+        // Bonfire join rows store the machine id (the household is
+        // server-wide); the live client row is the compound sign-in
+        // connection on that machine.
+        if (jellyfinConnectionForServerId(connectionsById, pc.connectionId) case final JellyfinConnection parent) {
+          jellyfinConnectionIds.add(parent.id);
+        }
+      }
+      // Bonfire children bind under ephemeral compound ids (`machineId/
+      // userId`) carried by no join row; without this the sweep sees the
+      // just-registered child client as "another profile's" and removes the
+      // whole server, cold-starting the app with "No servers available".
+      jellyfinConnectionIds.addAll(boundJellyfinConnectionIds);
       for (final serverId in serverManager.registeredServerIds) {
         final belongs = visibleServerIds.contains(serverId) || expectedServerIds.contains(serverId);
         if (belongs &&
@@ -492,6 +529,15 @@ class ActiveProfileBinder {
     if (profile.isPlexHome && parentId != null) {
       if (connectionsById[parentId] case final PlexAccountConnection account) {
         expected.addAll(plexMembership(account));
+      }
+    }
+    if (profile.isJellyfinBonfire && parentId != null) {
+      // A Bonfire profile's reach is exactly its parent server — the plugin
+      // scopes libraries server-side; there is no server-membership list to
+      // consult. The parent id is the machine id; the live row may be keyed
+      // by the compound machineId/userId id.
+      if (jellyfinConnectionForServerId(connectionsById, parentId) case final JellyfinConnection conn) {
+        expected.add(conn.serverMachineId);
       }
     }
 
@@ -606,6 +652,166 @@ class ActiveProfileBinder {
     );
   }
 
+  /// Bind a Jellyfin Bonfire virtual profile against its parent connection.
+  ///
+  /// The parent row stores the master token exactly as it was signed in. A
+  /// master-tied profile binds with that token directly. A child profile gets
+  /// a profile-scoped session token — minted once via Bonfire's
+  /// `POST /plugins/profiles/switch` (PIN-prompted where the profile demands
+  /// one) and persisted on the profile's join row, so cold-start resume
+  /// reattaches the child session without a second PIN round-trip. The live
+  /// client is rebuilt from a token-swapped copy of the connection: the
+  /// plugin scopes libraries server-side, so downstream requests simply obey
+  /// whatever the child token can see. The stored parent row is never
+  /// overwritten — switching back is a matter of choosing the master profile.
+  Future<_ProfileBindResult> _bindJellyfinBonfire(
+    Profile profile, {
+    required List<ProfileConnection> joinRows,
+    required Map<String, Connection> connectionsById,
+    required bool allowPinPrompt,
+    required int generation,
+  }) async {
+    final parentId = profile.parentConnectionId;
+    final bonfireUserId = profile.bonfireUserId;
+    if (parentId == null || bonfireUserId == null) {
+      appLogger.w('ActiveProfileBinder: ${profile.displayName} missing parent/uuid metadata');
+      return const _ProfileBindResult.empty();
+    }
+    final parent = jellyfinConnectionForServerId(connectionsById, parentId);
+    if (parent == null) {
+      appLogger.w('ActiveProfileBinder: parent connection $parentId for ${profile.displayName} not found');
+      return const _ProfileBindResult.empty();
+    }
+
+    // Join rows are keyed by the parent connection's persisted row id (an FK
+    // to Connections), while the Bonfire profile id — and therefore
+    // parentId — carries the canonical machine id. Match through the host.
+    bool belongsToParent(ProfileConnection row) => joinRowBelongsToParent(
+      row,
+      parentConnectionId: parentId,
+      parentConnection: parent,
+      connectionsById: connectionsById,
+    );
+
+    ProfileConnection? pc;
+    for (final row in joinRows) {
+      if (belongsToParent(row)) {
+        pc = row;
+        break;
+      }
+    }
+
+    if (profile.bonfireIsMaster) {
+      // The master Bonfire profile is the account that signed in: its token
+      // already IS the parent connection's token — except after a PIN re-entry
+      // through the plugin, because /plugins/profiles/switch re-issues (rotates)
+      // the master token for this device and the activation row persists the new
+      // one. Binding the connection's older token then 401s every request, so
+      // prefer the switch-issued token when the row holds one — but probe it
+      // first: a Quick Connect re-login on the server kills old tokens, and
+      // binding a dead rotated token cold-starts the app offline.
+      final rotated = pc != null && pc.hasToken ? pc.userToken : null;
+      if (rotated != null && rotated.isNotEmpty && rotated != parent.accessToken) {
+        if (await bonfireProfileTokenStillValid(parent, bonfireUserId, rotated)) {
+          return _bindMediaBrowser(
+            parent.copyWith(accessToken: rotated),
+            profileId: profile.id,
+            generation: generation,
+          );
+        }
+        appLogger.i('ActiveProfileBinder: rotated master token is no longer valid — keeping the connection token');
+        await profileConnections.recordToken(profile.id, parent.id, '');
+      }
+      return _bindMediaBrowser(parent, profileId: profile.id, generation: generation);
+    }
+    final cachedToken = pc != null && pc.hasToken ? pc.userToken : null;
+    if (cachedToken != null && cachedToken.isNotEmpty) {
+      // Resume the minted child session — same posture Plex Home uses for
+      // cold-start auto-resume and passive rebinds. Validate first: Bonfire
+      // expires child tokens when the master session re-authenticates (a
+      // Quick Connect re-login, for example), and binding a dead token
+      // leaves the whole app offline until the user hits Reconnect.
+      if (await bonfireProfileTokenStillValid(parent, bonfireUserId, cachedToken)) {
+        return _bindMediaBrowser(
+          // Distinct compound id (machineId/userId) per Bonfire profile: the
+          // client manager keys live Jellyfin clients by connection id, so a
+          // copy that keeps the parent's id collides with the parent's live
+          // client and keeps serving the previous profile until a manual
+          // reconnect. Deriving the id mirrors how a second human user on the
+          // same server gets their own connection at auth time.
+          parent.copyWith(
+            id: '${parent.serverMachineId}/$bonfireUserId',
+            accessToken: cachedToken,
+            userId: bonfireUserId,
+            userName: profile.displayName,
+          ),
+          profileId: profile.id,
+          generation: generation,
+        );
+      }
+      appLogger.i(
+        'ActiveProfileBinder: cached Bonfire token for ${profile.displayName} is no longer valid — re-minting',
+      );
+      await profileConnections.recordToken(profile.id, parent.id, '');
+    }
+
+    if (!allowPinPrompt && profile.bonfireRequiresPin) {
+      appLogger.i(
+        'ActiveProfileBinder: suppressing PIN-gated Bonfire switch for passive rebind of ${profile.displayName}',
+      );
+      return const _ProfileBindResult.empty();
+    }
+
+    final result = await switchBonfireUserWithPin(
+      parentConnection: parent,
+      profileId: bonfireUserId,
+      requiresPin: profile.bonfireRequiresPin,
+      promptForPin: allowPinPrompt
+          ? ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage)
+          : ({String? errorMessage}) async => null,
+      logLabel: profile.displayName,
+    );
+    if (!_isCurrentBind(profile.id, generation)) return const _ProfileBindResult.empty();
+    final token = result.userToken;
+    if (!result.succeeded || token == null || token.isEmpty) {
+      appLogger.w(
+        'ActiveProfileBinder: Bonfire switch failed for ${profile.displayName}: ${result.status.name} ${result.message ?? ""}',
+      );
+      if (result.status == BonfireSwitchStatus.authRejected) {
+        // The parent/master token itself is no longer valid — drop the stale
+        // child token so the next bind re-mints after the account re-auths.
+        await profileConnections.recordToken(profile.id, parent.id, '');
+      }
+      return const _ProfileBindResult.empty();
+    }
+
+    final minted = result.userToken!;
+    await profileConnections.upsert(
+      ProfileConnection(
+        profileId: profile.id,
+        // FK to the persisted parent connections row — see bonfire_switch.
+        connectionId: parent.id,
+        userToken: minted,
+        userIdentifier: bonfireUserId,
+        tokenAcquiredAt: DateTime.now(),
+      ),
+    );
+    appLogger.i(
+      'ActiveProfileBinder: minted Bonfire profile token for ${profile.displayName} '
+      '(server=${parent.serverMachineId}, uuid=$bonfireUserId, tokenLen=${minted.length})',
+    );
+    return _bindMediaBrowser(
+      parent.copyWith(
+        id: '${parent.serverMachineId}/$bonfireUserId',
+        accessToken: minted,
+        userId: bonfireUserId,
+        userName: profile.displayName,
+      ),
+      profileId: profile.id,
+      generation: generation,
+    );
+  }
+
   /// Bind every [ProfileConnection] row for [profile]. Used by both kinds:
   /// for local profiles, this is the entire bind. For plex_home profiles,
   /// this handles connections borrowed on top of the parent account (the
@@ -627,13 +833,33 @@ class ActiveProfileBinder {
       return const _ProfileBindResult.empty();
     }
     final parentId = profile.parentConnectionId;
+    // The parent connection is implicit for both virtual kinds: Plex Home
+    // never stores it as a join row, and a Bonfire join row IS the parent
+    // connections row (the FK target) bound by _bindJellyfinBonfire itself.
+    // Letting that row fall through to the borrow switch re-binds the parent
+    // host with the MASTER token beside the child bind — which races the
+    // just-minted token and can serve master-scope content for a PIN-gated
+    // child whose own bind failed.
+    final parentConn = parentId == null
+        ? null
+        : profile.isJellyfinBonfire
+        ? jellyfinConnectionForServerId(connectionsById, parentId)
+        : connectionsById[parentId];
 
     final visible = <String>{};
     final expected = <String>{};
     final futures = <Future<_ProfileBindResult>>[];
     for (final pc in joinRows) {
-      if (parentId != null && pc.connectionId == parentId) continue;
+      if (parentId != null &&
+          (pc.connectionId == parentId || (parentConn != null && pc.connectionId == parentConn.id))) {
+        continue;
+      }
       final conn = connectionsById[pc.connectionId];
+      if (profile.isJellyfinBonfire && conn is JellyfinConnection && conn.serverMachineId == parentId) {
+        // Any row on the parent's own host: Bonfire reach is the parent
+        // connection, never a sibling row.
+        continue;
+      }
       if (conn == null) {
         appLogger.w('ActiveProfileBinder: missing connection ${pc.connectionId} for ${profile.displayName}');
         continue;
@@ -1202,9 +1428,17 @@ class ActiveProfileBinder {
     // filter so the refusal banner can surface it instead of hiding it as if
     // the profile had no server.
     if (ok || serverManager.refusedServerIds.contains(conn.serverMachineId)) {
-      return _ProfileBindResult.visible({conn.serverMachineId});
+      return _ProfileBindResult(
+        visibleServerIds: {conn.serverMachineId},
+        expectedServerIds: {conn.serverMachineId},
+        boundJellyfinConnectionIds: {conn.id},
+      );
     }
-    return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+    return _ProfileBindResult(
+      visibleServerIds: const {},
+      expectedServerIds: {conn.serverMachineId},
+      boundJellyfinConnectionIds: {conn.id},
+    );
   }
 
   bool _isCurrentBind(String profileId, int generation) {

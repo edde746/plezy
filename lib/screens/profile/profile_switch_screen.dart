@@ -29,6 +29,7 @@ import 'add_local_profile_screen.dart';
 import 'pin_entry_dialog.dart';
 import 'profile_teardown.dart';
 import 'profile_detail_screen.dart';
+import '../../profiles/server_connection_lookup.dart';
 
 /// Flat picker showing every [Profile] in the system — Plex Home users
 /// auto-surfaced from connected accounts, plus user-created locals.
@@ -331,17 +332,26 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     var hasConnections = false;
     // With a single Plex account on the device, naming it under every tile
     // tells no two profiles apart and reads as if each were that account's
-    // owner (#2590).
-    final namesAccount = activeProvider.connectionsById.values.whereType<PlexAccountConnection>().length > 1;
+    // owner (#2590). The same reasoning applies to Bonfire tiles: the parent
+    // chip is the only thing distinguishing Bonfire profiles when a device
+    // hosts Jellyfin on more than one server.
+    final jellyfinHosts = {
+      for (final c in activeProvider.connectionsById.values.whereType<JellyfinConnection>()) c.serverMachineId,
+    };
+    final namesAccount =
+        activeProvider.connectionsById.values.whereType<PlexAccountConnection>().length > 1 ||
+        (profile.isJellyfinBonfire && jellyfinHosts.length > 1);
     // Plex Home profiles implicitly own their parent Plex connection (no
     // join-table row), so prepend it before any borrowed connections. The
     // profile *is* the Home user there, so its own name identifies the user
     // half of the label — and without the account half the chip would only
     // repeat the tile's title.
-    if (profile.isPlexHome) {
+    if (profile.isPlexHome || profile.isJellyfinBonfire) {
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
-        final conn = activeProvider.connectionsById[parentId];
+        final conn = profile.isJellyfinBonfire
+            ? jellyfinConnectionForServerId(activeProvider.connectionsById, parentId)
+            : activeProvider.connectionsById[parentId];
         if (conn != null) {
           hasConnections = true;
           if (namesAccount) chips.add(_chipFor(conn, user: profile.displayName, namesAccount: true));

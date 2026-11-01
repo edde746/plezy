@@ -33,6 +33,7 @@ import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
 import 'profile_teardown.dart';
 import 'profile_name_field.dart';
+import '../../profiles/server_connection_lookup.dart';
 
 /// Manage one [Profile] — rename, change PIN, list/add/remove
 /// connections, set the default connection.
@@ -208,9 +209,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       final other = byId[row.connectionId];
       if (other != null) retained.addAll(_serverIdsForConnection(other));
     }
-    final parentId = _profile.isPlexHome ? _profile.parentConnectionId : null;
+    final parentId = (_profile.isPlexHome || _profile.isJellyfinBonfire) ? _profile.parentConnectionId : null;
     if (parentId != null && parentId != excludingConnectionId) {
-      final parent = byId[parentId];
+      final parent = _profile.isJellyfinBonfire ? jellyfinConnectionForServerId(byId, parentId) : byId[parentId];
       if (parent != null) retained.addAll(_serverIdsForConnection(parent));
     }
     return retained;
@@ -309,7 +310,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
               const SizedBox(height: 8),
               if (!isLocal)
                 Text(
-                  _profile.plexProtected ? t.profiles.pinManagedByPlex : t.profiles.noPinSetEditOnPlex,
+                  _profile.isJellyfinBonfire
+                      ? (_profile.bonfireRequiresPin
+                            ? t.profiles.pinManagedByBonfire
+                            : t.profiles.noPinRequiredByBonfire)
+                      : _profile.plexProtected
+                      ? t.profiles.pinManagedByPlex
+                      : t.profiles.noPinSetEditOnPlex,
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 )
               else if (_profile.pinHash == null)
@@ -430,12 +437,17 @@ class _ConnectionsListState extends State<_ConnectionsList> {
               builder: (context, snap) {
                 final all = snap.data ?? const <Connection>[];
                 final byId = {for (final c in all) c.id: c};
-                // Plex Home profiles have an implicit parent connection that
-                // isn't in the join table — list it first so the user sees the
-                // full picture. The profile *is* a home user of that account,
-                // so the only removal is signing out of the whole account;
-                // it isn't shown for locals.
-                final parentConn = profile.isPlexHome ? byId[profile.parentConnectionId] : null;
+                // Plex Home and Bonfire profiles have an implicit parent
+                // connection that isn't in the join table — list it first so
+                // the user sees the full picture. The profile *is* a home user
+                // of that account / a plugin-managed profile of that server,
+                // so the only removal is signing out of the whole account; it
+                // isn't shown for locals.
+                final parentConn = profile.isPlexHome
+                    ? byId[profile.parentConnectionId]
+                    : profile.isJellyfinBonfire && profile.parentConnectionId != null
+                    ? jellyfinConnectionForServerId(byId, profile.parentConnectionId!)
+                    : null;
                 final visiblePcs = visibleProfileConnections(profile, pcs);
                 if (visiblePcs.isEmpty && parentConn == null) {
                   return Padding(
@@ -455,17 +467,25 @@ class _ConnectionsListState extends State<_ConnectionsList> {
                       ListTile(
                         leading: BackendBadge(backend: parentConn.backend, size: 24),
                         title: Text(parentConn.displayLabel),
-                        subtitle: Text(t.profiles.plexHomeAccount),
-                        trailing: FocusablePopupMenuButton<String>(
-                          icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                          tooltip: t.profiles.manage,
-                          onSelected: (value) {
-                            if (value == 'sign_out') {
-                              unawaited(widget.onSignOutParent(parentConn));
-                            }
-                          },
-                          itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
+                        subtitle: Text(
+                          profile.isJellyfinBonfire ? t.profiles.bonfireAccount : t.profiles.plexHomeAccount,
                         ),
+                        // Only Plex parents can be signed out from here. A
+                        // Bonfire parent is a Jellyfin login the server owns —
+                        // its sign-out lives on the connection's own settings
+                        // screen, so offering it here would be a dead control.
+                        trailing: parentConn is PlexAccountConnection
+                            ? FocusablePopupMenuButton<String>(
+                                icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                                tooltip: t.profiles.manage,
+                                onSelected: (value) {
+                                  if (value == 'sign_out') {
+                                    unawaited(widget.onSignOutParent(parentConn));
+                                  }
+                                },
+                                itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
+                              )
+                            : null,
                       ),
                     for (final pc in visiblePcs)
                       if (byId[pc.connectionId] case final conn?)

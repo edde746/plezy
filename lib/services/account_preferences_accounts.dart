@@ -3,6 +3,7 @@ import '../media/account_preferences_target.dart';
 import '../media/account_ref.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_connection.dart';
+import '../profiles/server_connection_lookup.dart';
 
 /// One editable account: what the picker shows, plus the credential the
 /// plex.tv source needs. MediaBrowser accounts carry no token here — their
@@ -55,7 +56,9 @@ AccountPreferenceResolution resolveAccountPreferenceAccounts({
 
   for (final row in profileConnections) {
     if (row.profileId != profile.id) continue;
-    final connection = byId[row.connectionId];
+    // Bonfire join rows store the canonical machine id (households are
+    // server-wide); the live client row is the compound sign-in connection.
+    final connection = byId[row.connectionId] ?? jellyfinConnectionForServerId(byId, row.connectionId);
     final account = switch (connection) {
       JellyfinConnection() => AccountPreferenceAccount(
         target: AccountPreferenceTarget(

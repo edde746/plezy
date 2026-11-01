@@ -2989,6 +2989,12 @@ class Translations$profiles$en {
 	/// en: 'No PIN set. To require one, edit the home user on plex.tv.'
 	String get noPinSetEditOnPlex => 'No PIN set. To require one, edit the home user on plex.tv.';
 
+	/// en: 'PIN managed by the Bonfire plugin on your server.'
+	String get pinManagedByBonfire => 'PIN managed by the Bonfire plugin on your server.';
+
+	/// en: 'No PIN required. To require one, edit the profile in your server's Bonfire plugin settings.'
+	String get noPinRequiredByBonfire => 'No PIN required. To require one, edit the profile in your server\'s Bonfire plugin settings.';
+
 	/// en: 'Set PIN'
 	String get setPin => 'Set PIN';
 
@@ -3024,6 +3030,12 @@ class Translations$profiles$en {
 
 	/// en: 'Plex Home account'
 	String get plexHomeAccount => 'Plex Home account';
+
+	/// en: 'Bonfire master account'
+	String get bonfireAccount => 'Bonfire master account';
+
+	/// en: 'Too many attempts — try again in a few minutes.'
+	String get bonfireRateLimited => 'Too many attempts — try again in a few minutes.';
 
 	/// en: 'Plex account: ${account}'
 	String plexAccountChip({required Object account}) => 'Plex account: ${account}';
@@ -9098,6 +9110,8 @@ extension on Translations {
 			'profiles.pinProtectionLabel' => 'PIN protection',
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
+			'profiles.pinManagedByBonfire' => 'PIN managed by the Bonfire plugin on your server.',
+			'profiles.noPinRequiredByBonfire' => 'No PIN required. To require one, edit the profile in your server\'s Bonfire plugin settings.',
 			'profiles.setPin' => 'Set PIN',
 			'profiles.setPinTitle' => 'Set PIN',
 			'profiles.confirmPinTitle' => 'Confirm PIN',
@@ -9110,6 +9124,8 @@ extension on Translations {
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
+			'profiles.bonfireAccount' => 'Bonfire master account',
+			'profiles.bonfireRateLimited' => 'Too many attempts — try again in a few minutes.',
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
@@ -9132,12 +9148,12 @@ extension on Translations {
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
@@ -9646,12 +9662,12 @@ extension on Translations {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
@@ -10160,12 +10176,12 @@ extension on Translations {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',

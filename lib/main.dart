@@ -30,6 +30,7 @@ import 'profiles/profile_selection_policy.dart';
 import 'models/external_player_models.dart';
 import 'mixins/mounted_set_state_mixin.dart';
 import 'theme/mono_theme.dart';
+import 'profiles/bonfire_service.dart';
 import 'profiles/plex_home_service.dart';
 import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
@@ -1356,6 +1357,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final ConnectionRegistry _connections;
   late final ProfileConnectionRegistry _profileConnections;
   late final PlexHomeService _plexHomeService;
+  late final BonfireProfileService _bonfireService;
   late final AppLifecycleListener _appLifecycleListener;
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
 
@@ -1427,6 +1429,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       storage: widget.storage,
     );
     unawaited(_plexHomeService.hydrate());
+    // Bonfire/JellyProfiles virtual profiles ride the same hydrate-then-
+    // start lifecycle: cached list paints the picker, live refresh waits for
+    // the startup offline decision like Plex Home does.
+    _bonfireService = BonfireProfileService(connections: _connections, storage: widget.storage);
+    unawaited(_bonfireService.hydrate());
 
     // The first read registers the link channel handler.
     DeepLinkService.instance.host = const _RootDeepLinkProfileHost();
@@ -1497,6 +1504,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // those keep firing if the process outlives this teardown (#2651, #3012).
     await Future.wait([
       _plexHomeService.dispose(),
+      _bonfireService.dispose(),
       _offlineWatchSyncService.stopBackgroundSync(),
       ?_autoDeleteRun?.future,
     ]);
@@ -1515,6 +1523,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       _downloadManager.dispose();
       _serverManager.dispose();
       unawaited(_plexHomeService.dispose());
+      unawaited(_bonfireService.dispose());
     }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -1751,11 +1760,13 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         Provider<ProfileRegistry>(create: (_) => ProfileRegistry(_appDatabase)),
         Provider<ProfileConnectionRegistry>.value(value: _profileConnections),
         Provider<PlexHomeService>.value(value: _plexHomeService),
+        Provider<BonfireProfileService>.value(value: _bonfireService),
         ChangeNotifierProvider<ActiveProfileProvider>(
           create: (context) {
             final provider = ActiveProfileProvider(
               registry: context.read<ProfileRegistry>(),
               plexHome: context.read<PlexHomeService>(),
+              bonfire: context.read<BonfireProfileService>(),
               connections: context.read<ConnectionRegistry>(),
               profileConnections: context.read<ProfileConnectionRegistry>(),
               storage: context.read<StorageService>(),
