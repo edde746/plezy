@@ -24,6 +24,9 @@ class MobileNavigationRail extends StatelessWidget {
     this.isOffline = false,
     this.isReconnecting = false,
     this.onReconnect,
+    this.minWidth,
+    this.groupAlignment = 0,
+    this.backgroundColor,
   });
 
   final List<NavigationTab> tabs;
@@ -34,6 +37,14 @@ class MobileNavigationRail extends StatelessWidget {
   final bool isOffline;
   final bool isReconnecting;
   final VoidCallback? onReconnect;
+
+  /// Rail width; defaults to the Material rail width. iPhone Duo's vertical
+  /// bar shell sizes the rail to the system bar's inset.
+  final double? minWidth;
+
+  /// Where the destinations sit vertically: -1 top, 0 centre, 1 bottom.
+  final double groupAlignment;
+  final Color? backgroundColor;
 
   /// Material 3 rail indicator size; the long-press target matches it so the
   /// hold works anywhere on the visible pill, not only on the glyph.
@@ -60,12 +71,17 @@ class MobileNavigationRail extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight;
-        final labelled = showLabels && labelsFit(destinations: tabs.length, hasLeading: isOffline, height: height);
+        // The rail's own SafeArea takes the vertical insets out of the space.
+        final usableHeight = height - MediaQuery.paddingOf(context).vertical;
+        final labelled =
+            showLabels && labelsFit(destinations: tabs.length, hasLeading: isOffline, height: usableHeight);
         final rail = NavigationRail(
           selectedIndex: selectedIndex >= 0 ? selectedIndex : null,
           onDestinationSelected: (index) => onDestinationSelected(tabs[index].id),
           labelType: labelled ? NavigationRailLabelType.all : NavigationRailLabelType.none,
-          groupAlignment: 0,
+          groupAlignment: groupAlignment,
+          minWidth: minWidth,
+          backgroundColor: backgroundColor,
           leading: isOffline ? _reconnectAction(context) : null,
           destinations: [for (final tab in tabs) _destination(context, tab)],
         );

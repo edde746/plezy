@@ -101,9 +101,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
       mainBlankView?.frame = window?.bounds ?? .zero
 
-      let screen = containerView.window?.screen ?? window?.screen ?? UIScreen.main
-      let scale = screen.nativeScale > 0 ? screen.nativeScale : screen.scale
-      videoLayer.contentsScale = scale
+      if let screen = containerView.window?.screen ?? window?.screen {
+        videoLayer.contentsScale = screen.nativeScale > 0 ? screen.nativeScale : screen.scale
+      } else {
+        videoLayer.contentsScale = containerView.traitCollection.displayScale
+      }
     }
 
     #if os(iOS)

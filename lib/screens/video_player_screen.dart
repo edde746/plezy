@@ -86,6 +86,7 @@ import '../providers/shader_provider.dart';
 import '../providers/account_preferences_controller.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/iphone_duo.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/immersive_mode_guard.dart';
 import '../utils/live_tv_player_navigation.dart';
@@ -2207,6 +2208,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           // keeps the activity resumed and lets Android re-show the bars. The
           // guard answers the engine's re-show callback until release.
           ImmersiveModeGuard.acquire(this);
+          // iPhone Duo: horizontal status bar while playing, so the video and
+          // its controls get the full width instead of sharing it with the
+          // vertical bar.
+          IphoneDuo.instance.disableVerticalBarFor(this);
         } catch (e) {
           appLogger.w('Failed to set orientation', error: e);
           // Don't crash if orientation fails - video can still play
@@ -2384,6 +2389,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Before the overlays are shown below: the re-show callback that follows
     // must find no owner, or it would hide them again.
     ImmersiveModeGuard.release(this);
+    IphoneDuo.instance.restoreVerticalBarFor(this);
     final existing = _systemUiRestoreOperation;
     if (existing != null) return existing;
     if (_activeRouteGuard.identityFor(this) == null) return Future<void>.value();
@@ -2548,6 +2554,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // out; until then nobody owns it, and a stale owner would keep hiding
     // the bars on whatever screen comes next.
     ImmersiveModeGuard.release(this);
+    IphoneDuo.instance.restoreVerticalBarFor(this);
     if (!isReplacingWithVideo) {
       unawaited(_restoreSystemUiAndOrientation());
     }
