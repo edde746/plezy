@@ -1591,6 +1591,8 @@
       "watchOn": "观看平台",
       "watchTrailer": "观看预告片",
       "openOn": "在 ${site} 打开",
+      "trailerUnavailable": "无法在此设备上打开预告片",
+      "linkUnavailable": "无法在此设备上打开链接",
       "crew": "演职人员",
       "ratings": "评分",
       "schedule": "播出时间",

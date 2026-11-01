@@ -1599,6 +1599,8 @@
       "watchOn": "Megnézhető itt",
       "watchTrailer": "Előzetes megtekintése",
       "openOn": "Megnyitás itt: ${site}",
+      "trailerUnavailable": "Ezen az eszközön nem sikerült megnyitni az előzetest",
+      "linkUnavailable": "Ezen az eszközön nem sikerült megnyitni a hivatkozást",
       "crew": "Stáb",
       "ratings": "Értékelések",
       "schedule": "Műsorrend",

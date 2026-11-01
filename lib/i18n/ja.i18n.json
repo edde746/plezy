@@ -1591,6 +1591,8 @@
       "watchOn": "視聴先",
       "watchTrailer": "予告編を見る",
       "openOn": "${site}で開く",
+      "trailerUnavailable": "この端末では予告編を開けませんでした",
+      "linkUnavailable": "この端末ではリンクを開けませんでした",
       "crew": "スタッフ",
       "ratings": "評価",
       "schedule": "放送予定",

@@ -10,7 +10,9 @@ import 'package:http/testing.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_version.dart';
@@ -32,6 +34,7 @@ import 'package:plezy/services/seerr/seerr_auth_service.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/external_url.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/hub_section.dart';
@@ -306,10 +309,34 @@ const _item = CatalogItem(
   ids: CatalogItemIds(tmdb: 1),
 );
 
+/// Answers [fetchExtras] for `server-1`, enough for the library trailer lookup.
+class _ExtrasClient implements MediaServerClient {
+  _ExtrasClient(this.extras);
+
+  final List<MediaItem> extras;
+  final fetchedIds = <String>[];
+
+  @override
+  ServerId get serverId => ServerId('server-1');
+
+  @override
+  Future<List<MediaItem>> fetchExtras(String id) async {
+    fetchedIds.add(id);
+    return extras;
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 Future<void> _pumpDetail(
   WidgetTester tester,
   _FakeCatalogSource source, {
   List<MediaItem> matches = const [],
+  List<MediaServerClient> clients = const [],
   bool pushedRoute = false,
   CatalogItem item = _item,
   CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
@@ -320,6 +347,9 @@ Future<void> _pumpDetail(
   final sources = _FakeCatalogSourcesProvider(source, seerr: seerr);
   if (account != null) sources.followAccount(account);
   final serverManager = MultiServerManager();
+  for (final client in clients) {
+    serverManager.debugRegisterClientForTesting(client);
+  }
   final multiServer = testMultiServerProvider(serverManager);
   final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
   addTearDown(sources.dispose);
@@ -1043,6 +1073,181 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byTooltip(t.explore.detail.watchTrailer), findsOneWidget);
+  });
+
+  testWidgets('says so when an outbound link cannot be opened', (tester) async {
+    const urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final launched = <String>[];
+    messenger.setMockMethodCallHandler(urlLauncherChannel, (call) async {
+      if (call.method != 'launch') return null;
+      launched.add((call.arguments as Map)['url'] as String);
+      return false;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(urlLauncherChannel, null));
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Linked Movie',
+      ids: CatalogItemIds(tmdb: 41),
+      links: [CatalogLink(label: 'StreamCo', url: 'https://example.com/watch', isStreaming: true)],
+    );
+
+    await _pumpDetail(
+      tester,
+      _FakeCatalogSource(detail: const CatalogDetail(item: item)),
+      item: item,
+    );
+    await tester.tap(find.text('Open on StreamCo'));
+    await tester.pumpAndSettle();
+
+    expect(launched, ['https://example.com/watch']);
+    expect(find.text(t.explore.detail.linkUnavailable), findsOneWidget);
+  });
+
+  testWidgets('says so when the trailer cannot be opened', (tester) async {
+    const urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(urlLauncherChannel, (call) async => call.method == 'launch' ? false : null);
+    addTearDown(() => messenger.setMockMethodCallHandler(urlLauncherChannel, null));
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Trailer Movie',
+      ids: CatalogItemIds(tmdb: 51),
+      trailerUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    );
+
+    await _pumpDetail(
+      tester,
+      _FakeCatalogSource(detail: const CatalogDetail(item: item)),
+      item: item,
+    );
+    await tester.tap(find.byTooltip(t.explore.detail.watchTrailer));
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.explore.detail.trailerUnavailable), findsOneWidget);
+  });
+
+  group('tvOS runner', () {
+    const handoffChannel = MethodChannel('com.plezy/external_player');
+    const trailerItem = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Trailer Movie',
+      ids: CatalogItemIds(tmdb: 51),
+      trailerUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    );
+    late bool youTubeInstalled;
+    late bool openSucceeds;
+    late List<String> opened;
+
+    setUp(() {
+      debugTvosRunnerOverride = true;
+      youTubeInstalled = true;
+      openSucceeds = true;
+      opened = [];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(handoffChannel, (
+        call,
+      ) async {
+        final url = (call.arguments as Map)['url'] as String;
+        switch (call.method) {
+          case 'canOpenUrl':
+            return url == 'youtube://' && youTubeInstalled;
+          case 'openUrl':
+            opened.add(url);
+            return openSucceeds;
+        }
+        return null;
+      });
+    });
+
+    tearDown(() {
+      debugTvosRunnerOverride = null;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(handoffChannel, null);
+    });
+
+    testWidgets('hides outbound links, which have no browser to open in', (tester) async {
+      const item = CatalogItem(
+        source: CatalogSourceId.trakt,
+        kind: MediaKind.movie,
+        title: 'Linked Movie',
+        ids: CatalogItemIds(tmdb: 41),
+        links: [
+          CatalogLink(label: 'StreamCo', url: 'https://example.com/watch', isStreaming: true),
+          CatalogLink(label: 'Official Site', url: 'https://example.com'),
+        ],
+      );
+
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(detail: const CatalogDetail(item: item)),
+        item: item,
+      );
+
+      expect(find.text(t.explore.detail.watchOn), findsNothing);
+      expect(find.text(t.explore.detail.links), findsNothing);
+      expect(find.text('Open on StreamCo'), findsNothing);
+    });
+
+    testWidgets('hands a YouTube trailer to the YouTube app', (tester) async {
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(detail: const CatalogDetail(item: trailerItem)),
+        item: trailerItem,
+      );
+      await tester.tap(find.byTooltip(t.explore.detail.watchTrailer));
+      await tester.pumpAndSettle();
+
+      expect(opened, ['youtube://www.youtube.com/watch?v=dQw4w9WgXcQ']);
+      expect(find.text(t.explore.detail.trailerUnavailable), findsNothing);
+    });
+
+    testWidgets('says so when the YouTube app does not open the trailer', (tester) async {
+      openSucceeds = false;
+
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(detail: const CatalogDetail(item: trailerItem)),
+        item: trailerItem,
+      );
+      await tester.tap(find.byTooltip(t.explore.detail.watchTrailer));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.explore.detail.trailerUnavailable), findsOneWidget);
+    });
+
+    testWidgets('hides the trailer without the YouTube app or a library trailer', (tester) async {
+      youTubeInstalled = false;
+
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(detail: const CatalogDetail(item: trailerItem)),
+        item: trailerItem,
+      );
+
+      expect(find.byTooltip(t.explore.detail.watchTrailer), findsNothing);
+    });
+
+    testWidgets("offers a library copy's own trailer without the YouTube app", (tester) async {
+      youTubeInstalled = false;
+      final client = _ExtrasClient([
+        testMediaItem(id: 'featurette-1', serverId: 'server-1', raw: const {'ExtraType': 'Featurette'}),
+        testMediaItem(id: 'trailer-1', serverId: 'server-1', raw: const {'ExtraType': 'Trailer'}),
+      ]);
+
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(detail: const CatalogDetail(item: trailerItem)),
+        item: trailerItem,
+        matches: [_libraryCopy(id: 'copy-1', libraryTitle: 'Movies')],
+        clients: [client],
+      );
+
+      expect(client.fetchedIds, ['copy-1']);
+      expect(find.byTooltip(t.explore.detail.watchTrailer), findsOneWidget);
+      expect(opened, isEmpty);
+    });
   });
 
   testWidgets('background prose renders as its own section', (tester) async {

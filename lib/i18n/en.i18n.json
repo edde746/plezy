@@ -1599,6 +1599,8 @@
       "watchOn": "Watch on",
       "watchTrailer": "Watch trailer",
       "openOn": "Open on ${site}",
+      "trailerUnavailable": "Couldn't open the trailer on this device",
+      "linkUnavailable": "Couldn't open this link on this device",
       "crew": "Crew",
       "ratings": "Ratings",
       "schedule": "Schedule",

@@ -1599,6 +1599,8 @@
       "watchOn": "Bekijk op",
       "watchTrailer": "Trailer bekijken",
       "openOn": "Openen op ${site}",
+      "trailerUnavailable": "Kan de trailer niet openen op dit apparaat",
+      "linkUnavailable": "Kan de link niet openen op dit apparaat",
       "crew": "Crew",
       "ratings": "Beoordelingen",
       "schedule": "Uitzendschema",

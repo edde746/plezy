@@ -3033,6 +3033,8 @@ class Translations$explore$detail$zh extends Translations$explore$detail$en {
 	@override String get watchOn => '观看平台';
 	@override String get watchTrailer => '观看预告片';
 	@override String openOn({required Object site}) => '在 ${site} 打开';
+	@override String get trailerUnavailable => '无法在此设备上打开预告片';
+	@override String get linkUnavailable => '无法在此设备上打开链接';
 	@override String get crew => '演职人员';
 	@override String get ratings => '评分';
 	@override String get schedule => '播出时间';
@@ -4825,6 +4827,8 @@ extension on TranslationsZh {
 			'explore.detail.watchOn' => '观看平台',
 			'explore.detail.watchTrailer' => '观看预告片',
 			'explore.detail.openOn' => ({required Object site}) => '在 ${site} 打开',
+			'explore.detail.trailerUnavailable' => '无法在此设备上打开预告片',
+			'explore.detail.linkUnavailable' => '无法在此设备上打开链接',
 			'explore.detail.crew' => '演职人员',
 			'explore.detail.ratings' => '评分',
 			'explore.detail.schedule' => '播出时间',
@@ -4921,10 +4925,10 @@ extension on TranslationsZh {
 			'liveTv.recordSettings.skipInLibrary' => '跳过媒体库中已有的剧集',
 			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留全部剧集',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
 			'liveTv.failedToStartChannel' => '无法播放直播频道',
 			'liveTv.failedToBuildStreamUrl' => '无法生成视频流 URL',
@@ -5435,10 +5439,10 @@ extension on TranslationsZh {
 			'performanceOverlay.decoderExynosHw' => 'Exynos 硬件',
 			'performanceOverlay.decoderSoftware' => '软件',
 			'performanceOverlay.decoderHardware' => '硬件',
-			'performanceOverlay.tunnelingActive' => '已启用',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => '已启用',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他应用中打开视频',
