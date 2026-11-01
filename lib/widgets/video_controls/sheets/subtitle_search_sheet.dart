@@ -104,7 +104,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     });
 
     try {
-      final client = context.tryGetMediaClientForServer(ServerId(widget.serverId)) as ExternalSubtitleSearchClient?;
+      final client = _searchClient();
       if (client == null) {
         if (!mounted || generation != _searchGeneration) return;
         setState(() => _isSearching = false);
@@ -180,12 +180,18 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     _search();
   }
 
+  /// Null for a server that is gone, or whose client has no subtitle search.
+  ExternalSubtitleSearchClient? _searchClient() {
+    final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
+    return client is ExternalSubtitleSearchClient ? client as ExternalSubtitleSearchClient : null;
+  }
+
   Future<void> _downloadSubtitle(SubtitleSearchResult result) async {
     if (_downloadingKey != null) return;
     setState(() => _downloadingKey = result.key);
 
     try {
-      final client = context.tryGetMediaClientForServer(ServerId(widget.serverId)) as ExternalSubtitleSearchClient?;
+      final client = _searchClient();
       if (client == null) {
         if (!mounted) return;
         setState(() => _downloadingKey = null);

@@ -90,7 +90,8 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         _subtitleItemId() == ratingKey;
 
     try {
-      final client = context.getMediaClientForServer(ServerId(serverId)) as ExternalSubtitleSearchClient;
+      final client = _subtitleSearchClient();
+      if (client == null) return SubtitleDownloadApplyOutcome.unavailable;
 
       // The server downloads asynchronously: the request returns immediately
       // but the new stream entry shows up in metadata seconds later. Poll until it
