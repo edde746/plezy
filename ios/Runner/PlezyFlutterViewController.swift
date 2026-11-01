@@ -9,6 +9,12 @@ import UIKit
 ///
 /// All geometry is in this view's coordinate space, which is Flutter's
 /// logical pixel space.
+///
+/// The iPhone Duo API exists only in the iOS 27.1 SDK and later, and
+/// `#available` does not hide it from older compilers, so it is gated at
+/// compile time: Swift 6.4 (Xcode 27) plus a UIKit at least as new as the iOS
+/// 27.1 SDK's (Xcode 27.0 ships Swift 6.4 with the 27.0 SDK). Older toolchains
+/// build an inert controller whose channel reports no Duo state.
 class PlezyFlutterViewController: FlutterViewController {
   private var duoChannel: FlutterMethodChannel?
   private var verticalBarDisabled = false
@@ -24,25 +30,27 @@ class PlezyFlutterViewController: FlutterViewController {
     }
     duoChannel = channel
 
-    if #available(iOS 27.1, *) {
-      registerForTraitChanges(UITraitCollection.systemTraitsAffectingVerticalBarEdge) {
-        (self: Self, _: UITraitCollection) in
-        self.pushStateIfChanged()
-      }
-
-      let hinge = UIHingeInteraction { [weak self] _, update in
-        guard let self else { return }
-        if let hinge = update.hinge {
-          self.hingeStatus = Self.name(of: hinge.status)
-        } else {
-          self.hingeStatus = nil
+    #if compiler(>=6.4) && canImport(UIKit, _version: 9127.0.85)
+      if #available(iOS 27.1, *) {
+        registerForTraitChanges(UITraitCollection.systemTraitsAffectingVerticalBarEdge) {
+          (self: Self, _: UITraitCollection) in
+          self.pushStateIfChanged()
         }
-        // Reserved regions follow the hinge; read them after the resulting layout.
-        self.view.setNeedsLayout()
-        self.pushStateIfChanged()
+
+        let hinge = UIHingeInteraction { [weak self] _, update in
+          guard let self else { return }
+          if let hinge = update.hinge {
+            self.hingeStatus = Self.name(of: hinge.status)
+          } else {
+            self.hingeStatus = nil
+          }
+          // Reserved regions follow the hinge; read them after the resulting layout.
+          self.view.setNeedsLayout()
+          self.pushStateIfChanged()
+        }
+        view.addInteraction(hinge)
       }
-      view.addInteraction(hinge)
-    }
+    #endif
   }
 
   override func viewDidLayoutSubviews() {
@@ -50,10 +58,12 @@ class PlezyFlutterViewController: FlutterViewController {
     pushStateIfChanged()
   }
 
-  @available(iOS 27.1, *)
-  override var preferredVerticalBarBehavior: UIVerticalBarBehavior {
-    verticalBarDisabled ? .disabled : .automatic
-  }
+  #if compiler(>=6.4) && canImport(UIKit, _version: 9127.0.85)
+    @available(iOS 27.1, *)
+    override var preferredVerticalBarBehavior: UIVerticalBarBehavior {
+      verticalBarDisabled ? .disabled : .automatic
+    }
+  #endif
 
   private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
@@ -65,9 +75,11 @@ class PlezyFlutterViewController: FlutterViewController {
       let disabled = (call.arguments as? Bool) ?? false
       if disabled != verticalBarDisabled {
         verticalBarDisabled = disabled
-        if #available(iOS 27.1, *) {
-          setNeedsUpdateOfVerticalBarConfiguration()
-        }
+        #if compiler(>=6.4) && canImport(UIKit, _version: 9127.0.85)
+          if #available(iOS 27.1, *) {
+            setNeedsUpdateOfVerticalBarConfiguration()
+          }
+        #endif
       }
       result(nil)
     default:
@@ -84,28 +96,32 @@ class PlezyFlutterViewController: FlutterViewController {
   }
 
   private func currentState() -> NSDictionary {
-    var state: [String: Any] = [:]
-    guard #available(iOS 27.1, *) else { return state as NSDictionary }
+    #if compiler(>=6.4) && canImport(UIKit, _version: 9127.0.85)
+      guard #available(iOS 27.1, *) else { return [:] }
+      var state: [String: Any] = [:]
 
-    switch traitCollection.verticalBarEdge {
-    case .leading:
-      state["verticalBarEdge"] = isRightToLeft ? "right" : "left"
-    case .trailing:
-      state["verticalBarEdge"] = isRightToLeft ? "left" : "right"
-    default:
-      break
-    }
+      switch traitCollection.verticalBarEdge {
+      case .leading:
+        state["verticalBarEdge"] = isRightToLeft ? "right" : "left"
+      case .trailing:
+        state["verticalBarEdge"] = isRightToLeft ? "left" : "right"
+      default:
+        break
+      }
 
-    if let hingeStatus { state["hingeStatus"] = hingeStatus }
+      if let hingeStatus { state["hingeStatus"] = hingeStatus }
 
-    state["folds"] = view.reservedRegions(kind: .division)
-      .filter { $0.isActive && !$0.frame.isEmpty }
-      .map { Self.encode($0.frame) }
-    state["occlusions"] = view.reservedRegions(kind: .occlusion)
-      .filter { $0.isActive && !$0.frame.isEmpty }
-      .map { Self.encode($0.frame) }
+      state["folds"] = view.reservedRegions(kind: .division)
+        .filter { $0.isActive && !$0.frame.isEmpty }
+        .map { Self.encode($0.frame) }
+      state["occlusions"] = view.reservedRegions(kind: .occlusion)
+        .filter { $0.isActive && !$0.frame.isEmpty }
+        .map { Self.encode($0.frame) }
 
-    return state as NSDictionary
+      return state as NSDictionary
+    #else
+      return [:]
+    #endif
   }
 
   private var isRightToLeft: Bool {
@@ -116,13 +132,15 @@ class PlezyFlutterViewController: FlutterViewController {
     ["x": Double(rect.minX), "y": Double(rect.minY), "width": Double(rect.width), "height": Double(rect.height)]
   }
 
-  @available(iOS 27.1, *)
-  private static func name(of status: UIHinge.Status) -> String {
-    switch status {
-    case .closed: return "closed"
-    case .partiallyOpen: return "partiallyOpen"
-    case .fullyOpen: return "fullyOpen"
-    default: return "unknown"
+  #if compiler(>=6.4) && canImport(UIKit, _version: 9127.0.85)
+    @available(iOS 27.1, *)
+    private static func name(of status: UIHinge.Status) -> String {
+      switch status {
+      case .closed: return "closed"
+      case .partiallyOpen: return "partiallyOpen"
+      case .fullyOpen: return "fullyOpen"
+      default: return "unknown"
+      }
     }
-  }
+  #endif
 }
