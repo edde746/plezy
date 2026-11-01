@@ -137,30 +137,4 @@ void main() {
       expect(label.left, greaterThanOrEqualTo(382), reason: tab.getLabel());
     }
   });
-
-  testWidgets('grids get an even column count across a vertical fold', (tester) async {
-    IphoneDuo.instance.state.value = const IphoneDuoState(folds: [Rect.fromLTWH(455.5, 0, 40, 669)]);
-    late int odd;
-    late int even;
-    await tester.pumpWidget(
-      MediaQuery(
-        data: const MediaQueryData(size: Size(951, 669)),
-        child: IphoneDuoScope(
-          child: Builder(
-            builder: (context) {
-              odd = IphoneDuo.foldAwareColumnCount(context, 5);
-              even = IphoneDuo.foldAwareColumnCount(context, 4);
-              return const SizedBox();
-            },
-          ),
-        ),
-      ),
-    );
-    expect(odd, 6);
-    expect(even, 4);
-
-    IphoneDuo.instance.state.value = IphoneDuoState.empty;
-    await tester.pump();
-    expect(odd, 5);
-  });
 }

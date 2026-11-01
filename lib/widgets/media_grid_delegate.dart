@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../media/media_item.dart' show CardShape;
 import '../services/settings_service.dart';
 import '../utils/grid_size_calculator.dart';
-import '../utils/iphone_duo.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import 'media_card.dart';
@@ -59,9 +58,10 @@ class MediaGridDelegate {
       useWideAspectRatio: useWideAspectRatio,
     );
     final spacing = spacingFor(context: context, useWideAspectRatio: useWideAspectRatio);
-    final columnCount = IphoneDuo.foldAwareColumnCount(
-      context,
-      GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent, crossAxisSpacing: spacing),
+    final columnCount = GridSizeCalculator.getColumnCount(
+      availableWidth,
+      maxCrossAxisExtent,
+      crossAxisSpacing: spacing,
     );
     return GridSizeCalculator.getCellWidthForColumnCount(availableWidth, columnCount, crossAxisSpacing: spacing);
   }
@@ -162,13 +162,11 @@ class MediaGridGeometry {
       shape: shape,
     );
 
-    final packedColumnCount = GridSizeCalculator.getColumnCount(
+    final columnCount = GridSizeCalculator.getColumnCount(
       crossAxisExtentForColumnCount ?? crossAxisExtent,
       maxCrossAxisExtent,
       crossAxisSpacing: spacing,
     );
-    // iPhone Duo held like a book: an even count puts the fold between columns.
-    final columnCount = IphoneDuo.foldAwareColumnCount(context, packedColumnCount);
     final itemWidth = GridSizeCalculator.getCellWidthForColumnCount(
       crossAxisExtent,
       columnCount,
@@ -191,9 +189,7 @@ class MediaGridGeometry {
         // When the column count is pinned to a different basis width, the
         // delegate must pack exactly [columnCount] columns into the real
         // extent, so cap cells at the derived width instead.
-        maxCrossAxisExtent: crossAxisExtentForColumnCount != null || columnCount != packedColumnCount
-            ? itemWidth
-            : maxCrossAxisExtent,
+        maxCrossAxisExtent: crossAxisExtentForColumnCount != null ? itemWidth : maxCrossAxisExtent,
         mainAxisExtent: itemHeight,
         crossAxisSpacing: spacing,
         mainAxisSpacing: spacing,
