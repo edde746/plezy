@@ -2494,6 +2494,9 @@ class Translations$videoControls$en {
 	/// en: 'Failed to download subtitle'
 	String get subtitleDownloadFailed => 'Failed to download subtitle';
 
+	/// en: 'The subtitle didn't appear in time. The download may have failed'
+	String get subtitleDownloadTimedOut => 'The subtitle didn\'t appear in time. The download may have failed';
+
 	/// en: 'Search languages...'
 	String get searchLanguages => 'Search languages...';
 
@@ -2685,6 +2688,9 @@ class Translations$messages$en {
 
 	/// en: 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.'
 	String get serverLimitBody => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.';
+
+	/// en: 'Try transcoding'
+	String get serverLimitTranscode => 'Try transcoding';
 
 	/// en: 'File unavailable'
 	String get mediaUnreadableTitle => 'File unavailable';
@@ -8955,6 +8961,7 @@ extension on Translations {
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
+			'videoControls.subtitleDownloadTimedOut' => 'The subtitle didn\'t appear in time. The download may have failed',
 			'videoControls.searchLanguages' => 'Search languages...',
 			'videoControls.skipIntro' => 'Skip Intro',
 			'videoControls.skipCredits' => 'Skip Credits',
@@ -9015,6 +9022,7 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
+			'messages.serverLimitTranscode' => 'Try transcoding',
 			'messages.mediaUnreadableTitle' => 'File unavailable',
 			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
 			'messages.serverBusyTitle' => 'Stream unavailable',
@@ -9140,10 +9148,10 @@ extension on Translations {
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
-			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
-			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
+			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
@@ -9654,10 +9662,10 @@ extension on Translations {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
-			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			'liveTv.recordShow' => 'Record show',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
+			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
@@ -10168,10 +10176,10 @@ extension on Translations {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
-			'performanceOverlay.playMethod' => 'Play Method',
-			'performanceOverlay.memory' => 'Memory',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.playMethod' => 'Play Method',
+			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
