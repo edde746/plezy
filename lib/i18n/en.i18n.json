@@ -1074,6 +1074,7 @@
     "noConnections": "No connections",
     "plexHomeAccount": "Plex Home account",
     "bonfireAccount": "Bonfire master account",
+      "bonfireRateLimited": "Too many attempts — try again in a few minutes.",
     "plexAccountChip": "Plex account: ${account}",
     "plexAccountUserChip": "${user} via ${account}",
     "connectionDefault": "Default",

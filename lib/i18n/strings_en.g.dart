@@ -3028,6 +3028,9 @@ class Translations$profiles$en {
 	/// en: 'Bonfire master account'
 	String get bonfireAccount => 'Bonfire master account';
 
+	/// en: 'Too many attempts — try again in a few minutes.'
+	String get bonfireRateLimited => 'Too many attempts — try again in a few minutes.';
+
 	/// en: 'Plex account: ${account}'
 	String plexAccountChip({required Object account}) => 'Plex account: ${account}';
 
@@ -9114,6 +9117,7 @@ extension on Translations {
 			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
 			'profiles.bonfireAccount' => 'Bonfire master account',
+			'profiles.bonfireRateLimited' => 'Too many attempts — try again in a few minutes.',
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
@@ -9138,9 +9142,9 @@ extension on Translations {
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
-			'profiles.continueButton' => 'Continue',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
@@ -9652,9 +9656,9 @@ extension on Translations {
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
-			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
@@ -10166,9 +10170,9 @@ extension on Translations {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
-			'performanceOverlay.uiFps' => 'UI FPS',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

@@ -64,6 +64,8 @@ Future<bool> bonfireProfileTokenStillValid(
   } catch (e) {
     appLogger.w('bonfireProfileTokenStillValid: probe failed ($e) — keeping token');
     return true;
+  } finally {
+    client.close();
   }
 }
 
@@ -97,6 +99,7 @@ Future<BonfireSwitchResult> switchBonfireUserWithPin({
     client: testClient,
   );
   String? pin;
+  final labelSuffix = logLabel == null ? '' : ' for $logLabel';
   String? error;
   try {
     while (true) {
@@ -118,45 +121,38 @@ Future<BonfireSwitchResult> switchBonfireUserWithPin({
               ? (data['activeProfileToken'] ?? data['ActiveProfileToken'])?.toString()
               : null;
           if (token == null || token.isEmpty) {
-            appLogger.e('switchBonfireUserWithPin: 200 without activeProfileToken${logLabel == null ? '' : ' for $logLabel'}');
+            appLogger.e('switchBonfireUserWithPin: 200 without activeProfileToken$labelSuffix');
             return const BonfireSwitchResult._(BonfireSwitchStatus.failed, null, null);
           }
           return BonfireSwitchResult._(BonfireSwitchStatus.success, token, null);
         case 400:
           final reason = _failureReason(response.data);
-          // The body carries the reason. Only a PIN-shaped 400 is retryable;
-          // device restrictions / unprotected masters are final.
-          if (pin == null || _looksLikePinFailure(reason)) {
-            error = t.profiles.incorrectPinTryAgain;
-            pin = null;
-            // Force the next iteration to prompt even when the caller didn't
-            // expect a PIN — the plugin disagrees about whether one is needed.
-            requiresPin = true;
-            continue;
+          // The body carries the reason. Only a PIN-shaped 400 is retryable:
+          // Bonfire answers "Invalid PIN"/"PIN required" here, and those get
+          // a prompt (or a re-prompt when the entered PIN was wrong). Any
+          // other 400 — profile not found, device restrictions — is final,
+          // exactly like switchPlexHomeUserWithPin treats them.
+          if (!_looksLikePinFailure(reason)) {
+            return BonfireSwitchResult._(BonfireSwitchStatus.failed, null, reason);
           }
-          return BonfireSwitchResult._(BonfireSwitchStatus.failed, null, reason);
+          error = pin != null ? t.profiles.incorrectPinTryAgain : reason;
+          pin = null;
+          // Force the next iteration to prompt even when the caller didn't
+          // expect a PIN — the plugin disagrees about whether one is needed.
+          requiresPin = true;
+          continue;
         case 401:
           // About the caller's own token, never the target (plugin contract).
           return const BonfireSwitchResult._(BonfireSwitchStatus.authRejected, null, null);
         case 429:
-          return const BonfireSwitchResult._(
-            BonfireSwitchStatus.failed,
-            null,
-            'Too many attempts — try again in a few minutes.',
-          );
+          return BonfireSwitchResult._(BonfireSwitchStatus.failed, null, t.profiles.bonfireRateLimited);
         default:
-          appLogger.w(
-            'switchBonfireUserWithPin got ${response.statusCode}${logLabel == null ? '' : ' for $logLabel'}',
-          );
+          appLogger.w('switchBonfireUserWithPin got ${response.statusCode}$labelSuffix');
           return BonfireSwitchResult._(BonfireSwitchStatus.failed, null, _failureReason(response.data));
       }
     }
   } catch (e, st) {
-    appLogger.e(
-      'switchBonfireUserWithPin failed${logLabel == null ? '' : ' for $logLabel'}',
-      error: e,
-      stackTrace: st,
-    );
+    appLogger.e('switchBonfireUserWithPin failed$labelSuffix', error: e, stackTrace: st);
     return const BonfireSwitchResult._(BonfireSwitchStatus.failed, null, null);
   } finally {
     client.close();
@@ -220,4 +216,6 @@ String _failureReason(Object? data) {
   return text.length > 240 ? '${text.substring(0, 240)}…' : text;
 }
 
-bool _looksLikePinFailure(String reason) => reason.toLowerCase().contains('pin');
+/// Word-shaped match so unrelated wording that merely contains the
+/// letters ("pinned", "spine") doesn't masquerade as a PIN problem.
+bool _looksLikePinFailure(String reason) => RegExp(r'\bpin\b', caseSensitive: false).hasMatch(reason);
