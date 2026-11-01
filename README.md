@@ -119,6 +119,7 @@ sudo moss pad plezy
 - Resolution, HDR/Dolby Vision, and audio-format badges on cards and detail pages
 - Favorites and unwatched library filters[^mb]
 - Extras — trailers, deleted scenes, behind-the-scenes
+- Plex theme music on title details, with optional TV spotlight and mobile home playback; configure it under Settings > Appearance > Home Screen
 
 ### <img src="assets/readme_icons/explore.svg" height="20" alt="" align="center" /> Explore & Requests
 - Explore tab — watchlist, trending, popular, and recommendation rows from Plex Discover[^plex], Trakt, MyAnimeList, AniList, Simkl, and Seerr[^connect]

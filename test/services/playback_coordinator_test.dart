@@ -248,6 +248,31 @@ void main() {
     expect(musicStops, 1);
   });
 
+  test('music claim releases theme without waiting for video retirement', () async {
+    final retirement = Completer<void>();
+    var themeStops = 0;
+    var videoStops = 0;
+    Future<void> stopTheme() async => themeStops++;
+    Future<void> stopVideo() async => videoStops++;
+
+    coordinator.registerThemeSession(stopAndDispose: stopTheme);
+    coordinator.registerVideoSession(shutdown: stopVideo);
+    coordinator.unregisterVideoSession(stopVideo, retirement: retirement.future);
+    addTearDown(() async {
+      if (!retirement.isCompleted) retirement.complete();
+      coordinator.unregisterThemeSession(stopTheme);
+      coordinator.unregisterVideoSession(stopVideo);
+      await coordinator.shutdownVideo();
+    });
+
+    await coordinator.claimMusic().timeout(const Duration(seconds: 1));
+
+    expect(themeStops, 1);
+    expect(videoStops, 0);
+    expect(coordinator.hasVideoSession, isTrue);
+    expect(retirement.isCompleted, isFalse);
+  });
+
   test('video claim releases music before theme', () async {
     final stops = <String>[];
     Future<void> stopMusic() async => stops.add('music');

@@ -100,6 +100,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<int> _heroIndex = ValueNotifier<int>(0);
+  late final ThemeMusicService? _themeMusicService;
   Timer? _autoScrollTimer;
   Timer? _indicatorTimer;
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
@@ -354,6 +355,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void initState() {
     super.initState();
+    _themeMusicService = context.read<ThemeMusicService?>();
     WidgetsBinding.instance.addObserver(this);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _heroFocusNode.addListener(_onHeroFocusChanged);
@@ -477,7 +479,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
-    unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
+    unawaited(_themeMusicService?.stop(_heroThemeMusicOwner));
     _spotlight.dispose();
     _tabVisible.dispose();
     _indicatorProgress.dispose();
@@ -497,8 +499,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Stale hubs refetch on every resume — cheap timestamp check, and a
       // desktop window-focus gain after hours away should refresh too (#1646).
       final startedFullPass = _discover.refreshIfStale();
-      if (_tabVisible.value && !_isAutoScrollPaused)
+      if (_tabVisible.value && !_isAutoScrollPaused) {
         unawaited(context.read<ThemeMusicService?>()?.resume(_heroThemeMusicOwner));
+      }
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
       if (!startedFullPass && (Platform.isIOS || Platform.isAndroid)) {
@@ -611,12 +614,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// [ThemeMusicMode.everywhere]. Episodes have no theme of their own, so an
   /// on-deck episode falls back to its show's.
   void _maybeStartHeroThemeMusic() {
-    if (!_tabVisible.value || _currentHeroIndex < 0 || _currentHeroIndex >= _onDeck.length) {
+    final heroIndex = _heroIndex.value;
+    if (!_tabVisible.value || heroIndex < 0 || heroIndex >= _onDeck.length) {
       unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
       _heroThemeMusicKey = null;
       return;
     }
-    final item = _onDeck[_currentHeroIndex];
+    final item = _onDeck[heroIndex];
     if (item.globalKey == _heroThemeMusicKey) return;
     _heroThemeMusicKey = item.globalKey;
 

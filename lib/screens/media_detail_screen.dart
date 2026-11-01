@@ -377,6 +377,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedExtras = false;
   bool _hasLoadedRelatedHubs = false;
   final Object _themeMusicOwner = Object();
+  late final ThemeMusicService? _themeMusicService;
   final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
   final _hubFocusMemory = HubFocusMemory();
   PageRoute<dynamic>? _route;
@@ -883,6 +884,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void initState() {
     super.initState();
+    _themeMusicService = context.read<ThemeMusicService?>();
     WidgetsBinding.instance.addObserver(this);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
@@ -1169,7 +1171,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _libraryContentSubscription?.cancel();
     unawaited(_communityRatingsSubscription?.cancel());
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));
+    unawaited(_themeMusicService?.stop(_themeMusicOwner));
     for (final source in _watchlistListenedSources) {
       source.watchlistChanges.removeListener(_onWatchlistSourceChanged);
     }

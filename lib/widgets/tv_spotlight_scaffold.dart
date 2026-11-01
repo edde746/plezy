@@ -196,6 +196,7 @@ class _TvSpotlightThemeMusicListener extends StatefulWidget {
 class _TvSpotlightThemeMusicListenerState extends State<_TvSpotlightThemeMusicListener>
     with WidgetsBindingObserver, RouteAware {
   final Object _themeMusicOwner = Object();
+  late final ThemeMusicService? _themeMusicService;
   String? _itemKey;
   PageRoute<dynamic>? _route;
   RouteObserver<PageRoute<dynamic>>? _routeObserver;
@@ -203,6 +204,7 @@ class _TvSpotlightThemeMusicListenerState extends State<_TvSpotlightThemeMusicLi
   @override
   void initState() {
     super.initState();
+    _themeMusicService = context.read<ThemeMusicService?>();
     WidgetsBinding.instance.addObserver(this);
     widget.spotlightListenable.addListener(_onSpotlightChanged);
     widget.tabVisible?.addListener(_onTabVisibleChanged);
@@ -287,7 +289,7 @@ class _TvSpotlightThemeMusicListenerState extends State<_TvSpotlightThemeMusicLi
     widget.tabVisible?.removeListener(_onTabVisibleChanged);
     WidgetsBinding.instance.removeObserver(this);
     _routeObserver?.unsubscribe(this);
-    unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));
+    unawaited(_themeMusicService?.stop(_themeMusicOwner));
     super.dispose();
   }
 
