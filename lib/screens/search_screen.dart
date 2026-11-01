@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
+import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -16,22 +17,32 @@ import '../media/search_hit.dart';
 import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
+import '../models/catalog/catalog_item.dart';
+import '../models/catalog/catalog_labels.dart';
+import '../models/catalog/catalog_metadata.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/seerr_account_provider.dart';
+import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
+import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/search_relevance.dart';
+import '../widgets/app_icon.dart';
+import '../widgets/catalog_source_logo.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/search_input_field.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/person_search_row.dart';
+import '../widgets/seerr_request_sheet.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
@@ -55,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen>
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
-  ({String query, SearchAggregationResult result})? _pendingSearchOutcome;
+  ({String query, SearchAggregationResult result, List<MediaItem> seerr})? _pendingSearchOutcome;
 
   /// Filter over the current results: everything, one media kind, or only
   /// people. Chips and the filtered views derive from [_searchCandidates] and
@@ -67,6 +78,12 @@ class _SearchScreenState extends State<SearchScreen>
   List<MediaPerson> _searchPeople = const [];
   List<MediaKind> _candidateKinds = const [];
   List<SearchHit>? _filteredResults;
+
+  /// Titles the connected Seerr instance found for the query that the media
+  /// servers do not already have, as catalog stand-ins. They trail the
+  /// library hits in every view (never ranked into them) so a title that is
+  /// not on the server can still be found, and requested, from Search.
+  List<MediaItem> _seerrResults = const [];
   late final FocusNode _allChipFocusNode = FocusNode(debugLabel: 'SearchKindChipAll');
   late final FocusNode _peopleChipFocusNode = FocusNode(debugLabel: 'SearchPeopleChip');
   final Map<MediaKind, FocusNode> _kindChipFocusNodes = {};
@@ -131,6 +148,8 @@ class _SearchScreenState extends State<SearchScreen>
     // start would filter nothing. Read before any await: the profile subtree
     // can be torn down mid-search.
     final hiddenLibraries = context.read<HiddenLibrariesProvider>();
+    // Seerr runs alongside the servers and never fails the search.
+    final seerrFuture = _searchSeerr(query);
     await hiddenLibraries.ensureInitialized();
     if (!mounted) return const [];
 
@@ -152,11 +171,63 @@ class _SearchScreenState extends State<SearchScreen>
           message: 'Search was cancelled before any server completed',
         );
       }
-      _pendingSearchOutcome = (query: query, result: result);
-      return result.hits;
+      final seerr = await seerrFuture ?? const <MediaItem>[];
+      abort.throwIfAborted();
+      _pendingSearchOutcome = (query: query, result: result, seerr: seerr);
+      return [...result.hits, for (final item in seerr) MediaSearchHit(item)];
     } finally {
       if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
     }
+  }
+
+  /// Upper bound on how long a slow Seerr instance can hold back the
+  /// library results it is shown alongside.
+  static const Duration _seerrSearchTimeout = Duration(seconds: 5);
+
+  /// The connected Seerr source's titles for [query] that its media server
+  /// does not report as available — available ones are already among the
+  /// library hits. Null when Seerr is not connected, the lookup failed, or it
+  /// outlived [_seerrSearchTimeout].
+  Future<List<MediaItem>?> _searchSeerr(String query) async {
+    final seerr = context.read<CatalogSourcesProvider?>()?.seerrSource;
+    if (seerr == null) return null;
+    try {
+      final items = await seerr.search(query).timeout(_seerrSearchTimeout);
+      return [
+        for (final item in items)
+          if (_isMissingFromLibrary(item)) item.toMediaItem(),
+      ];
+    } catch (error) {
+      appLogger.w('Search: Seerr lookup failed', error: error);
+      return null;
+    }
+  }
+
+  static bool _isMissingFromLibrary(CatalogItem item) {
+    final state = item.serverState;
+    return state?.availability != CatalogAvailability.available &&
+        state?.availability4k != CatalogAvailability.available;
+  }
+
+  /// Re-read the Seerr rows of the query on screen after a request, so the
+  /// row's action turns into the request's status. Library rows stay as
+  /// they are.
+  Future<void> _refreshSeerrResults() async {
+    final query = lastSearchedQuery;
+    if (query.isEmpty) return;
+    final fresh = await _searchSeerr(query);
+    if (fresh == null || !mounted || isSearching || query != lastSearchedQuery) return;
+    setState(() {
+      searchResults = [
+        for (final hit in searchResults)
+          if (hit is! MediaSearchHit || !hit.item.isCatalogItem) hit,
+        for (final item in fresh) MediaSearchHit(item),
+      ];
+      _seerrResults = fresh;
+      _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults]);
+      if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
+      _filteredResults = _rankFilteredResults(_selectedFilter, query);
+    });
   }
 
   @override
@@ -188,7 +259,8 @@ class _SearchScreenState extends State<SearchScreen>
   void onSearchCompleted(String query, List<SearchHit> results) {
     final outcome = _pendingSearchOutcome;
     _pendingSearchOutcome = null;
-    final matched = outcome != null && outcome.query == query ? outcome.result : null;
+    final matchedOutcome = outcome != null && outcome.query == query ? outcome : null;
+    final matched = matchedOutcome?.result;
 
     // Committed alongside the results the pending setState renders (build has
     // not run yet): the pre-rank pools the filter chips derive from. A selected
@@ -198,7 +270,13 @@ class _SearchScreenState extends State<SearchScreen>
         matched?.candidates ??
         [
           for (final hit in results)
-            if (hit case MediaSearchHit(:final item)) item,
+            if (hit case MediaSearchHit(:final item) when !item.isCatalogItem) item,
+        ];
+    _seerrResults =
+        matchedOutcome?.seerr ??
+        [
+          for (final hit in results)
+            if (hit case MediaSearchHit(:final item) when item.isCatalogItem) item,
         ];
     _searchPeople =
         matched?.people ??
@@ -206,7 +284,7 @@ class _SearchScreenState extends State<SearchScreen>
           for (final hit in results)
             if (hit case PersonSearchHit(:final person)) person,
         ];
-    _candidateKinds = _kindsIn(_searchCandidates);
+    _candidateKinds = _kindsIn([..._searchCandidates, ..._seerrResults]);
     if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
     _filteredResults = _rankFilteredResults(_selectedFilter, query);
 
@@ -400,6 +478,8 @@ class _SearchScreenState extends State<SearchScreen>
         return [
           for (final item in rankMediaSearchResults(ofKind, query, limit: defaultMediaSearchLimit))
             MediaSearchHit(item),
+          for (final item in _seerrResults)
+            if (item.kind == kind) MediaSearchHit(item),
         ];
       case _PeopleResults():
         return [
@@ -423,6 +503,7 @@ class _SearchScreenState extends State<SearchScreen>
     _searchPeople = const [];
     _candidateKinds = const [];
     _filteredResults = null;
+    _seerrResults = const [];
   }
 
   FocusNode _chipFocusNode(_SearchFilter filter) => switch (filter) {
@@ -498,12 +579,96 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  Future<void> _requestFromSeerr(SeerrCatalogSource seerr, CatalogItem item, int tmdbId) async {
+    await showSeerrRequestSheet(context, source: seerr, kind: item.kind, tmdbId: tmdbId, title: item.title);
+    if (mounted) await _refreshSeerrResults();
+  }
+
+  /// The trailing end of a Seerr row: the status of a request already in
+  /// flight, otherwise a Request button when the user may request this kind.
+  /// The button is off the D-pad path, so TV requests through the row's
+  /// detail screen or context menu instead.
+  Widget? _seerrRowAction(BuildContext context, CatalogItem? item, SeerrCatalogSource? seerr) {
+    if (item == null) return null;
+    if (item.serverState?.request
+        case final request? &&
+            (CatalogRequestState.pending || CatalogRequestState.approved || CatalogRequestState.processing)) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Text(
+          requestStateLabel(request, is4k: false),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: tokens(context).textMuted),
+        ),
+      );
+    }
+    final tmdbId = item.ids.tmdb;
+    if (seerr == null || tmdbId == null || !seerr.canRequest(item.kind) || PlatformDetector.isTV()) return null;
+    return IconButton(
+      tooltip: t.seerr.request,
+      icon: const AppIcon(Symbols.download_rounded, fill: 1, size: 22),
+      onPressed: () => unawaited(_requestFromSeerr(seerr, item, tmdbId)),
+    );
+  }
+
+  /// A Seerr title the servers do not have: the same row as a library hit
+  /// (a tap opens the catalog detail screen), plus its request action. The
+  /// first one heads the Seerr section.
+  Widget _buildSeerrRow(
+    BuildContext context,
+    MediaItem item, {
+    required SeerrCatalogSource? seerr,
+    required bool showHeader,
+    required bool isFirst,
+    required VoidCallback? onNavigateUp,
+  }) {
+    Widget row = FocusableMediaCard(
+      key: Key(item.globalKey),
+      item: item,
+      viewModeOverride: ViewMode.list,
+      disableScale: true,
+      focusNode: isFirst ? firstResultFocusNode : null,
+      onNavigateLeft: _navigateToSidebar,
+      onNavigateUp: onNavigateUp,
+    );
+    if (_seerrRowAction(context, item.catalogItem, seerr) case final action?) {
+      row = Row(
+        children: [
+          Expanded(child: row),
+          const SizedBox(width: 8),
+          action,
+        ],
+      );
+    }
+    if (!showHeader) return row;
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(8, isFirst ? 0 : 16, 8, 8),
+          child: Row(
+            children: [
+              const CatalogSourceLogo(CatalogSourceId.seerr, size: 18),
+              const SizedBox(width: 8),
+              Text(t.seerr.title, style: Theme.of(context).textTheme.titleSmall),
+            ],
+          ),
+        ),
+        row,
+      ],
+    );
+  }
+
   Widget _buildResultsList(BuildContext context) {
     final multiServer = context.watch<MultiServerProvider>();
     final libraries = context.watch<LibrariesProvider>();
+    // Subscriptions for the Seerr rows' Request action: the source itself
+    // (disconnect) and the signed-in user's request permissions.
+    final seerr = context.select<CatalogSourcesProvider?, SeerrCatalogSource?>((sources) => sources?.seerrSource);
+    context.select<SeerrAccountProvider?, int?>((account) => account?.permissions);
     final showServerName = multiServer.totalServerCount > 1;
     final showChips = _showFilterChips;
     final visible = _visibleResults;
+    final firstSeerrIndex = visible.indexWhere((hit) => hit is MediaSearchHit && hit.item.isCatalogItem);
     return buildResultsSliver(
       childCount: visible.length,
       // Half the default top padding when the chip strip sits directly above:
@@ -513,6 +678,14 @@ class _SearchScreenState extends State<SearchScreen>
         final isFirst = index == 0;
         final onNavigateUp = isFirst ? (showChips ? _focusFilterChips : focusSearchInput) : null;
         return switch (visible[index]) {
+          MediaSearchHit(:final item) when item.isCatalogItem => _buildSeerrRow(
+            context,
+            item,
+            seerr: seerr,
+            showHeader: index == firstSeerrIndex,
+            isFirst: isFirst,
+            onNavigateUp: onNavigateUp,
+          ),
           MediaSearchHit(:final item) => FocusableMediaCard(
             key: Key(item.globalKey),
             item: item,
