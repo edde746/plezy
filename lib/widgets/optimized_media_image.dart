@@ -199,7 +199,9 @@ class OptimizedMediaImage extends StatefulWidget {
 class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
   double? _committedWidth;
   double? _committedHeight;
-  (int, int)? _pendingTargetBucket;
+  double? _pendingWidth;
+  double? _pendingHeight;
+  (int, int, double)? _pendingTargetKey;
   Timer? _debounceTimer;
 
   @override
@@ -210,7 +212,9 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
         oldWidget.client != widget.client) {
       _debounceTimer?.cancel();
       _debounceTimer = null;
-      _pendingTargetBucket = null;
+      _pendingTargetKey = null;
+      _pendingWidth = null;
+      _pendingHeight = null;
       _committedWidth = null;
       _committedHeight = null;
     }
@@ -219,6 +223,7 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _debounceTimer = null;
     super.dispose();
   }
 
@@ -344,14 +349,7 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
     double renderWidth = effectiveWidth;
     double renderHeight = effectiveHeight;
 
-    if (DevicePerformance.isReduced) {
-      // Reduced tier: skip shrink retention to preserve tight RAM budgets.
-      _debounceTimer?.cancel();
-      _debounceTimer = null;
-      _pendingTargetBucket = null;
-      _committedWidth = effectiveWidth;
-      _committedHeight = effectiveHeight;
-    } else if (_committedWidth == null || _committedHeight == null) {
+    if (_committedWidth == null || _committedHeight == null) {
       _committedWidth = effectiveWidth;
       _committedHeight = effectiveHeight;
     } else {
@@ -369,22 +367,34 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
         imageType: widget.imageType,
       );
 
-      if (targetBucketWidth > committedBucketWidth || targetBucketHeight > committedBucketHeight) {
+      final isGrowing = targetBucketWidth > committedBucketWidth || targetBucketHeight > committedBucketHeight;
+
+      if (isGrowing) {
         // Layout expanded to a larger bucket: debounce the upgrade so live drags
         // don't hammer the media server with an upgrade on every bucket boundary.
-        final targetBucket = (targetBucketWidth, targetBucketHeight);
-        if (_pendingTargetBucket != targetBucket) {
-          _pendingTargetBucket = targetBucket;
+        // We track the latest pending logical dimensions and include the fetch
+        // density in the key so mixed-DPI transitions do not capture stale sizes.
+        _pendingWidth = effectiveWidth;
+        _pendingHeight = effectiveHeight;
+        final targetKey = (targetBucketWidth, targetBucketHeight, pixelRatio);
+
+        if (_pendingTargetKey != targetKey) {
+          _pendingTargetKey = targetKey;
           _debounceTimer?.cancel();
-          final nextWidth = effectiveWidth;
-          final nextHeight = effectiveHeight;
           _debounceTimer = Timer(const Duration(milliseconds: 250), () {
-            if (mounted) {
+            if (mounted && _pendingWidth != null && _pendingHeight != null) {
               setState(() {
-                _committedWidth = nextWidth;
-                _committedHeight = nextHeight;
+                if (DevicePerformance.isReduced) {
+                  _committedWidth = _pendingWidth;
+                  _committedHeight = _pendingHeight;
+                } else {
+                  _committedWidth = math.max(_committedWidth!, _pendingWidth!);
+                  _committedHeight = math.max(_committedHeight!, _pendingHeight!);
+                }
                 _debounceTimer = null;
-                _pendingTargetBucket = null;
+                _pendingTargetKey = null;
+                _pendingWidth = null;
+                _pendingHeight = null;
               });
             }
           });
@@ -392,11 +402,18 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
         renderWidth = _committedWidth!;
         renderHeight = _committedHeight!;
       } else {
-        // Layout shrunk or stayed in the same bucket: cancel any pending upgrade
-        // and retain the larger committed size.
+        // Layout shrunk or stayed in the same bucket: cancel any pending upgrade.
         _debounceTimer?.cancel();
         _debounceTimer = null;
-        _pendingTargetBucket = null;
+        _pendingTargetKey = null;
+        _pendingWidth = null;
+        _pendingHeight = null;
+
+        if (DevicePerformance.isReduced) {
+          // Reduced tier: commit shrinks immediately to preserve tight RAM budgets.
+          _committedWidth = effectiveWidth;
+          _committedHeight = effectiveHeight;
+        }
         renderWidth = _committedWidth!;
         renderHeight = _committedHeight!;
       }
