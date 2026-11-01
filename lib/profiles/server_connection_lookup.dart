@@ -1,4 +1,5 @@
 import '../connection/connection.dart';
+import 'profile_connection.dart';
 
 /// Resolve the Jellyfin connection that hosts a Bonfire virtual profile.
 ///
@@ -20,4 +21,27 @@ JellyfinConnection? jellyfinConnectionForServerId(Map<String, Connection> connec
     if (best == null || c.id.length < best.id.length) best = c;
   }
   return best;
+}
+
+/// Whether a `profile_connections` row belongs to a virtual profile's parent
+/// connection rather than being a borrowed row on another server.
+///
+/// Bonfire rows are written with the parent connection's persisted row id
+/// (the FK target), while the profile's `parentConnectionId` carries the
+/// canonical machine id — and rows written before that split may carry the
+/// machine id or a compound host id directly. Accept any shape that resolves
+/// to the same host connection; everything else is a borrow.
+bool joinRowBelongsToParent(
+  ProfileConnection row, {
+  required String parentConnectionId,
+  Connection? parentConnection,
+  required Map<String, Connection> connectionsById,
+}) {
+  if (parentConnection != null && row.connectionId == parentConnection.id) return true;
+  if (row.connectionId == parentConnectionId) return true;
+  if (jellyfinConnectionForServerId(connectionsById, row.connectionId)
+          case final JellyfinConnection resolved) {
+    return resolved.serverMachineId == parentConnectionId || resolved.id == parentConnection?.id;
+  }
+  return false;
 }

@@ -686,32 +686,12 @@ class ActiveProfileBinder {
     // Join rows are keyed by the parent connection's persisted row id (an FK
     // to Connections), while the Bonfire profile id — and therefore
     // parentId — carries the canonical machine id. Match through the host.
-    bool belongsToParent(ProfileConnection row) =>
-        row.connectionId == parent.id ||
-        row.connectionId == parentId ||
-        jellyfinConnectionForServerId(connectionsById, row.connectionId)
-            ?.serverMachineId == parentId;
-
-    if (profile.bonfireIsMaster) {
-      // The master Bonfire profile is the account that signed in: its token
-      // already IS the parent connection's token — except after a PIN re-entry
-      // through the plugin, because /plugins/profiles/switch re-issues (rotates)
-      // the master token for this device and the activation row persists the new
-      // one. Binding the connection's older token then 401s every request, so
-      // prefer the switch-issued token when the row holds one.
-      ProfileConnection? masterRow;
-      for (final row in joinRows) {
-        if (belongsToParent(row)) {
-          masterRow = row;
-          break;
-        }
-      }
-      final rotated = masterRow != null && masterRow.hasToken ? masterRow.userToken : null;
-      if (rotated != null && rotated.isNotEmpty && rotated != parent.accessToken) {
-        return _bindMediaBrowser(parent.copyWith(accessToken: rotated), profileId: profile.id, generation: generation);
-      }
-      return _bindMediaBrowser(parent, profileId: profile.id, generation: generation);
-    }
+    bool belongsToParent(ProfileConnection row) => joinRowBelongsToParent(
+          row,
+          parentConnectionId: parentId,
+          parentConnection: parent,
+          connectionsById: connectionsById,
+        );
 
     ProfileConnection? pc;
     for (final row in joinRows) {
@@ -719,6 +699,28 @@ class ActiveProfileBinder {
         pc = row;
         break;
       }
+    }
+
+    if (profile.bonfireIsMaster) {
+      // The master Bonfire profile is the account that signed in: its token
+      // already IS the parent connection's token — except after a PIN re-entry
+      // through the plugin, because /plugins/profiles/switch re-issues (rotates)
+      // the master token for this device and the activation row persists the new
+      // one. Binding the connection's older token then 401s every request, so
+      // prefer the switch-issued token when the row holds one — but probe it
+      // first: a Quick Connect re-login on the server kills old tokens, and
+      // binding a dead rotated token cold-starts the app offline.
+      final rotated = pc != null && pc.hasToken ? pc.userToken : null;
+      if (rotated != null && rotated.isNotEmpty && rotated != parent.accessToken) {
+        if (await bonfireProfileTokenStillValid(parent, bonfireUserId, rotated)) {
+          return _bindMediaBrowser(parent.copyWith(accessToken: rotated), profileId: profile.id, generation: generation);
+        }
+        appLogger.i(
+          'ActiveProfileBinder: rotated master token is no longer valid — keeping the connection token',
+        );
+        await profileConnections.recordToken(profile.id, parent.id, '');
+      }
+      return _bindMediaBrowser(parent, profileId: profile.id, generation: generation);
     }
     final cachedToken = pc != null && pc.hasToken ? pc.userToken : null;
     if (cachedToken != null && cachedToken.isNotEmpty) {
@@ -829,13 +831,33 @@ class ActiveProfileBinder {
       return const _ProfileBindResult.empty();
     }
     final parentId = profile.parentConnectionId;
+    // The parent connection is implicit for both virtual kinds: Plex Home
+    // never stores it as a join row, and a Bonfire join row IS the parent
+    // connections row (the FK target) bound by _bindJellyfinBonfire itself.
+    // Letting that row fall through to the borrow switch re-binds the parent
+    // host with the MASTER token beside the child bind — which races the
+    // just-minted token and can serve master-scope content for a PIN-gated
+    // child whose own bind failed.
+    final parentConn = parentId == null
+        ? null
+        : profile.isJellyfinBonfire
+        ? jellyfinConnectionForServerId(connectionsById, parentId)
+        : connectionsById[parentId];
 
     final visible = <String>{};
     final expected = <String>{};
     final futures = <Future<_ProfileBindResult>>[];
     for (final pc in joinRows) {
-      if (parentId != null && pc.connectionId == parentId) continue;
+      if (parentId != null &&
+          (pc.connectionId == parentId || (parentConn != null && pc.connectionId == parentConn.id))) {
+        continue;
+      }
       final conn = connectionsById[pc.connectionId];
+      if (profile.isJellyfinBonfire && conn is JellyfinConnection && conn.serverMachineId == parentId) {
+        // Any row on the parent's own host: Bonfire reach is the parent
+        // connection, never a sibling row.
+        continue;
+      }
       if (conn == null) {
         appLogger.w('ActiveProfileBinder: missing connection ${pc.connectionId} for ${profile.displayName}');
         continue;
