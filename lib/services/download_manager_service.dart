@@ -322,6 +322,10 @@ class DownloadManagerService {
 
   bool get downloadsSupported => _downloadsSupportedOverride ?? platformDownloadsSupported;
 
+  /// Set when the storage guard stops the queue; a user action (new download,
+  /// resume, retry) clears it.
+  bool get queueBlockedByStorageFailure => _queueBlockedByStorageFailure;
+
   NativeDownloaderOps get _nativeOps =>
       _nativeOpsOverride ??
       (
@@ -1773,6 +1777,9 @@ class DownloadManagerService {
   /// Queue [metadata] for download. Returns the item actually stored —
   /// identical to [metadata] unless library stamping filled `libraryId`/
   /// `libraryTitle`, so the caller can keep its in-memory copy in sync.
+  ///
+  /// [userInitiated] is false for automatic enqueues (sync rules), which must
+  /// not lift a storage block the user has not acted on.
   Future<MediaItem> queueDownload({
     required MediaItem metadata,
     required MediaServerClient client,
@@ -1780,9 +1787,12 @@ class DownloadManagerService {
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
     int mediaIndex = 0,
+    bool userInitiated = true,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return metadata;
-    _rearmQueueForUserAction('new download');
+    // Sync rules run on every refresh; re-arming for them restarted the queue
+    // into the same storage refusal, failing the same episodes in a loop (#2876).
+    if (userInitiated) _rearmQueueForUserAction('new download');
 
     final globalKey = metadata.globalKey;
 
