@@ -1008,6 +1008,7 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Субтитърът е изтеглен';
 	@override String get subtitleDownloadedNotApplied => 'Субтитрите са изтеглени, но не можаха да бъдат избрани';
 	@override String get subtitleDownloadFailed => 'Неуспешно изтегляне на субтитър';
+	@override String get subtitleDownloadTimedOut => 'Субтитърът не се появи навреме. Изтеглянето може да е неуспешно';
 	@override String get searchLanguages => 'Търсене на езици...';
 	@override String get skipIntro => 'Пропусни интрото';
 	@override String get skipCredits => 'Пропусни надписите';
@@ -4233,6 +4234,7 @@ extension on TranslationsBg {
 			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
+			'videoControls.subtitleDownloadTimedOut' => 'Субтитърът не се появи навреме. Изтеглянето може да е неуспешно',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
 			'videoControls.skipIntro' => 'Пропусни интрото',
 			'videoControls.skipCredits' => 'Пропусни надписите',
@@ -4420,9 +4422,9 @@ extension on TranslationsBg {
 			'profiles.pinsDontMatch' => 'PIN кодовете не съвпадат',
 			'profiles.tokenIdentityMismatch' => 'Токенът на профила в Plex съответства на неочакван сървър',
 			'connections.sectionTitle' => 'Връзки',
-			'connections.addConnection' => 'Добави връзка',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Добави връзка',
 			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin или Emby сървър',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сесията за ${name} е изтекла',
@@ -4934,9 +4936,9 @@ extension on TranslationsBg {
 			'liveTv.recordSettings.keepUpTo' => 'Епизоди за запазване',
 			'liveTv.recordSettings.keepUpToHint' => '0 запазва всички епизоди',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Започва след ${minutes} мин',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо',
 			'liveTv.failedToStartChannel' => 'Каналът на живо не можа да бъде пуснат',
 			'liveTv.failedToBuildStreamUrl' => 'URL за потока не можа да бъде създаден',
@@ -5448,9 +5450,9 @@ extension on TranslationsBg {
 			'performanceOverlay.decoderSoftware' => 'Софтуерен',
 			'performanceOverlay.decoderHardware' => 'Хардуерен',
 			'performanceOverlay.tunnelingActive' => 'Активно',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (неуспешни: ${failures})',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (неуспешни: ${failures})',
 			'externalPlayer.title' => 'Външен плеър',
 			'externalPlayer.useExternalPlayer' => 'Използвай външен плеър',
 			'externalPlayer.useExternalPlayerDescription' => 'Отваряй видеата в друго приложение',

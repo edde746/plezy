@@ -1005,6 +1005,7 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => '자막이 다운로드되었습니다';
 	@override String get subtitleDownloadedNotApplied => '자막을 다운로드했지만 선택할 수 없습니다';
 	@override String get subtitleDownloadFailed => '자막 다운로드에 실패했습니다';
+	@override String get subtitleDownloadTimedOut => '자막이 제시간에 나타나지 않았습니다. 다운로드에 실패했을 수 있습니다';
 	@override String get searchLanguages => '언어 검색...';
 	@override String get skipIntro => '인트로 건너뛰기';
 	@override String get skipCredits => '크레딧 건너뛰기';
@@ -4221,6 +4222,7 @@ extension on TranslationsKo {
 			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
 			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			'videoControls.subtitleDownloadFailed' => '자막 다운로드에 실패했습니다',
+			'videoControls.subtitleDownloadTimedOut' => '자막이 제시간에 나타나지 않았습니다. 다운로드에 실패했을 수 있습니다',
 			'videoControls.searchLanguages' => '언어 검색...',
 			'videoControls.skipIntro' => '인트로 건너뛰기',
 			'videoControls.skipCredits' => '크레딧 건너뛰기',
@@ -4408,9 +4410,9 @@ extension on TranslationsKo {
 			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
 			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
 			'connections.sectionTitle' => '연결',
-			'connections.addConnection' => '연결 추가',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => '연결 추가',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name}의 세션이 만료되었습니다',
@@ -4922,9 +4924,9 @@ extension on TranslationsKo {
 			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
 			'liveTv.recordSettings.keepUpToHint' => '0이면 모든 에피소드 보관',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
 			'liveTv.failedToStartChannel' => '실시간 채널을 시작할 수 없습니다',
 			'liveTv.failedToBuildStreamUrl' => '스트림 URL을 생성할 수 없습니다',
@@ -5436,9 +5438,9 @@ extension on TranslationsKo {
 			'performanceOverlay.decoderSoftware' => '소프트웨어',
 			'performanceOverlay.decoderHardware' => '하드웨어',
 			'performanceOverlay.tunnelingActive' => '활성',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)',
 			'externalPlayer.title' => '외부 플레이어',
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
 			'externalPlayer.useExternalPlayerDescription' => '동영상을 다른 앱에서 열기',

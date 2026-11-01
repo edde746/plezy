@@ -658,7 +658,8 @@ jobs:
             libharfbuzz-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev \
             libva-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev \
             libdisplay-info-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev \
-            liblua5.2-dev rpm libarchive-tools imagemagick ruby-dev build-essential
+            liblua5.2-dev rpm libarchive-tools imagemagick ruby-dev build-essential \
+            zsync desktop-file-utils
           sudo gem install fpm --version 1.17.0 --no-document
 
       # Keyed the same way build.yml keys it: the lock names the asset and its
@@ -754,6 +755,36 @@ jobs:
           tar -czf "$OUTPUT_DIR/plezy-linux-x64.tar.gz" -C "$BUNDLE_DIR" .
           echo "=== libmpv travelling in every artifact ==="
           ldd "$BUNDLE_DIR/lib/libmpv.so" | grep -iE 'wayland|libX11|vdpau' || echo '(none)'
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/packages
+
+      # Same bundle again, built the way build.yml builds the release AppImage.
+      - name: Build the AppImage
+        run: |
+          bash linux/packaging/fetch-appimage-tools.sh x64 "$RUNNER_TEMP/appimage"
+          APPIMAGETOOL="$RUNNER_TEMP/appimage/appimagetool" \
+          RUNTIME_FILE="$RUNNER_TEMP/appimage/runtime" \
+          bash linux/packaging/build-appimage.sh build/linux/x64/release/bundle x64 "$OUTPUT_DIR"
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/packages
+          UPDATE_REPO: ${{ github.repository }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+
+      # Gear Lever reads the embedded update information, downloads the release
+      # asset whose name is the .zsync's minus that suffix, and offers an update
+      # when the .zsync's SHA-1 differs from the installed file's. A mismatch
+      # here would mean every install sees an update that never goes away.
+      - name: Verify the AppImage's update information
+        run: |
+          APPIMAGE="$OUTPUT_DIR/plezy-linux-x64.AppImage"
+          readelf --string-dump=.upd_info --wide "$APPIMAGE" \
+            | grep -F "gh-releases-zsync|${GITHUB_REPOSITORY%/*}|${GITHUB_REPOSITORY#*/}|latest|plezy-linux-x64.AppImage.zsync"
+          ZSYNC_SHA1=$(grep -a -m1 '^SHA-1: ' "$APPIMAGE.zsync" | cut -d' ' -f2)
+          FILE_SHA1=$(sha1sum "$APPIMAGE" | cut -d' ' -f1)
+          if [[ "$ZSYNC_SHA1" != "$FILE_SHA1" ]]; then
+            echo "::error::the .zsync records SHA-1 $ZSYNC_SHA1 but the AppImage is $FILE_SHA1"
+            exit 1
+          fi
         env:
           OUTPUT_DIR: ${{ github.workspace }}/packages
 

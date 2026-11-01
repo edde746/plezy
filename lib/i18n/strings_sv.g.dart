@@ -1008,6 +1008,7 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Undertexten har laddats ned';
 	@override String get subtitleDownloadedNotApplied => 'Undertexten laddades ned men kunde inte väljas';
 	@override String get subtitleDownloadFailed => 'Det gick inte att ladda ned undertexten';
+	@override String get subtitleDownloadTimedOut => 'Undertexten dök inte upp i tid. Nedladdningen kan ha misslyckats';
 	@override String get searchLanguages => 'Sök språk...';
 	@override String get skipIntro => 'Hoppa över intro';
 	@override String get skipCredits => 'Hoppa över eftertexter';
@@ -4233,6 +4234,7 @@ extension on TranslationsSv {
 			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Det gick inte att ladda ned undertexten',
+			'videoControls.subtitleDownloadTimedOut' => 'Undertexten dök inte upp i tid. Nedladdningen kan ha misslyckats',
 			'videoControls.searchLanguages' => 'Sök språk...',
 			'videoControls.skipIntro' => 'Hoppa över intro',
 			'videoControls.skipCredits' => 'Hoppa över eftertexter',
@@ -4420,9 +4422,9 @@ extension on TranslationsSv {
 			'profiles.pinsDontMatch' => 'PIN-koderna stämmer inte överens',
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
 			'connections.sectionTitle' => 'Anslutningar',
-			'connections.addConnection' => 'Lägg till anslutning',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Lägg till anslutning',
 			'connections.addConnectionSubtitleNoProfile' => 'Logga in med Plex eller anslut en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Lägg till för ${displayName}: Plex, Jellyfin, Emby eller en annan profilanslutning',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen har gått ut för ${name}',
@@ -4934,9 +4936,9 @@ extension on TranslationsSv {
 			'liveTv.recordSettings.keepUpTo' => 'Avsnitt att behålla',
 			'liveTv.recordSettings.keepUpToHint' => '0 behåller alla avsnitt',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Börjar om ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV',
 			'liveTv.failedToStartChannel' => 'Kunde inte starta livekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunde inte skapa strömmens URL',
@@ -5448,9 +5450,9 @@ extension on TranslationsSv {
 			'performanceOverlay.decoderSoftware' => 'Programvara',
 			'performanceOverlay.decoderHardware' => 'Maskinvara',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',
 			'externalPlayer.title' => 'Extern spelare',
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en annan app',

@@ -1008,6 +1008,7 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Altyazı indirildi';
 	@override String get subtitleDownloadedNotApplied => 'Altyazı indirildi ancak seçilemedi';
 	@override String get subtitleDownloadFailed => 'Altyazı indirilemedi';
+	@override String get subtitleDownloadTimedOut => 'Altyazı zamanında görünmedi. İndirme başarısız olmuş olabilir';
 	@override String get searchLanguages => 'Dillerde ara...';
 	@override String get skipIntro => 'İntroyu atla';
 	@override String get skipCredits => 'Jeneriği atla';
@@ -4233,6 +4234,7 @@ extension on TranslationsTr {
 			'videoControls.subtitleDownloaded' => 'Altyazı indirildi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı indirildi ancak seçilemedi',
 			'videoControls.subtitleDownloadFailed' => 'Altyazı indirilemedi',
+			'videoControls.subtitleDownloadTimedOut' => 'Altyazı zamanında görünmedi. İndirme başarısız olmuş olabilir',
 			'videoControls.searchLanguages' => 'Dillerde ara...',
 			'videoControls.skipIntro' => 'İntroyu atla',
 			'videoControls.skipCredits' => 'Jeneriği atla',
@@ -4420,9 +4422,9 @@ extension on TranslationsTr {
 			'profiles.pinsDontMatch' => 'PIN\'ler eşleşmiyor',
 			'profiles.tokenIdentityMismatch' => 'Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi',
 			'connections.sectionTitle' => 'Bağlantılar',
-			'connections.addConnection' => 'Bağlantı ekle',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Bağlantı ekle',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ile giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} için oturum süresi doldu',
@@ -4934,9 +4936,9 @@ extension on TranslationsTr {
 			'liveTv.recordSettings.keepUpTo' => 'Saklanacak bölüm sayısı',
 			'liveTv.recordSettings.keepUpToHint' => '0 tüm bölümleri saklar',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dk içinde başlıyor',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} saat ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü',
 			'liveTv.failedToStartChannel' => 'Canlı kanal başlatılamadı',
 			'liveTv.failedToBuildStreamUrl' => 'Akış URL\'si oluşturulamadı',
@@ -5448,9 +5450,9 @@ extension on TranslationsTr {
 			'performanceOverlay.decoderSoftware' => 'Yazılım',
 			'performanceOverlay.decoderHardware' => 'Donanım',
 			'performanceOverlay.tunnelingActive' => 'Etkin',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)',
 			'externalPlayer.title' => 'Harici Oynatıcı',
 			'externalPlayer.useExternalPlayer' => 'Harici Oynatıcı Kullan',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başka bir uygulamada açın',

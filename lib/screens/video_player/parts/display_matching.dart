@@ -178,10 +178,11 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Apply Windows display mode matching (refresh rate, HDR) from what mpv
-  /// presents: the derived output rate and `video-params/sig-peak`, which mpv
-  /// raises above 1.0 for PQ/HLG (and Dolby Vision base layers).
-  Future<void> _applyWindowsDisplayMatching() async {
+  /// Apply desktop display mode matching from what mpv presents: the derived
+  /// output rate for the refresh rate (Windows, macOS) and
+  /// `video-params/sig-peak`, which mpv raises above 1.0 for PQ/HLG (and
+  /// Dolby Vision base layers), for system HDR (Windows).
+  Future<void> _applyDisplayModeMatching() async {
     if (player == null || _displayModeService == null) return;
 
     try {
@@ -196,7 +197,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       if (!mounted || player != currentPlayer) return;
 
       // Leaving fullscreen clears mpv's colorspace hint so its HDR swapchain
-      // is released before system HDR goes off (_restoreWindowsDisplayMode).
+      // is released before system HDR goes off (_restoreDisplayMode).
       // With system HDR on again, restore the hint the user's HDR setting
       // asks for, or mpv keeps presenting SDR.
       if (displayModeService.hdrStateChanged) {
@@ -246,8 +247,8 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     });
   }
 
-  /// Called when fullscreen state changes — apply or restore Windows display
-  /// matching. On Windows the player opens windowed by default, so the initial
+  /// Called when fullscreen state changes — apply or restore desktop display
+  /// matching. The desktop player opens windowed by default, so the initial
   /// attempt during `playbackRestart` is skipped by DisplayModeService's
   /// fullscreen gate. Catching the enter-fullscreen transition here lets the
   /// switch happen at the natural moment the user starts watching.
@@ -255,17 +256,17 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     if (_displayModeService == null) return;
     if (FullscreenStateManager().isFullscreen) {
       if (_firstFrame.uiReady.value && !_displayModeService!.anyChangeApplied) {
-        _applyWindowsDisplayMatching();
+        _applyDisplayModeMatching();
       }
     } else if (_displayModeService!.anyChangeApplied) {
-      _restoreWindowsDisplayMode();
+      _restoreDisplayMode();
     }
   }
 
-  /// Restore Windows display mode to original state. Fullscreen-exit only:
+  /// Restore the display mode to its original state. Fullscreen-exit only:
   /// `dispose()` runs its own fire-and-forget variant because it cannot await
   /// the HDR settle below.
-  Future<void> _restoreWindowsDisplayMode() async {
+  Future<void> _restoreDisplayMode() async {
     if (_displayModeService == null || !_displayModeService!.anyChangeApplied) return;
 
     try {

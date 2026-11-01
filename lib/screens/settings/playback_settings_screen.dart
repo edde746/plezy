@@ -54,6 +54,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
             PlatformDetector.isAppleTV() ||
             (Platform.isWindows &&
                 (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
+            (Platform.isMacOS && svc.read(SettingsService.matchRefreshRate)) ||
             (Platform.isAndroid &&
                 (svc.read(SettingsService.matchContentFrameRate) || svc.read(SettingsService.matchContentResolution)));
         // Android mpv and Apple TV only: ExoPlayer is not taking new features, and
@@ -84,7 +85,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
               children: [
                 if (Platform.isAndroid) _matchContentFrameRateTile(),
                 if (Platform.isAndroid && PlatformDetector.isTV()) _matchContentResolutionTile(),
-                if (Platform.isWindows) _matchRefreshRateTile(),
+                if (Platform.isWindows || Platform.isMacOS) _matchRefreshRateTile(),
                 if (Platform.isWindows) _matchDynamicRangeTile(),
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (showDisableDolbyVision) _disableDolbyVisionTile(),

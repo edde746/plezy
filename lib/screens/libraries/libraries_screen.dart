@@ -26,6 +26,7 @@ import '../../widgets/app_menu.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/library_management_sheet.dart';
+import '../../services/media_list_playback_launcher.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
 import '../../i18n/strings.g.dart';
@@ -866,6 +867,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   ),
                 )
               : null,
+        ),
+      if (selectedLibrary != null && MediaListPlaybackLauncher.canShuffleLibrary(selectedLibrary))
+        FocusableAction(
+          icon: Symbols.shuffle_rounded,
+          tooltip: t.libraries.shuffleLibrary,
+          onPressed: () => unawaited(MediaListPlaybackLauncher.shuffleLibrary(context, selectedLibrary)),
         ),
       FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
     ];

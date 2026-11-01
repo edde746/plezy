@@ -1008,6 +1008,7 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Felirat letöltve';
 	@override String get subtitleDownloadedNotApplied => 'Felirat letöltve, de nem sikerült kiválasztani';
 	@override String get subtitleDownloadFailed => 'Nem sikerült a felirat letöltése';
+	@override String get subtitleDownloadTimedOut => 'A felirat nem jelent meg időben. Lehet, hogy a letöltés nem sikerült';
 	@override String get searchLanguages => 'Nyelvek keresése...';
 	@override String get skipIntro => 'Főcím átugrása';
 	@override String get skipCredits => 'Stáblista átugrása';
@@ -4233,6 +4234,7 @@ extension on TranslationsHu {
 			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
 			'videoControls.subtitleDownloadedNotApplied' => 'Felirat letöltve, de nem sikerült kiválasztani',
 			'videoControls.subtitleDownloadFailed' => 'Nem sikerült a felirat letöltése',
+			'videoControls.subtitleDownloadTimedOut' => 'A felirat nem jelent meg időben. Lehet, hogy a letöltés nem sikerült',
 			'videoControls.searchLanguages' => 'Nyelvek keresése...',
 			'videoControls.skipIntro' => 'Főcím átugrása',
 			'videoControls.skipCredits' => 'Stáblista átugrása',
@@ -4420,9 +4422,9 @@ extension on TranslationsHu {
 			'profiles.pinsDontMatch' => 'A PIN-kódok nem egyeznek',
 			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			'connections.sectionTitle' => 'Kapcsolatok',
-			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
@@ -4934,9 +4936,9 @@ extension on TranslationsHu {
 			'liveTv.recordSettings.keepUpTo' => 'Megtartandó epizódok',
 			'liveTv.recordSettings.keepUpToHint' => 'A 0 minden epizódot megtart',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} perc múlva kezdődik',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
 			'liveTv.failedToStartChannel' => 'Nem sikerült elindítani az élő csatornát',
 			'liveTv.failedToBuildStreamUrl' => 'Nem sikerült összeállítani a stream URL-címét',
@@ -5448,9 +5450,9 @@ extension on TranslationsHu {
 			'performanceOverlay.decoderSoftware' => 'Szoftveres',
 			'performanceOverlay.decoderHardware' => 'Hardveres',
 			'performanceOverlay.tunnelingActive' => 'Aktív',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
 			'externalPlayer.title' => 'Külső lejátszó',
 			'externalPlayer.useExternalPlayer' => 'Külső lejátszó használata',
 			'externalPlayer.useExternalPlayerDescription' => 'Videók megnyitása egy másik alkalmazásban',

@@ -122,6 +122,79 @@ void main() {
     expect(controller.offset, greaterThan(0));
   });
 
+  testWidgets('centered focus along the top row keeps a floating NestedScrollView header in place (#2916)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final nodes = List.generate(4, (i) => FocusNode(debugLabel: 'card$i'));
+    final outerController = ScrollController();
+    for (final node in nodes) {
+      addTearDown(node.dispose);
+    }
+    addTearDown(outerController.dispose);
+
+    // A 56px floating header over a 570px body: the body overflows the 544px
+    // left beside the visible header and fits the full 600px once it hides.
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          home: Scaffold(
+            body: NestedScrollView(
+              controller: outerController,
+              floatHeaderSlivers: true,
+              headerSliverBuilder: (context, _) => [
+                SliverOverlapAbsorber(
+                  handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                  sliver: const SliverAppBar(floating: true, snap: true, title: Text('header')),
+                ),
+              ],
+              body: CustomScrollView(
+                primary: true,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < nodes.length; i++)
+                          FocusableWrapper(
+                            focusNode: nodes[i],
+                            // TV card configuration: always aim for the center.
+                            useComfortableZone: false,
+                            scrollAlignment: 0.5,
+                            onSelect: () {},
+                            onNavigateRight: i + 1 < nodes.length ? nodes[i + 1].requestFocus : null,
+                            child: const SizedBox(width: 100, height: 150),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 420)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    nodes.first.requestFocus();
+    await tester.pumpAndSettle();
+
+    final headerOffsets = [outerController.offset];
+    for (var i = 1; i < nodes.length; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(nodes[i].hasFocus, isTrue);
+      headerOffsets.add(outerController.offset);
+    }
+
+    expect(headerOffsets, everyElement(0.0));
+  });
+
   testWidgets('dialog close restoring pointer-parked focus keeps the scroll position', (tester) async {
     // Issue #2031: entry code parks focus on an item, the user scrolls away by
     // touch/mouse, and closing a context menu (a dialog route) hands focus back

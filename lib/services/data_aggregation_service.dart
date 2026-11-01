@@ -33,13 +33,23 @@ typedef ObservedRow = ({MediaItem item, String? clientScope});
 /// *before* dedup or limiting. Continue Watching dedup can drop one server's
 /// copy in favour of another's, and a dropped copy would otherwise leave that
 /// key unreconciled even though its server did return it (#1829).
+/// [copies] is [ContinueWatchingRows.copies] for [items].
 typedef OnDeckAggregationResult = ({
   List<MediaItem> items,
+  Map<String, List<MediaItem>> copies,
   List<ObservedRow> observedItems,
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
 });
+
+/// Continue Watching rows after cross-library and cross-server dedup.
+/// [copies] maps the global key of every row that absorbed duplicates — the
+/// same title in a 4K and an HD library, or on two servers — to all copies in
+/// its group, the row included, ordered best-first by [compareLibraryCopies].
+/// A row without duplicates has no entry.
+typedef ContinueWatchingRows = ({List<MediaItem> items, Map<String, List<MediaItem>> copies});
+
 typedef HubAggregationResult = ({
   List<MediaHub> hubs,
   List<ObservedRow> observedItems,
@@ -284,6 +294,7 @@ class DataAggregationService {
     if (clients.isEmpty) {
       return (
         items: const <MediaItem>[],
+        copies: const <String, List<MediaItem>>{},
         observedItems: const <ObservedRow>[],
         succeededServerIds: const <String>{},
         cancelledServerIds: const <String>{},
@@ -308,21 +319,20 @@ class DataAggregationService {
       },
     );
     // Filter out items from hidden libraries
-    var filteredOnDeck = _withoutHiddenLibraries(fetched.items, hiddenLibraryKeys);
+    final filteredOnDeck = _withoutHiddenLibraries(fetched.items, hiddenLibraryKeys);
 
     // Sort by most recently viewed, falling back to addedAt for unwatched items.
     // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
     // so per-server and cross-server ordering can't drift apart.
     filteredOnDeck.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
 
-    filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
+    final rows = _limitContinueWatching(await _deduplicateContinueWatching(filteredOnDeck), limit);
 
-    final items = limit != null && limit < filteredOnDeck.length ? filteredOnDeck.sublist(0, limit) : filteredOnDeck;
-
-    appLogger.i('Fetched ${items.length} on deck items from all servers');
+    appLogger.i('Fetched ${rows.items.length} on deck items from all servers');
 
     return (
-      items: items,
+      items: rows.items,
+      copies: rows.copies,
       // Pre-dedup, pre-limit: a copy dropped by dedup or trimmed by the limit
       // was still authoritatively returned by its server.
       observedItems: observedRows,
@@ -332,17 +342,40 @@ class DataAggregationService {
     );
   }
 
-  /// Merge an [existing] Continue Watching list with [fresh] rows from
-  /// newly-online servers: same recency ordering and cross-server identity
-  /// dedup as [getOnDeckFromAllServers], applied to the union.
-  Future<List<MediaItem>> mergeContinueWatching(List<MediaItem> existing, List<MediaItem> fresh, {int? limit}) async {
-    final combined = [...existing, ...fresh]..sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
-    final deduped = await _deduplicateContinueWatching(combined);
-    return limit != null && limit < deduped.length ? deduped.sublist(0, limit) : deduped;
+  /// Merge an [existing] Continue Watching list, with the [existingCopies]
+  /// its rows absorbed, and [fresh] rows from newly-online servers: same
+  /// recency ordering and cross-server identity dedup as
+  /// [getOnDeckFromAllServers], applied to the union. Absorbed copies rejoin
+  /// the pool so a regrouped row still offers them, and a fresh row replaces
+  /// any existing one with its global key.
+  Future<ContinueWatchingRows> mergeContinueWatching(
+    List<MediaItem> existing,
+    List<MediaItem> fresh, {
+    required Map<String, List<MediaItem>> existingCopies,
+    int? limit,
+  }) async {
+    final byKey = <String, MediaItem>{};
+    for (final row in existing) {
+      for (final copy in existingCopies[row.globalKey] ?? [row]) {
+        byKey[copy.globalKey] = copy.globalKey == row.globalKey ? row : copy;
+      }
+    }
+    for (final item in fresh) {
+      byKey[item.globalKey] = item;
+    }
+    final combined = byKey.values.toList()..sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
+    return _limitContinueWatching(await _deduplicateContinueWatching(combined), limit);
   }
 
-  Future<List<MediaItem>> _deduplicateContinueWatching(List<MediaItem> items) async {
-    if (items.length < 2) return items;
+  ContinueWatchingRows _limitContinueWatching(ContinueWatchingRows rows, int? limit) {
+    if (limit == null || limit >= rows.items.length) return rows;
+    final items = rows.items.sublist(0, limit);
+    return (items: items, copies: {for (final item in items) item.globalKey: ?rows.copies[item.globalKey]});
+  }
+
+  Future<ContinueWatchingRows> _deduplicateContinueWatching(List<MediaItem> items) async {
+    const noCopies = <String, List<MediaItem>>{};
+    if (items.length < 2) return (items: items, copies: noCopies);
 
     final bucketCounts = <String, int>{};
     for (final item in items) {
@@ -355,7 +388,7 @@ class DataAggregationService {
       for (final entry in bucketCounts.entries)
         if (entry.value > 1) entry.key,
     };
-    if (duplicateBuckets.isEmpty) return items;
+    if (duplicateBuckets.isEmpty) return (items: items, copies: noCopies);
 
     final externalIdLoads = <String, Future<ExternalIds>>{};
     final identityKeysByIndex = <int, Set<String>>{};
@@ -376,7 +409,8 @@ class DataAggregationService {
     // then shows the member the user most recently played on this device —
     // servers sync watch state across guid-linked siblings, so their
     // lastViewedAt ties and can't tell the 4K copy from the 1080p one
-    // (#1492). Without local history the anchor (recency order) stands.
+    // (#1492). Without local history the anchor (recency order) stands. The
+    // other members stay reachable through the slot's copies.
     final keyToGroup = <String, int>{};
     final groups = <List<MediaItem>>[];
     final groupSlots = <int, int>{};
@@ -414,15 +448,17 @@ class DataAggregationService {
       result.add(item);
     }
 
-    if (groupSlots.isEmpty) return result;
+    if (groupSlots.isEmpty) return (items: result, copies: noCopies);
     final lastPlayed = await LocalPlaybackHistory.snapshot();
+    final copies = <String, List<MediaItem>>{};
     for (final slot in groupSlots.entries) {
       final members = groups[slot.value];
-      if (members.length > 1) {
-        result[slot.key] = _preferLocallyLastPlayed(members, lastPlayed);
-      }
+      if (members.length < 2) continue;
+      final shown = _preferLocallyLastPlayed(members, lastPlayed);
+      result[slot.key] = shown;
+      copies[shown.globalKey] = [...members]..sort(compareLibraryCopies);
     }
-    return result;
+    return (items: result, copies: copies);
   }
 
   /// The duplicate-group member most recently played on this device (by item

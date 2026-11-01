@@ -1008,6 +1008,7 @@ class _Translations$videoControls$nb extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Undertekst lastet ned';
 	@override String get subtitleDownloadedNotApplied => 'Underteksten ble lastet ned, men kunne ikke velges';
 	@override String get subtitleDownloadFailed => 'Kunne ikke laste ned undertekst';
+	@override String get subtitleDownloadTimedOut => 'Underteksten dukket ikke opp i tide. Nedlastingen kan ha mislyktes';
 	@override String get searchLanguages => 'Søk etter språk...';
 	@override String get skipIntro => 'Hopp over intro';
 	@override String get skipCredits => 'Hopp over rulletekst';
@@ -4233,6 +4234,7 @@ extension on TranslationsNb {
 			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten ble lastet ned, men kunne ikke velges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke laste ned undertekst',
+			'videoControls.subtitleDownloadTimedOut' => 'Underteksten dukket ikke opp i tide. Nedlastingen kan ha mislyktes',
 			'videoControls.searchLanguages' => 'Søk etter språk...',
 			'videoControls.skipIntro' => 'Hopp over intro',
 			'videoControls.skipCredits' => 'Hopp over rulletekst',
@@ -4420,9 +4422,9 @@ extension on TranslationsNb {
 			'profiles.pinsDontMatch' => 'PIN-ene samsvarer ikke',
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet ble knyttet til en uventet server',
 			'connections.sectionTitle' => 'Tilkoblinger',
-			'connections.addConnection' => 'Legg til tilkobling',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Legg til tilkobling',
 			'connections.addConnectionSubtitleNoProfile' => 'Logg inn med Plex eller koble til en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Legg til for ${displayName}: Plex, Jellyfin, Emby eller en annen profiltilkobling',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Økten er utløpt for ${name}',
@@ -4934,9 +4936,9 @@ extension on TranslationsNb {
 			'liveTv.recordSettings.keepUpTo' => 'Episoder som skal beholdes',
 			'liveTv.recordSettings.keepUpToHint' => '0 beholder alle episoder',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerte ugyldige avspillingsdata for direkte-TV',
 			'liveTv.failedToStartChannel' => 'Kunne ikke starte direktekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunne ikke opprette strømme-URL-en',
@@ -5448,9 +5450,9 @@ extension on TranslationsNb {
 			'performanceOverlay.decoderSoftware' => 'Programvare',
 			'performanceOverlay.decoderHardware' => 'Maskinvare',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislyktes)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislyktes)',
 			'externalPlayer.title' => 'Ekstern spiller',
 			'externalPlayer.useExternalPlayer' => 'Bruk ekstern spiller',
 			'externalPlayer.useExternalPlayerDescription' => 'Åpne videoer i en annen app',

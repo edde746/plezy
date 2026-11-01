@@ -6,8 +6,10 @@ import '../utils/app_logger.dart';
 import 'profile_connection.dart';
 import 'profile_connection_registry.dart';
 
-/// Outcome of a Plex Home user switch attempt.
-enum PlexHomeSwitchStatus { success, cancelled, failed }
+/// Outcome of a Plex Home user switch attempt. [authRejected] means plex.tv
+/// answered HTTP 401 to the account token, normally because it expired or was
+/// revoked; signing in to the account again mints a new one.
+enum PlexHomeSwitchStatus { success, cancelled, failed, authRejected }
 
 class PlexHomeSwitchResult {
   final PlexHomeSwitchStatus status;
@@ -63,7 +65,10 @@ Future<PlexHomeSwitchResult> switchPlexHomeUserWithPin({
         continue;
       }
       appLogger.e('switchPlexHomeUserWithPin failed${logLabel == null ? '' : ' for $logLabel'}', error: e);
-      return const PlexHomeSwitchResult._(PlexHomeSwitchStatus.failed, null);
+      return PlexHomeSwitchResult._(
+        e.statusCode == 401 ? PlexHomeSwitchStatus.authRejected : PlexHomeSwitchStatus.failed,
+        null,
+      );
     } catch (e, st) {
       appLogger.e(
         'switchPlexHomeUserWithPin failed${logLabel == null ? '' : ' for $logLabel'}',

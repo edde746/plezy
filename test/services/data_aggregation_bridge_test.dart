@@ -1190,6 +1190,85 @@ void main() {
       expect(result.items.map((item) => item.id), ['movie-uhd']);
     });
 
+    /// A 1080p and a 4K library holding the same movie (tmdb 777), plus an
+    /// unrelated movie that stands alone.
+    void registerDuplicateMovieLibraries() {
+      registerContinueWatchingPlex(
+        [
+          {
+            'ratingKey': 'movie-hd',
+            'type': 'movie',
+            'title': 'Shared Movie',
+            'guid': 'plex://movie/shared-movie',
+            'lastViewedAt': 300,
+            'librarySectionID': 1,
+            'librarySectionTitle': 'Movies',
+            'Media': [
+              {'id': 1, 'videoResolution': '1080', 'videoCodec': 'h264', 'container': 'mkv'},
+            ],
+          },
+          {'ratingKey': 'movie-alone', 'type': 'movie', 'title': 'Lonely Movie', 'lastViewedAt': 200},
+          {
+            'ratingKey': 'movie-uhd',
+            'type': 'movie',
+            'title': 'Shared Movie',
+            'guid': 'plex://movie/shared-movie',
+            'lastViewedAt': 100,
+            'librarySectionID': 2,
+            'librarySectionTitle': 'Movies 4K',
+            'Media': [
+              {'id': 2, 'videoResolution': '4k', 'videoCodec': 'hevc', 'container': 'mkv'},
+            ],
+          },
+        ],
+        metadata: (ratingKey) {
+          if (ratingKey != 'movie-hd' && ratingKey != 'movie-uhd') return null;
+          return {
+            'ratingKey': ratingKey,
+            'type': 'movie',
+            'title': 'Shared Movie',
+            'Guid': [
+              {'id': 'tmdb://777'},
+            ],
+          };
+        },
+      );
+    }
+
+    test('getOnDeckFromAllServers keeps every copy behind a merged row, best first', () async {
+      registerDuplicateMovieLibraries();
+
+      final result = await service.getOnDeckFromAllServers(limit: 10);
+
+      expect(result.items.map((item) => item.id), ['movie-hd', 'movie-alone']);
+      expect(result.copies.keys, ['plex-1:movie-hd']);
+      expect(result.copies['plex-1:movie-hd']!.map((copy) => copy.id), ['movie-uhd', 'movie-hd']);
+    });
+
+    test('mergeContinueWatching regroups the copies a row absorbed with fresh rows', () async {
+      registerDuplicateMovieLibraries();
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.localLastPlayedAt, {'plex-1:movie-uhd': 999999});
+      final first = await service.getOnDeckFromAllServers(limit: 10);
+      expect(first.items.map((item) => item.id), ['movie-uhd', 'movie-alone']);
+
+      // A newly-online server answers with an unrelated row. The 1080p copy
+      // left the list when the 4K copy took the row, but it must come back
+      // through the regrouped row, not vanish from the picker.
+      final merged = await service.mergeContinueWatching(first.items, [
+        testMediaItem(
+          id: 'fresh',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Fresh',
+          serverId: 'plex-2',
+        ),
+      ], existingCopies: first.copies);
+
+      expect(merged.items.map((item) => item.id), ['movie-uhd', 'movie-alone', 'fresh']);
+      expect(merged.copies['plex-1:movie-uhd']!.map((copy) => copy.id), ['movie-uhd', 'movie-hd']);
+    });
+
     test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {
       registerContinueWatchingPlex(
         [

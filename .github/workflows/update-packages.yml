@@ -12,6 +12,8 @@ on:
 
 jobs:
   resolve-release:
+    # Packages track stable releases only. A skipped job also skips every job that needs it.
+    if: github.event_name != 'release' || !github.event.release.prerelease
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,14 +49,20 @@ jobs:
           fi
 
           RELEASE=$(gh release view "$REQUESTED_TAG" --repo "$GITHUB_REPOSITORY" \
-            --json tagName,isDraft,publishedAt)
+            --json tagName,isDraft,isPrerelease,publishedAt)
           RESOLVED_TAG=$(jq -r '.tagName' <<< "$RELEASE")
           IS_DRAFT=$(jq -r '.isDraft' <<< "$RELEASE")
+          IS_PRERELEASE=$(jq -r '.isPrerelease' <<< "$RELEASE")
           PUBLISHED_AT=$(jq -r '.publishedAt // empty' <<< "$RELEASE")
 
           if [ "$RESOLVED_TAG" != "$REQUESTED_TAG" ] || \
              [ "$IS_DRAFT" != "false" ] || [ -z "$PUBLISHED_AT" ]; then
             echo "Tag '$REQUESTED_TAG' is not an exact published release tag." >&2
+            exit 1
+          fi
+
+          if [ "$IS_PRERELEASE" != "false" ]; then
+            echo "Tag '$REQUESTED_TAG' is a pre-release; packages track stable releases only." >&2
             exit 1
           fi
 

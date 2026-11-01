@@ -1008,6 +1008,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Субтитр жүктелді';
 	@override String get subtitleDownloadedNotApplied => 'Субтитр жүктелді, бірақ қолданылмады';
 	@override String get subtitleDownloadFailed => 'Субтитрді жүктеу мүмкін болмады';
+	@override String get subtitleDownloadTimedOut => 'Субтитр уақытында пайда болмады. Жүктеу сәтсіз болуы мүмкін';
 	@override String get searchLanguages => 'Тілдерден іздеу...';
 	@override String get skipIntro => 'Кіріспені өткізу';
 	@override String get skipCredits => 'Титрлерді өткізу';
@@ -4233,6 +4234,7 @@ extension on TranslationsKk {
 			'videoControls.subtitleDownloaded' => 'Субтитр жүктелді',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитр жүктелді, бірақ қолданылмады',
 			'videoControls.subtitleDownloadFailed' => 'Субтитрді жүктеу мүмкін болмады',
+			'videoControls.subtitleDownloadTimedOut' => 'Субтитр уақытында пайда болмады. Жүктеу сәтсіз болуы мүмкін',
 			'videoControls.searchLanguages' => 'Тілдерден іздеу...',
 			'videoControls.skipIntro' => 'Кіріспені өткізу',
 			'videoControls.skipCredits' => 'Титрлерді өткізу',
@@ -4420,9 +4422,9 @@ extension on TranslationsKk {
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
 			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
 			'connections.sectionTitle' => 'Қосылымдар',
-			'connections.addConnection' => 'Қосылым қосу',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
@@ -4934,9 +4936,9 @@ extension on TranslationsKk {
 			'liveTv.recordSettings.keepUpTo' => 'Сақталатын эпизодтар',
 			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
 			'liveTv.failedToStartChannel' => 'Тікелей эфир арнасын іске қосу мүмкін болмады',
 			'liveTv.failedToBuildStreamUrl' => 'Ағын URL-ін құру мүмкін болмады',
@@ -5448,9 +5450,9 @@ extension on TranslationsKk {
 			'performanceOverlay.decoderSoftware' => 'Бағдарламалық',
 			'performanceOverlay.decoderHardware' => 'Аппараттық',
 			'performanceOverlay.tunnelingActive' => 'Белсенді',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			'externalPlayer.title' => 'Сыртқы ойнатқыш',
 			'externalPlayer.useExternalPlayer' => 'Сыртқы ойнатқышты пайдалану',
 			'externalPlayer.useExternalPlayerDescription' => 'Видеоларды басқа қолданбада ашу',

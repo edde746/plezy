@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:openwatchparty/openwatchparty.dart' as owp;
+import 'package:web_socket/web_socket.dart';
+
+import '../../utils/app_logger.dart';
 
 /// [input] as the base URL of a self-hosted Open Watch Party relay: `http` or
 /// `https`, a host, an optional port and path prefix, scheme and host lower
@@ -43,6 +46,31 @@ owp.Relays relaysFor(String? customBaseUrl) =>
 /// of one relay setting don't show under another.
 String relayScopeOf(String? customBaseUrl) =>
     customBaseUrl == null ? 'public' : sha256.convert(utf8.encode(customBaseUrl)).toString();
+
+/// The SDK's own WebSocket connect for [relays], plus the log line it lacks:
+/// the SDK reduces every failed connect to `unreachable`, and drops why
+/// (DNS, TLS, a refused upgrade, a timeout) and which relay it was.
+owp.WebSocketConnector relayConnector(owp.Relays relays) => (url) async {
+  final stopwatch = Stopwatch()..start();
+  try {
+    final socket = await WebSocket.connect(url);
+    if (debugLoggingEnabled) {
+      appLogger.d('WatchTogether: relay ${_relayId(relays, url)} connected in ${stopwatch.elapsedMilliseconds} ms');
+    }
+    return socket;
+  } catch (error) {
+    appLogger.w(
+      'WatchTogether: relay ${_relayId(relays, url)} failed to connect after ${stopwatch.elapsedMilliseconds} ms',
+      error: error,
+    );
+    rethrow;
+  }
+};
+
+/// The id of [relays]' relay at [url] (`na`, `custom`, …); its list can be
+/// refreshed under a party, so it is looked up at log time.
+String _relayId(owp.Relays relays, Uri url) =>
+    relays.list.where((relay) => Uri.parse(relay.url) == url).firstOrNull?.id ?? url.host;
 
 /// The offset bound of SDK.md §13: 7 days either way.
 const int maxRoomOffsetMs = 604800000;

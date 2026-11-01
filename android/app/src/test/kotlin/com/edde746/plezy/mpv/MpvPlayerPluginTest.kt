@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import com.edde746.mpv.EndFileReason
+import com.edde746.mpv.GpuVoPolicy
 import com.edde746.mpv.LogLevel
 import com.edde746.mpv.MpvEvent
 import com.edde746.mpv.MpvException
@@ -1668,7 +1669,7 @@ class MpvPlayerPluginTest {
   @Test
   fun voTargetFollowsTheActiveReasonSet() {
     // Reason precedence through the real property-write path: DV reshaping
-    // outranks HDR-on-SDR, dropping the winner falls back to the reason still
+    // outranks HDR tone-mapping, dropping the winner falls back to the reason still
     // active, and dropping the last one returns the session to the plane.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
@@ -1679,8 +1680,8 @@ class MpvPlayerPluginTest {
 
     fun lastVo(): String? = writes.toList().lastOrNull { it.first == "vo" }?.second
 
-    // HDR-on-SDR raises first, then the DV router wins the arbitration.
-    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, true)
+    // HDR tone-mapping raises first, then the DV router wins the arbitration.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_TONE_MAP, true)
     invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_DV_RESHAPE, true)
     awaitCondition { lastVo() == "gpu-next" }
     assertEquals("gpu-next", lastVo())
@@ -1692,7 +1693,7 @@ class MpvPlayerPluginTest {
     assertEquals("gpu", lastVo())
 
     // Last reason dropping returns the session to the video plane.
-    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, false)
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_TONE_MAP, false)
     awaitCondition { lastVo() == "mediacodec" }
     assertEquals("mediacodec", lastVo())
   }
@@ -1715,13 +1716,13 @@ class MpvPlayerPluginTest {
       }
     }
 
-    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, true)
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_TONE_MAP, true)
     invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_SHADERS, true)
 
     val logged = routes.toList()
     assertEquals(2, logged.size)
     assertTrue(logged[0].contains("mediacodec -> gpu"))
-    assertTrue(logged[1].contains(GpuVoPolicy.REASON_HDR_SDR))
+    assertTrue(logged[1].contains(GpuVoPolicy.REASON_TONE_MAP))
     assertTrue(logged[1].contains(GpuVoPolicy.REASON_SHADERS))
   }
 
@@ -2032,7 +2033,7 @@ class MpvPlayerPluginTest {
     // FFmpeg hevc_mediacodec options. Robolectric reports no Dolby Vision
     // display and no file is loaded, so `auto` takes the no-DV branch for a
     // file with no DOVI record deterministically; the per-file answer for a
-    // loaded P5/P8 is GpuVoPolicyTest's.
+    // loaded P5/P8 is mpv-android's GpuVoPolicyTest's.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->

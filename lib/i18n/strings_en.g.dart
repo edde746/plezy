@@ -2497,6 +2497,9 @@ class Translations$videoControls$en {
 	/// en: 'Failed to download subtitle'
 	String get subtitleDownloadFailed => 'Failed to download subtitle';
 
+	/// en: 'The subtitle didn't appear in time. The download may have failed'
+	String get subtitleDownloadTimedOut => 'The subtitle didn\'t appear in time. The download may have failed';
+
 	/// en: 'Search languages...'
 	String get searchLanguages => 'Search languages...';
 
@@ -2688,6 +2691,9 @@ class Translations$messages$en {
 
 	/// en: 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.'
 	String get serverLimitBody => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.';
+
+	/// en: 'Try transcoding'
+	String get serverLimitTranscode => 'Try transcoding';
 
 	/// en: 'File unavailable'
 	String get mediaUnreadableTitle => 'File unavailable';
@@ -3274,6 +3280,9 @@ class Translations$discover$en {
 	/// en: 'Continue Watching in ${library}'
 	String continueWatchingIn({required Object library}) => 'Continue Watching in ${library}';
 
+	/// en: 'Select Version'
+	String get selectVersion => 'Select Version';
+
 	/// en: 'Next Up'
 	String get nextUp => 'Next Up';
 
@@ -3515,6 +3524,9 @@ class Translations$libraries$en {
 
 	/// en: 'Library options'
 	String get libraryOptions => 'Library options';
+
+	/// en: 'Shuffle library'
+	String get shuffleLibrary => 'Shuffle library';
 
 	/// en: 'library content'
 	String get content => 'library content';
@@ -8941,6 +8953,7 @@ extension on Translations {
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
+			'videoControls.subtitleDownloadTimedOut' => 'The subtitle didn\'t appear in time. The download may have failed',
 			'videoControls.searchLanguages' => 'Search languages...',
 			'videoControls.skipIntro' => 'Skip Intro',
 			'videoControls.skipCredits' => 'Skip Credits',
@@ -9001,6 +9014,7 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
+			'messages.serverLimitTranscode' => 'Try transcoding',
 			'messages.mediaUnreadableTitle' => 'File unavailable',
 			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
 			'messages.serverBusyTitle' => 'Stream unavailable',
@@ -9125,10 +9139,10 @@ extension on Translations {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			'profiles.pinsDontMatch' => 'PINs don\'t match',
-			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinsDontMatch' => 'PINs don\'t match',
+			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
@@ -9202,6 +9216,7 @@ extension on Translations {
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
 			'discover.continueWatchingIn' => ({required Object library}) => 'Continue Watching in ${library}',
+			'discover.selectVersion' => 'Select Version',
 			'discover.nextUp' => 'Next Up',
 			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
 			'discover.recentlyAdded' => 'Recently Added',
@@ -9280,6 +9295,7 @@ extension on Translations {
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
+			'libraries.shuffleLibrary' => 'Shuffle library',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
@@ -9637,12 +9653,12 @@ extension on Translations {
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
@@ -10151,12 +10167,12 @@ extension on Translations {
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
