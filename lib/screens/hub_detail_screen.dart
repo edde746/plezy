@@ -2,8 +2,10 @@ import 'dart:async';
 import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../media/library_filter_result.dart';
 import '../media/library_query.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -24,20 +26,31 @@ import '../widgets/media_card_sliver_layout.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
+import '../focus/dpad_navigator.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import '../mixins/paginated_item_loader.dart';
+import 'libraries/filters_bottom_sheet.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/content_state_builder.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 import 'focusable_detail_screen_mixin.dart';
 
+class HubFilterSource {
+  final Future<LibraryFilterResult> Function() loadFilters;
+  final FilterValuesLoader loadFilterValues;
+  final Future<List<MediaItem>> Function(List<LibraryFilter> filters) loadItems;
+
+  const HubFilterSource({required this.loadFilters, required this.loadFilterValues, required this.loadItems});
+}
+
 /// Screen to display full content of a recommendation hub
 class HubDetailScreen extends StatefulWidget {
   final MediaHub hub;
   final Future<List<MediaItem>> Function()? loadItems;
+  final HubFilterSource? filterSource;
   final bool isInContinueWatching;
   final bool usesContinueWatchingAction;
   final VoidCallback? onRemoveFromContinueWatching;
@@ -46,6 +59,7 @@ class HubDetailScreen extends StatefulWidget {
     super.key,
     required this.hub,
     this.loadItems,
+    this.filterSource,
     this.isInContinueWatching = false,
     bool? usesContinueWatchingAction,
     this.onRemoveFromContinueWatching,
@@ -64,6 +78,8 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   List<MediaSort> _sortOptions = [];
   MediaSort? _selectedSort;
   bool _isSortDescending = false;
+  LibraryFilterResult _filterOptions = LibraryFilterResult.empty;
+  List<LibraryFilter> _filters = const [];
   bool _isLoading = false;
   String? _errorMessage;
   bool _replaceContinuationItems = false;
@@ -88,7 +104,19 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   List<FocusableAction> getAppBarActions() {
     return [
-      FocusableAction(icon: Symbols.swap_vert_rounded, tooltip: t.libraries.sort, onPressed: _showSortBottomSheet),
+      if (_filterOptions.filters.isNotEmpty)
+        FocusableAction(
+          icon: Symbols.filter_alt_rounded,
+          tooltip: _filters.isEmpty ? t.libraries.filters : t.libraries.filtersWithCount(count: _filters.length),
+          onPressed: _showFiltersSheet,
+        ),
+      FocusableAction(
+        // Keeps focus on Sort when the filter button appears after loading.
+        debugLabel: 'hub_detail_sort',
+        icon: Symbols.swap_vert_rounded,
+        tooltip: t.libraries.sort,
+        onPressed: _showSortBottomSheet,
+      ),
     ];
   }
 
@@ -109,6 +137,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       _loadMoreItems();
     }
     _loadSorts();
+    if (widget.filterSource case final source?) _loadFilterOptions(source);
     autoFocusFirstItemAfterLoad();
   }
 
@@ -255,6 +284,48 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         });
   }
 
+  Future<void> _loadFilterOptions(HubFilterSource source) async {
+    try {
+      final options = await source.loadFilters();
+      if (!mounted) return;
+      setState(() => _filterOptions = options);
+    } catch (e, stackTrace) {
+      appLogger.w('Failed to load hub filters', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  void _showFiltersSheet() {
+    final source = widget.filterSource;
+    if (source == null) return;
+    final overlayContext = _overlayChildKey.currentContext ?? context;
+    var pending = _filters;
+    SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+    OverlaySheetController.of(overlayContext)
+        .show(
+          builder: (context) => FiltersBottomSheet(
+            filters: _filterOptions.filters,
+            cachedValues: _filterOptions.cachedValues,
+            selectedFilters: _filters,
+            serverId: 'catalog',
+            libraryKey: widget.hub.id,
+            loadFilterValues: source.loadFilterValues,
+            onFiltersChanged: (filters) => pending = filters,
+          ),
+        )
+        .then((_) {
+          if (!mounted) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || listEquals(pending, _filters)) return;
+            setState(() {
+              _filters = pending;
+              _items = [];
+              _filteredItems = [];
+            });
+            unawaited(_loadMoreItems(restart: true));
+          });
+        });
+  }
+
   bool _shouldUsePaginatedLoader(MediaServerClient client) =>
       client.backend.usesMediaBrowserApi && widget.hub.id.endsWith('.recent');
 
@@ -278,11 +349,13 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     if (mounted) setState(() {});
   }
 
-  Future<void> _loadMoreItems() async {
-    if (_isLoading) return;
+  /// [restart] replaces a load that is still running.
+  Future<void> _loadMoreItems({bool restart = false}) async {
+    if (_isLoading && !restart) return;
 
     final serverId = widget.hub.serverId;
-    final loader = widget.loadItems;
+    final filterSource = widget.filterSource;
+    final loader = filterSource == null ? widget.loadItems : () => filterSource.loadItems(_filters);
     if (loader == null && serverId == null) {
       appLogger.w('Hub has no serverId; cannot load more items for ${widget.hub.id}');
       return;
@@ -520,7 +593,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                 else if (_filteredItems.isEmpty && _isLoading)
                   LoadingIndicatorBox.sliver
                 else if (_filteredItems.isEmpty)
-                  SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Text(_filters.isEmpty ? t.hubDetail.noItemsFound : t.libraries.noItemsMatchFilters),
+                    ),
+                  )
                 else
                   SettingsBuilder(
                     prefs: const [
