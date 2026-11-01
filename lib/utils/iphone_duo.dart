@@ -154,31 +154,6 @@ class IphoneDuo {
       _ => null,
     };
   }
-
-  /// The active fold when it splits the layout into left and right halves
-  /// (iPhone Duo held like a book), else null.
-  static Rect? verticalFoldOf(BuildContext context) {
-    for (final fold in of(context).folds) {
-      if (fold.height > fold.width) return fold;
-    }
-    return null;
-  }
-
-  /// The active fold when it splits the layout into top and bottom halves
-  /// (iPhone Duo standing like a laptop), else null.
-  static Rect? horizontalFoldOf(BuildContext context) {
-    for (final fold in of(context).folds) {
-      if (fold.width > fold.height) return fold;
-    }
-    return null;
-  }
-
-  /// Grids should split evenly across a vertical fold (HIG: prefer an even
-  /// number of columns so the fold falls between them).
-  static int foldAwareColumnCount(BuildContext context, int columns) {
-    if (columns < 2 || columns.isEven) return columns;
-    return verticalFoldOf(context) == null ? columns : columns + 1;
-  }
 }
 
 class _IphoneDuoInherited extends InheritedWidget {
