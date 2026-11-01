@@ -403,6 +403,7 @@
     "autoPip": "Автоматичен режим картина в картината",
     "autoPipDescription": "Автоматично включвай режима картина в картината при излизане от приложението по време на възпроизвеждане",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

@@ -403,6 +403,7 @@
     "autoPip": "Imagen en imagen automática",
     "autoPipDescription": "Activar automáticamente el modo de imagen en imagen al salir de la aplicación durante la reproducción",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

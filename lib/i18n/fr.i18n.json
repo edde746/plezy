@@ -403,6 +403,7 @@
     "autoPip": "Mode image dans l’image automatique",
     "autoPipDescription": "Passer en mode image dans l’image si vous quittez l’application pendant la lecture",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

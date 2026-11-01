@@ -403,6 +403,7 @@
     "autoPip": "Automatisk billede-i-billede",
     "autoPipDescription": "Skift automatisk til billede-i-billede, når du forlader appen under afspilning",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

@@ -403,6 +403,7 @@
     "autoPip": "Automatikus kép a képben (PiP)",
     "autoPipDescription": "Lejátszás közben az alkalmazás elhagyásakor automatikusan kép a képben módra vált",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

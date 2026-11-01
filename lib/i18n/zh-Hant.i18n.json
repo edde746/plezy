@@ -403,6 +403,7 @@
     "autoPip": "自動進入子母畫面",
     "autoPipDescription": "播放影片時離開應用程式將自動進入子母畫面模式",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

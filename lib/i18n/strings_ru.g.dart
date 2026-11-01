@@ -496,6 +496,7 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get autoPip => 'Автоматический режим «картинка в картинке»';
 	@override String get autoPipDescription => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения';
 	@override String get playThemeMusic => 'Воспроизводить музыкальную тему';
+	@override String get themeMusicVolume => 'Громкость музыкальной темы';
 	@override String get themeMusicOff => 'Никогда';
 	@override String get themeMusicDetailScreen => 'Экран сведений';
 	@override String get themeMusicEverywhere => 'И главный экран';
@@ -3804,6 +3805,7 @@ extension on TranslationsRu {
 			'settings.autoPip' => 'Автоматический режим «картинка в картинке»',
 			'settings.autoPipDescription' => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения',
 			'settings.playThemeMusic' => 'Воспроизводить музыкальную тему',
+			'settings.themeMusicVolume' => 'Громкость музыкальной темы',
 			'settings.themeMusicOff' => 'Никогда',
 			'settings.themeMusicDetailScreen' => 'Экран сведений',
 			'settings.themeMusicEverywhere' => 'И главный экран',
@@ -3934,9 +3936,9 @@ extension on TranslationsRu {
 			'themeEditor.colors' => 'Цвета',
 			'themeEditor.preview' => 'Предпросмотр',
 			'themeEditor.slots.bg' => 'Фон',
-			'themeEditor.slots.surface' => 'Поверхность',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.surface' => 'Поверхность',
 			'themeEditor.slots.outline' => 'Обводка',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Второстепенный текст',
@@ -4448,9 +4450,9 @@ extension on TranslationsRu {
 			'profiles.profileNameHint' => 'например, Гости, Дети, Семейная комната',
 			'profiles.pinProtectionOptional' => 'Защита PIN-кодом (необязательно)',
 			'profiles.pinExplain' => 'Для переключения профилей нужен 4-значный PIN.',
-			'profiles.continueButton' => 'Продолжить',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.continueButton' => 'Продолжить',
 			'profiles.pinsDontMatch' => 'PIN-коды не совпадают',
 			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			'connections.sectionTitle' => 'Подключения',
@@ -4962,9 +4964,9 @@ extension on TranslationsRu {
 			'liveTv.recordSettings.newOnly' => 'Только новые эпизоды',
 			'liveTv.recordSettings.anyChannel' => 'Записывать на любом канале',
 			'liveTv.recordSettings.anyTime' => 'Записывать в любое время',
-			'liveTv.recordSettings.skipInLibrary' => 'Пропускать эпизоды, уже имеющиеся в библиотеке',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'Пропускать эпизоды, уже имеющиеся в библиотеке',
 			'liveTv.recordSettings.keepUpTo' => 'Сколько эпизодов хранить',
 			'liveTv.recordSettings.keepUpToHint' => '0 — хранить все эпизоды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
@@ -5476,9 +5478,9 @@ extension on TranslationsRu {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA, аппаратный',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm, аппаратный',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek, аппаратный',
-			'performanceOverlay.decoderExynosHw' => 'Exynos, аппаратный',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos, аппаратный',
 			'performanceOverlay.decoderSoftware' => 'Программный',
 			'performanceOverlay.decoderHardware' => 'Аппаратный',
 			'performanceOverlay.tunnelingActive' => 'Активно',

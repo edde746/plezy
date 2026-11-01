@@ -403,6 +403,7 @@
     "autoPip": "자동 PIP 모드",
     "autoPipDescription": "재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

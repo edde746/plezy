@@ -403,6 +403,7 @@
     "autoPip": "自动画中画",
     "autoPipDescription": "播放期间离开应用时自动进入画中画模式",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

@@ -403,6 +403,7 @@
     "autoPip": "Avtomatik Rasm ichida rasm (PiP)",
     "autoPipDescription": "Video ijro etilayotganda ilovadan chiqilganda avto-PiP rejimiga oʻtish",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

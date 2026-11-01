@@ -403,6 +403,7 @@
     "autoPip": "Automatische beeld-in-beeld",
     "autoPipDescription": "Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

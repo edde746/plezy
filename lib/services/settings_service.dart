@@ -801,6 +801,13 @@ class SettingsService extends BaseSharedPreferencesService {
   /// around.
   static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
 
+  /// Theme music volume is independent of the music and video players.
+  static final themeMusicVolume = DoublePref(
+    'theme_music_volume',
+    defaultValue: 35.0,
+    transform: (value) => value.clamp(0.0, 100.0),
+  );
+
   /// Plex-only: Jellyfin/Emby items never resolve a theme URL, so this is a
   /// no-op there regardless of mode.
   static const themeMusicMode = EnumPref<ThemeMusicMode>(
@@ -1523,6 +1530,7 @@ class SettingsService extends BaseSharedPreferencesService {
     hdrSdrConversion,
     musicVolume,
     themeMusicMode,
+    themeMusicVolume,
     resumeMusicOnLaunch,
     autoPlayNextEpisode,
     playNextCountdown,
@@ -1673,7 +1681,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'subtitle_font_size' => (10, 80),
     'subtitle_border_size' => (0, 5),
     'subtitle_position' => (0, 150),
-    'subtitle_background_opacity' || 'music_volume' => (0, 100),
+    'subtitle_background_opacity' || 'music_volume' || 'theme_music_volume' => (0, 100),
     'volume' => (0, 300),
     'max_volume' => (100, 300),
     'downmix_center_boost' => (0, 12),

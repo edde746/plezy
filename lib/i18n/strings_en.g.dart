@@ -1157,6 +1157,9 @@ class Translations$settings$en {
 	/// en: 'Play Theme Music'
 	String get playThemeMusic => 'Play Theme Music';
 
+	/// en: 'Theme Music Volume'
+	String get themeMusicVolume => 'Theme Music Volume';
+
 	/// en: 'Never'
 	String get themeMusicOff => 'Never';
 
@@ -8503,6 +8506,7 @@ extension on Translations {
 			'settings.autoPip' => 'Auto Picture-in-Picture',
 			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when you leave the app during playback',
 			'settings.playThemeMusic' => 'Play Theme Music',
+			'settings.themeMusicVolume' => 'Theme Music Volume',
 			'settings.themeMusicOff' => 'Never',
 			'settings.themeMusicDetailScreen' => 'Details Screen Only',
 			'settings.themeMusicEverywhere' => 'Also Home Screen',
@@ -8633,9 +8637,9 @@ extension on Translations {
 			'themeEditor.colors' => 'Colors',
 			'themeEditor.preview' => 'Preview',
 			'themeEditor.slots.bg' => 'Background',
-			'themeEditor.slots.surface' => 'Surface',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
@@ -9147,9 +9151,9 @@ extension on Translations {
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
-			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
@@ -9661,9 +9665,9 @@ extension on Translations {
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
-			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
@@ -10175,9 +10179,9 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
-			'performanceOverlay.player' => 'Player',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',

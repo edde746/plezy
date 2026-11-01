@@ -403,6 +403,7 @@
     "autoPip": "Picture-in-picture automático",
     "autoPipDescription": "Entrar automaticamente no modo picture-in-picture ao sair do app durante a reprodução",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

@@ -403,6 +403,7 @@
     "autoPip": "Otomatik Pencere İçinde Pencere (PiP)",
     "autoPipDescription": "Oynatma sırasında uygulamadan çıktığınızda otomatik olarak pencere içinde pencere moduna geç",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

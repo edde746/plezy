@@ -403,6 +403,7 @@
     "autoPip": "Avtomatik Pəncərə daxilində Pəncərə (PiP)",
     "autoPipDescription": "Oynatma zamanı tətbiqdən çıxdıqda avtomatik PiP rejiminə keç",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

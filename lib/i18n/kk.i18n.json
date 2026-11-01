@@ -403,6 +403,7 @@
     "autoPip": "Автоматты Суреттегі сурет (PiP)",
     "autoPipDescription": "Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

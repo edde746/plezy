@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focusable_slider.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/screens/settings/appearance_settings_screen.dart';
@@ -53,6 +55,49 @@ void main() {
     // Moved away: profile prompt and performance overlay no longer live here.
     expect(find.text(t.settings.requireProfileSelectionOnOpen), findsNothing);
     expect(find.text(t.settings.autoHidePerformanceOverlay), findsNothing);
+  });
+
+  testWidgets('theme music volume slider displays and persists the selected level', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 3000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final supporter = SupporterService.forTesting(availability: SupporterAvailability.hidden);
+    addTearDown(supporter.dispose);
+    final theme = ThemeProvider(supporter: supporter);
+    addTearDown(theme.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ThemeProvider>.value(
+        value: theme,
+        child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const AppearanceSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final control = find.byKey(const ValueKey('theme-music-volume-slider'));
+    await tester.ensureVisible(control);
+    await tester.pumpAndSettle();
+    expect(find.text(t.settings.themeMusicVolume), findsOneWidget);
+    expect(tester.widget<FocusableSlider>(control).value, 35);
+    expect(find.text('35%'), findsOneWidget);
+
+    final slider = find.descendant(of: control, matching: find.byType(Slider));
+    await tester.tapAt(tester.getCenter(slider));
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.themeMusicVolume), 50);
+    expect(find.text('50%'), findsOneWidget);
+
+    Focus.of(tester.element(slider)).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.themeMusicVolume), 55);
+    expect(find.text('55%'), findsOneWidget);
+
+    await SettingsService.instance.reset(SettingsService.themeMusicVolume);
+    await tester.pumpAndSettle();
+    expect(tester.widget<FocusableSlider>(control).value, 35);
   });
 
   testWidgets('the Theme entry opens the theme picker and a pick applies live', (tester) async {

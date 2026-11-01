@@ -23,6 +23,29 @@ void main() {
     TvDetectionService.debugSetAutomotiveOverride(null);
   });
 
+  test('theme music volume has bounded, portable, resettable settings', () async {
+    final settings = await SettingsService.getInstance();
+    final pref = SettingsService.themeMusicVolume;
+    expect(settings.read(pref), 35);
+    expect(SettingsService.numericBounds(pref), (0, 100));
+    expect(SettingsService.portablePrefs, contains(pref));
+    expect(SettingsService.editableAppPrefs, contains(pref));
+    expect(() => SettingsService.validateEditableValue(pref, 101.0), throwsFormatException);
+
+    await settings.write(pref, -5.0);
+    expect(settings.read(pref), 0);
+    await settings.write(pref, 150.0);
+    expect(settings.read(pref), 100);
+    await settings.write(pref, 65.0);
+    expect(settings.read(pref), 65);
+    SettingsService.resetForTesting();
+    BaseSharedPreferencesService.resetForTesting();
+    final reopened = await SettingsService.getInstance();
+    expect(reopened.read(pref), 65);
+    await reopened.reset(pref);
+    expect(reopened.read(pref), 35);
+  });
+
   group('SettingsService.parseMpvConfigText', () {
     test('parses plain key=value lines', () {
       final out = SettingsService.parseMpvConfigText('hwdec=auto\nvolume=100');

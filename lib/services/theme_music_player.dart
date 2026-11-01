@@ -4,8 +4,9 @@ import 'package:flutter/foundation.dart';
 
 import '../mpv/models.dart';
 import '../mpv/player/player.dart';
-import 'playback_coordinator.dart';
 import '../utils/app_logger.dart';
+import 'playback_coordinator.dart';
+import 'settings_service.dart';
 
 /// Profile-scoped owner of the single native audio core used for theme music.
 ///
@@ -15,19 +16,20 @@ import '../utils/app_logger.dart';
 class ThemeMusicService extends ChangeNotifier {
   ThemeMusicService({Player Function()? playerFactory, PlaybackCoordinator? coordinator})
     : _playerFactory = playerFactory ?? Player.audio,
-      _coordinator = coordinator ?? PlaybackCoordinator.instance {
+      _coordinator = coordinator ?? PlaybackCoordinator.instance,
+      _volumeSetting = SettingsService.instance.listenable(SettingsService.themeMusicVolume) {
     _stopAndDisposeCallback = _stopAndDisposeForClaim;
     _coordinator.registerThemeSession(stopAndDispose: _stopAndDisposeCallback);
+    _volumeSetting.addListener(_onVolumeChanged);
   }
 
   static const _fadeInDuration = Duration(milliseconds: 1200);
   static const _fadeOutDuration = Duration(milliseconds: 400);
   static const _fadeStep = Duration(milliseconds: 40);
   static const _repeatDelay = Duration(seconds: 5);
-  static const targetVolume = 35.0;
-
   final Player Function() _playerFactory;
   final PlaybackCoordinator _coordinator;
+  final ValueListenable<double> _volumeSetting;
   late final Future<void> Function() _stopAndDisposeCallback;
   Player? _player;
   Timer? _fadeTimer;
@@ -37,6 +39,7 @@ class ThemeMusicService extends ChangeNotifier {
   Future<void> _command = Future.value();
   Object? _owner;
   String? _requestedUrl;
+  double _fadeLevel = 0;
   bool _paused = false;
   bool _disposed = false;
 
@@ -64,11 +67,13 @@ class ThemeMusicService extends ChangeNotifier {
     if (_disposed || _requestedUrl != url) return;
     final player = _player ??= _createPlayer();
     try {
+      _cancelFade();
+      _fadeLevel = 0;
       await player.setVolume(0);
       if (_disposed || _requestedUrl != url) return;
       await player.setProperty('loop-file', 'no');
       await player.open(Media(url), play: true);
-      unawaited(_fadeVolume(player, from: 0, to: targetVolume, duration: _fadeInDuration));
+      unawaited(_fadeVolume(player, to: 1, duration: _fadeInDuration));
     } catch (e, st) {
       appLogger.d('ThemeMusicService: failed to start theme music', error: e, stackTrace: st);
     }
@@ -110,7 +115,7 @@ class ThemeMusicService extends ChangeNotifier {
       final player = _player;
       if (player == null || _requestedUrl == null) return;
       try {
-        await _fadeVolume(player, from: targetVolume, to: 0, duration: _fadeOutDuration);
+        await _fadeVolume(player, to: 0, duration: _fadeOutDuration);
         await player.pause();
       } catch (e, st) {
         appLogger.d('ThemeMusicService: failed to pause theme music', error: e, stackTrace: st);
@@ -128,7 +133,7 @@ class ThemeMusicService extends ChangeNotifier {
       if (player == null || _requestedUrl == null) return;
       try {
         await player.play();
-        await _fadeVolume(player, from: 0, to: targetVolume, duration: _fadeInDuration);
+        await _fadeVolume(player, to: 1, duration: _fadeInDuration);
       } catch (e, st) {
         appLogger.d('ThemeMusicService: failed to resume theme music', error: e, stackTrace: st);
       }
@@ -151,9 +156,8 @@ class ThemeMusicService extends ChangeNotifier {
     _requestedUrl = null;
     _paused = false;
     return _enqueue(() async {
-      _fadeTimer?.cancel();
-      _fadeCompleter?.complete();
-      _fadeCompleter = null;
+      _cancelFade();
+      _fadeLevel = 0;
       await _completedSubscription?.cancel();
       _completedSubscription = null;
       final player = _player;
@@ -176,7 +180,7 @@ class ThemeMusicService extends ChangeNotifier {
     final player = _player;
     if (player == null) return;
     try {
-      await _fadeVolume(player, from: targetVolume, to: 0, duration: _fadeOutDuration);
+      await _fadeVolume(player, to: 0, duration: _fadeOutDuration);
       await player.stop();
     } catch (e, st) {
       appLogger.d('ThemeMusicService: failed to stop theme music', error: e, stackTrace: st);
@@ -188,23 +192,44 @@ class ThemeMusicService extends ChangeNotifier {
     return _command;
   }
 
-  Future<void> _fadeVolume(Player player, {required double from, required double to, required Duration duration}) {
+  void _onVolumeChanged() {
+    final player = _player;
+    if (player == null || _requestedUrl == null) return;
+    unawaited(_applyVolume(player));
+  }
+
+  Future<void> _applyVolume(Player player) async {
+    try {
+      await player.setVolume(_fadeLevel * _volumeSetting.value);
+    } catch (e, st) {
+      appLogger.w('ThemeMusicService: failed to set volume', error: e, stackTrace: st);
+    }
+  }
+
+  void _cancelFade() {
     _fadeTimer?.cancel();
-    _fadeCompleter?.complete();
+    _fadeTimer = null;
+    final completer = _fadeCompleter;
+    _fadeCompleter = null;
+    if (completer != null && !completer.isCompleted) completer.complete();
+  }
+
+  Future<void> _fadeVolume(Player player, {required double to, required Duration duration}) {
+    _cancelFade();
+    final from = _fadeLevel;
     final steps = (duration.inMilliseconds / _fadeStep.inMilliseconds).round().clamp(1, 1000);
     final completer = Completer<void>();
     _fadeCompleter = completer;
     var step = 0;
     _fadeTimer = Timer.periodic(_fadeStep, (timer) async {
+      if (!identical(_fadeTimer, timer)) return;
       step++;
       final t = (step / steps).clamp(0.0, 1.0);
-      try {
-        await player.setVolume(from + (to - from) * t);
-      } catch (_) {
-        // Player may have been disposed mid-fade; the timer cancels below.
-      }
-      if (step >= steps) {
+      _fadeLevel = from + (to - from) * t;
+      await _applyVolume(player);
+      if (step >= steps && identical(_fadeTimer, timer)) {
         timer.cancel();
+        _fadeTimer = null;
         if (!completer.isCompleted) completer.complete();
         if (identical(_fadeCompleter, completer)) _fadeCompleter = null;
       }
@@ -217,6 +242,7 @@ class ThemeMusicService extends ChangeNotifier {
     if (_disposed) return;
     _disposed = true;
     _repeatTimer?.cancel();
+    _volumeSetting.removeListener(_onVolumeChanged);
     _coordinator.unregisterThemeSession(_stopAndDisposeCallback);
     unawaited(_stopAndDisposeForClaim());
     super.dispose();

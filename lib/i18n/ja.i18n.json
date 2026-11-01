@@ -403,6 +403,7 @@
     "autoPip": "自動ピクチャーインピクチャー",
     "autoPipDescription": "再生中にアプリを離れると、自動的にピクチャーインピクチャーに切り替えます",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",

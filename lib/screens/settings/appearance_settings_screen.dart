@@ -118,6 +118,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             _continueWatchingActionSelector(),
             _episodeActionSelector(),
             _playThemeMusicTile(),
+            _themeMusicVolumeSlider(),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,
@@ -198,6 +199,40 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: ThemeMusicMode.detailScreen, label: Text(t.settings.themeMusicDetailScreen)),
       ButtonSegment(value: ThemeMusicMode.everywhere, label: Text(t.settings.themeMusicEverywhere)),
     ],
+  );
+
+  Widget _themeMusicVolumeSlider() => SettingValueBuilder<double>(
+    pref: SettingsService.themeMusicVolume,
+    builder: (context, volume, _) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: .start,
+        children: [
+          Row(
+            children: [
+              const AppIcon(Symbols.volume_up_rounded, fill: 1),
+              const SizedBox(width: 16),
+              Expanded(child: Text(t.settings.themeMusicVolume, style: settingsOptionTitleStyle(context))),
+              Text(
+                t.settings.maxVolumePercent(percent: volume.round().toString()),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Semantics(
+            label: t.settings.themeMusicVolume,
+            child: FocusableSlider(
+              key: const ValueKey('theme-music-volume-slider'),
+              value: volume,
+              max: 100,
+              divisions: 20,
+              onChanged: (value) => SettingsService.instance.write(SettingsService.themeMusicVolume, value),
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 
   // Opens the theme picker; the subtitle and icon follow the theme on screen,

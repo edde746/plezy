@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
 
@@ -14,6 +16,9 @@ import '../utils/app_logger.dart';
 /// two native cores cannot coexist.
 class PlaybackCoordinator {
   PlaybackCoordinator._();
+
+  @visibleForTesting
+  PlaybackCoordinator.forTesting();
 
   static final PlaybackCoordinator instance = PlaybackCoordinator._();
 

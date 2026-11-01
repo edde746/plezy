@@ -403,6 +403,7 @@
     "autoPip": "Auto Picture-in-Picture",
     "autoPipDescription": "Automatically enter picture-in-picture when you leave the app during playback",
     "playThemeMusic": "Play Theme Music",
+    "themeMusicVolume": "Theme Music Volume",
     "themeMusicOff": "Never",
     "themeMusicDetailScreen": "Details Screen Only",
     "themeMusicEverywhere": "Also Home Screen",

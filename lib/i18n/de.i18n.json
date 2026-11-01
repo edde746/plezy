@@ -403,6 +403,7 @@
     "autoPip": "Automatisches Bild-in-Bild",
     "autoPipDescription": "Beim Verlassen der App während der Wiedergabe automatisch Bild-in-Bild starten",
     "playThemeMusic": "",
+    "themeMusicVolume": "",
     "themeMusicOff": "",
     "themeMusicDetailScreen": "",
     "themeMusicEverywhere": "",
