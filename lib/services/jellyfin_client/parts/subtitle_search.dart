@@ -61,6 +61,12 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
   /// Jellyfin's subtitle providers only search movies and episodes.
   bool canSearchSubtitlesFor(MediaKind kind) => kind == MediaKind.movie || kind == MediaKind.episode;
 
+  /// A merged alternate version is an item of its own, whose media source id
+  /// is that item's id, and Jellyfin saves its subtitles next to its file. A
+  /// source without an id gets its position as a version id, which is not one.
+  String subtitleItemIdFor(String itemId, {String? mediaSourceId}) =>
+      mediaSourceId == null || mediaSourceId.isEmpty || int.tryParse(mediaSourceId) != null ? itemId : mediaSourceId;
+
   /// Jellyfin resolves two- and three-letter [language] codes alike. Its
   /// search takes no title, so [title] filters the rows by name instead.
   Future<List<SubtitleSearchResult>> searchSubtitles(
@@ -101,7 +107,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     final language = result.languageCode ?? '';
     final codec = result.codec ?? 'srt';
     _pendingSubtitleDownloads[ratingKey] = (
-      paths: (await _externalSubtitlesByPath(ratingKey)).keys.toSet(),
+      paths: (await _externalSubtitlesByPath(ratingKey)).tracks.keys.toSet(),
       language: language,
       codec: codec,
       forced: result.forced,
@@ -133,8 +139,9 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
         (language != null &&
             LanguageCodes.getLanguageName(language) == null &&
             path.split('/').last.toLowerCase().contains('.${pending.language.toLowerCase()}.'));
+    final now = await _externalSubtitlesByPath(ratingKey);
     final added = [
-      for (final MapEntry(key: path, value: track) in (await _externalSubtitlesByPath(ratingKey)).entries)
+      for (final MapEntry(key: path, value: track) in now.tracks.entries)
         if (!pending.paths.contains(path) &&
             inLanguage(path, track.languageCode) &&
             track.forced == pending.forced &&
@@ -142,27 +149,40 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
           track,
     ];
     if (added.length != 1) return null;
+    // For a merged version, the row playback reads cache-first is the primary
+    // item's, one of the other versions this item lists: refresh those too,
+    // before forgetting the download, so a failed refresh is retried.
+    await Future.wait([for (final id in now.otherVersionIds) fetchItem(id)]);
     _pendingSubtitleDownloads.remove(ratingKey);
     return added.single;
   }
 
   /// Through [fetchItem], which always hits the network and rewrites the row
   /// playback reads cache-first, so the reload after a download sees the
-  /// renumbered streams too.
-  Future<Map<String, MediaSubtitleTrack>> _externalSubtitlesByPath(String itemId) async {
+  /// renumbered streams too. Also returns the item's other versions.
+  Future<({Map<String, MediaSubtitleTrack> tracks, List<String> otherVersionIds})> _externalSubtitlesByPath(
+    String itemId,
+  ) async {
     final raw = (await fetchItem(itemId))?.raw;
-    final sources = raw is Map<String, dynamic> ? raw['MediaSources'] : null;
-    final source = sources is List
-        ? sources.whereType<Map<String, dynamic>>().where((s) => s['Id'] == itemId).firstOrNull ??
-              sources.whereType<Map<String, dynamic>>().firstOrNull
-        : null;
+    final sources = [
+      if (raw is Map<String, dynamic> && raw['MediaSources'] is List)
+        ...(raw['MediaSources'] as List).whereType<Map<String, dynamic>>(),
+    ];
+    final otherVersionIds = [
+      for (final s in sources)
+        if (s['Id'] is String && s['Id'] != itemId) s['Id'] as String,
+    ];
+    final source = sources.where((s) => s['Id'] == itemId).firstOrNull ?? sources.firstOrNull;
     final streams = source?['MediaStreams'];
-    if (streams is! List) return const {};
+    if (streams is! List) return (tracks: const <String, MediaSubtitleTrack>{}, otherVersionIds: otherVersionIds);
     final tracks = {for (final t in jellyfinMediaSourceToMediaSourceInfo(source!).subtitleTracks) t.id: t};
-    return {
-      for (final stream in streams.whereType<Map<String, dynamic>>())
-        if (stream['IsExternal'] == true && stream['Path'] is String && tracks[stream['Index']] != null)
-          stream['Path'] as String: tracks[stream['Index']]!,
-    };
+    return (
+      tracks: {
+        for (final stream in streams.whereType<Map<String, dynamic>>())
+          if (stream['IsExternal'] == true && stream['Path'] is String && tracks[stream['Index']] != null)
+            stream['Path'] as String: tracks[stream['Index']]!,
+      },
+      otherVersionIds: otherVersionIds,
+    );
   }
 }

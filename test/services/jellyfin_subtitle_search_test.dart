@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/media/subtitle_search_result.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -265,6 +266,67 @@ void main() {
         await downloadThenFind([...before, ('Film.de.srt', 'ger', 'subrip'), ('Film.de.0.srt', 'ger', 'subrip')]),
         isNull,
         reason: 'two candidates: decline rather than guess',
+      );
+    });
+
+    test('a download for an alternate version also refreshes the row playback reads, the primary item', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      JellyfinApiCache.initialize(db);
+      var downloaded = false;
+      var primaryFailures = 1;
+      Map<String, Object?> source(String id, {required bool withNewFile}) => {
+        'Id': id,
+        'MediaStreams': [
+          if (id == 'alt-2' && withNewFile)
+            {
+              'Index': 0,
+              'Type': 'Subtitle',
+              'Language': 'ger',
+              'Codec': 'subrip',
+              'IsExternal': true,
+              'Path': '/m/Film - 720p.de.srt',
+            },
+          {'Index': id == 'alt-2' && withNewFile ? 1 : 0, 'Type': 'Video'},
+        ],
+      };
+      // Each version is an item of its own, and every one lists all versions.
+      Map<String, Object?> item(String id) => {
+        'Id': id,
+        'Type': 'Movie',
+        'MediaSources': [
+          for (final sourceId in [id, if (id == 'item-1') 'alt-2' else 'item-1'])
+            source(sourceId, withNewFile: downloaded),
+        ],
+      };
+      final fake = clientAnswering({
+        '/Users/user-1/Items/item-1': (_) =>
+            downloaded && primaryFailures-- > 0 ? http.Response('', 503) : item('item-1'),
+        '/Users/user-1/Items/alt-2': (_) => item('alt-2'),
+        '/Items/alt-2/RemoteSearch/Subtitles/sub-1': (_) {
+          downloaded = true;
+          return http.Response('', 204);
+        },
+      });
+      await fake.client.fetchItem('item-1'); // playback start caches the primary row
+
+      await fake.client.downloadSubtitle(
+        'alt-2',
+        const SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: 'de'),
+      );
+      await expectLater(
+        fake.client.findDownloadedSubtitle('alt-2', existingTrackIds: const {}),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+      final found = await fake.client.findDownloadedSubtitle('alt-2', existingTrackIds: const {});
+
+      expect(found?.language, 'ger', reason: 'the next poll still finds the download');
+      final cached = await fake.client.fetchItemFreshCacheFirst('item-1');
+      final alternate = ((cached!.raw as Map)['MediaSources'] as List).firstWhere((s) => s['Id'] == 'alt-2');
+      expect(
+        (alternate['MediaStreams'] as List).map((s) => s['Path']),
+        contains('/m/Film - 720p.de.srt'),
+        reason: 'the reload reads the primary row cache-first; a stale one resolves tracks against the old numbering',
       );
     });
 

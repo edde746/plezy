@@ -1055,6 +1055,10 @@ abstract interface class ExternalSubtitleSearchClient {
   /// Whether the server's subtitle providers can search items of [kind].
   bool canSearchSubtitlesFor(MediaKind kind);
 
+  /// The item id the other methods take while [mediaSourceId] of [itemId]
+  /// plays; it differs where a merged version is an item of its own.
+  String subtitleItemIdFor(String itemId, {String? mediaSourceId});
+
   /// [language] is an ISO 639-1 code.
   Future<List<SubtitleSearchResult>> searchSubtitles(String ratingKey, {required String language, String? title});
 

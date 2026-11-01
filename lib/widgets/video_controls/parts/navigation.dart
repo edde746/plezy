@@ -76,7 +76,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     required String ratingKey,
   }) async {
     if (!mounted) return SubtitleDownloadApplyOutcome.unavailable;
-    if (widget.metadata.serverId != serverId || widget.metadata.id != ratingKey) {
+    if (widget.metadata.serverId != serverId || _subtitleItemId() != ratingKey) {
       return SubtitleDownloadApplyOutcome.superseded;
     }
     final switchSource = widget.onPlaybackSourceChanged;
@@ -87,7 +87,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         mounted &&
         widget.metadata.globalKey == itemKey &&
         widget.metadata.serverId == serverId &&
-        widget.metadata.id == ratingKey;
+        _subtitleItemId() == ratingKey;
 
     try {
       final client = context.getMediaClientForServer(ServerId(serverId)) as ExternalSubtitleSearchClient;

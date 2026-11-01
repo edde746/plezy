@@ -26,16 +26,17 @@ void main() {
       if (client.canSearchSubtitlesFor(kind)) kind,
   ];
 
-  test('Plex: the 15 s wait Plex-web uses, stable stream ids, any item', () {
+  test('Plex: the 15 s wait Plex-web uses, stable stream ids, any item, searched on the item itself', () {
     final client = testPlexClient();
     addTearDown(client.close);
 
     expect(client.subtitleDownloadTimeout, const Duration(seconds: 15));
     expect(client.subtitleDownloadKeepsStreamIds, isTrue);
     expect(searchable(client), MediaKind.values);
+    expect(client.subtitleItemIdFor('item-1', mediaSourceId: 'part-9'), 'item-1');
   });
 
-  test('Jellyfin: a longer wait, renumbered streams, films and episodes only', () {
+  test('Jellyfin: a longer wait, renumbered streams, films and episodes only, on the playing version', () {
     final client = JellyfinClient.forTesting(
       connection: testJellyfinConnection(),
       httpClient: MockClient((_) async => http.Response('', 404)),
@@ -45,6 +46,13 @@ void main() {
     expect(client.subtitleDownloadTimeout, const Duration(seconds: 30));
     expect(client.subtitleDownloadKeepsStreamIds, isFalse);
     expect(searchable(client), [MediaKind.movie, MediaKind.episode]);
+    // A merged alternate version is an item of its own, and its media source
+    // id is that item's id: search, download and polling must all use it.
+    expect(client.subtitleItemIdFor('primary-1', mediaSourceId: 'alternate-2'), 'alternate-2');
+    expect(client.subtitleItemIdFor('primary-1', mediaSourceId: 'primary-1'), 'primary-1');
+    expect(client.subtitleItemIdFor('primary-1'), 'primary-1');
+    // A source without an id gets its position as a version id: not an item.
+    expect(client.subtitleItemIdFor('primary-1', mediaSourceId: '1'), 'primary-1');
   });
 
   test('Plex: a search row downloads with the fields Plex asks for', () async {
