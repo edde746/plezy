@@ -103,7 +103,7 @@ void main() {
     // show camelCase. Parsing must accept both.
     test('parses the real server shape', () {
       final profile = BonfireProfile.fromJson(const {
-        'ProfileUserId': 'e5b69450454d458c883028fb7ecd0a49',
+        'ProfileUserId': 'd1c0ffee43214abc9def0123456789ab',
         'ProfileName': 'Max',
         'AvatarInitial': 'M',
         'AvatarColor': '#E50914',
@@ -118,13 +118,13 @@ void main() {
         'BypassPinOnLocalNetwork': false,
         'AllowedDeviceIds': <String>[],
         'IsBonfire': false,
-        'MasterUserId': '60aa717550f74bc8b5f4901ab87a29f4',
+        'MasterUserId': '2fa9e0c1abcd4ef598760fedcba32109',
       });
-      expect(profile.profileUserId, 'e5b69450454d458c883028fb7ecd0a49');
+      expect(profile.profileUserId, 'd1c0ffee43214abc9def0123456789ab');
       expect(profile.displayName, 'Max');
       expect(profile.requiresPin, false);
       expect(profile.isMaster, false);
-      expect(profile.masterUserId, '60aa717550f74bc8b5f4901ab87a29f4');
+      expect(profile.masterUserId, '2fa9e0c1abcd4ef598760fedcba32109');
     });
   });
 }

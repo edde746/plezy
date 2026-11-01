@@ -27,7 +27,7 @@ JellyfinConnection _conn(String id) {
     serverName: 'Home Media',
     serverMachineId: 'machine-$id',
     userId: 'master-1',
-    userName: 'dalgibbard',
+    userName: 'Householder',
     accessToken: 'master-token',
     deviceId: 'device-1',
     createdAt: DateTime(2026, 1, 1),
@@ -131,14 +131,14 @@ void main() {
     test('local parent row is hidden when a Bonfire master virtual exists', () {
       final merged = mergeLocalWithPlexHome(
         locals: [
-          Profile.local(id: 'local-dal', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1)),
+          Profile.local(id: 'local-dal', displayName: 'Householder', createdAt: DateTime(2026, 1, 1)),
           Profile.local(id: 'local-multi', displayName: 'Shared', createdAt: DateTime(2026, 1, 1)),
         ],
         plexHomeByConnectionId: const {},
         connectionsById: {'jf-1': _conn('jf-1'), 'jf-2': _conn('jf-2')},
         bonfireByConnectionId: {
           'jf-1': [
-            _bonfire(_masterGuid, name: 'dalgibbard', isMaster: true),
+            _bonfire(_masterGuid, name: 'Householder', isMaster: true),
             _bonfire(_kidsGuid, name: 'Max'),
           ],
         },
@@ -163,13 +163,13 @@ void main() {
     test('an unrowed local named after the Bonfire master user is also hidden', () {
       final merged = mergeLocalWithPlexHome(
         locals: [
-          Profile.local(id: 'local-fresh', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1)),
+          Profile.local(id: 'local-fresh', displayName: 'Householder', createdAt: DateTime(2026, 1, 1)),
           Profile.local(id: 'local-other', displayName: 'Someone Else', createdAt: DateTime(2026, 1, 1)),
         ],
         plexHomeByConnectionId: const {},
         connectionsById: {'jf-1': _conn('jf-1')},
         bonfireByConnectionId: {
-          'jf-1': [_bonfire(_masterGuid, name: 'dalgibbard', isMaster: true)],
+          'jf-1': [_bonfire(_masterGuid, name: 'Householder', isMaster: true)],
         },
       );
 
@@ -187,18 +187,18 @@ void main() {
         serverName: 'Home Media',
         serverMachineId: 'machine-1',
         userId: '60aa',
-        userName: 'dalgibbard',
+        userName: 'Householder',
         accessToken: 'master-token',
         deviceId: 'device-1',
         createdAt: DateTime(2026, 1, 1),
       );
       final merged = mergeLocalWithPlexHome(
-        locals: [Profile.local(id: 'local-dal', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1))],
+        locals: [Profile.local(id: 'local-dal', displayName: 'Householder', createdAt: DateTime(2026, 1, 1))],
         plexHomeByConnectionId: const {},
         connectionsById: {host.id: host},
         bonfireByConnectionId: {
           'machine-1': [
-            _bonfire(_masterGuid, name: 'dalgibbard', isMaster: true),
+            _bonfire(_masterGuid, name: 'Householder', isMaster: true),
             _bonfire(_kidsGuid, name: 'Max'),
           ],
         },
@@ -217,25 +217,25 @@ void main() {
     test('a local whose sole join row is the compound host row hides too', () {
       // On device the local account's join row points at the compound sign-in
       // row, while the Bonfire master set carries machine ids. A row-keyed
-      // comparison misses the duplicate and the picker shows two dalgibbards.
+      // comparison misses the duplicate and the picker shows two Householders.
       final host = JellyfinConnection(
         id: 'machine-1/60aa',
         baseUrl: 'https://jellyfin.example.net',
         serverName: 'Home Media',
         serverMachineId: 'machine-1',
         userId: '60aa',
-        userName: 'dalgibbard',
+        userName: 'Householder',
         accessToken: 'master-token',
         deviceId: 'device-1',
         createdAt: DateTime(2026, 1, 1),
       );
       final merged = mergeLocalWithPlexHome(
-        locals: [Profile.local(id: 'local-dal', displayName: 'dalgibbard', createdAt: DateTime(2026, 1, 1))],
+        locals: [Profile.local(id: 'local-dal', displayName: 'Householder', createdAt: DateTime(2026, 1, 1))],
         plexHomeByConnectionId: const {},
         connectionsById: {host.id: host},
         bonfireByConnectionId: {
           'machine-1': [
-            _bonfire(_masterGuid, name: 'dalgibbard', isMaster: true),
+            _bonfire(_masterGuid, name: 'Householder', isMaster: true),
             _bonfire(_kidsGuid, name: 'Max'),
           ],
         },

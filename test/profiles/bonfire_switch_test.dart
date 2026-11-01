@@ -11,6 +11,7 @@ import 'package:plezy/profiles/bonfire_switch.dart';
 import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 const _guid = 'a90f11cb-42a1-432d-94bb-97cc2d42ef8b';
@@ -22,15 +23,11 @@ JellyfinConnection _conn() {
     serverName: 'Home Media',
     serverMachineId: 'machine-1',
     userId: 'master-1',
-    userName: 'dalgibbard',
+    userName: 'Householder',
     accessToken: 'master-token',
     deviceId: 'device-1',
     createdAt: DateTime(2026, 1, 1),
   );
-}
-
-http.Response _json(Object? body, int status) {
-  return http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json'});
 }
 
 Future<BonfireSwitchResult> _switch({
@@ -62,7 +59,7 @@ void main() {
           expect(body['profileId'], _guid);
           expect(body.containsKey('pin'), isFalse);
           expect(request.headers['Authorization'], contains('MediaBrowser'));
-          return _json({'activeProfileToken': 'scoped-token', 'jellyfinUserId': _guid}, 200);
+          return jsonResponse({'activeProfileToken': 'scoped-token', 'jellyfinUserId': _guid}, status: 200);
         }),
       );
       expect(attempts, 1);
@@ -82,7 +79,7 @@ void main() {
         mock: MockClient((request) async {
           final body = jsonDecode(request.body) as Map<String, Object?>;
           expect(body['pin'], '1234');
-          return _json({'activeProfileToken': 'scoped-token'}, 200);
+          return jsonResponse({'activeProfileToken': 'scoped-token'}, status: 200);
         }),
       );
       expect(result.succeeded, isTrue);
@@ -96,7 +93,7 @@ void main() {
         promptForPin: ({String? errorMessage}) async => null,
         mock: MockClient((request) async {
           attempts++;
-          return _json({'activeProfileToken': 'x'}, 200);
+          return jsonResponse({'activeProfileToken': 'x'}, status: 200);
         }),
       );
       expect(result.status, BonfireSwitchStatus.cancelled);
@@ -118,8 +115,8 @@ void main() {
           final body = jsonDecode(request.body) as Map<String, Object?>;
           sentPins.add(body['pin'] as String);
           attempts++;
-          if (attempts == 1) return _json({'message': 'Incorrect PIN'}, 400);
-          return _json({'activeProfileToken': 'scoped-token'}, 200);
+          if (attempts == 1) return jsonResponse({'message': 'Incorrect PIN'}, status: 400);
+          return jsonResponse({'activeProfileToken': 'scoped-token'}, status: 200);
         }),
       );
       expect(result.succeeded, isTrue);
@@ -139,10 +136,10 @@ void main() {
         },
         mock: MockClient((request) async {
           attempts++;
-          if (attempts == 1) return _json({'message': 'A PIN is required for this profile'}, 400);
+          if (attempts == 1) return jsonResponse({'message': 'A PIN is required for this profile'}, status: 400);
           final body = jsonDecode(request.body) as Map<String, Object?>;
           expect(body['pin'], '1234');
-          return _json({'activeProfileToken': 'scoped-token'}, 200);
+          return jsonResponse({'activeProfileToken': 'scoped-token'}, status: 200);
         }),
       );
       expect(result.succeeded, isTrue);
@@ -156,7 +153,7 @@ void main() {
         promptForPin: ({String? errorMessage}) async => '1234',
         mock: MockClient((request) async {
           attempts++;
-          return _json({'message': 'This profile is restricted to other devices'}, 400);
+          return jsonResponse({'message': 'This profile is restricted to other devices'}, status: 400);
         }),
       );
       expect(attempts, 1);
@@ -165,7 +162,7 @@ void main() {
     });
 
     test('HTTP 401 is authRejected — about the caller token, never the target', () async {
-      final result = await _switch(mock: MockClient((request) async => _json({'message': 'expired'}, 401)));
+      final result = await _switch(mock: MockClient((request) async => jsonResponse({'message': 'expired'}, status: 401)));
       expect(result.status, BonfireSwitchStatus.authRejected);
       expect(result.succeeded, isFalse);
     });
@@ -175,7 +172,7 @@ void main() {
       final result = await _switch(
         mock: MockClient((request) async {
           attempts++;
-          return _json({'message': 'slow down'}, 429);
+          return jsonResponse({'message': 'slow down'}, status: 429);
         }),
       );
       expect(attempts, 1);
@@ -184,17 +181,51 @@ void main() {
     });
 
     test('a 200 without activeProfileToken is a failure', () async {
-      final result = await _switch(mock: MockClient((request) async => _json({'jellyfinUserId': _guid}, 200)));
+      final result = await _switch(mock: MockClient((request) async => jsonResponse({'jellyfinUserId': _guid}, status: 200)));
       expect(result.status, BonfireSwitchStatus.failed);
       expect(result.userToken, isNull);
     });
 
     test('a PascalCase 200 (Jellyfin 12 serialization) still yields the token', () async {
       final result = await _switch(
-        mock: MockClient((request) async => _json({'ActiveProfileToken': 'scoped-token', 'JellyfinUserId': _guid}, 200)),
+        mock: MockClient((request) async => jsonResponse({'ActiveProfileToken': 'scoped-token', 'JellyfinUserId': _guid}, status: 200)),
       );
       expect(result.status, BonfireSwitchStatus.success);
       expect(result.userToken, 'scoped-token');
+    });
+  });
+
+  group('switchBonfireUserWithPin non-PIN failures', () {
+    // A 400 that says nothing about a PIN ('profile not found', device
+    // restrictions) is final. Prompting for a PIN anyway sends the user to
+    // re-enter a credential that cannot change the outcome.
+    test('a non-PIN 400 with no PIN sent yet is final — no phantom prompt', () async {
+      var prompted = 0;
+      final result = await _switch(
+        mock: MockClient((request) async =>
+            jsonResponse({'message': 'Profile not found'}, status: 400)),
+        promptForPin: ({String? errorMessage}) async {
+          prompted++;
+          return '1234';
+        },
+
+      );
+      expect(prompted, 0);
+      expect(result.status, BonfireSwitchStatus.failed);
+      expect(result.message, 'Profile not found');
+    });
+
+    test('HTTP 5xx is a plain failure without retrying', () async {
+      var attempts = 0;
+      final result = await _switch(
+        mock: MockClient((request) async {
+          attempts++;
+          return jsonResponse({'message': 'bad gateway'}, status: 502);
+        }),
+      );
+      expect(attempts, 1);
+      expect(result.status, BonfireSwitchStatus.failed);
+      expect(result.message, 'bad gateway');
     });
   });
 
@@ -233,7 +264,7 @@ void main() {
       final parent = _conn().copyWith(id: 'machine-1/master-1');
       await ConnectionRegistry(db).upsert(parent);
       final registry = ProfileConnectionRegistry(db);
-      final mock = MockClient((request) async => _json({'activeProfileToken': 'scoped-token', 'jellyfinUserId': _guid}, 200));
+      final mock = MockClient((request) async => jsonResponse({'activeProfileToken': 'scoped-token', 'jellyfinUserId': _guid}, status: 200));
 
       final result = await mintBonfireProfileToken(
         parentConnection: parent,
@@ -266,7 +297,10 @@ void main() {
             userIdentifier: _guid,
           ),
         ),
-        throwsA(anything),
+        throwsA(predicate(
+          (Object? e) => e.toString().contains('FOREIGN KEY constraint failed'),
+          'FOREIGN KEY constraint failed',
+        )),
       );
     });
   });
