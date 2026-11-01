@@ -1673,6 +1673,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
     DownloadVersionConfig? versionConfig,
     _RelatedMetadataDownloadContext? relatedContext,
+    bool userInitiated = true,
   }) async {
     if (!_downloadManager.downloadsSupported) return false;
 
@@ -1779,6 +1780,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       metadata: metadataToStore,
       client: client,
       mediaIndex: resolvedIndex,
+      userInitiated: userInitiated,
     );
     // The manager may have stamped library identity during the enqueue; keep
     // the hydrated item and the row-derived map in sync with what was stored.
@@ -2461,12 +2463,17 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
   }) async {
     if (!_isQueueOwnershipCurrent(ownership)) return false;
+    // Queuing behind a storage block would only turn the rows the guard failed
+    // back into queued ones, dropping their error and Retry action. Leave them
+    // failed until the user frees space and retries (#2876).
+    if (_downloadManager.queueBlockedByStorageFailure) return false;
     return _queueSingleDownload(
       item,
       client,
       ownership: ownership,
       mediaIndex: mediaIndex,
       relatedContext: relatedContext,
+      userInitiated: false,
     );
   }
 

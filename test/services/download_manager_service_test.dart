@@ -2261,6 +2261,66 @@ void main() {
         expect(row?.errorMessage, t.downloads.storageFull, reason: key);
       }
     });
+
+    test('only a user-initiated enqueue lifts the storage block (#2876)', () async {
+      final fixture = await _createSupplementaryFixture();
+      final key = fixture.metadata.globalKey;
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: key,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await fixture.db.updateBgTaskId(key, 'task-1');
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      var processingAttempts = 0;
+      final processingStarted = Completer<void>();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        nativeOpsOverride: (
+          allTasks: () async => const <Task>[],
+          allRecords: () async => const <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (_) async => true,
+          resetGroup: () async => 0,
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+        queueProcessorOverride: (_) async {
+          processingAttempts++;
+          if (!processingStarted.isCompleted) processingStarted.complete();
+        },
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          _downloadTask('task-1', key),
+          TaskStatus.failed,
+          TaskFileSystemException(
+            'Insufficient space to store the downloaded file on /tmp: 6 bytes free, floor 4, 3 needed',
+          ),
+        ),
+      );
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client, userInitiated: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(processingAttempts, 0, reason: 'a sync rule must not restart the queue into the same refusal');
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      await processingStarted.future.timeout(const Duration(seconds: 5));
+      expect(processingAttempts, 1);
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+    });
   });
 
   group('HTTP failures', () {
