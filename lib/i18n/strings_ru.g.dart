@@ -3066,6 +3066,8 @@ class _Translations$explore$detail$ru extends Translations$explore$detail$en {
 	@override String get watchOn => 'Смотреть на';
 	@override String get watchTrailer => 'Смотреть трейлер';
 	@override String openOn({required Object site}) => 'Открыть на ${site}';
+	@override String get trailerUnavailable => 'Не удалось открыть трейлер на этом устройстве';
+	@override String get linkUnavailable => 'Не удалось открыть ссылку на этом устройстве';
 	@override String get crew => 'Съёмочная группа';
 	@override String get ratings => 'Рейтинги';
 	@override String get schedule => 'Расписание';
@@ -4861,6 +4863,8 @@ extension on TranslationsRu {
 			'explore.detail.watchOn' => 'Смотреть на',
 			'explore.detail.watchTrailer' => 'Смотреть трейлер',
 			'explore.detail.openOn' => ({required Object site}) => 'Открыть на ${site}',
+			'explore.detail.trailerUnavailable' => 'Не удалось открыть трейлер на этом устройстве',
+			'explore.detail.linkUnavailable' => 'Не удалось открыть ссылку на этом устройстве',
 			'explore.detail.crew' => 'Съёмочная группа',
 			'explore.detail.ratings' => 'Рейтинги',
 			'explore.detail.schedule' => 'Расписание',
@@ -4957,10 +4961,10 @@ extension on TranslationsRu {
 			'liveTv.recordSettings.skipInLibrary' => 'Пропускать эпизоды, уже имеющиеся в библиотеке',
 			'liveTv.recordSettings.keepUpTo' => 'Сколько эпизодов хранить',
 			'liveTv.recordSettings.keepUpToHint' => '0 — хранить все эпизоды',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
 			'liveTv.failedToStartChannel' => 'Не удалось запустить канал в прямом эфире',
 			'liveTv.failedToBuildStreamUrl' => 'Не удалось сформировать URL потока',
@@ -5471,10 +5475,10 @@ extension on TranslationsRu {
 			'performanceOverlay.decoderExynosHw' => 'Exynos, аппаратный',
 			'performanceOverlay.decoderSoftware' => 'Программный',
 			'performanceOverlay.decoderHardware' => 'Аппаратный',
-			'performanceOverlay.tunnelingActive' => 'Активно',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Активно',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})',
 			'externalPlayer.title' => 'Внешний плеер',
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео в другом приложении',

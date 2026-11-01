@@ -1615,6 +1615,8 @@
       "watchOn": "Oglądaj na",
       "watchTrailer": "Obejrzyj zwiastun",
       "openOn": "Otwórz na ${site}",
+      "trailerUnavailable": "Nie udało się otworzyć zwiastuna na tym urządzeniu",
+      "linkUnavailable": "Nie udało się otworzyć linku na tym urządzeniu",
       "crew": "Obsada i ekipa",
       "ratings": "Oceny",
       "schedule": "Harmonogram",

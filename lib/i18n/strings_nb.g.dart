@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$nb extends Translations$explore$detail$en {
 	@override String get watchOn => 'Se på';
 	@override String get watchTrailer => 'Se trailer';
 	@override String openOn({required Object site}) => 'Åpne på ${site}';
+	@override String get trailerUnavailable => 'Kunne ikke åpne traileren på denne enheten';
+	@override String get linkUnavailable => 'Kunne ikke åpne lenken på denne enheten';
 	@override String get crew => 'Mannskap';
 	@override String get ratings => 'Vurderinger';
 	@override String get schedule => 'Sendeskjema';
@@ -4837,6 +4839,8 @@ extension on TranslationsNb {
 			'explore.detail.watchOn' => 'Se på',
 			'explore.detail.watchTrailer' => 'Se trailer',
 			'explore.detail.openOn' => ({required Object site}) => 'Åpne på ${site}',
+			'explore.detail.trailerUnavailable' => 'Kunne ikke åpne traileren på denne enheten',
+			'explore.detail.linkUnavailable' => 'Kunne ikke åpne lenken på denne enheten',
 			'explore.detail.crew' => 'Mannskap',
 			'explore.detail.ratings' => 'Vurderinger',
 			'explore.detail.schedule' => 'Sendeskjema',
@@ -4933,10 +4937,10 @@ extension on TranslationsNb {
 			'liveTv.recordSettings.skipInLibrary' => 'Hopp over episoder som allerede finnes i biblioteket',
 			'liveTv.recordSettings.keepUpTo' => 'Episoder som skal beholdes',
 			'liveTv.recordSettings.keepUpToHint' => '0 beholder alle episoder',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerte ugyldige avspillingsdata for direkte-TV',
 			'liveTv.failedToStartChannel' => 'Kunne ikke starte direktekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunne ikke opprette strømme-URL-en',
@@ -5447,10 +5451,10 @@ extension on TranslationsNb {
 			'performanceOverlay.decoderExynosHw' => 'Exynos-maskinvare',
 			'performanceOverlay.decoderSoftware' => 'Programvare',
 			'performanceOverlay.decoderHardware' => 'Maskinvare',
-			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislyktes)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Aktiv',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislyktes)',
 			'externalPlayer.title' => 'Ekstern spiller',
 			'externalPlayer.useExternalPlayer' => 'Bruk ekstern spiller',
 			'externalPlayer.useExternalPlayerDescription' => 'Åpne videoer i en annen app',

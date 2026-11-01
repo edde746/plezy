@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$bg extends Translations$explore$detail$en {
 	@override String get watchOn => 'Гледай в';
 	@override String get watchTrailer => 'Гледай трейлъра';
 	@override String openOn({required Object site}) => 'Отвори в ${site}';
+	@override String get trailerUnavailable => 'Трейлърът не можа да се отвори на това устройство';
+	@override String get linkUnavailable => 'Връзката не можа да се отвори на това устройство';
 	@override String get crew => 'Екип';
 	@override String get ratings => 'Оценки';
 	@override String get schedule => 'Програма';
@@ -4837,6 +4839,8 @@ extension on TranslationsBg {
 			'explore.detail.watchOn' => 'Гледай в',
 			'explore.detail.watchTrailer' => 'Гледай трейлъра',
 			'explore.detail.openOn' => ({required Object site}) => 'Отвори в ${site}',
+			'explore.detail.trailerUnavailable' => 'Трейлърът не можа да се отвори на това устройство',
+			'explore.detail.linkUnavailable' => 'Връзката не можа да се отвори на това устройство',
 			'explore.detail.crew' => 'Екип',
 			'explore.detail.ratings' => 'Оценки',
 			'explore.detail.schedule' => 'Програма',
@@ -4933,10 +4937,10 @@ extension on TranslationsBg {
 			'liveTv.recordSettings.skipInLibrary' => 'Пропускане на епизоди, които вече са в библиотеката',
 			'liveTv.recordSettings.keepUpTo' => 'Епизоди за запазване',
 			'liveTv.recordSettings.keepUpToHint' => '0 запазва всички епизоди',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Започва след ${minutes} мин',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Започва след ${minutes} мин',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо',
 			'liveTv.failedToStartChannel' => 'Каналът на живо не можа да бъде пуснат',
 			'liveTv.failedToBuildStreamUrl' => 'URL за потока не можа да бъде създаден',
@@ -5447,10 +5451,10 @@ extension on TranslationsBg {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Софтуерен',
 			'performanceOverlay.decoderHardware' => 'Хардуерен',
-			'performanceOverlay.tunnelingActive' => 'Активно',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (неуспешни: ${failures})',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Активно',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (неуспешни: ${failures})',
 			'externalPlayer.title' => 'Външен плеър',
 			'externalPlayer.useExternalPlayer' => 'Използвай външен плеър',
 			'externalPlayer.useExternalPlayerDescription' => 'Отваряй видеата в друго приложение',

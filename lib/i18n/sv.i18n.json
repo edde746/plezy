@@ -1599,6 +1599,8 @@
       "watchOn": "Titta på",
       "watchTrailer": "Titta på trailer",
       "openOn": "Öppna på ${site}",
+      "trailerUnavailable": "Det gick inte att öppna trailern på den här enheten",
+      "linkUnavailable": "Det gick inte att öppna länken på den här enheten",
       "crew": "Besättning",
       "ratings": "Betyg",
       "schedule": "Schema",

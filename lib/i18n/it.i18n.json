@@ -1599,6 +1599,8 @@
       "watchOn": "Guarda su",
       "watchTrailer": "Guarda trailer",
       "openOn": "Apri su ${site}",
+      "trailerUnavailable": "Impossibile aprire il trailer su questo dispositivo",
+      "linkUnavailable": "Impossibile aprire il link su questo dispositivo",
       "crew": "Cast tecnico",
       "ratings": "Valutazioni",
       "schedule": "Programmazione",

@@ -1599,6 +1599,8 @@
       "watchOn": "İzlə",
       "watchTrailer": "Treyleri izlə",
       "openOn": "${site} saytında aç",
+      "trailerUnavailable": "Bu cihazda treyler açıla bilmədi",
+      "linkUnavailable": "Bu cihazda bu keçid açıla bilmədi",
       "crew": "Heyət",
       "ratings": "Reytinq",
       "schedule": "Cədvəl",

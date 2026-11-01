@@ -1591,6 +1591,8 @@
       "watchOn": "觀看平台",
       "watchTrailer": "觀看預告片",
       "openOn": "在 ${site} 開啟",
+      "trailerUnavailable": "無法在這部裝置上開啟預告片",
+      "linkUnavailable": "無法在這部裝置上開啟連結",
       "crew": "幕後團隊",
       "ratings": "評分",
       "schedule": "播出時間",

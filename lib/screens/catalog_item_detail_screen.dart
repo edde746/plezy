@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_button.dart';
@@ -17,10 +16,12 @@ import '../focus/key_event_utils.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
+import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_rating.dart';
+import '../media/primary_trailer.dart';
 import '../models/catalog/catalog_cast_member.dart';
 import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_labels.dart';
@@ -36,6 +37,7 @@ import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/catalog_navigation_helper.dart';
 import '../utils/desktop_window_padding.dart';
+import '../utils/external_url.dart';
 import '../utils/formatters.dart';
 import '../utils/country_codes.dart';
 import '../utils/language_codes.dart';
@@ -44,6 +46,8 @@ import '../utils/media_navigation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/rating_utils.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/trailer_urls.dart';
+import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/backend_badge.dart';
@@ -106,6 +110,17 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// Library items matching this catalog item; null while resolving.
   List<MediaItem>? _matches;
 
+  /// A library copy's own trailer. Plays in the player rather than handing
+  /// the provider's YouTube link to another app; tvOS has no other way to
+  /// play a trailer when the YouTube app is missing.
+  MediaItem? _libraryTrailer;
+  bool _lookingUpLibraryTrailer = false;
+  final Set<String> _trailerCheckedCopies = {};
+
+  /// tvOS only: the YouTube app is installed, so a YouTube trailer can be
+  /// handed to it. There is no browser to open the link in otherwise.
+  bool _youTubeAppInstalled = false;
+
   /// Coverage belongs to the newest launched (detail-enriched) query, not the
   /// union of historical successes. Verified copies are merged independently.
   int _resolutionGeneration = 0;
@@ -131,6 +146,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     _syncDetailCollections(widget.item);
     unawaited(_resolveMatches(widget.item));
     unawaited(_loadDetail());
+    if (isTvosRunner) unawaited(_checkYouTubeApp());
     final sources = context.read<CatalogSourcesProvider>();
     _watchlistSource = sources.watchlistSourceFor(widget.item);
     final source = _watchlistSource;
@@ -232,6 +248,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         ),
     ];
     setState(() => _matches = merged);
+    unawaited(_resolveLibraryTrailer());
     // A merge re-sorts, and SettingsGroup shapes its cards by list index, so
     // the tile holding the focused node can be rebuilt from scratch and drop
     // it. Reclaim it rather than dumping a dpad user on another copy.
@@ -240,6 +257,45 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         if (!mounted || focused.hasPrimaryFocus || focused.context == null) return;
         focused.requestFocus();
       });
+    }
+  }
+
+  /// Walk the library copies for one with a trailer among its extras. Each
+  /// merge can add a copy from another server, so later passes pick up where
+  /// the last stopped instead of fetching the same extras again.
+  Future<void> _resolveLibraryTrailer() async {
+    if (_lookingUpLibraryTrailer) return;
+    _lookingUpLibraryTrailer = true;
+    try {
+      while (_libraryTrailer == null) {
+        final match = _matches?.firstWhereOrNull((copy) => !_trailerCheckedCopies.contains(copy.globalKey));
+        if (match == null || !mounted) return;
+        _trailerCheckedCopies.add(match.globalKey);
+        final manager = context.read<MultiServerProvider>().serverManager;
+        final serverId = serverIdOrNull(match.serverId);
+        final client = serverId != null && manager.isClientOnline(serverId) ? manager.getClient(serverId) : null;
+        if (client == null) continue;
+        try {
+          final trailer = primaryTrailer(match, await client.fetchExtras(match.id));
+          if (trailer != null && mounted) {
+            // The player resolves its client from the extra's own server.
+            setState(() => _libraryTrailer = trailer.copyWith(serverId: match.serverId, serverName: match.serverName));
+          }
+        } catch (e) {
+          appLogger.d('Catalog library trailer lookup failed for ${match.globalKey}', error: e);
+        }
+      }
+    } finally {
+      _lookingUpLibraryTrailer = false;
+    }
+  }
+
+  Future<void> _checkYouTubeApp() async {
+    try {
+      final installed = await tvosCanOpenUrl(Uri.parse('youtube://'));
+      if (mounted && installed != _youTubeAppInstalled) setState(() => _youTubeAppInstalled = installed);
+    } catch (e) {
+      appLogger.d('Catalog YouTube app check failed', error: e);
     }
   }
 
@@ -255,7 +311,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     ]..sort((a, b) => (b.rank ?? -1).compareTo(a.rank ?? -1));
     final streamingLinks = <CatalogLink>[];
     final otherLinks = <CatalogLink>[];
-    for (final link in item.links ?? const <CatalogLink>[]) {
+    // tvOS has no browser to open a provider's site in (#2877).
+    for (final link in isTvosRunner ? const <CatalogLink>[] : item.links ?? const <CatalogLink>[]) {
       if (link.label.trim().isEmpty || link.url.trim().isEmpty) continue;
       (link.isStreaming ? streamingLinks : otherLinks).add(link);
     }
@@ -331,7 +388,18 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     ];
   }
 
-  bool get _hasTrailer => _item.trailerUrl?.trim().isNotEmpty ?? false;
+  /// The provider trailer as something this device can open: the web link,
+  /// or on tvOS, which has no browser, a YouTube-app link once the app is
+  /// known to be installed (#2877).
+  Uri? get _externalTrailerUri {
+    final url = _item.trailerUrl?.trim();
+    if (url == null || url.isEmpty) return null;
+    if (isTvosRunner) return _youTubeAppInstalled ? youTubeAppUrl(url) : null;
+    final uri = Uri.tryParse(url);
+    return uri != null && uri.hasScheme ? uri : null;
+  }
+
+  bool get _hasTrailer => _libraryTrailer != null || _externalTrailerUri != null;
 
   /// The Seerr source when the signed-in user may request this kind. Read
   /// live rather than captured in initState: the account provider adopts
@@ -610,16 +678,21 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   Future<void> _openExternalUrl(String value) async {
     final uri = Uri.tryParse(value);
-    if (uri == null || !uri.hasScheme) {
-      appLogger.d('Catalog external URL is invalid: $value');
+    if (uri != null && uri.hasScheme && await openExternalUrl(uri)) return;
+    appLogger.d('Catalog external URL could not be opened: $value');
+    if (mounted) showErrorSnackBar(context, t.explore.detail.linkUnavailable);
+  }
+
+  /// A library copy's trailer plays in the player; otherwise the provider's
+  /// link goes to another app, and a refusal says so instead of doing nothing.
+  Future<void> _playTrailer() async {
+    if (_libraryTrailer case final trailer?) {
+      await navigateToVideoPlayer(context, metadata: trailer, isLaunchCurrent: () => mounted);
       return;
     }
-    try {
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened) appLogger.d('Catalog external URL could not be opened: $value');
-    } catch (e) {
-      appLogger.d('Catalog external URL failed to open: $value', error: e);
-    }
+    final uri = _externalTrailerUri;
+    if (uri == null || await openExternalUrl(uri)) return;
+    if (mounted) showErrorSnackBar(context, t.explore.detail.trailerUnavailable);
   }
 
   bool? get _isOnWatchlist => _watchlistSource?.isOnWatchlist(_item.kind, _item.ids);
@@ -1464,12 +1537,12 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                     ),
                                                   ),
                                                 ),
-                                              if (item.trailerUrl?.trim() case final trailer? when trailer.isNotEmpty)
+                                              if (_hasTrailer)
                                                 FocusableAction(
                                                   debugLabel: 'catalog_trailer',
                                                   icon: Symbols.play_circle_rounded,
                                                   tooltip: t.explore.detail.watchTrailer,
-                                                  onPressed: () => unawaited(_openExternalUrl(trailer)),
+                                                  onPressed: () => unawaited(_playTrailer()),
                                                 ),
                                             ],
                                           ),

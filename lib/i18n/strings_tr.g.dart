@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$tr extends Translations$explore$detail$en {
 	@override String get watchOn => 'İzle';
 	@override String get watchTrailer => 'Fragmanı izle';
 	@override String openOn({required Object site}) => '${site}\'de aç';
+	@override String get trailerUnavailable => 'Bu cihazda fragman açılamadı';
+	@override String get linkUnavailable => 'Bu cihazda bağlantı açılamadı';
 	@override String get crew => 'Ekip';
 	@override String get ratings => 'Puanlar';
 	@override String get schedule => 'Yayın takvimi';
@@ -4837,6 +4839,8 @@ extension on TranslationsTr {
 			'explore.detail.watchOn' => 'İzle',
 			'explore.detail.watchTrailer' => 'Fragmanı izle',
 			'explore.detail.openOn' => ({required Object site}) => '${site}\'de aç',
+			'explore.detail.trailerUnavailable' => 'Bu cihazda fragman açılamadı',
+			'explore.detail.linkUnavailable' => 'Bu cihazda bağlantı açılamadı',
 			'explore.detail.crew' => 'Ekip',
 			'explore.detail.ratings' => 'Puanlar',
 			'explore.detail.schedule' => 'Yayın takvimi',
@@ -4933,10 +4937,10 @@ extension on TranslationsTr {
 			'liveTv.recordSettings.skipInLibrary' => 'Kitaplıkta zaten bulunan bölümleri atla',
 			'liveTv.recordSettings.keepUpTo' => 'Saklanacak bölüm sayısı',
 			'liveTv.recordSettings.keepUpToHint' => '0 tüm bölümleri saklar',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dk içinde başlıyor',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} saat ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dk içinde başlıyor',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü',
 			'liveTv.failedToStartChannel' => 'Canlı kanal başlatılamadı',
 			'liveTv.failedToBuildStreamUrl' => 'Akış URL\'si oluşturulamadı',
@@ -5447,10 +5451,10 @@ extension on TranslationsTr {
 			'performanceOverlay.decoderExynosHw' => 'Exynos Donanım',
 			'performanceOverlay.decoderSoftware' => 'Yazılım',
 			'performanceOverlay.decoderHardware' => 'Donanım',
-			'performanceOverlay.tunnelingActive' => 'Etkin',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Etkin',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)',
 			'externalPlayer.title' => 'Harici Oynatıcı',
 			'externalPlayer.useExternalPlayer' => 'Harici Oynatıcı Kullan',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başka bir uygulamada açın',
