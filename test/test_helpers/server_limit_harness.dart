@@ -1,12 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
@@ -22,22 +18,19 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/providers/shader_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
-import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
-import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:provider/provider.dart';
 
-import 'hdr_startup.dart';
-import 'io_fakes.dart';
 import 'media_items.dart';
 import 'mock_player_channels.dart';
 import 'multi_server_fixtures.dart';
 import 'playback_report_fakes.dart';
+import 'player_screen_harness.dart';
 import 'pump.dart';
 import 'stub_music_playback_service.dart';
 
@@ -52,33 +45,8 @@ String serverLimitTranscodeUrl(TranscodeQualityPreset preset) =>
 /// Text of the HTTP 500 dialog's transcode button.
 String get serverLimitPlayLabel => t.messages.serverLimitTranscode;
 
-/// Per-file setup for the server-limit widget tests: one player screen per
-/// file, like [installHdrStartupHarness] requires.
-class ServerLimitHarness {
-  late Directory _tmpRoot;
-  late PathProviderPlatform _previousPathProvider;
-  late AppDatabase db;
-
-  Future<void> setUp() async {
-    LocaleSettings.setLocaleSync(AppLocale.en);
-    await initializeDateFormatting('en');
-    _tmpRoot = await Directory.systemTemp.createTemp('server_limit_test_');
-    _previousPathProvider = PathProviderPlatform.instance;
-    PathProviderPlatform.instance = FakePathProvider(_tmpRoot);
-    await installHdrStartupHarness();
-    DownloadStorageService.resetForTesting();
-    await DownloadStorageService.instance.initialize(SettingsService.instance);
-    db = AppDatabase.forTesting(NativeDatabase.memory());
-  }
-
-  Future<void> tearDown() async {
-    await db.close();
-    DownloadStorageService.resetForTesting();
-    SettingsService.resetForTesting();
-    PathProviderPlatform.instance = _previousPathProvider;
-    if (await _tmpRoot.exists()) await _tmpRoot.delete(recursive: true);
-  }
-}
+/// Per-file setup for the server-limit widget tests.
+typedef ServerLimitHarness = PlayerScreenHarness;
 
 /// What one server-limit run observed, for the test body to assert on.
 class ServerLimitRun {
