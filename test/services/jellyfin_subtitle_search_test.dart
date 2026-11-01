@@ -188,6 +188,88 @@ void main() {
       expect(filtered.map((r) => r.key), ['sub-1']);
     });
 
+    test('takes only a new file in the chosen language and format, and declines an ambiguous one', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      JellyfinApiCache.initialize(db);
+      var after = <(String, String?, String)>[];
+      Map<String, Object?> item(List<(String, String?, String)> files) => {
+        'Id': 'item-1',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'item-1',
+            'MediaStreams': [
+              for (final (index, (file, language, codec)) in files.indexed)
+                {
+                  'Index': index,
+                  'Type': 'Subtitle',
+                  'Language': language,
+                  'Codec': codec,
+                  'IsExternal': true,
+                  'IsForced': file.contains('.forced.'),
+                  'Path': '/movies/$file',
+                },
+            ],
+          },
+        ],
+      };
+      const before = [('Film.en.srt', 'eng', 'subrip')];
+      var downloaded = false;
+      final fake = clientAnswering({
+        '/Users/user-1/Items/item-1': (_) => item(downloaded ? after : before),
+        '/Items/item-1/RemoteSearch/Subtitles/sub-1': (_) {
+          downloaded = true;
+          return http.Response('', 204);
+        },
+      });
+      Future<String?> downloadThenFind(
+        List<(String, String?, String)> listed, {
+        String language = 'de',
+        bool forced = false,
+      }) async {
+        downloaded = false;
+        after = listed;
+        await fake.client.downloadSubtitle(
+          'item-1',
+          key: 'sub-1',
+          codec: 'srt',
+          language: language,
+          hearingImpaired: false,
+          forced: forced,
+          providerTitle: 'Open Subtitles',
+        );
+        final found = await fake.client.findDownloadedSubtitle('item-1', existingTrackIds: const {0});
+        return found?.languageCode;
+      }
+
+      // Another client or Bazarr adds a French file in the same window: not ours.
+      expect(
+        await downloadThenFind([...before, ('Film.fr.srt', 'fre', 'subrip'), ('Film.de.srt', 'ger', 'subrip')]),
+        'ger',
+      );
+      expect(await downloadThenFind([...before, ('Film.fr.srt', 'fre', 'subrip')]), isNull);
+      expect(await downloadThenFind([...before, ('Film.de.forced.srt', 'ger', 'subrip')]), isNull, reason: 'forced');
+      expect(await downloadThenFind([...before, ('Film.de.forced.srt', 'deu', 'subrip')], forced: true), 'deu');
+      // Jellyfin 10.11+ keeps a language whose name has a dash as that name.
+      expect(
+        await downloadThenFind([...before, ('Film.el.srt', 'Greek, Modern (1453-)', 'subrip')], language: 'el'),
+        'Greek, Modern (1453-)',
+      );
+      expect(
+        await downloadThenFind([...before, ('Film.de.srt', 'Greek, Modern (1453-)', 'subrip')], language: 'el'),
+        isNull,
+      );
+      // Jellyfin's own downloads always carry the language it read from the name.
+      expect(await downloadThenFind([...before, ('Film.WEB-DL.srt', null, 'subrip')]), isNull);
+      expect(await downloadThenFind([...before, ('Film.de.ass', 'ger', 'ass')]), isNull, reason: 'wrong format');
+      expect(
+        await downloadThenFind([...before, ('Film.de.srt', 'ger', 'subrip'), ('Film.de.0.srt', 'ger', 'subrip')]),
+        isNull,
+        reason: 'two candidates: decline rather than guess',
+      );
+    });
+
     test('finds the downloaded file by path, and leaves playback a fresh catalog', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
@@ -205,7 +287,7 @@ void main() {
                 {
                   'Index': index,
                   'Type': 'Subtitle',
-                  'Language': 'eng',
+                  'Language': file.contains('.de.') ? 'ger' : 'eng',
                   'Codec': 'subrip',
                   'IsExternal': true,
                   'Path': '/movies/$file',

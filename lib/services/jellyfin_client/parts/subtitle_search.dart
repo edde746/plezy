@@ -8,8 +8,9 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
 
   bool _remoteSubtitleSearchAvailable = false;
 
-  /// External subtitle paths per item before its last [downloadSubtitle].
-  final _subtitlePathsBeforeDownload = <String, Set<String>>{};
+  /// Per item, its external subtitle paths before the last [downloadSubtitle],
+  /// and the language, format and forced-ness that download asked for.
+  final _pendingSubtitleDownloads = <String, ({Set<String> paths, String language, String codec, bool forced})>{};
 
   /// Cached result of [probeRemoteSubtitleSearch]; false until it resolves.
   bool get remoteSubtitleSearchAvailable => _remoteSubtitleSearchAvailable;
@@ -96,7 +97,12 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     required bool forced,
     required String providerTitle,
   }) async {
-    _subtitlePathsBeforeDownload[ratingKey] = (await _externalSubtitlesByPath(ratingKey)).keys.toSet();
+    _pendingSubtitleDownloads[ratingKey] = (
+      paths: (await _externalSubtitlesByPath(ratingKey)).keys.toSet(),
+      language: language,
+      codec: codec,
+      forced: forced,
+    );
     final response = await _http.post('/Items/${_segment(ratingKey)}/RemoteSearch/Subtitles/${_segment(key)}');
     throwIfHttpError(response);
     return true;
@@ -110,12 +116,31 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     required Set<int> existingTrackIds,
     Duration? position,
   }) async {
-    final before = _subtitlePathsBeforeDownload[ratingKey];
-    if (before == null) return null;
-    final now = await _externalSubtitlesByPath(ratingKey);
-    final added = now.entries.where((entry) => !before.contains(entry.key)).firstOrNull?.value;
-    if (added != null) _subtitlePathsBeforeDownload.remove(ratingKey);
-    return added;
+    final pending = _pendingSubtitleDownloads[ratingKey];
+    if (pending == null) return null;
+    final languages = LanguageCodes.getVariations(pending.language);
+    final format = CodecUtils.getSubtitleExtension(pending.codec);
+    // Bazarr, a scan or another client can add a file in the same window, so
+    // only a new file in the chosen language, format and forced-ness counts,
+    // and only one. Jellyfin reads the language from the name it saves under,
+    // but from 10.11 keeps one whose name has a dash (Greek's "Greek, Modern
+    // (1453-)") as that name: the code is then still in the file name.
+    bool inLanguage(String path, String? language) =>
+        languages.contains(language?.toLowerCase()) ||
+        (language != null &&
+            LanguageCodes.getLanguageName(language) == null &&
+            path.split('/').last.toLowerCase().contains('.${pending.language.toLowerCase()}.'));
+    final added = [
+      for (final MapEntry(key: path, value: track) in (await _externalSubtitlesByPath(ratingKey)).entries)
+        if (!pending.paths.contains(path) &&
+            inLanguage(path, track.languageCode) &&
+            track.forced == pending.forced &&
+            CodecUtils.getSubtitleExtension(track.codec) == format)
+          track,
+    ];
+    if (added.length != 1) return null;
+    _pendingSubtitleDownloads.remove(ratingKey);
+    return added.single;
   }
 
   /// Through [fetchItem], which always hits the network and rewrites the row
