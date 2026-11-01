@@ -368,7 +368,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   StreamSubscription<LibraryChangeEvent>? _libraryContentSubscription;
 
   bool get _canUseDetail => mounted && !_isDeleted;
+
+  /// The extras row: [_showExtras] then [_seasonExtras]. The halves load
+  /// independently, so each is kept to rebuild the row when the other lands.
   List<MediaItem>? _extras;
+  List<MediaItem>? _showExtras;
+  List<MediaItem> _seasonExtras = const [];
   List<MediaHub> _relatedHubs = [];
   List<GlobalKey<HubSectionState>> _relatedHubKeys = [];
   bool _hasLoadedExtras = false;
@@ -639,9 +644,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       item.id,
       (existing) => existing.globalKey == sourceGlobalKey ? _normalizeRefreshedItem(item, existing) : existing,
     );
-    final extras = _extras;
-    if (extras != null) {
-      _patchItemInList(extras, sourceGlobalKey, item);
+    for (final extras in [_extras, _showExtras, _seasonExtras]) {
+      if (extras != null) _patchItemInList(extras, sourceGlobalKey, item);
     }
 
     _relatedHubs = _patchItemInHubs(_relatedHubs, sourceGlobalKey, item);
@@ -1893,6 +1897,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _showEpisodesDirectly = shouldShowEpisodesDirectly;
         _selectedSeasonIndex = onDeckSeasonIndex;
       });
+      unawaited(_loadSeasonExtras(client, seasonsWithServerId));
 
       if (shouldShowEpisodesDirectly) {
         await _fetchAllEpisodes();
@@ -2324,19 +2329,37 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       resolveClient: () => getServerBoundMediaClient(context),
       fetch: (client) => client.fetchExtras(_metadata.id),
       apply: (extras) {
-        // Preserve serverId for each extra (needed for multi-server setups).
-        _extras = extras
-            .map(
-              (extra) => extra.copyWith(
-                serverId: _metadata.serverId ?? extra.serverId,
-                serverName: _metadata.serverName ?? extra.serverName,
-              ),
-            )
-            .toList();
+        _showExtras = extras.map(_withDetailServer).toList();
+        _extras = [..._showExtras!, ..._seasonExtras];
       },
       markLoaded: () => _hasLoadedExtras = true,
     );
   }
+
+  /// Season folders carry extras of their own (Jellyfin's
+  /// `Season 01/Featurettes/…`, #2403); append them after the show's. One
+  /// request per season — the server has no series-wide query for them.
+  Future<void> _loadSeasonExtras(MediaServerClient client, List<MediaItem> seasons) async {
+    if (!client.capabilities.seasonExtras || seasons.isEmpty) return;
+    try {
+      final perSeason = await Future.wait(seasons.map((season) => client.fetchExtras(season.id)));
+      if (!_canUseDetail) return;
+      final seasonExtras = perSeason.expand((extras) => extras).map(_withDetailServer).toList();
+      if (seasonExtras.isEmpty && _seasonExtras.isEmpty) return;
+      setStateIfMounted(() {
+        _seasonExtras = seasonExtras;
+        _extras = [...?_showExtras, ...seasonExtras];
+      });
+    } catch (_) {
+      // Silently fail - the row keeps the show's own extras
+    }
+  }
+
+  /// Preserve serverId for each extra (needed for multi-server setups).
+  MediaItem _withDetailServer(MediaItem extra) => extra.copyWith(
+    serverId: _metadata.serverId ?? extra.serverId,
+    serverName: _metadata.serverName ?? extra.serverName,
+  );
 
   /// Load related hubs (collections, similar, "more from" director/actor).
   /// Backend-neutral — both Plex and Jellyfin implement
