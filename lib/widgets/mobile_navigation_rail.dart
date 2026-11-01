@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
 import '../navigation/navigation_tabs.dart';
 import 'app_icon.dart';
+import 'navigation_label_fit.dart';
 
 /// The mobile shell's navigation in landscape: the bottom [NavigationBar]'s
 /// destinations on a leading Material [NavigationRail], so a wide, short
@@ -24,6 +25,9 @@ class MobileNavigationRail extends StatelessWidget {
     this.isOffline = false,
     this.isReconnecting = false,
     this.onReconnect,
+    this.minWidth,
+    this.groupAlignment = 0,
+    this.backgroundColor,
   });
 
   final List<NavigationTab> tabs;
@@ -35,6 +39,14 @@ class MobileNavigationRail extends StatelessWidget {
   final bool isReconnecting;
   final VoidCallback? onReconnect;
 
+  /// Rail width; defaults to the Material rail width. iPhone Duo's vertical
+  /// bar shell sizes the rail to the system bar's inset.
+  final double? minWidth;
+
+  /// Where the destinations sit vertically: -1 top, 0 centre, 1 bottom.
+  final double groupAlignment;
+  final Color? backgroundColor;
+
   /// Material 3 rail indicator size; the long-press target matches it so the
   /// hold works anywhere on the visible pill, not only on the glyph.
   static const Size _indicatorSize = Size(56, 32);
@@ -43,6 +55,22 @@ class MobileNavigationRail extends StatelessWidget {
   /// the leading action's extent, used to decide whether labels fit.
   /// Estimates: the scroll view below is the exact fallback.
   static const double _labelledExtent = 72;
+
+  /// Material 3 rail defaults: its width, and the horizontal padding a
+  /// destination keeps around its label.
+  static const double _defaultRailWidth = 80;
+  static const double _destinationHorizontalPadding = 16;
+
+  /// The style the rail paints labels with (theme first, Material 3 default
+  /// second), so the fitted scale matches what is painted.
+  static TextStyle _labelStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    final railTheme = NavigationRailTheme.of(context);
+    return (theme.textTheme.labelMedium ?? const TextStyle())
+        .merge(railTheme.unselectedLabelTextStyle)
+        .merge(railTheme.selectedLabelTextStyle);
+  }
+
   static const double _leadingExtent = 56;
 
   /// Whether every destination fits at once with labels on a rail of
@@ -60,15 +88,31 @@ class MobileNavigationRail extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight;
-        final labelled = showLabels && labelsFit(destinations: tabs.length, hasLeading: isOffline, height: height);
-        final rail = NavigationRail(
+        // The rail's own SafeArea takes the vertical insets out of the space.
+        final usableHeight = height - MediaQuery.paddingOf(context).vertical;
+        final labelled =
+            showLabels && labelsFit(destinations: tabs.length, hasLeading: isOffline, height: usableHeight);
+        Widget rail = NavigationRail(
           selectedIndex: selectedIndex >= 0 ? selectedIndex : null,
           onDestinationSelected: (index) => onDestinationSelected(tabs[index].id),
           labelType: labelled ? NavigationRailLabelType.all : NavigationRailLabelType.none,
-          groupAlignment: 0,
+          groupAlignment: groupAlignment,
+          minWidth: minWidth,
+          backgroundColor: backgroundColor,
           leading: isOffline ? _reconnectAction(context) : null,
           destinations: [for (final tab in tabs) _destination(context, tab)],
         );
+        if (labelled) {
+          // Like the bottom bar: shrink labels just enough to keep each on
+          // one line in the rail's destination width (iPhone Duo's 84pt
+          // vertical bar would otherwise break "Downloads" in two).
+          rail = NavigationLabelScale(
+            labels: [for (final tab in tabs) tab.getLabel()],
+            labelWidth: (minWidth ?? _defaultRailWidth) - _destinationHorizontalPadding,
+            style: _labelStyle(context),
+            child: rail,
+          );
+        }
         // NavigationRail needs a bounded height. Give it at least the viewport
         // and let it grow past that inside a scroll view when even icon-only
         // destinations cannot fit (seven tabs plus reconnect on a small phone).
@@ -115,6 +159,9 @@ class MobileNavigationRail extends StatelessWidget {
         ),
       );
     }
-    return NavigationRailDestination(icon: icon, label: Text(tab.getLabel()));
+    return NavigationRailDestination(
+      icon: icon,
+      label: Text(tab.getLabel(), maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis),
+    );
   }
 }
