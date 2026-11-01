@@ -28,7 +28,7 @@ class ToolbarScrim extends StatelessWidget {
           overlayColor.withValues(alpha: 0.7),
           overlayColor.withValues(alpha: 0.5),
           overlayColor.withValues(alpha: 0.3),
-          Colors.transparent,
+          overlayColor.withValues(alpha: 0),
         ],
         stops: const [0.0, 0.3, 0.6, 1.0],
       ),
