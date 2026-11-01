@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
+import 'package:plezy/media/subtitle_search_result.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 
@@ -184,6 +185,8 @@ void main() {
       expect(all.first.displayTitle, 'Open Subtitles · SRT');
       expect(all.last.displayTitle, 'Open Subtitles · SRT · SDH');
       expect(all.last.perfectMatch, isTrue);
+      // Downloading needs the language back; the client reads none from Jellyfin's rows.
+      expect(all.map((r) => r.languageCode).toSet(), {'en'});
       expect(byTitle.map((r) => r.key), ['sub-1', 'sub-2']);
       expect(filtered.map((r) => r.key), ['sub-1']);
     });
@@ -232,12 +235,7 @@ void main() {
         after = listed;
         await fake.client.downloadSubtitle(
           'item-1',
-          key: 'sub-1',
-          codec: 'srt',
-          language: language,
-          hearingImpaired: false,
-          forced: forced,
-          providerTitle: 'Open Subtitles',
+          SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: language, forced: forced),
         );
         final found = await fake.client.findDownloadedSubtitle('item-1', existingTrackIds: const {0});
         return found?.languageCode;
@@ -310,12 +308,7 @@ void main() {
       expect(await fake.client.findDownloadedSubtitle('item-1', existingTrackIds: const {0}), isNull);
       final ok = await fake.client.downloadSubtitle(
         'item-1',
-        key: 'sub-1',
-        codec: 'srt',
-        language: 'de',
-        hearingImpaired: false,
-        forced: false,
-        providerTitle: 'Open Subtitles',
+        const SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: 'de'),
       );
       final found = await fake.client.findDownloadedSubtitle('item-1', existingTrackIds: const {0});
 

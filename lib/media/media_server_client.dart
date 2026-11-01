@@ -1058,18 +1058,13 @@ abstract interface class ExternalSubtitleSearchClient {
   /// [language] is an ISO 639-1 code.
   Future<List<SubtitleSearchResult>> searchSubtitles(String ratingKey, {required String language, String? title});
 
-  Future<bool> downloadSubtitle(
-    String ratingKey, {
-    required String key,
-    required String codec,
-    required String language,
-    required bool hearingImpaired,
-    required bool forced,
-    required String providerTitle,
-  });
+  /// Downloads [result], one of the rows [searchSubtitles] returned.
+  Future<bool> downloadSubtitle(String ratingKey, SubtitleSearchResult result);
 
   /// The external subtitle track a [downloadSubtitle] added, once the server
-  /// lists it; null until then. [existingTrackIds] are the player's source ids.
+  /// lists it; null until then. [existingTrackIds] (the player's source ids)
+  /// and [position] (which file of a stacked item plays) serve a server that
+  /// keeps stream ids; one that renumbers them tracks the download itself.
   Future<MediaSubtitleTrack?> findDownloadedSubtitle(
     String ratingKey, {
     required Set<int> existingTrackIds,

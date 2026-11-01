@@ -191,15 +191,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
         setState(() => _downloadingKey = null);
         return;
       }
-      final success = await client.downloadSubtitle(
-        widget.ratingKey,
-        key: result.key,
-        codec: result.codec ?? 'srt',
-        language: result.languageCode ?? _languageCode,
-        hearingImpaired: result.hearingImpaired,
-        forced: result.forced,
-        providerTitle: result.providerTitle ?? '',
-      );
+      final success = await client.downloadSubtitle(widget.ratingKey, result);
 
       if (!mounted) return;
 

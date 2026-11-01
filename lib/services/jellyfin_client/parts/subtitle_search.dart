@@ -79,8 +79,8 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
       for (final row in rows)
         if (row['Id'] is String && letters('${row['Name'] ?? ''}').contains(filter))
           SubtitleSearchResult(
-            id: 0,
             key: row['Id'] as String,
+            languageCode: language,
             codec: row['Format'] as String?,
             title: row['Name'] as String?,
             displayTitle: [
@@ -97,22 +97,16 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
 
   /// Jellyfin answers 204 even when the provider failed and rescans the item
   /// in the background, so success shows only in [findDownloadedSubtitle].
-  Future<bool> downloadSubtitle(
-    String ratingKey, {
-    required String key,
-    required String codec,
-    required String language,
-    required bool hearingImpaired,
-    required bool forced,
-    required String providerTitle,
-  }) async {
+  Future<bool> downloadSubtitle(String ratingKey, SubtitleSearchResult result) async {
+    final language = result.languageCode ?? '';
+    final codec = result.codec ?? 'srt';
     _pendingSubtitleDownloads[ratingKey] = (
       paths: (await _externalSubtitlesByPath(ratingKey)).keys.toSet(),
       language: language,
       codec: codec,
-      forced: forced,
+      forced: result.forced,
     );
-    final response = await _http.post('/Items/${_segment(ratingKey)}/RemoteSearch/Subtitles/${_segment(key)}');
+    final response = await _http.post('/Items/${_segment(ratingKey)}/RemoteSearch/Subtitles/${_segment(result.key)}');
     throwIfHttpError(response);
     return true;
   }

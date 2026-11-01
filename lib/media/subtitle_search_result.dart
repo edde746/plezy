@@ -1,42 +1,24 @@
-import 'package:json_annotation/json_annotation.dart';
-
-import '../utils/json_utils.dart';
-
-part 'subtitle_search_result.g.dart';
-
-/// One row of a server's external subtitle search: Plex's OpenSubtitles agent
-/// (whose search-stream fields these are) or Jellyfin's subtitle plugins.
-@JsonSerializable()
+/// One row of a server's external subtitle search, whichever server answered:
+/// each client maps its own wire format onto it.
 class SubtitleSearchResult {
-  @JsonKey(fromJson: flexibleIntOrZero)
-  final int id;
-  @JsonKey(readValue: readStringField, defaultValue: '')
+  /// What the server needs back to download this row.
   final String key;
-  @JsonKey(readValue: readStringField)
   final String? codec;
-  @JsonKey(readValue: readStringField)
   final String? language;
-  @JsonKey(readValue: readStringField)
+
+  /// The language to download it in; clients fill it from the search when
+  /// the server leaves it out.
   final String? languageCode;
-  @JsonKey(fromJson: flexibleDouble)
   final double? score;
-  @JsonKey(readValue: readStringField)
   final String? providerTitle;
-  @JsonKey(readValue: readStringField)
   final String? title;
-  @JsonKey(readValue: readStringField)
   final String? displayTitle;
-  @JsonKey(fromJson: flexibleBool)
   final bool hearingImpaired;
-  @JsonKey(fromJson: flexibleBool)
   final bool perfectMatch;
-  @JsonKey(fromJson: flexibleBool)
   final bool downloaded;
-  @JsonKey(fromJson: flexibleBool)
   final bool forced;
 
-  SubtitleSearchResult({
-    required this.id,
+  const SubtitleSearchResult({
     required this.key,
     this.codec,
     this.language,
@@ -50,8 +32,4 @@ class SubtitleSearchResult {
     this.downloaded = false,
     this.forced = false,
   });
-
-  factory SubtitleSearchResult.fromJson(Map<String, dynamic> json) => _$SubtitleSearchResultFromJson(json);
-
-  Map<String, dynamic> toJson() => _$SubtitleSearchResultToJson(this);
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -43,5 +45,57 @@ void main() {
     expect(client.subtitleDownloadTimeout, const Duration(seconds: 30));
     expect(client.subtitleDownloadKeepsStreamIds, isFalse);
     expect(searchable(client), [MediaKind.movie, MediaKind.episode]);
+  });
+
+  test('Plex: a search row downloads with the fields Plex asks for', () async {
+    Uri? put;
+    final client = testPlexClient(
+      handler: (request) async {
+        if (request.method == 'PUT') {
+          put = request.url;
+          return http.Response('', 200);
+        }
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Stream': [
+                {
+                  'id': 7,
+                  'key': '/sub/7',
+                  'codec': 'srt',
+                  'title': 'Film.2024.srt',
+                  'displayTitle': 'English',
+                  'score': '9.5',
+                  'hearingImpaired': 1,
+                  'forced': '0',
+                  'providerTitle': 'OpenSubtitles',
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      },
+    );
+    addTearDown(client.close);
+
+    final row = (await client.searchSubtitles('item-1', language: 'en')).single;
+    expect(
+      (row.key, row.title, row.score, row.hearingImpaired, row.forced),
+      ('/sub/7', 'Film.2024.srt', 9.5, true, false),
+    );
+    expect(row.languageCode, 'en', reason: 'Plex left it out, so the searched language stands in, as the sheet did');
+
+    expect(await client.downloadSubtitle('item-1', row), isTrue);
+    expect(put!.path, '/library/metadata/item-1/subtitles');
+    expect(put!.queryParameters, {
+      'key': '/sub/7',
+      'codec': 'srt',
+      'language': 'en',
+      'hearingImpaired': '1',
+      'forced': '0',
+      'providerTitle': 'OpenSubtitles',
+    });
   });
 }

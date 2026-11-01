@@ -1493,7 +1493,7 @@ class PlexClient
       (response) {
         final container = _getMediaContainer(response);
         final streams = container?['Stream'] as List? ?? [];
-        return streams.map((s) => SubtitleSearchResult.fromJson(s as Map<String, dynamic>)).toList();
+        return [for (final s in streams.whereType<Map<String, dynamic>>()) _plexSubtitleSearchResult(s, language)];
       },
       'Failed to search subtitles',
     );
@@ -1502,30 +1502,40 @@ class PlexClient
   /// Download a subtitle from an external provider and add it to the media item.
   /// The server downloads the file asynchronously; the new stream appears after a short delay.
   @override
-  Future<bool> downloadSubtitle(
-    String ratingKey, {
-    required String key,
-    required String codec,
-    required String language,
-    required bool hearingImpaired,
-    required bool forced,
-    required String providerTitle,
-  }) async {
+  Future<bool> downloadSubtitle(String ratingKey, SubtitleSearchResult result) async {
     return _wrapBoolApiCall(
       () => _http.put(
         '/library/metadata/$ratingKey/subtitles',
         queryParameters: {
-          'key': key,
-          'codec': codec,
-          'language': language,
-          'hearingImpaired': hearingImpaired ? 1 : 0,
-          'forced': forced ? 1 : 0,
-          'providerTitle': providerTitle,
+          'key': result.key,
+          'codec': result.codec ?? 'srt',
+          'language': result.languageCode ?? '',
+          'hearingImpaired': result.hearingImpaired ? 1 : 0,
+          'forced': result.forced ? 1 : 0,
+          'providerTitle': result.providerTitle ?? '',
         },
       ),
       'Failed to download subtitle',
     );
   }
+
+  /// One stream of Plex's OpenSubtitles search; [language] is the searched
+  /// one, standing in when the stream leaves its own out.
+  static SubtitleSearchResult _plexSubtitleSearchResult(Map<String, dynamic> s, String language) =>
+      SubtitleSearchResult(
+        key: readStringField(s, 'key')?.toString() ?? '',
+        codec: readStringField(s, 'codec')?.toString(),
+        language: readStringField(s, 'language')?.toString(),
+        languageCode: readStringField(s, 'languageCode')?.toString() ?? language,
+        score: flexibleDouble(s['score']),
+        providerTitle: readStringField(s, 'providerTitle')?.toString(),
+        title: readStringField(s, 'title')?.toString(),
+        displayTitle: readStringField(s, 'displayTitle')?.toString(),
+        hearingImpaired: s['hearingImpaired'] != null && flexibleBool(s['hearingImpaired']),
+        perfectMatch: s['perfectMatch'] != null && flexibleBool(s['perfectMatch']),
+        downloaded: s['downloaded'] != null && flexibleBool(s['downloaded']),
+        forced: s['forced'] != null && flexibleBool(s['forced']),
+      );
 
   @override
   Future<MediaSubtitleTrack?> findDownloadedSubtitle(
