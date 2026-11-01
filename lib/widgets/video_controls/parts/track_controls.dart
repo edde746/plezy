@@ -151,6 +151,10 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       selectedAudioStreamId: widget.selectedAudioStreamId,
       sourceSubtitleTracks: widget.sourceSubtitleTracks,
       selectedSubtitleChoice: widget.selectedSubtitleChoice,
+      // Plex proxies OpenSubtitles via its server-side plugin; Jellyfin via
+      // its Open Subtitles plugin once the client's probe found it. The check
+      // uses the registered client for this metadata's serverId.
+      subtitleSearchSupported: _supportsSubtitleSearch(),
     );
     final canSwitchSourceSubtitles = versionQuality.canSwitch && versionQuality.sourceSubtitleTracks.isNotEmpty;
     return TrackControlsState(
@@ -212,10 +216,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       ratingKey: _subtitleItemId(),
       mediaTitle: widget.metadata.title,
       onSubtitleDownloaded: _onSubtitleDownloaded,
-      // Plex proxies OpenSubtitles via its server-side plugin; Jellyfin via
-      // its Open Subtitles plugin once the client's probe found it. The check
-      // uses the registered client for this metadata's serverId.
-      subtitleSearchSupported: _supportsSubtitleSearch(),
+      subtitleSearchSupported: versionQuality.subtitleSearchSupported,
     );
   }
 

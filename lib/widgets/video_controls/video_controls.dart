@@ -179,6 +179,7 @@ ShaderPreset resolveShaderTogglePreset({
   List<MediaSubtitleTrack> sourceSubtitleTracks,
   PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
   bool canSwitch,
+  bool subtitleSearchSupported,
 })
 effectiveVersionQualityControls({
   required bool isOfflinePlayback,
@@ -189,6 +190,7 @@ effectiveVersionQualityControls({
   required int? selectedAudioStreamId,
   required List<MediaSubtitleTrack> sourceSubtitleTracks,
   required PlaybackSourceSubtitleChoice? selectedSubtitleChoice,
+  required bool subtitleSearchSupported,
 }) {
   if (isOfflinePlayback) {
     return (
@@ -200,6 +202,8 @@ effectiveVersionQualityControls({
       sourceSubtitleTracks: const <MediaSubtitleTrack>[],
       selectedSubtitleChoice: null,
       canSwitch: false,
+      // A download would land on the server; the reload reopens the local copy.
+      subtitleSearchSupported: false,
     );
   }
   return (
@@ -211,6 +215,7 @@ effectiveVersionQualityControls({
     sourceSubtitleTracks: sourceSubtitleTracks,
     selectedSubtitleChoice: selectedSubtitleChoice,
     canSwitch: true,
+    subtitleSearchSupported: subtitleSearchSupported,
   );
 }
 
