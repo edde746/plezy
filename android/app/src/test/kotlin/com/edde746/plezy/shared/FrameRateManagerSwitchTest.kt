@@ -190,4 +190,108 @@ class FrameRateManagerSwitchTest {
     manager.clearVideoFrameRate()
     assertEquals(0, activity.window.attributes.preferredDisplayModeId)
   }
+
+  private val restores = mutableListOf<String>()
+
+  private fun switchedTo23976(activity: Activity): FrameRateManager {
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976)
+    val manager = buildManager(activity)
+    request(manager, 23.976f)
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz23976.modeId, hz60, hz23976)
+    idle(2100)
+    assertEquals(listOf(true), completions)
+    return manager
+  }
+
+  @Test
+  fun awaitedRestoreCompletesOnlyAfterTheDisplayLeavesTheContentMode() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate(hdrActive = false) { restores += "restored" }
+    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
+    idle(1000)
+    assertEquals(emptyList<String>(), restores)
+
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976)
+    idle(200)
+    assertEquals(emptyList<String>(), restores)
+    idle(100)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun awaitedRestoreOnADisplayThatNeverChangesCompletesFromTheWatchdog() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate(hdrActive = false) { restores += "restored" }
+    idle(2900)
+    assertEquals(emptyList<String>(), restores)
+    idle(200)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun awaitedHdrRestoreWaitsForTheHdrExitBeforeWatchingTheDisplay() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate(hdrActive = true) { restores += "restored" }
+    idle(300)
+    assertEquals(hz23976.modeId, activity.window.attributes.preferredDisplayModeId)
+    idle(200)
+    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
+
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976)
+    idle(300)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun awaitedRestoreWithNothingAppliedCompletesAtOnce() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976)
+    val manager = buildManager(activity)
+
+    manager.clearVideoFrameRate(hdrActive = true) { restores += "restored" }
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun awaitedRestoreOfAPinnedModeCompletesAtOnce() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz23976.modeId, hz60, hz23976)
+    val manager = buildManager(activity)
+    request(manager, 23.976f)
+    assertEquals(hz23976.modeId, activity.window.attributes.preferredDisplayModeId)
+
+    manager.clearVideoFrameRate(hdrActive = false) { restores += "restored" }
+    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun aDisposeClearDuringTheSettleDoesNotEndTheAwaitedRestoreEarly() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate(hdrActive = false) { restores += "restored" }
+    setDisplayModes(Display.DEFAULT_DISPLAY, hz60.modeId, hz60, hz23976)
+    idle(100)
+    manager.clearVideoFrameRate()
+    assertEquals(emptyList<String>(), restores)
+    idle(200)
+    assertEquals(listOf("restored"), restores)
+  }
+
+  @Test
+  fun aNewSwitchRequestReleasesAnAwaitedRestore() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val manager = switchedTo23976(activity)
+
+    manager.clearVideoFrameRate(hdrActive = true) { restores += "restored" }
+    request(manager, 23.976f)
+    assertEquals(listOf("restored"), restores)
+  }
 }
