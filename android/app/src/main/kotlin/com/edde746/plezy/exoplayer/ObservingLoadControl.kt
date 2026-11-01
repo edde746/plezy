@@ -37,7 +37,11 @@ import androidx.media3.exoplayer.upstream.Allocator
  * wrapper so a media3 upgrade that adds another such method fails a test rather than a device.
  */
 @OptIn(UnstableApi::class)
-class ObservingLoadControl(private val delegate: LoadControl) : LoadControl {
+class ObservingLoadControl(
+  private val delegate: LoadControl,
+  private val targetBufferBytes: Int = 0,
+  private val onRebuffering: (() -> Unit)? = null
+) : LoadControl {
 
   /**
    * The delegate's most recent verdict, or null if it has not been asked since [reset].
@@ -49,20 +53,88 @@ class ObservingLoadControl(private val delegate: LoadControl) : LoadControl {
   var startPlaybackVerdict: Boolean? = null
     private set
 
+  /**
+   * True while the loader is being held back after hitting [targetBufferBytes] until allocated
+   * bytes drain to [LoadControlPolicy.byteCapResumeThresholdBytes].
+   */
+  @Volatile
+  var holdingForByteCap: Boolean = false
+    private set
+
+  @Volatile
+  private var wasRebuffering: Boolean = false
+
+  @Volatile
+  private var lastPlayerId: PlayerId? = null
+
   /** Forgets the recorded verdict, for a watchdog arming a fresh buffering window. */
   fun reset() {
     startPlaybackVerdict = null
+    holdingForByteCap = false
+    wasRebuffering = false
+  }
+
+  /** Current bytes allocated for the active player, or null when no player is prepared. */
+  fun allocatedBytes(): Int? {
+    val playerId = lastPlayerId ?: return null
+    return try {
+      delegate.getAllocator(playerId).totalBytesAllocated
+    } catch (_: Exception) {
+      null
+    }
   }
 
   // The Parameters overloads are the ones ExoPlayer 1.10 calls; the older signatures are deprecated
   // shims that route through them.
   override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean {
+    lastPlayerId = parameters.playerId
     val verdict = delegate.shouldStartPlayback(parameters)
     startPlaybackVerdict = verdict
     return verdict
   }
 
-  override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean = delegate.shouldContinueLoading(parameters)
+  override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean {
+    lastPlayerId = parameters.playerId
+    if (parameters.rebuffering) {
+      holdingForByteCap = false
+      if (!wasRebuffering) {
+        wasRebuffering = true
+        onRebuffering?.invoke()
+      }
+    } else {
+      wasRebuffering = false
+    }
+
+    val delegateVerdict = delegate.shouldContinueLoading(parameters)
+    if (targetBufferBytes <= 0) return delegateVerdict
+
+    val allocatedBytes = try {
+      delegate.getAllocator(parameters.playerId).totalBytesAllocated
+    } catch (_: Exception) {
+      return delegateVerdict
+    }
+
+    if (!delegateVerdict) {
+      if (allocatedBytes >= targetBufferBytes) {
+        holdingForByteCap = true
+      }
+      return false
+    }
+
+    if (holdingForByteCap) {
+      val hold = LoadControlPolicy.shouldHoldBackForByteCap(
+        targetBufferBytes = targetBufferBytes,
+        allocatedBytes = allocatedBytes,
+        bufferedDurationUs = parameters.bufferedDurationUs,
+        playbackSpeed = parameters.playbackSpeed,
+        rebuffering = parameters.rebuffering
+      )
+      if (hold) return false
+      holdingForByteCap = false
+    }
+
+    return true
+  }
 
   override fun shouldContinuePreloading(
     playerId: PlayerId,
@@ -71,7 +143,12 @@ class ObservingLoadControl(private val delegate: LoadControl) : LoadControl {
     bufferedDurationUs: Long
   ): Boolean = delegate.shouldContinuePreloading(playerId, timeline, mediaPeriodId, bufferedDurationUs)
 
-  override fun onPrepared(playerId: PlayerId) = delegate.onPrepared(playerId)
+  override fun onPrepared(playerId: PlayerId) {
+    lastPlayerId = playerId
+    holdingForByteCap = false
+    wasRebuffering = false
+    delegate.onPrepared(playerId)
+  }
 
   override fun onTracksSelected(
     parameters: LoadControl.Parameters,
@@ -79,9 +156,18 @@ class ObservingLoadControl(private val delegate: LoadControl) : LoadControl {
     trackSelections: Array<out ExoTrackSelection>
   ) = delegate.onTracksSelected(parameters, trackGroups, trackSelections)
 
-  override fun onStopped(playerId: PlayerId) = delegate.onStopped(playerId)
+  override fun onStopped(playerId: PlayerId) {
+    holdingForByteCap = false
+    wasRebuffering = false
+    delegate.onStopped(playerId)
+  }
 
-  override fun onReleased(playerId: PlayerId) = delegate.onReleased(playerId)
+  override fun onReleased(playerId: PlayerId) {
+    holdingForByteCap = false
+    wasRebuffering = false
+    if (lastPlayerId == playerId) lastPlayerId = null
+    delegate.onReleased(playerId)
+  }
 
   override fun getAllocator(playerId: PlayerId): Allocator = delegate.getAllocator(playerId)
 
