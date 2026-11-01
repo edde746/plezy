@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
 
@@ -15,9 +17,14 @@ import '../utils/app_logger.dart';
 class PlaybackCoordinator {
   PlaybackCoordinator._();
 
+  @visibleForTesting
+  PlaybackCoordinator.forTesting();
+
   static final PlaybackCoordinator instance = PlaybackCoordinator._();
 
   Future<void> Function()? _stopMusicSession;
+  Future<void> Function()? _stopThemeSession;
+  Future<void> _claimTail = Future<void>.value();
 
   Future<void> Function()? _shutdownVideoSession;
   Future<bool> Function()? _exitVideoSession;
@@ -102,37 +109,41 @@ class PlaybackCoordinator {
     if (_stopMusicSession == stopAndDispose) _stopMusicSession = null;
   }
 
+  /// Register the profile's theme-music session so music or video can stop it.
+  void registerThemeSession({required Future<void> Function() stopAndDispose}) {
+    _stopThemeSession = stopAndDispose;
+  }
+
+  void unregisterThemeSession(Future<void> Function() stopAndDispose) {
+    if (_stopThemeSession == stopAndDispose) _stopThemeSession = null;
+  }
+
   /// Video playback is about to construct its native core: stop and dispose
   /// any live music session first. Completes once the audio core is gone.
-  Future<void> claimVideo() async {
-    final stop = _stopMusicSession;
+  Future<void> claimVideo() => _enqueueClaim(() async {
+    await _stopSession(_stopMusicSession, 'music');
+    await _stopSession(_stopThemeSession, 'theme');
+  });
+
+  /// Release theme audio before music starts, without waiting for retiring
+  /// video cores: music and video use independent native sessions.
+  Future<void> claimMusic() => _enqueueClaim(() => _stopSession(_stopThemeSession, 'theme'));
+
+  /// Theme playback is about to construct its audio core, so release any
+  /// active music session first.
+  Future<void> claimTheme() => _enqueueClaim(() => _stopSession(_stopMusicSession, 'music'));
+
+  Future<void> _enqueueClaim(Future<void> Function() claim) {
+    _claimTail = _claimTail.then((_) => claim(), onError: (_, _) => claim());
+    return _claimTail;
+  }
+
+  Future<void> _stopSession(Future<void> Function()? stop, String sessionName) async {
     if (stop == null) return;
     try {
       await stop();
     } catch (e, st) {
-      // The video player must still be able to start; a wedged audio core
-      // is strictly worse than a leaked stop error.
-      appLogger.w('PlaybackCoordinator: music session teardown failed', error: e, stackTrace: st);
+      appLogger.w('PlaybackCoordinator: $sessionName session teardown failed', error: e, stackTrace: st);
     }
   }
-
-  /// Music playback is about to construct its audio core. Nothing to do, and
-  /// deliberately so rather than for lack of a mechanism.
-  ///
-  /// Bounded route exit can expose music UI while video cleanup is still
-  /// retiring, but the two share nothing that has to be serialized: they are
-  /// separate plugin instances on separate channels
-  /// (`com.plezy/mpv_audio_player` vs `com.plezy/mpv_player`), so neither
-  /// contends for `PlayerBase`'s per-channel event-channel owner; on Android
-  /// each holds its own native session, handle and locks; and a retiring video
-  /// core releases audio focus in the synchronous part of its dispose, before
-  /// the teardown thread it leaves running.
-  ///
-  /// Making this await [_videoRetirements] would hand a wedged video teardown
-  /// — the one case where retirement outlives the route by more than a frame —
-  /// the power to stop music from starting at all, which is the bricking the
-  /// per-session native rework exists to prevent.
-  ///
-  /// Kept as a seam so a future reverse teardown has one place to live.
-  Future<void> claimMusic() async {}
 }

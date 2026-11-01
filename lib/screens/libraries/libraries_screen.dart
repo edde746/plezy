@@ -78,6 +78,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _genresTabKey = GlobalKey();
   final _playlistsTabKey = GlobalKey();
 
+  /// Whether Libraries itself is the visible main app tab (distinct from
+  /// [TabNavigationMixin.tabController], which tracks the sub-tab within
+  /// Libraries). Without this, leaving Libraries for another main tab never
+  /// flips the active sub-tab's `isActive` false, so e.g. TV theme music kept
+  /// playing after navigating away.
+  bool _isMainTabVisible = true;
+
   String? _selectedLibraryGlobalKey;
 
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
@@ -585,14 +592,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// activation, and a library switch reloads unconditionally anyway.
   @override
   void onTabShown() {
+    setState(() {
+      _isMainTabVisible = true;
+    });
     if (_selectedLibraryGlobalKey == null) return;
     final Object? tabState = _getTabState(tabController.index);
     if (tabState is BaseLibraryTabState) tabState.refreshIfLibraryContentStale();
   }
 
   @override
-  // ignore: no-empty-block - visibility mixin contract; nothing to pause.
-  void onTabHidden() {}
+  void onTabHidden() {
+    setState(() {
+      _isMainTabVisible = false;
+    });
+  }
 
   /// The toolbar refresh. Without a selected library the screen is showing the
   /// provider's empty or error state, and there are no tabs to refetch: reload
@@ -961,7 +974,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           _visibleTabs[index],
           library: selectedLibrary,
           canGroupByFolders: canSelectedLibraryGroupByFolders,
-          isActive: tabController.index == index,
+          isActive: tabController.index == index && _isMainTabVisible,
           tabIndex: index,
         );
         // Clip each tab so horizontal overflow (e.g. hub rows with Clip.none)

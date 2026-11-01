@@ -1809,6 +1809,13 @@ class PlexClient
     return _http.buildUri(thumbPath).toString().withPlexToken(config.token);
   }
 
+  /// URL for a show/movie's theme music audio stream, or '' if [ratingKey] is
+  /// empty. A 404 response means the item has no theme music.
+  String themeUrl(String? ratingKey) {
+    if (ratingKey == null || ratingKey.isEmpty) return '';
+    return getThumbnailUrl('/library/metadata/$ratingKey/theme');
+  }
+
   /// Download the full BIF (Base Index Frames) file for a given part, failing
   /// once the body exceeds [maxBytes] instead of buffering it.
   /// Returns null when the server answers with an empty body.
