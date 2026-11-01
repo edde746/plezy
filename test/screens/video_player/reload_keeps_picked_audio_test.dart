@@ -203,6 +203,20 @@ void main() {
         expect(client.opens.last.preferredAudioTrack?.language, 'fre', reason: 'the reload carries the pick');
         expect(client.opens.last.selectedAudioStreamId, isNull, reason: 'the rescan may have renumbered the streams');
 
+        // The cycle-audio hotkey moves on to German; then a quality switch reloads.
+        key.currentState!.debugCycleAudioTrackForTesting();
+        playing = 'ger';
+        emitTrackList(loads);
+        await tester.pump();
+        expect(
+          await switchSource(
+            (state) => state.debugSwitchPlaybackSourceForTesting(newPreset: TranscodeQualityPreset.p720_2mbps),
+          ),
+          PlaybackSourceChangeOutcome.applied,
+        );
+        expect(client.opens, hasLength(3));
+        expect(client.opens.last.selectedAudioStreamId, 6, reason: 'the reload carries the cycled track');
+
         var shutdownDone = false;
         final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);
         await pumpUntil(tester, () => shutdownDone);

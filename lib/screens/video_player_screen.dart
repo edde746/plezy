@@ -1326,6 +1326,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @visibleForTesting
   Future<void> debugPickAudioTrackForTesting(AudioTrack track) => _onAudioTrackChanged(track);
 
+  /// The cycle-audio hotkey and the companion remote's audio button.
+  @visibleForTesting
+  void debugCycleAudioTrackForTesting() => _cycleAudioTrack();
+
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
       _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
@@ -2795,17 +2799,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Future<void> _onAudioTrackChanged(AudioTrack track) async {
-    if (track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id) {
-      _sessionAudioPreference = track;
-      final streamId = sourceAudioStreamIdForPick(
-        isTranscoding: _isTranscoding,
-        pick: track,
-        engineTracks: player?.state.tracks.audio ?? const [],
-        rows: _currentMediaInfo?.audioTracks ?? const [],
-      );
-      if (streamId != null && mounted) setState(() => _selectedAudioStreamId = streamId);
-    }
+    _rememberAudioPick(track);
     await _trackManager?.onAudioTrackSelectedByUser(track);
+  }
+
+  /// An audio track the user picked in the player, from the list or by cycling.
+  void _rememberAudioPick(AudioTrack track) {
+    if (track.id == AudioTrack.auto.id || track.id == AudioTrack.off.id) return;
+    _sessionAudioPreference = track;
+    final streamId = sourceAudioStreamIdForPick(
+      isTranscoding: _isTranscoding,
+      pick: track,
+      engineTracks: player?.state.tracks.audio ?? const [],
+      rows: _currentMediaInfo?.audioTracks ?? const [],
+    );
+    if (streamId != null && mounted) setState(() => _selectedAudioStreamId = streamId);
   }
 
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
