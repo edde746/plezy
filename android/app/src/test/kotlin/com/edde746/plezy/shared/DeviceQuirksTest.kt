@@ -55,4 +55,26 @@ class DeviceQuirksTest {
   fun buildStringCasingDoesNotDefeatTheMatch() {
     assertTrue(unreliable(manufacturer = "amazon", model = "aftmm"))
   }
+
+  @Test
+  fun amlogicGoogleTvBoxesRaiseGraphicsBlackInDolbyVision() {
+    // #2926: Xiaomi TV Box S 3rd Gen; the onn boxes report the same vendor string.
+    assertTrue(DeviceQuirks.raisesGraphicsBlackInDolbyVision("Amlogic", "Xiaomi"))
+    assertTrue(DeviceQuirks.raisesGraphicsBlackInDolbyVision("amlogic", "onn."))
+  }
+
+  @Test
+  fun amlogicFireTvKeepsTheOpaqueLetterbox() {
+    // The Fire TV Cube 3 is Amlogic but needs opaque black like the MediaTek Fire TVs.
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("Amlogic", "Amazon"))
+  }
+
+  @Test
+  fun otherSocsAndUnreportedVendorsKeepTheOpaqueLetterbox() {
+    // MediaTek is where the opaque fill fixed gray bars (#2163); pre-S devices report no vendor.
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("Mediatek", "Google"))
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("NVIDIA", "NVIDIA"))
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("unknown", "Xiaomi"))
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision(null, "Xiaomi"))
+  }
 }
