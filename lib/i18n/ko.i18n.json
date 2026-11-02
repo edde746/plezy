@@ -1591,6 +1591,8 @@
       "watchOn": "시청처",
       "watchTrailer": "예고편 보기",
       "openOn": "${site}에서 열기",
+      "trailerUnavailable": "이 기기에서 예고편을 열 수 없습니다",
+      "linkUnavailable": "이 기기에서 링크를 열 수 없습니다",
       "crew": "제작진",
       "ratings": "평점",
       "schedule": "방영 일정",

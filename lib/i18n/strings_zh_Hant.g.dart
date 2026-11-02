@@ -3034,6 +3034,8 @@ class _Translations$explore$detail$zh_Hant extends Translations$explore$detail$z
 	@override String get watchOn => '觀看平台';
 	@override String get watchTrailer => '觀看預告片';
 	@override String openOn({required Object site}) => '在 ${site} 開啟';
+	@override String get trailerUnavailable => '無法在這部裝置上開啟預告片';
+	@override String get linkUnavailable => '無法在這部裝置上開啟連結';
 	@override String get crew => '幕後團隊';
 	@override String get ratings => '評分';
 	@override String get schedule => '播出時間';
@@ -4826,6 +4828,8 @@ extension on TranslationsZhHant {
 			'explore.detail.watchOn' => '觀看平台',
 			'explore.detail.watchTrailer' => '觀看預告片',
 			'explore.detail.openOn' => ({required Object site}) => '在 ${site} 開啟',
+			'explore.detail.trailerUnavailable' => '無法在這部裝置上開啟預告片',
+			'explore.detail.linkUnavailable' => '無法在這部裝置上開啟連結',
 			'explore.detail.crew' => '幕後團隊',
 			'explore.detail.ratings' => '評分',
 			'explore.detail.schedule' => '播出時間',
@@ -4922,10 +4926,10 @@ extension on TranslationsZhHant {
 			'liveTv.recordSettings.skipInLibrary' => '略過媒體庫中已有的劇集',
 			'liveTv.recordSettings.keepUpTo' => '要保留的劇集數',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留所有劇集',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
 			'liveTv.failedToStartChannel' => '無法啟動直播頻道',
 			'liveTv.failedToBuildStreamUrl' => '無法建立串流 URL',
@@ -5436,10 +5440,10 @@ extension on TranslationsZhHant {
 			'performanceOverlay.decoderExynosHw' => 'Exynos 硬體',
 			'performanceOverlay.decoderSoftware' => '軟體',
 			'performanceOverlay.decoderHardware' => '硬體',
-			'performanceOverlay.tunnelingActive' => '已啟用',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => '已啟用',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他應用程式中開啟影片',

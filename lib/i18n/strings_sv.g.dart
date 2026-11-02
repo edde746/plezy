@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$sv extends Translations$explore$detail$en {
 	@override String get watchOn => 'Titta på';
 	@override String get watchTrailer => 'Titta på trailer';
 	@override String openOn({required Object site}) => 'Öppna på ${site}';
+	@override String get trailerUnavailable => 'Det gick inte att öppna trailern på den här enheten';
+	@override String get linkUnavailable => 'Det gick inte att öppna länken på den här enheten';
 	@override String get crew => 'Besättning';
 	@override String get ratings => 'Betyg';
 	@override String get schedule => 'Schema';
@@ -4837,6 +4839,8 @@ extension on TranslationsSv {
 			'explore.detail.watchOn' => 'Titta på',
 			'explore.detail.watchTrailer' => 'Titta på trailer',
 			'explore.detail.openOn' => ({required Object site}) => 'Öppna på ${site}',
+			'explore.detail.trailerUnavailable' => 'Det gick inte att öppna trailern på den här enheten',
+			'explore.detail.linkUnavailable' => 'Det gick inte att öppna länken på den här enheten',
 			'explore.detail.crew' => 'Besättning',
 			'explore.detail.ratings' => 'Betyg',
 			'explore.detail.schedule' => 'Schema',
@@ -4933,10 +4937,10 @@ extension on TranslationsSv {
 			'liveTv.recordSettings.skipInLibrary' => 'Hoppa över avsnitt som redan finns i biblioteket',
 			'liveTv.recordSettings.keepUpTo' => 'Avsnitt att behålla',
 			'liveTv.recordSettings.keepUpToHint' => '0 behåller alla avsnitt',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Börjar om ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Börjar om ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV',
 			'liveTv.failedToStartChannel' => 'Kunde inte starta livekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunde inte skapa strömmens URL',
@@ -5447,10 +5451,10 @@ extension on TranslationsSv {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Programvara',
 			'performanceOverlay.decoderHardware' => 'Maskinvara',
-			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Aktiv',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',
 			'externalPlayer.title' => 'Extern spelare',
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en annan app',

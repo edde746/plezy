@@ -1599,6 +1599,8 @@
       "watchOn": "Tomosha qilish",
       "watchTrailer": "Treylerni koʻrish",
       "openOn": "${site} da ochish",
+      "trailerUnavailable": "Bu qurilmada treylerni ochib boʻlmadi",
+      "linkUnavailable": "Bu qurilmada havolani ochib boʻlmadi",
       "crew": "Jamoa",
       "ratings": "Baholar",
       "schedule": "Jadval",

@@ -7390,6 +7390,12 @@ class Translations$explore$detail$en {
 	/// en: 'Open on ${site}'
 	String openOn({required Object site}) => 'Open on ${site}';
 
+	/// en: 'Couldn't open the trailer on this device'
+	String get trailerUnavailable => 'Couldn\'t open the trailer on this device';
+
+	/// en: 'Couldn't open this link on this device'
+	String get linkUnavailable => 'Couldn\'t open this link on this device';
+
 	/// en: 'Crew'
 	String get crew => 'Crew';
 
@@ -9559,6 +9565,8 @@ extension on Translations {
 			'explore.detail.watchOn' => 'Watch on',
 			'explore.detail.watchTrailer' => 'Watch trailer',
 			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
+			'explore.detail.trailerUnavailable' => 'Couldn\'t open the trailer on this device',
+			'explore.detail.linkUnavailable' => 'Couldn\'t open this link on this device',
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Ratings',
 			'explore.detail.schedule' => 'Schedule',
@@ -9648,10 +9656,10 @@ extension on Translations {
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
-			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
-			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
+			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
@@ -10162,10 +10170,10 @@ extension on Translations {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
-			'performanceOverlay.uiFps' => 'UI FPS',
-			'performanceOverlay.fps' => 'FPS',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.uiFps' => 'UI FPS',
+			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',

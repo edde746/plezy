@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$de extends Translations$explore$detail$en {
 	@override String get watchOn => 'Ansehen auf';
 	@override String get watchTrailer => 'Trailer ansehen';
 	@override String openOn({required Object site}) => 'Auf ${site} öffnen';
+	@override String get trailerUnavailable => 'Der Trailer konnte auf diesem Gerät nicht geöffnet werden';
+	@override String get linkUnavailable => 'Der Link konnte auf diesem Gerät nicht geöffnet werden';
 	@override String get crew => 'Crew';
 	@override String get ratings => 'Bewertungen';
 	@override String get schedule => 'Sendetermine';
@@ -4837,6 +4839,8 @@ extension on TranslationsDe {
 			'explore.detail.watchOn' => 'Ansehen auf',
 			'explore.detail.watchTrailer' => 'Trailer ansehen',
 			'explore.detail.openOn' => ({required Object site}) => 'Auf ${site} öffnen',
+			'explore.detail.trailerUnavailable' => 'Der Trailer konnte auf diesem Gerät nicht geöffnet werden',
+			'explore.detail.linkUnavailable' => 'Der Link konnte auf diesem Gerät nicht geöffnet werden',
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Bewertungen',
 			'explore.detail.schedule' => 'Sendetermine',
@@ -4933,10 +4937,10 @@ extension on TranslationsDe {
 			'liveTv.recordSettings.skipInLibrary' => 'Episoden überspringen, die schon in der Bibliothek sind',
 			'liveTv.recordSettings.keepUpTo' => 'Zu behaltende Episoden',
 			'liveTv.recordSettings.keepUpToHint' => '0 behält alle Episoden',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Beginnt in ${minutes} Min.',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} um ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Beginnt in ${minutes} Min.',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} um ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} hat ungültige Live-TV-Wiedergabedaten zurückgegeben',
 			'liveTv.failedToStartChannel' => 'Der Live-Sender konnte nicht gestartet werden',
 			'liveTv.failedToBuildStreamUrl' => 'Die Stream-URL konnte nicht erstellt werden',
@@ -5447,10 +5451,10 @@ extension on TranslationsDe {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
-			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} fehlgeschlagen)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Aktiv',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} fehlgeschlagen)',
 			'externalPlayer.title' => 'Externer Player',
 			'externalPlayer.useExternalPlayer' => 'Externen Player verwenden',
 			'externalPlayer.useExternalPlayerDescription' => 'Videos in einer anderen App öffnen',

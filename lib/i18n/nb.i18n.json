@@ -1599,6 +1599,8 @@
       "watchOn": "Se på",
       "watchTrailer": "Se trailer",
       "openOn": "Åpne på ${site}",
+      "trailerUnavailable": "Kunne ikke åpne traileren på denne enheten",
+      "linkUnavailable": "Kunne ikke åpne lenken på denne enheten",
       "crew": "Mannskap",
       "ratings": "Vurderinger",
       "schedule": "Sendeskjema",

@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$da extends Translations$explore$detail$en {
 	@override String get watchOn => 'Se på';
 	@override String get watchTrailer => 'Se trailer';
 	@override String openOn({required Object site}) => 'Åbn på ${site}';
+	@override String get trailerUnavailable => 'Kunne ikke åbne traileren på denne enhed';
+	@override String get linkUnavailable => 'Kunne ikke åbne linket på denne enhed';
 	@override String get crew => 'Stab';
 	@override String get ratings => 'Bedømmelser';
 	@override String get schedule => 'Program';
@@ -4837,6 +4839,8 @@ extension on TranslationsDa {
 			'explore.detail.watchOn' => 'Se på',
 			'explore.detail.watchTrailer' => 'Se trailer',
 			'explore.detail.openOn' => ({required Object site}) => 'Åbn på ${site}',
+			'explore.detail.trailerUnavailable' => 'Kunne ikke åbne traileren på denne enhed',
+			'explore.detail.linkUnavailable' => 'Kunne ikke åbne linket på denne enhed',
 			'explore.detail.crew' => 'Stab',
 			'explore.detail.ratings' => 'Bedømmelser',
 			'explore.detail.schedule' => 'Program',
@@ -4933,10 +4937,10 @@ extension on TranslationsDa {
 			'liveTv.recordSettings.skipInLibrary' => 'Spring afsnit over, der allerede er i biblioteket',
 			'liveTv.recordSettings.keepUpTo' => 'Afsnit der skal beholdes',
 			'liveTv.recordSettings.keepUpToHint' => '0 beholder alle afsnit',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerede ugyldige afspilningsdata for Live TV',
 			'liveTv.failedToStartChannel' => 'Kunne ikke starte livekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunne ikke oprette stream-URL\'en',
@@ -5447,10 +5451,10 @@ extension on TranslationsDa {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
-			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislykkedes)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Aktiv',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislykkedes)',
 			'externalPlayer.title' => 'Ekstern afspiller',
 			'externalPlayer.useExternalPlayer' => 'Brug ekstern afspiller',
 			'externalPlayer.useExternalPlayerDescription' => 'Åbn videoer i en anden app',
