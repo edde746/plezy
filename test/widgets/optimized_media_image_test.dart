@@ -696,7 +696,7 @@ void main() {
     expect(resizeProvider.height, 300);
   });
 
-  testWidgets('pending upgrade refreshes logical size across DPR change', (tester) async {
+  testWidgets('aspect-dependent artwork does not combine max dimensions across layouts', (tester) async {
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1.0;
     tester.view.display.size = const Size(1920, 1080);
@@ -705,6 +705,74 @@ void main() {
       tester.view.resetDevicePixelRatio();
       tester.view.display.reset();
     });
+
+    final sizeNotifier = ValueNotifier<Size>(const Size(100, 450));
+    addTearDown(sizeNotifier.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: ValueListenableBuilder<Size>(
+            valueListenable: sizeNotifier,
+            builder: (context, size, _) => SizedBox(
+              width: size.width,
+              height: size.height,
+              child: const OptimizedMediaImage.poster(
+                imagePath: 'https://jf.example/Items/1/Images/Primary?api_key=token',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Initial 100x450 layout requires min bucket (160x240)
+    var image = tester.widget<Image>(find.byType(Image));
+    var resizeProvider = image.image as ResizeImage;
+    var cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+    expect(cachedProvider.url, contains('maxWidth=160&maxHeight=240'));
+
+    // Resize to 300x200: target bucket is 200x300, which is >= committed on both axes.
+    // It should commit 200x300 directly rather than combining max width (300) and max height (450)
+    // which would have requested an over-sized 480x720 bucket.
+    sizeNotifier.value = const Size(300, 200);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    image = tester.widget<Image>(find.byType(Image));
+    resizeProvider = image.image as ResizeImage;
+    cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+
+    expect(cachedProvider.url, contains('maxWidth=200&maxHeight=300'));
+    expect(resizeProvider.width, 480);
+    expect(resizeProvider.height, 300);
+  });
+
+  testWidgets('pending upgrade refreshes logical size across DPR change', (tester) async {
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.display.size = const Size(2400, 1350);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.display.reset();
+    });
+
+    // Verify both layout/DPR combinations share the exact same 400x600 bucket
+    final step1Bucket = MediaImageHelper.calculateOptimalDimensions(
+      maxWidth: 200,
+      maxHeight: 300,
+      pixelRatio: 1.875,
+      imageType: ImageType.poster,
+    );
+    final step2Bucket = MediaImageHelper.calculateOptimalDimensions(
+      maxWidth: 128,
+      maxHeight: 192,
+      pixelRatio: 3.0,
+      imageType: ImageType.poster,
+    );
+    expect(step1Bucket, (400, 600));
+    expect(step2Bucket, (400, 600));
 
     final sizeNotifier = ValueNotifier<Size>(const Size(50, 75));
     addTearDown(sizeNotifier.dispose);
@@ -726,7 +794,7 @@ void main() {
       ),
     );
 
-    // Step 1: poster expands to 200x300 at 1x (target bucket 400x600)
+    // Step 1: poster expands to 200x300 at density 1.875 (target bucket 400x600)
     sizeNotifier.value = const Size(200, 300);
     await tester.pump();
 
@@ -744,6 +812,69 @@ void main() {
 
     // Committed logical size was refreshed to 128x192 (not stale 200x300), so at 3x DPR
     // it requests 400x600, NOT 600x900.
+    expect(cachedProvider.url, contains('maxWidth=400&maxHeight=600'));
+    expect(resizeProvider.width, 400);
+    expect(resizeProvider.height, 600);
+  });
+
+  testWidgets('shrunken artwork resets retention when DPR increases', (tester) async {
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.display.size = const Size(1920, 1080);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.display.reset();
+    });
+
+    final sizeNotifier = ValueNotifier<Size>(const Size(200, 300));
+    addTearDown(sizeNotifier.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: ValueListenableBuilder<Size>(
+            valueListenable: sizeNotifier,
+            builder: (context, size, _) => SizedBox(
+              width: size.width,
+              height: size.height,
+              child: const OptimizedMediaImage.poster(
+                imagePath: 'https://jf.example/Items/1/Images/Primary?api_key=token',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Initial 200x300 @ 1x (fetch density 1.5) produces bucket 320x480
+    var image = tester.widget<Image>(find.byType(Image));
+    var resizeProvider = image.image as ResizeImage;
+    var cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+    expect(cachedProvider.url, contains('maxWidth=320&maxHeight=480'));
+    expect(resizeProvider.width, 320);
+    expect(resizeProvider.height, 480);
+
+    // Shrink to 128x192: shrink retention keeps the larger 320x480 decode
+    sizeNotifier.value = const Size(128, 192);
+    await tester.pump();
+
+    image = tester.widget<Image>(find.byType(Image));
+    resizeProvider = image.image as ResizeImage;
+    cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+    expect(cachedProvider.url, contains('maxWidth=320&maxHeight=480'));
+    expect(resizeProvider.width, 320);
+    expect(resizeProvider.height, 480);
+
+    // Window moves to higher-DPI monitor: DPR becomes 3.0 (fetch density 3.0) with layout unchanged.
+    // Retention from the 200x300 slot resets to the current 128x192 layout, requesting 400x600 instead
+    // of multiplying the stale 200x300 slot by 3.0 to request 600x900.
+    tester.view.devicePixelRatio = 3.0;
+    await tester.pump();
+
+    image = tester.widget<Image>(find.byType(Image));
+    resizeProvider = image.image as ResizeImage;
+    cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
     expect(cachedProvider.url, contains('maxWidth=400&maxHeight=600'));
     expect(resizeProvider.width, 400);
     expect(resizeProvider.height, 600);

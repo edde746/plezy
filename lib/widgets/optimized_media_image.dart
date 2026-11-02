@@ -199,6 +199,7 @@ class OptimizedMediaImage extends StatefulWidget {
 class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
   double? _committedWidth;
   double? _committedHeight;
+  double? _committedDensity;
   double? _pendingWidth;
   double? _pendingHeight;
   (int, int, double)? _pendingTargetKey;
@@ -217,6 +218,7 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
       _pendingHeight = null;
       _committedWidth = null;
       _committedHeight = null;
+      _committedDensity = null;
     }
   }
 
@@ -349,9 +351,22 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
     double renderWidth = effectiveWidth;
     double renderHeight = effectiveHeight;
 
-    if (_committedWidth == null || _committedHeight == null) {
+    if (_committedWidth == null || _committedHeight == null || _committedDensity == null) {
       _committedWidth = effectiveWidth;
       _committedHeight = effectiveHeight;
+      _committedDensity = pixelRatio;
+    } else if (_committedDensity != pixelRatio) {
+      // Fetch density changed (e.g. window moved across mixed-DPI monitors).
+      // Reset retention from the current layout so old logical dimensions are not
+      // rescaled by the new density.
+      _debounceTimer?.cancel();
+      _debounceTimer = null;
+      _pendingTargetKey = null;
+      _pendingWidth = null;
+      _pendingHeight = null;
+      _committedWidth = effectiveWidth;
+      _committedHeight = effectiveHeight;
+      _committedDensity = pixelRatio;
     } else {
       final (committedBucketWidth, committedBucketHeight) = MediaImageHelper.calculateOptimalDimensions(
         maxWidth: _committedWidth!,
@@ -388,9 +403,29 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
                   _committedWidth = _pendingWidth;
                   _committedHeight = _pendingHeight;
                 } else {
-                  _committedWidth = math.max(_committedWidth!, _pendingWidth!);
-                  _committedHeight = math.max(_committedHeight!, _pendingHeight!);
+                  // If target bucket is >= committed bucket on both axes, commit new size as-is.
+                  // Only fall back to per-axis max when axis buckets diverge (logo/art).
+                  final (committedBw, committedBh) = MediaImageHelper.calculateOptimalDimensions(
+                    maxWidth: _committedWidth!,
+                    maxHeight: _committedHeight!,
+                    pixelRatio: pixelRatio,
+                    imageType: widget.imageType,
+                  );
+                  final (pendingBw, pendingBh) = MediaImageHelper.calculateOptimalDimensions(
+                    maxWidth: _pendingWidth!,
+                    maxHeight: _pendingHeight!,
+                    pixelRatio: pixelRatio,
+                    imageType: widget.imageType,
+                  );
+                  if (pendingBw >= committedBw && pendingBh >= committedBh) {
+                    _committedWidth = _pendingWidth;
+                    _committedHeight = _pendingHeight;
+                  } else {
+                    _committedWidth = math.max(_committedWidth!, _pendingWidth!);
+                    _committedHeight = math.max(_committedHeight!, _pendingHeight!);
+                  }
                 }
+                _committedDensity = pixelRatio;
                 _debounceTimer = null;
                 _pendingTargetKey = null;
                 _pendingWidth = null;
@@ -414,6 +449,7 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
           _committedWidth = effectiveWidth;
           _committedHeight = effectiveHeight;
         }
+        _committedDensity = pixelRatio;
         renderWidth = _committedWidth!;
         renderHeight = _committedHeight!;
       }
