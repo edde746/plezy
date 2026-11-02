@@ -32,7 +32,6 @@ import 'agent_control_protocol.dart';
 import 'plex_client.dart';
 import 'scoped_player_prefs.dart';
 import 'settings_service.dart';
-import 'shader_service.dart';
 import 'storage_service.dart';
 
 typedef _ApplySetting = Future<Map<String, dynamic>> Function();
@@ -192,8 +191,7 @@ class AgentScopedSettingsCommands {
         type: 'string',
         defaultValue: SettingsService.globalShaderPreset.defaultValue,
         choices: shaderProvider.allPresets.map((p) => p.id).toList(),
-        isSupported: () =>
-            ShaderService.isPlatformSupported && !(Platform.isAndroid && settings.read(SettingsService.useExoPlayer)),
+        isSupported: () => !(Platform.isAndroid && settings.read(SettingsService.useExoPlayer)),
         decode: (v) {
           if (v is! String || shaderProvider.findPresetById(v) == null) _invalid('Select an available shader preset.');
           return v;

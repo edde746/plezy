@@ -199,7 +199,7 @@ sudo moss pad plezy
 [^connect]: Requires connecting the service under Settings > Services.
 [^hdr]: In-app HDR toggle on Windows, macOS, iOS, tvOS, and Linux — Linux needs a colour-managed Wayland compositor. Dolby Vision on Android, macOS, and Apple TV.
 [^pass]: Desktop, Android TV, and Apple TV.
-[^mpv]: Requires mpv's GPU renderer — unavailable on iOS, tvOS, and macOS, and Android defaults to ExoPlayer.
+[^mpv]: Requires the mpv player backend — Android defaults to ExoPlayer. Not applied to Dolby Vision on Apple platforms.
 [^pip]: Android, iOS, and macOS — not on Android TV or Apple TV.
 [^rrm]: Windows, Android, and tvOS.
 [^android]: Progress sync on Android.
