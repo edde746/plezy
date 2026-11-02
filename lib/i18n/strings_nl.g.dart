@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$nl extends Translations$explore$detail$en {
 	@override String get watchOn => 'Bekijk op';
 	@override String get watchTrailer => 'Trailer bekijken';
 	@override String openOn({required Object site}) => 'Openen op ${site}';
+	@override String get trailerUnavailable => 'Kan de trailer niet openen op dit apparaat';
+	@override String get linkUnavailable => 'Kan de link niet openen op dit apparaat';
 	@override String get crew => 'Crew';
 	@override String get ratings => 'Beoordelingen';
 	@override String get schedule => 'Uitzendschema';
@@ -4837,6 +4839,8 @@ extension on TranslationsNl {
 			'explore.detail.watchOn' => 'Bekijk op',
 			'explore.detail.watchTrailer' => 'Trailer bekijken',
 			'explore.detail.openOn' => ({required Object site}) => 'Openen op ${site}',
+			'explore.detail.trailerUnavailable' => 'Kan de trailer niet openen op dit apparaat',
+			'explore.detail.linkUnavailable' => 'Kan de link niet openen op dit apparaat',
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Beoordelingen',
 			'explore.detail.schedule' => 'Uitzendschema',
@@ -4933,10 +4937,10 @@ extension on TranslationsNl {
 			'liveTv.recordSettings.skipInLibrary' => 'Afleveringen overslaan die al in de bibliotheek staan',
 			'liveTv.recordSettings.keepUpTo' => 'Te bewaren afleveringen',
 			'liveTv.recordSettings.keepUpToHint' => '0 bewaart alle afleveringen',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Begint over ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} om ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Begint over ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} om ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd',
 			'liveTv.failedToStartChannel' => 'Kon de livezender niet starten',
 			'liveTv.failedToBuildStreamUrl' => 'Kon de stream-URL niet samenstellen',
@@ -5447,10 +5451,10 @@ extension on TranslationsNl {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
-			'performanceOverlay.tunnelingActive' => 'Actief',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Actief',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)',
 			'externalPlayer.title' => 'Externe speler',
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een andere app',

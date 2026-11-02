@@ -1,5 +1,30 @@
 {
   "schemaVersion": 1,
-  "reviewedOn": "2026-10-15",
-  "accepted": []
+  "reviewedOn": "2026-11-02",
+  "accepted": [
+    {
+      "id": 1243067,
+      "package": "@sveltejs/kit",
+      "severity": "low",
+      "vulnerableRange": "<3.0.0",
+      "expiresOn": "2027-01-31",
+      "rationale": "GHSA-pfhg-q3qv-9q6r: Fixed only in SvelteKit 3. The adapter-static site has no forms, form actions, or use:enhance, and no server answers requests."
+    },
+    {
+      "id": 1243076,
+      "package": "@sveltejs/kit",
+      "severity": "low",
+      "vulnerableRange": "<3.0.0",
+      "expiresOn": "2027-01-31",
+      "rationale": "GHSA-27mw-82g8-phjj: Fixed only in SvelteKit 3. No route calls setHeaders, so no cache-control value reaches the prerendered HTML."
+    },
+    {
+      "id": 1243505,
+      "package": "deepmerge",
+      "severity": "low",
+      "vulnerableRange": ">=4.2.0 <=4.3.1",
+      "expiresOn": "2027-01-31",
+      "rationale": "GHSA-gcqx-w48m-w2h4: No patched release exists. Only vite-plugin-svelte uses it, at build time, to merge repository-controlled Svelte options."
+    }
+  ]
 }

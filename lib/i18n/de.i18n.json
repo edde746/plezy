@@ -1599,6 +1599,8 @@
       "watchOn": "Ansehen auf",
       "watchTrailer": "Trailer ansehen",
       "openOn": "Auf ${site} öffnen",
+      "trailerUnavailable": "Der Trailer konnte auf diesem Gerät nicht geöffnet werden",
+      "linkUnavailable": "Der Link konnte auf diesem Gerät nicht geöffnet werden",
       "crew": "Crew",
       "ratings": "Bewertungen",
       "schedule": "Sendetermine",

@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$az extends Translations$explore$detail$en {
 	@override String get watchOn => 'İzlə';
 	@override String get watchTrailer => 'Treyleri izlə';
 	@override String openOn({required Object site}) => '${site} saytında aç';
+	@override String get trailerUnavailable => 'Bu cihazda treyler açıla bilmədi';
+	@override String get linkUnavailable => 'Bu cihazda bu keçid açıla bilmədi';
 	@override String get crew => 'Heyət';
 	@override String get ratings => 'Reytinq';
 	@override String get schedule => 'Cədvəl';
@@ -4837,6 +4839,8 @@ extension on TranslationsAz {
 			'explore.detail.watchOn' => 'İzlə',
 			'explore.detail.watchTrailer' => 'Treyleri izlə',
 			'explore.detail.openOn' => ({required Object site}) => '${site} saytında aç',
+			'explore.detail.trailerUnavailable' => 'Bu cihazda treyler açıla bilmədi',
+			'explore.detail.linkUnavailable' => 'Bu cihazda bu keçid açıla bilmədi',
 			'explore.detail.crew' => 'Heyət',
 			'explore.detail.ratings' => 'Reytinq',
 			'explore.detail.schedule' => 'Cədvəl',
@@ -4933,10 +4937,10 @@ extension on TranslationsAz {
 			'liveTv.recordSettings.skipInLibrary' => 'Kitabxanada artıq olan epizodları ötür',
 			'liveTv.recordSettings.keepUpTo' => 'Saxlanılacaq epizodlar',
 			'liveTv.recordSettings.keepUpToHint' => '0 bütün epizodları saxlayır',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dəq sonra başlayır',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, saat ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dəq sonra başlayır',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} etibarsız Canlı TV oynatma məlumatı qaytardı',
 			'liveTv.failedToStartChannel' => 'Canlı kanalı başlatmaq olmadı',
 			'liveTv.failedToBuildStreamUrl' => 'Yayım URL-i yaratmaq olmadı',
@@ -5447,10 +5451,10 @@ extension on TranslationsAz {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Proqram təminatı',
 			'performanceOverlay.decoderHardware' => 'Aparat təminatı',
-			'performanceOverlay.tunnelingActive' => 'Aktiv',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Aktiv',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)',
 			'externalPlayer.title' => 'Xarici oynadıcı',
 			'externalPlayer.useExternalPlayer' => 'Xarici oynadıcı istifadə et',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başqa tətbiqdə açın',

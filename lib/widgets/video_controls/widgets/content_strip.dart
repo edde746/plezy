@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/focus_theme.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_item.dart';
@@ -441,6 +442,7 @@ class ContentStripState extends State<ContentStrip> {
             borderRadius: 6,
             autoScroll: false,
             useBackgroundFocus: true,
+            focusColor: FocusTheme.onMediaFocusFill,
             child: item,
           ),
         );

@@ -3066,6 +3066,8 @@ class _Translations$explore$detail$pl extends Translations$explore$detail$en {
 	@override String get watchOn => 'Oglądaj na';
 	@override String get watchTrailer => 'Obejrzyj zwiastun';
 	@override String openOn({required Object site}) => 'Otwórz na ${site}';
+	@override String get trailerUnavailable => 'Nie udało się otworzyć zwiastuna na tym urządzeniu';
+	@override String get linkUnavailable => 'Nie udało się otworzyć linku na tym urządzeniu';
 	@override String get crew => 'Obsada i ekipa';
 	@override String get ratings => 'Oceny';
 	@override String get schedule => 'Harmonogram';
@@ -4861,6 +4863,8 @@ extension on TranslationsPl {
 			'explore.detail.watchOn' => 'Oglądaj na',
 			'explore.detail.watchTrailer' => 'Obejrzyj zwiastun',
 			'explore.detail.openOn' => ({required Object site}) => 'Otwórz na ${site}',
+			'explore.detail.trailerUnavailable' => 'Nie udało się otworzyć zwiastuna na tym urządzeniu',
+			'explore.detail.linkUnavailable' => 'Nie udało się otworzyć linku na tym urządzeniu',
 			'explore.detail.crew' => 'Obsada i ekipa',
 			'explore.detail.ratings' => 'Oceny',
 			'explore.detail.schedule' => 'Harmonogram',
@@ -4957,10 +4961,10 @@ extension on TranslationsPl {
 			'liveTv.recordSettings.skipInLibrary' => 'Pomijaj odcinki już obecne w bibliotece',
 			'liveTv.recordSettings.keepUpTo' => 'Odcinki do zachowania',
 			'liveTv.recordSettings.keepUpToHint' => '0 zachowuje wszystkie odcinki',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Rozpocznie się za ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} o ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Rozpocznie się za ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} o ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} zwrócił nieprawidłowe dane odtwarzania TV na żywo',
 			'liveTv.failedToStartChannel' => 'Nie udało się uruchomić kanału na żywo',
 			'liveTv.failedToBuildStreamUrl' => 'Nie udało się utworzyć adresu URL strumienia',
@@ -5471,10 +5475,10 @@ extension on TranslationsPl {
 			'performanceOverlay.decoderExynosHw' => 'Exynos (sprzętowy)',
 			'performanceOverlay.decoderSoftware' => 'Programowy',
 			'performanceOverlay.decoderHardware' => 'Sprzętowy',
-			'performanceOverlay.tunnelingActive' => 'Aktywne',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (niepowodzenia: ${failures})',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Aktywne',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (niepowodzenia: ${failures})',
 			'externalPlayer.title' => 'Zewnętrzny odtwarzacz',
 			'externalPlayer.useExternalPlayer' => 'Użyj zewnętrznego odtwarzacza',
 			'externalPlayer.useExternalPlayerDescription' => 'Otwieraj wideo w innej aplikacji',

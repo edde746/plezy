@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../utils/iphone_duo.dart';
 import '../utils/platform_detector.dart';
 
 /// Entry in the sheet page stack.
@@ -164,6 +165,9 @@ class OverlaySheetController {
         // here so the last row clears the home indicator / gesture nav bar.
         builder: (context) => SafeArea(top: false, child: builder(context)),
         constraints: effectiveConstraints,
+        // Beside iPhone Duo's vertical bar the hosted sheet ends at the bar
+        // (see _buildSheet); the route's safe area does the same here.
+        useSafeArea: IphoneDuo.verticalBarEdgeOf(context) != null,
         backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
         barrierColor: Colors.black54,
         isDismissible: barrierDismissible,
@@ -586,7 +590,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
                 ),
               ),
             ),
-            _buildSheet(context),
+            _avoidDisplayFeatures(context, _buildSheet(context)),
           ],
         ],
       ),
@@ -685,6 +689,72 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     );
   }
 
+  /// This host's top-left in the coordinate space of [MediaQueryData.displayFeatures]
+  /// (the view), as of the last layout.
+  Offset _hostOrigin() {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return Offset.zero;
+    return box.localToGlobal(Offset.zero);
+  }
+
+  /// Keeps the sheet off a fold or hinge (iPhone Duo held like a book, Android
+  /// foldables), as Flutter's dialogs and modal sheets do through
+  /// [DisplayFeatureSubScreen]: the sheet lays out in the sub-screen nearest
+  /// its anchored edge on the leading side. The barrier, focus scope and back
+  /// handling stay host-wide.
+  Widget _avoidDisplayFeatures(BuildContext context, Widget sheet) {
+    // Read the display features alone: the host otherwise depends only on the
+    // size, and the whole MediaQuery would rebuild it (and the open sheet) on
+    // every inset change, such as each frame of the keyboard animation.
+    final avoid = DisplayFeatureSubScreen.avoidBounds(
+      MediaQueryData(displayFeatures: MediaQuery.displayFeaturesOf(context)),
+    ).toList();
+    if (avoid.isEmpty) return sheet;
+
+    // Display features are in view coordinates; hosts are usually full-screen
+    // but not always. The origin comes from the previous layout, so re-check
+    // it once this frame has laid out (rotation, a bar changing sides).
+    final origin = _hostOrigin();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isOpen && _hostOrigin() != origin) setState(() {});
+    });
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bounds = Offset.zero & constraints.biggest;
+        final features = [
+          for (final feature in avoid)
+            if (feature.shift(-origin).overlaps(bounds)) feature.shift(-origin),
+        ];
+        if (features.isEmpty) return sheet;
+
+        final isRtl = Directionality.of(context) == TextDirection.rtl;
+        final anchor = Offset(isRtl ? bounds.right : bounds.left, _alignment.y < 0 ? bounds.top : bounds.bottom);
+        double distance(Rect rect) {
+          final dx = math.max(0.0, math.max(rect.left - anchor.dx, anchor.dx - rect.right));
+          final dy = math.max(0.0, math.max(rect.top - anchor.dy, anchor.dy - rect.bottom));
+          return dx * dx + dy * dy;
+        }
+
+        final area = DisplayFeatureSubScreen.subScreensInBounds(bounds, features)
+            .map((rect) => rect.intersect(bounds))
+            .where((rect) => !rect.isEmpty)
+            .fold<Rect?>(null, (best, rect) {
+              return best == null || distance(rect) < distance(best) ? rect : best;
+            });
+        if (area == null || area == bounds) return sheet;
+
+        // Insets only apply on the sides where the area meets the view edge.
+        final media = MediaQuery.of(context);
+        final inView = area.shift(origin).intersect(Offset.zero & media.size);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(area.left, area.top, bounds.right - area.right, bounds.bottom - area.bottom),
+          child: inView.isEmpty ? sheet : MediaQuery(data: media.removeDisplayFeatures(inView), child: sheet),
+        );
+      },
+    );
+  }
+
   Widget _buildSheet(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isDesktop = size.width > 600;
@@ -695,10 +765,14 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final effectiveConstraints = _constraints ?? OverlaySheetController._defaultSheetConstraints(context);
     // A sheet that spans the viewport keeps its surface (and drag handle)
     // full-bleed and pads only its pages by the side insets, like the modal
-    // fallback; otherwise an asymmetric inset (iPhone Duo's portrait sensor
-    // column) would leave it hugging one edge. A capped or edge-padded sheet
-    // floats and clears the insets instead.
-    final spansWidth = !isDesktop && effectiveConstraints.maxWidth >= size.width;
+    // fallback, rather than leaving the inset as an uncovered strip beside it.
+    // A capped or edge-padded sheet floats and clears the insets instead, and
+    // so does one beside iPhone Duo's vertical bar: the bar is chrome that
+    // content runs up to (status items, and the tab rail in the main shell),
+    // so a full-bleed surface would cover it with an empty block. Off iPhone
+    // Duo the bar check reads no MediaQuery inset.
+    final spansWidth =
+        !isDesktop && effectiveConstraints.maxWidth >= size.width && IphoneDuo.verticalBarEdgeOf(context) == null;
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker
@@ -714,6 +788,17 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Widget content = _pageStack.isNotEmpty ? _buildPageStack() : const SizedBox.shrink();
     // Keep sheet scrollables from attaching to the route's primary controller.
     content = PrimaryScrollController.none(child: content);
+    // The surface clears the inset on its anchored edge (the SafeArea below).
+    // The opposite edge lies inside the screen, so its inset (a status bar
+    // above a bottom sheet) must not reach the pages either: a list without
+    // explicit padding would pad itself by it. Flutter's modal bottom sheet
+    // removes it the same way. The Builder keeps the MediaQuery dependency
+    // off the host.
+    final pages = content;
+    content = Builder(
+      builder: (context) =>
+          MediaQuery.removePadding(context: context, removeTop: !isTop, removeBottom: isTop, child: pages),
+    );
     if (spansWidth) content = SafeArea(top: false, bottom: false, child: content);
 
     // Wrap content in NotificationListener for scroll-aware drag-to-dismiss

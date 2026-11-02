@@ -84,25 +84,33 @@ class FocusTheme {
   /// the overlay paint area so the blur is not clipped.
   static double get focusGlowExtent => focusGlowOuterBlurRadius * 2 + focusGlowSpreadRadius;
 
+  /// Translucent fill over video for on-media controls, which sit on dark
+  /// frames whatever the app theme is. Pass it as the wrapper's `focusColor`
+  /// together with `useBackgroundFocus`.
+  static const Color onMediaFocusFill = Color(0x33FFFFFF);
+
   /// Build focus decoration with background color instead of border.
-  /// Useful for video controls where it should match the native hover style.
+  ///
+  /// The fill derives from the theme's `onSurface` so it reads on light and
+  /// dark surfaces alike (a fixed white fill vanished on light themes, #2929).
+  /// [color] overrides it; over video use [onMediaFocusFill].
   /// [radii] overrides [borderRadius] when per-corner radii are needed.
-  static BoxDecoration focusBackgroundDecoration({
+  static BoxDecoration focusBackgroundDecoration(
+    BuildContext context, {
     required bool isFocused,
     double borderRadius = defaultBorderRadius,
     BorderRadius? radii,
+    Color? color,
   }) {
     return BoxDecoration(
       borderRadius: radii ?? BorderRadius.circular(borderRadius),
-      color: isFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+      color: isFocused ? color ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2) : Colors.transparent,
     );
   }
 
-  /// Focus background fill derived from the theme's text color, so it stays
-  /// visible on BOTH light and dark surfaces — the white-based
-  /// [focusBackgroundDecoration] disappears on light ones. This is the mono
-  /// convention used by [TrackRow], the navigation rail, and the music player
-  /// surfaces. Prefer this for any new mono-themed surface.
+  /// A subtler text-derived fill (12%, the theme's ListTile `focusColor`)
+  /// than [focusBackgroundDecoration]. This is the mono convention used by
+  /// [TrackRow], the navigation rail, and the music player surfaces.
   static BoxDecoration textFillFocusDecoration(
     BuildContext context, {
     required bool isFocused,

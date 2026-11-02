@@ -155,12 +155,14 @@ class FocusableWrapper extends StatefulWidget {
   /// Short press triggers [onSelect].
   final bool enableLongPress;
 
-  /// Whether to use background color instead of border for focus indicator.
-  /// Useful for video controls where outline doesn't look good.
+  /// Whether to use a translucent background fill instead of a border for the
+  /// focus indicator.
   final bool useBackgroundFocus;
 
-  /// Custom color for the focus border. Only used when [useBackgroundFocus] is false.
-  /// Useful for filled buttons where the default primary border blends in.
+  /// Custom focus color: the border color, or the fill when
+  /// [useBackgroundFocus] is set. Useful for filled buttons where the default
+  /// primary border blends in, and for controls over video, which pass
+  /// [FocusTheme.onMediaFocusFill] instead of the theme-derived fill.
   final Color? focusColor;
 
   /// Whether to disable the scale animation on focus.

@@ -706,8 +706,7 @@ class PlezyActivity : FlutterActivity() {
       manufacturer = Build.MANUFACTURER,
       isAndroidTv = isAndroidTv,
       sdkInt = Build.VERSION.SDK_INT,
-      supportsVulkan11 = isAndroidTv &&
-        packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11),
+      supportsVulkan11 = packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11),
       is64Bit = Process.is64Bit()
     )
   }

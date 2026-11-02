@@ -3033,6 +3033,8 @@ class _Translations$explore$detail$ja extends Translations$explore$detail$en {
 	@override String get watchOn => '視聴先';
 	@override String get watchTrailer => '予告編を見る';
 	@override String openOn({required Object site}) => '${site}で開く';
+	@override String get trailerUnavailable => 'この端末では予告編を開けませんでした';
+	@override String get linkUnavailable => 'この端末ではリンクを開けませんでした';
 	@override String get crew => 'スタッフ';
 	@override String get ratings => '評価';
 	@override String get schedule => '放送予定';
@@ -4825,6 +4827,8 @@ extension on TranslationsJa {
 			'explore.detail.watchOn' => '視聴先',
 			'explore.detail.watchTrailer' => '予告編を見る',
 			'explore.detail.openOn' => ({required Object site}) => '${site}で開く',
+			'explore.detail.trailerUnavailable' => 'この端末では予告編を開けませんでした',
+			'explore.detail.linkUnavailable' => 'この端末ではリンクを開けませんでした',
 			'explore.detail.crew' => 'スタッフ',
 			'explore.detail.ratings' => '評価',
 			'explore.detail.schedule' => '放送予定',
@@ -4921,10 +4925,10 @@ extension on TranslationsJa {
 			'liveTv.recordSettings.skipInLibrary' => 'ライブラリにあるエピソードをスキップ',
 			'liveTv.recordSettings.keepUpTo' => '保持するエピソード数',
 			'liveTv.recordSettings.keepUpToHint' => '0 ですべてのエピソードを保持',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}から無効なライブTV再生データが返されました',
 			'liveTv.failedToStartChannel' => 'ライブチャンネルを開始できませんでした',
 			'liveTv.failedToBuildStreamUrl' => 'ストリームURLを生成できませんでした',
@@ -5435,10 +5439,10 @@ extension on TranslationsJa {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'ソフトウェア',
 			'performanceOverlay.decoderHardware' => 'ハードウェア',
-			'performanceOverlay.tunnelingActive' => '有効',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => '有効',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			'externalPlayer.title' => '外部プレーヤー',
 			'externalPlayer.useExternalPlayer' => '外部プレーヤーを使用',
 			'externalPlayer.useExternalPlayerDescription' => '動画を別のアプリで開きます',

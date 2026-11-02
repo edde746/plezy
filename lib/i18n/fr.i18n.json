@@ -1599,6 +1599,8 @@
       "watchOn": "Regarder sur",
       "watchTrailer": "Regarder la bande-annonce",
       "openOn": "Ouvrir sur ${site}",
+      "trailerUnavailable": "Impossible d’ouvrir la bande-annonce sur cet appareil",
+      "linkUnavailable": "Impossible d’ouvrir ce lien sur cet appareil",
       "crew": "Équipe",
       "ratings": "Notes",
       "schedule": "Programme",

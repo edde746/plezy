@@ -1599,6 +1599,8 @@
       "watchOn": "Se på",
       "watchTrailer": "Se trailer",
       "openOn": "Åbn på ${site}",
+      "trailerUnavailable": "Kunne ikke åbne traileren på denne enhed",
+      "linkUnavailable": "Kunne ikke åbne linket på denne enhed",
       "crew": "Stab",
       "ratings": "Bedømmelser",
       "schedule": "Program",

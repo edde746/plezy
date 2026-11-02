@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../focus/focus_theme.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_source_info.dart';
@@ -64,6 +65,7 @@ class SkipMarkerButton extends StatelessWidget {
       onSelect: _activate,
       borderRadius: tokens(context).radiusSm,
       useBackgroundFocus: true,
+      focusColor: FocusTheme.onMediaFocusFill,
       autoScroll: false,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {

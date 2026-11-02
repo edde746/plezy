@@ -3044,6 +3044,8 @@ class _Translations$explore$detail$uz extends Translations$explore$detail$en {
 	@override String get watchOn => 'Tomosha qilish';
 	@override String get watchTrailer => 'Treylerni koʻrish';
 	@override String openOn({required Object site}) => '${site} da ochish';
+	@override String get trailerUnavailable => 'Bu qurilmada treylerni ochib boʻlmadi';
+	@override String get linkUnavailable => 'Bu qurilmada havolani ochib boʻlmadi';
 	@override String get crew => 'Jamoa';
 	@override String get ratings => 'Baholar';
 	@override String get schedule => 'Jadval';
@@ -4837,6 +4839,8 @@ extension on TranslationsUz {
 			'explore.detail.watchOn' => 'Tomosha qilish',
 			'explore.detail.watchTrailer' => 'Treylerni koʻrish',
 			'explore.detail.openOn' => ({required Object site}) => '${site} da ochish',
+			'explore.detail.trailerUnavailable' => 'Bu qurilmada treylerni ochib boʻlmadi',
+			'explore.detail.linkUnavailable' => 'Bu qurilmada havolani ochib boʻlmadi',
 			'explore.detail.crew' => 'Jamoa',
 			'explore.detail.ratings' => 'Baholar',
 			'explore.detail.schedule' => 'Jadval',
@@ -4933,10 +4937,10 @@ extension on TranslationsUz {
 			'liveTv.recordSettings.skipInLibrary' => 'Kutubxonada mavjud epizodlarni oʻtkazib yuborish',
 			'liveTv.recordSettings.keepUpTo' => 'Saqlanadigan epizodlar',
 			'liveTv.recordSettings.keepUpToHint' => '0 barcha epizodlarni saqlaydi',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, soat ${time} da',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, soat ${time} da',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi',
 			'liveTv.failedToStartChannel' => 'Jonli kanalni boshlab boʻlmadi',
 			'liveTv.failedToBuildStreamUrl' => 'Oqim URL-ini tuzib boʻlmadi',
@@ -5447,10 +5451,10 @@ extension on TranslationsUz {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Dasturiy',
 			'performanceOverlay.decoderHardware' => 'Apparat',
-			'performanceOverlay.tunnelingActive' => 'Faol',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Faol',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)',
 			'externalPlayer.title' => 'Tashqi pleyer',
 			'externalPlayer.useExternalPlayer' => 'Tashqi pleyerdan foydalanish',
 			'externalPlayer.useExternalPlayerDescription' => 'Videolarni boshqa ilovada ochish',
