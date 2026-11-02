@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show DisplayFeature, DisplayFeatureState, DisplayFeatureType;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -835,6 +836,111 @@ void main() {
       expect(find.text('SHEET'), findsNothing);
       expect(find.text('Open'), findsOneWidget);
       expect(backs, 0);
+    });
+  });
+
+  group('display features', () {
+    // iPhone Duo's inner display, measured on the simulator (iOS 27.1).
+    const fold = Rect.fromLTWH(455.5, 0, 40, 669);
+    const landscape = Size(951, 669);
+
+    Future<void> openSheet(
+      WidgetTester tester, {
+      required Size size,
+      required List<Rect> folds,
+      FakeViewPadding padding = FakeViewPadding.zero,
+      TextDirection direction = TextDirection.ltr,
+      double hostInset = 0,
+      int rows = 3,
+    }) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      tester.view.padding = padding;
+      tester.view.displayFeatures = [
+        for (final bounds in folds)
+          DisplayFeature(bounds: bounds, type: DisplayFeatureType.fold, state: DisplayFeatureState.postureFlat),
+      ];
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.android),
+          builder: (context, child) => Directionality(textDirection: direction, child: child!),
+          home: Row(
+            children: [
+              SizedBox(width: hostInset),
+              Expanded(
+                child: OverlaySheetHost(
+                  child: Scaffold(
+                    body: Center(
+                      child: Builder(
+                        builder: (context) => ElevatedButton(
+                          onPressed: () => OverlaySheetController.of(context).show<void>(
+                            builder: (_) => ListView(
+                              key: const ValueKey('sheet'),
+                              shrinkWrap: true,
+                              children: [for (var i = 0; i < rows; i++) ListTile(title: Text('Row $i'))],
+                            ),
+                          ),
+                          child: const Text('Open'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+
+    Rect sheetRect(WidgetTester tester) =>
+        tester.getRect(find.ancestor(of: find.byKey(const ValueKey('sheet')), matching: find.byType(Material)).first);
+
+    testWidgets('a vertical fold keeps the sheet on the leading side', (tester) async {
+      await openSheet(tester, size: landscape, folds: [fold], padding: const FakeViewPadding(right: 84, bottom: 20));
+      final sheet = sheetRect(tester);
+      expect(sheet.left, greaterThanOrEqualTo(0));
+      expect(sheet.right, lessThanOrEqualTo(fold.left));
+      expect(sheet.bottom, landscape.height);
+
+      // The barrier still covers the whole host, the far side included.
+      await tester.tapAt(const Offset(700, 100));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('sheet')), findsNothing);
+    });
+
+    testWidgets('right-to-left puts the sheet right of the fold', (tester) async {
+      await openSheet(tester, size: landscape, folds: [fold], direction: TextDirection.rtl);
+      final sheet = sheetRect(tester);
+      expect(sheet.left, greaterThanOrEqualTo(fold.right));
+      expect(sheet.right, lessThanOrEqualTo(landscape.width));
+    });
+
+    testWidgets('a horizontal fold keeps a bottom sheet below it', (tester) async {
+      await openSheet(tester, size: const Size(669, 951), folds: const [Rect.fromLTWH(0, 455.5, 669, 40)], rows: 40);
+      final sheet = sheetRect(tester);
+      expect(sheet.top, greaterThanOrEqualTo(495.5));
+      expect(sheet.bottom, 951);
+    });
+
+    testWidgets('a host that does not start at the view origin maps the fold into its own space', (tester) async {
+      await openSheet(tester, size: landscape, folds: [fold], hostInset: 84);
+      final sheet = sheetRect(tester);
+      expect(sheet.left, greaterThanOrEqualTo(84));
+      expect(sheet.right, lessThanOrEqualTo(fold.left));
+    });
+
+    testWidgets('without a fold the sheet stays centred', (tester) async {
+      await openSheet(tester, size: landscape, folds: const []);
+      final sheet = sheetRect(tester);
+      expect(sheet.center.dx, closeTo(landscape.width / 2, 0.5));
+      expect(sheet.left, lessThan(fold.left));
+      expect(sheet.right, greaterThan(fold.right));
     });
   });
 }

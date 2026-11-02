@@ -45,6 +45,7 @@ import 'services/settings_service.dart';
 import 'services/agent_control_service.dart';
 import 'widgets/agent_control_scope.dart';
 import 'widgets/settings_builder.dart';
+import 'utils/iphone_duo.dart';
 import 'utils/platform_detector.dart';
 import 'utils/pointer_scroll_axis.dart';
 import 'services/apple_tv_remote_touch_service.dart';
@@ -2024,10 +2025,12 @@ class _AppShell extends StatelessWidget {
 /// below would leave global snackbars at the car's native density while the rest of the
 /// interface grew.
 Widget rootShell(Widget? child) {
-  return FormFactorScale(
-    child: ScaffoldMessenger(
-      key: rootScaffoldMessengerKey,
-      child: Scaffold(backgroundColor: Colors.transparent, body: child),
+  return IphoneDuoScope(
+    child: FormFactorScale(
+      child: ScaffoldMessenger(
+        key: rootScaffoldMessengerKey,
+        child: Scaffold(backgroundColor: Colors.transparent, body: child),
+      ),
     ),
   );
 }
