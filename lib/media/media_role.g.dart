@@ -11,6 +11,7 @@ MediaRole _$MediaRoleFromJson(Map<String, dynamic> json) => MediaRole(
   tag: stringOrEmpty(json['tag']),
   role: json['role'] as String?,
   thumbPath: json['thumbPath'] as String?,
+  personKey: json['personKey'] as String?,
 );
 
 Map<String, dynamic> _$MediaRoleToJson(MediaRole instance) => <String, dynamic>{
@@ -18,4 +19,5 @@ Map<String, dynamic> _$MediaRoleToJson(MediaRole instance) => <String, dynamic>{
   'tag': instance.tag,
   'role': ?instance.role,
   'thumbPath': ?instance.thumbPath,
+  'personKey': ?instance.personKey,
 };

@@ -349,6 +349,7 @@ Future<void> navigateToPersonMedia(
   BuildContext context, {
   required String personId,
   required String name,
+  String? personKey,
   String? thumbPath,
   String? characterName,
   required String serverId,
@@ -361,6 +362,7 @@ Future<void> navigateToPersonMedia(
       builder: (_) => ActorMediaScreen(
         actorName: name,
         personId: personId,
+        personKey: personKey,
         actorThumb: thumbPath,
         characterName: characterName,
         serverId: serverId,

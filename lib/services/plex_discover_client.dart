@@ -62,6 +62,24 @@ class PlexDiscoverHub {
   });
 }
 
+/// One `role`+item pair from a person's `/credits` filmography.
+class PlexDiscoverCredit {
+  final String? role;
+  final Map<String, dynamic> metadata;
+
+  const PlexDiscoverCredit({this.role, required this.metadata});
+}
+
+/// One department group from a person's `/credits` filmography (Actor,
+/// Appearances, Director, Producer, Writer, …), as Discover groups it.
+class PlexDiscoverCreditGroup {
+  final String title;
+  final String? type;
+  final List<PlexDiscoverCredit> credits;
+
+  const PlexDiscoverCreditGroup({required this.title, this.type, required this.credits});
+}
+
 class PlexDiscoverException implements Exception {
   final int statusCode;
   final String message;
@@ -289,6 +307,46 @@ class PlexDiscoverClient {
     );
     if (data == null) return null;
     return firstFlexibleMap(_mediaContainer(data)['Metadata']);
+  }
+
+  /// The person's "Known For" shelf — Discover's own curated highlight reel,
+  /// distinct from (and usually much shorter than) the full [getPersonCredits]
+  /// filmography.
+  Future<PlexDiscoverPage> getPersonKnownFor(String personId, {int limit = 24}) async {
+    final safeLimit = limit.clamp(1, 100);
+    final data = await _request(
+      'GET',
+      '/library/people/${Uri.encodeComponent(personId)}/person_known_for',
+      query: {'includeMeta': 1, 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': safeLimit},
+      allowNotFound: true,
+    );
+    if (data == null) return const PlexDiscoverPage(items: []);
+    final container = _mediaContainer(data);
+    final items = flexibleMapList(container['Metadata']);
+    final total = flexibleInt(container['totalSize']) ?? items.length;
+    return PlexDiscoverPage(items: items, hasMore: items.length < total, totalResults: total);
+  }
+
+  /// The person's full filmography, grouped by department (Actor,
+  /// Appearances, Director, Producer, Writer, …) exactly as Discover groups
+  /// it — order and grouping are the provider's, not re-derived here.
+  Future<List<PlexDiscoverCreditGroup>> getPersonCredits(String personId) async {
+    final data = await _request('GET', '/library/people/${Uri.encodeComponent(personId)}/credits', allowNotFound: true);
+    if (data == null) return const [];
+    final container = _mediaContainer(data);
+    return [
+      for (final group in flexibleMapList(container['CreditGroup']))
+        if (_nonEmptyString(group['title']) case final String title)
+          PlexDiscoverCreditGroup(
+            title: title,
+            type: _nonEmptyString(group['type']),
+            credits: [
+              for (final credit in flexibleMapList(group['Credit']))
+                if (firstFlexibleMap(credit['Metadata']) case final Map<String, dynamic> metadata)
+                  PlexDiscoverCredit(role: _nonEmptyString(credit['role']), metadata: metadata),
+            ],
+          ),
+    ];
   }
 
   Future<Map<String, dynamic>?> getMetadata(String ratingKey) async {
