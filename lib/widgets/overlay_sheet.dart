@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../utils/iphone_duo.dart';
 import '../utils/platform_detector.dart';
 
 /// Entry in the sheet page stack.
@@ -164,6 +165,9 @@ class OverlaySheetController {
         // here so the last row clears the home indicator / gesture nav bar.
         builder: (context) => SafeArea(top: false, child: builder(context)),
         constraints: effectiveConstraints,
+        // Beside iPhone Duo's vertical bar the hosted sheet ends at the bar
+        // (see _buildSheet); the route's safe area does the same here.
+        useSafeArea: IphoneDuo.verticalBarEdgeOf(context) != null,
         backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
         barrierColor: Colors.black54,
         isDismissible: barrierDismissible,
@@ -761,10 +765,14 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final effectiveConstraints = _constraints ?? OverlaySheetController._defaultSheetConstraints(context);
     // A sheet that spans the viewport keeps its surface (and drag handle)
     // full-bleed and pads only its pages by the side insets, like the modal
-    // fallback; otherwise an asymmetric inset (iPhone Duo's portrait sensor
-    // column) would leave it hugging one edge. A capped or edge-padded sheet
-    // floats and clears the insets instead.
-    final spansWidth = !isDesktop && effectiveConstraints.maxWidth >= size.width;
+    // fallback, rather than leaving the inset as an uncovered strip beside it.
+    // A capped or edge-padded sheet floats and clears the insets instead, and
+    // so does one beside iPhone Duo's vertical bar: the bar is chrome that
+    // content runs up to (status items, and the tab rail in the main shell),
+    // so a full-bleed surface would cover it with an empty block. Off iPhone
+    // Duo the bar check reads no MediaQuery inset.
+    final spansWidth =
+        !isDesktop && effectiveConstraints.maxWidth >= size.width && IphoneDuo.verticalBarEdgeOf(context) == null;
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker
@@ -780,6 +788,17 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Widget content = _pageStack.isNotEmpty ? _buildPageStack() : const SizedBox.shrink();
     // Keep sheet scrollables from attaching to the route's primary controller.
     content = PrimaryScrollController.none(child: content);
+    // The surface clears the inset on its anchored edge (the SafeArea below).
+    // The opposite edge lies inside the screen, so its inset (a status bar
+    // above a bottom sheet) must not reach the pages either: a list without
+    // explicit padding would pad itself by it. Flutter's modal bottom sheet
+    // removes it the same way. The Builder keeps the MediaQuery dependency
+    // off the host.
+    final pages = content;
+    content = Builder(
+      builder: (context) =>
+          MediaQuery.removePadding(context: context, removeTop: !isTop, removeBottom: isTop, child: pages),
+    );
     if (spansWidth) content = SafeArea(top: false, bottom: false, child: content);
 
     // Wrap content in NotificationListener for scroll-aware drag-to-dismiss

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/utils/iphone_duo.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/bottom_sheet_header.dart';
 import 'package:plezy/widgets/bottom_sheet_page_scaffold.dart';
@@ -837,6 +838,113 @@ void main() {
       expect(find.text('Open'), findsOneWidget);
       expect(backs, 0);
     });
+  });
+
+  group('safe-area insets', () {
+    // iPhone Duo's outer display in portrait: the vertical bar is the 84pt
+    // right inset.
+    const portrait = Size(400, 600);
+    const barPadding = FakeViewPadding(right: 84, bottom: 20);
+
+    Future<void> openSheet(
+      WidgetTester tester, {
+      required Size size,
+      required FakeViewPadding padding,
+      VerticalBarEdge? verticalBarEdge,
+      bool hosted = true,
+      Alignment alignment = Alignment.bottomCenter,
+    }) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      tester.view.padding = padding;
+      addTearDown(tester.view.reset);
+      IphoneDuo.instance.state.value = IphoneDuoState(verticalBarEdge: verticalBarEdge);
+      addTearDown(() => IphoneDuo.instance.state.value = IphoneDuoState.empty);
+
+      // A header above a list without explicit padding, like the player's
+      // settings sheet.
+      Widget page(BuildContext context) => Column(
+        key: const ValueKey('page'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(key: ValueKey('header'), height: 56),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [for (var i = 0; i < 3; i++) ListTile(key: ValueKey('row$i'), title: Text('Row $i'))],
+            ),
+          ),
+        ],
+      );
+      final opener = Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () => OverlaySheetController.showAdaptive<void>(context, builder: page, alignment: alignment),
+          child: const Text('Open'),
+        ),
+      );
+      final screen = Scaffold(body: Center(child: opener));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.android),
+          builder: (context, child) => IphoneDuoScope(child: child!),
+          home: hosted ? OverlaySheetHost(child: screen) : screen,
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+
+    Rect surfaceRect(WidgetTester tester) =>
+        tester.getRect(find.ancestor(of: find.byKey(const ValueKey('page')), matching: find.byType(Material)).first);
+    Rect rect(WidgetTester tester, String key) => tester.getRect(find.byKey(ValueKey(key)));
+
+    testWidgets('a bottom sheet keeps the top inset out of its pages', (tester) async {
+      // The player disables the vertical bar, which moves the status bar to
+      // the top of the landscape display.
+      await openSheet(tester, size: const Size(951, 669), padding: const FakeViewPadding(top: 84, bottom: 20));
+      expect(rect(tester, 'row0').top, rect(tester, 'header').bottom);
+      expect(rect(tester, 'row2').bottom, 669 - 20);
+    });
+
+    testWidgets('a top sheet keeps the bottom inset out of its pages', (tester) async {
+      await openSheet(
+        tester,
+        size: const Size(400, 800),
+        padding: const FakeViewPadding(top: 50, bottom: 34),
+        alignment: Alignment.topCenter,
+      );
+      expect(rect(tester, 'header').top, 50);
+      expect(rect(tester, 'row2').bottom, surfaceRect(tester).bottom);
+    });
+
+    testWidgets('without the vertical bar a full-width sheet stays full-bleed and insets its rows', (tester) async {
+      await openSheet(tester, size: portrait, padding: barPadding);
+      final surface = surfaceRect(tester);
+      expect(surface.left, 0);
+      expect(surface.right, portrait.width);
+      expect(rect(tester, 'row0').right, portrait.width - 84);
+    });
+
+    for (final hosted in [true, false]) {
+      testWidgets('a full-width sheet ends at the vertical bar (${hosted ? 'hosted' : 'modal fallback'})', (
+        tester,
+      ) async {
+        await openSheet(
+          tester,
+          size: portrait,
+          padding: barPadding,
+          verticalBarEdge: VerticalBarEdge.right,
+          hosted: hosted,
+        );
+        final surface = surfaceRect(tester);
+        expect(surface.left, 0);
+        expect(surface.right, portrait.width - 84);
+        expect(rect(tester, 'row0').left, surface.left);
+        expect(rect(tester, 'row0').right, surface.right);
+      });
+    }
   });
 
   group('display features', () {
