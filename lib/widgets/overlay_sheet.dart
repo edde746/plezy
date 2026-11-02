@@ -699,8 +699,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   /// its anchored edge on the leading side. The barrier, focus scope and back
   /// handling stay host-wide.
   Widget _avoidDisplayFeatures(BuildContext context, Widget sheet) {
-    final media = MediaQuery.of(context);
-    final avoid = DisplayFeatureSubScreen.avoidBounds(media).toList();
+    // Read the display features alone: the host otherwise depends only on the
+    // size, and the whole MediaQuery would rebuild it (and the open sheet) on
+    // every inset change, such as each frame of the keyboard animation.
+    final avoid = DisplayFeatureSubScreen.avoidBounds(
+      MediaQueryData(displayFeatures: MediaQuery.displayFeaturesOf(context)),
+    ).toList();
     if (avoid.isEmpty) return sheet;
 
     // Display features are in view coordinates; hosts are usually full-screen
@@ -737,6 +741,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         if (area == null || area == bounds) return sheet;
 
         // Insets only apply on the sides where the area meets the view edge.
+        final media = MediaQuery.of(context);
         final inView = area.shift(origin).intersect(Offset.zero & media.size);
         return Padding(
           padding: EdgeInsets.fromLTRB(area.left, area.top, bounds.right - area.right, bounds.bottom - area.bottom),
