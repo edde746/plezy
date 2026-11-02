@@ -1772,6 +1772,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _claimDownloadForProfile(globalKey, ownership, client);
     if (!_isQueueOwnershipCurrent(ownership)) return false;
 
+    final previousProgress = _downloads[globalKey];
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
     safeNotifyListeners();
 
@@ -1782,6 +1783,17 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       mediaIndex: resolvedIndex,
       userInitiated: userInitiated,
     );
+    if (storedMetadata == null) {
+      // Storage stopped the queue during the awaits above and the manager
+      // left the row as it was; show it that way again (#2876).
+      if (previousProgress == null) {
+        _downloads.remove(globalKey);
+      } else {
+        _downloads[globalKey] = previousProgress;
+      }
+      safeNotifyListeners();
+      return false;
+    }
     // The manager may have stamped library identity during the enqueue; keep
     // the hydrated item and the row-derived map in sync with what was stored.
     if (!identical(storedMetadata, metadataToStore)) {
