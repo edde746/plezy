@@ -6,6 +6,7 @@ import MediaPlayer
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private var deviceAdjustmentChannel: FlutterMethodChannel?
+  private var backupExclusionChannel: FlutterMethodChannel?
   /// The screen whose brightness the player changed, and the level to restore
   /// on it. Tracked per screen because iPhone Duo moves the app between its
   /// outer and inner displays when folded or unfolded (#2861).
@@ -59,6 +60,10 @@ import MediaPlayer
       registerDeviceAdjustmentChannel(messenger: registrar.messenger())
     }
 
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "BackupExclusionChannel") {
+      registerBackupExclusionChannel(messenger: registrar.messenger())
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AppIconPlugin") {
       AppIconPlugin.register(with: registrar)
     }
@@ -76,6 +81,33 @@ import MediaPlayer
       }
     }
     deviceAdjustmentChannel = channel
+  }
+
+  /// Marks a directory excluded from iCloud Backup. Downloads live in
+  /// `Documents`, which is backed up by default (#2958); a directory's mark
+  /// covers everything stored in it later.
+  private func registerBackupExclusionChannel(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "com.plezy/backup_exclusion", binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "excludeFromBackup" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let path = call.arguments as? String, !path.isEmpty else {
+        result(FlutterError(code: "INVALID_ARGUMENT", message: "Expected a directory path", details: nil))
+        return
+      }
+      var url = URL(fileURLWithPath: path, isDirectory: true)
+      var values = URLResourceValues()
+      values.isExcludedFromBackup = true
+      do {
+        try url.setResourceValues(values)
+        result(nil)
+      } catch {
+        result(FlutterError(code: "EXCLUDE_FROM_BACKUP_FAILED", message: error.localizedDescription, details: nil))
+      }
+    }
+    backupExclusionChannel = channel
   }
 
   private func handleDeviceAdjustmentCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
