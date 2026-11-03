@@ -5162,11 +5162,31 @@ class PlexClient
     );
     var url = playbackData.videoUrl!;
     if (sessionIdentifier != null) {
-      // Append identity without parsing/re-encoding the existing query: part
-      // URLs can carry repeated parameters or signatures over their raw value.
+      // Replace only identity parameters without re-encoding the other query
+      // pairs: part URLs can carry repeated parameters or raw signed values.
       final fragmentIndex = url.indexOf('#');
       final fragment = fragmentIndex < 0 ? '' : url.substring(fragmentIndex);
-      final base = fragmentIndex < 0 ? url : url.substring(0, fragmentIndex);
+      var base = fragmentIndex < 0 ? url : url.substring(0, fragmentIndex);
+      final queryIndex = base.indexOf('?');
+      if (queryIndex >= 0) {
+        final pairs = base.substring(queryIndex + 1).split('&');
+        final retained = pairs.where((pair) {
+          final equalsIndex = pair.indexOf('=');
+          final rawKey = equalsIndex < 0 ? pair : pair.substring(0, equalsIndex);
+          try {
+            final key = Uri.decodeQueryComponent(rawKey).toLowerCase();
+            return key != 'x-plex-session-identifier' && key != 'x-plex-client-identifier';
+          } on FormatException {
+            return true;
+          } on ArgumentError {
+            // Invalid percent escapes are reported as ArgumentError by Uri.
+            return true;
+          }
+        }).toList();
+        if (retained.length != pairs.length) {
+          base = '${base.substring(0, queryIndex)}${retained.isEmpty ? '' : '?${retained.join('&')}'}';
+        }
+      }
       final identityQuery = Uri(
         queryParameters: {
           'X-Plex-Session-Identifier': sessionIdentifier,

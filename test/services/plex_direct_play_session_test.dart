@@ -429,6 +429,32 @@ void main() {
     expect(Uri.parse(target.url).queryParameters['X-Plex-Token'], 'part/token');
   });
 
+  test('external handoff replaces stale identity pairs without changing unrelated raw query pairs', () async {
+    const originalQuery =
+        'option=a&X-Plex-Session-Identifier=old-session&option=b&'
+        'X%2dPlex%2dClient%2dIdentifier=old-client&signed=a%2fb%3D%2B+z&'
+        'X%2dPlex%2dSession%2dIdentifier=another-session&X-Plex-Client-Identifier=another-client&'
+        'X-Plex-Token=part%2Ftoken&bad%ZZkey=unchanged&bad%FFkey=unchanged';
+    const retainedQuery =
+        'option=a&option=b&signed=a%2fb%3D%2B+z&'
+        'X-Plex-Token=part%2Ftoken&bad%ZZkey=unchanged&bad%FFkey=unchanged';
+    const fragment = '#chapter%2f1';
+    (media[1]['Part'] as List<Map<String, Object>>).single['key'] =
+        '/library/parts/200/file.mkv?$originalQuery$fragment';
+    final target = (await client(token: null).resolveExternalPlayback(testMediaItem(id: '42')))!;
+    final identityQuery = Uri(
+      queryParameters: {'X-Plex-Session-Identifier': target.playSessionId!, 'X-Plex-Client-Identifier': 'test-client'},
+    ).query;
+
+    expect(target.url, 'https://plex.example.com/library/parts/200/file.mkv?$retainedQuery&$identityQuery$fragment');
+    // Check raw pairs because unrelated malformed percent escapes are preserved.
+    final pairs = target.url.split('?').last.split('#').first.split('&');
+    expect(pairs.where((pair) => pair.startsWith('X-Plex-Session-Identifier=')), hasLength(1));
+    expect(pairs.where((pair) => pair.startsWith('X-Plex-Client-Identifier=')), hasLength(1));
+    expect(target.url, isNot(contains('old-session')));
+    expect(target.url, isNot(contains('old-client')));
+  });
+
   test('external handoff selects the requested version and carries matching session/client query IDs', () async {
     media[2] = _media(30, [_part(300)]);
     final plex = client(
