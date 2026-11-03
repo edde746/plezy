@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../focus/dpad_navigator.dart';
+import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focusable_tile_mixin.dart';
 import '../utils/platform_detector.dart';
 import 'clickable_cursor.dart';
@@ -63,14 +66,53 @@ class FocusableListTile extends StatefulWidget {
 }
 
 class _FocusableListTileState extends State<FocusableListTile> with FocusableTileStateMixin<FocusableListTile> {
+  final _selectLongPress = DpadSelectLongPressController();
+
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
+
+  @override
+  void dispose() {
+    _selectLongPress.dispose();
+    super.dispose();
+  }
+
+  /// Material's [ListTile.onLongPress] is touch-only, so a remote/keyboard
+  /// could never reach it. When a long-press action exists, hold SELECT (or
+  /// press the context-menu key) triggers it and a short SELECT still taps.
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    final onLongPress = widget.onLongPress;
+    if (onLongPress == null || !widget.enabled || !effectiveFocusNode.hasFocus) {
+      return KeyEventResult.ignored;
+    }
+
+    if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      if (event is KeyUpEvent && event.logicalKey.isSelectKey) _selectLongPress.reset();
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey.isSelectKey) {
+      return _selectLongPress.handleKeyEvent(
+        event,
+        isOwnerActive: () => mounted,
+        onShortPress: () => widget.onTap?.call(),
+        onLongPress: onLongPress,
+      );
+    }
+
+    if (event.isActionable && event.logicalKey.isContextMenuKey) {
+      _selectLongPress.reset();
+      onLongPress();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
 
   @override
   Widget build(BuildContext context) {
     final automotive = PlatformDetector.isAutomotive();
 
-    return MouseRegion(
+    final tile = MouseRegion(
       cursor: widget.enabled && (widget.onTap != null || widget.onLongPress != null)
           ? SystemMouseCursors.click
           : MouseCursor.defer,
@@ -92,6 +134,9 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
         minLeadingWidth: widget.minLeadingWidth,
       ),
     );
+
+    if (widget.onLongPress == null) return tile;
+    return Focus(canRequestFocus: false, skipTraversal: true, onKeyEvent: _handleKeyEvent, child: tile);
   }
 }
 

@@ -141,4 +141,50 @@ void main() {
     expect(bottomNode.hasFocus, isTrue);
     expect(controller.offset, greaterThan(0));
   });
+
+  group('onLongPress via D-pad', () {
+    Future<(FocusNode, List<String>)> pumpTile(WidgetTester tester) async {
+      final node = FocusNode(debugLabel: 'long-press tile');
+      addTearDown(node.dispose);
+      final events = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FocusableListTile(
+              focusNode: node,
+              title: const Text('Track'),
+              onTap: () => events.add('tap'),
+              onLongPress: () => events.add('long'),
+            ),
+          ),
+        ),
+      );
+      node.requestFocus();
+      await tester.pump();
+      return (node, events);
+    }
+
+    testWidgets('short SELECT taps once', (tester) async {
+      final (_, events) = await pumpTile(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+      expect(events, ['tap']);
+    });
+
+    testWidgets('holding SELECT long-presses without a tap', (tester) async {
+      final (_, events) = await pumpTile(tester);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+      expect(events, ['long']);
+    });
+
+    testWidgets('context-menu key long-presses', (tester) async {
+      final (_, events) = await pumpTile(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
+      await tester.pump();
+      expect(events, ['long']);
+    });
+  });
 }
