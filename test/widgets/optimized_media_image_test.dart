@@ -879,4 +879,59 @@ void main() {
     expect(resizeProvider.width, 400);
     expect(resizeProvider.height, 600);
   });
+
+  testWidgets('thumb artwork clamps width to height aspect limit before taking max', (tester) async {
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.display.size = const Size(1920, 1080);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.display.reset();
+    });
+
+    final sizeNotifier = ValueNotifier<Size>(const Size(300, 300));
+    addTearDown(sizeNotifier.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: ValueListenableBuilder<Size>(
+            valueListenable: sizeNotifier,
+            builder: (context, size, _) => SizedBox(
+              width: size.width,
+              height: size.height,
+              child: const OptimizedMediaImage(
+                imagePath: 'https://jf.example/Items/1/Images/Primary?api_key=token',
+                imageType: ImageType.thumb,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Initial 300x300 layout @ 1.5 fetch density produces bucket 480x480
+    var image = tester.widget<Image>(find.byType(Image));
+    var resizeProvider = image.image as ResizeImage;
+    var cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+    expect(cachedProvider.url, contains('maxWidth=480&maxHeight=480'));
+    expect(resizeProvider.width, 480);
+    expect(resizeProvider.height, 480);
+
+    // Resize to 900x200: width expands, height shrinks (axes diverge).
+    // Raw logical max would give 900x300, lifting the 16/9 cap to request 800x480.
+    // Clamping width to height * 16/9 before taking max gives 355.5x300 -> 560x480.
+    sizeNotifier.value = const Size(900, 200);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    image = tester.widget<Image>(find.byType(Image));
+    resizeProvider = image.image as ResizeImage;
+    cachedProvider = resizeProvider.imageProvider as CachedNetworkImageProvider;
+
+    expect(cachedProvider.url, contains('maxWidth=560&maxHeight=480'));
+    expect(resizeProvider.width, 560);
+    expect(resizeProvider.height, 480);
+  });
 }

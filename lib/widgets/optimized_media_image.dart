@@ -404,7 +404,7 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
                   _committedHeight = _pendingHeight;
                 } else {
                   // If target bucket is >= committed bucket on both axes, commit new size as-is.
-                  // Only fall back to per-axis max when axis buckets diverge (logo/art).
+                  // Only fall back to per-axis max when axis buckets diverge (logo/thumb).
                   final (committedBw, committedBh) = MediaImageHelper.calculateOptimalDimensions(
                     maxWidth: _committedWidth!,
                     maxHeight: _committedHeight!,
@@ -420,6 +420,14 @@ class _OptimizedMediaImageState extends State<OptimizedMediaImage> {
                   if (pendingBw >= committedBw && pendingBh >= committedBh) {
                     _committedWidth = _pendingWidth;
                     _committedHeight = _pendingHeight;
+                  } else if (widget.imageType == ImageType.thumb) {
+                    // For thumb, width is capped by height * 16/9. Clamp each layout's width
+                    // to its height cap before taking the max, so expanding width on a shorter
+                    // layout does not lift the cap and over-fetch when combined with retained height.
+                    final committedThumbWidth = math.min(_committedWidth!, _committedHeight! * (16 / 9));
+                    final pendingThumbWidth = math.min(_pendingWidth!, _pendingHeight! * (16 / 9));
+                    _committedWidth = math.max(committedThumbWidth, pendingThumbWidth);
+                    _committedHeight = math.max(_committedHeight!, _pendingHeight!);
                   } else {
                     _committedWidth = math.max(_committedWidth!, _pendingWidth!);
                     _committedHeight = math.max(_committedHeight!, _pendingHeight!);
