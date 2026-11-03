@@ -3783,7 +3783,7 @@ class PlexClient
             );
           }
 
-          return _transcodeFallbackResult(data, result.outcome, options);
+          return await _transcodeFallbackResult(data, result.outcome, options);
         }
 
         final resolvedAudioId = carriedAudioTrack == null
@@ -3829,10 +3829,11 @@ class PlexClient
         }
 
         if (options.forceTranscode) throw _forcedTranscodeUnavailable(result.outcome);
-        return _transcodeFallbackResult(data, result.outcome, options, activeAudioStreamId: carriedAudioStreamId);
+        return await _transcodeFallbackResult(data, result.outcome, options, activeAudioStreamId: carriedAudioStreamId);
       }
       if (options.forceTranscode && !isTrack) throw _forcedTranscodeUnavailable(null);
 
+      await _registerDirectVideoSession(data, options);
       return PlaybackInitializationResult(
         availableVersions: data.availableVersions,
         videoUrl: _trackStreamUrl(data.videoUrl, options),
@@ -3907,12 +3908,13 @@ class PlexClient
   /// said direct-play only), surfacing the reason so the UI can notify the
   /// user. Shared by the video and music branches of
   /// [getPlaybackInitialization].
-  PlaybackInitializationResult _transcodeFallbackResult(
+  Future<PlaybackInitializationResult> _transcodeFallbackResult(
     PlexVideoPlaybackData data,
     TranscodeDecisionOutcome outcome,
     PlaybackInitializationOptions options, {
     int? activeAudioStreamId,
-  }) {
+  }) async {
+    await _registerDirectVideoSession(data, options);
     final fallbackReason = outcome == TranscodeDecisionOutcome.directPlayOnly
         ? TranscodeFallbackReason.directPlayOnly
         : TranscodeFallbackReason.decisionFailed;
@@ -3930,6 +3932,93 @@ class PlexClient
       playSessionId: options.sessionIdentifier,
       selectedMediaIndex: data.selectedMediaIndex,
     );
+  }
+
+  /// Register the exact source before opening its part URL. Without this MDE
+  /// decision Plex can authorize an older, unavailable version in an ad-hoc
+  /// session even though the URL points at the current file.
+  Future<void> _registerDirectVideoSession(PlexVideoPlaybackData data, PlaybackInitializationOptions options) async {
+    final sessionIdentifier = options.sessionIdentifier;
+    if (!options.metadata.kind.isVideo ||
+        isOfflineMode ||
+        sessionIdentifier == null ||
+        sessionIdentifier.trim().isEmpty) {
+      return;
+    }
+    final decisionSessionId = options.transcodeSessionId?.trim().isNotEmpty == true
+        ? options.transcodeSessionId!
+        : sessionIdentifier;
+    try {
+      final response = await _http.get(
+        '/video/:/transcode/universal/decision',
+        queryParameters: {
+          'path': '/library/metadata/${options.metadata.id}',
+          'mediaIndex': data.selectedMediaIndex.toString(),
+          'partIndex': data.selectedPartIndex.toString(),
+          'directPlay': '1',
+          'directStream': '1',
+          'directStreamAudio': '1',
+          'protocol': 'hls',
+          'hasMDE': '1',
+          'subtitles': 'none',
+          'location': 'lan',
+          'session': decisionSessionId,
+          'X-Plex-Session-Identifier': sessionIdentifier,
+          'X-Plex-Client-Profile-Name': 'Generic',
+          ..._transcodeClientParams(),
+        },
+        timeout: const Duration(seconds: 5),
+        // The part URL has already been resolved against this endpoint.
+        allowEndpointFailover: false,
+      );
+      if (response.statusCode != 200) {
+        appLogger.w('Direct-play session registration returned HTTP ${response.statusCode}; trying the file');
+      } else if (!_directVideoSessionMatches(response.data, data, sessionIdentifier)) {
+        appLogger.w('Direct-play session registration was not confirmed; trying the file');
+      }
+    } on Exception catch (error) {
+      if (error is MediaServerHttpException && error.isCancellation) rethrow;
+      // Keep legacy direct play available on servers without this endpoint.
+      // Transport exceptions can contain URLs, tokens, or response bodies.
+      appLogger.w('Direct-play session registration failed; trying the file');
+    }
+  }
+
+  /// Optional response fields vary by PMS version. Only diagnose explicit
+  /// refusals or conflicting identities; never replace the selected URL.
+  static bool _directVideoSessionMatches(dynamic response, PlexVideoPlaybackData data, String sessionIdentifier) {
+    if (response is! Map || response['MediaContainer'] is! Map) return false;
+    final container = response['MediaContainer'] as Map;
+    for (final field in ['mdeDecisionCode', 'generalDecisionCode', 'directPlayDecisionCode']) {
+      final code = flexibleInt(container[field]);
+      if (code != null && code >= 2000) return false;
+    }
+    final session = container['resourceSession']?.toString();
+    if (session != null && session != sessionIdentifier) return false;
+
+    Map? selected(dynamic entries) {
+      if (entries is! List) return null;
+      final maps = entries.whereType<Map>();
+      for (final entry in maps) {
+        if (entry['selected'] == true || entry['selected'] == 1 || entry['selected'] == '1') return entry;
+      }
+      return maps.firstOrNull;
+    }
+
+    bool matchesId(dynamic actual, dynamic expected) {
+      if (actual == null || expected == null || expected.toString().isEmpty) return true;
+      String normalized(dynamic id) => int.tryParse(id.toString())?.toString() ?? id.toString();
+      return normalized(actual) == normalized(expected);
+    }
+
+    final metadata = selected(container['Metadata']);
+    final media = selected(metadata?['Media']);
+    final part = selected(media?['Part']);
+    if (!matchesId(media?['id'], data.mediaInfo?.mediaSourceId) || !matchesId(part?['id'], data.mediaInfo?.partId)) {
+      return false;
+    }
+    final decision = part?['decision'];
+    return decision == null || decision == 'directplay';
   }
 
   /// [url] with the playback session in its query when it streams a track,
@@ -5055,10 +5144,36 @@ class PlexClient
     String? mediaSourceId,
     Duration? position,
   }) async {
-    final playbackData = await getVideoPlaybackData(item.id, mediaIndex: mediaIndex, position: position);
+    final playbackData = await getVideoPlaybackData(
+      item.id,
+      mediaIndex: mediaIndex,
+      selectedMediaSourceId: mediaSourceId,
+      position: position,
+    );
     if (!playbackData.hasValidVideoUrl) return null;
+    final sessionIdentifier = item.kind.isVideo ? const Uuid().v4() : null;
+    await _registerDirectVideoSession(
+      playbackData,
+      PlaybackInitializationOptions(
+        metadata: item,
+        selectedMediaIndex: playbackData.selectedMediaIndex,
+        sessionIdentifier: sessionIdentifier,
+      ),
+    );
+    final uri = Uri.parse(playbackData.videoUrl!);
     return ExternalPlaybackTarget(
-      url: playbackData.videoUrl!,
+      url: sessionIdentifier == null
+          ? playbackData.videoUrl!
+          : uri
+                .replace(
+                  queryParameters: {
+                    ...uri.queryParameters,
+                    'X-Plex-Session-Identifier': sessionIdentifier,
+                    'X-Plex-Client-Identifier': config.clientIdentifier,
+                  },
+                )
+                .toString(),
+      playSessionId: sessionIdentifier,
       subtitles: [for (final sidecar in _buildExternalSubtitles(playbackData.mediaInfo)) sidecar.track],
       partTimeline: playbackData.mediaInfo?.partTimeline,
     );
