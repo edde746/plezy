@@ -121,9 +121,10 @@ void main() {
   });
   tearDown(() async => db.close());
 
-  PlexClient client({Future<http.Response> Function(http.Request)? decision}) {
+  PlexClient client({Future<http.Response> Function(http.Request)? decision, String? token = 'token'}) {
     final client = testPlexClient(
       serverId: ServerId('srv'),
+      token: token,
       prioritizedEndpoints: ['https://plex.example.com', 'https://backup.example.com'],
       handler: (request) async {
         requests.add(request);
@@ -410,6 +411,22 @@ void main() {
     final result = await client().resolveDownload(testMediaItem(id: '42'), mediaSourceId: '20');
     expect(result.videoUrl, contains('/library/parts/200/file.mkv'));
     expect(decisions(), isEmpty);
+  });
+
+  test('external handoff preserves repeated and encoded query values and the raw fragment', () async {
+    const originalQuery = 'option=a&option=b&signed=a%2fb%3D%2B+z&X-Plex-Token=part%2Ftoken';
+    const fragment = '#chapter%2f1';
+    const partKey = '/library/parts/200/file.mkv?$originalQuery$fragment';
+    (media[1]['Part'] as List<Map<String, Object>>).single['key'] = partKey;
+    final target = (await client(token: null).resolveExternalPlayback(testMediaItem(id: '42')))!;
+    final identityQuery = Uri(
+      queryParameters: {'X-Plex-Session-Identifier': target.playSessionId!, 'X-Plex-Client-Identifier': 'test-client'},
+    ).query;
+
+    expect(target.url, 'https://plex.example.com/library/parts/200/file.mkv?$originalQuery&$identityQuery$fragment');
+    expect(Uri.parse(target.url).queryParametersAll['option'], ['a', 'b']);
+    expect(Uri.parse(target.url).queryParameters['X-Plex-Session-Identifier'], target.playSessionId);
+    expect(Uri.parse(target.url).queryParameters['X-Plex-Token'], 'part/token');
   });
 
   test('external handoff selects the requested version and carries matching session/client query IDs', () async {

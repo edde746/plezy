@@ -5160,19 +5160,23 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
       ),
     );
-    final uri = Uri.parse(playbackData.videoUrl!);
+    var url = playbackData.videoUrl!;
+    if (sessionIdentifier != null) {
+      // Append identity without parsing/re-encoding the existing query: part
+      // URLs can carry repeated parameters or signatures over their raw value.
+      final fragmentIndex = url.indexOf('#');
+      final fragment = fragmentIndex < 0 ? '' : url.substring(fragmentIndex);
+      final base = fragmentIndex < 0 ? url : url.substring(0, fragmentIndex);
+      final identityQuery = Uri(
+        queryParameters: {
+          'X-Plex-Session-Identifier': sessionIdentifier,
+          'X-Plex-Client-Identifier': config.clientIdentifier,
+        },
+      ).query;
+      url = '$base${base.contains('?') ? '&' : '?'}$identityQuery$fragment';
+    }
     return ExternalPlaybackTarget(
-      url: sessionIdentifier == null
-          ? playbackData.videoUrl!
-          : uri
-                .replace(
-                  queryParameters: {
-                    ...uri.queryParameters,
-                    'X-Plex-Session-Identifier': sessionIdentifier,
-                    'X-Plex-Client-Identifier': config.clientIdentifier,
-                  },
-                )
-                .toString(),
+      url: url,
       playSessionId: sessionIdentifier,
       subtitles: [for (final sidecar in _buildExternalSubtitles(playbackData.mediaInfo)) sidecar.track],
       partTimeline: playbackData.mediaInfo?.partTimeline,
