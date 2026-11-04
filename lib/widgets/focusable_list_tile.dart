@@ -81,8 +81,7 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
   /// could never reach it. When a long-press action exists, hold SELECT (or
   /// press the context-menu key) triggers it and a short SELECT still taps.
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    final onLongPress = widget.onLongPress;
-    if (onLongPress == null || !widget.enabled || !effectiveFocusNode.hasFocus) {
+    if (widget.onLongPress == null || !widget.enabled || !effectiveFocusNode.hasPrimaryFocus) {
       return KeyEventResult.ignored;
     }
 
@@ -96,13 +95,15 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
         event,
         isOwnerActive: () => mounted,
         onShortPress: () => widget.onTap?.call(),
-        onLongPress: onLongPress,
+        // Read at fire time: the tile may have rebuilt (new selection state)
+        // during the hold.
+        onLongPress: () => widget.onLongPress?.call(),
       );
     }
 
     if (event.isActionable && event.logicalKey.isContextMenuKey) {
       _selectLongPress.reset();
-      onLongPress();
+      widget.onLongPress?.call();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -112,7 +113,22 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
   Widget build(BuildContext context) {
     final automotive = PlatformDetector.isAutomotive();
 
-    final tile = MouseRegion(
+    // Always mounted, even without onLongPress: adding/removing this wrapper
+    // would remount the ListTile and drop its ink focus highlight.
+    // _handleKeyEvent ignores events while onLongPress is null.
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (!hasFocus) _selectLongPress.reset();
+      },
+      onKeyEvent: _handleKeyEvent,
+      child: _buildTile(automotive),
+    );
+  }
+
+  Widget _buildTile(bool automotive) {
+    return MouseRegion(
       cursor: widget.enabled && (widget.onTap != null || widget.onLongPress != null)
           ? SystemMouseCursors.click
           : MouseCursor.defer,
@@ -134,9 +150,6 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
         minLeadingWidth: widget.minLeadingWidth,
       ),
     );
-
-    if (widget.onLongPress == null) return tile;
-    return Focus(canRequestFocus: false, skipTraversal: true, onKeyEvent: _handleKeyEvent, child: tile);
   }
 }
 
