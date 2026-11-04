@@ -105,8 +105,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "7c341be73df8a6a5ddccb06124807ac250a32bc1"
-      resolved-ref: "7c341be73df8a6a5ddccb06124807ac250a32bc1"
+      ref: afa3fe68080327cfa87e725a38961bf5d2e35307
+      resolved-ref: afa3fe68080327cfa87e725a38961bf5d2e35307
       url: "https://github.com/edde746/background_downloader"
     source: git
     version: "9.6.2"
