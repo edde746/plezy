@@ -1309,7 +1309,8 @@ void main() {
       height: 1080,
     );
 
-    expect(run.paths, isNot(contains('/video/:/transcode/universal/decision')));
+    expect(run.decisions.single.queryParameters['directPlay'], '1');
+    expect(run.decisions.single.queryParameters.containsKey('X-Plex-Client-Profile-Extra'), isFalse);
     expect(run.result.isTranscoding, isFalse);
     expect(run.result.playMethod, 'DirectPlay');
     expect(run.result.videoUrl, contains('/library/parts/99/file.mkv'));
@@ -1401,7 +1402,8 @@ void main() {
         height: 2160,
       );
 
-      expect(run.decisions, isEmpty);
+      expect(run.decisions.single.queryParameters['directPlay'], '1');
+      expect(run.decisions.single.queryParameters.containsKey('X-Plex-Client-Profile-Extra'), isFalse);
       expect(run.result.playMethod, 'DirectPlay');
       expect(run.result.videoUrl, contains('/library/parts/99/file.mkv'));
     });
@@ -1414,7 +1416,7 @@ void main() {
         transcodeDecisionCode: 4002,
       );
 
-      expect(run.decisions, hasLength(1));
+      expect(run.decisions.map((uri) => uri.queryParameters['directPlay']), ['0', '1']);
       expect(run.result.playMethod, 'DirectPlay');
       expect(run.result.fallbackReason, TranscodeFallbackReason.decisionFailed);
     });
@@ -1469,7 +1471,8 @@ void main() {
         videoCodec: 'h264',
       );
 
-      expect(run.decisions, isEmpty);
+      expect(run.decisions.single.queryParameters['directPlay'], '1');
+      expect(run.decisions.single.queryParameters.containsKey('X-Plex-Client-Profile-Extra'), isFalse);
       expect(run.result.playMethod, 'DirectPlay');
       expect(run.result.videoUrl, contains('/library/parts/99/file.mkv'));
     });

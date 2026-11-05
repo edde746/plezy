@@ -31,6 +31,7 @@ class _RecordingClient with PlaybackReportRecorder implements MediaServerClient,
   final started = <({int positionMs, int? durationMs})>[];
   final stopped = <({int positionMs, int? durationMs})>[];
   final watched = <String>[];
+  final reports = <PlaybackReportCall>[];
 
   @override
   ServerId get serverId => ServerId('srv');
@@ -51,6 +52,7 @@ class _RecordingClient with PlaybackReportRecorder implements MediaServerClient,
 
   @override
   Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    reports.add(call);
     final entry = (positionMs: call.position.inMilliseconds, durationMs: call.duration?.inMilliseconds);
     switch (call.kind) {
       case PlaybackReportKind.started:
@@ -84,6 +86,31 @@ MediaItem _item({int? durationMs}) {
 }
 
 void main() {
+  test('Android result progress echoes the handoff playback session in both reports', () async {
+    final client = _RecordingClient();
+    await ExternalPlayerService.reportExternalProgressForTesting(
+      positionMs: 5000,
+      durationMs: 60000,
+      metadata: _item(durationMs: 60000),
+      client: client,
+      playSessionId: 'handoff-session',
+    );
+    expect(client.reports.map((call) => call.playSessionId), ['handoff-session', 'handoff-session']);
+  });
+
+  test('callback progress echoes the stored handoff session in both reports', () async {
+    final client = _RecordingClient();
+    final callback = ExternalPlayerService.beginCallbackSessionForTesting(
+      metadata: _item(durationMs: 60000),
+      client: client,
+      playSessionId: 'handoff-session',
+    );
+    await ExternalPlayerService.handleCallbackUrl(
+      Uri.parse('plezy://external-player/success/$callback?position=5&duration=60'),
+    );
+    expect(client.reports.map((call) => call.playSessionId), ['handoff-session', 'handoff-session']);
+  });
+
   test('External progress preserves null duration and still stops after start failure', () async {
     final client = _RecordingClient()..failStart = true;
 
