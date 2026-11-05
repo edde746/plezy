@@ -1,0 +1,450 @@
+package com.edde746.plezy.watchnext
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.net.Uri
+import android.util.Log
+import androidx.tvprovider.media.tv.PreviewChannel
+import androidx.tvprovider.media.tv.PreviewChannelHelper
+import androidx.tvprovider.media.tv.PreviewProgram
+import androidx.tvprovider.media.tv.TvContractCompat
+import java.io.File
+
+/**
+ * Publishes Android TV Preview Channels (Recently Added / New Releases) that
+ * Projectivy and other launchers surface as browsable rows. Artwork reuses
+ * [SystemShelfArtworkStore]; URI grants are unioned with Watch Next via
+ * [SystemShelfUriLedger] so neither surface revokes the other's posters.
+ */
+internal class PreviewChannelPublisher(
+  private val context: Context,
+  private val lifecycleLease: SystemShelfLifecycle.Lease?,
+  private val syncDurationMillis: Long = SystemShelfArtworkStore.MAX_SYNC_DURATION_MS
+) {
+  companion object {
+    private const val TAG = "PreviewChannelPublisher"
+    internal const val CHANNEL_RECENTLY_ADDED = "recently_added"
+    internal const val CHANNEL_NEW_RELEASES = "new_releases"
+    private val KNOWN_CHANNELS = listOf(CHANNEL_RECENTLY_ADDED, CHANNEL_NEW_RELEASES)
+
+    /** Artwork files currently referenced by preview-channel programs. */
+    fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<File> {
+      return SystemShelfUriLedger(context).channelUris().mapNotNullTo(LinkedHashSet()) { artwork.resolve(it) }
+    }
+  }
+
+  data class ChannelItem(
+    val contentId: String,
+    val title: String,
+    val episodeTitle: String?,
+    val description: String?,
+    val posterSourceUri: String?,
+    val type: Int,
+    val duration: Long,
+    val seriesTitle: String?,
+    val seasonNumber: Int?,
+    val episodeNumber: Int?,
+    /** Higher weight sorts earlier in the channel (launcher-dependent). */
+    val weight: Int
+  )
+
+  private data class PreparedChannelItem(val metadata: ChannelItem, val localPosterUri: Uri?)
+
+  private val ledger = SystemShelfUriLedger(context)
+  private val artwork = SystemShelfArtworkStore(context.cacheDir)
+  private val helper = PreviewChannelHelper(context)
+
+  internal fun claimOwnership(ownerId: String, generation: Long): SystemShelfLifecycle.Ownership? =
+    lifecycleLease?.let { SystemShelfLifecycle.claim(it, ownerId, generation) }
+
+  internal fun syncChannel(
+    ownerId: String,
+    generation: Long,
+    channelKey: String,
+    channelTitle: String,
+    items: List<ChannelItem>,
+    ownership: SystemShelfLifecycle.Ownership? = null,
+    isOperationActive: () -> Boolean = { true }
+  ): Boolean {
+    if (channelKey !in KNOWN_CHANNELS) return false
+    if (items.size > SystemShelfArtworkStore.MAX_ITEMS) return false
+    val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
+    if (!isOperationActive()) return false
+    val session = SystemShelfSyncSession(operationOwnership, syncDurationMillis)
+
+    val oldUnion = ledger.grantedUris()
+    val oldPackages = ledger.grantedPackages()
+    val previousChannelUris = ledger.channelUris()
+    val preparedArtwork = LinkedHashSet<SystemShelfArtworkStore.Prepared>()
+    val preparedBySource = HashMap<String, SystemShelfArtworkStore.Prepared?>()
+
+    try {
+      val preparedItems = items.map { item ->
+        val source = item.posterSourceUri
+        val local = if (source == null) {
+          null
+        } else {
+          val candidate = if (preparedBySource.containsKey(source)) {
+            preparedBySource[source]
+          } else {
+            artwork.prepare(ownerId, source, session).also { prepared ->
+              preparedBySource[source] = prepared
+              prepared?.let(preparedArtwork::add)
+            }
+          }
+          candidate?.materialized
+        }
+        PreparedChannelItem(item, local?.uri)
+      }
+      if (!isOperationActive() || !session.isActive()) return false
+
+      return SystemShelfLifecycle.whileCurrent(session.ownership) {
+        if (!isOperationActive() || session.isExpired()) return@whileCurrent false
+
+        val publishedFiles = LinkedHashSet<File>()
+        preparedArtwork.forEach { candidate ->
+          val publication = artwork.publish(candidate)
+          if (publication == null) {
+            artwork.delete(publishedFiles)
+            return@whileCurrent false
+          }
+          if (publication.newlyPublished) publishedFiles += publication.materialized.file
+        }
+
+        val channelUris = preparedItems.mapNotNullTo(LinkedHashSet()) { it.localPosterUri }
+        val watchNextUris = ledger.watchNextUris()
+        val unionUris = LinkedHashSet<Uri>().apply {
+          addAll(watchNextUris)
+          addAll(channelUris)
+        }
+        val packages = consumerPackages()
+        if (!grantReadAccess(unionUris, packages)) {
+          reconcileReadAccess(unionUris, packages, oldUnion, oldPackages)
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
+        if (session.isExpired()) {
+          reconcileReadAccess(unionUris, packages, oldUnion, oldPackages)
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
+
+        if (!ledger.commitChannelPublication(channelUris, unionUris, packages)) {
+          reconcileReadAccess(unionUris, packages, oldUnion, oldPackages)
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
+
+        val channelId = ensureChannel(channelKey, channelTitle) ?: run {
+          ledger.rollbackGrants(oldUnion, oldPackages, previousChannelUris)
+          reconcileReadAccess(unionUris, packages, oldUnion, oldPackages)
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
+
+        if (!replacePrograms(channelId, preparedItems)) {
+          ledger.rollbackGrants(oldUnion, oldPackages, previousChannelUris)
+          reconcileReadAccess(unionUris, packages, oldUnion, oldPackages)
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
+
+        reconcileReadAccess(oldUnion, oldPackages, unionUris, packages)
+        val keepFiles = LinkedHashSet<File>()
+        unionUris.mapNotNullTo(keepFiles) { artwork.resolve(it) }
+        // Preserve Watch Next posters that share the store.
+        keepFiles += WatchNextProvider.referencedArtworkFiles(context, artwork)
+        artwork.deleteExcept(keepFiles)
+        true
+      } ?: false
+    } finally {
+      artwork.discard(preparedArtwork)
+    }
+  }
+
+  internal fun clearAll(
+    ownerId: String,
+    generation: Long,
+    ownership: SystemShelfLifecycle.Ownership? = null,
+    isOperationActive: () -> Boolean = { true }
+  ): Boolean {
+    val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
+    return SystemShelfLifecycle.whileCurrent(operationOwnership) {
+      if (!isOperationActive()) return@whileCurrent false
+      clearChannelsUnlocked()
+    } ?: false
+  }
+
+  /**
+   * Drop every preview channel and its URI ledger entries. Caller must already
+   * hold [SystemShelfLifecycle.whileCurrent] — used from Watch Next [clearAll]
+   * so the two surfaces share one ownership fence without re-entering the lock.
+   */
+  internal fun clearChannelsUnlocked(): Boolean {
+    KNOWN_CHANNELS.forEach { key ->
+      val channelId = ledger.channelId(key) ?: findPublishedChannelId(key)
+      if (channelId != null) {
+        runCatching { helper.deletePreviewChannel(channelId) }
+      }
+      ledger.clearChannelId(key)
+    }
+    val oldUnion = ledger.grantedUris()
+    val oldPackages = ledger.grantedPackages()
+    val watchNextUris = ledger.watchNextUris()
+    val packages = consumerPackages()
+    ledger.commitChannelPublication(emptySet(), watchNextUris, packages)
+    reconcileReadAccess(oldUnion, oldPackages, watchNextUris, packages)
+    return true
+  }
+
+  fun restoreReadGrants(): Boolean {
+    val uris = ledger.grantedUris().filterTo(LinkedHashSet()) { artwork.resolve(it) != null }
+    val packages = consumerPackages()
+    reconcileReadAccess(ledger.grantedUris(), ledger.grantedPackages(), uris, packages)
+    return ledger.persistGranted(uris, packages)
+  }
+
+  private fun ensureChannel(channelKey: String, title: String): Long? {
+    val existingId = ledger.channelId(channelKey) ?: findPublishedChannelId(channelKey)
+    if (existingId != null) {
+      val existing = runCatching { helper.getPreviewChannel(existingId) }.getOrNull()
+      if (existing != null) {
+        if (existing.displayName?.toString() != title) {
+          val updated = PreviewChannel.Builder(existing)
+            .setDisplayName(title)
+            .build()
+          runCatching { helper.updatePreviewChannel(existingId, updated) }
+        }
+        ledger.setChannelId(channelKey, existingId)
+        return existingId
+      }
+    }
+
+    val appLink = Uri.Builder().scheme("plezy").authority("home").build()
+    val builder = PreviewChannel.Builder()
+      .setDisplayName(title)
+      .setInternalProviderId(providerIdFor(channelKey))
+      .setAppLinkIntentUri(appLink)
+      .setLogo(channelLogoBitmap())
+    return try {
+      val id = helper.publishChannel(builder.build())
+      if (id <= 0L) null else {
+        ledger.setChannelId(channelKey, id)
+        id
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to publish preview channel $channelKey", e)
+      null
+    }
+  }
+
+  private fun findPublishedChannelId(channelKey: String): Long? {
+    val wanted = providerIdFor(channelKey)
+    return runCatching {
+      helper.allChannels.firstOrNull { it.internalProviderId == wanted }?.id
+    }.getOrNull()
+  }
+
+  private fun providerIdFor(channelKey: String) = "plezy_channel_$channelKey"
+
+  private fun replacePrograms(channelId: Long, items: List<PreparedChannelItem>): Boolean = try {
+    context.contentResolver.delete(
+      TvContractCompat.PreviewPrograms.CONTENT_URI,
+      "${TvContractCompat.PreviewPrograms.COLUMN_CHANNEL_ID}=?",
+      arrayOf(channelId.toString())
+    )
+    items.forEach { item ->
+      val program = buildProgram(channelId, item)
+      helper.publishPreviewProgram(program)
+    }
+    true
+  } catch (e: Exception) {
+    Log.e(TAG, "Failed to replace preview programs", e)
+    false
+  }
+
+  private fun buildProgram(channelId: Long, item: PreparedChannelItem): PreviewProgram {
+    val metadata = item.metadata
+    val builder = PreviewProgram.Builder()
+      .setChannelId(channelId)
+      .setWeight(metadata.weight)
+      .setType(metadata.type)
+      .setTitle(metadata.title)
+      .setInternalProviderId(metadata.contentId)
+      .setContentId(metadata.contentId)
+      .setBrowsable(true)
+
+    metadata.description?.let(builder::setDescription)
+    item.localPosterUri?.let { uri ->
+      builder.setPosterArtUri(uri)
+      builder.setPosterArtAspectRatio(TvContractCompat.PreviewPrograms.ASPECT_RATIO_16_9)
+    }
+    if (metadata.duration > 0) {
+      builder.setDurationMillis(metadata.duration.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+    }
+    if (metadata.type == TvContractCompat.PreviewPrograms.TYPE_TV_EPISODE) {
+      metadata.episodeTitle?.let(builder::setEpisodeTitle)
+      metadata.seasonNumber?.let { builder.setSeasonNumber(it) }
+      metadata.episodeNumber?.let { builder.setEpisodeNumber(it) }
+    }
+    builder.setIntentUri(
+      Uri.Builder().scheme("plezy").authority("play")
+        .appendQueryParameter("content_id", metadata.contentId).build()
+    )
+    return builder.build()
+  }
+
+  private fun channelLogoBitmap(): Bitmap {
+    val size = 160
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    canvas.drawColor(Color.parseColor("#121212"))
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      color = Color.parseColor("#E8E8E8")
+      textAlign = Paint.Align.CENTER
+      textSize = 48f
+      isFakeBoldText = true
+    }
+    val x = size / 2f
+    val y = size / 2f - (paint.descent() + paint.ascent()) / 2f
+    canvas.drawText("P", x, y, paint)
+    return bitmap
+  }
+
+  internal fun consumerPackages(): Set<String> {
+    val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+    return context.packageManager
+      .queryIntentActivities(homeIntent, android.content.pm.PackageManager.MATCH_ALL)
+      .mapNotNullTo(LinkedHashSet()) { candidate ->
+        candidate.activityInfo?.packageName?.takeIf(String::isNotBlank)
+      }
+  }
+
+  private fun reconcileReadAccess(
+    previousUris: Set<Uri>,
+    previousPackages: Set<String>,
+    currentUris: Set<Uri>,
+    currentPackages: Set<String>
+  ) {
+    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+    if (previousPackages.isEmpty() && previousUris.isNotEmpty()) {
+      previousUris.forEach { uri -> runCatching { context.revokeUriPermission(uri, flags) } }
+    } else {
+      previousPackages.forEach { packageName ->
+        previousUris.forEach { uri ->
+          if (packageName !in currentPackages || uri !in currentUris) {
+            revokeReadAccess(packageName, uri, flags)
+          }
+        }
+      }
+    }
+    grantReadAccess(currentUris, currentPackages)
+  }
+
+  private fun grantReadAccess(uris: Set<Uri>, packages: Set<String>): Boolean {
+    if (uris.isEmpty() || packages.isEmpty()) return true
+    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+    var unreadable = 0
+    uris.forEach { uri ->
+      var granted = 0
+      packages.forEach { packageName ->
+        if (runCatching { context.grantUriPermission(packageName, uri, flags) }.isSuccess) {
+          granted++
+        }
+      }
+      if (granted == 0) unreadable++
+    }
+    return unreadable == 0
+  }
+
+  private fun revokeReadAccess(packageName: String, uri: Uri, flags: Int) {
+    runCatching {
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        context.revokeUriPermission(packageName, uri, flags)
+      } else {
+        context.revokeUriPermission(uri, flags)
+      }
+    }
+  }
+}
+
+/**
+ * Shared SharedPreferences ledger so Watch Next and Preview Channels grant the
+ * union of their poster URIs and never revoke each other's launcher access.
+ */
+internal class SystemShelfUriLedger(context: Context) {
+  companion object {
+    private const val PREFS = "system_shelf_state"
+    private const val GRANTED_URIS = "granted_uris"
+    private const val GRANTED_PACKAGES = "granted_packages"
+    private const val WATCH_NEXT_URIS = "watch_next_uris"
+    private const val CHANNEL_URIS = "channel_uris"
+    private const val CHANNEL_ID_PREFIX = "preview_channel_id_"
+  }
+
+  private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+  fun grantedUris(): Set<Uri> =
+    prefs.getStringSet(GRANTED_URIS, emptySet()).orEmpty().mapNotNullTo(LinkedHashSet(), Uri::parse)
+
+  fun grantedPackages(): Set<String> =
+    prefs.getStringSet(GRANTED_PACKAGES, emptySet()).orEmpty()
+
+  fun watchNextUris(): Set<Uri> {
+    val stored = prefs.getStringSet(WATCH_NEXT_URIS, null)
+    if (stored != null) {
+      return stored.mapNotNullTo(LinkedHashSet(), Uri::parse)
+    }
+    // Pre-channel installs only tracked the union key; treat it as Watch Next.
+    return grantedUris()
+  }
+
+  fun channelUris(): Set<Uri> =
+    prefs.getStringSet(CHANNEL_URIS, emptySet()).orEmpty().mapNotNullTo(LinkedHashSet(), Uri::parse)
+
+  fun channelId(channelKey: String): Long? {
+    val raw = prefs.getLong(CHANNEL_ID_PREFIX + channelKey, -1L)
+    return raw.takeIf { it > 0L }
+  }
+
+  fun setChannelId(channelKey: String, id: Long) {
+    prefs.edit().putLong(CHANNEL_ID_PREFIX + channelKey, id).commit()
+  }
+
+  fun clearChannelId(channelKey: String) {
+    prefs.edit().remove(CHANNEL_ID_PREFIX + channelKey).commit()
+  }
+
+  fun commitWatchNextPublication(watchNextUris: Set<Uri>, unionUris: Set<Uri>, packages: Set<String>): Boolean =
+    prefs.edit()
+      .putStringSet(WATCH_NEXT_URIS, watchNextUris.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_URIS, unionUris.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_PACKAGES, packages)
+      .commit()
+
+  fun commitChannelPublication(channelUris: Set<Uri>, unionUris: Set<Uri>, packages: Set<String>): Boolean =
+    prefs.edit()
+      .putStringSet(CHANNEL_URIS, channelUris.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_URIS, unionUris.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_PACKAGES, packages)
+      .commit()
+
+  fun persistGranted(uris: Set<Uri>, packages: Set<String>): Boolean =
+    prefs.edit()
+      .putStringSet(GRANTED_URIS, uris.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_PACKAGES, packages)
+      .commit()
+
+  fun rollbackGrants(oldUnion: Set<Uri>, oldPackages: Set<String>, previousChannelUris: Set<Uri>) {
+    prefs.edit()
+      .putStringSet(GRANTED_URIS, oldUnion.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_PACKAGES, oldPackages)
+      .putStringSet(CHANNEL_URIS, previousChannelUris.mapTo(LinkedHashSet(), Uri::toString))
+      .commit()
+  }
+
+}

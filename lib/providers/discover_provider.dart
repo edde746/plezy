@@ -377,6 +377,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     var outcome = DiscoverRefreshOutcome.cancelled;
     var passClearedExceptionBoundary = false;
     List<MediaItem>? systemShelfPassToken;
+    List<MediaHub>? libraryChannelsPassToken;
     // Observations are staged with the pass, not recorded as each leg lands:
     // suppressing a patch whose fresh row is then discarded or rolled back
     // would leave an older snapshot on screen with nothing to correct it.
@@ -549,6 +550,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         fetchedHubs.cancelledServerIds,
       );
       _hubsLoadedAt = _now();
+      libraryChannelsPassToken = List<MediaHub>.unmodifiable(_hubs);
       // Credit this committed pass so a push event landing moments later
       // defers to the cooldown's trailing edge instead of refetching.
       _libraryEventPacer.notePass();
@@ -610,6 +612,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (passClearedExceptionBoundary && _commitRevision == expectedCommitRevision && !isDisposed) {
         _recordObservations(observation, pendingObservations, observedServerIds);
         if (systemShelfPassToken != null) unawaited(_syncSystemShelf(systemShelfPassToken));
+        if (libraryChannelsPassToken != null) unawaited(_syncLibraryChannels(libraryChannelsPassToken));
       }
     }
   }
@@ -708,6 +711,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${_hubs.length} hubs after merging $ids');
       safeNotifyListeners();
       unawaited(_syncSystemShelf(_onDeck));
+      if (freshHubs != null) unawaited(_syncLibraryChannels(_hubs));
     } catch (e) {
       if (isDisposed) return;
       // Keep the loaded state — stale rows beat an error flash.
@@ -1091,6 +1095,28 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   List<String> _libraryOrderKeys() => [for (final library in _libraries.libraries) library.globalKey];
 
   // --- Platform launcher shelf ----------------------------------------------
+
+  /// Publish Recently Added + New Releases Preview Channels from Discover hubs.
+  Future<void> _syncLibraryChannels(List<MediaHub> hubs) async {
+    if (isDisposed) return;
+    final owner = profileId;
+    if (owner == null) return;
+    // Widget tests that stub the Continue Watching shelf also skip channels.
+    if (_syncSystemShelfOverride != null) return;
+    try {
+      final settings = await SettingsService.getInstance();
+      if (isDisposed) return;
+      await SystemShelfService().syncLibraryChannels(
+        owner,
+        hubs,
+        _clientForShelfItem,
+        hideSpoilers: settings.read(SettingsService.hideSpoilers),
+        episodePosterMode: settings.read(SettingsService.episodePosterMode),
+      );
+    } catch (e) {
+      appLogger.w('Failed to sync library preview channels', error: e);
+    }
+  }
 
   /// Sync Continue Watching to the platform launcher shelf. Rapid updates
   /// coalesce: a sync that arrives while one is in flight queues exactly one

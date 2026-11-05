@@ -32,6 +32,7 @@ class WatchNextPlugin() :
     private val closed = AtomicBoolean(false)
     var lease: SystemShelfLifecycle.Lease? = null
     var provider: WatchNextProvider? = null
+    var channels: PreviewChannelPublisher? = null
 
     fun close() {
       closed.set(true)
@@ -59,6 +60,7 @@ class WatchNextPlugin() :
       session.lease = lease
       if (session.isOpen()) {
         session.provider = WatchNextProvider(session.context, lease)
+        session.channels = PreviewChannelPublisher(session.context, lease)
       }
     }
   }
@@ -77,6 +79,7 @@ class WatchNextPlugin() :
           session.lease?.let(SystemShelfLifecycle::invalidate)
           session.lease = null
           session.provider = null
+          session.channels = null
         }
       } catch (_: java.util.concurrent.RejectedExecutionException) {
         Log.e(TAG, "System shelf lifecycle executor rejected detach")
@@ -90,6 +93,7 @@ class WatchNextPlugin() :
     when (call.method) {
       "isSupported" -> handleIsSupported(result)
       "sync" -> handleSync(call, result)
+      "syncChannel" -> handleSyncChannel(call, result)
       "clear" -> handleClear(call, result)
       "remove" -> handleRemove(call, result)
       else -> result.notImplemented()
@@ -121,6 +125,30 @@ class WatchNextPlugin() :
     val items = itemsData.mapNotNull(::parseWatchNextItem)
     executeOwnedOnIo(session, executor, result, owner, generation) { provider, ownership ->
       provider.syncWatchNextPrograms(owner, generation, items, ownership, session::isOpen)
+    }
+  }
+
+  private fun handleSyncChannel(call: MethodCall, result: MethodChannel.Result) {
+    val session = engineSession ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val (owner, generation) = ownerArguments(call)
+      ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
+    val channelKey = call.argument<String>("channelKey")?.takeIf(String::isNotBlank)
+      ?: return result.error("INVALID_ARGS", "Missing channelKey", null)
+    val channelTitle = call.argument<String>("channelTitle")?.takeIf(String::isNotBlank)
+      ?: return result.error("INVALID_ARGS", "Missing channelTitle", null)
+    val itemsData = call.argument<List<Map<String, Any?>>>("items")
+      ?: return result.error("INVALID_ARGS", "Missing items", null)
+    if (itemsData.size > SystemShelfArtworkStore.MAX_ITEMS) {
+      return result.error("INVALID_ARGS", "Too many items", null)
+    }
+    val items = itemsData.mapIndexedNotNull { index, data -> parseChannelItem(data, index) }
+    executeOnIo(executor, result) {
+      if (!session.isOpen()) return@executeOnIo false
+      val channels = session.channels ?: return@executeOnIo false
+      val ownership = channels.claimOwnership(owner, generation) ?: return@executeOnIo false
+      if (!session.isOpen()) return@executeOnIo false
+      channels.syncChannel(owner, generation, channelKey, channelTitle, items, ownership, session::isOpen)
     }
   }
 
@@ -184,6 +212,7 @@ class WatchNextPlugin() :
     val title = data["title"] as? String ?: return null
     val type = when ((data["type"] as? String)?.lowercase()) {
       "episode" -> TvContractCompat.WatchNextPrograms.TYPE_TV_EPISODE
+      "show", "series", "tv_series" -> TvContractCompat.WatchNextPrograms.TYPE_TV_SERIES
       else -> TvContractCompat.WatchNextPrograms.TYPE_MOVIE
     }
     return WatchNextProvider.WatchNextItem(
@@ -199,6 +228,29 @@ class WatchNextPlugin() :
       seriesTitle = data["seriesTitle"] as? String,
       seasonNumber = (data["seasonNumber"] as? Number)?.toInt(),
       episodeNumber = (data["episodeNumber"] as? Number)?.toInt()
+    )
+  }
+
+  private fun parseChannelItem(data: Map<String, Any?>, index: Int): PreviewChannelPublisher.ChannelItem? {
+    val contentId = (data["contentId"] as? String)?.takeIf(String::isNotBlank) ?: return null
+    val title = data["title"] as? String ?: return null
+    val type = when ((data["type"] as? String)?.lowercase()) {
+      "episode" -> TvContractCompat.PreviewPrograms.TYPE_TV_EPISODE
+      "show", "series", "tv_series" -> TvContractCompat.PreviewPrograms.TYPE_TV_SERIES
+      else -> TvContractCompat.PreviewPrograms.TYPE_MOVIE
+    }
+    return PreviewChannelPublisher.ChannelItem(
+      contentId = contentId,
+      title = title,
+      episodeTitle = data["episodeTitle"] as? String,
+      description = data["description"] as? String,
+      posterSourceUri = data["posterSourceUri"] as? String,
+      type = type,
+      duration = (data["duration"] as? Number)?.toLong() ?: 0L,
+      seriesTitle = data["seriesTitle"] as? String,
+      seasonNumber = (data["seasonNumber"] as? Number)?.toInt(),
+      episodeNumber = (data["episodeNumber"] as? Number)?.toInt(),
+      weight = (data["weight"] as? Number)?.toInt() ?: (SystemShelfArtworkStore.MAX_ITEMS - index)
     )
   }
 }

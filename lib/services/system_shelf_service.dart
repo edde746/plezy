@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
+import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
@@ -15,6 +16,7 @@ import '../utils/platform_detector.dart';
 import 'jellyfin_client.dart';
 import 'plex_client.dart';
 import 'settings_service.dart' show EpisodePosterMode;
+import 'system_shelf_library_channels.dart';
 
 /// Syncs Continue Watching content to platform launcher surfaces.
 ///
@@ -222,6 +224,78 @@ class SystemShelfService {
             severe: true,
           ) ??
           false;
+    });
+    return result ?? false;
+  }
+
+  /// Publish Android TV Preview Channels for Recently Added and New Releases
+  /// from the current Discover hubs (Plex + Jellyfin combined, deduped).
+  ///
+  /// tvOS Top Shelf has no equivalent multi-channel surface yet, so this is a
+  /// no-op outside Android. Local-only channel titles use the existing
+  /// Recently Added string plus a fixed New Releases label.
+  Future<bool> syncLibraryChannels(
+    String profileId,
+    List<MediaHub> hubs,
+    MediaServerClient Function(ServerId serverId) getClientForServerId, {
+    bool hideSpoilers = false,
+    EpisodePosterMode episodePosterMode = EpisodePosterMode.seriesPoster,
+  }) async {
+    if (_isTvosTarget) return false;
+    final channel = _channel;
+    if (channel == null || _activeOwner != profileId) return false;
+    final generation = _generation;
+
+    final recentlyAdded = SystemShelfLibraryChannels.recentlyAdded(hubs);
+    final newReleases = SystemShelfLibraryChannels.newReleases(hubs);
+    if (!_owns(profileId, generation)) return false;
+
+    final supported = await isSupported();
+    if (!_owns(profileId, generation) || !supported) return false;
+
+    Map<String, dynamic> toPayload(MediaItem item, int index) {
+      final payload = _convertToShelfItem(
+        item,
+        getClientForServerId,
+        hideSpoilers: hideSpoilers,
+        episodePosterMode: episodePosterMode,
+      );
+      payload['weight'] = SystemShelfLibraryChannels.maxItems - index;
+      return payload;
+    }
+
+    final result = await _enqueueMutation<bool>(() async {
+      if (!_owns(profileId, generation)) return false;
+      final recentOk = await _invokeGuarded<bool>(
+            channel,
+            'syncChannel',
+            arguments: _envelope(profileId, generation, {
+              'channelKey': 'recently_added',
+              'channelTitle': t.discover.recentlyAdded,
+              'items': [
+                for (var i = 0; i < recentlyAdded.length; i++) toPayload(recentlyAdded[i], i),
+              ],
+            }),
+            label: 'Failed to sync Recently Added preview channel',
+            severe: true,
+          ) ??
+          false;
+      if (!_owns(profileId, generation)) return false;
+      final releasesOk = await _invokeGuarded<bool>(
+            channel,
+            'syncChannel',
+            arguments: _envelope(profileId, generation, {
+              'channelKey': 'new_releases',
+              'channelTitle': 'New Releases',
+              'items': [
+                for (var i = 0; i < newReleases.length; i++) toPayload(newReleases[i], i),
+              ],
+            }),
+            label: 'Failed to sync New Releases preview channel',
+            severe: true,
+          ) ??
+          false;
+      return recentOk && releasesOk;
     });
     return result ?? false;
   }
