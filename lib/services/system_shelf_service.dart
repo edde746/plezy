@@ -232,12 +232,12 @@ class SystemShelfService {
     return result ?? false;
   }
 
-  /// Publish Android TV Preview Channels for Recently Added and New Releases
-  /// from the current Discover hubs (Plex + Jellyfin combined, deduped).
+  /// Publish Android TV Preview Channels for Recently Added / New Releases,
+  /// split into Movies and TV so episode-heavy hubs cannot crowd out films.
   ///
   /// tvOS Top Shelf has no equivalent multi-channel surface yet, so this is a
-  /// no-op outside Android. Local-only channel titles use the existing
-  /// Recently Added string plus a fixed New Releases label.
+  /// no-op outside Android. Channel titles are English for the local sidecar;
+  /// slang keys land when the PR is dialed in.
   Future<bool> syncLibraryChannels(
     String profileId,
     List<MediaHub> hubs,
@@ -250,8 +250,22 @@ class SystemShelfService {
     if (channel == null || _activeOwner != profileId) return false;
     final generation = _generation;
 
-    final recentlyAdded = SystemShelfLibraryChannels.recentlyAdded(hubs);
-    final newReleases = SystemShelfLibraryChannels.newReleases(hubs);
+    final recentMovies = SystemShelfLibraryChannels.recentlyAdded(
+      hubs,
+      kind: SystemShelfLibraryKind.movies,
+    );
+    final recentTv = SystemShelfLibraryChannels.recentlyAdded(
+      hubs,
+      kind: SystemShelfLibraryKind.tv,
+    );
+    final newMovies = SystemShelfLibraryChannels.newReleases(
+      hubs,
+      kind: SystemShelfLibraryKind.movies,
+    );
+    final newTv = SystemShelfLibraryChannels.newReleases(
+      hubs,
+      kind: SystemShelfLibraryKind.tv,
+    );
     if (!_owns(profileId, generation)) return false;
 
     final supported = await isSupported();
@@ -268,38 +282,55 @@ class SystemShelfService {
       return payload;
     }
 
+    Future<bool> syncRow({
+      required String key,
+      required String title,
+      required List<MediaItem> items,
+      required String label,
+    }) async {
+      if (!_owns(profileId, generation)) return false;
+      return await _invokeGuarded<bool>(
+            channel,
+            'syncChannel',
+            arguments: _envelope(profileId, generation, {
+              'channelKey': key,
+              'channelTitle': title,
+              'items': [
+                for (var i = 0; i < items.length; i++) toPayload(items[i], i),
+              ],
+            }),
+            label: label,
+            severe: true,
+          ) ??
+          false;
+    }
+
     final result = await _enqueueMutation<bool>(() async {
-      if (!_owns(profileId, generation)) return false;
-      final recentOk = await _invokeGuarded<bool>(
-            channel,
-            'syncChannel',
-            arguments: _envelope(profileId, generation, {
-              'channelKey': 'recently_added',
-              'channelTitle': t.discover.recentlyAdded,
-              'items': [
-                for (var i = 0; i < recentlyAdded.length; i++) toPayload(recentlyAdded[i], i),
-              ],
-            }),
-            label: 'Failed to sync Recently Added preview channel',
-            severe: true,
-          ) ??
-          false;
-      if (!_owns(profileId, generation)) return false;
-      final releasesOk = await _invokeGuarded<bool>(
-            channel,
-            'syncChannel',
-            arguments: _envelope(profileId, generation, {
-              'channelKey': 'new_releases',
-              'channelTitle': 'New Releases',
-              'items': [
-                for (var i = 0; i < newReleases.length; i++) toPayload(newReleases[i], i),
-              ],
-            }),
-            label: 'Failed to sync New Releases preview channel',
-            severe: true,
-          ) ??
-          false;
-      return recentOk && releasesOk;
+      final okMoviesRecent = await syncRow(
+        key: 'recently_added_movies',
+        title: 'Recently Added Movies',
+        items: recentMovies,
+        label: 'Failed to sync Recently Added Movies preview channel',
+      );
+      final okTvRecent = await syncRow(
+        key: 'recently_added_tv',
+        title: 'Recently Added TV',
+        items: recentTv,
+        label: 'Failed to sync Recently Added TV preview channel',
+      );
+      final okMoviesNew = await syncRow(
+        key: 'new_releases_movies',
+        title: 'New Movies',
+        items: newMovies,
+        label: 'Failed to sync New Movies preview channel',
+      );
+      final okTvNew = await syncRow(
+        key: 'new_releases_tv',
+        title: 'New TV Shows',
+        items: newTv,
+        label: 'Failed to sync New TV Shows preview channel',
+      );
+      return okMoviesRecent && okTvRecent && okMoviesNew && okTvNew;
     });
     return result ?? false;
   }

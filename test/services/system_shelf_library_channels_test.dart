@@ -71,7 +71,10 @@ void main() {
         _hub(id: 'home.recent', identifier: 'home.recent', items: [jelly]),
       ];
 
-      final merged = SystemShelfLibraryChannels.recentlyAdded(hubs);
+      final merged = SystemShelfLibraryChannels.recentlyAdded(
+        hubs,
+        kind: SystemShelfLibraryKind.movies,
+      );
       expect(merged.map((item) => item.id), ['p1', 'p2']);
     });
 
@@ -104,9 +107,41 @@ void main() {
         _hub(id: 'home.recent', identifier: 'home.recent', items: [plex, jelly]),
       ];
 
-      final merged = SystemShelfLibraryChannels.recentlyAdded(hubs);
+      final merged = SystemShelfLibraryChannels.recentlyAdded(
+        hubs,
+        kind: SystemShelfLibraryKind.movies,
+      );
       expect(merged, hasLength(1));
       expect(merged.single.id, 'j1'); // higher addedAt wins
+    });
+
+    test('splits recently added movies from tv/episodes', () {
+      final hubs = [
+        _hub(
+          id: 'home.recent',
+          identifier: 'home.recent',
+          items: [
+            testMediaItem(id: 'm1', title: 'Film', kind: MediaKind.movie, addedAt: 30),
+            testMediaItem(id: 's1', title: 'Series', kind: MediaKind.show, addedAt: 40),
+            testMediaItem(id: 'e1', title: 'Ep', kind: MediaKind.episode, addedAt: 50),
+          ],
+        ),
+      ];
+
+      expect(
+        SystemShelfLibraryChannels.recentlyAdded(
+          hubs,
+          kind: SystemShelfLibraryKind.movies,
+        ).map((item) => item.id),
+        ['m1'],
+      );
+      expect(
+        SystemShelfLibraryChannels.recentlyAdded(
+          hubs,
+          kind: SystemShelfLibraryKind.tv,
+        ).map((item) => item.id),
+        ['e1', 's1'],
+      );
     });
 
     test('new releases prefer premiere date over addedAt', () {
@@ -136,6 +171,7 @@ void main() {
 
       final releases = SystemShelfLibraryChannels.newReleases(
         hubs,
+        kind: SystemShelfLibraryKind.movies,
         now: DateTime.utc(2025, 6, 1),
       );
       expect(releases.map((item) => item.id), ['new', 'old']);
@@ -173,6 +209,7 @@ void main() {
 
       final releases = SystemShelfLibraryChannels.newReleases(
         hubs,
+        kind: SystemShelfLibraryKind.movies,
         now: DateTime.utc(2025, 6, 1),
       );
       expect(releases.map((item) => item.id), ['rel']);
@@ -202,7 +239,10 @@ void main() {
         ),
       ];
 
-      final merged = SystemShelfLibraryChannels.recentlyAdded(hubs);
+      final merged = SystemShelfLibraryChannels.recentlyAdded(
+        hubs,
+        kind: SystemShelfLibraryKind.movies,
+      );
       expect(merged.map((item) => item.id), ['fresh', 'no-added']);
     });
 
@@ -234,6 +274,7 @@ void main() {
 
       final releases = SystemShelfLibraryChannels.newReleases(
         hubs,
+        kind: SystemShelfLibraryKind.movies,
         now: DateTime.utc(2025, 6, 1),
       );
       expect(releases.map((item) => item.id), ['older-add-newer-film']);
@@ -266,6 +307,7 @@ void main() {
 
       final releases = SystemShelfLibraryChannels.newReleases(
         hubs,
+        kind: SystemShelfLibraryKind.movies,
         now: DateTime.utc(2025, 6, 1),
       );
       expect(releases.map((item) => item.id), ['newer']);
@@ -297,16 +339,17 @@ void main() {
 
       final releases = SystemShelfLibraryChannels.newReleases(
         hubs,
+        kind: SystemShelfLibraryKind.movies,
         now: DateTime.utc(2025, 6, 1),
       );
       expect(releases.map((item) => item.id), ['fresh']);
     });
 
-    test('new releases skip episodes', () {
+    test('new movie releases skip episodes and shows', () {
       final hubs = [
         _hub(
-          id: 'home.movies.recent',
-          identifier: 'home.movies.recent',
+          id: 'home.recent',
+          identifier: 'home.recent',
           items: [
             testMediaItem(
               id: 'ep',
@@ -315,6 +358,14 @@ void main() {
               kind: MediaKind.episode,
               originallyAvailableAt: '2025-05-01',
               addedAt: 50,
+            ),
+            testMediaItem(
+              id: 'show',
+              title: 'Series',
+              year: 2025,
+              kind: MediaKind.show,
+              originallyAvailableAt: '2025-05-15',
+              addedAt: 45,
             ),
             testMediaItem(
               id: 'movie',
@@ -328,11 +379,22 @@ void main() {
         ),
       ];
 
-      final releases = SystemShelfLibraryChannels.newReleases(
-        hubs,
-        now: DateTime.utc(2025, 6, 1),
+      expect(
+        SystemShelfLibraryChannels.newReleases(
+          hubs,
+          kind: SystemShelfLibraryKind.movies,
+          now: DateTime.utc(2025, 6, 1),
+        ).map((item) => item.id),
+        ['movie'],
       );
-      expect(releases.map((item) => item.id), ['movie']);
+      expect(
+        SystemShelfLibraryChannels.newReleases(
+          hubs,
+          kind: SystemShelfLibraryKind.tv,
+          now: DateTime.utc(2025, 6, 1),
+        ).map((item) => item.id),
+        ['show'],
+      );
     });
   });
 }

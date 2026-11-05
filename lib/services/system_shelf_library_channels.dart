@@ -3,13 +3,25 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../utils/external_ids.dart';
 
+/// Which library surface a Preview Channel row is building.
+enum SystemShelfLibraryKind {
+  /// Theatrical / feature films.
+  movies,
+
+  /// TV shows and (for Recently Added) newly arrived episodes.
+  tv,
+}
+
 /// Builds deduplicated Recently Added / New Releases lists from Discover hubs
 /// across Plex + Jellyfin (and Emby) servers.
 ///
+/// Movies and TV are separate rows so episode-heavy "latest" hubs cannot crowd
+/// films out of Recently Added / New Releases.
+///
 /// [recentlyAdded] keeps library-arrival order ([MediaItem.addedAt]).
-/// [newReleases] ranks movies/shows by premiere date only — add date is
-/// ignored — and drops titles older than [newReleaseMaxAgeDays] so an old
-/// catalog import cannot fill the row.
+/// [newReleases] ranks by premiere date only — add date is ignored — and
+/// drops titles older than [newReleaseMaxAgeDays] so an old catalog import
+/// cannot fill the row.
 class SystemShelfLibraryChannels {
   SystemShelfLibraryChannels._();
 
@@ -56,17 +68,21 @@ class SystemShelfLibraryChannels {
     return false;
   }
 
-  /// Anything the server put in a recently-added / latest hub, newest library
-  /// arrival first. Episodes stay — a just-added episode is a recent add.
+  /// Anything the server put in a recently-added / latest hub for [kind],
+  /// newest library arrival first.
   ///
   /// Ranking uses [MediaItem.addedAt] only (never [MediaItem.updatedAt], which
   /// follows metadata refreshes). Items missing [addedAt] still appear, last.
-  static List<MediaItem> recentlyAdded(List<MediaHub> hubs, {int limit = maxItems}) {
+  static List<MediaItem> recentlyAdded(
+    List<MediaHub> hubs, {
+    required SystemShelfLibraryKind kind,
+    int limit = maxItems,
+  }) {
     final items = <MediaItem>[];
     for (final hub in hubs) {
       if (!isRecentlyAddedHub(hub)) continue;
       for (final item in hub.items) {
-        if (_isShelfKind(item.kind)) items.add(item);
+        if (_matchesRecentlyAdded(kind, item.kind)) items.add(item);
       }
     }
     return _dedupeAndSort(
@@ -76,14 +92,14 @@ class SystemShelfLibraryChannels {
     );
   }
 
-  /// Newest movies/shows by premiere date. Library add date is ignored.
+  /// Newest titles of [kind] by premiere date. Library add date is ignored.
   ///
-  /// Prefers dedicated new-release hubs; otherwise takes movies/shows from
-  /// every Discover hub and ranks by premiere so a just-imported older film
-  /// cannot outrank a newer title that simply was not in a "recent" hub.
-  /// Episodes are excluded — air dates are not movie/show premieres.
+  /// Prefers dedicated new-release hubs; otherwise takes matching titles from
+  /// every Discover hub and ranks by premiere. Episodes are never included —
+  /// air dates are not show premieres.
   static List<MediaItem> newReleases(
     List<MediaHub> hubs, {
+    required SystemShelfLibraryKind kind,
     int limit = maxItems,
     DateTime? now,
   }) {
@@ -91,7 +107,7 @@ class SystemShelfLibraryChannels {
     for (final hub in hubs) {
       if (!isNewReleasesHub(hub)) continue;
       for (final item in hub.items) {
-        if (_isNewReleaseKind(item.kind)) fromReleaseHubs.add(item);
+        if (_matchesNewRelease(kind, item.kind)) fromReleaseHubs.add(item);
       }
     }
     final source = fromReleaseHubs.isNotEmpty
@@ -99,7 +115,7 @@ class SystemShelfLibraryChannels {
         : [
             for (final hub in hubs)
               for (final item in hub.items)
-                if (_isNewReleaseKind(item.kind)) item,
+                if (_matchesNewRelease(kind, item.kind)) item,
           ];
     final clock = now ?? DateTime.now();
     final fresh = [
@@ -203,11 +219,19 @@ class SystemShelfLibraryChannels {
     return key >= cutoffKey;
   }
 
-  static bool _isShelfKind(MediaKind kind) =>
-      kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.episode;
+  static bool _matchesRecentlyAdded(SystemShelfLibraryKind kind, MediaKind itemKind) {
+    return switch (kind) {
+      SystemShelfLibraryKind.movies => itemKind == MediaKind.movie,
+      SystemShelfLibraryKind.tv => itemKind == MediaKind.show || itemKind == MediaKind.episode,
+    };
+  }
 
-  static bool _isNewReleaseKind(MediaKind kind) =>
-      kind == MediaKind.movie || kind == MediaKind.show;
+  static bool _matchesNewRelease(SystemShelfLibraryKind kind, MediaKind itemKind) {
+    return switch (kind) {
+      SystemShelfLibraryKind.movies => itemKind == MediaKind.movie,
+      SystemShelfLibraryKind.tv => itemKind == MediaKind.show,
+    };
+  }
 
   static Iterable<String> _semanticKeys(MediaHub hub) sync* {
     yield hub.id;

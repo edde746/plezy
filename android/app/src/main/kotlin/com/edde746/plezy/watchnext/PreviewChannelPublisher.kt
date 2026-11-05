@@ -27,14 +27,21 @@ internal class PreviewChannelPublisher(
 ) {
   companion object {
     private const val TAG = "PreviewChannelPublisher"
-    internal const val CHANNEL_RECENTLY_ADDED = "recently_added"
-    internal const val CHANNEL_NEW_RELEASES = "new_releases"
+    internal const val CHANNEL_RECENTLY_ADDED_MOVIES = "recently_added_movies"
+    internal const val CHANNEL_RECENTLY_ADDED_TV = "recently_added_tv"
+    internal const val CHANNEL_NEW_RELEASES_MOVIES = "new_releases_movies"
+    internal const val CHANNEL_NEW_RELEASES_TV = "new_releases_tv"
     internal const val CHANNEL_LIVE_TV = "live_tv"
-    private val KNOWN_CHANNELS = listOf(
-      CHANNEL_RECENTLY_ADDED,
-      CHANNEL_NEW_RELEASES,
+    /** Pre-split mixed rows — deleted when a split channel publishes. */
+    private val LEGACY_CHANNELS = listOf("recently_added", "new_releases")
+    private val ACTIVE_CHANNELS = listOf(
+      CHANNEL_RECENTLY_ADDED_MOVIES,
+      CHANNEL_RECENTLY_ADDED_TV,
+      CHANNEL_NEW_RELEASES_MOVIES,
+      CHANNEL_NEW_RELEASES_TV,
       CHANNEL_LIVE_TV
     )
+    private val KNOWN_CHANNELS = ACTIVE_CHANNELS + LEGACY_CHANNELS
 
     /** Artwork files currently referenced by preview-channel programs. */
     fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<File> {
@@ -77,10 +84,11 @@ internal class PreviewChannelPublisher(
     ownership: SystemShelfLifecycle.Ownership? = null,
     isOperationActive: () -> Boolean = { true }
   ): Boolean {
-    if (channelKey !in KNOWN_CHANNELS) return false
+    if (channelKey !in ACTIVE_CHANNELS) return false
     if (items.size > SystemShelfArtworkStore.MAX_ITEMS) return false
     val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
     if (!isOperationActive()) return false
+    purgeLegacyChannelsUnlocked()
     val session = SystemShelfSyncSession(operationOwnership, syncDurationMillis)
 
     val oldUnion = ledger.grantedUris()
@@ -191,6 +199,15 @@ internal class PreviewChannelPublisher(
    * hold [SystemShelfLifecycle.whileCurrent] — used from Watch Next [clearAll]
    * so the two surfaces share one ownership fence without re-entering the lock.
    */
+  /** Deletes pre-split Recently Added / New Releases rows if they still exist. */
+  private fun purgeLegacyChannelsUnlocked() {
+    LEGACY_CHANNELS.forEach { key ->
+      val channelId = ledger.channelId(key) ?: findPublishedChannelId(key) ?: return@forEach
+      runCatching { helper.deletePreviewChannel(channelId) }
+      ledger.clearChannelId(key)
+    }
+  }
+
   internal fun clearChannelsUnlocked(): Boolean {
     KNOWN_CHANNELS.forEach { key ->
       val channelId = ledger.channelId(key) ?: findPublishedChannelId(key)
