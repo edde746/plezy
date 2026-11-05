@@ -64,6 +64,24 @@ object DeviceQuirks {
   internal fun raisesGraphicsBlackInDolbyVision(socManufacturer: String?, manufacturer: String): Boolean = socManufacturer.equals("Amlogic", ignoreCase = true) &&
     !manufacturer.equals("Amazon", ignoreCase = true)
 
+  /**
+   * The hardware video plane reaches the screen a refresh after a graphics layer given the same
+   * presentation timestamp, so the mpv vo=mediacodec subtitle plane leads its picture by one
+   * refresh (#2894). HDMI captures showed it on an Amlogic S905X4 (SEI Box R 4K Plus, the chip of
+   * the onn 4K Pro) and a MediaTek MT8696 (Google TV Streamer); a Tegra X1 (Shield) shows both on
+   * the same refresh. Neither SurfaceFlinger's present times nor the codec's frame-rendered reports
+   * include the lag, so nothing on the device can measure it.
+   *
+   * Scoped to TV boxes, where it was measured, by SoC vendor, which Android reports from API 31 (S).
+   */
+  fun videoPlaneLagsGraphics(isTv: Boolean): Boolean = videoPlaneLagsGraphics(
+    socManufacturer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MANUFACTURER else null,
+    isTv = isTv
+  )
+
+  internal fun videoPlaneLagsGraphics(socManufacturer: String?, isTv: Boolean): Boolean = isTv &&
+    (socManufacturer.equals("Amlogic", ignoreCase = true) || socManufacturer.equals("Mediatek", ignoreCase = true))
+
   private val isGooglePixelDevice: Boolean
     get() = (
       Build.MANUFACTURER.equals("Google", ignoreCase = true) ||

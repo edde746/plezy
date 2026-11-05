@@ -77,4 +77,22 @@ class DeviceQuirksTest {
     assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("unknown", "Xiaomi"))
     assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision(null, "Xiaomi"))
   }
+
+  @Test
+  fun amlogicAndMediatekTvBoxesDelayTheSubtitlePlane() {
+    // #2894: SEI Box R 4K Plus (S905X4) and Google TV Streamer (MT8696) report these strings.
+    assertTrue(DeviceQuirks.videoPlaneLagsGraphics("Amlogic", isTv = true))
+    assertTrue(DeviceQuirks.videoPlaneLagsGraphics("Mediatek", isTv = true))
+    assertTrue(DeviceQuirks.videoPlaneLagsGraphics("MediaTek", isTv = true))
+  }
+
+  @Test
+  fun otherSocsPhonesAndUnreportedVendorsKeepTheSubtitlePlaneOnTheVideoTimestamp() {
+    // The Shield (Tegra, API 28) reports no vendor and shows both planes on one refresh.
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics(null, isTv = true))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("NVIDIA", isTv = true))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Realtek", isTv = true))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Mediatek", isTv = false))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Amlogic", isTv = false))
+  }
 }
