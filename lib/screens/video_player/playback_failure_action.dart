@@ -1,3 +1,4 @@
+import '../../models/transcode_quality_preset.dart';
 import '../../mpv/models.dart';
 
 /// Highest fallback level the live-TV ladder will climb before giving up.
@@ -89,4 +90,26 @@ PlaybackFailureAction resolvePlaybackFailureAction({
   }
 
   return PlaybackFailureAction.fatal;
+}
+
+/// Whether the HTTP 500 dialog may offer to have the server transcode the item
+/// instead.
+///
+/// The 500 itself stays terminal (see [resolvePlaybackFailureAction]): this
+/// never retries the refused request. It only lets the viewer ask for a
+/// different one: a Plex transcode with direct play withheld and no cap of
+/// ours, so the server picks whatever output its limit admits, as Plex Web
+/// does when the server will not serve the file. Only an on-demand Plex open
+/// at Original quality qualifies, on a server that can transcode, and only
+/// once per item ([fallbackAlreadyUsed]): a transcode that is refused too is
+/// the server's final answer.
+bool offersServerLimitTranscode({
+  required bool isLive,
+  required bool isPlexBacked,
+  required bool serverSupportsTranscoding,
+  required TranscodeQualityPreset requestedPreset,
+  required bool fallbackAlreadyUsed,
+}) {
+  if (isLive || !isPlexBacked || !serverSupportsTranscoding) return false;
+  return requestedPreset.isOriginal && !fallbackAlreadyUsed;
 }

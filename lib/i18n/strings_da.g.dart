@@ -1007,6 +1007,7 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Undertekst downloadet';
 	@override String get subtitleDownloadedNotApplied => 'Underteksten blev downloadet, men kunne ikke vælges';
 	@override String get subtitleDownloadFailed => 'Kunne ikke downloade undertekst';
+	@override String get subtitleDownloadTimedOut => 'Underteksten dukkede ikke op i tide. Downloaden er muligvis mislykkedes';
 	@override String get searchLanguages => 'Søg sprog...';
 	@override String get skipIntro => 'Spring intro over';
 	@override String get skipCredits => 'Spring rulletekster over';
@@ -3043,6 +3044,8 @@ class _Translations$explore$detail$da extends Translations$explore$detail$en {
 	@override String get watchOn => 'Se på';
 	@override String get watchTrailer => 'Se trailer';
 	@override String openOn({required Object site}) => 'Åbn på ${site}';
+	@override String get trailerUnavailable => 'Kunne ikke åbne traileren på denne enhed';
+	@override String get linkUnavailable => 'Kunne ikke åbne linket på denne enhed';
 	@override String get crew => 'Stab';
 	@override String get ratings => 'Bedømmelser';
 	@override String get schedule => 'Program';
@@ -4231,6 +4234,7 @@ extension on TranslationsDa {
 			'videoControls.subtitleDownloaded' => 'Undertekst downloadet',
 			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten blev downloadet, men kunne ikke vælges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke downloade undertekst',
+			'videoControls.subtitleDownloadTimedOut' => 'Underteksten dukkede ikke op i tide. Downloaden er muligvis mislykkedes',
 			'videoControls.searchLanguages' => 'Søg sprog...',
 			'videoControls.skipIntro' => 'Spring intro over',
 			'videoControls.skipCredits' => 'Spring rulletekster over',
@@ -4419,9 +4423,9 @@ extension on TranslationsDa {
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet blev knyttet til en uventet server',
 			'connections.sectionTitle' => 'Forbindelser',
 			'connections.addConnection' => 'Tilføj forbindelse',
-			'connections.addConnectionSubtitleNoProfile' => 'Log ind med Plex eller forbind til en Jellyfin- eller Emby-server',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnectionSubtitleNoProfile' => 'Log ind med Plex eller forbind til en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin, Emby eller en anden profilforbindelse',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen er udløbet for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessionerne er udløbet for ${count} servere',
@@ -4835,6 +4839,8 @@ extension on TranslationsDa {
 			'explore.detail.watchOn' => 'Se på',
 			'explore.detail.watchTrailer' => 'Se trailer',
 			'explore.detail.openOn' => ({required Object site}) => 'Åbn på ${site}',
+			'explore.detail.trailerUnavailable' => 'Kunne ikke åbne traileren på denne enhed',
+			'explore.detail.linkUnavailable' => 'Kunne ikke åbne linket på denne enhed',
 			'explore.detail.crew' => 'Stab',
 			'explore.detail.ratings' => 'Bedømmelser',
 			'explore.detail.schedule' => 'Program',
@@ -4931,11 +4937,11 @@ extension on TranslationsDa {
 			'liveTv.recordSettings.skipInLibrary' => 'Spring afsnit over, der allerede er i biblioteket',
 			'liveTv.recordSettings.keepUpTo' => 'Afsnit der skal beholdes',
 			'liveTv.recordSettings.keepUpToHint' => '0 beholder alle afsnit',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerede ugyldige afspilningsdata for Live TV',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Kunne ikke starte livekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunne ikke oprette stream-URL\'en',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kunne ikke starte kanalen: ${reason}',
@@ -5445,11 +5451,11 @@ extension on TranslationsDa {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislykkedes)',
 			'externalPlayer.title' => 'Ekstern afspiller',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Brug ekstern afspiller',
 			'externalPlayer.useExternalPlayerDescription' => 'Åbn videoer i en anden app',
 			'externalPlayer.selectPlayer' => 'Vælg afspiller',

@@ -6,8 +6,10 @@ import 'package:flutter/semantics.dart' show SemanticsNode;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/card_focus_scope.dart';
+import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/theme/mono_theme.dart';
 
 void main() {
   Finder chromeIn(Type type) => find.descendant(of: find.byType(FocusableWrapper), matching: find.byType(type));
@@ -122,6 +124,79 @@ void main() {
     expect(controller.offset, greaterThan(0));
   });
 
+  testWidgets('centered focus along the top row keeps a floating NestedScrollView header in place (#2916)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final nodes = List.generate(4, (i) => FocusNode(debugLabel: 'card$i'));
+    final outerController = ScrollController();
+    for (final node in nodes) {
+      addTearDown(node.dispose);
+    }
+    addTearDown(outerController.dispose);
+
+    // A 56px floating header over a 570px body: the body overflows the 544px
+    // left beside the visible header and fits the full 600px once it hides.
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          home: Scaffold(
+            body: NestedScrollView(
+              controller: outerController,
+              floatHeaderSlivers: true,
+              headerSliverBuilder: (context, _) => [
+                SliverOverlapAbsorber(
+                  handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                  sliver: const SliverAppBar(floating: true, snap: true, title: Text('header')),
+                ),
+              ],
+              body: CustomScrollView(
+                primary: true,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < nodes.length; i++)
+                          FocusableWrapper(
+                            focusNode: nodes[i],
+                            // TV card configuration: always aim for the center.
+                            useComfortableZone: false,
+                            scrollAlignment: 0.5,
+                            onSelect: () {},
+                            onNavigateRight: i + 1 < nodes.length ? nodes[i + 1].requestFocus : null,
+                            child: const SizedBox(width: 100, height: 150),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 420)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    nodes.first.requestFocus();
+    await tester.pumpAndSettle();
+
+    final headerOffsets = [outerController.offset];
+    for (var i = 1; i < nodes.length; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(nodes[i].hasFocus, isTrue);
+      headerOffsets.add(outerController.offset);
+    }
+
+    expect(headerOffsets, everyElement(0.0));
+  });
+
   testWidgets('dialog close restoring pointer-parked focus keeps the scroll position', (tester) async {
     // Issue #2031: entry code parks focus on an item, the user scrolls away by
     // touch/mouse, and closing a context menu (a dialog route) hands focus back
@@ -184,6 +259,51 @@ void main() {
 
     expect(longPressed, 1);
     expect(selected, 1);
+  });
+
+  Future<Color> focusedFill(WidgetTester tester, MonoPalette palette, {Color? focusColor}) async {
+    final node = FocusNode(debugLabel: 'tile');
+    addTearDown(node.dispose);
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          theme: monoTheme(palette),
+          home: Scaffold(
+            body: FocusableWrapper(
+              focusNode: node,
+              useBackgroundFocus: true,
+              focusColor: focusColor,
+              onSelect: () {},
+              child: const SizedBox(width: 100, height: 40),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    node.requestFocus();
+    await tester.pumpAndSettle();
+
+    return (tester.widget<AnimatedContainer>(chromeIn(AnimatedContainer)).decoration! as BoxDecoration).color!;
+  }
+
+  double contrastOver(Color fill, Color backdrop) =>
+      (Color.alphaBlend(fill, backdrop).computeLuminance() - backdrop.computeLuminance()).abs();
+
+  testWidgets('background focus fill stands out on light and dark card surfaces (#2929)', (tester) async {
+    for (final palette in [MonoPalette.light, MonoPalette.paper, MonoPalette.dark]) {
+      final fill = await focusedFill(tester, palette);
+      expect(
+        contrastOver(fill, palette.surface),
+        greaterThan(0.02),
+        reason: 'focus fill vanished on surface ${palette.surface}',
+      );
+    }
+  });
+
+  testWidgets('on-media background focus stays visible over video under a light theme', (tester) async {
+    final fill = await focusedFill(tester, MonoPalette.light, focusColor: FocusTheme.onMediaFocusFill);
+    expect(contrastOver(fill, Colors.black), greaterThan(0.02));
   });
 
   testWidgets('focus scale animation keeps child semantics geometry stable', (tester) async {

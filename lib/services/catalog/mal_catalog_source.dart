@@ -9,7 +9,8 @@ import '../../models/mal/mal_anime.dart';
 import '../../models/trackers/fribb_mapping_row.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/external_ids.dart';
-import '../trackers/fribb_mapping_store.dart';
+import '../trackers/anime_mappings_store.dart';
+import '../trackers/fribb_index.dart';
 import '../trackers/mal/mal_client.dart';
 import '../trackers/mal/mal_constants.dart';
 import '../trackers/tracker_exceptions.dart';
@@ -31,7 +32,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource, 
   final MalClient _client;
   final FribbMappingLookup _fribb;
 
-  MalCatalogSource(this._client, {FribbMappingLookup? fribb}) : _fribb = fribb ?? FribbMappingStore.instance;
+  MalCatalogSource(this._client, {FribbMappingLookup? fribb}) : _fribb = fribb ?? AnimeMappingsStore.instance;
 
   @override
   String get watchlistLogLabel => 'MAL: Plan to Watch';

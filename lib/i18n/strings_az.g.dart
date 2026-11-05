@@ -1007,6 +1007,7 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Altyazı yükləndi';
 	@override String get subtitleDownloadedNotApplied => 'Altyazı yükləndi, lakin seçilə bilmədi';
 	@override String get subtitleDownloadFailed => 'Altyazı yüklənə bilmədi';
+	@override String get subtitleDownloadTimedOut => 'Altyazı vaxtında görünmədi. Yükləmə uğursuz olmuş ola bilər';
 	@override String get searchLanguages => 'Dillərdə axtar...';
 	@override String get skipIntro => 'Girişi keç';
 	@override String get skipCredits => 'Titrləri keç';
@@ -3043,6 +3044,8 @@ class _Translations$explore$detail$az extends Translations$explore$detail$en {
 	@override String get watchOn => 'İzlə';
 	@override String get watchTrailer => 'Treyleri izlə';
 	@override String openOn({required Object site}) => '${site} saytında aç';
+	@override String get trailerUnavailable => 'Bu cihazda treyler açıla bilmədi';
+	@override String get linkUnavailable => 'Bu cihazda bu keçid açıla bilmədi';
 	@override String get crew => 'Heyət';
 	@override String get ratings => 'Reytinq';
 	@override String get schedule => 'Cədvəl';
@@ -4231,6 +4234,7 @@ extension on TranslationsAz {
 			'videoControls.subtitleDownloaded' => 'Altyazı yükləndi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı yükləndi, lakin seçilə bilmədi',
 			'videoControls.subtitleDownloadFailed' => 'Altyazı yüklənə bilmədi',
+			'videoControls.subtitleDownloadTimedOut' => 'Altyazı vaxtında görünmədi. Yükləmə uğursuz olmuş ola bilər',
 			'videoControls.searchLanguages' => 'Dillərdə axtar...',
 			'videoControls.skipIntro' => 'Girişi keç',
 			'videoControls.skipCredits' => 'Titrləri keç',
@@ -4419,9 +4423,9 @@ extension on TranslationsAz {
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			'connections.sectionTitle' => 'Qoşulmalar',
 			'connections.addConnection' => 'Qoşulma əlavə et',
-			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} üçün seansın vaxtı bitdi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server üçün seansın vaxtı bitdi',
@@ -4835,6 +4839,8 @@ extension on TranslationsAz {
 			'explore.detail.watchOn' => 'İzlə',
 			'explore.detail.watchTrailer' => 'Treyleri izlə',
 			'explore.detail.openOn' => ({required Object site}) => '${site} saytında aç',
+			'explore.detail.trailerUnavailable' => 'Bu cihazda treyler açıla bilmədi',
+			'explore.detail.linkUnavailable' => 'Bu cihazda bu keçid açıla bilmədi',
 			'explore.detail.crew' => 'Heyət',
 			'explore.detail.ratings' => 'Reytinq',
 			'explore.detail.schedule' => 'Cədvəl',
@@ -4931,11 +4937,11 @@ extension on TranslationsAz {
 			'liveTv.recordSettings.skipInLibrary' => 'Kitabxanada artıq olan epizodları ötür',
 			'liveTv.recordSettings.keepUpTo' => 'Saxlanılacaq epizodlar',
 			'liveTv.recordSettings.keepUpToHint' => '0 bütün epizodları saxlayır',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dəq sonra başlayır',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} etibarsız Canlı TV oynatma məlumatı qaytardı',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Canlı kanalı başlatmaq olmadı',
 			'liveTv.failedToBuildStreamUrl' => 'Yayım URL-i yaratmaq olmadı',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanal başladıla bilmədi: ${reason}',
@@ -5445,11 +5451,11 @@ extension on TranslationsAz {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Proqram təminatı',
 			'performanceOverlay.decoderHardware' => 'Aparat təminatı',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)',
 			'externalPlayer.title' => 'Xarici oynadıcı',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Xarici oynadıcı istifadə et',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başqa tətbiqdə açın',
 			'externalPlayer.selectPlayer' => 'Oynadıcı seç',

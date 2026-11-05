@@ -45,6 +45,7 @@ import 'services/settings_service.dart';
 import 'services/agent_control_service.dart';
 import 'widgets/agent_control_scope.dart';
 import 'widgets/settings_builder.dart';
+import 'utils/iphone_duo.dart';
 import 'utils/platform_detector.dart';
 import 'utils/pointer_scroll_axis.dart';
 import 'services/apple_tv_remote_touch_service.dart';
@@ -94,6 +95,7 @@ import 'utils/watch_state_notifier.dart';
 import 'i18n/app_locale_utils.dart';
 import 'i18n/strings.g.dart';
 import 'widgets/app_icon.dart';
+import 'widgets/app_system_ui_style.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -855,6 +857,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
             theme: resolved?.lightTheme ?? widget.lightTheme,
             darkTheme: resolved?.darkTheme ?? widget.darkTheme,
             themeMode: resolved?.themeMode ?? widget.themeMode,
+            builder: (context, child) => AppSystemUiStyle(child: child!),
             home: Builder(builder: _buildBootstrapHome),
           ),
         ),
@@ -2024,10 +2027,14 @@ class _AppShell extends StatelessWidget {
 /// below would leave global snackbars at the car's native density while the rest of the
 /// interface grew.
 Widget rootShell(Widget? child) {
-  return FormFactorScale(
-    child: ScaffoldMessenger(
-      key: rootScaffoldMessengerKey,
-      child: Scaffold(backgroundColor: Colors.transparent, body: child),
+  return AppSystemUiStyle(
+    child: IphoneDuoScope(
+      child: FormFactorScale(
+        child: ScaffoldMessenger(
+          key: rootScaffoldMessengerKey,
+          child: Scaffold(backgroundColor: Colors.transparent, body: child),
+        ),
+      ),
     ),
   );
 }

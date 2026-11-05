@@ -224,7 +224,8 @@ final class MpvPlayerContractTests: XCTestCase {
 
   func testMpvContextsPreferAVFoundationOverAudioUnit() {
     // ao_audiounit remixes 5.1/7.1 to stereo on AirPods (#2264); both the
-    // video and the music core must probe AVFoundation first.
+    // video and the music core must probe AVFoundation first. From iOS 26,
+    // ao_spatial precedes it and refuses everything but TrueHD and DTS-HD.
     let core = MpvAudioPlayerCore()
     XCTAssertTrue(core.initialize())
     defer {
@@ -232,7 +233,13 @@ final class MpvPlayerContractTests: XCTestCase {
       core.queue.sync {}
     }
 
-    XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), "avfoundation,audiounit")
+    let expected: String
+    if #available(iOS 26, *) {
+      expected = "spatial,avfoundation,audiounit"
+    } else {
+      expected = "avfoundation,audiounit"
+    }
+    XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), expected)
   }
 
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
@@ -267,6 +274,12 @@ final class MpvPlayerContractTests: XCTestCase {
   // ao_avfoundation queues seconds of audio filtered at the old speed. A Watch
   // Together room pauses, changes its rate and plays; playback must run at the
   // new rate from the paused position, not drift off while that queue drains.
+  //
+  // Unflushed, that queue lands playback about 4 s off. The flush is a seek,
+  // and restarting output after it costs about 0.25 s of wall time, which is
+  // 0.5 s of position at 2x, and more on a loaded CI simulator.
+  private let speedChangeTolerance: TimeInterval = 1.5
+
   func testSpeedWrittenWhilePausedTakesEffectOnPlay() throws {
     let (core, file) = try startSilentPlayback()
     defer { stopSilentPlayback(core, file: file) }
@@ -281,7 +294,7 @@ final class MpvPlayerContractTests: XCTestCase {
     pump(3)
 
     let expected = pausedAt + 2 * Date().timeIntervalSince(playedAt)
-    XCTAssertEqual(try timePos(core), expected, accuracy: 0.5)
+    XCTAssertEqual(try timePos(core), expected, accuracy: speedChangeTolerance)
   }
 
   func testSpeedWrittenWhilePlayingTakesEffectAtOnce() throws {
@@ -294,7 +307,7 @@ final class MpvPlayerContractTests: XCTestCase {
     pump(3)
 
     let expected = changedFrom + 2 * Date().timeIntervalSince(changedAt)
-    XCTAssertEqual(try timePos(core), expected, accuracy: 0.5)
+    XCTAssertEqual(try timePos(core), expected, accuracy: speedChangeTolerance)
   }
 
   func testOlderPauseReplyCannotOverwriteNewerUserIntent() {

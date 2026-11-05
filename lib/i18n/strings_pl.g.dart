@@ -1013,6 +1013,7 @@ class _Translations$videoControls$pl extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Napisy pobrane';
 	@override String get subtitleDownloadedNotApplied => 'Napisy zostały pobrane, ale nie można ich było wybrać';
 	@override String get subtitleDownloadFailed => 'Nie udało się pobrać napisów';
+	@override String get subtitleDownloadTimedOut => 'Napisy nie pojawiły się na czas. Pobieranie mogło się nie udać';
 	@override String get searchLanguages => 'Szukaj języków...';
 	@override String get skipIntro => 'Pomiń intro';
 	@override String get skipCredits => 'Pomiń napisy końcowe';
@@ -3065,6 +3066,8 @@ class _Translations$explore$detail$pl extends Translations$explore$detail$en {
 	@override String get watchOn => 'Oglądaj na';
 	@override String get watchTrailer => 'Obejrzyj zwiastun';
 	@override String openOn({required Object site}) => 'Otwórz na ${site}';
+	@override String get trailerUnavailable => 'Nie udało się otworzyć zwiastuna na tym urządzeniu';
+	@override String get linkUnavailable => 'Nie udało się otworzyć linku na tym urządzeniu';
 	@override String get crew => 'Obsada i ekipa';
 	@override String get ratings => 'Oceny';
 	@override String get schedule => 'Harmonogram';
@@ -4255,6 +4258,7 @@ extension on TranslationsPl {
 			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
 			'videoControls.subtitleDownloadedNotApplied' => 'Napisy zostały pobrane, ale nie można ich było wybrać',
 			'videoControls.subtitleDownloadFailed' => 'Nie udało się pobrać napisów',
+			'videoControls.subtitleDownloadTimedOut' => 'Napisy nie pojawiły się na czas. Pobieranie mogło się nie udać',
 			'videoControls.searchLanguages' => 'Szukaj języków...',
 			'videoControls.skipIntro' => 'Pomiń intro',
 			'videoControls.skipCredits' => 'Pomiń napisy końcowe',
@@ -4443,9 +4447,9 @@ extension on TranslationsPl {
 			'profiles.tokenIdentityMismatch' => 'Token profilu Plex został powiązany z nieoczekiwanym serwerem',
 			'connections.sectionTitle' => 'Połączenia',
 			'connections.addConnection' => 'Dodaj połączenie',
-			'connections.addConnectionSubtitleNoProfile' => 'Zaloguj się przez Plex lub połącz serwer Jellyfin albo Emby',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnectionSubtitleNoProfile' => 'Zaloguj się przez Plex lub połącz serwer Jellyfin albo Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Dodaj do ${displayName}: Plex, Jellyfin, Emby lub połączenie innego profilu',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesja wygasła dla ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sesja wygasła dla ${count} serwerów',
@@ -4859,6 +4863,8 @@ extension on TranslationsPl {
 			'explore.detail.watchOn' => 'Oglądaj na',
 			'explore.detail.watchTrailer' => 'Obejrzyj zwiastun',
 			'explore.detail.openOn' => ({required Object site}) => 'Otwórz na ${site}',
+			'explore.detail.trailerUnavailable' => 'Nie udało się otworzyć zwiastuna na tym urządzeniu',
+			'explore.detail.linkUnavailable' => 'Nie udało się otworzyć linku na tym urządzeniu',
 			'explore.detail.crew' => 'Obsada i ekipa',
 			'explore.detail.ratings' => 'Oceny',
 			'explore.detail.schedule' => 'Harmonogram',
@@ -4955,11 +4961,11 @@ extension on TranslationsPl {
 			'liveTv.recordSettings.skipInLibrary' => 'Pomijaj odcinki już obecne w bibliotece',
 			'liveTv.recordSettings.keepUpTo' => 'Odcinki do zachowania',
 			'liveTv.recordSettings.keepUpToHint' => '0 zachowuje wszystkie odcinki',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Rozpocznie się za ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} o ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} zwrócił nieprawidłowe dane odtwarzania TV na żywo',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Nie udało się uruchomić kanału na żywo',
 			'liveTv.failedToBuildStreamUrl' => 'Nie udało się utworzyć adresu URL strumienia',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Nie udało się uruchomić kanału: ${reason}',
@@ -5469,11 +5475,11 @@ extension on TranslationsPl {
 			'performanceOverlay.decoderExynosHw' => 'Exynos (sprzętowy)',
 			'performanceOverlay.decoderSoftware' => 'Programowy',
 			'performanceOverlay.decoderHardware' => 'Sprzętowy',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Aktywne',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (niepowodzenia: ${failures})',
 			'externalPlayer.title' => 'Zewnętrzny odtwarzacz',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Użyj zewnętrznego odtwarzacza',
 			'externalPlayer.useExternalPlayerDescription' => 'Otwieraj wideo w innej aplikacji',
 			'externalPlayer.selectPlayer' => 'Wybierz odtwarzacz',

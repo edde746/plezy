@@ -1366,7 +1366,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       // Reach full bg before the bottom edge so the hero
                       // blends seamlessly into the content below and the
                       // page dots sit on a solid band.
-                      colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
+                      colors: [bgColor.withValues(alpha: 0), bgColor.withValues(alpha: 0.9), bgColor, bgColor],
                       stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
                     ),
                   ),

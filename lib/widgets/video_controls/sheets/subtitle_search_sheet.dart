@@ -211,7 +211,12 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
           showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
           OverlaySheetController.of(context).close();
         } else {
-          showErrorSnackBar(context, t.videoControls.subtitleDownloadedNotApplied);
+          showErrorSnackBar(
+            context,
+            outcome == SubtitleDownloadApplyOutcome.timedOut
+                ? t.videoControls.subtitleDownloadTimedOut
+                : t.videoControls.subtitleDownloadedNotApplied,
+          );
           setState(() => _downloadingKey = null);
         }
       } else {

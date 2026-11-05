@@ -43,6 +43,27 @@ object DeviceQuirks {
     contentFrameRate > 0f &&
     contentFrameRate <= MAX_UNRELIABLE_TUNNELED_FPS
 
+  /**
+   * The display pipeline raises opaque black on a graphics layer while the output is in Dolby
+   * Vision, and scans a transparent area out black. Letterbox bars filled black on the mpv OSD
+   * plane therefore come out gray here (#2926), while ExoPlayer, which leaves its overlay plane
+   * transparent over the same picture-sized video surface, shows black ones. MediaTek boxes (Google
+   * TV Streamer, Fire TV 4K Max) behave the other way round (#2163), which is why the fill stays on
+   * everywhere else.
+   *
+   * Scoped to Amlogic by SoC vendor, which Android reports from API 31 (S). Amazon is excluded by
+   * name: Kodi lists the Amlogic Fire TV Cube 3 with the MediaTek Fire TV Stick 4K Max as needing
+   * opaque black (xbmc/xbmc#22561).
+   */
+  val raisesGraphicsBlackInDolbyVision: Boolean
+    get() = raisesGraphicsBlackInDolbyVision(
+      socManufacturer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MANUFACTURER else null,
+      manufacturer = Build.MANUFACTURER
+    )
+
+  internal fun raisesGraphicsBlackInDolbyVision(socManufacturer: String?, manufacturer: String): Boolean = socManufacturer.equals("Amlogic", ignoreCase = true) &&
+    !manufacturer.equals("Amazon", ignoreCase = true)
+
   private val isGooglePixelDevice: Boolean
     get() = (
       Build.MANUFACTURER.equals("Google", ignoreCase = true) ||

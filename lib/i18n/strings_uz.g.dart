@@ -1007,6 +1007,7 @@ class _Translations$videoControls$uz extends Translations$videoControls$en {
 	@override String get subtitleDownloaded => 'Subtitr yuklab olindi';
 	@override String get subtitleDownloadedNotApplied => 'Subtitr yuklab olindi, lekin qoʻllanilmadi';
 	@override String get subtitleDownloadFailed => 'Subtitrni yuklab boʻlmadi';
+	@override String get subtitleDownloadTimedOut => 'Subtitr oʻz vaqtida paydo boʻlmadi. Yuklab olish muvaffaqiyatsiz boʻlgan boʻlishi mumkin';
 	@override String get searchLanguages => 'Tillardan qidirish...';
 	@override String get skipIntro => 'Kirishni oʻtkazish';
 	@override String get skipCredits => 'Titrlardan oʻtish';
@@ -3043,6 +3044,8 @@ class _Translations$explore$detail$uz extends Translations$explore$detail$en {
 	@override String get watchOn => 'Tomosha qilish';
 	@override String get watchTrailer => 'Treylerni koʻrish';
 	@override String openOn({required Object site}) => '${site} da ochish';
+	@override String get trailerUnavailable => 'Bu qurilmada treylerni ochib boʻlmadi';
+	@override String get linkUnavailable => 'Bu qurilmada havolani ochib boʻlmadi';
 	@override String get crew => 'Jamoa';
 	@override String get ratings => 'Baholar';
 	@override String get schedule => 'Jadval';
@@ -4231,6 +4234,7 @@ extension on TranslationsUz {
 			'videoControls.subtitleDownloaded' => 'Subtitr yuklab olindi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitr yuklab olindi, lekin qoʻllanilmadi',
 			'videoControls.subtitleDownloadFailed' => 'Subtitrni yuklab boʻlmadi',
+			'videoControls.subtitleDownloadTimedOut' => 'Subtitr oʻz vaqtida paydo boʻlmadi. Yuklab olish muvaffaqiyatsiz boʻlgan boʻlishi mumkin',
 			'videoControls.searchLanguages' => 'Tillardan qidirish...',
 			'videoControls.skipIntro' => 'Kirishni oʻtkazish',
 			'videoControls.skipCredits' => 'Titrlardan oʻtish',
@@ -4419,9 +4423,9 @@ extension on TranslationsUz {
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
 			'connections.sectionTitle' => 'Ulanishlar',
 			'connections.addConnection' => 'Ulanish qoʻshish',
-			'connections.addConnectionSubtitleNoProfile' => 'Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnectionSubtitleNoProfile' => 'Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} uchun seans vaqti tugadi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server uchun seans vaqti tugadi',
@@ -4835,6 +4839,8 @@ extension on TranslationsUz {
 			'explore.detail.watchOn' => 'Tomosha qilish',
 			'explore.detail.watchTrailer' => 'Treylerni koʻrish',
 			'explore.detail.openOn' => ({required Object site}) => '${site} da ochish',
+			'explore.detail.trailerUnavailable' => 'Bu qurilmada treylerni ochib boʻlmadi',
+			'explore.detail.linkUnavailable' => 'Bu qurilmada havolani ochib boʻlmadi',
 			'explore.detail.crew' => 'Jamoa',
 			'explore.detail.ratings' => 'Baholar',
 			'explore.detail.schedule' => 'Jadval',
@@ -4931,11 +4937,11 @@ extension on TranslationsUz {
 			'liveTv.recordSettings.skipInLibrary' => 'Kutubxonada mavjud epizodlarni oʻtkazib yuborish',
 			'liveTv.recordSettings.keepUpTo' => 'Saqlanadigan epizodlar',
 			'liveTv.recordSettings.keepUpToHint' => '0 barcha epizodlarni saqlaydi',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, soat ${time} da',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToStartChannel' => 'Jonli kanalni boshlab boʻlmadi',
 			'liveTv.failedToBuildStreamUrl' => 'Oqim URL-ini tuzib boʻlmadi',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanalni ishga tushirib boʻlmadi: ${reason}',
@@ -5445,11 +5451,11 @@ extension on TranslationsUz {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Dasturiy',
 			'performanceOverlay.decoderHardware' => 'Apparat',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Faol',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)',
 			'externalPlayer.title' => 'Tashqi pleyer',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.useExternalPlayer' => 'Tashqi pleyerdan foydalanish',
 			'externalPlayer.useExternalPlayerDescription' => 'Videolarni boshqa ilovada ochish',
 			'externalPlayer.selectPlayer' => 'Pleyerni tanlash',

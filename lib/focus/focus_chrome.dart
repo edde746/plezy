@@ -33,7 +33,13 @@ Widget buildFocusChrome(
     card = CardFocusScope(showFocus: showFocus, child: child);
   } else {
     final decoration = useBackgroundFocus
-        ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: borderRadius, radii: borderRadii)
+        ? FocusTheme.focusBackgroundDecoration(
+            context,
+            isFocused: showFocus,
+            borderRadius: borderRadius,
+            radii: borderRadii,
+            color: focusColor,
+          )
         : FocusTheme.focusDecoration(
             context,
             isFocused: showFocus,

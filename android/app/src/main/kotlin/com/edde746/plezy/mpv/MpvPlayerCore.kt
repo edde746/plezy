@@ -20,6 +20,7 @@ import com.edde746.mpv.*
 import com.edde746.plezy.NativeModuleCache
 import com.edde746.plezy.exoplayer.DoviBridge
 import com.edde746.plezy.shared.AudioFocusManager
+import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerDebugLog
 import com.edde746.plezy.shared.PlayerDelegate
@@ -1077,6 +1078,12 @@ class MpvPlayerCore private constructor(
                   setOption("vo", initialVideoOutput(hardwareDecoding))
                   setOption("gpu-context", "android")
                   setOption("opengl-es", "yes")
+                  // The vo=mediacodec OSD plane fills the letterbox opaque black,
+                  // except where that black comes out gray in Dolby Vision output and
+                  // a transparent margin stays black; see PlayerSurfaceHost.createOsdSurface.
+                  if (DeviceQuirks.raisesGraphicsBlackInDolbyVision) {
+                    setOption("vo-mediacodec-letterbox-fill", "no")
+                  }
                   // The Java MediaCodec wrapper, driven asynchronously where
                   // the platform is trusted to (rationale on
                   // initialDecoderEntries). This belongs to every video core,

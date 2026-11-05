@@ -86,6 +86,7 @@ import '../providers/shader_provider.dart';
 import '../providers/account_preferences_controller.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/iphone_duo.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/immersive_mode_guard.dart';
 import '../utils/live_tv_player_navigation.dart';
@@ -371,6 +372,7 @@ class _PlaybackOpenRequest {
     required this.qualityPreset,
     required this.audioStreamId,
     required this.resumePosition,
+    this.forceTranscode = false,
   });
 
   final MediaItem metadata;
@@ -380,13 +382,18 @@ class _PlaybackOpenRequest {
   final int? audioStreamId;
   final Duration? resumePosition;
 
+  /// A server transcode the viewer asked for after the server refused the
+  /// file itself (HTTP 500); see [PlaybackInitializationOptions.forceTranscode].
+  final bool forceTranscode;
+
   /// Same item and source selection; where it resumes from is incidental.
   bool sameSourceAs(_PlaybackOpenRequest other) =>
       metadata.globalKey == other.metadata.globalKey &&
       mediaIndex == other.mediaIndex &&
       mediaSourceId == other.mediaSourceId &&
       qualityPreset == other.qualityPreset &&
-      audioStreamId == other.audioStreamId;
+      audioStreamId == other.audioStreamId &&
+      forceTranscode == other.forceTranscode;
 
   _PlaybackOpenRequest resumingAt(Duration? position) => _PlaybackOpenRequest(
     metadata: metadata,
@@ -395,6 +402,7 @@ class _PlaybackOpenRequest {
     qualityPreset: qualityPreset,
     audioStreamId: audioStreamId,
     resumePosition: position,
+    forceTranscode: forceTranscode,
   );
 }
 
@@ -1371,6 +1379,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Fullscreen entered from here on is the player's to drop; whatever was
     // already fullscreen belongs to the app window (#1624).
     FullscreenStateManager().beginScope();
+
+    // iPhone Duo: horizontal status bar while playing, so the video and its
+    // controls get the full width instead of sharing it with the vertical bar.
+    // Claimed here rather than after startup: a replacement player (next
+    // episode) mounts before the one it replaces is disposed, so the two
+    // claims overlap and the bar never comes back in between.
+    IphoneDuo.instance.disableVerticalBarFor(this);
 
     _playerNavigationCoordinator = PlayerNavigationCoordinator(
       chromeController: _chromeController,
@@ -2378,6 +2393,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Before the overlays are shown below: the re-show callback that follows
     // must find no owner, or it would hide them again.
     ImmersiveModeGuard.release(this);
+    IphoneDuo.instance.restoreVerticalBarFor(this);
     final existing = _systemUiRestoreOperation;
     if (existing != null) return existing;
     if (_activeRouteGuard.identityFor(this) == null) return Future<void>.value();
@@ -2542,6 +2558,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // out; until then nobody owns it, and a stale owner would keep hiding
     // the bars on whatever screen comes next.
     ImmersiveModeGuard.release(this);
+    IphoneDuo.instance.restoreVerticalBarFor(this);
     if (!isReplacingWithVideo) {
       unawaited(_restoreSystemUiAndOrientation());
     }
@@ -2720,6 +2737,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// deliberately retries a 503 (see `_applyNetworkStreamTuning`), and a
   /// transient status must never mask the fatal one that follows.
   final Set<int> _fatalHttpStatuses = <int>{};
+
+  /// The HTTP 500 dialog's transcode was already tried for the item on
+  /// screen, so a further 500 shows the dialog without it. Cleared when an
+  /// in-place reload opens another item.
+  bool _serverLimitFallbackUsed = false;
 
   /// Bounds an open the server keeps answering with HTTP 503 — that loop
   /// otherwise never raises an error (#1830). Armed from [_onPlayerLog],

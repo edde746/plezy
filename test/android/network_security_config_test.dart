@@ -14,7 +14,7 @@ const _expectedDomains = <String>{
   'simkl.com',
   'simkl.in',
   'jsdelivr.net',
-  'api.github.com',
+  'github.com',
   'image.tmdb.org',
 };
 const _fixedEndpointSourcePaths = <String>[
@@ -26,8 +26,7 @@ const _fixedEndpointSourcePaths = <String>[
   'lib/services/trackers/anilist/anilist_constants.dart',
   'lib/services/trackers/simkl/simkl_constants.dart',
   'lib/services/trackers/oauth_proxy_client.dart',
-  'lib/services/trackers/anime_lists_mapping_store.dart',
-  'lib/services/trackers/fribb_mapping_store.dart',
+  'lib/services/trackers/anime_mappings_store.dart',
   'lib/services/catalog/seerr_catalog_source.dart',
   'lib/services/discord_rpc_service.dart',
   'lib/services/update_service.dart',

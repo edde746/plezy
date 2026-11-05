@@ -5,6 +5,8 @@ import 'package:plezy/focus/covered_route_focus_boundary.dart';
 /// The shape from #2034/#2239: a nested navigator whose content sits under a
 /// route pushed on the ROOT navigator. Nested-route `isCurrent` stays true
 /// there, so a focus self-heal below must be neutralised by the boundary.
+/// With [innerBoundary] the nested home route carries its own boundary too,
+/// as MainScreen does, for detail routes pushed beside it (#2915).
 class _Harness {
   _Harness(this.tester);
 
@@ -16,19 +18,20 @@ class _Harness {
   final content = FocusScopeNode(debugLabel: 'ContentScope');
   final cover = FocusNode(debugLabel: 'PickerTile');
   final sheetItem = FocusNode(debugLabel: 'SheetItem');
+  final detail = FocusNode(debugLabel: 'DetailPageItem');
   late BuildContext nestedContext;
   bool showTile = true;
   bool showSheet = false;
   StateSetter? _rebuildNested;
 
-  Future<void> pump({bool boundary = true}) async {
+  Future<void> pump({bool boundary = true, bool innerBoundary = false}) async {
     Widget session = Navigator(
       onGenerateRoute: (_) => MaterialPageRoute(
         builder: (context) => StatefulBuilder(
           builder: (context, setState) {
             nestedContext = context;
             _rebuildNested = setState;
-            return Column(
+            final Widget screen = Column(
               children: [
                 Focus(focusNode: hidden, child: const SizedBox(height: 10, width: 10)),
                 FocusScope(
@@ -49,6 +52,7 @@ class _Harness {
                   ),
               ],
             );
+            return innerBoundary ? CoveredRouteFocusBoundary(child: screen) : screen;
           },
         ),
       ),
@@ -77,6 +81,25 @@ class _Harness {
     await tester.pump();
   }
 
+  /// A detail page pushed on the nested navigator, over the home route.
+  Future<void> pushDetail() async {
+    Navigator.of(nestedContext).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Focus(focusNode: detail, autofocus: true, child: const SizedBox.expand()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(detail.hasPrimaryFocus, isTrue, reason: 'precondition: detail page took focus');
+  }
+
+  Future<void> popDetail() async {
+    Navigator.of(nestedContext).pop();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+  }
+
   void unmountTile() => _rebuildNested!(() => showTile = false);
 
   void openSheet() => _rebuildNested!(() => showSheet = true);
@@ -90,6 +113,7 @@ class _Harness {
     content.dispose();
     cover.dispose();
     sheetItem.dispose();
+    detail.dispose();
   }
 }
 
@@ -226,5 +250,73 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(h.tile.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('a self-heal under a screen covered by a sibling route is a no-op (#2915)', (tester) async {
+    // MainScreen's offline flip refocused its sidebar while a series page sat
+    // on top of it; the remote then drove the hidden sidebar and Back never
+    // reached the page.
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump(innerBoundary: true);
+    await h.pushDetail();
+
+    h.hidden.requestFocus();
+    await tester.pump();
+
+    expect(h.hidden.hasPrimaryFocus, isFalse);
+    expect(h.detail.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('focus returns to the leaf that had it once the sibling route pops', (tester) async {
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump(innerBoundary: true);
+    h.secondTile.requestFocus();
+    await tester.pump();
+    await h.pushDetail();
+    h.hidden.requestFocus();
+    await tester.pump();
+
+    await h.popDetail();
+
+    expect(h.secondTile.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('an initial focus request passes an uncovered inner boundary to the covered outer one', (tester) async {
+    // The #2817 remount under the root picker, with MainScreen's own boundary
+    // between the request and the session boundary that is actually covered.
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump(innerBoundary: true);
+    await h.pushCover();
+
+    CoveredRouteFocusBoundary.requestInitialFocus(h.secondTile.context!, h.secondTile);
+    await tester.pump();
+    expect(h.cover.hasPrimaryFocus, isTrue, reason: 'a held request must not steal the cover');
+
+    await h.popCover();
+
+    expect(h.secondTile.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('an initial focus request held under a sibling route waits out a root cover too', (tester) async {
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump(innerBoundary: true);
+    await h.pushDetail();
+    await h.pushCover();
+
+    // Requested from inside the screen, as TvBrowseRail does: the innermost
+    // covered boundary holds it first.
+    CoveredRouteFocusBoundary.requestInitialFocus(h.secondTile.context!, h.secondTile);
+    // The sibling route leaves first, while the root cover is still up: the
+    // replay must not land behind the cover.
+    await h.popDetail();
+    expect(h.cover.hasPrimaryFocus, isTrue, reason: 'the replay must not steal the root cover');
+
+    await h.popCover();
+
+    expect(h.secondTile.hasPrimaryFocus, isTrue);
   });
 }

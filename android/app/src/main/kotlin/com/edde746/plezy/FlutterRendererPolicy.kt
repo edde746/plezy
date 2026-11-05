@@ -27,8 +27,13 @@ internal object FlutterRendererPolicy {
     ) {
       return FlutterRenderer.SKIA
     }
+    // Without Vulkan 1.1, Impeller can only fall back to its GLES backend. The engine's own
+    // guard keys on API level, which custom ROMs defeat: LineageOS 21 reports API 34 on a
+    // Nexus 7 (2013) still running the 2016 Adreno 320 driver, whose shader compiler crashes
+    // the raster thread on Impeller's GLES shaders at launch (#2948, flutter/flutter#164906).
+    if (!supportsVulkan11) return FlutterRenderer.SKIA
     if (!isAndroidTv) return FlutterRenderer.IMPELLER
-    if (sdkInt < ANDROID_12_API || manufacturer.equals("Amazon", ignoreCase = true) || !supportsVulkan11) {
+    if (sdkInt < ANDROID_12_API || manufacturer.equals("Amazon", ignoreCase = true)) {
       return FlutterRenderer.SKIA
     }
 

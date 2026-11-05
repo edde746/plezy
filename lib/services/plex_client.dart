@@ -100,13 +100,18 @@ const _plexVideoHlsProtocol = 'hls';
 /// [VideoDecodeCapabilities.transcodeVideoCodecs] in their ranked order — the
 /// same list the MediaBrowser device profile sends.
 ///
-/// Every non-Original VOD request pins `directStream=0`, and an Original one
-/// transcodes only when the source codec was refused and is therefore absent
-/// here, so this codec list is a menu of *encode* outputs, never copy
-/// targets. HEVC must not be offered in an mpegts target: a Plex Pass server
-/// with HEVC encoding enabled obliges, and its hardware HEVC encode → TS
-/// segmenter path emits parameter sets mpv rejects ("PPS changed between
-/// slices", issue #1859). Apple's HLS spec likewise requires fMP4 for HEVC.
+/// Every non-Original VOD request pins `directStream=0`. An Original one
+/// transcodes only when the source codec was refused, and is therefore absent
+/// here, or when the server refused the file itself (HTTP 500). That second
+/// case keeps `directStream=1`, so the list doubles as copy targets: PMS 1.43
+/// copies a listed source codec into this target when its limits admit the
+/// source bitrate (measured on a LAN session with a 4K HEVC source), and
+/// encodes to one of them otherwise.
+///
+/// HEVC must not be offered in an mpegts target: a Plex Pass server with HEVC
+/// encoding enabled obliges, and its hardware HEVC encode → TS segmenter path
+/// emits parameter sets mpv rejects ("PPS changed between slices", issue
+/// #1859). Apple's HLS spec likewise requires fMP4 for HEVC.
 /// fMP4 decisions and segment output were verified against PMS 1.22 through
 /// 1.43; servers older than 1.22 fail the decision request itself regardless
 /// of container, so no version gate. PMS 1.43 has no AV1 encoder and answers
@@ -1062,7 +1067,10 @@ class PlexClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _getWithFailover('/', timeout: MediaServerTimeouts.plexProbe);
+      // A dead pooled socket after an Apple TV sleep times out silently; the
+      // in-place retry keeps that from flipping a reachable server offline.
+      final response = await _http.get('/', timeout: MediaServerTimeouts.plexProbe, retryTimeoutInPlace: true);
+      throwIfHttpError(response);
       return response.statusCode == 200 ? HealthStatus.online : HealthStatus.offline;
     } on MediaServerHttpException catch (e) {
       return switch (e.statusCode) {
@@ -2841,9 +2849,9 @@ class PlexClient
   /// seeks + quality/version/audio switches within one playback so the
   /// server-side transcode session is preserved.
   ///
-  /// [sourceCodecRefused] asks for a video encode even at Original quality:
-  /// the user refused the source's codec, so the file itself must not be
-  /// served (#2443).
+  /// [withholdDirectPlay] asks for a transcode even at Original quality, where
+  /// the file itself must not be served: the user refused the source's codec
+  /// (#2443), or the server already refused the file (HTTP 500).
   ///
   /// Deliberately no `offset` request parameter: the start URL always
   /// describes the full title and the player seeks in-band by requesting the
@@ -2864,7 +2872,7 @@ class PlexClient
     int? audioStreamId,
     MediaSubtitleTrack? selectedSubtitleTrack,
     int? partId,
-    bool sourceCodecRefused = false,
+    bool withholdDirectPlay = false,
   }) async {
     try {
       await selectSubtitleStreamForBurn(partId: partId, track: selectedSubtitleTrack);
@@ -2878,7 +2886,7 @@ class PlexClient
         audioStreamId: audioStreamId,
         selectedSubtitleTrack: selectedSubtitleTrack,
         useTsFallbackTarget: useTsFallbackTarget,
-        sourceCodecRefused: sourceCodecRefused,
+        withholdDirectPlay: withholdDirectPlay,
       );
 
       final primary = await _runTranscodeDecision(
@@ -3076,7 +3084,7 @@ class PlexClient
     int? audioStreamId,
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
-    bool sourceCodecRefused = false,
+    bool withholdDirectPlay = false,
   }) {
     final isOriginal = preset.isOriginal;
     final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
@@ -3105,7 +3113,12 @@ class PlexClient
       // `directStream=1` it copies the audio and encodes the video to the
       // first target codec it can produce, at source resolution and 20 Mbps
       // when no preset caps it.
-      'directPlay': selectedInternalSubtitle == null && isOriginal && !sourceCodecRefused ? '1' : '0',
+      //
+      // So does a file the server refused (HTTP 500, typically its remote
+      // bandwidth limit). Plex Web answers that by re-asking the decision
+      // with direct play off and the viewer's quality unchanged ("[PDE]
+      // Forcing transcode"), leaving the output to the server's own limits.
+      'directPlay': selectedInternalSubtitle == null && isOriginal && !withholdDirectPlay ? '1' : '0',
       'directStream': isOriginal ? '1' : '0',
       'subtitleSize': '100',
       'audioBoost': '100',
@@ -3744,7 +3757,7 @@ class PlexClient
       final sourceCodecRefused = !isTrack && _sourceCodecRefused(data);
       final wantTranscode = isTrack
           ? !audioPreset.isOriginal
-          : sourceCodecRefused || _presetNeedsTranscode(options.qualityPreset, data);
+          : sourceCodecRefused || options.forceTranscode || _presetNeedsTranscode(options.qualityPreset, data);
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -3787,7 +3800,7 @@ class PlexClient
           audioStreamId: resolvedAudioId,
           selectedSubtitleTrack: requestedSubtitleTrack,
           partId: data.mediaInfo?.partId,
-          sourceCodecRefused: sourceCodecRefused,
+          withholdDirectPlay: sourceCodecRefused || options.forceTranscode,
         );
 
         // A transcode that cannot carry the requested caption is not the outcome we asked for. The
@@ -3815,8 +3828,10 @@ class PlexClient
           );
         }
 
+        if (options.forceTranscode) throw _forcedTranscodeUnavailable(result.outcome);
         return _transcodeFallbackResult(data, result.outcome, options, activeAudioStreamId: carriedAudioStreamId);
       }
+      if (options.forceTranscode && !isTrack) throw _forcedTranscodeUnavailable(null);
 
       return PlaybackInitializationResult(
         availableVersions: data.availableVersions,
@@ -3876,6 +3891,17 @@ class PlexClient
 
   MediaVersion? _selectedVersion(PlexVideoPlaybackData data) =>
       data.selectedMediaIndex < data.availableVersions.length ? data.availableVersions[data.selectedMediaIndex] : null;
+
+  /// A forced transcode ([PlaybackInitializationOptions.forceTranscode]) the
+  /// server would not start. The direct-play URL is not an answer here: the
+  /// server already refused that file, so opening it again could only fail the
+  /// same way.
+  PlaybackException _forcedTranscodeUnavailable(TranscodeDecisionOutcome? outcome) {
+    appLogger.w(
+      'Forced transcode unavailable (${outcome?.name ?? 'no transcode session'}); not falling back to the file',
+    );
+    return PlaybackException(t.messages.serverLimitBody, reason: PlaybackFailureReason.noPlayableSource);
+  }
 
   /// Direct-play result for a transcode decision that fell back (failed or
   /// said direct-play only), surfacing the reason so the UI can notify the

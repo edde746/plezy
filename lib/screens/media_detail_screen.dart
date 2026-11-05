@@ -32,6 +32,7 @@ import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
+import '../media/primary_trailer.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
@@ -4931,38 +4932,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Get the primary trailer from the extras list.
+  /// Get the primary trailer from the extras list; null hides the button.
   MediaItem? _getPrimaryTrailer() {
-    if (_extras == null || _extras!.isEmpty) return null;
-
-    // If there's a trailerKey (Plex `primaryExtraKey`), try to find that specific trailer
-    final metadata = _metadata;
-    if (metadata case PlexMediaItem(:final trailerKey?)) {
-      // Extract rating key from trailerKey (e.g., "/library/metadata/52601" -> "52601")
-      final primaryKey = trailerKey.split('/').last;
-      try {
-        return _extras!.firstWhere((extra) => extra.id == primaryKey);
-      } catch (_) {
-        // Primary key not found, fall through to find any trailer
-      }
-    }
-
-    try {
-      return _extras!.firstWhere(_isTrailerExtra);
-    } catch (_) {
-      // No trailer found, return null (button won't appear)
-      return null;
-    }
-  }
-
-  bool _isTrailerExtra(MediaItem extra) {
-    if (extra case PlexMediaItem(:final subtype?)) {
-      return subtype.toLowerCase() == 'trailer';
-    }
-    final raw = extra.raw;
-    final extraType = raw?['ExtraType'] as String?;
-    final type = raw?['Type'] as String?;
-    return extraType?.toLowerCase() == 'trailer' || type?.toLowerCase() == 'trailer';
+    final extras = _extras;
+    return extras == null ? null : primaryTrailer(_metadata, extras);
   }
 
   /// Build the cast section with locked focus pattern for D-pad navigation

@@ -6,8 +6,9 @@ import '../../models/trackers/anime_lists_mapping.dart';
 import '../../models/trackers/fribb_mapping_row.dart';
 import '../../utils/external_ids.dart';
 import 'anime_episode_progress_resolver.dart';
-import 'anime_lists_mapping_store.dart';
-import 'fribb_mapping_store.dart';
+import 'anime_lists_index.dart';
+import 'anime_mappings_store.dart';
+import 'fribb_index.dart';
 import 'future_coalescer.dart';
 
 /// Paired ID output: always-present Plex external IDs (tvdb/imdb/tmdb) plus
@@ -62,8 +63,8 @@ class TrackerRatingContext {
 /// external IDs (used by Trakt and by Simkl for non-anime matches) and Fribb
 /// anime IDs (used by MAL/AniList, and by Simkl for anime precision).
 /// Episodes resolve against the show's GUIDs because Fribb only maps
-/// show-level external IDs. Anime-Lists XML is used when available to
-/// disambiguate same-season split-cour episode ranges by AniDB id.
+/// show-level external IDs. Anime-Lists' episode mappings disambiguate
+/// same-season split-cour episode ranges by AniDB id.
 ///
 /// A HAMA-matched Plex library supplies an AniDB id and nothing else. That is
 /// Fribb's own primary key, so it resolves an anime directly — but Anime-Lists
@@ -73,7 +74,7 @@ class TrackerRatingContext {
 ///
 /// The Fribb lookup is skipped when [needsFribb] returns false — set this way
 /// for Trakt (which never uses anime IDs) and for a Simkl-only configuration,
-/// so those users don't pay the 5.6 MB mapping download they'll never need.
+/// so those users don't pay the anime mappings download they'll never need.
 class TrackerIdResolver {
   final MediaServerClient _client;
   final FribbMappingLookup _store;
@@ -94,8 +95,8 @@ class TrackerIdResolver {
     AnimeEpisodeProgressLookup? animeProgress,
   }) : _client = client,
        _needsFribb = needsFribb ?? _returnTrue,
-       _store = store ?? FribbMappingStore.instance,
-       _animeLists = animeLists ?? AnimeListsMappingStore.instance,
+       _store = store ?? AnimeMappingsStore.instance,
+       _animeLists = animeLists ?? AnimeMappingsStore.instance,
        _animeProgress = animeProgress ?? AnimeEpisodeProgressResolver(client);
 
   static bool _returnTrue() => true;

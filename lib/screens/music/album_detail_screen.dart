@@ -143,7 +143,11 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
         item: widget.album,
         child: Builder(
           builder: (buttonContext) => Container(
-            decoration: FocusTheme.focusBackgroundDecoration(isFocused: state.showFocus, borderRadius: 20),
+            decoration: FocusTheme.focusBackgroundDecoration(
+              buttonContext,
+              isFocused: state.showFocus,
+              borderRadius: 20,
+            ),
             child: IconButton(
               icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
               onPressed: () => _showOverflowMenuAt(buttonContext),
@@ -240,7 +244,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
           }
 
           return Container(
-            decoration: FocusTheme.focusBackgroundDecoration(isFocused: state.showFocus, borderRadius: 20),
+            decoration: FocusTheme.focusBackgroundDecoration(context, isFocused: state.showFocus, borderRadius: 20),
             child: IconButton(icon: icon, tooltip: tooltip, onPressed: () => unawaited(_handleDownloadPressed())),
           );
         },
@@ -450,7 +454,7 @@ class _ArtistLinkState extends State<_ArtistLink> {
               child: AnimatedContainer(
                 duration: FocusTheme.getAnimationDuration(context),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus),
+                decoration: FocusTheme.focusBackgroundDecoration(context, isFocused: showFocus),
                 child: Text(widget.name, style: style),
               ),
             ),

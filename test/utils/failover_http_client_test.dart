@@ -406,6 +406,32 @@ void main() {
       expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
       expect(h.switches, [(url: fallback, persist: false), (url: fallback, persist: true)]);
     });
+
+    test('a probe that opts in surfaces a second timeout in place without cascading', () async {
+      // retryTimeoutInPlace is for cheap reachability probes (#2915): one
+      // resend on the endpoint that answered, and a resend that also times
+      // out keeps the #2581 verdict — slow, not dead.
+      final validations = <String>[];
+      final h = build(
+        handler: (request, _) async => throw TimeoutException('server still working'),
+        validateCandidate: (candidateBaseUrl, _) async {
+          validations.add(candidateBaseUrl);
+          return true;
+        },
+      );
+
+      await expectLater(
+        h.client.get('/identity', retryTimeoutInPlace: true),
+        throwsA(
+          isA<MediaServerHttpException>().having((e) => e.type, 'type', MediaServerHttpErrorType.connectionTimeout),
+        ),
+      );
+
+      expect(validations, [primary]);
+      expect(h.requests.map((u) => u.host), ['primary.example.com', 'primary.example.com']);
+      expect(h.switches, isEmpty);
+      expect(h.exhausted, isEmpty);
+    });
   });
 
   test('allowEndpointFailover: false rethrows without switching', () async {
