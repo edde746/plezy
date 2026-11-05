@@ -8,7 +8,7 @@ enum SystemShelfLibraryKind {
   /// Theatrical / feature films.
   movies,
 
-  /// TV shows and (for Recently Added) newly arrived episodes.
+  /// Recently Added: shows + episodes. New Releases: episodes only.
   tv,
 }
 
@@ -27,10 +27,14 @@ class SystemShelfLibraryChannels {
 
   static const int maxItems = 20;
 
-  /// Premiere window for New Releases. Add date is intentionally ignored;
-  /// this only drops theatrical / originally-available dates that are too old
-  /// to count as "new" (e.g. Rise of Skywalker in a small hub pool).
+  /// Premiere window for New Movies. Add date is intentionally ignored;
+  /// this only drops theatrical dates that are too old to count as "new"
+  /// (e.g. Rise of Skywalker in a small hub pool).
   static const int newReleaseMaxAgeDays = 730;
+
+  /// Air-date window for New Episodes. Tighter than movies so the row stays
+  /// current rather than flooding with years of catalog episode dates.
+  static const int newEpisodeMaxAgeDays = 90;
 
   /// Hub keys that mean "just landed in the library".
   static bool isRecentlyAddedHub(MediaHub hub) {
@@ -92,11 +96,14 @@ class SystemShelfLibraryChannels {
     );
   }
 
-  /// Newest titles of [kind] by premiere date. Library add date is ignored.
+  /// Newest titles of [kind] by premiere / air date. Library add date is ignored.
+  ///
+  /// - [SystemShelfLibraryKind.movies]: movies only, ~2 year premiere window.
+  /// - [SystemShelfLibraryKind.tv]: episodes only (not whole shows), ~90 day
+  ///   air-date window — show-level premieres barely appear in Discover hubs.
   ///
   /// Prefers dedicated new-release hubs; otherwise takes matching titles from
-  /// every Discover hub and ranks by premiere. Episodes are never included —
-  /// air dates are not show premieres.
+  /// every Discover hub and ranks by premiere/air date.
   static List<MediaItem> newReleases(
     List<MediaHub> hubs, {
     required SystemShelfLibraryKind kind,
@@ -118,9 +125,10 @@ class SystemShelfLibraryChannels {
                 if (_matchesNewRelease(kind, item.kind)) item,
           ];
     final clock = now ?? DateTime.now();
+    final maxAgeDays = kind == SystemShelfLibraryKind.tv ? newEpisodeMaxAgeDays : newReleaseMaxAgeDays;
     final fresh = [
       for (final item in source)
-        if (_isFreshRelease(item, now: clock)) item,
+        if (_isFreshRelease(item, now: clock, maxAgeDays: maxAgeDays)) item,
     ];
     return _dedupeAndSort(
       fresh,
@@ -211,10 +219,14 @@ class SystemShelfLibraryChannels {
     return item.year != null ? item.year! * 10000 : 0;
   }
 
-  static bool _isFreshRelease(MediaItem item, {required DateTime now}) {
+  static bool _isFreshRelease(
+    MediaItem item, {
+    required DateTime now,
+    int maxAgeDays = newReleaseMaxAgeDays,
+  }) {
     final key = _releaseSortKey(item);
     if (key <= 0) return false;
-    final cutoff = now.subtract(const Duration(days: newReleaseMaxAgeDays));
+    final cutoff = now.subtract(Duration(days: maxAgeDays));
     final cutoffKey = cutoff.year * 10000 + cutoff.month * 100 + cutoff.day;
     return key >= cutoffKey;
   }
@@ -229,7 +241,7 @@ class SystemShelfLibraryChannels {
   static bool _matchesNewRelease(SystemShelfLibraryKind kind, MediaKind itemKind) {
     return switch (kind) {
       SystemShelfLibraryKind.movies => itemKind == MediaKind.movie,
-      SystemShelfLibraryKind.tv => itemKind == MediaKind.show,
+      SystemShelfLibraryKind.tv => itemKind == MediaKind.episode,
     };
   }
 

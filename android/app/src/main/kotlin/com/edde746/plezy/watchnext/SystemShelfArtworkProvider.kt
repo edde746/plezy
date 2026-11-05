@@ -88,8 +88,11 @@ internal class SystemShelfArtworkStore(
   companion object {
     const val MAX_IMAGE_BYTES = 2 * 1024 * 1024
     const val MAX_SYNC_BYTES = 8 * 1024 * 1024
+    /** Preview Channels download up to 20 posters each; allow a fuller pass. */
+    const val MAX_CHANNEL_SYNC_BYTES = 20 * 1024 * 1024
     const val MAX_ITEMS = 20
     const val MAX_SYNC_DURATION_MS = 10_000L
+    const val MAX_CHANNEL_SYNC_DURATION_MS = 60_000L
     const val CONNECT_TIMEOUT_MS = 2_500
     const val READ_TIMEOUT_MS = 2_500
     private val opaquePart = Regex("^[a-f0-9]{64}$")

@@ -326,9 +326,9 @@ class SystemShelfService {
       );
       final okTvNew = await syncRow(
         key: 'new_releases_tv',
-        title: 'New TV Shows',
+        title: 'New Episodes',
         items: newTv,
-        label: 'Failed to sync New TV Shows preview channel',
+        label: 'Failed to sync New Episodes preview channel',
       );
       return okMoviesRecent && okTvRecent && okMoviesNew && okTvNew;
     });

@@ -387,13 +387,49 @@ void main() {
         ).map((item) => item.id),
         ['movie'],
       );
+    });
+
+    test('new tv releases prefer recent episodes over shows', () {
+      final hubs = [
+        _hub(
+          id: 'home.recent',
+          identifier: 'home.recent',
+          items: [
+            testMediaItem(
+              id: 'old-ep',
+              title: 'Old Ep',
+              year: 2024,
+              kind: MediaKind.episode,
+              originallyAvailableAt: '2024-01-01',
+              addedAt: 90,
+            ),
+            testMediaItem(
+              id: 'new-ep',
+              title: 'New Ep',
+              year: 2025,
+              kind: MediaKind.episode,
+              originallyAvailableAt: '2025-05-20',
+              addedAt: 10,
+            ),
+            testMediaItem(
+              id: 'show',
+              title: 'Series',
+              year: 2025,
+              kind: MediaKind.show,
+              originallyAvailableAt: '2025-05-15',
+              addedAt: 80,
+            ),
+          ],
+        ),
+      ];
+
       expect(
         SystemShelfLibraryChannels.newReleases(
           hubs,
           kind: SystemShelfLibraryKind.tv,
           now: DateTime.utc(2025, 6, 1),
         ).map((item) => item.id),
-        ['show'],
+        ['new-ep'],
       );
     });
   });

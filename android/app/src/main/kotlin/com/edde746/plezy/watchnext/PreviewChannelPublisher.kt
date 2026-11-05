@@ -23,7 +23,7 @@ import java.io.File
 internal class PreviewChannelPublisher(
   private val context: Context,
   private val lifecycleLease: SystemShelfLifecycle.Lease?,
-  private val syncDurationMillis: Long = SystemShelfArtworkStore.MAX_SYNC_DURATION_MS
+  private val syncDurationMillis: Long = SystemShelfArtworkStore.MAX_CHANNEL_SYNC_DURATION_MS
 ) {
   companion object {
     private const val TAG = "PreviewChannelPublisher"
@@ -89,7 +89,11 @@ internal class PreviewChannelPublisher(
     val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
     if (!isOperationActive()) return false
     purgeLegacyChannelsUnlocked()
-    val session = SystemShelfSyncSession(operationOwnership, syncDurationMillis)
+    val session = SystemShelfSyncSession(
+      operationOwnership,
+      syncDurationMillis,
+      budget = SystemShelfArtworkStore.Budget(SystemShelfArtworkStore.MAX_CHANNEL_SYNC_BYTES)
+    )
 
     val oldUnion = ledger.grantedUris()
     val oldPackages = ledger.grantedPackages()
