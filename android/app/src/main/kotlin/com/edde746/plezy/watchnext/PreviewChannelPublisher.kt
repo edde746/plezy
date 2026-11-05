@@ -252,11 +252,10 @@ internal class PreviewChannelPublisher(
   private fun providerIdFor(channelKey: String) = "plezy_channel_$channelKey"
 
   private fun replacePrograms(channelId: Long, items: List<PreparedChannelItem>): Boolean = try {
-    context.contentResolver.delete(
-      TvContractCompat.PreviewPrograms.CONTENT_URI,
-      "${TvContractCompat.PreviewPrograms.COLUMN_CHANNEL_ID}=?",
-      arrayOf(channelId.toString())
-    )
+    // Fire OS TvProvider rejects delete/query with a SQL selection on the base
+    // preview_program table ("Selection not allowed"). Prefer the channel-scoped
+    // URI (no selection), then per-row deletes, then stock Android selection.
+    deleteProgramsForChannel(channelId)
     items.forEach { item ->
       val program = buildProgram(channelId, item)
       helper.publishPreviewProgram(program)
@@ -265,6 +264,39 @@ internal class PreviewChannelPublisher(
   } catch (e: Exception) {
     Log.e(TAG, "Failed to replace preview programs", e)
     false
+  }
+
+  private fun deleteProgramsForChannel(channelId: Long) {
+    val channelProgramsUri = TvContractCompat.buildPreviewProgramsUriForChannel(channelId)
+    val bulkDeleted = runCatching {
+      context.contentResolver.delete(channelProgramsUri, null, null)
+    }.getOrElse { -1 }
+    if (bulkDeleted >= 0) return
+
+    val projection = arrayOf(TvContractCompat.PreviewPrograms._ID)
+    val queried = runCatching {
+      context.contentResolver.query(channelProgramsUri, projection, null, null, null)
+    }.getOrNull()
+    if (queried != null) {
+      queried.use { cursor ->
+        val idIndex = cursor.getColumnIndexOrThrow(TvContractCompat.PreviewPrograms._ID)
+        while (cursor.moveToNext()) {
+          val programId = cursor.getLong(idIndex)
+          context.contentResolver.delete(
+            TvContractCompat.buildPreviewProgramUri(programId),
+            null,
+            null
+          )
+        }
+      }
+      return
+    }
+
+    context.contentResolver.delete(
+      TvContractCompat.PreviewPrograms.CONTENT_URI,
+      "${TvContractCompat.PreviewPrograms.COLUMN_CHANNEL_ID}=?",
+      arrayOf(channelId.toString())
+    )
   }
 
   private fun buildProgram(channelId: Long, item: PreparedChannelItem): PreviewProgram {
