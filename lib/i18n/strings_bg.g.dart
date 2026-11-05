@@ -602,6 +602,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => 'Скорост на възпроизвеждане';
 	@override String get scopeShaderPreset => 'Предварителна настройка на шейдъра';
 	@override String get scopeAspectRatio => 'Съотношение на страните';
+	@override String get scopeZoom => 'Мащаб';
 	@override String get scopeSyncOffsets => 'Синхронизация на аудио и субтитри';
 	@override String get playerScopeOff => 'Не запазвай';
 	@override String get playerScopeGlobal => 'Навсякъде';
@@ -3884,6 +3885,7 @@ extension on TranslationsBg {
 			'settings.scopePlaybackSpeed' => 'Скорост на възпроизвеждане',
 			'settings.scopeShaderPreset' => 'Предварителна настройка на шейдъра',
 			'settings.scopeAspectRatio' => 'Съотношение на страните',
+			'settings.scopeZoom' => 'Мащаб',
 			'settings.scopeSyncOffsets' => 'Синхронизация на аудио и субтитри',
 			'settings.playerScopeOff' => 'Не запазвай',
 			'settings.playerScopeGlobal' => 'Навсякъде',
@@ -3908,9 +3910,9 @@ extension on TranslationsBg {
 			'themeEditor.slots.outline' => 'Контур',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Вторичен текст',
-			'themeEditor.slots.accent' => 'Акцент',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Непрозрачност',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'От други теми',
@@ -4422,9 +4424,9 @@ extension on TranslationsBg {
 			'profiles.pinsDontMatch' => 'PIN кодовете не съвпадат',
 			'profiles.tokenIdentityMismatch' => 'Токенът на профила в Plex съответства на неочакван сървър',
 			'connections.sectionTitle' => 'Връзки',
-			'connections.addConnection' => 'Добави връзка',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Добави връзка',
 			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin или Emby сървър',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сесията за ${name} е изтекла',
@@ -4936,9 +4938,9 @@ extension on TranslationsBg {
 			'liveTv.recordSettings.anyTime' => 'Записване по всяко време',
 			'liveTv.recordSettings.skipInLibrary' => 'Пропускане на епизоди, които вече са в библиотеката',
 			'liveTv.recordSettings.keepUpTo' => 'Епизоди за запазване',
-			'liveTv.recordSettings.keepUpToHint' => '0 запазва всички епизоди',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => '0 запазва всички епизоди',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Започва след ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо',
@@ -5450,9 +5452,9 @@ extension on TranslationsBg {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Софтуерен',
-			'performanceOverlay.decoderHardware' => 'Хардуерен',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => 'Хардуерен',
 			'performanceOverlay.tunnelingActive' => 'Активно',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (неуспешни: ${failures})',
 			'externalPlayer.title' => 'Външен плеър',

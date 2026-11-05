@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "再生速度",
     "scopeShaderPreset": "シェーダープリセット",
     "scopeAspectRatio": "アスペクト比",
+    "scopeZoom": "ズーム",
     "scopeSyncOffsets": "音声と字幕の同期",
     "playerScopeOff": "保存しない",
     "playerScopeGlobal": "すべて",

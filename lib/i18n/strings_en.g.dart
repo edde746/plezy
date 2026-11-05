@@ -1475,6 +1475,9 @@ class Translations$settings$en {
 	/// en: 'Aspect Ratio'
 	String get scopeAspectRatio => 'Aspect Ratio';
 
+	/// en: 'Zoom'
+	String get scopeZoom => 'Zoom';
+
 	/// en: 'Audio & Subtitle Sync'
 	String get scopeSyncOffsets => 'Audio & Subtitle Sync';
 
@@ -8630,6 +8633,7 @@ extension on Translations {
 			'settings.scopePlaybackSpeed' => 'Playback Speed',
 			'settings.scopeShaderPreset' => 'Shader Preset',
 			'settings.scopeAspectRatio' => 'Aspect Ratio',
+			'settings.scopeZoom' => 'Zoom',
 			'settings.scopeSyncOffsets' => 'Audio & Subtitle Sync',
 			'settings.playerScopeOff' => 'Don\'t save',
 			'settings.playerScopeGlobal' => 'Everywhere',
@@ -8654,9 +8658,9 @@ extension on Translations {
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			'themeEditor.slots.accent' => 'Accent',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'From other themes',
@@ -9168,9 +9172,9 @@ extension on Translations {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
@@ -9682,9 +9686,9 @@ extension on Translations {
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			'liveTv.recordShow' => 'Record show',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
@@ -10196,9 +10200,9 @@ extension on Translations {
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
-			'performanceOverlay.cacheUsed' => 'Cache Used',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',

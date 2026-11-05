@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "Playback Speed",
     "scopeShaderPreset": "Shader Preset",
     "scopeAspectRatio": "Aspect Ratio",
+    "scopeZoom": "Zoom",
     "scopeSyncOffsets": "Audio & Subtitle Sync",
     "playerScopeOff": "Don't save",
     "playerScopeGlobal": "Everywhere",

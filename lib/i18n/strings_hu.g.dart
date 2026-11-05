@@ -602,6 +602,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => 'Lejátszási sebesség';
 	@override String get scopeShaderPreset => 'Shader-előbeállítás';
 	@override String get scopeAspectRatio => 'Képarány';
+	@override String get scopeZoom => 'Nagyítás';
 	@override String get scopeSyncOffsets => 'Hang- és feliratszinkronizálás';
 	@override String get playerScopeOff => 'Ne mentse';
 	@override String get playerScopeGlobal => 'Mindenhol';
@@ -3884,6 +3885,7 @@ extension on TranslationsHu {
 			'settings.scopePlaybackSpeed' => 'Lejátszási sebesség',
 			'settings.scopeShaderPreset' => 'Shader-előbeállítás',
 			'settings.scopeAspectRatio' => 'Képarány',
+			'settings.scopeZoom' => 'Nagyítás',
 			'settings.scopeSyncOffsets' => 'Hang- és feliratszinkronizálás',
 			'settings.playerScopeOff' => 'Ne mentse',
 			'settings.playerScopeGlobal' => 'Mindenhol',
@@ -3908,9 +3910,9 @@ extension on TranslationsHu {
 			'themeEditor.slots.outline' => 'Körvonal',
 			'themeEditor.slots.text' => 'Szöveg',
 			'themeEditor.slots.textMuted' => 'Másodlagos szöveg',
-			'themeEditor.slots.accent' => 'Kiemelőszín',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Kiemelőszín',
 			'themeEditor.opacity' => 'Átlátszatlanság',
 			'themeEditor.hexHint' => '#RRGGBB vagy #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Más témákból',
@@ -4422,9 +4424,9 @@ extension on TranslationsHu {
 			'profiles.pinsDontMatch' => 'A PIN-kódok nem egyeznek',
 			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			'connections.sectionTitle' => 'Kapcsolatok',
-			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
@@ -4936,9 +4938,9 @@ extension on TranslationsHu {
 			'liveTv.recordSettings.anyTime' => 'Felvétel bármikor',
 			'liveTv.recordSettings.skipInLibrary' => 'A könyvtárban már meglévő epizódok kihagyása',
 			'liveTv.recordSettings.keepUpTo' => 'Megtartandó epizódok',
-			'liveTv.recordSettings.keepUpToHint' => 'A 0 minden epizódot megtart',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => 'A 0 minden epizódot megtart',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} perc múlva kezdődik',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
@@ -5450,9 +5452,9 @@ extension on TranslationsHu {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Szoftveres',
-			'performanceOverlay.decoderHardware' => 'Hardveres',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => 'Hardveres',
 			'performanceOverlay.tunnelingActive' => 'Aktív',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
 			'externalPlayer.title' => 'Külső lejátszó',

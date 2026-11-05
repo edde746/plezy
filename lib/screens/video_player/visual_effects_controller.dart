@@ -191,10 +191,14 @@ class VisualEffectsController {
     _requestRebuild();
   }
 
-  /// Also used by the pinch-zoom gesture, which mutates the filter
-  /// manager directly during the gesture and toasts once on gesture end.
-  void showZoomToast(double zoomScale) {
+  void _showZoomToast(double zoomScale) {
     _toast.show(Symbols.zoom_in_rounded, t.videoControls.zoomPercent(percent: (zoomScale * 100).round()));
+  }
+
+  /// Reads the item at call time so a change after an in-place episode swap
+  /// keys against the item actually on screen.
+  void _persistZoom(double zoomScale) {
+    unawaited(ScopedPlayerPrefs.write(ScopedPlayerPrefs.videoZoom, _metadata(), zoomScale));
   }
 
   double setZoom(double zoomScale, {bool showToast = true}) {
@@ -203,9 +207,19 @@ class VisualEffectsController {
 
     _ambientLighting()?.disable();
     final next = filterManager.setZoomScale(zoomScale);
-    if (showToast) showZoomToast(next);
+    _persistZoom(next);
+    if (showToast) _showZoomToast(next);
     if (_isMounted()) _requestRebuild();
     return next;
+  }
+
+  /// End of a pinch. The gesture mutates the filter manager directly on
+  /// every tick, so it toasts and persists once, here.
+  void commitPinchZoom() {
+    final zoomScale = _filterManager()?.zoomScale;
+    if (zoomScale == null) return;
+    _showZoomToast(zoomScale);
+    _persistZoom(zoomScale);
   }
 
   void zoomIn() {

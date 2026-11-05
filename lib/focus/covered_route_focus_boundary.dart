@@ -41,6 +41,14 @@ import 'package:flutter/widgets.dart';
 /// subtree its *first* focus therefore goes through [requestInitialFocus],
 /// which holds it while covered and replays it on uncover; every other
 /// request stays a plain `requestFocus()` that the cover drops.
+///
+/// Excluding a subtree that holds focus has a cost of its own: Flutter moves
+/// focus to the nearest focusable scope above it, the covered route's own
+/// scope, and that request lands after the covering route asked for focus. A
+/// covering page that claims no first focus of its own (Logs) then left the
+/// D-pad on the hidden screen (#2302). So a cover that begins with focus below
+/// the boundary gives up that parked focus once the exclusion is in place, and
+/// the navigator hands it to the route on top.
 class CoveredRouteFocusBoundary extends StatefulWidget {
   const CoveredRouteFocusBoundary({super.key, required this.child});
 
@@ -140,15 +148,37 @@ class _CoveredRouteFocusBoundaryState extends State<CoveredRouteFocusBoundary> {
     return _scope;
   }
 
+  /// Gives up the focus the exclusion parked on the covered route's scope, the
+  /// ancestor scope directly under [navigator]'s, so the navigator's scope
+  /// refocuses the route on top. A no-op when that scope neither holds focus
+  /// nor is about to.
+  void _yieldFocusToCover(NavigatorState? navigator) {
+    if (!mounted || !_covered) return;
+    final navigatorScope = navigator?.focusNode.enclosingScope;
+    if (navigatorScope == null) return;
+    FocusScopeNode? routeScope = _scope.enclosingScope;
+    while (routeScope != null && !identical(routeScope.enclosingScope, navigatorScope)) {
+      routeScope = routeScope.enclosingScope;
+    }
+    routeScope?.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
+  }
+
   @override
   Widget build(BuildContext context) {
     // ModalRoute.of subscribes to the route's status, so this rebuilds on
     // every isCurrent flip. Outside any route the subtree is never covered.
-    final covered = !(ModalRoute.of(context)?.isCurrent ?? true);
+    final route = ModalRoute.of(context);
+    final covered = !(route?.isCurrent ?? true);
     if (!_covered && covered) {
       // This build runs before any descendant rebuilt in the same frame can
       // unmount the focused node, so the path is still whole here.
       _focusPathAtCover = _focusPathBelowScope();
+      // The exclusion applies in this build's didUpdateWidget; post-frame
+      // callbacks run before the focus change it requested is applied.
+      if (_focusPathAtCover.isNotEmpty) {
+        final navigator = route?.navigator;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _yieldFocusToCover(navigator));
+      }
     } else if (_covered && !covered) {
       final path = _focusPathAtCover;
       _focusPathAtCover = const [];

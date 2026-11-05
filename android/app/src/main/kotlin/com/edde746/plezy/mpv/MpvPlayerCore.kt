@@ -18,6 +18,7 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import com.edde746.mpv.*
 import com.edde746.plezy.NativeModuleCache
+import com.edde746.plezy.TvDetection
 import com.edde746.plezy.exoplayer.DoviBridge
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.DeviceQuirks
@@ -1083,6 +1084,14 @@ class MpvPlayerCore private constructor(
                   // a transparent margin stays black; see PlayerSurfaceHost.createOsdSurface.
                   if (DeviceQuirks.raisesGraphicsBlackInDolbyVision) {
                     setOption("vo-mediacodec-letterbox-fill", "no")
+                  }
+                  // Present the OSD plane a refresh after the video's timestamp where the
+                  // video plane itself lags a refresh (rationale on
+                  // DeviceQuirks.videoPlaneLagsGraphics). The fork then presents the
+                  // plane on every video frame, without which the delay made Amlogic
+                  // video judder (mpv-build 0145).
+                  if (DeviceQuirks.videoPlaneLagsGraphics(TvDetection.isTv(context))) {
+                    setOption("vo-mediacodec-osd-vsync-delay", "1")
                   }
                   // The Java MediaCodec wrapper, driven asynchronously where
                   // the platform is trusted to (rationale on
