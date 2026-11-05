@@ -347,6 +347,7 @@ class AgentSettingsCommands {
     'subtitle_position',
     'default_playback_speed',
     'default_box_fit_mode',
+    'default_video_zoom',
     'global_shader_preset',
     'custom_shaders',
     'mpv_config_text',

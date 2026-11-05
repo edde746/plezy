@@ -602,6 +602,7 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => 'Velocidad de reproducción';
 	@override String get scopeShaderPreset => 'Preajuste de sombreado';
 	@override String get scopeAspectRatio => 'Relación de aspecto';
+	@override String get scopeZoom => 'Zoom';
 	@override String get scopeSyncOffsets => 'Sincronización de audio y subtítulos';
 	@override String get playerScopeOff => 'No guardar';
 	@override String get playerScopeGlobal => 'En todas partes';
@@ -3884,6 +3885,7 @@ extension on TranslationsEs {
 			'settings.scopePlaybackSpeed' => 'Velocidad de reproducción',
 			'settings.scopeShaderPreset' => 'Preajuste de sombreado',
 			'settings.scopeAspectRatio' => 'Relación de aspecto',
+			'settings.scopeZoom' => 'Zoom',
 			'settings.scopeSyncOffsets' => 'Sincronización de audio y subtítulos',
 			'settings.playerScopeOff' => 'No guardar',
 			'settings.playerScopeGlobal' => 'En todas partes',
@@ -3908,9 +3910,9 @@ extension on TranslationsEs {
 			'themeEditor.slots.outline' => 'Contorno',
 			'themeEditor.slots.text' => 'Texto',
 			'themeEditor.slots.textMuted' => 'Texto secundario',
-			'themeEditor.slots.accent' => 'Acento',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Acento',
 			'themeEditor.opacity' => 'Opacidad',
 			'themeEditor.hexHint' => '#RRGGBB o #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'De otros temas',
@@ -4422,9 +4424,9 @@ extension on TranslationsEs {
 			'profiles.pinsDontMatch' => 'Los PIN no coinciden',
 			'profiles.tokenIdentityMismatch' => 'El token del perfil de Plex correspondía a un servidor inesperado',
 			'connections.sectionTitle' => 'Conexiones',
-			'connections.addConnection' => 'Añadir conexión',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Añadir conexión',
 			'connections.addConnectionSubtitleNoProfile' => 'Inicia sesión con Plex o conecta un servidor de Jellyfin o Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Añadir a ${displayName}: Plex, Jellyfin, Emby u otra conexión de perfil',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesión caducada para ${name}',
@@ -4936,9 +4938,9 @@ extension on TranslationsEs {
 			'liveTv.recordSettings.anyTime' => 'Grabar a cualquier hora',
 			'liveTv.recordSettings.skipInLibrary' => 'Omitir episodios que ya están en la biblioteca',
 			'liveTv.recordSettings.keepUpTo' => 'Episodios que conservar',
-			'liveTv.recordSettings.keepUpToHint' => '0 conserva todos los episodios',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => '0 conserva todos los episodios',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Empieza en ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} a las ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} devolvió datos de reproducción de TV en vivo no válidos',
@@ -5450,9 +5452,9 @@ extension on TranslationsEs {
 			'performanceOverlay.decoderMediatekHw' => 'HW de MediaTek',
 			'performanceOverlay.decoderExynosHw' => 'HW de Exynos',
 			'performanceOverlay.decoderSoftware' => 'Software',
-			'performanceOverlay.decoderHardware' => 'Hardware',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Activo',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} con error)',
 			'externalPlayer.title' => 'Reproductor externo',

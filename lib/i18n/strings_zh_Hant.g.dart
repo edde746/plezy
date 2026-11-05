@@ -603,6 +603,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get scopePlaybackSpeed => '播放速度';
 	@override String get scopeShaderPreset => '著色器預設';
 	@override String get scopeAspectRatio => '顯示比例';
+	@override String get scopeZoom => '縮放';
 	@override String get scopeSyncOffsets => '音訊與字幕同步';
 	@override String get playerScopeOff => '不要儲存';
 	@override String get playerScopeGlobal => '全部';
@@ -3873,6 +3874,7 @@ extension on TranslationsZhHant {
 			'settings.scopePlaybackSpeed' => '播放速度',
 			'settings.scopeShaderPreset' => '著色器預設',
 			'settings.scopeAspectRatio' => '顯示比例',
+			'settings.scopeZoom' => '縮放',
 			'settings.scopeSyncOffsets' => '音訊與字幕同步',
 			'settings.playerScopeOff' => '不要儲存',
 			'settings.playerScopeGlobal' => '全部',
@@ -3897,9 +3899,9 @@ extension on TranslationsZhHant {
 			'themeEditor.slots.outline' => '外框',
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
-			'themeEditor.slots.accent' => '強調色',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => '強調色',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '來自其他主題',
@@ -4411,9 +4413,9 @@ extension on TranslationsZhHant {
 			'profiles.pinsDontMatch' => 'PIN 碼不符合',
 			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
 			'connections.sectionTitle' => '連線',
-			'connections.addConnection' => '新增連線',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => '新增連線',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
@@ -4925,9 +4927,9 @@ extension on TranslationsZhHant {
 			'liveTv.recordSettings.anyTime' => '在任何時間錄影',
 			'liveTv.recordSettings.skipInLibrary' => '略過媒體庫中已有的劇集',
 			'liveTv.recordSettings.keepUpTo' => '要保留的劇集數',
-			'liveTv.recordSettings.keepUpToHint' => '0 表示保留所有劇集',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => '0 表示保留所有劇集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
@@ -5439,9 +5441,9 @@ extension on TranslationsZhHant {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬體',
 			'performanceOverlay.decoderExynosHw' => 'Exynos 硬體',
 			'performanceOverlay.decoderSoftware' => '軟體',
-			'performanceOverlay.decoderHardware' => '硬體',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => '硬體',
 			'performanceOverlay.tunnelingActive' => '已啟用',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
 			'externalPlayer.title' => '外部播放器',

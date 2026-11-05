@@ -898,13 +898,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
   /// Re-push scope-persisted player values for the item swapped in by
   /// [_reloadMediaInPlace].
   ///
-  /// Shader, box-fit, and sync offsets are applied once per screen/player and
-  /// otherwise survive an in-place reload as latent native state. Sync offsets
-  /// are file timing, so every item starts from its own resolved offset and a
-  /// session-only tweak stays with the item it was made on (#2449). Shader and
-  /// box-fit are picture preferences: only changed resolutions are pushed, so
-  /// a session-local tweak keeps carrying over, and a Watch Together swap or a
-  /// next-episode hop across a library/title boundary still switches them.
+  /// Shader, box-fit, zoom, and sync offsets are applied once per
+  /// screen/player and otherwise survive an in-place reload as latent native
+  /// state. Sync offsets are file timing, so every item starts from its own
+  /// resolved offset and a session-only tweak stays with the item it was made
+  /// on (#2449). Shader, box-fit, and zoom are picture preferences: only
+  /// changed resolutions are pushed, so a session-local tweak keeps carrying
+  /// over, and a Watch Together swap or a next-episode hop across a
+  /// library/title boundary still switches them.
   /// Playback speed needs no handling here: TrackManager re-resolves it on
   /// every open.
   Future<void> _reapplyScopedPlayerPrefsForItemChange({
@@ -920,6 +921,12 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       final boxFit = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, metadata);
       if (boxFit != previousBoxFit) {
         _videoFilterManager?.setBoxFitMode(boxFit);
+      }
+
+      final previousZoom = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.videoZoom, previousMetadata);
+      final zoom = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.videoZoom, metadata);
+      if (zoom != previousZoom) {
+        _videoFilterManager?.setZoomScale(zoom);
       }
 
       final previousShaderId = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.shaderPreset, previousMetadata);

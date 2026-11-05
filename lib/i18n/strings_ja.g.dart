@@ -602,6 +602,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => '再生速度';
 	@override String get scopeShaderPreset => 'シェーダープリセット';
 	@override String get scopeAspectRatio => 'アスペクト比';
+	@override String get scopeZoom => 'ズーム';
 	@override String get scopeSyncOffsets => '音声と字幕の同期';
 	@override String get playerScopeOff => '保存しない';
 	@override String get playerScopeGlobal => 'すべて';
@@ -3872,6 +3873,7 @@ extension on TranslationsJa {
 			'settings.scopePlaybackSpeed' => '再生速度',
 			'settings.scopeShaderPreset' => 'シェーダープリセット',
 			'settings.scopeAspectRatio' => 'アスペクト比',
+			'settings.scopeZoom' => 'ズーム',
 			'settings.scopeSyncOffsets' => '音声と字幕の同期',
 			'settings.playerScopeOff' => '保存しない',
 			'settings.playerScopeGlobal' => 'すべて',
@@ -3896,9 +3898,9 @@ extension on TranslationsJa {
 			'themeEditor.slots.outline' => '枠線',
 			'themeEditor.slots.text' => 'テキスト',
 			'themeEditor.slots.textMuted' => '補助テキスト',
-			'themeEditor.slots.accent' => 'アクセント',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'アクセント',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB または #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '他のテーマから',
@@ -4410,9 +4412,9 @@ extension on TranslationsJa {
 			'profiles.pinsDontMatch' => 'PINが一致しません',
 			'profiles.tokenIdentityMismatch' => 'Plexプロフィールのトークンから予期しないサーバーが特定されました',
 			'connections.sectionTitle' => '接続',
-			'connections.addConnection' => '接続を追加',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => '接続を追加',
 			'connections.addConnectionSubtitleNoProfile' => 'Plexでサインインするか、JellyfinまたはEmbyサーバーに接続',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
@@ -4924,9 +4926,9 @@ extension on TranslationsJa {
 			'liveTv.recordSettings.anyTime' => 'すべての時間帯で録画',
 			'liveTv.recordSettings.skipInLibrary' => 'ライブラリにあるエピソードをスキップ',
 			'liveTv.recordSettings.keepUpTo' => '保持するエピソード数',
-			'liveTv.recordSettings.keepUpToHint' => '0 ですべてのエピソードを保持',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => '0 ですべてのエピソードを保持',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}から無効なライブTV再生データが返されました',
@@ -5438,9 +5440,9 @@ extension on TranslationsJa {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'ソフトウェア',
-			'performanceOverlay.decoderHardware' => 'ハードウェア',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => 'ハードウェア',
 			'performanceOverlay.tunnelingActive' => '有効',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			'externalPlayer.title' => '外部プレーヤー',

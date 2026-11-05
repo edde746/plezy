@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "Velocidad de reproducción",
     "scopeShaderPreset": "Preajuste de sombreado",
     "scopeAspectRatio": "Relación de aspecto",
+    "scopeZoom": "Zoom",
     "scopeSyncOffsets": "Sincronización de audio y subtítulos",
     "playerScopeOff": "No guardar",
     "playerScopeGlobal": "En todas partes",

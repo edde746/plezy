@@ -13,6 +13,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_rate.dart';
+import '../media/video_zoom.dart';
 import '../models/player_setting_scope.dart';
 import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
@@ -210,6 +211,23 @@ class AgentScopedSettingsCommands {
         decode: (v) => _integer(v, min: 0, max: 2),
       ),
       _playerValue(
+        ScopedPlayerPrefs.videoZoom,
+        settings,
+        guard,
+        item,
+        library,
+        persistence,
+        type: 'number',
+        defaultValue: SettingsService.defaultVideoZoom.defaultValue,
+        constraints: {'minimum': minimumVideoZoom, 'maximum': maximumVideoZoom},
+        decode: (v) {
+          if (v is! num || !v.isFinite || v < minimumVideoZoom || v > maximumVideoZoom) {
+            _invalid('Video zoom is outside the supported range.');
+          }
+          return (v).toDouble();
+        },
+      ),
+      _playerValue(
         ScopedPlayerPrefs.audioSyncOffset,
         settings,
         guard,
@@ -248,6 +266,7 @@ class AgentScopedSettingsCommands {
       SettingsService.playbackSpeedScope,
       SettingsService.shaderPresetScope,
       SettingsService.boxFitScope,
+      SettingsService.videoZoomScope,
       SettingsService.syncOffsetScope,
     ]) {
       entries.add(

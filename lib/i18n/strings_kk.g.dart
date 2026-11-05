@@ -602,6 +602,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => 'Ойнату жылдамдығы';
 	@override String get scopeShaderPreset => 'Шейдер алдын ала орнатымы';
 	@override String get scopeAspectRatio => 'Кадр пішімі';
+	@override String get scopeZoom => 'Масштаб';
 	@override String get scopeSyncOffsets => 'Аудио және субтитр синхрондауы';
 	@override String get playerScopeOff => 'Сақтамау';
 	@override String get playerScopeGlobal => 'Барлық жерде';
@@ -3884,6 +3885,7 @@ extension on TranslationsKk {
 			'settings.scopePlaybackSpeed' => 'Ойнату жылдамдығы',
 			'settings.scopeShaderPreset' => 'Шейдер алдын ала орнатымы',
 			'settings.scopeAspectRatio' => 'Кадр пішімі',
+			'settings.scopeZoom' => 'Масштаб',
 			'settings.scopeSyncOffsets' => 'Аудио және субтитр синхрондауы',
 			'settings.playerScopeOff' => 'Сақтамау',
 			'settings.playerScopeGlobal' => 'Барлық жерде',
@@ -3908,9 +3910,9 @@ extension on TranslationsKk {
 			'themeEditor.slots.outline' => 'Контур',
 			'themeEditor.slots.text' => 'Мәтін',
 			'themeEditor.slots.textMuted' => 'Қосалқы мәтін',
-			'themeEditor.slots.accent' => 'Акцент',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Мөлдірлік',
 			'themeEditor.hexHint' => '#RRGGBB немесе #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Басқа тақырыптардан',
@@ -4422,9 +4424,9 @@ extension on TranslationsKk {
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
 			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
 			'connections.sectionTitle' => 'Қосылымдар',
-			'connections.addConnection' => 'Қосылым қосу',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
@@ -4936,9 +4938,9 @@ extension on TranslationsKk {
 			'liveTv.recordSettings.anyTime' => 'Кез келген уақытта жазу',
 			'liveTv.recordSettings.skipInLibrary' => 'Кітапханада бар эпизодтарды өткізіп жіберу',
 			'liveTv.recordSettings.keepUpTo' => 'Сақталатын эпизодтар',
-			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
@@ -5450,9 +5452,9 @@ extension on TranslationsKk {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Бағдарламалық',
-			'performanceOverlay.decoderHardware' => 'Аппараттық',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => 'Аппараттық',
 			'performanceOverlay.tunnelingActive' => 'Белсенді',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			'externalPlayer.title' => 'Сыртқы ойнатқыш',

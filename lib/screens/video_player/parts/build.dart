@@ -220,8 +220,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
             return;
           }
 
-          final zoomScale = _videoFilterManager?.zoomScale ?? 1.0;
-          _visualEffects.showZoomToast(zoomScale);
+          _visualEffects.commitPinchZoom();
           _clearMobileZoomGesture();
           _setPlayerState(() {});
         },

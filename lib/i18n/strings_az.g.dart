@@ -602,6 +602,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => 'Oxutma sürəti';
 	@override String get scopeShaderPreset => 'Şader ön ayarı';
 	@override String get scopeAspectRatio => 'Tərəf nisbəti';
+	@override String get scopeZoom => 'Miqyas';
 	@override String get scopeSyncOffsets => 'Audio və subtitr sinxronizasiyası';
 	@override String get playerScopeOff => 'Saxlama';
 	@override String get playerScopeGlobal => 'Hər yerdə';
@@ -3884,6 +3885,7 @@ extension on TranslationsAz {
 			'settings.scopePlaybackSpeed' => 'Oxutma sürəti',
 			'settings.scopeShaderPreset' => 'Şader ön ayarı',
 			'settings.scopeAspectRatio' => 'Tərəf nisbəti',
+			'settings.scopeZoom' => 'Miqyas',
 			'settings.scopeSyncOffsets' => 'Audio və subtitr sinxronizasiyası',
 			'settings.playerScopeOff' => 'Saxlama',
 			'settings.playerScopeGlobal' => 'Hər yerdə',
@@ -3908,9 +3910,9 @@ extension on TranslationsAz {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Mətn',
 			'themeEditor.slots.textMuted' => 'Köməkçi mətn',
-			'themeEditor.slots.accent' => 'Vurğu',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Vurğu',
 			'themeEditor.opacity' => 'Şəffaflıq',
 			'themeEditor.hexHint' => '#RRGGBB və ya #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Digər mövzulardan',
@@ -4422,9 +4424,9 @@ extension on TranslationsAz {
 			'profiles.pinsDontMatch' => 'PIN-lər uyğun gəlmir',
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			'connections.sectionTitle' => 'Qoşulmalar',
-			'connections.addConnection' => 'Qoşulma əlavə et',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Qoşulma əlavə et',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} üçün seansın vaxtı bitdi',
@@ -4936,9 +4938,9 @@ extension on TranslationsAz {
 			'liveTv.recordSettings.anyTime' => 'İstənilən vaxt yaz',
 			'liveTv.recordSettings.skipInLibrary' => 'Kitabxanada artıq olan epizodları ötür',
 			'liveTv.recordSettings.keepUpTo' => 'Saxlanılacaq epizodlar',
-			'liveTv.recordSettings.keepUpToHint' => '0 bütün epizodları saxlayır',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => '0 bütün epizodları saxlayır',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dəq sonra başlayır',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} etibarsız Canlı TV oynatma məlumatı qaytardı',
@@ -5450,9 +5452,9 @@ extension on TranslationsAz {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Proqram təminatı',
-			'performanceOverlay.decoderHardware' => 'Aparat təminatı',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => 'Aparat təminatı',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)',
 			'externalPlayer.title' => 'Xarici oynadıcı',
