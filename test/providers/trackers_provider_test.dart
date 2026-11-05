@@ -93,6 +93,186 @@ void main() {
   tearDown(_resetTrackerBindings);
 
   group('TrackersProvider', () {
+    group('reconnect warnings', () {
+      test('an immediate reconnect from a disconnect listener is saved after the old connection is cleared', () async {
+        const uuid = 'profile-immediate-reconnect';
+        final replacement = _session(TrackerService.anilist, 'replacement');
+        await _anilistStore.save(uuid, _session(TrackerService.anilist, 'original'));
+        final p = TrackersProvider.forTesting(
+          connectPipeline:
+              ({required logLabel, required authorize, required enrich, required save, required assign}) async {
+                await save(replacement);
+                assign(replacement);
+                return true;
+              },
+        );
+        await _bindProfile(p, uuid);
+        Future<bool>? reconnecting;
+        p.addListener(() {
+          if (!p.isAnilistConnected && !p.isConnectingTracker && reconnecting == null) {
+            reconnecting = p.connectAnilist(onCodeReady: (_) {});
+          }
+        });
+
+        await p.disconnectAnilist();
+        expect(await reconnecting, isTrue);
+        expect((await _anilistStore.load(uuid))?.accessToken, replacement.accessToken);
+        expect(p.anilist, same(replacement));
+        expect(p.reconnectRequiredServices, isEmpty);
+        p.dispose();
+      });
+
+      for (final service in TrackerService.values) {
+        test('$service invalidation is reported once, persists, and stays in its profile', () async {
+          const uuid = 'profile-warning';
+          await _store(service).save(uuid, _session(service, 'owner'));
+          final p = TrackersProvider();
+          await _bindProfile(p, uuid);
+          final invalidate = _invalidationCallback(service);
+          var notifications = 0;
+          p.addListener(() => notifications++);
+
+          invalidate();
+          invalidate();
+          expect(p.reconnectRequiredServices, [service]);
+          expect(notifications, 1, reason: 'the old client must not publish the same failure twice');
+          expect((await _store(service).loadState(uuid)).needsReconnect, isTrue);
+
+          await _bindProfile(p, 'another-profile');
+          expect(p.reconnectRequiredServices, isEmpty);
+          invalidate();
+          expect(p.reconnectRequiredServices, isEmpty, reason: 'a late callback belongs to the old profile');
+          p.dispose();
+
+          final restarted = TrackersProvider();
+          await _bindProfile(restarted, uuid);
+          expect(restarted.reconnectRequiredServices, [service]);
+          expect(_providerSession(restarted, service), isNull);
+          await restarted.dismissReconnectWarning(service);
+          await _bindProfile(restarted, uuid);
+          expect(restarted.reconnectRequiredServices, isEmpty);
+          restarted.dispose();
+        });
+
+        test('$service successful reconnect clears its saved warning; cancelled reconnect retains it', () async {
+          const uuid = 'profile-reconnect';
+          await _store(service).markNeedsReconnect(uuid);
+          var succeed = false;
+          final connected = _session(service, 'reconnected');
+          final p = TrackersProvider.forTesting(
+            connectPipeline:
+                ({required logLabel, required authorize, required enrich, required save, required assign}) async {
+                  if (!succeed) return false;
+                  await save(connected);
+                  assign(connected);
+                  return true;
+                },
+          );
+          await _bindProfile(p, uuid);
+
+          expect(await _connect(p, service), isFalse);
+          expect(p.reconnectRequiredServices, [service]);
+          succeed = true;
+          expect(await _connect(p, service), isTrue);
+          expect(p.reconnectRequiredServices, isEmpty);
+          expect((await _store(service).loadState(uuid)).needsReconnect, isFalse);
+          // A stale dismissal must not disconnect the successful new login.
+          await p.dismissReconnectWarning(service);
+          expect(_providerSession(p, service), same(connected));
+          p.dispose();
+        });
+      }
+    });
+
+    group('account validation', () {
+      Future<TrackersProvider> withTrakt(http.Client client) async {
+        const uuid = 'profile-check';
+        await _traktStore.save(uuid, _trakt(username: 'owner'));
+        final p = TrackersProvider();
+        addTearDown(() {
+          if (!p.isDisposed) p.dispose();
+        });
+        await _bindProfile(p, uuid);
+        // Keep the provider's real guarded callbacks while replacing only the
+        // transport. No tracker endpoint or live account is used by this test.
+        final live = TraktTracker.instance.client!;
+        TraktTracker.instance.rebindSession(
+          p.trakt,
+          onSessionInvalidated: live.onSessionInvalidated,
+          onSessionUpdated: live.onSessionUpdated,
+          httpClient: client,
+        );
+        return p;
+      }
+
+      test('a terminal refresh failure raises the same warning as playback', () async {
+        final p = await withTrakt(
+          MockClient(
+            (request) async => http.Response(
+              request.url.path == '/oauth/token' ? '{"error":"invalid_grant"}' : '{}',
+              request.url.path == '/oauth/token' ? 400 : 401,
+            ),
+          ),
+        );
+
+        await p.validateSessions();
+
+        expect(p.isTraktConnected, isFalse);
+        expect(p.reconnectRequiredServices, [TrackerService.trakt]);
+        expect((await _traktStore.loadState('profile-check')).needsReconnect, isTrue);
+      });
+
+      for (final status in [429, 500, 503]) {
+        test('HTTP $status does not claim the account was signed out', () async {
+          final p = await withTrakt(MockClient((_) async => http.Response('{}', status)));
+
+          await p.validateSessions();
+
+          expect(p.isTraktConnected, isTrue);
+          expect(p.reconnectRequiredServices, isEmpty);
+          expect((await _traktStore.loadState('profile-check')).needsReconnect, isFalse);
+        });
+      }
+
+      test('a failed network request does not claim the account was signed out', () async {
+        final p = await withTrakt(MockClient((_) async => throw http.ClientException('offline')));
+        await p.validateSessions();
+        expect(p.isTraktConnected, isTrue);
+        expect(p.reconnectRequiredServices, isEmpty);
+      });
+
+      test('a recoverable refresh failure retains the account', () async {
+        final p = await withTrakt(
+          MockClient((request) async => http.Response('{}', request.url.path == '/oauth/token' ? 503 : 401)),
+        );
+        await p.validateSessions();
+        expect(p.isTraktConnected, isTrue);
+        expect(p.reconnectRequiredServices, isEmpty);
+      });
+
+      test('concurrent checks share one request and do not repeat after disposal', () async {
+        final response = Completer<http.Response>();
+        var requests = 0;
+        final p = await withTrakt(
+          MockClient((_) {
+            requests++;
+            return response.future;
+          }),
+        );
+        final first = p.validateSessions();
+        final second = p.validateSessions();
+        expect(second, same(first));
+        await pumpEventQueue();
+        expect(requests, 1);
+        response.complete(http.Response('{"user":{"username":"owner"}}', 200));
+        await first;
+        expect(p.reconnectRequiredServices, isEmpty);
+        p.dispose();
+        await p.validateSessions();
+        expect(requests, 1);
+      });
+    });
+
     test('starts with all trackers disconnected', () {
       final p = TrackersProvider();
       expect(p.mal, isNull);
@@ -105,6 +285,7 @@ void main() {
       expect(p.isSimklConnected, isFalse);
       expect(p.isTraktConnected, isFalse);
       expect(p.isMdblistConnected, isFalse);
+      expect(p.reconnectRequiredServices, isEmpty);
       expect(p.mdblistCatalogClient, isNull);
       expect(p.malUsername, isNull);
       expect(p.anilistUsername, isNull);
@@ -654,6 +835,14 @@ void _resetTrackerBindings() {
   TraktTracker.instance.rebindSession(null, onSessionInvalidated: () {});
   MdblistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
 }
+
+void Function() _invalidationCallback(TrackerService service) => switch (service) {
+  TrackerService.mal => MalTracker.instance.client!.onSessionInvalidated,
+  TrackerService.anilist => AnilistTracker.instance.client!.onSessionInvalidated,
+  TrackerService.simkl => SimklTracker.instance.client!.onSessionInvalidated,
+  TrackerService.trakt => TraktTracker.instance.client!.onSessionInvalidated,
+  TrackerService.mdblist => MdblistTracker.instance.client!.onSessionInvalidated,
+};
 
 TrackerAccountStore _store(TrackerService service) => switch (service) {
   TrackerService.mal => _malStore,
