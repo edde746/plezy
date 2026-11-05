@@ -237,6 +237,7 @@ class WatchNextPlugin() :
     val type = when ((data["type"] as? String)?.lowercase()) {
       "episode" -> TvContractCompat.PreviewPrograms.TYPE_TV_EPISODE
       "show", "series", "tv_series" -> TvContractCompat.PreviewPrograms.TYPE_TV_SERIES
+      "channel", "tv_channel" -> TvContractCompat.PreviewPrograms.TYPE_CHANNEL
       else -> TvContractCompat.PreviewPrograms.TYPE_MOVIE
     }
     return PreviewChannelPublisher.ChannelItem(
@@ -250,7 +251,8 @@ class WatchNextPlugin() :
       seriesTitle = data["seriesTitle"] as? String,
       seasonNumber = (data["seasonNumber"] as? Number)?.toInt(),
       episodeNumber = (data["episodeNumber"] as? Number)?.toInt(),
-      weight = (data["weight"] as? Number)?.toInt() ?: (SystemShelfArtworkStore.MAX_ITEMS - index)
+      weight = (data["weight"] as? Number)?.toInt() ?: (SystemShelfArtworkStore.MAX_ITEMS - index),
+      intentUri = (data["intentUri"] as? String)?.takeIf(String::isNotBlank)
     )
   }
 }

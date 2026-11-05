@@ -113,10 +113,10 @@ void main() {
       final olderPremiere = testMediaItem(
         id: 'old',
         title: 'Old Prem',
-        year: 2020,
+        year: 2024,
         kind: MediaKind.movie,
         addedAt: 999,
-        originallyAvailableAt: '2020-01-01',
+        originallyAvailableAt: '2024-01-01',
       );
       final newerPremiere = testMediaItem(
         id: 'new',
@@ -134,7 +134,10 @@ void main() {
         ),
       ];
 
-      final releases = SystemShelfLibraryChannels.newReleases(hubs);
+      final releases = SystemShelfLibraryChannels.newReleases(
+        hubs,
+        now: DateTime.utc(2025, 6, 1),
+      );
       expect(releases.map((item) => item.id), ['new', 'old']);
     });
 
@@ -168,8 +171,168 @@ void main() {
         ),
       ];
 
-      final releases = SystemShelfLibraryChannels.newReleases(hubs);
+      final releases = SystemShelfLibraryChannels.newReleases(
+        hubs,
+        now: DateTime.utc(2025, 6, 1),
+      );
       expect(releases.map((item) => item.id), ['rel']);
+    });
+
+    test('recently added ranks by addedAt and keeps hub items without it', () {
+      final hubs = [
+        _hub(
+          id: 'home.movies.recent',
+          identifier: 'home.movies.recent',
+          items: [
+            testMediaItem(
+              id: 'no-added',
+              title: 'Hub Says Recent',
+              year: 2015,
+              kind: MediaKind.movie,
+              updatedAt: 9999,
+            ),
+            testMediaItem(
+              id: 'fresh',
+              title: 'Actually Added',
+              year: 2024,
+              kind: MediaKind.movie,
+              addedAt: 100,
+            ),
+          ],
+        ),
+      ];
+
+      final merged = SystemShelfLibraryChannels.recentlyAdded(hubs);
+      expect(merged.map((item) => item.id), ['fresh', 'no-added']);
+    });
+
+    test('new releases rank by premiere only, ignoring add date', () {
+      final hubs = [
+        _hub(
+          id: 'home.movies.recent',
+          identifier: 'home.movies.recent',
+          items: [
+            testMediaItem(
+              id: 'just-added-old',
+              title: 'Rise of Skywalker',
+              year: 2019,
+              kind: MediaKind.movie,
+              originallyAvailableAt: '2019-12-20',
+              addedAt: 9000,
+            ),
+            testMediaItem(
+              id: 'older-add-newer-film',
+              title: 'Newer Film',
+              year: 2024,
+              kind: MediaKind.movie,
+              originallyAvailableAt: '2024-11-01',
+              addedAt: 10,
+            ),
+          ],
+        ),
+      ];
+
+      final releases = SystemShelfLibraryChannels.newReleases(
+        hubs,
+        now: DateTime.utc(2025, 6, 1),
+      );
+      expect(releases.map((item) => item.id), ['older-add-newer-film']);
+    });
+
+    test('year-only new release outranks older dated premiere', () {
+      final hubs = [
+        _hub(
+          id: 'home.movies.recent',
+          identifier: 'home.movies.recent',
+          items: [
+            testMediaItem(
+              id: 'skywalker',
+              title: 'Rise of Skywalker',
+              year: 2019,
+              kind: MediaKind.movie,
+              originallyAvailableAt: '2019-12-20',
+              addedAt: 500,
+            ),
+            testMediaItem(
+              id: 'newer',
+              title: 'Newer Film',
+              year: 2024,
+              kind: MediaKind.movie,
+              addedAt: 400,
+            ),
+          ],
+        ),
+      ];
+
+      final releases = SystemShelfLibraryChannels.newReleases(
+        hubs,
+        now: DateTime.utc(2025, 6, 1),
+      );
+      expect(releases.map((item) => item.id), ['newer']);
+    });
+
+    test('new releases drop premieres older than the freshness window', () {
+      final hubs = [
+        _hub(
+          id: 'movie.recentlyreleased',
+          identifier: 'movie.recentlyreleased',
+          items: [
+            testMediaItem(
+              id: 'skywalker',
+              title: 'Rise of Skywalker',
+              year: 2019,
+              kind: MediaKind.movie,
+              originallyAvailableAt: '2019-12-20',
+            ),
+            testMediaItem(
+              id: 'fresh',
+              title: 'Fresh Film',
+              year: 2024,
+              kind: MediaKind.movie,
+              originallyAvailableAt: '2024-11-01',
+            ),
+          ],
+        ),
+      ];
+
+      final releases = SystemShelfLibraryChannels.newReleases(
+        hubs,
+        now: DateTime.utc(2025, 6, 1),
+      );
+      expect(releases.map((item) => item.id), ['fresh']);
+    });
+
+    test('new releases skip episodes', () {
+      final hubs = [
+        _hub(
+          id: 'home.movies.recent',
+          identifier: 'home.movies.recent',
+          items: [
+            testMediaItem(
+              id: 'ep',
+              title: 'Pilot',
+              year: 2025,
+              kind: MediaKind.episode,
+              originallyAvailableAt: '2025-05-01',
+              addedAt: 50,
+            ),
+            testMediaItem(
+              id: 'movie',
+              title: 'Feature',
+              year: 2025,
+              kind: MediaKind.movie,
+              originallyAvailableAt: '2025-04-01',
+              addedAt: 40,
+            ),
+          ],
+        ),
+      ];
+
+      final releases = SystemShelfLibraryChannels.newReleases(
+        hubs,
+        now: DateTime.utc(2025, 6, 1),
+      );
+      expect(releases.map((item) => item.id), ['movie']);
     });
   });
 }

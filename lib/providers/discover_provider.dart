@@ -9,6 +9,7 @@ import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
+import '../models/livetv_channel.dart';
 import '../services/settings_service.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
@@ -1096,7 +1097,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   // --- Platform launcher shelf ----------------------------------------------
 
-  /// Publish Recently Added + New Releases Preview Channels from Discover hubs.
+  /// Publish Recently Added + New Releases Preview Channels from Discover hubs,
+  /// then best-effort Live TV channels when any Live TV server is available.
   Future<void> _syncLibraryChannels(List<MediaHub> hubs) async {
     if (isDisposed) return;
     final owner = profileId;
@@ -1115,6 +1117,46 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       );
     } catch (e) {
       appLogger.w('Failed to sync library preview channels', error: e);
+    }
+    if (isDisposed) return;
+    await _syncLiveTvPreviewChannel(owner);
+  }
+
+  Future<void> _syncLiveTvPreviewChannel(String owner) async {
+    if (isDisposed || _syncSystemShelfOverride != null) return;
+    try {
+      if (!_multiServer.hasLiveTv) {
+        await SystemShelfService().syncLiveTvChannels(owner, const [], _clientForShelfItem);
+        return;
+      }
+      final channels = <LiveTvChannel>[];
+      final seen = <String>{};
+      for (final serverInfo in _multiServer.liveTvServers) {
+        if (isDisposed) return;
+        final client = _multiServer.getClientForServer(ServerId(serverInfo.serverId));
+        if (client == null) continue;
+        try {
+          final fetched = await client.liveTv.fetchChannels(lineup: serverInfo.lineup);
+          for (final channel in fetched) {
+            final scoped = channel.copyWith(
+              serverId: serverInfo.serverId,
+              liveDvrKey: serverInfo.dvrKey,
+            );
+            if (seen.add(liveTvChannelScopeKey(scoped))) {
+              channels.add(scoped);
+            }
+          }
+        } catch (e) {
+          appLogger.w(
+            'Failed to fetch Live TV channels for shelf from ${serverInfo.serverId}',
+            error: e,
+          );
+        }
+      }
+      if (isDisposed) return;
+      await SystemShelfService().syncLiveTvChannels(owner, channels, _clientForShelfItem);
+    } catch (e) {
+      appLogger.w('Failed to sync Live TV preview channel', error: e);
     }
   }
 

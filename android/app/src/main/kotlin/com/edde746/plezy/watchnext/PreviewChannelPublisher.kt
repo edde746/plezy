@@ -29,7 +29,12 @@ internal class PreviewChannelPublisher(
     private const val TAG = "PreviewChannelPublisher"
     internal const val CHANNEL_RECENTLY_ADDED = "recently_added"
     internal const val CHANNEL_NEW_RELEASES = "new_releases"
-    private val KNOWN_CHANNELS = listOf(CHANNEL_RECENTLY_ADDED, CHANNEL_NEW_RELEASES)
+    internal const val CHANNEL_LIVE_TV = "live_tv"
+    private val KNOWN_CHANNELS = listOf(
+      CHANNEL_RECENTLY_ADDED,
+      CHANNEL_NEW_RELEASES,
+      CHANNEL_LIVE_TV
+    )
 
     /** Artwork files currently referenced by preview-channel programs. */
     fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<File> {
@@ -49,7 +54,9 @@ internal class PreviewChannelPublisher(
     val seasonNumber: Int?,
     val episodeNumber: Int?,
     /** Higher weight sorts earlier in the channel (launcher-dependent). */
-    val weight: Int
+    val weight: Int,
+    /** Optional deep link; defaults to `plezy://play?content_id=...`. */
+    val intentUri: String? = null
   )
 
   private data class PreparedChannelItem(val metadata: ChannelItem, val localPosterUri: Uri?)
@@ -313,7 +320,12 @@ internal class PreviewChannelPublisher(
     metadata.description?.let(builder::setDescription)
     item.localPosterUri?.let { uri ->
       builder.setPosterArtUri(uri)
-      builder.setPosterArtAspectRatio(TvContractCompat.PreviewPrograms.ASPECT_RATIO_16_9)
+      val aspect = if (metadata.type == TvContractCompat.PreviewPrograms.TYPE_CHANNEL) {
+        TvContractCompat.PreviewPrograms.ASPECT_RATIO_1_1
+      } else {
+        TvContractCompat.PreviewPrograms.ASPECT_RATIO_16_9
+      }
+      builder.setPosterArtAspectRatio(aspect)
     }
     if (metadata.duration > 0) {
       builder.setDurationMillis(metadata.duration.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
@@ -323,9 +335,10 @@ internal class PreviewChannelPublisher(
       metadata.seasonNumber?.let { builder.setSeasonNumber(it) }
       metadata.episodeNumber?.let { builder.setEpisodeNumber(it) }
     }
-    val playUri = Uri.Builder().scheme("plezy").authority("play")
-      .appendQueryParameter("content_id", metadata.contentId).build()
-    builder.setIntent(Intent(Intent.ACTION_VIEW, playUri).setPackage(context.packageName))
+    val intentUri = metadata.intentUri?.let(Uri::parse)
+      ?: Uri.Builder().scheme("plezy").authority("play")
+        .appendQueryParameter("content_id", metadata.contentId).build()
+    builder.setIntent(Intent(Intent.ACTION_VIEW, intentUri).setPackage(context.packageName))
     return builder.build()
   }
 
