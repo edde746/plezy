@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../focus/dpad_navigator.dart';
+import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focusable_tile_mixin.dart';
 import '../utils/platform_detector.dart';
 import 'clickable_cursor.dart';
@@ -63,13 +66,68 @@ class FocusableListTile extends StatefulWidget {
 }
 
 class _FocusableListTileState extends State<FocusableListTile> with FocusableTileStateMixin<FocusableListTile> {
+  final _selectLongPress = DpadSelectLongPressController();
+
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
+
+  @override
+  void dispose() {
+    _selectLongPress.dispose();
+    super.dispose();
+  }
+
+  /// Material's [ListTile.onLongPress] is touch-only, so a remote/keyboard
+  /// could never reach it. When a long-press action exists, hold SELECT (or
+  /// press the context-menu key) triggers it and a short SELECT still taps.
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (widget.onLongPress == null || !widget.enabled || !effectiveFocusNode.hasPrimaryFocus) {
+      return KeyEventResult.ignored;
+    }
+
+    if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      if (event is KeyUpEvent && event.logicalKey.isSelectKey) _selectLongPress.reset();
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey.isSelectKey) {
+      return _selectLongPress.handleKeyEvent(
+        event,
+        isOwnerActive: () => mounted,
+        onShortPress: () => widget.onTap?.call(),
+        // Read at fire time: the tile may have rebuilt (new selection state)
+        // during the hold.
+        onLongPress: () => widget.onLongPress?.call(),
+      );
+    }
+
+    if (event.isActionable && event.logicalKey.isContextMenuKey) {
+      _selectLongPress.reset();
+      widget.onLongPress?.call();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
 
   @override
   Widget build(BuildContext context) {
     final automotive = PlatformDetector.isAutomotive();
 
+    // Always mounted, even without onLongPress: adding/removing this wrapper
+    // would remount the ListTile and drop its ink focus highlight.
+    // _handleKeyEvent ignores events while onLongPress is null.
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (!hasFocus) _selectLongPress.reset();
+      },
+      onKeyEvent: _handleKeyEvent,
+      child: _buildTile(automotive),
+    );
+  }
+
+  Widget _buildTile(bool automotive) {
     return MouseRegion(
       cursor: widget.enabled && (widget.onTap != null || widget.onLongPress != null)
           ? SystemMouseCursors.click
