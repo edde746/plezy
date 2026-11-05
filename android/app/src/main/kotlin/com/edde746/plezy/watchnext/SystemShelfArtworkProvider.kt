@@ -22,7 +22,11 @@ import java.util.concurrent.TimeUnit
 
 class SystemShelfArtworkProvider : ContentProvider() {
   companion object {
+    /** Default store authority; sidecar builds use `${applicationId}.systemshelf.artwork`. */
     const val AUTHORITY = "com.edde746.plezy.systemshelf.artwork"
+    const val AUTHORITY_SUFFIX = ".systemshelf.artwork"
+
+    fun authorityFor(packageName: String): String = "$packageName$AUTHORITY_SUFFIX"
   }
 
   override fun onCreate(): Boolean = context != null
@@ -37,12 +41,15 @@ class SystemShelfArtworkProvider : ContentProvider() {
   override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
     if (mode != "r") throw FileNotFoundException("Read-only artwork")
     val appContext = context ?: throw FileNotFoundException("Provider unavailable")
-    val file = SystemShelfArtworkStore(appContext.cacheDir).resolve(uri)
+    val file = SystemShelfArtworkStore(appContext.cacheDir, appContext.packageName).resolve(uri)
       ?: throw FileNotFoundException("Unknown artwork")
     return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
   }
 
-  override fun getType(uri: Uri): String? = if (uri.authority == AUTHORITY) "image/*" else null
+  override fun getType(uri: Uri): String? {
+    val expected = context?.packageName?.let(::authorityFor) ?: AUTHORITY
+    return if (uri.authority == expected) "image/*" else null
+  }
   override fun query(
     uri: Uri,
     projection: Array<out String>?,
@@ -74,7 +81,10 @@ internal class SystemShelfSyncSession(
   } ?: false
 }
 
-internal class SystemShelfArtworkStore(private val cacheDir: File) {
+internal class SystemShelfArtworkStore(
+  private val cacheDir: File,
+  private val packageName: String = "com.edde746.plezy"
+) {
   companion object {
     const val MAX_IMAGE_BYTES = 2 * 1024 * 1024
     const val MAX_SYNC_BYTES = 8 * 1024 * 1024
@@ -261,7 +271,7 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
 
   fun contentUri(ownerKey: String, key: String): Uri = Uri.Builder()
     .scheme("content")
-    .authority(SystemShelfArtworkProvider.AUTHORITY)
+    .authority(SystemShelfArtworkProvider.authorityFor(packageName))
     .appendPath("art")
     .appendPath(ownerKey)
     .appendPath(key)
@@ -325,7 +335,17 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
   fun deleteAll(): Boolean = !root.exists() || root.deleteRecursively()
 
   private fun confinedCandidate(uri: Uri): File? {
-    if (uri.scheme != "content" || uri.authority != SystemShelfArtworkProvider.AUTHORITY) return null
+    val authority = uri.authority
+    if (
+      uri.scheme != "content" ||
+      authority == null ||
+      (
+        authority != SystemShelfArtworkProvider.AUTHORITY &&
+          !authority.endsWith(SystemShelfArtworkProvider.AUTHORITY_SUFFIX)
+      )
+    ) {
+      return null
+    }
     val segments = uri.pathSegments
     if (segments.size != 3 || segments[0] != "art") return null
     val owner = segments[1]

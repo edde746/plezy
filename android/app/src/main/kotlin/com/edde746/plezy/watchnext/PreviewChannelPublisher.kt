@@ -55,7 +55,7 @@ internal class PreviewChannelPublisher(
   private data class PreparedChannelItem(val metadata: ChannelItem, val localPosterUri: Uri?)
 
   private val ledger = SystemShelfUriLedger(context)
-  private val artwork = SystemShelfArtworkStore(context.cacheDir)
+  private val artwork = SystemShelfArtworkStore(context.cacheDir, context.packageName)
   private val helper = PreviewChannelHelper(context)
 
   internal fun claimOwnership(ownerId: String, generation: Long): SystemShelfLifecycle.Ownership? =
@@ -228,7 +228,7 @@ internal class PreviewChannelPublisher(
     val builder = PreviewChannel.Builder()
       .setDisplayName(title)
       .setInternalProviderId(providerIdFor(channelKey))
-      .setAppLinkIntentUri(appLink)
+      .setAppLinkIntent(Intent(Intent.ACTION_VIEW, appLink).setPackage(context.packageName))
       .setLogo(channelLogoBitmap())
     return try {
       val id = helper.publishChannel(builder.build())
@@ -291,10 +291,9 @@ internal class PreviewChannelPublisher(
       metadata.seasonNumber?.let { builder.setSeasonNumber(it) }
       metadata.episodeNumber?.let { builder.setEpisodeNumber(it) }
     }
-    builder.setIntentUri(
-      Uri.Builder().scheme("plezy").authority("play")
-        .appendQueryParameter("content_id", metadata.contentId).build()
-    )
+    val playUri = Uri.Builder().scheme("plezy").authority("play")
+      .appendQueryParameter("content_id", metadata.contentId).build()
+    builder.setIntent(Intent(Intent.ACTION_VIEW, playUri).setPackage(context.packageName))
     return builder.build()
   }
 

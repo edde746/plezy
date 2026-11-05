@@ -150,7 +150,7 @@ class WatchNextProvider internal constructor(
 
   private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
   private val ledger = SystemShelfUriLedger(context)
-  private val artwork = SystemShelfArtworkStore(context.cacheDir)
+  private val artwork = SystemShelfArtworkStore(context.cacheDir, context.packageName)
   private data class CommittedPublication(
     val ownerId: String,
     val generation: Long,
@@ -754,10 +754,11 @@ class WatchNextProvider internal constructor(
       metadata.seasonNumber?.let(builder::setSeasonNumber)
       metadata.episodeNumber?.let(builder::setEpisodeNumber)
     }
-    builder.setIntentUri(
-      Uri.Builder().scheme("plezy").authority("play")
-        .appendQueryParameter("content_id", metadata.contentId).build()
-    )
+    val playUri = Uri.Builder().scheme("plezy").authority("play")
+      .appendQueryParameter("content_id", metadata.contentId).build()
+    // Pin the package so a sidecar install (Plezy Local) doesn't share a chooser
+    // with the store build when both register the plezy:// scheme.
+    builder.setIntent(Intent(Intent.ACTION_VIEW, playUri).setPackage(context.packageName))
     return builder.build()
   }
 }
