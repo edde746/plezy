@@ -47,6 +47,17 @@ internal class PreviewChannelPublisher(
     fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<File> {
       return SystemShelfUriLedger(context).channelUris().mapNotNullTo(LinkedHashSet()) { artwork.resolve(it) }
     }
+
+    /** Union of intended grants and posters still visible to launchers. */
+    internal fun mergeGrantUris(intended: Set<Uri>, livePublished: Set<Uri>): Set<Uri> =
+      mergeGrantSets(intended, livePublished)
+
+    /** Package-visible for JVM unit tests that cannot construct [Uri] stubs. */
+    internal fun <T> mergeGrantSets(intended: Set<T>, livePublished: Set<T>): Set<T> =
+      LinkedHashSet<T>(intended.size + livePublished.size).apply {
+        addAll(intended)
+        addAll(livePublished)
+      }
   }
 
   data class ChannelItem(
@@ -172,9 +183,18 @@ internal class PreviewChannelPublisher(
           return@whileCurrent false
         }
 
-        reconcileReadAccess(oldUnion, oldPackages, unionUris, packages)
+        // Fire OS may leave prior preview_program rows after a "successful" replace.
+        // Never revoke or delete artwork still referenced by live TvProvider posters.
+        val grantUris = mergeGrantUris(unionUris, liveChannelPosterUris())
+        if (!ledger.persistGranted(grantUris, packages)) {
+          ledger.rollbackGrants(oldUnion, oldPackages, previousChannelUris)
+          reconcileReadAccess(grantUris, packages, oldUnion, oldPackages)
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
+        reconcileReadAccess(oldUnion, oldPackages, grantUris, packages)
         val keepFiles = LinkedHashSet<File>()
-        unionUris.mapNotNullTo(keepFiles) { artwork.resolve(it) }
+        grantUris.mapNotNullTo(keepFiles) { artwork.resolve(it) }
         // Preserve Watch Next posters that share the store.
         keepFiles += WatchNextProvider.referencedArtworkFiles(context, artwork)
         artwork.deleteExcept(keepFiles)
@@ -230,7 +250,11 @@ internal class PreviewChannelPublisher(
   }
 
   fun restoreReadGrants(): Boolean {
-    val uris = ledger.grantedUris().filterTo(LinkedHashSet()) { artwork.resolve(it) != null }
+    val live = liveChannelPosterUris()
+    val uris = LinkedHashSet<Uri>().apply {
+      addAll(ledger.grantedUris())
+      addAll(live)
+    }.filterTo(LinkedHashSet()) { artwork.resolve(it) != null }
     val packages = consumerPackages()
     reconcileReadAccess(ledger.grantedUris(), ledger.grantedPackages(), uris, packages)
     return ledger.persistGranted(uris, packages)
@@ -296,10 +320,10 @@ internal class PreviewChannelPublisher(
 
   private fun deleteProgramsForChannel(channelId: Long) {
     val channelProgramsUri = TvContractCompat.buildPreviewProgramsUriForChannel(channelId)
-    val bulkDeleted = runCatching {
-      context.contentResolver.delete(channelProgramsUri, null, null)
-    }.getOrElse { -1 }
-    if (bulkDeleted >= 0) return
+    // Fire OS often returns 0 from the channel-scoped bulk delete without removing
+    // rows. Always follow with a query + per-row delete so stale poster URIs do not
+    // outlive the grants we are about to revoke.
+    runCatching { context.contentResolver.delete(channelProgramsUri, null, null) }
 
     val projection = arrayOf(TvContractCompat.PreviewPrograms._ID)
     val queried = runCatching {
@@ -310,21 +334,57 @@ internal class PreviewChannelPublisher(
         val idIndex = cursor.getColumnIndexOrThrow(TvContractCompat.PreviewPrograms._ID)
         while (cursor.moveToNext()) {
           val programId = cursor.getLong(idIndex)
-          context.contentResolver.delete(
-            TvContractCompat.buildPreviewProgramUri(programId),
-            null,
-            null
-          )
+          runCatching {
+            context.contentResolver.delete(
+              TvContractCompat.buildPreviewProgramUri(programId),
+              null,
+              null
+            )
+          }
         }
       }
       return
     }
 
-    context.contentResolver.delete(
-      TvContractCompat.PreviewPrograms.CONTENT_URI,
-      "${TvContractCompat.PreviewPrograms.COLUMN_CHANNEL_ID}=?",
-      arrayOf(channelId.toString())
-    )
+    runCatching {
+      context.contentResolver.delete(
+        TvContractCompat.PreviewPrograms.CONTENT_URI,
+        "${TvContractCompat.PreviewPrograms.COLUMN_CHANNEL_ID}=?",
+        arrayOf(channelId.toString())
+      )
+    }
+  }
+
+  /**
+   * Poster URIs still published on our Preview Channels. Used so grant revoke /
+   * artwork GC cannot drop tiles Fire OS failed to delete during replace.
+   */
+  internal fun liveChannelPosterUris(): Set<Uri> {
+    val authority = SystemShelfArtworkProvider.authorityFor(context.packageName)
+    val uris = LinkedHashSet<Uri>()
+    KNOWN_CHANNELS.forEach { key ->
+      val channelId = ledger.channelId(key) ?: findPublishedChannelId(key) ?: return@forEach
+      val channelProgramsUri = TvContractCompat.buildPreviewProgramsUriForChannel(channelId)
+      val cursor = runCatching {
+        context.contentResolver.query(
+          channelProgramsUri,
+          arrayOf(TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI),
+          null,
+          null,
+          null
+        )
+      }.getOrNull() ?: return@forEach
+      cursor.use { rows ->
+        val index = rows.getColumnIndex(TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI)
+        if (index < 0) return@use
+        while (rows.moveToNext()) {
+          val raw = rows.getString(index) ?: continue
+          val uri = runCatching { Uri.parse(raw) }.getOrNull() ?: continue
+          if (uri.authority == authority) uris += uri
+        }
+      }
+    }
+    return uris
   }
 
   private fun buildProgram(channelId: Long, item: PreparedChannelItem): PreviewProgram {
