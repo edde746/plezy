@@ -35,48 +35,58 @@ void main() {
       );
       expect(
         SystemShelfLibraryChannels.isRecentlyAddedHub(
-          _hub(id: 'library.music.recentlyplayed', identifier: 'library.music.recentlyplayed'),
+          _hub(
+            id: 'library.music.recentlyplayed',
+            identifier: 'library.music.recentlyplayed',
+          ),
         ),
         isFalse,
       );
     });
 
-    test('merges plex+jellyfin recently added by addedAt with title dedupe', () {
-      final plex = testMediaItem(
-        id: 'p1',
-        serverId: 'plex',
-        title: 'Dune',
-        year: 2021,
-        kind: MediaKind.movie,
-        addedAt: 200,
-      );
-      final jelly = testMediaItem(
-        id: 'j1',
-        serverId: 'jelly',
-        title: 'Dune',
-        year: 2021,
-        kind: MediaKind.movie,
-        addedAt: 150,
-      );
-      final other = testMediaItem(
-        id: 'p2',
-        serverId: 'plex',
-        title: 'Arrival',
-        year: 2016,
-        kind: MediaKind.movie,
-        addedAt: 180,
-      );
-      final hubs = [
-        _hub(id: 'home.movies.recent', identifier: 'home.movies.recent', items: [plex, other]),
-        _hub(id: 'home.recent', identifier: 'home.recent', items: [jelly]),
-      ];
+    test(
+      'merges plex+jellyfin recently added by addedAt with title dedupe',
+      () {
+        final plex = testMediaItem(
+          id: 'p1',
+          serverId: 'plex',
+          title: 'Dune',
+          year: 2021,
+          kind: MediaKind.movie,
+          addedAt: 200,
+        );
+        final jelly = testMediaItem(
+          id: 'j1',
+          serverId: 'jelly',
+          title: 'Dune',
+          year: 2021,
+          kind: MediaKind.movie,
+          addedAt: 150,
+        );
+        final other = testMediaItem(
+          id: 'p2',
+          serverId: 'plex',
+          title: 'Arrival',
+          year: 2016,
+          kind: MediaKind.movie,
+          addedAt: 180,
+        );
+        final hubs = [
+          _hub(
+            id: 'home.movies.recent',
+            identifier: 'home.movies.recent',
+            items: [plex, other],
+          ),
+          _hub(id: 'home.recent', identifier: 'home.recent', items: [jelly]),
+        ];
 
-      final merged = SystemShelfLibraryChannels.recentlyAdded(
-        hubs,
-        kind: SystemShelfLibraryKind.movies,
-      );
-      expect(merged.map((item) => item.id), ['p1', 'p2']);
-    });
+        final merged = SystemShelfLibraryChannels.recentlyAdded(
+          hubs,
+          kind: SystemShelfLibraryKind.movies,
+        );
+        expect(merged.map((item) => item.id), ['p1', 'p2']);
+      },
+    );
 
     test('dedupes on imdb when raw Guid is present', () {
       final plex = MediaItem.plex(
@@ -104,7 +114,11 @@ void main() {
         },
       );
       final hubs = [
-        _hub(id: 'home.recent', identifier: 'home.recent', items: [plex, jelly]),
+        _hub(
+          id: 'home.recent',
+          identifier: 'home.recent',
+          items: [plex, jelly],
+        ),
       ];
 
       final merged = SystemShelfLibraryChannels.recentlyAdded(
@@ -121,9 +135,24 @@ void main() {
           id: 'home.recent',
           identifier: 'home.recent',
           items: [
-            testMediaItem(id: 'm1', title: 'Film', kind: MediaKind.movie, addedAt: 30),
-            testMediaItem(id: 's1', title: 'Series', kind: MediaKind.show, addedAt: 40),
-            testMediaItem(id: 'e1', title: 'Ep', kind: MediaKind.episode, addedAt: 50),
+            testMediaItem(
+              id: 'm1',
+              title: 'Film',
+              kind: MediaKind.movie,
+              addedAt: 30,
+            ),
+            testMediaItem(
+              id: 's1',
+              title: 'Series',
+              kind: MediaKind.show,
+              addedAt: 40,
+            ),
+            testMediaItem(
+              id: 'e1',
+              title: 'Ep',
+              kind: MediaKind.episode,
+              addedAt: 50,
+            ),
           ],
         ),
       ];
