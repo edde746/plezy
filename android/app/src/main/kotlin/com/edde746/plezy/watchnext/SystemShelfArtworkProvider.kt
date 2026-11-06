@@ -40,14 +40,15 @@ class SystemShelfArtworkProvider : ContentProvider() {
   override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
     if (mode != "r") throw FileNotFoundException("Read-only artwork")
     val appContext = context ?: throw FileNotFoundException("Provider unavailable")
-    val file = SystemShelfArtworkStore(appContext.cacheDir, appContext.packageName).resolve(uri)
+    val file = SystemShelfArtworkStore(appContext.cacheDir).resolve(uri)
       ?: throw FileNotFoundException("Unknown artwork")
     return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
   }
 
   override fun getType(uri: Uri): String? {
-    val expected = context?.packageName?.let(::authorityFor) ?: AUTHORITY
-    return if (uri.authority == expected) "image/*" else null
+    val authority = uri.authority
+    val runtime = context?.packageName?.let(::authorityFor)
+    return if (authority == AUTHORITY || authority == runtime) "image/*" else null
   }
   override fun query(
     uri: Uri,
@@ -80,10 +81,7 @@ internal class SystemShelfSyncSession(
   } ?: false
 }
 
-internal class SystemShelfArtworkStore(
-  private val cacheDir: File,
-  private val packageName: String = "com.edde746.plezy"
-) {
+internal class SystemShelfArtworkStore(private val cacheDir: File) {
   companion object {
     const val MAX_IMAGE_BYTES = 2 * 1024 * 1024
     const val MAX_SYNC_BYTES = 8 * 1024 * 1024
@@ -274,7 +272,7 @@ internal class SystemShelfArtworkStore(
 
   fun contentUri(ownerKey: String, key: String): Uri = Uri.Builder()
     .scheme("content")
-    .authority(SystemShelfArtworkProvider.authorityFor(packageName))
+    .authority(SystemShelfArtworkProvider.AUTHORITY)
     .appendPath("art")
     .appendPath(ownerKey)
     .appendPath(key)

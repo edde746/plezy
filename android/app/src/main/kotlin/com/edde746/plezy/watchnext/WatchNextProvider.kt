@@ -148,7 +148,7 @@ class WatchNextProvider internal constructor(
 
   private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
   private val ledger = SystemShelfUriLedger(context)
-  private val artwork = SystemShelfArtworkStore(context.cacheDir, context.packageName)
+  private val artwork = SystemShelfArtworkStore(context.cacheDir)
   private data class CommittedPublication(
     val ownerId: String,
     val generation: Long,
@@ -367,12 +367,14 @@ class WatchNextProvider internal constructor(
   private fun restoreReadGrantsOwned(): Boolean {
     val previousUris = storedUris()
     val previousPackages = storedPackages()
-    val validUris = previousUris.filterTo(LinkedHashSet()) { artwork.resolve(it) != null }
+    // One pass for Watch Next and Preview Channels. A second restore on the
+    // same ledger revokes every stale URI again, which API 25 records as a
+    // separate uri-wide revoke.
+    val keep = PreviewChannelPublisher(context, null).retainedPosterUris(previousUris)
     val currentPackages = consumerPackages()
-    reconcileReadAccess(previousUris, previousPackages, validUris, currentPackages)
-    PreviewChannelPublisher(context, null).restoreReadGrants()
+    reconcileReadAccess(previousUris, previousPackages, keep, currentPackages)
     return prefs.edit()
-      .putStringSet(GRANTED_URIS, validUris.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_URIS, keep.mapTo(LinkedHashSet(), Uri::toString))
       .putStringSet(GRANTED_PACKAGES, currentPackages)
       .commit()
   }

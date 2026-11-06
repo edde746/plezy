@@ -77,7 +77,7 @@ internal class PreviewChannelPublisher(
   private data class PreparedChannelItem(val metadata: ChannelItem, val localPosterUri: Uri?)
 
   private val ledger = SystemShelfUriLedger(context)
-  private val artwork = SystemShelfArtworkStore(context.cacheDir, context.packageName)
+  private val artwork = SystemShelfArtworkStore(context.cacheDir)
   private val helper = PreviewChannelHelper(context)
 
   internal fun claimOwnership(ownerId: String, generation: Long): SystemShelfLifecycle.Ownership? = lifecycleLease?.let { SystemShelfLifecycle.claim(it, ownerId, generation) }
@@ -246,15 +246,19 @@ internal class PreviewChannelPublisher(
   }
 
   fun restoreReadGrants(): Boolean {
-    val live = liveChannelPosterUris()
-    val uris = LinkedHashSet<Uri>().apply {
-      addAll(ledger.grantedUris())
-      addAll(live)
-    }.filterTo(LinkedHashSet()) { artwork.resolve(it) != null }
+    val previous = ledger.grantedUris()
+    val keep = retainedPosterUris(previous)
     val packages = consumerPackages()
-    reconcileReadAccess(ledger.grantedUris(), ledger.grantedPackages(), uris, packages)
-    return ledger.persistGranted(uris, packages)
+    reconcileReadAccess(previous, ledger.grantedPackages(), keep, packages)
+    return ledger.persistGranted(keep, packages)
   }
+
+  /** Resolvable Watch Next, channel, and still-published poster URIs. */
+  internal fun retainedPosterUris(candidates: Set<Uri>): Set<Uri> = LinkedHashSet<Uri>().apply {
+    addAll(candidates)
+    addAll(ledger.channelUris())
+    addAll(liveChannelPosterUris())
+  }.filterTo(LinkedHashSet()) { artwork.resolve(it) != null }
 
   private fun ensureChannel(channelKey: String, title: String): Long? {
     val existingId = ledger.channelId(channelKey) ?: findPublishedChannelId(channelKey)
@@ -358,7 +362,6 @@ internal class PreviewChannelPublisher(
    * artwork GC cannot drop tiles Fire OS failed to delete during replace.
    */
   internal fun liveChannelPosterUris(): Set<Uri> {
-    val authority = SystemShelfArtworkProvider.authorityFor(context.packageName)
     val uris = LinkedHashSet<Uri>()
     KNOWN_CHANNELS.forEach { key ->
       val channelId = ledger.channelId(key) ?: findPublishedChannelId(key) ?: return@forEach
@@ -378,7 +381,13 @@ internal class PreviewChannelPublisher(
         while (rows.moveToNext()) {
           val raw = rows.getString(index) ?: continue
           val uri = runCatching { Uri.parse(raw) }.getOrNull() ?: continue
-          if (uri.authority == authority) uris += uri
+          val posterAuthority = uri.authority
+          if (
+            posterAuthority == SystemShelfArtworkProvider.AUTHORITY ||
+            posterAuthority?.endsWith(SystemShelfArtworkProvider.AUTHORITY_SUFFIX) == true
+          ) {
+            uris += uri
+          }
         }
       }
     }
