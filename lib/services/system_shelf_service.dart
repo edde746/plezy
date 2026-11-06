@@ -293,25 +293,25 @@ class SystemShelfService {
     final result = await _enqueueMutation<bool>(() async {
       final okMoviesRecent = await syncRow(
         key: 'recently_added_movies',
-        title: 'Recently Added Movies',
+        title: t.discover.previewChannelRecentlyAddedMovies,
         items: recentMovies,
         label: 'Failed to sync Recently Added Movies preview channel',
       );
       final okTvRecent = await syncRow(
         key: 'recently_added_tv',
-        title: 'Recently Added TV',
+        title: t.discover.previewChannelRecentlyAddedTv,
         items: recentTv,
         label: 'Failed to sync Recently Added TV preview channel',
       );
       final okMoviesNew = await syncRow(
         key: 'new_releases_movies',
-        title: 'New Movies',
+        title: t.discover.previewChannelNewMovies,
         items: newMovies,
         label: 'Failed to sync New Movies preview channel',
       );
       final okTvNew = await syncRow(
         key: 'new_releases_tv',
-        title: 'New Episodes',
+        title: t.discover.previewChannelNewEpisodes,
         items: newTv,
         label: 'Failed to sync New Episodes preview channel',
       );

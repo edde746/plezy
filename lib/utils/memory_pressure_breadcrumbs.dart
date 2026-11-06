@@ -49,9 +49,21 @@ mixin MemoryPressureBreadcrumbs on PaintingBinding {
     _lastMemoryPressureBreadcrumb = now;
 
     final cache = imageCache;
+    // currentRss and maxRss are separate reads. The high-water mark can come
+    // back one megabyte under the sample just taken when the two counters move
+    // between the calls, so the recorded max is at least this observation.
+    final rss = _megabytes('rssMb', () => ProcessInfo.currentRss);
+    final maxRss = _megabytes('maxRssMb', () => ProcessInfo.maxRss);
+    final rssMb = rss?['rssMb'];
+    if (rssMb is int && maxRss != null) {
+      final recordedMax = maxRss['maxRssMb'];
+      if (recordedMax is int && recordedMax < rssMb) {
+        maxRss['maxRssMb'] = rssMb;
+      }
+    }
     final data = <String, Object>{
-      ...?_megabytes('rssMb', () => ProcessInfo.currentRss),
-      ...?_megabytes('maxRssMb', () => ProcessInfo.maxRss),
+      ...?rss,
+      ...?maxRss,
       'imageCacheMb': cache.currentSizeBytes >> 20,
       'imageCacheImages': cache.currentSize,
       'liveImages': cache.liveImageCount,
