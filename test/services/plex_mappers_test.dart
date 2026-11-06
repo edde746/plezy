@@ -252,7 +252,7 @@ void main() {
           {'tag': 'Sci-Fi'},
         ],
         'Director': [
-          {'tag': 'Christopher Nolan'},
+          {'id': 7, 'tag': 'Christopher Nolan'},
         ],
         'Writer': [
           {'tag': 'Christopher Nolan'},
@@ -315,6 +315,8 @@ void main() {
       // Tag lists from the heterogeneous `[{tag: ...}, ...]` shape.
       expect(item.genres, ['Action', 'Sci-Fi']);
       expect(item.directors, ['Christopher Nolan']);
+      // Directors keep their person id so they can open the same page as cast.
+      expect(item.directorRoles?.map((d) => (d.id, d.tag)).toList(), [('7', 'Christopher Nolan')]);
       expect(item.writers, ['Christopher Nolan']);
       expect(item.producers, ['Emma Thomas']);
       expect(item.countries, ['United States']);

@@ -15,6 +15,7 @@ import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
+import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
@@ -2090,6 +2091,46 @@ void main() {
 
       expect(find.text('Director'), findsOneWidget);
       expect(find.text('Jane Director'), findsOneWidget);
+    });
+
+    testWidgets('lists directors with a person id as the first cast cards', (tester) async {
+      final movie = testMediaItem(
+        id: 'director_cast',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Directed movie',
+        directors: ['Jane Director'],
+        directorRoles: const [MediaRole(id: '7', tag: 'Jane Director')],
+        roles: const [MediaRole(id: '1', tag: 'Leo Actor', role: 'Cobb')],
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      // The card reads "Director" under the name, ahead of the actor's card.
+      expect(find.text('Director'), findsWidgets);
+      expect(tester.getTopLeft(find.text('Jane Director').first).dx, lessThan(tester.getTopLeft(find.text('Leo Actor')).dx));
+    });
+
+    testWidgets('shows a cast strip for directors alone and skips directors without an id', (tester) async {
+      final movie = testMediaItem(
+        id: 'director_only_strip',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Directors only',
+        directorRoles: const [MediaRole(id: '7', tag: 'Jane Director'), MediaRole(tag: 'No Id Director')],
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      expect(find.text(t.discover.cast), findsOneWidget);
+      expect(find.text('Jane Director'), findsOneWidget);
+      expect(find.text('No Id Director'), findsNothing);
     });
 
     testWidgets('omits the director row for an empty list', (tester) async {
