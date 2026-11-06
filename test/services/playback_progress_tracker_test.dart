@@ -751,6 +751,132 @@ void main() {
       expect(client.playbackStreamSelections.last.subtitleStreamIndex, 3);
     });
 
+    test('Jellyfin progress reports the selected audio by identity, not catalog position (#2649)', () async {
+      final client = _FakePlexClient();
+      // ExoPlayer groups MediaCodecAudioRenderer tracks (AC3/EAC3) ahead of
+      // FfmpegAudioRenderer tracks (DTS-HD MA), so English DTS-HD MA sits at
+      // index 7 while Jellyfin's container-ordered MediaStreams has English
+      // DTS-HD MA at StreamIndex 1 (index 0) and Ukrainian DDP5.1 at
+      // StreamIndex 8 (index 7).
+      const selectedDtsEng = AudioTrack(
+        id: '1_7',
+        language: 'en',
+        title: 'BTM DTS-HD Master',
+        channels: 6,
+        isDefault: true,
+      );
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(
+          audio: [
+            AudioTrack(id: '1_0', language: 'en', title: 'BTM DD 5.1', channels: 6),
+            AudioTrack(id: '1_1', language: 'es-419', title: 'BTM DD 5.1', channels: 6),
+            AudioTrack(id: '1_2', language: 'fr', title: 'BTM DD 5.1', channels: 6),
+            AudioTrack(id: '1_3', language: 'de', title: 'BTM DD 5.1', channels: 6),
+            AudioTrack(id: '1_4', language: 'it', title: 'BTM DD 5.1', channels: 6),
+            AudioTrack(id: '1_5', language: 'ru', title: 'BTM DDP5.1', channels: 6),
+            AudioTrack(id: '1_6', language: 'uk', title: 'BTM DDP5.1', channels: 6),
+            selectedDtsEng,
+          ],
+        ),
+        track: const TrackSelection(audio: selectedDtsEng, subtitle: SubtitleTrack.off),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [
+          MediaAudioTrack(
+            id: 1,
+            index: 1,
+            languageCode: 'eng',
+            title: 'BTM DTS-HD Master',
+            codec: 'dts',
+            channels: 6,
+            selected: true,
+          ),
+          MediaAudioTrack(
+            id: 2,
+            index: 2,
+            languageCode: 'eng',
+            title: 'BTM DD 5.1',
+            codec: 'ac3',
+            channels: 6,
+            selected: false,
+          ),
+          MediaAudioTrack(
+            id: 3,
+            index: 3,
+            languageCode: 'spa',
+            title: 'BTM DD 5.1',
+            codec: 'ac3',
+            channels: 6,
+            selected: false,
+          ),
+          MediaAudioTrack(
+            id: 4,
+            index: 4,
+            languageCode: 'fre',
+            title: 'BTM DD 5.1',
+            codec: 'ac3',
+            channels: 6,
+            selected: false,
+          ),
+          MediaAudioTrack(
+            id: 5,
+            index: 5,
+            languageCode: 'ger',
+            title: 'BTM DD 5.1',
+            codec: 'ac3',
+            channels: 6,
+            selected: false,
+          ),
+          MediaAudioTrack(
+            id: 6,
+            index: 6,
+            languageCode: 'ita',
+            title: 'BTM DD 5.1',
+            codec: 'ac3',
+            channels: 6,
+            selected: false,
+          ),
+          MediaAudioTrack(
+            id: 7,
+            index: 7,
+            languageCode: 'rus',
+            title: 'BTM DDP5.1',
+            codec: 'eac3',
+            channels: 6,
+            selected: false,
+          ),
+          MediaAudioTrack(
+            id: 8,
+            index: 8,
+            languageCode: 'ukr',
+            title: 'BTM DDP5.1',
+            codec: 'eac3',
+            channels: 6,
+            selected: false,
+          ),
+        ],
+        subtitleTracks: const [],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.episode, serverId: 'srv'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.playbackStreamSelections.single.audioStreamIndex, 1);
+    });
+
     test('a burned-in subtitle is reported as its source stream, not as off', () async {
       final client = _FakePlexClient();
       const audio = AudioTrack(id: '1', language: 'jpn');
