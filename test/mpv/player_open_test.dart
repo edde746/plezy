@@ -1666,6 +1666,97 @@ void main() {
         },
       );
     });
+
+    test('ExoPlayer re-initializes on retry open after MPV fallback initialization fails', () async {
+      final calls = <MethodCall>[];
+      var nativeCoreInitialized = false;
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              nativeCoreInitialized = true;
+              return Future.value(true);
+            case 'open':
+              if (!nativeCoreInitialized) {
+                throw PlatformException(code: 'NOT_INITIALIZED', message: 'ExoPlayer is not initialized');
+              }
+              return Future.value(null);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await player.open(Media('https://example.test/dtshd.mkv'));
+            expect(calls.where((call) => call.method == 'initialize'), hasLength(1));
+
+            // Simulate ExoPlayerPlugin tearing down playerCore for MPV fallback
+            // and MPV fallback failing to initialize.
+            nativeCoreInitialized = false;
+            player.handlePlayerEvent('end-file', {
+              'reason': 'error',
+              'message': 'Compatible player failed to initialize',
+            });
+
+            // Retrying playback in-place must re-initialize the native core
+            // instead of throwing PlatformException(NOT_INITIALIZED).
+            await player.open(Media('https://example.test/dtshd.mkv'));
+            expect(calls.where((call) => call.method == 'initialize'), hasLength(2));
+            expect(calls.where((call) => call.method == 'open'), hasLength(2));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer open recovers when native core returns NOT_INITIALIZED directly', () async {
+      final calls = <MethodCall>[];
+      var nativeCoreInitialized = false;
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              nativeCoreInitialized = true;
+              return Future.value(true);
+            case 'open':
+              if (!nativeCoreInitialized) {
+                throw PlatformException(code: 'NOT_INITIALIZED', message: 'ExoPlayer is not initialized');
+              }
+              return Future.value(null);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await player.open(Media('https://example.test/first.mkv'));
+            player.handlePlayerEvent('backend-switched', null);
+            expect(player.usingMpvFallback, isTrue);
+
+            // Simulate native core lost without prior end-file reset.
+            nativeCoreInitialized = false;
+
+            await player.open(Media('https://example.test/retry.mkv'));
+            expect(player.usingMpvFallback, isFalse);
+            expect(calls.where((call) => call.method == 'initialize'), hasLength(2));
+            expect(calls.where((call) => call.method == 'open'), hasLength(3));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
   });
 }
 
