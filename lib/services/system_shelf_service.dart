@@ -236,8 +236,7 @@ class SystemShelfService {
   /// split into Movies and TV so episode-heavy hubs cannot crowd out films.
   ///
   /// tvOS Top Shelf has no equivalent multi-channel surface yet, so this is a
-  /// no-op outside Android. Channel titles are English for the local sidecar;
-  /// slang keys land when the PR is dialed in.
+  /// no-op outside Android.
   Future<bool> syncLibraryChannels(
     String profileId,
     List<MediaHub> hubs,

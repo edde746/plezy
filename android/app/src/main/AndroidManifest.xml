@@ -32,7 +32,7 @@
     <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
 
     <application
-        android:label="${appLabel}"
+        android:label="Plezy"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"
@@ -538,7 +538,7 @@
         <!-- END generated app icon aliases -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
+            android:authorities="com.edde746.plezy.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

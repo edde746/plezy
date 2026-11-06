@@ -301,16 +301,12 @@ android {
   }
 
   defaultConfig {
-    // PLEZY_SIDECAR=1 installs as com.edde746.plezy.local beside the store build
-    // without replacing it (debug-signed local APK can't update Amazon's signature).
-    val sidecar = System.getenv("PLEZY_SIDECAR") != null
-    applicationId = if (sidecar) "com.edde746.plezy.local" else "com.edde746.plezy"
+    applicationId = "com.edde746.plezy"
     minSdk = 25 // Fire OS 6.x (API 25); the mpv-android AAR shares the same floor
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode
-    versionName = if (sidecar) "${flutter.versionName}-local" else flutter.versionName
+    versionName = flutter.versionName
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    manifestPlaceholders["appLabel"] = if (sidecar) "Plezy Local" else "Plezy"
 
     externalNativeBuild {
       cmake {
