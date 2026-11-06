@@ -602,6 +602,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => 'Afspilningshastighed';
 	@override String get scopeShaderPreset => 'Shader-forudindstilling';
 	@override String get scopeAspectRatio => 'Billedformat';
+	@override String get scopeZoom => 'Zoom';
 	@override String get scopeSyncOffsets => 'Synkronisering af lyd og undertekster';
 	@override String get playerScopeOff => 'Gem ikke';
 	@override String get playerScopeGlobal => 'Overalt';
@@ -3884,6 +3885,7 @@ extension on TranslationsDa {
 			'settings.scopePlaybackSpeed' => 'Afspilningshastighed',
 			'settings.scopeShaderPreset' => 'Shader-forudindstilling',
 			'settings.scopeAspectRatio' => 'Billedformat',
+			'settings.scopeZoom' => 'Zoom',
 			'settings.scopeSyncOffsets' => 'Synkronisering af lyd og undertekster',
 			'settings.playerScopeOff' => 'Gem ikke',
 			'settings.playerScopeGlobal' => 'Overalt',
@@ -3908,9 +3910,9 @@ extension on TranslationsDa {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Sekundær tekst',
-			'themeEditor.slots.accent' => 'Accentfarve',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Accentfarve',
 			'themeEditor.opacity' => 'Opacitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Fra andre temaer',
@@ -4422,9 +4424,9 @@ extension on TranslationsDa {
 			'profiles.pinsDontMatch' => 'PIN-koderne matcher ikke',
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet blev knyttet til en uventet server',
 			'connections.sectionTitle' => 'Forbindelser',
-			'connections.addConnection' => 'Tilføj forbindelse',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnection' => 'Tilføj forbindelse',
 			'connections.addConnectionSubtitleNoProfile' => 'Log ind med Plex eller forbind til en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin, Emby eller en anden profilforbindelse',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen er udløbet for ${name}',
@@ -4936,9 +4938,9 @@ extension on TranslationsDa {
 			'liveTv.recordSettings.anyTime' => 'Optag på alle tidspunkter',
 			'liveTv.recordSettings.skipInLibrary' => 'Spring afsnit over, der allerede er i biblioteket',
 			'liveTv.recordSettings.keepUpTo' => 'Afsnit der skal beholdes',
-			'liveTv.recordSettings.keepUpToHint' => '0 beholder alle afsnit',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpToHint' => '0 beholder alle afsnit',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerede ugyldige afspilningsdata for Live TV',
@@ -5450,9 +5452,9 @@ extension on TranslationsDa {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
-			'performanceOverlay.decoderHardware' => 'Hardware',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislykkedes)',
 			'externalPlayer.title' => 'Ekstern afspiller',

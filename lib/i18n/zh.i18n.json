@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "播放速度",
     "scopeShaderPreset": "着色器预设",
     "scopeAspectRatio": "宽高比",
+    "scopeZoom": "缩放",
     "scopeSyncOffsets": "音频和字幕同步",
     "playerScopeOff": "不保存",
     "playerScopeGlobal": "所有位置",

@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "재생 속도",
     "scopeShaderPreset": "셰이더 프리셋",
     "scopeAspectRatio": "화면 비율",
+    "scopeZoom": "확대/축소",
     "scopeSyncOffsets": "오디오 및 자막 동기화",
     "playerScopeOff": "저장하지 않음",
     "playerScopeGlobal": "모든 곳",

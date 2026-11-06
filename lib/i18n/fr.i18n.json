@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "Vitesse de lecture",
     "scopeShaderPreset": "Préréglage du shader",
     "scopeAspectRatio": "Format d’image",
+    "scopeZoom": "Zoom",
     "scopeSyncOffsets": "Synchronisation audio et sous-titres",
     "playerScopeOff": "Ne pas enregistrer",
     "playerScopeGlobal": "Partout",

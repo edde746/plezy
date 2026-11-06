@@ -1,5 +1,5 @@
 /// Where a player-sheet change (playback speed, shader preset, aspect ratio,
-/// sync offsets) is persisted and re-applied from.
+/// zoom, sync offsets) is persisted and re-applied from.
 ///
 /// The scope governs writes: a change made during playback is stored at the
 /// configured scope. Resolution at playback start consults only the configured

@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "Скорость воспроизведения",
     "scopeShaderPreset": "Предустановка шейдера",
     "scopeAspectRatio": "Соотношение сторон",
+    "scopeZoom": "Масштаб",
     "scopeSyncOffsets": "Синхронизация аудио и субтитров",
     "playerScopeOff": "Не сохранять",
     "playerScopeGlobal": "Везде",

@@ -509,6 +509,7 @@
     "scopePlaybackSpeed": "Wiedergabegeschwindigkeit",
     "scopeShaderPreset": "Shader-Voreinstellung",
     "scopeAspectRatio": "Seitenverhältnis",
+    "scopeZoom": "Zoom",
     "scopeSyncOffsets": "Audio- und Untertitelsynchronisierung",
     "playerScopeOff": "Nicht speichern",
     "playerScopeGlobal": "Überall",
