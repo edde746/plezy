@@ -81,6 +81,19 @@ String? libraryCopyQualityLabel(MediaItem copy) {
   return best?.displayLabel;
 }
 
+/// Merge an artwork path, preserving an existing path when the incoming
+/// path is omitted, or when the existing path contains a more specific
+/// cache-busting timestamp/hash suffix (e.g. `/library/metadata/123/thumb/1`
+/// vs `/library/metadata/123/thumb`) to avoid cache churn.
+String? _mergeArtworkPath(String? addition, String? existing) {
+  if (addition == null || addition.isEmpty) return existing;
+  if (existing == null || existing.isEmpty) return addition;
+  if (existing.startsWith(addition) && existing.length > addition.length) {
+    return existing;
+  }
+  return addition;
+}
+
 /// Fold a re-resolved copy into the one already known for its
 /// [MediaItem.globalKey].
 ///
@@ -102,10 +115,16 @@ MediaItem mergeLibraryCopy(MediaItem existing, MediaItem addition) {
   final library = _libraryPair(addition, existing);
   final serverName = addition.serverName ?? existing.serverName;
   final mediaVersions = versions == null || versions.isEmpty ? existing.mediaVersions : versions;
+  final parentThumbPath = _mergeArtworkPath(addition.parentThumbPath, existing.parentThumbPath);
+  final grandparentThumbPath = _mergeArtworkPath(addition.grandparentThumbPath, existing.grandparentThumbPath);
+  final thumbPath = _mergeArtworkPath(addition.thumbPath, existing.thumbPath);
   if (library.libraryId == addition.libraryId &&
       library.libraryTitle == addition.libraryTitle &&
       serverName == addition.serverName &&
-      identical(mediaVersions, versions)) {
+      identical(mediaVersions, versions) &&
+      parentThumbPath == addition.parentThumbPath &&
+      grandparentThumbPath == addition.grandparentThumbPath &&
+      thumbPath == addition.thumbPath) {
     return addition;
   }
   return addition.copyWith(
@@ -113,6 +132,9 @@ MediaItem mergeLibraryCopy(MediaItem existing, MediaItem addition) {
     libraryTitle: library.libraryTitle,
     serverName: serverName,
     mediaVersions: mediaVersions,
+    parentThumbPath: parentThumbPath,
+    grandparentThumbPath: grandparentThumbPath,
+    thumbPath: thumbPath,
   );
 }
 

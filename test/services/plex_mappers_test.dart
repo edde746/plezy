@@ -533,6 +533,28 @@ void main() {
       expect(item.durationMs, 2820000);
       expect(item.viewOffsetMs, 1410000);
     });
+
+    test('episode without parentThumb synthesizes parentThumbPath from parentRatingKey', () {
+      final json = <String, dynamic>{
+        'ratingKey': '61185',
+        'type': 'episode',
+        'title': 'The Pilot',
+        'index': 2,
+        'parentIndex': 1,
+        'parentRatingKey': '61183',
+        'parentTitle': 'Season 1',
+        'grandparentRatingKey': '61182',
+        'grandparentTitle': 'DTF St. Louis',
+        'grandparentThumb': '/library/metadata/61182/thumb/1',
+        'thumb': '/library/metadata/61185/thumb/1',
+      };
+
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
+
+      expect(item.parentId, '61183');
+      expect(item.parentThumbPath, '/library/metadata/61183/thumb');
+      expect(item.posterThumb(mode: EpisodePosterMode.seasonPoster), '/library/metadata/61183/thumb');
+    });
   });
 
   group('PlexMappers.mediaItem (music)', () {

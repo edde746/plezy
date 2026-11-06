@@ -361,7 +361,8 @@ class DataAggregationService {
       }
     }
     for (final item in fresh) {
-      byKey[item.globalKey] = item;
+      final prev = byKey[item.globalKey];
+      byKey[item.globalKey] = prev == null ? item : mergeLibraryCopy(prev, item);
     }
     final combined = byKey.values.toList()..sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
     return _limitContinueWatching(await _deduplicateContinueWatching(combined), limit);

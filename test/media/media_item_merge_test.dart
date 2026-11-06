@@ -77,12 +77,18 @@ void main() {
     String? libraryTitle,
     String? videoResolution,
     List<MediaVersion>? mediaVersions,
+    String? parentThumbPath,
+    String? grandparentThumbPath,
+    String? thumbPath,
   }) => testMediaItem(
     id: id,
     serverId: 'server-1',
     serverName: 'Living Room',
     libraryId: libraryId ?? (libraryTitle == null ? null : '$id-lib'),
     libraryTitle: libraryTitle,
+    parentThumbPath: parentThumbPath,
+    grandparentThumbPath: grandparentThumbPath,
+    thumbPath: thumbPath,
     mediaVersions:
         mediaVersions ??
         (videoResolution == null ? null : [MediaVersion(id: '$id-v', videoResolution: videoResolution)]),
@@ -145,5 +151,23 @@ void main() {
     );
 
     expect(merged.single.mediaVersions?.single.videoResolution, '1080');
+  });
+
+  test('preserves existing parentThumbPath when a fresh re-resolve omits it', () {
+    final merged = mergeLibraryCopies(
+      [copy(id: 'ep1', libraryTitle: 'TV', parentThumbPath: '/library/metadata/510/thumb/1')],
+      [copy(id: 'ep1', libraryTitle: 'TV', parentThumbPath: null)],
+    );
+
+    expect(merged.single.parentThumbPath, '/library/metadata/510/thumb/1');
+  });
+
+  test('preserves existing timestamp-versioned parentThumbPath when fresh re-resolve is unversioned', () {
+    final merged = mergeLibraryCopies(
+      [copy(id: 'ep1', libraryTitle: 'TV', parentThumbPath: '/library/metadata/510/thumb/1')],
+      [copy(id: 'ep1', libraryTitle: 'TV', parentThumbPath: '/library/metadata/510/thumb')],
+    );
+
+    expect(merged.single.parentThumbPath, '/library/metadata/510/thumb/1');
   });
 }
