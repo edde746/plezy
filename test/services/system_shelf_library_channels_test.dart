@@ -10,9 +10,7 @@ void main() {
   group('SystemShelfLibraryChannels', () {
     test('recognizes plex and jellyfin recently-added hub keys', () {
       expect(
-        SystemShelfLibraryChannels.isRecentlyAddedHub(
-          _hub(id: 'home.movies.recent', identifier: 'home.movies.recent'),
-        ),
+        SystemShelfLibraryChannels.isRecentlyAddedHub(_hub(id: 'home.movies.recent', identifier: 'home.movies.recent')),
         isTrue,
       );
       expect(
@@ -28,65 +26,50 @@ void main() {
         isTrue,
       );
       expect(
-        SystemShelfLibraryChannels.isRecentlyAddedHub(
-          _hub(id: 'home.continue', identifier: 'home.continue'),
-        ),
+        SystemShelfLibraryChannels.isRecentlyAddedHub(_hub(id: 'home.continue', identifier: 'home.continue')),
         isFalse,
       );
       expect(
         SystemShelfLibraryChannels.isRecentlyAddedHub(
-          _hub(
-            id: 'library.music.recentlyplayed',
-            identifier: 'library.music.recentlyplayed',
-          ),
+          _hub(id: 'library.music.recentlyplayed', identifier: 'library.music.recentlyplayed'),
         ),
         isFalse,
       );
     });
 
-    test(
-      'merges plex+jellyfin recently added by addedAt with title dedupe',
-      () {
-        final plex = testMediaItem(
-          id: 'p1',
-          serverId: 'plex',
-          title: 'Dune',
-          year: 2021,
-          kind: MediaKind.movie,
-          addedAt: 200,
-        );
-        final jelly = testMediaItem(
-          id: 'j1',
-          serverId: 'jelly',
-          title: 'Dune',
-          year: 2021,
-          kind: MediaKind.movie,
-          addedAt: 150,
-        );
-        final other = testMediaItem(
-          id: 'p2',
-          serverId: 'plex',
-          title: 'Arrival',
-          year: 2016,
-          kind: MediaKind.movie,
-          addedAt: 180,
-        );
-        final hubs = [
-          _hub(
-            id: 'home.movies.recent',
-            identifier: 'home.movies.recent',
-            items: [plex, other],
-          ),
-          _hub(id: 'home.recent', identifier: 'home.recent', items: [jelly]),
-        ];
+    test('merges plex+jellyfin recently added by addedAt with title dedupe', () {
+      final plex = testMediaItem(
+        id: 'p1',
+        serverId: 'plex',
+        title: 'Dune',
+        year: 2021,
+        kind: MediaKind.movie,
+        addedAt: 200,
+      );
+      final jelly = testMediaItem(
+        id: 'j1',
+        serverId: 'jelly',
+        title: 'Dune',
+        year: 2021,
+        kind: MediaKind.movie,
+        addedAt: 150,
+      );
+      final other = testMediaItem(
+        id: 'p2',
+        serverId: 'plex',
+        title: 'Arrival',
+        year: 2016,
+        kind: MediaKind.movie,
+        addedAt: 180,
+      );
+      final hubs = [
+        _hub(id: 'home.movies.recent', identifier: 'home.movies.recent', items: [plex, other]),
+        _hub(id: 'home.recent', identifier: 'home.recent', items: [jelly]),
+      ];
 
-        final merged = SystemShelfLibraryChannels.recentlyAdded(
-          hubs,
-          kind: SystemShelfLibraryKind.movies,
-        );
-        expect(merged.map((item) => item.id), ['p1', 'p2']);
-      },
-    );
+      final merged = SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.movies);
+      expect(merged.map((item) => item.id), ['p1', 'p2']);
+    });
 
     test('dedupes on imdb when raw Guid is present', () {
       final plex = MediaItem.plex(
@@ -114,17 +97,10 @@ void main() {
         },
       );
       final hubs = [
-        _hub(
-          id: 'home.recent',
-          identifier: 'home.recent',
-          items: [plex, jelly],
-        ),
+        _hub(id: 'home.recent', identifier: 'home.recent', items: [plex, jelly]),
       ];
 
-      final merged = SystemShelfLibraryChannels.recentlyAdded(
-        hubs,
-        kind: SystemShelfLibraryKind.movies,
-      );
+      final merged = SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.movies);
       expect(merged, hasLength(1));
       expect(merged.single.id, 'j1'); // higher addedAt wins
     });
@@ -135,42 +111,21 @@ void main() {
           id: 'home.recent',
           identifier: 'home.recent',
           items: [
-            testMediaItem(
-              id: 'm1',
-              title: 'Film',
-              kind: MediaKind.movie,
-              addedAt: 30,
-            ),
-            testMediaItem(
-              id: 's1',
-              title: 'Series',
-              kind: MediaKind.show,
-              addedAt: 40,
-            ),
-            testMediaItem(
-              id: 'e1',
-              title: 'Ep',
-              kind: MediaKind.episode,
-              addedAt: 50,
-            ),
+            testMediaItem(id: 'm1', title: 'Film', kind: MediaKind.movie, addedAt: 30),
+            testMediaItem(id: 's1', title: 'Series', kind: MediaKind.show, addedAt: 40),
+            testMediaItem(id: 'e1', title: 'Ep', kind: MediaKind.episode, addedAt: 50),
           ],
         ),
       ];
 
       expect(
-        SystemShelfLibraryChannels.recentlyAdded(
-          hubs,
-          kind: SystemShelfLibraryKind.movies,
-        ).map((item) => item.id),
+        SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.movies).map((item) => item.id),
         ['m1'],
       );
-      expect(
-        SystemShelfLibraryChannels.recentlyAdded(
-          hubs,
-          kind: SystemShelfLibraryKind.tv,
-        ).map((item) => item.id),
-        ['e1', 's1'],
-      );
+      expect(SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.tv).map((item) => item.id), [
+        'e1',
+        's1',
+      ]);
     });
 
     test('new releases prefer premiere date over addedAt', () {
@@ -191,11 +146,7 @@ void main() {
         originallyAvailableAt: '2024-06-01',
       );
       final hubs = [
-        _hub(
-          id: 'home.movies.recent',
-          identifier: 'home.movies.recent',
-          items: [olderPremiere, newerPremiere],
-        ),
+        _hub(id: 'home.movies.recent', identifier: 'home.movies.recent', items: [olderPremiere, newerPremiere]),
       ];
 
       final releases = SystemShelfLibraryChannels.newReleases(
@@ -215,11 +166,7 @@ void main() {
         originallyAvailableAt: '2025-01-01',
       );
       final hubs = [
-        _hub(
-          id: 'movie.recentlyreleased',
-          identifier: 'movie.recentlyreleased',
-          items: [fromReleaseHub],
-        ),
+        _hub(id: 'movie.recentlyreleased', identifier: 'movie.recentlyreleased', items: [fromReleaseHub]),
         _hub(
           id: 'home.movies.recent',
           identifier: 'home.movies.recent',
@@ -250,28 +197,13 @@ void main() {
           id: 'home.movies.recent',
           identifier: 'home.movies.recent',
           items: [
-            testMediaItem(
-              id: 'no-added',
-              title: 'Hub Says Recent',
-              year: 2015,
-              kind: MediaKind.movie,
-              updatedAt: 9999,
-            ),
-            testMediaItem(
-              id: 'fresh',
-              title: 'Actually Added',
-              year: 2024,
-              kind: MediaKind.movie,
-              addedAt: 100,
-            ),
+            testMediaItem(id: 'no-added', title: 'Hub Says Recent', year: 2015, kind: MediaKind.movie, updatedAt: 9999),
+            testMediaItem(id: 'fresh', title: 'Actually Added', year: 2024, kind: MediaKind.movie, addedAt: 100),
           ],
         ),
       ];
 
-      final merged = SystemShelfLibraryChannels.recentlyAdded(
-        hubs,
-        kind: SystemShelfLibraryKind.movies,
-      );
+      final merged = SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.movies);
       expect(merged.map((item) => item.id), ['fresh', 'no-added']);
     });
 
@@ -323,13 +255,7 @@ void main() {
               originallyAvailableAt: '2019-12-20',
               addedAt: 500,
             ),
-            testMediaItem(
-              id: 'newer',
-              title: 'Newer Film',
-              year: 2024,
-              kind: MediaKind.movie,
-              addedAt: 400,
-            ),
+            testMediaItem(id: 'newer', title: 'Newer Film', year: 2024, kind: MediaKind.movie, addedAt: 400),
           ],
         ),
       ];
@@ -464,16 +390,6 @@ void main() {
   });
 }
 
-MediaHub _hub({
-  required String id,
-  String? identifier,
-  List<MediaItem> items = const [],
-}) {
-  return MediaHub(
-    id: id,
-    identifier: identifier,
-    title: id,
-    type: 'mixed',
-    items: items,
-  );
+MediaHub _hub({required String id, String? identifier, List<MediaItem> items = const []}) {
+  return MediaHub(id: id, identifier: identifier, title: id, type: 'mixed', items: items);
 }

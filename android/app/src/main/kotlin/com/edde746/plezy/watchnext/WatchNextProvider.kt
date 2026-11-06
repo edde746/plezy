@@ -119,9 +119,7 @@ class WatchNextProvider internal constructor(
     internal fun forMaintenance(context: Context) = WatchNextProvider(context, null)
 
     /** Artwork files currently referenced by Watch Next programs. */
-    internal fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<java.io.File> {
-      return SystemShelfUriLedger(context).watchNextUris().mapNotNullTo(LinkedHashSet()) { artwork.resolve(it) }
-    }
+    internal fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<java.io.File> = SystemShelfUriLedger(context).watchNextUris().mapNotNullTo(LinkedHashSet()) { artwork.resolve(it) }
   }
 
   data class WatchNextItem(

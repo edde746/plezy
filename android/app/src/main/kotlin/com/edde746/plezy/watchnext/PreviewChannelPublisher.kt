@@ -32,6 +32,7 @@ internal class PreviewChannelPublisher(
     internal const val CHANNEL_NEW_RELEASES_MOVIES = "new_releases_movies"
     internal const val CHANNEL_NEW_RELEASES_TV = "new_releases_tv"
     internal const val CHANNEL_LIVE_TV = "live_tv"
+
     /** Pre-split mixed rows — deleted when a split channel publishes. */
     private val LEGACY_CHANNELS = listOf("recently_added", "new_releases")
     private val ACTIVE_CHANNELS = listOf(
@@ -44,20 +45,16 @@ internal class PreviewChannelPublisher(
     private val KNOWN_CHANNELS = ACTIVE_CHANNELS + LEGACY_CHANNELS
 
     /** Artwork files currently referenced by preview-channel programs. */
-    fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<File> {
-      return SystemShelfUriLedger(context).channelUris().mapNotNullTo(LinkedHashSet()) { artwork.resolve(it) }
-    }
+    fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<File> = SystemShelfUriLedger(context).channelUris().mapNotNullTo(LinkedHashSet()) { artwork.resolve(it) }
 
     /** Union of intended grants and posters still visible to launchers. */
-    internal fun mergeGrantUris(intended: Set<Uri>, livePublished: Set<Uri>): Set<Uri> =
-      mergeGrantSets(intended, livePublished)
+    internal fun mergeGrantUris(intended: Set<Uri>, livePublished: Set<Uri>): Set<Uri> = mergeGrantSets(intended, livePublished)
 
     /** Package-visible for JVM unit tests that cannot construct [Uri] stubs. */
-    internal fun <T> mergeGrantSets(intended: Set<T>, livePublished: Set<T>): Set<T> =
-      LinkedHashSet<T>(intended.size + livePublished.size).apply {
-        addAll(intended)
-        addAll(livePublished)
-      }
+    internal fun <T> mergeGrantSets(intended: Set<T>, livePublished: Set<T>): Set<T> = LinkedHashSet<T>(intended.size + livePublished.size).apply {
+      addAll(intended)
+      addAll(livePublished)
+    }
   }
 
   data class ChannelItem(
@@ -83,8 +80,7 @@ internal class PreviewChannelPublisher(
   private val artwork = SystemShelfArtworkStore(context.cacheDir, context.packageName)
   private val helper = PreviewChannelHelper(context)
 
-  internal fun claimOwnership(ownerId: String, generation: Long): SystemShelfLifecycle.Ownership? =
-    lifecycleLease?.let { SystemShelfLifecycle.claim(it, ownerId, generation) }
+  internal fun claimOwnership(ownerId: String, generation: Long): SystemShelfLifecycle.Ownership? = lifecycleLease?.let { SystemShelfLifecycle.claim(it, ownerId, generation) }
 
   internal fun syncChannel(
     ownerId: String,
@@ -284,7 +280,9 @@ internal class PreviewChannelPublisher(
       .setLogo(channelLogoBitmap())
     return try {
       val id = helper.publishChannel(builder.build())
-      if (id <= 0L) null else {
+      if (id <= 0L) {
+        null
+      } else {
         ledger.setChannelId(channelKey, id)
         id
       }
@@ -513,11 +511,9 @@ internal class SystemShelfUriLedger(context: Context) {
 
   private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-  fun grantedUris(): Set<Uri> =
-    prefs.getStringSet(GRANTED_URIS, emptySet()).orEmpty().mapNotNullTo(LinkedHashSet(), Uri::parse)
+  fun grantedUris(): Set<Uri> = prefs.getStringSet(GRANTED_URIS, emptySet()).orEmpty().mapNotNullTo(LinkedHashSet(), Uri::parse)
 
-  fun grantedPackages(): Set<String> =
-    prefs.getStringSet(GRANTED_PACKAGES, emptySet()).orEmpty()
+  fun grantedPackages(): Set<String> = prefs.getStringSet(GRANTED_PACKAGES, emptySet()).orEmpty()
 
   fun watchNextUris(): Set<Uri> {
     val stored = prefs.getStringSet(WATCH_NEXT_URIS, null)
@@ -528,8 +524,7 @@ internal class SystemShelfUriLedger(context: Context) {
     return grantedUris()
   }
 
-  fun channelUris(): Set<Uri> =
-    prefs.getStringSet(CHANNEL_URIS, emptySet()).orEmpty().mapNotNullTo(LinkedHashSet(), Uri::parse)
+  fun channelUris(): Set<Uri> = prefs.getStringSet(CHANNEL_URIS, emptySet()).orEmpty().mapNotNullTo(LinkedHashSet(), Uri::parse)
 
   fun channelId(channelKey: String): Long? {
     val raw = prefs.getLong(CHANNEL_ID_PREFIX + channelKey, -1L)
@@ -544,25 +539,22 @@ internal class SystemShelfUriLedger(context: Context) {
     prefs.edit().remove(CHANNEL_ID_PREFIX + channelKey).commit()
   }
 
-  fun commitWatchNextPublication(watchNextUris: Set<Uri>, unionUris: Set<Uri>, packages: Set<String>): Boolean =
-    prefs.edit()
-      .putStringSet(WATCH_NEXT_URIS, watchNextUris.mapTo(LinkedHashSet(), Uri::toString))
-      .putStringSet(GRANTED_URIS, unionUris.mapTo(LinkedHashSet(), Uri::toString))
-      .putStringSet(GRANTED_PACKAGES, packages)
-      .commit()
+  fun commitWatchNextPublication(watchNextUris: Set<Uri>, unionUris: Set<Uri>, packages: Set<String>): Boolean = prefs.edit()
+    .putStringSet(WATCH_NEXT_URIS, watchNextUris.mapTo(LinkedHashSet(), Uri::toString))
+    .putStringSet(GRANTED_URIS, unionUris.mapTo(LinkedHashSet(), Uri::toString))
+    .putStringSet(GRANTED_PACKAGES, packages)
+    .commit()
 
-  fun commitChannelPublication(channelUris: Set<Uri>, unionUris: Set<Uri>, packages: Set<String>): Boolean =
-    prefs.edit()
-      .putStringSet(CHANNEL_URIS, channelUris.mapTo(LinkedHashSet(), Uri::toString))
-      .putStringSet(GRANTED_URIS, unionUris.mapTo(LinkedHashSet(), Uri::toString))
-      .putStringSet(GRANTED_PACKAGES, packages)
-      .commit()
+  fun commitChannelPublication(channelUris: Set<Uri>, unionUris: Set<Uri>, packages: Set<String>): Boolean = prefs.edit()
+    .putStringSet(CHANNEL_URIS, channelUris.mapTo(LinkedHashSet(), Uri::toString))
+    .putStringSet(GRANTED_URIS, unionUris.mapTo(LinkedHashSet(), Uri::toString))
+    .putStringSet(GRANTED_PACKAGES, packages)
+    .commit()
 
-  fun persistGranted(uris: Set<Uri>, packages: Set<String>): Boolean =
-    prefs.edit()
-      .putStringSet(GRANTED_URIS, uris.mapTo(LinkedHashSet(), Uri::toString))
-      .putStringSet(GRANTED_PACKAGES, packages)
-      .commit()
+  fun persistGranted(uris: Set<Uri>, packages: Set<String>): Boolean = prefs.edit()
+    .putStringSet(GRANTED_URIS, uris.mapTo(LinkedHashSet(), Uri::toString))
+    .putStringSet(GRANTED_PACKAGES, packages)
+    .commit()
 
   fun rollbackGrants(oldUnion: Set<Uri>, oldPackages: Set<String>, previousChannelUris: Set<Uri>) {
     prefs.edit()
@@ -571,5 +563,4 @@ internal class SystemShelfUriLedger(context: Context) {
       .putStringSet(CHANNEL_URIS, previousChannelUris.mapTo(LinkedHashSet(), Uri::toString))
       .commit()
   }
-
 }

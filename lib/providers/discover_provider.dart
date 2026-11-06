@@ -1138,19 +1138,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         try {
           final fetched = await client.liveTv.fetchChannels(lineup: serverInfo.lineup);
           for (final channel in fetched) {
-            final scoped = channel.copyWith(
-              serverId: serverInfo.serverId,
-              liveDvrKey: serverInfo.dvrKey,
-            );
+            final scoped = channel.copyWith(serverId: serverInfo.serverId, liveDvrKey: serverInfo.dvrKey);
             if (seen.add(liveTvChannelScopeKey(scoped))) {
               channels.add(scoped);
             }
           }
         } catch (e) {
-          appLogger.w(
-            'Failed to fetch Live TV channels for shelf from ${serverInfo.serverId}',
-            error: e,
-          );
+          appLogger.w('Failed to fetch Live TV channels for shelf from ${serverInfo.serverId}', error: e);
         }
       }
       if (isDisposed) return;

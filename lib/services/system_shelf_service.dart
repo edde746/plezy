@@ -250,22 +250,10 @@ class SystemShelfService {
     if (channel == null || _activeOwner != profileId) return false;
     final generation = _generation;
 
-    final recentMovies = SystemShelfLibraryChannels.recentlyAdded(
-      hubs,
-      kind: SystemShelfLibraryKind.movies,
-    );
-    final recentTv = SystemShelfLibraryChannels.recentlyAdded(
-      hubs,
-      kind: SystemShelfLibraryKind.tv,
-    );
-    final newMovies = SystemShelfLibraryChannels.newReleases(
-      hubs,
-      kind: SystemShelfLibraryKind.movies,
-    );
-    final newTv = SystemShelfLibraryChannels.newReleases(
-      hubs,
-      kind: SystemShelfLibraryKind.tv,
-    );
+    final recentMovies = SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.movies);
+    final recentTv = SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.tv);
+    final newMovies = SystemShelfLibraryChannels.newReleases(hubs, kind: SystemShelfLibraryKind.movies);
+    final newTv = SystemShelfLibraryChannels.newReleases(hubs, kind: SystemShelfLibraryKind.tv);
     if (!_owns(profileId, generation)) return false;
 
     final supported = await isSupported();
@@ -295,9 +283,7 @@ class SystemShelfService {
             arguments: _envelope(profileId, generation, {
               'channelKey': key,
               'channelTitle': title,
-              'items': [
-                for (var i = 0; i < items.length; i++) toPayload(items[i], i),
-              ],
+              'items': [for (var i = 0; i < items.length; i++) toPayload(items[i], i)],
             }),
             label: label,
             severe: true,
@@ -351,10 +337,7 @@ class SystemShelfService {
     if (channel == null || _activeOwner != profileId) return false;
     final generation = _generation;
 
-    final selected = SystemShelfLiveTvChannels.select(
-      channels,
-      favoriteScopeKeys: favoriteScopeKeys,
-    );
+    final selected = SystemShelfLiveTvChannels.select(channels, favoriteScopeKeys: favoriteScopeKeys);
     if (!_owns(profileId, generation)) return false;
 
     final supported = await isSupported();

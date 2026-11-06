@@ -36,6 +36,5 @@ class SystemShelfLiveTvChannels {
     return out;
   }
 
-  static double _channelNumber(LiveTvChannel channel) =>
-      double.tryParse(channel.number ?? '') ?? 999999;
+  static double _channelNumber(LiveTvChannel channel) => double.tryParse(channel.number ?? '') ?? 999999;
 }

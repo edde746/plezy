@@ -89,11 +89,7 @@ class SystemShelfLibraryChannels {
         if (_matchesRecentlyAdded(kind, item.kind)) items.add(item);
       }
     }
-    return _dedupeAndSort(
-      items,
-      limit: limit,
-      sortKey: (item) => item.addedAt ?? 0,
-    );
+    return _dedupeAndSort(items, limit: limit, sortKey: (item) => item.addedAt ?? 0);
   }
 
   /// Newest titles of [kind] by premiere / air date. Library add date is ignored.
@@ -125,9 +121,7 @@ class SystemShelfLibraryChannels {
                 if (_matchesNewRelease(kind, item.kind)) item,
           ];
     final clock = now ?? DateTime.now();
-    final maxAgeDays = kind == SystemShelfLibraryKind.tv
-        ? newEpisodeMaxAgeDays
-        : newReleaseMaxAgeDays;
+    final maxAgeDays = kind == SystemShelfLibraryKind.tv ? newEpisodeMaxAgeDays : newReleaseMaxAgeDays;
     final fresh = [
       for (final item in source)
         if (_isFreshRelease(item, now: clock, maxAgeDays: maxAgeDays)) item,
@@ -167,10 +161,7 @@ class SystemShelfLibraryChannels {
       if (ids.tvdb != null) return 'tvdb:${item.kind.name}:${ids.tvdb}';
     }
     if (item.kind == MediaKind.episode) {
-      final show =
-          (item.grandparentTitle ?? item.parentTitle ?? item.title ?? '')
-              .trim()
-              .toLowerCase();
+      final show = (item.grandparentTitle ?? item.parentTitle ?? item.title ?? '').trim().toLowerCase();
       return 'ep:$show|${item.parentIndex ?? 0}|${item.index ?? 0}|${item.year ?? 0}';
     }
     final title = (item.title ?? '').trim().toLowerCase();
@@ -187,11 +178,7 @@ class SystemShelfLibraryChannels {
       }
       final providerIds = raw['ProviderIds'];
       if (providerIds is Map) {
-        fromRaw = fromRaw.fillFrom(
-          ExternalIds.fromJellyfinProviderIds(
-            providerIds.cast<String, Object?>(),
-          ),
-        );
+        fromRaw = fromRaw.fillFrom(ExternalIds.fromJellyfinProviderIds(providerIds.cast<String, Object?>()));
       }
     }
     final legacy = ExternalIds.fromLegacyPlexGuid(item.guid);
@@ -222,11 +209,7 @@ class SystemShelfLibraryChannels {
     return item.year != null ? item.year! * 10000 : 0;
   }
 
-  static bool _isFreshRelease(
-    MediaItem item, {
-    required DateTime now,
-    int maxAgeDays = newReleaseMaxAgeDays,
-  }) {
+  static bool _isFreshRelease(MediaItem item, {required DateTime now, int maxAgeDays = newReleaseMaxAgeDays}) {
     final key = _releaseSortKey(item);
     if (key <= 0) return false;
     final cutoff = now.subtract(Duration(days: maxAgeDays));
@@ -234,21 +217,14 @@ class SystemShelfLibraryChannels {
     return key >= cutoffKey;
   }
 
-  static bool _matchesRecentlyAdded(
-    SystemShelfLibraryKind kind,
-    MediaKind itemKind,
-  ) {
+  static bool _matchesRecentlyAdded(SystemShelfLibraryKind kind, MediaKind itemKind) {
     return switch (kind) {
       SystemShelfLibraryKind.movies => itemKind == MediaKind.movie,
-      SystemShelfLibraryKind.tv =>
-        itemKind == MediaKind.show || itemKind == MediaKind.episode,
+      SystemShelfLibraryKind.tv => itemKind == MediaKind.show || itemKind == MediaKind.episode,
     };
   }
 
-  static bool _matchesNewRelease(
-    SystemShelfLibraryKind kind,
-    MediaKind itemKind,
-  ) {
+  static bool _matchesNewRelease(SystemShelfLibraryKind kind, MediaKind itemKind) {
     return switch (kind) {
       SystemShelfLibraryKind.movies => itemKind == MediaKind.movie,
       SystemShelfLibraryKind.tv => itemKind == MediaKind.episode,
@@ -263,6 +239,5 @@ class SystemShelfLibraryChannels {
 
   static final RegExp _separators = RegExp(r'[^a-z0-9]+');
 
-  static String _compact(String raw) =>
-      raw.toLowerCase().replaceAll(_separators, '');
+  static String _compact(String raw) => raw.toLowerCase().replaceAll(_separators, '');
 }
