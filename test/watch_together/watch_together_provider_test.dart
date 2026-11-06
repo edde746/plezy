@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openwatchparty/openwatchparty.dart' as owp;
 import 'package:plezy/media/ids.dart';
@@ -823,6 +824,34 @@ void main() {
 
     setUpAll(() async => relay = await _Relay.start(_relayBinary!));
     tearDownAll(() => relay.stop());
+
+    test('application exit leaves the room and promotes the first joined guest', () async {
+      await HttpOverrides.runWithHttpOverrides(() async {
+        final world = _RealWorld(relay.baseUrl);
+        // Other apps do not receive this app's exit event.
+        owp.WatchParty<WatchCopy> guest(String name) =>
+            owp.WatchParty<WatchCopy>(relays: owp.Relays.at(relay.baseUrl), client: 'Other/1.0', name: name);
+        final first = guest('First');
+        final second = guest('Second');
+        try {
+          final h = world.host();
+          final code = await h.provider.createRoom();
+          await first.join(code);
+          await second.join(code);
+          await world.until(() => h.provider.participantCount == 3, 'all participants joined');
+
+          await ServicesBinding.instance.handleRequestAppExit();
+          await world.until(() => first.state.isHost, 'the first guest becomes host');
+          await world.until(() => second.state.room?.participants.length == 2, 'the old host left');
+          expect(h.provider.isInSession, isFalse);
+          expect(second.state.room!.participants.singleWhere((p) => p.host).peerId, first.state.peerId);
+        } finally {
+          await first.close();
+          await second.close();
+          await world.close();
+        }
+      }, _NetworkHttp());
+    });
 
     test('create, join, share, follow, presses, stop and leave', () async {
       // The widget-test binding answers every HttpClient with a 400.

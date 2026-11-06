@@ -33,6 +33,44 @@ void main() {
     PlatformDetector.debugSetIsDesktopOSOverride(null);
   });
 
+  for (final desktop in [true, false]) {
+    testWidgets('direct exit honors cancellation and awaits cleanup (desktop: $desktop)', (tester) async {
+      PlatformDetector.debugSetIsDesktopOSOverride(desktop);
+      var cancel = true;
+      final cleanup = Completer<void>();
+      final events = <String>[];
+      final listener = AppLifecycleListener(
+        onExitRequested: () async {
+          if (cancel) return ui.AppExitResponse.cancel;
+          events.add('cleanup started');
+          await cleanup.future;
+          events.add('cleanup finished');
+          return ui.AppExitResponse.exit;
+        },
+      );
+      addTearDown(listener.dispose);
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method != 'System.exitApplication' && call.method != 'SystemNavigator.pop') return null;
+        events.add('native exit');
+        return call.method == 'System.exitApplication' ? {'response': 'exit'} : null;
+      });
+
+      final canceledExit = AppExitService.requestExit();
+      await tester.pump();
+      expect(await canceledExit, isFalse);
+      expect(events, isEmpty);
+
+      cancel = false;
+      final acceptedExit = AppExitService.requestExit();
+      await tester.pump();
+      expect(events, ['cleanup started']);
+      cleanup.complete();
+      await tester.pump();
+      expect(await acceptedExit, isTrue);
+      expect(events, ['cleanup started', 'cleanup finished', 'native exit']);
+    });
+  }
+
   testWidgets('native termination waits for the exit listener to finish teardown', (tester) async {
     final teardown = Completer<void>();
     final events = <String>[];

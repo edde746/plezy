@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:clock/clock.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:openwatchparty/openwatchparty.dart' as owp;
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -94,6 +95,7 @@ class WatchTogetherProvider extends ChangeNotifier {
   final LibraryResolver _resolver;
 
   owp.WatchParty<WatchCopy>? _party;
+  AppLifecycleListener? _lifecycleListener;
   StreamSubscription<owp.PartyState<WatchCopy>>? _stateSubscription;
   StreamSubscription<owp.PartyEvent>? _eventSubscription;
   owp.PartyState<WatchCopy> _state = const owp.PartyState.initial();
@@ -234,6 +236,15 @@ class WatchTogetherProvider extends ChangeNotifier {
     final name = _sanitizedName(_displayName());
     final party = _partyFactory(relays: _currentRelays(), client: await _clientName(), name: name, resolver: _resolver);
     _party = party;
+    // App termination can happen while the profile's provider tree stays
+    // mounted. Send leave before the engine or platform closes its socket.
+    _lifecycleListener = AppLifecycleListener(
+      onExitRequested: () async {
+        leave();
+        return AppExitResponse.exit;
+      },
+      onDetach: leave,
+    );
     _openedKey = null;
     _playBlocked = false;
     _stateSubscription = party.states.listen(_onState);
@@ -707,6 +718,8 @@ class WatchTogetherProvider extends ChangeNotifier {
   }
 
   Future<void> _closeParty() async {
+    _lifecycleListener?.dispose();
+    _lifecycleListener = null;
     final party = _party;
     if (party == null) return;
     _party = null;
