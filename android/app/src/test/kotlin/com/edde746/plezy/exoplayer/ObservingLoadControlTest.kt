@@ -5,6 +5,7 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -72,36 +73,142 @@ class ObservingLoadControlTest {
       observing.onReleased(playerId)
     }
   }
+
+  @Test
+  fun byteCapHysteresisSuppressesMicroReadsUntilBufferDrainsToLowWaterMark() {
+    val targetBytes = 10 * 64 * 1024 // 10 segments (640 KiB)
+    val delegate = FakeLoadControl(targetBytes = targetBytes)
+    var rebufferCalls = 0
+    val observing = ObservingLoadControl(
+      delegate = delegate,
+      targetBufferBytes = targetBytes,
+      onRebuffering = { rebufferCalls++ }
+    )
+
+    // 1. Fill allocator to targetBytes (10 segments). Delegate stops loading.
+    delegate.setAllocatedSegments(10)
+    assertFalse(observing.shouldContinueLoading(delegate.parametersWith(bufferedDurationUs = 6_000_000L)))
+    assertTrue("byte-cap hold should latch when stopped at targetBufferBytes", observing.holdingForByteCap)
+    assertEquals(targetBytes, observing.allocatedBytes())
+
+    // 2. Renderer consumes 1 segment (90% full). Because bufferedDurationUs (5.5s) < minBufferMs (15s),
+    // DefaultLoadControl flips back to true immediately, which would cause 1 MiB micro-throttling.
+    // ObservingLoadControl must keep returning false until 80% (8 segments).
+    delegate.setAllocatedSegments(9)
+    assertFalse(
+      "must suppress micro-read at 90% full",
+      observing.shouldContinueLoading(delegate.parametersWith(bufferedDurationUs = 5_500_000L))
+    )
+    assertTrue(observing.holdingForByteCap)
+
+    // 3. Drains to 80% (8 segments): hysteresis releases and burst loading resumes.
+    delegate.setAllocatedSegments(8)
+    assertTrue(
+      "must resume burst loading at 80% low-water mark",
+      observing.shouldContinueLoading(delegate.parametersWith(bufferedDurationUs = 4_800_000L))
+    )
+    assertFalse(observing.holdingForByteCap)
+    assertEquals(0, rebufferCalls)
+  }
+
+  @Test
+  fun rebufferingReleasesByteCapHoldAndNotifiesOncePerRebufferEdge() {
+    val targetBytes = 10 * 64 * 1024
+    val delegate = FakeLoadControl(targetBytes = targetBytes)
+    var rebufferCalls = 0
+    val observing = ObservingLoadControl(
+      delegate = delegate,
+      targetBufferBytes = targetBytes,
+      onRebuffering = { rebufferCalls++ }
+    )
+
+    delegate.setAllocatedSegments(10)
+    assertFalse(observing.shouldContinueLoading(delegate.parametersWith(bufferedDurationUs = 6_000_000L)))
+    assertTrue(observing.holdingForByteCap)
+
+    // Mid-playback rebuffer at 9 segments: releases hold immediately and notifies callback once.
+    delegate.setAllocatedSegments(9)
+    assertTrue(
+      observing.shouldContinueLoading(
+        delegate.parametersWith(bufferedDurationUs = 1_000_000L, rebuffering = true)
+      )
+    )
+    assertFalse(observing.holdingForByteCap)
+    assertEquals(1, rebufferCalls)
+
+    // Subsequent tick in the same rebuffer window does not double-fire.
+    assertTrue(
+      observing.shouldContinueLoading(
+        delegate.parametersWith(bufferedDurationUs = 2_000_000L, rebuffering = true)
+      )
+    )
+    assertEquals(1, rebufferCalls)
+
+    // Exiting rebuffer and re-entering later fires again.
+    assertTrue(
+      observing.shouldContinueLoading(
+        delegate.parametersWith(bufferedDurationUs = 6_000_000L, rebuffering = false)
+      )
+    )
+    assertTrue(
+      observing.shouldContinueLoading(
+        delegate.parametersWith(bufferedDurationUs = 500_000L, rebuffering = true)
+      )
+    )
+    assertEquals(2, rebufferCalls)
+  }
 }
 
 /** Minimal complete [LoadControl], so the wrapper's recording can be exercised on its own. */
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-private class FakeLoadControl : LoadControl {
+private class FakeLoadControl(private val targetBytes: Int = 0) : LoadControl {
   var startPlayback = false
+  private val defaultAllocator = androidx.media3.exoplayer.upstream.DefaultAllocator(true, 64 * 1024)
+  private val heldAllocations = mutableListOf<androidx.media3.exoplayer.upstream.Allocation>()
 
-  val lastParameters: LoadControl.Parameters = LoadControl.Parameters(
+  val lastParameters: LoadControl.Parameters = parametersWith()
+
+  fun parametersWith(
+    bufferedDurationUs: Long = 0L,
+    playbackSpeed: Float = 1f,
+    rebuffering: Boolean = false
+  ): LoadControl.Parameters = LoadControl.Parameters(
     androidx.media3.exoplayer.analytics.PlayerId.UNSET,
     androidx.media3.common.Timeline.EMPTY,
     LoadControl.EMPTY_MEDIA_PERIOD_ID,
     /* playbackPositionUs= */
     0L,
     /* bufferedDurationUs= */
-    0L,
+    bufferedDurationUs,
     /* playbackSpeed= */
-    1f,
+    playbackSpeed,
     /* playWhenReady= */
     true,
     /* rebuffering= */
-    false,
+    rebuffering,
     /* targetLiveOffsetUs= */
     androidx.media3.common.C.TIME_UNSET,
     /* lastRebufferRealtimeMs= */
     androidx.media3.common.C.TIME_UNSET
   )
 
+  fun setAllocatedSegments(count: Int) {
+    while (heldAllocations.size < count) {
+      heldAllocations.add(defaultAllocator.allocate())
+    }
+    while (heldAllocations.size > count) {
+      defaultAllocator.release(heldAllocations.removeAt(heldAllocations.lastIndex))
+    }
+  }
+
   override fun shouldStartPlayback(parameters: LoadControl.Parameters): Boolean = startPlayback
 
-  override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean = true
+  override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean {
+    if (targetBytes > 0 && defaultAllocator.totalBytesAllocated >= targetBytes) {
+      return false
+    }
+    return true
+  }
 
   override fun onPrepared(playerId: androidx.media3.exoplayer.analytics.PlayerId) = Unit
 
@@ -117,7 +224,7 @@ private class FakeLoadControl : LoadControl {
 
   override fun getAllocator(
     playerId: androidx.media3.exoplayer.analytics.PlayerId
-  ): androidx.media3.exoplayer.upstream.Allocator = androidx.media3.exoplayer.upstream.DefaultAllocator(true, 64 * 1024)
+  ): androidx.media3.exoplayer.upstream.Allocator = defaultAllocator
 
   override fun getBackBufferDurationUs(playerId: androidx.media3.exoplayer.analytics.PlayerId): Long = 0L
 

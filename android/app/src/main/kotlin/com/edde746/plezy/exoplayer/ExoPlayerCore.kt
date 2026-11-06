@@ -224,7 +224,7 @@ class ExoPlayerCore(private val activity: Activity) :
   // Tracks whether a text track was selected on the previous onTracksChanged so we
   // can detect the transition to "no subtitle" and clear the painted overlays (#1387).
   private var hadSelectedTextTrack: Boolean = false
-  private var httpDataSourceFactory: HttpDataSource.Factory? = null
+  private var httpDataSourceFactory: ReconnectingHttpDataSource.Factory? = null
   private var dataSourceFactory: DefaultDataSource.Factory? = null
   private var trackSelector: DefaultTrackSelector? = null
   private var tunnelingUserEnabled: Boolean = true
@@ -717,20 +717,24 @@ class ExoPlayerCore(private val activity: Activity) :
       // Prefer Cronet for HTTP/2 multiplexing; fall back when a device's provider crashes during init.
       val cronetEngine = getCronetEngine(activity)
       val dataSourceLabel: String
-      val httpFactory: HttpDataSource.Factory
+      val upstreamHttpFactory: HttpDataSource.Factory
       if (cronetEngine != null) {
         dataSourceLabel = "Cronet"
-        httpFactory = CronetDataSource.Factory(cronetEngine, cronetExecutor)
+        upstreamHttpFactory = CronetDataSource.Factory(cronetEngine, cronetExecutor)
           .setConnectionTimeoutMs(15_000)
           .setReadTimeoutMs(10_000)
       } else {
         dataSourceLabel = "DefaultHttp"
-        httpFactory = DefaultHttpDataSource.Factory()
+        upstreamHttpFactory = DefaultHttpDataSource.Factory()
           .setConnectTimeoutMs(15_000)
           .setReadTimeoutMs(10_000)
       }
-      httpDataSourceFactory = httpFactory
-      dataSourceFactory = DefaultDataSource.Factory(activity, httpFactory)
+      val reconnectingHttpFactory = ReconnectingHttpDataSource.Factory(
+        upstreamFactory = upstreamHttpFactory,
+        log = { level, message -> emitLog(level, "http-reconnect", message) }
+      )
+      httpDataSourceFactory = reconnectingHttpFactory
+      dataSourceFactory = DefaultDataSource.Factory(activity, reconnectingHttpFactory)
       val extractorsFactory = DefaultExtractorsFactory()
         // High-bitrate Plex DVR MPEG-TS recordings can have sparse PCR packets; the default
         // 600-packet window may leave duration unknown and seeking disabled.
@@ -817,7 +821,13 @@ class ExoPlayerCore(private val activity: Activity) :
           LoadControlPolicy.BUFFER_FOR_PLAYBACK_MS,
           LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
         )
-      }.build().let { ObservingLoadControl(it).also { observing -> observingLoadControl = observing } }
+      }.build().let {
+        ObservingLoadControl(
+          delegate = it,
+          targetBufferBytes = targetBufferBytes,
+          onRebuffering = { reconnectingHttpFactory.notifyRebuffering() }
+        ).also { observing -> observingLoadControl = observing }
+      }
       emitLog(
         "info",
         "init",
@@ -1168,6 +1178,9 @@ class ExoPlayerCore(private val activity: Activity) :
 
     when (state) {
       Player.STATE_BUFFERING -> {
+        if (firstFrameRendered) {
+          httpDataSourceFactory?.notifyRebuffering()
+        }
         delegate?.onPropertyChange("paused-for-cache", true)
         armBufferingStallWatchdog()
       }
@@ -3455,6 +3468,7 @@ class ExoPlayerCore(private val activity: Activity) :
     resetPlaybackProgress(startPositionMs)
 
     // Apply auth/custom headers to the HTTP DataSource for this session
+    httpDataSourceFactory?.resetSession()
     httpDataSourceFactory?.setDefaultRequestProperties(
       if (!headers.isNullOrEmpty()) headers else emptyMap()
     )
@@ -4256,6 +4270,9 @@ class ExoPlayerCore(private val activity: Activity) :
       // Buffer metrics
       "bufferedPositionMs" to player.bufferedPosition,
       "currentPositionMs" to player.currentPosition,
+      "bufferAllocatedBytes" to observingLoadControl?.allocatedBytes(),
+      "bufferSpeedBytesPerSec" to httpDataSourceFactory?.currentThroughputBytesPerSec(),
+      "httpReconnectCount" to httpDataSourceFactory?.totalReconnectCount(),
       // Both read-ahead ceilings. The smaller binds, so a Maximum Buffer that appears to do
       // nothing on a high bitrate file is explained by the byte target sitting beside it.
       "bufferTargetBytes" to resolvedTargetBufferBytes,
