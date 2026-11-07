@@ -1120,7 +1120,17 @@ class ExoPlayerCore(private val activity: Activity) :
     val textCues = cues.filter { it.bitmap == null }
     val bitmapCues = cues.filter { it.bitmap != null }
     updateBitmapSubtitlePlaneAspect(bitmapCues)
-    val outgoing = SubtitleCueLayout.layout(textCues, subtitlePositionPercent, subtitleFontSize)
+    val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+    val containerHeight = surfaceContainer?.height?.takeIf { it > 0 } ?: contentView.height
+    val textHeight = subtitleView?.layoutParams?.height?.takeIf { it > 0 }
+      ?: subtitleView?.height?.takeIf { it > 0 }
+      ?: containerHeight
+    val scaleFactor = if (containerHeight > 0 && textHeight > 0) {
+      containerHeight.toFloat() / textHeight.toFloat()
+    } else {
+      1f
+    }
+    val outgoing = SubtitleCueLayout.layout(textCues, subtitlePositionPercent, subtitleFontSize, scaleFactor)
     subtitleView?.setCues(outgoing)
     bitmapSubtitleView?.setCues(bitmapCues)
   }
@@ -1804,6 +1814,8 @@ class ExoPlayerCore(private val activity: Activity) :
       val textView = subtitleView
       if (textView != null && textDimensions != null) {
         applySubtitleViewSize(textView, textDimensions)
+        applySubtitleFontSize(containerHeight, textDimensions.height)
+        if (lastSubtitleCues.isNotEmpty()) renderSubtitleCues(lastSubtitleCues)
       }
       val bitmapView = bitmapSubtitleView
       if (bitmapView != null && bitmapDimensions != null) {
@@ -3987,6 +3999,15 @@ class ExoPlayerCore(private val activity: Activity) :
     }
   }
 
+  private fun applySubtitleFontSize(containerHeight: Int, textHeight: Int) {
+    if (containerHeight <= 0 || textHeight <= 0) return
+    // Scale fraction so text size is relative to the display/container height (720p baseline)
+    // rather than shrinking when the SubtitleView is letterboxed inside widescreen video.
+    val heightScale = containerHeight.toFloat() / textHeight.toFloat()
+    val fraction = (subtitleFontSize / 720f) * heightScale
+    subtitleView?.setFractionalTextSize(fraction)
+  }
+
   fun setSubtitleStyle(
     fontSize: Float,
     textColor: String,
@@ -4034,16 +4055,19 @@ class ExoPlayerCore(private val activity: Activity) :
         typeface
       )
       subtitleView?.setStyle(style)
-      // Font size: MPV sub-font-size is scaled pixels at 720p height
-      // Convert to fractional size (0.0-1.0 relative to view height)
-      val fraction = fontSize / 720f
-      subtitleView?.setFractionalTextSize(fraction)
 
       // Subtitle position: VTT default cues arrive with explicit line numbers,
       // so app positioning is applied at cue level below.
       val clampedPosition = subtitlePosition.coerceIn(0, 100)
       subtitlePositionPercent = clampedPosition
       subtitleFontSize = fontSize
+
+      val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+      val containerHeight = surfaceContainer?.height?.takeIf { it > 0 } ?: contentView.height
+      val textHeight = subtitleView?.layoutParams?.height?.takeIf { it > 0 }
+        ?: subtitleView?.height?.takeIf { it > 0 }
+        ?: containerHeight
+      applySubtitleFontSize(containerHeight, textHeight)
 
       // Anchor-to-screen (#1730): resize the text SubtitleView to the full
       // container so default-placed cues land in the letterbox bars.

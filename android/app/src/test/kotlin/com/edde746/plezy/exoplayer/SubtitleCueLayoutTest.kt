@@ -46,4 +46,24 @@ class SubtitleCueLayoutTest {
 
     assertSame(positioned, laidOut.single())
   }
+
+  @Test
+  fun userPositionAccountsForScaleFactorInLetterbox() {
+    val first = Cue.Builder().setText("first").build()
+    val second = Cue.Builder().setText("second").build()
+
+    // When scaleFactor > 1.0 (e.g. in letterbox where view height < container height),
+    // row spacing expands proportionally so visual size matches screen baseline.
+    val laidOut = SubtitleCueLayout.layout(
+      listOf(first, second),
+      positionPercent = 50,
+      fontSize = 36f,
+      scaleFactor = 1.3333334f
+    )
+
+    assertEquals(Cue.LINE_TYPE_FRACTION, laidOut[0].lineType)
+    // rowHeight = (36 / 720 * 1.3333334 * 1.2) = 0.08
+    assertEquals(0.42f, laidOut[0].line, 0.0001f)
+    assertEquals(0.5f, laidOut[1].line, 0.0001f)
+  }
 }

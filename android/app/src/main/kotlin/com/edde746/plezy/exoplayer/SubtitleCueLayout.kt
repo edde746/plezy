@@ -7,7 +7,12 @@ import androidx.media3.common.util.UnstableApi
 @OptIn(UnstableApi::class)
 internal object SubtitleCueLayout {
 
-  fun layout(cues: List<Cue>, positionPercent: Int, fontSize: Float): List<Cue> = applyPosition(stackUnpositioned(cues), positionPercent, fontSize)
+  fun layout(
+    cues: List<Cue>,
+    positionPercent: Int,
+    fontSize: Float,
+    scaleFactor: Float = 1f
+  ): List<Cue> = applyPosition(stackUnpositioned(cues), positionPercent, fontSize, scaleFactor)
 
   // SRT carries no per-cue positioning, so SubripParser emits cues with
   // lineType = TYPE_UNSET. SubtitlePainter then renders every such cue at the
@@ -37,12 +42,17 @@ internal object SubtitleCueLayout {
     return rebuilt
   }
 
-  private fun applyPosition(cues: List<Cue>, positionPercent: Int, fontSize: Float): List<Cue> {
+  private fun applyPosition(
+    cues: List<Cue>,
+    positionPercent: Int,
+    fontSize: Float,
+    scaleFactor: Float = 1f
+  ): List<Cue> {
     val clampedPosition = positionPercent.coerceIn(0, 100)
     if (clampedPosition == 100 || cues.isEmpty()) return cues
 
     val baseLine = clampedPosition / 100f
-    val rowHeight = (fontSize / 720f * 1.2f).coerceAtLeast(0.01f)
+    val rowHeight = (fontSize / 720f * scaleFactor * 1.2f).coerceAtLeast(0.01f)
     var changed = false
 
     val rebuilt = cues.map { cue ->
