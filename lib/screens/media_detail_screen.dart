@@ -144,6 +144,7 @@ const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
 const String _tvDetailExtrasHubId = 'detail_extras';
 const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
+const String _tvDetailActorPersonKeyRawKey = 'tvDetailActorPersonKey';
 
 enum _SyncRuleAction { edit, remove, delete }
 
@@ -1597,6 +1598,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         context,
         personId: personId,
         name: actor.tag,
+        personKey: actor.personKey,
         thumbPath: actor.thumbPath,
         characterName: actor.role,
         serverId: _metadata.serverId!,
@@ -4484,6 +4486,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   MediaItem _tvDetailActorItem(MediaItem metadata, MediaRole actor, int index) {
     final personId = actor.id?.trim();
+    final personKey = actor.personKey?.trim();
     return MediaItem(
       id: personId != null && personId.isNotEmpty ? '${metadata.id}_actor_$personId' : '${metadata.id}_actor_$index',
       backend: metadata.backend,
@@ -4493,7 +4496,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       thumbPath: actor.thumbPath,
       serverId: metadata.serverId,
       serverName: metadata.serverName,
-      raw: {if (personId != null && personId.isNotEmpty) _tvDetailActorPersonIdRawKey: personId},
+      raw: {
+        if (personId != null && personId.isNotEmpty) _tvDetailActorPersonIdRawKey: personId,
+        if (personKey != null && personKey.isNotEmpty) _tvDetailActorPersonKeyRawKey: personKey,
+      },
     );
   }
 
@@ -4511,8 +4517,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (hub.id != _tvDetailActorsHubId) return false;
     final personId = item.raw?[_tvDetailActorPersonIdRawKey];
     if (personId is String && personId.isNotEmpty) {
+      final personKey = item.raw?[_tvDetailActorPersonKeyRawKey];
       _navigateToActorMedia(
-        MediaRole(id: personId, tag: item.displayTitle, role: item.parentTitle, thumbPath: item.thumbPath),
+        MediaRole(
+          id: personId,
+          tag: item.displayTitle,
+          role: item.parentTitle,
+          thumbPath: item.thumbPath,
+          personKey: personKey is String && personKey.isNotEmpty ? personKey : null,
+        ),
       );
     }
     return true;
