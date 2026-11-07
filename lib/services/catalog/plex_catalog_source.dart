@@ -1,3 +1,7 @@
+import '../../i18n/strings.g.dart';
+import '../../media/library_filter_result.dart';
+import '../../media/library_query.dart';
+import '../../media/media_filter.dart';
 import '../../media/media_rating.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_cast_member.dart';
@@ -7,6 +11,7 @@ import '../../utils/external_ids.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/country_codes.dart';
 import '../../utils/json_utils.dart';
+import '../library_query_translator.dart';
 import '../plex_discover_client.dart';
 import '../plex_mappers.dart';
 import 'catalog_source.dart';
@@ -15,7 +20,7 @@ import 'catalog_watchlist_machinery.dart';
 /// [CatalogSource] backed by the active Plex profile's universal watchlist
 /// and Discover's Home shelves (what Plex's own web client shows on its
 /// Home ▸ Trending tab).
-class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogHubSource {
+class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogHubSource, CatalogRowFilters {
   final PlexDiscoverClient _client;
   final bool includeImageVariants;
   final Map<String, String> _hubKeys = {};
@@ -49,9 +54,66 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
   int get watchlistMaxPages => 50;
 
   @override
-  Future<CatalogPage> fetchRow(CatalogRowId row, {int page = 1, int limit = 25}) async {
+  Future<CatalogPage> fetchRow(CatalogRowId row, {int page = 1, int limit = 25}) =>
+      fetchFilteredRow(row, filters: const [], page: page, limit: limit);
+
+  /// Hidden because Plezy only plays from the user's own servers.
+  static const _streamingAvailabilityFilters = {'onPlex', 'preferredServices', 'available', 'availabilityPlatform'};
+
+  /// Discover ignores negated filters, so every filter is equality only.
+  @override
+  Future<LibraryFilterResult> fetchRowFilters(CatalogRowId row) async {
+    if (row != CatalogRowId.watchlist) return LibraryFilterResult.empty;
+    final types = flexibleMapList((await _client.getWatchlistMeta())?['Type']);
+    final all = types.where((type) => type['active'] == true).firstOrNull ?? types.firstOrNull;
+    if (all == null) return LibraryFilterResult.empty;
+    MediaFilter equalityOnly(MediaFilter filter) => MediaFilter(
+      filter: filter.filter,
+      filterType: filter.filterType,
+      key: filter.key,
+      title: filter.title,
+      type: filter.type,
+      operators: const [LibraryFilterOperator.is_],
+    );
+    return LibraryFilterResult(
+      filters: [
+        MediaFilter(
+          filter: 'type',
+          filterType: MediaFilterType.integer,
+          key: 'type',
+          title: t.fileInfo.mediaType,
+          type: 'filter',
+        ),
+        for (final filter in flexibleMapList(all['Filter']))
+          if (!_streamingAvailabilityFilters.contains(filter['filter'])) MediaFilter.fromJson(filter),
+      ].map(equalityOnly).toList(),
+      cachedValues: {
+        'type': [
+          for (final type in types)
+            if (type['type'] != 'mixed') MediaFilterValue(key: '${type['key']}', title: '${type['title']}'),
+        ],
+      },
+    );
+  }
+
+  @override
+  Future<List<MediaFilterValue>> fetchRowFilterValues(MediaFilter filter) async {
+    return [
+      // Year and decade titles arrive as numbers.
+      for (final value in await _client.getDirectory(filter.key))
+        MediaFilterValue(key: '${value['key']}', title: '${value['title']}'),
+    ];
+  }
+
+  @override
+  Future<CatalogPage> fetchFilteredRow(
+    CatalogRowId row, {
+    required List<LibraryFilter> filters,
+    int page = 1,
+    int limit = 25,
+  }) async {
     if (row != CatalogRowId.watchlist) throw ArgumentError('Plex does not serve ${row.name}');
-    final response = await _client.getWatchlist(page: page, limit: limit);
+    final response = await _client.getWatchlist(page: page, limit: limit, query: plexFilterQueryParameters(filters));
     return CatalogPage(
       items: _fromMetadata(response.items),
       hasMore: response.hasMore,

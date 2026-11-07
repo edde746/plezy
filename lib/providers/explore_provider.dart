@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../i18n/strings.g.dart';
+import '../media/library_query.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -268,6 +269,17 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     final source = _source;
     if (source == null) return const [];
     return _loadAllPages(row.name, (page) => source.fetchRow(row, page: page, limit: viewAllPageLimit));
+  }
+
+  /// Like [loadAllForRow], with the given filters applied.
+  Future<List<MediaItem>> loadAllForFilteredRow(CatalogRowId row, List<LibraryFilter> filters) async {
+    final source = _source;
+    if (source is! CatalogRowFilters) return const [];
+    final filtering = source as CatalogRowFilters;
+    return _loadAllPages(
+      row.name,
+      (page) => filtering.fetchFilteredRow(row, filters: filters, page: page, limit: viewAllPageLimit),
+    );
   }
 
   /// Full item list for either a fixed row or a provider-defined hub.
