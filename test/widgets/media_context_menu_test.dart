@@ -240,11 +240,11 @@ void main() {
       );
     });
 
-    test('Plex keeps its account-level gate', () {
+    test('Plex requires both the account-level gate and the server preference', () {
       expect(
         isMediaDeletionAllowed(
           itemBackend: MediaBackend.plex,
-          resolvedItemPermission: null,
+          resolvedItemPermission: true,
           isAdminActionAllowed: true,
         ),
         isTrue,
@@ -252,8 +252,24 @@ void main() {
       expect(
         isMediaDeletionAllowed(
           itemBackend: MediaBackend.plex,
-          resolvedItemPermission: null,
+          resolvedItemPermission: true,
           isAdminActionAllowed: false,
+        ),
+        isFalse,
+      );
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.plex,
+          resolvedItemPermission: false,
+          isAdminActionAllowed: true,
+        ),
+        isFalse,
+      );
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.plex,
+          resolvedItemPermission: null,
+          isAdminActionAllowed: true,
         ),
         isFalse,
       );
@@ -365,7 +381,7 @@ void main() {
       await tester.pump();
       expect(find.text(t.mediaMenu.fileInfo), findsNothing, reason: 'the menu waits for the permission answer');
 
-      await tester.pump(MediaServerTimeouts.jellyfinDeletePermission + const Duration(milliseconds: 1));
+      await tester.pump(MediaServerTimeouts.deletePermission + const Duration(milliseconds: 1));
       await tester.pumpAndSettle();
 
       expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
