@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit
 class SystemShelfArtworkProvider : ContentProvider() {
   companion object {
     const val AUTHORITY = "com.edde746.plezy.systemshelf.artwork"
+    const val AUTHORITY_SUFFIX = ".systemshelf.artwork"
+
+    fun authorityFor(packageName: String): String = "$packageName$AUTHORITY_SUFFIX"
   }
 
   override fun onCreate(): Boolean = context != null
@@ -42,7 +45,11 @@ class SystemShelfArtworkProvider : ContentProvider() {
     return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
   }
 
-  override fun getType(uri: Uri): String? = if (uri.authority == AUTHORITY) "image/*" else null
+  override fun getType(uri: Uri): String? {
+    val authority = uri.authority
+    val runtime = context?.packageName?.let(::authorityFor)
+    return if (authority == AUTHORITY || authority == runtime) "image/*" else null
+  }
   override fun query(
     uri: Uri,
     projection: Array<out String>?,
@@ -78,8 +85,12 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
   companion object {
     const val MAX_IMAGE_BYTES = 2 * 1024 * 1024
     const val MAX_SYNC_BYTES = 8 * 1024 * 1024
+
+    /** Preview Channels download up to 20 posters each; allow a fuller pass. */
+    const val MAX_CHANNEL_SYNC_BYTES = 20 * 1024 * 1024
     const val MAX_ITEMS = 20
     const val MAX_SYNC_DURATION_MS = 10_000L
+    const val MAX_CHANNEL_SYNC_DURATION_MS = 60_000L
     const val CONNECT_TIMEOUT_MS = 2_500
     const val READ_TIMEOUT_MS = 2_500
     private val opaquePart = Regex("^[a-f0-9]{64}$")
@@ -325,7 +336,17 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
   fun deleteAll(): Boolean = !root.exists() || root.deleteRecursively()
 
   private fun confinedCandidate(uri: Uri): File? {
-    if (uri.scheme != "content" || uri.authority != SystemShelfArtworkProvider.AUTHORITY) return null
+    val authority = uri.authority
+    if (
+      uri.scheme != "content" ||
+      authority == null ||
+      (
+        authority != SystemShelfArtworkProvider.AUTHORITY &&
+          !authority.endsWith(SystemShelfArtworkProvider.AUTHORITY_SUFFIX)
+        )
+    ) {
+      return null
+    }
     val segments = uri.pathSegments
     if (segments.size != 3 || segments[0] != "art") return null
     val owner = segments[1]

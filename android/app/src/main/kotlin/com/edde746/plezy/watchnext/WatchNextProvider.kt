@@ -117,6 +117,9 @@ class WatchNextProvider internal constructor(
     )
 
     internal fun forMaintenance(context: Context) = WatchNextProvider(context, null)
+
+    /** Artwork files currently referenced by Watch Next programs. */
+    internal fun referencedArtworkFiles(context: Context, artwork: SystemShelfArtworkStore): Set<java.io.File> = SystemShelfUriLedger(context).watchNextUris().mapNotNullTo(LinkedHashSet()) { artwork.resolve(it) }
   }
 
   data class WatchNextItem(
@@ -144,6 +147,7 @@ class WatchNextProvider internal constructor(
   )
 
   private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+  private val ledger = SystemShelfUriLedger(context)
   private val artwork = SystemShelfArtworkStore(context.cacheDir)
   private data class CommittedPublication(
     val ownerId: String,
@@ -202,7 +206,12 @@ class WatchNextProvider internal constructor(
         }
         PreparedWatchNextItem(item, localArtwork?.uri)
       }
-      val newUris = preparedItems.mapNotNullTo(LinkedHashSet()) { it.localPosterUri }
+      val newWatchNextUris = preparedItems.mapNotNullTo(LinkedHashSet()) { it.localPosterUri }
+      val channelUris = ledger.channelUris()
+      val newUris = LinkedHashSet<Uri>().apply {
+        addAll(newWatchNextUris)
+        addAll(channelUris)
+      }
       val newPackages = consumerPackages()
       if (!isOperationActive() || !session.isActive()) return false
 
@@ -233,6 +242,8 @@ class WatchNextProvider internal constructor(
             artworkIdentities[posterUri] = beforeValidation
           }
         }
+        // Keep preview-channel posters that share this artwork store.
+        referencedFiles += PreviewChannelPublisher.referencedArtworkFiles(context, artwork)
         if (session.isExpired()) {
           artwork.delete(publishedFiles)
           return@whileCurrent false
@@ -250,11 +261,8 @@ class WatchNextProvider internal constructor(
           artwork.delete(publishedFiles)
           return@whileCurrent false
         }
-        val preferencesCommitted = prefs.edit()
-          .putStringSet(GRANTED_URIS, newUris.mapTo(LinkedHashSet(), Uri::toString))
-          .putStringSet(GRANTED_PACKAGES, newPackages)
-          .putInt(SHELF_SCHEMA_VERSION_KEY, SHELF_SCHEMA_VERSION)
-          .commit()
+        val preferencesCommitted = ledger.commitWatchNextPublication(newWatchNextUris, newUris, newPackages) &&
+          prefs.edit().putInt(SHELF_SCHEMA_VERSION_KEY, SHELF_SCHEMA_VERSION).commit()
         if (!preferencesCommitted) {
           reconcileReadAccess(newUris, newPackages, oldUris, oldPackages)
           artwork.delete(publishedFiles)
@@ -278,7 +286,7 @@ class WatchNextProvider internal constructor(
         reconcileReadAccess(oldUris, oldPackages, newUris, newPackages)
         artwork.deleteExcept(referencedFiles)
         // An unavailable source (including last-known-good fallback) must be retried, not cached.
-        if (preparedBySource.values.none { it == null } && artworkIdentities.size == newUris.size) {
+        if (preparedBySource.values.none { it == null } && artworkIdentities.size == newWatchNextUris.size) {
           val rows = queryCommittedRows(includeMetadata = true)
           if (rows != null &&
             rows.size == preparedItems.size &&
@@ -293,7 +301,7 @@ class WatchNextProvider internal constructor(
               items.toList(),
               rows,
               artworkIdentities,
-              newUris
+              newWatchNextUris
             )
           }
         }
@@ -315,6 +323,7 @@ class WatchNextProvider internal constructor(
     return SystemShelfLifecycle.whileCurrent(operationOwnership) {
       if (!isOperationActive()) return@whileCurrent false
       lastPublication = null
+      PreviewChannelPublisher(context, lifecycleLease).clearChannelsUnlocked()
       val rowsCleared = deleteRows()
       if (!rowsCleared) return@whileCurrent false
       val uris = storedUris()
@@ -324,6 +333,8 @@ class WatchNextProvider internal constructor(
       prefs.edit()
         .remove(GRANTED_URIS)
         .remove(GRANTED_PACKAGES)
+        .remove("watch_next_uris")
+        .remove("channel_uris")
         .putInt(SHELF_SCHEMA_VERSION_KEY, SHELF_SCHEMA_VERSION)
         .commit()
       true
@@ -356,11 +367,14 @@ class WatchNextProvider internal constructor(
   private fun restoreReadGrantsOwned(): Boolean {
     val previousUris = storedUris()
     val previousPackages = storedPackages()
-    val validUris = previousUris.filterTo(LinkedHashSet()) { artwork.resolve(it) != null }
+    // One pass for Watch Next and Preview Channels. A second restore on the
+    // same ledger revokes every stale URI again, which API 25 records as a
+    // separate uri-wide revoke.
+    val keep = PreviewChannelPublisher(context, null).retainedPosterUris(previousUris)
     val currentPackages = consumerPackages()
-    reconcileReadAccess(previousUris, previousPackages, validUris, currentPackages)
+    reconcileReadAccess(previousUris, previousPackages, keep, currentPackages)
     return prefs.edit()
-      .putStringSet(GRANTED_URIS, validUris.mapTo(LinkedHashSet(), Uri::toString))
+      .putStringSet(GRANTED_URIS, keep.mapTo(LinkedHashSet(), Uri::toString))
       .putStringSet(GRANTED_PACKAGES, currentPackages)
       .commit()
   }
@@ -541,9 +555,10 @@ class WatchNextProvider internal constructor(
     }
     // Consumer/persistence transitions take the original grant and schema rollback path.
     val packages = storedPackages()
+    val watchNextUris = ledger.watchNextUris()
     if (
       prefs.getInt(SHELF_SCHEMA_VERSION_KEY, 0) != SHELF_SCHEMA_VERSION ||
-      storedUris() != publication.uris ||
+      watchNextUris != publication.uris ||
       packages != consumerPackages()
     ) {
       return@whileCurrent null
@@ -556,8 +571,8 @@ class WatchNextProvider internal constructor(
     ) {
       return@whileCurrent null
     }
-    // Grants are reboot-volatile even if the persisted consumer set has not changed.
-    if (!grantReadAccess(publication.uris, packages)) return@whileCurrent false
+    // Re-grant the full Watch Next + Preview Channel union; grants are reboot-volatile.
+    if (!grantReadAccess(storedUris(), packages)) return@whileCurrent false
     if (!isOperationActive() || session.isExpired()) return@whileCurrent false
     if (!updateProgressRows(items, rows)) return@whileCurrent false
     lastPublication = publication

@@ -3295,6 +3295,18 @@ class Translations$discover$en {
 	/// en: 'Recently Added in ${library}'
 	String recentlyAddedIn({required Object library}) => 'Recently Added in ${library}';
 
+	/// en: 'Recently Added Movies'
+	String get previewChannelRecentlyAddedMovies => 'Recently Added Movies';
+
+	/// en: 'Recently Added TV'
+	String get previewChannelRecentlyAddedTv => 'Recently Added TV';
+
+	/// en: 'New Movies'
+	String get previewChannelNewMovies => 'New Movies';
+
+	/// en: 'New Episodes'
+	String get previewChannelNewEpisodes => 'New Episodes';
+
 	/// en: 'Latest Albums in ${library}'
 	String latestAlbumsIn({required Object library}) => 'Latest Albums in ${library}';
 
@@ -9227,6 +9239,10 @@ extension on Translations {
 			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
 			'discover.recentlyAdded' => 'Recently Added',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Recently Added in ${library}',
+			'discover.previewChannelRecentlyAddedMovies' => 'Recently Added Movies',
+			'discover.previewChannelRecentlyAddedTv' => 'Recently Added TV',
+			'discover.previewChannelNewMovies' => 'New Movies',
+			'discover.previewChannelNewEpisodes' => 'New Episodes',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Latest Albums in ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Recently Played in ${library}',
 			'discover.mostPlayedIn' => ({required Object library}) => 'Most Played in ${library}',
@@ -9655,12 +9671,12 @@ extension on Translations {
 			'liveTv.editRule' => 'Edit rule',
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -10169,12 +10185,12 @@ extension on Translations {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',

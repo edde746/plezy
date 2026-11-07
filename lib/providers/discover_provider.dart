@@ -9,6 +9,7 @@ import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
+import '../models/livetv_channel.dart';
 import '../services/settings_service.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
@@ -377,6 +378,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     var outcome = DiscoverRefreshOutcome.cancelled;
     var passClearedExceptionBoundary = false;
     List<MediaItem>? systemShelfPassToken;
+    List<MediaHub>? libraryChannelsPassToken;
     // Observations are staged with the pass, not recorded as each leg lands:
     // suppressing a patch whose fresh row is then discarded or rolled back
     // would leave an older snapshot on screen with nothing to correct it.
@@ -549,6 +551,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         fetchedHubs.cancelledServerIds,
       );
       _hubsLoadedAt = _now();
+      libraryChannelsPassToken = List<MediaHub>.unmodifiable(_hubs);
       // Credit this committed pass so a push event landing moments later
       // defers to the cooldown's trailing edge instead of refetching.
       _libraryEventPacer.notePass();
@@ -610,6 +613,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (passClearedExceptionBoundary && _commitRevision == expectedCommitRevision && !isDisposed) {
         _recordObservations(observation, pendingObservations, observedServerIds);
         if (systemShelfPassToken != null) unawaited(_syncSystemShelf(systemShelfPassToken));
+        if (libraryChannelsPassToken != null) unawaited(_syncLibraryChannels(libraryChannelsPassToken));
       }
     }
   }
@@ -709,6 +713,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${_hubs.length} hubs after merging $ids');
       safeNotifyListeners();
       unawaited(_syncSystemShelf(_onDeck));
+      if (freshHubs != null) unawaited(_syncLibraryChannels(_hubs));
     } catch (e) {
       if (isDisposed) return;
       // Keep the loaded state — stale rows beat an error flash.
@@ -1092,6 +1097,63 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   List<String> _libraryOrderKeys() => [for (final library in _libraries.libraries) library.globalKey];
 
   // --- Platform launcher shelf ----------------------------------------------
+
+  /// Publish Recently Added + New Releases Preview Channels from Discover hubs,
+  /// then best-effort Live TV channels when any Live TV server is available.
+  Future<void> _syncLibraryChannels(List<MediaHub> hubs) async {
+    if (isDisposed) return;
+    final owner = profileId;
+    if (owner == null) return;
+    // Widget tests that stub the Continue Watching shelf also skip channels.
+    if (_syncSystemShelfOverride != null) return;
+    try {
+      final settings = await SettingsService.getInstance();
+      if (isDisposed) return;
+      await SystemShelfService().syncLibraryChannels(
+        owner,
+        hubs,
+        _clientForShelfItem,
+        hideSpoilers: settings.read(SettingsService.hideSpoilers),
+        episodePosterMode: settings.read(SettingsService.episodePosterMode),
+      );
+    } catch (e) {
+      appLogger.w('Failed to sync library preview channels', error: e);
+    }
+    if (isDisposed) return;
+    await _syncLiveTvPreviewChannel(owner);
+  }
+
+  Future<void> _syncLiveTvPreviewChannel(String owner) async {
+    if (isDisposed || _syncSystemShelfOverride != null) return;
+    try {
+      if (!_multiServer.hasLiveTv) {
+        await SystemShelfService().syncLiveTvChannels(owner, const [], _clientForShelfItem);
+        return;
+      }
+      final channels = <LiveTvChannel>[];
+      final seen = <String>{};
+      for (final serverInfo in _multiServer.liveTvServers) {
+        if (isDisposed) return;
+        final client = _multiServer.getClientForServer(ServerId(serverInfo.serverId));
+        if (client == null) continue;
+        try {
+          final fetched = await client.liveTv.fetchChannels(lineup: serverInfo.lineup);
+          for (final channel in fetched) {
+            final scoped = channel.copyWith(serverId: serverInfo.serverId, liveDvrKey: serverInfo.dvrKey);
+            if (seen.add(liveTvChannelScopeKey(scoped))) {
+              channels.add(scoped);
+            }
+          }
+        } catch (e) {
+          appLogger.w('Failed to fetch Live TV channels for shelf from ${serverInfo.serverId}', error: e);
+        }
+      }
+      if (isDisposed) return;
+      await SystemShelfService().syncLiveTvChannels(owner, channels, _clientForShelfItem);
+    } catch (e) {
+      appLogger.w('Failed to sync Live TV preview channel', error: e);
+    }
+  }
 
   /// Sync Continue Watching to the platform launcher shelf. Rapid updates
   /// coalesce: a sync that arrives while one is in flight queues exactly one

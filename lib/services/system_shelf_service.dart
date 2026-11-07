@@ -6,15 +6,21 @@ import 'package:flutter/foundation.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
+import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../models/livetv_channel.dart';
+import '../screens/video_player/live_tv_session_args.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
+import 'deep_links/deep_link.dart';
 import 'jellyfin_client.dart';
 import 'plex_client.dart';
 import 'settings_service.dart' show EpisodePosterMode;
+import 'system_shelf_library_channels.dart';
+import 'system_shelf_live_tv_channels.dart';
 
 /// Syncs Continue Watching content to platform launcher surfaces.
 ///
@@ -219,6 +225,175 @@ class SystemShelfService {
             'sync',
             arguments: _envelope(profileId, generation, {'items': items, 'sectionTitle': t.discover.continueWatching}),
             label: 'Failed to sync system shelf',
+            severe: true,
+          ) ??
+          false;
+    });
+    return result ?? false;
+  }
+
+  /// Publish Android TV Preview Channels for Recently Added / New Releases,
+  /// split into Movies and TV so episode-heavy hubs cannot crowd out films.
+  ///
+  /// tvOS Top Shelf has no equivalent multi-channel surface yet, so this is a
+  /// no-op outside Android.
+  Future<bool> syncLibraryChannels(
+    String profileId,
+    List<MediaHub> hubs,
+    MediaServerClient Function(ServerId serverId) getClientForServerId, {
+    bool hideSpoilers = false,
+    EpisodePosterMode episodePosterMode = EpisodePosterMode.seriesPoster,
+  }) async {
+    if (_isTvosTarget) return false;
+    final channel = _channel;
+    if (channel == null || _activeOwner != profileId) return false;
+    final generation = _generation;
+
+    final recentMovies = SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.movies);
+    final recentTv = SystemShelfLibraryChannels.recentlyAdded(hubs, kind: SystemShelfLibraryKind.tv);
+    final newMovies = SystemShelfLibraryChannels.newReleases(hubs, kind: SystemShelfLibraryKind.movies);
+    final newTv = SystemShelfLibraryChannels.newReleases(hubs, kind: SystemShelfLibraryKind.tv);
+    if (!_owns(profileId, generation)) return false;
+
+    final supported = await isSupported();
+    if (!_owns(profileId, generation) || !supported) return false;
+
+    Map<String, dynamic> toPayload(MediaItem item, int index) {
+      final payload = _convertToShelfItem(
+        item,
+        getClientForServerId,
+        hideSpoilers: hideSpoilers,
+        episodePosterMode: episodePosterMode,
+      );
+      payload['weight'] = SystemShelfLibraryChannels.maxItems - index;
+      return payload;
+    }
+
+    Future<bool> syncRow({
+      required String key,
+      required String title,
+      required List<MediaItem> items,
+      required String label,
+    }) async {
+      if (!_owns(profileId, generation)) return false;
+      return await _invokeGuarded<bool>(
+            channel,
+            'syncChannel',
+            arguments: _envelope(profileId, generation, {
+              'channelKey': key,
+              'channelTitle': title,
+              'items': [for (var i = 0; i < items.length; i++) toPayload(items[i], i)],
+            }),
+            label: label,
+            severe: true,
+          ) ??
+          false;
+    }
+
+    final result = await _enqueueMutation<bool>(() async {
+      final okMoviesRecent = await syncRow(
+        key: 'recently_added_movies',
+        title: t.discover.previewChannelRecentlyAddedMovies,
+        items: recentMovies,
+        label: 'Failed to sync Recently Added Movies preview channel',
+      );
+      final okTvRecent = await syncRow(
+        key: 'recently_added_tv',
+        title: t.discover.previewChannelRecentlyAddedTv,
+        items: recentTv,
+        label: 'Failed to sync Recently Added TV preview channel',
+      );
+      final okMoviesNew = await syncRow(
+        key: 'new_releases_movies',
+        title: t.discover.previewChannelNewMovies,
+        items: newMovies,
+        label: 'Failed to sync New Movies preview channel',
+      );
+      final okTvNew = await syncRow(
+        key: 'new_releases_tv',
+        title: t.discover.previewChannelNewEpisodes,
+        items: newTv,
+        label: 'Failed to sync New Episodes preview channel',
+      );
+      return okMoviesRecent && okTvRecent && okMoviesNew && okTvNew;
+    });
+    return result ?? false;
+  }
+
+  /// Publish a Live TV Preview Channel from the current channel list.
+  ///
+  /// Empty [channels] clears the row. Favorites (when supplied) sort first;
+  /// otherwise channels follow guide number. Each tile deep-links via
+  /// `plezy://live`.
+  Future<bool> syncLiveTvChannels(
+    String profileId,
+    List<LiveTvChannel> channels,
+    MediaServerClient Function(ServerId serverId) getClientForServerId, {
+    Set<String> favoriteScopeKeys = const {},
+  }) async {
+    if (_isTvosTarget) return false;
+    final channel = _channel;
+    if (channel == null || _activeOwner != profileId) return false;
+    final generation = _generation;
+
+    final selected = SystemShelfLiveTvChannels.select(channels, favoriteScopeKeys: favoriteScopeKeys);
+    if (!_owns(profileId, generation)) return false;
+
+    final supported = await isSupported();
+    if (!_owns(profileId, generation) || !supported) return false;
+
+    final items = <Map<String, dynamic>>[];
+    for (var i = 0; i < selected.length; i++) {
+      final live = selected[i];
+      final serverId = serverIdOrNull(live.serverId);
+      if (serverId == null) continue;
+      String? posterSourceUri;
+      try {
+        final thumb = live.thumb ?? live.art;
+        if (thumb != null && thumb.isNotEmpty) {
+          posterSourceUri = getClientForServerId(serverId).thumbnailUrl(thumb, width: 400, height: 400);
+          if (posterSourceUri.isEmpty) posterSourceUri = null;
+        }
+      } catch (_) {
+        appLogger.w('Failed to prepare Live TV shelf artwork');
+      }
+      final title = live.title?.trim().isNotEmpty == true
+          ? live.title!
+          : (live.callSign?.trim().isNotEmpty == true
+                ? live.callSign!
+                : (live.number != null ? t.liveTv.channelNumber(number: live.number!) : t.liveTv.unknownChannel));
+      final description = [
+        if (live.number != null && live.number!.isNotEmpty) live.number,
+        if (live.callSign != null && live.callSign!.isNotEmpty && live.callSign != title) live.callSign,
+        if (live.liveTvSourceTitle != null && live.liveTvSourceTitle!.isNotEmpty) live.liveTvSourceTitle,
+      ].join(' · ');
+      items.add({
+        'contentId': 'plezy_live_${serverId.value}_${live.key}',
+        'title': title,
+        'description': description.isEmpty ? null : description,
+        'posterSourceUri': posterSourceUri,
+        'type': 'channel',
+        'duration': 0,
+        'weight': SystemShelfLiveTvChannels.maxItems - i,
+        'intentUri': LiveLink(
+          channel: live.key,
+          serverId: serverId,
+          startPosition: LiveTvStartPosition.live,
+        ).toUri().toString(),
+      });
+    }
+
+    final result = await _enqueueMutation<bool>(() async {
+      if (!_owns(profileId, generation)) return false;
+      return await _invokeGuarded<bool>(
+            channel,
+            'syncChannel',
+            arguments: _envelope(profileId, generation, {
+              'channelKey': 'live_tv',
+              'channelTitle': t.liveTv.title,
+              'items': items,
+            }),
+            label: 'Failed to sync Live TV preview channel',
             severe: true,
           ) ??
           false;
