@@ -243,6 +243,59 @@ void main() {
     expect(service.anyChangeApplied, isFalse);
   });
 
+  group('a refresh-rate switch landing after its fullscreen session ended', () {
+    // setDisplayMode answers only after [duringSwitch] ran, the way the
+    // native switch can land after Dart's fullscreen check went stale.
+    Future<Duration> matchWhile(Future<void> Function() duringSwitch) async {
+      service = DisplayModeService.forTesting(
+        SettingsService.instance,
+        FullscreenStateManager(),
+        channel: channel,
+        isWindows: false,
+        isMacOS: true,
+      );
+      await SettingsService.instance.write(SettingsService.matchRefreshRate, true);
+      await SettingsService.instance.write(SettingsService.displaySwitchDelay, 2);
+      FullscreenStateManager().setFullscreen(true);
+      addTearDown(() => FullscreenStateManager().setFullscreen(false));
+
+      setHandler((call) async {
+        calls.add(call.method);
+        switch (call.method) {
+          case 'getCurrentDisplayMode':
+            return {'width': 1512, 'height': 982, 'refreshRate': 120.0};
+          case 'getDisplayModes':
+            return [
+              for (final rate in [120.0, 48.0]) {'width': 1512, 'height': 982, 'refreshRate': rate},
+            ];
+          case 'setDisplayMode':
+            await duringSwitch();
+            return true;
+          case 'restoreDisplayMode':
+            return true;
+        }
+        throw MissingPluginException('No implementation for ${call.method}');
+      });
+      return service.applyDisplayMatching(fps: 24, sigPeak: null);
+    }
+
+    test('is undone when fullscreen was exited', () async {
+      final delay = await matchWhile(() async => FullscreenStateManager().setFullscreen(false));
+
+      expect(delay, Duration.zero);
+      expect(calls, ['getCurrentDisplayMode', 'getDisplayModes', 'setDisplayMode', 'restoreDisplayMode']);
+      expect(service.anyChangeApplied, isFalse);
+    });
+
+    test('is undone when the player closed with nothing applied yet', () async {
+      final delay = await matchWhile(() => service.restoreAll());
+
+      expect(delay, Duration.zero);
+      expect(calls, ['getCurrentDisplayMode', 'getDisplayModes', 'setDisplayMode', 'restoreDisplayMode']);
+      expect(service.anyChangeApplied, isFalse);
+    });
+  });
+
   test('a platform without a display mode backend performs no native work', () async {
     service = DisplayModeService.forTesting(
       SettingsService.instance,

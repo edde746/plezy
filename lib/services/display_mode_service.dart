@@ -22,6 +22,10 @@ class DisplayModeService {
   bool _displayModeChanged = false;
   bool _hdrStateChanged = false;
 
+  /// Bumped by [restoreAll]. A match whose native calls straddle a restore
+  /// lands after the restore had nothing to undo, so it undoes itself.
+  int _restoreEpoch = 0;
+
   bool get hdrStateChanged => _hdrStateChanged;
   bool get anyChangeApplied => _displayModeChanged || _hdrStateChanged;
 
@@ -56,6 +60,7 @@ class DisplayModeService {
       appLogger.d('Display matching skipped: not in fullscreen');
       return Duration.zero;
     }
+    final epoch = _restoreEpoch;
 
     bool anyChange = false;
 
@@ -77,6 +82,14 @@ class DisplayModeService {
       }
     }
 
+    // Leaving fullscreen or closing the player while the native calls were in
+    // flight already ran its restore, which found nothing applied yet.
+    if (anyChange && (epoch != _restoreEpoch || !_fullscreen.isFullscreen)) {
+      appLogger.d('Display matching outlived its fullscreen session; restoring');
+      await _restoreChanges();
+      return Duration.zero;
+    }
+
     if (anyChange) {
       final delaySec = _settings.read(SettingsService.displaySwitchDelay);
       return Duration(seconds: delaySec);
@@ -85,9 +98,15 @@ class DisplayModeService {
     return Duration.zero;
   }
 
+  /// Restore every change applied so far, and make any match still in flight
+  /// undo its own change when it lands.
   Future<void> restoreAll() async {
     if (!_isSupported) return;
+    _restoreEpoch++;
+    await _restoreChanges();
+  }
 
+  Future<void> _restoreChanges() async {
     if (_hdrStateChanged) {
       try {
         final restored = await _channel.invokeMethod<bool>('restoreSystemHDR');

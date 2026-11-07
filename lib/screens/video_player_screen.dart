@@ -2519,8 +2519,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     FullscreenStateManager().endScope();
     // Not _restoreDisplayMode(): that helper waits 200ms after clearing the
     // Windows HDR hint before restoring, which dispose() cannot do. Fire the
-    // hint clear at the still-live player and restore immediately.
-    if (!isReplacingWithVideo && _displayModeService != null && _displayModeService!.anyChangeApplied) {
+    // hint clear at the still-live player and restore immediately. Restore
+    // even with nothing applied yet: it makes a match still in flight undo
+    // itself when it lands.
+    if (!isReplacingWithVideo && _displayModeService != null) {
       if (_displayModeService!.hdrStateChanged && player != null) {
         final currentPlayer = player!;
         unawaited(() async {
