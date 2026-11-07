@@ -668,6 +668,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           _onDeck,
           freshOnDeck.items,
           existingCopies: _continueWatchingCopies,
+          freshCopies: freshOnDeck.copies,
           limit: _continueWatchingProbeLimit,
         );
         if (isDisposed) return;
