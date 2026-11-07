@@ -12,6 +12,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private weak var window: UIWindow?
   private var mainBlankView: UIView?
   private var isVisible = false
+  private var videoDisabledForBackground = false
   private static var activeDisplayCriteriaKey: String?
   #if os(tvOS)
     /// A `preferredDisplayCriteria` write (set or clear) not yet consumed by
@@ -25,6 +26,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   #endif
 
   var isPipStarting = false
+  var onExternalDisplayChanged: (() -> Void)?
+
+  var isExternalDisplayActive: Bool {
+    guard let externalSuperview = externalVideoSuperview else { return false }
+    return containerView?.superview === externalSuperview
+  }
 
   private static func log(_ message: @autoclosure () -> String) {
     guard MpvLog.isDebugEnabled else { return }
@@ -67,7 +74,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     setupNotifications()
     #if os(iOS)
-      ExternalDisplayManager.shared.attach(core: self)
+      ExternalDisplayManager.shared.attach(core: self, in: window)
     #endif
 
     isInitialized = true
@@ -153,8 +160,29 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
   }
 
+  var isApplicationBackgrounded: Bool {
+    window?.windowScene?.activationState == .background
+  }
+
   func externalDisplayDidChange() {
     refreshExternalDisplayAttachment()
+    if isExternalDisplayActive {
+      // The display may reconnect while the application scene stays locked.
+      // Only undo video suppression performed by our background handler.
+      if videoDisabledForBackground {
+        videoDisabledForBackground = false
+        setProperty("vid", value: "auto")
+      }
+      return
+    }
+    // An unplug while locked must not leave an invisible video playing.
+    if isApplicationBackgrounded,
+      !isPipActive, !isPipStarting
+    {
+      setProperty("pause", value: "yes")
+      // Pausing is sufficient here. Keep the selected video track so a locked
+      // reconnect can resume it without waiting for the application to activate.
+    }
   }
 
   private func refreshExternalDisplayAttachment() {
@@ -174,6 +202,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     setContainerHidden(!isVisible)
     updateFrame()
+    onExternalDisplayChanged?()
   }
 
   private var externalVideoSuperview: UIView? {
@@ -888,7 +917,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       return
     }
 
+    if isExternalDisplayActive {
+      MpvLog.debug("[MpvPlayerCore] Entering background - keeping external display video")
+      return
+    }
+
     MpvLog.debug("[MpvPlayerCore] Entering background - disabling video")
+    videoDisabledForBackground = true
     setProperty("vid", value: "no")
   }
 
@@ -900,6 +935,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     MpvLog.debug("[MpvPlayerCore] Entering foreground - enabling video")
+    videoDisabledForBackground = false
     setProperty("vid", value: "auto")
   }
 
@@ -910,6 +946,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         return
       }
 
+      videoDisabledForBackground = false
       setProperty("vid", value: "auto")
       restoreVideoPresentation()
     }

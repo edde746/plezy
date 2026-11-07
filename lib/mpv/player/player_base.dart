@@ -1350,6 +1350,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool get supportsSecondarySubtitles => true;
 
   @override
+  Future<bool> isExternalDisplayActive() async => false;
+
+  @override
   bool get detectsFpsAfterRender => false;
 
   @override
