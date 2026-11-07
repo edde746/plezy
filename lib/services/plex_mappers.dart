@@ -1090,7 +1090,11 @@ class PlexMappers {
       contentRating: dto.contentRating,
       parentId: dto.parentRatingKey,
       parentTitle: dto.parentTitle,
-      parentThumbPath: dto.parentThumb,
+      parentThumbPath: (dto.parentThumb != null && dto.parentThumb!.isNotEmpty)
+          ? dto.parentThumb
+          : (kind == MediaKind.episode && dto.parentRatingKey != null && dto.parentRatingKey!.isNotEmpty
+                ? '/library/metadata/${dto.parentRatingKey}/thumb'
+                : null),
       parentIndex: dto.parentIndex,
       index: dto.index,
       grandparentId: dto.grandparentRatingKey,

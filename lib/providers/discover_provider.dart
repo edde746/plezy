@@ -6,6 +6,7 @@ import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/library_change_event.dart';
 import '../media/media_item.dart';
+import '../media/media_item_merge.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
@@ -914,7 +915,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void _applyOnDeck(List<MediaItem> fetched, {required Map<String, List<MediaItem>> copies}) {
     final hasMore = fetched.length > continueWatchingPreviewLimit;
     _continueWatchingCopies = copies;
-    _replaceOnDeck(hasMore ? fetched.take(continueWatchingPreviewLimit).toList() : fetched, hasMore: hasMore);
+    final existingByKey = <String, MediaItem>{for (final item in _onDeck) item.globalKey: item};
+    final resolved = [
+      for (final item in fetched)
+        existingByKey.containsKey(item.globalKey) ? mergeLibraryCopy(existingByKey[item.globalKey]!, item) : item,
+    ];
+    _replaceOnDeck(hasMore ? resolved.take(continueWatchingPreviewLimit).toList() : resolved, hasMore: hasMore);
   }
 
   /// Drop copies failing [keep] from every row's copy group; a group left
