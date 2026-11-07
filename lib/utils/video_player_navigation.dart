@@ -9,10 +9,12 @@ import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_version.dart';
 import '../media/media_version_preference.dart';
+import '../media/play_queue.dart';
 import '../mpv/mpv.dart';
 import '../models/transcode_quality_preset.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/playback_state_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/models/watch_copy.dart';
@@ -264,6 +266,52 @@ Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem me
   return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
 }
 
+/// Builds the client-side [LocalPlayQueue] for a multi-part movie/video
+/// (`PartCount > 1` on Jellyfin/Emby) from [primaryPart] and its fetched
+/// [additionalParts], resolving the starting part index:
+///
+/// - When [allowSmartResume] is true, prefers the first part with active
+///   progress (`viewOffsetMs > 0`); otherwise, if [primaryPart] is watched,
+///   selects the first unwatched part (`!isWatched`), falling back to index `0`
+///   when all parts are watched.
+/// - Zeroes `viewOffsetMs` on every non-starting part (and on all parts when
+///   [resolveWatchState] is false) so part-to-part transitions always open the
+///   next part at `0:00`.
+LocalPlayQueue resolveAdditionalPartsQueue({
+  required MediaItem primaryPart,
+  required List<MediaItem> additionalParts,
+  required bool resolveWatchState,
+  required bool allowSmartResume,
+  MediaItem Function(MediaItem)? transformWatchState,
+}) {
+  final rawParts = <MediaItem>[
+    primaryPart,
+    for (final part in additionalParts)
+      transformWatchState != null
+          ? transformWatchState(inheritAdditionalPartMetadata(primaryPart, part))
+          : inheritAdditionalPartMetadata(primaryPart, part),
+  ];
+
+  var startIndex = 0;
+  if (allowSmartResume) {
+    final inProgressIdx = rawParts.indexWhere((part) => (part.viewOffsetMs ?? 0) > 0);
+    if (inProgressIdx >= 0) {
+      startIndex = inProgressIdx;
+    } else if (primaryPart.isWatched) {
+      final firstUnwatchedIdx = rawParts.indexWhere((part) => !part.isWatched);
+      if (firstUnwatchedIdx >= 0) {
+        startIndex = firstUnwatchedIdx;
+      }
+    }
+  }
+
+  final items = <MediaItem>[
+    for (var i = 0; i < rawParts.length; i++)
+      (i == startIndex && resolveWatchState) ? rawParts[i] : rawParts[i].copyWith(viewOffsetMs: 0),
+  ];
+  return LocalPlayQueue(items: items, currentIndex: startIndex);
+}
+
 /// The index and source id of [copy]'s version among [metadata]'s versions,
 /// for opening the Watch Together room's file; null when [copy] names no
 /// version or [metadata] doesn't list it (the viewer's own remembered version
@@ -337,10 +385,42 @@ Future<bool?> navigateToVideoPlayer(
   // Plex-only client. The player branches on the returned type internally.
   final manager = context.read<MultiServerProvider>().serverManager;
   final offlineWatchService = context.read<OfflineWatchSyncService>();
+  final playbackState = context.read<PlaybackStateProvider?>();
   final serverId = serverIdOrNull(metadata.serverId);
   final mediaClient = serverId != null && (!isOffline || manager.isClientOnline(serverId))
       ? manager.getClient(serverId)
       : null;
+
+  // Jellyfin/Emby split movies (`PartCount > 1`) expose subsequent files as
+  // separate items under `/Videos/{id}/AdditionalParts` (#2825). Expand them
+  // into a local queue and pick the active/unwatched part before resolving
+  // downloads or version preferences so the player opens the right part
+  // directly and holds the exact queued MediaItem instance by identity.
+  if (!isOffline &&
+      !usePushReplacement &&
+      watchTogetherCopy == null &&
+      metadata.hasAdditionalParts &&
+      mediaClient != null &&
+      (playbackState == null || !playbackState.isItemInActiveQueue(metadata))) {
+    try {
+      final additionalParts = await mediaClient.fetchAdditionalParts(metadata.id);
+      if (!launchCurrent()) return null;
+      if (additionalParts.isNotEmpty) {
+        final queue = resolveAdditionalPartsQueue(
+          primaryPart: metadata,
+          additionalParts: additionalParts,
+          resolveWatchState: resolveWatchState,
+          allowSmartResume: resolveWatchState && !explicitStartPolicy && initialPosition == null,
+          transformWatchState: resolveWatchState && context.mounted ? context.readFreshWatchState : null,
+        );
+        final startIdx = queue.currentIndex ?? 0;
+        metadata = queue.items[startIdx];
+        playbackState?.setPlaybackFromLocalQueue(queue, contextKey: queue.items.first.id);
+      }
+    } catch (e, st) {
+      appLogger.w('Failed to expand additional parts for ${metadata.id}', error: e, stackTrace: st);
+    }
+  }
 
   // Plain Play on a downloaded item must target the version actually on
   // disk, online too, so the player can open the local copy instead of
