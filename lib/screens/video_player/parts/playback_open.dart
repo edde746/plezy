@@ -878,11 +878,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       onOpening?.call();
       return player.open(
         media,
-        // The last word on the vehicle, taken here because this is the only place media actually
-        // starts: callers decide `play` before awaiting resolve, tuning and track work, and a car
-        // that starts driving in between has already spent its restriction pausing the outgoing
-        // item. `DD-3` allows video no exemption, and the gated resume paths start it once parked.
-        play: shouldPlay && automotivePlaybackAllowedNow(),
+        // The last word on the vehicle and the resume profile picker, taken here because this is
+        // the only place media actually starts: callers decide `play` before awaiting resolve,
+        // tuning and track work, and a car that starts driving in between has already spent its
+        // restriction pausing the outgoing item. `DD-3` allows video no exemption, and the gated
+        // resume paths start it once parked.
+        play: shouldPlay && automotivePlaybackAllowedNow() && !_playbackHeldForProfileSelection,
         externalSubtitles: externalSubtitles,
         timelineDuration: timing.timelineDuration,
         timelineOffset: timing.timelineOffset,

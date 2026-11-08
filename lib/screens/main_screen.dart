@@ -113,28 +113,28 @@ bool shouldHandleDesktopRootEscape({
 ///
 /// Mobile-only: on desktop `resumed` fires on every window focus gain
 /// (alt-tab, click), which is far too frequent — the startup prompt is
-/// sufficient there. Never during active video playback: waking the device
-/// mid-stream must resume the stream, not stack the root-navigator picker
-/// over the live player route, whose focus self-heal fights the picker for
-/// the remote (#2034) — the playback session already belongs to the profile
-/// that started it. Likewise never during a live companion-remote session:
-/// a phone driving another device backgrounds and sleeps constantly, and
-/// the picker + PIN would bury a session that already belongs to the
-/// profile that started it (#2087).
+/// sufficient there. An open player does not exempt the resume: "ask on
+/// open" exists so that whoever wakes the device cannot carry on with the
+/// previous profile's session, and a show left paused overnight is exactly
+/// that (#2195). The player stays paused under the picker
+/// ([VideoPlayerScreenState.holdActivePlaybackUntil]). A session that kept
+/// playing in Picture in Picture never left the user's sight, so it never
+/// arms [ProfileSelectionResumeGate]. Never during a live companion-remote
+/// session: a phone driving another device backgrounds and sleeps
+/// constantly, and the picker + PIN would bury a session that already
+/// belongs to the profile that started it (#2087).
 @visibleForTesting
 bool shouldShowProfileSelectionOnResume({
   required bool resumedFromBackground,
   required bool isOffline,
   required bool alreadyShowingProfileSelection,
   required bool isMobilePlatform,
-  required bool hasActiveVideoPlayback,
   required bool hasActiveCompanionRemoteSession,
 }) {
   return resumedFromBackground &&
       !isOffline &&
       !alreadyShowingProfileSelection &&
       isMobilePlatform &&
-      !hasActiveVideoPlayback &&
       !hasActiveCompanionRemoteSession;
 }
 
@@ -149,24 +149,42 @@ bool shouldShowProfileSelectionOnResume({
 /// previous state would miss a real return; latching the deepest state seen
 /// handles both. The startup flow owns the cold open, so a first `resumed`
 /// with no prior backgrounding does not prompt.
+///
+/// A backgrounding the active player spends in Picture in Picture does not
+/// latch: the session never left the user's sight. Only the way out decides
+/// that. Flutter walks every state in between, so a return from `paused`
+/// passes back through `hidden`, by when PiP may already have handed the
+/// session back to the app; that frame must not latch it after the fact.
 @visibleForTesting
 class ProfileSelectionResumeGate {
   bool _wasBackgrounded = false;
+  AppLifecycleState? _lastState;
 
   /// Whether a genuine backgrounding has been observed since the last resume.
   bool get wasBackgrounded => _wasBackgrounded;
 
   /// Feeds one lifecycle transition through the gate. Returns true exactly
   /// once per backgrounding: on the first `resumed` after the sequence
-  /// reached `hidden`/`paused`/`detached`. Consuming resets the latch.
-  bool consumePromptOn(AppLifecycleState state) {
+  /// reached `hidden`/`paused`/`detached` other than in Picture in Picture.
+  /// Consuming resets the latch.
+  ///
+  /// [sessionContinuesInPip] is whether the active player keeps playing in
+  /// PiP were the app backgrounded now; it is read only for frames on the way
+  /// out.
+  bool consumePromptOn(AppLifecycleState state, {bool sessionContinuesInPip = false}) {
+    final previous = _lastState;
+    _lastState = state;
     switch (state) {
       case AppLifecycleState.resumed:
         final shouldPrompt = _wasBackgrounded;
         _wasBackgrounded = false;
         return shouldPrompt;
       case AppLifecycleState.hidden:
+        if (previous != AppLifecycleState.paused && !sessionContinuesInPip) _wasBackgrounded = true;
+        return false;
       case AppLifecycleState.paused:
+        if (!sessionContinuesInPip) _wasBackgrounded = true;
+        return false;
       case AppLifecycleState.detached:
         _wasBackgrounded = true;
         return false;
@@ -1117,7 +1135,10 @@ class _MainScreenState extends State<MainScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Always consume: the gates latch backgrounding on every lifecycle event.
-    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(state);
+    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(
+      state,
+      sessionContinuesInPip: VideoPlayerScreenState.activeSessionContinuesInPip,
+    );
     final refreshStaleContent = _contentRefreshResumeGate.consumeRefreshOn(state);
     // Seerr authority is independent of media-server reachability and stale
     // content. A grant must recover hidden Request actions on any real resume.
@@ -1129,7 +1150,6 @@ class _MainScreenState extends State<MainScreen>
       isOffline: _isOffline,
       alreadyShowingProfileSelection: _isShowingProfileSelection,
       isMobilePlatform: Platform.isAndroid || Platform.isIOS,
-      hasActiveVideoPlayback: VideoPlayerScreenState.activeGlobalKey != null,
       // Short-circuit on resumedFromBackground: the provider is lazy and
       // otherwise unused on phones, so an unconditional read would create it
       // on the first lifecycle event for users who never open the remote.
@@ -1172,7 +1192,11 @@ class _MainScreenState extends State<MainScreen>
     // The link that brought the app forward names the profile to open.
     if (DeepLinkService.instance.selectsProfile) return;
 
-    await _pushProfileSelection();
+    final selection = _pushProfileSelection();
+    // Pushed synchronously above; from here on the picker stands between
+    // whoever woke the device and the previous profile's session.
+    VideoPlayerScreenState.holdActivePlaybackUntil(selection);
+    await selection;
   }
 
   /// IndexedStack that disables tickers for offscreen children to prevent

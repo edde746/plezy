@@ -106,7 +106,8 @@ class WatchTogetherProvider extends ChangeNotifier {
   bool _attached = false;
 
   /// Why the user is away from the player (the app in the background, a car
-  /// that forbids video): the room stops waiting for them meanwhile.
+  /// that forbids video, the profile picker over it): the room stops waiting
+  /// for them meanwhile.
   final Set<_Away> _away = {};
   bool get _isAway => _away.isNotEmpty;
   bool _playBlocked = false;
@@ -522,6 +523,10 @@ class WatchTogetherProvider extends ChangeNotifier {
   /// [setBackgrounded].
   void setVehicleRestricted(bool restricted) => _setAway(_Away.vehicle, restricted);
 
+  /// The resume profile picker covers the player (or a profile was chosen),
+  /// as [setBackgrounded].
+  void setAwaitingProfileSelection(bool awaiting) => _setAway(_Away.profileSelection, awaiting);
+
   void _setAway(_Away reason, bool away) {
     final wasAway = _isAway;
     if (away) {
@@ -756,4 +761,4 @@ String _sanitizedName(String name) {
   return kept.isEmpty ? 'Plezy' : kept;
 }
 
-enum _Away { background, vehicle }
+enum _Away { background, vehicle, profileSelection }

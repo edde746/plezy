@@ -696,7 +696,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       // playback-intent wrappers below, so `onPause` can never be denied: a
       // gated `canControlPlayback` would make the router swallow `PauseEvent`.
       canControlPlayback: _canControlPlayback,
-      canNavigateMediaItems: () => _canNavigateMediaItems() && automotivePlaybackAllowedNow(),
+      canNavigateMediaItems: () =>
+          _canNavigateMediaItems() && automotivePlaybackAllowedNow() && !_playbackHeldForProfileSelection,
       onPlay: () {
         final currentPlayer = player;
         if (currentPlayer == null) return;
@@ -791,6 +792,19 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       final currentPlayer = player;
       if (currentPlayer != null) {
         _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'TV background');
+      }
+      unawaited(_wakelockController.setEnabled(false));
+      return;
+    }
+
+    if (isPlaying && _playbackHeldForProfileSelection) {
+      // As for the vehicle above: a native resume (audio-focus regain) skips
+      // the playback-intent wrappers, and nothing may play the covered session
+      // before the resume profile picker gets a choice.
+      appLogger.w('Playback started while the profile picker covers the player; pausing');
+      final currentPlayer = player;
+      if (currentPlayer != null) {
+        _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'Profile selection');
       }
       unawaited(_wakelockController.setEnabled(false));
       return;

@@ -553,6 +553,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
+  /// Whether the active player keeps the session on screen in Picture in
+  /// Picture if the app is backgrounded now. The resume profile prompt reads
+  /// it as the app leaves the foreground: a session that stayed in sight never
+  /// needs a profile chosen again (#2195).
+  static bool get activeSessionContinuesInPip {
+    final owner = _activeRouteGuard.owner;
+    return owner is VideoPlayerScreenState && owner._sessionContinuesInPip;
+  }
+
+  /// Keeps the active player paused until [until] completes. The resume
+  /// profile picker covers the player, and whoever woke the device must choose
+  /// a profile (and pass its PIN) before the previous profile's session plays
+  /// again; a choice of the same profile leaves it paused for them to resume.
+  static void holdActivePlaybackUntil(Future<void> until) {
+    final owner = _activeRouteGuard.owner;
+    if (owner is VideoPlayerScreenState) owner._holdPlaybackForProfileSelection(until);
+  }
+
   Player? player;
   VideoVolumeController? _volumeController;
   bool _isPlayerInitialized = false;
@@ -957,6 +975,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled) ||
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
+  /// Whether backgrounding now leaves this session playing in PiP. Narrower
+  /// than [_shouldSkipForPip], which also leaves a *paused* Apple player alone
+  /// when auto-PiP is enabled: nothing is lost by not pausing a paused player,
+  /// but native auto-PiP is armed only while playing ([_updateAutoPipState]),
+  /// so a paused one leaves the screen with the app.
+  bool get _sessionContinuesInPip =>
+      PipService().isPipActive.value ||
+      (Platform.isAndroid && _androidAutoPipTransitionInFlight) ||
+      ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled && _pipInitialized && (player?.state.playing ?? false));
+
+  /// Open [holdActivePlaybackUntil] holds; playback may not start while any is.
+  int _profileSelectionHolds = 0;
+  bool get _playbackHeldForProfileSelection => _profileSelectionHolds > 0;
+
   MediaControlsManager? _mediaControlsManager;
 
   /// [_initializeServices] ran while the open had already failed and left the
@@ -970,6 +1002,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     hasLiveSeekWindow: () => _live.captureBuffer != null,
     hasNextLiveChannel: () => _hasNextChannel,
     hasPreviousLiveChannel: () => _hasPreviousChannel,
+    isPlaybackHeld: () => _playbackHeldForProfileSelection,
     shouldSkipForPip: () => _shouldSkipForPip,
     isPlayerInitialized: () => _isPlayerInitialized,
     metadata: () => _currentMetadata,
@@ -1190,6 +1223,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       appLogger.d('Playback blocked while Android Automotive app is not resumed');
       return Future<void>.value();
     }
+    if (_playbackHeldForProfileSelection) {
+      _playbackIntentShouldPlay = false;
+      appLogger.d('Playback held while the profile picker covers the player');
+      return Future<void>.value();
+    }
     _playbackIntentShouldPlay = true;
     if (widget.isLive && _live.retryFailed) {
       return _retryLiveStreamForPlayIntent();
@@ -1212,6 +1250,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (_shuttingDown) return Future<void>.value();
     if (!automotivePlaybackAllowedNow()) {
       appLogger.d('Play/pause requested while Android Automotive app is not resumed; keeping playback paused');
+      return _pauseWithPlaybackIntent(currentPlayer);
+    }
+    if (_playbackHeldForProfileSelection) {
+      appLogger.d('Play/pause requested while the profile picker covers the player; keeping playback paused');
       return _pauseWithPlaybackIntent(currentPlayer);
     }
     if (widget.isLive && _live.retryFailed) {

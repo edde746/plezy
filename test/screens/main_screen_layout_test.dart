@@ -152,13 +152,12 @@ void main() {
     );
   });
 
-  test('resume prompt is suppressed during playback (#2034) and companion sessions (#2087)', () {
+  test('resume prompt is suppressed during companion sessions (#2087)', () {
     bool should({
       bool resumedFromBackground = true,
       bool isOffline = false,
       bool alreadyShowingProfileSelection = false,
       bool isMobilePlatform = true,
-      bool hasActiveVideoPlayback = false,
       bool hasActiveCompanionRemoteSession = false,
     }) {
       return shouldShowProfileSelectionOnResume(
@@ -166,15 +165,11 @@ void main() {
         isOffline: isOffline,
         alreadyShowingProfileSelection: alreadyShowingProfileSelection,
         isMobilePlatform: isMobilePlatform,
-        hasActiveVideoPlayback: hasActiveVideoPlayback,
         hasActiveCompanionRemoteSession: hasActiveCompanionRemoteSession,
       );
     }
 
     expect(should(), isTrue);
-    // Waking the device mid-stream resumes the stream; the picker would
-    // fight the player's focus self-heal for the remote.
-    expect(should(hasActiveVideoPlayback: true), isFalse);
     // A phone driving another device backgrounds constantly; the picker +
     // PIN would bury the live remote session.
     expect(should(hasActiveCompanionRemoteSession: true), isFalse);
@@ -215,6 +210,40 @@ void main() {
         expect(gate.consumePromptOn(state), isFalse);
         expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue, reason: '$state');
       }
+    });
+
+    // The full sequences Flutter delivers: it walks every state in between,
+    // so a return from `paused` passes back through `hidden`.
+    const goesToBackground = [AppLifecycleState.inactive, AppLifecycleState.hidden, AppLifecycleState.paused];
+    const comesBack = [AppLifecycleState.hidden, AppLifecycleState.inactive, AppLifecycleState.resumed];
+
+    test('does not prompt after a backgrounding spent in Picture in Picture (#2195)', () {
+      final gate = ProfileSelectionResumeGate();
+      for (final state in goesToBackground) {
+        expect(gate.consumePromptOn(state, sessionContinuesInPip: true), isFalse);
+      }
+      // PiP hands the session back before Flutter's return frames arrive.
+      final prompts = [for (final state in comesBack) gate.consumePromptOn(state)];
+      expect(prompts, [false, false, false]);
+    });
+
+    test('prompts after a full round trip without Picture in Picture', () {
+      final gate = ProfileSelectionResumeGate();
+      for (final state in goesToBackground) {
+        gate.consumePromptOn(state);
+      }
+      // PiP starting only on the way back in cannot excuse the backgrounding.
+      final prompts = [for (final state in comesBack) gate.consumePromptOn(state, sessionContinuesInPip: true)];
+      expect(prompts, [false, false, true]);
+    });
+
+    test('one way-out frame without Picture in Picture is enough to prompt', () {
+      final gate = ProfileSelectionResumeGate();
+      gate.consumePromptOn(AppLifecycleState.inactive, sessionContinuesInPip: true);
+      gate.consumePromptOn(AppLifecycleState.hidden);
+      gate.consumePromptOn(AppLifecycleState.paused, sessionContinuesInPip: true);
+      final prompts = [for (final state in comesBack) gate.consumePromptOn(state)];
+      expect(prompts, [false, false, true]);
     });
 
     test('does not prompt without a prior backgrounding (cold open)', () {

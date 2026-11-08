@@ -74,6 +74,38 @@ void main() {
 
     expect(argumentsOf('disableControls'), containsAll(<String>['previous', 'next']));
   });
+
+  group('restoreAfterResume', () {
+    Future<({List<String> transport, bool latchCleared})> resume({required bool held}) async {
+      final manager = MediaControlsManager();
+      addTearDown(manager.dispose);
+      final transport = <String>[];
+      var wasPlaying = true;
+      final controller = _vodController(
+        manager: manager,
+        player: FakeSyncPlayer(position: const Duration(minutes: 30)),
+        metadata: testMediaItem(kind: MediaKind.movie, title: 'Film'),
+        isPlaybackHeld: () => held,
+        transport: transport,
+        wasPlayingBeforeInactive: () => wasPlaying,
+        clearWasPlayingBeforeInactive: () => wasPlaying = false,
+      );
+      await controller.restoreAfterResume();
+      return (transport: transport, latchCleared: !wasPlaying);
+    }
+
+    test('rewinds and resumes a session that was playing when the app left', () async {
+      final result = await resume(held: false);
+      expect(result.transport, ['seek:${const Duration(minutes: 29, seconds: 50).inMilliseconds}', 'play']);
+      expect(result.latchCleared, isTrue);
+    });
+
+    test('leaves the session paused and unrewound under the resume profile picker', () async {
+      final result = await resume(held: true);
+      expect(result.transport, isEmpty);
+      expect(result.latchCleared, isTrue, reason: 'choosing a profile, not a later resume, decides what plays');
+    });
+  });
 }
 
 MediaControlsScreenController _vodController({
@@ -81,6 +113,10 @@ MediaControlsScreenController _vodController({
   required FakeSyncPlayer player,
   required MediaItem metadata,
   bool canNavigateMediaItems = true,
+  bool Function()? isPlaybackHeld,
+  List<String>? transport,
+  bool Function()? wasPlayingBeforeInactive,
+  void Function()? clearWasPlayingBeforeInactive,
 }) {
   return MediaControlsScreenController(
     manager: () => manager,
@@ -90,6 +126,7 @@ MediaControlsScreenController _vodController({
     hasLiveSeekWindow: () => false,
     hasNextLiveChannel: () => false,
     hasPreviousLiveChannel: () => false,
+    isPlaybackHeld: isPlaybackHeld ?? () => false,
     shouldSkipForPip: () => false,
     isPlayerInitialized: () => true,
     metadata: () => metadata,
@@ -98,10 +135,10 @@ MediaControlsScreenController _vodController({
     canControlPlayback: () => true,
     canNavigateMediaItems: () => canNavigateMediaItems,
     rewindOnResumeSeconds: () => 10,
-    seek: (_) async {},
-    play: (_) async {},
-    wasPlayingBeforeInactive: () => false,
-    clearWasPlayingBeforeInactive: () {},
+    seek: (position) async => transport?.add('seek:${position.inMilliseconds}'),
+    play: (_) async => transport?.add('play'),
+    wasPlayingBeforeInactive: wasPlayingBeforeInactive ?? () => false,
+    clearWasPlayingBeforeInactive: clearWasPlayingBeforeInactive ?? () {},
     wakelock: WakelockController(),
     recordLifecycle: (_, {action}) {},
   );
