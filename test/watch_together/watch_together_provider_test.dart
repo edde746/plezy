@@ -816,6 +816,44 @@ void main() {
       expect(screen.players.single.adapter.copy, _copyOf(_guestAlien));
       expect(g.provider.canJoinPlayback, isFalse);
     });
+
+    _roomTest('a guest that switches to another version of its file keeps following, and the room seeks it', (
+      world,
+    ) async {
+      final (host: h, guest: g, hostPlayer: _, :screen) = await world.following();
+      final remux = _openPlayer(
+        _copyOf(_alien('g-alien', 'guest-nas', durationMs: _alienMs + 800, version: 'g-remux')),
+      );
+
+      g.provider.playerOpened(remux.adapter, shareable: true, roomLaunch: false);
+      await world.until(() => g.provider.isFollowing, 'the guest follows the other version');
+      expect(g.provider.roomCopy?.ref, remux.adapter.copy);
+      expect(g.provider.canJoinPlayback, isFalse);
+      expect(screen.players, hasLength(1), reason: 'the switched file is the guest pick, so nothing reopens');
+
+      expect(h.provider.seek(const Duration(minutes: 20)), isTrue);
+      await world.until(
+        () => remux.player.commandLog.any(
+          (command) => command.startsWith('seek:') && int.parse(command.substring(5)) >= 1200000,
+        ),
+        'the room seeks the other version',
+      );
+    });
+
+    _roomTest('a version the room cannot take sits out instead of holding the room', (world) async {
+      final (host: h, guest: g, hostPlayer: _, screen: _) = await world.following();
+      // No length anywhere and no server to read it from: the party refuses it.
+      final unknown = _openPlayer(_copyOf(_alien('g-alien', 'guest-nas', durationMs: null, version: 'g-remux')));
+
+      g.provider.playerOpened(unknown.adapter, shareable: true, roomLaunch: false);
+      await world.noticed<ChoiceFailedNotice>(g, 'the guest is told');
+      expect(g.provider.isFollowing, isFalse);
+      expect(g.provider.roomCopy?.ref, _copyOf(_guestAlien), reason: 'the room keeps the guest earlier pick');
+      await world.until(
+        () => h.participant(g.peerId).player == owp.PlayerState.idle,
+        'the room stops waiting for the guest',
+      );
+    });
   });
 
   group('on a real relay', skip: _relayBinary == null ? 'OWP_RELAY_BIN is not set' : false, () {

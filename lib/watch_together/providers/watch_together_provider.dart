@@ -117,6 +117,10 @@ class WatchTogetherProvider extends ChangeNotifier {
   String? _openedKey;
   int _shareGeneration = 0;
 
+  /// Bumped by every [choose]: the SDK drops an earlier choice's pending probe
+  /// for a later one, so only the latest choice may act on its refusal.
+  int _chooseGeneration = 0;
+
   WatchPlayerHooks? _playerHooks;
   Object? _playerHooksOwner;
 
@@ -337,6 +341,7 @@ class WatchTogetherProvider extends ChangeNotifier {
   /// Plays [candidate] for the room's media. False when it can't (no length,
   /// the media changed meanwhile).
   Future<bool> choose(owp.Candidate<WatchCopy> candidate) async {
+    _chooseGeneration++;
     final party = _party;
     if (party == null) return false;
     try {
@@ -451,8 +456,8 @@ class WatchTogetherProvider extends ChangeNotifier {
   /// when the room asked for this file.
   ///
   /// A host shares the file with the room. A guest's player follows the room
-  /// when it opened the room's file, and else sits out so the room doesn't
-  /// wait for it.
+  /// when it opened the room's file or another version of it, and else sits
+  /// out so the room doesn't wait for it.
   void playerOpened(PlezyPlayerAdapter adapter, {required bool shareable, required bool roomLaunch}) {
     final previous = _player?.adapter;
     if (previous != null && !identical(previous, adapter)) previous.release();
@@ -481,17 +486,40 @@ class WatchTogetherProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (_state.choice?.ref == copy) {
+    final choice = _state.choice?.ref;
+    final otherVersion = choice != null && choice.serverId == copy.serverId && choice.itemId == copy.itemId;
+    if (choice == copy) {
       party.attachPlayer(adapter, copy);
       _attached = true;
-    } else if (roomLaunch && media != null && copy.item != null) {
+    } else if ((roomLaunch || otherVersion) && media != null && copy.item != null) {
+      // The room asked for this file, or the user switched the version the
+      // room picked: this file becomes the user's pick for the room's media.
       party.attachPlayer(adapter, copy);
       _attached = true;
-      unawaited(chooseCopy(copy.item!, copy.version));
+      unawaited(_chooseOpened(party, adapter));
     } else {
       _attached = false;
       unawaited(party.detachPlayer());
     }
+    notifyListeners();
+  }
+
+  /// Picks the file [adapter] has open for the room's media. When the party
+  /// refuses it (its length is unknown), the player sits out: attached to a
+  /// file the room never commands, it would keep the room waiting for it.
+  Future<void> _chooseOpened(owp.WatchParty<WatchCopy> party, PlezyPlayerAdapter adapter) async {
+    final copy = adapter.copy;
+    final epoch = party.state.room?.epoch;
+    // choose() bumps the generation before its first await.
+    final chosen = chooseCopy(copy.item!, copy.version);
+    final generation = _chooseGeneration;
+    if (await chosen) return;
+    // A later choice or a new epoch's search decides what this player follows.
+    if (_disposed || !identical(_party, party) || generation != _chooseGeneration) return;
+    if (party.state.room?.epoch != epoch || !_attached || !identical(_player?.adapter, adapter)) return;
+    _attached = false;
+    unawaited(party.detachPlayer(adapter));
+    _notify(const ChoiceFailedNotice());
     notifyListeners();
   }
 

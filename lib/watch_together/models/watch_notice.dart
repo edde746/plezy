@@ -73,3 +73,9 @@ class NotSharedNotice extends WatchNotice {
 class OpenFailedNotice extends WatchNotice {
   const OpenFailedNotice();
 }
+
+/// The file a guest's player opened could not be picked for the room's media;
+/// the player plays it on its own.
+class ChoiceFailedNotice extends WatchNotice {
+  const ChoiceFailedNotice();
+}
