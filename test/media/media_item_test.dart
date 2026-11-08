@@ -768,4 +768,72 @@ void main() {
       expect(_movie(year: 2001).albumYear, isNull);
     });
   });
+
+  group('MediaItem.seasonPosterPath and fallback', () {
+    test('uses server-supplied parentThumbPath when present', () {
+      final ep = testMediaItem(
+        id: 'ep1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        parentId: '200',
+        parentThumbPath: '/library/metadata/200/thumb/12345',
+        grandparentThumbPath: '/library/metadata/100/thumb/99999',
+        thumbPath: '/library/metadata/ep1/thumb',
+      );
+
+      expect(ep.seasonPosterPath, '/library/metadata/200/thumb/12345');
+      expect(ep.posterThumb(mode: EpisodePosterMode.seasonPoster), '/library/metadata/200/thumb/12345');
+      expect(ep.posterThumbFallback(mode: EpisodePosterMode.seasonPoster), '/library/metadata/100/thumb/99999');
+    });
+
+    test('synthesizes season path when Plex omits parentThumbPath but parentId is present', () {
+      final ep = testMediaItem(
+        id: 'ep1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        parentId: '61183',
+        parentThumbPath: null,
+        grandparentThumbPath: '/library/metadata/61182/thumb/1700000000',
+        thumbPath: '/library/metadata/61185/thumb/1700000001',
+      );
+
+      expect(ep.seasonPosterPath, '/library/metadata/61183/thumb');
+      expect(ep.posterThumb(mode: EpisodePosterMode.seasonPoster), '/library/metadata/61183/thumb');
+      // When the season has no poster on the server, the synthesized path 404s,
+      // and posterThumbFallback cleanly yields the series poster.
+      expect(ep.posterThumbFallback(mode: EpisodePosterMode.seasonPoster), '/library/metadata/61182/thumb/1700000000');
+    });
+
+    test('falls back to series poster directly when parentId is absent', () {
+      final ep = testMediaItem(
+        id: 'ep1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        parentId: null,
+        parentThumbPath: null,
+        grandparentThumbPath: '/library/metadata/61182/thumb/1700000000',
+        thumbPath: '/library/metadata/61185/thumb/1700000001',
+      );
+
+      expect(ep.seasonPosterPath, isNull);
+      expect(ep.posterThumb(mode: EpisodePosterMode.seasonPoster), '/library/metadata/61182/thumb/1700000000');
+      expect(ep.posterThumbFallback(mode: EpisodePosterMode.seasonPoster), isNull);
+    });
+
+    test('non-Plex backend does not synthesize Plex path when parentThumbPath is null', () {
+      final ep = testMediaItem(
+        id: 'ep1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        parentId: 'jelly-season-1',
+        parentThumbPath: null,
+        grandparentThumbPath: '/Items/jelly-series-1/Images/Primary',
+        thumbPath: '/Items/ep1/Images/Primary',
+      );
+
+      expect(ep.seasonPosterPath, isNull);
+      expect(ep.posterThumb(mode: EpisodePosterMode.seasonPoster), '/Items/jelly-series-1/Images/Primary');
+      expect(ep.posterThumbFallback(mode: EpisodePosterMode.seasonPoster), isNull);
+    });
+  });
 }

@@ -41,19 +41,9 @@ import 'media_card_list_layout.dart';
 import 'backend_badge.dart';
 import 'optimized_media_image.dart';
 
-const _failedPosterUrlCacheLimit = 512;
-final _failedPosterUrls = <String>{};
+bool _hasFailedPosterUrl(String? url) => MediaImageHelper.hasFailedPosterUrl(url);
 
-bool _hasFailedPosterUrl(String? url) => url != null && _failedPosterUrls.contains(url);
-
-void _rememberFailedPosterUrl(String? url) {
-  if (url == null || url.isEmpty) return;
-  _failedPosterUrls.remove(url);
-  _failedPosterUrls.add(url);
-  if (_failedPosterUrls.length > _failedPosterUrlCacheLimit) {
-    _failedPosterUrls.remove(_failedPosterUrls.first);
-  }
-}
+void _rememberFailedPosterUrl(String? url) => MediaImageHelper.rememberFailedPosterUrl(url);
 
 const int _catalogBadgeLimit = 3;
 String? _compactNumberLocale;

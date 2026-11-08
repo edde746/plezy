@@ -7,7 +7,11 @@ import 'package:plezy/theme/mono_theme.dart';
 
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/screens/libraries/folder_tree_item.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/media_image_helper.dart';
+import 'package:plezy/widgets/optimized_media_image.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 void main() {
   testWidgets('folder rows use the item title for seasons', (tester) async {
@@ -109,5 +113,94 @@ void main() {
     await tester.pumpAndSettle();
     expect(player.hasPrimaryFocus, isTrue);
     expect(row.hasFocus, isFalse);
+  });
+
+  testWidgets('episode row in season poster mode falls back to series poster when season poster fails', (tester) async {
+    resetSharedPreferencesForTest();
+    MediaImageHelper.clearFailedPosterUrls();
+    await SettingsService.getInstance();
+    await SettingsService.instance.write(SettingsService.episodePosterMode, EpisodePosterMode.seasonPoster);
+
+    final item = testMediaItem(
+      id: 'ep-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Episode 1',
+      parentId: 'season-61183',
+      parentThumbPath: null, // Season has no poster on PMS
+      grandparentThumbPath: '/library/metadata/show-61182/thumb',
+      thumbPath: '/library/metadata/ep-1/thumb',
+    );
+
+    Future<void> pumpRow() => tester.pumpWidget(
+      MaterialApp(
+        home: Material(child: FolderTreeItem(item: item, depth: 0, isFolder: false)),
+      ),
+    );
+
+    await pumpRow();
+    final primaryFinder = find
+        .descendant(of: find.byType(FolderTreeItem), matching: find.byType(OptimizedMediaImage))
+        .first;
+    final primary = tester.widget<OptimizedMediaImage>(primaryFinder);
+    expect(primary.imagePath, '/library/metadata/season-61183/thumb');
+    expect(primary.errorWidget, isNotNull);
+
+    // Unresolved error (e.g. no client in offline / disconnected state) preserves primary path on rebuild
+    final unresolvedFallback = primary.errorWidget!(
+      tester.element(primaryFinder),
+      '/library/metadata/season-61183/thumb',
+      const UnresolvedImageUrl('/library/metadata/season-61183/thumb'),
+    );
+    expect(unresolvedFallback, isA<OptimizedMediaImage>());
+    expect((unresolvedFallback as OptimizedMediaImage).imagePath, '/library/metadata/show-61182/thumb');
+
+    await pumpRow();
+    final unresolvedRebuild = tester.widget<OptimizedMediaImage>(primaryFinder);
+    expect(unresolvedRebuild.imagePath, '/library/metadata/season-61183/thumb');
+
+    // Attempted-and-failed load (e.g. season has no poster on server -> 404) records dead URL
+    final failedFallback = unresolvedRebuild.errorWidget!(
+      tester.element(primaryFinder),
+      '/library/metadata/season-61183/thumb',
+      StateError('404 Not Found'),
+    );
+    expect(failedFallback, isA<OptimizedMediaImage>());
+    expect((failedFallback as OptimizedMediaImage).imagePath, '/library/metadata/show-61182/thumb');
+    expect(MediaImageHelper.hasFailedPosterUrl('/library/metadata/season-61183/thumb'), isTrue);
+
+    // Subsequent builds of FolderTreeItem go straight to the remembered fallback series poster
+    await pumpRow();
+    expect(tester.widget<OptimizedMediaImage>(primaryFinder).imagePath, '/library/metadata/show-61182/thumb');
+  });
+
+  testWidgets('episode row in season poster mode uses season poster path when available', (tester) async {
+    resetSharedPreferencesForTest();
+    MediaImageHelper.clearFailedPosterUrls();
+    await SettingsService.getInstance();
+    await SettingsService.instance.write(SettingsService.episodePosterMode, EpisodePosterMode.seasonPoster);
+
+    final item = testMediaItem(
+      id: 'ep-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Episode 1',
+      parentId: 'season-61183',
+      parentThumbPath: '/library/metadata/season-61183/thumb/12345',
+      grandparentThumbPath: '/library/metadata/show-61182/thumb',
+      thumbPath: '/library/metadata/ep-1/thumb',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Material(child: FolderTreeItem(item: item, depth: 0, isFolder: false)),
+      ),
+    );
+
+    final primaryFinder = find
+        .descendant(of: find.byType(FolderTreeItem), matching: find.byType(OptimizedMediaImage))
+        .first;
+    final primary = tester.widget<OptimizedMediaImage>(primaryFinder);
+    expect(primary.imagePath, '/library/metadata/season-61183/thumb/12345');
   });
 }

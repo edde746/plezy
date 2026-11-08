@@ -519,6 +519,18 @@ sealed class MediaItem with _$MediaItem {
     return false;
   }
 
+  /// When [parentThumbPath] is absent (e.g. sparse Plex hub payloads), returns
+  /// the canonical synthesized season thumbnail path if available.
+  String? get seasonPosterPath {
+    if (parentThumbPath != null && parentThumbPath!.isNotEmpty) {
+      return parentThumbPath;
+    }
+    if (this case PlexMediaItem() when parentId != null && parentId!.isNotEmpty) {
+      return '/library/metadata/$parentId/thumb';
+    }
+    return null;
+  }
+
   /// Returns the appropriate poster path based on episode poster mode.
   String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
     if (kind == MediaKind.episode) {
@@ -526,7 +538,7 @@ sealed class MediaItem with _$MediaItem {
         case EpisodePosterMode.episodeThumbnail:
           return thumbPath;
         case EpisodePosterMode.seasonPoster:
-          return parentThumbPath ?? grandparentThumbPath ?? thumbPath;
+          return seasonPosterPath ?? grandparentThumbPath ?? thumbPath;
         case EpisodePosterMode.seriesPoster:
           return grandparentThumbPath ?? thumbPath;
       }

@@ -15,6 +15,7 @@ import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/formatters.dart';
 import '../../utils/focus_utils.dart';
+import '../../utils/media_image_helper.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/media_context_menu.dart';
@@ -338,30 +339,44 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     double height,
   ) {
     final item = widget.item;
-    final posterUrl = item.posterThumb(mode: episodePosterMode);
+    final defaultPosterUrl = item.posterThumb(mode: episodePosterMode);
+    final fallbackUrl = item.posterThumbFallback(mode: episodePosterMode);
+    final useRememberedFallback = fallbackUrl != null && MediaImageHelper.hasFailedPosterUrl(defaultPosterUrl);
+    final posterUrl = useRememberedFallback ? fallbackUrl : defaultPosterUrl;
     // Backend-neutral so Jellyfin items render via Jellyfin's transcoder.
     final client = context.tryGetMediaClientWithFallback(serverIdOrNull(widget.serverId));
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
+    final isWide = item.usesWideAspectRatio(episodePosterMode);
 
-    Widget image;
-    if (item.usesWideAspectRatio(episodePosterMode)) {
-      image = OptimizedMediaImage.thumb(
-        client: client,
-        imagePath: posterUrl,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
-    } else {
-      image = OptimizedMediaImage.poster(
-        client: client,
-        imagePath: posterUrl,
-        width: width,
-        height: height,
-        fit: BoxFit.cover,
-      );
+    OptimizedMediaImage buildImage(String? path, {Widget Function(BuildContext, String, dynamic)? errorWidget}) =>
+        isWide
+        ? OptimizedMediaImage.thumb(
+            client: client,
+            imagePath: path,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+            errorWidget: errorWidget,
+          )
+        : OptimizedMediaImage.poster(
+            client: client,
+            imagePath: path,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+            errorWidget: errorWidget,
+          );
+
+    Widget Function(BuildContext, String, dynamic)? retryWithFallback() {
+      if (fallbackUrl == null || useRememberedFallback) return null;
+      return (_, _, error) {
+        if (error is! UnresolvedImageUrl) MediaImageHelper.rememberFailedPosterUrl(defaultPosterUrl);
+        return buildImage(fallbackUrl);
+      };
     }
+
+    final image = buildImage(posterUrl, errorWidget: isWide ? null : retryWithFallback());
 
     if (shouldBlur) {
       return ClipRect(

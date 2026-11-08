@@ -432,6 +432,25 @@ class MediaImageHelper {
     return ToneMappedLogoImage(bounded, target: logoToneTarget, remapMixed: logoToneRemapMixed);
   }
 
+  static const int _failedPosterUrlCacheLimit = 512;
+  static final Set<String> _failedPosterUrls = <String>{};
+
+  /// Whether [url] was previously recorded as having failed to load.
+  static bool hasFailedPosterUrl(String? url) => url != null && _failedPosterUrls.contains(url);
+
+  /// Remember that [url] failed to load so subsequent builds fall straight back.
+  static void rememberFailedPosterUrl(String? url) {
+    if (url == null || url.isEmpty) return;
+    _failedPosterUrls.remove(url);
+    _failedPosterUrls.add(url);
+    if (_failedPosterUrls.length > _failedPosterUrlCacheLimit) {
+      _failedPosterUrls.remove(_failedPosterUrls.first);
+    }
+  }
+
+  @visibleForTesting
+  static void clearFailedPosterUrls() => _failedPosterUrls.clear();
+
   static final _serverArtworkCacheKeys = <String, String>{};
   static const _serverArtworkCacheKeyLimit = 512;
 
