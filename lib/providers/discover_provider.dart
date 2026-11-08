@@ -876,29 +876,45 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return fetched.items;
   }
 
-  /// Refetch a single item (post-edit refresh from a hub row) through its
-  /// source server and swap it into whichever lists contain that qualified
-  /// identity.
+  /// Reconcile [source] after the user acted on it: returned from its player
+  /// or detail screen, or edited it in place.
+  ///
+  /// Continue Watching rows are written only by the on-deck fetch, so a row
+  /// (or a copy it absorbed) reconciles through [refreshContinueWatching].
+  /// Splicing the `fetchItem` copy into the row raced the refresh Home starts
+  /// on route return, and the two shapes carry different artwork (Plex's full
+  /// metadata has a season poster older servers' hub rows lack), so the poster
+  /// flipped with whichever response landed last (#2950). Ordinary hubs have
+  /// no competing refetch and keep the in-place swap, fetched through the
+  /// source server only when one of them holds the item.
   Future<void> updateItem(MediaItem source) async {
+    if (isDisposed) return;
     final serverId = source.serverId;
     if (serverId == null) return;
+    final globalKey = source.globalKey;
 
+    await Future.wait([
+      if (_isInContinueWatching(globalKey)) refreshContinueWatching(),
+      if (_hubs.any((hub) => hub.items.any((item) => item.globalKey == globalKey)))
+        _refreshHubItem(ServerId(serverId), source.id, globalKey),
+    ]);
+  }
+
+  bool _isInContinueWatching(String globalKey) =>
+      _onDeck.followedBy(_continueWatchingCopyItems).any((item) => item.globalKey == globalKey);
+
+  Future<void> _refreshHubItem(ServerId serverId, String itemId, String globalKey) async {
     try {
-      final updated = await _multiServer.getClientForServer(ServerId(serverId))?.fetchItem(source.id);
+      final updated = await _multiServer.getClientForServer(serverId)?.fetchItem(itemId);
       if (updated == null || isDisposed) return;
-      _updateItemInLists(source.globalKey, updated);
+      _replaceInHubs(globalKey, updated);
       safeNotifyListeners();
     } catch (_) {
       // Silently fail — the item will refresh on the next full reload.
     }
   }
 
-  void _updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
-    final onDeckIndex = _onDeck.indexWhere((item) => item.globalKey == sourceGlobalKey);
-    if (onDeckIndex != -1) {
-      _replaceOnDeck(List.of(_onDeck)..[onDeckIndex] = updatedItem, hasMore: _hasMoreContinueWatching);
-    }
-
+  void _replaceInHubs(String sourceGlobalKey, MediaItem updatedItem) {
     List<MediaHub>? updatedHubs;
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
