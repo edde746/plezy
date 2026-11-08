@@ -6,8 +6,8 @@
     "title": "Icona dell'app",
     "defaultIcon": "Predefinita",
     "current": "Icona attuale",
-    "locked": "Vantaggio Supporter",
-    "lockedHint": "Le icone alternative sono un vantaggio Supporter.",
+    "locked": "Incluso nel Pacchetto temi e icone",
+    "lockedHint": "Le icone alternative sono incluse nel Pacchetto temi e icone.",
     "changeFailed": "Impossibile cambiare l'icona dell'app",
     "launcherHint": "La nuova icona appare nella schermata Home quando esci da Plezy.",
     "tvLauncherHint": "Il nuovo banner appare quando esci da Plezy. Android TV potrebbe continuare a mostrare quello precedente fino al riavvio del televisore.",
@@ -153,8 +153,8 @@
     "checkFailed": "Impossibile controllare gli aggiornamenti"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Un acquisto una tantum che sostiene lo sviluppo di Plezy e sblocca extra estetici:",
+    "title": "Pacchetto temi e icone",
+    "intro": "Un acquisto una tantum facoltativo che aggiunge extra estetici:",
     "presetThemes": "Temi preimpostati",
     "presetThemesDescription": "Brace, Ghiacciaio, Foresta, Prugna e Carta",
     "customTheme": "Tema personalizzato",
@@ -165,18 +165,18 @@
     "loadingPrice": "Caricamento del prezzo...",
     "restore": "Ripristina acquisti",
     "pending": "Il tuo acquisto è in attesa di pagamento o approvazione. Gli extra verranno sbloccati non appena lo store lo avrà completato.",
-    "thankYouTitle": "Grazie per sostenere Plezy",
-    "thankYouBody": "Gli extra di Supporter sono stati sbloccati.",
+    "thankYouTitle": "Grazie per l'acquisto",
+    "thankYouBody": "Il Pacchetto temi e icone è sbloccato.",
     "tileSubtitle": "Sblocca temi e icone dell'app con un acquisto una tantum",
     "tileSubtitleThemesOnly": "Sblocca i temi con un acquisto una tantum",
-    "tileUnlocked": "Grazie per il tuo sostegno",
+    "tileUnlocked": "Sbloccato — grazie per l'acquisto",
     "errors": {
       "storeUnavailable": "Gli acquisti non sono disponibili. Verifica di aver effettuato l'accesso allo store e che gli acquisti siano consentiti su questo dispositivo.",
-      "productNotFound": "L'acquisto Supporter non è al momento disponibile nel tuo store.",
+      "productNotFound": "Il Pacchetto temi e icone non è al momento disponibile nel tuo store.",
       "productQueryFailed": "Impossibile caricare il prezzo. Controlla la connessione e riprova.",
       "purchaseFailed": "L'acquisto non è andato a buon fine. Riprova.",
       "restoreFailed": "Impossibile raggiungere lo store per ripristinare l'acquisto. Riprova.",
-      "nothingToRestore": "Nessun acquisto Supporter trovato per questo account dello store."
+      "nothingToRestore": "Nessun acquisto del Pacchetto temi e icone trovato per questo account dello store."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Non ancora creato",
     "editCustom": "Modifica tema personalizzato",
     "editCustomDescription": "Scegli tu ogni colore",
-    "locked": "Sblocca con Supporter",
-    "savedLocked": "Salvato — si sblocca con Supporter",
+    "locked": "Sblocca con il Pacchetto temi e icone",
+    "savedLocked": "Salvato — si sblocca con il Pacchetto temi e icone",
     "title": "Tema personalizzato",
     "startFrom": "Parti da",
     "startFromDescription": "Copia tutti i colori da un altro tema",

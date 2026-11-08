@@ -6,8 +6,8 @@
     "title": "Ilova belgisi",
     "defaultIcon": "Standart",
     "current": "Joriy belgi",
-    "locked": "Supporter imtiyozi",
-    "lockedHint": "Muqobil belgilar — Supporter imtiyozi.",
+    "locked": "Mavzu va belgilar toʻplamiga kiradi",
+    "lockedHint": "Muqobil belgilar Mavzu va belgilar toʻplamiga kiradi.",
     "changeFailed": "Ilova belgisini oʻzgartirib boʻlmadi",
     "launcherHint": "Yangi belgi Plezy-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.",
     "tvLauncherHint": "Yangi banner Plezy-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.",
@@ -153,8 +153,8 @@
     "checkFailed": "Yangilanishlarni tekshirish imkoni boʻlmadi"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Plezy rivojini qoʻllab-quvvatlaydigan va tashqi koʻrinish uchun qoʻshimcha imkoniyatlarni ochadigan bir martalik xarid:",
+    "title": "Mavzu va belgilar toʻplami",
+    "intro": "Tashqi koʻrinish uchun qoʻshimchalar beradigan ixtiyoriy bir martalik xarid:",
     "presetThemes": "Tayyor mavzular",
     "presetThemesDescription": "Choʻgʻ, Muzlik, Oʻrmon, Olxoʻri va Qogʻoz",
     "customTheme": "Shaxsiy mavzu",
@@ -165,18 +165,18 @@
     "loadingPrice": "Narx yuklanmoqda...",
     "restore": "Xaridlarni tiklash",
     "pending": "Xaridingiz toʻlov yoki tasdiqlashni kutmoqda. Doʻkon uni yakunlashi bilanoq qoʻshimchalar ochiladi.",
-    "thankYouTitle": "Plezy-ni qoʻllab-quvvatlaganingiz uchun rahmat",
-    "thankYouBody": "Supporter qoʻshimchalaringiz ochildi.",
+    "thankYouTitle": "Xaridingiz uchun rahmat",
+    "thankYouBody": "Mavzu va belgilar toʻplami ochildi.",
     "tileSubtitle": "Bir martalik xarid bilan mavzular va ilova belgilarini oching",
     "tileSubtitleThemesOnly": "Bir martalik xarid bilan mavzularni oching",
-    "tileUnlocked": "Qoʻllab-quvvatlaganingiz uchun rahmat",
+    "tileUnlocked": "Ochildi — xaridingiz uchun rahmat",
     "errors": {
       "storeUnavailable": "Xaridlar mavjud emas. Doʻkonga kirganingizni va bu qurilmada xaridlarga ruxsat berilganini tekshiring.",
-      "productNotFound": "Supporter xaridi hozircha doʻkoningizda mavjud emas.",
+      "productNotFound": "Mavzu va belgilar toʻplami hozircha doʻkoningizda mavjud emas.",
       "productQueryFailed": "Narxni yuklab boʻlmadi. Ulanishni tekshirib, qaytadan urinib koʻring.",
       "purchaseFailed": "Xarid amalga oshmadi. Qaytadan urinib koʻring.",
       "restoreFailed": "Xaridni tiklash uchun doʻkonga ulanib boʻlmadi. Qaytadan urinib koʻring.",
-      "nothingToRestore": "Ushbu doʻkon hisobi uchun Supporter xaridi topilmadi."
+      "nothingToRestore": "Ushbu doʻkon hisobi uchun Mavzu va belgilar toʻplami xaridi topilmadi."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Hali yaratilmagan",
     "editCustom": "Shaxsiy mavzuni tahrirlash",
     "editCustomDescription": "Har bir rangni oʻzingiz tanlang",
-    "locked": "Supporter bilan ochiladi",
-    "savedLocked": "Saqlangan — Supporter bilan ochiladi",
+    "locked": "Mavzu va belgilar toʻplami bilan ochiladi",
+    "savedLocked": "Saqlangan — Mavzu va belgilar toʻplami bilan ochiladi",
     "title": "Shaxsiy mavzu",
     "startFrom": "Asos qilib olish",
     "startFromDescription": "Boshqa mavzudan barcha ranglarni nusxalash",

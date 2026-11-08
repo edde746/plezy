@@ -115,8 +115,8 @@ class _Translations$appIcon$ja extends Translations$appIcon$en {
 	@override String get title => 'アプリアイコン';
 	@override String get defaultIcon => 'デフォルト';
 	@override String get current => '現在のアイコン';
-	@override String get locked => 'Supporter特典';
-	@override String get lockedHint => '別のアイコンはSupporter特典です。';
+	@override String get locked => 'テーマ＆アイコンパックに含まれます';
+	@override String get lockedHint => '別のアイコンはテーマ＆アイコンパックに含まれます。';
 	@override String get changeFailed => 'アプリアイコンを変更できませんでした';
 	@override String get launcherHint => 'Plezyを離れると、ホーム画面に新しいアイコンが表示されます。';
 	@override String get tvLauncherHint => 'Plezyを離れると、新しいバナーが表示されます。Android TVでは、テレビを再起動するまで古いバナーが表示され続ける場合があります。';
@@ -246,8 +246,8 @@ class _Translations$supporter$ja extends Translations$supporter$en {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => '1回限りの購入でPlezyの開発を支援し、次の見た目の特典をご利用いただけます：';
+	@override String get title => 'テーマ＆アイコンパック';
+	@override String get intro => '見た目の特典を追加する、任意の1回限りの購入です：';
 	@override String get presetThemes => 'プリセットテーマ';
 	@override String get presetThemesDescription => '残り火、氷河、森、プラム、ペーパー';
 	@override String get customTheme => 'カスタムテーマ';
@@ -258,11 +258,11 @@ class _Translations$supporter$ja extends Translations$supporter$en {
 	@override String get loadingPrice => '価格を読み込み中…';
 	@override String get restore => '購入を復元';
 	@override String get pending => '購入は支払いまたは承認を待っています。ストアでの処理が完了すると、すぐに特典のロックが解除されます。';
-	@override String get thankYouTitle => 'Plezyをご支援いただきありがとうございます';
-	@override String get thankYouBody => 'Supporter特典のロックが解除されました。';
+	@override String get thankYouTitle => 'ご購入ありがとうございます';
+	@override String get thankYouBody => 'テーマ＆アイコンパックのロックが解除されました。';
 	@override String get tileSubtitle => '1回限りの購入でテーマとアプリアイコンのロックを解除';
 	@override String get tileSubtitleThemesOnly => '1回限りの購入でテーマのロックを解除';
-	@override String get tileUnlocked => 'ご支援ありがとうございます';
+	@override String get tileUnlocked => 'ロック解除済み — ご購入ありがとうございます';
 	@override late final _Translations$supporter$errors$ja errors = _Translations$supporter$errors$ja._(_root);
 }
 
@@ -624,8 +624,8 @@ class _Translations$themeEditor$ja extends Translations$themeEditor$en {
 	@override String get customEmpty => '未作成';
 	@override String get editCustom => 'カスタムテーマを編集';
 	@override String get editCustomDescription => 'すべての色を自分で選択';
-	@override String get locked => 'Supporterでロック解除';
-	@override String get savedLocked => '保存済み — Supporterでロック解除';
+	@override String get locked => 'テーマ＆アイコンパックでロック解除';
+	@override String get savedLocked => '保存済み — テーマ＆アイコンパックでロック解除';
 	@override String get title => 'カスタムテーマ';
 	@override String get startFrom => '元にするテーマ';
 	@override String get startFromDescription => '別のテーマからすべての色をコピー';
@@ -2532,11 +2532,11 @@ class _Translations$supporter$errors$ja extends Translations$supporter$errors$en
 
 	// Translations
 	@override String get storeUnavailable => '購入を利用できません。ストアにサインインしていること、およびこのデバイスで購入が許可されていることを確認してください。';
-	@override String get productNotFound => '現在、お使いのストアではSupporterを購入できません。';
+	@override String get productNotFound => '現在、お使いのストアではテーマ＆アイコンパックを購入できません。';
 	@override String get productQueryFailed => '価格を読み込めませんでした。接続を確認してもう一度お試しください。';
 	@override String get purchaseFailed => '購入を完了できませんでした。もう一度お試しください。';
 	@override String get restoreFailed => '購入を復元するためにストアに接続できませんでした。もう一度お試しください。';
-	@override String get nothingToRestore => 'このストアアカウントではSupporterの購入が見つかりませんでした。';
+	@override String get nothingToRestore => 'このストアアカウントではテーマ＆アイコンパックの購入が見つかりませんでした。';
 }
 
 // Path: themeEditor.slots
@@ -3390,8 +3390,8 @@ extension on TranslationsJa {
 			'appIcon.title' => 'アプリアイコン',
 			'appIcon.defaultIcon' => 'デフォルト',
 			'appIcon.current' => '現在のアイコン',
-			'appIcon.locked' => 'Supporter特典',
-			'appIcon.lockedHint' => '別のアイコンはSupporter特典です。',
+			'appIcon.locked' => 'テーマ＆アイコンパックに含まれます',
+			'appIcon.lockedHint' => '別のアイコンはテーマ＆アイコンパックに含まれます。',
 			'appIcon.changeFailed' => 'アプリアイコンを変更できませんでした',
 			'appIcon.launcherHint' => 'Plezyを離れると、ホーム画面に新しいアイコンが表示されます。',
 			'appIcon.tvLauncherHint' => 'Plezyを離れると、新しいバナーが表示されます。Android TVでは、テレビを再起動するまで古いバナーが表示され続ける場合があります。',
@@ -3521,8 +3521,8 @@ extension on TranslationsJa {
 			'update.viewRelease' => 'リリースを表示',
 			'update.latestVersion' => '最新バージョンです',
 			'update.checkFailed' => 'アップデートの確認に失敗しました',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => '1回限りの購入でPlezyの開発を支援し、次の見た目の特典をご利用いただけます：',
+			'supporter.title' => 'テーマ＆アイコンパック',
+			'supporter.intro' => '見た目の特典を追加する、任意の1回限りの購入です：',
 			'supporter.presetThemes' => 'プリセットテーマ',
 			'supporter.presetThemesDescription' => '残り火、氷河、森、プラム、ペーパー',
 			'supporter.customTheme' => 'カスタムテーマ',
@@ -3533,17 +3533,17 @@ extension on TranslationsJa {
 			'supporter.loadingPrice' => '価格を読み込み中…',
 			'supporter.restore' => '購入を復元',
 			'supporter.pending' => '購入は支払いまたは承認を待っています。ストアでの処理が完了すると、すぐに特典のロックが解除されます。',
-			'supporter.thankYouTitle' => 'Plezyをご支援いただきありがとうございます',
-			'supporter.thankYouBody' => 'Supporter特典のロックが解除されました。',
+			'supporter.thankYouTitle' => 'ご購入ありがとうございます',
+			'supporter.thankYouBody' => 'テーマ＆アイコンパックのロックが解除されました。',
 			'supporter.tileSubtitle' => '1回限りの購入でテーマとアプリアイコンのロックを解除',
 			'supporter.tileSubtitleThemesOnly' => '1回限りの購入でテーマのロックを解除',
-			'supporter.tileUnlocked' => 'ご支援ありがとうございます',
+			'supporter.tileUnlocked' => 'ロック解除済み — ご購入ありがとうございます',
 			'supporter.errors.storeUnavailable' => '購入を利用できません。ストアにサインインしていること、およびこのデバイスで購入が許可されていることを確認してください。',
-			'supporter.errors.productNotFound' => '現在、お使いのストアではSupporterを購入できません。',
+			'supporter.errors.productNotFound' => '現在、お使いのストアではテーマ＆アイコンパックを購入できません。',
 			'supporter.errors.productQueryFailed' => '価格を読み込めませんでした。接続を確認してもう一度お試しください。',
 			'supporter.errors.purchaseFailed' => '購入を完了できませんでした。もう一度お試しください。',
 			'supporter.errors.restoreFailed' => '購入を復元するためにストアに接続できませんでした。もう一度お試しください。',
-			'supporter.errors.nothingToRestore' => 'このストアアカウントではSupporterの購入が見つかりませんでした。',
+			'supporter.errors.nothingToRestore' => 'このストアアカウントではテーマ＆アイコンパックの購入が見つかりませんでした。',
 			'settings.title' => '設定',
 			'settings.supportDeveloper' => 'Plezyを支援',
 			'settings.supportDeveloperDescription' => 'Liberapayで寄付して開発を支援',
@@ -3886,8 +3886,8 @@ extension on TranslationsJa {
 			'themeEditor.customEmpty' => '未作成',
 			'themeEditor.editCustom' => 'カスタムテーマを編集',
 			'themeEditor.editCustomDescription' => 'すべての色を自分で選択',
-			'themeEditor.locked' => 'Supporterでロック解除',
-			'themeEditor.savedLocked' => '保存済み — Supporterでロック解除',
+			'themeEditor.locked' => 'テーマ＆アイコンパックでロック解除',
+			'themeEditor.savedLocked' => '保存済み — テーマ＆アイコンパックでロック解除',
 			'themeEditor.title' => 'カスタムテーマ',
 			'themeEditor.startFrom' => '元にするテーマ',
 			'themeEditor.startFromDescription' => '別のテーマからすべての色をコピー',

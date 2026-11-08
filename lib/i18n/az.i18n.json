@@ -6,8 +6,8 @@
     "title": "Tətbiq ikonu",
     "defaultIcon": "Defolt",
     "current": "Cari ikon",
-    "locked": "Supporter imtiyazı",
-    "lockedHint": "Alternativ ikonlar Supporter imtiyazıdır.",
+    "locked": "Mövzu və ikon paketinə daxildir",
+    "lockedHint": "Alternativ ikonlar Mövzu və ikon paketinə daxildir.",
     "changeFailed": "Tətbiq ikonu dəyişdirilə bilmədi",
     "launcherHint": "Plezy-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.",
     "tvLauncherHint": "Plezy-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.",
@@ -153,8 +153,8 @@
     "checkFailed": "Yenilənmələr yoxlanıla bilmədi"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Plezy-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:",
+    "title": "Mövzu və ikon paketi",
+    "intro": "Kosmetik əlavələr gətirən istəyə bağlı birdəfəlik alış:",
     "presetThemes": "Hazır mövzular",
     "presetThemesDescription": "Köz, Buzlaq, Meşə, Gavalı və Kağız",
     "customTheme": "Xüsusi mövzu",
@@ -165,18 +165,18 @@
     "loadingPrice": "Qiymət yüklənir...",
     "restore": "Alışları bərpa et",
     "pending": "Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.",
-    "thankYouTitle": "Plezy-ni dəstəklədiyiniz üçün təşəkkür edirik",
-    "thankYouBody": "Supporter əlavələriniz açıldı.",
+    "thankYouTitle": "Alışınız üçün təşəkkür edirik",
+    "thankYouBody": "Mövzu və ikon paketi açıldı.",
     "tileSubtitle": "Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın",
     "tileSubtitleThemesOnly": "Mövzuları birdəfəlik alışla açın",
-    "tileUnlocked": "Dəstəyiniz üçün təşəkkür edirik",
+    "tileUnlocked": "Açıldı — alışınız üçün təşəkkür edirik",
     "errors": {
       "storeUnavailable": "Alışlar əlçatan deyil. Mağazaya daxil olduğunuzu və bu cihazda alışlara icazə verildiyini yoxlayın.",
-      "productNotFound": "Supporter alışı hazırda mağazanızda əlçatan deyil.",
+      "productNotFound": "Mövzu və ikon paketi hazırda mağazanızda əlçatan deyil.",
       "productQueryFailed": "Qiymət yüklənə bilmədi. Bağlantınızı yoxlayın və yenidən cəhd edin.",
       "purchaseFailed": "Alış baş tutmadı. Yenidən cəhd edin.",
       "restoreFailed": "Alışınızı bərpa etmək üçün mağazaya qoşulmaq mümkün olmadı. Yenidən cəhd edin.",
-      "nothingToRestore": "Bu mağaza hesabı üçün Supporter alışı tapılmadı."
+      "nothingToRestore": "Bu mağaza hesabı üçün Mövzu və ikon paketi alışı tapılmadı."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Hələ yaradılmayıb",
     "editCustom": "Xüsusi mövzuya düzəliş et",
     "editCustomDescription": "Bütün rəngləri özünüz seçin",
-    "locked": "Supporter ilə açın",
-    "savedLocked": "Yadda saxlanılıb — Supporter ilə açılır",
+    "locked": "Mövzu və ikon paketi ilə açın",
+    "savedLocked": "Yadda saxlanılıb — Mövzu və ikon paketi ilə açılır",
     "title": "Xüsusi mövzu",
     "startFrom": "Başlanğıc mövzu",
     "startFromDescription": "Bütün rəngləri başqa mövzudan kopyala",

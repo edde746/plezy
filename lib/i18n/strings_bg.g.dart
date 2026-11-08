@@ -115,8 +115,8 @@ class _Translations$appIcon$bg extends Translations$appIcon$en {
 	@override String get title => 'Икона на приложението';
 	@override String get defaultIcon => 'По подразбиране';
 	@override String get current => 'Текуща икона';
-	@override String get locked => 'Бонус за Supporter';
-	@override String get lockedHint => 'Алтернативните икони са бонус за Supporter.';
+	@override String get locked => 'Част от пакета с теми и икони';
+	@override String get lockedHint => 'Алтернативните икони са част от пакета с теми и икони.';
 	@override String get changeFailed => 'Иконата на приложението не можа да бъде сменена';
 	@override String get launcherHint => 'Новата икона ще се появи на началния ви екран, след като излезете от Plezy.';
 	@override String get tvLauncherHint => 'Новият банер ще се появи, след като излезете от Plezy. Android TV може да продължи да показва стария, докато телевизорът не бъде рестартиран.';
@@ -246,8 +246,8 @@ class _Translations$supporter$bg extends Translations$supporter$en {
 	final TranslationsBg _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Еднократна покупка, която подкрепя разработката на Plezy и отключва козметични екстри:';
+	@override String get title => 'Пакет с теми и икони';
+	@override String get intro => 'Незадължителна еднократна покупка, която добавя козметични екстри:';
 	@override String get presetThemes => 'Готови теми';
 	@override String get presetThemesDescription => 'Жарава, Ледник, Гора, Слива и Хартия';
 	@override String get customTheme => 'Персонализирана тема';
@@ -258,11 +258,11 @@ class _Translations$supporter$bg extends Translations$supporter$en {
 	@override String get loadingPrice => 'Зареждане на цената...';
 	@override String get restore => 'Възстанови покупките';
 	@override String get pending => 'Покупката ви очаква плащане или одобрение. Екстрите ще се отключат веднага щом магазинът я обработи.';
-	@override String get thankYouTitle => 'Благодарим ви, че подкрепяте Plezy';
-	@override String get thankYouBody => 'Екстрите от Supporter са отключени.';
+	@override String get thankYouTitle => 'Благодарим ви за покупката';
+	@override String get thankYouBody => 'Пакетът с теми и икони е отключен.';
 	@override String get tileSubtitle => 'Отключете теми и икони на приложението с еднократна покупка';
 	@override String get tileSubtitleThemesOnly => 'Отключете теми с еднократна покупка';
-	@override String get tileUnlocked => 'Благодарим ви за подкрепата';
+	@override String get tileUnlocked => 'Отключен — благодарим ви за покупката';
 	@override late final _Translations$supporter$errors$bg errors = _Translations$supporter$errors$bg._(_root);
 }
 
@@ -624,8 +624,8 @@ class _Translations$themeEditor$bg extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Все още не е създадена';
 	@override String get editCustom => 'Редактирай персонализираната тема';
 	@override String get editCustomDescription => 'Изберете всеки цвят сами';
-	@override String get locked => 'Отключва се със Supporter';
-	@override String get savedLocked => 'Запазена — отключва се със Supporter';
+	@override String get locked => 'Отключва се с пакета с теми и икони';
+	@override String get savedLocked => 'Запазена — отключва се с пакета с теми и икони';
 	@override String get title => 'Персонализирана тема';
 	@override String get startFrom => 'Започни от';
 	@override String get startFromDescription => 'Копирай всички цветове от друга тема';
@@ -2542,11 +2542,11 @@ class _Translations$supporter$errors$bg extends Translations$supporter$errors$en
 
 	// Translations
 	@override String get storeUnavailable => 'Покупките не са налични. Проверете дали сте влезли в магазина и дали покупките са разрешени на това устройство.';
-	@override String get productNotFound => 'Покупката Supporter в момента не е налична във вашия магазин.';
+	@override String get productNotFound => 'Пакетът с теми и икони в момента не е наличен във вашия магазин.';
 	@override String get productQueryFailed => 'Цената не можа да бъде заредена. Проверете връзката си и опитайте отново.';
 	@override String get purchaseFailed => 'Покупката не беше осъществена. Опитайте отново.';
 	@override String get restoreFailed => 'Няма връзка с магазина и покупката ви не можа да бъде възстановена. Опитайте отново.';
-	@override String get nothingToRestore => 'Не е намерена покупка на Supporter за този акаунт в магазина.';
+	@override String get nothingToRestore => 'Не е намерена покупка на пакета с теми и икони за този акаунт в магазина.';
 }
 
 // Path: themeEditor.slots
@@ -3402,8 +3402,8 @@ extension on TranslationsBg {
 			'appIcon.title' => 'Икона на приложението',
 			'appIcon.defaultIcon' => 'По подразбиране',
 			'appIcon.current' => 'Текуща икона',
-			'appIcon.locked' => 'Бонус за Supporter',
-			'appIcon.lockedHint' => 'Алтернативните икони са бонус за Supporter.',
+			'appIcon.locked' => 'Част от пакета с теми и икони',
+			'appIcon.lockedHint' => 'Алтернативните икони са част от пакета с теми и икони.',
 			'appIcon.changeFailed' => 'Иконата на приложението не можа да бъде сменена',
 			'appIcon.launcherHint' => 'Новата икона ще се появи на началния ви екран, след като излезете от Plezy.',
 			'appIcon.tvLauncherHint' => 'Новият банер ще се появи, след като излезете от Plezy. Android TV може да продължи да показва стария, докато телевизорът не бъде рестартиран.',
@@ -3533,8 +3533,8 @@ extension on TranslationsBg {
 			'update.viewRelease' => 'Виж версията',
 			'update.latestVersion' => 'Използвате най-новата версия',
 			'update.checkFailed' => 'Неуспешна проверка за актуализации',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Еднократна покупка, която подкрепя разработката на Plezy и отключва козметични екстри:',
+			'supporter.title' => 'Пакет с теми и икони',
+			'supporter.intro' => 'Незадължителна еднократна покупка, която добавя козметични екстри:',
 			'supporter.presetThemes' => 'Готови теми',
 			'supporter.presetThemesDescription' => 'Жарава, Ледник, Гора, Слива и Хартия',
 			'supporter.customTheme' => 'Персонализирана тема',
@@ -3545,17 +3545,17 @@ extension on TranslationsBg {
 			'supporter.loadingPrice' => 'Зареждане на цената...',
 			'supporter.restore' => 'Възстанови покупките',
 			'supporter.pending' => 'Покупката ви очаква плащане или одобрение. Екстрите ще се отключат веднага щом магазинът я обработи.',
-			'supporter.thankYouTitle' => 'Благодарим ви, че подкрепяте Plezy',
-			'supporter.thankYouBody' => 'Екстрите от Supporter са отключени.',
+			'supporter.thankYouTitle' => 'Благодарим ви за покупката',
+			'supporter.thankYouBody' => 'Пакетът с теми и икони е отключен.',
 			'supporter.tileSubtitle' => 'Отключете теми и икони на приложението с еднократна покупка',
 			'supporter.tileSubtitleThemesOnly' => 'Отключете теми с еднократна покупка',
-			'supporter.tileUnlocked' => 'Благодарим ви за подкрепата',
+			'supporter.tileUnlocked' => 'Отключен — благодарим ви за покупката',
 			'supporter.errors.storeUnavailable' => 'Покупките не са налични. Проверете дали сте влезли в магазина и дали покупките са разрешени на това устройство.',
-			'supporter.errors.productNotFound' => 'Покупката Supporter в момента не е налична във вашия магазин.',
+			'supporter.errors.productNotFound' => 'Пакетът с теми и икони в момента не е наличен във вашия магазин.',
 			'supporter.errors.productQueryFailed' => 'Цената не можа да бъде заредена. Проверете връзката си и опитайте отново.',
 			'supporter.errors.purchaseFailed' => 'Покупката не беше осъществена. Опитайте отново.',
 			'supporter.errors.restoreFailed' => 'Няма връзка с магазина и покупката ви не можа да бъде възстановена. Опитайте отново.',
-			'supporter.errors.nothingToRestore' => 'Не е намерена покупка на Supporter за този акаунт в магазина.',
+			'supporter.errors.nothingToRestore' => 'Не е намерена покупка на пакета с теми и икони за този акаунт в магазина.',
 			'settings.title' => 'Настройки',
 			'settings.supportDeveloper' => 'Подкрепи Plezy',
 			'settings.supportDeveloperDescription' => 'Дарение чрез Liberapay за финансиране на разработката',
@@ -3898,8 +3898,8 @@ extension on TranslationsBg {
 			'themeEditor.customEmpty' => 'Все още не е създадена',
 			'themeEditor.editCustom' => 'Редактирай персонализираната тема',
 			'themeEditor.editCustomDescription' => 'Изберете всеки цвят сами',
-			'themeEditor.locked' => 'Отключва се със Supporter',
-			'themeEditor.savedLocked' => 'Запазена — отключва се със Supporter',
+			'themeEditor.locked' => 'Отключва се с пакета с теми и икони',
+			'themeEditor.savedLocked' => 'Запазена — отключва се с пакета с теми и икони',
 			'themeEditor.title' => 'Персонализирана тема',
 			'themeEditor.startFrom' => 'Започни от',
 			'themeEditor.startFromDescription' => 'Копирай всички цветове от друга тема',

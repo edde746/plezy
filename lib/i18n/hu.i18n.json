@@ -6,8 +6,8 @@
     "title": "Alkalmazásikon",
     "defaultIcon": "Alapértelmezett",
     "current": "Jelenlegi ikon",
-    "locked": "Supporter-előny",
-    "lockedHint": "Az alternatív ikonok a Supporter-előnyök közé tartoznak.",
+    "locked": "A Téma- és ikoncsomag része",
+    "lockedHint": "Az alternatív ikonok a Téma- és ikoncsomag részei.",
     "changeFailed": "Nem sikerült módosítani az alkalmazásikont",
     "launcherHint": "Az új ikon azután jelenik meg a kezdőképernyőn, hogy kiléptél a Plezyből.",
     "tvLauncherHint": "Az új banner azután jelenik meg, hogy kiléptél a Plezyből. Az Android TV a TV újraindításáig még a régit is mutathatja.",
@@ -153,8 +153,8 @@
     "checkFailed": "Nem sikerült az újabb frissítések ellenőrzése"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Egyszeri vásárlás, amely a Plezy fejlesztését támogatja, és kozmetikai extrákat old fel:",
+    "title": "Téma- és ikoncsomag",
+    "intro": "Opcionális, egyszeri vásárlás kozmetikai extrákkal:",
     "presetThemes": "Előre beállított témák",
     "presetThemesDescription": "Parázs, Gleccser, Erdő, Szilva és Papír",
     "customTheme": "Egyéni téma",
@@ -165,18 +165,18 @@
     "loadingPrice": "Ár betöltése...",
     "restore": "Vásárlások visszaállítása",
     "pending": "A vásárlásod fizetésre vagy jóváhagyásra vár. Az extrák azonnal feloldódnak, amint az áruház lezárja a folyamatot.",
-    "thankYouTitle": "Köszönjük, hogy támogatod a Plezyt",
-    "thankYouBody": "A Supporter-extráid fel vannak oldva.",
+    "thankYouTitle": "Köszönjük a vásárlást",
+    "thankYouBody": "A Téma- és ikoncsomag fel van oldva.",
     "tileSubtitle": "Témák és alkalmazásikonok feloldása egyszeri vásárlással",
     "tileSubtitleThemesOnly": "Témák feloldása egyszeri vásárlással",
-    "tileUnlocked": "Köszönjük a támogatásodat",
+    "tileUnlocked": "Feloldva — köszönjük a vásárlást",
     "errors": {
       "storeUnavailable": "A vásárlás nem érhető el. Ellenőrizd, hogy be vagy-e jelentkezve az áruházba, és engedélyezett-e a vásárlás ezen az eszközön.",
-      "productNotFound": "A Supporter-vásárlás jelenleg nem érhető el az áruházadban.",
+      "productNotFound": "A Téma- és ikoncsomag jelenleg nem érhető el az áruházadban.",
       "productQueryFailed": "Nem sikerült betölteni az árat. Ellenőrizd a kapcsolatot, majd próbáld újra.",
       "purchaseFailed": "A vásárlás nem sikerült. Próbáld újra.",
       "restoreFailed": "Nem sikerült elérni az áruházat a vásárlás visszaállításához. Próbáld újra.",
-      "nothingToRestore": "Ehhez az áruházfiókhoz nem található Supporter-vásárlás."
+      "nothingToRestore": "Ehhez az áruházfiókhoz nem található Téma- és ikoncsomag-vásárlás."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Még nincs létrehozva",
     "editCustom": "Egyéni téma szerkesztése",
     "editCustomDescription": "Válaszd ki magad az összes színt",
-    "locked": "Supporterrel oldható fel",
-    "savedLocked": "Mentve — Supporterrel oldható fel",
+    "locked": "A Téma- és ikoncsomaggal oldható fel",
+    "savedLocked": "Mentve — a Téma- és ikoncsomaggal oldható fel",
     "title": "Egyéni téma",
     "startFrom": "Kiindulási téma",
     "startFromDescription": "Az összes szín átmásolása egy másik témából",

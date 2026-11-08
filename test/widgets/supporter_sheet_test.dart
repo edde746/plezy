@@ -373,7 +373,7 @@ void main() {
       await harness.pump(tester, body: const SupporterSettingsTile());
 
       expect(find.text(t.supporter.tileSubtitle), findsOneWidget);
-      await tester.tap(find.text(t.settings.supportDeveloper));
+      await tester.tap(find.text(t.supporter.title));
       await tester.pumpAndSettle();
       expect(find.byType(SupporterSheet), findsOneWidget);
 

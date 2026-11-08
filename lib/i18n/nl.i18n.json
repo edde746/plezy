@@ -6,8 +6,8 @@
     "title": "App-icoon",
     "defaultIcon": "Standaard",
     "current": "Huidig icoon",
-    "locked": "Supporter-voordeel",
-    "lockedHint": "Alternatieve iconen zijn een Supporter-voordeel.",
+    "locked": "Onderdeel van het Thema- en iconenpakket",
+    "lockedHint": "Alternatieve iconen zijn onderdeel van het Thema- en iconenpakket.",
     "changeFailed": "Het app-icoon kon niet worden gewijzigd",
     "launcherHint": "Het nieuwe icoon verschijnt op je beginscherm zodra je Plezy verlaat.",
     "tvLauncherHint": "De nieuwe banner verschijnt zodra je Plezy verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.",
@@ -153,8 +153,8 @@
     "checkFailed": "Kon niet controleren op updates"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Een eenmalige aankoop die de ontwikkeling van Plezy steunt en cosmetische extra's ontgrendelt:",
+    "title": "Thema- en iconenpakket",
+    "intro": "Een optionele eenmalige aankoop met cosmetische extra's:",
     "presetThemes": "Kant-en-klare thema's",
     "presetThemesDescription": "Sintel, Gletsjer, Woud, Pruim en Papier",
     "customTheme": "Aangepast thema",
@@ -165,18 +165,18 @@
     "loadingPrice": "Prijs laden...",
     "restore": "Aankopen herstellen",
     "pending": "Je aankoop wacht op betaling of goedkeuring. De extra's worden ontgrendeld zodra de store de aankoop afrondt.",
-    "thankYouTitle": "Bedankt dat je Plezy steunt",
-    "thankYouBody": "Je Supporter-extra's zijn ontgrendeld.",
+    "thankYouTitle": "Bedankt voor je aankoop",
+    "thankYouBody": "Het Thema- en iconenpakket is ontgrendeld.",
     "tileSubtitle": "Ontgrendel thema's en app-iconen met een eenmalige aankoop",
     "tileSubtitleThemesOnly": "Ontgrendel thema's met een eenmalige aankoop",
-    "tileUnlocked": "Bedankt voor je steun",
+    "tileUnlocked": "Ontgrendeld — bedankt voor je aankoop",
     "errors": {
       "storeUnavailable": "Aankopen zijn niet beschikbaar. Controleer of je bent aangemeld bij de store en of aankopen op dit apparaat zijn toegestaan.",
-      "productNotFound": "De Supporter-aankoop is momenteel niet beschikbaar in jouw store.",
+      "productNotFound": "Het Thema- en iconenpakket is momenteel niet beschikbaar in jouw store.",
       "productQueryFailed": "De prijs kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.",
       "purchaseFailed": "De aankoop is niet gelukt. Probeer het opnieuw.",
       "restoreFailed": "De store kon niet worden bereikt om je aankoop te herstellen. Probeer het opnieuw.",
-      "nothingToRestore": "Er is geen Supporter-aankoop gevonden voor dit store-account."
+      "nothingToRestore": "Er is geen aankoop van het Thema- en iconenpakket gevonden voor dit store-account."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Nog niet gemaakt",
     "editCustom": "Aangepast thema bewerken",
     "editCustomDescription": "Kies elke kleur zelf",
-    "locked": "Ontgrendelen met Supporter",
-    "savedLocked": "Opgeslagen — wordt ontgrendeld met Supporter",
+    "locked": "Ontgrendelen met het Thema- en iconenpakket",
+    "savedLocked": "Opgeslagen — wordt ontgrendeld met het Thema- en iconenpakket",
     "title": "Aangepast thema",
     "startFrom": "Beginnen vanaf",
     "startFromDescription": "Kopieer alle kleuren van een ander thema",

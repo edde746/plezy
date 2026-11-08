@@ -6,8 +6,8 @@
     "title": "Appikon",
     "defaultIcon": "Standard",
     "current": "Gjeldende ikon",
-    "locked": "Supporter-fordel",
-    "lockedHint": "Alternative ikoner er en Supporter-fordel.",
+    "locked": "Del av Tema- og ikonpakken",
+    "lockedHint": "Alternative ikoner er en del av Tema- og ikonpakken.",
     "changeFailed": "Kunne ikke endre appikonet",
     "launcherHint": "Det nye ikonet vises på startskjermen når du forlater Plezy.",
     "tvLauncherHint": "Det nye banneret vises når du forlater Plezy. Android TV kan fortsette å vise det gamle til TV-en startes på nytt.",
@@ -153,8 +153,8 @@
     "checkFailed": "Kunne ikke se etter oppdateringer"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Et engangskjøp som støtter utviklingen av Plezy og låser opp kosmetiske tillegg:",
+    "title": "Tema- og ikonpakke",
+    "intro": "Et valgfritt engangskjøp med kosmetiske tillegg:",
     "presetThemes": "Forhåndsinnstilte temaer",
     "presetThemesDescription": "Glød, Isbre, Skog, Plomme og Papir",
     "customTheme": "Egendefinert tema",
@@ -165,18 +165,18 @@
     "loadingPrice": "Laster pris...",
     "restore": "Gjenopprett kjøp",
     "pending": "Kjøpet ditt venter på betaling eller godkjenning. Tilleggene låses opp så snart butikken har fullført kjøpet.",
-    "thankYouTitle": "Takk for at du støtter Plezy",
-    "thankYouBody": "Supporter-tilleggene dine er låst opp.",
+    "thankYouTitle": "Takk for kjøpet",
+    "thankYouBody": "Tema- og ikonpakken er låst opp.",
     "tileSubtitle": "Lås opp temaer og appikoner med et engangskjøp",
     "tileSubtitleThemesOnly": "Lås opp temaer med et engangskjøp",
-    "tileUnlocked": "Takk for støtten",
+    "tileUnlocked": "Låst opp – takk for kjøpet",
     "errors": {
       "storeUnavailable": "Kjøp er ikke tilgjengelig. Sjekk at du er logget inn i butikken, og at kjøp er tillatt på denne enheten.",
-      "productNotFound": "Supporter-kjøpet er ikke tilgjengelig i butikken din akkurat nå.",
+      "productNotFound": "Tema- og ikonpakken er ikke tilgjengelig i butikken din akkurat nå.",
       "productQueryFailed": "Kunne ikke laste inn prisen. Sjekk tilkoblingen og prøv igjen.",
       "purchaseFailed": "Kjøpet gikk ikke gjennom. Prøv igjen.",
       "restoreFailed": "Kunne ikke nå butikken for å gjenopprette kjøpet. Prøv igjen.",
-      "nothingToRestore": "Fant ikke noe Supporter-kjøp for denne butikkontoen."
+      "nothingToRestore": "Fant ikke noe kjøp av Tema- og ikonpakken for denne butikkontoen."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Ikke opprettet ennå",
     "editCustom": "Rediger egendefinert tema",
     "editCustomDescription": "Velg alle fargene selv",
-    "locked": "Lås opp med Supporter",
-    "savedLocked": "Lagret – låses opp med Supporter",
+    "locked": "Lås opp med Tema- og ikonpakken",
+    "savedLocked": "Lagret – låses opp med Tema- og ikonpakken",
     "title": "Egendefinert tema",
     "startFrom": "Start fra",
     "startFromDescription": "Kopier alle fargene fra et annet tema",

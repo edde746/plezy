@@ -6,8 +6,8 @@
     "title": "应用图标",
     "defaultIcon": "默认",
     "current": "当前图标",
-    "locked": "Supporter 专属",
-    "lockedHint": "备用图标是 Supporter 专属福利。",
+    "locked": "包含在主题与图标包中",
+    "lockedHint": "备用图标包含在主题与图标包中。",
     "changeFailed": "无法更改应用图标",
     "launcherHint": "离开 Plezy 后，新图标将显示在主屏幕上。",
     "tvLauncherHint": "离开 Plezy 后将显示新横幅。在电视重启之前，Android TV 可能仍会显示旧横幅。",
@@ -153,8 +153,8 @@
     "checkFailed": "无法检查更新"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "一次性购买，支持 Plezy 的开发，并解锁以下外观类附加内容：",
+    "title": "主题与图标包",
+    "intro": "可选的一次性购买，提供以下外观类附加内容：",
     "presetThemes": "预设主题",
     "presetThemesDescription": "余烬、冰川、森林、梅子和纸张",
     "customTheme": "自定义主题",
@@ -165,18 +165,18 @@
     "loadingPrice": "正在加载价格…",
     "restore": "恢复购买",
     "pending": "你的购买正在等待付款或批准。商店完成处理后，附加内容将立即解锁。",
-    "thankYouTitle": "感谢你支持 Plezy",
-    "thankYouBody": "你的 Supporter 附加内容已解锁。",
+    "thankYouTitle": "感谢你的购买",
+    "thankYouBody": "主题与图标包已解锁。",
     "tileSubtitle": "一次性购买即可解锁主题和应用图标",
     "tileSubtitleThemesOnly": "一次性购买即可解锁主题",
-    "tileUnlocked": "感谢你的支持",
+    "tileUnlocked": "已解锁 — 感谢你的购买",
     "errors": {
       "storeUnavailable": "无法进行购买。请确认你已登录商店，且此设备允许购买。",
-      "productNotFound": "你的商店目前无法购买 Supporter。",
+      "productNotFound": "你的商店目前无法购买主题与图标包。",
       "productQueryFailed": "无法加载价格。请检查网络连接后重试。",
       "purchaseFailed": "购买未完成。请重试。",
       "restoreFailed": "无法连接到商店以恢复你的购买。请重试。",
-      "nothingToRestore": "未在此商店账户中找到 Supporter 购买记录。"
+      "nothingToRestore": "未在此商店账户中找到主题与图标包购买记录。"
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "尚未创建",
     "editCustom": "编辑自定义主题",
     "editCustomDescription": "自行选择每种颜色",
-    "locked": "通过 Supporter 解锁",
-    "savedLocked": "已保存 — 通过 Supporter 解锁",
+    "locked": "通过主题与图标包解锁",
+    "savedLocked": "已保存 — 通过主题与图标包解锁",
     "title": "自定义主题",
     "startFrom": "从现有主题开始",
     "startFromDescription": "从其他主题复制所有颜色",

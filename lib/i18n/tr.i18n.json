@@ -6,8 +6,8 @@
     "title": "Uygulama simgesi",
     "defaultIcon": "Varsayılan",
     "current": "Mevcut simge",
-    "locked": "Supporter avantajı",
-    "lockedHint": "Alternatif simgeler bir Supporter avantajıdır.",
+    "locked": "Tema ve Simge Paketi'ne dahil",
+    "lockedHint": "Alternatif simgeler Tema ve Simge Paketi'ne dahildir.",
     "changeFailed": "Uygulama simgesi değiştirilemedi",
     "launcherHint": "Yeni simge, Plezy'den çıktığınızda ana ekranınızda görünür.",
     "tvLauncherHint": "Yeni banner, Plezy'den çıktığınızda görünür. Android TV, TV yeniden başlatılana kadar eskisini göstermeye devam edebilir.",
@@ -153,8 +153,8 @@
     "checkFailed": "Güncellemeler kontrol edilemedi"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Plezy'nin geliştirilmesini destekleyen ve kozmetik ekstraların kilidini açan tek seferlik bir satın alım:",
+    "title": "Tema ve Simge Paketi",
+    "intro": "Kozmetik ekstralar ekleyen isteğe bağlı, tek seferlik bir satın alım:",
     "presetThemes": "Hazır temalar",
     "presetThemesDescription": "Kor, Buzul, Orman, Erik ve Kâğıt",
     "customTheme": "Özel tema",
@@ -165,18 +165,18 @@
     "loadingPrice": "Fiyat yükleniyor...",
     "restore": "Satın Alımları Geri Yükle",
     "pending": "Satın alımınız ödeme veya onay bekliyor. Mağaza işlemi tamamladığı anda ekstraların kilidi açılır.",
-    "thankYouTitle": "Plezy'yi desteklediğiniz için teşekkürler",
-    "thankYouBody": "Supporter ekstralarınızın kilidi açıldı.",
+    "thankYouTitle": "Satın aldığınız için teşekkürler",
+    "thankYouBody": "Tema ve Simge Paketi'nin kilidi açıldı.",
     "tileSubtitle": "Temaların ve uygulama simgelerinin kilidini tek seferlik bir satın alımla açın",
     "tileSubtitleThemesOnly": "Temaların kilidini tek seferlik bir satın alımla açın",
-    "tileUnlocked": "Desteğiniz için teşekkürler",
+    "tileUnlocked": "Kilidi açıldı — satın aldığınız için teşekkürler",
     "errors": {
       "storeUnavailable": "Satın alımlar kullanılamıyor. Mağazada oturum açtığınızdan ve bu cihazda satın alımlara izin verildiğinden emin olun.",
-      "productNotFound": "Supporter satın alımı şu anda mağazanızda kullanılamıyor.",
+      "productNotFound": "Tema ve Simge Paketi şu anda mağazanızda kullanılamıyor.",
       "productQueryFailed": "Fiyat yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
       "purchaseFailed": "Satın alım gerçekleşmedi. Tekrar deneyin.",
       "restoreFailed": "Satın alımınızı geri yüklemek için mağazaya ulaşılamadı. Tekrar deneyin.",
-      "nothingToRestore": "Bu mağaza hesabı için Supporter satın alımı bulunamadı."
+      "nothingToRestore": "Bu mağaza hesabı için Tema ve Simge Paketi satın alımı bulunamadı."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Henüz oluşturulmadı",
     "editCustom": "Özel temayı düzenle",
     "editCustomDescription": "Her rengi kendiniz seçin",
-    "locked": "Supporter ile kilidi açın",
-    "savedLocked": "Kaydedildi — Supporter ile kilidi açılır",
+    "locked": "Tema ve Simge Paketi ile kilidi açın",
+    "savedLocked": "Kaydedildi — Tema ve Simge Paketi ile kilidi açılır",
     "title": "Özel Tema",
     "startFrom": "Başlangıç teması",
     "startFromDescription": "Tüm renkleri başka bir temadan kopyalayın",

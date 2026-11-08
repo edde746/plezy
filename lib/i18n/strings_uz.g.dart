@@ -115,8 +115,8 @@ class _Translations$appIcon$uz extends Translations$appIcon$en {
 	@override String get title => 'Ilova belgisi';
 	@override String get defaultIcon => 'Standart';
 	@override String get current => 'Joriy belgi';
-	@override String get locked => 'Supporter imtiyozi';
-	@override String get lockedHint => 'Muqobil belgilar — Supporter imtiyozi.';
+	@override String get locked => 'Mavzu va belgilar toʻplamiga kiradi';
+	@override String get lockedHint => 'Muqobil belgilar Mavzu va belgilar toʻplamiga kiradi.';
 	@override String get changeFailed => 'Ilova belgisini oʻzgartirib boʻlmadi';
 	@override String get launcherHint => 'Yangi belgi Plezy-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.';
 	@override String get tvLauncherHint => 'Yangi banner Plezy-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.';
@@ -246,8 +246,8 @@ class _Translations$supporter$uz extends Translations$supporter$en {
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Plezy rivojini qoʻllab-quvvatlaydigan va tashqi koʻrinish uchun qoʻshimcha imkoniyatlarni ochadigan bir martalik xarid:';
+	@override String get title => 'Mavzu va belgilar toʻplami';
+	@override String get intro => 'Tashqi koʻrinish uchun qoʻshimchalar beradigan ixtiyoriy bir martalik xarid:';
 	@override String get presetThemes => 'Tayyor mavzular';
 	@override String get presetThemesDescription => 'Choʻgʻ, Muzlik, Oʻrmon, Olxoʻri va Qogʻoz';
 	@override String get customTheme => 'Shaxsiy mavzu';
@@ -258,11 +258,11 @@ class _Translations$supporter$uz extends Translations$supporter$en {
 	@override String get loadingPrice => 'Narx yuklanmoqda...';
 	@override String get restore => 'Xaridlarni tiklash';
 	@override String get pending => 'Xaridingiz toʻlov yoki tasdiqlashni kutmoqda. Doʻkon uni yakunlashi bilanoq qoʻshimchalar ochiladi.';
-	@override String get thankYouTitle => 'Plezy-ni qoʻllab-quvvatlaganingiz uchun rahmat';
-	@override String get thankYouBody => 'Supporter qoʻshimchalaringiz ochildi.';
+	@override String get thankYouTitle => 'Xaridingiz uchun rahmat';
+	@override String get thankYouBody => 'Mavzu va belgilar toʻplami ochildi.';
 	@override String get tileSubtitle => 'Bir martalik xarid bilan mavzular va ilova belgilarini oching';
 	@override String get tileSubtitleThemesOnly => 'Bir martalik xarid bilan mavzularni oching';
-	@override String get tileUnlocked => 'Qoʻllab-quvvatlaganingiz uchun rahmat';
+	@override String get tileUnlocked => 'Ochildi — xaridingiz uchun rahmat';
 	@override late final _Translations$supporter$errors$uz errors = _Translations$supporter$errors$uz._(_root);
 }
 
@@ -624,8 +624,8 @@ class _Translations$themeEditor$uz extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Hali yaratilmagan';
 	@override String get editCustom => 'Shaxsiy mavzuni tahrirlash';
 	@override String get editCustomDescription => 'Har bir rangni oʻzingiz tanlang';
-	@override String get locked => 'Supporter bilan ochiladi';
-	@override String get savedLocked => 'Saqlangan — Supporter bilan ochiladi';
+	@override String get locked => 'Mavzu va belgilar toʻplami bilan ochiladi';
+	@override String get savedLocked => 'Saqlangan — Mavzu va belgilar toʻplami bilan ochiladi';
 	@override String get title => 'Shaxsiy mavzu';
 	@override String get startFrom => 'Asos qilib olish';
 	@override String get startFromDescription => 'Boshqa mavzudan barcha ranglarni nusxalash';
@@ -2542,11 +2542,11 @@ class _Translations$supporter$errors$uz extends Translations$supporter$errors$en
 
 	// Translations
 	@override String get storeUnavailable => 'Xaridlar mavjud emas. Doʻkonga kirganingizni va bu qurilmada xaridlarga ruxsat berilganini tekshiring.';
-	@override String get productNotFound => 'Supporter xaridi hozircha doʻkoningizda mavjud emas.';
+	@override String get productNotFound => 'Mavzu va belgilar toʻplami hozircha doʻkoningizda mavjud emas.';
 	@override String get productQueryFailed => 'Narxni yuklab boʻlmadi. Ulanishni tekshirib, qaytadan urinib koʻring.';
 	@override String get purchaseFailed => 'Xarid amalga oshmadi. Qaytadan urinib koʻring.';
 	@override String get restoreFailed => 'Xaridni tiklash uchun doʻkonga ulanib boʻlmadi. Qaytadan urinib koʻring.';
-	@override String get nothingToRestore => 'Ushbu doʻkon hisobi uchun Supporter xaridi topilmadi.';
+	@override String get nothingToRestore => 'Ushbu doʻkon hisobi uchun Mavzu va belgilar toʻplami xaridi topilmadi.';
 }
 
 // Path: themeEditor.slots
@@ -3402,8 +3402,8 @@ extension on TranslationsUz {
 			'appIcon.title' => 'Ilova belgisi',
 			'appIcon.defaultIcon' => 'Standart',
 			'appIcon.current' => 'Joriy belgi',
-			'appIcon.locked' => 'Supporter imtiyozi',
-			'appIcon.lockedHint' => 'Muqobil belgilar — Supporter imtiyozi.',
+			'appIcon.locked' => 'Mavzu va belgilar toʻplamiga kiradi',
+			'appIcon.lockedHint' => 'Muqobil belgilar Mavzu va belgilar toʻplamiga kiradi.',
 			'appIcon.changeFailed' => 'Ilova belgisini oʻzgartirib boʻlmadi',
 			'appIcon.launcherHint' => 'Yangi belgi Plezy-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.',
 			'appIcon.tvLauncherHint' => 'Yangi banner Plezy-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.',
@@ -3533,8 +3533,8 @@ extension on TranslationsUz {
 			'update.viewRelease' => 'Tafsilotlarni koʻrish',
 			'update.latestVersion' => 'Sizda eng soʻnggi versiya oʻrnatilgan',
 			'update.checkFailed' => 'Yangilanishlarni tekshirish imkoni boʻlmadi',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Plezy rivojini qoʻllab-quvvatlaydigan va tashqi koʻrinish uchun qoʻshimcha imkoniyatlarni ochadigan bir martalik xarid:',
+			'supporter.title' => 'Mavzu va belgilar toʻplami',
+			'supporter.intro' => 'Tashqi koʻrinish uchun qoʻshimchalar beradigan ixtiyoriy bir martalik xarid:',
 			'supporter.presetThemes' => 'Tayyor mavzular',
 			'supporter.presetThemesDescription' => 'Choʻgʻ, Muzlik, Oʻrmon, Olxoʻri va Qogʻoz',
 			'supporter.customTheme' => 'Shaxsiy mavzu',
@@ -3545,17 +3545,17 @@ extension on TranslationsUz {
 			'supporter.loadingPrice' => 'Narx yuklanmoqda...',
 			'supporter.restore' => 'Xaridlarni tiklash',
 			'supporter.pending' => 'Xaridingiz toʻlov yoki tasdiqlashni kutmoqda. Doʻkon uni yakunlashi bilanoq qoʻshimchalar ochiladi.',
-			'supporter.thankYouTitle' => 'Plezy-ni qoʻllab-quvvatlaganingiz uchun rahmat',
-			'supporter.thankYouBody' => 'Supporter qoʻshimchalaringiz ochildi.',
+			'supporter.thankYouTitle' => 'Xaridingiz uchun rahmat',
+			'supporter.thankYouBody' => 'Mavzu va belgilar toʻplami ochildi.',
 			'supporter.tileSubtitle' => 'Bir martalik xarid bilan mavzular va ilova belgilarini oching',
 			'supporter.tileSubtitleThemesOnly' => 'Bir martalik xarid bilan mavzularni oching',
-			'supporter.tileUnlocked' => 'Qoʻllab-quvvatlaganingiz uchun rahmat',
+			'supporter.tileUnlocked' => 'Ochildi — xaridingiz uchun rahmat',
 			'supporter.errors.storeUnavailable' => 'Xaridlar mavjud emas. Doʻkonga kirganingizni va bu qurilmada xaridlarga ruxsat berilganini tekshiring.',
-			'supporter.errors.productNotFound' => 'Supporter xaridi hozircha doʻkoningizda mavjud emas.',
+			'supporter.errors.productNotFound' => 'Mavzu va belgilar toʻplami hozircha doʻkoningizda mavjud emas.',
 			'supporter.errors.productQueryFailed' => 'Narxni yuklab boʻlmadi. Ulanishni tekshirib, qaytadan urinib koʻring.',
 			'supporter.errors.purchaseFailed' => 'Xarid amalga oshmadi. Qaytadan urinib koʻring.',
 			'supporter.errors.restoreFailed' => 'Xaridni tiklash uchun doʻkonga ulanib boʻlmadi. Qaytadan urinib koʻring.',
-			'supporter.errors.nothingToRestore' => 'Ushbu doʻkon hisobi uchun Supporter xaridi topilmadi.',
+			'supporter.errors.nothingToRestore' => 'Ushbu doʻkon hisobi uchun Mavzu va belgilar toʻplami xaridi topilmadi.',
 			'settings.title' => 'Sozlamalar',
 			'settings.supportDeveloper' => 'Plezy-ni qoʻllab-quvvatlash',
 			'settings.supportDeveloperDescription' => 'Dasturchini Liberapay orqali qoʻllab-quvvatlang',
@@ -3898,8 +3898,8 @@ extension on TranslationsUz {
 			'themeEditor.customEmpty' => 'Hali yaratilmagan',
 			'themeEditor.editCustom' => 'Shaxsiy mavzuni tahrirlash',
 			'themeEditor.editCustomDescription' => 'Har bir rangni oʻzingiz tanlang',
-			'themeEditor.locked' => 'Supporter bilan ochiladi',
-			'themeEditor.savedLocked' => 'Saqlangan — Supporter bilan ochiladi',
+			'themeEditor.locked' => 'Mavzu va belgilar toʻplami bilan ochiladi',
+			'themeEditor.savedLocked' => 'Saqlangan — Mavzu va belgilar toʻplami bilan ochiladi',
 			'themeEditor.title' => 'Shaxsiy mavzu',
 			'themeEditor.startFrom' => 'Asos qilib olish',
 			'themeEditor.startFromDescription' => 'Boshqa mavzudan barcha ranglarni nusxalash',

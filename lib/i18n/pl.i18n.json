@@ -6,8 +6,8 @@
     "title": "Ikona aplikacji",
     "defaultIcon": "Domyślna",
     "current": "Bieżąca ikona",
-    "locked": "W pakiecie Supporter",
-    "lockedHint": "Alternatywne ikony są dostępne w pakiecie Supporter.",
+    "locked": "W pakiecie motywów i ikon",
+    "lockedHint": "Alternatywne ikony są dostępne w pakiecie motywów i ikon.",
     "changeFailed": "Nie udało się zmienić ikony aplikacji",
     "launcherHint": "Nowa ikona pojawi się na ekranie głównym po opuszczeniu Plezy.",
     "tvLauncherHint": "Nowy baner pojawi się po opuszczeniu Plezy. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.",
@@ -153,8 +153,8 @@
     "checkFailed": "Nie udało się sprawdzić aktualizacji"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Jednorazowy zakup, który wspiera rozwój Plezy i odblokowuje dodatki wizualne:",
+    "title": "Pakiet motywów i ikon",
+    "intro": "Opcjonalny jednorazowy zakup z dodatkami wizualnymi:",
     "presetThemes": "Gotowe motywy",
     "presetThemesDescription": "Żar, Lodowiec, Las, Śliwka i Papier",
     "customTheme": "Własny motyw",
@@ -165,18 +165,18 @@
     "loadingPrice": "Ładowanie ceny...",
     "restore": "Przywróć zakupy",
     "pending": "Twój zakup oczekuje na płatność lub zatwierdzenie. Dodatki zostaną odblokowane, gdy tylko sklep go sfinalizuje.",
-    "thankYouTitle": "Dziękujemy za wspieranie Plezy",
-    "thankYouBody": "Dodatki z pakietu Supporter zostały odblokowane.",
+    "thankYouTitle": "Dziękujemy za zakup",
+    "thankYouBody": "Pakiet motywów i ikon został odblokowany.",
     "tileSubtitle": "Odblokuj motywy i ikony aplikacji jednorazowym zakupem",
     "tileSubtitleThemesOnly": "Odblokuj motywy jednorazowym zakupem",
-    "tileUnlocked": "Dziękujemy za wsparcie",
+    "tileUnlocked": "Odblokowano — dziękujemy za zakup",
     "errors": {
       "storeUnavailable": "Zakupy są niedostępne. Sprawdź, czy zalogowano się do sklepu i czy zakupy są dozwolone na tym urządzeniu.",
-      "productNotFound": "Pakiet Supporter jest obecnie niedostępny w Twoim sklepie.",
+      "productNotFound": "Pakiet motywów i ikon jest obecnie niedostępny w Twoim sklepie.",
       "productQueryFailed": "Nie udało się wczytać ceny. Sprawdź połączenie i spróbuj ponownie.",
       "purchaseFailed": "Zakup nie powiódł się. Spróbuj ponownie.",
       "restoreFailed": "Nie udało się połączyć ze sklepem, aby przywrócić zakup. Spróbuj ponownie.",
-      "nothingToRestore": "Nie znaleziono zakupu pakietu Supporter dla tego konta sklepu."
+      "nothingToRestore": "Nie znaleziono zakupu pakietu motywów i ikon dla tego konta sklepu."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Jeszcze nie utworzono",
     "editCustom": "Edytuj własny motyw",
     "editCustomDescription": "Wybierz każdy kolor samodzielnie",
-    "locked": "Odblokuj z pakietem Supporter",
-    "savedLocked": "Zapisany — wymaga pakietu Supporter",
+    "locked": "Odblokuj z pakietem motywów i ikon",
+    "savedLocked": "Zapisany — wymaga pakietu motywów i ikon",
     "title": "Własny motyw",
     "startFrom": "Zacznij od",
     "startFromDescription": "Skopiuj wszystkie kolory z innego motywu",

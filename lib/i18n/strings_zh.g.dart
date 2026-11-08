@@ -115,8 +115,8 @@ class Translations$appIcon$zh extends Translations$appIcon$en {
 	@override String get title => '应用图标';
 	@override String get defaultIcon => '默认';
 	@override String get current => '当前图标';
-	@override String get locked => 'Supporter 专属';
-	@override String get lockedHint => '备用图标是 Supporter 专属福利。';
+	@override String get locked => '包含在主题与图标包中';
+	@override String get lockedHint => '备用图标包含在主题与图标包中。';
 	@override String get changeFailed => '无法更改应用图标';
 	@override String get launcherHint => '离开 Plezy 后，新图标将显示在主屏幕上。';
 	@override String get tvLauncherHint => '离开 Plezy 后将显示新横幅。在电视重启之前，Android TV 可能仍会显示旧横幅。';
@@ -246,8 +246,8 @@ class Translations$supporter$zh extends Translations$supporter$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => '一次性购买，支持 Plezy 的开发，并解锁以下外观类附加内容：';
+	@override String get title => '主题与图标包';
+	@override String get intro => '可选的一次性购买，提供以下外观类附加内容：';
 	@override String get presetThemes => '预设主题';
 	@override String get presetThemesDescription => '余烬、冰川、森林、梅子和纸张';
 	@override String get customTheme => '自定义主题';
@@ -258,11 +258,11 @@ class Translations$supporter$zh extends Translations$supporter$en {
 	@override String get loadingPrice => '正在加载价格…';
 	@override String get restore => '恢复购买';
 	@override String get pending => '你的购买正在等待付款或批准。商店完成处理后，附加内容将立即解锁。';
-	@override String get thankYouTitle => '感谢你支持 Plezy';
-	@override String get thankYouBody => '你的 Supporter 附加内容已解锁。';
+	@override String get thankYouTitle => '感谢你的购买';
+	@override String get thankYouBody => '主题与图标包已解锁。';
 	@override String get tileSubtitle => '一次性购买即可解锁主题和应用图标';
 	@override String get tileSubtitleThemesOnly => '一次性购买即可解锁主题';
-	@override String get tileUnlocked => '感谢你的支持';
+	@override String get tileUnlocked => '已解锁 — 感谢你的购买';
 	@override late final Translations$supporter$errors$zh errors = Translations$supporter$errors$zh.internal(_root);
 }
 
@@ -624,8 +624,8 @@ class Translations$themeEditor$zh extends Translations$themeEditor$en {
 	@override String get customEmpty => '尚未创建';
 	@override String get editCustom => '编辑自定义主题';
 	@override String get editCustomDescription => '自行选择每种颜色';
-	@override String get locked => '通过 Supporter 解锁';
-	@override String get savedLocked => '已保存 — 通过 Supporter 解锁';
+	@override String get locked => '通过主题与图标包解锁';
+	@override String get savedLocked => '已保存 — 通过主题与图标包解锁';
 	@override String get title => '自定义主题';
 	@override String get startFrom => '从现有主题开始';
 	@override String get startFromDescription => '从其他主题复制所有颜色';
@@ -2532,11 +2532,11 @@ class Translations$supporter$errors$zh extends Translations$supporter$errors$en 
 
 	// Translations
 	@override String get storeUnavailable => '无法进行购买。请确认你已登录商店，且此设备允许购买。';
-	@override String get productNotFound => '你的商店目前无法购买 Supporter。';
+	@override String get productNotFound => '你的商店目前无法购买主题与图标包。';
 	@override String get productQueryFailed => '无法加载价格。请检查网络连接后重试。';
 	@override String get purchaseFailed => '购买未完成。请重试。';
 	@override String get restoreFailed => '无法连接到商店以恢复你的购买。请重试。';
-	@override String get nothingToRestore => '未在此商店账户中找到 Supporter 购买记录。';
+	@override String get nothingToRestore => '未在此商店账户中找到主题与图标包购买记录。';
 }
 
 // Path: themeEditor.slots
@@ -3390,8 +3390,8 @@ extension on TranslationsZh {
 			'appIcon.title' => '应用图标',
 			'appIcon.defaultIcon' => '默认',
 			'appIcon.current' => '当前图标',
-			'appIcon.locked' => 'Supporter 专属',
-			'appIcon.lockedHint' => '备用图标是 Supporter 专属福利。',
+			'appIcon.locked' => '包含在主题与图标包中',
+			'appIcon.lockedHint' => '备用图标包含在主题与图标包中。',
 			'appIcon.changeFailed' => '无法更改应用图标',
 			'appIcon.launcherHint' => '离开 Plezy 后，新图标将显示在主屏幕上。',
 			'appIcon.tvLauncherHint' => '离开 Plezy 后将显示新横幅。在电视重启之前，Android TV 可能仍会显示旧横幅。',
@@ -3521,8 +3521,8 @@ extension on TranslationsZh {
 			'update.viewRelease' => '查看发布详情',
 			'update.latestVersion' => '当前已是最新版本',
 			'update.checkFailed' => '无法检查更新',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => '一次性购买，支持 Plezy 的开发，并解锁以下外观类附加内容：',
+			'supporter.title' => '主题与图标包',
+			'supporter.intro' => '可选的一次性购买，提供以下外观类附加内容：',
 			'supporter.presetThemes' => '预设主题',
 			'supporter.presetThemesDescription' => '余烬、冰川、森林、梅子和纸张',
 			'supporter.customTheme' => '自定义主题',
@@ -3533,17 +3533,17 @@ extension on TranslationsZh {
 			'supporter.loadingPrice' => '正在加载价格…',
 			'supporter.restore' => '恢复购买',
 			'supporter.pending' => '你的购买正在等待付款或批准。商店完成处理后，附加内容将立即解锁。',
-			'supporter.thankYouTitle' => '感谢你支持 Plezy',
-			'supporter.thankYouBody' => '你的 Supporter 附加内容已解锁。',
+			'supporter.thankYouTitle' => '感谢你的购买',
+			'supporter.thankYouBody' => '主题与图标包已解锁。',
 			'supporter.tileSubtitle' => '一次性购买即可解锁主题和应用图标',
 			'supporter.tileSubtitleThemesOnly' => '一次性购买即可解锁主题',
-			'supporter.tileUnlocked' => '感谢你的支持',
+			'supporter.tileUnlocked' => '已解锁 — 感谢你的购买',
 			'supporter.errors.storeUnavailable' => '无法进行购买。请确认你已登录商店，且此设备允许购买。',
-			'supporter.errors.productNotFound' => '你的商店目前无法购买 Supporter。',
+			'supporter.errors.productNotFound' => '你的商店目前无法购买主题与图标包。',
 			'supporter.errors.productQueryFailed' => '无法加载价格。请检查网络连接后重试。',
 			'supporter.errors.purchaseFailed' => '购买未完成。请重试。',
 			'supporter.errors.restoreFailed' => '无法连接到商店以恢复你的购买。请重试。',
-			'supporter.errors.nothingToRestore' => '未在此商店账户中找到 Supporter 购买记录。',
+			'supporter.errors.nothingToRestore' => '未在此商店账户中找到主题与图标包购买记录。',
 			'settings.title' => '设置',
 			'settings.supportDeveloper' => '支持 Plezy',
 			'settings.supportDeveloperDescription' => '通过 Liberapay 捐赠支持开发',
@@ -3886,8 +3886,8 @@ extension on TranslationsZh {
 			'themeEditor.customEmpty' => '尚未创建',
 			'themeEditor.editCustom' => '编辑自定义主题',
 			'themeEditor.editCustomDescription' => '自行选择每种颜色',
-			'themeEditor.locked' => '通过 Supporter 解锁',
-			'themeEditor.savedLocked' => '已保存 — 通过 Supporter 解锁',
+			'themeEditor.locked' => '通过主题与图标包解锁',
+			'themeEditor.savedLocked' => '已保存 — 通过主题与图标包解锁',
 			'themeEditor.title' => '自定义主题',
 			'themeEditor.startFrom' => '从现有主题开始',
 			'themeEditor.startFromDescription' => '从其他主题复制所有颜色',

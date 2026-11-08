@@ -126,11 +126,11 @@ class Translations$appIcon$en {
 	/// en: 'Current icon'
 	String get current => 'Current icon';
 
-	/// en: 'Supporter perk'
-	String get locked => 'Supporter perk';
+	/// en: 'Part of the Theme & Icon Pack'
+	String get locked => 'Part of the Theme & Icon Pack';
 
-	/// en: 'Alternate icons are a Supporter perk.'
-	String get lockedHint => 'Alternate icons are a Supporter perk.';
+	/// en: 'Alternate icons are part of the Theme & Icon Pack.'
+	String get lockedHint => 'Alternate icons are part of the Theme & Icon Pack.';
 
 	/// en: 'Couldn't change the app icon'
 	String get changeFailed => 'Couldn\'t change the app icon';
@@ -426,11 +426,11 @@ class Translations$supporter$en {
 
 	// Translations
 
-	/// en: 'Plezy Supporter'
-	String get title => 'Plezy Supporter';
+	/// en: 'Theme & Icon Pack'
+	String get title => 'Theme & Icon Pack';
 
-	/// en: 'A one-time purchase that supports Plezy's development and unlocks cosmetic extras:'
-	String get intro => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:';
+	/// en: 'An optional one-time purchase that adds cosmetic extras:'
+	String get intro => 'An optional one-time purchase that adds cosmetic extras:';
 
 	/// en: 'Preset themes'
 	String get presetThemes => 'Preset themes';
@@ -462,11 +462,11 @@ class Translations$supporter$en {
 	/// en: 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.'
 	String get pending => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.';
 
-	/// en: 'Thank you for supporting Plezy'
-	String get thankYouTitle => 'Thank you for supporting Plezy';
+	/// en: 'Thanks for your purchase'
+	String get thankYouTitle => 'Thanks for your purchase';
 
-	/// en: 'Your Supporter extras are unlocked.'
-	String get thankYouBody => 'Your Supporter extras are unlocked.';
+	/// en: 'The Theme & Icon Pack is unlocked.'
+	String get thankYouBody => 'The Theme & Icon Pack is unlocked.';
 
 	/// en: 'Unlock themes and app icons with a one-time purchase'
 	String get tileSubtitle => 'Unlock themes and app icons with a one-time purchase';
@@ -474,8 +474,8 @@ class Translations$supporter$en {
 	/// en: 'Unlock themes with a one-time purchase'
 	String get tileSubtitleThemesOnly => 'Unlock themes with a one-time purchase';
 
-	/// en: 'Thank you for your support'
-	String get tileUnlocked => 'Thank you for your support';
+	/// en: 'Unlocked — thanks for your purchase'
+	String get tileUnlocked => 'Unlocked — thanks for your purchase';
 
 	late final Translations$supporter$errors$en errors = Translations$supporter$errors$en.internal(_root);
 }
@@ -1523,11 +1523,11 @@ class Translations$themeEditor$en {
 	/// en: 'Choose every color yourself'
 	String get editCustomDescription => 'Choose every color yourself';
 
-	/// en: 'Unlock with Supporter'
-	String get locked => 'Unlock with Supporter';
+	/// en: 'Unlock with the Theme & Icon Pack'
+	String get locked => 'Unlock with the Theme & Icon Pack';
 
-	/// en: 'Saved — unlocks with Supporter'
-	String get savedLocked => 'Saved — unlocks with Supporter';
+	/// en: 'Saved — unlocks with the Theme & Icon Pack'
+	String get savedLocked => 'Saved — unlocks with the Theme & Icon Pack';
 
 	/// en: 'Custom Theme'
 	String get title => 'Custom Theme';
@@ -6355,8 +6355,8 @@ class Translations$supporter$errors$en {
 	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
 	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
 
-	/// en: 'The Supporter purchase isn't available in your store right now.'
-	String get productNotFound => 'The Supporter purchase isn\'t available in your store right now.';
+	/// en: 'The Theme & Icon Pack isn't available in your store right now.'
+	String get productNotFound => 'The Theme & Icon Pack isn\'t available in your store right now.';
 
 	/// en: 'Couldn't load the price. Check your connection and try again.'
 	String get productQueryFailed => 'Couldn\'t load the price. Check your connection and try again.';
@@ -6367,8 +6367,8 @@ class Translations$supporter$errors$en {
 	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
 	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
 
-	/// en: 'No Supporter purchase was found for this store account.'
-	String get nothingToRestore => 'No Supporter purchase was found for this store account.';
+	/// en: 'No Theme & Icon Pack purchase was found for this store account.'
+	String get nothingToRestore => 'No Theme & Icon Pack purchase was found for this store account.';
 }
 
 // Path: themeEditor.slots
@@ -8123,8 +8123,8 @@ extension on Translations {
 			'appIcon.title' => 'App icon',
 			'appIcon.defaultIcon' => 'Default',
 			'appIcon.current' => 'Current icon',
-			'appIcon.locked' => 'Supporter perk',
-			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
+			'appIcon.locked' => 'Part of the Theme & Icon Pack',
+			'appIcon.lockedHint' => 'Alternate icons are part of the Theme & Icon Pack.',
 			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
 			'appIcon.launcherHint' => 'The new icon appears on your home screen once you leave Plezy.',
 			'appIcon.tvLauncherHint' => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.',
@@ -8254,8 +8254,8 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:',
+			'supporter.title' => 'Theme & Icon Pack',
+			'supporter.intro' => 'An optional one-time purchase that adds cosmetic extras:',
 			'supporter.presetThemes' => 'Preset themes',
 			'supporter.presetThemesDescription' => 'Ember, Glacier, Forest, Plum and Paper',
 			'supporter.customTheme' => 'Custom theme',
@@ -8266,17 +8266,17 @@ extension on Translations {
 			'supporter.loadingPrice' => 'Loading price...',
 			'supporter.restore' => 'Restore Purchases',
 			'supporter.pending' => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.',
-			'supporter.thankYouTitle' => 'Thank you for supporting Plezy',
-			'supporter.thankYouBody' => 'Your Supporter extras are unlocked.',
+			'supporter.thankYouTitle' => 'Thanks for your purchase',
+			'supporter.thankYouBody' => 'The Theme & Icon Pack is unlocked.',
 			'supporter.tileSubtitle' => 'Unlock themes and app icons with a one-time purchase',
 			'supporter.tileSubtitleThemesOnly' => 'Unlock themes with a one-time purchase',
-			'supporter.tileUnlocked' => 'Thank you for your support',
+			'supporter.tileUnlocked' => 'Unlocked — thanks for your purchase',
 			'supporter.errors.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
-			'supporter.errors.productNotFound' => 'The Supporter purchase isn\'t available in your store right now.',
+			'supporter.errors.productNotFound' => 'The Theme & Icon Pack isn\'t available in your store right now.',
 			'supporter.errors.productQueryFailed' => 'Couldn\'t load the price. Check your connection and try again.',
 			'supporter.errors.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
 			'supporter.errors.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
-			'supporter.errors.nothingToRestore' => 'No Supporter purchase was found for this store account.',
+			'supporter.errors.nothingToRestore' => 'No Theme & Icon Pack purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support Plezy',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
@@ -8619,8 +8619,8 @@ extension on Translations {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
-			'themeEditor.locked' => 'Unlock with Supporter',
-			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
+			'themeEditor.locked' => 'Unlock with the Theme & Icon Pack',
+			'themeEditor.savedLocked' => 'Saved — unlocks with the Theme & Icon Pack',
 			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',

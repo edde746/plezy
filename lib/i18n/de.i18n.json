@@ -6,8 +6,8 @@
     "title": "App-Symbol",
     "defaultIcon": "Standard",
     "current": "Aktuelles Symbol",
-    "locked": "Supporter-Vorteil",
-    "lockedHint": "Alternative Symbole sind ein Supporter-Vorteil.",
+    "locked": "Teil des Design- und Symbolpakets",
+    "lockedHint": "Alternative Symbole sind Teil des Design- und Symbolpakets.",
     "changeFailed": "App-Symbol konnte nicht geändert werden",
     "launcherHint": "Das neue Symbol erscheint auf deinem Startbildschirm, sobald du Plezy verlässt.",
     "tvLauncherHint": "Das neue Banner erscheint, sobald du Plezy verlässt. Android TV zeigt eventuell noch das alte an, bis der Fernseher neu gestartet wird.",
@@ -153,8 +153,8 @@
     "checkFailed": "Fehler bei der Updateprüfung"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Ein einmaliger Kauf, der die Entwicklung von Plezy unterstützt und kosmetische Extras freischaltet:",
+    "title": "Design- und Symbolpaket",
+    "intro": "Ein optionaler einmaliger Kauf mit kosmetischen Extras:",
     "presetThemes": "Design-Vorlagen",
     "presetThemesDescription": "Glut, Gletscher, Wald, Pflaume und Papier",
     "customTheme": "Eigenes Design",
@@ -165,18 +165,18 @@
     "loadingPrice": "Preis wird geladen …",
     "restore": "Käufe wiederherstellen",
     "pending": "Dein Kauf wartet auf Zahlung oder Genehmigung. Die Extras werden freigeschaltet, sobald der Store ihn abschließt.",
-    "thankYouTitle": "Danke, dass du Plezy unterstützt",
-    "thankYouBody": "Deine Supporter-Extras sind freigeschaltet.",
+    "thankYouTitle": "Danke für deinen Kauf",
+    "thankYouBody": "Das Design- und Symbolpaket ist freigeschaltet.",
     "tileSubtitle": "Designs und App-Symbole mit einem einmaligen Kauf freischalten",
     "tileSubtitleThemesOnly": "Designs mit einem einmaligen Kauf freischalten",
-    "tileUnlocked": "Danke für deine Unterstützung",
+    "tileUnlocked": "Freigeschaltet – danke für deinen Kauf",
     "errors": {
       "storeUnavailable": "Käufe sind nicht verfügbar. Prüfe, ob du im Store angemeldet bist und Käufe auf diesem Gerät erlaubt sind.",
-      "productNotFound": "Der Supporter-Kauf ist in deinem Store derzeit nicht verfügbar.",
+      "productNotFound": "Das Design- und Symbolpaket ist in deinem Store derzeit nicht verfügbar.",
       "productQueryFailed": "Der Preis konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
       "purchaseFailed": "Der Kauf wurde nicht abgeschlossen. Versuche es erneut.",
       "restoreFailed": "Der Store ist nicht erreichbar, daher konnte dein Kauf nicht wiederhergestellt werden. Versuche es erneut.",
-      "nothingToRestore": "Für dieses Store-Konto wurde kein Supporter-Kauf gefunden."
+      "nothingToRestore": "Für dieses Store-Konto wurde kein Kauf des Design- und Symbolpakets gefunden."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Noch nicht erstellt",
     "editCustom": "Eigenes Design bearbeiten",
     "editCustomDescription": "Jede Farbe selbst wählen",
-    "locked": "Mit Supporter freischalten",
-    "savedLocked": "Gespeichert – wird mit Supporter freigeschaltet",
+    "locked": "Mit dem Design- und Symbolpaket freischalten",
+    "savedLocked": "Gespeichert – wird mit dem Design- und Symbolpaket freigeschaltet",
     "title": "Eigenes Design",
     "startFrom": "Basierend auf",
     "startFromDescription": "Alle Farben aus einem anderen Design übernehmen",

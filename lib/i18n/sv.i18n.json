@@ -6,8 +6,8 @@
     "title": "Appikon",
     "defaultIcon": "Standard",
     "current": "Aktuell ikon",
-    "locked": "Supporter-förmån",
-    "lockedHint": "Alternativa ikoner är en Supporter-förmån.",
+    "locked": "Ingår i Tema- och ikonpaketet",
+    "lockedHint": "Alternativa ikoner ingår i Tema- och ikonpaketet.",
     "changeFailed": "Kunde inte byta appikon",
     "launcherHint": "Den nya ikonen visas på hemskärmen när du lämnar Plezy.",
     "tvLauncherHint": "Den nya bannern visas när du lämnar Plezy. Android TV kan fortsätta visa den gamla tills TV:n startas om.",
@@ -153,8 +153,8 @@
     "checkFailed": "Det gick inte att söka efter uppdateringar"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Ett engångsköp som stöder utvecklingen av Plezy och låser upp kosmetiska extrafunktioner:",
+    "title": "Tema- och ikonpaket",
+    "intro": "Ett valfritt engångsköp med kosmetiska extrafunktioner:",
     "presetThemes": "Förinställda teman",
     "presetThemesDescription": "Glöd, Glaciär, Skog, Plommon och Papper",
     "customTheme": "Anpassat tema",
@@ -165,18 +165,18 @@
     "loadingPrice": "Hämtar pris...",
     "restore": "Återställ köp",
     "pending": "Ditt köp väntar på betalning eller godkännande. Extrafunktionerna låses upp så snart butiken har slutfört det.",
-    "thankYouTitle": "Tack för att du stöder Plezy",
-    "thankYouBody": "Dina Supporter-extrafunktioner är upplåsta.",
+    "thankYouTitle": "Tack för ditt köp",
+    "thankYouBody": "Tema- och ikonpaketet är upplåst.",
     "tileSubtitle": "Lås upp teman och appikoner med ett engångsköp",
     "tileSubtitleThemesOnly": "Lås upp teman med ett engångsköp",
-    "tileUnlocked": "Tack för ditt stöd",
+    "tileUnlocked": "Upplåst — tack för ditt köp",
     "errors": {
       "storeUnavailable": "Köp är inte tillgängliga. Kontrollera att du är inloggad i butiken och att köp är tillåtna på den här enheten.",
-      "productNotFound": "Supporter-köpet är inte tillgängligt i din butik just nu.",
+      "productNotFound": "Tema- och ikonpaketet är inte tillgängligt i din butik just nu.",
       "productQueryFailed": "Kunde inte hämta priset. Kontrollera anslutningen och försök igen.",
       "purchaseFailed": "Köpet gick inte igenom. Försök igen.",
       "restoreFailed": "Kunde inte nå butiken för att återställa ditt köp. Försök igen.",
-      "nothingToRestore": "Inget Supporter-köp hittades för det här butikskontot."
+      "nothingToRestore": "Inget köp av Tema- och ikonpaketet hittades för det här butikskontot."
     }
   },
   "settings": {
@@ -524,8 +524,8 @@
     "customEmpty": "Inte skapat ännu",
     "editCustom": "Redigera anpassat tema",
     "editCustomDescription": "Välj alla färger själv",
-    "locked": "Lås upp med Supporter",
-    "savedLocked": "Sparat — låses upp med Supporter",
+    "locked": "Lås upp med Tema- och ikonpaketet",
+    "savedLocked": "Sparat — låses upp med Tema- och ikonpaketet",
     "title": "Anpassat tema",
     "startFrom": "Utgå från",
     "startFromDescription": "Kopiera alla färger från ett annat tema",
