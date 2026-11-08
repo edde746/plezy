@@ -82,7 +82,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // The open is negotiating the display from this frame: keep it behind
     // the loading UI until the mode switch (and decoder refresh) settled,
-    // as the spinner did while the metadata pre-load switch ran. Concurrent
+    // as the spinner does while a switch before the decoder runs. Concurrent
     // callers (restart event, position fallback) re-check after the wait so
     // only one latches the frame. A negotiation abandoned by a newer open
     // resolves false: that open holds and reveals its own first frame, and

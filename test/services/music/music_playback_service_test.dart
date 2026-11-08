@@ -373,6 +373,9 @@ class FakePlayer implements Player {
   Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {}
 
   @override
+  VideoDecoderHold? holdVideoDecoderAtPreload() => null;
+
+  @override
   Future<void> configureSubtitleFonts() async {}
 
   /// Each setAudioPassthrough write with the number of opens before it, so a

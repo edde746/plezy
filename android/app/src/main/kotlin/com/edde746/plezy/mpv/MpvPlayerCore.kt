@@ -98,9 +98,18 @@ class MpvPlayerCore private constructor(
     /**
      * Upper bound for the `on_preloaded` decode routing. mpv holds playback
      * start until the hook is continued; past this the routing is cancelled
-     * and the library continues the hook itself.
+     * and the hook moves on.
      */
     private const val HOOK_TIMEOUT_MS = 3_000L
+
+    /**
+     * Upper bound for holding a file's decoder at `on_preloaded` while Dart
+     * switches the display for it ([DecoderHold]): FrameRateManager's longest
+     * wait (settle, the 10 s maximum user delay and its watchdog margin: 15 s)
+     * plus the round trips. The library continues the hook itself once the
+     * routing and this have both run out.
+     */
+    private const val DECODER_HOLD_TIMEOUT_MS = 20_000L
 
     /**
      * How long an admitted write may go unanswered before the core is declared
@@ -458,9 +467,13 @@ class MpvPlayerCore private constructor(
 
   /**
    * Per-file decode routing run inside mpv's `on_preloaded` hook, set once
-   * the session is adopted; null continues the hook at once.
+   * the session is adopted; null continues the hook at once. Returns the
+   * pending video track it routed, which [holdDecoderForDisplay] reports.
    */
-  @Volatile private var hookHandler: (suspend (name: String) -> Unit)? = null
+  @Volatile private var hookHandler: (suspend (name: String) -> org.json.JSONObject?)? = null
+
+  /** Dart's hold on the next file's video decoder; see [holdVideoDecoder]. */
+  private val decoderHold = DecoderHold()
 
   /**
    * The session's callbacks. The library calls them on the session's
@@ -487,16 +500,25 @@ class MpvPlayerCore private constructor(
       // that answers the hook. continueHook is idempotent, so answering after
       // the library's own timeout or close is a no-op.
       scope.launch(start = CoroutineStart.UNDISPATCHED) {
+        // Taken first, so this file's hook consumes the arm whatever the
+        // routing does: an arm left behind would hold the next file instead.
+        val hold = if (name == "on_preloaded") decoderHold.take() else null
         try {
           val handle = hookHandler
-          if (handle != null && withTimeoutOrNull(HOOK_TIMEOUT_MS) { handle(name) } == null) {
+          var track: org.json.JSONObject? = null
+          if (handle != null && withTimeoutOrNull(HOOK_TIMEOUT_MS) { track = handle(name) } == null) {
             Log.w(TAG, "Hook $name handler overran; continuing playback")
           }
+          if (hold != null) holdDecoderForDisplay(hold, track)
         } catch (e: CancellationException) {
           PlayerDebugLog.d(TAG) { "Hook $name handler canceled" }
         } catch (e: Exception) {
           Log.w(TAG, "Hook $name handler failed; continuing playback", e)
         } finally {
+          hold?.let {
+            it.answer(null)
+            decoderHold.finish(it)
+          }
           player.continueHook(id)
         }
       }
@@ -1057,7 +1079,7 @@ class MpvPlayerCore private constructor(
           val p = writeOperations.run("initialization") {
             withContext(NonCancellable) {
               // Blocks through mpv_initialize on this write worker (IO), never main.
-              val created = MpvPlayer.create(context.applicationContext, mpvListener, HOOK_TIMEOUT_MS) {
+              val created = MpvPlayer.create(context.applicationContext, mpvListener, HOOK_TIMEOUT_MS + DECODER_HOLD_TIMEOUT_MS) {
                 // The level Dart hands us at `initialize` drives mpv's own
                 // verbosity and the Kotlin-side traces alike.
                 PlayerDebugLog.applyLogLevel(initialLogLevel)
@@ -1191,7 +1213,10 @@ class MpvPlayerCore private constructor(
                   applySoftwareDecodePolicy(p, track)
                   applyDecoderOperatingRate(track)
                   applyFramedropPolicy()
+                  track
                 }
+              } else {
+                null
               }
             }
           } else if (!audioOnly) {
@@ -1200,8 +1225,10 @@ class MpvPlayerCore private constructor(
             hookHandler = { name ->
               if (name == "on_preloaded" && !disposing) {
                 writeOperations.run("preloaded hook") {
-                  applySoftwareDvReshapeOutput(pendingVideoTrack(p))
+                  pendingVideoTrack(p).also { applySoftwareDvReshapeOutput(it) }
                 }
+              } else {
+                null
               }
             }
           }
@@ -1284,9 +1311,11 @@ class MpvPlayerCore private constructor(
   private fun onMpvEvent(event: MpvEvent) {
     when (event) {
       is MpvEvent.EndFile -> {
+        decoderHold.onFileEnded()
         delegate?.onEvent("end-file", endFileDiagnostics.onEndFile(event))
       }
       is MpvEvent.StartFile -> {
+        decoderHold.onFileStarted()
         endFileDiagnostics.onStartFile()
         // Per file: mpv's verdict was on the previous stream's decode
         // path, so the next file gets the plane back. A genuine
@@ -3187,6 +3216,53 @@ class MpvPlayerCore private constructor(
     frameRateManager?.clearVideoFrameRate(hdrActive = hdrDisplayActive)
   }
 
+  /**
+   * Holds the next opened file's video decoder at `on_preloaded` until Dart
+   * calls [releaseVideoDecoderHold] with [token], so the display can be
+   * switched for the file before its decoder exists ([DecoderHold], #2998).
+   * [onPreloaded] gets the file's demuxed video format (`fps`, `width`,
+   * `height`) once the hold is in place, or null when nothing was held: no
+   * video track, a failed or superseded open, a disposed core.
+   */
+  fun holdVideoDecoder(token: Long, onPreloaded: (Map<String, Any?>?) -> Unit) {
+    if (audioOnly || disposing) {
+      onPreloaded(null)
+      return
+    }
+    decoderHold.arm(token) { format -> runOnMain { onPreloaded(format) } }
+  }
+
+  /** Lets the decoder [holdVideoDecoder] held for [token] open, or cancels that hold. */
+  fun releaseVideoDecoderHold(token: Long) {
+    decoderHold.release(token)
+  }
+
+  /**
+   * The held side of [holdVideoDecoder], inside this file's `on_preloaded`:
+   * reports the pending [track]'s demuxed rate and size, then waits for
+   * Dart's release, at most [DECODER_HOLD_TIMEOUT_MS]. A file without a
+   * video track has nothing to switch for; the hook's finally answers that.
+   */
+  private suspend fun holdDecoderForDisplay(hold: DecoderHold.Hold, track: org.json.JSONObject?) {
+    if (track == null || disposing) return
+    val fps = track.optDouble("demux-fps").takeIf { it.isFinite() && it > 0.0 }
+    val width = track.optInt("demux-w")
+    val height = track.optInt("demux-h")
+    hold.answer(mapOf("fps" to fps, "width" to width, "height" to height))
+    val started = SystemClock.elapsedRealtime()
+    val released = withTimeoutOrNull(DECODER_HOLD_TIMEOUT_MS) { hold.released.await() } != null
+    val heldMs = SystemClock.elapsedRealtime() - started
+    emitLog(
+      "info",
+      "framerate",
+      if (released) {
+        "video decoder held ${heldMs}ms for the display (fps=$fps, ${width}x$height)"
+      } else {
+        "display not ready after ${heldMs}ms; opening the video decoder"
+      }
+    )
+  }
+
   // Cleanup
 
   // A dispose that arrives while an earlier one is still tearing down joins
@@ -3258,6 +3334,8 @@ class MpvPlayerCore private constructor(
     // Media3 onStopped: the Surface outlives this core until native teardown.
     frameRateVote.onStopped()
     frameRateVote.onSurfaceChanged(null)
+    // An armed hold's Dart waiter is answered; a held hook lets go.
+    decoderHold.close()
 
     // Cancel all coroutines
     scope.cancel()

@@ -11,6 +11,7 @@ import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
 import 'player_base.dart';
+import 'video_decoder_hold.dart';
 
 typedef _AudioStateRequest = ({
   bool passthrough,
@@ -999,6 +1000,39 @@ class PlayerNative extends PlayerBase {
     if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
     await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs});
+  }
+
+  /// Tells this player's holds apart, so a superseded open's late release
+  /// cannot let go of a newer open's hold.
+  int _decoderHoldTokens = 0;
+
+  @override
+  VideoDecoderHold? holdVideoDecoderAtPreload() {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isAndroid || !initialized) return null;
+    final token = ++_decoderHoldTokens;
+    final format = invoke<Map<Object?, Object?>>('holdVideoDecoder', {'token': token}).then<DemuxedVideoFormat?>(
+      (answer) => answer == null
+          ? null
+          : (
+              fps: (answer['fps'] as num?)?.toDouble(),
+              width: (answer['width'] as num?)?.toInt() ?? 0,
+              height: (answer['height'] as num?)?.toInt() ?? 0,
+            ),
+      onError: (Object e, StackTrace stackTrace) {
+        appLogger.w('Video decoder hold failed', error: e, stackTrace: stackTrace);
+        return null;
+      },
+    );
+    return VideoDecoderHold(
+      format: format,
+      release: () async {
+        try {
+          await invoke<void>('releaseVideoDecoderHold', {'token': token});
+        } catch (e, stackTrace) {
+          appLogger.w('Video decoder hold release failed', error: e, stackTrace: stackTrace);
+        }
+      },
+    );
   }
 
   @override

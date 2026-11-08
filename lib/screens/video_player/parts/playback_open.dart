@@ -4,10 +4,14 @@ part of '../../video_player_screen.dart';
 /// pre-switch ran (ExoPlayer only), whether playback must open paused behind
 /// a startup gate, and which post-open follow-up releases it.
 ///
-/// mpv never switches before open: its target is read from the decoded
-/// stream itself (see [PlayerOutputFormat]), so it opens paused, negotiates
-/// the display once the first frame proves what is being presented, and
-/// resumes. ExoPlayer keeps its metadata-driven pre-open switch.
+/// mpv never switches before open. An Android mpv VOD open switches once
+/// the demuxer has opened the file, before its video decoder exists, from
+/// the rate and size the container declares
+/// ([_FrameRateStartupPlan.displaySwitchBeforeDecoder]); every mpv open then
+/// checks the switch against the decoded stream itself (see
+/// [PlayerOutputFormat]) once the first frame proves what is being
+/// presented, and resumes. ExoPlayer keeps its metadata-driven pre-open
+/// switch.
 class _FrameRateStartupPlan {
   _FrameRateStartupPlan({required this.fps, this.width = 0, this.height = 0});
 
@@ -29,6 +33,12 @@ class _FrameRateStartupPlan {
   /// the player's own output (Android mpv) or wait out the AVDisplayManager
   /// switch the decoded stream triggered (Apple TV), then resume.
   bool needsFirstFrameSwitch = false;
+
+  /// The switch an Android mpv VOD open makes while its video decoder is
+  /// held, from open until the decoder is let go
+  /// ([_armDisplaySwitchBeforeDecoder]). Completes at once when there is
+  /// none; the first-frame negotiation awaits it.
+  Future<void> displaySwitchBeforeDecoder = Future<void>.value();
 
   /// The first-frame signal, taken from the attempt's open outcome *before*
   /// open() so the gate can't miss a synchronously-fast restart event.
@@ -129,7 +139,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// off). Transcoded streams stay unannounced: the server may tone-map, so
   /// the default SDR surface is the safe target. This is a surface-format
   /// hint set before the decoder exists, not display matching — the display
-  /// mode itself is negotiated from mpv's decoded stream on every platform.
+  /// mode itself is negotiated from what mpv demuxes and decodes on every
+  /// platform.
   Future<void> _announceContentColorTransfer({
     required Player player,
     required MediaDisplayCriteria? displayCriteria,
@@ -224,7 +235,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// decoded stream at its first frame — Android mpv and Apple TV — or null
   /// for one that does not (ExoPlayer, desktop). Shared by the VOD open and
   /// Live TV channel opens ([_armLiveDisplayNegotiation]) so the two cannot
-  /// drift.
+  /// drift. Only the VOD open adds the switch before the decoder
+  /// ([_armDisplaySwitchBeforeDecoder]): a Live TV zap stays on the
+  /// first-frame switch alone, since broadcast is where interlaced video
+  /// lives and a declared frame rate there would mean a second switch per
+  /// zap.
   _FrameRateStartupPlan? _firstFrameStartupPlan(
     Player currentPlayer,
     SettingsService settingsService, {
@@ -245,12 +260,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }
 
   /// Decide the display strategy for an open. mpv (Android) and Apple TV
-  /// open paused and negotiate from the decoded stream at the first frame;
-  /// ExoPlayer switches before open from metadata (after audio focus, so
-  /// AudioTrack passthrough survives the renegotiation) and falls back to a
-  /// post-open switch that holds playback start when it could not. Returns
-  /// null when the screen/player went stale mid-switch and the caller must
-  /// bail.
+  /// open paused and negotiate at the first frame, Android mpv VOD after a
+  /// switch made before its decoder exists; ExoPlayer switches before open
+  /// from metadata (after audio focus, so AudioTrack passthrough survives
+  /// the renegotiation) and falls back to a post-open switch that holds
+  /// playback start when it could not. Returns null when the screen/player
+  /// went stale mid-switch and the caller must bail.
   Future<_FrameRateStartupPlan?> _prepareFrameRateForOpen({
     required Player currentPlayer,
     required SettingsService settingsService,
@@ -391,6 +406,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterRefresh,
   }) async {
+    // A VOD open switched before its decoder existed; this checks that
+    // switch against what the decoder presents.
+    await plan.displaySwitchBeforeDecoder;
     appLogger.d('Display matching: waiting for the first frame before negotiating the display');
     final startupReady = await plan._startupFrameReady;
     if (!isCurrent()) {
@@ -1091,6 +1109,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         partTimeline: result.mediaInfo?.partTimeline,
       );
       if (!isCurrent()) return false;
+      _armDisplaySwitchBeforeDecoder(
+        currentPlayer: currentPlayer,
+        settingsService: settingsService,
+        plan: frameRatePlan,
+        outcome: outcome,
+      );
       final openResult = await _openMediaOnPlayer(
         player: currentPlayer,
         settingsService: settingsService,

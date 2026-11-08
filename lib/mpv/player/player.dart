@@ -10,8 +10,10 @@ import 'player_state.dart';
 import 'player_streams.dart';
 import 'platform/player_linux.dart';
 import 'platform/player_windows.dart';
+import 'video_decoder_hold.dart';
 
 export 'player_base.dart';
+export 'video_decoder_hold.dart';
 
 /// Abstract interface for the video player.
 ///
@@ -206,6 +208,16 @@ abstract class Player {
   /// has ended, plus the settle and [extraDelayMs] for TVs or AVRs that need
   /// extra time. Immediate on every other platform.
   Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0});
+
+  /// Hold the next opened file's video decoder until the display is ready
+  /// for it (Android mpv): the player stops after the demuxer opened the
+  /// file and before any decoder exists, reports the stream's demuxed format
+  /// through [VideoDecoderHold.format], and creates the decoder once
+  /// [VideoDecoderHold.release] is called. A decoder created before an HDMI
+  /// mode switch can stay bound to the old mode (#2998), so the display is
+  /// switched in between. Call right before [open]; the hold applies to that
+  /// open only. Null where the backend has no such hold.
+  VideoDecoderHold? holdVideoDecoderAtPreload();
 
   /// Configure subtitle fonts for libass rendering.
   ///
