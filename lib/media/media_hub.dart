@@ -2,6 +2,10 @@ import 'media_item.dart';
 
 /// A named, ordered list of items grouped on the home screen (Plex `Hub`,
 /// or a synthesized Jellyfin "Latest"/"Resume"/"NextUp" row).
+/// Identifies a hub Plex returned from its promoted (Home) endpoint, across
+/// fetches: the server it came from and its content identifier.
+String promotedHubKey(MediaHub hub) => '${hub.serverId ?? ''}|${hub.identifier ?? hub.id}';
+
 class MediaHub {
   /// Backend-opaque hub identifier (Plex `key`, synthesized for Jellyfin).
   final String id;

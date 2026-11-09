@@ -65,6 +65,7 @@ List<MediaHub> buildConfiguredHomeSections({
   Map<String, List<MediaItem>> singleCollectionContents = const {},
   Map<String, ManagedHubHeroOverride> managedHubHeroOverrides = const {},
   MediaHub? continueWatchingHub,
+  Set<String> promotedHubKeys = const {},
 }) {
   final output = <MediaHub>[];
   for (final section in sections.where((s) => s.enabled && s.showOnHome)) {
@@ -164,6 +165,28 @@ List<MediaHub> buildConfiguredHomeSections({
         ? custom[token]
         : resolvePlexToken(token);
     if (hub != null && usedHubs.add(hub)) ordered.add(hub);
+  }
+  // A row on Plex's own Home that the Organizer has no place for yet (added
+  // on Plex itself or by another app, after the order was saved) still
+  // shows: Plex's Home is what decides which rows exist, since removing a row
+  // in the Organizer takes it off Plex's Home too. It goes where Plex has it,
+  // right after the row Plex shows before it. Per-library hubs fetched only
+  // to feed merged rows or music are never promoted, so they stay hidden.
+  for (var i = 0; i < combined.length; i++) {
+    final hub = combined[i];
+    if (usedHubs.contains(hub) || !promotedHubKeys.contains(promotedHubKey(hub))) continue;
+    if (_hubLibraryId(hub) == null) continue; // already shown with the untrackable rows
+    var at = 0;
+    for (var j = i - 1; j >= 0; j--) {
+      final before = ordered.indexOf(combined[j]);
+      if (before >= 0) {
+        at = before + 1;
+        break;
+      }
+    }
+    if (at == 0 && ordered.isNotEmpty && ordered.first.id == 'continue_watching') at = 1;
+    ordered.insert(at, hub);
+    usedHubs.add(hub);
   }
   return [...ordered, ...untrackable];
 }

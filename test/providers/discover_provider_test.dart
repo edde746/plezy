@@ -76,6 +76,7 @@ class _FakeAggregationService extends DataAggregationService {
   Set<String> hubCancelledServerIds = const {};
   Set<String> onDeckFailedServerIds = const {};
   Set<String> hubFailedServerIds = const {};
+  Set<String> hubPromotedKeys = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
   Future<void>? onDeckGate;
@@ -123,6 +124,7 @@ class _FakeAggregationService extends DataAggregationService {
     final hubs = hubsResult();
     return (
       hubs: hubs,
+      promotedHubKeys: hubPromotedKeys,
       observedItems: [
         for (final hub in hubs)
           for (final item in hub.items) (item: item, clientScope: null),

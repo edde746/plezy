@@ -41,6 +41,11 @@ typedef OnDeckAggregationResult = ({
 });
 typedef HubAggregationResult = ({
   List<MediaHub> hubs,
+  // [promotedHubKey]s of the hubs that came from Plex's own Home (promoted)
+  // endpoint, as opposed to per-library hubs fetched only to feed merged
+  // rows or music. Home shows a promoted hub even before the Organizer has
+  // saved a place for it (a row added on Plex itself, or by another app).
+  Set<String> promotedHubKeys,
   List<ObservedRow> observedItems,
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
@@ -613,6 +618,7 @@ class DataAggregationService {
       appLogger.w('No online servers available for fetching hubs');
       return (
         hubs: const <MediaHub>[],
+        promotedHubKeys: const <String>{},
         observedItems: const <ObservedRow>[],
         succeededServerIds: const <String>{},
         cancelledServerIds: const <String>{},
@@ -632,6 +638,7 @@ class DataAggregationService {
     final legCancelledServerIds = <String>{if (libraryFetch != null) ...libraryFetch.cancelledServerIds};
     final globalDiagnosticsByServer = <String, HubFetchDiagnostics>{};
     final observedRows = <ObservedRow>[];
+    final promotedHubKeys = <String>{};
 
     final fetched = await _fanOut<MediaHub>(
       clients,
@@ -642,6 +649,7 @@ class DataAggregationService {
         final prefetchDegraded = legFailedServerIds.contains(serverId) || legCancelledServerIds.contains(serverId);
         final hubItemLimit = limit ?? defaultHubPreviewLimit;
         List<MediaHub> hubs;
+        var promotedIdentifiers = const <String>{};
         if (shouldUseGlobalHubs) {
           // Both legs are independent, so start them before awaiting either.
           // Spreading `...await a, ...await b` into one list literal evaluates
@@ -703,6 +711,7 @@ class DataAggregationService {
             if (music.cancelled) legCancelledServerIds.add(serverId);
           }
           if (globalError != null) Error.throwWithStackTrace(globalError, globalStackTrace!);
+          promotedIdentifiers = {for (final hub in globalHubs) hub.identifier ?? hub.id};
           hubs = [...globalHubs, if (music != null) ...music.hubs];
         } else {
           // A fallback backend cannot run a hub leg without the libraries its
@@ -723,6 +732,9 @@ class DataAggregationService {
           hubs = libraryHubs.hubs;
         }
         final processed = _postProcessHubs(hubs, serverId: ServerId(serverId), hiddenLibraryKeys: hiddenLibraryKeys);
+        for (final hub in processed) {
+          if (promotedIdentifiers.contains(hub.identifier ?? hub.id)) promotedHubKeys.add(promotedHubKey(hub));
+        }
         final scope = client.cacheServerId;
         observedRows.addAll([
           for (final hub in processed)
@@ -741,6 +753,7 @@ class DataAggregationService {
     final hubs = limit != null && limit < all.length ? all.sublist(0, limit) : all;
     return (
       hubs: hubs,
+      promotedHubKeys: promotedHubKeys,
       // Pre-limit, so a row trimmed off the tail still counts as observed.
       observedItems: observedRows,
       succeededServerIds: legSucceededServerIds,

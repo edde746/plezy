@@ -590,6 +590,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         singleCollectionContents: singleCollectionContents,
         managedHubHeroOverrides: settings.read(SettingsService.managedHubHeroOverrides),
         continueWatchingHub: settings.read(SettingsService.continueWatchingOnHome) ? _continueWatchingHub : null,
+        promotedHubKeys: fetchedHubs.promotedHubKeys,
       );
 
       final visibleHubs = settings.read(SettingsService.hideWatchedInHubs)

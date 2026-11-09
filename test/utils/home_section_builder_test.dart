@@ -312,4 +312,48 @@ void main() {
       expect(result.map((h) => h.identifier), ['movie.recentlyreleased.7']);
     });
   });
+  group('rows on Plex Home the Organizer has not seen yet', () {
+    MediaHub row(String identifier) => MediaHub(
+      id: identifier,
+      identifier: identifier,
+      title: identifier,
+      type: 'movie',
+      serverId: 'srv',
+      libraryId: '1',
+      items: [testMediaItem(id: identifier)],
+    );
+
+    test('a row added on Plex shows where Plex has it; per-library feed rows stay hidden', () {
+      final added = row('movie.recentlyadded.1');
+      final christmas = row('custom.collection.1.55');
+      final released = row('movie.recentlyreleased.1');
+      final feed = row('movie.recentlyreleased.9');
+      final result = buildConfiguredHomeSections(
+        // Plex's Home order: Recently Added, then the new collection row, then Recently Released.
+        sourceHubs: [added, christmas, released, feed],
+        collections: const [],
+        sections: const [],
+        rowOrder: const ['plex:srv:1:movie.recentlyreleased', 'plex:srv:1:movie.recentlyadded'],
+        promotedHubKeys: {
+          for (final hub in [added, christmas, released]) promotedHubKey(hub),
+        },
+      );
+      // The saved order is kept; the new row lands right after the row Plex shows before it.
+      expect(result.map((hub) => hub.identifier), [
+        'movie.recentlyreleased.1',
+        'movie.recentlyadded.1',
+        'custom.collection.1.55',
+      ]);
+    });
+
+    test('without promoted keys nothing new shows (the saved order alone, as before)', () {
+      final result = buildConfiguredHomeSections(
+        sourceHubs: [row('movie.recentlyadded.1'), row('custom.collection.1.55')],
+        collections: const [],
+        sections: const [],
+        rowOrder: const ['plex:srv:1:movie.recentlyadded'],
+      );
+      expect(result.map((hub) => hub.identifier), ['movie.recentlyadded.1']);
+    });
+  });
 }
