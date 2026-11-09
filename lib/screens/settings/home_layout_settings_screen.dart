@@ -326,7 +326,32 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       for (final section in sections)
         if (section.enabled && section.showOnHome) 'custom:${section.id}',
     ];
-    return [...saved.where(available.contains), ...available.where((entry) => !saved.contains(entry))];
+    // A row that is new here (promoted on Plex itself, or by another app)
+    // goes where Plex has it, right after the nearest row before it in
+    // Plex's order, rather than at the bottom: Home shows such a row in
+    // Plex's place too, so the list and Home agree.
+    final result = [...saved.where(available.contains)];
+    for (var i = 0; i < available.length; i++) {
+      final entry = available[i];
+      if (result.contains(entry)) continue;
+      var at = -1;
+      for (var j = i - 1; j >= 0 && at < 0; j--) {
+        final k = result.indexOf(available[j]);
+        if (k >= 0) at = k + 1;
+      }
+      if (at < 0) {
+        at = result.length;
+        for (var j = i + 1; j < available.length; j++) {
+          final k = result.indexOf(available[j]);
+          if (k >= 0) {
+            at = k;
+            break;
+          }
+        }
+      }
+      result.insert(at, entry);
+    }
+    return result;
   }
 
   /// Wraps [child] so the entire tile — not just a small handle icon — is a
