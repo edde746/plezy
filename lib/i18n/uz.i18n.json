@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Media elementini oʻchirib boʻlmadi",
     "rate": "Baho berish",
     "playFromBeginning": "Boshidan ijro etish",
-    "playVersion": "Versiyani ijro etish..."
+    "playVersion": "Versiyani ijro etish...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Baho berish",

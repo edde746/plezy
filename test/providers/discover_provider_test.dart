@@ -8,6 +8,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/title_copies.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/providers/discover_provider.dart';
@@ -21,6 +22,8 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/library_content_notifier.dart';
+import 'package:plezy/utils/external_ids.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
@@ -78,6 +81,16 @@ class _FakeAggregationService extends DataAggregationService {
   Set<String> hubFailedServerIds = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
   Map<String, List<MediaItem>> onDeckCopies = const {};
+  List<MediaItem> discoveredCopies = const [];
+
+  @override
+  Future<LibraryLookupResult> findTitleCopiesAcrossServers(TitleQuery query, {AbortController? abort}) async => (
+    items: discoveredCopies,
+    succeededServerIds: const {'server_1'},
+    cancelledServerIds: const <String>{},
+    failedServerIds: const <String>{},
+    unqueriedServerIds: const <String>{},
+  );
   List<MediaHub> Function() hubsResult = () => const [];
   Future<void>? onDeckGate;
   Future<void>? hubGate;
@@ -167,6 +180,9 @@ class _FakeClient implements MediaServerClient {
     fetchedItemIds.add(id);
     return itemResult;
   }
+
+  @override
+  Future<ExternalIds> fetchExternalIds(String id) async => const ExternalIds(tmdb: 777);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -501,6 +517,24 @@ void main() {
       expect(provider.onDeck.map((item) => item.id), ['movie-hd', 'other']);
       expect(provider.continueWatchingCopiesOf(hd), isEmpty);
       refetch.complete();
+    });
+  });
+
+  test('a copy found outside the hub can promote itself into Continue Watching on progress', () async {
+    final original = _item('movie-uhd', kind: MediaKind.movie).copyWith(durationMs: 100000, viewOffsetMs: 10000);
+    final discovered = _item('movie-dv', kind: MediaKind.movie).copyWith(durationMs: 100000);
+    aggregation.onDeckResult = () => [original];
+    aggregation.discoveredCopies = [original, discovered];
+    await provider.load();
+    final choices = await provider.resolveContinueWatchingCopies(original);
+    expect(choices.copies.map((copy) => copy.id).toSet(), {'movie-uhd', 'movie-dv'});
+    WatchStateNotifier().notifyProgress(item: discovered, viewOffset: 40000, duration: 100000);
+    await pumpEventQueue();
+    expect(provider.onDeck.single.id, 'movie-dv');
+    expect(provider.onDeck.single.viewOffsetMs, 40000);
+    expect(provider.continueWatchingCopiesOf(provider.onDeck.single).map((copy) => copy.id).toSet(), {
+      'movie-uhd',
+      'movie-dv',
     });
   });
 

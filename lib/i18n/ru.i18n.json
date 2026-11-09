@@ -768,7 +768,8 @@
     "mediaFailedToDelete": "Не удалось удалить медиаэлемент",
     "rate": "Оценить",
     "playFromBeginning": "Воспроизвести сначала",
-    "playVersion": "Воспроизвести версию..."
+    "playVersion": "Воспроизвести версию...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Оценить",

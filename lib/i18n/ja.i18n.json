@@ -759,7 +759,8 @@
     "mediaFailedToDelete": "メディアアイテムの削除に失敗しました",
     "rate": "評価",
     "playFromBeginning": "最初から再生",
-    "playVersion": "バージョンを選んで再生…"
+    "playVersion": "バージョンを選んで再生…",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "評価",

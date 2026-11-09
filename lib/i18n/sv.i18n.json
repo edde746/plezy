@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Det gick inte att ta bort medieobjektet",
     "rate": "Betygsätt",
     "playFromBeginning": "Spela från början",
-    "playVersion": "Spela version..."
+    "playVersion": "Spela version...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Betygsätt",

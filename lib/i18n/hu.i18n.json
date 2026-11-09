@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Nem sikerült a médiaelem törlése",
     "rate": "Értékelés",
     "playFromBeginning": "Lejátszás az elejétől",
-    "playVersion": "Verzió lejátszása..."
+    "playVersion": "Verzió lejátszása...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Értékelés",

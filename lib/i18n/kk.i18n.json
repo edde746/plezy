@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Медиа элементін өшіру мүмкін болмады",
     "rate": "Бағалау",
     "playFromBeginning": "Басынан бастап ойнату",
-    "playVersion": "Нұсқаны ойнату..."
+    "playVersion": "Нұсқаны ойнату...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Бағалау",

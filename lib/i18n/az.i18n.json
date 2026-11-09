@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Media elementi silinə bilmədi",
     "rate": "Qiymətləndir",
     "playFromBeginning": "Əvvəldən oynat",
-    "playVersion": "Versiyanı oynat..."
+    "playVersion": "Versiyanı oynat...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Qiymətləndir",

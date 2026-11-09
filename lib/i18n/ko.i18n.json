@@ -759,7 +759,8 @@
     "mediaFailedToDelete": "미디어 항목 삭제 실패",
     "rate": "평가",
     "playFromBeginning": "처음부터 재생",
-    "playVersion": "버전 재생..."
+    "playVersion": "버전 재생...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "평가",

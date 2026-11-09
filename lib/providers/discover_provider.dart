@@ -11,8 +11,10 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
 import '../services/settings_service.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/continue_watching_copy_resolver.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/media_server_http_client.dart';
 import '../utils/coalesced_load_coordinator.dart';
 import '../utils/deletion_notifier.dart';
 import '../utils/media_event_keys.dart';
@@ -143,6 +145,45 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final MultiServerProvider _multiServer;
   final HiddenLibrariesProvider _hiddenLibraries;
   final LibrariesProvider _libraries;
+  late final _copyResolver = ContinueWatchingCopyResolver(
+    clientFor: (id) => _multiServer.serverManager.visibleOnlineClients[id],
+    findCopies: _multiServer.aggregationService.findTitleCopiesAcrossServers,
+  );
+
+  String _copyScopeKey() {
+    final clients = _multiServer.serverManager.visibleOnlineClients;
+    final ids = _multiServer.expectedServerIds.toList()..sort();
+    return ids
+        .map((id) {
+          final client = clients[id];
+          return '$id:${identityHashCode(client)}:${identityHashCode(client?.authenticationSessionId)}';
+        })
+        .join('|');
+  }
+
+  Future<ContinueWatchingCopyLookup> resolveContinueWatchingCopies(MediaItem item, {AbortController? abort}) async {
+    final result = await _copyResolver.resolve(
+      item,
+      knownCopies: continueWatchingCopiesOf(item),
+      hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+      scopeKey: _copyScopeKey,
+      abort: abort,
+    );
+    abort?.throwIfAborted();
+    if (isDisposed) {
+      final cancelled = AbortController()..abort();
+      cancelled.throwIfAborted();
+    }
+    final copies = result.copies
+        .where((copy) => _isInVisibleLibrary(copy, _hiddenLibraries.hiddenLibraryKeys))
+        .toList();
+    if (copies.length > 1 && _onDeck.any((row) => row.globalKey == item.globalKey)) {
+      // Progress/deletion subscriptions must know about copies discovered
+      // outside the hub, just as they know about copies merged from the hub.
+      _continueWatchingCopies = {..._continueWatchingCopies, item.globalKey: copies};
+    }
+    return (copies: copies, isComplete: result.isComplete);
+  }
 
   /// Injectable clock for the [staleAfter] check; tests advance it instead of
   /// sleeping — same seam as `ContentRefreshResumeGate`.
@@ -362,6 +403,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// periodically instead of continuously. The first event after a quiet
   /// period always refreshes promptly.
   void _onLibraryContentChanged(LibraryChangeEvent event) {
+    _copyResolver.clear();
     if (isDisposed || !event.hasChanges) return;
     _libraryEventPacer.schedule();
   }
@@ -1048,6 +1090,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       hierarchicalEventGlobalKeys(_visibleItems.followedBy(_continueWatchingCopyItems));
 
   void _onDeletion(DeletionEvent event) {
+    _copyResolver.clear();
     // On-deck and hubs are server-backed: a download-only deletion leaves the
     // server item in place, so it must not evict anything here.
     if (event.isDownloadOnly) return;
@@ -1085,6 +1128,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _onHiddenLibrariesChanged() {
+    _copyResolver.clear();
     final currentKeys = _hiddenLibraries.hiddenLibraryKeys;
     if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
       return;

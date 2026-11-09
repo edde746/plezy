@@ -33,6 +33,7 @@ import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
+import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
@@ -48,6 +49,7 @@ import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/continue_watching_copy_resolver.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/external_ids.dart';
@@ -69,6 +71,70 @@ import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
+  for (final kind in [MediaKind.movie, MediaKind.episode]) {
+    testWidgets('library-copy action is offered for a single online Continue Watching $kind without a lookup', (
+      tester,
+    ) async {
+      final discover = _LibraryCopyDiscover();
+      final requests = <Uri>[];
+      final menuKey = await _pumpPlexMovieMenu(
+        tester,
+        const [],
+        discover: discover,
+        isInContinueWatching: true,
+        requests: requests,
+        item: testMediaItem(id: 'single', kind: kind, backend: MediaBackend.plex, serverId: 'plex-1'),
+      );
+      menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+      await tester.pumpAndSettle();
+      expect(find.text(t.mediaMenu.chooseLibraryCopy), findsOneWidget);
+      expect(discover.lookups, 0);
+      expect(requests, isEmpty);
+    });
+  }
+
+  for (final gate in ['outside Continue Watching', 'server offline', 'downloaded item', 'offline mode']) {
+    testWidgets('library-copy action is hidden when $gate', (tester) async {
+      final discover = _LibraryCopyDiscover();
+      final menuKey = await _pumpPlexMovieMenu(
+        tester,
+        const [],
+        discover: discover,
+        isInContinueWatching: gate != 'outside Continue Watching',
+        serverOnline: gate != 'server offline',
+        isOffline: gate == 'downloaded item',
+        offlineMode: gate == 'offline mode' ? _MenuOfflineMode() : null,
+      );
+      menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+      await tester.pumpAndSettle();
+      expect(find.text(t.mediaMenu.chooseLibraryCopy), findsNothing);
+      expect(discover.lookups, 0);
+    });
+  }
+
+  testWidgets('library-copy lookup starts only on selection and cancellation never launches a late result', (
+    tester,
+  ) async {
+    final discover = _LibraryCopyDiscover();
+    final menuKey = await _pumpPlexMovieMenu(tester, const [], discover: discover, isInContinueWatching: true);
+    menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+    await tester.pumpAndSettle();
+    expect(discover.lookups, 0);
+    await tester.tap(find.text(t.mediaMenu.chooseLibraryCopy));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+    expect(discover.lookups, 1);
+    expect(find.byKey(const Key('continue-watching-copy-loading')), findsOneWidget);
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pumpAndSettle();
+    expect(discover.abort!.isAborted, isTrue);
+    discover.pending.complete((copies: [testMediaItem(id: 'late', kind: MediaKind.movie)], isComplete: true));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('picker target'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('cancelled media menu restores its live captured item', (tester) async {
     final destination = FocusNode();
     addTearDown(destination.dispose);
@@ -1724,6 +1790,12 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   List<({String id, String title})> playlists, {
   Widget Function(Widget menu)? wrapMenu,
   MediaItem? item,
+  DiscoverProvider? discover,
+  bool isInContinueWatching = false,
+  bool isOffline = false,
+  bool serverOnline = true,
+  OfflineModeProvider? offlineMode,
+  List<Uri>? requests,
 }) async {
   LocaleSettings.setLocaleSync(AppLocale.en);
   TvDetectionService.debugSetAppleTVOverride(true);
@@ -1741,6 +1813,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
     ),
     serverId: ServerId('plex-1'),
     httpClient: MockClient((request) async {
+      requests?.add(request.url);
       if (request.url.path != '/playlists') return http.Response('not found', 404);
       return http.Response(
         jsonEncode({
@@ -1765,7 +1838,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
       );
     }),
   );
-  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client, online: serverOnline);
   final multiServerProvider = testMultiServerProvider(manager);
   final stack = await ProfileStack.create(db: db, withStorage: false);
   addTearDown(() async {
@@ -1778,6 +1851,8 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   final menuKey = GlobalKey<MediaContextMenuState>();
   final menu = MediaContextMenu(
     key: menuKey,
+    isInContinueWatching: isInContinueWatching,
+    isOffline: isOffline,
     item:
         item ??
         testMediaItem(
@@ -1795,6 +1870,8 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          if (discover != null) ChangeNotifierProvider<DiscoverProvider>.value(value: discover),
+          if (offlineMode != null) ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
         ],
         child: MaterialApp(
           theme: monoTheme(MonoPalette.dark),
@@ -1804,6 +1881,30 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
     ),
   );
   return menuKey;
+}
+
+class _LibraryCopyDiscover extends ChangeNotifier implements DiscoverProvider {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  int lookups = 0;
+  AbortController? abort;
+  final pending = Completer<ContinueWatchingCopyLookup>();
+
+  @override
+  Future<ContinueWatchingCopyLookup> resolveContinueWatchingCopies(MediaItem item, {AbortController? abort}) {
+    lookups++;
+    this.abort = abort;
+    return pending.future;
+  }
+}
+
+class _MenuOfflineMode extends ChangeNotifier implements OfflineModeProvider {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  bool get isOffline => true;
 }
 
 /// Jellyfin answer for the per-item delete-permission probe.

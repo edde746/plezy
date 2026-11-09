@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
@@ -1147,6 +1148,89 @@ void main() {
       // (before the movie); without local history hd-episode (newest
       // lastViewedAt) would have survived.
       expect(result.items.map((item) => item.id), ['uhd-episode', 'movie-between']);
+    });
+
+    test('two 4K libraries and one HD library retain all three copies of an episode', () async {
+      registerContinueWatchingPlex(
+        [
+          for (final (id, show, library, height) in [
+            ('hd-episode', 'hd-show', 'Series', 1080),
+            ('uhd-episode', 'uhd-show', 'Series - 4K', 2160),
+            ('remux-episode', 'remux-show', 'Series - 4K Remux', 2160),
+          ])
+            {
+              'ratingKey': id,
+              'type': 'episode',
+              'title': 'Episode 1',
+              'grandparentRatingKey': show,
+              'grandparentTitle': 'House of the Dragon',
+              'parentIndex': 3,
+              'index': 1,
+              'guid': 'plex://episode/shared-s3e1',
+              'lastViewedAt': 200,
+              'librarySectionID': height == 1080
+                  ? 4
+                  : id == 'remux-episode'
+                  ? 8
+                  : 6,
+              'librarySectionTitle': library,
+              'Media': [
+                {
+                  'id': height == 1080
+                      ? 1
+                      : id == 'remux-episode'
+                      ? 3
+                      : 2,
+                  'height': height,
+                  'videoResolution': height == 1080 ? '1080' : '4k',
+                },
+              ],
+            },
+        ],
+        metadata: (ratingKey) => ratingKey.endsWith('-show')
+            ? {
+                'ratingKey': ratingKey,
+                'type': 'show',
+                'title': 'House of the Dragon',
+                'Guid': [
+                  {'id': 'tvdb://371572'},
+                ],
+              }
+            : null,
+      );
+
+      final result = await service.getOnDeckFromAllServers(limit: 10);
+
+      expect(result.items, hasLength(1));
+      expect(result.copies[result.items.single.globalKey]!.map((copy) => copy.id), [
+        'uhd-episode',
+        'remux-episode',
+        'hd-episode',
+      ]);
+      expect(result.copies[result.items.single.globalKey]!.map((copy) => copy.libraryId).toSet(), hasLength(3));
+    });
+
+    test('a singleton Continue Watching episode does not trigger a search for other libraries', () async {
+      final requests = registerContinueWatchingPlex([
+        {
+          'ratingKey': 'uhd-episode',
+          'type': 'episode',
+          'title': 'Episode 1',
+          'grandparentRatingKey': 'uhd-show',
+          'grandparentTitle': 'House of the Dragon',
+          'parentIndex': 3,
+          'index': 1,
+          'librarySectionID': 6,
+          'librarySectionTitle': 'Series - 4K',
+          'clearLogo': '/logo.png',
+        },
+      ]);
+
+      final result = await service.getOnDeckFromAllServers(limit: 10);
+
+      expect(result.items.single.id, 'uhd-episode');
+      expect(result.copies, isEmpty);
+      expect(requests.map((request) => request.path), ['/hubs']);
     });
 
     test('getOnDeckFromAllServers prefers a duplicate recorded by item key', () async {

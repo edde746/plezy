@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
     "rate": "Vurder",
     "playFromBeginning": "Spill fra begynnelsen",
-    "playVersion": "Spill av versjon..."
+    "playVersion": "Spill av versjon...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Vurder",

@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Falha ao excluir item de mídia",
     "rate": "Avaliar",
     "playFromBeginning": "Reproduzir do início",
-    "playVersion": "Reproduzir versão..."
+    "playVersion": "Reproduzir versão...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Avaliar",

@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Medienelement konnte nicht gelöscht werden",
     "rate": "Bewerten",
     "playFromBeginning": "Von Anfang an abspielen",
-    "playVersion": "Version abspielen …"
+    "playVersion": "Version abspielen …",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Bewerten",

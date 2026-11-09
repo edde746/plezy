@@ -768,7 +768,8 @@
     "mediaFailedToDelete": "Nie udało się usunąć elementu multimedialnego",
     "rate": "Oceń",
     "playFromBeginning": "Odtwórz od początku",
-    "playVersion": "Odtwórz wersję..."
+    "playVersion": "Odtwórz wersję...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Oceń",

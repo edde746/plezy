@@ -29,6 +29,7 @@ import '../utils/download_utils.dart';
 import '../utils/focus_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
+import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/catalog_sources_provider.dart';
@@ -38,6 +39,7 @@ import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/media_navigation_helper.dart';
+import '../utils/library_copy_navigation.dart';
 import '../utils/music_navigation.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -740,6 +742,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // offering versions that can't play (issue #1440).
     final hasVersionChoice = (mediaItem.mediaVersions ?? const []).length > 1;
     return [
+      // Hub membership is not a complete inventory. Discover alternatives only
+      // when explicitly requested, even if the hub supplied just one copy.
+      if (widget.isInContinueWatching &&
+          !widget.isOffline &&
+          isMovieOrEpisode &&
+          menu.itemServerOnline &&
+          context.read<OfflineModeProvider?>()?.isOffline != true &&
+          context.read<DiscoverProvider?>() != null)
+        _MenuAction(
+          value: 'play_library_copy',
+          icon: Symbols.video_library_rounded,
+          label: t.mediaMenu.chooseLibraryCopy,
+        ),
       if (isMovieOrEpisode && (hasVersionChoice || menu.canTranscode) && menu.itemServerOnline)
         _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
       // File Info — every file-backed leaf kind (movies, episodes, tracks,
@@ -938,6 +953,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         break;
       case 'play_version':
         outcome.didNavigate = await promptAndPlayVersion(context, _mediaItem!);
+        break;
+      case 'play_library_copy':
+        outcome.didNavigate = await promptAndPlayLibraryCopy(context, mediaItem);
         break;
       case 'fileinfo':
         await _showFileInfo(context);

@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Неуспешно изтриване на елемента",
     "rate": "Оцени",
     "playFromBeginning": "Пусни от началото",
-    "playVersion": "Пусни версия..."
+    "playVersion": "Пусни версия...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Оцени",

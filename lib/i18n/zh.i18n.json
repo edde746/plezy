@@ -759,7 +759,8 @@
     "mediaFailedToDelete": "删除媒体项失败",
     "rate": "评分",
     "playFromBeginning": "从头播放",
-    "playVersion": "播放版本…"
+    "playVersion": "播放版本…",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "评分",

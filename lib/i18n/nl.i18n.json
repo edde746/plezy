@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
     "rate": "Beoordelen",
     "playFromBeginning": "Afspelen vanaf het begin",
-    "playVersion": "Versie afspelen..."
+    "playVersion": "Versie afspelen...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Beoordelen",

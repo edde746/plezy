@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Medya ögesi silinemedi",
     "rate": "Oyla",
     "playFromBeginning": "Baştan Oynat",
-    "playVersion": "Sürümü Oynat..."
+    "playVersion": "Sürümü Oynat...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Oyla",

@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",
     "playFromBeginning": "Play from Beginning",
-    "playVersion": "Play Version..."
+    "playVersion": "Play Version...",
+    "chooseLibraryCopy": "Choose library copy…"
   },
   "rateSheet": {
     "title": "Rate",

@@ -762,7 +762,8 @@
     "mediaFailedToDelete": "Impossibile eliminare l'elemento multimediale",
     "rate": "Valuta",
     "playFromBeginning": "Riproduci dall'inizio",
-    "playVersion": "Riproduci versione..."
+    "playVersion": "Riproduci versione...",
+    "chooseLibraryCopy": ""
   },
   "rateSheet": {
     "title": "Valuta",
