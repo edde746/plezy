@@ -133,6 +133,7 @@
       "playlist": "Lista de reproducción",
       "clip": "Clip",
       "photo": "Foto",
+      "photoAlbum": "",
       "folder": "Carpeta"
     }
   },

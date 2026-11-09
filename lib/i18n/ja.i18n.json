@@ -133,6 +133,7 @@
       "playlist": "プレイリスト",
       "clip": "クリップ",
       "photo": "写真",
+      "photoAlbum": "",
       "folder": "フォルダ"
     }
   },

@@ -1061,6 +1061,8 @@ IconData _mediaPosterFallbackIcon(MediaItem item) {
   if (item.kind == MediaKind.artist) return Symbols.artist_rounded;
   if (item.kind == MediaKind.album) return Symbols.album_rounded;
   if (item.kind == MediaKind.track) return Symbols.music_note_rounded;
+  if (item.kind == MediaKind.photoAlbum) return Symbols.photo_library_rounded;
+  if (item.kind == MediaKind.photo) return Symbols.image_rounded;
   if (item.isShow || item.isSeason || item.isEpisode) return Symbols.tv_rounded;
   return Symbols.movie_rounded;
 }
@@ -1086,8 +1088,9 @@ double _posterFocusRadius(BuildContext context, Object item) =>
 /// Watched/progress overlays are suppressed for artists: a corner checkmark
 /// sits outside the circular artwork and play-state on an artist is noise.
 /// Albums/tracks keep the standard treatment (albums have no in-progress
-/// state to draw; tracks can show watched/resume state).
-bool _showsWatchedIndicator(MediaItem item) => item.kind != MediaKind.artist;
+/// state to draw; tracks can show watched/resume state). Photos and their
+/// albums have no play state at all.
+bool _showsWatchedIndicator(MediaItem item) => item.kind != MediaKind.artist && !item.kind.isPhotoContent;
 
 Widget _buildPosterImage(
   BuildContext context,
