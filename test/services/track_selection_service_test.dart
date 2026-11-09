@@ -174,6 +174,37 @@ void main() {
       expect(svc.languageMatches('en', 'fr'), isFalse);
       expect(svc.languageMatches('eng', 'fre'), isFalse);
     });
+
+    test('regional language matching and quality tiers', () {
+      // Tier 3: Direct or regional alias exact matches
+      expect(svc.languageMatchQuality('pt-BR', 'pt-BR'), 3);
+      expect(svc.languageMatchQuality('pt_BR', 'pt-BR'), 3);
+      expect(svc.languageMatchQuality('pob', 'pt-BR'), 3);
+      expect(svc.languageMatchQuality('pt-BR', 'pob'), 3);
+      expect(svc.languageMatchQuality('por-BR', 'pt-BR'), 3);
+      expect(svc.languageMatchQuality('pt-BR', 'por-BR'), 3);
+      expect(svc.languageMatchQuality('pob', 'por-BR'), 3);
+
+      // Tier 2: Base language matches with no region conflict (one generic)
+      expect(svc.languageMatchQuality('pt', 'pt-BR'), 2);
+      expect(svc.languageMatchQuality('por', 'pt-BR'), 2);
+      expect(svc.languageMatchQuality('pt-BR', 'pt'), 2);
+      expect(svc.languageMatchQuality('pt-PT', 'pt'), 2);
+      expect(svc.languageMatchQuality('pob', 'pt'), 2);
+      expect(svc.languageMatchQuality('pob', 'por'), 2);
+      expect(svc.languageMatchQuality('pt', 'pob'), 2);
+      expect(svc.languageMatchQuality('por', 'pob'), 2);
+
+      // Tier 1: Conflicting region matches (cross-region fallback)
+      expect(svc.languageMatchQuality('pt-PT', 'pt-BR'), 1);
+      expect(svc.languageMatchQuality('pob', 'pt-PT'), 1);
+      expect(svc.languageMatchQuality('pt-PT', 'pob'), 1);
+      expect(svc.languageMatchQuality('en-GB', 'en-US'), 1);
+
+      // 0: Non-matching languages
+      expect(svc.languageMatchQuality('en', 'pt-BR'), 0);
+      expect(svc.languageMatchQuality('es', 'pt-BR'), 0);
+    });
   });
 
   group('findBestSubtitleMatch', () {
@@ -949,6 +980,56 @@ void main() {
           subtitleMode: SubtitlePlaybackMode.smart,
         ),
       ).selectSubtitleTrack(tracks, null, _audio('A', lang: 'jpn'))!;
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('prioritizes exact regional matches (pt-BR) over conflicting European Portuguese (pt-PT)', () {
+      final tracks = [_sub('1', lang: 'pt-PT'), _sub('2', lang: 'pt-BR')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'pt-BR', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('prioritizes exact regional matches (pt-BR) over generic Portuguese (pt)', () {
+      final tracks = [_sub('1', lang: 'pt'), _sub('2', lang: 'pt-BR')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'pt-BR', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('prioritizes generic Portuguese (pt) over conflicting European Portuguese (pt-PT) when pt-BR preferred', () {
+      final tracks = [_sub('1', lang: 'pt-PT'), _sub('2', lang: 'pt')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'pt-BR', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('falls back to cross-region Portuguese (pt-PT) when only pt-PT and non-Portuguese exist', () {
+      final tracks = [_sub('1', lang: 'en'), _sub('2', lang: 'pt-PT')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'pt-BR', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('matches pob 3-letter alias track to pt-BR profile preference', () {
+      final tracks = [_sub('1', lang: 'en'), _sub('2', lang: 'pob')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'pt-BR', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, '2');
     });
