@@ -122,6 +122,8 @@ final class RecordingAudioSession {
   private var activatedOnMainThread = false
   /// Held by `activate` until signalled, when set.
   var activationGate: DispatchSemaphore?
+  /// Thrown by `activate`, after it is recorded, when set.
+  var activationError: Error?
 
   var calls: [String] {
     lock.lock()
@@ -143,6 +145,7 @@ final class RecordingAudioSession {
         recordedCalls.append("activate")
         activatedOnMainThread = Thread.isMainThread
         lock.unlock()
+        if let activationError { throw activationError }
       },
       deactivate: { [self] in
         lock.lock()
@@ -351,6 +354,40 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual(session.calls, [])
   }
 
+  func testADeactivationQueuedBehindAnActivationSparesAContextCreatedSince() {
+    // A video core torn down while its activation still waits on the audio
+    // server, and music started before that activation returns: the music
+    // core's output may already have activated the session itself.
+    let session = RecordingAudioSession()
+    let gate = DispatchSemaphore(value: 0)
+    session.activationGate = gate
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.contextWillBeCreated(activating: false)
+    gate.signal()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "deactivate"])
+  }
+
+  func testAFailedActivationLeavesTheSessionToWhoeverActivatedIt() {
+    // During a call, say: whatever activates the session later (mpv's audio
+    // output, the media controls) deactivates it too.
+    let session = RecordingAudioSession()
+    session.activationError = failure
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+  }
+
   func testVideoCoreActivatesTheAudioSessionBeforeItsFirstFileAndStillPlays() throws {
     let audioSession = AVAudioSession.sharedInstance()
     // As the app delegate leaves it at launch.
@@ -370,6 +407,8 @@ final class MpvPlayerContractTests: XCTestCase {
       core.queue.async { destroyed.fulfill() }
       wait(for: [destroyed], timeout: 10)
       MpvAudioSessionActivation.shared.queue.sync {}
+      // The process-wide session as the app delegate leaves it, for the tests after this one.
+      try? audioSession.setCategory(.playback, mode: .default)
       try? FileManager.default.removeItem(at: file)
     }
 

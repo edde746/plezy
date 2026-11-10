@@ -139,7 +139,13 @@ final class MpvWakeupCallbackContext {
     /// disposal run in the order they were asked for.
     let queue = DispatchQueue(label: "com.plezy.mpv.audio-session", qos: .userInitiated)
     private let session: Session
+    /// Counted on the caller's thread, not on `queue`: a deactivation still
+    /// queued behind a slow activation must see a music core created since,
+    /// whose own output may already have activated the session.
+    private let contextsLock = NSLock()
     private var liveContexts = 0
+    /// Whether `activate` succeeded and nothing has deactivated since. Only
+    /// touched on `queue`.
     private var activated = false
 
     init(session: Session) {
@@ -147,12 +153,14 @@ final class MpvWakeupCallbackContext {
     }
 
     func contextWillBeCreated(activating: Bool) {
+      contextsLock.lock()
+      liveContexts += 1
+      contextsLock.unlock()
+      guard activating else { return }
       queue.async { [self] in
-        liveContexts += 1
-        guard activating else { return }
-        activated = true
         do {
           try session.activate()
+          activated = true
         } catch {
           // mpv's audio output activates the session itself when it opens.
           MpvLog.debug("[MpvAudioSessionActivation] Failed to activate the audio session: \(error)")
@@ -161,16 +169,25 @@ final class MpvWakeupCallbackContext {
     }
 
     func contextWasDestroyed() {
+      contextsLock.lock()
+      liveContexts -= 1
+      contextsLock.unlock()
       queue.async { [self] in
-        liveContexts -= 1
-        guard liveContexts == 0, activated else { return }
-        activated = false
+        // Counted when the deactivation runs, not when it was asked for.
+        guard activated, !hasLiveContexts else { return }
         do {
           try session.deactivate()
+          activated = false
         } catch {
           MpvLog.debug("[MpvAudioSessionActivation] Failed to deactivate the audio session: \(error)")
         }
       }
+    }
+
+    private var hasLiveContexts: Bool {
+      contextsLock.lock()
+      defer { contextsLock.unlock() }
+      return liveContexts > 0
     }
   }
 #endif
