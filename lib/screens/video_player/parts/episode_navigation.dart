@@ -168,7 +168,14 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       }
       final followServerSelections = settingsService.read(SettingsService.followServerTrackSelections);
       final committedSubtitleSelection = _playbackSession?.subtitleSelection;
-      final primarySubtitlePreference = followServerSelections
+      // A pick the always-on fallback supplied is not a choice, so it must not
+      // be carried: a carried selection matches at navigation priority on the
+      // next episode, which persists it to the server as if the viewer had
+      // chosen it. The live native track is that same pick, so it cannot stand
+      // in either - the next episode starts from no preference and runs the
+      // fallback for itself.
+      final subtitleCameFromFallback = committedSubtitleSelection?.isForcedFallback == true;
+      final primarySubtitlePreference = followServerSelections || subtitleCameFromFallback
           ? null
           : subtitlePreferenceForItemChange(
               hasCommittedSelection: committedSubtitleSelection != null,
