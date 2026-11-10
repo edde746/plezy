@@ -17,6 +17,8 @@ abstract interface class SafStorageOperations {
 
   Future<List<SafDocumentFile>?> list(String uri);
 
+  Future<SafDocumentFile?> stat(String uri, {required bool isDir});
+
   Future<String?> resolvePersistedPermissionUri(String uri);
 
   Future<List<String>?> getPersistedPermissionUris();
@@ -177,6 +179,19 @@ class SafStorageService implements SafStorageOperations {
       return await _safUtil.list(uri);
     } catch (e) {
       appLogger.w('SAF list error', error: e);
+      return null;
+    }
+  }
+
+  /// Look up a SAF file or directory (including its byte length). Returns
+  /// null when it does not exist or on error.
+  @override
+  Future<SafDocumentFile?> stat(String uri, {required bool isDir}) async {
+    if (!isAvailable) return null;
+    try {
+      return await _safUtil.stat(uri, isDir);
+    } catch (e) {
+      appLogger.w('SAF stat error', error: e);
       return null;
     }
   }
