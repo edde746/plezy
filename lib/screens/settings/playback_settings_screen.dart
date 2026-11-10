@@ -154,6 +154,12 @@ class PlaybackSettingsScreen extends StatelessWidget {
                       DialogOption(value: language.code, title: language.name),
                   ],
                 ),
+                SettingSwitchTile(
+                  pref: SettingsService.autoDownloadSubtitles,
+                  icon: Symbols.cloud_download_rounded,
+                  title: t.settings.autoDownloadSubtitles,
+                  subtitle: t.settings.autoDownloadSubtitlesDescription,
+                ),
                 SettingNavigationTile(
                   icon: Symbols.subtitles_rounded,
                   title: t.settings.subtitleStyling,

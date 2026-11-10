@@ -663,14 +663,18 @@ class SettingsService extends BaseSharedPreferencesService {
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
 
-  /// Preferred subtitle language, shared by the search sheet and the always-on
-  /// fallback ([forceSubtitles]). One language, one key: a second "preferred
-  /// language" pref could disagree with this one.
+  /// Preferred subtitle language, shared by the search sheet, the always-on
+  /// fallback ([forceSubtitles]) and [autoDownloadSubtitles]. One language,
+  /// one key: a second "preferred language" pref could disagree with this one.
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
 
   /// Keep subtitles on even when neither the server nor a carried preference
   /// selects one. An explicit in-session "off" still wins.
   static const forceSubtitles = BoolPref('force_subtitles');
+
+  /// Fetch a subtitle from the server's online providers when the item carries
+  /// nothing in [subtitleSearchLanguage]. Plex only.
+  static const autoDownloadSubtitles = BoolPref('auto_download_subtitles');
 
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
@@ -1508,6 +1512,7 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleSyncOffset,
     subtitleSearchLanguage,
     forceSubtitles,
+    autoDownloadSubtitles,
     volume,
     subtitleFontSize,
     subtitleTextColor,

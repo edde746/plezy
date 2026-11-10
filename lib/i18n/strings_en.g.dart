@@ -785,6 +785,12 @@ class Translations$settings$en {
 	/// en: 'Not set'
 	String get preferredSubtitleLanguageNotSet => 'Not set';
 
+	/// en: 'Auto-Download Subtitles'
+	String get autoDownloadSubtitles => 'Auto-Download Subtitles';
+
+	/// en: 'Fetch a subtitle from your Plex server's providers when the item has none in your language'
+	String get autoDownloadSubtitlesDescription => 'Fetch a subtitle from your Plex server\'s providers when the item has none in your language';
+
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
@@ -2496,6 +2502,9 @@ class Translations$videoControls$en {
 
 	/// en: 'Language'
 	String get language => 'Language';
+
+	/// en: 'Fetching subtitles…'
+	String get fetchingSubtitles => 'Fetching subtitles…';
 
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
@@ -8388,6 +8397,8 @@ extension on Translations {
 			'settings.forceSubtitlesDescription' => 'Turn subtitles on even when the server selects none',
 			'settings.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
 			'settings.preferredSubtitleLanguageNotSet' => 'Not set',
+			'settings.autoDownloadSubtitles' => 'Auto-Download Subtitles',
+			'settings.autoDownloadSubtitlesDescription' => 'Fetch a subtitle from your Plex server\'s providers when the item has none in your language',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -8641,10 +8652,10 @@ extension on Translations {
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
 			'themeEditor.colors' => 'Colors',
-			'themeEditor.preview' => 'Preview',
-			'themeEditor.slots.bg' => 'Background',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.preview' => 'Preview',
+			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
@@ -8971,6 +8982,7 @@ extension on Translations {
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
+			'videoControls.fetchingSubtitles' => 'Fetching subtitles…',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
@@ -9154,11 +9166,11 @@ extension on Translations {
 			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
@@ -9668,11 +9680,11 @@ extension on Translations {
 			'liveTv.processRecordingRules' => 'Re-evaluate rules',
 			'liveTv.recordingInProgress' => 'Recording now',
 			'liveTv.recordingsCount' => ({required Object count}) => '${count} scheduled',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.editRule' => 'Edit rule',
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
@@ -10182,11 +10194,11 @@ extension on Translations {
 			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
