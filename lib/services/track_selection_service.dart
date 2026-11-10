@@ -681,7 +681,14 @@ class TrackSelectionResult<T> {
   final T track;
   final TrackSelectionPriority priority;
 
-  const TrackSelectionResult(this.track, this.priority);
+  /// This track was supplied by the always-on fallback, not chosen by the
+  /// viewer or the server. It must not be carried across an item boundary:
+  /// a carried selection matches at [TrackSelectionPriority.navigation] on the
+  /// next item, which persists it to the server as if the viewer had picked
+  /// it. Each item derives its own fallback instead.
+  final bool forcedFallback;
+
+  const TrackSelectionResult(this.track, this.priority, {this.forcedFallback = false});
 }
 
 /// Service for selecting and applying audio and subtitle tracks based on
@@ -692,7 +699,23 @@ class TrackSelectionService {
   final MediaItem metadata;
   final MediaSourceInfo? plexMediaInfo;
 
-  TrackSelectionService({this.player, this.profileSettings, required this.metadata, this.plexMediaInfo});
+  /// Local "always show subtitles" override. Plex never reaches the profile
+  /// mode below (PMS folds `autoSelectSubtitle` into `selected`), so an item
+  /// with no server-selected stream would otherwise always play unsubtitled.
+  final bool forceSubtitles;
+
+  /// Language the override prefers. A null or absent language still forces a
+  /// track on - any subtitle beats none once the viewer asked for always-on.
+  final String? forcedSubtitleLanguage;
+
+  TrackSelectionService({
+    this.player,
+    this.profileSettings,
+    required this.metadata,
+    this.plexMediaInfo,
+    this.forceSubtitles = false,
+    this.forcedSubtitleLanguage,
+  });
 
   /// The profile's preferred language for one track kind, or null when unset.
   static String? _preferredLanguage(MediaServerUserProfile profile, {required bool isAudio}) {
@@ -775,6 +798,32 @@ class TrackSelectionService {
       if (track.isDefault) return track;
     }
     return null;
+  }
+
+  /// The off result the ladder would return, unless the viewer asked for
+  /// always-on subtitles and this item can serve one.
+  ///
+  /// Full dialogue first: a forced-only row carries signs and songs, which is
+  /// not what "always show subtitles" means, so it is taken only when nothing
+  /// else is on offer.
+  TrackSelectionResult<SubtitleTrack> _offOrForced(
+    List<SubtitleTrack> availableTracks,
+    TrackSelectionPriority offPriority,
+  ) {
+    if (!forceSubtitles || availableTracks.isEmpty) {
+      return TrackSelectionResult(SubtitleTrack.off, offPriority);
+    }
+
+    final language = forcedSubtitleLanguage;
+    final fullDialogue = availableTracks.where((track) => !track.effectiveForced).toList(growable: false);
+    final preferred = language == null || language.isEmpty
+        ? null
+        : _findTrackByPreferredLanguage<SubtitleTrack>(fullDialogue, language, (track) => track.language) ??
+              _findTrackByPreferredLanguage<SubtitleTrack>(availableTracks, language, (track) => track.language);
+
+    final selected =
+        preferred ?? _findDefaultSubtitleTrack(fullDialogue) ?? fullDialogue.firstOrNull ?? availableTracks.first;
+    return TrackSelectionResult(selected, TrackSelectionPriority.profile, forcedFallback: true);
   }
 
   SubtitleTrack? _findForcedSubtitleTrack(List<SubtitleTrack> availableTracks) {
@@ -912,29 +961,8 @@ class TrackSelectionService {
   ///
   /// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes
   /// Also handles bibliographic variants and region codes (e.g., "en-US")
-  bool languageMatches(String? trackLanguage, String? preferredLanguage) {
-    if (trackLanguage == null || preferredLanguage == null) {
-      return false;
-    }
-
-    final track = trackLanguage.toLowerCase();
-    final preferred = preferredLanguage.toLowerCase();
-
-    // Direct match
-    if (track == preferred) return true;
-
-    // Extract base language codes (handle region codes like "en-US")
-    final trackBase = track.split('-').first;
-    final preferredBase = preferred.split('-').first;
-
-    if (trackBase == preferredBase) return true;
-
-    // Get all variations of the preferred language (e.g., "en" → ["en", "eng"])
-    final variations = LanguageCodes.getVariations(preferredBase);
-
-    // Check if track's base code matches any variation
-    return variations.contains(trackBase);
-  }
+  bool languageMatches(String? trackLanguage, String? preferredLanguage) =>
+      subtitleLanguageMatches(trackLanguage, preferredLanguage);
 
   /// Select the best audio track based on priority:
   /// Priority 1: Preferred track from navigation
@@ -1144,7 +1172,7 @@ class TrackSelectionService {
       } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
         if (availableTracks.isEmpty && waitForPendingSource) return null;
         // Native tracks exist and none maps to a server-selected stream.
-        return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
+        return _offOrForced(availableTracks, TrackSelectionPriority.serverSelected);
       }
       if (waitForPendingSource && availableTracks.isEmpty && info.subtitleTracks.isNotEmpty) return null;
     }
@@ -1162,7 +1190,7 @@ class TrackSelectionService {
     }
 
     // Priority 5: Turn off subtitles
-    return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.off);
+    return _offOrForced(availableTracks, TrackSelectionPriority.off);
   }
 
   /// Select and apply audio and subtitle tracks based on preferences

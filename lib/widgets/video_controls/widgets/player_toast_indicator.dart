@@ -8,10 +8,15 @@ import 'transport_feedback_indicator.dart';
 /// VLC-style dark pill shown at top-center of the video player.
 /// Used for rate changes and other transient in-player notifications.
 class PlayerToastIndicator extends StatelessWidget {
-  const PlayerToastIndicator({super.key, required this.icon, required this.text});
+  const PlayerToastIndicator({super.key, required this.icon, required this.text, this.busy = false});
 
   final IconData icon;
   final String text;
+
+  /// Swaps the glyph for a spinner while the work the pill describes is still
+  /// running. The pill then stays up until [PlayerToastController.hide], since
+  /// the thing it reports on has no duration we can guess in advance.
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +43,14 @@ class PlayerToastIndicator extends StatelessWidget {
             child: Row(
               mainAxisSize: .min,
               children: [
-                AppIcon(icon, fill: 1, color: Colors.white, size: 16),
+                if (busy)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                else
+                  AppIcon(icon, fill: 1, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
@@ -66,6 +78,10 @@ enum PlayerToastKind {
   /// Icon-only disc at the centre of the frame confirming an accepted
   /// play/pause command, in the shape viewers know from YouTube.
   transport,
+
+  /// The [notice] pill with a spinner in place of its glyph, for work that is
+  /// still running and whose duration is not known up front.
+  busy,
 }
 
 /// Owns the currently-displayed toast + auto-hide timer.
@@ -90,6 +106,12 @@ class PlayerToastController extends ChangeNotifier {
   /// widget is never unmounted mid-exit.
   void showTransport(IconData icon, String text) {
     show(icon, text, kind: PlayerToastKind.transport, duration: TransportFeedbackIndicator.totalDuration);
+  }
+
+  /// A pill that stays up until [hide]. The duration is only a safety net for
+  /// a caller whose work dies without clearing it.
+  void showBusy(IconData icon, String text, {Duration duration = const Duration(seconds: 60)}) {
+    show(icon, text, kind: PlayerToastKind.busy, duration: duration);
   }
 
   void show(

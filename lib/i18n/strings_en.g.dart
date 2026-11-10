@@ -773,6 +773,24 @@ class Translations$settings$en {
 	/// en: 'Music Quality'
 	String get musicQualityTitle => 'Music Quality';
 
+	/// en: 'Always Show Subtitles'
+	String get forceSubtitles => 'Always Show Subtitles';
+
+	/// en: 'Turn subtitles on even when the server selects none'
+	String get forceSubtitlesDescription => 'Turn subtitles on even when the server selects none';
+
+	/// en: 'Preferred Subtitle Language'
+	String get preferredSubtitleLanguage => 'Preferred Subtitle Language';
+
+	/// en: 'Not set'
+	String get preferredSubtitleLanguageNotSet => 'Not set';
+
+	/// en: 'Auto-Download Subtitles'
+	String get autoDownloadSubtitles => 'Auto-Download Subtitles';
+
+	/// en: 'Fetch a subtitle from your Plex server's providers when the item has none in your language'
+	String get autoDownloadSubtitlesDescription => 'Fetch a subtitle from your Plex server\'s providers when the item has none in your language';
+
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
@@ -2484,6 +2502,9 @@ class Translations$videoControls$en {
 
 	/// en: 'Language'
 	String get language => 'Language';
+
+	/// en: 'Fetching subtitles…'
+	String get fetchingSubtitles => 'Fetching subtitles…';
 
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
@@ -8372,6 +8393,12 @@ extension on Translations {
 			'settings.videoCodecsDescription' => 'Unchecked codecs are transcoded by the server',
 			'settings.videoCodecsAlwaysAccepted' => 'Always accepted',
 			'settings.musicQualityTitle' => 'Music Quality',
+			'settings.forceSubtitles' => 'Always Show Subtitles',
+			'settings.forceSubtitlesDescription' => 'Turn subtitles on even when the server selects none',
+			'settings.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
+			'settings.preferredSubtitleLanguageNotSet' => 'Not set',
+			'settings.autoDownloadSubtitles' => 'Auto-Download Subtitles',
+			'settings.autoDownloadSubtitlesDescription' => 'Fetch a subtitle from your Plex server\'s providers when the item has none in your language',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -8625,14 +8652,14 @@ extension on Translations {
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
 			'themeEditor.colors' => 'Colors',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.preview' => 'Preview',
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -8955,6 +8982,7 @@ extension on Translations {
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
+			'videoControls.fetchingSubtitles' => 'Fetching subtitles…',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
@@ -9138,6 +9166,8 @@ extension on Translations {
 			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
@@ -9145,8 +9175,6 @@ extension on Translations {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
@@ -9652,6 +9680,8 @@ extension on Translations {
 			'liveTv.processRecordingRules' => 'Re-evaluate rules',
 			'liveTv.recordingInProgress' => 'Recording now',
 			'liveTv.recordingsCount' => ({required Object count}) => '${count} scheduled',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.editRule' => 'Edit rule',
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
@@ -9659,8 +9689,6 @@ extension on Translations {
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -10166,6 +10194,8 @@ extension on Translations {
 			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
@@ -10173,8 +10203,6 @@ extension on Translations {
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
