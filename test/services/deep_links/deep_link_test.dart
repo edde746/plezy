@@ -55,6 +55,18 @@ void main() {
       );
     });
 
+    test('reads a room invite and normalizes its code', () {
+      final link = DeepLink.tryParse('plezy://watch-together?code=k7m-q2x&profile=Kids') as WatchTogetherLink;
+      expect(link.code, 'K7MQ2X');
+      expect(link.profile, 'Kids');
+    });
+
+    test('a room invite ignores relay parameters', () {
+      final link =
+          DeepLink.tryParse('plezy://watch-together?code=K7MQ2X&relay=https://relay.test') as WatchTogetherLink;
+      expect(link.toUri().toString(), 'plezy://watch-together?code=K7MQ2X');
+    });
+
     test('reads open with and without a profile', () {
       expect((DeepLink.tryParse('plezy://open')! as OpenLink).profile, isNull);
       expect((DeepLink.tryParse('plezy://open?profile=%20Kids%20')! as OpenLink).profile, 'Kids');
@@ -85,6 +97,10 @@ void main() {
         'plezy://live',
         'plezy://live?channel=',
         'plezy://live?channel=4&start=sideways',
+        'plezy://watch-together',
+        'plezy://watch-together?code=',
+        'plezy://watch-together?code=K7MQ0X',
+        'plezy://watch-together?code=K7MQ2XY',
         'plezy://play?server=a&id=%E0%A4%A',
       ]) {
         expect(DeepLink.tryParse(url), isNull, reason: url);
@@ -95,6 +111,8 @@ void main() {
       final links = <DeepLink>[
         const OpenLink(),
         const OpenLink(profile: 'Kids'),
+        const WatchTogetherLink(code: 'K7MQ2X'),
+        const WatchTogetherLink(code: 'ABC234', profile: 'Kids'),
         PlayLink(
           target: ItemPlayTarget(serverId: ServerId('srv 1'), itemId: 'a/b&c'),
         ),

@@ -6,6 +6,8 @@ import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/deep_links/deep_link.dart';
+import 'package:plezy/services/deep_links/deep_link_launcher.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/models/watch_copy.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
@@ -54,6 +56,24 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
   await tester.pump();
   await tester.tap(finder);
+  await settleWatchFrames(tester);
+}
+
+Future<void> _openInvite(WidgetTester tester, WatchTogetherProvider provider, String url) async {
+  await tester.pumpWidget(
+    watchTestApp(
+      provider,
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () => launchDeepLink(context, DeepLink.tryParse(url)!, isOffline: false),
+            child: const Text('Open invite'),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('Open invite'));
   await settleWatchFrames(tester);
 }
 
@@ -245,8 +265,57 @@ void main() {
     });
   });
 
+  group('room links', () {
+    for (final relay in [null, 'https://configured.example.com']) {
+      _screenTest('an invite uses the configured relay: ${relay ?? 'public relays'}', (tester, world) async {
+        final host = world.host();
+        await world.settle(host.createRoom());
+        final guest = world.member('Ben', profileId: 'p1', relayBaseUrl: relay);
+        const link = WatchTogetherLink(code: FakeOwpRelay.code);
+        await _openInvite(tester, guest, link.toUri().toString());
+        await world.until(() => guest.isConnected, 'the invite joined');
+        await settleWatchFrames(tester);
+        expect(find.byType(WatchTogetherScreen), findsOneWidget);
+        expect(find.text('K7M-Q2X'), findsOneWidget);
+        expect(guest.customRelayBaseUrl, relay);
+        final expected = relaysFor(relay).list.map((r) => r.url);
+        expect(world.relay.requestedRelays.last.list.map((r) => r.url), expected);
+        expect(world.relay.sent('join').last['create'], isNot(true));
+        expect(_recentRooms('p1', relay).single.code, FakeOwpRelay.code);
+
+        final copied = mockWatchClipboard();
+        await _tap(tester, find.text(t.watchTogether.copyLink));
+        expect(copied.single, link.toUri().toString());
+        guest.leave();
+        await world.until(() => !guest.isInSession, 'the guest left');
+        expect(guest.customRelayBaseUrl, relay);
+      });
+    }
+
+    _screenTest('an unavailable invite shows its error without creating a room', (tester, world) async {
+      final guest = world.guest();
+      await _openInvite(tester, guest, 'plezy://watch-together?code=ABC234');
+      await world.until(
+        () => find.text(t.watchTogether.errors.roomNotFound).evaluate().isNotEmpty,
+        'the error is shown',
+      );
+      expect(guest.isInSession, isFalse);
+      expect(world.relay.sent('create'), isEmpty);
+      expect(_enabled(tester, t.watchTogether.joinRoom), isTrue);
+    });
+
+    _screenTest('opening an invite for the current room does not rejoin', (tester, world) async {
+      final host = world.host();
+      final guest = world.guest();
+      await world.together(host, [guest]);
+      await _openInvite(tester, guest, 'plezy://watch-together?code=K7MQ2X');
+      expect(world.relay.sent('join'), hasLength(1));
+      expect(guest.isConnected, isTrue);
+    });
+  });
+
   group('in a room', () {
-    _screenTest('Copy Code and Share Invite put the formatted code on the clipboard', (tester, world) async {
+    _screenTest('Copy Code, Copy Link and Share Invite copy the selected invite format', (tester, world) async {
       final copied = mockWatchClipboard();
       final host = world.host();
       await world.settle(host.createRoom());
@@ -258,8 +327,16 @@ void main() {
 
       await tester.pump(const Duration(seconds: 10));
       await settleWatchFrames(tester);
+      await _tap(tester, find.text(t.watchTogether.copyLink));
+      expect(copied.last, 'plezy://watch-together?code=K7MQ2X');
+      expect(find.text(t.watchTogether.linkCopied), findsOneWidget);
+      await tester.pump(const Duration(seconds: 10));
+      await settleWatchFrames(tester);
       await _tap(tester, find.text(t.watchTogether.shareInvite));
-      expect(copied.last, t.watchTogether.inviteMessage(code: 'K7M-Q2X'));
+      expect(
+        copied.last,
+        t.watchTogether.inviteLinkMessage(code: 'K7M-Q2X', link: 'plezy://watch-together?code=K7MQ2X'),
+      );
       expect(find.text(t.watchTogether.inviteCopied), findsOneWidget);
     });
 
@@ -619,8 +696,9 @@ void main() {
         expectWatchFocus(expected);
       }
 
-      await press(LogicalKeyboardKey.arrowRight, t.watchTogether.shareInvite);
+      await press(LogicalKeyboardKey.arrowRight, t.watchTogether.copyLink);
       await press(LogicalKeyboardKey.arrowLeft, t.watchTogether.copyCode);
+      await press(LogicalKeyboardKey.arrowDown, t.watchTogether.shareInvite);
       await press(LogicalKeyboardKey.arrowDown, 'Ben');
       await press(LogicalKeyboardKey.arrowDown, t.watchTogether.letEveryoneControl);
       await press(LogicalKeyboardKey.arrowDown, t.watchTogether.lockRoom);
@@ -644,6 +722,8 @@ void main() {
       await _openScreenWithKeys(tester, host);
       expectWatchFocus(t.watchTogether.copyCode);
 
+      await pressWatchKey(tester, LogicalKeyboardKey.arrowDown);
+      expectWatchFocus(t.watchTogether.shareInvite);
       await pressWatchKey(tester, LogicalKeyboardKey.arrowDown);
       expectWatchFocus('Ben');
       await pressWatchKey(tester, LogicalKeyboardKey.enter);

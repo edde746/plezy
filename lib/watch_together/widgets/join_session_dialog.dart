@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
+import '../../services/deep_links/deep_link.dart';
 import '../../utils/dialogs.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
@@ -206,6 +207,10 @@ class RoomCodeInputFormatter extends TextInputFormatter {
 /// it written like one (an invite message): `K7M-Q2X` first, then a word with
 /// a digit. A plain word such as "snacks" never counts. Null without one.
 String? roomCodeIn(String text) {
+  for (final match in _inviteUrl.allMatches(text)) {
+    final link = DeepLink.tryParse(match[0]!);
+    if (link is WatchTogetherLink) return link.code;
+  }
   final whole = normalizeRoomCode(text);
   if (whole != null) return whole;
   String? withDigit;
@@ -218,6 +223,8 @@ String? roomCodeIn(String text) {
   }
   return withDigit;
 }
+
+final _inviteUrl = RegExp(r'''plezy://[^\s<>"']+''', caseSensitive: false);
 
 final _digit = RegExp('[0-9]');
 
