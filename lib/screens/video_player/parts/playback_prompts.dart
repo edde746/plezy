@@ -103,6 +103,14 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       // waits for a person instead of counting down.
       final serverStopped = _progressTracker?.stoppedByServer ?? false;
 
+      // Split-file parts of the same movie/video (Jellyfin/Emby AdditionalParts,
+      // #2825) advance seamlessly without a Play Next prompt or countdown.
+      if (!serverStopped && _episode.next != null && isAdditionalPartOfSameVideo(_currentMetadata, _episode.next!)) {
+        _logVideoCompleted('action=presentNext additionalPart');
+        unawaited(_playNext());
+        return;
+      }
+
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value && !serverStopped) {
         _logVideoCompleted('action=presentNext pip');

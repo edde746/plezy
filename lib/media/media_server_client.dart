@@ -444,6 +444,11 @@ abstract class MediaServerClient {
   /// scope for this neutral surface.
   Future<List<MediaItem>> fetchExtras(String id);
 
+  /// Additional split-file parts attached to [itemId] (`PartCount > 1` on
+  /// Jellyfin/Emby via `/Videos/{itemId}/AdditionalParts`). Backends that stack
+  /// multi-part files into one [MediaVersion] (Plex) return an empty list.
+  Future<List<MediaItem>> fetchAdditionalParts(String itemId);
+
   /// Page through media featuring a specific person/actor.
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(String personId, {int? start, int? size, AbortController? abort});
 

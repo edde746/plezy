@@ -4640,6 +4640,11 @@ class PlexClient
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
+  /// Plex stacks multi-part files as parts of a single [MediaVersion], so there
+  /// are no separate additional-part items to fetch.
+  @override
+  Future<List<MediaItem>> fetchAdditionalParts(String itemId) async => const [];
+
   /// Plex-specific: paginated library content with raw Plex filter map,
   /// returning neutral [MediaItem]s. The aggregation bridge uses this when it
   /// has Plex-specific filter strings (`unwatched=1`, `genre=...`) to forward.

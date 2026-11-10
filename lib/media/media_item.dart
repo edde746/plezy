@@ -508,6 +508,23 @@ sealed class MediaItem with _$MediaItem {
   /// Plex-only edition label. Jellyfin returns null.
   String? get editionTitle => null;
 
+  /// Number of separate item parts on servers that split multi-file videos into
+  /// distinct items (`PartCount` on Jellyfin/Emby). Defaults to 1.
+  int get partCount {
+    final count = flexibleInt(raw?['PartCount']);
+    return count != null && count > 1 ? count : 1;
+  }
+
+  /// Whether this item has additional part items that must be fetched via
+  /// [MediaServerClient.fetchAdditionalParts] (Jellyfin/Emby `PartCount > 1`).
+  bool get hasAdditionalParts => partCount > 1;
+
+  /// When this item was expanded from `/Videos/{id}/AdditionalParts`, the ID of
+  /// the primary item (`part 1`) it belongs to. Stored in [raw] so it survives
+  /// [copyWith] clones without colliding with Jellyfin's physical folder
+  /// [parentId].
+  String? get additionalPartOfId => raw?['_additionalPartOfId'] as String?;
+
   /// Plex marks unmatched home-video items ("Other Videos" libraries, agent
   /// `tv.plex.agents.none`) as `type="movie"` with `subtype="clip"`. They keep
   /// [MediaKind.movie] so movie-only actions (downloads, add-to, delete from
@@ -663,6 +680,35 @@ sealed class MediaItem with _$MediaItem {
 /// thumbnails (episodes/clips), or 1:1 squares (music artwork; artists clip
 /// to a circle). Resolved per item via [MediaItem.cardShape].
 enum CardShape { poster, wide, square }
+
+/// Stamps [part] (an item returned by `/Videos/{id}/AdditionalParts`) with
+/// [parent]'s identity, artwork, library, and server metadata while keeping
+/// [part]'s own playback identity (`id`, `title`, `durationMs`, `viewOffsetMs`,
+/// `viewCount`, `mediaVersions`).
+MediaItem inheritAdditionalPartMetadata(MediaItem parent, MediaItem part) {
+  return part.copyWith(
+    parentId: parent.id,
+    parentTitle: parent.title,
+    year: part.year ?? parent.year,
+    thumbPath: part.thumbPath ?? parent.thumbPath,
+    artPath: part.artPath ?? parent.artPath,
+    backdropPaths: (part.backdropPaths?.isNotEmpty ?? false) ? part.backdropPaths : parent.backdropPaths,
+    clearLogoPath: part.clearLogoPath ?? parent.clearLogoPath,
+    libraryId: part.libraryId ?? parent.libraryId,
+    libraryTitle: part.libraryTitle ?? parent.libraryTitle,
+    serverId: part.serverId ?? parent.serverId,
+    serverName: part.serverName ?? parent.serverName,
+    raw: <String, Object?>{...?part.raw, '_additionalPartOfId': parent.id},
+  );
+}
+
+/// Whether [next] is a subsequent split-file part of the same movie/video as
+/// [current] (e.g. Part 1 -> Part 2 or Part 2 -> Part 3).
+bool isAdditionalPartOfSameVideo(MediaItem current, MediaItem next) {
+  final targetParentId = next.additionalPartOfId;
+  if (targetParentId == null) return false;
+  return targetParentId == (current.additionalPartOfId ?? current.id);
+}
 
 MediaKind _mediaKindFromJson(Object? raw) => MediaKind.fromString(raw as String?);
 
