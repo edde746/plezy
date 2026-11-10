@@ -99,6 +99,82 @@ final class MpvWakeupCallbackContext {
   }
 }
 
+#if os(iOS)
+  /// Activates the audio session for a video core while the core is created,
+  /// instead of leaving it to mpv's audio output.
+  ///
+  /// The output activates `AVAudioSession` when it opens, on mpv's core thread,
+  /// and the first decoded frame waits behind that. Asked for here, the same
+  /// calls overlap mpv's creation and the app resolving what to play, and the
+  /// output finds the session active. They block on the audio server, so they
+  /// run on a queue of their own and never on the main thread.
+  ///
+  /// Otherwise only an output that opened deactivates the session, so a core
+  /// that never opened one (a failed open, a file without audio) would leave
+  /// other apps' audio stopped. Once no mpv context is left, what a video core
+  /// activated is therefore deactivated here too. Music cores count as
+  /// contexts, so that their audio is never cut, but activate nothing: one can
+  /// exist long before it plays.
+  final class MpvAudioSessionActivation {
+    struct Session {
+      var activate: () throws -> Void
+      var deactivate: () throws -> Void
+
+      static let system = Session(
+        activate: {
+          // What ao_avfoundation sets before it activates the session.
+          let session = AVAudioSession.sharedInstance()
+          try session.setCategory(.playback, mode: .moviePlayback)
+          try session.setActive(true)
+        },
+        deactivate: {
+          try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
+      )
+    }
+
+    static let shared = MpvAudioSessionActivation(session: .system)
+
+    /// Serial, so that a core's activation and the deactivation after its
+    /// disposal run in the order they were asked for.
+    let queue = DispatchQueue(label: "com.plezy.mpv.audio-session", qos: .userInitiated)
+    private let session: Session
+    private var liveContexts = 0
+    private var activated = false
+
+    init(session: Session) {
+      self.session = session
+    }
+
+    func contextWillBeCreated(activating: Bool) {
+      queue.async { [self] in
+        liveContexts += 1
+        guard activating else { return }
+        activated = true
+        do {
+          try session.activate()
+        } catch {
+          // mpv's audio output activates the session itself when it opens.
+          MpvLog.debug("[MpvAudioSessionActivation] Failed to activate the audio session: \(error)")
+        }
+      }
+    }
+
+    func contextWasDestroyed() {
+      queue.async { [self] in
+        liveContexts -= 1
+        guard liveContexts == 0, activated else { return }
+        activated = false
+        do {
+          try session.deactivate()
+        } catch {
+          MpvLog.debug("[MpvAudioSessionActivation] Failed to deactivate the audio session: \(error)")
+        }
+      }
+    }
+  }
+#endif
+
 class MpvPlayerCoreBase: NSObject {
   weak var delegate: MpvPlayerDelegate?
 
@@ -491,7 +567,7 @@ class MpvPlayerCoreBase: NSObject {
 
     applyDvConversionModeEnvironment()
 
-    let created = createMpvContext { [self] mpv in
+    let created = createMpvContext(activatingAudioSession: true) { [self] mpv in
       var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
       checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
       applySharedMpvOptions(mpv: mpv)
@@ -531,7 +607,16 @@ class MpvPlayerCoreBase: NSObject {
   /// instance-scoped (per-instance dispatch queue, request table, and retained
   /// wakeup context), so the video core and the audio-only core can each own
   /// an independent context and be created/destroyed at any time.
-  func createMpvContext(configure: (OpaquePointer) -> Void) -> Bool {
+  /// `activatingAudioSession` starts the audio session's activation alongside
+  /// on iPhone and iPad; see `MpvAudioSessionActivation`.
+  func createMpvContext(activatingAudioSession: Bool = false, configure: (OpaquePointer) -> Void) -> Bool {
+    #if os(iOS)
+      MpvAudioSessionActivation.shared.contextWillBeCreated(activating: activatingAudioSession)
+      var contextCreated = false
+      defer {
+        if !contextCreated { MpvAudioSessionActivation.shared.contextWasDestroyed() }
+      }
+    #endif
     guard let mpv = mpv_create() else {
       MpvLog.error("[MpvPlayerCore] Failed to create MPV context")
       return false
@@ -593,6 +678,9 @@ class MpvPlayerCoreBase: NSObject {
       wakeupContext
     )
     lifecycleLock.unlock()
+    #if os(iOS)
+      contextCreated = true
+    #endif
     return true
   }
 
@@ -1049,6 +1137,9 @@ class MpvPlayerCoreBase: NSObject {
       if let mpvHandle {
         mpv_set_wakeup_callback(mpvHandle, nil, nil)
         mpv_terminate_destroy(mpvHandle)
+        #if os(iOS)
+          MpvAudioSessionActivation.shared.contextWasDestroyed()
+        #endif
       }
       if let callbackContext {
         Unmanaged<MpvWakeupCallbackContext>.fromOpaque(callbackContext).release()

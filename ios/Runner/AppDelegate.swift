@@ -18,7 +18,9 @@ import MediaPlayer
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Configure the non-mixing session; activate it only when playback starts.
+    // Configure the non-mixing session; activate it only for playback: a video
+    // player core claims it as it is created (MpvAudioSessionActivation), mpv's
+    // audio output otherwise.
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(.playback, mode: .default)
