@@ -765,20 +765,31 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     _queueScrubPreviewLoad(metadata: metadata, mediaInfo: mediaInfo, mediaClient: mediaClient);
   }
 
-  /// Per-open network stream tunings: ffmpeg auto-reconnect plus an enlarged
-  /// mpv stream ring buffer for poorly interleaved MP4/MOV direct play (the
+  /// Per-open stream tunings: ffmpeg auto-reconnect plus an enlarged mpv
+  /// stream ring buffer for poorly interleaved MP4/MOV direct play (the
   /// ring absorbs the demuxer's audio↔video byte ping-pong so HTTP reads stay
   /// linear instead of dropping the connection on every byte seek — see
-  /// [networkStreamRingBytes]). Every property is always written, set or
-  /// reset, so a reused player never carries one item's tuning into the next
-  /// open. On Android with ExoPlayer active they are stashed natively and
-  /// replayed on the exo→mpv fallback, so keep them unconditional.
+  /// [networkStreamRingBytes]), and the demuxer's read-ahead hysteresis for
+  /// a downloaded file mpv reads uncached ([demuxerHysteresisSecs]). Every
+  /// property is always written, set or reset, so a reused player never
+  /// carries one item's tuning into the next open; the hysteresis alone
+  /// yields to a line of the custom mpv config this player was set up with.
+  /// On Android with ExoPlayer active they are stashed natively and replayed
+  /// on the exo→mpv fallback, so keep them unconditional.
   Future<void> _applyNetworkStreamTuning({
     required Player player,
+    required String videoUrl,
+    required bool isLocalMedia,
     required bool isNetworkVod,
     required bool isTranscoding,
     required MediaVersion? selectedVersion,
   }) async {
+    final hysteresis = demuxerHysteresisSecs(
+      uncachedLocalFile: isLocalMedia && readsUncachedLocalFile(videoUrl, platform: defaultTargetPlatform),
+      customMpvConfig: _appliedCustomMpvConfig,
+    );
+    if (hysteresis != null) await player.setProperty('demuxer-hysteresis-secs', hysteresis);
+
     if (isNetworkVod) {
       // Covers network drops up to 10 min; applies to transcode streams too.
       //
@@ -877,6 +888,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     await _applyNetworkStreamTuning(
       player: player,
+      videoUrl: videoUrl,
+      isLocalMedia: isLocalMedia,
       isNetworkVod: !isLocalMedia && !widget.isLive,
       isTranscoding: isTranscoding,
       selectedVersion: selectedVersion,

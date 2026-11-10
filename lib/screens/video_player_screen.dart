@@ -805,6 +805,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // `player.open()` so the semantics are unchanged — we just eat the cost
   // during otherwise-idle setup time.
   Future<void>? _audioFocusFuture;
+  // The custom mpv config as parsed when the current player was set up: what
+  // the player actually received. Per-open tunings that yield to a config line
+  // read this rather than the setting, which can change while the player lives.
+  Map<String, String> _appliedCustomMpvConfig = const {};
   late final String _playbackSessionIdentifier;
   late String _playbackTranscodeSessionId;
 
@@ -2160,6 +2164,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
+      _appliedCustomMpvConfig = customMpvConfig;
       // Only the Linux video plane owns the four real mpv properties, so only
       // there are they withheld. Elsewhere nothing caches them and a config line
       // is the user's single way to reach them - dropping it would take away
