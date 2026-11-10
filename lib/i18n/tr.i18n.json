@@ -133,6 +133,7 @@
       "playlist": "Oynatma listesi",
       "clip": "Klip",
       "photo": "Fotoğraf",
+      "photoAlbum": "",
       "folder": "Klasör"
     }
   },

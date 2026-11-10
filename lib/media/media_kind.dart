@@ -19,6 +19,11 @@ enum MediaKind {
   clip,
   photo,
 
+  /// Album in a photo library. Holds photos, clips and further albums, and
+  /// has no `Media`/`MediaSources` of its own. Children are fetched via
+  /// `MediaServerClient.fetchChildrenPage`.
+  photoAlbum,
+
   /// Filesystem-style directory row in folder browsing (Plex `/folder`
   /// listings, Jellyfin `Folder`/`CollectionFolder` items). Not playable
   /// media itself — children are fetched via
@@ -32,6 +37,10 @@ enum MediaKind {
 
   bool get isPlayable => isVideo || this == track;
 
+  /// Stills and their albums. Nothing here has playback or watch state, unlike
+  /// the clips a photo library can also hold, which stay [clip].
+  bool get isPhotoContent => this == photo || this == photoAlbum;
+
   /// Whether this kind maps to one or more files on disk, i.e. the server can
   /// answer `MediaServerClient.getFileInfo` for it.
   ///
@@ -44,7 +53,7 @@ enum MediaKind {
   /// Whether this container kind derives watched state from aggregate leaves.
   bool get usesLeafWatchCounts => switch (this) {
     show || season || artist || album || collection || playlist || folder => true,
-    movie || episode || track || clip || photo || unknown => false,
+    movie || episode || track || clip || photo || photoAlbum || unknown => false,
   };
 
   /// Lowercase string id used when persisting or comparing legacy code paths
@@ -61,6 +70,7 @@ enum MediaKind {
     MediaKind.playlist => 'playlist',
     MediaKind.clip => 'clip',
     MediaKind.photo => 'photo',
+    MediaKind.photoAlbum => 'photoalbum',
     MediaKind.folder => 'folder',
     MediaKind.unknown => 'unknown',
   };
@@ -78,6 +88,7 @@ enum MediaKind {
     MediaKind.playlist => t.common.mediaKind.playlist,
     MediaKind.clip => t.common.mediaKind.clip,
     MediaKind.photo => t.common.mediaKind.photo,
+    MediaKind.photoAlbum => t.common.mediaKind.photoAlbum,
     MediaKind.folder => t.common.mediaKind.folder,
     MediaKind.unknown => t.common.unknown,
   };
@@ -96,6 +107,7 @@ enum MediaKind {
       'playlist' => MediaKind.playlist,
       'clip' || 'trailer' || 'video' || 'musicvideo' => MediaKind.clip,
       'photo' => MediaKind.photo,
+      'photoalbum' => MediaKind.photoAlbum,
       'folder' || 'collectionfolder' => MediaKind.folder,
       _ => MediaKind.unknown,
     };

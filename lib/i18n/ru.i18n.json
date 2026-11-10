@@ -133,6 +133,7 @@
       "playlist": "Плейлист",
       "clip": "Клип",
       "photo": "Фото",
+      "photoAlbum": "",
       "folder": "Папка"
     }
   },

@@ -133,6 +133,7 @@
       "playlist": "Spellista",
       "clip": "Klipp",
       "photo": "Foto",
+      "photoAlbum": "",
       "folder": "Mapp"
     }
   },

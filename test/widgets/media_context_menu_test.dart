@@ -814,6 +814,99 @@ void main() {
     });
   });
 
+  group('MediaContextMenu watched entries', () {
+    Future<void> openPlexMenu(WidgetTester tester, MediaKind kind) async {
+      final item = testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: kind, serverId: 'plex-1');
+      final menuKey = await _pumpPlexMovieMenu(tester, const [], item: item);
+      menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+      await tester.pumpAndSettle();
+    }
+
+    for (final kind in [MediaKind.photo, MediaKind.photoAlbum]) {
+      testWidgets('are not offered on a ${kind.name}', (tester) async {
+        await openPlexMenu(tester, kind);
+
+        expect(find.text(t.mediaMenu.markAsWatched), findsNothing);
+        expect(find.text(t.mediaMenu.markAsUnwatched), findsNothing);
+      });
+    }
+
+    for (final kind in [MediaKind.movie, MediaKind.clip]) {
+      testWidgets('are still offered on a ${kind.name}', (tester) async {
+        await openPlexMenu(tester, kind);
+
+        expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+      });
+    }
+  });
+
+  group('MediaContextMenu with no actions', () {
+    const platforms = TargetPlatformVariant({TargetPlatform.linux, TargetPlatform.android});
+
+    bool menuIsOpen(WidgetTester tester) => !ModalRoute.of(tester.element(find.text('picker target')))!.isCurrent;
+
+    MediaItem plexItem(MediaKind kind) =>
+        testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: kind, serverId: 'plex-1');
+
+    Future<void> open(WidgetTester tester, GlobalKey<MediaContextMenuState> menuKey, {Offset? position}) async {
+      menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')), position: position);
+      await tester.pumpAndSettle();
+    }
+
+    for (final kind in [MediaKind.photo, MediaKind.photoAlbum]) {
+      testWidgets('opens nothing for a ${kind.name}', (tester) async {
+        final menuKey = await _pumpPlexMovieMenu(tester, const [], item: plexItem(kind));
+
+        await open(tester, menuKey, position: const Offset(10, 10));
+
+        expect(menuIsOpen(tester), isFalse);
+        expect(tester.takeException(), isNull);
+      }, variant: platforms);
+
+      testWidgets('opens nothing for a ${kind.name} from the keyboard', (tester) async {
+        final menuKey = await _pumpPlexMovieMenu(tester, const [], item: plexItem(kind));
+
+        await open(tester, menuKey);
+
+        expect(menuIsOpen(tester), isFalse);
+      }, variant: platforms);
+    }
+
+    testWidgets('still opens for an item with actions', (tester) async {
+      final menuKey = await _pumpPlexMovieMenu(tester, const [], item: plexItem(MediaKind.movie));
+
+      await open(tester, menuKey, position: const Offset(10, 10));
+
+      expect(menuIsOpen(tester), isTrue);
+    }, variant: platforms);
+
+    testWidgets('opens once the same card gains an action', (tester) async {
+      final extraEntries = ValueNotifier<List<MediaMenuExtraEntry>>(const []);
+      addTearDown(extraEntries.dispose);
+      final menuKey = await _pumpPlexMovieMenu(
+        tester,
+        const [],
+        item: plexItem(MediaKind.photo),
+        wrapMenu: (menu) {
+          final base = menu as MediaContextMenu;
+          return ValueListenableBuilder(
+            valueListenable: extraEntries,
+            builder: (_, entries, _) =>
+                MediaContextMenu(key: base.key, item: base.item, extraEntries: entries, child: base.child),
+          );
+        },
+      );
+      await open(tester, menuKey, position: const Offset(10, 10));
+      expect(menuIsOpen(tester), isFalse);
+
+      extraEntries.value = [MediaMenuExtraEntry(icon: Symbols.star_rounded, label: 'Extra', onSelected: () {})];
+      await tester.pump();
+      await open(tester, menuKey, position: const Offset(10, 10));
+
+      expect(find.text('Extra'), findsOneWidget);
+    });
+  });
+
   group('MediaContextMenu show link', () {
     Future<void> openPlexMenu(WidgetTester tester, MediaKind kind, {String? guid}) async {
       final item = testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: kind, guid: guid, serverId: 'plex-1');

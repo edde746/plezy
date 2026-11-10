@@ -133,6 +133,7 @@
       "playlist": "Afspeellijst",
       "clip": "Clip",
       "photo": "Foto",
+      "photoAlbum": "",
       "folder": "Map"
     }
   },

@@ -23,4 +23,12 @@ extension MediaItemTypes on MediaItem {
 
   /// Non-spoiler art path for episodes (show/season background).
   String? get spoilerSafeArt => grandparentArtPath ?? artPath;
+
+  /// Server path of the image to show full-screen for a photo. On Plex that is
+  /// the photo's own file. MediaBrowser servers serve photos through their
+  /// image endpoint, and their part paths are video stream routes.
+  String? get photoImagePath => switch (this) {
+    PlexMediaItem(:final mediaVersions) => mediaVersions?.firstOrNull?.parts.firstOrNull?.streamPath ?? thumbPath,
+    JellyfinMediaItem() => thumbPath,
+  };
 }

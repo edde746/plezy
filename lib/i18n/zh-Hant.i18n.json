@@ -133,6 +133,7 @@
       "playlist": "播放清單",
       "clip": "短片",
       "photo": "相片",
+      "photoAlbum": "",
       "folder": "資料夾"
     }
   },
