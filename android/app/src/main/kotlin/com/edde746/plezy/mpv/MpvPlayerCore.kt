@@ -317,11 +317,11 @@ class MpvPlayerCore private constructor(
      * waits until every one has loaded. `ytdl` has its own reasons where it
      * is set, and the OSC is already off in mpv's libmpv profile.
      *
-     * A custom mpv config line still wins: it is a property write after
-     * init, and mpv loads a builtin script when its option turns on
-     * (`load-stats-overlay=yes`).
+     * A custom mpv config line still wins on the video core, the one the
+     * config is applied to: it is a property write after init, and mpv loads
+     * a builtin script when its option turns on (`load-stats-overlay=yes`).
      */
-    internal val UNUSED_BUILTIN_SCRIPT_OPTIONS: List<String> = listOf(
+    private val UNUSED_BUILTIN_SCRIPT_OPTIONS: List<String> = listOf(
       "load-stats-overlay",
       "load-console",
       "load-auto-profiles",
