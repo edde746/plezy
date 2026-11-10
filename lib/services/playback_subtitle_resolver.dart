@@ -45,6 +45,12 @@ class PlaybackSubtitleSelection {
   final PlaybackSubtitleSidecar? secondarySidecar;
   final List<PlaybackSubtitleSidecar> preloadedSidecars;
 
+  /// The primary track came from the always-on fallback rather than from the
+  /// viewer or the server, so it must not cross an item boundary: a carried
+  /// selection matches at navigation priority on the next item and is
+  /// persisted to the server as an explicit choice. Each item derives its own.
+  final bool isForcedFallback;
+
   /// The primary preference the resolver could not serve when this selection
   /// is off. Distinguishes "the carried choice declined and the ladder fell
   /// through" from a deliberate off (#1785): the open flow hands the declined
@@ -70,13 +76,15 @@ class PlaybackSubtitleSelection {
     this.preloadedSidecars = const [],
     this.declinedPreference,
     this.primaryHonorsPreference = false,
+    this.isForcedFallback = false,
   });
 
   const PlaybackSubtitleSelection.off({
     this.preloadedSidecars = const [],
     this.declinedPreference,
     this.primaryHonorsPreference = false,
-  }) : primaryTrack = SubtitleTrack.off,
+  }) : isForcedFallback = false,
+       primaryTrack = SubtitleTrack.off,
        primarySourceStreamId = null,
        primarySidecar = null,
        secondaryTrack = null,
@@ -172,6 +180,8 @@ class PlaybackSubtitleResolver {
     SubtitlePreference? preferredSecondarySubtitleTrack,
     bool preserveSourceIdentity = true,
     bool isTranscoding = false,
+    bool forceSubtitles = false,
+    String? forcedSubtitleLanguage,
   }) {
     final candidates = <_SubtitleCandidate>[];
     final matchedSidecars = <PlaybackSubtitleSidecar>{};
@@ -203,6 +213,8 @@ class PlaybackSubtitleResolver {
       profileSettings: profileSettings,
       metadata: metadata,
       plexMediaInfo: mediaInfo,
+      forceSubtitles: forceSubtitles,
+      forcedSubtitleLanguage: forcedSubtitleLanguage,
     );
     final selectedAudio = service.selectAudioTrack(audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
     final primaryPreference = _sourceBackedPreference(
@@ -270,6 +282,7 @@ class PlaybackSubtitleResolver {
       secondarySidecar: secondaryCandidate?.sidecar,
       preloadedSidecars: preloadedSidecars,
       primaryHonorsPreference: primaryHonorsPreference,
+      isForcedFallback: primaryResult?.forcedFallback ?? false,
     );
   }
 

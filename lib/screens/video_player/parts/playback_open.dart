@@ -120,6 +120,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     await _waitForProfileSettingsIfNeeded();
     if (!mounted) return const PlaybackSubtitleSelection.off();
 
+    final settings = await SettingsService.getInstance();
+    if (!mounted) return const PlaybackSubtitleSelection.off();
+
     return PlaybackSubtitleResolver.resolve(
       metadata: metadata,
       mediaInfo: result.mediaInfo,
@@ -130,6 +133,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
       preserveSourceIdentity: preserveSubtitleSourceIdentity,
       isTranscoding: result.isTranscoding,
+      forceSubtitles: settings.read(SettingsService.forceSubtitles),
+      forcedSubtitleLanguage: resolveSubtitleLanguageFromSettings(settings),
     );
   }
 
