@@ -30,6 +30,13 @@ void main() {
         ),
         isTrue,
       );
+      expect(
+        readsUncachedLocalFile(
+          'file:///private/var/mobile/Containers/Data/Application/0B1C/Documents/downloads/Movie.mkv',
+          platform: TargetPlatform.iOS,
+        ),
+        isTrue,
+      );
     });
 
     test('is false where mpv puts its cache in front of the file', () {
@@ -58,6 +65,14 @@ void main() {
         ),
         isFalse,
       );
+      // So may one that only carries the container's names deeper in its path.
+      expect(
+        readsUncachedLocalFile(
+          'file:///private/var/mobile/Library/LiveFiles/smb/Containers/Data/Application/0B1C/Movie.mkv',
+          platform: TargetPlatform.iOS,
+        ),
+        isFalse,
+      );
     });
 
     test('is false on desktop, where a download folder may be a network mount', () {
@@ -79,6 +94,11 @@ void main() {
       // The value is absolute: a stream's read-ahead is its cache, and half a
       // second would let that drain before every refill.
       expect(demuxerHysteresisSecs(uncachedLocalFile: false, customMpvConfig: const {}), '0');
+    });
+
+    test('leaves mpv\'s default for a local file a cache=yes line puts behind the cache', () {
+      expect(demuxerHysteresisSecs(uncachedLocalFile: true, customMpvConfig: const {'cache': 'yes'}), '0');
+      expect(demuxerHysteresisSecs(uncachedLocalFile: true, customMpvConfig: const {'cache': 'no'}), '0.5');
     });
 
     test('leaves the option to a custom mpv config line that names it', () {

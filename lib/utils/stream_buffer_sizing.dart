@@ -15,12 +15,21 @@ const mpvDefaultStreamBufferBytes = 128 * 1024;
 /// every SAF `content://` document, and NFS or SMB mounts elsewhere. Only the
 /// app's own data directory is known to be neither, and only on the two
 /// platforms where that directory is always on the device: a custom download
-/// folder, a memory card and every desktop path answer false.
+/// folder, a memory card and every desktop path answer false. The test is a
+/// prefix anchored at the root of the path: `/data/` on Android, the app
+/// containers of an iPhone or iPad (`/var/mobile/Containers/Data/Application/`
+/// and its `/private` alias) on iOS, so a folder elsewhere that merely
+/// contains those names does not qualify.
 bool readsUncachedLocalFile(String uri, {required TargetPlatform platform}) => switch (platform) {
   TargetPlatform.android => uri.startsWith('file:///data/'),
-  TargetPlatform.iOS => uri.startsWith('file:///') && uri.contains('/Containers/Data/Application/'),
+  TargetPlatform.iOS => _iosAppContainerPrefixes.any(uri.startsWith),
   _ => false,
 };
+
+const _iosAppContainerPrefixes = [
+  'file:///var/mobile/Containers/Data/Application/',
+  'file:///private/var/mobile/Containers/Data/Application/',
+];
 
 /// mpv `demuxer-hysteresis-secs` for an open: half a second for a file mpv
 /// reads uncached ([readsUncachedLocalFile]), mpv's default (off) for
@@ -32,14 +41,17 @@ bool readsUncachedLocalFile(String uri, {required TargetPlatform platform}) => s
 /// for an uncached file) full. With it the thread sleeps until half a second
 /// is left and then reads the next half second in one go. The value is
 /// absolute, so it stays off wherever mpv caches: there the read-ahead is the
-/// cache, which would drain to half a second before every refill.
+/// cache, which would drain to half a second before every refill. A
+/// `cache=yes` line in [customMpvConfig] puts the cache in front of every
+/// file, local ones included.
 ///
 /// The custom mpv config is applied when the player is set up, before any
 /// open. A line for this option there stays the user's, for every stream, as
 /// it was before the app wrote the property at all.
 String? demuxerHysteresisSecs({required bool uncachedLocalFile, required Map<String, String> customMpvConfig}) {
   if (customMpvConfig.containsKey('demuxer-hysteresis-secs')) return null;
-  return uncachedLocalFile ? '0.5' : '0';
+  final cacheForced = customMpvConfig['cache'] == 'yes';
+  return uncachedLocalFile && !cacheForced ? '0.5' : '0';
 }
 
 /// QuickTime/MP4 muxer family. Apple capture muxers (iPhone recordings and

@@ -773,12 +773,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// a downloaded file mpv reads uncached ([demuxerHysteresisSecs]). Every
   /// property is always written, set or reset, so a reused player never
   /// carries one item's tuning into the next open; the hysteresis alone
-  /// yields to a custom mpv config line. On Android with ExoPlayer active
-  /// they are stashed natively and replayed on the exo→mpv fallback, so keep
-  /// them unconditional.
+  /// yields to a line of the custom mpv config this player was set up with.
+  /// On Android with ExoPlayer active they are stashed natively and replayed
+  /// on the exo→mpv fallback, so keep them unconditional.
   Future<void> _applyNetworkStreamTuning({
     required Player player,
-    required SettingsService settingsService,
     required String videoUrl,
     required bool isLocalMedia,
     required bool isNetworkVod,
@@ -787,7 +786,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     final hysteresis = demuxerHysteresisSecs(
       uncachedLocalFile: isLocalMedia && readsUncachedLocalFile(videoUrl, platform: defaultTargetPlatform),
-      customMpvConfig: SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText)),
+      customMpvConfig: _appliedCustomMpvConfig,
     );
     if (hysteresis != null) await player.setProperty('demuxer-hysteresis-secs', hysteresis);
 
@@ -889,7 +888,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     await _applyNetworkStreamTuning(
       player: player,
-      settingsService: settingsService,
       videoUrl: videoUrl,
       isLocalMedia: isLocalMedia,
       isNetworkVod: !isLocalMedia && !widget.isLive,
