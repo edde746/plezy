@@ -102,6 +102,15 @@ void main() {
       serverId: ServerId('plex-1'),
       httpClient: MockClient((request) async {
         paths.add(request.url.path);
+        if (request.url.path == '/') {
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'allowMediaDeletion': true},
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
         if (request.method == 'DELETE') {
           deleted.add(request.url.path.split('/').last);
           return http.Response('', 200);
