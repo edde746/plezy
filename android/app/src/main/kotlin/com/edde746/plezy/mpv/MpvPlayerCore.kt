@@ -307,6 +307,31 @@ class MpvPlayerCore private constructor(
     )
 
     /**
+     * mpv's builtin Lua scripts that nothing in the app reaches. The stats
+     * overlay, the console, the selection menus, drag-to-pan, the `open`
+     * prompt and the context menu answer key bindings and script messages,
+     * and the app sends mpv neither; auto-profiles serves the conditional
+     * profiles of a config file the player never reads. At mpv's defaults
+     * each is a Lua state started by `mpv_initialize`, all but auto-profiles
+     * keep a thread for the life of the player, and the first `loadfile`
+     * waits until every one has loaded. `ytdl` has its own reasons where it
+     * is set, and the OSC is already off in mpv's libmpv profile.
+     *
+     * A custom mpv config line still wins on the video core, the one the
+     * config is applied to: it is a property write after init, and mpv loads
+     * a builtin script when its option turns on (`load-stats-overlay=yes`).
+     */
+    private val UNUSED_BUILTIN_SCRIPT_OPTIONS: List<String> = listOf(
+      "load-stats-overlay",
+      "load-console",
+      "load-auto-profiles",
+      "load-select",
+      "load-positioning",
+      "load-commands",
+      "load-context-menu"
+    )
+
+    /**
      * Whether content with this transfer is worth an HDR (BT.2020 PQ) GL
      * surface. PQ and HLG both render into a PQ target; everything else -
      * including unknown - stays on the default sRGB surface, which renders
@@ -1164,6 +1189,8 @@ class MpvPlayerCore private constructor(
                 // the access token in its argv. mpv decides whether to load the
                 // builtin script during mpv_initialize, hence an option here.
                 setOption("ytdl", "no")
+                // Rationale on UNUSED_BUILTIN_SCRIPT_OPTIONS.
+                for (name in UNUSED_BUILTIN_SCRIPT_OPTIONS) setOption(name, "no")
               }
               val adopted = synchronized(nativeOwnershipLock) {
                 if (disposing || nativeFailure.get() != null) {
