@@ -656,6 +656,13 @@ class MpvPlayerCoreBase: NSObject {
       // it has to be an option here. The iOS and tvOS libmpv is built without
       // Lua, so neither the hook nor this option exists there.
       checkError(mpv_set_option_string(mpv, "ytdl", "no"))
+    #else
+      // mpv re-expands `title` on every OSD update to name its window and its
+      // audio stream, and the default is a property expansion of
+      // `media-title`. iPhone, iPad and Apple TV have neither: the video and
+      // audio outputs used here drop the title, and Now Playing is published
+      // from Dart. A constant spares the core thread that expansion.
+      checkError(mpv_set_option_string(mpv, "title", "mpv"))
     #endif
 
     applyPlatformAudioOutput(mpv: mpv)
