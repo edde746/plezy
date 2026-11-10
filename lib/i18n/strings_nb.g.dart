@@ -2609,6 +2609,8 @@ class _Translations$hotkeys$actions$nb extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Tilbakestill zoom';
 	@override String get subSeekNext => 'Spol til neste undertekst';
 	@override String get subSeekPrev => 'Spol til forrige undertekst';
+	@override String get subtitleDelayIncrease => 'Forsink undertekster';
+	@override String get subtitleDelayDecrease => 'Fremskynd undertekster';
 	@override String get shaderToggle => 'Slå shadere av/på';
 	@override String get skipMarker => 'Hopp over intro/rulletekst';
 	@override String get screenshot => 'Ta skjermbilde';
@@ -3965,6 +3967,8 @@ extension on TranslationsNb {
 			'hotkeys.actions.zoomReset' => 'Tilbakestill zoom',
 			'hotkeys.actions.subSeekNext' => 'Spol til neste undertekst',
 			'hotkeys.actions.subSeekPrev' => 'Spol til forrige undertekst',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Forsink undertekster',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Fremskynd undertekster',
 			'hotkeys.actions.shaderToggle' => 'Slå shadere av/på',
 			'hotkeys.actions.skipMarker' => 'Hopp over intro/rulletekst',
 			'hotkeys.actions.screenshot' => 'Ta skjermbilde',
@@ -4422,10 +4426,10 @@ extension on TranslationsNb {
 			'profiles.pinExplain' => '4-sifret PIN kreves for å bytte profiler.',
 			'profiles.continueButton' => 'Fortsett',
 			'profiles.pinsDontMatch' => 'PIN-ene samsvarer ikke',
-			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet ble knyttet til en uventet server',
-			'connections.sectionTitle' => 'Tilkoblinger',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet ble knyttet til en uventet server',
+			'connections.sectionTitle' => 'Tilkoblinger',
 			'connections.addConnection' => 'Legg til tilkobling',
 			'connections.addConnectionSubtitleNoProfile' => 'Logg inn med Plex eller koble til en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Legg til for ${displayName}: Plex, Jellyfin, Emby eller en annen profiltilkobling',
@@ -4936,10 +4940,10 @@ extension on TranslationsNb {
 			'liveTv.recordSettings.newOnly' => 'Bare nye episoder',
 			'liveTv.recordSettings.anyChannel' => 'Ta opp på alle kanaler',
 			'liveTv.recordSettings.anyTime' => 'Ta opp når som helst',
-			'liveTv.recordSettings.skipInLibrary' => 'Hopp over episoder som allerede finnes i biblioteket',
-			'liveTv.recordSettings.keepUpTo' => 'Episoder som skal beholdes',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'Hopp over episoder som allerede finnes i biblioteket',
+			'liveTv.recordSettings.keepUpTo' => 'Episoder som skal beholdes',
 			'liveTv.recordSettings.keepUpToHint' => '0 beholder alle episoder',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starter om ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
@@ -5450,10 +5454,10 @@ extension on TranslationsNb {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA-maskinvare',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm-maskinvare',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek-maskinvare',
-			'performanceOverlay.decoderExynosHw' => 'Exynos-maskinvare',
-			'performanceOverlay.decoderSoftware' => 'Programvare',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos-maskinvare',
+			'performanceOverlay.decoderSoftware' => 'Programvare',
 			'performanceOverlay.decoderHardware' => 'Maskinvare',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislyktes)',

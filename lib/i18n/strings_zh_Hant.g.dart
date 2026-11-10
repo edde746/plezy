@@ -2600,6 +2600,8 @@ class _Translations$hotkeys$actions$zh_Hant extends Translations$hotkeys$actions
 	@override String get zoomReset => '重設縮放';
 	@override String get subSeekNext => '跳轉至下一句字幕';
 	@override String get subSeekPrev => '跳轉至上一句字幕';
+	@override String get subtitleDelayIncrease => '延遲字幕';
+	@override String get subtitleDelayDecrease => '提前字幕';
 	@override String get shaderToggle => '切換著色器';
 	@override String get skipMarker => '跳過片頭/片尾';
 	@override String get screenshot => '螢幕截圖';
@@ -3954,6 +3956,8 @@ extension on TranslationsZhHant {
 			'hotkeys.actions.zoomReset' => '重設縮放',
 			'hotkeys.actions.subSeekNext' => '跳轉至下一句字幕',
 			'hotkeys.actions.subSeekPrev' => '跳轉至上一句字幕',
+			'hotkeys.actions.subtitleDelayIncrease' => '延遲字幕',
+			'hotkeys.actions.subtitleDelayDecrease' => '提前字幕',
 			'hotkeys.actions.shaderToggle' => '切換著色器',
 			'hotkeys.actions.skipMarker' => '跳過片頭/片尾',
 			'hotkeys.actions.screenshot' => '螢幕截圖',
@@ -4411,10 +4415,10 @@ extension on TranslationsZhHant {
 			'profiles.pinExplain' => '切換至此使用者設定檔時需要 4 位數 PIN 碼。',
 			'profiles.continueButton' => '繼續',
 			'profiles.pinsDontMatch' => 'PIN 碼不符合',
-			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
-			'connections.sectionTitle' => '連線',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
+			'connections.sectionTitle' => '連線',
 			'connections.addConnection' => '新增連線',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
@@ -4925,10 +4929,10 @@ extension on TranslationsZhHant {
 			'liveTv.recordSettings.newOnly' => '僅新劇集',
 			'liveTv.recordSettings.anyChannel' => '在任何頻道錄影',
 			'liveTv.recordSettings.anyTime' => '在任何時間錄影',
-			'liveTv.recordSettings.skipInLibrary' => '略過媒體庫中已有的劇集',
-			'liveTv.recordSettings.keepUpTo' => '要保留的劇集數',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => '略過媒體庫中已有的劇集',
+			'liveTv.recordSettings.keepUpTo' => '要保留的劇集數',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留所有劇集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
@@ -5439,10 +5443,10 @@ extension on TranslationsZhHant {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA 硬體',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm 硬體',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬體',
-			'performanceOverlay.decoderExynosHw' => 'Exynos 硬體',
-			'performanceOverlay.decoderSoftware' => '軟體',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos 硬體',
+			'performanceOverlay.decoderSoftware' => '軟體',
 			'performanceOverlay.decoderHardware' => '硬體',
 			'performanceOverlay.tunnelingActive' => '已啟用',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',

@@ -2609,6 +2609,8 @@ class _Translations$hotkeys$actions$uz extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Masshtabni qayta oʻrnatish';
 	@override String get subSeekNext => 'Keyingi subtitrga oʻtish';
 	@override String get subSeekPrev => 'Oldingi subtitrga oʻtish';
+	@override String get subtitleDelayIncrease => 'Subtitrni kechiktirish';
+	@override String get subtitleDelayDecrease => 'Subtitrni oldinga surish';
 	@override String get shaderToggle => 'Sheyderlarni yoqish/oʻchirish';
 	@override String get skipMarker => 'Intro/Titrlarni oʻtkazib yuborish';
 	@override String get screenshot => 'Ekran tasvirini olish';
@@ -3965,6 +3967,8 @@ extension on TranslationsUz {
 			'hotkeys.actions.zoomReset' => 'Masshtabni qayta oʻrnatish',
 			'hotkeys.actions.subSeekNext' => 'Keyingi subtitrga oʻtish',
 			'hotkeys.actions.subSeekPrev' => 'Oldingi subtitrga oʻtish',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Subtitrni kechiktirish',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Subtitrni oldinga surish',
 			'hotkeys.actions.shaderToggle' => 'Sheyderlarni yoqish/oʻchirish',
 			'hotkeys.actions.skipMarker' => 'Intro/Titrlarni oʻtkazib yuborish',
 			'hotkeys.actions.screenshot' => 'Ekran tasvirini olish',
@@ -4422,10 +4426,10 @@ extension on TranslationsUz {
 			'profiles.pinExplain' => 'Profillar orasida oʻtish uchun 4 xonali PIN kod talab qilinadi.',
 			'profiles.continueButton' => 'Davom ettirish',
 			'profiles.pinsDontMatch' => 'PIN kodlar mos kelmadi',
-			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
-			'connections.sectionTitle' => 'Ulanishlar',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
+			'connections.sectionTitle' => 'Ulanishlar',
 			'connections.addConnection' => 'Ulanish qoʻshish',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish',
@@ -4936,10 +4940,10 @@ extension on TranslationsUz {
 			'liveTv.recordSettings.newOnly' => 'Faqat yangi epizodlar',
 			'liveTv.recordSettings.anyChannel' => 'Istalgan kanaldan yozib olish',
 			'liveTv.recordSettings.anyTime' => 'Istalgan vaqtda yozib olish',
-			'liveTv.recordSettings.skipInLibrary' => 'Kutubxonada mavjud epizodlarni oʻtkazib yuborish',
-			'liveTv.recordSettings.keepUpTo' => 'Saqlanadigan epizodlar',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'Kutubxonada mavjud epizodlarni oʻtkazib yuborish',
+			'liveTv.recordSettings.keepUpTo' => 'Saqlanadigan epizodlar',
 			'liveTv.recordSettings.keepUpToHint' => '0 barcha epizodlarni saqlaydi',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, soat ${time} da',
@@ -5450,10 +5454,10 @@ extension on TranslationsUz {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Dasturiy',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Dasturiy',
 			'performanceOverlay.decoderHardware' => 'Apparat',
 			'performanceOverlay.tunnelingActive' => 'Faol',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)',

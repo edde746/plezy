@@ -2599,6 +2599,8 @@ class Translations$hotkeys$actions$zh extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => '重置缩放';
 	@override String get subSeekNext => '跳转到下一条字幕';
 	@override String get subSeekPrev => '跳转到上一条字幕';
+	@override String get subtitleDelayIncrease => '延迟字幕';
+	@override String get subtitleDelayDecrease => '提前字幕';
 	@override String get shaderToggle => '切换着色器';
 	@override String get skipMarker => '跳过片头/片尾';
 	@override String get screenshot => '截图';
@@ -3953,6 +3955,8 @@ extension on TranslationsZh {
 			'hotkeys.actions.zoomReset' => '重置缩放',
 			'hotkeys.actions.subSeekNext' => '跳转到下一条字幕',
 			'hotkeys.actions.subSeekPrev' => '跳转到上一条字幕',
+			'hotkeys.actions.subtitleDelayIncrease' => '延迟字幕',
+			'hotkeys.actions.subtitleDelayDecrease' => '提前字幕',
 			'hotkeys.actions.shaderToggle' => '切换着色器',
 			'hotkeys.actions.skipMarker' => '跳过片头/片尾',
 			'hotkeys.actions.screenshot' => '截图',
@@ -4410,10 +4414,10 @@ extension on TranslationsZh {
 			'profiles.pinExplain' => '切换用户资料时需要输入 4 位 PIN。',
 			'profiles.continueButton' => '继续',
 			'profiles.pinsDontMatch' => 'PIN 不匹配',
-			'profiles.tokenIdentityMismatch' => 'Plex 用户资料令牌解析到了非预期服务器',
-			'connections.sectionTitle' => '连接',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex 用户资料令牌解析到了非预期服务器',
+			'connections.sectionTitle' => '连接',
 			'connections.addConnection' => '添加连接',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登录，或连接 Jellyfin 或 Emby 服务器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接',
@@ -4924,10 +4928,10 @@ extension on TranslationsZh {
 			'liveTv.recordSettings.newOnly' => '仅新剧集',
 			'liveTv.recordSettings.anyChannel' => '在任意频道录制',
 			'liveTv.recordSettings.anyTime' => '在任意时间录制',
-			'liveTv.recordSettings.skipInLibrary' => '跳过媒体库中已有的剧集',
-			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => '跳过媒体库中已有的剧集',
+			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留全部剧集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
@@ -5438,10 +5442,10 @@ extension on TranslationsZh {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA 硬件',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm 硬件',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬件',
-			'performanceOverlay.decoderExynosHw' => 'Exynos 硬件',
-			'performanceOverlay.decoderSoftware' => '软件',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos 硬件',
+			'performanceOverlay.decoderSoftware' => '软件',
 			'performanceOverlay.decoderHardware' => '硬件',
 			'performanceOverlay.tunnelingActive' => '已启用',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',

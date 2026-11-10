@@ -2609,6 +2609,8 @@ class _Translations$hotkeys$actions$sv extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Återställ zoom';
 	@override String get subSeekNext => 'Hoppa till nästa undertext';
 	@override String get subSeekPrev => 'Hoppa till föregående undertext';
+	@override String get subtitleDelayIncrease => 'Fördröj undertexter';
+	@override String get subtitleDelayDecrease => 'Tidigarelägg undertexter';
 	@override String get shaderToggle => 'Växla shaders';
 	@override String get skipMarker => 'Hoppa över intro/eftertexter';
 	@override String get screenshot => 'Ta skärmbild';
@@ -3965,6 +3967,8 @@ extension on TranslationsSv {
 			'hotkeys.actions.zoomReset' => 'Återställ zoom',
 			'hotkeys.actions.subSeekNext' => 'Hoppa till nästa undertext',
 			'hotkeys.actions.subSeekPrev' => 'Hoppa till föregående undertext',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Fördröj undertexter',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Tidigarelägg undertexter',
 			'hotkeys.actions.shaderToggle' => 'Växla shaders',
 			'hotkeys.actions.skipMarker' => 'Hoppa över intro/eftertexter',
 			'hotkeys.actions.screenshot' => 'Ta skärmbild',
@@ -4422,10 +4426,10 @@ extension on TranslationsSv {
 			'profiles.pinExplain' => 'En fyrsiffrig PIN-kod krävs för att byta profil.',
 			'profiles.continueButton' => 'Fortsätt',
 			'profiles.pinsDontMatch' => 'PIN-koderna stämmer inte överens',
-			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
-			'connections.sectionTitle' => 'Anslutningar',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
+			'connections.sectionTitle' => 'Anslutningar',
 			'connections.addConnection' => 'Lägg till anslutning',
 			'connections.addConnectionSubtitleNoProfile' => 'Logga in med Plex eller anslut en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Lägg till för ${displayName}: Plex, Jellyfin, Emby eller en annan profilanslutning',
@@ -4936,10 +4940,10 @@ extension on TranslationsSv {
 			'liveTv.recordSettings.newOnly' => 'Endast nya avsnitt',
 			'liveTv.recordSettings.anyChannel' => 'Spela in på alla kanaler',
 			'liveTv.recordSettings.anyTime' => 'Spela in när som helst',
-			'liveTv.recordSettings.skipInLibrary' => 'Hoppa över avsnitt som redan finns i biblioteket',
-			'liveTv.recordSettings.keepUpTo' => 'Avsnitt att behålla',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'Hoppa över avsnitt som redan finns i biblioteket',
+			'liveTv.recordSettings.keepUpTo' => 'Avsnitt att behålla',
 			'liveTv.recordSettings.keepUpToHint' => '0 behåller alla avsnitt',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Börjar om ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
@@ -5450,10 +5454,10 @@ extension on TranslationsSv {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Programvara',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Programvara',
 			'performanceOverlay.decoderHardware' => 'Maskinvara',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',

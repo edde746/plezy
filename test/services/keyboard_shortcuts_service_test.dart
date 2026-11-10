@@ -8,6 +8,8 @@ import 'package:plezy/models/hotkey_model.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/keyboard_shortcuts_service.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/player_sync_offsets.dart';
+import 'package:plezy/services/scoped_player_prefs.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_filter_manager.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -243,6 +245,73 @@ void main() {
     // Persistence is the surface's responsibility (scope-aware); the service
     // reports the clamped rate it applied.
     expect(persistedSpeeds, [8.0]);
+  });
+
+  testWidgets('subtitle delay shortcuts step sub-delay, repeat while held and report the offset', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    final player = _FakePlayer();
+    final reportedOffsets = <int>[];
+
+    KeyEventResult press(PhysicalKeyboardKey key, LogicalKeyboardKey logicalKey, {bool repeat = false}) =>
+        service.handleVideoPlayerKeyEvent(
+          repeat
+              ? KeyRepeatEvent(physicalKey: key, logicalKey: logicalKey, timeStamp: Duration.zero)
+              : KeyDownEvent(physicalKey: key, logicalKey: logicalKey, timeStamp: Duration.zero),
+          player,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          canControlPlayback: true,
+          canNavigateMediaItems: true,
+          onSubtitleSyncOffsetChanged: reportedOffsets.add,
+        );
+
+    expect(press(PhysicalKeyboardKey.keyX, LogicalKeyboardKey.keyX), KeyEventResult.handled);
+    expect(press(PhysicalKeyboardKey.keyX, LogicalKeyboardKey.keyX, repeat: true), KeyEventResult.handled);
+    expect(press(PhysicalKeyboardKey.keyZ, LogicalKeyboardKey.keyZ), KeyEventResult.handled);
+    await tester.pump();
+
+    expect(player.properties, [('sub-delay', '0.05'), ('sub-delay', '0.1'), ('sub-delay', '0.05')]);
+    expect(PlayerSyncOffsets.of(player).subtitleMs, 50);
+    // Persistence is the surface's responsibility (scope-aware); the service
+    // reports each offset it applied.
+    expect(reportedOffsets, [50, 100, 50]);
+  });
+
+  testWidgets('subtitle delay shortcuts stop at the shared sync offset limit', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    final player = _FakePlayer();
+    PlayerSyncOffsets.of(
+      player,
+    ).recordApplied(PlayerSyncOffsets.subtitleProperty, ScopedPlayerPrefs.minimumSyncOffsetMs);
+    final reportedOffsets = <int>[];
+
+    service.handleVideoPlayerKeyEvent(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.keyZ,
+        logicalKey: LogicalKeyboardKey.keyZ,
+        timeStamp: Duration.zero,
+      ),
+      player,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
+      onSubtitleSyncOffsetChanged: reportedOffsets.add,
+    );
+    await tester.pump();
+
+    expect(PlayerSyncOffsets.of(player).subtitleMs, ScopedPlayerPrefs.minimumSyncOffsetMs);
+    expect(reportedOffsets, [ScopedPlayerPrefs.minimumSyncOffsetMs]);
   });
 
   testWidgets('Ctrl+S takes a screenshot once while held', (tester) async {
@@ -777,6 +846,7 @@ class _FakePlayer implements Player {
   final commands = <List<String>>[];
   final volumeChanges = <double>[];
   final rateChanges = <double>[];
+  final properties = <(String, String)>[];
   double volume;
   double rate;
 
@@ -804,6 +874,11 @@ class _FakePlayer implements Player {
   Future<void> setRate(double rate) async {
     this.rate = rate;
     rateChanges.add(rate);
+  }
+
+  @override
+  Future<void> setProperty(String name, String value) async {
+    properties.add((name, value));
   }
 
   @override

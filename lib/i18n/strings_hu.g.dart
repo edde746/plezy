@@ -2609,6 +2609,8 @@ class _Translations$hotkeys$actions$hu extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Nagyítás alaphelyzetbe állítása';
 	@override String get subSeekNext => 'Ugrás a következő feliratra';
 	@override String get subSeekPrev => 'Ugrás az előző feliratra';
+	@override String get subtitleDelayIncrease => 'Feliratok késleltetése';
+	@override String get subtitleDelayDecrease => 'Feliratok előrehozása';
 	@override String get shaderToggle => 'Shaderek be- és kikapcsolása';
 	@override String get skipMarker => 'Intró/stáblista átugrása';
 	@override String get screenshot => 'Képernyőkép készítése';
@@ -3965,6 +3967,8 @@ extension on TranslationsHu {
 			'hotkeys.actions.zoomReset' => 'Nagyítás alaphelyzetbe állítása',
 			'hotkeys.actions.subSeekNext' => 'Ugrás a következő feliratra',
 			'hotkeys.actions.subSeekPrev' => 'Ugrás az előző feliratra',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Feliratok késleltetése',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Feliratok előrehozása',
 			'hotkeys.actions.shaderToggle' => 'Shaderek be- és kikapcsolása',
 			'hotkeys.actions.skipMarker' => 'Intró/stáblista átugrása',
 			'hotkeys.actions.screenshot' => 'Képernyőkép készítése',
@@ -4422,10 +4426,10 @@ extension on TranslationsHu {
 			'profiles.pinExplain' => '4 jegyű PIN-kód szükséges a profilváltáshoz.',
 			'profiles.continueButton' => 'Folytatás',
 			'profiles.pinsDontMatch' => 'A PIN-kódok nem egyeznek',
-			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
-			'connections.sectionTitle' => 'Kapcsolatok',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
+			'connections.sectionTitle' => 'Kapcsolatok',
 			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
@@ -4936,10 +4940,10 @@ extension on TranslationsHu {
 			'liveTv.recordSettings.newOnly' => 'Csak új epizódok',
 			'liveTv.recordSettings.anyChannel' => 'Felvétel bármelyik csatornáról',
 			'liveTv.recordSettings.anyTime' => 'Felvétel bármikor',
-			'liveTv.recordSettings.skipInLibrary' => 'A könyvtárban már meglévő epizódok kihagyása',
-			'liveTv.recordSettings.keepUpTo' => 'Megtartandó epizódok',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'A könyvtárban már meglévő epizódok kihagyása',
+			'liveTv.recordSettings.keepUpTo' => 'Megtartandó epizódok',
 			'liveTv.recordSettings.keepUpToHint' => 'A 0 minden epizódot megtart',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} perc múlva kezdődik',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
@@ -5450,10 +5454,10 @@ extension on TranslationsHu {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Szoftveres',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Szoftveres',
 			'performanceOverlay.decoderHardware' => 'Hardveres',
 			'performanceOverlay.tunnelingActive' => 'Aktív',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
