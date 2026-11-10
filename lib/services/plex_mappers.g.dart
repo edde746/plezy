@@ -136,7 +136,9 @@ PlexMetadataDto _$PlexMetadataDtoFromJson(Map<String, dynamic> json) =>
           .toList(),
       imdbRatingCount: flexibleInt(json['imdbRatingCount']),
       genre: _tagListFromJson(json['Genre']),
-      director: _tagListFromJson(json['Director']),
+      director: (json['Director'] as List<dynamic>?)
+          ?.map((e) => PlexRoleDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
       writer: _tagListFromJson(json['Writer']),
       producer: _tagListFromJson(json['Producer']),
       country: _tagListFromJson(json['Country']),
