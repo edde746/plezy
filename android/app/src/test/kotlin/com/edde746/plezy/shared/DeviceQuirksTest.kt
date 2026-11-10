@@ -95,4 +95,40 @@ class DeviceQuirksTest {
     assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Mediatek", isTv = false))
     assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Amlogic", isTv = false))
   }
+
+  private fun asynchronous(
+    manufacturer: String = "NVIDIA",
+    model: String = "SHIELD Android TV",
+    device: String = "mdarcy",
+    sdkInt: Int = 28
+  ) = DeviceQuirks.runsMediaCodecAsynchronouslyBelowS(manufacturer, model, device, sdkInt)
+
+  @Test
+  fun theDevicesRunWithAsynchronousMediaCodecBelowApi31UseIt() {
+    // SHIELD TV Pro (2019) on Android 9 and Fire TV Stick 4K Max (2nd gen) on Fire OS 8.
+    assertTrue(asynchronous())
+    assertTrue(asynchronous(manufacturer = "Amazon", model = "AFTKRT", device = "karat", sdkInt = 30))
+    assertTrue(asynchronous(manufacturer = "nvidia", device = "MDARCY"))
+    assertTrue(asynchronous(manufacturer = "amazon", model = "aftkrt", device = "karat", sdkInt = 30))
+  }
+
+  @Test
+  fun theSameDevicesOnAnApiLevelThatWasNotRunStaySynchronous() {
+    assertFalse(asynchronous(sdkInt = 30))
+    assertFalse(asynchronous(sdkInt = 26))
+    assertFalse(asynchronous(manufacturer = "Amazon", model = "AFTKRT", device = "karat", sdkInt = 28))
+  }
+
+  @Test
+  fun siblingModelsThatWereNotRunStaySynchronous() {
+    // Every SHIELD reports the same model, so only the board tells the 2019 Pro apart.
+    assertFalse(asynchronous(device = "darcy"))
+    assertFalse(asynchronous(device = "foster"))
+    assertFalse(asynchronous(device = "sif"))
+    assertFalse(asynchronous(manufacturer = "Amazon", model = "AFTKM", device = "kara", sdkInt = 30))
+    assertFalse(asynchronous(manufacturer = "Amazon", model = "AFTMM", device = "mantis", sdkInt = 28))
+    assertFalse(asynchronous(manufacturer = "Google", model = "Chromecast", device = "sabrina", sdkInt = 30))
+    // A board name alone is not the device.
+    assertFalse(asynchronous(manufacturer = "Amazon", model = "AFTKM", device = "mdarcy"))
+  }
 }

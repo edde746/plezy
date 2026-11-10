@@ -2134,13 +2134,17 @@ class MpvPlayerPluginTest {
     // Media3 trusts asynchronous MediaCodec from API 31; below it the decoder
     // stays synchronous (bounded waits, polled). The Java wrapper on every
     // level: the NDK one cannot read the crop rectangle below API 28 (#2427).
-    fun entries(sdkInt: Int): Map<String, String> = MpvPlayerCore.initialDecoderEntries(sdkInt).toMap()
+    fun entries(sdkInt: Int, asynchronousBelowS: Boolean = false): Map<String, String> = MpvPlayerCore.initialDecoderEntries(sdkInt, asynchronousBelowS).toMap()
     assertEquals("1", entries(31)["async"])
     assertEquals("1", entries(36)["async"])
     assertNull(entries(30)["async"])
     assertNull(entries(25)["async"])
     assertEquals("0", entries(25)["ndk_codec"])
     assertEquals("0", entries(36)["ndk_codec"])
+    // A device DeviceQuirks lists as run asynchronously below the threshold.
+    assertEquals("1", entries(28, asynchronousBelowS = true)["async"])
+    assertEquals("1", entries(30, asynchronousBelowS = true)["async"])
+    assertEquals("0", entries(28, asynchronousBelowS = true)["ndk_codec"])
   }
 
   private fun awaitQueueEntry(

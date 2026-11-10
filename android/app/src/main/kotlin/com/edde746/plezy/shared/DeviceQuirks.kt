@@ -82,6 +82,37 @@ object DeviceQuirks {
   internal fun videoPlaneLagsGraphics(socManufacturer: String?, isTv: Boolean): Boolean = isTv &&
     (socManufacturer.equals("Amlogic", ignoreCase = true) || socManufacturer.equals("Mediatek", ignoreCase = true))
 
+  /**
+   * Devices below API 31 on which the mpv core drives MediaCodec asynchronously, where
+   * `MpvPlayerCore.initialDecoderEntries` otherwise follows Media3 and keeps the decoder
+   * synchronous. A synchronous decoder is polled with bounded waits, so the decoder thread and the
+   * codec's loop wake hundreds of times a second for 24 fps video; asynchronous, the codec calls
+   * back when it has something.
+   *
+   * Media3's threshold stands for device bugs nobody can rule out from here, so this is a list of
+   * what was run, not a rule: each entry is one device at the API level it ran at, on which the mpv
+   * core played, paused, seeked (exact, keyframe, a burst), reached EOF, seeked back out of it and
+   * switched files with `async=1` across H.264, HEVC Main 10 and Dolby Vision 8.1. Widen only with
+   * another device in hand. A custom mpv config line `vd-lavc-o=async=0` turns it back off.
+   */
+  val runsMediaCodecAsynchronouslyBelowS: Boolean
+    get() = runsMediaCodecAsynchronouslyBelowS(Build.MANUFACTURER, Build.MODEL, Build.DEVICE, Build.VERSION.SDK_INT)
+
+  internal fun runsMediaCodecAsynchronouslyBelowS(
+    manufacturer: String,
+    model: String,
+    device: String,
+    sdkInt: Int
+  ): Boolean = when {
+    // SHIELD TV Pro (2019) on Android 9. Every SHIELD shares one model string, so the board names it.
+    manufacturer.equals("NVIDIA", ignoreCase = true) && device.equals("mdarcy", ignoreCase = true) ->
+      sdkInt == Build.VERSION_CODES.P
+    // Fire TV Stick 4K Max (2nd gen) on Fire OS 8.
+    manufacturer.equals("Amazon", ignoreCase = true) && model.equals("AFTKRT", ignoreCase = true) ->
+      sdkInt == Build.VERSION_CODES.R
+    else -> false
+  }
+
   private val isGooglePixelDevice: Boolean
     get() = (
       Build.MANUFACTURER.equals("Google", ignoreCase = true) ||

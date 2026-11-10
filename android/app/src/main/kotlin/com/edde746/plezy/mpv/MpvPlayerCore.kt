@@ -264,16 +264,18 @@ class MpvPlayerCore private constructor(
      * `DefaultMediaCodecAdapterFactory` trusts asynchronous MediaCodec by
      * default from API 31 only, for the same device-quirk history. Below it
      * the decoder still bounds its wait (8 ms) and is polled - Media3's
-     * synchronous adapter, in native clothing.
+     * synchronous adapter, in native clothing - except on the devices
+     * [DeviceQuirks.runsMediaCodecAsynchronouslyBelowS] lists, which were
+     * run asynchronously and spend less on the polling.
      *
      * `priority=0`: realtime (MediaFormat `priority`), what Media3 declares
      * beside an operating rate and what some vendors require beside one (a
      * decoder on s5e8835/SA8155P refuses to configure with a rate and no
      * priority).
      */
-    internal fun initialDecoderEntries(sdkInt: Int): List<Pair<String, String>> = buildList {
+    internal fun initialDecoderEntries(sdkInt: Int, asynchronousBelowS: Boolean): List<Pair<String, String>> = buildList {
       add("ndk_codec" to "0")
-      if (sdkInt >= Build.VERSION_CODES.S) add("async" to "1")
+      if (sdkInt >= Build.VERSION_CODES.S || asynchronousBelowS) add("async" to "1")
       add("priority" to "0")
     }
 
@@ -1124,7 +1126,9 @@ class MpvPlayerCore private constructor(
                   // list (per-file DV routing, the stream rate, the user's own
                   // line) goes through decoderOptions, so none of them loses
                   // the others' keys.
-                  decoderOptions.putAll(initialDecoderEntries(Build.VERSION.SDK_INT))
+                  decoderOptions.putAll(
+                    initialDecoderEntries(Build.VERSION.SDK_INT, DeviceQuirks.runsMediaCodecAsynchronouslyBelowS)
+                  )
                   setOption("vd-lavc-o", decoderOptions.compose())
                   // mpv's default hwdec-codecs leaves out mpeg2video, so
                   // broadcast MPEG-2 (Live TV at Original quality) would decode

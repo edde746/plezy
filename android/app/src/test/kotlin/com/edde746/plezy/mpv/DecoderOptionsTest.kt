@@ -13,7 +13,7 @@ class DecoderOptionsTest {
   @Test
   fun aUserLineWinsPerKeyAndTheSessionsOtherKeysSurvive() {
     val options = DecoderOptions()
-    options.putAll(MpvPlayerCore.initialDecoderEntries(36))
+    options.putAll(MpvPlayerCore.initialDecoderEntries(36, asynchronousBelowS = false))
     options.put("dolby_vision" to "0", "dv_p7_mode" to "strip")
     // A custom mpv config line naming one session key must not discard the
     // DV routing or the wrapper choice along with it.
@@ -34,7 +34,7 @@ class DecoderOptionsTest {
   @Test
   fun aLaterSessionWriteKeepsTheUsersLine() {
     val options = DecoderOptions()
-    options.putAll(MpvPlayerCore.initialDecoderEntries(31))
+    options.putAll(MpvPlayerCore.initialDecoderEntries(31, asynchronousBelowS = false))
     options.setUser("threads=2")
     options.put("dolby_vision" to "1", "dv_p7_mode" to "convert")
     options.put("frame_rate" to "23.976")
