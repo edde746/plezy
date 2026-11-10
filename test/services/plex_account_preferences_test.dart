@@ -139,6 +139,40 @@ void main() {
       expect(preferences.preferredAudioLanguage, 'de');
     });
 
+    test('regional language preferences preserve regional variants across wire patch', () async {
+      var requestCount = 0;
+      final source = PlexAccountPreferencesSource(
+        authToken: 'account-token',
+        serviceFactory: () async => _serviceWith(
+          MockClient((request) async {
+            requestCount++;
+            if (request.method == 'PUT') {
+              expect(request.url.queryParameters['defaultSubtitleLanguage'], 'pt-BR');
+              expect(request.url.queryParameters['defaultAudioLanguage'], 'pt-BR');
+              return http.Response('', 204);
+            }
+            return http.Response(
+              jsonEncode({
+                'profile': {..._profilePayload(), 'defaultSubtitleLanguage': 'pt-BR', 'defaultAudioLanguage': 'pt-BR'},
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
+        ),
+      );
+
+      final patch = AccountPreferencesPatch({
+        AccountPreferenceKey.preferredSubtitleLanguage: 'pt-BR',
+        AccountPreferenceKey.preferredAudioLanguage: 'pob',
+      });
+
+      final preferences = await source.write(patch);
+      expect(requestCount, 2);
+      expect(preferences.preferredSubtitleLanguage, 'pt-BR');
+      expect(preferences.preferredAudioLanguage, 'pt-BR');
+    });
+
     test('disabling automatic audio also sends manual subtitle selection', () async {
       final source = PlexAccountPreferencesSource(
         authToken: 'account-token',

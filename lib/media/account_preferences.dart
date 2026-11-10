@@ -226,7 +226,7 @@ class AccountPreferences implements MediaServerUserProfile {
 
   static String? _code1(String? raw) {
     if (raw == null || raw.isEmpty) return null;
-    return LanguageCodes.getIso6391Code(raw) ?? raw;
+    return LanguageCodes.normalizeCode(raw) ?? raw;
   }
 
   /// Typed read of a single key, for generic UI rows.
