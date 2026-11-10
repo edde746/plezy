@@ -115,6 +115,47 @@ final class ReleaseTrackingCore: MpvPlayerCoreBase {
   deinit { onDeinit() }
 }
 
+/// Stands in for `AVAudioSession` behind `MpvAudioSessionActivation`.
+final class RecordingAudioSession {
+  private let lock = NSLock()
+  private var recordedCalls: [String] = []
+  private var activatedOnMainThread = false
+  /// Held by `activate` until signalled, when set.
+  var activationGate: DispatchSemaphore?
+  /// Thrown by `activate`, after it is recorded, when set.
+  var activationError: Error?
+
+  var calls: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return recordedCalls
+  }
+
+  var didActivateOnMainThread: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return activatedOnMainThread
+  }
+
+  var session: MpvAudioSessionActivation.Session {
+    .init(
+      activate: { [self] in
+        activationGate?.wait()
+        lock.lock()
+        recordedCalls.append("activate")
+        activatedOnMainThread = Thread.isMainThread
+        lock.unlock()
+        if let activationError { throw activationError }
+      },
+      deactivate: { [self] in
+        lock.lock()
+        recordedCalls.append("deactivate")
+        lock.unlock()
+      }
+    )
+  }
+}
+
 final class MpvPlayerContractTests: XCTestCase {
   private let failure = NSError(
     domain: "MpvPlayerContractTests",
@@ -240,6 +281,158 @@ final class MpvPlayerContractTests: XCTestCase {
       expected = "avfoundation,audiounit"
     }
     XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), expected)
+  }
+
+  func testVideoContextActivatesTheAudioSessionOffTheMainThreadWithoutBlockingItsCaller() {
+    let session = RecordingAudioSession()
+    let gate = DispatchSemaphore(value: 0)
+    session.activationGate = gate
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    // Returns while the activation is still held: the main thread, where the
+    // player screen is opening, never waits for the audio server.
+    activation.contextWillBeCreated(activating: true)
+    XCTAssertEqual(session.calls, [])
+
+    gate.signal()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+    XCTAssertFalse(session.didActivateOnMainThread)
+  }
+
+  func testLastMpvContextDeactivatesTheAudioSessionAVideoContextActivated() {
+    // A video core whose open failed, or whose file had no audio, never opens
+    // the audio output that would deactivate the session.
+    let session = RecordingAudioSession()
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "deactivate"])
+
+    // Nothing is left to deactivate for a later music core.
+    activation.contextWillBeCreated(activating: false)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "deactivate"])
+  }
+
+  func testAudioSessionStaysActiveWhileAnotherMpvContextIsAlive() {
+    let session = RecordingAudioSession()
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    // A video core replaced by another: the old one is destroyed after the
+    // new one exists.
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "activate"])
+
+    // Music started while the video core was still being torn down must not
+    // have its session deactivated under it.
+    activation.contextWillBeCreated(activating: false)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "activate"])
+
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "activate", "deactivate"])
+  }
+
+  func testMusicContextsLeaveTheAudioSessionToMpv() {
+    // A music core can exist long before it plays; activating for it would
+    // stop other apps' audio with nothing to play.
+    let session = RecordingAudioSession()
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: false)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, [])
+  }
+
+  func testADeactivationQueuedBehindAnActivationSparesAContextCreatedSince() {
+    // A video core torn down while its activation still waits on the audio
+    // server, and music started before that activation returns: the music
+    // core's output may already have activated the session itself.
+    let session = RecordingAudioSession()
+    let gate = DispatchSemaphore(value: 0)
+    session.activationGate = gate
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.contextWillBeCreated(activating: false)
+    gate.signal()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "deactivate"])
+  }
+
+  func testAFailedActivationLeavesTheSessionToWhoeverActivatedIt() {
+    // During a call, say: whatever activates the session later (mpv's audio
+    // output, the media controls) deactivates it too.
+    let session = RecordingAudioSession()
+    session.activationError = failure
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+  }
+
+  func testVideoCoreActivatesTheAudioSessionBeforeItsFirstFileAndStillPlays() throws {
+    let audioSession = AVAudioSession.sharedInstance()
+    // As the app delegate leaves it at launch.
+    try audioSession.setCategory(.playback, mode: .default)
+
+    let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+    let window = UIWindow(windowScene: scene)
+    let core = MpvPlayerCore()
+    XCTAssertTrue(core.initialize(in: window))
+    let file = FileManager.default.temporaryDirectory
+      .appendingPathComponent("plezy-silence-\(UUID().uuidString).wav")
+    defer {
+      core.dispose()
+      // Waited for on the run loop: a video core's teardown may need the
+      // main thread.
+      let destroyed = expectation(description: "core destroyed")
+      core.queue.async { destroyed.fulfill() }
+      wait(for: [destroyed], timeout: 10)
+      MpvAudioSessionActivation.shared.queue.sync {}
+      // The process-wide session as the app delegate leaves it, for the tests after this one.
+      try? audioSession.setCategory(.playback, mode: .default)
+      try? FileManager.default.removeItem(at: file)
+    }
+
+    // No file is loaded, so mpv has opened no audio output: the mode the
+    // output would set can only come from the core's own activation.
+    MpvAudioSessionActivation.shared.queue.sync {}
+    XCTAssertEqual(audioSession.category, .playback)
+    XCTAssertEqual(audioSession.mode, .moviePlayback)
+
+    // The output's own activation, on a session that is already active.
+    try silentWav(seconds: 30).write(to: file)
+    core.command(["loadfile", file.path])
+    XCTAssertSuccess(awaitProperty(core, name: "pause", value: "no"))
+    // time-pos is unavailable until the file has loaded.
+    var position = 0.0
+    let deadline = Date().addingTimeInterval(10)
+    while position < 0.5, Date() < deadline {
+      pump(0.25)
+      if case .success(let value?) = awaitGetProperty(core, name: "time-pos") {
+        position = Double(value) ?? 0
+      }
+    }
+    XCTAssertEqual(try awaitGetProperty(core, name: "current-ao").get(), "avfoundation")
+    XCTAssertGreaterThanOrEqual(position, 0.5)
   }
 
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
