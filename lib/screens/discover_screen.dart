@@ -23,6 +23,7 @@ import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/hero_carousel_backdrop.dart';
 import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
+import '../widgets/rasterized_gradient.dart';
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
@@ -1349,7 +1350,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
             ),
           ),
-          // Gradient Overlay - blends into scaffold background
+          // Gradient Overlay - blends into scaffold background. Rasterised:
+          // Impeller's GLES gradient shader over the artwork pushed raster
+          // frames past 30ms while scrolling a full-size Linux window; the
+          // strip texture keeps the hero at flat-quad cost (~2ms).
           Positioned(
             top: 0,
             left: 0,
@@ -1358,17 +1362,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             child: Builder(
               builder: (context) {
                 final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                return Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      // Reach full bg before the bottom edge so the hero
-                      // blends seamlessly into the content below and the
-                      // page dots sit on a solid band.
-                      colors: [bgColor.withValues(alpha: 0), bgColor.withValues(alpha: 0.9), bgColor, bgColor],
-                      stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
-                    ),
+                return RasterizedGradient(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    // Reach full bg before the bottom edge so the hero
+                    // blends seamlessly into the content below and the
+                    // page dots sit on a solid band.
+                    colors: [bgColor.withValues(alpha: 0), bgColor.withValues(alpha: 0.9), bgColor, bgColor],
+                    stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
                   ),
                 );
               },
