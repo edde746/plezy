@@ -9,9 +9,38 @@ import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
 import 'settings_utils.dart';
+import 'subtitle_style_preview.dart';
 
-class SubtitleStylingScreen extends StatelessWidget {
+class SubtitleStylingScreen extends StatefulWidget {
   const SubtitleStylingScreen({super.key});
+
+  @override
+  State<SubtitleStylingScreen> createState() => _SubtitleStylingScreenState();
+}
+
+class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
+  final _overrides = SubtitleStylePreviewController();
+  SubtitleStylePreviewOverlay? _preview;
+
+  @override
+  void initState() {
+    super.initState();
+    // After the first frame: the root overlay this inserts into is an ancestor
+    // that does not exist yet while initState runs.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _preview = SubtitleStylePreviewOverlay.insert(context, _overrides);
+    });
+  }
+
+  @override
+  void dispose() {
+    _preview?.remove();
+    _preview = null;
+    // Disposing drops any provisional value a dialog still open would never
+    // withdraw itself.
+    _overrides.dispose();
+    super.dispose();
+  }
 
   String _assOverrideLabel(SubAssOverride value) {
     return switch (value) {
@@ -87,6 +116,8 @@ class SubtitleStylingScreen extends StatelessWidget {
               ),
             SettingNumberTile(
               pref: SettingsService.subtitleFontSize,
+              onPreview: (v) => _overrides.set(SettingsService.subtitleFontSize.key, v),
+              onPreviewEnd: () => _overrides.set(SettingsService.subtitleFontSize.key, null),
               icon: Symbols.format_size_rounded,
               title: t.subtitlingStyling.fontSize,
               subtitleBuilder: (v) => '$v',
@@ -95,11 +126,15 @@ class SubtitleStylingScreen extends StatelessWidget {
             ),
             SettingColorTile(
               pref: SettingsService.subtitleTextColor,
+              onPreview: (v) => _overrides.set(SettingsService.subtitleTextColor.key, v),
+              onPreviewEnd: () => _overrides.set(SettingsService.subtitleTextColor.key, null),
               icon: Symbols.format_color_text_rounded,
               title: t.subtitlingStyling.textColor,
             ),
             SettingNumberTile(
               pref: SettingsService.subtitlePosition,
+              onPreview: (v) => _overrides.set(SettingsService.subtitlePosition.key, v),
+              onPreviewEnd: () => _overrides.set(SettingsService.subtitlePosition.key, null),
               icon: Symbols.vertical_align_bottom_rounded,
               title: t.subtitlingStyling.position,
               subtitleBuilder: _formatPosition,
@@ -138,6 +173,8 @@ class SubtitleStylingScreen extends StatelessWidget {
           children: [
             SettingNumberTile(
               pref: SettingsService.subtitleBorderSize,
+              onPreview: (v) => _overrides.set(SettingsService.subtitleBorderSize.key, v),
+              onPreviewEnd: () => _overrides.set(SettingsService.subtitleBorderSize.key, null),
               icon: Symbols.border_style_rounded,
               title: t.subtitlingStyling.borderSize,
               subtitleBuilder: (v) => '$v',
@@ -146,6 +183,8 @@ class SubtitleStylingScreen extends StatelessWidget {
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBorderColor,
+              onPreview: (v) => _overrides.set(SettingsService.subtitleBorderColor.key, v),
+              onPreviewEnd: () => _overrides.set(SettingsService.subtitleBorderColor.key, null),
               icon: Symbols.border_color_rounded,
               title: t.subtitlingStyling.borderColor,
             ),
@@ -157,6 +196,8 @@ class SubtitleStylingScreen extends StatelessWidget {
           children: [
             SettingNumberTile(
               pref: SettingsService.subtitleBackgroundOpacity,
+              onPreview: (v) => _overrides.set(SettingsService.subtitleBackgroundOpacity.key, v),
+              onPreviewEnd: () => _overrides.set(SettingsService.subtitleBackgroundOpacity.key, null),
               icon: Symbols.opacity_rounded,
               title: t.subtitlingStyling.backgroundOpacity,
               subtitleBuilder: (v) => '$v%',
@@ -165,6 +206,8 @@ class SubtitleStylingScreen extends StatelessWidget {
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBackgroundColor,
+              onPreview: (v) => _overrides.set(SettingsService.subtitleBackgroundColor.key, v),
+              onPreviewEnd: () => _overrides.set(SettingsService.subtitleBackgroundColor.key, null),
               icon: Symbols.format_color_fill_rounded,
               title: t.subtitlingStyling.backgroundColor,
             ),
