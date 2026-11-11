@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 
 import '../i18n/strings.g.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/trackers_provider.dart';
 import '../screens/settings/add_connection_screen.dart';
+import '../screens/settings/tracker_service_info.dart';
 import '../focus/focusable_button.dart';
 import 'app_icon.dart';
 
-/// Top-of-app banner for servers that answered and refused this account.
+/// Top-of-app banner for servers that refused this account and lost tracker logins.
 /// Distinct from "server offline" — the server is reachable, so empty hubs
 /// need an explanation.
 ///
@@ -22,7 +24,9 @@ import 'app_icon.dart';
 /// the same refusal, and only the server owner or the network the device is on
 /// can change it.
 ///
-/// Collapses to `SizedBox.shrink()` when no visible server refuses.
+/// Tracker warnings reuse the existing session text and each service's normal
+/// connection flow. They appear only after a client's auth invalidation callback.
+/// Collapses to `SizedBox.shrink()` when there is nothing to reconnect or explain.
 class AuthErrorBanner extends StatelessWidget {
   const AuthErrorBanner({super.key});
 
@@ -34,7 +38,13 @@ class AuthErrorBanner extends StatelessWidget {
     final deniedEntries = context.select<MultiServerProvider, List<({ServerId serverId, String displayName})>>(
       (p) => p.accessDeniedServers,
     );
-    if (signInEntries.isEmpty && deniedEntries.isEmpty) return const SizedBox.shrink();
+    // This banner is also used outside a profile's tracker provider scope.
+    final trackers = context.watch<TrackersProvider?>();
+    final invalidated = trackers?.reconnectRequiredServices ?? const [];
+    final services = invalidated.isEmpty ? const <TrackerServiceInfo>[] : TrackerServiceInfo.all;
+    final expiredTrackers = services.where((info) => invalidated.contains(info.service)).toList();
+    final trackerBusy = services.any((info) => trackers!.isConnecting(info.service));
+    if (signInEntries.isEmpty && deniedEntries.isEmpty && expiredTrackers.isEmpty) return const SizedBox.shrink();
 
     final scheme = Theme.of(context).colorScheme;
     return Material(
@@ -68,6 +78,24 @@ class AuthErrorBanner extends StatelessWidget {
                 label: deniedEntries.length == 1
                     ? t.connections.accessDeniedOne(name: deniedEntries.first.displayName)
                     : t.connections.accessDeniedMany(count: deniedEntries.length),
+              ),
+            for (final info in expiredTrackers)
+              _BannerRow(
+                icon: Symbols.lock_rounded,
+                label: t.connections.sessionExpiredOne(name: info.displayName),
+                action: Flexible(
+                  child: FocusableButton(
+                    onPressed: trackerBusy ? null : () => info.startConnection(context),
+                    child: FilledButton.tonal(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: scheme.onErrorContainer,
+                        foregroundColor: scheme.errorContainer,
+                      ),
+                      onPressed: trackerBusy ? null : () => info.startConnection(context),
+                      child: Text(t.connections.signInAgain),
+                    ),
+                  ),
+                ),
               ),
           ],
         ),

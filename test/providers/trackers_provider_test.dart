@@ -93,6 +93,111 @@ void main() {
   tearDown(_resetTrackerBindings);
 
   group('TrackersProvider', () {
+    group('reconnect warnings', () {
+      for (final service in TrackerService.values) {
+        test('$service invalidation is saved, restored, and isolated from another profile', () async {
+          final store = _store(service);
+          await store.save('alice', _session(service, 'alice'));
+          await store.save('bob', _session(service, 'bob'));
+          final p = TrackersProvider();
+          addTearDown(p.dispose);
+          await _bindProfile(p, 'alice');
+          final invalidate = _invalidationCallback(service);
+
+          invalidate();
+          invalidate();
+          expect(p.reconnectRequiredServices, [service]);
+          expect(_providerSession(p, service), isNull);
+          await TrackerCoordinator.instance.flushWriteQueue();
+          expect(await store.needsReconnect('alice'), isTrue);
+          expect(await store.load('alice'), isNull);
+
+          await _bindProfile(p, 'bob');
+          invalidate(); // The old client's callback must not affect Bob.
+          expect(p.reconnectRequiredServices, isEmpty);
+          expect(_providerSession(p, service)?.username, 'bob');
+          expect(await store.needsReconnect('bob'), isFalse);
+
+          BaseSharedPreferencesService.resetForTesting();
+          await _bindProfile(p, 'alice');
+          expect(p.reconnectRequiredServices, [service]);
+          expect(_providerSession(p, service), isNull);
+        });
+
+        test('$service keeps a failed reconnect warning and clears it after success', () async {
+          final store = _store(service);
+          await store.clear('alice', reconnectRequired: true);
+          var succeed = false;
+          final p = TrackersProvider.forTesting(
+            connectPipeline:
+                ({required logLabel, required authorize, required enrich, required save, required assign}) async {
+                  if (!succeed) return false;
+                  final session = _session(service, 'alice');
+                  await save(session);
+                  assign(session);
+                  return true;
+                },
+          );
+          addTearDown(p.dispose);
+          await _bindProfile(p, 'alice');
+
+          expect(await _connect(p, service), isFalse);
+          expect(p.reconnectRequiredServices, [service]);
+          expect(await store.needsReconnect('alice'), isTrue);
+
+          succeed = true;
+          expect(await _connect(p, service), isTrue);
+          await TrackerCoordinator.instance.flushWriteQueue();
+          expect(p.reconnectRequiredServices, isEmpty);
+          expect(await store.needsReconnect('alice'), isFalse);
+          expect(_providerSession(p, service)?.username, 'alice');
+        });
+      }
+
+      test('a cancelled reconnect retains the warning and deliberate disconnect clears it', () async {
+        await _traktStore.clear('alice', reconnectRequired: true);
+        final pipeline = _ControlledConnectPipeline(_trakt());
+        final p = TrackersProvider.forTesting(connectPipeline: pipeline.call);
+        addTearDown(p.dispose);
+        await _bindProfile(p, 'alice');
+
+        final connect = p.connectTrakt(onCodeReady: (_) {});
+        await pipeline.beforeSave.future;
+        p.cancelConnect();
+        pipeline.releaseBeforeSave.complete();
+        expect(await connect, isFalse);
+        expect(p.reconnectRequiredServices, [TrackerService.trakt]);
+        expect(await _traktStore.needsReconnect('alice'), isTrue);
+
+        await p.disconnectTrakt();
+        expect(p.reconnectRequiredServices, isEmpty);
+        expect(await _traktStore.needsReconnect('alice'), isFalse);
+        await _bindProfile(p, 'alice');
+        expect(p.reconnectRequiredServices, isEmpty);
+      });
+
+      for (final status in [429, 503]) {
+        test('a Trakt HTTP $status response does not create a reconnect warning', () async {
+          await _traktStore.save('alice', _trakt());
+          final p = TrackersProvider();
+          addTearDown(p.dispose);
+          await _bindProfile(p, 'alice');
+          final live = TraktTracker.instance.client!;
+          TraktTracker.instance.rebindSession(
+            live.session,
+            onSessionInvalidated: live.onSessionInvalidated,
+            httpClient: MockClient((_) async => http.Response('', status)),
+          );
+
+          await expectLater(TraktTracker.instance.client!.getUserSettings(), throwsException);
+          expect(p.reconnectRequiredServices, isEmpty);
+          expect(p.isTraktConnected, isTrue);
+          expect(await _traktStore.needsReconnect('alice'), isFalse);
+          expect(await _traktStore.load('alice'), isNotNull);
+        });
+      }
+    });
+
     test('starts with all trackers disconnected', () {
       final p = TrackersProvider();
       expect(p.mal, isNull);
@@ -716,6 +821,14 @@ Object? _boundClient(TrackerService service) => switch (service) {
   TrackerService.simkl => SimklTracker.instance.client,
   TrackerService.trakt => TraktTracker.instance.client,
   TrackerService.mdblist => MdblistTracker.instance.client,
+};
+
+void Function() _invalidationCallback(TrackerService service) => switch (service) {
+  TrackerService.mal => MalTracker.instance.client!.onSessionInvalidated,
+  TrackerService.anilist => AnilistTracker.instance.client!.onSessionInvalidated,
+  TrackerService.simkl => SimklTracker.instance.client!.onSessionInvalidated,
+  TrackerService.trakt => TraktTracker.instance.client!.onSessionInvalidated,
+  TrackerService.mdblist => MdblistTracker.instance.client!.onSessionInvalidated,
 };
 
 TrackerSession? _boundSession(TrackerService service) => switch (service) {
