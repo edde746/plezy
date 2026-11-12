@@ -29,6 +29,13 @@ class TrackerAccountStore {
 
   String _scopedKey(String userUuid) => profileScopedPrefsKey(userUuid, _baseKey);
 
+  String _reconnectKey(String userUuid) => profileScopedPrefsKey(userUuid, '${_baseKey}_needs_reconnect');
+
+  Future<bool> needsReconnect(String userUuid) async {
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    return prefs.getBool(_reconnectKey(userUuid)) ?? false;
+  }
+
   Future<TrackerSession?> load(String userUuid) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     final raw = readTolerantString(prefs, _scopedKey(userUuid));
@@ -42,12 +49,20 @@ class TrackerAccountStore {
 
   Future<void> save(String userUuid, TrackerSession session) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    await prefs.setString(_scopedKey(userUuid), session.encode());
+    await Future.wait<void>([
+      prefs.setString(_scopedKey(userUuid), session.encode()),
+      prefs.remove(_reconnectKey(userUuid)),
+    ]);
   }
 
-  Future<void> clear(String userUuid) async {
+  /// Keep the reason separately from the existing credential JSON. An empty
+  /// account slot alone cannot distinguish a lost login from a deliberate logout.
+  Future<void> clear(String userUuid, {bool reconnectRequired = false}) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    await prefs.remove(_scopedKey(userUuid));
+    await Future.wait<void>([
+      prefs.remove(_scopedKey(userUuid)),
+      if (reconnectRequired) prefs.setBool(_reconnectKey(userUuid), true) else prefs.remove(_reconnectKey(userUuid)),
+    ]);
   }
 }
 
