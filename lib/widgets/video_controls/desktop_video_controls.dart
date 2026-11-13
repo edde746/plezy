@@ -44,6 +44,7 @@ class DesktopVideoControls extends StatefulWidget {
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final bool showChapterMarkersOnTimeline;
+  final bool showFinishTime;
   final int seekTimeSmall;
   final VoidCallback onSeekToPreviousChapter;
   final VoidCallback onSeekToNextChapter;
@@ -123,6 +124,7 @@ class DesktopVideoControls extends StatefulWidget {
     required this.chapters,
     required this.chaptersLoaded,
     this.showChapterMarkersOnTimeline = true,
+    this.showFinishTime = true,
     required this.seekTimeSmall,
     required this.onSeekToPreviousChapter,
     required this.onSeekToNextChapter,
@@ -898,22 +900,27 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   )
                 else
                   Expanded(
-                    child: FinishTimeBuilder(
-                      player: widget.player,
-                      builder: (context, finishTime) {
-                        if (finishTime == null) return const SizedBox.shrink();
+                    child: widget.showFinishTime
+                        ? FinishTimeBuilder(
+                            player: widget.player,
+                            builder: (context, finishTime) {
+                              if (finishTime == null) return const SizedBox.shrink();
 
-                        final text = t.videoControls.endsAt(
-                          time: formatClockTime(finishTime, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context)),
-                        );
-                        const style = TextStyle(color: Colors.white70, fontSize: 13);
+                              final text = t.videoControls.endsAt(
+                                time: formatClockTime(
+                                  finishTime,
+                                  is24Hour: MediaQuery.alwaysUse24HourFormatOf(context),
+                                ),
+                              );
+                              const style = TextStyle(color: Colors.white70, fontSize: 13);
 
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
-                        );
-                      },
-                    ),
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
+                              );
+                            },
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 // Volume control (hidden on TV — hardware handles volume)
                 if (!PlatformDetector.isTV()) ...[

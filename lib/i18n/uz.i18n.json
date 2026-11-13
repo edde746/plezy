@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Ilova ochilganda oxirgi qo'shiqni to'xtagan joyida pauzada ochish",
     "showChapterMarkersOnTimeline": "Vaqt shkalasida boʻlim belgilarini koʻrsatish",
     "showChapterMarkersOnTimelineDescription": "Vaqt shkalasini boʻlimlarga boʻlish",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Maxsus qismlar epizodlar tartibida",
     "specialsOrderingDescription": "Maxsus qismlar serialning tomosha qilish tartibida qayerda ijro etiladi",
     "specialsOrderingServer": "Server tartibiga amal qilish",

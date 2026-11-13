@@ -705,6 +705,7 @@ class SettingsService extends BaseSharedPreferencesService {
   /// selections instead of carrying the current choice over (#1717).
   static const followServerTrackSelections = BoolPref('follow_server_track_selections');
   static const showChapterMarkersOnTimeline = BoolPref('show_chapter_markers_on_timeline', defaultValue: true);
+  static const showFinishTime = BoolPref('show_finish_time', defaultValue: true);
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
   static const skipIntroMode = _SkipMarkerModePref('skip_intro_mode', legacyKey: _legacyAutoSkipIntroKey);
   static const skipCreditsMode = _SkipMarkerModePref('skip_credits_mode', legacyKey: _legacyAutoSkipCreditsKey);
@@ -1605,6 +1606,7 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleBold,
     subtitleItalic,
     showChapterMarkersOnTimeline,
+    showFinishTime,
     clickVideoTogglesPlayback,
     skipIntroMode,
     skipCreditsMode,

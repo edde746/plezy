@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Қолданба ашылғанда соңғы әнді тоқтаған жерінен кідіртілген күйде ашу",
     "showChapterMarkersOnTimeline": "Уақыт шкаласында бөлім белгілерін көрсету",
     "showChapterMarkersOnTimelineDescription": "Уақыт шкаласын бөлімдерге бөлу",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Арнайы бөлімдер эпизодтар ретімен",
     "specialsOrderingDescription": "Арнайы бөлімдер сериалдың көру ретінің қай жерінде ойнатылады",
     "specialsOrderingServer": "Сервер ретін сақтау",

@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "При стартиране на приложението отваряй последната песен на пауза от мястото, докъдето е стигнала",
     "showChapterMarkersOnTimeline": "Показвай маркери на глави върху времевата линия",
     "showChapterMarkersOnTimelineDescription": "Разделяй времевата линия на сегменти по границите на главите",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Специални епизоди в реда на епизодите",
     "specialsOrderingDescription": "Къде се възпроизвеждат специалните епизоди в реда за гледане на сериала",
     "specialsOrderingServer": "Следвай реда на сървъра",

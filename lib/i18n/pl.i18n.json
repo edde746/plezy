@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Przy uruchomieniu aplikacji otwieraj ostatni utwór wstrzymany w miejscu, w którym przerwano",
     "showChapterMarkersOnTimeline": "Pokaż znaczniki rozdziałów na pasku przewijania",
     "showChapterMarkersOnTimelineDescription": "Podziel pasek przewijania na granicach rozdziałów",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Specjale w kolejności odcinków",
     "specialsOrderingDescription": "Miejsce odcinków specjalnych w kolejności oglądania serialu",
     "specialsOrderingServer": "Zgodnie z kolejnością serwera",

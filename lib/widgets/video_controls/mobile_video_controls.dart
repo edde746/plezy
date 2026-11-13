@@ -35,6 +35,7 @@ class MobileVideoControls extends StatefulWidget {
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final bool showChapterMarkersOnTimeline;
+  final bool showFinishTime;
   final int seekTimeSmall;
   final Widget trackChapterControls;
   final Function(Duration) onSeek;
@@ -94,6 +95,7 @@ class MobileVideoControls extends StatefulWidget {
     required this.chapters,
     required this.chaptersLoaded,
     this.showChapterMarkersOnTimeline = true,
+    this.showFinishTime = true,
     required this.seekTimeSmall,
     required this.trackChapterControls,
     required this.onSeek,
@@ -447,7 +449,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           onScrubEnd: widget.onScrubEnd,
           horizontalLayout: false,
           enabled: widget.canControl,
-          showFinishTime: true,
+          showFinishTime: widget.showFinishTime,
           thumbnailDataBuilder: widget.thumbnailDataBuilder,
         ),
       ),
