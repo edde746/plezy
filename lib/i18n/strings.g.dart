@@ -3,8 +3,8 @@
 /// Source: lib/i18n
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 22
-/// Strings: 50956 (2316 per locale)
+/// Locales: 23
+/// Strings: 53297 (2317 per locale)
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
@@ -36,6 +36,7 @@ import 'strings_sv.g.dart' deferred as l_sv;
 import 'strings_tr.g.dart' deferred as l_tr;
 import 'strings_uz.g.dart' deferred as l_uz;
 import 'strings_zh.g.dart' deferred as l_zh;
+import 'strings_pt_PT.g.dart' deferred as l_pt_PT;
 import 'strings_zh_Hant.g.dart' deferred as l_zh_Hant;
 part 'strings_en.g.dart';
 
@@ -67,6 +68,7 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	tr(languageCode: 'tr'),
 	uz(languageCode: 'uz'),
 	zh(languageCode: 'zh'),
+	ptPt(languageCode: 'pt', countryCode: 'PT'),
 	zhHant(languageCode: 'zh', scriptCode: 'Hant');
 
 	const AppLocale({
@@ -232,6 +234,13 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
+			case AppLocale.ptPt:
+				await l_pt_PT.loadLibrary();
+				return l_pt_PT.TranslationsPtPt(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
 			case AppLocale.zhHant:
 				await l_zh_Hant.loadLibrary();
 				return l_zh_Hant.TranslationsZhHant(
@@ -371,6 +380,12 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 				);
 			case AppLocale.zh:
 				return l_zh.TranslationsZh(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.ptPt:
+				return l_pt_PT.TranslationsPtPt(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,

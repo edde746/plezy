@@ -362,6 +362,19 @@ void main() {
       expect(settings.read(SettingsService.appLocale), AppLocale.zhHant);
     });
 
+    test('persists region-specific locales by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.appLocale, AppLocale.ptPt);
+      expect(settings.prefs.getString(SettingsService.appLocale.key), 'ptPt');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.appLocale), AppLocale.ptPt);
+    });
+
     test('continues to read legacy language-code values', () async {
       var settings = await SettingsService.getInstance();
       await settings.prefs.setString(SettingsService.appLocale.key, 'zh');
