@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../i18n/app_locale_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../navigation/navigation_tabs.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -80,7 +81,7 @@ class GeneralSettingsScreen extends StatelessWidget {
         final picked = await showSelectionDialog<AppLocale>(
           context: context,
           title: t.settings.language,
-          options: AppLocale.values
+          options: languagePickerLocales
               .map((locale) => DialogOption(value: locale, title: _getLanguageDisplayName(locale)))
               .toList(),
           currentValue: LocaleSettings.currentLocale,
@@ -130,7 +131,9 @@ class GeneralSettingsScreen extends StatelessWidget {
       case AppLocale.es:
         return 'Español';
       case AppLocale.pt:
-        return 'Português';
+        return 'Português (Brasil)';
+      case AppLocale.ptPt:
+        return 'Português (Portugal)';
       case AppLocale.ja:
         return '日本語';
       case AppLocale.ru:
