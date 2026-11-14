@@ -469,6 +469,9 @@ class FakeMediaServerClient extends Fake with PlaybackReportRecorder implements 
   final List<String> markedWatched = [];
   Completer<List<MediaItem>>? instantMixGate;
 
+  /// The [fetchInstantMix] onMore of the last mix, to deliver the rest of it.
+  bool Function(List<MediaItem> more)? instantMixMore;
+
   Iterable<RecordedReport> reportsFor(String state) => reports.where((r) => r.state == state);
 
   @override
@@ -484,7 +487,12 @@ class FakeMediaServerClient extends Fake with PlaybackReportRecorder implements 
   void close() {}
 
   @override
-  Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100}) {
+  Future<List<MediaItem>> fetchInstantMix(
+    String itemId, {
+    int limit = 100,
+    bool Function(List<MediaItem> more)? onMore,
+  }) {
+    instantMixMore = onMore;
     return instantMixGate?.future ?? Future.value(const []);
   }
 
@@ -1292,6 +1300,32 @@ void main() {
     await pumpEventQueue();
 
     expect(h.service.currentTrack?.id, t3.id);
+    expect(h.service.queue.map((track) => track.id), [t3.id]);
+  });
+
+  test('a radio with nothing in it says so', () async {
+    h.client.instantMixGate = Completer()..complete(const []);
+    expect(await h.service.playInstantMix(t1), InstantMixOutcome.empty);
+
+    h.client.instantMixGate = Completer()..complete([t1]);
+    expect(await h.service.playInstantMix(t1), InstantMixOutcome.started);
+  });
+
+  test('the rest of a radio joins the queue as the server builds it', () async {
+    h.client.instantMixGate = Completer()..complete([t1]);
+    await h.service.playInstantMix(t1);
+
+    expect(h.client.instantMixMore!([t2]), isTrue);
+    expect(h.service.queue.map((track) => track.id), [t1.id, t2.id]);
+  });
+
+  test('the rest of a radio stays out of a queue that replaced it', () async {
+    h.client.instantMixGate = Completer()..complete([t1]);
+    await h.service.playInstantMix(t1);
+    final more = h.client.instantMixMore!;
+    await h.playTracks([t3]);
+
+    expect(more([t2]), isFalse, reason: 'the server should stop building it');
     expect(h.service.queue.map((track) => track.id), [t3.id]);
   });
 

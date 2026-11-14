@@ -4323,8 +4323,8 @@ class Translations$music$en {
 	/// en: 'Go to artist'
 	String get goToArtist => 'Go to artist';
 
-	/// en: 'Instant Mix'
-	String get instantMix => 'Instant Mix';
+	/// en: 'Radio'
+	String get instantMix => 'Radio';
 
 	/// en: 'Play next'
 	String get playNext => 'Play next';
@@ -4386,14 +4386,14 @@ class Translations$music$en {
 	/// en: 'Repeat one'
 	String get repeatOne => 'Repeat one';
 
-	/// en: 'No server is available for an instant mix'
-	String get instantMixNoServer => 'No server is available for an instant mix';
+	/// en: 'No server is available for radio'
+	String get instantMixNoServer => 'No server is available for radio';
 
-	/// en: 'Failed to load the instant mix'
-	String get instantMixFailed => 'Failed to load the instant mix';
+	/// en: 'Couldn't start the radio'
+	String get instantMixFailed => 'Couldn\'t start the radio';
 
-	/// en: 'The instant mix came back with no tracks'
-	String get instantMixEmpty => 'The instant mix came back with no tracks';
+	/// en: 'Plex has no radio for this'
+	String get instantMixEmpty => 'Plex has no radio for this';
 
 	/// en: 'No audio URL is available for ${track}'
 	String noAudioUrl({required Object track}) => 'No audio URL is available for ${track}';
@@ -9725,7 +9725,7 @@ extension on Translations {
 			'playlists.errorRemoving' => 'Failed to remove from playlist',
 			'music.goToAlbum' => 'Go to album',
 			'music.goToArtist' => 'Go to artist',
-			'music.instantMix' => 'Instant Mix',
+			'music.instantMix' => 'Radio',
 			'music.playNext' => 'Play next',
 			'music.addToQueue' => 'Add to queue',
 			'music.discNumber' => ({required Object n}) => 'Disc ${n}',
@@ -9745,9 +9745,9 @@ extension on Translations {
 			'music.repeat' => 'Repeat',
 			'music.repeatAll' => 'Repeat all',
 			'music.repeatOne' => 'Repeat one',
-			'music.instantMixNoServer' => 'No server is available for an instant mix',
-			'music.instantMixFailed' => 'Failed to load the instant mix',
-			'music.instantMixEmpty' => 'The instant mix came back with no tracks',
+			'music.instantMixNoServer' => 'No server is available for radio',
+			'music.instantMixFailed' => 'Couldn\'t start the radio',
+			'music.instantMixEmpty' => 'Plex has no radio for this',
 			'music.noAudioUrl' => ({required Object track}) => 'No audio URL is available for ${track}',
 			'music.discography.singlesAndEps' => 'Singles & EPs',
 			'music.discography.live' => 'Live',

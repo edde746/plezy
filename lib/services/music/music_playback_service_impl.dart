@@ -395,8 +395,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       throw PlaybackException(t.music.instantMixNoServer, reason: PlaybackFailureReason.serverUnavailable);
     }
     List<MediaItem> tracks;
+    int? mixSession;
     try {
-      tracks = await client.fetchInstantMix(seed.id);
+      tracks = await client.fetchInstantMix(
+        seed.id,
+        onMore: (more) {
+          if (_disposed || mixSession == null || mixSession != _queueSessionRevision) return false;
+          addToEnd(more);
+          return true;
+        },
+      );
     } catch (e, st) {
       if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
       appLogger.w('Instant mix fetch failed for ${seed.id}', error: e, stackTrace: st);
@@ -404,10 +412,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
     if (tracks.isEmpty) return InstantMixOutcome.empty;
-    await _startQueue(
+    // _startQueue opens its session before its first await, so the revision
+    // read straight after is this mix's: the rest of it is added only while
+    // nothing else has replaced it.
+    final started = _startQueue(
       tracks: tracks,
       playContext: MusicPlayContext(title: seed.displayTitle, kind: MusicPlayContextKind.mix),
     );
+    mixSession = _queueSessionRevision;
+    await started;
     return InstantMixOutcome.started;
   }
 

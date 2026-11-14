@@ -10,6 +10,11 @@ import '../../../media/library_genre.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_kind.dart';
+import '../../../media/media_backend.dart';
+import '../../../media/media_server_client.dart';
+import '../../../services/music/music_playback_service.dart';
+import '../../../utils/music_navigation.dart';
+import '../../../utils/snackbar_helper.dart';
 import '../../../media/media_library.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../utils/media_server_http_client.dart';
@@ -317,6 +322,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   List<MediaFilter> _filters = [];
   List<MediaSort> _sortOptions = [];
   List<LibraryFilter> _selectedFilters = const [];
+
+  /// A music library's genres, offered as pills above the grid on mobile,
+  /// where filters otherwise sit two taps away in the options sheet.
+  List<MediaFilterValue> _genres = const [];
   MediaSort? _selectedSort;
   bool _isSortDescending = false;
   String _selectedGrouping = 'all'; // all, seasons, episodes, folders
@@ -428,6 +437,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
   final FocusNode _filtersChipFocusNode = FocusNode(debugLabel: 'filters_chip');
   final FocusNode _sortChipFocusNode = FocusNode(debugLabel: 'sort_chip');
+  final FocusNode _radioChipFocusNode = FocusNode(debugLabel: 'radio_chip');
+  final FocusNode _shuffleChipFocusNode = FocusNode(debugLabel: 'shuffle_chip');
 
   // Anchor keys for the desktop dropdown variants of the chip menus.
   final GlobalKey _groupingChipKey = GlobalKey();
@@ -464,6 +475,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _groupingChipFocusNode.dispose();
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
+    _radioChipFocusNode.dispose();
+    _shuffleChipFocusNode.dispose();
     _alphaJumpBarFocusNode.dispose();
     _currentFirstVisibleIndex.dispose();
     _isScrollActive.dispose();
@@ -700,6 +713,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       });
       _notifyFiltersActive();
+      unawaited(_loadGenres(generation, libraryGlobalKey));
 
       if (library.backend.usesMediaBrowserApi) {
         _loadMediaBrowserFiltersInBackground(generation, libraryGlobalKey, library);
@@ -832,6 +846,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       _mediaBrowserFilterValues = const {};
       _mediaBrowserAlphaPrefix = null;
       _selectedFilters = const [];
+      _genres = const [];
       _selectedSort = null;
       _isSortDescending = false;
       _selectedGrouping = _getDefaultGrouping();
@@ -1143,6 +1158,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     StorageService.getInstance().then((storage) {
       storage.saveLibraryGrouping(widget.library.globalKey, value);
     });
+    if (_genres.isEmpty) unawaited(_loadGenres(libraryLoadGeneration, widget.library.globalKey));
     if (sortTypeChanged) {
       // Music groupings serve per-type sort lists; refresh the options (and
       // drop a selected sort the new list doesn't offer) before fetching
@@ -1798,6 +1814,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             // Floating chips: scroll off with content but snap back into view
             // on upward direction reversal, matching the outer floating
             // SliverAppBar's behavior.
+            if (_usesMobileBrowseOptions && _canShuffleView) SliverToBoxAdapter(child: _buildMusicPills()),
             if (!_usesMobileBrowseOptions)
               SliverPersistentHeader(
                 floating: true,
@@ -1942,6 +1959,134 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   bool get _isSortChipVisible => _sortOptions.isNotEmpty && _selectedGrouping != 'folders';
 
+  /// Whether the view can be played as a whole: a Plex music library
+  /// grouped by artists, albums or tracks.
+  bool get _canShuffleView =>
+      widget.library.backend == MediaBackend.plex &&
+      widget.library.kind == MediaKind.artist &&
+      musicShuffleQuery(_selectedGrouping, _selectedFilters) != null;
+
+  /// Shuffle every track behind what the view shows, filters included.
+  Future<void> _shuffleView() => _playView(
+    fetch: (client) async => (await client.fetchLibraryPagedContent(
+      widget.library.id,
+      query: musicShuffleQuery(_selectedGrouping, _selectedFilters)!,
+    )).items,
+    playContext: MusicPlayContext(title: widget.library.title, kind: MusicPlayContextKind.tracks),
+  );
+
+  /// Radio from what the view shows: well-known tracks, spread across
+  /// artists. A genre too obscure for Last.fm to know falls back to all of
+  /// its tracks.
+  Future<void> _radioView() {
+    final genreKey = _selectedGenreKey;
+    final genre = _genres.where((g) => g.key == genreKey).firstOrNull;
+    return _playView(
+      fetch: (client) async {
+        Future<List<MediaItem>> fetch(LibraryQuery query) async =>
+            (await client.fetchLibraryPagedContent(widget.library.id, query: query)).items;
+        var tracks = await fetch(musicRadioQuery(_selectedGrouping, _selectedFilters)!);
+        if (tracks.length < musicRadioTrackCount ~/ 2) {
+          tracks = await fetch(musicShuffleQuery(_selectedGrouping, _selectedFilters)!);
+        }
+        return spreadArtists(tracks, count: musicRadioTrackCount);
+      },
+      playContext: MusicPlayContext(title: genre?.title ?? widget.library.title, kind: MusicPlayContextKind.mix),
+    );
+  }
+
+  Future<void> _playView({
+    required Future<List<MediaItem>> Function(MediaServerClient client) fetch,
+    required MusicPlayContext playContext,
+  }) async {
+    if (!_canShuffleView) return;
+    final client = context.getMediaClientForLibrary(widget.library);
+    await playFetchedTracks(
+      context,
+      fetch: () => fetch(client),
+      playContext: playContext,
+      onError: (e, stackTrace) =>
+          showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.library.title)),
+      onEmpty: () => showAppSnackBar(context, t.libraries.noItemsMatchFilters),
+    );
+  }
+
+  Future<void> _loadGenres(int generation, String libraryGlobalKey) async {
+    if (!_usesMobileBrowseOptions || !_canShuffleView) return;
+    final genre = _filters.where((f) => f.filter == _genreFilterKey).firstOrNull;
+    if (genre == null) return;
+    try {
+      final genres = await _loadFilterValues(genre);
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+      setState(() => _genres = genres);
+    } catch (e, st) {
+      appLogger.w('Failed to load genres for the genre pills', error: e, stackTrace: st);
+    }
+  }
+
+  static const _genreFilterKey = 'genre';
+
+  /// The one genre chosen, when the genre filter holds exactly one.
+  String? get _selectedGenreKey => switch (_selectedFilters.where((f) => f.field == _genreFilterKey).toList()) {
+    [LibraryFilter(op: LibraryFilterOperator.is_, values: [final key])] => key,
+    _ => null,
+  };
+
+  /// Show [genre]'s items, or everything when null. Applied like a choice
+  /// from the filters sheet, so it is saved and counted the same way.
+  void _selectGenre(MediaFilterValue? genre) {
+    final others = _selectedFilters.where((f) => f.field != _genreFilterKey);
+    final toggledOff = genre == null || _selectedGenreKey == genre.key;
+    unawaited(
+      _applyFilters([
+        ...others,
+        if (!toggledOff) LibraryFilter(field: _genreFilterKey, values: [genre.key]),
+      ]),
+    );
+  }
+
+  /// Radio and Shuffle, then a pill per genre: on a phone, browsing a genre
+  /// and playing it should not take a trip through the filters sheet.
+  Widget _buildMusicPills() {
+    final selected = _selectedGenreKey;
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        children: [
+          ActionChip(
+            avatar: const AppIcon(Symbols.radio_rounded, fill: 1, size: 18),
+            label: Text(t.music.instantMix),
+            onPressed: () => unawaited(_radioView()),
+          ),
+          const SizedBox(width: 8),
+          ActionChip(
+            avatar: const AppIcon(Symbols.shuffle_rounded, fill: 1, size: 18),
+            label: Text(t.common.shuffle),
+            onPressed: () => unawaited(_shuffleView()),
+          ),
+          if (_genres.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            ChoiceChip(
+              label: Text(t.libraries.groupings.all),
+              selected: selected == null,
+              onSelected: (_) => _selectGenre(null),
+            ),
+            for (final genre in _genres) ...[
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: Text(genre.title),
+                selected: selected == genre.key,
+                onSelected: (_) => _selectGenre(genre),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
   /// Builds the chips bar widget
   Widget _buildChipsBar() {
     return OptionsChipsBar(
@@ -1971,6 +2116,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             label: _selectedSort?.title ?? t.libraries.sort,
             onPressed: _showSortBottomSheet,
           ),
+        if (_canShuffleView) ...[
+          OptionsChipDescriptor(
+            focusNode: _radioChipFocusNode,
+            icon: Symbols.radio_rounded,
+            label: t.music.instantMix,
+            onPressed: () => unawaited(_radioView()),
+          ),
+          OptionsChipDescriptor(
+            focusNode: _shuffleChipFocusNode,
+            icon: Symbols.shuffle_rounded,
+            label: t.common.shuffle,
+            onPressed: () => unawaited(_shuffleView()),
+          ),
+        ],
       ],
       onNavigateDown: _navigateToGrid,
       onNavigateUp: widget.onBack,

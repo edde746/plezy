@@ -714,7 +714,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Instant Mix — capability-gated, and only while the server is
       // reachable (capabilities stay truthy for offline servers).
       if (menu.itemServerOnline && (menu.mediaClient?.capabilities.instantMix ?? false))
-        _MenuAction(value: 'music_instant_mix', icon: Symbols.wand_stars_rounded, label: t.music.instantMix),
+        _MenuAction(value: 'music_instant_mix', icon: Symbols.radio_rounded, label: t.music.instantMix),
       if (mediaKind == MediaKind.track && mediaItem.parentId != null && ancestorAlbumId != mediaItem.parentId)
         _MenuAction(value: 'music_album', icon: Symbols.album_rounded, label: t.music.goToAlbum),
       if (musicArtistId != null && ancestorArtistId != musicArtistId)

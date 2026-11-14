@@ -62,7 +62,11 @@ mixin _JellyfinMusicMethods on _JellyfinClientInternals {
 
   /// Server-built radio seeded from a track/album/artist/playlist id.
   @override
-  Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100}) async {
+  Future<List<MediaItem>> fetchInstantMix(
+    String itemId, {
+    int limit = 100,
+    bool Function(List<MediaItem> more)? onMore,
+  }) async {
     final response = await _http.get(
       '/Items/${_segment(itemId)}/InstantMix',
       queryParameters: {

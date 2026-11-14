@@ -256,6 +256,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   List<FocusableAction> getAppBarActions() {
     final client = context.tryGetMediaClientWithFallback(serverIdOrNull(widget.album.serverId));
     return buildMusicActions(
+      context: context,
       onPlay: () => unawaited(_playAll()),
       onShuffle: () => unawaited(_playAll(shuffle: true)),
       onInstantMix: (client?.capabilities.instantMix ?? false)

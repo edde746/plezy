@@ -348,7 +348,15 @@ abstract class MediaServerClient {
   /// (`POST /playQueues?type=audio&uri=...station...`), consumed here as a
   /// plain track list — music playback is queue-managed client-side on both
   /// backends. Gated by [ServerCapabilities.instantMix].
-  Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100});
+  ///
+  /// A backend that builds the mix a few tracks at a time (Plex) returns as
+  /// soon as there is enough to start, then hands the rest to [onMore] until
+  /// [limit] or until [onMore] returns false.
+  Future<List<MediaItem>> fetchInstantMix(
+    String itemId, {
+    int limit = 100,
+    bool Function(List<MediaItem> more)? onMore,
+  });
 
   /// Lyrics for [track], or `null` when the server has none. Jellyfin:
   /// `/Audio/{id}/Lyrics` (per-line tick offsets when synced); Plex: a

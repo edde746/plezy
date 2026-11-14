@@ -11,17 +11,37 @@ void main() {
 
   setUp(() => LocaleSettings.setLocaleSync(AppLocale.en));
 
-  testWidgets('Instant Mix renders a distinct icon and runs its callback when the server supports it', (tester) async {
+  /// Phone width, where Radio is an icon with a tooltip rather than a label.
+  void phone(WidgetTester tester) {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+  }
+
+  testWidgets('Radio carries its name beside Play where there is room', (tester) async {
+    await tester.pumpWidget(
+      _wrap((context) => buildMusicActions(context: context, onPlay: () {}, onShuffle: () {}, onInstantMix: () {})),
+    );
+
+    expect(find.text(t.music.instantMix), findsOneWidget);
+  });
+
+  testWidgets('Radio renders a distinct icon and runs its callback when the server supports it', (tester) async {
+    phone(tester);
     var mixes = 0;
 
-    await tester.pumpWidget(_wrap(buildMusicActions(onPlay: () {}, onShuffle: () {}, onInstantMix: () => mixes++)));
+    await tester.pumpWidget(
+      _wrap(
+        (context) => buildMusicActions(context: context, onPlay: () {}, onShuffle: () {}, onInstantMix: () => mixes++),
+      ),
+    );
 
-    final instantMix = find.byIcon(Symbols.wand_stars_rounded);
+    final instantMix = find.byIcon(Symbols.radio_rounded);
     expect(instantMix, findsOneWidget);
     expect(
       find.ancestor(of: instantMix, matching: find.byTooltip(t.music.instantMix)),
       findsOneWidget,
-      reason: 'the icon is the only affordance on TV, so it must carry the Instant Mix tooltip',
+      reason: 'the icon is the only affordance on a phone, so it must carry the Radio tooltip',
     );
 
     // #1629: the fader glyph reads as an equalizer in a music context, and is
@@ -37,22 +57,24 @@ void main() {
     expect(mixes, 1);
   });
 
-  testWidgets('Instant Mix is absent when the server lacks the capability', (tester) async {
-    await tester.pumpWidget(_wrap(buildMusicActions(onPlay: () {}, onShuffle: () {})));
+  testWidgets('Radio is absent when the server lacks the capability', (tester) async {
+    await tester.pumpWidget(_wrap((context) => buildMusicActions(context: context, onPlay: () {}, onShuffle: () {})));
 
-    expect(find.byIcon(Symbols.wand_stars_rounded), findsNothing);
+    expect(find.byIcon(Symbols.radio_rounded), findsNothing);
     expect(find.byTooltip(t.music.instantMix), findsNothing);
     expect(find.byIcon(Symbols.shuffle_rounded), findsOneWidget);
     expect(find.text(t.common.play), findsOneWidget);
   });
 }
 
-Widget _wrap(List<FocusableAction> actions) {
+Widget _wrap(List<FocusableAction> Function(BuildContext context) actions) {
   return TranslationProvider(
     child: MaterialApp(
       theme: monoTheme(MonoPalette.dark),
       home: Scaffold(
-        body: Center(child: FocusableActionBar(actions: actions)),
+        body: Center(
+          child: Builder(builder: (context) => FocusableActionBar(actions: actions(context))),
+        ),
       ),
     ),
   );

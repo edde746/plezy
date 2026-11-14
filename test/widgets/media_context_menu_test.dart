@@ -1374,7 +1374,7 @@ void main() {
       expect(find.text('picker target'), findsOneWidget);
     });
 
-    testWidgets('the music menu gives Instant Mix an icon it shares with no sibling row', (tester) async {
+    testWidgets('the music menu gives Radio an icon it shares with no sibling row', (tester) async {
       final track = testMediaItem(
         id: 'track-1',
         backend: MediaBackend.jellyfin,
@@ -1392,7 +1392,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(t.music.instantMix), findsOneWidget);
-      expect(find.byIcon(Symbols.wand_stars_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.radio_rounded), findsOneWidget);
 
       // #1629: the fader glyph reads as an equalizer, and the neighbouring
       // rows must stay tellable apart at a glance on a TV.
@@ -1404,7 +1404,7 @@ void main() {
           .whereType<IconData>()
           .toList();
       expect(
-        musicIcons.where((icon) => icon == Symbols.wand_stars_rounded),
+        musicIcons.where((icon) => icon == Symbols.radio_rounded),
         hasLength(1),
         reason: 'Instant Mix must not reuse the glyph of Play, Play next, Add to queue, or Go to artist',
       );

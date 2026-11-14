@@ -6,18 +6,23 @@ import '../../i18n/strings.g.dart';
 import '../app_icon.dart';
 
 /// Standard action list for the music detail screens (album/artist):
-/// a labeled Play pill, a shuffle icon, an optional Instant Mix icon (pass
-/// null when the server lacks the capability), an optional [download]
-/// action (the album download button), and an optional [trailing] action
-/// (the album overflow ⋮). Render inside a [FocusableActionBar] —
-/// icon actions get the bar's default focus-background treatment.
+/// a labeled Play pill, a shuffle icon, an optional Radio button, labeled
+/// where there is room (pass null when the server lacks the capability), an
+/// optional [download] action (the album download button), and an optional
+/// [trailing] action (the album overflow ⋮). Render inside a
+/// [FocusableActionBar] — icon actions get the bar's default focus-background
+/// treatment.
 List<FocusableAction> buildMusicActions({
+  required BuildContext context,
   required VoidCallback onPlay,
   required VoidCallback onShuffle,
   VoidCallback? onInstantMix,
   FocusableAction? download,
   FocusableAction? trailing,
 }) {
+  // A phone has no room for a second label beside Play and an album's
+  // download and overflow buttons.
+  final labelRadio = MediaQuery.sizeOf(context).width >= 600;
   return [
     FocusableAction(
       debugLabel: 'music_play',
@@ -31,12 +36,19 @@ List<FocusableAction> buildMusicActions({
       onPressed: onShuffle,
     ),
     if (onInstantMix != null)
-      FocusableAction(
-        debugLabel: 'music_instant_mix',
-        icon: Symbols.wand_stars_rounded,
-        tooltip: t.music.instantMix,
-        onPressed: onInstantMix,
-      ),
+      if (labelRadio)
+        FocusableAction(
+          debugLabel: 'music_instant_mix',
+          onPressed: onInstantMix,
+          builder: (context, state) => _MusicRadioButton(onPressed: onInstantMix, showFocus: state.showFocus),
+        )
+      else
+        FocusableAction(
+          debugLabel: 'music_instant_mix',
+          icon: Symbols.radio_rounded,
+          tooltip: t.music.instantMix,
+          onPressed: onInstantMix,
+        ),
     ?download,
     ?trailing,
   ];
@@ -63,6 +75,30 @@ class _MusicPlayButton extends StatelessWidget {
           : null,
       icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20),
       label: Text(t.common.play, style: const TextStyle(fontWeight: .w700)),
+    );
+  }
+}
+
+/// Labeled Radio button, tonal so it reads as second to Play.
+class _MusicRadioButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool showFocus;
+
+  const _MusicRadioButton({required this.onPressed, required this.showFocus});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
+      style: showFocus
+          ? FilledButton.styleFrom(
+              backgroundColor: colorScheme.inverseSurface,
+              foregroundColor: colorScheme.onInverseSurface,
+            )
+          : null,
+      icon: const AppIcon(Symbols.radio_rounded, fill: 1, size: 20),
+      label: Text(t.music.instantMix),
     );
   }
 }
