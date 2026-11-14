@@ -15,7 +15,7 @@ import '../test_helpers/media_items.dart';
 /// Test probe wired with a controllable `fetchPage` so individual tests can
 /// stage successes, failures, and slow responses.
 class _PaginatedProbe extends StatefulWidget {
-  const _PaginatedProbe({required this.fetcher, this.onState, this.onPageLoadedHook});
+  const _PaginatedProbe({required this.fetcher, this.onState, this.onPageLoadedHook, this.dedupe = false});
 
   /// Returns a future for the requested `(start, size)` slice. Tests stage
   /// futures via this fetcher to control timing and error paths.
@@ -23,6 +23,10 @@ class _PaginatedProbe extends StatefulWidget {
 
   final void Function(_PaginatedProbeState)? onState;
   final void Function(int start, List<MediaItem> items)? onPageLoadedHook;
+
+  /// Opts the probe into shift detection, as a real screen does by overriding
+  /// `identityOf`.
+  final bool dedupe;
 
   @override
   State<_PaginatedProbe> createState() => _PaginatedProbeState();
@@ -53,6 +57,9 @@ class _PaginatedProbeState extends State<_PaginatedProbe>
   void onPageLoaded(int start, List<MediaItem> items) {
     widget.onPageLoadedHook?.call(start, items);
   }
+
+  @override
+  Object? identityOf(MediaItem item) => widget.dedupe ? item.id : null;
 
   @override
   void initState() {
@@ -680,6 +687,151 @@ void main() {
       await tester.pump();
       expect(freshResult.applied, isTrue);
       expect(state.totalSize, 99);
+    });
+
+    testWidgets('a page that fills nothing truncates the total instead of looping forever', (tester) async {
+      late _PaginatedProbeState state;
+      // The count says 400; the collection only ever hands over 100. This is the
+      // structurally likely shape mid-scan, and the shipped behaviour was to
+      // re-issue the identical request once per frame, indefinitely.
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => start >= 100
+              ? const LibraryPage<MediaItem>(items: [], totalCount: 400)
+              : _result(start: start, size: size.clamp(0, 100 - start), totalSize: 400),
+        ),
+      );
+
+      await state.loadInitialPage(50);
+      await tester.pump();
+      expect(state.totalSize, 400);
+
+      await state.ensureRangeLoaded(0, 50);
+      await tester.pumpAndSettle();
+
+      expect(state.totalSize, 100, reason: 'the rows the server will serve are the honest total');
+      final settledFetches = state.fetchCalls;
+
+      // The loop is gone: another pass over the same range asks for nothing.
+      await state.ensureRangeLoaded(0, 50);
+      await tester.pumpAndSettle();
+      expect(state.fetchCalls, settledFetches);
+    });
+
+    testWidgets('reaching the end of a growing collection re-asks for the total', (tester) async {
+      late _PaginatedProbeState state;
+      var total = 20;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async {
+            final available = (total - start).clamp(0, size);
+            return _result(start: start, size: available, totalSize: total);
+          },
+        ),
+      );
+
+      await state.loadInitialPage(20);
+      await tester.pump();
+      expect(state.totalSize, 20);
+      expect(state.loadedItems.length, 20);
+
+      // A scan commits a batch while the user sits at the bottom of the list.
+      // Nothing is missing inside the known total, so before the growth probe
+      // no fetch was issued and the user stayed pinned at 20.
+      total = 26;
+      await state.ensureRangeLoaded(10, 10);
+      await tester.pumpAndSettle();
+
+      expect(state.totalSize, 26);
+      expect(state.loadedItems.containsKey(25), isTrue);
+    });
+
+    testWidgets('the growth probe is throttled and stays quiet away from the end', (tester) async {
+      late _PaginatedProbeState state;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async =>
+              _result(start: start, size: (100 - start).clamp(0, size), totalSize: 100),
+        ),
+      );
+
+      await state.loadInitialPage(100);
+      await tester.pump();
+      final afterInitial = state.fetchCalls;
+
+      // Viewport nowhere near the end: no probe, even though nothing is missing.
+      await state.ensureRangeLoaded(0, 10, buffer: 0);
+      await tester.pumpAndSettle();
+      expect(state.fetchCalls, afterInitial);
+
+      // At the end: one probe...
+      await state.ensureRangeLoaded(90, 10, buffer: 0);
+      await tester.pumpAndSettle();
+      expect(state.fetchCalls, afterInitial + 1);
+
+      // ...and not a second one on the next scroll settle.
+      await state.ensureRangeLoaded(90, 10, buffer: 0);
+      await tester.pumpAndSettle();
+      expect(state.fetchCalls, afterInitial + 1);
+    });
+
+    testWidgets('a page that re-delivers loaded rows renumbers the map instead of duplicating them', (tester) async {
+      late _PaginatedProbeState state;
+      // Page two arrives after the scanner inserted one row behind the cursor,
+      // so it starts with the row already held at index 9.
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          dedupe: true,
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => start == 0
+              ? _result(start: 0, size: 10, totalSize: 20)
+              : LibraryPage<MediaItem>(
+                  items: List<MediaItem>.generate(size, (i) => _meta(start - 1 + i)),
+                  totalCount: 21,
+                  offset: start,
+                ),
+        ),
+      );
+
+      await state.loadInitialPage(10);
+      await tester.pump();
+
+      state.ensureIndexLoaded(10, pageSize: 5);
+      await tester.pumpAndSettle();
+
+      final ids = state.loadedItems.values.map((item) => item.id).toList();
+      expect(ids.toSet(), hasLength(ids.length), reason: 'no row may be rendered at two indices');
+      // Everything moved up one, and index 0 is the hole the inserted row left.
+      expect(state.loadedItems[10]?.id, 'k9');
+      expect(state.loadedItems.containsKey(0), isFalse);
+      expect(state.totalSize, 21);
+    });
+
+    testWidgets('a plain re-fetch of loaded rows is not mistaken for a shift', (tester) async {
+      late _PaginatedProbeState state;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          dedupe: true,
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => _result(start: start, size: size, totalSize: 400),
+        ),
+      );
+
+      await state.loadInitialPage(200);
+      await tester.pump();
+
+      // clearPendingRanges + a repeat request is a normal fast-scroll pattern:
+      // the same rows come back at the same offsets, which is not a shift.
+      state.clearPendingRanges();
+      state.ensureIndexLoaded(0, pageSize: 200);
+      await tester.pumpAndSettle();
+
+      expect(state.loadedItems[0]?.id, 'k0');
+      expect(state.loadedItems[199]?.id, 'k199');
+      expect(state.loadedItems.length, 200);
     });
 
     testWidgets('a stale in-flight failure from before resetPaginationState is dropped', (tester) async {

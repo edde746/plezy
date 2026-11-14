@@ -14,6 +14,13 @@ import '../exceptions/media_server_exceptions.dart';
 /// with backoff, abort propagation, and request-generation invalidation so
 /// reloads don't collide with in-flight fetches.
 ///
+/// Two things the offsets cannot be trusted about, both of which show up on a
+/// library that is still being scanned and neither of which is visible in a
+/// test against a static fixture:
+/// - the total grows (see [_probeForGrowth]);
+/// - rows are inserted behind the cursor, so offsets already fetched go stale
+///   (see [identityOf]).
+///
 /// Typical lifecycle:
 /// 1. Subclass's `loadItems` calls [resetPaginationState] inside `setState`,
 ///    then awaits [loadInitialPage].
@@ -39,6 +46,8 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   Timer? _retryTimer;
   bool _visibleRangeLoading = false;
   DateTime? _lastEagerPrefetch;
+  DateTime? _lastGrowthProbe;
+  bool _growthProbeInFlight = false;
   Object? get paginationError => _paginationError;
   bool get isPaginationLoading => _loadingRanges.isNotEmpty;
 
@@ -53,6 +62,17 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   /// Fetch a page of items. Subclass implements this — typically delegating
   /// to a paginated client method that returns a [LibraryPage].
   Future<LibraryPage<T>> fetchPage(int start, int size, AbortController? abort);
+
+  /// Stable identity of [item], or null to opt out of shift detection.
+  ///
+  /// [loadedItems] addresses rows by server offset, and those offsets are only
+  /// stable while the collection is. A library being scanned inserts rows
+  /// *behind* the user's cursor, after which every offset already fetched is
+  /// too low by however many rows were inserted — so the next page re-delivers
+  /// rows the map already holds at earlier indices and the grid renders the
+  /// same album twice. Overriding this lets [_mergePage] notice that and
+  /// realign the map instead. See [_detectedShift].
+  Object? identityOf(T item) => null;
 
   /// Hook fired after each successful page merge. Default: no-op.
   /// Override for image prefetch, syncing a base-class `items` list, etc.
@@ -73,6 +93,8 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     _retryCount = 0;
     _visibleRangeLoading = false;
     _lastEagerPrefetch = null;
+    _lastGrowthProbe = null;
+    _growthProbeInFlight = false;
     _scheduledRetry = null;
     _paginationError = null;
     _openEndedPageSize = null;
@@ -87,6 +109,62 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     final count = page.items.length;
     final sentinel = requestedSize > 0 && count >= requestedSize && page.totalCount == start + count + 1;
     _openEndedPageSize = sentinel ? requestedSize : null;
+  }
+
+  /// Write [items] into [loadedItems] at [start], realigning first if the
+  /// collection has grown underneath the offsets already loaded.
+  ///
+  /// Returns the number of indices the existing map was shifted by.
+  int _mergePage(int start, List<T> items) {
+    final shift = _detectedShift(start, items);
+    if (shift > 0) {
+      final shifted = <int, T>{for (final entry in loadedItems.entries) entry.key + shift: entry.value};
+      loadedItems
+        ..clear()
+        ..addAll(shifted);
+    }
+    for (var i = 0; i < items.length; i++) {
+      loadedItems[start + i] = items[i];
+    }
+    return shift;
+  }
+
+  /// How many rows the server inserted below [start] since the map was filled,
+  /// or 0 when nothing suggests it moved.
+  ///
+  /// The signal is a page whose leading rows are already loaded at *lower*
+  /// indices than the ones it is being written to: the only way the server can
+  /// hand back a row the map already holds is if that row moved down the list.
+  /// The whole leading run has to agree on the same distance before the shift
+  /// is believed — a single coincidence is not enough to renumber the map — and
+  /// a row that is already loaded at exactly the index it is arriving at is a
+  /// plain re-fetch (after [clearPendingRanges] or eviction), not a shift.
+  int _detectedShift(int start, List<T> items) {
+    if (items.isEmpty || loadedItems.isEmpty) return 0;
+    final firstIdentity = identityOf(items.first);
+    if (firstIdentity == null) return 0;
+
+    // One pass over the (eviction-bounded) map rather than a maintained reverse
+    // index, which would have to survive eviction, removal and shifting.
+    final indexByIdentity = <Object, int>{};
+    for (final entry in loadedItems.entries) {
+      final identity = identityOf(entry.value);
+      if (identity != null) indexByIdentity[identity] = entry.key;
+    }
+
+    final previous = indexByIdentity[firstIdentity];
+    if (previous == null || previous >= start) return 0;
+    final shift = start - previous;
+
+    // Corroborate against the rest of the run that must also have moved. A page
+    // shorter than the shift can only offer what it has; requiring the rows it
+    // does carry to agree is still far stronger than trusting one row.
+    final checked = items.length < shift ? items.length : shift;
+    for (var i = 1; i < checked; i++) {
+      final identity = identityOf(items[i]);
+      if (identity == null || indexByIdentity[identity] != previous + i) return 0;
+    }
+    return shift;
   }
 
   /// Fetch the first page. Await from outside `setState`. Mutates
@@ -111,9 +189,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     }
     if (generation != _requestId || !mounted) return (page: result, applied: false);
 
-    for (var i = 0; i < result.items.length; i++) {
-      loadedItems[i] = result.items[i];
-    }
+    _mergePage(0, result.items);
     totalSize = result.totalCount;
     _trackOpenEndedTotal(0, pageSize, result);
     onPageLoaded(0, result.items);
@@ -138,7 +214,17 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
         fetchEnd = i + 1;
       }
     }
-    if (fetchStart == null || fetchEnd == null) return;
+    if (fetchStart == null || fetchEnd == null) {
+      // Nothing is missing inside the total the list currently believes in. That
+      // total only ever moves when a page fetch reports a new one, so a user who
+      // has reached the end of a library being scanned would otherwise stay
+      // pinned at whatever the count was when the screen opened — measured 77%
+      // growth in 45 minutes. Ask once the viewport genuinely reaches the end.
+      if (firstIndex + visibleCount >= totalSize) {
+        unawaited(_probeForGrowth(buffer > 0 ? buffer : (visibleCount > 0 ? visibleCount : 1)));
+      }
+      return;
+    }
 
     _retryTimer?.cancel();
     _scheduledRetry = () => ensureRangeLoaded(firstIndex, visibleCount, buffer: buffer);
@@ -152,6 +238,48 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
       }
     } finally {
       _visibleRangeLoading = false;
+    }
+  }
+
+  /// Minimum spacing between "has the collection grown?" probes.
+  ///
+  /// Deliberately shorter than a client's own count memo (Music Assistant's is
+  /// 60s): a probe that lands inside the memo costs one cheap request and no
+  /// server work, and pinning this to any one backend's cache policy would
+  /// bake that policy into a mixin three backends share.
+  static const Duration _growthProbeInterval = Duration(seconds: 10);
+
+  /// Ask for the page that would start one past the end of the known list.
+  ///
+  /// A page request carries the server's own current total, so this doubles as
+  /// a total refresh and as the fetch of whatever appeared. Nothing is reported
+  /// on failure: the list on screen is intact and complete as far as it knows,
+  /// and a growth probe that could raise a banner would turn a background
+  /// question into a user-visible error.
+  Future<void> _probeForGrowth(int pageSize) async {
+    if (_growthProbeInFlight || totalSize == 0) return;
+    final now = DateTime.now();
+    if (_lastGrowthProbe != null && now.difference(_lastGrowthProbe!) < _growthProbeInterval) return;
+    _lastGrowthProbe = now;
+    _growthProbeInFlight = true;
+
+    final start = totalSize;
+    final generation = _requestId;
+    try {
+      final result = await fetchPage(start, pageSize, _cancelToken);
+      if (generation != _requestId || !mounted || result.items.isEmpty) return;
+      setState(() {
+        _mergePage(start, result.items);
+        // Trust the fresh total, but never below what just arrived: a count that
+        // trails the rows it is committed alongside would re-hide them.
+        final delivered = start + result.items.length;
+        totalSize = result.totalCount > delivered ? result.totalCount : delivered;
+      });
+      onPageLoaded(start, result.items);
+    } catch (_) {
+      // Intentionally silent — see above.
+    } finally {
+      _growthProbeInFlight = false;
     }
   }
 
@@ -340,6 +468,8 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     _loadingRanges.clear();
     _paginationError = null;
     _scheduledRetry = null;
+    _lastGrowthProbe = null;
+    _growthProbeInFlight = false;
   }
 
   Future<bool> _fetchRange(int start, int size) async {
@@ -369,16 +499,26 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
       if (generation != _requestId || !mounted) return false;
 
       setState(() {
-        for (var i = 0; i < result.items.length; i++) {
-          loadedItems[start + i] = result.items[i];
+        _mergePage(start, result.items);
+        if (result.items.isEmpty && start < totalSize) {
+          // The total claims rows this offset cannot serve. Believing it leaves
+          // a gap that can never be filled, and because a short page still
+          // counts as success, `ensureRangeLoaded` re-arms itself post-frame and
+          // reissues the identical request every frame forever. The rows the
+          // server will actually hand over are the honest total.
+          totalSize = start;
+          loadedItems.removeWhere((index, _) => index >= start);
+        } else if (result.totalCount != totalSize) {
+          totalSize = result.totalCount;
         }
-        if (result.totalCount != totalSize) totalSize = result.totalCount;
       });
       _trackOpenEndedTotal(start, requestSize, result);
 
       _retryCount = 0;
       onPageLoaded(start, result.items);
-      return true;
+      // "Made progress", not "did not throw": re-arming on a page that filled
+      // nothing is the loop described above.
+      return result.items.isNotEmpty;
     } catch (e) {
       if (e is MediaServerHttpException && e.type == MediaServerHttpErrorType.cancelled) return false;
       _paginationError = e;

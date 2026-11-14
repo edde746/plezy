@@ -351,6 +351,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   bool? _listMetricsUsesWideRatio;
   CardShape? _listMetricsShape;
   final FocusNode _alphaJumpBarFocusNode = FocusNode(debugLabel: 'alpha_jump_bar');
+  final FocusNode _paginationRetryFocusNode = FocusNode(debugLabel: 'browse_pagination_retry');
   // When the user taps a letter, pin the highlight so scroll-based recalculation
   // doesn't immediately override it (e.g. when the letter has fewer items than a full row).
   bool _hasJumpPin = false;
@@ -465,6 +466,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
     _alphaJumpBarFocusNode.dispose();
+    _paginationRetryFocusNode.dispose();
     _currentFirstVisibleIndex.dispose();
     _isScrollActive.dispose();
     disposeGridFocusNodes();
@@ -963,6 +965,37 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   void onPageLoaded(int start, List<MediaItem> pageItems) {
     _prefetchImages(start, pageItems);
+  }
+
+  /// Lets the loader notice that the collection shifted underneath the offsets
+  /// it has already fetched. All three backends can do this — anything indexing
+  /// in the background inserts rows behind the cursor — and without it the grid
+  /// renders the same item at two indices.
+  @override
+  Object? identityOf(MediaItem item) => item.id;
+
+  /// A page that fails mid-scroll used to be invisible here: the mixin recorded
+  /// the error and retried with backoff, but the error view only renders when
+  /// nothing at all is loaded, so a dropped socket showed frozen skeletons and
+  /// no way to ask again.
+  @override
+  void onPaginationStateChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _retryPagination() {
+    final range = _computeVisibleRange();
+    if (range != null) {
+      ensureRangeLoaded(range.firstIndex, range.visibleCount, buffer: _activeFetchSize ~/ 2);
+      return;
+    }
+    // No usable viewport geometry (the grid is all skeletons): fall back to the
+    // first index the map is missing.
+    var index = 0;
+    while (index < totalSize && loadedItems.containsKey(index)) {
+      index++;
+    }
+    if (index < totalSize) ensureIndexLoaded(index, pageSize: _activeFetchSize);
   }
 
   String _getDefaultGrouping() {
@@ -2045,6 +2078,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         ],
         builder: (context) => _buildItemsSliver(context),
       ),
+      // A page that failed mid-scroll leaves loaded rows on screen, so the
+      // full-screen error state above never fires. Without this the user gets
+      // skeletons that stop filling, silent backoff retries, and nothing to
+      // press. Same footer the hub detail screen uses for the same state.
+      if (paginationError != null)
+        ContinuationStatusSliver(
+          error: paginationError,
+          onRetry: _retryPagination,
+          retryFocusNode: _paginationRetryFocusNode,
+          errorContext: widget.library.title,
+          onNavigateUp: _navigateToGridNearScroll,
+          onBack: widget.onBack,
+        ),
     ];
   }
 
