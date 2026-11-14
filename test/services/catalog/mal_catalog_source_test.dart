@@ -112,6 +112,7 @@ Future<void> _expectNativeLibraryMatch(
     MediaBackend.plex => testPlexClient(handler: respond),
     MediaBackend.jellyfin => testJellyfinClient(handler: respond),
     MediaBackend.emby => testEmbyClient(handler: respond),
+    MediaBackend.musicAssistant => throw UnsupportedError('no catalog on Music Assistant'),
   };
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServer = MultiServerProvider(manager, DataAggregationService(manager));
@@ -402,7 +403,8 @@ void main() {
         await db.close();
       });
 
-      for (final backend in MediaBackend.values) {
+      // Music Assistant holds no films or shows to match against.
+      for (final backend in MediaBackend.values.where((b) => b != MediaBackend.musicAssistant)) {
         test('Kimi no Na wa. finds only the ID-verified native-title copy on ${backend.name}', () async {
           handlers.add(
             (_) => _json(_pageBody([_node(id: 32281, title: 'Kimi no Na wa.', ja: '君の名は。', mediaType: 'movie')])),

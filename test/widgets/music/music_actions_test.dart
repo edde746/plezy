@@ -14,7 +14,11 @@ void main() {
   testWidgets('Instant Mix renders a distinct icon and runs its callback when the server supports it', (tester) async {
     var mixes = 0;
 
-    await tester.pumpWidget(_wrap(buildMusicActions(onPlay: () {}, onShuffle: () {}, onInstantMix: () => mixes++)));
+    await tester.pumpWidget(
+      _wrap(
+        (context) => buildMusicActions(context: context, onPlay: () {}, onShuffle: () {}, onInstantMix: () => mixes++),
+      ),
+    );
 
     final instantMix = find.byIcon(Symbols.wand_stars_rounded);
     expect(instantMix, findsOneWidget);
@@ -38,7 +42,7 @@ void main() {
   });
 
   testWidgets('Instant Mix is absent when the server lacks the capability', (tester) async {
-    await tester.pumpWidget(_wrap(buildMusicActions(onPlay: () {}, onShuffle: () {})));
+    await tester.pumpWidget(_wrap((context) => buildMusicActions(context: context, onPlay: () {}, onShuffle: () {})));
 
     expect(find.byIcon(Symbols.wand_stars_rounded), findsNothing);
     expect(find.byTooltip(t.music.instantMix), findsNothing);
@@ -47,12 +51,14 @@ void main() {
   });
 }
 
-Widget _wrap(List<FocusableAction> actions) {
+Widget _wrap(List<FocusableAction> Function(BuildContext context) actions) {
   return TranslationProvider(
     child: MaterialApp(
       theme: monoTheme(MonoPalette.dark),
       home: Scaffold(
-        body: Center(child: FocusableActionBar(actions: actions)),
+        body: Center(
+          child: Builder(builder: (context) => FocusableActionBar(actions: actions(context))),
+        ),
       ),
     ),
   );

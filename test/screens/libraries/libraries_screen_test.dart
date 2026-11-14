@@ -170,6 +170,34 @@ void main() {
     expect(selected, [_libraryA.globalKey]);
   });
 
+  group('visible tabs', () {
+    test('a backend with no collections concept is not offered the tab', () {
+      // Music Assistant refuses every collection call, so the tab could only
+      // ever be empty — and it was the chip that overflowed the strip.
+      expect(visibleLibraryTabs(_libraryA, supportsCollections: false), [
+        for (final tab in LibraryTabType.values)
+          if (tab != LibraryTabType.collections) tab,
+      ]);
+    });
+
+    test('every other backend keeps all four, including when unresolvable', () {
+      expect(visibleLibraryTabs(_libraryA), LibraryTabType.values);
+      expect(visibleLibraryTabs(_libraryA, supportsCollections: true), LibraryTabType.values);
+    });
+
+    test('a shared library is unaffected either way', () {
+      const shared = MediaLibrary(
+        id: 'shared',
+        backend: MediaBackend.plex,
+        title: 'Shared',
+        kind: MediaKind.movie,
+        serverId: 'server',
+        isShared: true,
+      );
+      expect(visibleLibraryTabs(shared, supportsCollections: false), [LibraryTabType.browse, LibraryTabType.playlists]);
+    });
+  });
+
   testWidgets('stale saved tab cannot replace the current library tab', (tester) async {
     final preferences = _GatedPreferences({
       'selected_library_key': _libraryB.globalKey,

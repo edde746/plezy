@@ -14,6 +14,9 @@ import 'alpha_jump_helper.dart';
 /// synthesises the 27-letter alphabet (`#`, `A`–`Z`) and acts as a name-prefix
 /// filter that refetches the page when the user picks a letter (matching the
 /// server web clients' UX).
+///
+/// Music Assistant has neither: no per-letter counts and no name-prefix
+/// filter on `music/<type>/library_items`, so the bar is suppressed.
 abstract class LibraryAlphaBarStrategy {
   /// Whether the bar should be rendered at all. Implementations consider
   /// total item count, sort key, and current filter state.
@@ -68,6 +71,7 @@ abstract class LibraryAlphaBarStrategy {
         isShared: isShared,
       ),
       MediaBackend.jellyfin || MediaBackend.emby => const MediaBrowserAlphaBarStrategy(),
+      MediaBackend.musicAssistant => const MusicAssistantAlphaBarStrategy(),
     };
   }
 }
@@ -214,4 +218,53 @@ class MediaBrowserAlphaBarStrategy implements LibraryAlphaBarStrategy {
     final next = (currentMediaBrowserPrefix == letter) ? null : letter;
     onMediaBrowserPrefixChange(next);
   }
+}
+
+/// Music Assistant strategy — no alpha bar.
+///
+/// `music/<type>/library_items` offers neither per-letter counts (so the Plex
+/// scroll-offset UX has nothing to scroll to) nor a name-prefix filter (so the
+/// Jellyfin refetch UX has nothing to filter on). It does take a `search`
+/// argument, but that is a substring match — `zz` returns `All That Jazz` — so
+/// it cannot stand in for a prefix filter either. Server ordering is by
+/// `sort_name`, which disagrees with `name` for roughly one item in nine, so a
+/// locally-derived bar would send the user to the wrong row. Suppressing it is
+/// the honest answer until the server grows one of those two affordances.
+///
+/// The `#`-bucket problem it would otherwise have to solve is handled where the
+/// pages are fetched instead: `MusicAssistantClient` rotates the block of
+/// punctuation-only titles off the front of the alphabetical list and serves it
+/// after Z. See `_alphabeticalPage` in
+/// `music_assistant_client/parts/browse.dart` and [LibraryAlphaBucket].
+class MusicAssistantAlphaBarStrategy implements LibraryAlphaBarStrategy {
+  const MusicAssistantAlphaBarStrategy();
+
+  @override
+  bool shouldShow({
+    required int totalItemCount,
+    required int loadedCharacterCount,
+    required String? sortKey,
+    required bool isFolderGrouping,
+    required String? mediaBrowserAlphaPrefix,
+    required bool isPhone,
+  }) => false;
+
+  @override
+  Future<({List<LibraryFirstCharacter> chars, AlphaJumpHelper helper})> loadCharacters({
+    required Map<String, dynamic> filters,
+    required int? typeId,
+    required bool descending,
+  }) async => (chars: const <LibraryFirstCharacter>[], helper: AlphaJumpHelper(const []));
+
+  @override
+  String currentLetter(int index, AlphaJumpHelper helper, {String? mediaBrowserAlphaPrefix}) => '';
+
+  @override
+  void onLetterPressed(
+    int targetIndex,
+    AlphaJumpHelper helper, {
+    required String? currentMediaBrowserPrefix,
+    required void Function(int index) onPlexJump,
+    required void Function(String? nextPrefix) onMediaBrowserPrefixChange,
+  }) {}
 }

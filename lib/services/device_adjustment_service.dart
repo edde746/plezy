@@ -23,6 +23,72 @@ class DeviceAdjustmentService {
   int _brightnessGeneration = 0;
   Future<void> _brightnessQueue = Future<void>.value();
 
+  /// Called with the new system volume (0.0–1.0) when it changes, including
+  /// from the hardware buttons. Null to stop listening.
+  void Function(double volume)? onSystemVolumeChanged;
+
+  /// Start reporting system volume changes to [onSystemVolumeChanged].
+  Future<void> startVolumeButtonWatch() async {
+    _ensureVolumeHandler();
+    try {
+      await _channel.invokeMethod<void>('startVolumeButtonWatch');
+    } on MissingPluginException {
+      // Unsupported platform: the buttons keep their normal meaning.
+    } on PlatformException catch (error) {
+      appLogger.d('Could not watch the volume buttons: ${error.code}');
+    }
+  }
+
+  Future<void> stopVolumeButtonWatch() async {
+    try {
+      await _channel.invokeMethod<void>('stopVolumeButtonWatch');
+    } on MissingPluginException {
+      // Nothing was watching.
+    } on PlatformException catch (error) {
+      appLogger.d('Could not stop watching the volume buttons: ${error.code}');
+    }
+  }
+
+  /// Plays silence on this device so iOS treats the app as the one playing.
+  ///
+  /// iOS only sends lock-screen, Control Center and headphone commands (an
+  /// AirPods press) to the app that is playing audio, and only keeps a
+  /// backgrounded app running while it plays. Music going to a speaker in
+  /// another room plays nothing here, so without this those controls reach
+  /// another app, and the volume buttons stop working once the phone locks.
+  Future<void> startNowPlayingKeepAlive() async {
+    try {
+      await _channel.invokeMethod<void>('startNowPlayingKeepAlive');
+    } on MissingPluginException {
+      // Not iOS: nothing to hold.
+    } on PlatformException catch (error) {
+      appLogger.d('Could not hold the audio session: ${error.code}');
+    }
+  }
+
+  Future<void> stopNowPlayingKeepAlive() async {
+    try {
+      await _channel.invokeMethod<void>('stopNowPlayingKeepAlive');
+    } on MissingPluginException {
+      // Nothing was held.
+    } on PlatformException catch (error) {
+      appLogger.d('Could not release the audio session: ${error.code}');
+    }
+  }
+
+  bool _volumeHandlerInstalled = false;
+
+  void _ensureVolumeHandler() {
+    if (_volumeHandlerInstalled) return;
+    _volumeHandlerInstalled = true;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method != 'onSystemVolumeChanged') return null;
+      final value = call.arguments;
+      if (value is num) onSystemVolumeChanged?.call(value.toDouble());
+      return null;
+    });
+  }
+
   Future<double?> getBrightness() => _invokeDouble('getBrightness');
 
   Future<void> setBrightness(double value) async {
@@ -71,14 +137,20 @@ class DeviceAdjustmentService {
 
   Future<double?> getMediaVolume() => _invokeDouble('getMediaVolume');
 
-  Future<void> setMediaVolume(double value) async {
+  /// Whether the volume was set. iOS can refuse — its system slider only
+  /// exists once the app has a window — and a caller that measures from the
+  /// value it asked for needs to know.
+  Future<bool> setMediaVolume(double value) async {
     final clamped = value.clamp(0.0, 1.0);
     try {
       await _channel.invokeMethod<void>('setMediaVolume', clamped);
+      return true;
     } on MissingPluginException {
       // Unsupported platform: keep gestures harmless.
+      return false;
     } on PlatformException catch (error, stackTrace) {
       appLogger.w('Failed to set media volume', error: error, stackTrace: stackTrace);
+      return false;
     }
   }
 

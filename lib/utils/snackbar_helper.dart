@@ -23,6 +23,7 @@ SnackBar _buildSnackBar(
   required Color? backgroundColor,
   required Duration duration,
   bool? dismissible,
+  SnackBarAction? action,
 }) {
   final isDesktop = PlatformDetector.isDesktopOS();
   final tapToDismiss = dismissible ?? isDesktop;
@@ -44,6 +45,7 @@ SnackBar _buildSnackBar(
     behavior: isDesktop ? SnackBarBehavior.floating : null,
     width: isDesktop ? _desktopSnackBarWidth(context) : null,
     padding: tapToDismiss ? EdgeInsets.zero : null,
+    action: action,
   );
 }
 
@@ -115,13 +117,20 @@ void showGlobalErrorSnackBar(String message) {
 /// Shows an info snackbar through the main-screen messenger when available
 /// (so it floats above the mobile NavigationBar), falling back to the root
 /// messenger when the main screen is not mounted.
-void showMainSnackBar(String message, {Duration duration = AppDurations.snackBarDefault}) {
+void showMainSnackBar(String message, {Duration duration = AppDurations.snackBarDefault, SnackBarAction? action}) {
   final messenger = profileNavigationRegistry.mainScaffoldMessenger ?? rootScaffoldMessengerKey.currentState;
   if (messenger == null) return;
   messenger
     ..removeCurrentSnackBar()
     ..showSnackBar(
-      _buildSnackBar(messenger.context, messenger, content: Text(message), backgroundColor: null, duration: duration),
+      _buildSnackBar(
+        messenger.context,
+        messenger,
+        content: Text(message),
+        backgroundColor: null,
+        duration: duration,
+        action: action,
+      ),
     );
 }
 

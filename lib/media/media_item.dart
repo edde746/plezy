@@ -109,6 +109,29 @@ sealed class MediaItem with _$MediaItem {
         serverName: serverName,
         raw: raw,
       ),
+      MediaBackend.musicAssistant => MusicAssistantMediaItem(
+        id: id,
+        kind: kind,
+        title: title,
+        summary: summary,
+        year: year,
+        contentRating: contentRating,
+        parentId: parentId,
+        parentTitle: parentTitle,
+        index: index,
+        thumbPath: thumbPath,
+        artPath: artPath,
+        durationMs: durationMs,
+        leafCount: leafCount,
+        rating: rating,
+        ratings: ratings,
+        genres: genres,
+        libraryId: libraryId,
+        libraryTitle: libraryTitle,
+        serverId: serverId,
+        serverName: serverName,
+        raw: raw,
+      ),
     };
   }
 
@@ -286,9 +309,92 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
   }) = JellyfinMediaItem;
 
+  /// Backend-tagged concrete subclass for items sourced from a Music Assistant
+  /// server. Music-only, so the video-shaped fields below are inherited from
+  /// the shared shape and left null rather than being populated — the union
+  /// exposes one neutral getter per field and variants may not narrow it.
+  ///
+  /// Music field conventions match the other backends: track number in [index],
+  /// disc in [parentIndex], album in [parentId]/[parentTitle], album artist in
+  /// [grandparentId]/[grandparentTitle].
+  @FreezedUnionValue('music_assistant')
+  @JsonSerializable(includeIfNull: false, explicitToJson: true)
+  const factory MediaItem.musicAssistant({
+    @JsonKey(readValue: readStringField, defaultValue: '') required String id,
+    @JsonKey(fromJson: _mediaKindFromJson, toJson: _mediaKindToJson) required MediaKind kind,
+
+    /// Music Assistant's `uri` (`library://track/68057`) — the handle every
+    /// playback and favourite command takes.
+    String? guid,
+    String? title,
+    String? titleSort,
+    String? summary,
+    String? tagline,
+    String? originalTitle,
+    String? studio,
+    @JsonKey(fromJson: flexibleInt) int? year,
+    String? originallyAvailableAt,
+    String? contentRating,
+    String? parentId,
+    String? parentTitle,
+    String? parentThumbPath,
+    @JsonKey(fromJson: flexibleInt) int? parentIndex,
+    @JsonKey(fromJson: flexibleInt) int? index,
+    String? grandparentId,
+    String? grandparentTitle,
+    String? grandparentThumbPath,
+    String? grandparentArtPath,
+    List<String>? grandparentBackdropPaths,
+    String? thumbPath,
+    String? artPath,
+    List<String>? backdropPaths,
+    String? clearLogoPath,
+    String? backgroundSquarePath,
+    @JsonKey(fromJson: flexibleInt) int? durationMs,
+    @JsonKey(fromJson: flexibleInt) int? viewOffsetMs,
+    @JsonKey(fromJson: flexibleInt) int? viewCount,
+    @JsonKey(fromJson: flexibleInt) int? lastViewedAt,
+    @JsonKey(fromJson: flexibleInt) int? leafCount,
+    @JsonKey(fromJson: flexibleInt) int? viewedLeafCount,
+    @JsonKey(fromJson: flexibleInt) int? childCount,
+    @JsonKey(fromJson: flexibleInt) int? addedAt,
+    @JsonKey(fromJson: flexibleInt) int? updatedAt,
+    @JsonKey(fromJson: flexibleDouble) double? rating,
+    @JsonKey(fromJson: flexibleDouble) double? userRating,
+    @JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? ratings,
+
+    /// Music Assistant's `favorite` flag, toggled via `music/favorites/*`.
+    bool? isFavorite,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? writers,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? producers,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? countries,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? collections,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? labels,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? styles,
+    @JsonKey(fromJson: _mediaItemStringList) List<String>? moods,
+    @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? roles,
+    @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
+    String? libraryId,
+    String? libraryTitle,
+    String? audioLanguage,
+
+    /// Playlist entry id used by playlist write endpoints.
+    String? playlistItemId,
+    String? serverId,
+    String? serverName,
+
+    /// Always null — Music Assistant has no folder hierarchy. Exists on every
+    /// variant so the union exposes one neutral getter.
+    String? backendFolderKey,
+    @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
+  }) = MusicAssistantMediaItem;
+
   MediaBackend get backend => switch (this) {
     PlexMediaItem() => MediaBackend.plex,
     JellyfinMediaItem(:final dialect) => dialect.backend,
+    MusicAssistantMediaItem() => MediaBackend.musicAssistant,
   };
 
   /// Restore a [MediaItem] from a [toJson] payload. Missing/unknown backend
@@ -299,6 +405,7 @@ sealed class MediaItem with _$MediaItem {
       MediaBackend.plex => _$PlexMediaItemFromJson(json),
       MediaBackend.jellyfin => _$JellyfinMediaItemFromJson(json),
       MediaBackend.emby => _$JellyfinMediaItemFromJson(json).copyWith(dialect: MediaBrowserDialect.emby),
+      MediaBackend.musicAssistant => _$MusicAssistantMediaItemFromJson(json),
     };
   }
 
@@ -306,6 +413,10 @@ sealed class MediaItem with _$MediaItem {
     return switch (this) {
       final PlexMediaItem item => {'backend': MediaBackend.plex.id, ..._$PlexMediaItemToJson(item)},
       final JellyfinMediaItem item => {'backend': item.dialect.backend.id, ..._$JellyfinMediaItemToJson(item)},
+      final MusicAssistantMediaItem item => {
+        'backend': MediaBackend.musicAssistant.id,
+        ..._$MusicAssistantMediaItemToJson(item),
+      },
     };
   }
 

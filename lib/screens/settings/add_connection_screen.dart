@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -9,10 +11,13 @@ import '../../media/media_browser_dialect.dart';
 import '../../theme/mono_tokens.dart';
 import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
+import '../../services/music_assistant_lan_discovery_service.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../profile/borrow_connection_screen.dart';
 import 'add_jellyfin_screen.dart';
+import 'add_music_assistant_screen.dart';
 import 'add_plex_account_screen.dart';
+import 'local_server_discovery.dart';
 
 /// Picker shown when the user taps "Add connection".
 ///
@@ -24,16 +29,65 @@ import 'add_plex_account_screen.dart';
 ///
 /// Pops with `true` after the underlying flow succeeds so the parent list
 /// refreshes; pops with `null` (the default) when the user backs out.
-class AddConnectionScreen extends StatelessWidget {
+///
+/// ### Why this screen browses the network
+///
+/// It runs the Music Assistant mDNS browse itself, and says so on the card
+/// when something answers. That looks like work belonging to the next screen,
+/// and the reason it is here is timing: the browse takes about two and a half
+/// seconds, and a user who taps through immediately would otherwise watch a
+/// spinner on the other side of the transition. Started here, the answer is
+/// usually already waiting by the time the next screen builds.
+///
+/// It also changes what the card *means*. "Enter your server URL" asks for
+/// homework; "Found on your network" is an invitation, and it is the honest
+/// label for a one-tap add. Nothing depends on the result — the card behaves
+/// identically if the browse finds nothing or never finishes, which is why it
+/// is safe to fire and forget.
+///
+/// Plex and Jellyfin are not browsed for here. Plex has no LAN advert to find
+/// and Jellyfin's discovery is a UDP broadcast its own screen already runs at
+/// the moment it can act on it.
+class AddConnectionScreen extends StatefulWidget {
   final Profile? targetProfile;
-
   const AddConnectionScreen({super.key, this.targetProfile});
 
   @override
+  State<AddConnectionScreen> createState() => _AddConnectionScreenState();
+}
+
+class _AddConnectionScreenState extends State<AddConnectionScreen>
+    with LocalServerDiscoveryMixin<DiscoveredMusicAssistantServer, AddConnectionScreen> {
+  @override
+  String get discoveryDebugLabel => 'AddConnection';
+
+  @override
+  String discoveredServerId(DiscoveredMusicAssistantServer server) => server.id;
+
+  @override
+  Future<List<DiscoveredMusicAssistantServer>> discoverLocalServers() async {
+    return MusicAssistantLanDiscoveryService().discover();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    startLocalDiscovery();
+  }
+
+  @override
+  void dispose() {
+    disposeLocalDiscovery();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final targetProfile = widget.targetProfile;
     final scoped = targetProfile != null;
     const jellyfinDialect = MediaBrowserDialect.jellyfin;
     const embyDialect = MediaBrowserDialect.emby;
+    final foundMusicAssistant = localServers.isNotEmpty;
     final options = <_BackendOption>[
       _BackendOption(
         backend: MediaBackend.plex,
@@ -47,7 +101,7 @@ class AddConnectionScreen extends StatelessWidget {
         subtitle: scoped
             ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
                 product: jellyfinDialect.productName,
-                name: targetProfile!.displayName,
+                name: targetProfile.displayName,
               )
             : t.addServer.connectToMediaBrowserCardSubtitle,
         builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: jellyfinDialect),
@@ -58,25 +112,36 @@ class AddConnectionScreen extends StatelessWidget {
         subtitle: scoped
             ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
                 product: embyDialect.productName,
-                name: targetProfile!.displayName,
+                name: targetProfile.displayName,
               )
             : t.addServer.connectToMediaBrowserCardSubtitle,
         builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: embyDialect),
+      ),
+      _BackendOption(
+        backend: MediaBackend.musicAssistant,
+        title: t.addServer.connectToMusicAssistantCard,
+        // The scoped copy wins when both apply: which profile the connection
+        // binds to is a consequence the user has to know about, and "found on
+        // your network" is only an encouragement.
+        subtitle: scoped
+            ? t.addServer.connectToMusicAssistantCardSubtitleScoped(name: targetProfile.displayName)
+            : foundMusicAssistant
+            ? t.addServer.connectToMusicAssistantCardSubtitleFound
+            : t.addServer.connectToMusicAssistantCardSubtitle,
+        builder: (_) => AddMusicAssistantScreen(targetProfile: targetProfile),
       ),
       if (scoped)
         _BackendOption(
           backend: null,
           title: t.addServer.borrowFromAnotherProfile,
           subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
-          builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!),
+          builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile),
         ),
     ];
     final tokensRef = tokens(context);
     return FocusedScrollScaffold(
       title: Text(
-        scoped
-            ? t.addServer.addConnectionTitleScoped(name: targetProfile!.displayName)
-            : t.addServer.addConnectionTitle,
+        scoped ? t.addServer.addConnectionTitleScoped(name: targetProfile.displayName) : t.addServer.addConnectionTitle,
       ),
       slivers: [
         SliverPadding(

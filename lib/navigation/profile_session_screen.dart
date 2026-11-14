@@ -29,9 +29,14 @@ import '../screens/video_player_screen.dart';
 import '../services/api_cache.dart';
 import '../services/agent_control_service.dart';
 import '../services/catalog/catalog_library_matcher.dart';
+import '../services/music/audio_route_service.dart';
+import '../services/music/music_output_controller.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
 import '../services/music/music_session_store.dart';
+import '../services/music/remote_music_playback_service.dart';
+import '../services/music/remote_track_url_resolver.dart';
+import '../services/music/routed_music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/storage_service.dart';
 import '../services/system_shelf_service.dart';
@@ -39,9 +44,12 @@ import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/watch_together.dart' show WatchNoticeListener;
 import '../widgets/music/mini_player.dart';
+import '../widgets/music/remote_volume_hud.dart';
 import '../widgets/agent_control_scope.dart';
 import 'profile_navigation_scope.dart';
 import 'settings_shortcut.dart';
+import '../services/music/remote_now_playing.dart';
+import '../services/music/remote_volume_buttons.dart';
 
 CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
   return CatalogSourcesProvider(
@@ -252,20 +260,83 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
               ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
+              // Where audio comes out. Eager and ahead of the music session,
+              // because the session is routed by it: built lazily, the first
+              // thing to read it would be the picker, and by then a track
+              // would already be playing out of the wrong speaker.
+              ChangeNotifierProvider<MusicOutputController>(
+                lazy: false,
+                create: (context) =>
+                    MusicOutputController(serverManager: context.read<MultiServerProvider>().serverManager)..start(),
+              ),
+              // The system audio route, which is what makes AirPlay visible as
+              // a destination distinct from the phone's own speaker. Eager for
+              // the same reason as the controller above: the route is already
+              // whatever it is before anyone opens the picker, and a lazily
+              // built observer would report "iPhone Speaker" over a pair of
+              // connected AirPods until first read.
+              ChangeNotifierProvider<AudioRouteService>(lazy: false, create: (_) => AudioRouteService()..start()),
               // Profile-session scope so a profile switch tears the music
               // session down (dispose stops playback + releases the audio
               // core).
+              //
+              // Provided as the routing façade rather than the local engine.
+              // The local engine is unchanged and is still what runs when the
+              // output is this device; the façade only exists so that picking
+              // a speaker can swap the engine underneath a UI that holds the
+              // service by identity. See [RoutedMusicPlaybackService].
               ChangeNotifierProvider<MusicPlaybackService>(
-                create: (context) => MusicPlaybackServiceImpl(
-                  serverManager: context.read<MultiServerProvider>().serverManager,
-                  database: context.read<AppDatabase>(),
-                  offlineWatchService: context.read<OfflineWatchSyncService>(),
-                  // Last-session restore (#2148) is per profile; no profile,
-                  // nothing to restore.
-                  sessionStore: activeId == null
-                      ? null
-                      : MusicSessionStore(database: context.read<AppDatabase>(), profileId: activeId),
-                ),
+                create: (context) {
+                  final serverManager = context.read<MultiServerProvider>().serverManager;
+                  final database = context.read<AppDatabase>();
+                  return RoutedMusicPlaybackService(
+                    local: MusicPlaybackServiceImpl(
+                      serverManager: serverManager,
+                      database: database,
+                      offlineWatchService: context.read<OfflineWatchSyncService>(),
+                      // Last-session restore (#2148) is per profile; no profile,
+                      // nothing to restore.
+                      sessionStore: activeId == null
+                          ? null
+                          : MusicSessionStore(database: database, profileId: activeId),
+                    ),
+                    outputs: context.read<MusicOutputController>(),
+                    remoteFactory: (output) => RemoteMusicPlaybackService(
+                      output: output,
+                      players: musicAssistantPlayersFor(serverManager, output),
+                      resolver: ServerRemoteTrackUrlResolver(serverManager: serverManager, database: database),
+                      serverManager: serverManager,
+                    ),
+                  );
+                },
+              ),
+              // Eager because nothing reads it: its whole job is to follow the
+              // output selection so the hardware buttons reach a speaker the
+              // moment one is chosen.
+              Provider<RemoteVolumeButtons>(
+                lazy: false,
+                create: (context) => RemoteVolumeButtons(
+                  outputs: context.read<MusicOutputController>(),
+                  playback: context.read<MusicPlaybackService>(),
+                )..start(),
+                dispose: (_, buttons) => unawaited(buttons.dispose()),
+              ),
+              // Eager like the one above: nothing reads it. While a speaker
+              // plays it holds the lock screen and the AirPods controls.
+              Provider<RemoteNowPlaying>(
+                lazy: false,
+                create: (context) {
+                  final serverManager = context.read<MultiServerProvider>().serverManager;
+                  return RemoteNowPlaying(
+                    outputs: context.read<MusicOutputController>(),
+                    playback: context.read<MusicPlaybackService>(),
+                    clientFor: (track) {
+                      final serverId = serverIdOrNull(track.serverId);
+                      return serverId == null ? null : serverManager.getClient(serverId);
+                    },
+                  )..start();
+                },
+                dispose: (_, nowPlaying) => unawaited(nowPlaying.dispose()),
               ),
               // Per profile: a profile switch disposes of it, which leaves the
               // room and closes the party.
@@ -403,6 +474,7 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
                     onGenerateRoute: _onGenerateRoute,
                   ),
                   const Positioned.fill(child: MusicMiniPlayerOverlay()),
+                  const Positioned.fill(child: RemoteVolumeHud()),
                 ],
               ),
             ),

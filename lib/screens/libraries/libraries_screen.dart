@@ -41,14 +41,18 @@ import 'tabs/base_library_tab.dart';
 
 enum LibraryTabType { recommended, browse, collections, playlists, genres }
 
-List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
+/// [supportsCollections] comes from the owning server's capabilities. A backend
+/// with no collections concept would otherwise be given a tab that can only
+/// ever be empty.
+List<LibraryTabType> visibleLibraryTabs(MediaLibrary library, {bool supportsCollections = true}) {
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
   // Genres filter the library's own type; only movie and show libraries
   // browse a type both backends tag with genres.
   final hasGenres = library.kind == MediaKind.movie || library.kind == MediaKind.show;
   return [
     for (final tab in LibraryTabType.values)
-      if (tab != LibraryTabType.genres || hasGenres) tab,
+      if ((tab != LibraryTabType.genres || hasGenres) && (tab != LibraryTabType.collections || supportsCollections))
+        tab,
   ];
 }
 
@@ -503,6 +507,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _loadLibraryContent(libraryGlobalKey);
   }
 
+  /// Whether the server owning [library] has collections at all.
+  ///
+  /// Defaults to true when the client is not resolvable, so an unknown server
+  /// keeps the tab set it has always had rather than silently losing one.
+  bool _supportsCollections(MediaLibrary library) {
+    final serverId = serverIdOrNull(library.serverId);
+    if (serverId == null) return true;
+    return context.read<MultiServerProvider>().getClientForServer(serverId)?.capabilities.collections ?? true;
+  }
+
   Future<void> _loadLibraryContent(String libraryGlobalKey) async {
     final librariesProvider = context.read<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
@@ -516,7 +530,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Update visible tabs and state in the same synchronous block so no
     // intermediate rebuild can see a mismatched controller/key pair.
-    _updateVisibleTabs(visibleLibraryTabs(selectedLibrary));
+    _updateVisibleTabs(visibleLibraryTabs(selectedLibrary, supportsCollections: _supportsCollections(selectedLibrary)));
 
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;

@@ -612,6 +612,50 @@ void main() {
     });
   });
 
+  test('keeps an unreachable Music Assistant server registered instead of deleting it', () async {
+    // A health probe that times out is not the same as losing access. Removing
+    // the server on that signal deleted one the user had just added and left
+    // the app reporting no servers at all.
+    binder.dispose();
+    multiServerProvider.dispose();
+
+    final maManager = _UnhealthyMusicAssistantManager('ma-server-1');
+    manager = maManager;
+    multiServerProvider = testMultiServerProvider(manager);
+    binder = ActiveProfileBinder(
+      activeProfile: activeProfile,
+      connections: connections,
+      profileConnections: profileConnections,
+      serverManager: manager,
+      multiServerProvider: multiServerProvider,
+      pinPrompt: (_, {String? errorMessage}) async => null,
+      shouldDeferInitialBind: (_) async => false,
+    );
+
+    final profile = await createActiveLocalProfile('local-ma-slow');
+    final ma = MusicAssistantConnection(
+      id: 'ma-1',
+      displayName: 'Music Assistant',
+      baseUrl: 'http://10.0.2.107:8095',
+      serverId: 'ma-server-1',
+      createdAt: DateTime(2026, 1, 1),
+    );
+    await connections.upsert(ma);
+    await profileConnections.upsert(
+      ProfileConnection(profileId: profile.id, connectionId: ma.id, userIdentifier: 'ma-user'),
+    );
+
+    await binder.rebindActive();
+
+    expect(maManager.removed, isEmpty, reason: 'a slow server must survive the bind that could not reach it');
+    expect(
+      multiServerProvider.serverIds,
+      isEmpty,
+      reason: 'it is still hidden — nothing lists a server that cannot answer',
+    );
+    expect(multiServerProvider.expectedServerIds, ['ma-server-1']);
+  });
+
   test('binds Plex and Jellyfin join rows in parallel', () async {
     binder.dispose();
     multiServerProvider.dispose();
@@ -1597,6 +1641,34 @@ class _CountingFailingJellyfinManager extends MultiServerManager {
     calls++;
     updateServerStatus(ServerId(connection.serverMachineId), false);
     return false;
+  }
+}
+
+/// A Music Assistant server that is registered but answers no health probe —
+/// what a momentarily slow or busy server looks like to the binder.
+class _UnhealthyMusicAssistantManager extends MultiServerManager {
+  _UnhealthyMusicAssistantManager(this.serverIdValue);
+
+  final String serverIdValue;
+  final removed = <String>[];
+  bool registered = false;
+
+  @override
+  List<String> get serverIds => registered ? [serverIdValue] : const [];
+
+  @override
+  Future<bool> addMusicAssistantConnection(MusicAssistantConnection connection) async {
+    registered = true;
+    return false;
+  }
+
+  @override
+  String? musicAssistantServerIdFor(String connectionId) => registered ? serverIdValue : null;
+
+  @override
+  void removeServer(ServerId serverId) {
+    removed.add(serverId.value);
+    super.removeServer(serverId);
   }
 }
 

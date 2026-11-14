@@ -3,7 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../media/media_backend.dart';
 
-/// Tiny SVG badge for a [MediaBackend] (Plex chevron / Jellyfin or Emby mark).
+/// Tiny SVG badge for a [MediaBackend] (Plex chevron / Jellyfin or Emby mark /
+/// Music Assistant equaliser).
 /// All assets render in `currentColor` so they pick up whatever foreground
 /// the parent provides — pass [color] to override, otherwise inherits from
 /// [DefaultTextStyle] / `IconTheme`.
@@ -25,6 +26,7 @@ class BackendBadge extends StatelessWidget {
       MediaBackend.plex => 'assets/plex_chevron.svg',
       MediaBackend.jellyfin => 'assets/jellyfin_icon.svg',
       MediaBackend.emby => 'assets/emby_icon.svg',
+      MediaBackend.musicAssistant => 'assets/music_assistant_icon.svg',
     };
     return SvgPicture.asset(
       asset,

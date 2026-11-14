@@ -14,6 +14,9 @@ import 'package:plezy/screens/music/now_playing_screen.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/services/music/music_output.dart';
+import 'package:plezy/services/music/music_output_controller.dart';
+import 'package:plezy/services/multi_server_manager.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/media_items.dart';
@@ -120,6 +123,22 @@ class _FakeMusicService extends StubMusicPlaybackService {
   }
 }
 
+/// An output controller the test drives directly.
+class _FakeOutputs extends MusicOutputController {
+  _FakeOutputs(this._selected) : super(serverManager: MultiServerManager());
+
+  final MusicOutput _selected;
+
+  @override
+  List<MusicOutput> get outputs => [MusicOutput.thisDevice, _selected];
+
+  @override
+  MusicOutput get selected => _selected;
+
+  @override
+  Future<void> refresh() async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -134,14 +153,21 @@ void main() {
     PlatformDetector.debugSetIsDesktopOSOverride(null);
   });
 
-  Future<void> pumpNowPlaying(WidgetTester tester, _FakeMusicService service, {required bool isTv}) async {
+  Future<void> pumpNowPlaying(
+    WidgetTester tester,
+    _FakeMusicService service, {
+    required bool isTv,
+    MusicOutputController? outputs,
+    bool desktop = true,
+    Size viewSize = const Size(1200, 700),
+  }) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(1200, 700);
+    tester.view.physicalSize = viewSize;
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
     TvDetectionService.debugSetAppleTVOverride(isTv);
-    PlatformDetector.debugSetIsDesktopOSOverride(!isTv);
+    PlatformDetector.debugSetIsDesktopOSOverride(desktop && !isTv);
 
     addTearDown(service.dispose);
     final multiServerProvider = testMultiServer().provider;
@@ -153,6 +179,7 @@ void main() {
             providers: [
               ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
               ChangeNotifierProvider<MusicPlaybackService>.value(value: service),
+              if (outputs != null) ChangeNotifierProvider<MusicOutputController>.value(value: outputs),
             ],
             child: MaterialApp(
               theme: monoTheme(
@@ -352,5 +379,52 @@ void main() {
 
     expect(find.text(t.messages.playbackFailed), findsOneWidget);
     expect(find.textContaining('PlayerInitializationException'), findsNothing);
+  });
+
+  testWidgets('a speaker gets a volume slider on the phone, the phone itself does not', (tester) async {
+    // The hardware buttons change *this device's* volume, which is the right
+    // control while the sound is coming out of the phone and no control at all
+    // once it is coming out of a speaker in another room. There was no in-app
+    // control on mobile at all, so a Sonos could not be turned down from here.
+    const speaker = MusicOutput(
+      id: 'srv|RINCON_1',
+      name: 'Dining Room',
+      serverId: 'srv',
+      playerId: 'RINCON_1',
+      available: true,
+    );
+
+    final onPhone = _FakeMusicService(
+      track: _track(id: 'one', title: 'First Track', album: 'First Album', year: 1973),
+      context: const MusicPlayContext(title: 'First Album', kind: MusicPlayContextKind.album),
+    );
+    const phone = Size(390, 844);
+    await pumpNowPlaying(
+      tester,
+      onPhone,
+      isTv: false,
+      desktop: false,
+      viewSize: phone,
+      outputs: _FakeOutputs(MusicOutput.thisDevice),
+    );
+    expect(find.byType(Slider), findsOneWidget, reason: 'only the seek bar when playing on the phone');
+
+    final onSpeaker = _FakeMusicService(
+      track: _track(id: 'one', title: 'First Track', album: 'First Album', year: 1973),
+      context: const MusicPlayContext(title: 'First Album', kind: MusicPlayContextKind.album),
+    );
+    await pumpNowPlaying(
+      tester,
+      onSpeaker,
+      isTv: false,
+      desktop: false,
+      viewSize: phone,
+      outputs: _FakeOutputs(speaker),
+    );
+    expect(
+      find.byType(Slider),
+      findsNWidgets(2),
+      reason: 'a speaker needs its own volume control; the phone buttons cannot reach it',
+    );
   });
 }

@@ -174,6 +174,10 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
           if (serverMachineId == rule.serverId && serverName.isNotEmpty) {
             return _RuleServerInfo(label: serverName, isKnown: true);
           }
+        case MusicAssistantConnection(:final serverId, :final displayName):
+          if (serverId == rule.serverId && displayName.isNotEmpty) {
+            return _RuleServerInfo(label: displayName, isKnown: true);
+          }
       }
     }
 

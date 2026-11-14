@@ -33,6 +33,7 @@ import '../widgets/dialog_action_button.dart';
 import 'auth/plex_pin_auth_flow.dart';
 import 'profile/profile_switch_screen.dart';
 import 'settings/add_jellyfin_screen.dart';
+import 'settings/add_music_assistant_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({
@@ -234,13 +235,17 @@ class _AuthScreenState extends State<AuthScreen> {
     _showDebugTokenDialog();
   }
 
-  Future<void> _connectToMediaBrowser(MediaBrowserDialect dialect) async {
+  Future<void> _connectToMediaBrowser(MediaBrowserDialect dialect) =>
+      _addSelfHostedServer((_) => AddJellyfinScreen(dialect: dialect));
+
+  Future<void> _connectToMusicAssistant() => _addSelfHostedServer((_) => const AddMusicAssistantScreen());
+
+  /// Shared first-run path for the backends that are added by URL rather than
+  /// by a Plex.tv sign-in.
+  Future<void> _addSelfHostedServer(WidgetBuilder builder) async {
     if (!await _prepareDatabaseRecoveryForSignIn()) return;
     if (!mounted) return;
-    final added = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => AddJellyfinScreen(dialect: dialect)),
-    );
+    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: builder));
     if (!mounted || added != true) return;
     // The connection persisted and the manager registered the client; move
     // straight to the main screen. [MainScreen] reads the active client
@@ -451,6 +456,16 @@ class _AuthScreenState extends State<AuthScreen> {
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
             icon: const BackendBadge(backend: MediaBackend.emby, size: 18),
             label: Text(t.auth.connectToMediaBrowser(product: embyDialect.productName)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FocusableButton(
+          onPressed: _connectToMusicAssistant,
+          child: OutlinedButton.icon(
+            onPressed: _connectToMusicAssistant,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.musicAssistant, size: 18),
+            label: Text(t.auth.connectToMusicAssistant),
           ),
         ),
         if (kDebugMode) ...[

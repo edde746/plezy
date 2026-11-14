@@ -9,18 +9,24 @@ import 'media_browser_dialect.dart';
 enum MediaBackend {
   plex,
   jellyfin,
-  emby;
+  emby,
+
+  /// Music Assistant — music only. It has no video, live TV or metadata
+  /// editing, so capability-gated UI hides most affordances for it.
+  musicAssistant;
 
   String get id => switch (this) {
     MediaBackend.plex => 'plex',
     MediaBackend.jellyfin => 'jellyfin',
     MediaBackend.emby => 'emby',
+    MediaBackend.musicAssistant => 'music_assistant',
   };
 
   static MediaBackend fromId(String id) => switch (id) {
     'plex' => MediaBackend.plex,
     'jellyfin' => MediaBackend.jellyfin,
     'emby' => MediaBackend.emby,
+    'music_assistant' => MediaBackend.musicAssistant,
     _ => throw ArgumentError('Unknown MediaBackend id: $id'),
   };
 
@@ -31,12 +37,13 @@ enum MediaBackend {
   ///   surfaces corrupted cache rows or schema drift instead of silently
   ///   misclassifying Jellyfin items as Plex.
   static MediaBackend fromString(String? id) {
-    if (id != null && id != 'plex' && id != 'jellyfin' && id != 'emby') {
+    if (id != null && id != 'plex' && id != 'jellyfin' && id != 'emby' && id != 'music_assistant') {
       appLogger.w('Unknown MediaBackend id "$id"; defaulting to plex');
     }
     return switch (id) {
       'jellyfin' => MediaBackend.jellyfin,
       'emby' => MediaBackend.emby,
+      'music_assistant' => MediaBackend.musicAssistant,
       _ => MediaBackend.plex,
     };
   }
@@ -52,5 +59,6 @@ enum MediaBackend {
     MediaBackend.plex => null,
     MediaBackend.jellyfin => MediaBrowserDialect.jellyfin,
     MediaBackend.emby => MediaBrowserDialect.emby,
+    MediaBackend.musicAssistant => null,
   };
 }

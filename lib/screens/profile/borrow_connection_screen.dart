@@ -254,6 +254,8 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
           await _borrowPlex(cand);
         case JellyfinConnection():
           await _borrowJellyfin(cand);
+        case MusicAssistantConnection():
+          await _borrowMusicAssistant(cand);
       }
     } catch (e, st) {
       // Without this, a throw from the verify/borrow steps (network, DB)
@@ -353,6 +355,26 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
         connectionId: jelly.id,
         userToken: cand.pc.hasToken ? cand.pc.userToken : jelly.accessToken,
         userIdentifier: cand.pc.userIdentifier.isNotEmpty ? cand.pc.userIdentifier : jelly.userId,
+        tokenAcquiredAt: DateTime.now(),
+      ),
+    );
+    _finishBorrow();
+  }
+
+  /// Music Assistant has no user accounts, so borrowing is a straight copy of
+  /// the join row — no token to re-mint and no user to identify. The
+  /// [ProfileConnection.userIdentifier] carried by the source row is reused
+  /// verbatim (normally empty) so the (connection, user) dedup key stays
+  /// consistent with the candidate list.
+  Future<void> _borrowMusicAssistant(_BorrowCandidate cand) async {
+    final ma = cand.connection as MusicAssistantConnection;
+    final pcRegistry = context.read<ProfileConnectionRegistry>();
+    await pcRegistry.upsert(
+      ProfileConnection(
+        profileId: widget.targetProfile.id,
+        connectionId: ma.id,
+        userToken: cand.pc.hasToken ? cand.pc.userToken : ma.accessToken,
+        userIdentifier: cand.pc.userIdentifier,
         tokenAcquiredAt: DateTime.now(),
       ),
     );

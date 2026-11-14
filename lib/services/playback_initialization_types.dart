@@ -218,6 +218,11 @@ enum PlaybackFailureReason {
   cancelled,
   invalidPlaybackData,
   noPlayableSource,
+
+  /// The chosen output cannot play this server's media at all — a Music
+  /// Assistant track with this device selected. Every track in the queue will
+  /// fail the same way, so skipping ahead is pointless.
+  wrongOutput,
   unknown,
 }
 

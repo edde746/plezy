@@ -80,6 +80,7 @@ import 'services/download_storage_service.dart';
 import 'services/connectivity_probe.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
+import 'services/music_assistant_api_cache.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
 import 'database/download_operations.dart';
@@ -1404,6 +1405,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     PlexApiCache.initialize(_appDatabase);
     JellyfinApiCache.initialize(_appDatabase);
+    MusicAssistantApiCache.initialize(_appDatabase);
 
     _downloadManager = DownloadManagerService(
       database: _appDatabase,
@@ -1769,7 +1771,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ),
         ChangeNotifierProvider(
           create: (context) {
-            _serverManager.onJellyfinConnectionUpdated = context.read<ConnectionRegistry>().upsert;
+            final connections = context.read<ConnectionRegistry>();
+            _serverManager.onJellyfinConnectionUpdated = connections.upsert;
+            _serverManager.onMusicAssistantConnectionUpdated = connections.upsert;
             return MultiServerProvider(_serverManager, _aggregationService);
           },
         ),

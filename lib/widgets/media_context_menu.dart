@@ -215,6 +215,10 @@ bool isMediaDeletionAllowed({
   null => false,
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
   MediaBackend.plex => isAdminActionAllowed,
+  // Music Assistant deletes from the *library index*, not from disk, and the
+  // app exposes no such command — so the destructive affordance stays hidden
+  // rather than promising something it can't do.
+  MediaBackend.musicAssistant => false,
 };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)

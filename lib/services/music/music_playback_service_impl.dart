@@ -30,6 +30,7 @@ import '../offline_watch_sync_service.dart';
 import '../playback_coordinator.dart';
 import '../playback_launch_observer.dart';
 import '../playback_initialization_service.dart';
+import '../playback_initialization_types.dart';
 import '../playback_progress_tracker.dart';
 import '../preferred_audio_device.dart';
 import '../settings_service.dart';
@@ -1023,6 +1024,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void _handlePlaybackFailure(Object error) {
     _markLaunchTerminal('failed', failure: 'playbackFailed');
     _errorsController.add(error);
+    // Every other track would fail the same way, and trying each of them
+    // flickers the mini player through the whole album before giving up.
+    if (error is PlaybackException && error.reason == PlaybackFailureReason.wrongOutput) {
+      unawaited(_stopSession(endStatus: MusicPlaybackStatus.error));
+      return;
+    }
     _consecutiveFailures++;
     if (_consecutiveFailures >= _maxConsecutiveFailures) {
       unawaited(_stopSession(endStatus: MusicPlaybackStatus.error));

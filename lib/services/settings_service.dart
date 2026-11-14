@@ -802,6 +802,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Restore the last music session parked-paused on launch (#2148).
   static const resumeMusicOnLaunch = BoolPref('resume_music_on_launch', defaultValue: true);
+
+  /// Which output music plays to — [MusicOutput.thisDeviceId], or
+  /// `<serverId>|<playerId>` for a Music Assistant player.
+  ///
+  /// Device-local on purpose: it names a speaker in one house, and carrying it
+  /// into another installation would point that install at a room it cannot
+  /// reach. Empty means "never chosen", which is what lets
+  /// [MusicOutputController] stay on the phone until someone picks a speaker.
+  static const musicOutputId = StringPref('music_output_id');
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
 
   /// Shuffled video queues start every episode at 0:00 instead of resuming
@@ -1643,6 +1652,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberedBrightnessLevel,
     refusedVideoCodecs,
     audioOutputDevice,
+    musicOutputId,
   ];
 
   /// Settings that "Reset All Settings" actually resets.

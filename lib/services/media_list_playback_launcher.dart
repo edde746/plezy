@@ -130,8 +130,15 @@ abstract class MediaListPlaybackLauncher {
 
   /// Pick the right implementation for [item]. Reads
   /// [MediaItem.backend] / [MediaPlaylist.backend].
+  ///
+  /// Exhaustive on purpose. This used to be `if (jellyfin) … else Plex`, which
+  /// silently handed every other backend to the Plex launcher — it would have
+  /// aimed Plex's `/playQueues` calls at a server that has no such endpoint
+  /// and failed somewhere far from here. A new backend now has to declare
+  /// itself, and gets a launcher that reports honestly until it has one.
   static MediaListPlaybackLauncher forItem(BuildContext context, Object item) {
     final backend = _backendOf(item);
+    if (backend == MediaBackend.musicAssistant) return UnsupportedListPlaybackLauncher(backend);
     if (backend.usesMediaBrowserApi) {
       return JellyfinSequentialLauncher(context: context);
     }
@@ -317,6 +324,50 @@ abstract class MediaListPlaybackLauncher {
     }
     return const PlayQueueSuccess();
   }
+}
+
+/// Launcher for a backend that has no list-playback implementation yet.
+///
+/// Every entry point returns a [PlayQueueError], which callers already render
+/// as a failure. That is deliberately louder than the old silent Plex
+/// fallback and quieter than a crash: the user is told the action didn't work
+/// instead of watching a request go to the wrong server.
+///
+/// TODO(music-assistant): replace with a real launcher. Music Assistant plays
+/// through server-side queues (`player_queues/play_media`), so it needs its
+/// own implementation rather than either existing one.
+class UnsupportedListPlaybackLauncher extends MediaListPlaybackLauncher {
+  final MediaBackend backend;
+
+  UnsupportedListPlaybackLauncher(this.backend);
+
+  PlayQueueResult get _unsupported =>
+      PlayQueueError(UnsupportedError('List playback is not implemented for ${backend.id}'));
+
+  @override
+  Future<PlayQueueResult> launchFromCollectionOrPlaylist({
+    required Object item,
+    required bool shuffle,
+    MediaItem? startItem,
+    bool showLoadingIndicator = true,
+  }) async => _unsupported;
+
+  @override
+  Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true}) async =>
+      _unsupported;
+
+  @override
+  Future<PlayQueueResult> launchFromFolder({
+    required MediaItem folder,
+    required bool shuffle,
+    bool showLoadingIndicator = true,
+  }) async => _unsupported;
+
+  @override
+  Future<PlayQueueResult> launchShuffledLibrary({
+    required MediaLibrary library,
+    bool showLoadingIndicator = true,
+  }) async => _unsupported;
 }
 
 /// Common shape extracted from [MediaItem] (collection) and [MediaPlaylist]

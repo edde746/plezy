@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/media_item.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
+import '../../services/music/music_output_controller.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_motion.dart';
 import '../../theme/mono_tokens.dart';
@@ -21,6 +22,8 @@ import '../../utils/video_player_navigation.dart';
 import '../media_context_menu.dart';
 import '../optimized_media_image.dart';
 import '../overlay_sheet.dart';
+import 'output_picker_sheet.dart';
+import '../../utils/app_logger.dart';
 
 /// Suppresses the mini-player while the top PAGE route of the profile
 /// navigator is a full-screen playback surface (the video player or the
@@ -153,6 +156,10 @@ class _MusicMiniPlayerOverlayState extends State<MusicMiniPlayerOverlay> {
   /// Last non-null track, so the exit animation still has content to show.
   MediaItem? _lastTrack;
 
+  /// Last logged visibility, so the diagnostic fires on change rather than
+  /// on every frame.
+  bool? _lastVisible;
+
   /// Optimistically hides the card the instant a swipe-dismiss lands —
   /// `stop()` tears the audio core down asynchronously and the Dismissible
   /// must leave the tree before that completes.
@@ -196,6 +203,17 @@ class _MusicMiniPlayerOverlayState extends State<MusicMiniPlayerOverlay> {
         // Sheets render inside the routes' subtrees, BELOW this overlay —
         // hide the card while any sheet is up so it never floats over one.
         final visible = hasSession && openSheets.value == 0;
+        // Named inputs, not a bare boolean: when the transport disappears
+        // while audio is still playing, the useful question is *which* of
+        // these turned it off, and that cannot be recovered after the fact.
+        if (_lastVisible != visible) {
+          _lastVisible = visible;
+          appLogger.i(
+            'Mini player ${visible ? 'shown' : 'hidden'}: '
+            'track=${track?.displayTitle}, suppressedByRoute=${suppress.value}, '
+            'dismissed=$_dismissed, openSheets=${openSheets.value}',
+          );
+        }
         final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
         // Report off the session (not sheet) state so the underlying
         // screen's scroll padding doesn't jump while a sheet is open.
@@ -284,6 +302,7 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
     final tk = tokens(context);
     final service = context.read<MusicPlaybackService>();
     final isPlaying = context.select<MusicPlaybackService, bool>((s) => s.isPlaying);
+    final outputs = context.watch<MusicOutputController?>();
     final client = context.tryGetMediaClientWithFallback(serverIdOrNull(widget.track.serverId));
     final artist = widget.track.trackArtistTitle;
 
@@ -364,6 +383,17 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
                       key: _transportKey,
                       onNavigateLeft: _detailsFocusNode.requestFocus,
                       actions: [
+                        // Only once the audio is not coming from this device.
+                        // On the phone's own speaker this would be a button
+                        // that says where the sound already obviously is; on a
+                        // speaker in another room it is the fastest way back.
+                        if (outputs != null && outputs.selected.isRemote)
+                          FocusableAction(
+                            icon: Symbols.speaker_rounded,
+                            iconColor: Theme.of(context).colorScheme.primary,
+                            tooltip: outputs.selected.name,
+                            onPressed: () => unawaited(showOutputPickerSheet(context)),
+                          ),
                         if (widget.desktop)
                           FocusableAction(
                             icon: Symbols.skip_previous_rounded,

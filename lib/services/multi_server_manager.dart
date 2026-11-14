@@ -14,6 +14,8 @@ import '../exceptions/media_server_exceptions.dart';
 import 'connectivity_probe.dart';
 import 'jellyfin_client.dart';
 import 'jellyfin_endpoint_discovery.dart';
+import 'music_assistant/music_assistant_api.dart';
+import 'music_assistant_client.dart';
 import 'plex_client.dart';
 import '../models/plex/plex_config.dart';
 import '../utils/app_logger.dart';
@@ -26,6 +28,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'plex_auth_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
+import 'server_handle.dart';
 
 typedef PlexClientFactory =
     Future<PlexClient> Function(
@@ -38,6 +41,11 @@ typedef PlexClientFactory =
       VoidCallback? onAllEndpointsExhausted,
       bool? seedTranscoderVideoSupport,
     });
+
+/// Builds a Music Assistant client with its socket already open. Injectable for
+/// the same reason [PlexClientFactory] is: the real one connects, so a test has
+/// no other way in.
+typedef MusicAssistantClientFactory = Future<MusicAssistantClient> Function(MusicAssistantConnection connection);
 
 /// The refusal a failed connect or token rotation reports, or null when the
 /// server did not answer with one: a rejected token (401, or a rejected
@@ -56,21 +64,40 @@ HealthStatus? _refusalFor(Object error) => switch (error) {
 /// [MediaServerClient] interface so consumers don't depend on the concrete
 /// backend. Onboarding helpers branch on backend (Plex `PlexServer`,
 /// MediaBrowser `JellyfinConnection`) and instantiate the matching client.
-class MultiServerManager {
+class MultiServerManager implements MediaServerRegistry {
   MultiServerManager({
     PlexClientFactory plexClientFactory = PlexClient.create,
+    MusicAssistantClientFactory musicAssistantClientFactory = MusicAssistantClient.create,
     Stream<List<ConnectivityResult>> Function()? connectivityChanges,
     Duration connectivityDebounceDuration = const Duration(seconds: 2),
-  }) : this._(plexClientFactory, connectivityChanges ?? _defaultConnectivityChanges, connectivityDebounceDuration);
+  }) : this._(
+         plexClientFactory,
+         musicAssistantClientFactory,
+         connectivityChanges ?? _defaultConnectivityChanges,
+         connectivityDebounceDuration,
+       );
 
-  MultiServerManager._(this._plexClientFactory, this._connectivityChanges, this._connectivityDebounceDuration);
+  MultiServerManager._(
+    this._plexClientFactory,
+    this._musicAssistantClientFactory,
+    this._connectivityChanges,
+    this._connectivityDebounceDuration,
+  );
 
   static Stream<List<ConnectivityResult>> _defaultConnectivityChanges() => ConnectivityProbe.changes;
 
   final PlexClientFactory _plexClientFactory;
+  final MusicAssistantClientFactory _musicAssistantClientFactory;
   final Stream<List<ConnectivityResult>> Function() _connectivityChanges;
   final Duration _connectivityDebounceDuration;
   FutureOr<void> Function(JellyfinConnection connection)? onJellyfinConnectionUpdated;
+
+  /// Persists the identity Music Assistant only reveals in its greeting frame
+  /// (`server_id`, `server_version`). Without it a connection added while the
+  /// server was unreachable would keep a null `serverId` forever, and the
+  /// binder's expected-server set — which is computed before any socket opens —
+  /// would never contain the id this manager actually registers it under.
+  FutureOr<void> Function(MusicAssistantConnection connection)? onMusicAssistantConnectionUpdated;
 
   final Map<String, MediaServerClient> _clients = {};
 
@@ -190,6 +217,17 @@ class MultiServerManager {
   final Map<String, String> _activeJellyfinMachine = {};
   final Map<String, HealthStatus> _jellyfinHealthByCompoundId = {};
 
+  /// Live Music Assistant clients, keyed by their connection row id, plus the
+  /// server id each is registered under in [_clients].
+  ///
+  /// Two maps rather than one because the registration key is not knowable
+  /// before the socket opens: it is the greeting's `server_id`, and falls back
+  /// to the row id only while the server has never been reached. A connection
+  /// that later completes its first handshake therefore moves between keys, and
+  /// the reverse lookup is what lets removal find the old one.
+  final Map<String, MusicAssistantClient> _musicAssistantByConnectionId = {};
+  final Map<String, String> _musicAssistantServerIdByConnectionId = {};
+
   /// Debounce timers for endpoint-exhaustion-triggered reconnection (per server)
   final Map<String, Timer> _reconnectDebounce = {};
 
@@ -270,7 +308,37 @@ class MultiServerManager {
 
   List<String> get offlineServerIds => _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();
 
+  /// Get client for specific server.
+  @override
   MediaServerClient? getClient(ServerId serverId) => _clients[serverId];
+
+  /// Mark a server online without binding a client, which is a state the
+  /// real code can reach transiently and which `onlineHandles` must exclude.
+  @visibleForTesting
+  void debugMarkServerOnlineForTesting(String serverId) => _serverStatus[serverId] = true;
+
+  /// A stable reference to [serverId] that survives the client being replaced.
+  ///
+  /// Prefer this over [getClient] anywhere the result outlives the statement
+  /// that fetched it — a field, a closure that awaits, a fan-out over servers.
+  ServerHandle handleFor(String serverId) => ServerHandle(serverId: serverId, registry: this);
+
+  /// Handles for every online *and bound* server, optionally restricted to
+  /// [serverIds].
+  ///
+  /// Membership matches [onlineClients] deliberately: [onlineServerIds] is
+  /// status alone, and a server marked online with no client yet would enter a
+  /// fan-out and come back permanently unbound. Callers read that as a
+  /// disruption to retry, so the sidebar and the discover rows would sit in a
+  /// skeleton that never resolves and never errors — a silent hang in place of
+  /// a visible failure.
+  ///
+  /// The *set* is a snapshot; which client serves each entry is not, so a swap
+  /// during a long fan-out cannot strand the work in progress.
+  Map<String, ServerHandle> onlineHandles([Set<String>? serverIds]) => {
+    for (final id in onlineClients.keys)
+      if ((serverIds == null || serverIds.contains(id)) && !isOutputOnly(ServerId(id))) id: handleFor(id),
+  };
 
   /// Resolve an exact private client namespace without falling back to a
   /// different active user on the same public server.
@@ -304,7 +372,17 @@ class MultiServerManager {
     if (!_visibilityController.isClosed) _visibilityController.add(null);
   }
 
-  bool isServerVisible(ServerId serverId) => _visibleServerIds?.contains(serverId) ?? true;
+  bool isServerVisible(ServerId serverId) => !isOutputOnly(serverId) && (_visibleServerIds?.contains(serverId) ?? true);
+
+  /// Whether [serverId] is only a way to reach speakers, never a library.
+  ///
+  /// Music Assistant is here for its players: it is the reliable way to get
+  /// music onto a group of Sonos speakers. Its own library duplicates the
+  /// Plex one with worse metadata, and a track from it cannot play on the
+  /// phone at all, so none of it is shown — not in libraries, home rows or
+  /// search. The output picker reaches the client through [getClient], which
+  /// this does not filter.
+  bool isOutputOnly(ServerId serverId) => _clients[serverId] is MusicAssistantClient;
 
   /// Resolve the client for a queued download. A supplied private namespace
   /// must match exactly; falling back to another active user would run work
@@ -413,6 +491,7 @@ class MultiServerManager {
   ///     `plexAdmin` check stays at the call site so it can fold in
   ///     `ActiveProfileProvider`).
   ///   - Jellyfin: `JellyfinConnection.isAdministrator` captured at sign-in.
+  ///   - Music Assistant: always `false` — see below.
   ///   - Unknown server: `false`.
   bool isOwnerOrAdmin(ServerId serverId) {
     final client = _clients[serverId];
@@ -421,6 +500,17 @@ class MultiServerManager {
     }
     if (client is JellyfinClient) {
       return client.connection.isAdministrator;
+    }
+    if (client is MusicAssistantClient) {
+      // Music Assistant has no user accounts: every client on the LAN has
+      // identical rights, so there is no owner/admin distinction to report.
+      // That argues either way on its own, so the deciding factor is what this
+      // gate is for — it reveals destructive admin entries (delete, edit
+      // metadata, match/unmatch), and [MusicAssistantClient] refuses every one
+      // of them with UnsupportedError because the backing music provider owns
+      // the files. Answering `true` would surface menu items that throw when
+      // tapped, so the honest answer is `false`.
+      return false;
     }
     return false;
   }
@@ -665,6 +755,16 @@ class MultiServerManager {
     _stopRelayEscape(serverId);
     final client = _clients.remove(serverId);
     _activeJellyfinMachine.remove(serverId);
+    // Music Assistant is keyed by connection row id, so its registrations are
+    // reachable only through the reverse lookup.
+    final musicAssistantRows = _musicAssistantServerIdByConnectionId.entries
+        .where((entry) => entry.value == serverId)
+        .map((entry) => entry.key)
+        .toList(growable: false);
+    for (final connectionId in musicAssistantRows) {
+      _musicAssistantServerIdByConnectionId.remove(connectionId);
+      _musicAssistantByConnectionId.remove(connectionId);
+    }
     _plexServers.remove(serverId);
     _clientIdByServer.remove(serverId);
     _plexAccountByServer.remove(serverId);
@@ -1026,6 +1126,197 @@ class MultiServerManager {
       _forgetServer(machineId);
       _emitStatus();
     }
+  }
+
+  /// Add a Music Assistant server. Returns true when it answered.
+  ///
+  /// One connection is one server: Music Assistant has no user accounts, so
+  /// there is no compound id and no "two users on the same machine" case to
+  /// keep apart — the Jellyfin bookkeeping around [_jellyfinByCompoundId] has
+  /// no counterpart here.
+  ///
+  /// Unlike both HTTP backends this cannot register a lazy client: every
+  /// command rides one WebSocket, and the server id the client is registered
+  /// under only arrives in the greeting. [MusicAssistantClient.create] therefore
+  /// opens the socket before returning, and returns a *usable* client even when
+  /// that fails — the transport arms its own backoff and reconnects — so an
+  /// unreachable server is registered offline rather than dropped, exactly as
+  /// an unhealthy Jellyfin server is.
+  ///
+  /// There is no endpoint racing: a Music Assistant connection holds a single
+  /// URL, and the transport has no per-request failover to reconcile.
+  /// One add at a time per connection.
+  ///
+  /// Startup rebinds twice, and both calls raced: each built its own client,
+  /// the second replaced the first, and closing the first left every consumer
+  /// still holding it — the library, the queue — failing its next request with
+  /// "Client disposed", which the UI reports as being unable to connect to the
+  /// media server. Serializing means the second call finds a settled client and
+  /// reuses it, which is what the reuse path was written for.
+  final _musicAssistantAddsInFlight = <String, Future<bool>>{};
+
+  Future<bool> addMusicAssistantConnection(MusicAssistantConnection connection) {
+    final inFlight = _musicAssistantAddsInFlight[connection.id];
+    if (inFlight != null) return inFlight;
+    final run = _addMusicAssistantConnection(connection);
+    _musicAssistantAddsInFlight[connection.id] = run;
+    return run.whenComplete(() {
+      if (identical(_musicAssistantAddsInFlight[connection.id], run)) {
+        _musicAssistantAddsInFlight.remove(connection.id);
+      }
+    });
+  }
+
+  Future<bool> _addMusicAssistantConnection(MusicAssistantConnection connection) async {
+    try {
+      final existing = _musicAssistantByConnectionId[connection.id];
+      // Identity has to have settled before a client is worth keeping. Reuse
+      // exists to preserve a live socket and its in-flight requests; a client
+      // that never completed a handshake has neither, and reusing it pins the
+      // registry to the placeholder id it is still answering — which then flips
+      // to the real `server_id` whenever the transport's own retry succeeds,
+      // asynchronously, leaving the manager keyed on an id nothing answers to.
+      // Rebuilding instead is cheap and is what actually retries the connection.
+      if (existing != null &&
+          existing.hasSettledIdentity &&
+          canReuseMusicAssistantClient(live: existing.connection, incoming: connection)) {
+        return await _reuseMusicAssistantClient(existing);
+      }
+
+      final client = await _musicAssistantClientFactory(connection);
+      // Post-handshake identity: `create` folds the greeting's server_id and
+      // server_version into the connection it carries.
+      final resolved = client.connection;
+      final serverId = client.serverId;
+
+      _replaceMusicAssistantClient(connection.id, client, serverId);
+
+      if (resolved.serverId != connection.serverId || resolved.serverVersion != connection.serverVersion) {
+        try {
+          await onMusicAssistantConnectionUpdated?.call(resolved);
+        } catch (e, st) {
+          // The in-memory client is already correct; only the row is stale.
+          appLogger.w('Failed to persist Music Assistant server identity', error: e.runtimeType, stackTrace: st);
+        }
+      }
+
+      final health = await client.checkHealth();
+      // A stale result must not resurrect a client that was replaced or removed
+      // while the probe was in flight.
+      if (!identical(_musicAssistantByConnectionId[connection.id], client)) {
+        appLogger.d('Ignoring stale Music Assistant health result for ${resolved.displayName}');
+        return health == HealthStatus.online;
+      }
+      _applyHealth(ServerId(serverId), health);
+
+      final healthy = health == HealthStatus.online;
+      appLogger.i('Added Music Assistant server: ${resolved.displayName}${healthy ? '' : ' (unreachable)'}');
+      if (_connectivitySubscription == null && healthy) {
+        _startNetworkMonitoring();
+      }
+      return healthy;
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to add Music Assistant server ${connection.displayName}', error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  /// Whether the live client bound to [live] can serve [incoming] without being
+  /// recreated.
+  ///
+  /// Only the two fields baked into the socket at construction time force a
+  /// rebuild: [MusicAssistantConnection.baseUrl] (which the WebSocket URL, the
+  /// image proxy and the flow stream are all derived from) and
+  /// [MusicAssistantConnection.accessToken]. `serverId`/`serverVersion` are
+  /// deliberately ignored — they are *written by* the handshake, so comparing
+  /// them would tear down and rebuild the client on every rebind.
+  @visibleForTesting
+  static bool canReuseMusicAssistantClient({
+    required MusicAssistantConnection live,
+    required MusicAssistantConnection incoming,
+  }) {
+    return live.baseUrl == incoming.baseUrl && live.accessToken == incoming.accessToken;
+  }
+
+  /// Re-add of an unchanged connection: keep the live socket (dropping it would
+  /// abort in-flight requests and re-run the handshake for nothing) and just
+  /// re-probe so the caller still gets a current answer.
+  Future<bool> _reuseMusicAssistantClient(MusicAssistantClient client) async {
+    final connectionId = client.connection.id;
+    final serverId = client.serverId;
+    // Only settled clients reach here, so the id normally matches what is
+    // already registered. It can still differ when a server is rebuilt and
+    // greets with a new `server_id` on a later reconnect — and leaving the old
+    // key behind would register one client twice and show the user a duplicate
+    // server that nothing ever cleans up.
+    final previousServerId = _musicAssistantServerIdByConnectionId[connectionId];
+    final keyMoved = previousServerId != null && previousServerId != serverId;
+    // Runs before the maps are updated, so the reverse lookup inside still
+    // resolves this row — which is also why both entries are rewritten after.
+    if (keyMoved) _forgetServer(previousServerId);
+    _clients[serverId] = client;
+    _musicAssistantByConnectionId[connectionId] = client;
+    _musicAssistantServerIdByConnectionId[connectionId] = serverId;
+    // The row answers to a different id now, so the visibility filter has to
+    // re-evaluate even if the health probe below reports no change.
+    if (keyMoved) _emitStatus();
+
+    final health = await client.checkHealth();
+    if (!identical(_musicAssistantByConnectionId[connectionId], client)) {
+      appLogger.d('Ignoring stale Music Assistant reuse result for ${client.connection.displayName}');
+      return health == HealthStatus.online;
+    }
+    _applyHealth(ServerId(serverId), health);
+    final healthy = health == HealthStatus.online;
+    appLogger.i(
+      'Reusing existing Music Assistant client for ${client.connection.displayName}'
+      '${healthy ? '' : ' (unreachable)'} (connection unchanged)',
+    );
+    if (_connectivitySubscription == null && healthy) {
+      _startNetworkMonitoring();
+    }
+    return healthy;
+  }
+
+  /// Swap [client] in for [connectionId], closing whatever it displaces and
+  /// dropping a registration left behind under a different server id — which
+  /// happens the first time a connection added while the server was down
+  /// finally completes a handshake and stops falling back to its row id.
+  void _replaceMusicAssistantClient(String connectionId, MusicAssistantClient client, String serverId) {
+    final previousClient = _musicAssistantByConnectionId[connectionId];
+    final previousServerId = _musicAssistantServerIdByConnectionId[connectionId];
+    _musicAssistantByConnectionId[connectionId] = client;
+    _musicAssistantServerIdByConnectionId[connectionId] = serverId;
+    final keyMoved = previousServerId != null && previousServerId != serverId;
+    if (keyMoved) _forgetServer(previousServerId);
+    if (previousClient != null) unawaited(_closeClientGracefully(previousClient));
+    _clients[serverId] = client;
+    // Always emitted, not just when the key moved. A swap under an unchanged
+    // server id whose health also does not change — editing a URL or a token —
+    // otherwise produces no signal at all, and client-map consumers cannot tell
+    // they are holding a client that has just been closed. The builtin-player
+    // binding is one: it would keep believing this server still has an audio
+    // output attached, stop reporting state, and let the server time the player
+    // out mid-track. Emitted only once the new client is installed, so nobody
+    // observes a moment with the server missing entirely.
+    _emitStatus();
+  }
+
+  /// The server id a Music Assistant connection row ended up registered under,
+  /// or null when it has no live client. Callers cannot derive it themselves:
+  /// it is the greeting's `server_id` whenever a handshake has succeeded, and
+  /// the row id only until then.
+  String? musicAssistantServerIdFor(String connectionId) => _musicAssistantServerIdByConnectionId[connectionId];
+
+  /// Tear down a Music Assistant connection's client and every registration
+  /// keyed to it.
+  void removeMusicAssistantConnection(MusicAssistantConnection connection) {
+    final client = _musicAssistantByConnectionId.remove(connection.id);
+    final serverId = _musicAssistantServerIdByConnectionId.remove(connection.id);
+    if (client != null) unawaited(_closeClientGracefully(client));
+    if (serverId == null) return;
+    _forgetServer(serverId);
+    _emitStatus();
   }
 
   /// Update server status (used for health monitoring).
@@ -1504,6 +1795,52 @@ class MultiServerManager {
     }
   }
 
+  /// Wall-clock budget for one [_reconnectMusicAssistantServer] attempt.
+  ///
+  /// Derived from the transport's own deadlines rather than fixed, because the
+  /// task does a handshake *and* a health probe in series. The 15s the other
+  /// two backends use is shorter than [MusicAssistantApi.requestTimeout] alone
+  /// (30s), so the probe was abandoned before it could either succeed or fail
+  /// and the server's health was never updated — the reconnect reported
+  /// nothing at all. The slack absorbs scheduling, not another round trip.
+  @visibleForTesting
+  static Duration musicAssistantReconnectTimeout(MusicAssistantApi api) =>
+      api.handshakeTimeout + api.requestTimeout + const Duration(seconds: 5);
+
+  /// Attempt reconnection for a single offline Music Assistant server.
+  ///
+  /// The transport already reconnects on its own, but on an exponential
+  /// backoff that has usually walked out to its 30s ceiling by the time a user
+  /// presses "reconnect". `connect` is the only entry point that resets that
+  /// ladder, so the manual path calls it rather than merely re-probing —
+  /// otherwise the button appears to do nothing for up to half a minute.
+  ///
+  /// It calls it **unconditionally**, and specifically must not be gated on
+  /// `client.api.isConnected`. This runs only for servers already published as
+  /// offline, so a socket still claiming `connected` here is not a reason to
+  /// skip the rebuild — it is the symptom of the exact failure that produced
+  /// the offline state: a half-open socket reports `connected` and carries
+  /// nothing. Trusting that flag is what made the reconnect button permanently
+  /// dead in the one case a user would ever press it.
+  Future<void> _reconnectMusicAssistantServer(String serverId, MusicAssistantClient client) async {
+    try {
+      appLogger.d('Attempting reconnection for Music Assistant server ${client.connection.displayName}');
+      await client.api.connect(Uri.parse(client.connection.baseUrl));
+      final status = await client.checkHealth();
+      if (!identical(_clients[serverId], client)) {
+        appLogger.d('Ignoring stale Music Assistant reconnection result for ${client.connection.displayName}');
+        return;
+      }
+      _applyHealth(ServerId(serverId), status);
+      if (status == HealthStatus.online) {
+        appLogger.i('Successfully reconnected to ${client.connection.displayName}');
+      }
+    } catch (e) {
+      appLogger.d('Reconnection failed for ${client.connection.displayName}: $e');
+      // Leave status as offline — the transport's own backoff keeps trying.
+    }
+  }
+
   /// Attempt reconnection for all offline servers.
   ///
   /// When [forceRediscovery] is true, the cached endpoint is cleared before
@@ -1559,14 +1896,25 @@ class MultiServerManager {
       // `_activeJellyfinMachine`. Run the same auth probe used at add time.
       final activeCompoundId = _activeJellyfinMachine[serverId];
       final jellyfinClient = activeCompoundId != null ? _jellyfinByCompoundId[activeCompoundId] : null;
-      if (jellyfinClient == null) return Future<void>.value();
+      if (jellyfinClient != null) {
+        return _runServerTask(
+          serverId,
+          () => _reconnectJellyfinServer(serverId, jellyfinClient),
+          timeout: const Duration(seconds: 15),
+          timeoutLabel: 'Jellyfin reconnection',
+        );
+      }
 
-      return _runServerTask(
-        serverId,
-        () => _reconnectJellyfinServer(serverId, jellyfinClient),
-        timeout: const Duration(seconds: 15),
-        timeoutLabel: 'Jellyfin reconnection',
-      );
+      final client = _clients[serverId];
+      if (client is MusicAssistantClient) {
+        return _runServerTask(
+          serverId,
+          () => _reconnectMusicAssistantServer(serverId, client),
+          timeout: musicAssistantReconnectTimeout(client.api),
+          timeoutLabel: 'Music Assistant reconnection',
+        );
+      }
+      return Future<void>.value();
     });
 
     await Future.wait(futures);
@@ -1683,11 +2031,17 @@ class MultiServerManager {
     _relayEscapeAttempts.clear();
     _activeHealthCheck = null;
     _activeReconnect = null;
-    final clients = <MediaServerClient>{..._clients.values, ..._jellyfinByCompoundId.values};
+    final clients = <MediaServerClient>{
+      ..._clients.values,
+      ..._jellyfinByCompoundId.values,
+      ..._musicAssistantByConnectionId.values,
+    };
     _clients.clear();
     _jellyfinByCompoundId.clear();
     _activeJellyfinMachine.clear();
     _jellyfinHealthByCompoundId.clear();
+    _musicAssistantByConnectionId.clear();
+    _musicAssistantServerIdByConnectionId.clear();
     _plexServers.clear();
     _serverStatus.clear();
     _refusedServers.clear();

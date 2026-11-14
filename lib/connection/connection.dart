@@ -9,7 +9,8 @@ import '../utils/url_utils.dart';
 ///
 /// A `PlexAccountConnection` carries one Plex account + its discovered servers + an
 /// optional active Home profile. A `JellyfinConnection` is a single server +
-/// user. Most users only ever add one connection.
+/// user. A `MusicAssistantConnection` is a single server, usually with no
+/// credential at all. Most users only ever add one connection.
 sealed class Connection {
   String get id;
   MediaBackend get kind;
@@ -363,5 +364,124 @@ class JellyfinConnection extends Connection {
   static String? normalizePrimaryImageTag(Object? raw) {
     final tag = raw?.toString().trim();
     return tag == null || tag.isEmpty ? null : tag;
+  }
+}
+
+/// A single-server Music Assistant connection.
+///
+/// Music Assistant has no user accounts: one server is one connection, and on
+/// a LAN install at schema 26 every command works unauthenticated. [serverId]
+/// and [serverVersion] come from the unsolicited greeting frame the server
+/// sends on connect, so they are null until the first successful handshake.
+class MusicAssistantConnection extends Connection {
+  @override
+  final String id;
+
+  @override
+  final DateTime createdAt;
+
+  @override
+  final DateTime? lastAuthenticatedAt;
+
+  /// User-facing name for this server. Music Assistant's greeting carries no
+  /// server name, so this is whatever the add-server flow captured (the
+  /// discovered mDNS name or the host).
+  @override
+  final String displayName;
+
+  /// Server base URL, no trailing slash — e.g. `http://10.0.2.107:8095`. The
+  /// WebSocket endpoint and the image proxy are both derived from it, so this
+  /// is stored in its HTTP form rather than as `ws://`.
+  final String baseUrl;
+
+  /// `server_id` from the greeting frame. Identifies the server across URL
+  /// changes.
+  final String? serverId;
+
+  /// `server_version` from the greeting frame, e.g. `2.6.3`.
+  final String? serverVersion;
+
+  /// Bearer token, for the servers that want one.
+  ///
+  /// Null is the normal case: a LAN server at schema 26 accepts every command
+  /// unauthenticated, so there is no credential to store. Kept nullable rather
+  /// than defaulting to `''` so "never had a token" stays distinguishable from
+  /// "had one and it was lost" (see [CredentialVault.reveal], which collapses
+  /// an undecryptable value to the empty string).
+  final String? accessToken;
+
+  MusicAssistantConnection({
+    required this.id,
+    required this.displayName,
+    required String baseUrl,
+    this.serverId,
+    this.serverVersion,
+    this.accessToken,
+    required this.createdAt,
+    this.lastAuthenticatedAt,
+  }) : baseUrl = canonicalizeBaseUrl(baseUrl);
+
+  @override
+  MediaBackend get kind => MediaBackend.musicAssistant;
+
+  @override
+  String get displayLabel => displayName;
+
+  @override
+  String? get displaySubtitle => JellyfinConnection._truncateUrl(baseUrl);
+
+  MusicAssistantConnection copyWith({
+    String? id,
+    String? displayName,
+    String? baseUrl,
+    String? serverId,
+    String? serverVersion,
+    String? accessToken,
+    bool clearAccessToken = false,
+    DateTime? createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    return MusicAssistantConnection(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      baseUrl: baseUrl ?? this.baseUrl,
+      serverId: serverId ?? this.serverId,
+      serverVersion: serverVersion ?? this.serverVersion,
+      accessToken: clearAccessToken ? null : (accessToken ?? this.accessToken),
+      createdAt: createdAt ?? this.createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
+    );
+  }
+
+  @override
+  Map<String, Object?> toConfigJson() {
+    return {
+      'displayName': displayName,
+      'baseUrl': baseUrl,
+      'serverId': serverId,
+      'serverVersion': serverVersion,
+      'accessToken': accessToken,
+    };
+  }
+
+  factory MusicAssistantConnection.fromConfigJson({
+    required String id,
+    required Map<String, Object?> json,
+    required DateTime createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    final token = json['accessToken'] as String?;
+    return MusicAssistantConnection(
+      id: id,
+      displayName: json['displayName'] as String? ?? 'Music Assistant',
+      baseUrl: json['baseUrl'] as String? ?? '',
+      serverId: json['serverId'] as String?,
+      serverVersion: json['serverVersion'] as String?,
+      // An empty token means either "no auth needed" or "credential lost";
+      // both want the unauthenticated path, so normalize to null.
+      accessToken: token == null || token.isEmpty ? null : token,
+      createdAt: createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt,
+    );
   }
 }

@@ -77,4 +77,60 @@ void main() {
       expect(result.migrated, isTrue);
     });
   });
+
+  group('CredentialVault.containsPlaintextCredential', () {
+    // This is the question `AppDatabase` asks before it writes a connection row
+    // into the tvOS recovery image. It used to answer it with a switch of its
+    // own, which knew about plex and jellyfin and let music_assistant fall
+    // through — so a Music Assistant token was declared already-protected and
+    // captured in the clear.
+    test('spots a plaintext token for every kind that has one', () async {
+      expect(CredentialVault.containsPlaintextCredential('plex', {'accountToken': 'plain'}), isTrue);
+      expect(CredentialVault.containsPlaintextCredential('jellyfin', {'accessToken': 'plain'}), isTrue);
+      expect(CredentialVault.containsPlaintextCredential('music_assistant', {'accessToken': 'plain'}), isTrue);
+    });
+
+    test('a protected token is not plaintext, for every kind', () async {
+      final protected = await CredentialVault.protect('tok');
+      expect(CredentialVault.containsPlaintextCredential('plex', {'accountToken': protected}), isFalse);
+      expect(CredentialVault.containsPlaintextCredential('jellyfin', {'accessToken': protected}), isFalse);
+      expect(CredentialVault.containsPlaintextCredential('music_assistant', {'accessToken': protected}), isFalse);
+    });
+
+    test('agrees with what protectConnectionConfig actually encrypts', () async {
+      // The point of sharing `_tokenKeyForKind` is that these two can no longer
+      // disagree. Assert it for every kind rather than trusting the shape.
+      for (final kind in ['plex', 'jellyfin', 'music_assistant']) {
+        for (final key in ['accountToken', 'accessToken']) {
+          final config = <String, Object?>{key: 'plain-tok'};
+          final protected = await CredentialVault.protectConnectionConfig(kind, config);
+          final wasEncrypted = protected[key] != 'plain-tok';
+          expect(
+            CredentialVault.containsPlaintextCredential(kind, config),
+            wasEncrypted,
+            reason: '$kind/$key: the detector and the protector must name the same field',
+          );
+        }
+      }
+    });
+
+    test('a kind with no credential at all is not plaintext', () {
+      expect(CredentialVault.containsPlaintextCredential('unknown_kind', {'accessToken': 'plain'}), isFalse);
+      expect(CredentialVault.containsPlaintextCredential('music_assistant', const {}), isFalse);
+      expect(CredentialVault.containsPlaintextCredential('music_assistant', {'accessToken': ''}), isFalse);
+    });
+
+    test('a Plex per-server token counts even when the account token is protected', () async {
+      final protected = await CredentialVault.protect('tok');
+      expect(
+        CredentialVault.containsPlaintextCredential('plex', {
+          'accountToken': protected,
+          'servers': [
+            {'accessToken': 'plain'},
+          ],
+        }),
+        isTrue,
+      );
+    });
+  });
 }

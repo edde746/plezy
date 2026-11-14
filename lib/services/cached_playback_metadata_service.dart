@@ -39,6 +39,10 @@ class CachedPlaybackMetadataService {
           backend: backend,
           mediaIndex: mediaIndex,
         ),
+        // Music Assistant speaks JSON-RPC over a WebSocket, so there is no
+        // cached HTTP response body to reread offline. Callers already treat
+        // null as "no cached metadata".
+        MediaBackend.musicAssistant => null,
       };
     } catch (e) {
       appLogger.d('Cached media source info unavailable for $cacheServerId:$itemId', error: e);
@@ -71,6 +75,10 @@ class CachedPlaybackMetadataService {
           creditsPattern: creditsPattern,
           forceChapterFallback: forceChapterFallback,
         ),
+        // No cached HTTP bodies for Music Assistant — see
+        // [fetchMediaSourceInfo]. Chapters/intro markers don't exist for music
+        // either.
+        MediaBackend.musicAssistant => null,
       };
     } catch (e) {
       appLogger.d('Cached playback extras unavailable for $cacheServerId:$itemId', error: e);

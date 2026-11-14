@@ -245,5 +245,6 @@ Set<ServerId> _serverIdsForConnection(Connection connection) {
       for (final server in servers) ?ServerId.tryParse(server.clientIdentifier),
     },
     JellyfinConnection(:final serverMachineId) => {?ServerId.tryParse(serverMachineId)},
+    MusicAssistantConnection(:final serverId) => {?ServerId.tryParse(serverId)},
   };
 }

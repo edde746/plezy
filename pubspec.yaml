@@ -59,6 +59,9 @@ dependencies:
   web_socket_channel: ^3.0.1
   # 1.2.1: Windows IPC no longer blocks the UI isolate while Discord stalls (#2518).
   dart_discord_presence: ^1.2.1
+  # Music Assistant advertises itself over mDNS as `_mass._tcp`. iOS browses
+  # with NWBrowser instead; this covers every other platform.
+  multicast_dns: ^0.3.3
   flutter_svg: ^2.2.3
   # Fork 54a34a0 fixes upstream #649's missing desktop temp parent; 7ee4588
   # survives a host with no documents directory (Linux without xdg-user-dirs);
@@ -165,6 +168,7 @@ flutter:
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg
     - assets/emby_icon.svg
+    - assets/music_assistant_icon.svg
     - assets/trakt_circlemark.svg
     - assets/mal_mark.svg
     - assets/anilist_mark.svg

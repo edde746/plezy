@@ -502,6 +502,10 @@ class ActiveProfileBinder {
           expected.addAll(plexMembership(account));
         case JellyfinConnection(:final serverMachineId):
           expected.add(serverMachineId);
+        case MusicAssistantConnection(:final serverId):
+          // The server id arrives in the greeting frame, so a connection that
+          // has never completed a handshake contributes nothing to expect.
+          if (serverId != null) expected.add(serverId);
         case null:
           break;
       }
@@ -654,6 +658,12 @@ class ActiveProfileBinder {
         case JellyfinConnection():
           expected.add(conn.serverMachineId);
           futures.add(_bindMediaBrowser(conn, profileId: profile.id, generation: generation));
+        case MusicAssistantConnection():
+          // Only a connection that has completed a handshake knows its server
+          // id; before that the manager registers it under its row id, which
+          // is what the bind result reports back.
+          if (conn.serverId != null) expected.add(conn.serverId!);
+          futures.add(_bindMusicAssistant(conn, profileId: profile.id, generation: generation));
       }
     }
     final results = await Future.wait(futures);
@@ -1205,6 +1215,31 @@ class ActiveProfileBinder {
       return _ProfileBindResult.visible({conn.serverMachineId});
     }
     return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+  }
+
+  /// Register a Music Assistant connection with the server manager.
+  ///
+  /// Shaped like [_bindJellyfin] with one difference that matters: the id the
+  /// manager registers under is not knowable up front — it is the greeting's
+  /// `server_id`, and only falls back to the connection row id while the server
+  /// has never answered. So the visible/expected sets are built from what the
+  /// manager reports *after* the attempt rather than from the connection.
+  ///
+  /// A server refusing this connection's token stays visible, as Jellyfin's
+  /// does, so the re-auth banner can surface it.
+  Future<_ProfileBindResult> _bindMusicAssistant(
+    MusicAssistantConnection conn, {
+    required String profileId,
+    required int generation,
+  }) async {
+    final ok = await serverManager.addMusicAssistantConnection(conn);
+    final serverId = serverManager.musicAssistantServerIdFor(conn.id) ?? conn.serverId;
+    final expected = {?serverId};
+    final needsSignIn = serverId != null && serverManager.authErrorServerIds.contains(serverId);
+    if (!_isCurrentBind(profileId, generation) || !(ok || needsSignIn)) {
+      return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: expected);
+    }
+    return _ProfileBindResult(visibleServerIds: expected, expectedServerIds: expected);
   }
 
   bool _isCurrentBind(String profileId, int generation) {

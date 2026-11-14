@@ -12,7 +12,25 @@ import MediaPlayer
   /// outer and inner displays when folded or unfolded (#2861).
   private var brightnessOverride: (screen: UIScreen, original: CGFloat)?
   private var volumeView: MPVolumeView?
+
+  /// Observes the system output volume so the hardware buttons can drive a
+  /// speaker in another room.
+  ///
+  /// iOS gives an app no direct key events for the volume buttons — the only
+  /// supported signal is that `outputVolume` changed. While a remote output is
+  /// selected the Dart side pins the system volume mid-scale, so a press in
+  /// either direction produces a delta it can forward and then undo, and the
+  /// handset's own level never drifts.
+  private var volumeObservation: NSKeyValueObservation?
+  private var volumeWatchActive = false
   private weak var volumeSlider: UISlider?
+
+  /// Loops silence while a speaker in another room plays, so iOS treats this
+  /// app as the one playing: only that app gets AirPods and lock-screen
+  /// commands, and only it keeps running in the background to read the volume
+  /// buttons. Samples are zero, so nothing is heard on the phone.
+  private var keepAlivePlayer: AVAudioPlayer?
+  private var keepAliveInterruptionObserver: NSObjectProtocol?
 
   override func application(
     _ application: UIApplication,
@@ -56,6 +74,20 @@ import MediaPlayer
 
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "VideoDecodeCapabilitiesPlugin") {
       VideoDecodeCapabilitiesPlugin.register(with: registrar)
+    }
+
+    // Reports the system audio route and vends AVRoutePickerView, so the music
+    // output picker can offer AirPlay as a destination distinct from both the
+    // phone's own speaker and a Music Assistant player.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AudioRoutePlugin") {
+      AudioRoutePlugin.register(with: registrar)
+    }
+
+    // Bonjour via mDNSResponder. A raw multicast socket — what the Dart mDNS
+    // package uses — receives nothing on a device without an entitlement Apple
+    // grants only on request, and fails silently when it is absent.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "BonjourDiscoveryPlugin") {
+      BonjourDiscoveryPlugin.register(with: registrar)
     }
 
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "DeviceAdjustmentChannel") {
@@ -137,6 +169,18 @@ import MediaPlayer
         brightnessOverride = nil
       }
       result(nil)
+    case "startVolumeButtonWatch":
+      startVolumeButtonWatch()
+      result(nil)
+    case "stopVolumeButtonWatch":
+      stopVolumeButtonWatch()
+      result(nil)
+    case "startNowPlayingKeepAlive":
+      startNowPlayingKeepAlive()
+      result(nil)
+    case "stopNowPlayingKeepAlive":
+      stopNowPlayingKeepAlive()
+      result(nil)
     case "getMediaVolume":
       result(Double(AVAudioSession.sharedInstance().outputVolume))
     case "setMediaVolume":
@@ -164,6 +208,87 @@ import MediaPlayer
       return nil
     }
     return min(1.0, max(0.0, doubleValue))
+  }
+
+  private func startVolumeButtonWatch() {
+    guard !volumeWatchActive else { return }
+    volumeWatchActive = true
+    let session = AVAudioSession.sharedInstance()
+    try? session.setActive(true)
+    volumeObservation = session.observe(\.outputVolume, options: [.new]) { [weak self] _, change in
+      guard let self, let value = change.newValue else { return }
+      DispatchQueue.main.async {
+        self.deviceAdjustmentChannel?.invokeMethod("onSystemVolumeChanged", arguments: Double(value))
+      }
+    }
+  }
+
+  private func stopVolumeButtonWatch() {
+    volumeObservation?.invalidate()
+    volumeObservation = nil
+    volumeWatchActive = false
+  }
+
+  private func startNowPlayingKeepAlive() {
+    if keepAlivePlayer == nil {
+      guard let player = try? AVAudioPlayer(data: Self.silentWav(seconds: 1)) else { return }
+      player.numberOfLoops = -1
+      player.prepareToPlay()
+      keepAlivePlayer = player
+    }
+    try? AVAudioSession.sharedInstance().setActive(true)
+    keepAlivePlayer?.play()
+
+    // A phone call stops the player; pick the silence back up afterwards or
+    // the controls go quiet for the rest of the session.
+    if keepAliveInterruptionObserver == nil {
+      keepAliveInterruptionObserver = NotificationCenter.default.addObserver(
+        forName: AVAudioSession.interruptionNotification,
+        object: AVAudioSession.sharedInstance(),
+        queue: .main
+      ) { [weak self] note in
+        guard
+          let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+          AVAudioSession.InterruptionType(rawValue: raw) == .ended,
+          let player = self?.keepAlivePlayer
+        else { return }
+        try? AVAudioSession.sharedInstance().setActive(true)
+        player.play()
+      }
+    }
+  }
+
+  private func stopNowPlayingKeepAlive() {
+    keepAlivePlayer?.stop()
+    keepAlivePlayer = nil
+    if let observer = keepAliveInterruptionObserver {
+      NotificationCenter.default.removeObserver(observer)
+      keepAliveInterruptionObserver = nil
+    }
+  }
+
+  /// A mono 16-bit PCM WAV of zeros.
+  private static func silentWav(seconds: Int) -> Data {
+    let sampleRate: UInt32 = 8000
+    let dataSize = UInt32(seconds) * sampleRate * 2
+    var data = Data()
+    func append<T: FixedWidthInteger>(_ value: T) {
+      withUnsafeBytes(of: value.littleEndian) { data.append(contentsOf: $0) }
+    }
+    data.append(contentsOf: Array("RIFF".utf8))
+    append(UInt32(36) + dataSize)
+    data.append(contentsOf: Array("WAVEfmt ".utf8))
+    append(UInt32(16))
+    append(UInt16(1))
+    append(UInt16(1))
+    append(sampleRate)
+    append(sampleRate * 2)
+    append(UInt16(2))
+    append(UInt16(16))
+    data.append(contentsOf: Array("data".utf8))
+    append(dataSize)
+    data.append(Data(count: Int(dataSize)))
+    return data
   }
 
   private func setMediaVolume(_ value: Double) -> Bool {

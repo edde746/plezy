@@ -29,6 +29,7 @@ import 'package:plezy/services/agent_playback_commands.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/companion_remote/companion_remote_receiver.dart';
 import 'package:plezy/services/discord_rpc_service.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/media_controls_manager.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
@@ -509,6 +510,9 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
 
   final MediaServerClient? client;
   final Set<String> failingIds = {};
+
+  /// When set, every resolve throws this instead of returning a source.
+  Object? failWith;
   final Map<String, int> resolveCounts = {};
   final Map<String, List<_CallGate>> _resolveGates = {};
 
@@ -528,6 +532,8 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
     final gate = gates == null || gates.isEmpty ? null : gates.removeAt(0);
     if (gates?.isEmpty ?? false) _resolveGates.remove(track.id);
     if (gate != null) await gate.block();
+    final failure = failWith;
+    if (failure != null) throw failure;
     if (failingIds.contains(track.id)) {
       throw StateError('resolve failed for ${track.id}');
     }
@@ -1443,6 +1449,24 @@ void main() {
     expect(h.service.currentTrack, isNull);
     expect(h.service.queue, isEmpty);
     expect(h.players.single.disposed, isTrue);
+    await sub.cancel();
+  });
+
+  test('an output that cannot play this server stops at once instead of trying every track', () async {
+    h.resolver.failWith = const PlaybackException(
+      'This Music Assistant server cannot play to this device.',
+      reason: PlaybackFailureReason.wrongOutput,
+    );
+    final errors = <Object>[];
+    final sub = h.service.errors.listen(errors.add);
+
+    await h.playTracks([t1, t2, t3]);
+    await pumpEventQueue();
+
+    expect(errors, hasLength(1), reason: 'one clear failure, not one per track');
+    expect(h.resolver.resolveCounts.keys, ['t1']);
+    expect(h.service.status, MusicPlaybackStatus.error);
+    expect(h.service.currentTrack, isNull);
     await sub.cancel();
   });
 

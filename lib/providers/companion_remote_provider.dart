@@ -330,6 +330,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
           );
         case JellyfinConnection():
           addContext(await _createMediaBrowserAuthContext(connection: connection));
+        case MusicAssistantConnection():
+          // Companion pairing derives its shared secret from a server-issued
+          // credential, and a LAN Music Assistant issues none — there is
+          // nothing secret both devices already know. Contributing no context
+          // simply means this connection can't be used to pair; other
+          // connections on the profile still can.
+          appLogger.d('CompanionRemote: Music Assistant connection ${connection.id} has no pairing secret; skipping');
       }
     }
 

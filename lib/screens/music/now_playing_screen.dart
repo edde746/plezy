@@ -23,6 +23,8 @@ import '../../media/media_server_client.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
 import '../../mpv/mpv.dart';
 import '../../services/device_performance.dart';
+import '../../services/music/music_output.dart';
+import '../../services/music/music_output_controller.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_motion.dart';
 import '../../theme/mono_tokens.dart';
@@ -37,6 +39,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/media_context_menu.dart';
 import '../../widgets/music/lyrics_view.dart';
+import '../../widgets/music/output_picker_sheet.dart';
 import '../../widgets/music/repeat_mode.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -356,6 +359,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         Expanded(child: upper),
         Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), child: _buildSeekBar(track)),
         _buildTransportRow(service),
+        _buildRemoteVolumeRow(service),
         _buildUtilityRow(showQueueButton: true),
         const SizedBox(height: 8),
       ],
@@ -458,6 +462,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 _buildSeekBar(track),
                 const SizedBox(height: 8),
                 _buildTransportRow(service),
+                _buildRemoteVolumeRow(service),
                 _buildUtilityRow(showQueueButton: true),
               ],
             ),
@@ -536,6 +541,23 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   /// (equal-width flanks), with lyrics + a desktop volume slider as a
   /// right-aligned cluster that scales down instead of overflowing when the
   /// pane is narrow.
+
+  /// Volume for an output the phone's own buttons cannot reach.
+  ///
+  /// The hardware buttons change *this device's* volume, which is the right
+  /// control while the sound is coming out of the phone and no control at all
+  /// once it is coming out of a speaker in another room. Desktop shows a
+  /// slider always, because it has no such buttons to fall back on; mobile
+  /// shows one exactly when the buttons stop working.
+  Widget _buildRemoteVolumeRow(MusicPlaybackService service) {
+    final output = context.watch<MusicOutputController?>()?.selected;
+    if (output == null || !output.isRemote || !output.supportsVolume) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Row(children: [Expanded(child: _buildVolumeCluster(service, expand: true))]),
+    );
+  }
+
   Widget _buildWideControlBand(MusicPlaybackService service) {
     final tk = tokens(context);
     final colorScheme = Theme.of(context).colorScheme;
@@ -577,7 +599,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   /// Desktop volume control (0–100), persisted by the service across
   /// sessions. Mono styling matches the seek bar: text-colored active track
   /// on outline.
-  Widget _buildVolumeCluster(MusicPlaybackService service) {
+  Widget _buildVolumeCluster(MusicPlaybackService service, {bool expand = false}) {
     return ValueListenableBuilder<double>(
       valueListenable: service.volumeListenable,
       builder: (context, volume, _) {
@@ -588,11 +610,12 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
             ? Symbols.volume_down_rounded
             : Symbols.volume_up_rounded;
         return Row(
-          mainAxisSize: .min,
+          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
           children: [
             AppIcon(icon, fill: 1, size: 20, color: tk.textMuted),
-            SizedBox(
-              width: 140,
+            const SizedBox(width: 8),
+            _VolumeSliderBox(
+              expand: expand,
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 3,
@@ -654,9 +677,15 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     return Column(
       crossAxisAlignment: centered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
+        // Two lines. This is the largest text on the screen and the thing the
+        // screen is *about*, and at headline size one line ellipsizes a very
+        // ordinary title — "Packt Like Sardines in a Crushd Tin Box" became
+        // "Packt Like Sardines in a Cr…" — while the artwork above it had room
+        // to spare. The artwork sits in an Expanded, so the second line costs
+        // it a few pixels and nothing else moves.
         Text(
           track.title ?? '',
-          maxLines: 1,
+          maxLines: 2,
           overflow: .ellipsis,
           textAlign: centered ? TextAlign.center : TextAlign.start,
           style: textTheme.headlineSmall?.copyWith(fontWeight: .w600, color: tk.text),
@@ -825,6 +854,26 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         onNavigateDown: () {},
         onBack: _pop,
         actions: [
+          // Where the audio comes out. Sits on the main transport row rather
+          // than behind the overflow menu because switching rooms is a thing
+          // people do mid-listen, and because the icon doubles as the only
+          // indication that the sound is not coming from this device.
+          if (context.watch<MusicOutputController?>()?.hasRemoteOutputs ?? false)
+            FocusableAction(
+              debugLabel: 'np_output',
+              onPressed: () => unawaited(showOutputPickerSheet(_sheetContext)),
+              builder: (context, state) {
+                final selected = context.watch<MusicOutputController?>()?.selected ?? MusicOutput.thisDevice;
+                return _transportIcon(
+                  state,
+                  icon: selected.isThisDevice ? Symbols.smartphone_rounded : Symbols.speaker_rounded,
+                  active: selected.isRemote,
+                  tooltip: selected.name,
+                  onPressed: () => unawaited(showOutputPickerSheet(_sheetContext)),
+                  size: 22,
+                );
+              },
+            ),
           FocusableAction(
             debugLabel: 'np_lyrics',
             onPressed: _toggleLyrics,
@@ -1220,4 +1269,15 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
       ),
     );
   }
+}
+
+/// Fixed width beside other controls, the whole row when it is the only one.
+class _VolumeSliderBox extends StatelessWidget {
+  const _VolumeSliderBox({required this.expand, required this.child});
+
+  final bool expand;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => expand ? Expanded(child: child) : SizedBox(width: 140, child: child);
 }

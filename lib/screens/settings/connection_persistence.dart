@@ -12,6 +12,29 @@ import '../../profiles/profile_registry.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 
+/// Whether an add-server flow should mint a first-run local profile.
+///
+/// True only on a genuinely empty install: no target was requested, nothing is
+/// active, and no profile exists to fall back on. Backend-neutral because the
+/// question is about the profile store, not about the server being added.
+bool shouldCreateFirstRunProfile({
+  required Profile? targetProfile,
+  required Profile? activeProfile,
+  required bool hasProfiles,
+}) {
+  return targetProfile == null && activeProfile == null && !hasProfiles;
+}
+
+/// Whether an add-server flow must ask which profile owns the new connection:
+/// profiles exist but none is active, so there is a real choice to make.
+bool shouldPromptForProfileSelection({
+  required Profile? targetProfile,
+  required Profile? activeProfile,
+  required bool hasProfiles,
+}) {
+  return targetProfile == null && activeProfile == null && hasProfiles;
+}
+
 /// Durably provision a freshly-authenticated [connection] and its optional
 /// [bindToProfile] ownership row.
 ///

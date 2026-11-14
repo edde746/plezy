@@ -161,6 +161,12 @@ class ConnectionRegistry {
           lastAuthenticatedAt: lastAuth,
           dialect: kind.dialect!,
         ),
+        MediaBackend.musicAssistant => MusicAssistantConnection.fromConfigJson(
+          id: row.id,
+          json: revealed.config,
+          createdAt: createdAt,
+          lastAuthenticatedAt: lastAuth,
+        ),
       };
       _decryptedConfigs[connection] = revealed.config;
       if (revealed.migrated) {

@@ -69,6 +69,12 @@ class ServerCapabilities {
   /// silent degradation.
   final bool libraryChangeEvents;
 
+  /// Server has a collections concept (Plex collections, Jellyfin BoxSets).
+  /// False hides the library's Collections tab outright rather than offering a
+  /// tab that can only ever be empty — a music-only backend has no such thing,
+  /// and the word is video vocabulary there.
+  final bool collections;
+
   const ServerCapabilities({
     this.liveTv = false,
     this.liveTvDvr = false,
@@ -83,6 +89,7 @@ class ServerCapabilities {
     this.folderGrouping = false,
     this.instantMix = false,
     this.libraryChangeEvents = false,
+    this.collections = true,
   });
 
   /// Defaults for a fully-featured Plex server.
@@ -100,6 +107,7 @@ class ServerCapabilities {
     folderGrouping: true,
     instantMix: true,
     libraryChangeEvents: true,
+    collections: true,
   );
 
   /// Defaults for a Jellyfin server.
@@ -124,6 +132,7 @@ class ServerCapabilities {
     folderGrouping: true,
     instantMix: true,
     libraryChangeEvents: true,
+    collections: true,
   );
 
   /// Defaults for an Emby server.
@@ -154,6 +163,42 @@ class ServerCapabilities {
     folderGrouping: true,
     instantMix: true,
     libraryChangeEvents: true,
+    collections: true,
+  );
+
+  /// Defaults for a Music Assistant server.
+  ///
+  /// Music Assistant is a music-only backend, so every video-oriented flag is
+  /// off — not "not wired yet", but nothing to wire: there is no video, no
+  /// Live TV, no subtitle or metadata editing, and nothing to scrub.
+  ///
+  /// `userFavorites` is `true` — `music/favorites/add_item` / `remove_item`
+  /// take an item uri and are the one per-item write the app performs.
+  ///
+  /// `richHubs` is `false` (the server exposes no recommendation rows this app
+  /// consumes), `folderGrouping` is `false` (the library is browsed by
+  /// artist/album/track/playlist, never by directory), and `instantMix` is
+  /// `false` because radio mode is server-side queue behaviour rather than the
+  /// "give me a track list from this seed" call the flag gates.
+  ///
+  /// `collections` is `false`: the client already refuses every collection call
+  /// (`parts/unsupported.dart`), so the tab could only ever be empty — and
+  /// "Collections" is Plex/Jellyfin video vocabulary that means nothing next to
+  /// Artists, Albums and Tracks.
+  static const ServerCapabilities musicAssistant = ServerCapabilities(
+    liveTv: false,
+    liveTvDvr: false,
+    videoTranscoding: false,
+    richHubs: false,
+    numericUserRating: false,
+    userFavorites: true,
+    continueWatchingRemoval: false,
+    externalSubtitleSearch: false,
+    richMetadataEdit: false,
+    scrubThumbnails: false,
+    folderGrouping: false,
+    instantMix: false,
+    collections: false,
   );
 
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
@@ -175,6 +220,7 @@ class ServerCapabilities {
       folderGrouping: folderGrouping,
       instantMix: instantMix,
       libraryChangeEvents: libraryChangeEvents,
+      collections: collections,
     );
   }
 }

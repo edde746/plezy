@@ -92,6 +92,35 @@ class CredentialVault {
     }
   }
 
+  /// Config key holding the encryptable credential for a [ConnectionKind] id.
+  ///
+  /// This switch is over a raw string, so the analyzer cannot prove it
+  /// exhaustive: a kind missing an arm falls into `_ => null` and its token is
+  /// written to the database in the clear, silently. Every new connection kind
+  /// that carries a credential must be added here — including ones that are
+  /// usually unauthenticated, since the field is populated on the servers that
+  /// do require it.
+
+  /// Whether [config] still holds a credential in the clear for [kind].
+  ///
+  /// Deliberately built on the same [_tokenKeyForKind] as
+  /// [protectConnectionConfig], so "which field is the secret" is answered once.
+  /// `AppDatabase` used to answer it a second time for the tvOS recovery
+  /// snapshot, and the copy drifted: it grew a `jellyfin` arm and a
+  /// `kind != 'plex'` bail-out, which quietly declared every Music Assistant
+  /// row already protected and wrote its token to the recovery image in
+  /// plaintext. A parallel switch over the same enum is the bug; this is the
+  /// fix.
+  static bool containsPlaintextCredential(String kind, Map<String, Object?> config) {
+    bool isPlaintext(Object? value) => value is String && value.isNotEmpty && !isProtected(value);
+
+    final tokenKey = _tokenKeyForKind(kind);
+    if (tokenKey != null && isPlaintext(config[tokenKey])) return true;
+    if (kind != 'plex') return false;
+    final servers = config['servers'];
+    return servers is List && servers.any((server) => server is Map && isPlaintext(server['accessToken']));
+  }
+
   static Future<Map<String, Object?>> protectConnectionConfig(String kind, Map<String, Object?> config) async {
     final copy = Map<String, Object?>.from(config);
     final tokenKey = _tokenKeyForKind(kind);
@@ -132,6 +161,7 @@ class CredentialVault {
   static String? _tokenKeyForKind(String kind) => switch (kind) {
     'plex' => 'accountToken',
     'jellyfin' || 'emby' => 'accessToken',
+    'music_assistant' => 'accessToken',
     _ => null,
   };
 
