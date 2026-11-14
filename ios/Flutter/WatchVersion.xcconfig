@@ -1,0 +1,4 @@
+// The watch targets take only the version from Flutter, not the Pods settings
+// Debug.xcconfig and Release.xcconfig bring in. Apple requires a watch app and
+// its companion to share a version.
+#include "Generated.xcconfig"

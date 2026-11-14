@@ -46,8 +46,10 @@ import MediaPlayer
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
 
+    // Register MPV player plugin and wire watch connectivity on the same registrar.
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MpvPlayerPlugin") {
       MpvPlayerPlugin.register(with: registrar)
+      WatchSessionManager.shared.setupMethodChannel(messenger: registrar.messenger())
     }
 
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MpvAudioPlayerPlugin") {

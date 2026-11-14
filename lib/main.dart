@@ -70,6 +70,7 @@ import 'providers/shader_provider.dart';
 import 'utils/snackbar_helper.dart';
 import 'services/multi_server_manager.dart';
 import 'services/library_events/library_event_service.dart';
+import 'services/watch_credentials_bridge.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/credential_vault.dart';
@@ -1772,6 +1773,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             _serverManager.onJellyfinConnectionUpdated = context.read<ConnectionRegistry>().upsert;
             return MultiServerProvider(_serverManager, _aggregationService);
           },
+        ),
+        // Eager: the watch may ask for Plex credentials before the profile
+        // session mounts, and a lazy provider would not be there to answer.
+        Provider<WatchCredentialsBridge>(
+          lazy: false,
+          create: (context) =>
+              WatchCredentialsBridge(serverManager: context.read<MultiServerProvider>().serverManager)..start(),
+          dispose: (_, bridge) => unawaited(bridge.dispose()),
         ),
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (context) {

@@ -406,6 +406,19 @@ class MultiServerManager {
   String serverDisplayName(ServerId serverId) =>
       _clients[serverId]?.serverName ?? _plexServers[serverId]?.name ?? serverId;
 
+  /// Addresses [serverId] can be reached at from outside its own network,
+  /// best first: direct ones, then Plex's relay. HTTPS only.
+  ///
+  /// For a client that cannot race connections itself and may leave the house
+  /// — the watch, which on cellular can do nothing with the LAN address the
+  /// phone happens to be using.
+  List<String> plexRemoteUris(ServerId serverId) {
+    final connections = _plexServers[serverId]?.connections ?? const <PlexConnection>[];
+    final remote = connections.where((c) => !c.local && c.protocol == 'https' && !c.ipv6).toList()
+      ..sort((a, b) => (a.relay ? 1 : 0) - (b.relay ? 1 : 0));
+    return [for (final c in remote) c.uri];
+  }
+
   /// Backend-neutral "is this user an owner/admin on [serverId]?" probe used
   /// by UI gates that hide destructive admin entries (delete, edit metadata,
   /// match/unmatch). Returns:
