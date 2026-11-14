@@ -815,9 +815,16 @@ class PlexWatchClient {
   }
 
   /// Fetch an existing play queue by id (Plex sometimes omits Metadata on create).
-  func fetchPlayQueue(queueId: Int) async -> PlayQueueResult? {
+  ///
+  /// With [center], the queue is read around that entry. A radio station has
+  /// no end: it starts with five tracks and adds five each time it is read
+  /// centred on its last one. Read without a center it stays the length it is.
+  func fetchPlayQueue(queueId: Int, center: Int? = nil, window: Int = 200) async -> PlayQueueResult? {
     guard credentials != nil else { return nil }
-    guard let json = await get("/playQueues/\(queueId)") else { return nil }
+    let path =
+      center.map { "/playQueues/\(queueId)?window=\(window)&includeBefore=1&includeAfter=1&center=\($0)" }
+      ?? "/playQueues/\(queueId)"
+    guard let json = await get(path) else { return nil }
     guard let container = json["MediaContainer"] as? [String: Any] else { return nil }
     let metadata = container["Metadata"] as? [[String: Any]] ?? []
     let items = metadata.compactMap { parseMusicItem($0) }
@@ -1251,7 +1258,8 @@ class PlexWatchClient {
         duration: item.duration,
         partKey: partKey,
         parentRatingKey: item.parentRatingKey,
-        grandparentRatingKey: item.grandparentRatingKey
+        grandparentRatingKey: item.grandparentRatingKey,
+        playQueueItemID: item.playQueueItemID
       )
     }
   }
@@ -1377,7 +1385,8 @@ class PlexWatchClient {
       duration: dict["duration"] as? Double,
       partKey: partKey,
       parentRatingKey: parentRK,
-      grandparentRatingKey: grandparentRK
+      grandparentRatingKey: grandparentRK,
+      playQueueItemID: dict["playQueueItemID"] as? Int
     )
   }
 }
@@ -1402,6 +1411,9 @@ struct MusicItem: Identifiable {
   let partKey: String?
   let parentRatingKey: String?
   let grandparentRatingKey: String?
+  /// This entry's id within a play queue, when it came from one. A station
+  /// grows only when it is read centred on its last entry, by this id.
+  let playQueueItemID: Int?
 
   init(
     ratingKey: String,
@@ -1413,7 +1425,8 @@ struct MusicItem: Identifiable {
     duration: Double? = nil,
     partKey: String? = nil,
     parentRatingKey: String? = nil,
-    grandparentRatingKey: String? = nil
+    grandparentRatingKey: String? = nil,
+    playQueueItemID: Int? = nil
   ) {
     self.ratingKey = ratingKey
     self.title = title
@@ -1425,6 +1438,7 @@ struct MusicItem: Identifiable {
     self.partKey = partKey
     self.parentRatingKey = parentRatingKey
     self.grandparentRatingKey = grandparentRatingKey
+    self.playQueueItemID = playQueueItemID
   }
 
   /// The track behind a queue entry, for starting something from it.

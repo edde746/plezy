@@ -309,8 +309,8 @@ class WatchAudioPlayer: NSObject, ObservableObject {
       return
     }
 
-    // Radio has no last track. Plex only extends a queue for clients that
-    // report their position, which this one does not, so it goes round.
+    // Radio has no last track. If the station could not be extended (the
+    // server is unreachable, say), go round rather than stop.
     if repeatMode == .all || playQueueRef?.isContinuous == true {
       currentIndex = 0
       playCurrent()
@@ -363,14 +363,29 @@ class WatchAudioPlayer: NSObject, ObservableObject {
     guard let ref = playQueueRef, !serverQueueExhausted else { return false }
 
     let generation = queueGeneration
+    // Centred on the last entry, which is what makes a station add more.
+    // The window is wide enough to start at the head of what is loaded.
+    let center = ref.isContinuous ? catalog.last?.playQueueItemID : nil
+    let window = catalog.count + 50
     let task = Task { @MainActor [weak self] () -> Bool in
-      let fetched = await PlexWatchClient.shared.fetchPlayQueue(queueId: ref.playQueueId)
+      let fetched = await PlexWatchClient.shared.fetchPlayQueue(
+        queueId: ref.playQueueId,
+        center: center,
+        window: window
+      )
       guard let self, generation == self.queueGeneration else { return false }
       self.moreTracksTask = nil
       guard let fetched else { return false }
 
+      // By queue entry where there is one: a station can bring a track back,
+      // and that is a new entry, not one already played.
+      let knownEntries = Set(self.catalog.compactMap(\.playQueueItemID))
       let known = Set(self.catalog.map(\.ratingKey))
-      let newTracks = fetched.items.filter { $0.isTrack && !known.contains($0.ratingKey) }
+      let newTracks = fetched.items.filter { item in
+        guard item.isTrack else { return false }
+        if let entry = item.playQueueItemID { return !knownEntries.contains(entry) }
+        return !known.contains(item.ratingKey)
+      }
       if newTracks.isEmpty {
         self.serverQueueExhausted = true
         return false

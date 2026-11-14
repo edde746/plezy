@@ -6,7 +6,8 @@
   ///
   /// With no phone to sign in from, also set PLEZY_DRIVE_SERVER and
   /// PLEZY_DRIVE_TOKEN. PLEZY_DRIVE_ALBUM then plays that album through to its
-  /// end and nothing else, shuffled if PLEZY_DRIVE_SHUFFLE=1.
+  /// end and nothing else, shuffled if PLEZY_DRIVE_SHUFFLE=1, or as Radio if
+  /// PLEZY_DRIVE_RADIO=1. PLEZY_DRIVE_SKIPS skips ahead that many tracks.
   enum InstrumentDriver {
     private static let environment = ProcessInfo.processInfo.environment
 
@@ -29,9 +30,17 @@
       }
       if let album = environment["PLEZY_DRIVE_ALBUM"] {
         let item = MusicItem(ratingKey: album, title: "Drive album", type: "album")
-        let style = MusicPlaybackCoordinator.PlayStyle.playAll(shuffle: environment["PLEZY_DRIVE_SHUFFLE"] == "1")
+        let style: MusicPlaybackCoordinator.PlayStyle =
+          environment["PLEZY_DRIVE_RADIO"] == "1"
+          ? .radio : .playAll(shuffle: environment["PLEZY_DRIVE_SHUFFLE"] == "1")
         let error = await MusicPlaybackCoordinator.shared.play(item: item, style: style, connectivity: connectivity)
         WatchInstrument.log(.lifecycle, "InstrumentDriver album result: \(error ?? "OK")")
+        // PLEZY_DRIVE_SKIPS=n skips ahead n tracks, to reach the end of what
+        // was first loaded without listening to it.
+        for skip in 0..<(Int(environment["PLEZY_DRIVE_SKIPS"] ?? "") ?? 0) {
+          await pause(4_000, label: "before skip \(skip + 1)")
+          WatchAudioPlayer.shared.next()
+        }
         return
       }
 
