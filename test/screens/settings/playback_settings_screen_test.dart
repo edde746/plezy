@@ -271,7 +271,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
-    final title = find.text('Show finish time');
+    final title = find.text('Show "Ends at" time');
     await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
     await tester.ensureVisible(title);
     await tester.pumpAndSettle();

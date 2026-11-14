@@ -824,11 +824,11 @@ class Translations$settings$en {
 	/// en: 'Segment the seek bar at chapter boundaries'
 	String get showChapterMarkersOnTimelineDescription => 'Segment the seek bar at chapter boundaries';
 
-	/// en: 'Show finish time'
-	String get showFinishTime => 'Show finish time';
+	/// en: 'Show "Ends at" time'
+	String get showFinishTime => 'Show "Ends at" time';
 
-	/// en: 'Show when playback will finish'
-	String get showFinishTimeDescription => 'Show when playback will finish';
+	/// en: 'Show when the current video will end, next to the remaining time'
+	String get showFinishTimeDescription => 'Show when the current video will end, next to the remaining time';
 
 	/// en: 'Specials in episode order'
 	String get specialsOrdering => 'Specials in episode order';
@@ -8395,8 +8395,8 @@ extension on Translations {
 			'settings.resumeMusicOnLaunchDescription' => 'Reopen the last song paused where it left off when the app starts',
 			'settings.showChapterMarkersOnTimeline' => 'Show chapter markers on seek bar',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segment the seek bar at chapter boundaries',
-			'settings.showFinishTime' => 'Show finish time',
-			'settings.showFinishTimeDescription' => 'Show when playback will finish',
+			'settings.showFinishTime' => 'Show "Ends at" time',
+			'settings.showFinishTimeDescription' => 'Show when the current video will end, next to the remaining time',
 			'settings.specialsOrdering' => 'Specials in episode order',
 			'settings.specialsOrderingDescription' => 'Where specials play in a show\'s watch order',
 			'settings.specialsOrderingServer' => 'Follow server order',

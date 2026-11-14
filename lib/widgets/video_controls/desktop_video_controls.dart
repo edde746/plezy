@@ -898,29 +898,26 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           )
                         : const SizedBox.shrink(),
                   )
+                else if (!widget.showFinishTime)
+                  const Spacer()
                 else
                   Expanded(
-                    child: widget.showFinishTime
-                        ? FinishTimeBuilder(
-                            player: widget.player,
-                            builder: (context, finishTime) {
-                              if (finishTime == null) return const SizedBox.shrink();
+                    child: FinishTimeBuilder(
+                      player: widget.player,
+                      builder: (context, finishTime) {
+                        if (finishTime == null) return const SizedBox.shrink();
 
-                              final text = t.videoControls.endsAt(
-                                time: formatClockTime(
-                                  finishTime,
-                                  is24Hour: MediaQuery.alwaysUse24HourFormatOf(context),
-                                ),
-                              );
-                              const style = TextStyle(color: Colors.white70, fontSize: 13);
+                        final text = t.videoControls.endsAt(
+                          time: formatClockTime(finishTime, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context)),
+                        );
+                        const style = TextStyle(color: Colors.white70, fontSize: 13);
 
-                              return Padding(
-                                padding: const EdgeInsets.only(left: 8),
-                                child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
-                              );
-                            },
-                          )
-                        : const SizedBox.shrink(),
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
+                        );
+                      },
+                    ),
                   ),
                 // Volume control (hidden on TV — hardware handles volume)
                 if (!PlatformDetector.isTV()) ...[
