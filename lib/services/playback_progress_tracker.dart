@@ -30,11 +30,22 @@ import '../utils/watch_state_notifier.dart';
 /// reports this tracker sends, so an explicit mark is issued only for sessions
 /// that gave it no such crossing (#1287, #1740).
 class PlaybackProgressTracker {
-  /// Server client for online progress updates (null when offline). Pinned
-  /// for the tracker's lifetime — one playback session against the server
-  /// that started it; if that server is removed mid-playback, reports fail
-  /// and are queued/dropped rather than re-routed.
-  final MediaServerClient? client;
+  /// Resolves the server client for online progress updates (null when
+  /// offline, or when the server has gone).
+  ///
+  /// Resolved per read rather than pinned. It used to hold the instance
+  /// captured when playback opened, so an ordinary reconnect mid-item
+  /// disposed it and every later report failed silently — streamed items do
+  /// not queue for retry — losing the resume position and watched state for
+  /// the whole item and killing the transcode keepalive, so the server reaped
+  /// the session mid-playback.
+  ///
+  /// A server that is genuinely *gone* still resolves to null and still stops
+  /// reporting; what changed is that a server which merely got a new socket no
+  /// longer counts as gone.
+  final MediaServerClient? Function() _resolveClient;
+
+  MediaServerClient? get client => _resolveClient();
 
   final MediaItem metadata;
 
@@ -209,11 +220,14 @@ class PlaybackProgressTracker {
 
   static const Duration _progressNotifyDelta = Duration(seconds: 30);
 
-  /// Built in the constructor body so the delivery callback can bind `this`.
-  late final PlaybackReportSession? _reportSession;
+  /// Rebuilt when the resolved client changes, so a replaced socket does not
+  /// keep a session bound to the disposed one.
+  PlaybackReportSession? _reportSessionCache;
+  MediaServerClient? _reportSessionClient;
 
   PlaybackProgressTracker({
-    required this.client,
+    MediaServerClient? client,
+    MediaServerClient? Function()? clientResolver,
     required this.metadata,
     required this.player,
     this.isOffline = false,
@@ -229,18 +243,28 @@ class PlaybackProgressTracker {
     this.subtitleOffIsDeliberate,
     this.burnedSubtitleStreamIndex,
     this.updateInterval = const Duration(seconds: 10),
-  }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
-       assert(isOffline || client != null, 'client is required when isOffline is false') {
-    final reportingClient = client;
-    _reportSession = isOffline || reportingClient == null
-        ? null
-        : PlaybackReportSession(
-            client: reportingClient,
-            itemId: metadata.id,
-            playSessionId: playSessionId,
-            playMethod: playMethod,
-            onDelivered: _onReportDelivered,
-          );
+  }) : _resolveClient = clientResolver ?? (() => client),
+       assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
+       assert(
+         isOffline || client != null || clientResolver != null,
+         'a client or a resolver is required when isOffline is false',
+       );
+
+  /// The reporting session for whoever is serving this item right now.
+  PlaybackReportSession? get _reportSession {
+    if (isOffline) return null;
+    final live = client;
+    if (live == null) return null;
+    final cached = _reportSessionCache;
+    if (cached != null && identical(_reportSessionClient, live)) return cached;
+    _reportSessionClient = live;
+    return _reportSessionCache = PlaybackReportSession(
+      client: live,
+      itemId: metadata.id,
+      playSessionId: playSessionId,
+      playMethod: playMethod,
+      onDelivered: _onReportDelivered,
+    );
   }
 
   /// Starts the periodic report timer and sends the initial report.

@@ -3036,7 +3036,10 @@ class DownloadManagerService {
 
       try {
         final metadata = ctx?.metadata ?? await _resolveMetadata(globalKey);
-        final client = ctx?.client ?? await _getClientForDownloadKey(globalKey);
+        // Re-resolved first, pinned second: the context's client was captured
+        // when the download started, and a reconnect since then disposed it —
+        // artwork and subtitles then fail on a download whose media succeeded.
+        final client = await _getClientForDownloadKey(globalKey) ?? ctx?.client;
 
         if (metadata != null && client != null) {
           final settled = await _runSupplementaryDownloads(

@@ -351,6 +351,43 @@ MediaItem _meta({
 void main() {
   setUp(resetSharedPreferencesForTest);
 
+  group('a client replaced mid-item', () {
+    test('reports follow the replacement instead of the disposed instance', () async {
+      // The client used to be captured when playback opened. An ordinary
+      // reconnect disposed it and every later report failed silently —
+      // streamed items do not queue for retry — losing resume position and
+      // watched state for the whole item, and killing the transcode keepalive
+      // so the server reaped the session mid-playback.
+      final first = _FakePlexClient();
+      final second = _FakePlexClient();
+      var live = first;
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        clientResolver: () => live,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(first.updateProgressCalls, isNotEmpty);
+      final deliveredToFirst = first.updateProgressCalls.length;
+
+      live = second;
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(second.updateProgressCalls, isNotEmpty, reason: 'the replacement must receive the later report');
+      expect(
+        first.updateProgressCalls.length,
+        deliveredToFirst,
+        reason: 'nothing more should reach the client that was replaced',
+      );
+    });
+  });
+
   group('constructor assertions', () {
     test('offline=true requires offlineWatchService', () {
       expect(

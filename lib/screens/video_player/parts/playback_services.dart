@@ -495,7 +495,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       final playbackState = context.read<PlaybackStateProvider>();
       final effectivePlayMethod = playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay');
       _progressTracker = PlaybackProgressTracker(
-        client: mediaClient,
+        // A resolver, not the instance: a reconnect mid-item replaces the
+        // client, and reporting has to follow it rather than keep addressing
+        // the disposed one for the rest of the item.
+        clientResolver: () => mounted ? _resolveReportingClient(context) : mediaClient,
         metadata: metadata,
         player: currentPlayer,
         offlineWatchService: offlineWatchService,
@@ -579,7 +582,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Get a live reporting client when possible. Downloaded/local playback
     // still uses this path when the server is reachable.
-    final mediaClient = _playbackContext?.reportingClient ?? _getOnlineMediaServerClient(context);
+    final mediaClient = _resolveReportingClient(context);
     // Live never reports progress, so it neither queues offline updates nor
     // needs the provider that owns them.
     final offlineWatchService = widget.isLive ? null : context.read<OfflineWatchSyncService>();

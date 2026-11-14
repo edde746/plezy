@@ -29,13 +29,19 @@ class JellyfinLiveSessionTracker {
     required Duration duration,
   }) async {
     try {
-      final session = _session ??= PlaybackReportSession(
-        client: client,
-        itemId: itemId,
-        playSessionId: _playSessionId,
-        playMethod: playMethod,
-        liveStreamId: liveStreamId,
-      );
+      // Rebuilt when the client changes, not just when there isn't one: a
+      // token refresh mid-broadcast hands in a fresh client, and `??=` kept
+      // reporting against the disposed one for the rest of the session.
+      final existing = _session;
+      final session = existing != null && identical(existing.client, client)
+          ? existing
+          : (_session = PlaybackReportSession(
+              client: client,
+              itemId: itemId,
+              playSessionId: _playSessionId,
+              playMethod: playMethod,
+              liveStreamId: liveStreamId,
+            ));
       await session.report(
         PlaybackReportSnapshot(
           state: state,

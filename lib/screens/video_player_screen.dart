@@ -1091,6 +1091,31 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     return manager.getClient(ServerId(id));
   }
 
+  /// The client to report progress against, resolved live rather than pinned.
+  ///
+  /// The reporting client used to come straight off [PlaybackContext], which
+  /// captured it when playback opened. A reconnect mid-item — an ordinary
+  /// `_attemptReconnect` — disposes that instance, and every later report
+  /// fails silently: `_recordProgressFailure` logs at debug and streamed items
+  /// do not queue for retry. The result is a lost resume position and watched
+  /// state for the whole item, plus a dead transcode keepalive, so the server
+  /// reaps the session mid-playback.
+  ///
+  /// Scope first: one server id can map to several authenticated users, and
+  /// the pinned client's [MediaServerClientScope.cacheServerId] names the
+  /// exact one this playback belongs to. Falling back to the server-wide client would report under a different
+  /// identity. The pinned client is the last resort — a disposed client that
+  /// fails is still better than not reporting at all when nothing resolves.
+  MediaServerClient? _resolveReportingClient(BuildContext context) {
+    final manager = context.read<MultiServerProvider>().serverManager;
+    final scopeId = _playbackContext?.reportingClient?.cacheServerId;
+    if (scopeId != null) {
+      final scoped = manager.getClientByScope(scopeId);
+      if (scoped != null) return scoped;
+    }
+    return _getOnlineMediaServerClient(context) ?? _playbackContext?.reportingClient;
+  }
+
   // Denormalized views over the committed [PlaybackSession]. Read sites
   // keep their historical names; live TV (no session) gets the defaults.
   PlaybackContext? get _playbackContext => _playbackSession?.context;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../../media/ids.dart';
 import '../../../exceptions/media_server_exceptions.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../i18n/strings.g.dart';
@@ -212,8 +213,19 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     return entries;
   }
 
+  /// The client for [server] as it is *now*.
+  ///
+  /// `_ServerRecordings.client` is a snapshot from the last 30s refresh, and a
+  /// reconnect between that refresh and the tap disposes it — cancelling a
+  /// recording then threw a connection error into a dialog the user was
+  /// looking at, for a server that was fine.
+  MediaServerClient _liveClient(_ServerRecordings server) {
+    final manager = context.read<MultiServerProvider>().serverManager;
+    return manager.getClient(ServerId(server.serverId)) ?? server.client;
+  }
+
   Future<void> _onCancelGrab(_GrabEntry entry) async {
-    final cancelled = await confirmCancelGrab(context, entry.server.client, entry.op);
+    final cancelled = await confirmCancelGrab(context, _liveClient(entry.server), entry.op);
     if (cancelled) await _load();
   }
 
@@ -229,10 +241,10 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     if (!mounted) return;
     switch (action) {
       case _RuleAction.edit:
-        final outcome = await editRecordingRule(context, entry.server.client, entry.rule);
+        final outcome = await editRecordingRule(context, _liveClient(entry.server), entry.rule);
         if (outcome == RecordOutcome.updated) await _load();
       case _RuleAction.delete:
-        final deleted = await confirmDeleteRule(context, entry.server.client, entry.rule);
+        final deleted = await confirmDeleteRule(context, _liveClient(entry.server), entry.rule);
         if (deleted) await _load();
       case null:
         break;

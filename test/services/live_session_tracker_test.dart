@@ -91,4 +91,35 @@ void main() {
 
     expect(client.calls, ['stopped:channel-1:live-session-1:source-1:live-stream-1']);
   });
+
+  test('follows the client through a swap instead of reporting to the dead one', () async {
+    // `??=` kept the first client for the life of the session, so a token
+    // refresh mid-broadcast stranded Live TV reporting against a disposed
+    // client — with errors swallowed, so nothing said so.
+    final first = _FakeJellyfinClient()..startGate.complete();
+    final second = _FakeJellyfinClient()..startGate.complete();
+    final tracker = JellyfinLiveSessionTracker(mediaSourceId: 'src', liveStreamId: 'live');
+
+    await tracker.report(
+      client: first,
+      itemId: 'item',
+      state: 'playing',
+      position: const Duration(seconds: 1),
+      duration: const Duration(seconds: 10),
+    );
+    await tracker.report(
+      client: second,
+      itemId: 'item',
+      state: 'playing',
+      position: const Duration(seconds: 2),
+      duration: const Duration(seconds: 10),
+    );
+
+    expect(second.calls, isNotEmpty, reason: 'the replacement client must receive the later heartbeat');
+    expect(
+      first.calls.length,
+      lessThan(second.calls.length + first.calls.length),
+      reason: 'reporting must not all have gone to the first client',
+    );
+  });
 }
