@@ -59,6 +59,36 @@ void main() {
 
       expect(_ids(rankMediaSearchResults(items, 'Target')), ['original', 'parent']);
     });
+
+    test('keeps an exact match on a weaker field above a substring in a title', () {
+      // The live shape of a `radiohead` search: one artist, the albums by that
+      // exact artist, and two mashups that merely mention the word. The albums
+      // match on `parentTitle`, which is discounted — but a discount must not
+      // demote an exact match below a substring, or the answer to the commonest
+      // music search there is falls off the bottom of a phone screen.
+      final items = [
+        testMediaItem(id: 'artist', kind: MediaKind.artist, title: 'Radiohead'),
+        testMediaItem(id: 'album', kind: MediaKind.album, title: 'Amnesiac', parentTitle: 'Radiohead'),
+        testMediaItem(
+          id: 'mashup',
+          kind: MediaKind.track,
+          title: '360 In Its Right Place (Charli XCX vs. Radiohead)',
+          grandparentTitle: 'Joe Hauke',
+        ),
+      ];
+
+      expect(_ids(rankMediaSearchResults(items, 'radiohead')), ['artist', 'album', 'mashup']);
+      expect(_ids(rankMediaSearchResults(items.reversed.toList(), 'radiohead')), ['artist', 'album', 'mashup']);
+    });
+
+    test('keeps a show above its own episodes on an exact series match', () {
+      final items = [
+        testMediaItem(id: 'episode', kind: MediaKind.episode, title: 'Pilot', grandparentTitle: 'The Bear'),
+        testMediaItem(id: 'show', kind: MediaKind.show, title: 'The Bear'),
+      ];
+
+      expect(_ids(rankMediaSearchResults(items, 'The Bear')), ['show', 'episode']);
+    });
   });
 
   group('rankMediaSearchResults', () {
