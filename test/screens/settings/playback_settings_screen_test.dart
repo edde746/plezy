@@ -262,6 +262,29 @@ void main() {
     expect(SettingsService.instance.prefs.getBool(SettingsService.shuffleStartsFromBeginning.key), isTrue);
   });
 
+  testWidgets('finish time toggle defaults on and persists changes (#2935)', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Show "Ends at" time');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.showFinishTime), isTrue);
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+
+    expect(settings.read(SettingsService.showFinishTime), isFalse);
+    expect(settings.prefs.getBool(SettingsService.showFinishTime.key), isFalse);
+  });
+
   testWidgets('gesture toggles stay hidden on non-mobile layouts', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);

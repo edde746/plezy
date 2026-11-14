@@ -44,6 +44,7 @@ class DesktopVideoControls extends StatefulWidget {
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final bool showChapterMarkersOnTimeline;
+  final bool showFinishTime;
   final int seekTimeSmall;
   final VoidCallback onSeekToPreviousChapter;
   final VoidCallback onSeekToNextChapter;
@@ -123,6 +124,7 @@ class DesktopVideoControls extends StatefulWidget {
     required this.chapters,
     required this.chaptersLoaded,
     this.showChapterMarkersOnTimeline = true,
+    this.showFinishTime = true,
     required this.seekTimeSmall,
     required this.onSeekToPreviousChapter,
     required this.onSeekToNextChapter,
@@ -896,6 +898,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           )
                         : const SizedBox.shrink(),
                   )
+                else if (!widget.showFinishTime)
+                  const Spacer()
                 else
                   Expanded(
                     child: FinishTimeBuilder(

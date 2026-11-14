@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Beim App-Start den letzten Titel pausiert an der letzten Stelle wieder öffnen",
     "showChapterMarkersOnTimeline": "Kapitelmarkierungen auf der Suchleiste anzeigen",
     "showChapterMarkersOnTimelineDescription": "Die Suchleiste an Kapitelgrenzen unterteilen",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Specials in Episodenreihenfolge",
     "specialsOrderingDescription": "Wo Specials in der Wiedergabereihenfolge einer Serie abgespielt werden",
     "specialsOrderingServer": "Serverreihenfolge folgen",

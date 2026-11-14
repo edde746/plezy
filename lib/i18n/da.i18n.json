@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Åbn den seneste sang på pause der, hvor den slap, når appen starter",
     "showChapterMarkersOnTimeline": "Vis kapitelmarkører på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Opdel tidslinjen ved kapitelgrænser",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Specialafsnit i episoderekkefølge",
     "specialsOrderingDescription": "Hvor specialafsnit afspilles i seriens visningsrækkefølge",
     "specialsOrderingServer": "Følg serverrækkefølgen",

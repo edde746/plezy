@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:drift/native.dart';
 import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
@@ -18,6 +20,7 @@ import 'package:plezy/services/playback_subtitle_resolver.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/mobile_video_controls.dart';
@@ -34,6 +37,8 @@ import 'package:plezy/widgets/video_controls/video_control_button.dart';
 import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/system_clock.dart';
 import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
+import 'package:plezy/widgets/video_controls/widgets/finish_time_builder.dart';
+import 'package:plezy/widgets/video_controls/widgets/volume_control.dart';
 
 import '../test_helpers/watch_together_fakes.dart';
 import '../test_helpers/media_items.dart';
@@ -1355,6 +1360,93 @@ void main() {
       await tester.pump();
       expect(seekEnds, [const Duration(seconds: 10)]);
     });
+  });
+
+  group('finish time setting', () {
+    for (final mobile in [false, true]) {
+      for (final initiallyEnabled in [true, false]) {
+        testWidgets(
+          '${mobile ? 'mobile' : 'desktop'} respects ${initiallyEnabled ? 'default' : 'stored'} visibility and live changes',
+          (tester) async {
+            LocaleSettings.setLocaleSync(AppLocale.en);
+            await initializeDateFormatting('en');
+            tester.view.physicalSize = mobile ? const Size(2532, 1170) : const Size(1280, 720);
+            tester.view.devicePixelRatio = mobile ? 3 : 1;
+            addTearDown(tester.view.reset);
+            PlatformDetector.debugSetIsDesktopOSOverride(!mobile);
+            addTearDown(() => PlatformDetector.debugSetIsDesktopOSOverride(null));
+            resetSharedPreferencesForTest(initialAsync: initiallyEnabled ? const {} : {'show_finish_time': false});
+            SettingsService.resetForTesting();
+            final settings = await SettingsService.getInstance();
+            final player = FakeSyncPlayer(playing: true, position: const Duration(minutes: 1));
+            final volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
+            final playbackState = PlaybackStateProvider();
+            final watchTogether = WatchTogetherProvider();
+            final chrome = PlayerChromeController();
+            final toast = PlayerToastController();
+            final database = AppDatabase.forTesting(NativeDatabase.memory());
+            addTearDown(player.dispose);
+            addTearDown(volume.dispose);
+            addTearDown(playbackState.dispose);
+            addTearDown(watchTogether.dispose);
+            addTearDown(chrome.dispose);
+            addTearDown(toast.dispose);
+            addTearDown(database.close);
+
+            await tester.pumpWidget(
+              MultiProvider(
+                providers: [
+                  Provider<AppDatabase>.value(value: database),
+                  ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
+                  ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
+                ],
+                child: MaterialApp(
+                  theme: ThemeData(
+                    platform: mobile ? TargetPlatform.android : TargetPlatform.macOS,
+                    extensions: const [testMonoTokens],
+                  ),
+                  home: Scaffold(
+                    body: PlexVideoControls(
+                      player: player,
+                      volumeController: volume,
+                      metadata: testMediaItem(id: 'finish-time'),
+                      toastController: toast,
+                      chromeController: chrome,
+                      canNavigateMediaItems: false,
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await tester.pump();
+
+            void expectFinishTime(bool enabled) {
+              expect(find.byType(FinishTimeBuilder), enabled ? findsOneWidget : findsNothing);
+              expect(find.textContaining('-44:00'), findsOneWidget, reason: 'remaining duration stays visible');
+              if (!mobile) expect(find.textContaining('Ends at '), enabled ? findsOneWidget : findsNothing);
+            }
+
+            expectFinishTime(initiallyEnabled);
+            final volumeRect = mobile ? null : tester.getRect(find.byType(VolumeControl));
+            for (final enabled in [!initiallyEnabled, initiallyEnabled]) {
+              await settings.write(SettingsService.showFinishTime, enabled);
+              await tester.pump();
+              expectFinishTime(enabled);
+              if (volumeRect != null) {
+                expect(
+                  tester.getRect(find.byType(VolumeControl)),
+                  volumeRect,
+                  reason: 'right-side controls keep their spacing',
+                );
+              }
+            }
+
+            chrome.cancelAutoHide();
+            await tester.pumpWidget(const SizedBox.shrink());
+          },
+        );
+      }
+    }
   });
 
   group('mobile header', () {

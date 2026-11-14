@@ -128,6 +128,23 @@ void main() {
     });
   });
 
+  group('SettingsService finish time', () {
+    test('resetAllSettings restores finish time visibility (#2935)', () async {
+      var settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.showFinishTime, false);
+      expect(settings.read(SettingsService.showFinishTime), isFalse);
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.showFinishTime), isTrue);
+      expect(settings.prefs.containsKey(SettingsService.showFinishTime.key), isFalse);
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.showFinishTime), isTrue);
+    });
+  });
+
   group('SettingsService skip marker modes', () {
     test('default to showing the button, independently per marker kind', () async {
       final settings = await SettingsService.getInstance();
