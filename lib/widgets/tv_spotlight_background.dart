@@ -71,6 +71,8 @@ class TvSpotlightBackground extends StatelessWidget {
       pref: SettingsService.tvCornerSpotlightBackdrop,
       builder: (context, cornerBackdrop, _) {
         final backdropSize = cornerBackdrop ? Size(size.width * 0.68, size.height * 0.72) : size;
+        final infoLeft = contentLeft ?? TvLayoutConstants.horizontalInset;
+        final infoColumnWidth = math.max(0.0, size.width * 0.57 - infoLeft);
         final backdrop = CyclingMediaBackdrop(
           mediaKey: media?.globalKey,
           imagePaths: media?.heroRotationPaths(containerAspectRatio: containerAspect) ?? const [],
@@ -109,8 +111,10 @@ class TvSpotlightBackground extends StatelessWidget {
             ),
             if (media != null && showInfo)
               Positioned(
-                left: contentLeft ?? TvLayoutConstants.horizontalInset,
-                right: MediaQuery.sizeOf(context).width * 0.43,
+                left: infoLeft,
+                // The summary spans the full width; the rest of the info block
+                // keeps its original column via [infoColumnWidth] (#3069).
+                right: TvLayoutConstants.horizontalInset,
                 top: contentTop,
                 bottom: contentBottom,
                 // The info block still cross-fades via AnimatedSwitcher, but its
@@ -128,7 +132,10 @@ class TvSpotlightBackground extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media, constraints.maxWidth));
+                          return Align(
+                            alignment: .bottomLeft,
+                            child: _buildInfo(context, media, math.min(constraints.maxWidth, infoColumnWidth)),
+                          );
                         }
 
                         return Align(
@@ -138,7 +145,7 @@ class TvSpotlightBackground extends StatelessWidget {
                             alignment: .bottomLeft,
                             child: SizedBox(
                               width: constraints.maxWidth,
-                              child: _buildInfo(context, media, constraints.maxWidth),
+                              child: _buildInfo(context, media, math.min(constraints.maxWidth, infoColumnWidth)),
                             ),
                           ),
                         );
@@ -192,6 +199,8 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
+  /// [width] is the title/metadata column; the summary may use the full
+  /// width of the info region.
   Widget _buildInfo(BuildContext context, MediaItem media, double width) {
     final scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
@@ -205,7 +214,10 @@ class TvSpotlightBackground extends StatelessWidget {
       children: [
         _buildLogoOrTitle(context, media, title, width),
         SizedBox(height: _sectionGap(scale)),
-        _buildMetadataLine(context, media),
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: width),
+          child: _buildMetadataLine(context, media),
+        ),
         if (summary != null && summary.isNotEmpty) ...[
           SizedBox(height: _sectionGap(scale)),
           Text(
