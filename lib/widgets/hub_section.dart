@@ -467,6 +467,14 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     );
   }
 
+  /// Caption title lines a card in a row may use.
+  static const int _titleMaxLines = 2;
+
+  /// Height the extra title line needs, matching [MediaCard]'s caption style
+  /// (`fontSize: 13, height: 1.1`) and rounded up so a fractional line cannot
+  /// overflow the row.
+  static const double _titleLineHeight = 15;
+
   /// TV shelf cards share [TvBrowseRailLayout.cardWidthFor] so the two
   /// remaining HubSection-on-TV surfaces (live TV "What's On", catalog item
   /// related rows) match the rails every neighboring TV screen renders —
@@ -528,7 +536,13 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     children: [
                       AppIcon(widget.icon, fill: 1, size: isTv ? 28 : null),
                       SizedBox(width: isTv ? 12 : 8),
+                      // Three parts to one, against the server name below: the
+                      // row's own name is what tells it apart from the row
+                      // under it, and the server name repeats on every row.
+                      // Sharing evenly gave three consecutive rows all reading
+                      // "Recently Add… • Oakland Plexmox" on a phone.
                       Flexible(
+                        flex: 3,
                         child: Text(widget.hub.title, style: titleStyle, overflow: .ellipsis, maxLines: 1),
                       ),
                       if (widget.totalResults case final totalResults?) ...[
@@ -552,10 +566,17 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          widget.hub.serverName!,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                        // Flexible, where it used to be rigid: an unshrinkable
+                        // server name took whatever width it liked and left the
+                        // title to absorb the whole shortfall.
+                        Flexible(
+                          child: Text(
+                            widget.hub.serverName!,
+                            overflow: .ellipsis,
+                            maxLines: 1,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                            ),
                           ),
                         ),
                       ],
@@ -642,7 +663,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                         ? EdgeInsets.only(right: cardGap)
                         : EdgeInsets.symmetric(horizontal: cardGap / 2);
 
-                    final containerHeight = posterHeight + (isTv ? 48 : 33);
+                    // A carousel measures its own height, so it can afford a
+                    // second title line; the band grows by exactly one line so
+                    // the artwork keeps its size.
+                    final containerHeight = posterHeight + (isTv ? 48 : 33) + _titleLineHeight;
                     final focusBorderWidth = FocusTheme.focusBorderWidth;
                     final focusExtra = focusBorderWidth * 2; // border on both sides
                     _itemExtent = cardWidth + focusExtra + cardGap;
@@ -790,6 +814,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                                     usesContinueWatchingAction: widget.usesContinueWatchingAction,
                                     mixedHubContext: isMixedHub,
                                     episodePosterModeOverride: episodePosterMode,
+                                    titleMaxLines: _titleMaxLines,
                                   ),
                                 ),
                               ),

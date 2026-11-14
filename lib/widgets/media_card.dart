@@ -248,6 +248,14 @@ class MediaCard extends StatefulWidget {
   /// surface supplies this for music libraries.
   final CardShape? cardShapeOverride;
 
+  /// Lines the caption title may take before it ellipsises.
+  ///
+  /// One by default because a grid cell's height is fixed by its aspect ratio,
+  /// so a second line there is taken out of the artwork. Carousel rows measure
+  /// their own height and pass 2 — see [HubSection], where one line was
+  /// clipping the majority of real album titles.
+  final int titleMaxLines;
+
   const MediaCard({
     super.key,
     required this.item,
@@ -272,6 +280,7 @@ class MediaCard extends StatefulWidget {
     this.showTitleImplied = false,
     this.artworkDim,
     this.cardShapeOverride,
+    this.titleMaxLines = 1,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
   /// Inset between a captioned grid card's cell and its artwork.
@@ -660,6 +669,9 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     );
   }
 
+  /// One laid-out line of the caption title: `fontSize: 13` at `height: 1.1`.
+  static const double _captionLineHeight = 13 * 1.1;
+
   Widget _buildStandardGridCard(
     BuildContext context,
     Object item,
@@ -705,25 +717,33 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               SizedBox(
                 height: posterHeight != null ? 2 : context.settingsRead(SettingsService.gridSpacing).posterTitleGap,
               ),
-              if (widget.onTap == null && item is MediaItem && !_impliesShowTitle(item) && _hasClickableTitle(item))
-                _ClickableText(
-                  text: item.displayTitle,
-                  style: MediaCard._gridTitleStyle,
-                  onTap: () => _navigateToFocusedDetail(context, item, isOffline: widget.isOffline),
-                )
-              else
-                ExcludeSemantics(
-                  child: Text(
-                    switch (item) {
-                      MediaPlaylist(:final title) => title,
-                      final MediaItem episode when _impliesShowTitle(episode) => episode.title ?? episode.displayTitle,
-                      _ => (item as MediaItem).displayTitle,
-                    },
-                    maxLines: 1,
-                    overflow: .ellipsis,
-                    style: MediaCard._gridTitleStyle,
-                  ),
-                ),
+              // Sized to its whole line allowance whenever more than one line
+              // is allowed: otherwise a one-line title beside a two-line one
+              // drops its subtitle by a line, and the metadata staggers across
+              // the row.
+              SizedBox(
+                height: widget.titleMaxLines > 1 ? widget.titleMaxLines * _captionLineHeight : null,
+                child: widget.onTap == null && item is MediaItem && !_impliesShowTitle(item) && _hasClickableTitle(item)
+                    ? _ClickableText(
+                        text: item.displayTitle,
+                        maxLines: widget.titleMaxLines,
+                        style: MediaCard._gridTitleStyle,
+                        onTap: () => _navigateToFocusedDetail(context, item, isOffline: widget.isOffline),
+                      )
+                    : ExcludeSemantics(
+                        child: Text(
+                          switch (item) {
+                            MediaPlaylist(:final title) => title,
+                            final MediaItem episode when _impliesShowTitle(episode) =>
+                              episode.title ?? episode.displayTitle,
+                            _ => (item as MediaItem).displayTitle,
+                          },
+                          maxLines: widget.titleMaxLines,
+                          overflow: .ellipsis,
+                          style: MediaCard._gridTitleStyle,
+                        ),
+                      ),
+              ),
               if (item is MediaPlaylist)
                 _MediaCardHelpers.buildPlaylistMeta(context, item)
               else if (item is MediaItem)
@@ -880,6 +900,16 @@ class _MediaCardList extends StatelessWidget {
   Widget build(BuildContext context) {
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
+    final summary = _summary();
+    final serverNameShown = showServerName && item is MediaItem && (item as MediaItem).serverName != null;
+
+    // A row whose only text is its title — an artist, most often, since an
+    // artist has no year, no runtime, no parent and no summary — left a line
+    // of text pinned to the top of a poster-sized square with the rest of the
+    // row blank. Nothing can fill that space honestly, so the text is centred
+    // against the artwork instead. Rows that do have something to say are
+    // unaffected: their column is as tall as the poster or taller.
+    final titleOnly = metadataLine.isEmpty && subtitle == null && summary == null && !serverNameShown;
 
     // List rows keep the whole-row border; inside stroke so adjacent rows
     // don't overlap.
@@ -896,7 +926,10 @@ class _MediaCardList extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Row(
-            crossAxisAlignment: .start,
+            // The Column sizes to its own text, so centring has to happen on
+            // the Row: `mainAxisAlignment` inside a column that is already
+            // exactly as tall as its children moves nothing.
+            crossAxisAlignment: titleOnly ? CrossAxisAlignment.center : CrossAxisAlignment.start,
             children: [
               ExcludeSemantics(
                 child: SizedBox(
@@ -946,7 +979,7 @@ class _MediaCardList extends StatelessWidget {
                           style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
                         ),
                       ),
-                    const SizedBox(height: 4),
+                    if (!titleOnly) const SizedBox(height: 4),
                     if (metadataLine.isNotEmpty) ...[
                       ExcludeSemantics(
                         child: Text(
@@ -983,7 +1016,7 @@ class _MediaCardList extends StatelessWidget {
                     if (!(item is MediaItem &&
                             SettingsService.instance.read(SettingsService.hideSpoilers) &&
                             (item as MediaItem).shouldHideSpoiler) &&
-                        _summary() != null) ...[
+                        summary != null) ...[
                       ExcludeSemantics(
                         child: Text(
                           _summary()!,
@@ -1564,8 +1597,9 @@ class _ClickableText extends StatefulWidget {
   final String text;
   final TextStyle? style;
   final VoidCallback onTap;
+  final int maxLines;
 
-  const _ClickableText({required this.text, this.style, required this.onTap});
+  const _ClickableText({required this.text, this.style, required this.onTap, this.maxLines = 1});
 
   @override
   State<_ClickableText> createState() => _ClickableTextState();
@@ -1586,7 +1620,7 @@ class _ClickableTextState extends State<_ClickableText> {
       excludeSemantics: true,
       child: Text(
         widget.text,
-        maxLines: 1,
+        maxLines: widget.maxLines,
         overflow: .ellipsis,
         style: isKeyboard
             ? baseStyle

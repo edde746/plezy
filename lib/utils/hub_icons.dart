@@ -33,6 +33,10 @@ const _titleKeywordIcons = <(List<String>, IconData)>[
   // Seasonal/Time-based
   (['seasonal'], Symbols.calendar_month_rounded),
   (['newly', 'new release'], Symbols.new_releases_rounded),
+  // Before the broader `recent`: "Recently Played" sits directly above
+  // "Recently Added" on a music home screen, and two adjacent rows under the
+  // same clock icon tell the eye they are the same kind of thing.
+  (['recently played', 'played again'], Symbols.replay_rounded),
   (['recently released', 'recent'], Symbols.schedule_rounded),
   // Top/Rated
   (['top rated', 'highest rated'], Symbols.star_rounded),

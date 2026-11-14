@@ -533,6 +533,53 @@ void main() {
 
     expect(focusedItemId, episode2.id);
   });
+
+  testWidgets('long and short album titles both get two lines, so subtitles line up', (tester) async {
+    // The real pair that rendered as `Prospekt's March…` / `Viva la Vida or
+    // De…` on a phone, with the same artist under both.
+    const long = 'Viva la Vida or Death and All His Friends';
+    const short = "Prospekt's March";
+    tester.view.physicalSize = const Size(1206, 2622);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    final items = [
+      for (final (id, title) in [('album_1', short), ('album_2', long)])
+        testMediaItem(
+          id: id,
+          backend: MediaBackend.plex,
+          kind: MediaKind.album,
+          title: title,
+          grandparentTitle: 'Coldplay',
+        ),
+    ];
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: HubSection(
+          hub: MediaHub(id: 'recentlyAdded', title: 'Recently Added', type: 'album', items: items, size: 2),
+          focusMemory: HubFocusMemory(),
+          icon: Symbols.album_rounded,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final rendered = tester.widget<Text>(find.descendant(of: find.byType(MediaCard), matching: find.text(long)));
+    expect(rendered.maxLines, 2);
+    // The row actually gives both titles the space: one 13px line at height 1.1
+    // lays out at ~14.3px, so past 20 is genuinely two lines rather than a
+    // permission the fixed-height strip then refuses.
+    final longBox = tester.getSize(find.descendant(of: find.byType(MediaCard), matching: find.text(long)));
+    final shortBox = tester.getSize(find.descendant(of: find.byType(MediaCard), matching: find.text(short)));
+    expect(longBox.height, greaterThan(20));
+    // And the short one reserves the same height, so the metadata under every
+    // card in the row sits on one baseline instead of staggering.
+    expect(shortBox.height, longBox.height);
+    // The extra line must not be paid for out of the artwork or overflow the
+    // strip.
+    expect(tester.takeException(), isNull);
+  });
 }
 
 MediaHub _hubWith(MediaItem item) {
