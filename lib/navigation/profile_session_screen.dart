@@ -12,6 +12,7 @@ import '../media/media_server_client.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_connection_registry.dart';
+import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
@@ -33,6 +34,7 @@ import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
 import '../services/music/music_session_store.dart';
 import '../services/offline_watch_sync_service.dart';
+import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
@@ -100,12 +102,42 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
   bool _seenFirstActiveId = false;
   String? _lastSessionActiveId;
 
+  final SystemShelfService _shelf = SystemShelfService();
+  bool Function(String profileId)? _shelfPolicy;
+  ActiveProfileProvider? _shelfPolicyProfiles;
+  ValueNotifier<bool>? _shelfPolicySelectionOnOpen;
+
   @override
   void initState() {
     super.initState();
+    _installShelfPolicy();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _hasBuiltSession = true;
     });
+  }
+
+  @override
+  void dispose() {
+    _shelfPolicyProfiles?.removeListener(_shelf.refreshPublicationPolicy);
+    _shelfPolicySelectionOnOpen?.removeListener(_shelf.refreshPublicationPolicy);
+    if (identical(_shelf.publicationPolicy, _shelfPolicy)) _shelf.publicationPolicy = null;
+    super.dispose();
+  }
+
+  /// Keeps a PIN-gated profile off the launcher shelf
+  /// ([ProfileSelectionPolicy.mayPublishToSystemShelf]), re-applied whenever
+  /// the profiles (PINs, count) or the ask-on-open setting change.
+  void _installShelfPolicy() {
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null) return;
+    final activeProfile = context.read<ActiveProfileProvider>();
+    bool policy(String profileId) => activeProfile.mayPublishToSystemShelf(profileId, settings);
+    _shelfPolicy = policy;
+    _shelf.publicationPolicy = policy;
+    _shelfPolicyProfiles = activeProfile..addListener(_shelf.refreshPublicationPolicy);
+    _shelfPolicySelectionOnOpen = settings.listenable(SettingsService.requireProfileSelectionOnOpen)
+      ..addListener(_shelf.refreshPublicationPolicy);
+    _shelf.refreshPublicationPolicy();
   }
 
   /// The keyed remount below recreates every session-scoped provider on a
@@ -115,7 +147,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
   /// doing it from inside MainScreen can't work, the remount unmounts it
   /// before any settle-await completes.
   void _onSessionProfileChanged(String? activeId) {
-    final shelf = SystemShelfService();
+    final shelf = _shelf;
     if (!_seenFirstActiveId) {
       _seenFirstActiveId = true;
       _lastSessionActiveId = activeId;
