@@ -1400,6 +1400,15 @@ class Translations$settings$en {
 	/// en: 'Home Screen'
 	String get homeScreen => 'Home Screen';
 
+	/// en: 'Show Content in Apple TV Top Shelf'
+	String get showTopShelfContent => 'Show Content in Apple TV Top Shelf';
+
+	/// en: 'Show Continue Watching on the Apple TV Home Screen. Turn off to show only Plezy artwork for all profiles.'
+	String get showTopShelfContentDescription => 'Show Continue Watching on the Apple TV Home Screen. Turn off to show only Plezy artwork for all profiles.';
+
+	/// en: 'Could not update Apple TV Top Shelf. Try again.'
+	String get topShelfUpdateFailed => 'Could not update Apple TV Top Shelf. Try again.';
+
 	/// en: 'Navigation'
 	String get navigation => 'Navigation';
 
@@ -8581,6 +8590,9 @@ extension on Translations {
 			'settings.display' => 'Display',
 			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
+			'settings.showTopShelfContent' => 'Show Content in Apple TV Top Shelf',
+			'settings.showTopShelfContentDescription' => 'Show Continue Watching on the Apple TV Home Screen. Turn off to show only Plezy artwork for all profiles.',
+			'settings.topShelfUpdateFailed' => 'Could not update Apple TV Top Shelf. Try again.',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Window',
 			'settings.liveTv' => 'Live TV',
@@ -8628,11 +8640,11 @@ extension on Translations {
 			'themeEditor.preview' => 'Preview',
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -9142,11 +9154,11 @@ extension on Translations {
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
@@ -9656,11 +9668,11 @@ extension on Translations {
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -10170,11 +10182,11 @@ extension on Translations {
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',

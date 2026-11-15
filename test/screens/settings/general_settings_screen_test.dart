@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
@@ -11,7 +12,9 @@ import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/screens/settings/general_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/system_shelf_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
@@ -23,6 +26,8 @@ void main() {
     await SettingsService.getInstance();
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
+
+  tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
   Future<({AppDatabase database, PlexHomeService plexHome, ActiveProfileProvider activeProfile})> pumpGeneralScreen(
     WidgetTester tester,
@@ -79,6 +84,33 @@ void main() {
     expect(find.text(t.settings.requireProfileSelectionOnOpen), findsNothing);
     // The test host is a desktop OS, so the window group applies.
     expect(find.text(t.settings.startInFullscreen), findsOneWidget);
+    expect(find.text(t.settings.showTopShelfContent), findsNothing);
+
+    await disposeHarness(tester, harness);
+  });
+
+  testWidgets('Apple TV persists the Top Shelf switch and applies both choices natively', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    const channel = MethodChannel('test/general_settings_shelf');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final enabledValues = <bool>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      expect(call.method, 'setEnabled');
+      enabledValues.add((call.arguments as Map)['enabled'] as bool);
+      return true;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    SystemShelfService.debugOverrideInstance(SystemShelfService.forTesting(channel: channel, isTvosTarget: () => true));
+    addTearDown(() => SystemShelfService.debugOverrideInstance(null));
+    final harness = await pumpGeneralScreen(tester);
+    expect(find.text(t.settings.showTopShelfContent), findsOneWidget);
+
+    for (final enabled in [false, true]) {
+      await tester.tap(find.text(t.settings.showTopShelfContent));
+      await tester.pumpAndSettle();
+      expect(SettingsService.instance.read(SettingsService.showTopShelfContent), enabled);
+    }
+    expect(enabledValues, [false, true]);
 
     await disposeHarness(tester, harness);
   });

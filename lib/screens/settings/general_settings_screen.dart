@@ -53,6 +53,19 @@ class GeneralSettingsScreen extends StatelessWidget {
           ],
         ),
 
+        if (PlatformDetector.isAppleTV())
+          SettingsGroup(
+            title: t.settings.homeScreen,
+            children: [
+              SettingSwitchTile(
+                pref: SettingsService.showTopShelfContent,
+                icon: Symbols.tv_rounded,
+                title: t.settings.showTopShelfContent,
+                subtitle: t.settings.showTopShelfContentDescription,
+              ),
+            ],
+          ),
+
         if (PlatformDetector.isDesktopOS())
           SettingsGroup(
             title: t.settings.window,

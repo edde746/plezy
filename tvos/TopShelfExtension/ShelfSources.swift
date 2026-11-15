@@ -85,6 +85,7 @@ enum ShelfSourceStore {
   static let schemaVersion = 3
   static let appGroupIdentifier = "group.com.edde746.plezy"
   static let sourcesKey = "PlezySystemShelfSources"
+  static let enabledKey = "PlezySystemShelfEnabled"
   static let tokenKeychainService = "com.edde746.plezy.systemshelf.tokens"
   static let defaultMaxItems = 20
   static let maxItemsLimit = 20
@@ -97,8 +98,14 @@ enum ShelfSourceStore {
     let servers: [ShelfServerSource]
   }
 
+  static func isEnabled(defaults: UserDefaults) -> Bool {
+    defaults.synchronize()
+    return defaults.object(forKey: enabledKey) as? Bool ?? true
+  }
+
   static func load() -> Sources? {
     guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
+      isEnabled(defaults: defaults),
       let data = defaults.data(forKey: sourcesKey),
       let payload = decodePayload(data)
     else { return nil }
