@@ -668,12 +668,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails),
       if (isVideoKind) _MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate),
       // Edit Metadata — admin-only and backend-capability gated.
-      if (menu.canEditMetadata)
+      if (menu.canEditMetadata) ...[
         _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
-      // Quick Tag — same admin/capability gate as Edit Metadata, restricted to
-      // the kinds whose schema carries a 'label' field on both backends.
-      if (menu.canEditMetadata && isMovieOrShow)
-        _MenuAction(value: 'quick_tag', icon: Symbols.label_rounded, label: t.metadataEdit.quickTag),
+        _MenuAction(value: 'refresh_metadata', icon: Symbols.refresh_rounded, label: t.metadataEdit.refreshMetadata),
+        // Quick Tag — same admin/capability gate as Edit Metadata, restricted to
+        // the kinds whose schema carries a 'label' field on both backends.
+        if (isMovieOrShow) _MenuAction(value: 'quick_tag', icon: Symbols.label_rounded, label: t.metadataEdit.quickTag),
+      ],
       // Match / Unmatch — Plex-only (MediaBrowser servers don't expose match agents).
       if (menu.isPlex && menu.isAdmin && isMovieOrShow) ...[
         _MenuAction(
@@ -927,6 +928,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       case 'edit_metadata':
         outcome.didNavigate = true;
         if (context.mounted) await _pushAndRefresh(context, mediaItem, MetadataEditScreen(metadata: mediaItem));
+        break;
+      case 'refresh_metadata':
+        await _refreshMetadata(context, mediaItem);
         break;
       case 'quick_tag':
         if (context.mounted) await _showQuickTagDialog(context, mediaItem);
@@ -1976,6 +1980,58 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     globalKey: _itemSyncRuleKey(context),
     displayTitle: _itemDisplayTitle(),
   );
+
+  /// Handle refresh metadata action.
+  ///
+  /// Plex queues metadata refresh asynchronously and returns 200 immediately,
+  /// so refetching right away would read and re-cache stale metadata. Subscribe
+  /// to the server's websocket push ([LibraryContentNotifier]) and only
+  /// invalidate the cache and refresh once the settled timeline event arrives.
+  Future<void> _refreshMetadata(BuildContext context, MediaItem mediaItem) async {
+    final client = _getClientForItem();
+    final serverId = mediaItem.serverId;
+    StreamSubscription<LibraryChangeEvent>? subscription;
+    void cancelSubscription() {
+      unawaited(subscription?.cancel());
+      if (identical(_refreshMetadataSubscription, subscription)) {
+        _refreshMetadataSubscription = null;
+      }
+    }
+
+    if (serverId != null) {
+      unawaited(_refreshMetadataSubscription?.cancel());
+      subscription = LibraryContentNotifier().stream.listen((event) async {
+        if (event.serverId != serverId || !event.updatedItemIds.contains(mediaItem.id)) return;
+        cancelSubscription();
+        await client.invalidateItemCache(mediaItem.id);
+        _notifyRefresh(mediaItem);
+      });
+      _refreshMetadataSubscription = subscription;
+    }
+
+    try {
+      final success = await client.refreshItemMetadata(mediaItem.id);
+      if (success) {
+        if (context.mounted) {
+          showSuccessSnackBar(context, t.messages.metadataRefreshStarted(title: mediaItem.displayTitle));
+        }
+        if (serverId == null) {
+          await client.invalidateItemCache(mediaItem.id);
+          _notifyRefresh(mediaItem);
+        }
+      } else {
+        cancelSubscription();
+        if (context.mounted) {
+          showErrorSnackBar(context, t.messages.metadataRefreshFailed(error: t.errors.reasonUnexpected));
+        }
+      }
+    } catch (e) {
+      cancelSubscription();
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.metadataRefreshFailed(error: localizedErrorReason(e)));
+      }
+    }
+  }
 
   /// Handle delete media item action.
   ///

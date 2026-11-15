@@ -5436,6 +5436,9 @@ class Translations$metadataEdit$en {
 
 	// Translations
 
+	/// en: 'Refresh Metadata'
+	String get refreshMetadata => 'Refresh Metadata';
+
 	/// en: 'Edit...'
 	String get editMetadata => 'Edit...';
 
