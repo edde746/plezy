@@ -712,6 +712,77 @@ void main() {
       },
     );
   });
+
+  // An in-place open (a TV wake-up restore, a quality switch) closes the
+  // first-frame gate, and the guard unmounts the transport row under a focused
+  // Play/Pause. Focus fell to the chrome's own scope, which no key stage
+  // answers, so a paused viewer's remote went dead under visible chrome
+  // (#3022).
+  group('an open that unmounts the focused control', () {
+    setUp(() async {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      await TvDetectionService.getInstance(forceTv: true);
+      TvDetectionService.setForceTVSync(true);
+      PlatformDetector.debugSetIsDesktopOSOverride(false);
+      await setNavigationEnabled(true);
+    });
+
+    Future<void> focusPlayPause(WidgetTester tester) async {
+      await press(tester, LogicalKeyboardKey.arrowUp);
+      expect(focusLabel(), 'PlayPause', reason: 'precondition: the remote is on Play/Pause');
+    }
+
+    playerTest('the remote waits on the surface and returns to Play/Pause with the frame', (tester) async {
+      await focusPlayPause(tester);
+
+      hasFirstFrame.value = false;
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayerSurface', reason: 'the emptied chrome scope must not keep the remote');
+
+      hasFirstFrame.value = true;
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayPause', reason: 'the frame brings back the control the open took away');
+
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      expect(focusLabel(), isNot(anyOf('PlayPause', 'PlayerSurface')), reason: 'arrows traverse the row again');
+    });
+
+    playerTest('OK toggles playback while the open is still loading', (tester) async {
+      await focusPlayPause(tester);
+      hasFirstFrame.value = false;
+      await tester.pumpAndSettle();
+
+      await press(tester, LogicalKeyboardKey.select);
+
+      expect(toggles, 1, reason: 'OK must not be swallowed while the row is gone');
+    });
+
+    playerTest('a remote resting on the surface stays there', (tester) async {
+      InputModeTracker.reportNonPointerInput();
+      chrome.show();
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayerSurface', reason: 'precondition: nothing in the chrome owns focus');
+
+      hasFirstFrame.value = false;
+      await tester.pumpAndSettle();
+      hasFirstFrame.value = true;
+      await tester.pumpAndSettle();
+
+      expect(focusLabel(), 'PlayerSurface', reason: 'the open hands back what it took; it does not grab');
+    });
+
+    // The chrome scope node outlives each hide. A rebuild while hiding must not
+    // leave it refusing focus to its controls once the chrome is back.
+    playerTest('the chrome takes the remote again after hiding and showing', (tester) async {
+      await focusPlayPause(tester);
+
+      chrome.hide();
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayerSurface', reason: 'precondition: the hidden chrome handed the remote back');
+
+      await focusPlayPause(tester);
+    });
+  });
 }
 
 /// Minimal [Player] reporting steady playback; transport is routed to the
