@@ -155,7 +155,7 @@ jobs:
   build-ios:
     needs: validate-trusted-ref
     if: ${{ inputs.build_ios }}
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       id-token: write
       attestations: write
