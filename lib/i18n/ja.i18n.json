@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "アプリ起動時に最後の曲を停止位置で一時停止のまま開きます",
     "showChapterMarkersOnTimeline": "シークバーにチャプターマーカーを表示",
     "showChapterMarkersOnTimelineDescription": "チャプターの境界でシークバーを区切る",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "エピソード順にスペシャルを表示",
     "specialsOrderingDescription": "シリーズの視聴順でスペシャルを再生する位置",
     "specialsOrderingServer": "サーバーの順序に従う",

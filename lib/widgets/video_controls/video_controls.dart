@@ -799,6 +799,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _isScreenLocked = false; // Touch lock during playback
   bool get _clickVideoTogglesPlayback => _settings.read(SettingsService.clickVideoTogglesPlayback);
   bool get _showChapterMarkersOnTimeline => _settings.read(SettingsService.showChapterMarkersOnTimeline);
+  bool get _showFinishTime => _settings.read(SettingsService.showFinishTime);
   int _trafficLightVisibilityGeneration = 0;
 
   // GlobalKey to access DesktopVideoControls state for focus management
@@ -970,6 +971,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.autoHidePerformanceOverlay,
       SettingsService.clickVideoTogglesPlayback,
       SettingsService.showChapterMarkersOnTimeline,
+      SettingsService.showFinishTime,
     ]);
     // A marker kind switched Off while inside one of its markers must drop the
     // prompt now, not on the next position tick (paused playback never ticks).
@@ -1333,6 +1335,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       chapters: _chapters,
                                                       chaptersLoaded: _chaptersLoaded,
                                                       showChapterMarkersOnTimeline: _showChapterMarkersOnTimeline,
+                                                      showFinishTime: _showFinishTime,
                                                       seekTimeSmall: _seekTimeSmall,
                                                       trackChapterControls: _buildTrackChapterControlsWidget(
                                                         hideChaptersAndQueue: hasStripContent,

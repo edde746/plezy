@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "All'avvio dell'app riapri l'ultimo brano in pausa dal punto in cui era rimasto",
     "showChapterMarkersOnTimeline": "Mostra i marcatori dei capitoli sulla barra di avanzamento",
     "showChapterMarkersOnTimelineDescription": "Segmenta la barra di avanzamento ai confini dei capitoli",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Speciali nell'ordine degli episodi",
     "specialsOrderingDescription": "Dove vengono riprodotti gli speciali nell'ordine di visione di una serie",
     "specialsOrderingServer": "Segui l'ordine del server",

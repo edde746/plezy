@@ -270,6 +270,12 @@ class PlaybackSettingsScreen extends StatelessWidget {
         title: t.settings.showChapterMarkersOnTimeline,
         subtitle: t.settings.showChapterMarkersOnTimelineDescription,
       ),
+      SettingSwitchTile(
+        pref: SettingsService.showFinishTime,
+        icon: Symbols.schedule_rounded,
+        title: t.settings.showFinishTime,
+        subtitle: t.settings.showFinishTimeDescription,
+      ),
       SettingSelectionTile<SpecialsOrdering>(
         pref: SettingsService.specialsOrdering,
         icon: Symbols.low_priority_rounded,

@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Uygulama açıldığında son şarkıyı kaldığı yerde duraklatılmış olarak aç",
     "showChapterMarkersOnTimeline": "Zaman çubuğunda kısım işaretçilerini göster",
     "showChapterMarkersOnTimelineDescription": "Zaman çubuğunu kısım sınırlarına göre böl",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Özel bölümler bölüm sırasına göre",
     "specialsOrderingDescription": "Özel bölümlerin dizinin izleme sırasındaki yeri",
     "specialsOrderingServer": "Sunucu sırasını izle",

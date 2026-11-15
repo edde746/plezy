@@ -40,6 +40,20 @@ void main() {
   });
 
   group('portable settings registry', () {
+    test('round-trips a hidden finish time through a settings backup (#2935)', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.showFinishTime, false);
+      final export = SettingsExportService.buildExportMap(settings.prefs);
+
+      await settings.write(SettingsService.showFinishTime, true);
+      await SettingsExportService.applyImportMap(export, settings.prefs, currentUserUuid: 'target-user');
+
+      SettingsService.resetForTesting();
+      BaseSharedPreferencesService.resetForTesting();
+      final recreated = await SettingsService.getInstance();
+      expect(recreated.read(SettingsService.showFinishTime), isFalse);
+    });
+
     test('exports scalar and JSON-backed values and strips only the active-user library scope', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setBool('enable_hardware_decoding', true);

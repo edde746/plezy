@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "應用程式啟動時，將上次播放的歌曲在停止處以暫停狀態開啟",
     "showChapterMarkersOnTimeline": "在進度條上顯示章節標記",
     "showChapterMarkersOnTimelineDescription": "依章節分段顯示進度條",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "特別篇依集數排序",
     "specialsOrderingDescription": "特別篇在影集觀看順序中的播放位置",
     "specialsOrderingServer": "依伺服器順序",

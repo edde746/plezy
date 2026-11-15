@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Tətbiq açılanda son mahnını dayandırıldığı yerdə fasilədə aç",
     "showChapterMarkersOnTimeline": "Zaman çubuğunda hissə işarələrini göstər",
     "showChapterMarkersOnTimelineDescription": "Zaman çubuğunu hissə sərhədlərinə böl",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Xüsusi bölmələr epizod sırasına görə",
     "specialsOrderingDescription": "Xüsusi bölmələrin serialın izləmə sırasındakı yeri",
     "specialsOrderingServer": "Server sırasını izlə",

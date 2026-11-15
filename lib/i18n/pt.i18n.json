@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Ao iniciar a aplicação, reabrir a última música em pausa onde parou",
     "showChapterMarkersOnTimeline": "Mostrar marcadores de capítulos na barra de reprodução",
     "showChapterMarkersOnTimelineDescription": "Segmentar a barra de reprodução nos limites dos capítulos",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Especiais na ordem dos episódios",
     "specialsOrderingDescription": "Onde os especiais são reproduzidos na ordem de exibição de uma série",
     "specialsOrderingServer": "Seguir a ordem do servidor",

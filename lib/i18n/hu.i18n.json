@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt",
     "showChapterMarkersOnTimeline": "Fejezetjelölők megjelenítése az idősávon",
     "showChapterMarkersOnTimelineDescription": "Az idősáv felosztása a fejezetek határainál",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Különkiadások epizódsorrendben",
     "specialsOrderingDescription": "A különkiadások helye a sorozat lejátszási sorrendjében",
     "specialsOrderingServer": "Szerver szerinti sorrend",

@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was",
     "showChapterMarkersOnTimeline": "Hoofdstukmarkeringen op tijdlijn tonen",
     "showChapterMarkersOnTimelineDescription": "Verdeel de tijdlijn bij hoofdstukgrenzen",
+    "showFinishTime": "",
+    "showFinishTimeDescription": "",
     "specialsOrdering": "Specials in afleveringsvolgorde",
     "specialsOrderingDescription": "Waar specials worden afgespeeld in de kijkvolgorde van een serie",
     "specialsOrderingServer": "Servervolgorde volgen",
