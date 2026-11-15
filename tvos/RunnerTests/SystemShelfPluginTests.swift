@@ -161,6 +161,18 @@ private final class SystemShelfSyncHarness {
     )
   }
 
+  func setEnabled(_ enabled: Bool, engineEpoch: UInt64? = nil) -> Bool {
+    SystemShelfPlugin.setEnabled(
+      enabled,
+      engineEpoch: engineEpoch ?? epoch,
+      state: &state,
+      defaults: defaults,
+      artworkRoot: root,
+      clearSourceTokens: {},
+      notifyChange: { [unowned self] in notificationCount += 1 }
+    )
+  }
+
   func remove(generation: Int64, contentId: String) -> Bool {
     SystemShelfPlugin.removeItem(
       envelope: envelope(generation: generation),
@@ -284,6 +296,31 @@ final class SystemShelfPluginTests: XCTestCase {
     super.tearDown()
   }
 
+  func testDisabledShelfClearsContentAndRejectsPublicationAcrossSessions() throws {
+    let harness = try SystemShelfSyncHarness()
+    defer { harness.cleanup() }
+    XCTAssertTrue(harness.sync(generation: 1, items: [["contentId": "old", "title": "Old profile"]]))
+    XCTAssertTrue(harness.updateSources(generation: 1, episodePoster: nil))
+    let notifications = harness.notificationCount
+    XCTAssertTrue(harness.setEnabled(false))
+    XCTAssertGreaterThan(harness.notificationCount, notifications)
+    XCTAssertNil(harness.defaults.data(forKey: SystemShelfPlugin.cacheDataKey))
+    XCTAssertNil(harness.defaults.data(forKey: SystemShelfPlugin.sourcesKey))
+    XCTAssertFalse(FileManager.default.fileExists(atPath: harness.root.path))
+
+    harness.beginEngineSession()
+    XCTAssertTrue(harness.clear(generation: 1))
+    XCTAssertFalse(ShelfSourceStore.isEnabled(defaults: harness.defaults))
+    XCTAssertFalse(harness.sync(generation: 2, items: [["contentId": "late", "title": "Late sync"]]))
+    XCTAssertFalse(harness.updateSources(generation: 2, episodePoster: nil))
+    XCTAssertNil(harness.defaults.data(forKey: SystemShelfPlugin.cacheDataKey))
+
+    XCTAssertTrue(harness.setEnabled(true))
+    XCTAssertTrue(
+      harness.sync(generation: 3, items: [["contentId": "new", "title": "New profile"]], ownerId: "profile-b"))
+    XCTAssertEqual(try harness.currentItems().compactMap { $0["contentId"] as? String }, ["new"])
+  }
+
   func testSyncRemoveAndClearUpdateCommittedShelf() throws {
     let harness = try SystemShelfSyncHarness()
     defer { harness.cleanup() }
@@ -396,6 +433,8 @@ final class SystemShelfPluginTests: XCTestCase {
         engineEpoch: staleEpoch
       )
     )
+    XCTAssertFalse(harness.setEnabled(false, engineEpoch: staleEpoch))
+    XCTAssertTrue(ShelfSourceStore.isEnabled(defaults: harness.defaults))
     let item = try XCTUnwrap(harness.currentItems().first)
     XCTAssertEqual(item["lastPlaybackPosition"] as? Int, 1)
     let data = try XCTUnwrap(
@@ -405,6 +444,9 @@ final class SystemShelfPluginTests: XCTestCase {
       JSONSerialization.jsonObject(with: data) as? [String: Any]
     )
     XCTAssertEqual(payload["ownerId"] as? String, "profile-b")
+    XCTAssertTrue(harness.setEnabled(false))
+    XCTAssertFalse(harness.setEnabled(true, engineEpoch: staleEpoch))
+    XCTAssertFalse(ShelfSourceStore.isEnabled(defaults: harness.defaults))
   }
 
   func testHigherGenerationRemainsLastWriter() throws {

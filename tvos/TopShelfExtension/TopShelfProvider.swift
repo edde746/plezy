@@ -102,11 +102,15 @@ private extension KeyedDecodingContainer {
 
 final class TopShelfProvider: TVTopShelfContentProvider {
   override func loadTopShelfContent() async -> (any TVTopShelfContent)? {
+    guard let defaults = TopShelfShared.sharedDefaults,
+      ShelfSourceStore.isEnabled(defaults: defaults)
+    else { return nil }
     // Prefer a live fetch when the app has published server sources; any
     // failure falls back to replaying the last committed cache unchanged.
     if let sources = ShelfSourceStore.load(),
       let items = await ShelfFetcher.fetchContinueWatching(sources: sources)
     {
+      guard ShelfSourceStore.isEnabled(defaults: defaults) else { return nil }
       // The app may have switched profile or signed out during the fetch. The
       // result then belongs to a stale owner: writing it would replace the
       // new owner's cache with the previous profile's items.
@@ -114,7 +118,8 @@ final class TopShelfProvider: TVTopShelfContentProvider {
       let sectionTitle =
         sources.sectionTitle.flatMap { $0.isEmpty ? nil : $0 } ?? TopShelfShared.fallbackSectionTitle
       persistLiveSnapshot(items, ownerId: sources.ownerId, sectionTitle: sectionTitle)
-      return buildLiveContent(items, ownerId: sources.ownerId, sectionTitle: sectionTitle)
+      return ShelfSourceStore.isEnabled(defaults: defaults)
+        ? buildLiveContent(items, ownerId: sources.ownerId, sectionTitle: sectionTitle) : nil
     }
     return buildContent()
   }
@@ -136,7 +141,9 @@ final class TopShelfProvider: TVTopShelfContentProvider {
   /// Rewrites the shared cache with the live result so offline replay stays
   /// fresh. Token-bearing poster URLs stay inside the app group container.
   private func persistLiveSnapshot(_ items: [ShelfFetchedItem], ownerId: String, sectionTitle: String) {
-    guard let defaults = TopShelfShared.sharedDefaults else { return }
+    guard let defaults = TopShelfShared.sharedDefaults,
+      ShelfSourceStore.isEnabled(defaults: defaults)
+    else { return }
     let itemDicts = items.map { item -> [String: Any] in
       var dict: [String: Any] = ["contentId": item.contentId, "title": item.title]
       if let episodeTitle = item.episodeTitle { dict["episodeTitle"] = episodeTitle }
@@ -166,6 +173,7 @@ final class TopShelfProvider: TVTopShelfContentProvider {
 
   private func buildContent() -> TVTopShelfContent? {
     guard let defaults = TopShelfShared.sharedDefaults,
+      ShelfSourceStore.isEnabled(defaults: defaults),
       let data = defaults.data(forKey: TopShelfShared.cacheDataKey)
     else { return nil }
 
@@ -181,7 +189,7 @@ final class TopShelfProvider: TVTopShelfContentProvider {
       collection.title = section.title
       return collection
     }
-    guard !sections.isEmpty else { return nil }
+    guard !sections.isEmpty, ShelfSourceStore.isEnabled(defaults: defaults) else { return nil }
     return TVTopShelfSectionedContent(sections: sections)
   }
 

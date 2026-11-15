@@ -302,6 +302,23 @@ import TVServices
       switch call.method {
       case "isSupported":
         result(Self.sharedDefaults != nil && Self.artworkRoot != nil)
+      case "setEnabled":
+        guard let raw = call.arguments as? [String: Any], let enabled = raw["enabled"] as? Bool else {
+          result(FlutterError(code: "INVALID_ARGS", message: "Missing Top Shelf preference", details: nil))
+          return
+        }
+        Self.perform(result) {
+          guard let defaults = Self.sharedDefaults else { return false }
+          return Self.setEnabled(
+            enabled,
+            engineEpoch: self.engineEpoch,
+            state: &Self.mutationState,
+            defaults: defaults,
+            artworkRoot: Self.artworkRoot,
+            clearSourceTokens: Self.deleteAllSourceTokens,
+            notifyChange: { TVTopShelfContentProvider.topShelfContentDidChange() }
+          )
+        }
       case "sync":
         guard let envelope = Self.envelope(call.arguments, engineEpoch: engineEpoch),
           let raw = call.arguments as? [String: Any],
@@ -436,7 +453,7 @@ import TVServices
     ) -> Bool {
       let defaults = environment.defaults
       let root = environment.artworkRoot
-      guard state.accepts(envelope) else { return false }
+      guard ShelfSourceStore.isEnabled(defaults: defaults), state.accepts(envelope) else { return false }
       let previouslyCommittedArtwork = committedArtworkFiles(defaults: defaults, root: root)
       let deadline = environment.now().addingTimeInterval(syncTimeout)
       let ownerDirectory = root.appendingPathComponent(ownerHash(envelope.ownerId), isDirectory: true)
@@ -574,7 +591,7 @@ import TVServices
       storeTokens: (String, [String: String]) -> Bool,
       notifyChange: () -> Void
     ) -> Bool {
-      guard state.accepts(envelope) else { return false }
+      guard ShelfSourceStore.isEnabled(defaults: defaults), state.accepts(envelope) else { return false }
       var descriptors: [[String: Any]] = []
       var tokens: [String: String] = [:]
       for raw in rawServers {
@@ -777,6 +794,36 @@ import TVServices
       else { return false }
       defaults.set(data, forKey: cacheDataKey)
       defaults.synchronize()
+      return true
+    }
+
+    static func setEnabled(
+      _ enabled: Bool,
+      engineEpoch: UInt64,
+      state: inout SystemShelfMutationState,
+      defaults: UserDefaults,
+      artworkRoot: URL?,
+      clearSourceTokens: () -> Void,
+      notifyChange: () -> Void
+    ) -> Bool {
+      guard engineEpoch == state.activeEngineEpoch else { return false }
+      defaults.set(enabled, forKey: ShelfSourceStore.enabledKey)
+      defaults.synchronize()
+      if !enabled {
+        return clearCache(
+          envelope: SystemShelfMutationEnvelope(
+            ownerId: state.ownerId,
+            generation: state.generation,
+            engineEpoch: state.activeEngineEpoch
+          ),
+          state: &state,
+          defaults: defaults,
+          artworkRoot: artworkRoot,
+          clearSourceTokens: clearSourceTokens,
+          notifyChange: notifyChange
+        )
+      }
+      notifyChange()
       return true
     }
 

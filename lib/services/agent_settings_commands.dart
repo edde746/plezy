@@ -193,6 +193,8 @@ class AgentSettingsCommands {
         if (!UpdateService.isUpdateCheckAvailable) return 'Updates are managed externally on this platform.';
       case 'force_tv_mode':
         if (!desktop && !Platform.isAndroid) return 'Forced TV mode requires Android or a desktop platform.';
+      case 'show_top_shelf_content':
+        if (!PlatformDetector.isAppleTV()) return 'Top Shelf requires Apple TV.';
       case 'visual_effects':
         if (!Platform.isAndroid) return 'Visual-effects tier selection is Android-only.';
       case 'automotive_ui_scale':

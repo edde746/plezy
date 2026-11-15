@@ -17,6 +17,7 @@ import 'discord_rpc_service.dart';
 import 'companion_remote/companion_remote_host_controller.dart';
 import 'music/music_playback_service.dart';
 import 'settings_service.dart';
+import 'system_shelf_service.dart';
 import 'trackers/anilist/anilist_tracker.dart';
 import 'trackers/mal/mal_tracker.dart';
 import 'trackers/mdblist/mdblist_tracker.dart';
@@ -68,6 +69,18 @@ class SettingsMutationService {
   /// them. Prefs without an entry are plain stored values.
   static final List<_SettingsEffect> _effects = [
     _SettingsEffect(SettingsService.appLocale, _applyAppLocale, rebuildsRoot: true),
+    _SettingsEffect(SettingsService.showTopShelfContent, (context, settings, checkCurrent) async {
+      if (!PlatformDetector.isAppleTV()) return;
+      final enabled = settings.read(SettingsService.showTopShelfContent);
+      final applied = await SystemShelfService().setTopShelfEnabled(enabled);
+      checkCurrent?.call();
+      if (!applied) {
+        throw SettingsEffectFailure(SettingsService.showTopShelfContent, t.settings.topShelfUpdateFailed);
+      }
+      if (enabled && context.mounted) {
+        unawaited(context.read<DiscoverProvider?>()?.refreshContinueWatching());
+      }
+    }),
     _SettingsEffect(
       SettingsService.forceTvMode,
       (_, settings, _) async => TvDetectionService.setForceTVSync(settings.read(SettingsService.forceTvMode)),

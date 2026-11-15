@@ -14,7 +14,7 @@ import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import 'jellyfin_client.dart';
 import 'plex_client.dart';
-import 'settings_service.dart' show EpisodePosterMode;
+import 'settings_service.dart' show EpisodePosterMode, SettingsService;
 
 /// Syncs Continue Watching content to platform launcher surfaces.
 ///
@@ -89,6 +89,27 @@ class SystemShelfService {
     return null;
   }
 
+  bool get _publicationEnabled =>
+      !_isTvosTarget || (SettingsService.instanceOrNull?.read(SettingsService.showTopShelfContent) ?? true);
+
+  /// Mirror the device-wide preference to the extension's shared defaults.
+  Future<bool> setTopShelfEnabled(bool enabled) async {
+    if (!_isTvosTarget) return true;
+    final channel = _channel;
+    if (channel == null) return false;
+    _generation++;
+    final result = await _enqueueMutation(
+      () => _invokeGuarded<bool>(
+        channel,
+        'setEnabled',
+        arguments: {'enabled': enabled},
+        label: 'Failed to update Top Shelf preference',
+        severe: true,
+      ),
+    );
+    return result ?? false;
+  }
+
   /// Establishes the only owner allowed to publish launcher shelf state.
   ///
   /// Ownership changes are synchronous. Native mutations remain serialized
@@ -122,7 +143,7 @@ class SystemShelfService {
   }
 
   bool _owns(String profileId, int generation) {
-    return _activeOwner == profileId && _generation == generation;
+    return _activeOwner == profileId && _generation == generation && _publicationEnabled;
   }
 
   Future<T?> _enqueueMutation<T>(Future<T> Function() mutation) {
@@ -194,7 +215,7 @@ class SystemShelfService {
     EpisodePosterMode episodePosterMode = EpisodePosterMode.seriesPoster,
   }) async {
     final channel = _channel;
-    if (channel == null || _activeOwner != profileId) return false;
+    if (channel == null || _activeOwner != profileId || !_publicationEnabled) return false;
     final generation = _generation;
 
     final items = continueWatchingItems
@@ -255,7 +276,7 @@ class SystemShelfService {
   }) async {
     if (!_isTvosTarget) return false;
     final channel = _channel;
-    if (channel == null || _activeOwner != profileId) return false;
+    if (channel == null || _activeOwner != profileId || !_publicationEnabled) return false;
     final generation = _generation;
 
     final servers = clients.map(_describeServerSource).nonNulls.toList(growable: false);

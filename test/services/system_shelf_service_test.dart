@@ -12,11 +12,12 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/settings_service.dart' show EpisodePosterMode;
+import 'package:plezy/services/settings_service.dart' show EpisodePosterMode, SettingsService;
 import 'package:plezy/services/system_shelf_service.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 class _ShelfClient implements MediaServerClient {
   _ShelfClient({this.throwOnThumbnail = false});
@@ -63,6 +64,68 @@ void main() {
 
   tearDown(() {
     messenger.setMockMethodCallHandler(channel, null);
+  });
+
+  test('startup reapplies the saved Top Shelf opt-out to the native extension', () async {
+    resetSharedPreferencesForTest(initialAsync: {SettingsService.showTopShelfContent.key: false});
+    SettingsService.resetForTesting();
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return true;
+    });
+    SystemShelfService.debugOverrideInstance(SystemShelfService.forTesting(channel: channel, isTvosTarget: () => true));
+    addTearDown(() => SystemShelfService.debugOverrideInstance(null));
+
+    await SettingsService.getInstance();
+
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'setEnabled');
+    expect(calls.single.arguments, {'enabled': false});
+  });
+
+  test('disabling drops a pending sync and stays off for another profile, without affecting Android', () async {
+    resetSharedPreferencesForTest();
+    final settings = await SettingsService.getInstance();
+    final support = Completer<bool>();
+    final calls = <MethodCall>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return true;
+    });
+    final service = SystemShelfService.forTesting(
+      channel: channel,
+      isSupported: () => support.future,
+      isTvosTarget: () => true,
+    );
+    service.beginProfileSession('owner-a');
+    final delayed = service.syncFromContinueWatching('owner-a', const [], (_) => _ShelfClient());
+    await settings.write(SettingsService.showTopShelfContent, false);
+    await service.setTopShelfEnabled(false);
+    support.complete(true);
+    expect(await delayed, isFalse);
+
+    await service.endProfileSession('owner-a');
+    service.beginProfileSession('owner-b');
+    expect(await service.syncFromContinueWatching('owner-b', const [], (_) => _ShelfClient()), isFalse);
+    expect(await service.syncServerSources('owner-b', const []), isFalse);
+    expect(calls.map((call) => call.method), ['setEnabled', 'clear']);
+
+    final android = SystemShelfService.forTesting(
+      channel: channel,
+      isSupported: () async => true,
+      isTvosTarget: () => false,
+    );
+    android.beginProfileSession('android-owner');
+    expect(await android.syncFromContinueWatching('android-owner', const [], (_) => _ShelfClient()), isTrue);
+
+    calls.clear();
+    await settings.write(SettingsService.showTopShelfContent, true);
+    await service.setTopShelfEnabled(true);
+    expect(await service.syncFromContinueWatching('owner-a', const [], (_) => _ShelfClient()), isFalse);
+    expect(await service.syncFromContinueWatching('owner-b', const [], (_) => _ShelfClient()), isTrue);
+    expect(calls.map((call) => call.method), ['setEnabled', 'sync']);
+    expect((calls.last.arguments as Map)['ownerId'], 'owner-b');
   });
 
   test('delayed support result is dropped after synchronous owner invalidation', () async {
