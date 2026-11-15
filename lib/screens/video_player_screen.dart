@@ -2155,7 +2155,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       if (PlatformDetector.isDesktopOS()) {
-        await currentPlayer.setProperty('screenshot-directory', '~/Pictures');
+        // Retain the existing Pictures location unless the user chose another folder.
+        final screenshotDirectory = settingsService.read(SettingsService.screenshotDirectory) ?? '~/Pictures';
+        await currentPlayer.setProperty('screenshot-directory', screenshotDirectory);
       }
 
       // Before custom mpv.conf, so an `audio-device` line there still wins.
