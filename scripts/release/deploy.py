@@ -31,7 +31,7 @@ Phases (in order):
     msstore     submit the Store msixbundle via the Microsoft Store
                 Submission API (replaces the manual Partner Center upload)
     publish     flip the GitHub release out of draft; the release event updates
-                Homebrew, WinGet, and the appcast branch
+                WinGet and the appcast branch
 
 State is checkpointed to build/deploy/state.json; a failed run resumes where
 it stopped (`release` again, optionally with --only/--skip). `--dry-run`
@@ -1687,7 +1687,7 @@ def phase_publish(ctx: Context) -> None:
         return
     if not ctx.confirm(
         f"Publish GitHub release {ctx.tag}? "
-        "The release event will update Homebrew, WinGet, and the appcast branch."
+        "The release event will update WinGet and the appcast branch."
     ):
         log("publish: skipped; rerun with --only publish when ready")
         raise PhaseDeferred
