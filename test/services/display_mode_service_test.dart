@@ -161,7 +161,7 @@ void main() {
 
     test('reads Windows 23/29/59 Hz modes as their 1000/1001 rates', () {
       expect(best(23.976, [23, 24, 60]), 23);
-      expect(best(29.97, [29, 30, 59, 60]), 29);
+      expect(best(29.97, [29, 30]), 29);
       expect(best(59.94, [59, 60]), 59);
       // Film-rate content on a panel with only NTSC-family modes.
       expect(best(23.976, [59, 119]), 119);
@@ -169,9 +169,19 @@ void main() {
 
     test('whole-number content keeps its whole-number modes', () {
       expect(best(24, [23, 24, 60]), 24);
-      expect(best(30, [29, 30, 60]), 30);
+      expect(best(30, [29, 30]), 30);
       expect(best(25, [50, 59, 60]), 50);
       expect(best(60, [59, 60, 120]), 60);
+    });
+
+    test('25 and 30 fps-class content takes its doubled rate over its own', () {
+      expect(best(25, [25, 50, 100]), 50);
+      expect(best(29.97, [29, 30, 59, 60, 119]), 59);
+      expect(best(30, [29, 30, 59, 60]), 60);
+      // Precision leads: 60 Hz is 0.1% off for 29.97 fps.
+      expect(best(29.97, [29, 60]), 29);
+      // Film rates are not doubled.
+      expect(best(24, [24, 48, 120]), 24);
     });
 
     test('takes macOS rates exactly as reported', () {
