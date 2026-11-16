@@ -1109,6 +1109,12 @@ class Translations$settings$en {
 	/// en: 'Delete watched downloads automatically'
 	String get autoRemoveWatchedDownloadsDescription => 'Delete watched downloads automatically';
 
+	/// en: 'Auto-download Continue Watching'
+	String get autoDownloadContinueWatching => 'Auto-download Continue Watching';
+
+	/// en: 'Keep items on your Continue Watching shelf downloaded, and remove them once they're no longer on it'
+	String get autoDownloadContinueWatchingDescription => 'Keep items on your Continue Watching shelf downloaded, and remove them once they\'re no longer on it';
+
 	/// en: 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.';
 
@@ -8484,6 +8490,8 @@ extension on Translations {
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
+			'settings.autoDownloadContinueWatching' => 'Auto-download Continue Watching',
+			'settings.autoDownloadContinueWatchingDescription' => 'Keep items on your Continue Watching shelf downloaded, and remove them once they\'re no longer on it',
 			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -8629,10 +8637,10 @@ extension on Translations {
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
-			'themeEditor.slots.text' => 'Text',
-			'themeEditor.slots.textMuted' => 'Secondary text',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -9143,10 +9151,10 @@ extension on Translations {
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
-			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
-			'profiles.continueButton' => 'Continue',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
+			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
@@ -9657,10 +9665,10 @@ extension on Translations {
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
-			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
-			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
+			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -10171,10 +10179,10 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
-			'performanceOverlay.player' => 'Player',
-			'performanceOverlay.playMethod' => 'Play Method',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.player' => 'Player',
+			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
