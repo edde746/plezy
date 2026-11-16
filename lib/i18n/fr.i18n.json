@@ -154,7 +154,7 @@
     "install": "Installer la mise à jour",
     "downloading": "Téléchargement de la mise à jour…",
     "installPermissionTitle": "Autoriser Plezy à installer les mises à jour",
-    "installPermissionMessage": "Dans les paramètres qui vont s'ouvrir, autorisez Plezy à installer des applications, puis revenez et choisissez de nouveau Installer la mise à jour.",
+    "installPermissionMessage": "Dans les paramètres qui vont s'ouvrir, autorisez Plezy à installer des applications, puis revenez : la mise à jour continuera.",
     "openSettings": "Ouvrir les paramètres",
     "downloadFailed": "La mise à jour n'a pas pu être téléchargée",
     "corrupt": "La mise à jour téléchargée est endommagée. Réessayez plus tard.",

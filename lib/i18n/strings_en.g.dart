@@ -426,8 +426,8 @@ class Translations$update$en {
 	/// en: 'Allow Plezy to install updates'
 	String get installPermissionTitle => 'Allow Plezy to install updates';
 
-	/// en: 'In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.'
-	String get installPermissionMessage => 'In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.';
+	/// en: 'In the settings page that opens, allow Plezy to install apps, then come back: the update will continue.'
+	String get installPermissionMessage => 'In the settings page that opens, allow Plezy to install apps, then come back: the update will continue.';
 
 	/// en: 'Open Settings'
 	String get openSettings => 'Open Settings';
@@ -8287,7 +8287,7 @@ extension on Translations {
 			'update.install' => 'Install Update',
 			'update.downloading' => 'Downloading update…',
 			'update.installPermissionTitle' => 'Allow Plezy to install updates',
-			'update.installPermissionMessage' => 'In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.',
+			'update.installPermissionMessage' => 'In the settings page that opens, allow Plezy to install apps, then come back: the update will continue.',
 			'update.openSettings' => 'Open Settings',
 			'update.downloadFailed' => 'The update could not be downloaded',
 			'update.corrupt' => 'The downloaded update is damaged. Try again later.',

@@ -154,7 +154,7 @@
     "install": "Install Update",
     "downloading": "Downloading update…",
     "installPermissionTitle": "Allow Plezy to install updates",
-    "installPermissionMessage": "In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.",
+    "installPermissionMessage": "In the settings page that opens, allow Plezy to install apps, then come back: the update will continue.",
     "openSettings": "Open Settings",
     "downloadFailed": "The update could not be downloaded",
     "corrupt": "The downloaded update is damaged. Try again later.",

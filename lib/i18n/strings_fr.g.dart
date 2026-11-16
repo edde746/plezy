@@ -240,7 +240,7 @@ class _Translations$update$fr extends Translations$update$en {
 	@override String get install => 'Installer la mise à jour';
 	@override String get downloading => 'Téléchargement de la mise à jour…';
 	@override String get installPermissionTitle => 'Autoriser Plezy à installer les mises à jour';
-	@override String get installPermissionMessage => 'Dans les paramètres qui vont s\'ouvrir, autorisez Plezy à installer des applications, puis revenez et choisissez de nouveau Installer la mise à jour.';
+	@override String get installPermissionMessage => 'Dans les paramètres qui vont s\'ouvrir, autorisez Plezy à installer des applications, puis revenez : la mise à jour continuera.';
 	@override String get openSettings => 'Ouvrir les paramètres';
 	@override String get downloadFailed => 'La mise à jour n\'a pas pu être téléchargée';
 	@override String get corrupt => 'La mise à jour téléchargée est endommagée. Réessayez plus tard.';
@@ -3546,7 +3546,7 @@ extension on TranslationsFr {
 			'update.install' => 'Installer la mise à jour',
 			'update.downloading' => 'Téléchargement de la mise à jour…',
 			'update.installPermissionTitle' => 'Autoriser Plezy à installer les mises à jour',
-			'update.installPermissionMessage' => 'Dans les paramètres qui vont s\'ouvrir, autorisez Plezy à installer des applications, puis revenez et choisissez de nouveau Installer la mise à jour.',
+			'update.installPermissionMessage' => 'Dans les paramètres qui vont s\'ouvrir, autorisez Plezy à installer des applications, puis revenez : la mise à jour continuera.',
 			'update.openSettings' => 'Ouvrir les paramètres',
 			'update.downloadFailed' => 'La mise à jour n\'a pas pu être téléchargée',
 			'update.corrupt' => 'La mise à jour téléchargée est endommagée. Réessayez plus tard.',

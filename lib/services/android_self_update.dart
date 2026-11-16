@@ -118,6 +118,10 @@ class AndroidSelfUpdate {
   @visibleForTesting
   static void debugSetSupported(bool? value) => _supportedCache = value;
 
+  /// Replaces the HTTP client [download] uses when none is passed, for widget tests.
+  @visibleForTesting
+  static http.Client? debugHttpClient;
+
   static Future<AndroidAbiInfo> abiInfo() async {
     final raw = await channel.invokeMapMethod<String, Object?>('getAbis') ?? const {};
     return AndroidAbiInfo(
@@ -176,7 +180,7 @@ class AndroidSelfUpdate {
     final digest = await _downloadTo(
       asset,
       archive,
-      client ?? httpClient.inner,
+      client ?? debugHttpClient ?? httpClient.inner,
       onProgress: onProgress,
       isCancelled: isCancelled,
     );
