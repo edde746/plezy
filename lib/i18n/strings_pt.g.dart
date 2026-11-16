@@ -2609,6 +2609,8 @@ class _Translations$hotkeys$actions$pt extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Redefinir zoom';
 	@override String get subSeekNext => 'Ir para Próxima Legenda';
 	@override String get subSeekPrev => 'Ir para Legenda Anterior';
+	@override String get subtitleDelayIncrease => 'Atrasar Legendas';
+	@override String get subtitleDelayDecrease => 'Adiantar Legendas';
 	@override String get shaderToggle => 'Alternar Shaders';
 	@override String get skipMarker => 'Pular introdução/créditos';
 	@override String get screenshot => 'Capturar tela';
@@ -3965,6 +3967,8 @@ extension on TranslationsPt {
 			'hotkeys.actions.zoomReset' => 'Redefinir zoom',
 			'hotkeys.actions.subSeekNext' => 'Ir para Próxima Legenda',
 			'hotkeys.actions.subSeekPrev' => 'Ir para Legenda Anterior',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Atrasar Legendas',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Adiantar Legendas',
 			'hotkeys.actions.shaderToggle' => 'Alternar Shaders',
 			'hotkeys.actions.skipMarker' => 'Pular introdução/créditos',
 			'hotkeys.actions.screenshot' => 'Capturar tela',
@@ -4422,10 +4426,10 @@ extension on TranslationsPt {
 			'profiles.pinExplain' => 'PIN de 4 dígitos necessário para trocar perfis.',
 			'profiles.continueButton' => 'Continuar',
 			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
-			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
-			'connections.sectionTitle' => 'Conexões',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
+			'connections.sectionTitle' => 'Conexões',
 			'connections.addConnection' => 'Adicionar conexão',
 			'connections.addConnectionSubtitleNoProfile' => 'Entre com Plex ou conecte um servidor Jellyfin ou Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra conexão de perfil',
@@ -4936,10 +4940,10 @@ extension on TranslationsPt {
 			'liveTv.recordSettings.newOnly' => 'Apenas episódios novos',
 			'liveTv.recordSettings.anyChannel' => 'Gravar em qualquer canal',
 			'liveTv.recordSettings.anyTime' => 'Gravar a qualquer hora',
-			'liveTv.recordSettings.skipInLibrary' => 'Ignorar episódios que já estão na biblioteca',
-			'liveTv.recordSettings.keepUpTo' => 'Episódios a manter',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'Ignorar episódios que já estão na biblioteca',
+			'liveTv.recordSettings.keepUpTo' => 'Episódios a manter',
 			'liveTv.recordSettings.keepUpToHint' => '0 mantém todos os episódios',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Começa em ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} às ${time}',
@@ -5450,10 +5454,10 @@ extension on TranslationsPt {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Software',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Ativo',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} com falha)',

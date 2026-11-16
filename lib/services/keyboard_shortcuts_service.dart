@@ -7,6 +7,8 @@ import '../media/playback_rate.dart';
 import '../models/hotkey_model.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
+import 'player_sync_offsets.dart';
+import 'scoped_player_prefs.dart';
 import 'settings_binding_owner.dart';
 import 'settings_service.dart';
 import 'shortcut_action.dart';
@@ -27,6 +29,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
   Future<void> _shortcutMutationTail = Future.value();
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
+  // Same step as the subtitle sync slider in the player settings.
+  static const _subtitleDelayStepMs = 50;
   bool _disposed = false;
   bool _settingsInitialized = false;
 
@@ -310,6 +314,11 @@ class KeyboardShortcutsService extends ChangeNotifier {
     /// each press rebases off `player.state.position`, which a slow backend
     /// has not applied yet.
     ValueChanged<int>? onSeekBy,
+
+    /// Reports the subtitle sync offset (ms) the subtitle delay shortcuts
+    /// applied, so the player surface can persist it under the configured
+    /// scope and announce it.
+    ValueChanged<int>? onSubtitleSyncOffsetChanged,
   }) {
     final isRepeat = event is KeyRepeatEvent;
     if (event is! KeyDownEvent && !isRepeat) return KeyEventResult.ignored;
@@ -348,6 +357,19 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
       void stepRate(double delta) {
         applyRate((player.state.rate + delta).clamp(minimumPlaybackRate, maximumPlaybackRate));
+      }
+
+      void stepSubtitleDelay(int deltaMs) {
+        final offsets = PlayerSyncOffsets.of(player);
+        final offsetMs = (offsets.subtitleMs + deltaMs).clamp(
+          ScopedPlayerPrefs.minimumSyncOffsetMs,
+          ScopedPlayerPrefs.maximumSyncOffsetMs,
+        );
+        unawaited(player.setProperty(PlayerSyncOffsets.subtitleProperty, (offsetMs / 1000.0).toString()));
+        // Recorded when the write is sent, not when it completes, so a held key
+        // steps from the offset already queued rather than one still in flight.
+        offsets.recordApplied(PlayerSyncOffsets.subtitleProperty, offsetMs);
+        onSubtitleSyncOffsetChanged?.call(offsetMs);
       }
 
       switch (action) {
@@ -393,6 +415,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
           player.command(['sub-seek', '1']);
         case ShortcutAction.subSeekPrev:
           player.command(['sub-seek', '-1']);
+        case ShortcutAction.subtitleDelayIncrease:
+          stepSubtitleDelay(_subtitleDelayStepMs);
+        case ShortcutAction.subtitleDelayDecrease:
+          stepSubtitleDelay(-_subtitleDelayStepMs);
         case ShortcutAction.shaderToggle:
           onToggleShader?.call();
         case ShortcutAction.skipMarker:

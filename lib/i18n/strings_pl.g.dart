@@ -2629,6 +2629,8 @@ class _Translations$hotkeys$actions$pl extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Zresetuj zoom';
 	@override String get subSeekNext => 'Przewiń do następnego napisu';
 	@override String get subSeekPrev => 'Przewiń do poprzedniego napisu';
+	@override String get subtitleDelayIncrease => 'Opóźnij napisy';
+	@override String get subtitleDelayDecrease => 'Przyspiesz napisy';
 	@override String get shaderToggle => 'Przełącz shadery';
 	@override String get skipMarker => 'Pomiń intro/napisy końcowe';
 	@override String get screenshot => 'Zrób zrzut ekranu';
@@ -3989,6 +3991,8 @@ extension on TranslationsPl {
 			'hotkeys.actions.zoomReset' => 'Zresetuj zoom',
 			'hotkeys.actions.subSeekNext' => 'Przewiń do następnego napisu',
 			'hotkeys.actions.subSeekPrev' => 'Przewiń do poprzedniego napisu',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Opóźnij napisy',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Przyspiesz napisy',
 			'hotkeys.actions.shaderToggle' => 'Przełącz shadery',
 			'hotkeys.actions.skipMarker' => 'Pomiń intro/napisy końcowe',
 			'hotkeys.actions.screenshot' => 'Zrób zrzut ekranu',
@@ -4446,10 +4450,10 @@ extension on TranslationsPl {
 			'profiles.pinExplain' => 'Do przełączania profili wymagany jest 4-cyfrowy PIN.',
 			'profiles.continueButton' => 'Kontynuuj',
 			'profiles.pinsDontMatch' => 'PIN-y nie pasują',
-			'profiles.tokenIdentityMismatch' => 'Token profilu Plex został powiązany z nieoczekiwanym serwerem',
-			'connections.sectionTitle' => 'Połączenia',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Token profilu Plex został powiązany z nieoczekiwanym serwerem',
+			'connections.sectionTitle' => 'Połączenia',
 			'connections.addConnection' => 'Dodaj połączenie',
 			'connections.addConnectionSubtitleNoProfile' => 'Zaloguj się przez Plex lub połącz serwer Jellyfin albo Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Dodaj do ${displayName}: Plex, Jellyfin, Emby lub połączenie innego profilu',
@@ -4960,10 +4964,10 @@ extension on TranslationsPl {
 			'liveTv.recordSettings.newOnly' => 'Tylko nowe odcinki',
 			'liveTv.recordSettings.anyChannel' => 'Nagrywaj na dowolnym kanale',
 			'liveTv.recordSettings.anyTime' => 'Nagrywaj o dowolnej porze',
-			'liveTv.recordSettings.skipInLibrary' => 'Pomijaj odcinki już obecne w bibliotece',
-			'liveTv.recordSettings.keepUpTo' => 'Odcinki do zachowania',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'Pomijaj odcinki już obecne w bibliotece',
+			'liveTv.recordSettings.keepUpTo' => 'Odcinki do zachowania',
 			'liveTv.recordSettings.keepUpToHint' => '0 zachowuje wszystkie odcinki',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Rozpocznie się za ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} o ${time}',
@@ -5474,10 +5478,10 @@ extension on TranslationsPl {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA (sprzętowy)',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm (sprzętowy)',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek (sprzętowy)',
-			'performanceOverlay.decoderExynosHw' => 'Exynos (sprzętowy)',
-			'performanceOverlay.decoderSoftware' => 'Programowy',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos (sprzętowy)',
+			'performanceOverlay.decoderSoftware' => 'Programowy',
 			'performanceOverlay.decoderHardware' => 'Sprzętowy',
 			'performanceOverlay.tunnelingActive' => 'Aktywne',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (niepowodzenia: ${failures})',

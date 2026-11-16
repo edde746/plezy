@@ -2609,6 +2609,8 @@ class _Translations$hotkeys$actions$az extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Miqyası sıfırla';
 	@override String get subSeekNext => 'Növbəti altyazıya sar';
 	@override String get subSeekPrev => 'Əvvəlki altyazıya sar';
+	@override String get subtitleDelayIncrease => 'Altyazını gecikdir';
+	@override String get subtitleDelayDecrease => 'Altyazını irəli çək';
 	@override String get shaderToggle => 'Şeyderləri aç/bağla';
 	@override String get skipMarker => 'Girişi/Titrləri ötür';
 	@override String get screenshot => 'Ekran şəkli çək';
@@ -3965,6 +3967,8 @@ extension on TranslationsAz {
 			'hotkeys.actions.zoomReset' => 'Miqyası sıfırla',
 			'hotkeys.actions.subSeekNext' => 'Növbəti altyazıya sar',
 			'hotkeys.actions.subSeekPrev' => 'Əvvəlki altyazıya sar',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Altyazını gecikdir',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Altyazını irəli çək',
 			'hotkeys.actions.shaderToggle' => 'Şeyderləri aç/bağla',
 			'hotkeys.actions.skipMarker' => 'Girişi/Titrləri ötür',
 			'hotkeys.actions.screenshot' => 'Ekran şəkli çək',
@@ -4422,10 +4426,10 @@ extension on TranslationsAz {
 			'profiles.pinExplain' => 'Profillər arası keçid üçün 4 rəqəmli PIN tələb olunur.',
 			'profiles.continueButton' => 'Davam et',
 			'profiles.pinsDontMatch' => 'PIN-lər uyğun gəlmir',
-			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
-			'connections.sectionTitle' => 'Qoşulmalar',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
+			'connections.sectionTitle' => 'Qoşulmalar',
 			'connections.addConnection' => 'Qoşulma əlavə et',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması',
@@ -4936,10 +4940,10 @@ extension on TranslationsAz {
 			'liveTv.recordSettings.newOnly' => 'Yalnız yeni epizodlar',
 			'liveTv.recordSettings.anyChannel' => 'İstənilən kanalda yaz',
 			'liveTv.recordSettings.anyTime' => 'İstənilən vaxt yaz',
-			'liveTv.recordSettings.skipInLibrary' => 'Kitabxanada artıq olan epizodları ötür',
-			'liveTv.recordSettings.keepUpTo' => 'Saxlanılacaq epizodlar',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => 'Kitabxanada artıq olan epizodları ötür',
+			'liveTv.recordSettings.keepUpTo' => 'Saxlanılacaq epizodlar',
 			'liveTv.recordSettings.keepUpToHint' => '0 bütün epizodları saxlayır',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dəq sonra başlayır',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, saat ${time}',
@@ -5450,10 +5454,10 @@ extension on TranslationsAz {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Proqram təminatı',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Proqram təminatı',
 			'performanceOverlay.decoderHardware' => 'Aparat təminatı',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)',
