@@ -1067,6 +1067,15 @@ class Translations$settings$en {
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
 
+	/// en: 'Screenshots'
+	String get screenshots => 'Screenshots';
+
+	/// en: 'Save Location'
+	String get screenshotLocation => 'Save Location';
+
+	/// en: 'Choose where Plezy saves screenshots.'
+	String get screenshotLocationDescription => 'Choose where Plezy saves screenshots.';
+
 	/// en: 'Choose where to store downloaded content'
 	String get downloadLocationDescription => 'Choose where to store downloaded content';
 

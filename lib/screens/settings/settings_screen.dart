@@ -104,6 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kManageLibraries = 'manage_libraries';
   static const _kServices = 'services';
   static const _kDownloadLocation = 'download_location';
+  static const _kScreenshotLocation = 'screenshot_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
   static const _kBackgroundDownloads = 'background_downloads';
@@ -228,6 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                   _buildConnectionsSection(sheetContext),
 
                   if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
+                  if (PlatformDetector.isDesktopOS()) _buildScreenshotLocationSection(),
 
                   if (_keyboardShortcutsSupported || PlatformDetector.shouldActAsRemoteHost(sheetContext))
                     _buildControlsSection(sheetContext),
@@ -457,6 +459,25 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
         // TODO: "Remove orphaned downloads" toggle (#1413) goes here, next to
         // autoRemoveWatchedDownloads.
+      ],
+    );
+  }
+
+  Widget _buildScreenshotLocationSection() {
+    return SettingsGroup(
+      title: t.settings.screenshots,
+      children: [
+        SettingValueBuilder<String?>(
+          pref: settings.SettingsService.screenshotDirectory,
+          builder: (context, path, _) => FocusableListTile(
+            focusNode: _focusTracker.get(_kScreenshotLocation),
+            leading: const AppIcon(Symbols.folder_rounded, fill: 1),
+            title: Text(t.settings.screenshotLocation),
+            subtitle: Text(path ?? '~/Pictures', maxLines: 2, overflow: .ellipsis),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: _showScreenshotLocationDialog,
+          ),
+        ),
       ],
     );
   }
@@ -700,6 +721,66 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         ),
         _buildAutoCheckUpdatesOnStartupTile(),
       ],
+    );
+  }
+
+  Future<void> _showScreenshotLocationDialog() async {
+    final currentPath = _settingsService.read(settings.SettingsService.screenshotDirectory);
+
+    await showScopedDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.settings.screenshotLocation),
+        content: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
+          children: [
+            Text(t.settings.screenshotLocationDescription),
+            const SizedBox(height: 16),
+            Text(
+              t.settings.currentPath(path: currentPath ?? '~/Pictures'),
+              style: Theme.of(dialogContext).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          if (currentPath != null)
+            DialogActionButton(
+              onPressed: () async {
+                final reset = await guardSettingsOperation<bool, FileSystemException>(
+                  context,
+                  operation: 'Screenshot location reset',
+                  body: () async {
+                    await _settingsService.write(settings.SettingsService.screenshotDirectory, null);
+                    return true;
+                  },
+                );
+                if (reset == true && dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+              label: t.settings.resetToDefault,
+            ),
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () async {
+              final changed = await guardSettingsOperation<bool, FileSystemException>(
+                context,
+                operation: 'Screenshot location selection',
+                body: () async {
+                  final selectedPath = await FilePickerService.instance.getDirectoryPath(
+                    dialogTitle: t.settings.selectFolder,
+                  );
+                  if (selectedPath == null || !mounted) return false;
+                  await _settingsService.write(settings.SettingsService.screenshotDirectory, selectedPath);
+                  return true;
+                },
+              );
+              if (changed == true && dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            label: t.settings.selectFolder,
+            isPrimary: true,
+          ),
+        ],
+      ),
     );
   }
 
