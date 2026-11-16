@@ -277,7 +277,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
                   child: _buildThumbnail(context, episodePosterMode, hideSpoilers, thumbWidth, thumbHeight),
                 ),
                 // Watch progress overlay
-                _buildWatchOverlay(context, showUnwatchedCount),
+                if (!widget.item.kind.isPhotoContent) _buildWatchOverlay(context, showUnwatchedCount),
               ],
             ),
           ),

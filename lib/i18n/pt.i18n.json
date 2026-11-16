@@ -133,6 +133,7 @@
       "playlist": "Playlist",
       "clip": "Clipe",
       "photo": "Foto",
+      "photoAlbum": "",
       "folder": "Pasta"
     }
   },

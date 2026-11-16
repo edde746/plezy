@@ -423,6 +423,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final openedFromKeyboard = _openedFromKeyboard;
     _openedFromKeyboard = false;
 
+    // Photos and albums can have nothing to offer. An empty menu would open as
+    // a bare surface.
+    if (menuActions.isEmpty) {
+      _isContextMenuOpen = false;
+      return;
+    }
+
     var position = _tapPosition;
     if (position == null) {
       final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
@@ -639,9 +646,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // screens, so surface it here whenever the screen wires up onPlayTrailer.
       if (widget.onPlayTrailer != null)
         _MenuAction(value: 'play_trailer', icon: Symbols.theaters_rounded, label: t.tooltips.playTrailer),
-      if (!mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
+      if (!mediaKind.isPhotoContent && (!mediaItem.isWatched || isPartiallyWatched || hasActiveProgress))
         _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
-      if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
+      if (!mediaKind.isPhotoContent && (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress))
         _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
       if (widget.isInContinueWatching && menu.canRemoveFromContinueWatching)
         _MenuAction(

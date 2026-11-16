@@ -133,6 +133,7 @@
       "playlist": "재생목록",
       "clip": "클립",
       "photo": "사진",
+      "photoAlbum": "",
       "folder": "폴더"
     }
   },

@@ -7,6 +7,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_item_types.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_playlist.dart';
@@ -703,6 +704,73 @@ void main() {
       final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.clearLogoPath, '/library/metadata/12345/clearLogo');
       expect(item.backgroundSquarePath, '/library/metadata/12345/squareBg');
+    });
+  });
+
+  group('PlexMappers.mediaItem (photo library)', () {
+    test('a row whose key lists children is a photo album', () {
+      final item = _mediaItemFromJson({
+        'ratingKey': '301680',
+        'key': '/library/metadata/301680/children',
+        'type': 'photo',
+        'title': 'Album',
+        'thumb': '/library/metadata/301680/composite/1',
+      });
+
+      expect(item.kind, MediaKind.photoAlbum);
+      expect(item.photoImagePath, '/library/metadata/301680/composite/1');
+    });
+
+    test('a row naming itself is a photo, and shows its file', () {
+      final item = _mediaItemFromJson({
+        'ratingKey': '302855',
+        'key': '/library/metadata/302855',
+        'type': 'photo',
+        'title': 'Photo',
+        'thumb': '/library/metadata/302855/thumb/1',
+        'Media': [
+          {
+            'id': 1,
+            'Part': [
+              {'id': 2, 'key': '/library/parts/2/1/photo.jpg'},
+            ],
+          },
+        ],
+      });
+
+      expect(item.kind, MediaKind.photo);
+      expect(item.photoImagePath, '/library/parts/2/1/photo.jpg');
+    });
+
+    test('a photo row without Media falls back to its thumb', () {
+      final item = _mediaItemFromJson({
+        'ratingKey': '302855',
+        'key': '/library/metadata/302855',
+        'type': 'photo',
+        'thumb': '/library/metadata/302855/thumb/1',
+      });
+
+      expect(item.kind, MediaKind.photo);
+      expect(item.photoImagePath, '/library/metadata/302855/thumb/1');
+    });
+
+    test('a video in a photo library stays a clip', () {
+      final item = _mediaItemFromJson({
+        'ratingKey': '248155',
+        'key': '/library/metadata/248155',
+        'type': 'clip',
+        'subtype': 'photo',
+        'title': 'Video',
+      });
+
+      expect(item.kind, MediaKind.clip);
+      expect(item.subtype, 'photo');
+    });
+
+    test('a non-photo row ending in children keeps its own kind', () {
+      final item = _mediaItemFromJson({'ratingKey': '1', 'key': '/library/metadata/1/children', 'type': 'season'});
+
+      expect(item.kind, MediaKind.season);
     });
   });
 

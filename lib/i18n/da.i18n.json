@@ -133,6 +133,7 @@
       "playlist": "Afspilningsliste",
       "clip": "Klip",
       "photo": "Foto",
+      "photoAlbum": "",
       "folder": "Mappe"
     }
   },

@@ -133,6 +133,7 @@
       "playlist": "Lejátszási lista",
       "clip": "Klip",
       "photo": "Fénykép",
+      "photoAlbum": "",
       "folder": "Mappa"
     }
   },

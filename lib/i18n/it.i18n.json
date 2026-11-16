@@ -133,6 +133,7 @@
       "playlist": "Playlist",
       "clip": "Clip",
       "photo": "Foto",
+      "photoAlbum": "",
       "folder": "Cartella"
     }
   },

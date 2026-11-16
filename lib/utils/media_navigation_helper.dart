@@ -14,6 +14,8 @@ import '../screens/actor_media_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/media_detail_screen.dart';
+import '../screens/photo_album_screen.dart';
+import '../screens/photo_viewer_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
 import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
@@ -32,7 +34,7 @@ enum MediaNavigationResult {
   /// Navigation completed, parent list should be refreshed (e.g., collection deleted)
   listRefreshNeeded,
 
-  /// Item type not supported (e.g., photos)
+  /// Item type not supported (e.g., a catalog item without its catalog entry)
   unsupported,
 
   /// Item is a library section — navigated to that library
@@ -171,6 +173,7 @@ Future<MediaItem?> _pickContinueWatchingCopy(BuildContext context, List<MediaIte
 /// For other types (shows), navigates to media detail screen.
 /// For artists/albums, navigates to the music detail screens; tracks start
 /// playback in their album queue.
+/// For photo albums, navigates to the album's grid; photos open full-screen.
 ///
 /// The [onRefresh] callback is invoked with the source item after returning
 /// from the detail screen, preserving its server-qualified identity.
@@ -276,6 +279,14 @@ Future<MediaNavigationResult> navigateToMediaItem(
       // Tracks start playback in their album queue instead of opening a
       // detail surface.
       await playTrackWithAlbumContext(context, mi);
+      return MediaNavigationResult.navigated;
+
+    case MediaKind.photoAlbum:
+      await Navigator.push<void>(context, MaterialPageRoute(builder: (context) => PhotoAlbumScreen(album: mi)));
+      return MediaNavigationResult.navigated;
+
+    case MediaKind.photo:
+      await Navigator.push<void>(context, MaterialPageRoute(builder: (context) => PhotoViewerScreen(photo: mi)));
       return MediaNavigationResult.navigated;
 
     case MediaKind.clip:

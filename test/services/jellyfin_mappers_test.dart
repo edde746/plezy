@@ -142,6 +142,17 @@ void main() {
       expect(item.ratings, isNull);
     });
 
+    test('a PhotoAlbum item is a photo album', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'album-1', 'Type': 'PhotoAlbum', 'Name': 'Holidays'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.kind, MediaKind.photoAlbum);
+      expect(item.title, 'Holidays');
+    });
+
     test('reports no ratings when the server sent neither score', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'movie-bare', 'Type': 'Movie'},

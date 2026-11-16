@@ -1,12 +1,62 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
 
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/media_detail_screen.dart';
+import 'package:plezy/screens/photo_album_screen.dart';
+import 'package:plezy/screens/photo_viewer_screen.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/immersive_mode_guard.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
+import 'package:provider/provider.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
+  group('photo library items', () {
+    tearDown(ImmersiveModeGuard.resetForTesting);
+
+    Future<void> open(WidgetTester tester, MediaItem item) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      final multi = testMultiServer();
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: ChangeNotifierProvider<MultiServerProvider>.value(
+            value: multi.provider,
+            child: MaterialApp(
+              theme: monoTheme(MonoPalette.dark),
+              home: Builder(
+                builder: (context) =>
+                    TextButton(onPressed: () => navigateToMediaItem(context, item), child: const Text('open')),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a photo album opens as a container, not a detail page', (tester) async {
+      await open(tester, testMediaItem(kind: MediaKind.photoAlbum, title: 'Album', serverId: 'server-1'));
+
+      expect(find.byType(PhotoAlbumScreen), findsOneWidget);
+      expect(find.byType(MediaDetailScreen), findsNothing);
+    });
+
+    testWidgets('a photo opens in the viewer, not a detail page', (tester) async {
+      await open(tester, testMediaItem(kind: MediaKind.photo, title: 'Photo', serverId: 'server-1'));
+
+      expect(find.byType(PhotoViewerScreen), findsOneWidget);
+      expect(find.byType(MediaDetailScreen), findsNothing);
+    });
+  });
+
   test('episode detail target opens parent show and focuses season episode', () {
     final episode = testMediaItem(
       id: 'episode-1',
