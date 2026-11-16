@@ -72,3 +72,33 @@ class LanguageCodes {
     return _resolve(languageCode)?.name;
   }
 }
+
+/// Checks if a track language matches a preferred language.
+///
+/// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes, plus
+/// bibliographic variants and region codes (e.g. "en-US"). Never a prefix
+/// compare, which would let `est` (Estonian) satisfy an `es` (Spanish)
+/// preference.
+bool subtitleLanguageMatches(String? trackLanguage, String? preferredLanguage) {
+  if (trackLanguage == null || preferredLanguage == null) {
+    return false;
+  }
+
+  final track = trackLanguage.toLowerCase();
+  final preferred = preferredLanguage.toLowerCase();
+
+  // Direct match
+  if (track == preferred) return true;
+
+  // Extract base language codes (handle region codes like "en-US")
+  final trackBase = track.split('-').first;
+  final preferredBase = preferred.split('-').first;
+
+  if (trackBase == preferredBase) return true;
+
+  // Get all variations of the preferred language (e.g., "en" → ["en", "eng"])
+  final variations = LanguageCodes.getVariations(preferredBase);
+
+  // Check if track's base code matches any variation
+  return variations.contains(trackBase);
+}
