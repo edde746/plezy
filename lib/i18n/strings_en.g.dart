@@ -416,6 +416,36 @@ class Translations$update$en {
 
 	/// en: 'Failed to check for updates'
 	String get checkFailed => 'Failed to check for updates';
+
+	/// en: 'Install Update'
+	String get install => 'Install Update';
+
+	/// en: 'Downloading update…'
+	String get downloading => 'Downloading update…';
+
+	/// en: 'Allow Plezy to install updates'
+	String get installPermissionTitle => 'Allow Plezy to install updates';
+
+	/// en: 'In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.'
+	String get installPermissionMessage => 'In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.';
+
+	/// en: 'Open Settings'
+	String get openSettings => 'Open Settings';
+
+	/// en: 'The update could not be downloaded'
+	String get downloadFailed => 'The update could not be downloaded';
+
+	/// en: 'The downloaded update is damaged. Try again later.'
+	String get corrupt => 'The downloaded update is damaged. Try again later.';
+
+	/// en: 'This update is signed differently from the installed Plezy, so Android cannot install it over it.'
+	String get signatureMismatch => 'This update is signed differently from the installed Plezy, so Android cannot install it over it.';
+
+	/// en: 'The system installer could not be opened'
+	String get installerFailed => 'The system installer could not be opened';
+
+	/// en: 'This release has no APK for this device'
+	String get noCompatibleApk => 'This release has no APK for this device';
 }
 
 // Path: supporter
@@ -8254,6 +8284,16 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
+			'update.install' => 'Install Update',
+			'update.downloading' => 'Downloading update…',
+			'update.installPermissionTitle' => 'Allow Plezy to install updates',
+			'update.installPermissionMessage' => 'In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.',
+			'update.openSettings' => 'Open Settings',
+			'update.downloadFailed' => 'The update could not be downloaded',
+			'update.corrupt' => 'The downloaded update is damaged. Try again later.',
+			'update.signatureMismatch' => 'This update is signed differently from the installed Plezy, so Android cannot install it over it.',
+			'update.installerFailed' => 'The system installer could not be opened',
+			'update.noCompatibleApk' => 'This release has no APK for this device',
 			'supporter.title' => 'Theme & Icon Pack',
 			'supporter.intro' => 'An optional one-time purchase that adds cosmetic extras:',
 			'supporter.presetThemes' => 'Preset themes',
@@ -8621,6 +8661,8 @@ extension on Translations {
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
 			'themeEditor.locked' => 'Unlock with the Theme & Icon Pack',
 			'themeEditor.savedLocked' => 'Saved — unlocks with the Theme & Icon Pack',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
@@ -8631,8 +8673,6 @@ extension on Translations {
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -9135,6 +9175,8 @@ extension on Translations {
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
@@ -9145,8 +9187,6 @@ extension on Translations {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
@@ -9649,6 +9689,8 @@ extension on Translations {
 			'liveTv.recordNotAvailable' => 'Recording not available for this program',
 			'liveTv.recordingCancelled' => 'Recording canceled',
 			'liveTv.recordingRuleDeleted' => 'Recording rule deleted',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.processRecordingRules' => 'Re-evaluate rules',
 			'liveTv.recordingInProgress' => 'Recording now',
 			'liveTv.recordingsCount' => ({required Object count}) => '${count} scheduled',
@@ -9659,8 +9701,6 @@ extension on Translations {
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -10163,6 +10203,8 @@ extension on Translations {
 			'performanceOverlay.dropped' => 'Dropped',
 			'performanceOverlay.dvRpus' => 'DV RPUs',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
@@ -10173,8 +10215,6 @@ extension on Translations {
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',

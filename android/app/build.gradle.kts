@@ -1,4 +1,5 @@
 import java.io.FileInputStream
+import java.util.Base64
 import java.util.Properties
 import java.util.UUID
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -286,6 +287,17 @@ val downloadLibdovi = tasks.register("downloadLibdovi") {
   }
 }
 
+// GitHub release builds (--dart-define=ENABLE_UPDATE_CHECK=true, see .github/workflows/build.yml)
+// install their own updates (AppUpdateChannel), which needs REQUEST_INSTALL_PACKAGES. The Play
+// Store and Amazon builds never pass that define, so they never declare the permission: Play
+// restricts it to apps whose core purpose is installing packages. The Flutter tool hands the
+// defines to Gradle base64-encoded and comma-separated.
+val selfUpdatingBuild = (findProperty("dart-defines") as String?).orEmpty()
+  .split(',')
+  .filter(String::isNotBlank)
+  .map { String(Base64.getDecoder().decode(it), Charsets.UTF_8) }
+  .contains("ENABLE_UPDATE_CHECK=true")
+
 android {
   namespace = "com.edde746.plezy"
   compileSdk = flutter.compileSdkVersion
@@ -417,6 +429,10 @@ android {
       // is extractMpvNatives' output (the AAR's 16 KB-capable libc++), wired
       // below via the JniLibFolders dependency.
       jniLibs.srcDir(mpvLibcxxJniDir)
+    }
+    if (selfUpdatingBuild) {
+      // Merged over src/main's manifest; release has no manifest of its own.
+      getByName("release").manifest.srcFile("src/selfUpdate/AndroidManifest.xml")
     }
   }
 

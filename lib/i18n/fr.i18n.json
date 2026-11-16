@@ -150,7 +150,17 @@
     "skipVersion": "Ignorer cette version",
     "viewRelease": "Voir les notes de version",
     "latestVersion": "Vous utilisez la dernière version",
-    "checkFailed": "Échec de la vérification des mises à jour"
+    "checkFailed": "Échec de la vérification des mises à jour",
+    "install": "Installer la mise à jour",
+    "downloading": "Téléchargement de la mise à jour…",
+    "installPermissionTitle": "Autoriser Plezy à installer les mises à jour",
+    "installPermissionMessage": "Dans les paramètres qui vont s'ouvrir, autorisez Plezy à installer des applications, puis revenez et choisissez de nouveau Installer la mise à jour.",
+    "openSettings": "Ouvrir les paramètres",
+    "downloadFailed": "La mise à jour n'a pas pu être téléchargée",
+    "corrupt": "La mise à jour téléchargée est endommagée. Réessayez plus tard.",
+    "signatureMismatch": "Cette mise à jour n'est pas signée comme le Plezy installé : Android ne peut pas l'installer par-dessus.",
+    "installerFailed": "Impossible d'ouvrir l'installeur du système",
+    "noCompatibleApk": "Cette version ne contient pas d'APK pour cet appareil"
   },
   "supporter": {
     "title": "Pack de thèmes et d’icônes",

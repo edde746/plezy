@@ -13,6 +13,8 @@ import 'base_shared_preferences_service.dart';
 ///
 /// On macOS (non-Homebrew) and installed Windows: delegates to Sparkle/WinSparkle
 /// via auto_updater for native update dialogs and in-app installs.
+/// On Android (GitHub build): GitHub API check, then AndroidSelfUpdate downloads the
+/// release's APK and opens the system installer.
 /// On all other platforms: falls back to GitHub API check + browser link dialog.
 class UpdateService {
   static const String _githubRepo = 'edde746/plezy';
@@ -185,6 +187,8 @@ class UpdateService {
           'releaseName': data['name'] as String? ?? 'Version $cleanVersion',
           'releaseNotes': data['body'] as String? ?? '',
           'publishedAt': data['published_at'] as String,
+          // Release files, for installs that update themselves (AndroidSelfUpdate).
+          'assets': data['assets'] is List ? data['assets'] as List : const <Object?>[],
         };
       }
     } catch (error, stackTrace) {

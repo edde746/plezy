@@ -150,7 +150,17 @@
     "skipVersion": "Skip This Version",
     "viewRelease": "View Release",
     "latestVersion": "You are on the latest version",
-    "checkFailed": "Failed to check for updates"
+    "checkFailed": "Failed to check for updates",
+    "install": "Install Update",
+    "downloading": "Downloading update…",
+    "installPermissionTitle": "Allow Plezy to install updates",
+    "installPermissionMessage": "In the settings page that opens, allow Plezy to install apps, then come back and choose Install Update again.",
+    "openSettings": "Open Settings",
+    "downloadFailed": "The update could not be downloaded",
+    "corrupt": "The downloaded update is damaged. Try again later.",
+    "signatureMismatch": "This update is signed differently from the installed Plezy, so Android cannot install it over it.",
+    "installerFailed": "The system installer could not be opened",
+    "noCompatibleApk": "This release has no APK for this device"
   },
   "supporter": {
     "title": "Theme & Icon Pack",

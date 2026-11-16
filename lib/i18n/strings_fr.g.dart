@@ -237,6 +237,16 @@ class _Translations$update$fr extends Translations$update$en {
 	@override String get viewRelease => 'Voir les notes de version';
 	@override String get latestVersion => 'Vous utilisez la dernière version';
 	@override String get checkFailed => 'Échec de la vérification des mises à jour';
+	@override String get install => 'Installer la mise à jour';
+	@override String get downloading => 'Téléchargement de la mise à jour…';
+	@override String get installPermissionTitle => 'Autoriser Plezy à installer les mises à jour';
+	@override String get installPermissionMessage => 'Dans les paramètres qui vont s\'ouvrir, autorisez Plezy à installer des applications, puis revenez et choisissez de nouveau Installer la mise à jour.';
+	@override String get openSettings => 'Ouvrir les paramètres';
+	@override String get downloadFailed => 'La mise à jour n\'a pas pu être téléchargée';
+	@override String get corrupt => 'La mise à jour téléchargée est endommagée. Réessayez plus tard.';
+	@override String get signatureMismatch => 'Cette mise à jour n\'est pas signée comme le Plezy installé : Android ne peut pas l\'installer par-dessus.';
+	@override String get installerFailed => 'Impossible d\'ouvrir l\'installeur du système';
+	@override String get noCompatibleApk => 'Cette version ne contient pas d\'APK pour cet appareil';
 }
 
 // Path: supporter
@@ -3533,6 +3543,16 @@ extension on TranslationsFr {
 			'update.viewRelease' => 'Voir les notes de version',
 			'update.latestVersion' => 'Vous utilisez la dernière version',
 			'update.checkFailed' => 'Échec de la vérification des mises à jour',
+			'update.install' => 'Installer la mise à jour',
+			'update.downloading' => 'Téléchargement de la mise à jour…',
+			'update.installPermissionTitle' => 'Autoriser Plezy à installer les mises à jour',
+			'update.installPermissionMessage' => 'Dans les paramètres qui vont s\'ouvrir, autorisez Plezy à installer des applications, puis revenez et choisissez de nouveau Installer la mise à jour.',
+			'update.openSettings' => 'Ouvrir les paramètres',
+			'update.downloadFailed' => 'La mise à jour n\'a pas pu être téléchargée',
+			'update.corrupt' => 'La mise à jour téléchargée est endommagée. Réessayez plus tard.',
+			'update.signatureMismatch' => 'Cette mise à jour n\'est pas signée comme le Plezy installé : Android ne peut pas l\'installer par-dessus.',
+			'update.installerFailed' => 'Impossible d\'ouvrir l\'installeur du système',
+			'update.noCompatibleApk' => 'Cette version ne contient pas d\'APK pour cet appareil',
 			'supporter.title' => 'Pack de thèmes et d’icônes',
 			'supporter.intro' => 'Un achat unique et facultatif qui ajoute des bonus esthétiques :',
 			'supporter.presetThemes' => 'Thèmes prédéfinis',
@@ -3900,6 +3920,8 @@ extension on TranslationsFr {
 			'themeEditor.editCustomDescription' => 'Choisissez vous-même chaque couleur',
 			'themeEditor.locked' => 'Débloquer avec le Pack de thèmes et d’icônes',
 			'themeEditor.savedLocked' => 'Enregistré — se débloque avec le Pack de thèmes et d’icônes',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.title' => 'Thème personnalisé',
 			'themeEditor.startFrom' => 'Partir d’un thème',
 			'themeEditor.startFromDescription' => 'Copier toutes les couleurs d’un autre thème',
@@ -3910,8 +3932,6 @@ extension on TranslationsFr {
 			'themeEditor.slots.outline' => 'Contour',
 			'themeEditor.slots.text' => 'Texte',
 			'themeEditor.slots.textMuted' => 'Texte secondaire',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacité',
 			'themeEditor.hexHint' => '#RRGGBB ou #AARRGGBB',
@@ -4414,6 +4434,8 @@ extension on TranslationsFr {
 			'profiles.incorrectPin' => 'PIN incorrect.',
 			'profiles.incorrectPinTryAgain' => 'PIN incorrect. Veuillez réessayer.',
 			'profiles.sourceProfileMissingParentAccount' => 'Le profil source ne possède pas de compte parent.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.failedToLoadHomeUsers' => 'Impossible de charger vos utilisateurs Plex Home. Vérifiez votre connexion et réessayez.',
 			'profiles.failedToVerifyPin' => 'Impossible de vérifier le PIN.',
 			'profiles.newProfile' => 'Nouveau profil',
@@ -4424,8 +4446,6 @@ extension on TranslationsFr {
 			'profiles.pinsDontMatch' => 'Les PIN ne correspondent pas',
 			'profiles.tokenIdentityMismatch' => 'Le jeton du profil Plex correspond à un serveur inattendu',
 			'connections.sectionTitle' => 'Connexions',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Ajouter une connexion',
 			'connections.addConnectionSubtitleNoProfile' => 'Connectez-vous avec Plex ou connectez un serveur Jellyfin ou Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Ajouter à ${displayName} : Plex, Jellyfin, Emby ou une autre connexion de profil',
@@ -4928,6 +4948,8 @@ extension on TranslationsFr {
 			'liveTv.recordingRuleUpdated' => 'Règle d\'enregistrement mise à jour',
 			'liveTv.guideReloadRequested' => 'Mise à jour du guide demandée',
 			'liveTv.guideReloadFailed' => 'Impossible d’actualiser le guide',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.rulesProcessRequested' => 'Réévaluation des règles demandée',
 			'liveTv.rulesProcessFailed' => 'Impossible de réévaluer les règles d’enregistrement',
 			'liveTv.recordShow' => 'Enregistrer l\'émission',
@@ -4938,8 +4960,6 @@ extension on TranslationsFr {
 			'liveTv.recordSettings.anyTime' => 'Enregistrer à n’importe quelle heure',
 			'liveTv.recordSettings.skipInLibrary' => 'Ignorer les épisodes déjà présents dans la bibliothèque',
 			'liveTv.recordSettings.keepUpTo' => 'Épisodes à conserver',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 conserve tous les épisodes',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Commence dans ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} à ${time}',
@@ -5442,6 +5462,8 @@ extension on TranslationsFr {
 			'performanceOverlay.cacheUsed' => 'Cache utilisé',
 			'performanceOverlay.cacheLimit' => 'Limite du cache',
 			'performanceOverlay.speed' => 'Vitesse',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.player' => 'Lecteur',
 			'performanceOverlay.memory' => 'Mémoire',
 			'performanceOverlay.uiFps' => 'FPS UI',
@@ -5452,8 +5474,6 @@ extension on TranslationsFr {
 			'performanceOverlay.decoderMediatekHw' => 'Matériel MediaTek',
 			'performanceOverlay.decoderExynosHw' => 'Matériel Exynos',
 			'performanceOverlay.decoderSoftware' => 'Logiciel',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Matériel',
 			'performanceOverlay.tunnelingActive' => 'Actif',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} échecs)',
