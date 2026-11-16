@@ -247,6 +247,8 @@ class _Translations$update$fr extends Translations$update$en {
 	@override String get signatureMismatch => 'Cette mise à jour n\'est pas signée comme le Plezy installé : Android ne peut pas l\'installer par-dessus.';
 	@override String get installerFailed => 'Impossible d\'ouvrir l\'installeur du système';
 	@override String get noCompatibleApk => 'Cette version ne contient pas d\'APK pour cet appareil';
+	@override String releaseNotesTitle({required Object version}) => 'Notes de version ${version}';
+	@override String get noReleaseNotes => 'Cette version n\'a pas de notes.';
 }
 
 // Path: supporter
@@ -3553,6 +3555,8 @@ extension on TranslationsFr {
 			'update.signatureMismatch' => 'Cette mise à jour n\'est pas signée comme le Plezy installé : Android ne peut pas l\'installer par-dessus.',
 			'update.installerFailed' => 'Impossible d\'ouvrir l\'installeur du système',
 			'update.noCompatibleApk' => 'Cette version ne contient pas d\'APK pour cet appareil',
+			'update.releaseNotesTitle' => ({required Object version}) => 'Notes de version ${version}',
+			'update.noReleaseNotes' => 'Cette version n\'a pas de notes.',
 			'supporter.title' => 'Pack de thèmes et d’icônes',
 			'supporter.intro' => 'Un achat unique et facultatif qui ajoute des bonus esthétiques :',
 			'supporter.presetThemes' => 'Thèmes prédéfinis',
@@ -3918,10 +3922,10 @@ extension on TranslationsFr {
 			'themeEditor.customEmpty' => 'Pas encore créé',
 			'themeEditor.editCustom' => 'Modifier le thème personnalisé',
 			'themeEditor.editCustomDescription' => 'Choisissez vous-même chaque couleur',
-			'themeEditor.locked' => 'Débloquer avec le Pack de thèmes et d’icônes',
-			'themeEditor.savedLocked' => 'Enregistré — se débloque avec le Pack de thèmes et d’icônes',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.locked' => 'Débloquer avec le Pack de thèmes et d’icônes',
+			'themeEditor.savedLocked' => 'Enregistré — se débloque avec le Pack de thèmes et d’icônes',
 			'themeEditor.title' => 'Thème personnalisé',
 			'themeEditor.startFrom' => 'Partir d’un thème',
 			'themeEditor.startFromDescription' => 'Copier toutes les couleurs d’un autre thème',
@@ -4432,10 +4436,10 @@ extension on TranslationsFr {
 			'profiles.borrowConnectionBorrowed' => 'Connexion empruntée.',
 			'profiles.borrowFailed' => 'Impossible d\'emprunter la connexion.',
 			'profiles.incorrectPin' => 'PIN incorrect.',
-			'profiles.incorrectPinTryAgain' => 'PIN incorrect. Veuillez réessayer.',
-			'profiles.sourceProfileMissingParentAccount' => 'Le profil source ne possède pas de compte parent.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.incorrectPinTryAgain' => 'PIN incorrect. Veuillez réessayer.',
+			'profiles.sourceProfileMissingParentAccount' => 'Le profil source ne possède pas de compte parent.',
 			'profiles.failedToLoadHomeUsers' => 'Impossible de charger vos utilisateurs Plex Home. Vérifiez votre connexion et réessayez.',
 			'profiles.failedToVerifyPin' => 'Impossible de vérifier le PIN.',
 			'profiles.newProfile' => 'Nouveau profil',
@@ -4946,10 +4950,10 @@ extension on TranslationsFr {
 			'liveTv.editRule' => 'Modifier la règle',
 			'liveTv.editRuleAction' => 'Modifier',
 			'liveTv.recordingRuleUpdated' => 'Règle d\'enregistrement mise à jour',
-			'liveTv.guideReloadRequested' => 'Mise à jour du guide demandée',
-			'liveTv.guideReloadFailed' => 'Impossible d’actualiser le guide',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.guideReloadRequested' => 'Mise à jour du guide demandée',
+			'liveTv.guideReloadFailed' => 'Impossible d’actualiser le guide',
 			'liveTv.rulesProcessRequested' => 'Réévaluation des règles demandée',
 			'liveTv.rulesProcessFailed' => 'Impossible de réévaluer les règles d’enregistrement',
 			'liveTv.recordShow' => 'Enregistrer l\'émission',
@@ -5460,10 +5464,10 @@ extension on TranslationsFr {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache utilisé',
-			'performanceOverlay.cacheLimit' => 'Limite du cache',
-			'performanceOverlay.speed' => 'Vitesse',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.cacheLimit' => 'Limite du cache',
+			'performanceOverlay.speed' => 'Vitesse',
 			'performanceOverlay.player' => 'Lecteur',
 			'performanceOverlay.memory' => 'Mémoire',
 			'performanceOverlay.uiFps' => 'FPS UI',

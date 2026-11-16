@@ -160,7 +160,9 @@
     "corrupt": "The downloaded update is damaged. Try again later.",
     "signatureMismatch": "This update is signed differently from the installed Plezy, so Android cannot install it over it.",
     "installerFailed": "The system installer could not be opened",
-    "noCompatibleApk": "This release has no APK for this device"
+    "noCompatibleApk": "This release has no APK for this device",
+    "releaseNotesTitle": "Release Notes ${version}",
+    "noReleaseNotes": "This release has no notes."
   },
   "supporter": {
     "title": "Theme & Icon Pack",

@@ -160,7 +160,9 @@
     "corrupt": "La mise à jour téléchargée est endommagée. Réessayez plus tard.",
     "signatureMismatch": "Cette mise à jour n'est pas signée comme le Plezy installé : Android ne peut pas l'installer par-dessus.",
     "installerFailed": "Impossible d'ouvrir l'installeur du système",
-    "noCompatibleApk": "Cette version ne contient pas d'APK pour cet appareil"
+    "noCompatibleApk": "Cette version ne contient pas d'APK pour cet appareil",
+    "releaseNotesTitle": "Notes de version ${version}",
+    "noReleaseNotes": "Cette version n'a pas de notes."
   },
   "supporter": {
     "title": "Pack de thèmes et d’icônes",

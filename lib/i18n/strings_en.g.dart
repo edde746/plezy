@@ -446,6 +446,12 @@ class Translations$update$en {
 
 	/// en: 'This release has no APK for this device'
 	String get noCompatibleApk => 'This release has no APK for this device';
+
+	/// en: 'Release Notes ${version}'
+	String releaseNotesTitle({required Object version}) => 'Release Notes ${version}';
+
+	/// en: 'This release has no notes.'
+	String get noReleaseNotes => 'This release has no notes.';
 }
 
 // Path: supporter
@@ -8294,6 +8300,8 @@ extension on Translations {
 			'update.signatureMismatch' => 'This update is signed differently from the installed Plezy, so Android cannot install it over it.',
 			'update.installerFailed' => 'The system installer could not be opened',
 			'update.noCompatibleApk' => 'This release has no APK for this device',
+			'update.releaseNotesTitle' => ({required Object version}) => 'Release Notes ${version}',
+			'update.noReleaseNotes' => 'This release has no notes.',
 			'supporter.title' => 'Theme & Icon Pack',
 			'supporter.intro' => 'An optional one-time purchase that adds cosmetic extras:',
 			'supporter.presetThemes' => 'Preset themes',
@@ -8659,10 +8667,10 @@ extension on Translations {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
-			'themeEditor.locked' => 'Unlock with the Theme & Icon Pack',
-			'themeEditor.savedLocked' => 'Saved — unlocks with the Theme & Icon Pack',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.locked' => 'Unlock with the Theme & Icon Pack',
+			'themeEditor.savedLocked' => 'Saved — unlocks with the Theme & Icon Pack',
 			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
@@ -9173,10 +9181,10 @@ extension on Translations {
 			'profiles.borrowEmptySubtitle' => 'Connect Plex, Jellyfin, or Emby to another profile first.',
 			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
-			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
-			'profiles.borrowFailed' => 'Failed to borrow connection.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
+			'profiles.borrowFailed' => 'Failed to borrow connection.',
 			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
@@ -9687,10 +9695,10 @@ extension on Translations {
 			'liveTv.recordingFailed' => 'Couldn\'t schedule recording',
 			'liveTv.recordingTargetMissing' => 'Couldn\'t determine recording library',
 			'liveTv.recordNotAvailable' => 'Recording not available for this program',
-			'liveTv.recordingCancelled' => 'Recording canceled',
-			'liveTv.recordingRuleDeleted' => 'Recording rule deleted',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordingCancelled' => 'Recording canceled',
+			'liveTv.recordingRuleDeleted' => 'Recording rule deleted',
 			'liveTv.processRecordingRules' => 'Re-evaluate rules',
 			'liveTv.recordingInProgress' => 'Recording now',
 			'liveTv.recordingsCount' => ({required Object count}) => '${count} scheduled',
@@ -10201,10 +10209,10 @@ extension on Translations {
 			'performanceOverlay.displayFps' => 'Display FPS',
 			'performanceOverlay.avSync' => 'A/V Sync',
 			'performanceOverlay.dropped' => 'Dropped',
-			'performanceOverlay.dvRpus' => 'DV RPUs',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpus' => 'DV RPUs',
+			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
 			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -10,6 +11,7 @@ import '../services/update_service.dart';
 import '../widgets/dialog_action_button.dart';
 import 'app_logger.dart';
 import 'dialogs.dart';
+import 'release_notes_text.dart';
 import 'snackbar_helper.dart';
 
 Future<void> showUpdateAvailableDialog(
@@ -65,6 +67,14 @@ Future<void> showUpdateAvailableDialog(
             ),
           DialogActionButton(
             onPressed: () async {
+              // Android TVs rarely have a browser: show the notes here instead.
+              if (defaultTargetPlatform == TargetPlatform.android) {
+                final install = await _showReleaseNotesDialog(dialogContext, updateInfo, offerInstall: selfUpdate);
+                if (install != true || !dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
+                unawaited(_runAndroidSelfUpdate(context, updateInfo));
+                return;
+              }
               await openRelease();
               if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
@@ -85,6 +95,112 @@ Future<void> showUpdateAvailableDialog(
       );
     },
   );
+}
+
+/// The release's notes, scrollable with the D-pad's up and down while a button keeps focus.
+/// Resolves true when the user chooses to install from here ([offerInstall]).
+Future<bool?> _showReleaseNotesDialog(
+  BuildContext context,
+  Map<String, dynamic> updateInfo, {
+  required bool offerInstall,
+}) {
+  return showScopedDialog<bool>(
+    context: context,
+    builder: (_) => _ReleaseNotesDialog(
+      version: updateInfo['latestVersion'] as String,
+      lines: releaseNotesLines(updateInfo['releaseNotes'] as String? ?? ''),
+      offerInstall: offerInstall,
+    ),
+  );
+}
+
+class _ReleaseNotesDialog extends StatefulWidget {
+  const _ReleaseNotesDialog({required this.version, required this.lines, required this.offerInstall});
+
+  final String version;
+  final List<ReleaseNotesLine> lines;
+  final bool offerInstall;
+
+  @override
+  State<_ReleaseNotesDialog> createState() => _ReleaseNotesDialogState();
+}
+
+class _ReleaseNotesDialogState extends State<_ReleaseNotesDialog> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _scrollBy(double direction) {
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    final target = (position.pixels + direction * position.viewportDimension * 0.8).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    unawaited(_scroll.animateTo(target, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    return AlertDialog(
+      title: Text(t.update.releaseNotesTitle(version: widget.version)),
+      content: SizedBox(
+        width: (size.width * 0.6).clamp(280.0, 720.0),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: size.height * 0.5),
+          child: widget.lines.isEmpty
+              ? Text(t.update.noReleaseNotes, style: theme.textTheme.bodyMedium)
+              : Scrollbar(
+                  controller: _scroll,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _scroll,
+                    padding: const EdgeInsetsDirectional.only(end: 16),
+                    child: Column(
+                      crossAxisAlignment: .start,
+                      children: [
+                        for (final line in widget.lines)
+                          Padding(
+                            padding: EdgeInsets.only(top: line.isHeading ? 8 : 2, bottom: line.isHeading ? 4 : 2),
+                            child: Text(
+                              line.text,
+                              style: line.isHeading
+                                  ? theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)
+                                  : theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
+      actions: [
+        DialogActionButton(
+          onPressed: () => Navigator.pop(context, false),
+          label: t.common.back,
+          autofocus: !widget.offerInstall,
+          onNavigateUp: () => _scrollBy(-1),
+          onNavigateDown: () => _scrollBy(1),
+        ),
+        if (widget.offerInstall)
+          DialogActionButton(
+            onPressed: () => Navigator.pop(context, true),
+            label: t.update.install,
+            isPrimary: true,
+            autofocus: true,
+            onNavigateUp: () => _scrollBy(-1),
+            onNavigateDown: () => _scrollBy(1),
+          ),
+      ],
+    );
+  }
 }
 
 /// Download, check and hand the release APK to the system installer. Errors end as a snackbar on
