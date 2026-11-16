@@ -90,12 +90,12 @@ void main() {
     expect(find.text(t.update.install), findsNothing);
   });
 
-  testWidgets('a self-updating build offers to install the update', (tester) async {
+  testWidgets('a self-updating build offers to install the update and keeps the release notes link', (tester) async {
     AndroidSelfUpdate.debugSetSupported(true);
     await open(tester);
 
     expect(find.text(t.update.install), findsOneWidget);
-    expect(find.text(t.update.viewRelease), findsNothing);
+    expect(find.text(t.update.viewRelease), findsOneWidget);
   });
 
   testWidgets('asks for the install permission before downloading anything', (tester) async {

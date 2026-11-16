@@ -63,6 +63,14 @@ Future<void> showUpdateAvailableDialog(
               },
               label: t.update.skipVersion,
             ),
+          DialogActionButton(
+            onPressed: () async {
+              await openRelease();
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            label: t.update.viewRelease,
+            isPrimary: !selfUpdate,
+          ),
           if (selfUpdate)
             DialogActionButton(
               onPressed: () {
@@ -72,15 +80,6 @@ Future<void> showUpdateAvailableDialog(
               label: t.update.install,
               isPrimary: true,
               autofocus: true,
-            )
-          else
-            DialogActionButton(
-              onPressed: () async {
-                await openRelease();
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              },
-              label: t.update.viewRelease,
-              isPrimary: true,
             ),
         ],
       );
