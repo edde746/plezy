@@ -2376,6 +2376,7 @@ class _Translations$seerr$de extends Translations$seerr$en {
 	@override String get sessionRejectedAfterReauth => 'Die Sitzung wurde nach der erneuten Anmeldung abgelehnt';
 	@override String get permissionDenied => 'Seerr hat diese Aktion abgelehnt: Dein Konto hat nicht mehr die erforderliche Berechtigung';
 	@override String get permissionRevoked => 'Du hast keine Berechtigung mehr, dies anzufragen';
+	@override late final _Translations$seerr$requests$de requests = _Translations$seerr$requests$de._(_root);
 }
 
 // Path: services
@@ -3304,6 +3305,44 @@ class _Translations$companionRemote$errors$de extends Translations$companionRemo
 	@override String get failedToConnectAnyAddress => 'Keine Verbindung zu einer Adresse möglich';
 	@override String connectionLostAfterAttempts({required Object attempts}) => 'Verbindung nach ${attempts} Versuchen verloren';
 	@override String get connectionLost => 'Verbindung verloren';
+}
+
+// Path: seerr.requests
+class _Translations$seerr$requests$de extends Translations$seerr$requests$en {
+	_Translations$seerr$requests$de._(TranslationsDe root) : this._root = root, super.internal(root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get myRequests => 'Meine Anfragen';
+	@override String get filter => 'Filter';
+	@override String get filterAll => 'Alle';
+	@override String get filterPending => 'Genehmigung ausstehend';
+	@override String get filterApproved => 'Genehmigt';
+	@override String get filterProcessing => 'Wird verarbeitet';
+	@override String get filterAvailable => 'Verfügbar';
+	@override String get filterFailed => 'Fehlgeschlagen';
+	@override String get statusApproved => 'Genehmigt';
+	@override String get empty => 'Du hast noch keine Anfragen';
+	@override String get emptyFiltered => 'Keine Anfragen für diesen Filter';
+	@override String get loadFailed => 'Deine Anfragen konnten nicht geladen werden';
+	@override String get loadMore => 'Mehr laden';
+	@override String unknownTitle({required Object id}) => 'Unbekannter Titel (TMDB ${id})';
+	@override String requestedOn({required Object date}) => 'Angefragt am ${date}';
+	@override String seasonsList({required Object seasons}) => 'Staffeln ${seasons}';
+	@override String get manage => 'Anfrage verwalten';
+	@override String get deleteRequest => 'Anfrage löschen';
+	@override String get deleteRequestTitle => 'Anfrage löschen?';
+	@override String deleteRequestBody({required Object title}) => 'Die Anfrage für „${title}“ wird aus Seerr entfernt. Bereits Heruntergeladenes bleibt auf der Festplatte.';
+	@override String get requestDeleted => 'Anfrage gelöscht';
+	@override String get removeCompletely => 'Komplett entfernen';
+	@override String removeCompletelyTitle({required Object title}) => '„${title}“ komplett entfernen?';
+	@override String removeCompletelyBody({required Object title, required Object service}) => '„${title}“ wird aus ${service} entfernt, und Seerr vergisst den Titel samt allen Anfragen dazu.';
+	@override String removeCompletelyWarning({required Object title}) => 'Alle Dateien von „${title}“ auf der Festplatte werden gelöscht. Das lässt sich nicht rückgängig machen.';
+	@override String removedCompletely({required Object title}) => '„${title}“ wurde komplett entfernt';
+	@override String service4k({required Object service}) => '${service} (4K)';
+	@override String serviceBoth({required Object service}) => '${service} (HD und 4K)';
+	@override String actionFailed({required Object error}) => 'Seerr konnte das nicht ausführen: ${error}';
 }
 
 // Path: services.names
@@ -5622,6 +5661,35 @@ extension on TranslationsDe {
 			'seerr.sessionRejectedAfterReauth' => 'Die Sitzung wurde nach der erneuten Anmeldung abgelehnt',
 			'seerr.permissionDenied' => 'Seerr hat diese Aktion abgelehnt: Dein Konto hat nicht mehr die erforderliche Berechtigung',
 			'seerr.permissionRevoked' => 'Du hast keine Berechtigung mehr, dies anzufragen',
+			'seerr.requests.myRequests' => 'Meine Anfragen',
+			'seerr.requests.filter' => 'Filter',
+			'seerr.requests.filterAll' => 'Alle',
+			'seerr.requests.filterPending' => 'Genehmigung ausstehend',
+			'seerr.requests.filterApproved' => 'Genehmigt',
+			'seerr.requests.filterProcessing' => 'Wird verarbeitet',
+			'seerr.requests.filterAvailable' => 'Verfügbar',
+			'seerr.requests.filterFailed' => 'Fehlgeschlagen',
+			'seerr.requests.statusApproved' => 'Genehmigt',
+			'seerr.requests.empty' => 'Du hast noch keine Anfragen',
+			'seerr.requests.emptyFiltered' => 'Keine Anfragen für diesen Filter',
+			'seerr.requests.loadFailed' => 'Deine Anfragen konnten nicht geladen werden',
+			'seerr.requests.loadMore' => 'Mehr laden',
+			'seerr.requests.unknownTitle' => ({required Object id}) => 'Unbekannter Titel (TMDB ${id})',
+			'seerr.requests.requestedOn' => ({required Object date}) => 'Angefragt am ${date}',
+			'seerr.requests.seasonsList' => ({required Object seasons}) => 'Staffeln ${seasons}',
+			'seerr.requests.manage' => 'Anfrage verwalten',
+			'seerr.requests.deleteRequest' => 'Anfrage löschen',
+			'seerr.requests.deleteRequestTitle' => 'Anfrage löschen?',
+			'seerr.requests.deleteRequestBody' => ({required Object title}) => 'Die Anfrage für „${title}“ wird aus Seerr entfernt. Bereits Heruntergeladenes bleibt auf der Festplatte.',
+			'seerr.requests.requestDeleted' => 'Anfrage gelöscht',
+			'seerr.requests.removeCompletely' => 'Komplett entfernen',
+			'seerr.requests.removeCompletelyTitle' => ({required Object title}) => '„${title}“ komplett entfernen?',
+			'seerr.requests.removeCompletelyBody' => ({required Object title, required Object service}) => '„${title}“ wird aus ${service} entfernt, und Seerr vergisst den Titel samt allen Anfragen dazu.',
+			'seerr.requests.removeCompletelyWarning' => ({required Object title}) => 'Alle Dateien von „${title}“ auf der Festplatte werden gelöscht. Das lässt sich nicht rückgängig machen.',
+			'seerr.requests.removedCompletely' => ({required Object title}) => '„${title}“ wurde komplett entfernt',
+			'seerr.requests.service4k' => ({required Object service}) => '${service} (4K)',
+			'seerr.requests.serviceBoth' => ({required Object service}) => '${service} (HD und 4K)',
+			'seerr.requests.actionFailed' => ({required Object error}) => 'Seerr konnte das nicht ausführen: ${error}',
 			'services.title' => 'Dienste',
 			'services.hubSubtitle' => 'Wiedergabefortschritt synchronisieren und neue Titel anfragen.',
 			'services.integrations' => 'Integrationen',

@@ -15,6 +15,7 @@ import '../../utils/trailer_urls.dart';
 import '../seerr/seerr_client.dart';
 import '../seerr/seerr_constants.dart';
 import 'catalog_source.dart';
+import 'seerr_requests.dart';
 
 /// [CatalogSource] backed by a Seerr instance's TMDB-based discover API.
 ///
@@ -22,11 +23,25 @@ import 'catalog_source.dart';
 /// here — never disposed by this class). Seerr has no watchlist; its
 /// contribution besides discovery rows is the request flow, which the
 /// request surfaces reach through [client] directly.
-class SeerrCatalogSource implements CatalogSource {
+class SeerrCatalogSource implements CatalogSource, CatalogHubSource {
   final SeerrClient client;
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
 
   SeerrCatalogSource(this.client);
+
+  /// The signed-in user's requests: the "My requests" Explore shelf, the
+  /// full list behind it, and the delete actions.
+  late final SeerrRequests requests = SeerrRequests(
+    client,
+    describe: (details, kind) async => _toDetailCatalogItem(details, kind, await _tmdbImageOrigin()),
+  );
+
+  @override
+  Future<List<CatalogHub>> fetchHubs({int limit = 25}) => requests.fetchHubs(limit: limit);
+
+  @override
+  Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25}) =>
+      requests.fetchHub(id, page: page, limit: limit);
 
   @override
   CatalogSourceId get id => CatalogSourceId.seerr;
@@ -165,7 +180,7 @@ class SeerrCatalogSource implements CatalogSource {
 
   Future<SeerrDetails?> _fetchDetails(MediaKind kind, int tmdbId) async {
     try {
-      return kind == MediaKind.movie ? await client.getMovie(tmdbId) : await client.getTv(tmdbId);
+      return await requests.fetchDetails(kind, tmdbId);
     } catch (error) {
       appLogger.w('Seerr: detail load failed for tmdb:$tmdbId', error: error);
       return null;
@@ -559,5 +574,6 @@ class SeerrCatalogSource implements CatalogSource {
   @override
   void dispose() {
     _watchlistChanges.dispose();
+    requests.dispose();
   }
 }
