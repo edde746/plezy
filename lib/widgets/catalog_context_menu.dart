@@ -14,14 +14,16 @@ import '../utils/external_url.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/trailer_urls.dart';
 import 'app_menu.dart';
+import 'seerr_request_actions.dart';
 
-enum _CatalogMenuActionType { viewDetails, toggleWatchlist, openTrailer, openLink }
+enum _CatalogMenuActionType { viewDetails, toggleWatchlist, openTrailer, openLink, seerrRequest }
 
 class _CatalogMenuAction {
   final _CatalogMenuActionType type;
   final Uri? uri;
+  final SeerrRequestAction? seerr;
 
-  const _CatalogMenuAction(this.type, {this.uri});
+  const _CatalogMenuAction(this.type, {this.uri, this.seerr});
 
   static const viewDetails = _CatalogMenuAction(_CatalogMenuActionType.viewDetails);
   static const toggleWatchlist = _CatalogMenuAction(_CatalogMenuActionType.toggleWatchlist);
@@ -49,6 +51,7 @@ Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset
 
   final trailerUri = await _trailerUri(item.trailerUrl);
   if (!context.mounted) return;
+  final seerr = seerrRequestMenuActions(context, item);
 
   final action = await showAdaptiveAppMenu<_CatalogMenuAction>(
     context,
@@ -78,6 +81,14 @@ Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset
           label: onWatchlist ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
           icon: onWatchlist ? Symbols.bookmark_remove_rounded : Symbols.bookmark_add_rounded,
         ),
+      for (final action in seerr?.actions ?? const <SeerrRequestAction>[])
+        AppMenuItem(
+          value: _CatalogMenuAction(_CatalogMenuActionType.seerrRequest, seerr: action),
+          label: action.label,
+          subtitle: action.subtitle,
+          icon: action.icon,
+          destructive: true,
+        ),
     ],
   );
   if (action == null || !context.mounted) return;
@@ -96,6 +107,8 @@ Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset
       } catch (_) {
         if (context.mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
       }
+    case _CatalogMenuActionType.seerrRequest:
+      await runSeerrRequestAction(context, source: seerr!.source, action: action.seerr!, title: item.title);
     case _CatalogMenuActionType.openTrailer || _CatalogMenuActionType.openLink:
       if (await openExternalUrl(action.uri!)) return;
       appLogger.w('Catalog context menu could not open an external URL');
