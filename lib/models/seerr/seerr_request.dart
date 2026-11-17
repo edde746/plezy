@@ -36,9 +36,47 @@ class SeerrRequest {
   /// TV only: the seasons this request covers.
   final List<SeerrRequestSeason>? seasons;
 
-  const SeerrRequest({required this.id, required this.status, this.is4k, this.media, this.seasons});
+  /// `movie` or `tv` (`MediaRequest.type`).
+  final String? type;
+
+  /// Who asked for it. Seerr only lets a user without `MANAGE_REQUESTS`
+  /// delete their own pending requests, so ownership gates the action.
+  final SeerrRequestUser? requestedBy;
+
+  /// ISO timestamp of the request.
+  final String? createdAt;
+
+  /// `GET /request` only, and only for users with `MANAGE_REQUESTS`: whether
+  /// the Sonarr/Radarr instance behind this request is still configured, i.e.
+  /// whether its files can be removed through Seerr.
+  final bool? canRemove;
+
+  const SeerrRequest({
+    required this.id,
+    required this.status,
+    this.is4k,
+    this.media,
+    this.seasons,
+    this.type,
+    this.requestedBy,
+    this.createdAt,
+    this.canRemove,
+  });
 
   factory SeerrRequest.fromJson(Map<String, dynamic> json) => _$SeerrRequestFromJson(json);
+}
+
+/// The requesting user as embedded in a request (`MediaRequest.requestedBy`).
+/// Only the fields the request surfaces read; every one is optional because
+/// Seerr filters the embedded user per viewer.
+@JsonSerializable(createToJson: false)
+class SeerrRequestUser {
+  final int? id;
+  final String? displayName;
+
+  const SeerrRequestUser({this.id, this.displayName});
+
+  factory SeerrRequestUser.fromJson(Map<String, dynamic> json) => _$SeerrRequestUserFromJson(json);
 }
 
 /// One season within a request (`MediaRequest.seasons[]`).

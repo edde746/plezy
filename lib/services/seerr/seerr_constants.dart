@@ -35,6 +35,10 @@ abstract final class SeerrMediaServerType {
 /// app checks are named; the full mask is stored on the session untouched.
 abstract final class SeerrPermission {
   static const int admin = 2;
+
+  /// `MANAGE_REQUESTS`: delete any request, remove media from Sonarr/Radarr
+  /// and clear its Seerr data.
+  static const int manageRequests = 16;
   static const int request = 32;
   static const int request4k = 1024;
   static const int request4kMovie = 2048;

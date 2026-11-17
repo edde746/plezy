@@ -16,7 +16,19 @@ SeerrRequest _$SeerrRequestFromJson(Map<String, dynamic> json) => SeerrRequest(
   seasons: (json['seasons'] as List<dynamic>?)
       ?.map((e) => SeerrRequestSeason.fromJson(e as Map<String, dynamic>))
       .toList(),
+  type: json['type'] as String?,
+  requestedBy: json['requestedBy'] == null
+      ? null
+      : SeerrRequestUser.fromJson(json['requestedBy'] as Map<String, dynamic>),
+  createdAt: json['createdAt'] as String?,
+  canRemove: json['canRemove'] as bool?,
 );
+
+SeerrRequestUser _$SeerrRequestUserFromJson(Map<String, dynamic> json) =>
+    SeerrRequestUser(
+      id: (json['id'] as num?)?.toInt(),
+      displayName: json['displayName'] as String?,
+    );
 
 SeerrRequestSeason _$SeerrRequestSeasonFromJson(Map<String, dynamic> json) =>
     SeerrRequestSeason(seasonNumber: (json['seasonNumber'] as num).toInt());
