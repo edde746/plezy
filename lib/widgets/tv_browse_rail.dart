@@ -366,6 +366,10 @@ class TvBrowseRail extends StatefulWidget {
   /// (Continue Watching, catalog rows) need one.
   final Future<List<MediaItem>> Function()? Function(MediaHub hub)? loadMoreItems;
 
+  /// Replaces a hub's View All destination (the hub detail grid) when it
+  /// returns a callback; null keeps the grid for that hub.
+  final VoidCallback? Function(MediaHub hub)? viewAllForHub;
+
   /// Optional per-hub trailing-slot state (loading/error/viewAll). When null the
   /// rail keeps the legacy "[MediaHub.more] → View All" behavior.
   final TvRailTrailing Function(MediaHub hub)? trailingForHub;
@@ -415,6 +419,7 @@ class TvBrowseRail extends StatefulWidget {
     this.isContinueWatchingHub,
     this.usesContinueWatchingAction,
     this.loadMoreItems,
+    this.viewAllForHub,
     this.trailingForHub,
     this.leadingItemForHub,
     this.onRetryHub,
@@ -1211,6 +1216,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   }
 
   void _navigateToHubDetail(MediaHub hub) {
+    if (widget.viewAllForHub?.call(hub) case final viewAll?) return viewAll();
     Navigator.push(
       context,
       MaterialPageRoute(

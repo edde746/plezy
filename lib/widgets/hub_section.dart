@@ -59,6 +59,10 @@ class HubSection extends StatefulWidget {
   final bool showServerName;
   final Future<List<MediaItem>> Function()? loadMoreItems;
 
+  /// Replaces the View All destination (the hub detail grid) for hubs that
+  /// have a purpose-built full list.
+  final VoidCallback? onViewAll;
+
   /// Provider-reported result count shown alongside the existing hub title.
   final int? totalResults;
 
@@ -110,6 +114,7 @@ class HubSection extends StatefulWidget {
     bool? usesContinueWatchingAction,
     this.showServerName = false,
     this.loadMoreItems,
+    this.onViewAll,
     this.totalResults,
     this.onFocusedItemChanged,
     this.onItemTap,
@@ -453,6 +458,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   }
 
   void _navigateToHubDetail(BuildContext context) {
+    if (widget.onViewAll case final onViewAll?) return onViewAll();
     Navigator.push(
       context,
       MaterialPageRoute(
