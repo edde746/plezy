@@ -37,6 +37,8 @@ import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
+import '../media/library_change_event.dart';
+import '../utils/library_content_notifier.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/music_navigation.dart';
@@ -282,8 +284,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   bool _openedFromKeyboard = false;
   bool _isContextMenuOpen = false;
+  StreamSubscription<LibraryChangeEvent>? _refreshMetadataSubscription;
 
   bool get isContextMenuOpen => _isContextMenuOpen;
+
+  @override
+  void dispose() {
+    unawaited(_refreshMetadataSubscription?.cancel());
+    _refreshMetadataSubscription = null;
+    super.dispose();
+  }
 
   void _notifyRefresh(MediaItem source) {
     if (!mounted) return;

@@ -578,7 +578,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (!_canUseDetail || widget.isOffline || event.serverId != serverBoundServerId) return;
     // Exact ids are authoritative even when the producer omits its per-item
     // fanout. Advisory flags alone do not prove this detail was removed.
-    if (_terminalDeletionIds.any(event.removedItemIds.contains)) _markDetailDeleted();
+    if (_terminalDeletionIds.any(event.removedItemIds.contains)) {
+      _markDetailDeleted();
+      return;
+    }
+    if (event.updatedItemIds.isEmpty) return;
+    if (event.updatedItemIds.contains(_metadata.id) || event.updatedItemIds.contains(widget.metadata.id)) {
+      unawaited(_refreshItemInPlace(_metadata));
+    }
+    for (final season in _seasons) {
+      if (event.updatedItemIds.contains(season.id)) {
+        unawaited(_refreshItemInPlace(season));
+      }
+    }
+    for (final episode in _episodes) {
+      if (event.updatedItemIds.contains(episode.id)) {
+        unawaited(_refreshItemInPlace(episode));
+      }
+    }
   }
 
   @override
@@ -674,12 +691,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return changed ? updatedHubs : hubs;
   }
 
+  final Set<String> _inFlightItemRefreshes = {};
+
   Future<void> _refreshItemInPlace(MediaItem source) async {
     if (!_canUseDetail) return;
     final serverId = source.serverId;
     if (serverId == null) return;
     final client = context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) return;
+    if (!_inFlightItemRefreshes.add(source.id)) return;
 
     try {
       final refreshed = await client.fetchItem(source.id);
@@ -689,6 +709,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
     } catch (e) {
       appLogger.d('Item refresh failed for ${source.globalKey}', error: e);
+    } finally {
+      _inFlightItemRefreshes.remove(source.id);
     }
   }
 

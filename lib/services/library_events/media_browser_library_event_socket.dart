@@ -91,6 +91,7 @@ class MediaBrowserLibraryEventSocket extends LibraryEventSocket {
     bool nonEmpty(dynamic value) => value is List && value.isNotEmpty;
     final collectionFolders = data['CollectionFolders'];
     final itemsRemoved = data['ItemsRemoved'];
+    final itemsUpdated = data['ItemsUpdated'];
     scheduleLibraryChange(
       libraryIds: [
         if (collectionFolders is List)
@@ -102,9 +103,14 @@ class MediaBrowserLibraryEventSocket extends LibraryEventSocket {
           for (final id in itemsRemoved)
             if (id != null) id.toString(),
       ],
+      updatedItemIds: [
+        if (itemsUpdated is List)
+          for (final id in itemsUpdated)
+            if (id != null) id.toString(),
+      ],
       added: nonEmpty(data['ItemsAdded']) || nonEmpty(data['FoldersAddedTo']),
       removed: nonEmpty(itemsRemoved) || nonEmpty(data['FoldersRemovedFrom']),
-      updated: nonEmpty(data['ItemsUpdated']),
+      updated: nonEmpty(itemsUpdated),
     );
   }
 
