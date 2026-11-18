@@ -59,6 +59,9 @@ class HubSection extends StatefulWidget {
   final bool showServerName;
   final Future<List<MediaItem>> Function()? loadMoreItems;
 
+  /// Filters the provider applies on the View All screen.
+  final HubFilterSource? filterSource;
+
   /// Provider-reported result count shown alongside the existing hub title.
   final int? totalResults;
 
@@ -110,6 +113,7 @@ class HubSection extends StatefulWidget {
     bool? usesContinueWatchingAction,
     this.showServerName = false,
     this.loadMoreItems,
+    this.filterSource,
     this.totalResults,
     this.onFocusedItemChanged,
     this.onItemTap,
@@ -459,6 +463,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
         builder: (context) => HubDetailScreen(
           hub: widget.hub,
           loadItems: widget.loadMoreItems,
+          filterSource: widget.filterSource,
           isInContinueWatching: widget.isInContinueWatching,
           usesContinueWatchingAction: widget.usesContinueWatchingAction,
           onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,

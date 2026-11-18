@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../../media/library_filter_result.dart';
+import '../../media/library_query.dart';
+import '../../media/media_filter.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_cast_member.dart';
@@ -149,6 +152,20 @@ abstract interface class CatalogHubSource {
   Future<List<CatalogHub>> fetchHubs({int limit = 25});
 
   Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25});
+}
+
+abstract interface class CatalogRowFilters {
+  Future<LibraryFilterResult> fetchRowFilters(CatalogRowId row);
+
+  Future<List<MediaFilterValue>> fetchRowFilterValues(MediaFilter filter);
+
+  /// Like [fetchRow], with [filters] from [fetchRowFilters] applied.
+  Future<CatalogPage> fetchFilteredRow(
+    CatalogRowId row, {
+    required List<LibraryFilter> filters,
+    int page = 1,
+    int limit = 25,
+  });
 }
 
 /// Optional capability for catalog providers that publish community scores

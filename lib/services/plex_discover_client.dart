@@ -95,12 +95,13 @@ class PlexDiscoverClient {
   /// became "Invalid value provided for x-plex-container-size!").
   static const int _watchlistChunkSize = 25;
 
-  Future<PlexDiscoverPage> getWatchlist({int page = 1, int limit = 25}) async {
+  /// [query] holds the watchlist filter parameters.
+  Future<PlexDiscoverPage> getWatchlist({int page = 1, int limit = 25, Map<String, Object?> query = const {}}) async {
     final safePage = page < 1 ? 1 : page;
     final safeLimit = limit.clamp(1, 500);
     final offset = (safePage - 1) * safeLimit;
     try {
-      return await _watchlistRange(offset, safeLimit);
+      return await _watchlistRange(offset, safeLimit, query);
     } on PlexDiscoverException catch (error) {
       if (safeLimit <= _watchlistChunkSize || !_isContainerSizeRejection(error)) rethrow;
       appLogger.w('Plex Discover: container size $safeLimit rejected, refetching in chunks of $_watchlistChunkSize');
@@ -111,6 +112,7 @@ class PlexDiscoverClient {
         chunk = await _watchlistRange(
           offset + items.length,
           remaining > _watchlistChunkSize ? _watchlistChunkSize : remaining,
+          query,
         );
         items.addAll(chunk.items);
       } while (items.length < safeLimit && chunk.hasMore && chunk.items.isNotEmpty);
@@ -118,11 +120,17 @@ class PlexDiscoverClient {
     }
   }
 
-  Future<PlexDiscoverPage> _watchlistRange(int offset, int size) async {
+  Future<PlexDiscoverPage> _watchlistRange(int offset, int size, Map<String, Object?> query) async {
     final data = await _request(
       'GET',
       '/library/sections/watchlist/all',
-      query: {'X-Plex-Container-Start': offset, 'X-Plex-Container-Size': size, 'includeGuids': 1, 'includeMeta': 1},
+      query: {
+        ...query,
+        'X-Plex-Container-Start': offset,
+        'X-Plex-Container-Size': size,
+        'includeGuids': 1,
+        'includeMeta': 1,
+      },
     );
     final container = _mediaContainer(data!);
     final items = flexibleMapList(container['Metadata']);
@@ -133,6 +141,21 @@ class PlexDiscoverClient {
 
   static bool _isContainerSizeRejection(PlexDiscoverException error) =>
       error.statusCode == 400 && error.message.toLowerCase().contains('container-size');
+
+  Future<Map<String, dynamic>?> getWatchlistMeta() async {
+    final data = await _request(
+      'GET',
+      '/library/sections/watchlist/all',
+      query: {'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 1, 'includeMeta': 1},
+    );
+    return firstFlexibleMap(_mediaContainer(data!)['Meta']);
+  }
+
+  /// Lists the values of a watchlist filter.
+  Future<List<Map<String, dynamic>>> getDirectory(String key) async {
+    final data = await _request('GET', key);
+    return flexibleMapList(_mediaContainer(data!)['Directory']);
+  }
 
   /// Discover's Home shelves — the rows Plex's own web client renders on its
   /// Home ▸ Trending tab, which reads
