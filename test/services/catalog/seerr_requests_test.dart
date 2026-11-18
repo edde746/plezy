@@ -226,6 +226,75 @@ void main() {
     });
   });
 
+  group('View All grid', () {
+    test('reads page after page under the filter and gives a title requested on two pages one card', () async {
+      final queries = <Map<String, String>>[];
+      final source = _source((request) {
+        if (request.url.path == '/api/v1/request') {
+          queries.add(request.url.queryParameters);
+          return request.url.queryParameters['skip'] == '0'
+              ? _page([_request(id: 3, tmdbId: 10), _request(id: 2, tmdbId: 20)], pages: 2, total: 3)
+              : _page([_request(id: 1, tmdbId: 10, is4k: true, status: 3)], page: 2, pages: 2, total: 3);
+        }
+        if (_isDetail(request)) return _details(request);
+        fail('unexpected ${request.url}');
+      });
+
+      final titles = await source.requests.fetchAllTitles(filter: SeerrRequestFilter.pending, pageSize: 2);
+
+      expect(
+        [for (final query in queries) (query['skip'], query['take'], query['filter'])],
+        [('0', '2', 'pending'), ('2', '2', 'pending')],
+      );
+      expect(titles.map((item) => item.title), ['Title 10', 'Title 20']);
+      expect(titles.first.serverState?.request, CatalogRequestState.pending);
+      expect(titles.first.serverState?.request4k, CatalogRequestState.declined);
+    });
+
+    test('stops at the page cap, and at a page that is empty yet claims more', () async {
+      var calls = 0;
+      var emptyFrom = 99;
+      final source = _source((request) {
+        if (request.url.path == '/api/v1/request') {
+          calls++;
+          return _page(
+            [if (calls < emptyFrom) _request(id: calls, tmdbId: calls)],
+            page: calls,
+            pages: 50,
+          );
+        }
+        if (_isDetail(request)) return _details(request);
+        fail('unexpected ${request.url}');
+      });
+
+      expect(await source.requests.fetchAllTitles(pageSize: 1, maxPages: 3), hasLength(3));
+      expect(calls, 3);
+
+      calls = 0;
+      emptyFrom = 2;
+      expect(await source.requests.fetchAllTitles(pageSize: 1, maxPages: 3), hasLength(1));
+      expect(calls, 2);
+    });
+
+    test('a later shelf load keeps what the grid learned beyond the shelf, so those cards keep their menus', () async {
+      final source = _source((request) {
+        if (request.url.path == '/api/v1/request') {
+          return request.url.queryParameters['take'] == '1'
+              ? _page([_request(id: 2, tmdbId: 20)], pages: 2, total: 2)
+              : _page([_request(id: 2, tmdbId: 20), _request(id: 1, tmdbId: 10)]);
+        }
+        if (_isDetail(request)) return _details(request);
+        fail('unexpected ${request.url}');
+      });
+
+      await source.requests.fetchAllTitles();
+      await source.fetchHubs(limit: 1);
+
+      expect(source.requests.known(MediaKind.movie, 20)?.requests.single.id, 2);
+      expect(source.requests.known(MediaKind.movie, 10)?.requests.single.id, 1);
+    });
+  });
+
   group('title lookups', () {
     test('run at most four at a time, once per title, and are reused by later loads', () async {
       var inFlight = 0;

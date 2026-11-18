@@ -46,8 +46,8 @@ class SeerrRequestEntry {
   final int tmdbId;
   final SeerrRequestBadge badge;
 
-  /// The requested title, or null when its lookup failed — the request is
-  /// still listed (and can still be deleted), just without title and poster.
+  /// The requested title, or null when its lookup failed — the request then
+  /// has no card ([SeerrRequests.rowItems]).
   final CatalogItem? item;
 
   const SeerrRequestEntry({
@@ -64,14 +64,6 @@ class SeerrRequestEntry {
     final String raw => DateTime.tryParse(raw),
     null => null,
   };
-
-  /// TV only: the requested season numbers, ascending.
-  List<int> get seasonNumbers =>
-      [for (final season in request.seasons ?? const <SeerrRequestSeason>[]) season.seasonNumber]..sort();
-
-  /// What Seerr holds for this entry's title as far as the entry itself
-  /// shows: its media record and this one request.
-  SeerrTitleRequests get title => SeerrTitleRequests(media: request.media, requests: [request]);
 }
 
 /// One page of [SeerrRequests.fetchMine].
@@ -201,6 +193,12 @@ class SeerrRequests extends ChangeNotifier with DisposableChangeNotifierMixin {
   SeerrTitleRequests? known(MediaKind kind, int tmdbId) => _known[_key(kind, tmdbId)];
 
   /// The signed-in user's requests, newest first, [take] at offset [skip].
+  ///
+  /// What a page says is added to [known], never traded for it: the shelf
+  /// reads the head of the list while the View All grid holds titles far
+  /// beyond it, and their card menus build from [known]. A request deleted
+  /// elsewhere drops out with the next mutation or detail read; until then
+  /// Seerr refuses the stale action.
   Future<SeerrRequestsPage> fetchMine({
     int skip = 0,
     int take = 20,
@@ -213,10 +211,6 @@ class SeerrRequests extends ChangeNotifier with DisposableChangeNotifierMixin {
       sort: 'added',
       requestedBy: client.session.userId,
     );
-    // The head of the unfiltered list is the freshest full picture there is:
-    // start over rather than keep requests that may have been deleted since.
-    if (skip == 0 && filter == SeerrRequestFilter.all) _known.clear();
-
     final located = <({SeerrRequest request, MediaKind kind, int tmdbId})>[];
     for (final request in page.items) {
       final kind = _kindOf(request);
@@ -337,7 +331,7 @@ class SeerrRequests extends ChangeNotifier with DisposableChangeNotifierMixin {
   /// request first. Empty (no shelf) when the user has no requests.
   ///
   /// Always reports more, so the shelf keeps its View All affordance — that
-  /// is the way into the full list with paging, filters and actions.
+  /// is the way into the grid of all requests and its status filter.
   Future<List<CatalogHub>> fetchHubs({int limit = 25}) async {
     final page = await fetchMine(take: limit);
     final items = rowItems(page.entries);
@@ -356,6 +350,27 @@ class SeerrRequests extends ChangeNotifier with DisposableChangeNotifierMixin {
     if (id != hubId) throw ArgumentError('Seerr does not serve hub $id');
     final result = await fetchMine(skip: (page - 1) * limit, take: limit);
     return CatalogPage(items: rowItems(result.entries), hasMore: result.hasMore, totalResults: result.total);
+  }
+
+  /// Every requested title under [filter], for the View All grid: pages of
+  /// [pageSize] until Seerr has no more or [maxPages] are read, then one card
+  /// per title over all of them — a title requested on two pages still gets
+  /// a single card.
+  Future<List<CatalogItem>> fetchAllTitles({
+    SeerrRequestFilter filter = SeerrRequestFilter.all,
+    int pageSize = 100,
+    int maxPages = 3,
+  }) async {
+    final entries = <SeerrRequestEntry>[];
+    var skip = 0;
+    for (var page = 0; page < maxPages; page++) {
+      final result = await fetchMine(skip: skip, take: pageSize, filter: filter);
+      entries.addAll(result.entries);
+      skip += result.fetched;
+      // An empty page that still claims more would page forever.
+      if (!result.hasMore || result.fetched == 0) break;
+    }
+    return rowItems(entries);
   }
 
   /// Entries as shelf cards: one per title (several requests for one title —

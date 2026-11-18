@@ -8004,24 +8004,6 @@ class Translations$seerr$requests$en {
 	/// en: 'Approved'
 	String get statusApproved => 'Approved';
 
-	/// en: 'You have no requests yet'
-	String get empty => 'You have no requests yet';
-
-	/// en: 'No requests match this filter'
-	String get emptyFiltered => 'No requests match this filter';
-
-	/// en: 'Couldn't load your requests'
-	String get loadFailed => 'Couldn\'t load your requests';
-
-	/// en: 'Load more'
-	String get loadMore => 'Load more';
-
-	/// en: 'Unknown title (TMDB ${id})'
-	String unknownTitle({required Object id}) => 'Unknown title (TMDB ${id})';
-
-	/// en: 'Requested ${date}'
-	String requestedOn({required Object date}) => 'Requested ${date}';
-
 	/// en: 'Seasons ${seasons}'
 	String seasonsList({required Object seasons}) => 'Seasons ${seasons}';
 
@@ -10459,12 +10441,6 @@ extension on Translations {
 			'seerr.requests.filterAvailable' => 'Available',
 			'seerr.requests.filterFailed' => 'Failed',
 			'seerr.requests.statusApproved' => 'Approved',
-			'seerr.requests.empty' => 'You have no requests yet',
-			'seerr.requests.emptyFiltered' => 'No requests match this filter',
-			'seerr.requests.loadFailed' => 'Couldn\'t load your requests',
-			'seerr.requests.loadMore' => 'Load more',
-			'seerr.requests.unknownTitle' => ({required Object id}) => 'Unknown title (TMDB ${id})',
-			'seerr.requests.requestedOn' => ({required Object date}) => 'Requested ${date}',
 			'seerr.requests.seasonsList' => ({required Object seasons}) => 'Seasons ${seasons}',
 			'seerr.requests.manage' => 'Manage request',
 			'seerr.requests.deleteRequest' => 'Delete request',

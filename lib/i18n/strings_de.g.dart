@@ -3323,12 +3323,6 @@ class _Translations$seerr$requests$de extends Translations$seerr$requests$en {
 	@override String get filterAvailable => 'Verfügbar';
 	@override String get filterFailed => 'Fehlgeschlagen';
 	@override String get statusApproved => 'Genehmigt';
-	@override String get empty => 'Du hast noch keine Anfragen';
-	@override String get emptyFiltered => 'Keine Anfragen für diesen Filter';
-	@override String get loadFailed => 'Deine Anfragen konnten nicht geladen werden';
-	@override String get loadMore => 'Mehr laden';
-	@override String unknownTitle({required Object id}) => 'Unbekannter Titel (TMDB ${id})';
-	@override String requestedOn({required Object date}) => 'Angefragt am ${date}';
 	@override String seasonsList({required Object seasons}) => 'Staffeln ${seasons}';
 	@override String get manage => 'Anfrage verwalten';
 	@override String get deleteRequest => 'Anfrage löschen';
@@ -5670,12 +5664,6 @@ extension on TranslationsDe {
 			'seerr.requests.filterAvailable' => 'Verfügbar',
 			'seerr.requests.filterFailed' => 'Fehlgeschlagen',
 			'seerr.requests.statusApproved' => 'Genehmigt',
-			'seerr.requests.empty' => 'Du hast noch keine Anfragen',
-			'seerr.requests.emptyFiltered' => 'Keine Anfragen für diesen Filter',
-			'seerr.requests.loadFailed' => 'Deine Anfragen konnten nicht geladen werden',
-			'seerr.requests.loadMore' => 'Mehr laden',
-			'seerr.requests.unknownTitle' => ({required Object id}) => 'Unbekannter Titel (TMDB ${id})',
-			'seerr.requests.requestedOn' => ({required Object date}) => 'Angefragt am ${date}',
 			'seerr.requests.seasonsList' => ({required Object seasons}) => 'Staffeln ${seasons}',
 			'seerr.requests.manage' => 'Anfrage verwalten',
 			'seerr.requests.deleteRequest' => 'Anfrage löschen',

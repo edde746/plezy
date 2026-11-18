@@ -7,18 +7,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/explore_provider.dart';
+import 'package:plezy/screens/hub_detail_screen.dart';
 import 'package:plezy/screens/seerr_requests_screen.dart';
+import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/catalog/seerr_requests.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/widgets/dialog_action_button.dart';
-import 'package:plezy/media/media_hub.dart';
+import 'package:plezy/widgets/focusable_media_card.dart';
+import 'package:provider/provider.dart';
 
-import '../test_helpers/theme.dart';
+import '../test_helpers/prefs.dart';
 
 const _me = 1;
 
@@ -66,11 +74,10 @@ http.Response _page(List<Map<String, dynamic>> results, {int page = 1, int pages
 /// A Seerr double: `GET /request` is answered by [list] (called with the
 /// query), details are titled after their id, and every DELETE succeeds.
 class _Seerr {
-  _Seerr({required this.list, this.permissions = SeerrPermission.request, this.failDetails = const {}});
+  _Seerr({required this.list, this.permissions = SeerrPermission.request});
 
   FutureOr<http.Response> Function(Map<String, String> query) list;
   final int permissions;
-  final Set<int> failDetails;
 
   final listQueries = <Map<String, String>>[];
   final deletes = <String>[];
@@ -108,7 +115,6 @@ class _Seerr {
     }
     if (path.startsWith('/api/v1/movie/') || path.startsWith('/api/v1/tv/')) {
       final id = int.parse(request.url.pathSegments.last);
-      if (failDetails.contains(id)) return _json({'message': 'TMDB down'}, status: 500);
       final isMovie = path.startsWith('/api/v1/movie/');
       return _json({
         'id': id,
@@ -125,20 +131,78 @@ class _Seerr {
   }
 }
 
-Future<void> _pumpScreen(WidgetTester tester, _Seerr seerr) async {
+class _SeerrSources extends CatalogSourcesProvider {
+  _SeerrSources(this.seerr);
+
+  final SeerrCatalogSource seerr;
+
+  @override
+  List<CatalogSource> get connectedSources => [seerr];
+
+  @override
+  CatalogSource? get activeSource => seerr;
+
+  @override
+  SeerrCatalogSource? get seerrSource => seerr;
+}
+
+/// Opens the screen the way Explore does: over the shelf's own hub, pushed on
+/// top of a launcher.
+Future<void> _pumpScreen(WidgetTester tester, _Seerr seerr) => _pumpScreenWith(tester, seerr, () {});
+
+/// [afterShelf] runs once the shelf has been read and before the screen opens.
+Future<void> _pumpScreenWith(WidgetTester tester, _Seerr seerr, VoidCallback afterShelf) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(1280, 720);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
   addTearDown(seerr.dispose);
+  final sources = _SeerrSources(seerr.source);
+  addTearDown(sources.dispose);
+
+  final shelf = (await seerr.source.requests.fetchHubs()).single;
+  seerr.listQueries.clear();
+  afterShelf();
+  final hub = MediaHub(
+    id: 'explore:seerr:hub:${shelf.id}',
+    identifier: 'explore.hub.${shelf.id}',
+    title: shelf.title,
+    type: 'mixed',
+    items: [for (final item in shelf.page.items) item.toMediaItem()],
+    size: shelf.page.totalResults ?? shelf.page.items.length,
+    more: shelf.page.hasMore,
+  );
+
   await tester.pumpWidget(
-    MaterialApp(
-      theme: ThemeData(extensions: const [testMonoTokens]),
-      home: SeerrRequestsScreen(source: seerr.source),
+    TranslationProvider(
+      child: ChangeNotifierProvider<CatalogSourcesProvider>.value(
+        value: sources,
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => SeerrRequestsScreen(source: seerr.source, hub: hub),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
     ),
   );
+  await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
 }
 
-Finder _row(int requestId) => find.byKey(ValueKey('seerr_request_$requestId'));
+Finder _card(String title) => find.ancestor(of: find.text(title), matching: find.byType(FocusableMediaCard));
 
-Finder _inRow(int requestId, String text) => find.descendant(of: _row(requestId), matching: find.text(text));
+Finder _inCard(String title, String text) => find.descendant(of: _card(title), matching: find.text(text));
 
 /// A row of the filter picker.
 Finder _filterOption(String label) => find.descendant(of: find.byType(SimpleDialog), matching: find.text(label));
@@ -149,51 +213,81 @@ void main() {
     await initializeDateFormatting('en');
   });
 
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+  });
+
   final strings = t.seerr.requests;
 
-  testWidgets('lists the user\'s requests newest first with type, variant, seasons and status', (tester) async {
+  testWidgets('is the shared hub grid: one poster card per requested title, badged by request status', (tester) async {
     final seerr = _Seerr(
       list: (_) => _page([
         _request(id: 3, tmdbId: 30, type: 'tv', status: 2, mediaStatus: 3),
-        _request(id: 2, tmdbId: 20, is4k: true),
+        _request(id: 2, tmdbId: 20),
         _request(id: 1, tmdbId: 10, status: 3),
       ]),
     );
     await _pumpScreen(tester, seerr);
 
+    expect(find.byType(HubDetailScreen), findsOneWidget);
+    expect(find.text(strings.myRequests), findsOneWidget);
+    expect(find.byTooltip(t.libraries.sort), findsOneWidget, reason: 'the grid keeps its own sort action');
     expect(seerr.listQueries.single, {
-      'take': '20',
+      'take': '${ExploreProvider.viewAllPageLimit}',
       'skip': '0',
       'filter': 'all',
       'sort': 'added',
       'requestedBy': '$_me',
     });
-    expect(find.text(strings.myRequests), findsOneWidget);
 
-    final titles = ['Title 30', 'Title 20', 'Title 10'];
-    final tops = [for (final title in titles) tester.getTopLeft(find.text(title)).dy];
-    expect(tops, orderedEquals([...tops]..sort()), reason: 'in the order Seerr returned them');
+    expect(find.byType(FocusableMediaCard), findsNWidgets(3));
+    final lefts = [
+      for (final title in const ['Title 30', 'Title 20', 'Title 10']) tester.getTopLeft(_card(title)).dx,
+    ];
+    expect(lefts, orderedEquals([...lefts]..sort()), reason: 'in the order Seerr returned them');
+    expect(_inCard('Title 30', t.explore.badge.processing), findsOneWidget);
+    expect(_inCard('Title 20', t.explore.badge.pendingApproval), findsOneWidget);
+    expect(_inCard('Title 10', t.explore.badge.declined), findsOneWidget);
+  });
 
-    expect(_inRow(3, t.explore.badge.processing), findsOneWidget);
-    expect(_inRow(2, t.explore.badge.pendingApproval), findsOneWidget);
-    expect(_inRow(1, t.explore.badge.declined), findsOneWidget);
-    expect(
-      find.descendant(
-        of: _row(3),
-        matching: find.textContaining(strings.seasonsList(seasons: '1, 2')),
-      ),
-      findsOneWidget,
+  testWidgets('loads every page of requests, and a title requested on two pages gets one card', (tester) async {
+    final seerr = _Seerr(
+      list: (query) => query['skip'] == '0'
+          ? _page([for (var i = 1; i <= 100; i++) _request(id: i, tmdbId: 100 + i)], pages: 2, total: 103)
+          : _page(
+              [
+                _request(id: 101, tmdbId: 201),
+                _request(id: 102, tmdbId: 202),
+                _request(id: 103, tmdbId: 101, is4k: true),
+              ],
+              page: 2,
+              pages: 2,
+              total: 103,
+            ),
     );
-    expect(find.descendant(of: _row(3), matching: find.textContaining(t.common.mediaKind.show)), findsOneWidget);
-    expect(find.descendant(of: _row(2), matching: find.textContaining('4K')), findsOneWidget);
-    expect(find.descendant(of: _row(2), matching: find.textContaining('2020')), findsOneWidget);
+    await _pumpScreen(tester, seerr);
+
+    expect([for (final query in seerr.listQueries) (query['skip'], query['take'])], [('0', '100'), ('100', '100')]);
+    expect(tester.takeException(), isNull, reason: 'no duplicate card keys');
+    expect(find.text('Title 101'), findsOneWidget);
+    expect(find.text('Title 202'), findsNothing, reason: 'the grid builds its cards lazily');
+
+    await tester.scrollUntilVisible(find.text('Title 202'), 600, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Title 202'), findsOneWidget);
+    expect(find.text('Title 101'), findsNothing);
+    expect(seerr.listQueries, hasLength(2), reason: 'scrolling asks Seerr for nothing more');
   });
 
   testWidgets('the status filter re-queries Seerr and shows which filter is on', (tester) async {
     final seerr = _Seerr(
-      list: (query) => query['filter'] == 'pending'
-          ? _page([_request(id: 2, tmdbId: 20)])
-          : _page([_request(id: 2, tmdbId: 20), _request(id: 1, tmdbId: 10, status: 2)]),
+      list: (query) => switch (query['filter']) {
+        'pending' => _page([_request(id: 2, tmdbId: 20)]),
+        'failed' => _page(const []),
+        _ => _page([_request(id: 2, tmdbId: 20), _request(id: 1, tmdbId: 10, status: 2)]),
+      },
     );
     await _pumpScreen(tester, seerr);
     expect(find.text('Title 10'), findsOneWidget);
@@ -217,81 +311,49 @@ void main() {
     expect(seerr.listQueries.last['skip'], '0');
     expect(find.text('Title 10'), findsNothing);
     expect(find.text('Title 20'), findsOneWidget);
-    expect(find.byTooltip('${strings.filter}: ${strings.filterPending}'), findsOneWidget);
-  });
 
-  testWidgets('a filter with no matches says so instead of looking like an empty account', (tester) async {
-    final seerr = _Seerr(
-      list: (query) => query['filter'] == 'failed' ? _page(const []) : _page([_request(id: 1, tmdbId: 10)]),
-    );
-    await _pumpScreen(tester, seerr);
-
-    await tester.tap(find.byTooltip('${strings.filter}: ${strings.filterAll}'));
+    // A filter with no matches empties the grid but keeps the way back.
+    await tester.tap(find.byTooltip('${strings.filter}: ${strings.filterPending}'));
     await tester.pumpAndSettle();
     await tester.tap(_filterOption(strings.filterFailed));
     await tester.pumpAndSettle();
 
-    expect(find.text(strings.emptyFiltered), findsOneWidget);
-    expect(find.text(strings.empty), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsNothing);
+    expect(find.text(t.hubDetail.noItemsFound), findsOneWidget);
+    expect(find.byTooltip('${strings.filter}: ${strings.filterFailed}'), findsOneWidget);
   });
 
-  testWidgets('pages by offset as the end of the list comes into view', (tester) async {
-    final seerr = _Seerr(
-      list: (query) => query['skip'] == '0'
-          ? _page([for (var i = 1; i <= 20; i++) _request(id: i, tmdbId: 100 + i)], pages: 2, total: 23)
-          : _page([for (var i = 21; i <= 23; i++) _request(id: i, tmdbId: 100 + i)], page: 2, pages: 2, total: 23),
-    );
-    await _pumpScreen(tester, seerr);
-    expect(seerr.listQueries, hasLength(1), reason: 'the second page waits until the user gets near it');
+  testWidgets('a filter picked while the list is still loading wins over that load', (tester) async {
+    final all = _page([_request(id: 2, tmdbId: 20), _request(id: 1, tmdbId: 10, status: 2)]);
+    final seerr = _Seerr(list: (_) => all);
+    final gate = Completer<void>();
+    addTearDown(() {
+      if (!gate.isCompleted) gate.complete();
+    });
+    await _pumpScreenWith(tester, seerr, () {
+      seerr.list = (query) async {
+        if (query['filter'] == 'all') await gate.future;
+        return query['filter'] == 'pending' ? _page([_request(id: 2, tmdbId: 20)]) : all;
+      };
+    });
+    expect(seerr.listQueries, hasLength(1));
 
-    await tester.dragUntilVisible(_row(20), find.byType(CustomScrollView), const Offset(0, -400));
+    await tester.tap(find.byTooltip('${strings.filter}: ${strings.filterAll}'));
+    await tester.pumpAndSettle();
+    await tester.tap(_filterOption(strings.filterPending));
+    await tester.pumpAndSettle();
+    expect(find.text('Title 10'), findsOneWidget, reason: 'the first load has not answered yet');
+
+    gate.complete();
     await tester.pumpAndSettle();
 
-    expect(seerr.listQueries, hasLength(2));
-    expect(seerr.listQueries.last['skip'], '20');
-    expect(seerr.listQueries.last['take'], '20');
-
-    await tester.dragUntilVisible(_row(23), find.byType(CustomScrollView), const Offset(0, -400));
-    await tester.pumpAndSettle();
-    expect(find.text('Title 123'), findsOneWidget);
-    expect(seerr.listQueries, hasLength(2), reason: 'the last page ends the paging');
-    expect(find.byKey(const ValueKey('seerr_requests_load_more')), findsNothing);
+    expect([for (final query in seerr.listQueries) query['filter']], ['all', 'pending']);
+    expect(find.text('Title 10'), findsNothing);
+    expect(find.text('Title 20'), findsOneWidget);
   });
 
-  testWidgets('pull-to-refresh and the refresh action reload the first page', (tester) async {
-    var generation = 0;
-    final seerr = _Seerr(list: (_) => _page([_request(id: 1, tmdbId: generation == 0 ? 10 : 11)]));
-    await _pumpScreen(tester, seerr);
-    expect(find.text('Title 10'), findsOneWidget);
-
-    generation = 1;
-    await tester.fling(find.text('Title 10'), const Offset(0, 400), 1200);
-    await tester.pumpAndSettle();
-    expect(seerr.listQueries, hasLength(2));
-    expect(find.text('Title 11'), findsOneWidget);
-
-    await tester.tap(find.byTooltip(t.common.refresh));
-    await tester.pumpAndSettle();
-    expect(seerr.listQueries, hasLength(3));
-  });
-
-  testWidgets('an empty account and a failed load each get their own state, the failure with a retry', (tester) async {
-    var fail = true;
-    final seerr = _Seerr(list: (_) => fail ? _json({'message': 'boom'}, status: 500) : _page(const []));
-    await _pumpScreen(tester, seerr);
-
-    expect(find.text(strings.loadFailed), findsOneWidget);
-
-    fail = false;
-    await tester.tap(find.text(t.common.retry));
-    await tester.pumpAndSettle();
-
-    expect(find.text(strings.loadFailed), findsNothing);
-    expect(find.text(strings.empty), findsOneWidget);
-  });
-
-  group('row menu', () {
-    testWidgets('a plain user may delete only their own pending request', (tester) async {
+  group('card menu', () {
+    testWidgets('a plain user may delete only their own pending request, and the grid re-reads Seerr', (tester) async {
       var deleted = false;
       final seerr = _Seerr(
         list: (_) => _page([
@@ -325,7 +387,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(seerr.deletes, ['DELETE /api/v1/request/2']);
-      expect(seerr.listQueries, hasLength(2), reason: 'the list re-reads Seerr after the deletion');
+      expect(seerr.listQueries, hasLength(2), reason: 'the grid re-reads Seerr after the deletion');
       expect(find.text('Title 20'), findsNothing);
       expect(find.text('Title 10'), findsOneWidget);
       expect(find.text(strings.requestDeleted), findsOneWidget);
@@ -366,13 +428,17 @@ void main() {
       expect(seerr.listQueries, hasLength(2));
     });
 
-    testWidgets('hold SELECT opens the menu from a remote, and its confirmation starts on Cancel', (tester) async {
+    testWidgets('the menu key opens it from a remote, and its confirmation starts on Cancel', (tester) async {
       final seerr = _Seerr(list: (_) => _page([_request(id: 2, tmdbId: 20)]));
       await _pumpScreen(tester, seerr);
 
-      // The first row takes focus once the list has loaded.
-      final rowFocus = Focus.of(tester.element(find.text('Title 20')));
-      expect(rowFocus.hasPrimaryFocus, isTrue);
+      // D-pad session parked on the card.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      final card = tester.widget<FocusableMediaCard>(_card('Title 20'));
+      card.focusNode!.requestFocus();
+      await tester.pumpAndSettle();
+      expect(card.focusNode!.hasPrimaryFocus, isTrue);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
       await tester.pumpAndSettle();
@@ -391,19 +457,27 @@ void main() {
       expect(onCancel, isTrue);
       expect(seerr.deletes, isEmpty);
     });
+  });
 
-    testWidgets('a request whose title could not be looked up is still listed and deletable', (tester) async {
-      final seerr = _Seerr(list: (_) => _page([_request(id: 2, tmdbId: 20)]), failDetails: {20});
-      await _pumpScreen(tester, seerr);
+  testWidgets('BACK from a card goes to the app bar first, then leaves — as in every hub grid', (tester) async {
+    final seerr = _Seerr(list: (_) => _page([_request(id: 2, tmdbId: 20)]));
+    await _pumpScreen(tester, seerr);
 
-      final placeholder = strings.unknownTitle(id: 20);
-      expect(find.text(placeholder), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    final card = tester.widget<FocusableMediaCard>(_card('Title 20'));
+    card.focusNode!.requestFocus();
+    await tester.pumpAndSettle();
 
-      await tester.longPress(find.text(placeholder));
-      await tester.pumpAndSettle();
-      expect(find.text(t.mediaMenu.viewDetails), findsNothing, reason: 'there is no title to open');
-      expect(find.text(strings.deleteRequest), findsOneWidget);
-    });
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(SeerrRequestsScreen), findsOneWidget);
+    expect(card.focusNode!.hasPrimaryFocus, isFalse);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(SeerrRequestsScreen), findsNothing);
+    expect(find.text('open'), findsOneWidget);
   });
 
   group('Explore helpers', () {
@@ -424,13 +498,13 @@ void main() {
       expect(seerrRequestsHubFirst(without), same(without));
     });
 
-    test('only the requests shelf gets its own icon and View All destination', () {
+    test('only the requests shelf gets its own icon', () {
       expect(seerrRequestsHubIcon(SeerrRequests.hubId), isNotNull);
       expect(seerrRequestsHubIcon('plex.hub'), isNull);
       expect(seerrRequestsHubIcon(null), isNull);
     });
 
-    testWidgets('View All opens the requests list for the shelf and stays generic for others', (tester) async {
+    testWidgets('View All is overridden for the requests shelf only', (tester) async {
       late BuildContext context;
       await tester.pumpWidget(
         MaterialApp(
@@ -442,9 +516,9 @@ void main() {
           ),
         ),
       );
-      expect(seerrRequestsViewAll(context, 'plex.hub'), isNull);
+      expect(seerrRequestsViewAll(context, fixedRow('plex.hub')), isNull);
       expect(seerrRequestsViewAll(context, null), isNull);
-      final viewAll = seerrRequestsViewAll(context, SeerrRequests.hubId);
+      final viewAll = seerrRequestsViewAll(context, fixedRow(SeerrRequests.hubId));
       expect(viewAll, isNotNull);
       // No Seerr source in scope: the callback is a no-op rather than a crash.
       viewAll!();

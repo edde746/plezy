@@ -377,7 +377,7 @@ class ExploreScreenState extends State<ExploreScreen>
               totalResults: rowHubs[i].totalResults,
               focusMemory: _hubFocusMemory,
               icon: seerrRequestsHubIcon(rowHubs[i].providerHubId) ?? _rowIcon(rowHubs[i].row),
-              onViewAll: seerrRequestsViewAll(context, rowHubs[i].providerHubId),
+              onViewAll: seerrRequestsViewAll(context, rowHubs[i]),
               loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
               onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
               onNavigateUp: i == 0 ? searchFocusNode.requestFocus : null,
@@ -539,7 +539,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 focusMemory: _hubFocusMemory,
                 iconForHub: (hub, _) =>
                     seerrRequestsHubIcon(_rowForHub(hub)?.providerHubId) ?? _rowIcon(_rowForHub(hub)?.row),
-                viewAllForHub: (hub) => seerrRequestsViewAll(context, _rowForHub(hub)?.providerHubId),
+                viewAllForHub: (hub) => seerrRequestsViewAll(context, _rowForHub(hub)),
                 onFocusedItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {
                   final rowHub = _rowForHub(hub);

@@ -11,7 +11,6 @@ import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/explore_provider.dart';
 import 'package:plezy/screens/explore_screen.dart';
 import 'package:plezy/screens/hub_detail_screen.dart';
-import 'package:plezy/screens/seerr_requests_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
@@ -19,6 +18,7 @@ import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -172,15 +172,28 @@ void main() {
     expect(find.text(t.explore.badge.declined), findsOneWidget);
   });
 
-  testWidgets('View All on the shelf opens the requests list, not the generic grid', (tester) async {
-    await _pumpExplore(tester, _seerr(requests: [_request(2, 20)]));
+  testWidgets('View All on the shelf opens the same hub grid as every other row', (tester) async {
+    final listCalls = <String>[];
+    await _pumpExplore(tester, _seerr(requests: [_request(2, 20), _request(1, 10, status: 3)], listCalls: listCalls));
 
     await tester.tap(find.text(t.seerr.requests.myRequests));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SeerrRequestsScreen), findsOneWidget);
-    expect(find.byType(HubDetailScreen), findsNothing);
-    expect(find.byKey(const ValueKey('seerr_request_2')), findsOneWidget);
+    expect(find.byType(HubDetailScreen), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(HubDetailScreen), matching: find.byType(FocusableMediaCard)),
+      findsNWidgets(2),
+    );
+    expect(find.descendant(of: find.byType(HubDetailScreen), matching: find.text('Requested 20')), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(HubDetailScreen), matching: find.text(t.explore.badge.declined)),
+      findsOneWidget,
+    );
+    expect(
+      Uri.splitQueryString(listCalls.last)['take'],
+      '${ExploreProvider.viewAllPageLimit}',
+      reason: 'the grid pages through the requests like the other rows page through their titles',
+    );
   });
 
   testWidgets('without requests there is no shelf and the discover rows stand as before', (tester) async {
