@@ -47,24 +47,16 @@ AppLocale? _resolvePortugueseLocale(Locale locale) {
   return region != null && _europeanPortugueseRegions.contains(region) ? AppLocale.ptPt : AppLocale.pt;
 }
 
-/// [AppLocale.values] in the order the language picker lists them.
+/// [AppLocale.values] grouped by language, in the order each language first
+/// appears; this is the order the language picker lists them.
 ///
 /// Slang appends script and region variants after every base language, so
 /// `pt-PT` and `zh-Hant` would otherwise sit at the end of the list instead of
 /// next to Portuguese and Chinese.
 final List<AppLocale> languagePickerLocales = List.unmodifiable([
-  for (final locale in AppLocale.values)
-    if (!_isVariant(locale) || !_hasBaseLocale(locale)) ...[
-      locale,
-      if (!_isVariant(locale))
-        ...AppLocale.values.where((variant) => _isVariant(variant) && variant.languageCode == locale.languageCode),
-    ],
+  for (final languageCode in {for (final locale in AppLocale.values) locale.languageCode})
+    ...AppLocale.values.where((locale) => locale.languageCode == languageCode),
 ]);
-
-bool _isVariant(AppLocale locale) => locale.countryCode != null || locale.scriptCode != null;
-
-bool _hasBaseLocale(AppLocale variant) =>
-    AppLocale.values.any((locale) => !_isVariant(locale) && locale.languageCode == variant.languageCode);
 
 /// Locales offered to Flutter's `Localizations`, one per [AppLocale].
 final List<Locale> supportedLocalizationsLocales = List.unmodifiable(

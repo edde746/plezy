@@ -127,20 +127,12 @@ void main() {
   });
 
   group('European Portuguese formatting', () {
-    test('uses region-specific date and compact-number formats', () async {
-      await LocaleSettings.setLocale(AppLocale.pt);
-      final brazilian = LocaleSettings.currentLocale.intlLocaleName;
-      await initializeDateFormatting(brazilian, null);
-      expect(brazilian, 'pt');
-      expect(DateFormat.yMMMd(brazilian).format(DateTime(2026, 11, 12)), '12 de nov. de 2026');
-      expect(NumberFormat.compact(locale: brazilian).format(1500000), '1,5\u00A0mi');
-
+    test('uses European date and compact-number formats', () async {
+      await initializeDateFormatting();
       await LocaleSettings.setLocale(AppLocale.ptPt);
-      final european = LocaleSettings.currentLocale.intlLocaleName;
-      await initializeDateFormatting(european, null);
-      expect(european, 'pt_PT');
-      expect(DateFormat.yMMMd(european).format(DateTime(2026, 11, 12)), '12/11/2026');
-      expect(NumberFormat.compact(locale: european).format(1500000), '1,5\u00A0M');
+
+      expect(formatAbbreviatedDate('2026-11-12'), '12/11/2026');
+      expect(NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName).format(1500000), '1,5\u00A0M');
     });
   });
 

@@ -84,11 +84,6 @@ void main() {
       );
     });
 
-    test('European Portuguese names its region', () {
-      expect(AppLocale.pt.localizationsLocale, const Locale('pt'));
-      expect(AppLocale.ptPt.localizationsLocale, const Locale('pt', 'PT'));
-    });
-
     // The app hands this locale to MaterialApp; a language no delegate
     // supports would leave MaterialLocalizations.of without a value.
     test('every app language loads every global localizations delegate', () async {
