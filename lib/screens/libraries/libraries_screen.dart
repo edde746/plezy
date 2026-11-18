@@ -764,23 +764,42 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           children: [
             AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.kind.id), fill: 1, size: 20),
             const SizedBox(width: 8),
+            // Flexible bounds the name to the space the toolbar actions leave,
+            // so a long name ellipsizes instead of painting under them (#3021).
             if (librariesSpanMultipleServers(visibleLibraries) && selectedLibrary.serverName != null)
-              Column(
-                crossAxisAlignment: .start,
-                mainAxisSize: .min,
-                children: [
-                  Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleMedium),
-                  LibraryServerLabel(
-                    library: selectedLibrary,
-                    badgeSize: 10,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: .start,
+                  mainAxisSize: .min,
+                  children: [
+                    Text(
+                      selectedLibrary.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: .ellipsis,
                     ),
-                  ),
-                ],
+                    LibraryServerLabel(
+                      library: selectedLibrary,
+                      badgeSize: 10,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      ),
+                      constrainText: true,
+                    ),
+                  ],
+                ),
               )
             else
-              Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleLarge),
+              Flexible(
+                child: Text(
+                  selectedLibrary.title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: .ellipsis,
+                ),
+              ),
             const SizedBox(width: 4),
             const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1, size: 24),
           ],

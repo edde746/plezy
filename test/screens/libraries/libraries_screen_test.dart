@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
@@ -37,9 +40,11 @@ import 'package:plezy/services/library_events/library_event_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/desktop_window_padding.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/library_content_notifier.dart';
 import 'package:plezy/media/library_change_event.dart';
+import 'package:plezy/widgets/backend_badge.dart';
 import 'package:plezy/widgets/hub_section.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -96,6 +101,28 @@ const _jellyfinMovies = MediaLibrary(
   kind: MediaKind.movie,
   serverId: 'server-c',
 );
+// A long name on a non-shared show library, so the phone toolbar carries
+// Shuffle as well as Manage and Refresh — and Library options too once Browse
+// is the saved tab. That is the four-action worst case of #3021.
+const _longLibrary = MediaLibrary(
+  id: 'anime',
+  backend: MediaBackend.plex,
+  title: 'Animés (KenzNath) Japanese Animation',
+  kind: MediaKind.show,
+  serverId: 'server',
+  serverName: 'Living Room Media Server With A Long Name',
+);
+// A second server, so the picker title adds the server-name line.
+const _otherServerLibrary = MediaLibrary(
+  id: 'movies',
+  backend: MediaBackend.jellyfin,
+  title: 'Movies',
+  kind: MediaKind.movie,
+  serverId: 'server-b',
+  serverName: 'Server B',
+);
+// Pixel 5, the #3021 report device.
+const _phoneViewport = Size(393, 851);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -562,6 +589,68 @@ void main() {
     expect(client.libraryHubCalls, hubCalls + 1, reason: 'activation consumes the push-marked library epoch');
     expect(_rowState(tester, 'B').widget.hub.items.map((item) => item.id), ['B-0', 'B-1']);
   });
+
+  testWidgets('a long library name ellipsizes before the phone toolbar actions (#3021)', (tester) async {
+    final harness = await _Harness.create(
+      _GatedPreferences({
+        'selected_library_key': _longLibrary.globalKey,
+        'library_tab_${_longLibrary.globalKey}': LibraryTabType.browse.name,
+      }),
+      libraryOrder: const [_longLibrary, _libraryA],
+    );
+    addTearDown(harness.dispose);
+
+    await harness.pump(tester, viewport: _phoneViewport);
+    _expectPickerClearsToolbar(tester, [_longLibrary.title]);
+
+    // A larger system font still ellipsizes rather than overlapping.
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.pumpAndSettle();
+    _expectPickerClearsToolbar(tester, [_longLibrary.title]);
+  });
+
+  testWidgets('a long name on a multi-server setup ellipsizes the picker title and server label (#3021)', (
+    tester,
+  ) async {
+    final harness = await _Harness.create(
+      _GatedPreferences({
+        'selected_library_key': _longLibrary.globalKey,
+        'library_tab_${_longLibrary.globalKey}': LibraryTabType.browse.name,
+      }),
+      libraryOrder: const [_longLibrary, _otherServerLibrary],
+    );
+    addTearDown(harness.dispose);
+
+    await harness.pump(tester, viewport: _phoneViewport);
+
+    _expectPickerClearsToolbar(tester, [_longLibrary.title, _longLibrary.serverName!]);
+    final badge = find.descendant(of: find.byTooltip(t.libraries.selectLibrary), matching: find.byType(BackendBadge));
+    expect(badge, findsOneWidget);
+    expect(
+      tester.getRect(badge).right,
+      lessThan(tester.getRect(find.byIcon(Symbols.arrow_drop_down_rounded)).left),
+      reason: 'the server badge stays visible',
+    );
+  });
+}
+
+/// Asserts the phone library picker shows each of [texts] on one ellipsized
+/// line, and that the picker and its ▾ end before the toolbar actions start
+/// instead of painting under them (#3021).
+void _expectPickerClearsToolbar(WidgetTester tester, List<String> texts) {
+  expect(tester.takeException(), isNull);
+  final picker = find.byTooltip(t.libraries.selectLibrary);
+  final arrow = tester.getRect(find.descendant(of: picker, matching: find.byIcon(Symbols.arrow_drop_down_rounded)));
+  final actions = tester.getRect(
+    find.ancestor(of: find.byTooltip(t.libraries.shuffleLibrary), matching: find.byType(FocusableActionBar)),
+  );
+  for (final text in texts) {
+    final finder = find.descendant(of: picker, matching: find.text(text));
+    expect(tester.renderObject<RenderParagraph>(finder).didExceedMaxLines, isTrue, reason: '"$text" is ellipsized');
+    expect(tester.getRect(finder).right, lessThanOrEqualTo(arrow.left));
+  }
+  expect(arrow.right, lessThanOrEqualTo(actions.left));
 }
 
 final class _Harness {
@@ -597,10 +686,11 @@ final class _Harness {
     bool settle = true,
     VoidCallback? onFirstPostFrame,
     ValueListenable<bool>? enabled,
+    Size viewport = const Size(1280, 720),
   }) async {
     final downloads = NoSyncRulesDownloadProvider();
     addTearDown(downloads.dispose);
-    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.physicalSize = viewport;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -622,15 +712,21 @@ final class _Harness {
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(MonoPalette.dark),
-            home: OverlaySheetHost(
-              child: FocusScope(
-                child: enabled == null
-                    ? LibrariesScreen(onLibrarySelected: onLibrarySelected)
-                    : ValueListenableBuilder<bool>(
-                        valueListenable: enabled,
-                        child: LibrariesScreen(onLibrarySelected: onLibrarySelected),
-                        builder: (_, value, child) => TickerMode(enabled: value, child: child!),
-                      ),
+            // Production never pads this app bar for macOS traffic lights: the
+            // side-nav layouts sit under MainScreen's SideNavigationScope and the
+            // phone layout runs only on iOS/Android. Without the scope a macOS
+            // test host would reserve 80 px of title width no device does.
+            home: SideNavigationScope(
+              child: OverlaySheetHost(
+                child: FocusScope(
+                  child: enabled == null
+                      ? LibrariesScreen(onLibrarySelected: onLibrarySelected)
+                      : ValueListenableBuilder<bool>(
+                          valueListenable: enabled,
+                          child: LibrariesScreen(onLibrarySelected: onLibrarySelected),
+                          builder: (_, value, child) => TickerMode(enabled: value, child: child!),
+                        ),
+                ),
               ),
             ),
           ),
