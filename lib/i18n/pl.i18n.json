@@ -2469,7 +2469,32 @@
     "noUserInformation": "Seerr nie zwrócił informacji o użytkowniku",
     "sessionRejectedAfterReauth": "Sesja została odrzucona po ponownym zalogowaniu",
     "permissionDenied": "Seerr odrzucił tę akcję: Twoje konto nie ma już wymaganych uprawnień",
-    "permissionRevoked": "Nie masz już uprawnień, aby to zamówić"
+    "permissionRevoked": "Nie masz już uprawnień, aby to zamówić",
+    "requests": {
+      "myRequests": "",
+      "filter": "",
+      "filterAll": "",
+      "filterPending": "",
+      "filterApproved": "",
+      "filterProcessing": "",
+      "filterAvailable": "",
+      "filterFailed": "",
+      "statusApproved": "",
+      "seasonsList": "",
+      "manage": "",
+      "deleteRequest": "",
+      "deleteRequestTitle": "",
+      "deleteRequestBody": "",
+      "requestDeleted": "",
+      "removeCompletely": "",
+      "removeCompletelyTitle": "",
+      "removeCompletelyBody": "",
+      "removeCompletelyWarning": "",
+      "removedCompletely": "",
+      "service4k": "",
+      "serviceBoth": "",
+      "actionFailed": ""
+    }
   },
   "services": {
     "title": "Usługi",

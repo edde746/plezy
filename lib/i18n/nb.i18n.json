@@ -2445,7 +2445,32 @@
     "noUserInformation": "Seerr returnerte ingen brukerinformasjon",
     "sessionRejectedAfterReauth": "Økten ble avvist etter ny innlogging",
     "permissionDenied": "Seerr avviste denne handlingen: kontoen din har ikke lenger den nødvendige tillatelsen",
-    "permissionRevoked": "Du har ikke lenger tillatelse til å be om dette"
+    "permissionRevoked": "Du har ikke lenger tillatelse til å be om dette",
+    "requests": {
+      "myRequests": "",
+      "filter": "",
+      "filterAll": "",
+      "filterPending": "",
+      "filterApproved": "",
+      "filterProcessing": "",
+      "filterAvailable": "",
+      "filterFailed": "",
+      "statusApproved": "",
+      "seasonsList": "",
+      "manage": "",
+      "deleteRequest": "",
+      "deleteRequestTitle": "",
+      "deleteRequestBody": "",
+      "requestDeleted": "",
+      "removeCompletely": "",
+      "removeCompletelyTitle": "",
+      "removeCompletelyBody": "",
+      "removeCompletelyWarning": "",
+      "removedCompletely": "",
+      "service4k": "",
+      "serviceBoth": "",
+      "actionFailed": ""
+    }
   },
   "services": {
     "title": "Tjenester",

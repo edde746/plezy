@@ -2445,7 +2445,32 @@
     "noUserInformation": "Seerr не върна информация за потребителя",
     "sessionRejectedAfterReauth": "Сесията беше отхвърлена след повторния вход",
     "permissionDenied": "Seerr отказа това действие: акаунтът ви вече няма необходимото разрешение",
-    "permissionRevoked": "Вече нямате разрешение да заявявате това"
+    "permissionRevoked": "Вече нямате разрешение да заявявате това",
+    "requests": {
+      "myRequests": "",
+      "filter": "",
+      "filterAll": "",
+      "filterPending": "",
+      "filterApproved": "",
+      "filterProcessing": "",
+      "filterAvailable": "",
+      "filterFailed": "",
+      "statusApproved": "",
+      "seasonsList": "",
+      "manage": "",
+      "deleteRequest": "",
+      "deleteRequestTitle": "",
+      "deleteRequestBody": "",
+      "requestDeleted": "",
+      "removeCompletely": "",
+      "removeCompletelyTitle": "",
+      "removeCompletelyBody": "",
+      "removeCompletelyWarning": "",
+      "removedCompletely": "",
+      "service4k": "",
+      "serviceBoth": "",
+      "actionFailed": ""
+    }
   },
   "services": {
     "title": "Услуги",

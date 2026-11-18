@@ -2445,7 +2445,32 @@
     "noUserInformation": "Seerr no devolvió información del usuario",
     "sessionRejectedAfterReauth": "La sesión fue rechazada después de volver a iniciar sesión",
     "permissionDenied": "Seerr denegó esta acción: tu cuenta ya no tiene el permiso necesario",
-    "permissionRevoked": "Ya no tienes permiso para solicitar esto"
+    "permissionRevoked": "Ya no tienes permiso para solicitar esto",
+    "requests": {
+      "myRequests": "",
+      "filter": "",
+      "filterAll": "",
+      "filterPending": "",
+      "filterApproved": "",
+      "filterProcessing": "",
+      "filterAvailable": "",
+      "filterFailed": "",
+      "statusApproved": "",
+      "seasonsList": "",
+      "manage": "",
+      "deleteRequest": "",
+      "deleteRequestTitle": "",
+      "deleteRequestBody": "",
+      "requestDeleted": "",
+      "removeCompletely": "",
+      "removeCompletelyTitle": "",
+      "removeCompletelyBody": "",
+      "removeCompletelyWarning": "",
+      "removedCompletely": "",
+      "service4k": "",
+      "serviceBoth": "",
+      "actionFailed": ""
+    }
   },
   "services": {
     "title": "Servicios",
