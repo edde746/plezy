@@ -45,6 +45,7 @@ import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/library_content_notifier.dart';
 import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/widgets/backend_badge.dart';
+import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/hub_section.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -181,21 +182,27 @@ void main() {
     expect(find.byWidgetPredicate((widget) => widget is BaseLibraryTab), findsWidgets);
   });
 
-  testWidgets('toolbar refresh reloads the library list while none is selected', (tester) async {
-    final harness = await _Harness.create(_GatedPreferences({}), clients: [_HubClient()], libraryOrder: const []);
-    addTearDown(harness.dispose);
-    harness.libraries.initialize(harness.multiServer.aggregationService);
-    final selected = <String>[];
+  // A narrow phone keeps Refresh direct too: without libraries the ⋮ menu
+  // would hold it alone.
+  for (final viewport in const [Size(1280, 720), _phoneViewport]) {
+    testWidgets('toolbar refresh reloads the library list while none is selected (${viewport.width.toInt()} dp)', (
+      tester,
+    ) async {
+      final harness = await _Harness.create(_GatedPreferences({}), clients: [_HubClient()], libraryOrder: const []);
+      addTearDown(harness.dispose);
+      harness.libraries.initialize(harness.multiServer.aggregationService);
+      final selected = <String>[];
 
-    await harness.pump(tester, onLibrarySelected: selected.add);
-    expect(find.text(t.libraries.noLibrariesFound), findsOneWidget);
+      await harness.pump(tester, onLibrarySelected: selected.add, viewport: viewport);
+      expect(find.text(t.libraries.noLibrariesFound), findsOneWidget);
 
-    // No tabs exist to refetch, so the button must reload the list itself.
-    await tester.tap(find.byTooltip(t.common.refresh));
-    await tester.pumpAndSettle();
+      // No tabs exist to refetch, so the button must reload the list itself.
+      await tester.tap(find.byTooltip(t.common.refresh));
+      await tester.pumpAndSettle();
 
-    expect(selected, [_libraryA.globalKey]);
-  });
+      expect(selected, [_libraryA.globalKey]);
+    });
+  }
 
   testWidgets('stale saved tab cannot replace the current library tab', (tester) async {
     final preferences = _GatedPreferences({
@@ -633,6 +640,168 @@ void main() {
       reason: 'the server badge stays visible',
     );
   });
+
+  testWidgets('a narrow phone keeps Library options and Shuffle direct and folds Manage and Refresh into a menu', (
+    tester,
+  ) async {
+    final client = _PagedClient('server-c');
+    final harness = await _Harness.create(
+      _GatedPreferences({
+        'selected_library_key': _jellyfinMovies.globalKey,
+        'library_tab_${_jellyfinMovies.globalKey}': LibraryTabType.browse.name,
+      }),
+      clients: [client],
+      libraryOrder: const [_jellyfinMovies],
+    );
+    addTearDown(harness.dispose);
+    // Paged browse content never quiesces enough for pumpAndSettle.
+    await harness.pump(tester, viewport: _phoneViewport, settle: false);
+    await pumpRequestFrames(tester);
+
+    expect(find.byTooltip(t.libraries.manageLibraries), findsNothing);
+    expect(find.byTooltip(t.common.refresh), findsNothing);
+    _expectActionOrder(tester, [t.libraries.libraryOptions, t.libraries.shuffleLibrary, t.common.options]);
+
+    Future<void> openMenu() async {
+      await tester.tap(find.byTooltip(t.common.options));
+      await pumpRequestFrames(tester);
+      expect(find.text(t.libraries.manageLibraries), findsOneWidget);
+      expect(find.text(t.common.refresh), findsOneWidget);
+    }
+
+    // Dismissing the menu runs neither entry.
+    final loads = client.pageRequestCount;
+    await openMenu();
+    await tester.tapAt(const Offset(8, 8));
+    await pumpRequestFrames(tester);
+    expect(find.text(t.common.refresh), findsNothing);
+    expect(find.text(t.libraries.manageLibraries), findsNothing);
+    expect(client.pageRequestCount, loads);
+
+    // Refresh refetches the library's tabs in place, as the button did.
+    await openMenu();
+    await tester.tap(find.text(t.common.refresh));
+    await pumpRequestFrames(tester);
+    expect(client.pageRequestCount, greaterThan(loads));
+
+    await openMenu();
+    await tester.tap(find.text(t.libraries.manageLibraries));
+    await pumpRequestFrames(tester);
+    expect(find.text(t.common.refresh), findsNothing, reason: 'the menu closed');
+    expect(find.text(t.libraries.manageLibraries), findsOneWidget, reason: 'the management sheet opened');
+  });
+
+  testWidgets('a 600 dp phone layout keeps every toolbar action direct', (tester) async {
+    final harness = await _Harness.create(
+      _GatedPreferences({
+        'selected_library_key': _longLibrary.globalKey,
+        'library_tab_${_longLibrary.globalKey}': LibraryTabType.browse.name,
+      }),
+      libraryOrder: const [_longLibrary, _libraryA],
+    );
+    addTearDown(harness.dispose);
+
+    await harness.pump(tester, viewport: const Size(600, 960));
+
+    expect(tester.takeException(), isNull);
+    _expectActionOrder(tester, [
+      t.libraries.manageLibraries,
+      t.libraries.libraryOptions,
+      t.libraries.shuffleLibrary,
+      t.common.refresh,
+    ]);
+    expect(find.byTooltip(t.common.options), findsNothing);
+  });
+
+  testWidgets('TV keeps Manage, Shuffle and Refresh direct', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final harness = await _Harness.create(
+      _GatedPreferences({
+        'selected_library_key': _longLibrary.globalKey,
+        'library_tab_${_longLibrary.globalKey}': LibraryTabType.browse.name,
+      }),
+      libraryOrder: const [_longLibrary, _libraryA],
+    );
+    addTearDown(harness.dispose);
+
+    await harness.pump(tester, viewport: const Size(960, 540));
+
+    expect(tester.takeException(), isNull);
+    _expectActionOrder(tester, [t.libraries.manageLibraries, t.libraries.shuffleLibrary, t.common.refresh]);
+    expect(find.byTooltip(t.libraries.libraryOptions), findsNothing);
+    expect(find.byTooltip(t.common.options), findsNothing);
+  });
+
+  testWidgets('keyboard Select on the narrow toolbar menu focuses its first entry and Back returns to it', (
+    tester,
+  ) async {
+    final harness = await _Harness.create(
+      _GatedPreferences({
+        'selected_library_key': _longLibrary.globalKey,
+        'library_tab_${_longLibrary.globalKey}': LibraryTabType.browse.name,
+      }),
+      libraryOrder: const [_longLibrary, _libraryA],
+    );
+    addTearDown(harness.dispose);
+    await harness.pump(tester, viewport: _phoneViewport);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    tester
+        .widget<FocusableTabChip>(find.widgetWithText(FocusableTabChip, t.libraries.tabs.browse))
+        .focusNode!
+        .requestFocus();
+    await tester.pumpAndSettle();
+
+    // Up from a tab chip enters the actions; Right walks them to the ⋮.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(_focusedLabel(), 'libraries_browse_options');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(_focusedLabel(), 'libraries_shuffle');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(_focusedLabel(), 'libraries_more');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text(t.common.refresh), findsOneWidget);
+    expect(
+      FocusManager.instance.primaryFocus!.rect.contains(tester.getCenter(find.text(t.libraries.manageLibraries))),
+      isTrue,
+      reason: 'the first entry has focus',
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text(t.common.refresh), findsNothing);
+    expect(_focusedLabel(), 'libraries_more');
+
+    // Crossing 600 dp swaps ⋮ for Manage and Refresh; the focused Shuffle
+    // survives both ways.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(_focusedLabel(), 'libraries_shuffle');
+    tester.view.physicalSize = const Size(800, 851);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip(t.libraries.manageLibraries), findsOneWidget);
+    expect(_focusedLabel(), 'libraries_shuffle');
+    tester.view.physicalSize = _phoneViewport;
+    await tester.pumpAndSettle();
+    expect(find.byTooltip(t.libraries.manageLibraries), findsNothing);
+    expect(_focusedLabel(), 'libraries_shuffle');
+  });
+}
+
+String? _focusedLabel() => FocusManager.instance.primaryFocus?.debugLabel;
+
+/// Asserts each of [tooltips] names exactly one toolbar action, laid out left
+/// to right in that order.
+void _expectActionOrder(WidgetTester tester, List<String> tooltips) {
+  final centers = [for (final tooltip in tooltips) tester.getCenter(find.byTooltip(tooltip)).dx];
+  for (var i = 1; i < centers.length; i++) {
+    expect(centers[i], greaterThan(centers[i - 1]), reason: '${tooltips[i]} follows ${tooltips[i - 1]}');
+  }
 }
 
 /// Asserts the phone library picker shows each of [texts] on one ellipsized
