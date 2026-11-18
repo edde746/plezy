@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:background_downloader/background_downloader.dart'
+    show DownloadTask, Task, TaskFileSystemException, TaskRecord, TaskStatus, TaskStatusUpdate;
 import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryInterceptor;
 import 'package:plezy/media/ids.dart';
 
@@ -12,6 +14,7 @@ import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_item_types.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
@@ -46,6 +49,48 @@ class _ThrowingClient implements MediaServerClient {
 
   @override
   MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A show with one unwatched episode, enough for a sync rule to run.
+/// [onFetchEpisode] runs while the provider fetches the episode before queuing it.
+class _SyncRuleShowClient implements MediaServerClient {
+  _SyncRuleShowClient({this.onFetchEpisode});
+
+  final Future<void> Function()? onFetchEpisode;
+  final show = testMediaItem(id: 'show-1', kind: MediaKind.show, serverId: ServerId('srv'), title: 'Show');
+  final episode = testMediaItem(
+    id: 'ep-1',
+    kind: MediaKind.episode,
+    serverId: ServerId('srv'),
+    title: 'Episode 1',
+    grandparentId: 'show-1',
+  );
+
+  @override
+  ServerId get serverId => ServerId('srv');
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    if (id == show.id) return show;
+    if (id != episode.id) return null;
+    await onFetchEpisode?.call();
+    return episode;
+  }
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => [episode];
+
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => const [];
+
+  @override
+  void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -944,6 +989,118 @@ void main() {
       expect(p.getSyncRule('test-profile|srv:99')!.episodeCount, 7);
 
       p.dispose();
+    });
+  });
+
+  group('DownloadProvider — sync rules after storage exhaustion', () {
+    var processingAttempts = 0;
+
+    DownloadManagerService storageTestManager() {
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+        nativeOpsOverride: (
+          allTasks: () async => const <Task>[],
+          allRecords: () async => const <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (_) async => true,
+          resetGroup: () async => 0,
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+        queueProcessorOverride: (_) async {
+          processingAttempts++;
+        },
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+      return manager;
+    }
+
+    Future<void> insertDownloading(String globalKey, String taskId) async {
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: globalKey.split(':').last,
+        globalKey: globalKey,
+        type: 'episode',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+      await db.updateBgTaskId(globalKey, taskId);
+    }
+
+    TaskStatusUpdate storageRefusal(String taskId, String globalKey) => TaskStatusUpdate(
+      DownloadTask(
+        taskId: taskId,
+        url: 'https://example.test/$taskId.mkv',
+        filename: '$taskId.mkv',
+        directory: 'downloads',
+        metaData: globalKey,
+      ),
+      TaskStatus.failed,
+      TaskFileSystemException('Insufficient space to store the downloaded file on /tmp'),
+    );
+
+    Future<DownloadProvider> providerWithRule(DownloadManagerService manager, _SyncRuleShowClient client) async {
+      final p = DownloadProvider.forTesting(downloadManager: manager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      await p.createSyncRule(
+        serverId: ServerId('srv'),
+        ratingKey: 'show-1',
+        targetType: 'show',
+        episodeCount: 1,
+        targetMetadata: client.show,
+      );
+      return p;
+    }
+
+    setUp(() => processingAttempts = 0);
+
+    test('a sync rule leaves an episode the storage guard failed as failed (#2876)', () async {
+      final manager = storageTestManager();
+      final client = _SyncRuleShowClient();
+      final servers = MultiServerManager()..debugRegisterClientForTesting(client);
+      addTearDown(servers.dispose);
+      await insertDownloading('srv:ep-1', 'task-1');
+      final p = await providerWithRule(manager, client);
+
+      await manager.debugHandleTaskStatus(storageRefusal('task-1', 'srv:ep-1'));
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+
+      final result = await p.executeSyncRuleFor(p.syncRuleKeyFor(ServerId('srv'), 'show-1'), servers);
+
+      expect(result, isNotNull, reason: 'the rule ran');
+      expect(result!.queuedCount, 0);
+      expect(processingAttempts, 0, reason: 'the queue must stay stopped until the user acts');
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+      final row = await db.getDownloadedMedia('srv:ep-1');
+      expect(row?.status, DownloadStatus.failed.index, reason: 'the episode keeps its error and Retry action');
+      expect(row?.errorMessage, t.downloads.storageFull);
+    });
+
+    test('a storage refusal while a sync rule queues an episode keeps it out of the queue (#2876)', () async {
+      final manager = storageTestManager();
+      // Another download runs out of space while the provider fetches the
+      // episode, after the rule's own check that the queue was running.
+      final client = _SyncRuleShowClient(
+        onFetchEpisode: () => manager.debugHandleTaskStatus(storageRefusal('task-0', 'srv:ep-0')),
+      );
+      final servers = MultiServerManager()..debugRegisterClientForTesting(client);
+      addTearDown(servers.dispose);
+      await insertDownloading('srv:ep-0', 'task-0');
+      final p = await providerWithRule(manager, client);
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+
+      final result = await p.executeSyncRuleFor(p.syncRuleKeyFor(ServerId('srv'), 'show-1'), servers);
+
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+      expect(result, isNotNull, reason: 'the rule ran');
+      expect(result!.queuedCount, 0);
+      expect(await db.getDownloadedMedia('srv:ep-1'), isNull, reason: 'not admitted behind the block');
+      expect(p.downloads['srv:ep-1'], isNull, reason: 'the provider drops its optimistic queued state');
+      expect(processingAttempts, 0);
     });
   });
 

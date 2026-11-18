@@ -1673,6 +1673,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
     DownloadVersionConfig? versionConfig,
     _RelatedMetadataDownloadContext? relatedContext,
+    bool userInitiated = true,
   }) async {
     if (!_downloadManager.downloadsSupported) return false;
 
@@ -1771,6 +1772,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _claimDownloadForProfile(globalKey, ownership, client);
     if (!_isQueueOwnershipCurrent(ownership)) return false;
 
+    final previousProgress = _downloads[globalKey];
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
     safeNotifyListeners();
 
@@ -1779,7 +1781,19 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       metadata: metadataToStore,
       client: client,
       mediaIndex: resolvedIndex,
+      userInitiated: userInitiated,
     );
+    if (storedMetadata == null) {
+      // Storage stopped the queue during the awaits above and the manager
+      // left the row as it was; show it that way again (#2876).
+      if (previousProgress == null) {
+        _downloads.remove(globalKey);
+      } else {
+        _downloads[globalKey] = previousProgress;
+      }
+      safeNotifyListeners();
+      return false;
+    }
     // The manager may have stamped library identity during the enqueue; keep
     // the hydrated item and the row-derived map in sync with what was stored.
     if (!identical(storedMetadata, metadataToStore)) {
@@ -2461,12 +2475,17 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
   }) async {
     if (!_isQueueOwnershipCurrent(ownership)) return false;
+    // Queuing behind a storage block would only turn the rows the guard failed
+    // back into queued ones, dropping their error and Retry action. Leave them
+    // failed until the user frees space and retries (#2876).
+    if (_downloadManager.queueBlockedByStorageFailure) return false;
     return _queueSingleDownload(
       item,
       client,
       ownership: ownership,
       mediaIndex: mediaIndex,
       relatedContext: relatedContext,
+      userInitiated: false,
     );
   }
 

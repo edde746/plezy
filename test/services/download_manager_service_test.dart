@@ -2261,6 +2261,184 @@ void main() {
         expect(row?.errorMessage, t.downloads.storageFull, reason: key);
       }
     });
+
+    test('only a user-initiated enqueue lifts the storage block (#2876)', () async {
+      final fixture = await _createSupplementaryFixture();
+      final key = fixture.metadata.globalKey;
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: key,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await fixture.db.updateBgTaskId(key, 'task-1');
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      var processingAttempts = 0;
+      final processingStarted = Completer<void>();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        nativeOpsOverride: (
+          allTasks: () async => const <Task>[],
+          allRecords: () async => const <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (_) async => true,
+          resetGroup: () async => 0,
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+        queueProcessorOverride: (_) async {
+          processingAttempts++;
+          if (!processingStarted.isCompleted) processingStarted.complete();
+        },
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          _downloadTask('task-1', key),
+          TaskStatus.failed,
+          TaskFileSystemException(
+            'Insufficient space to store the downloaded file on /tmp: 6 bytes free, floor 4, 3 needed',
+          ),
+        ),
+      );
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+
+      expect(
+        await manager.queueDownload(metadata: fixture.metadata, client: client, userInitiated: false),
+        isNull,
+        reason: 'an automatic enqueue is refused while storage stopped the queue',
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(processingAttempts, 0, reason: 'a sync rule must not restart the queue into the same refusal');
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+      final held = await fixture.db.getDownloadedMedia(key);
+      expect(held?.status, DownloadStatus.failed.index, reason: 'the row keeps its error and Retry action');
+      expect(held?.errorMessage, t.downloads.storageFull);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), isEmpty);
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      await processingStarted.future.timeout(const Duration(seconds: 5));
+      expect(processingAttempts, 1);
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+    });
+
+    test('deleting stored media gives a storage-stopped queue one more attempt (#2876)', () async {
+      final fixture = await _createSupplementaryFixture();
+      final videoFile = File(p.join(fixture.tempDir.path, 'watched.mkv'));
+      await videoFile.writeAsString('video');
+      for (final (key, status) in [
+        ('srv:failing', DownloadStatus.downloading),
+        ('srv:watched', DownloadStatus.completed),
+        ('srv:held', DownloadStatus.failed),
+      ]) {
+        await fixture.db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: key.split(':').last,
+          globalKey: key,
+          type: 'movie',
+          status: status.index,
+        );
+      }
+      await fixture.db.updateBgTaskId('srv:failing', 'task-1');
+      await fixture.db.updateVideoFilePath('srv:watched', videoFile.path);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+        nativeOpsOverride: (
+          allTasks: () async => const <Task>[],
+          allRecords: () async => const <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (_) async => true,
+          resetGroup: () async => 0,
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+        queueProcessorOverride: (_) async {},
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          _downloadTask('task-1', 'srv:failing'),
+          TaskStatus.failed,
+          TaskFileSystemException('Insufficient space to store the downloaded file on /tmp'),
+        ),
+      );
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+
+      await manager.deleteDownload('srv:held');
+      expect(manager.queueBlockedByStorageFailure, isTrue, reason: 'a row that held nothing frees nothing');
+
+      await manager.deleteDownload('srv:watched');
+      expect(await videoFile.exists(), isFalse);
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+    });
+
+    test('an automatic enqueue still resets the circuit breaker (#2876)', () async {
+      final fixture = await _createSupplementaryFixture();
+      // Nothing is cached for these ids and the client cannot fetch them, so
+      // every preparation fails permanently: three in a row trip the breaker
+      // before the lowest-priority item is reached.
+      for (var i = 1; i <= 4; i++) {
+        await fixture.db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: 'missing-$i',
+          globalKey: 'srv:missing-$i',
+          type: 'movie',
+          status: DownloadStatus.queued.index,
+        );
+        await fixture.db.addToQueue(mediaGlobalKey: 'srv:missing-$i', priority: 10 - i);
+      }
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+      );
+      addTearDown(manager.dispose);
+
+      final firstPassFailures = manager.progressStream
+          .where((event) => event.status == DownloadStatus.failed)
+          .take(3)
+          .toList();
+      manager.resumeQueuedDownloads(client);
+      await firstPassFailures;
+      List<DownloadQueueItem> queueRows;
+      do {
+        await Future<void>.delayed(Duration.zero);
+        queueRows = await fixture.db.select(fixture.db.downloadQueue).get();
+      } while (queueRows.length != 1);
+      expect(queueRows.single.mediaGlobalKey, 'srv:missing-4', reason: 'the breaker stopped the first pass');
+
+      final leftoverAttempted = manager.progressStream.firstWhere(
+        (event) => event.globalKey == 'srv:missing-4' && event.status == DownloadStatus.failed,
+      );
+      await manager.queueDownload(
+        metadata: testMediaItem(id: 'missing-5', backend: MediaBackend.plex, serverId: ServerId('srv')),
+        client: client,
+        userInitiated: false,
+      );
+      await leftoverAttempted.timeout(const Duration(seconds: 5));
+      // The pass also tries the newly queued item; let it drain.
+      do {
+        await Future<void>.delayed(Duration.zero);
+        queueRows = await fixture.db.select(fixture.db.downloadQueue).get();
+      } while (queueRows.isNotEmpty);
+    });
   });
 
   group('HTTP failures', () {

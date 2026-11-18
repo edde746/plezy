@@ -322,6 +322,10 @@ class DownloadManagerService {
 
   bool get downloadsSupported => _downloadsSupportedOverride ?? platformDownloadsSupported;
 
+  /// Set when the storage guard stops the queue; a user action (new download,
+  /// resume, retry) clears it.
+  bool get queueBlockedByStorageFailure => _queueBlockedByStorageFailure;
+
   NativeDownloaderOps get _nativeOps =>
       _nativeOpsOverride ??
       (
@@ -1773,16 +1777,26 @@ class DownloadManagerService {
   /// Queue [metadata] for download. Returns the item actually stored —
   /// identical to [metadata] unless library stamping filled `libraryId`/
   /// `libraryTitle`, so the caller can keep its in-memory copy in sync.
-  Future<MediaItem> queueDownload({
+  ///
+  /// [userInitiated] is false for automatic enqueues (sync rules), which must
+  /// not lift a storage block the user has not acted on. While one is in
+  /// place they are not admitted at all, and null reports that back.
+  Future<MediaItem?> queueDownload({
     required MediaItem metadata,
     required MediaServerClient client,
     int priority = 0,
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
     int mediaIndex = 0,
+    bool userInitiated = true,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return metadata;
-    _rearmQueueForUserAction('new download');
+    // Any enqueue resets the circuit breaker. Only the user's own lifts a
+    // storage block: sync rules run on every refresh, and lifting it for them
+    // restarted the queue into the same refusal, failing the same episodes in
+    // a loop (#2876).
+    _consecutiveQueueFailures = 0;
+    if (userInitiated) _liftStorageBlock('new download');
 
     final globalKey = metadata.globalKey;
 
@@ -1802,6 +1816,13 @@ class DownloadManagerService {
     // Read before the upsert: a re-admitted stacked attempt's files are the
     // caller's to discard.
     final prior = await _database.getDownloadedMedia(globalKey);
+    // Storage can stop the queue during the awaits above or the caller's own.
+    // Admitting then would turn a row the guard failed back into a queued one
+    // held behind the block, dropping its error and Retry action.
+    if (!userInitiated && _queueBlockedByStorageFailure) {
+      appLogger.d('Holding back automatic download of $globalKey: storage stopped the queue');
+      return null;
+    }
     final outcome = await _database.insertQueuedDownload(
       serverId: ServerId(metadata.serverId!),
       clientScopeId: client.cacheServerId == metadata.serverId ? null : client.cacheServerId,
@@ -2639,15 +2660,19 @@ class DownloadManagerService {
     await _markCancelled(globalKey);
   }
 
-  /// Re-arms the queue for a user action (new download, resume, retry): lifts a
+  /// Re-arms the queue for a user action (resume, retry): lifts a
   /// storage-failure block and resets the consecutive-failure circuit breaker.
   /// A tripped breaker otherwise only resets on an unrelated completion or
   /// auto-retry, so after a run of permanent failures every retry would be a
   /// silent no-op.
   void _rearmQueueForUserAction(String operation) {
     _consecutiveQueueFailures = 0;
+    _liftStorageBlock(operation);
+  }
+
+  void _liftStorageBlock(String reason) {
     if (!_queueBlockedByStorageFailure) return;
-    appLogger.i('Resuming download queue after storage failure: $operation');
+    appLogger.i('Resuming download queue after storage failure: $reason');
     _queueBlockedByStorageFailure = false;
   }
 
@@ -3622,6 +3647,7 @@ class DownloadManagerService {
           await _deleteMediaFilesWithMetadata(serverId, ratingKey, downloadRecord: downloadRecord, metadata: null);
           await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
           await _deleteDownloadRowAndRelease(globalKey);
+          _liftStorageBlockForFreedMedia([?downloadRecord]);
           return;
         }
 
@@ -3648,6 +3674,7 @@ class DownloadManagerService {
         await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
 
         await _deleteDownloadRowAndRelease(globalKey);
+        _liftStorageBlockForFreedMedia([?downloadRecord, ...?children]);
 
         _emitDeletionProgress(
           DeletionProgress(
@@ -3659,6 +3686,16 @@ class DownloadManagerService {
         );
       },
     );
+  }
+
+  /// Deleting stored media is the way out of a storage refusal, by hand or
+  /// through auto-remove-watched: lift the block so the next enqueue (a sync
+  /// rule refilling, say) gets one attempt. One attempt per delete, not a
+  /// loop. Deleting rows that held nothing frees nothing and lifts nothing.
+  void _liftStorageBlockForFreedMedia(List<DownloadedMediaItem> deleted) {
+    if (deleted.any((item) => item.videoFilePath != null || item.downloadedBytes > 0)) {
+      _liftStorageBlock('stored media deleted');
+    }
   }
 
   void _emitDeletionProgress(DeletionProgress progress) {
