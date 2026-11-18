@@ -42,6 +42,9 @@ class HubDetailScreen extends StatefulWidget {
   final bool usesContinueWatchingAction;
   final VoidCallback? onRemoveFromContinueWatching;
 
+  /// Extra app-bar actions, placed before the sort action.
+  final List<FocusableAction> extraActions;
+
   const HubDetailScreen({
     super.key,
     required this.hub,
@@ -49,6 +52,7 @@ class HubDetailScreen extends StatefulWidget {
     this.isInContinueWatching = false,
     bool? usesContinueWatchingAction,
     this.onRemoveFromContinueWatching,
+    this.extraActions = const [],
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
   @override
@@ -88,6 +92,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   List<FocusableAction> getAppBarActions() {
     return [
+      ...widget.extraActions,
       FocusableAction(icon: Symbols.swap_vert_rounded, tooltip: t.libraries.sort, onPressed: _showSortBottomSheet),
     ];
   }

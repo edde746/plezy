@@ -2445,7 +2445,32 @@
     "noUserInformation": "Seerr hat keine Benutzerinformationen zurückgegeben",
     "sessionRejectedAfterReauth": "Die Sitzung wurde nach der erneuten Anmeldung abgelehnt",
     "permissionDenied": "Seerr hat diese Aktion abgelehnt: Dein Konto hat nicht mehr die erforderliche Berechtigung",
-    "permissionRevoked": "Du hast keine Berechtigung mehr, dies anzufragen"
+    "permissionRevoked": "Du hast keine Berechtigung mehr, dies anzufragen",
+    "requests": {
+      "myRequests": "Meine Anfragen",
+      "filter": "Filter",
+      "filterAll": "Alle",
+      "filterPending": "Genehmigung ausstehend",
+      "filterApproved": "Genehmigt",
+      "filterProcessing": "Wird verarbeitet",
+      "filterAvailable": "Verfügbar",
+      "filterFailed": "Fehlgeschlagen",
+      "statusApproved": "Genehmigt",
+      "seasonsList": "Staffeln ${seasons}",
+      "manage": "Anfrage verwalten",
+      "deleteRequest": "Anfrage löschen",
+      "deleteRequestTitle": "Anfrage löschen?",
+      "deleteRequestBody": "Die Anfrage für „${title}“ wird aus Seerr entfernt. Bereits Heruntergeladenes bleibt auf der Festplatte.",
+      "requestDeleted": "Anfrage gelöscht",
+      "removeCompletely": "Komplett entfernen",
+      "removeCompletelyTitle": "„${title}“ komplett entfernen?",
+      "removeCompletelyBody": "„${title}“ wird aus ${service} entfernt, und Seerr vergisst den Titel samt allen Anfragen dazu.",
+      "removeCompletelyWarning": "Alle Dateien von „${title}“ auf der Festplatte werden gelöscht. Das lässt sich nicht rückgängig machen.",
+      "removedCompletely": "„${title}“ wurde komplett entfernt",
+      "service4k": "${service} (4K)",
+      "serviceBoth": "${service} (HD und 4K)",
+      "actionFailed": "Seerr konnte das nicht ausführen: ${error}"
+    }
   },
   "services": {
     "title": "Dienste",

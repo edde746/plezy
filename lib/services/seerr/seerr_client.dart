@@ -210,6 +210,93 @@ class SeerrClient {
     return SeerrRequest.fromJson(data as Map<String, dynamic>);
   }
 
+  /// `GET /request` — requests newest first ([sort] `added`, Seerr's default
+  /// direction is descending). Seerr answers with every user's requests for
+  /// `MANAGE_REQUESTS`/`REQUEST_VIEW` holders, so pass [requestedBy] to list
+  /// one user's. [filter] is one of Seerr's own filter names (`all`,
+  /// `pending`, `approved`, `processing`, `available`, `unavailable`,
+  /// `failed`, `completed`, `deleted`); there is no `declined` filter.
+  ///
+  /// Paged by offset: `pageInfo.results` is the total count, reported as
+  /// [SeerrPage.totalResults].
+  Future<SeerrPage<SeerrRequest>> getRequests({
+    int take = 20,
+    int skip = 0,
+    String filter = 'all',
+    String sort = 'added',
+    int? requestedBy,
+    String? mediaType,
+  }) async {
+    final data = await _request(
+      'GET',
+      '/request',
+      query: {
+        'take': take,
+        'skip': skip,
+        'filter': filter,
+        'sort': sort,
+        'requestedBy': ?requestedBy,
+        'mediaType': ?mediaType,
+      },
+    );
+    final json = data as Map<String, dynamic>;
+    final page = SeerrPage<SeerrRequest>.fromJson(json, SeerrRequest.fromJson);
+    final info = json['pageInfo'];
+    final total = info is Map<String, dynamic> ? (info['results'] as num?)?.toInt() : null;
+    return SeerrPage(items: page.items, hasMore: page.hasMore, totalResults: page.totalResults ?? total);
+  }
+
+  /// `DELETE /request/{id}` — withdraw a request. Seerr allows it for the
+  /// requester while the request is pending, and for `MANAGE_REQUESTS`
+  /// holders always.
+  ///
+  /// The handler refuses with a 401 in the error-handler shape — the one
+  /// status Seerr's API otherwise never emits on an authenticated route, so
+  /// [_request] reads it as an intermediary. A following `GET /auth/me` tells
+  /// the two apart: it answers only when Seerr itself is reachable with a
+  /// live session (and refreshes the permission mask on the way), which
+  /// makes the 401 a permission denial.
+  Future<void> deleteRequest(int requestId) async {
+    final path = '/request/$requestId';
+    try {
+      await _request('DELETE', path);
+    } on SeerrProxyException catch (e) {
+      if (e.statusCode != 401) rethrow;
+      await getMe();
+      throw _denied(path, e.statusCode);
+    } on SeerrApiException catch (e) {
+      if (e.statusCode != 403) rethrow;
+      throw _denied(path, e.statusCode);
+    }
+  }
+
+  /// `DELETE /media/{id}` — clear everything Seerr knows about a title,
+  /// including all its requests. Needs `MANAGE_REQUESTS`. [mediaId] is
+  /// Seerr's own media id ([SeerrMediaInfo.id]), not the TMDB id.
+  Future<void> deleteMedia(int mediaId) => _managed('/media/$mediaId');
+
+  /// `DELETE /media/{id}/file` — remove the title from the Sonarr/Radarr
+  /// instance of the given variant, **deleting its files on disk**. Needs
+  /// `MANAGE_REQUESTS`. Seerr answers 409 when no instance is configured for
+  /// the variant and 404 when the media record is gone.
+  Future<void> deleteMediaFile(int mediaId, {required bool is4k}) =>
+      _managed('/media/$mediaId/file', query: {'is4k': is4k});
+
+  Future<void> _managed(String path, {Map<String, Object?>? query}) async {
+    try {
+      await _request('DELETE', path, query: query);
+    } on SeerrApiException catch (e) {
+      if (e.statusCode != 403) rethrow;
+      throw _denied(path, e.statusCode);
+    }
+  }
+
+  SeerrPermissionException _denied(String path, int statusCode) => SeerrPermissionException(
+    'Permission denied for $path',
+    display: t.seerr.permissionDenied,
+    statusCode: statusCode,
+  );
+
   // ---------- Sonarr / Radarr options (request sheet advanced pickers) ----------
 
   Future<List<SeerrServiceInstance>> getRadarrServices() => _serviceList('/service/radarr');

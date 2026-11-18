@@ -2445,7 +2445,32 @@
     "noUserInformation": "Seerr istifadəçi məlumatlarını qaytarmadı",
     "sessionRejectedAfterReauth": "Yenidən daxil olduqdan sonra sessiya rədd edildi",
     "permissionDenied": "Seerr bu əməliyyatı rədd etdi: hesabınızda artıq tələb olunan icazə yoxdur",
-    "permissionRevoked": "Bunu sorğulamaq üçün artıq icazəniz yoxdur"
+    "permissionRevoked": "Bunu sorğulamaq üçün artıq icazəniz yoxdur",
+    "requests": {
+      "myRequests": "",
+      "filter": "",
+      "filterAll": "",
+      "filterPending": "",
+      "filterApproved": "",
+      "filterProcessing": "",
+      "filterAvailable": "",
+      "filterFailed": "",
+      "statusApproved": "",
+      "seasonsList": "",
+      "manage": "",
+      "deleteRequest": "",
+      "deleteRequestTitle": "",
+      "deleteRequestBody": "",
+      "requestDeleted": "",
+      "removeCompletely": "",
+      "removeCompletelyTitle": "",
+      "removeCompletelyBody": "",
+      "removeCompletelyWarning": "",
+      "removedCompletely": "",
+      "service4k": "",
+      "serviceBoth": "",
+      "actionFailed": ""
+    }
   },
   "services": {
     "title": "Xidmətlər",

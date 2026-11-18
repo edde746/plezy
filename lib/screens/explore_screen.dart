@@ -37,6 +37,7 @@ import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import 'catalog_search_screen.dart';
 import 'libraries/state_messages.dart';
+import 'seerr_requests_screen.dart';
 
 /// The Explore tab: watchlist + discover rows from the active external
 /// catalog source (Trakt). Only mounted when a source is connected (the tab
@@ -279,7 +280,7 @@ class ExploreScreenState extends State<ExploreScreen>
   Widget build(BuildContext context) {
     final explore = context.watch<ExploreProvider>();
     final sources = context.watch<CatalogSourcesProvider>();
-    final rowHubs = explore.rowHubs;
+    final rowHubs = seerrRequestsHubFirst(explore.rowHubs);
     _updateHubKeys(rowHubs);
 
     // The TV toolbar must remain mounted for loading, error, and empty
@@ -375,7 +376,8 @@ class ExploreScreenState extends State<ExploreScreen>
               hub: rowHubs[i].hub,
               totalResults: rowHubs[i].totalResults,
               focusMemory: _hubFocusMemory,
-              icon: _rowIcon(rowHubs[i].row),
+              icon: seerrRequestsHubIcon(rowHubs[i].providerHubId) ?? _rowIcon(rowHubs[i].row),
+              onViewAll: seerrRequestsViewAll(context, rowHubs[i]),
               loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
               onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
               onNavigateUp: i == 0 ? searchFocusNode.requestFocus : null,
@@ -535,7 +537,9 @@ class ExploreScreenState extends State<ExploreScreen>
                 key: _tvBrowseRailKey,
                 hubs: tvHubs,
                 focusMemory: _hubFocusMemory,
-                iconForHub: (hub, _) => _rowIcon(_rowForHub(hub)?.row),
+                iconForHub: (hub, _) =>
+                    seerrRequestsHubIcon(_rowForHub(hub)?.providerHubId) ?? _rowIcon(_rowForHub(hub)?.row),
+                viewAllForHub: (hub) => seerrRequestsViewAll(context, _rowForHub(hub)),
                 onFocusedItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {
                   final rowHub = _rowForHub(hub);

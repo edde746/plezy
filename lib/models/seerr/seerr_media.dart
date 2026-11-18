@@ -137,6 +137,14 @@ class SeerrMediaInfo {
   /// seasons in the request sheet).
   final List<SeerrRequest>? requests;
 
+  /// `movie` or `tv` (`Media.mediaType`).
+  final String? mediaType;
+
+  /// The Sonarr/Radarr instance Seerr sent the title to, per variant. Null
+  /// when that variant never reached an instance.
+  final int? serviceId;
+  final int? serviceId4k;
+
   const SeerrMediaInfo({
     this.id,
     this.tmdbId,
@@ -145,6 +153,9 @@ class SeerrMediaInfo {
     this.status4kCode,
     this.seasons,
     this.requests,
+    this.mediaType,
+    this.serviceId,
+    this.serviceId4k,
   });
 
   SeerrMediaStatus status(SeerrProduct product) => SeerrMediaStatus.resolve(statusCode, product);

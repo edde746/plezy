@@ -5915,6 +5915,8 @@ class Translations$seerr$en {
 
 	/// en: 'You no longer have permission to request this'
 	String get permissionRevoked => 'You no longer have permission to request this';
+
+	late final Translations$seerr$requests$en requests = Translations$seerr$requests$en.internal(_root);
 }
 
 // Path: services
@@ -7965,6 +7967,84 @@ class Translations$companionRemote$errors$en {
 
 	/// en: 'Connection lost'
 	String get connectionLost => 'Connection lost';
+}
+
+// Path: seerr.requests
+class Translations$seerr$requests$en {
+	Translations$seerr$requests$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'My requests'
+	String get myRequests => 'My requests';
+
+	/// en: 'Filter'
+	String get filter => 'Filter';
+
+	/// en: 'All'
+	String get filterAll => 'All';
+
+	/// en: 'Pending approval'
+	String get filterPending => 'Pending approval';
+
+	/// en: 'Approved'
+	String get filterApproved => 'Approved';
+
+	/// en: 'Processing'
+	String get filterProcessing => 'Processing';
+
+	/// en: 'Available'
+	String get filterAvailable => 'Available';
+
+	/// en: 'Failed'
+	String get filterFailed => 'Failed';
+
+	/// en: 'Approved'
+	String get statusApproved => 'Approved';
+
+	/// en: 'Seasons ${seasons}'
+	String seasonsList({required Object seasons}) => 'Seasons ${seasons}';
+
+	/// en: 'Manage request'
+	String get manage => 'Manage request';
+
+	/// en: 'Delete request'
+	String get deleteRequest => 'Delete request';
+
+	/// en: 'Delete request?'
+	String get deleteRequestTitle => 'Delete request?';
+
+	/// en: 'The request for "${title}" is removed from Seerr. Anything already downloaded stays on disk.'
+	String deleteRequestBody({required Object title}) => 'The request for "${title}" is removed from Seerr. Anything already downloaded stays on disk.';
+
+	/// en: 'Request deleted'
+	String get requestDeleted => 'Request deleted';
+
+	/// en: 'Remove completely'
+	String get removeCompletely => 'Remove completely';
+
+	/// en: 'Remove "${title}" completely?'
+	String removeCompletelyTitle({required Object title}) => 'Remove "${title}" completely?';
+
+	/// en: '"${title}" is removed from ${service}, and Seerr forgets the title along with every request for it.'
+	String removeCompletelyBody({required Object title, required Object service}) => '"${title}" is removed from ${service}, and Seerr forgets the title along with every request for it.';
+
+	/// en: 'All files of "${title}" on disk are deleted. This cannot be undone.'
+	String removeCompletelyWarning({required Object title}) => 'All files of "${title}" on disk are deleted. This cannot be undone.';
+
+	/// en: '"${title}" was removed completely'
+	String removedCompletely({required Object title}) => '"${title}" was removed completely';
+
+	/// en: '${service} (4K)'
+	String service4k({required Object service}) => '${service} (4K)';
+
+	/// en: '${service} (HD and 4K)'
+	String serviceBoth({required Object service}) => '${service} (HD and 4K)';
+
+	/// en: 'Seerr couldn't do that: ${error}'
+	String actionFailed({required Object error}) => 'Seerr couldn\'t do that: ${error}';
 }
 
 // Path: services.names
@@ -10352,6 +10432,29 @@ extension on Translations {
 			'seerr.sessionRejectedAfterReauth' => 'The session was rejected after signing in again',
 			'seerr.permissionDenied' => 'Seerr denied this action: your account no longer has the required permission',
 			'seerr.permissionRevoked' => 'You no longer have permission to request this',
+			'seerr.requests.myRequests' => 'My requests',
+			'seerr.requests.filter' => 'Filter',
+			'seerr.requests.filterAll' => 'All',
+			'seerr.requests.filterPending' => 'Pending approval',
+			'seerr.requests.filterApproved' => 'Approved',
+			'seerr.requests.filterProcessing' => 'Processing',
+			'seerr.requests.filterAvailable' => 'Available',
+			'seerr.requests.filterFailed' => 'Failed',
+			'seerr.requests.statusApproved' => 'Approved',
+			'seerr.requests.seasonsList' => ({required Object seasons}) => 'Seasons ${seasons}',
+			'seerr.requests.manage' => 'Manage request',
+			'seerr.requests.deleteRequest' => 'Delete request',
+			'seerr.requests.deleteRequestTitle' => 'Delete request?',
+			'seerr.requests.deleteRequestBody' => ({required Object title}) => 'The request for "${title}" is removed from Seerr. Anything already downloaded stays on disk.',
+			'seerr.requests.requestDeleted' => 'Request deleted',
+			'seerr.requests.removeCompletely' => 'Remove completely',
+			'seerr.requests.removeCompletelyTitle' => ({required Object title}) => 'Remove "${title}" completely?',
+			'seerr.requests.removeCompletelyBody' => ({required Object title, required Object service}) => '"${title}" is removed from ${service}, and Seerr forgets the title along with every request for it.',
+			'seerr.requests.removeCompletelyWarning' => ({required Object title}) => 'All files of "${title}" on disk are deleted. This cannot be undone.',
+			'seerr.requests.removedCompletely' => ({required Object title}) => '"${title}" was removed completely',
+			'seerr.requests.service4k' => ({required Object service}) => '${service} (4K)',
+			'seerr.requests.serviceBoth' => ({required Object service}) => '${service} (HD and 4K)',
+			'seerr.requests.actionFailed' => ({required Object error}) => 'Seerr couldn\'t do that: ${error}',
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',

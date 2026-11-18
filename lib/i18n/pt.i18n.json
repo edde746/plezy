@@ -2445,7 +2445,32 @@
     "noUserInformation": "O Seerr não retornou informações do usuário",
     "sessionRejectedAfterReauth": "A sessão foi rejeitada após entrar novamente",
     "permissionDenied": "O Seerr negou esta ação: sua conta não tem mais a permissão necessária",
-    "permissionRevoked": "Você não tem mais permissão para solicitar isso"
+    "permissionRevoked": "Você não tem mais permissão para solicitar isso",
+    "requests": {
+      "myRequests": "",
+      "filter": "",
+      "filterAll": "",
+      "filterPending": "",
+      "filterApproved": "",
+      "filterProcessing": "",
+      "filterAvailable": "",
+      "filterFailed": "",
+      "statusApproved": "",
+      "seasonsList": "",
+      "manage": "",
+      "deleteRequest": "",
+      "deleteRequestTitle": "",
+      "deleteRequestBody": "",
+      "requestDeleted": "",
+      "removeCompletely": "",
+      "removeCompletelyTitle": "",
+      "removeCompletelyBody": "",
+      "removeCompletelyWarning": "",
+      "removedCompletely": "",
+      "service4k": "",
+      "serviceBoth": "",
+      "actionFailed": ""
+    }
   },
   "services": {
     "title": "Serviços",

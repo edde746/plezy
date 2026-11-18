@@ -44,6 +44,9 @@ SeerrMediaInfo _$SeerrMediaInfoFromJson(Map<String, dynamic> json) =>
       requests: (json['requests'] as List<dynamic>?)
           ?.map((e) => SeerrRequest.fromJson(e as Map<String, dynamic>))
           .toList(),
+      mediaType: json['mediaType'] as String?,
+      serviceId: (json['serviceId'] as num?)?.toInt(),
+      serviceId4k: (json['serviceId4k'] as num?)?.toInt(),
     );
 
 SeerrSeasonInfo _$SeerrSeasonInfoFromJson(Map<String, dynamic> json) =>

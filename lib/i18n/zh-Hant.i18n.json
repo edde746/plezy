@@ -2433,7 +2433,32 @@
     "noUserInformation": "Seerr 未傳回使用者資訊",
     "sessionRejectedAfterReauth": "重新登入後，工作階段遭到拒絕",
     "permissionDenied": "Seerr 拒絕了此操作：您的帳戶不再具備所需權限",
-    "permissionRevoked": "您不再具有請求此內容的權限"
+    "permissionRevoked": "您不再具有請求此內容的權限",
+    "requests": {
+      "myRequests": "",
+      "filter": "",
+      "filterAll": "",
+      "filterPending": "",
+      "filterApproved": "",
+      "filterProcessing": "",
+      "filterAvailable": "",
+      "filterFailed": "",
+      "statusApproved": "",
+      "seasonsList": "",
+      "manage": "",
+      "deleteRequest": "",
+      "deleteRequestTitle": "",
+      "deleteRequestBody": "",
+      "requestDeleted": "",
+      "removeCompletely": "",
+      "removeCompletelyTitle": "",
+      "removeCompletelyBody": "",
+      "removeCompletelyWarning": "",
+      "removedCompletely": "",
+      "service4k": "",
+      "serviceBoth": "",
+      "actionFailed": ""
+    }
   },
   "services": {
     "title": "外部服務",

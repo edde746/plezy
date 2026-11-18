@@ -36,6 +36,7 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/external_url.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/hub_section.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
@@ -1811,4 +1812,219 @@ void main() {
 
     expect(tester.getSize(find.byType(MediaCard).first).width, lessThan(210));
   });
+
+  group('Seerr request delete actions', () {
+    final strings = t.seerr.requests;
+
+    testWidgets('a user may withdraw their own pending request, confirmed with Cancel focused', (tester) async {
+      final calls = <String>[];
+      var deleted = false;
+      final seerr = _seerrSourceAnswering((request) {
+        calls.add('${request.method} ${request.url.path}');
+        if (request.method == 'DELETE') {
+          deleted = true;
+          return http.Response('', 204);
+        }
+        if (request.url.path == '/api/v1/movie/1') {
+          return _seerrMovie(requests: [if (!deleted) _seerrRequest(id: 7, requestedBy: 1)]);
+        }
+        return http.Response('unexpected Seerr request', 500);
+      });
+
+      await _pumpDetail(tester, _FakeCatalogSource(), seerr: seerr);
+
+      expect(calls, ['GET /api/v1/movie/1'], reason: 'one read of what Seerr holds for the title');
+      await tester.tap(find.byTooltip(strings.manage));
+      await tester.pumpAndSettle();
+      expect(find.text(strings.deleteRequest), findsOneWidget);
+      expect(find.text(strings.removeCompletely), findsNothing);
+
+      await tester.tap(find.text(strings.deleteRequest));
+      await tester.pumpAndSettle();
+      expect(find.text(strings.deleteRequestBody(title: 'Catalog Movie')), findsOneWidget);
+      expect(_primaryFocusIsWithin(tester, find.widgetWithText(DialogActionButton, t.common.cancel)), isTrue);
+      expect(calls, hasLength(1), reason: 'nothing is deleted before the confirmation');
+
+      await tester.tap(find.widgetWithText(FilledButton, strings.deleteRequest));
+      await tester.pumpAndSettle();
+
+      expect(calls, ['GET /api/v1/movie/1', 'DELETE /api/v1/request/7', 'GET /api/v1/movie/1']);
+      expect(find.text(strings.requestDeleted), findsOneWidget);
+      expect(find.byTooltip(strings.manage), findsNothing, reason: 'the re-read finds nothing left to manage');
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+    });
+
+    testWidgets('nothing is offered for requests the user may not touch', (tester) async {
+      final seerr = _seerrSourceAnswering(
+        (request) => request.url.path == '/api/v1/movie/1'
+            ? _seerrMovie(
+                serviceId: 0,
+                requests: [_seerrRequest(id: 7, requestedBy: 99), _seerrRequest(id: 8, requestedBy: 1, status: 2)],
+              )
+            : http.Response('unexpected Seerr request', 500),
+      );
+
+      await _pumpDetail(tester, _FakeCatalogSource(), seerr: seerr);
+
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+      expect(find.byTooltip(strings.manage), findsNothing);
+    });
+
+    testWidgets('a manager may also remove the title completely, with the file-loss warning', (tester) async {
+      final calls = <String>[];
+      final seerr = _seerrSourceAnswering((request) {
+        if (request.method == 'DELETE') {
+          calls.add('${request.method} ${request.url.path}?${request.url.query}');
+          return http.Response('', 204);
+        }
+        return request.url.path == '/api/v1/movie/1'
+            ? _seerrMovie(serviceId: 0, serviceId4k: 1, requests: [_seerrRequest(id: 7, requestedBy: 99, status: 2)])
+            : http.Response('unexpected Seerr request', 500);
+      }, permissions: SeerrPermission.manageRequests);
+
+      await _pumpDetail(tester, _FakeCatalogSource(), seerr: seerr);
+
+      expect(find.byTooltip(t.seerr.request), findsNothing, reason: 'managing needs no request permission');
+      await tester.tap(find.byTooltip(strings.manage));
+      await tester.pumpAndSettle();
+      expect(find.text(strings.deleteRequest), findsOneWidget);
+      expect(find.text(strings.removeCompletely), findsOneWidget);
+
+      await tester.tap(find.text(strings.removeCompletely));
+      await tester.pumpAndSettle();
+      expect(find.text(strings.removeCompletelyTitle(title: 'Catalog Movie')), findsOneWidget);
+      expect(
+        find.text(
+          strings.removeCompletelyBody(
+            title: 'Catalog Movie',
+            service: strings.serviceBoth(service: 'Radarr'),
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(strings.removeCompletelyWarning(title: 'Catalog Movie')), findsOneWidget);
+      expect(_primaryFocusIsWithin(tester, find.widgetWithText(DialogActionButton, t.common.cancel)), isTrue);
+      expect(calls, isEmpty);
+
+      await tester.tap(find.widgetWithText(FilledButton, strings.removeCompletely));
+      await tester.pumpAndSettle();
+
+      expect(calls, [
+        'DELETE /api/v1/media/5/file?is4k=false',
+        'DELETE /api/v1/media/5/file?is4k=true',
+        'DELETE /api/v1/media/5?',
+      ]);
+      expect(find.text(strings.removedCompletely(title: 'Catalog Movie')), findsOneWidget);
+    });
+
+    testWidgets("a Seerr item's request badge follows the deletion", (tester) async {
+      var deleted = false;
+      final seerr = _seerrSourceAnswering((request) {
+        if (request.method == 'DELETE') {
+          deleted = true;
+          return http.Response('', 204);
+        }
+        return switch (request.url.path) {
+          '/api/v1/movie/1' => _seerrMovie(requests: [if (!deleted) _seerrRequest(id: 7, requestedBy: 1)]),
+          '/api/v1/movie/1/recommendations' => _seerrJson({'page': 1, 'totalPages': 1, 'results': <Object>[]}),
+          '/api/v1/settings/public' => _seerrJson({'message': 'Not Found'}, status: 404),
+          _ => http.Response('unexpected Seerr request', 500),
+        };
+      });
+      const item = CatalogItem(
+        source: CatalogSourceId.seerr,
+        kind: MediaKind.movie,
+        title: 'Catalog Movie',
+        ids: CatalogItemIds(tmdb: 1),
+        serverState: CatalogServerState(request: CatalogRequestState.pending),
+      );
+
+      await _pumpDetail(tester, _FakeCatalogSource(), item: item, seerr: seerr);
+      expect(find.text(t.explore.badge.pendingApproval), findsOneWidget);
+
+      await tester.tap(find.byTooltip(strings.manage));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(strings.deleteRequest));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, strings.deleteRequest));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.explore.badge.pendingApproval), findsNothing);
+      expect(find.byTooltip(strings.manage), findsNothing);
+    });
+  });
+}
+
+http.Response _seerrJson(Object body, {int status = 200}) =>
+    http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json'});
+
+/// `GET /movie/1` with what Seerr holds for the title: its media record
+/// (Seerr id 5) and the requests for it, nested without their media as the
+/// detail endpoints send them.
+http.Response _seerrMovie({required List<Map<String, Object?>> requests, int? serviceId, int? serviceId4k}) =>
+    _seerrJson({
+      'id': 1,
+      'title': 'Catalog Movie',
+      'mediaInfo': {
+        'id': 5,
+        'mediaType': 'movie',
+        'tmdbId': 1,
+        'status': requests.isEmpty ? 1 : 2,
+        'status4k': 1,
+        'serviceId': serviceId,
+        'serviceId4k': serviceId4k,
+        'requests': requests,
+      },
+    });
+
+Map<String, Object?> _seerrRequest({required int id, required int requestedBy, int status = 1}) => {
+  'id': id,
+  'status': status,
+  'is4k': false,
+  'type': 'movie',
+  'requestedBy': {'id': requestedBy},
+};
+
+/// A real [SeerrCatalogSource] for user 1 whose Seerr is played by [handler].
+SeerrCatalogSource _seerrSourceAnswering(
+  FutureOr<http.Response> Function(http.Request request) handler, {
+  int permissions = SeerrPermission.request,
+}) {
+  final client = SeerrClient(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: 'pw',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions,
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      product: SeerrProduct.jellyseerr,
+      createdAt: 0,
+    ),
+    onSessionInvalidated: () {},
+    httpClient: MockClient((request) async => handler(request)),
+  );
+  final source = SeerrCatalogSource(client);
+  addTearDown(() {
+    source.dispose();
+    client.dispose();
+  });
+  return source;
+}
+
+/// Whether primary focus sits inside the widget [finder] locates.
+bool _primaryFocusIsWithin(WidgetTester tester, Finder finder) {
+  final target = tester.element(finder);
+  final focused = FocusManager.instance.primaryFocus?.context;
+  if (focused == null) return false;
+  var inside = false;
+  focused.visitAncestorElements((element) {
+    if (element != target) return true;
+    inside = true;
+    return false;
+  });
+  return inside;
 }

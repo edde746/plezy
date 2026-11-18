@@ -33,6 +33,7 @@ import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/community_ratings.dart';
 import '../services/catalog/seerr_catalog_source.dart';
+import '../services/catalog/seerr_requests.dart';
 import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/catalog_navigation_helper.dart';
@@ -57,6 +58,7 @@ import '../widgets/focusable_list_tile.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/optimized_media_image.dart';
 import '../widgets/overlay_sheet.dart';
+import '../widgets/seerr_request_actions.dart';
 import '../widgets/seerr_request_sheet.dart';
 import '../widgets/settings_section.dart';
 import '../widgets/stat_chip.dart';
@@ -102,6 +104,11 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   bool _mutatingWatchlist = false;
 
   CatalogItem? _detailItem;
+
+  /// What Seerr holds for this title, for the request delete actions.
+  late final SeerrTitleRequestsController _seerrRequests = SeerrTitleRequestsController(
+    onMutated: () => unawaited(_reloadSeerrServerState()),
+  )..addListener(_onSeerrRequestsChanged);
 
   /// The connected trackers' scores, merged as they arrive; empty until then.
   List<MediaRatingSource> _communityRatings = const [];
@@ -171,6 +178,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       node.dispose();
     }
     _watchlistSource?.watchlistChanges.removeListener(_onWatchlistChanged);
+    _seerrRequests.dispose();
     unawaited(_communityRatingsSubscription?.cancel());
     for (final node in _libraryMatchNodesByKey.values) {
       node.dispose();
@@ -185,6 +193,23 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   void _onWatchlistChanged() {
     // ignore: no-empty-block - membership state lives in the source
     setState(() {});
+  }
+
+  void _onSeerrRequestsChanged() {
+    // ignore: no-empty-block - request state lives in the controller
+    if (mounted) setState(() {});
+  }
+
+  /// A request was withdrawn or the title removed: re-read Seerr's detail so
+  /// the availability and request chips follow. Starts from the item as
+  /// shown, minus its server state — enrichment keeps the starting item's
+  /// value wherever the detail body has none, and after a removal it has none.
+  Future<void> _reloadSeerrServerState() async {
+    if (!mounted) return;
+    final source = _ownSource;
+    if (source is! SeerrCatalogSource) return;
+    final detail = await source.fetchDetail(SeerrRequests.withServerState(_item, null));
+    if (mounted) setState(() => _detailItem = detail.item);
   }
 
   Future<void> _resolveMatches(CatalogItem item) async {
@@ -421,7 +446,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
+  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer || _seerrRequests.hasActions;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -1388,6 +1413,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     // the permission mask (grant/revoke), both adopted in place upstream.
     context.select<CatalogSourcesProvider, SeerrCatalogSource?>((sources) => sources.seerrSource);
     context.select<SeerrAccountProvider?, int?>((account) => account?.permissions);
+    _seerrRequests.bind(context.read<CatalogSourcesProvider>().seerrSource, item.kind, tmdbId);
     // The backdrop strip spans the full screen width (Positioned left/right: 0
     // below), and backdropFor is width-keyed: target the rendered width, not
     // the 320px slot height.
@@ -1534,6 +1560,22 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                       kind: item.kind,
                                                       tmdbId: tmdbId,
                                                       title: item.title,
+                                                    ),
+                                                  ),
+                                                ),
+                                              if (_seerrRequests.source case final SeerrCatalogSource seerr
+                                                  when _seerrRequests.hasActions)
+                                                FocusableAction(
+                                                  debugLabel: 'catalog_seerr_requests',
+                                                  icon: Symbols.delete_rounded,
+                                                  tooltip: t.seerr.requests.manage,
+                                                  onPressed: () => unawaited(
+                                                    showSeerrRequestActionsMenu(
+                                                      hostContext,
+                                                      source: seerr,
+                                                      actions: _seerrRequests.actions,
+                                                      title: item.title,
+                                                      anchor: _actionBarKey.currentContext,
                                                     ),
                                                   ),
                                                 ),
