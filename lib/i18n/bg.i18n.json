@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Сървърът ви не предостави данни за файловете на този елемент, така че Plezy не може да провери кои файлове ще бъдат премахнати. Може да изтрие повече от посочения по-горе елемент.",
     "mediaDeletedSuccessfully": "Елементът е изтрит успешно",
     "mediaFailedToDelete": "Неуспешно изтриване на елемента",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Оцени",
     "playFromBeginning": "Пусни от началото",
     "playVersion": "Пусни версия..."

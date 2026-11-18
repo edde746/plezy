@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Serveriniz bu element üçün fayl təfərrüatlarını təqdim etmədi, ona görə Plezy bunun hansı faylları siləcəyini yoxlaya bilmir. Yuxarıda adı çəkilən elementdən daha çoxunu silə bilər.",
     "mediaDeletedSuccessfully": "Media elementi uğurla silindi",
     "mediaFailedToDelete": "Media elementi silinə bilmədi",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Qiymətləndir",
     "playFromBeginning": "Əvvəldən oynat",
     "playVersion": "Versiyanı oynat..."

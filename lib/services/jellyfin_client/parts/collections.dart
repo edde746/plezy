@@ -191,11 +191,11 @@ mixin _JellyfinCollectionMethods on _JellyfinClientInternals {
               'EnableUserData': 'false',
               'EnableTotalRecordCount': 'false',
             },
-            timeout: MediaServerTimeouts.jellyfinDeletePermission,
+            timeout: MediaServerTimeouts.deletePermissionProbe,
             abort: abort,
             allowEndpointFailover: false,
           )
-          .namedTimeout(MediaServerTimeouts.jellyfinDeletePermission, operation: 'jellyfin delete permission');
+          .namedTimeout(MediaServerTimeouts.deletePermissionProbe, operation: 'jellyfin delete permission');
       throwIfHttpError(response);
       final items = _itemsArray(response.data);
       if (items.isEmpty) return false;

@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Серверіңіз бұл элемент үшін файл мәліметтерін ұсынбады, сондықтан Plezy қандай файлдар өшірілетінін тексере алмайды. Ол жоғарыда аталған элементтен артық өшіруі мүмкін.",
     "mediaDeletedSuccessfully": "Медиа элементі сәтті өшірілді",
     "mediaFailedToDelete": "Медиа элементін өшіру мүмкін болмады",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Бағалау",
     "playFromBeginning": "Басынан бастап ойнату",
     "playVersion": "Нұсқаны ойнату..."

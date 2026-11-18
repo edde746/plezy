@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.",
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
+    "mediaDeletionDisabledOnServer": "Media deletion is turned off on this server. Turn on \"Allow media deletion\" in the server's Library settings.",
     "rate": "Rate",
     "playFromBeginning": "Play from Beginning",
     "playVersion": "Play Version..."

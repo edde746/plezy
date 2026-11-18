@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Je server heeft geen bestandsgegevens voor dit item verstrekt, dus Plezy kan niet controleren welke bestanden hiermee worden verwijderd. Het kan meer verwijderen dan het hierboven genoemde item.",
     "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Beoordelen",
     "playFromBeginning": "Afspelen vanaf het begin",
     "playVersion": "Versie afspelen..."

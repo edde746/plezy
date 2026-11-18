@@ -766,6 +766,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Twój serwer nie podał informacji o plikach tego elementu, więc Plezy nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.",
     "mediaDeletedSuccessfully": "Usunięto element multimedialny",
     "mediaFailedToDelete": "Nie udało się usunąć elementu multimedialnego",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Oceń",
     "playFromBeginning": "Odtwórz od początku",
     "playVersion": "Odtwórz wersję..."

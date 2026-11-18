@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Votre serveur n'a pas fourni les détails du fichier pour cet élément, Plezy ne peut donc pas vérifier quels fichiers seront supprimés. Il risque d'en supprimer plus que l'élément nommé ci-dessus.",
     "mediaDeletedSuccessfully": "Élément média supprimé avec succès",
     "mediaFailedToDelete": "Échec de la suppression de l'élément média",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Noter",
     "playFromBeginning": "Lire depuis le début",
     "playVersion": "Lire la version..."

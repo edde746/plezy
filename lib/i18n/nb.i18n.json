@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Serveren din ga ikke fildetaljer for dette elementet, så Plezy kan ikke sjekke hvilke filer dette vil fjerne. Det kan slette mer enn elementet som er nevnt ovenfor.",
     "mediaDeletedSuccessfully": "Medieelement slettet",
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Vurder",
     "playFromBeginning": "Spill fra begynnelsen",
     "playVersion": "Spill av versjon..."

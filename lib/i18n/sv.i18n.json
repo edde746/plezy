@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Din server tillhandahöll inte filinformation för detta objekt, så Plezy kan inte kontrollera vilka filer detta tar bort. Det kan ta bort mer än objektet ovan.",
     "mediaDeletedSuccessfully": "Medieobjektet har tagits bort",
     "mediaFailedToDelete": "Det gick inte att ta bort medieobjektet",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Betygsätt",
     "playFromBeginning": "Spela från början",
     "playVersion": "Spela version..."

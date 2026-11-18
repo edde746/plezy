@@ -619,6 +619,13 @@ abstract class MediaServerClient {
   Future<bool> deleteCollection(MediaItem collection);
 
   /// Permanently delete [item] from the library.
+  ///
+  /// Plex carries out this DELETE even with the server's "Allow media
+  /// deletion" switch off (#2897), so `PlexClient` reads the switch again
+  /// immediately before sending it and throws [MediaDeletionRefusedException]
+  /// instead when the answer is anything but "allowed". Jellyfin/Emby need no
+  /// such client-side guard: the server checks `CanDelete` on the DELETE
+  /// itself and rejects it.
   Future<bool> deleteMediaItem(MediaItem item);
 
   /// File info (codec / resolution / bitrate / file path) for [item].
@@ -1018,15 +1025,18 @@ abstract interface class SeasonEpisodePagingClient {
 }
 
 /// Optional capability for clients whose server can answer "may the signed-in
-/// user delete *this* item?" per item.
+/// user delete *this* item right now?".
 ///
-/// Jellyfin-only by nature: `BaseItemDto.CanDelete` folds the global
-/// `EnableContentDeletion` grant, the per-library
-/// `EnableContentDeletionFromFolders` grant, and item state (virtual/missing
-/// files, in-progress recordings) into one server-computed boolean — none of
-/// which a client can reproduce. Plex exposes no per-item delete permission,
-/// so it deliberately does not implement this and callers keep using their
-/// account-level owner/admin gate for it.
+/// - Jellyfin/Emby answer per item: `BaseItemDto.CanDelete` folds the global
+///   `EnableContentDeletion` grant, the per-library
+///   `EnableContentDeletionFromFolders` grant, and item state (virtual/missing
+///   files, in-progress recordings) into one server-computed boolean — none of
+///   which a client can reproduce.
+/// - Plex answers with its server-wide "Allow media deletion" switch
+///   (`allowMediaDeletion` on the root MediaContainer). That switch says
+///   nothing about who may delete: Plex lets only the owning account delete
+///   even with it on, so callers combine the answer with their owner/admin
+///   gate rather than treating `true` as a grant on its own.
 abstract interface class MediaDeletionPermissionClient {
   /// `true`/`false` as reported by the server for [item], or `null` when the
   /// server did not answer (item not visible to this user, unexpected shape).

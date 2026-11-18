@@ -130,6 +130,18 @@ class RecordingConflictException extends MediaServerException {
   const RecordingConflictException(super.message, {super.display});
 }
 
+/// The client refused a server-side media delete because the server does not
+/// allow it right now.
+///
+/// Plex carries out `DELETE /library/metadata/{id}` even when the server's
+/// "Allow media deletion" switch is off (#2897), so `PlexClient` reads the
+/// switch again immediately before sending the DELETE and throws this instead
+/// of sending it. UI maps it to "deletion is turned off on this server" rather
+/// than a generic failure.
+class MediaDeletionRefusedException extends MediaServerException {
+  const MediaDeletionRefusedException(super.message, {super.display});
+}
+
 /// The server explicitly terminated the client's playback session (admin
 /// "stop stream", paused-too-long auto-termination, concurrent-stream limit).
 ///

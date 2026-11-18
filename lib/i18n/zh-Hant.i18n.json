@@ -757,6 +757,7 @@
     "deleteScopeUnverifiedNoFileInfo": "您的伺服器未提供此項目的檔案資訊，因此 Plezy 無法確認此操作會刪除哪些檔案。刪除範圍可能超出上方所列的項目。",
     "mediaDeletedSuccessfully": "媒體已成功刪除",
     "mediaFailedToDelete": "刪除媒體失敗",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "評分",
     "playFromBeginning": "從頭播放",
     "playVersion": "播放版本…"

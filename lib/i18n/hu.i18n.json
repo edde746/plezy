@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "A szerver nem szolgáltatott fájladatokat ehhez az elemhez, ezért a Plezy nem tudja ellenőrizni, mely fájlokat távolít el. A fent nevezett elemnél többet is törölhet.",
     "mediaDeletedSuccessfully": "Médiaelem sikeresen törölve",
     "mediaFailedToDelete": "Nem sikerült a médiaelem törlése",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Értékelés",
     "playFromBeginning": "Lejátszás az elejétől",
     "playVersion": "Verzió lejátszása..."

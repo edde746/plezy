@@ -757,6 +757,7 @@
     "deleteScopeUnverifiedNoFileInfo": "서버가 이 항목의 파일 정보를 제공하지 않아 Plezy가 어떤 파일이 삭제될지 확인할 수 없습니다. 위 항목보다 더 많은 파일이 삭제될 수 있습니다.",
     "mediaDeletedSuccessfully": "미디어 항목이 성공적으로 삭제되었습니다",
     "mediaFailedToDelete": "미디어 항목 삭제 실패",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "평가",
     "playFromBeginning": "처음부터 재생",
     "playVersion": "버전 재생..."

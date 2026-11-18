@@ -757,6 +757,7 @@
     "deleteScopeUnverifiedNoFileInfo": "サーバーがこのアイテムのファイル情報を提供しなかったため、Plezyは削除対象のファイルを確認できません。上記のアイテム以上に削除される可能性があります。",
     "mediaDeletedSuccessfully": "メディアアイテムを正常に削除しました",
     "mediaFailedToDelete": "メディアアイテムの削除に失敗しました",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "評価",
     "playFromBeginning": "最初から再生",
     "playVersion": "バージョンを選んで再生…"

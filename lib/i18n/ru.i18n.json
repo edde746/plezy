@@ -766,6 +766,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Ваш сервер не предоставил сведения о файлах для этого элемента, поэтому Plezy не может проверить, какие файлы будут удалены. Может быть удалено больше, чем указанный выше элемент.",
     "mediaDeletedSuccessfully": "Медиаэлемент успешно удалён",
     "mediaFailedToDelete": "Не удалось удалить медиаэлемент",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Оценить",
     "playFromBeginning": "Воспроизвести сначала",
     "playVersion": "Воспроизвести версию..."

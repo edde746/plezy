@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../exceptions/media_server_exceptions.dart';
 import '../providers/watch_state_store.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
@@ -205,8 +206,10 @@ bool isAdminActionAllowedForMediaItem({
 /// and anything unknown — offline, request failed, timed out, item invisible —
 /// stays hidden rather than offering a button that 401s.
 ///
-/// Plex has no per-item permission on the wire, so it keeps the account-level
-/// owner/admin gate.
+/// Plex needs both: the account-level owner/admin gate, because Plex lets only
+/// the owning account delete, and the server's "Allow media deletion" switch
+/// ([resolvedItemPermission]), because PMS carries out the DELETE even with the
+/// switch off (#2897). An unknown switch stays hidden too.
 bool isMediaDeletionAllowed({
   required MediaBackend? itemBackend,
   required bool? resolvedItemPermission,
@@ -214,7 +217,7 @@ bool isMediaDeletionAllowed({
 }) => switch (itemBackend) {
   null => false,
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
-  MediaBackend.plex => isAdminActionAllowed,
+  MediaBackend.plex => isAdminActionAllowed && resolvedItemPermission == true,
 };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -369,17 +372,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Ask the server whether the signed-in user may delete [item] right now.
   ///
-  /// Returns `null` when the backend exposes no per-item permission (Plex),
-  /// which leaves the account-level gate in charge, and `false` for every
-  /// unknown on a backend that does expose one — offline, server down, request
-  /// failed or timed out. The probe blocks the menu opening, so it is bounded
-  /// by `MediaServerTimeouts.jellyfinDeletePermission` and does not chase
+  /// Returns `null` when the client exposes no deletion permission at all,
+  /// and `false` for every unknown on one that does — offline, server down,
+  /// request failed or timed out. The probe blocks the menu opening, so it is
+  /// bounded by `MediaServerTimeouts.deletePermissionProbe` and does not chase
   /// failover endpoints: a stalled endpoint hunt would be felt as a frozen
   /// long-press, and hiding one entry is the cheaper failure.
   ///
-  /// Backend detection comes first so a menu on a backend without the
-  /// capability neither probes nor touches offline state — the read would
-  /// otherwise be a new dependency for every screen that shows a movie row.
+  /// Capability detection comes first so a menu on a client without it
+  /// neither probes nor touches offline state — the read would otherwise be a
+  /// new dependency for every screen that shows a movie row.
   Future<bool?> _resolveDeletePermission({
     required MediaServerClient? client,
     required MediaItem? item,
@@ -540,9 +542,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     }
 
-    // Deletion is the one gate that asks the server per item; see
+    // Deletion is the one gate that asks the server per menu open; see
     // [isMediaDeletionAllowed]. Only kinds that can actually be deleted pay
-    // for the round trip, and only on a backend that answers it.
+    // for the round trip, and on Plex only accounts that may delete at all:
+    // Plex lets only the owning account delete, so shared and managed users
+    // send no probe.
     final isDeletableKind =
         mediaKind == MediaKind.episode ||
         mediaKind == MediaKind.movie ||
@@ -550,6 +554,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         mediaKind == MediaKind.season;
     final canDeleteFromServer =
         isDeletableKind &&
+        (itemBackend != MediaBackend.plex || isAdmin) &&
         isMediaDeletionAllowed(
           itemBackend: itemBackend,
           resolvedItemPermission: await _resolveDeletePermission(
@@ -2020,6 +2025,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         } else {
           showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
         }
+      }
+    } on MediaDeletionRefusedException catch (e) {
+      // Refused before the DELETE was sent: nothing changed server-side, so no
+      // deletion events and no list refresh.
+      appLogger.w('Media deletion refused by server setting', error: e);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.mediaMenu.mediaDeletionDisabledOnServer);
       }
     } catch (e) {
       appLogger.e(t.mediaMenu.mediaFailedToDelete, error: e);

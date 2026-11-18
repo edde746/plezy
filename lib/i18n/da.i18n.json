@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Din server leverede ikke filoplysninger for dette emne, så Plezy kan ikke kontrollere, hvilke filer dette vil fjerne. Det kan slette mere end det ovennævnte emne.",
     "mediaDeletedSuccessfully": "Mediet blev slettet",
     "mediaFailedToDelete": "Mediet kunne ikke slettes",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Bedøm",
     "playFromBeginning": "Afspil fra begyndelsen",
     "playVersion": "Afspil version..."

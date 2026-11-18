@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Serveringiz ushbu element uchun fayl tafsilotlarini taqdim etmadi, shuning uchun Plezy qaysi fayllar olib tashlanishini tekshira olmaydi. U yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin.",
     "mediaDeletedSuccessfully": "Media elementi muvaffaqiyatli oʻchirildi",
     "mediaFailedToDelete": "Media elementini oʻchirib boʻlmadi",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Baho berish",
     "playFromBeginning": "Boshidan ijro etish",
     "playVersion": "Versiyani ijro etish..."

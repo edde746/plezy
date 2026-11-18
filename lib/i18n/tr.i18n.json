@@ -760,6 +760,7 @@
     "deleteScopeUnverifiedNoFileInfo": "Sunucunuz bu öge için dosya ayrıntıları sağlamadı, bu yüzden Plezy bunun hangi dosyaları sileceğini kontrol edemiyor. Yukarıda adı geçen ögeden daha fazlasını silebilir.",
     "mediaDeletedSuccessfully": "Medya ögesi başarıyla silindi",
     "mediaFailedToDelete": "Medya ögesi silinemedi",
+    "mediaDeletionDisabledOnServer": "",
     "rate": "Oyla",
     "playFromBeginning": "Baştan Oynat",
     "playVersion": "Sürümü Oynat..."
