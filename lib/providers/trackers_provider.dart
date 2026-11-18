@@ -167,6 +167,11 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   bool isConnecting(TrackerService service) => _connecting == service;
 
+  List<TrackerService> get reconnectRequiredServices => [
+    for (final slot in _slots)
+      if (slot.needsReconnect) slot.service,
+  ];
+
   /// Cancel an in-flight connect. Completing the completer both wakes the
   /// blocking `Future.any` race and flips `isCompleted` for the next sync check.
   void cancelConnect() {
@@ -188,6 +193,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // retry queue.
     for (final slot in _slots) {
       slot.session = null;
+      slot.needsReconnect = false;
       _rebind(slot);
     }
     // Publish the detach before awaiting: proxy consumers cache the client they
@@ -199,11 +205,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // moves) rather than dropping the freshly-loaded sessions for the others.
     final rebinds = [for (final slot in _slots) slot.rebindGeneration];
     final results = await Future.wait<TrackerSession?>([for (final slot in _slots) slot.store.load(userUuid)]);
+    final reconnectRequired = await Future.wait<bool>([for (final slot in _slots) slot.store.needsReconnect(userUuid)]);
     if (!_isCurrentProfileBinding(userUuid, generation)) return;
     for (var i = 0; i < _slots.length; i++) {
       final slot = _slots[i];
       if (slot.rebindGeneration != rebinds[i]) continue;
       slot.session = results[i];
+      slot.needsReconnect = results[i] == null && reconnectRequired[i];
       _rebind(slot);
     }
     // Connect/disconnect may flip `needsFribb` — drop cached resolver IDs so
@@ -384,6 +392,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         assign: (session) {
           if (!_isCurrentConnect(service, userUuid, generation)) return;
           slot.session = session;
+          slot.needsReconnect = false;
           _rebind(slot);
           // Same ordering contract as [_clearAndRebind] and the invalidation
           // teardown: the rebind above moved the account binding first, so an
@@ -421,6 +430,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // no longer touch the shared profile-binding generation (which would also
     // abort that load for the other services).
     slot.session = null;
+    slot.needsReconnect = false;
     _rebind(slot);
     safeNotifyListeners();
     await TrackerCoordinator.instance.purgeWriteQueueForService(slot.service);
@@ -514,9 +524,20 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     slot.bind(
       slot.session,
       onInvalidated: () {
-        if (!isCurrent()) return;
-        slot.store.clear(boundUuid);
+        if (!isCurrent() || slot.session == null) return;
+        // The client already classified this as a permanent auth failure.
+        // Record it here so normal tracker activity also explains the lost login.
+        unawaited(
+          slot.store.clear(boundUuid, reconnectRequired: true).catchError((Object error, StackTrace stackTrace) {
+            appLogger.w(
+              'Failed to persist ${slot.service.name} reconnect warning',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }),
+        );
         slot.session = null;
+        slot.needsReconnect = true;
         _rebind(slot);
         // Same contract as the explicit-disconnect purge in [_clearAndRebind]:
         // rows queued under the session that just died must never replay
@@ -567,6 +588,7 @@ class _TrackerSlot {
   final TrackerAccountStore store;
   final _TrackerBind bind;
   TrackerSession? session;
+  bool needsReconnect = false;
 
   /// Bumped on every rebind so a late callback from a disposed client (e.g. an
   /// in-flight refresh that resolves after a profile switch) can't persist or
