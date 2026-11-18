@@ -2465,6 +2465,35 @@ void main() {
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_1');
     });
 
+    testWidgets('extras row includes extras from season folders (#2403)', (tester) async {
+      // Jellyfin attaches a season folder's extras to the season, not the
+      // series, so the series' SpecialFeatures alone misses them.
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      MediaItem extra(String id, String title) =>
+          testMediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.clip, title: title);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [buildEpisode(show, season2, 1)],
+        },
+        extrasById: {
+          show.id: [extra('show_extra', 'Show Extra')],
+          season1.id: [extra('s1_deleted', 'S01 Deleted Scene'), extra('s1_gag', 'S01 Gag Reel')],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Show Extra'), findsOneWidget);
+      expect(find.text('S01 Deleted Scene'), findsOneWidget);
+      expect(find.text('S01 Gag Reel'), findsOneWidget);
+    });
+
     testWidgets('phone detail focuses requested episode row', (tester) async {
       final show = buildShow();
       final season1 = buildSeason(show, 1);
@@ -3388,6 +3417,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Future<List<MediaItem>>? pendingPlayableDescendants;
   final Map<String, MediaSourceInfo> mediaSourcesById;
   final Map<String, Map<String, dynamic>> rawItems;
+  final Map<String, List<MediaItem>> extrasById;
   Completer<void>? sourceGate;
   int itemReads = 0;
   int sourceReads = 0;
@@ -3417,6 +3447,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
+    this.extrasById = const {},
     Map<String, Map<String, dynamic>>? rawItems,
   }) : rawItems = rawItems ?? {},
        childrenPageFuturesByStart = childrenPageFuturesByStart ?? {};
@@ -3528,6 +3559,9 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   @override
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => const [];
+
+  @override
+  Future<List<MediaItem>> fetchExtras(String id) async => extrasById[id] ?? const [];
 
   @override
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {
