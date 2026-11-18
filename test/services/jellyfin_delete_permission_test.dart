@@ -126,7 +126,7 @@ void main() {
 
         final failure = _failureOf(client, item);
 
-        async.elapse(MediaServerTimeouts.jellyfinDeletePermission - const Duration(milliseconds: 1));
+        async.elapse(MediaServerTimeouts.deletePermission - const Duration(milliseconds: 1));
         expect(failure(), isNull);
 
         async.elapse(const Duration(milliseconds: 2));
@@ -145,7 +145,7 @@ void main() {
         final client = JellyfinClient.forTesting(
           connection: testJellyfinConnection(),
           httpClient: MockClient.streaming((_, _) async {
-            await Future<void>.delayed(MediaServerTimeouts.jellyfinDeletePermission - const Duration(seconds: 1));
+            await Future<void>.delayed(MediaServerTimeouts.deletePermission - const Duration(seconds: 1));
             return http.StreamedResponse(body.stream, 200, headers: const {'content-type': 'application/json'});
           }),
         );
@@ -153,12 +153,12 @@ void main() {
 
         final failure = _failureOf(client, item);
 
-        async.elapse(MediaServerTimeouts.jellyfinDeletePermission - const Duration(milliseconds: 1));
+        async.elapse(MediaServerTimeouts.deletePermission - const Duration(milliseconds: 1));
         expect(failure(), isNull, reason: 'the response arrived in time; only the body is stalled');
 
         async.elapse(const Duration(milliseconds: 2));
         expect(failure(), _isProbeTimeout);
-        expect(async.elapsed, lessThan(MediaServerTimeouts.jellyfinDeletePermission * 2));
+        expect(async.elapsed, lessThan(MediaServerTimeouts.deletePermission * 2));
       });
     });
   });

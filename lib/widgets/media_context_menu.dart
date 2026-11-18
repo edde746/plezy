@@ -205,8 +205,9 @@ bool isAdminActionAllowedForMediaItem({
 /// and anything unknown — offline, request failed, timed out, item invisible —
 /// stays hidden rather than offering a button that 401s.
 ///
-/// Plex has no per-item permission on the wire, so it keeps the account-level
-/// owner/admin gate.
+/// Plex combines its account-level owner/admin gate with the live server-wide
+/// `allowMediaDeletion` capability (#2897). Unknown permissions fail closed
+/// for every backend.
 bool isMediaDeletionAllowed({
   required MediaBackend? itemBackend,
   required bool? resolvedItemPermission,
@@ -214,7 +215,7 @@ bool isMediaDeletionAllowed({
 }) => switch (itemBackend) {
   null => false,
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
-  MediaBackend.plex => isAdminActionAllowed,
+  MediaBackend.plex => isAdminActionAllowed && resolvedItemPermission == true,
 };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -369,13 +370,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Ask the server whether the signed-in user may delete [item] right now.
   ///
-  /// Returns `null` when the backend exposes no per-item permission (Plex),
-  /// which leaves the account-level gate in charge, and `false` for every
-  /// unknown on a backend that does expose one — offline, server down, request
-  /// failed or timed out. The probe blocks the menu opening, so it is bounded
-  /// by `MediaServerTimeouts.jellyfinDeletePermission` and does not chase
-  /// failover endpoints: a stalled endpoint hunt would be felt as a frozen
-  /// long-press, and hiding one entry is the cheaper failure.
+  /// Returns `null` when the backend exposes no permission capability, and
+  /// `false` for every unknown on a backend that does expose one — offline,
+  /// server down, request failed or timed out. The probe blocks the menu
+  /// opening, so it is bounded by `MediaServerTimeouts.deletePermission` and
+  /// does not chase failover endpoints: a stalled endpoint hunt would be felt
+  /// as a frozen long-press, and hiding one entry is the cheaper failure.
   ///
   /// Backend detection comes first so a menu on a backend without the
   /// capability neither probes nor touches offline state — the read would
