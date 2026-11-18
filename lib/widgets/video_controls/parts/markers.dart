@@ -82,7 +82,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
 
     _startAutoSkipTimer(foundMarker);
 
-    // Auto-skip OFF: dismiss button after 7s if no interaction
+    // Auto-skip OFF: dismiss button after 12s if no interaction
     // Auto-skip ON: button stays until controls hide
     if (!_shouldAutoSkipForMarker(foundMarker)) {
       _startSkipButtonDismissTimer();
@@ -193,7 +193,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
   void _startSkipButtonDismissTimer() {
     _skipButtonDismissTimer?.cancel();
     if (!_hasRenderedFirstFrame) return;
-    _skipButtonDismissTimer = Timer(const Duration(seconds: 7), () {
+    _skipButtonDismissTimer = Timer(const Duration(seconds: 12), () {
       if (!mounted || _currentMarker == null) return;
       _setControlsState(() {
         _skipButtonDismissed = true;
