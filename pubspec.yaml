@@ -72,12 +72,13 @@ dependencies:
   # partial; 7c341be makes the rerun of a SAF download whose process died write
   # to the document the dead run created instead of a "name (1)" copy; afa3fe6
   # samples desktop free space once per 1 MiB instead of per received event
-  # (#2967). Keep the same-filesystem move/resume cleanup; no per-host TLS
-  # bypass.
+  # (#2967); 4f361e9 counts purgeable space on iOS/macOS (important usage) when
+  # plain free space would refuse a download (#2876). Keep the same-filesystem
+  # move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: afa3fe68080327cfa87e725a38961bf5d2e35307
+      ref: 4f361e91f3cb79b7e48486b6397e43974b6e0452
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
