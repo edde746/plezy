@@ -706,12 +706,22 @@ class TrackSelectionService {
   /// ISO 639 variation parity) - never prefix comparison, which would let
   /// e.g. an `est` (Estonian) track satisfy an `es` (Spanish) preference.
   T? _findTrackByPreferredLanguage<T>(List<T> tracks, String preferredLanguage, String? Function(T) getLanguage) {
+    T? bestTrack;
+    var bestQuality = 0;
+
     for (final track in tracks) {
-      if (languageMatches(getLanguage(track), preferredLanguage)) {
-        return track;
+      final quality = languageMatchQuality(getLanguage(track), preferredLanguage);
+      if (quality > bestQuality) {
+        bestQuality = quality;
+        bestTrack = track;
+        if (quality == 3) {
+          // Maximum quality reached; list order tiebreaking wins.
+          break;
+        }
       }
     }
-    return null;
+
+    return bestTrack;
   }
 
   /// Generic track matching for audio and subtitle tracks
@@ -913,27 +923,69 @@ class TrackSelectionService {
   /// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes
   /// Also handles bibliographic variants and region codes (e.g., "en-US")
   bool languageMatches(String? trackLanguage, String? preferredLanguage) {
+    return languageMatchQuality(trackLanguage, preferredLanguage) > 0;
+  }
+
+  /// Computes the match quality between a track language and a preferred language:
+  /// - 3: Exact match (case-insensitive direct match, normalized base+region match, or regional alias match)
+  /// - 2: Base language match without conflicting regions (e.g. pt matches pt-BR, or pt-BR matches pt)
+  /// - 1: Cross-region match where both specify different regions (e.g. pt-PT matches pt-BR)
+  /// - 0: No match
+  int languageMatchQuality(String? trackLanguage, String? preferredLanguage) {
     if (trackLanguage == null || preferredLanguage == null) {
-      return false;
+      return 0;
     }
 
-    final track = trackLanguage.toLowerCase();
-    final preferred = preferredLanguage.toLowerCase();
+    var track = trackLanguage.toLowerCase().trim().replaceAll('_', '-');
+    var preferred = preferredLanguage.toLowerCase().trim().replaceAll('_', '-');
 
-    // Direct match
-    if (track == preferred) return true;
+    if (track.isEmpty || preferred.isEmpty) {
+      return 0;
+    }
 
-    // Extract base language codes (handle region codes like "en-US")
+    // Resolve known regional aliases (e.g. pob -> pt-br)
+    final trackAlias = LanguageCodes.resolveAlias(track);
+    if (trackAlias != null) track = trackAlias.toLowerCase();
+    final preferredAlias = LanguageCodes.resolveAlias(preferred);
+    if (preferredAlias != null) preferred = preferredAlias.toLowerCase();
+
+    // Direct exact match (e.g. en == en, pt-br == pt-br)
+    if (track == preferred) return 3;
+
+    final trackHasRegion = track.contains('-');
+    final preferredHasRegion = preferred.contains('-');
+
     final trackBase = track.split('-').first;
     final preferredBase = preferred.split('-').first;
 
-    if (trackBase == preferredBase) return true;
+    final trackBaseNorm = LanguageCodes.getIso6391Code(trackBase) ?? trackBase;
+    final preferredBaseNorm = LanguageCodes.getIso6391Code(preferredBase) ?? preferredBase;
 
-    // Get all variations of the preferred language (e.g., "en" → ["en", "eng"])
-    final variations = LanguageCodes.getVariations(preferredBase);
+    final baseMatches =
+        trackBaseNorm == preferredBaseNorm || LanguageCodes.getVariations(preferredBaseNorm).contains(trackBaseNorm);
 
-    // Check if track's base code matches any variation
-    return variations.contains(trackBase);
+    if (!baseMatches) return 0;
+
+    // If both specify regions, check if they are identical or conflicting
+    if (trackHasRegion && preferredHasRegion) {
+      final trackRegion = track.split('-').sublist(1).join('-');
+      final preferredRegion = preferred.split('-').sublist(1).join('-');
+      if (trackRegion == preferredRegion) {
+        // e.g. por-BR and pt-BR: base matches and region matches -> exact match (Tier 3)
+        return 3;
+      }
+      // Conflicting regions: e.g. pt-PT vs pt-BR, en-GB vs en-US -> cross-region match (Tier 1)
+      return 1;
+    }
+
+    // Exact match for base variations when neither has a region (e.g. eng == en, deu == de)
+    if (!trackHasRegion && !preferredHasRegion) {
+      return 3;
+    }
+
+    // Exactly one has a region, one does not (e.g. pt vs pt-br, or pob vs pt):
+    // Base match without region conflict (Tier 2)
+    return 2;
   }
 
   /// Select the best audio track based on priority:

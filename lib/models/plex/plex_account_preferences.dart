@@ -104,7 +104,7 @@ class PlexAccountPreferences {
       throw ArgumentError.value(value, key.name, 'must be an ISO 639 language code or null');
     }
     if (value.isEmpty) return '';
-    return LanguageCodes.getIso6391Code(value) ?? value;
+    return LanguageCodes.normalizeCode(value) ?? value;
   }
 
   static String _boolQueryValue(AccountPreferenceKey key, Object? value) =>
