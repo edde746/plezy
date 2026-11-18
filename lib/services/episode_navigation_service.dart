@@ -161,6 +161,31 @@ class EpisodeNavigationService {
     if (playbackState.isQueueActive && playbackState.currentQueueItem?.globalKey == metadata.globalKey) {
       return _EpisodeQueueAvailability.active;
     }
+    if (!metadata.isEpisode &&
+        metadata.hasAdditionalParts &&
+        metadata.serverId != null &&
+        !playbackState.isQueueActive) {
+      final client = serverManager.getClient(ServerId(metadata.serverId!));
+      if (client != null) {
+        try {
+          final additionalParts = await client.fetchAdditionalParts(metadata.id);
+          if (additionalParts.isNotEmpty) {
+            final allParts = <MediaItem>[
+              metadata,
+              for (final part in additionalParts)
+                inheritAdditionalPartMetadata(metadata, part).copyWith(viewOffsetMs: 0),
+            ];
+            playbackState.setPlaybackFromLocalQueue(
+              LocalPlayQueue(items: allParts, currentIndex: 0),
+              contextKey: metadata.id,
+            );
+            return _EpisodeQueueAvailability.active;
+          }
+        } catch (e, st) {
+          appLogger.w('Failed additional-parts fetch for queue', error: e, stackTrace: st);
+        }
+      }
+    }
     if (metadata.serverId == null || !metadata.isEpisode || metadata.grandparentId == null) {
       return playbackState.isQueueActive ? _EpisodeQueueAvailability.failed : _EpisodeQueueAvailability.unavailable;
     }

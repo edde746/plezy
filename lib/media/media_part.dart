@@ -11,10 +11,9 @@ part 'media_part.g.dart';
 /// timeline (`MediaPartTimeline`).
 ///
 /// Jellyfin and Emby items always map to a single part per media source.
-/// Those servers model a split file as separate hidden items (`PartCount`,
+/// Those servers model a split file as separate items (`PartCount`,
 /// `/Videos/{id}/AdditionalParts`) that each keep their own progress and
-/// watched state; the app does not follow them, so only the first file
-/// plays there.
+/// watched state; the player queues those additional parts sequentially.
 @JsonSerializable(includeIfNull: false)
 class MediaPart {
   /// Backend-opaque part identifier.

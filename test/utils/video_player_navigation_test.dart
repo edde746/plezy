@@ -17,6 +17,8 @@ import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/providers/watch_state_store.dart';
 import 'package:plezy/services/downloaded_video_source.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
@@ -479,6 +481,144 @@ void main() {
       });
     });
   });
+
+  group('Jellyfin multi-part movies (AdditionalParts, #2825)', () {
+    MediaItem buildPart1({int? viewOffsetMs, int? viewCount}) => testMediaItem(
+      id: 'movie-1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Split Movie',
+      serverId: 'srv',
+      viewOffsetMs: viewOffsetMs,
+      viewCount: viewCount,
+    ).copyWith(raw: const {'PartCount': 3});
+
+    MediaItem buildAdditionalPart(String id, {int? viewOffsetMs, int? viewCount}) => testMediaItem(
+      id: id,
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.clip,
+      title: 'Split Movie - $id',
+      serverId: 'srv',
+      viewOffsetMs: viewOffsetMs,
+      viewCount: viewCount,
+    );
+
+    test('resolveAdditionalPartsQueue selects in-progress part and zeroes other parts viewOffsetMs', () {
+      final part1 = buildPart1(viewOffsetMs: 0, viewCount: 1);
+      final part2 = buildAdditionalPart('part-2', viewOffsetMs: 900000, viewCount: 0);
+      final part3 = buildAdditionalPart('part-3', viewOffsetMs: 300000, viewCount: 0);
+
+      final queue = resolveAdditionalPartsQueue(
+        primaryPart: part1,
+        additionalParts: [part2, part3],
+        resolveWatchState: true,
+        allowSmartResume: true,
+      );
+
+      expect(queue.currentIndex, 1);
+      expect(queue.items.map((item) => item.id), ['movie-1', 'part-2', 'part-3']);
+      expect(queue.items[0].viewOffsetMs, 0);
+      expect(queue.items[1].viewOffsetMs, 900000);
+      expect(queue.items[2].viewOffsetMs, 0);
+      expect(queue.items[1].additionalPartOfId, 'movie-1');
+      expect(queue.items[2].additionalPartOfId, 'movie-1');
+    });
+
+    test(
+      'resolveAdditionalPartsQueue selects first unwatched part when Part 1 is watched and no part is in progress',
+      () {
+        final part1 = buildPart1(viewOffsetMs: 0, viewCount: 1);
+        final part2 = buildAdditionalPart('part-2', viewOffsetMs: 0, viewCount: 1);
+        final part3 = buildAdditionalPart('part-3', viewOffsetMs: 0, viewCount: 0);
+
+        final queue = resolveAdditionalPartsQueue(
+          primaryPart: part1,
+          additionalParts: [part2, part3],
+          resolveWatchState: true,
+          allowSmartResume: true,
+        );
+
+        expect(queue.currentIndex, 2);
+        expect(queue.items[2].id, 'part-3');
+      },
+    );
+
+    test('resolveAdditionalPartsQueue starts at Part 1 with zeroed offsets when resolveWatchState is false', () {
+      final part1 = buildPart1(viewOffsetMs: 0, viewCount: 1);
+      final part2 = buildAdditionalPart('part-2', viewOffsetMs: 900000, viewCount: 0);
+
+      final queue = resolveAdditionalPartsQueue(
+        primaryPart: part1,
+        additionalParts: [part2],
+        resolveWatchState: false,
+        allowSmartResume: false,
+      );
+
+      expect(queue.currentIndex, 0);
+      expect(queue.items[0].viewOffsetMs, 0);
+      expect(queue.items[1].viewOffsetMs, 0);
+    });
+
+    testWidgets('navigateToVideoPlayer seeds PlaybackStateProvider and launches the smart-resumed part', (
+      tester,
+    ) async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await (await SettingsService.getInstance()).write(SettingsService.useExternalPlayer, true);
+      const urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+      final externalLaunches = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(urlLauncherChannel, (
+        call,
+      ) async {
+        if (call.method != 'launch') return null;
+        externalLaunches.add((call.arguments as Map)['url'] as String);
+        return true;
+      });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          urlLauncherChannel,
+          null,
+        );
+        SettingsService.resetForTesting();
+      });
+
+      final part1 = buildPart1(viewOffsetMs: 0, viewCount: 1);
+      final part2 = buildAdditionalPart('part-2', viewOffsetMs: 600000, viewCount: 0);
+      final client = _AdditionalPartsExternalClient(additionalParts: [part2]);
+      final servers = testMultiServer(clients: [client]);
+      final downloads = _NoDownloads();
+      final offlineWatch = _OfflineWatchSync();
+      final playbackState = PlaybackStateProvider();
+      final watchStateStore = WatchStateStore();
+      addTearDown(() {
+        downloads.dispose();
+        offlineWatch.dispose();
+        playbackState.dispose();
+        watchStateStore.dispose();
+      });
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: servers.provider),
+            ChangeNotifierProvider<DownloadProvider>.value(value: downloads),
+            ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
+            ChangeNotifierProvider<WatchStateStore>.value(value: watchStateStore),
+          ],
+          child: const MaterialApp(home: Scaffold(body: Text('Detail'))),
+        ),
+      );
+
+      await navigateToVideoPlayer(tester.element(find.text('Detail')), metadata: part1, resolveWatchState: true);
+
+      expect(client.resolvedItemIds, ['part-2']);
+      expect(playbackState.isQueueActive, isTrue);
+      expect(playbackState.shuffleContextKey, 'movie-1');
+      expect(playbackState.loadedItems.map((item) => item.id), ['movie-1', 'part-2']);
+      expect(playbackState.currentQueueItem?.id, 'part-2');
+    });
+  });
 }
 
 /// A route-owned real Dart player: native calls are mocked, but ownership
@@ -602,4 +742,28 @@ class _RoomCopyProvider extends WatchTogetherProvider {
 class _OfflineWatchSync extends ChangeNotifier implements OfflineWatchSyncService {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _AdditionalPartsExternalClient extends _ExternalUrlClient {
+  _AdditionalPartsExternalClient({required this.additionalParts});
+
+  final List<MediaItem> additionalParts;
+  final resolvedItemIds = <String>[];
+
+  @override
+  MediaBackend get backend => MediaBackend.jellyfin;
+
+  @override
+  Future<List<MediaItem>> fetchAdditionalParts(String itemId) async => additionalParts;
+
+  @override
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(
+    MediaItem item, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    Duration? position,
+  }) async {
+    resolvedItemIds.add(item.id);
+    return ExternalPlaybackTarget(url: 'https://server/stream/${item.id}');
+  }
 }

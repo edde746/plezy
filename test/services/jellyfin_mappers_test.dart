@@ -824,4 +824,113 @@ void main() {
       expect(uri.queryParameters['maxHeight'], '96');
     });
   });
+
+  group('Jellyfin multi-part movies (AdditionalParts)', () {
+    test('reads PartCount from Jellyfin raw JSON and defaults to 1', () {
+      final singlePart = JellyfinMappers.mediaItem(
+        {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Single'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+      expect(singlePart.partCount, 1);
+      expect(singlePart.hasAdditionalParts, isFalse);
+
+      final multiPart = JellyfinMappers.mediaItem(
+        {'Id': 'movie-2', 'Type': 'Movie', 'Name': 'Split Movie', 'PartCount': 2},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+      expect(multiPart.partCount, 2);
+      expect(multiPart.hasAdditionalParts, isTrue);
+    });
+
+    test('inheritAdditionalPartMetadata stamps parent identity and missing artwork while keeping part fields', () {
+      final parent = JellyfinMappers.mediaItem(
+        {
+          'Id': 'movie-1',
+          'Type': 'Movie',
+          'Name': 'Lawrence of Arabia',
+          'ParentId': 'folder-movies',
+          'ProductionYear': 1962,
+          'ImageTags': {'Primary': 'p-tag', 'Logo': 'l-tag'},
+          'BackdropImageTags': ['b-tag'],
+          'PartCount': 2,
+        },
+        serverId: ServerId(_serverId),
+        serverName: 'Home',
+        absolutizer: null,
+      )!.copyWith(libraryId: 'lib-1', libraryTitle: 'Movies');
+
+      final rawPart2 = JellyfinMappers.mediaItem(
+        {
+          'Id': 'part-2',
+          'Type': 'Video',
+          'Name': 'Lawrence of Arabia - part2',
+          'ParentId': 'folder-movies',
+          'RunTimeTicks': 36000000000,
+          'UserData': {'PlaybackPositionTicks': 12000000000, 'Played': false},
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      final part2 = inheritAdditionalPartMetadata(parent, rawPart2);
+
+      expect(part2.id, 'part-2');
+      expect(part2.title, 'Lawrence of Arabia - part2');
+      expect(part2.durationMs, 3600000);
+      expect(part2.viewOffsetMs, 1200000);
+      expect(part2.additionalPartOfId, 'movie-1');
+      expect(part2.parentId, 'movie-1');
+      expect(part2.parentTitle, 'Lawrence of Arabia');
+      expect(part2.year, 1962);
+      expect(part2.thumbPath, parent.thumbPath);
+      expect(part2.artPath, parent.artPath);
+      expect(part2.backdropPaths, parent.backdropPaths);
+      expect(part2.clearLogoPath, parent.clearLogoPath);
+      expect(part2.libraryId, 'lib-1');
+      expect(part2.libraryTitle, 'Movies');
+      expect(part2.serverId, _serverId);
+      expect(part2.serverName, 'Home');
+    });
+
+    test(
+      'isAdditionalPartOfSameVideo matches Part 1 -> Part 2 and Part 2 -> Part 3 without folder false positives',
+      () {
+        final movieA = JellyfinMappers.mediaItem(
+          {'Id': 'movie-a', 'Type': 'Movie', 'Name': 'Movie A', 'ParentId': 'folder-1', 'PartCount': 3},
+          serverId: ServerId(_serverId),
+          absolutizer: null,
+        )!;
+        final movieBInSameFolder = JellyfinMappers.mediaItem(
+          {'Id': 'movie-b', 'Type': 'Movie', 'Name': 'Movie B', 'ParentId': 'folder-1'},
+          serverId: ServerId(_serverId),
+          absolutizer: null,
+        )!;
+        final part2 = inheritAdditionalPartMetadata(
+          movieA,
+          JellyfinMappers.mediaItem(
+            {'Id': 'part-2', 'Type': 'Video', 'Name': 'Movie A - part2', 'ParentId': 'folder-1'},
+            serverId: ServerId(_serverId),
+            absolutizer: null,
+          )!,
+        );
+        final part3 = inheritAdditionalPartMetadata(
+          movieA,
+          JellyfinMappers.mediaItem(
+            {'Id': 'part-3', 'Type': 'Video', 'Name': 'Movie A - part3', 'ParentId': 'folder-1'},
+            serverId: ServerId(_serverId),
+            absolutizer: null,
+          )!,
+        );
+
+        expect(isAdditionalPartOfSameVideo(movieA, part2), isTrue);
+        expect(isAdditionalPartOfSameVideo(part2, part3), isTrue);
+        // Survives copyWith clones during watch-state / reload updates.
+        expect(isAdditionalPartOfSameVideo(movieA, part2.copyWith(viewOffsetMs: 0)), isTrue);
+        expect(isAdditionalPartOfSameVideo(movieA, movieBInSameFolder), isFalse);
+        expect(isAdditionalPartOfSameVideo(part2, movieBInSameFolder), isFalse);
+      },
+    );
+  });
 }
