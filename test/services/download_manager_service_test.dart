@@ -5,7 +5,7 @@ import 'package:plezy/media/ids.dart';
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryInterceptor, Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -2260,6 +2260,139 @@ void main() {
         expect(row?.status, DownloadStatus.failed.index, reason: key);
         expect(row?.errorMessage, t.downloads.storageFull, reason: key);
       }
+    });
+
+    test('only an explicit user request lifts a storage stop', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      var queueRuns = 0;
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+        queueProcessorOverride: (_) async {
+          queueRuns++;
+        },
+        nativeOpsOverride: _idleNativeOps,
+      );
+      addTearDown(manager.dispose);
+      MediaItem movie(String id) => testMediaItem(
+        id: id,
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: ServerId('srv'),
+        title: id,
+      );
+      final client = _SupplementaryClient(
+        metadata: movie('item-1'),
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+
+      Future<void> stopForStorage(String id) async {
+        final globalKey = 'srv:$id';
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: id,
+          globalKey: globalKey,
+          type: 'movie',
+          status: DownloadStatus.downloading.index,
+        );
+        await db.updateBgTaskId(globalKey, 'task-$id');
+        await manager.debugHandleTaskStatus(
+          TaskStatusUpdate(_downloadTask('task-$id', globalKey), TaskStatus.failed, TaskFileSystemException(_refusal)),
+        );
+        expect(manager.queueBlockedByStorageFailure, isTrue, reason: id);
+      }
+
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+      await stopForStorage('item-1');
+
+      // An automatic enqueue (a sync rule's) waits behind the stop.
+      await manager.queueDownload(metadata: movie('item-2'), client: client);
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+      expect((await db.getDownloadedMedia('srv:item-2'))?.status, DownloadStatus.queued.index);
+      expect(queueRuns, 0);
+
+      manager.beginUserDownloadRequest();
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+
+      await stopForStorage('item-3');
+      await manager.retryDownload('srv:item-1', client);
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+      expect(queueRuns, 1);
+
+      await stopForStorage('item-4');
+      await manager.resumeDownload('srv:item-4', client);
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+      expect(queueRuns, 2);
+    });
+
+    test('an auto-retry already under way does not requeue after a storage stop', () async {
+      final gate = _RowReadGate();
+      final db = AppDatabase.forTesting(NativeDatabase.memory().interceptWith(gate));
+      addTearDown(db.close);
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      for (final id in ['item-1', 'item-2']) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'movie',
+          status: DownloadStatus.downloading.index,
+        );
+        await db.updateBgTaskId('srv:$id', 'task-$id');
+      }
+      final client = _SupplementaryClient(
+        metadata: testMediaItem(
+          id: 'item-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv'),
+          title: 'Movie',
+        ),
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        queueProcessorOverride: (_) async {},
+        nativeOpsOverride: _idleNativeOps,
+        autoRetryDelay: const Duration(milliseconds: 20),
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          _downloadTask('task-item-1', 'srv:item-1'),
+          TaskStatus.failed,
+          TaskConnectionException('Connection reset by peer'),
+        ),
+      );
+      // No native downloader runs here: without a task id the retry's cleanup
+      // skips enumerating native tasks.
+      await db.updateBgTaskId('srv:item-1', null);
+      // The retry timer fires and the retry stops on its first read of the row.
+      gate.arm('srv:item-1');
+      await gate.started.timeout(const Duration(seconds: 5));
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          _downloadTask('task-item-2', 'srv:item-2'),
+          TaskStatus.failed,
+          TaskFileSystemException(_refusal),
+        ),
+      );
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+      gate.release();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect((await db.getDownloadedMedia('srv:item-1'))?.status, DownloadStatus.failed.index);
+      expect(await db.select(db.downloadQueue).get(), isEmpty);
     });
   });
 
@@ -4536,6 +4669,48 @@ DownloadTask _downloadTask(String taskId, String globalKey) {
     directory: 'downloads',
     metaData: globalKey,
   );
+}
+
+/// The iOS guard's refusal, figures first.
+const _refusal =
+    'Insufficient space to store the downloaded file: needs 4294967296 bytes above a reserve of 5368709120 bytes; '
+    '6442450944 bytes free, 7516192768 for important usage, on /private/var/mobile/tmp';
+
+/// Native operations a storage stop and a requeue reach, with nothing native running.
+final NativeDownloaderOps _idleNativeOps = (
+  allTasks: () async => const <Task>[],
+  allRecords: () async => const <TaskRecord>[],
+  deleteRecord: (_) async {},
+  cancelTaskIds: (_) async => true,
+  resetGroup: () async => 0,
+  cleanUpOrphanedTempFiles: () async => 0,
+  rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+);
+
+/// Holds the first read of a download row after [arm] until [release].
+class _RowReadGate extends QueryInterceptor {
+  String? _globalKey;
+  final _started = Completer<void>();
+  final _release = Completer<void>();
+
+  Future<void> get started => _started.future;
+
+  void arm(String globalKey) => _globalKey = globalKey;
+
+  void release() => _release.complete();
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(QueryExecutor executor, String statement, List<Object?> args) async {
+    final globalKey = _globalKey;
+    if (globalKey != null &&
+        !_started.isCompleted &&
+        statement.contains('downloaded_media') &&
+        args.contains(globalKey)) {
+      _started.complete();
+      await _release.future;
+    }
+    return executor.runSelect(statement, args);
+  }
 }
 
 /// Where the app's private storage lived before it was moved to another volume.
