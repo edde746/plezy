@@ -2,14 +2,19 @@ import 'package:flutter/widgets.dart';
 
 import 'strings.g.dart';
 
-/// Resolves device locales in preference order while preserving Chinese script.
+/// Resolves device locales in preference order while preserving Chinese script
+/// and the Portuguese variant.
 ///
 /// Slang's generic resolver cannot disambiguate `zh` and `zh-Hant` after an
 /// exact script-and-region miss, so common Traditional Chinese device tags need
-/// an application-owned canonicalization step.
+/// an application-owned canonicalization step. Portuguese has the same shape:
+/// `pt` is Brazilian Portuguese and `pt-PT` European Portuguese.
 AppLocale resolvePreferredAppLocale(Iterable<Locale> preferredLocales) {
   for (final locale in preferredLocales) {
-    final resolved = _resolveChineseLocale(locale) ?? AppLocaleUtils.parse(locale.toLanguageTag());
+    final resolved =
+        _resolveChineseLocale(locale) ??
+        _resolvePortugueseLocale(locale) ??
+        AppLocaleUtils.parse(locale.toLanguageTag());
     if (resolved != AppLocale.en || locale.languageCode == AppLocale.en.languageCode) return resolved;
   }
   return AppLocale.en;
@@ -31,6 +36,36 @@ AppLocale? _resolveChineseLocale(Locale locale) {
   };
 }
 
+/// Regions CLDR gives European Portuguese as their parent (every regional
+/// Portuguese locale except Brazil). Brazil, other regions and a bare `pt` tag
+/// keep the Brazilian translation.
+const _europeanPortugueseRegions = {'PT', 'AO', 'MZ', 'CV', 'GW', 'ST', 'TL', 'MO', 'GQ', 'LU', 'CH'};
+
+AppLocale? _resolvePortugueseLocale(Locale locale) {
+  if (locale.languageCode.toLowerCase() != 'pt') return null;
+  final region = locale.countryCode?.toUpperCase();
+  return region != null && _europeanPortugueseRegions.contains(region) ? AppLocale.ptPt : AppLocale.pt;
+}
+
+/// [AppLocale.values] in the order the language picker lists them.
+///
+/// Slang appends script and region variants after every base language, so
+/// `pt-PT` and `zh-Hant` would otherwise sit at the end of the list instead of
+/// next to Portuguese and Chinese.
+final List<AppLocale> languagePickerLocales = List.unmodifiable([
+  for (final locale in AppLocale.values)
+    if (!_isVariant(locale) || !_hasBaseLocale(locale)) ...[
+      locale,
+      if (!_isVariant(locale))
+        ...AppLocale.values.where((variant) => _isVariant(variant) && variant.languageCode == locale.languageCode),
+    ],
+]);
+
+bool _isVariant(AppLocale locale) => locale.countryCode != null || locale.scriptCode != null;
+
+bool _hasBaseLocale(AppLocale variant) =>
+    AppLocale.values.any((locale) => !_isVariant(locale) && locale.languageCode == variant.languageCode);
+
 /// Locales offered to Flutter's `Localizations`, one per [AppLocale].
 final List<Locale> supportedLocalizationsLocales = List.unmodifiable(
   AppLocale.values.map((locale) => locale.localizationsLocale),
@@ -49,7 +84,11 @@ extension AppLocaleExternalFormats on AppLocale {
   };
 
   /// Locale name accepted by `package:intl`.
-  String get intlLocaleName => this == AppLocale.zhHant ? 'zh_TW' : languageCode;
+  String get intlLocaleName => switch (this) {
+    AppLocale.zhHant => 'zh_TW',
+    AppLocale.ptPt => 'pt_PT',
+    _ => languageCode,
+  };
 
   /// Locale name accepted by `package:duration`.
   String get durationLocaleName => this == AppLocale.zhHant ? 'zh_Hant' : languageCode;
