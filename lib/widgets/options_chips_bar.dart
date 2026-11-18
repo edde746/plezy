@@ -71,6 +71,9 @@ class OptionsChipsBar extends StatelessWidget {
   /// Chips to render, in order.
   final List<OptionsChipDescriptor> chips;
 
+  /// Optional non-focusable content displayed after the chips.
+  final Widget? trailing;
+
   /// Invoked on DOWN from any chip (typically hands focus to the content
   /// below the bar).
   final VoidCallback? onNavigateDown;
@@ -87,6 +90,7 @@ class OptionsChipsBar extends StatelessWidget {
   const OptionsChipsBar({
     super.key,
     required this.chips,
+    this.trailing,
     this.onNavigateDown,
     this.onNavigateUp,
     this.onNavigateLeftEdge,
@@ -103,6 +107,7 @@ class OptionsChipsBar extends StatelessWidget {
         mainAxisSize: .min,
         children: [
           for (var i = 0; i < chips.length; i++) ...[if (i > 0) const SizedBox(width: 8), _buildChip(i)],
+          if (trailing != null) ...[const SizedBox(width: 12), trailing!],
         ],
       ),
     );
