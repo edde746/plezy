@@ -152,27 +152,27 @@ void main() {
     );
   });
 
-  test('resume prompt is suppressed during companion sessions (#2087)', () {
+  test('resume prompt is suppressed while driving a companion remote (#2087)', () {
     bool should({
       bool resumedFromBackground = true,
       bool isOffline = false,
       bool alreadyShowingProfileSelection = false,
       bool isMobilePlatform = true,
-      bool hasActiveCompanionRemoteSession = false,
+      bool isDrivingCompanionRemote = false,
     }) {
       return shouldShowProfileSelectionOnResume(
         resumedFromBackground: resumedFromBackground,
         isOffline: isOffline,
         alreadyShowingProfileSelection: alreadyShowingProfileSelection,
         isMobilePlatform: isMobilePlatform,
-        hasActiveCompanionRemoteSession: hasActiveCompanionRemoteSession,
+        isDrivingCompanionRemote: isDrivingCompanionRemote,
       );
     }
 
     expect(should(), isTrue);
     // A phone driving another device backgrounds constantly; the picker +
     // PIN would bury the live remote session.
-    expect(should(hasActiveCompanionRemoteSession: true), isFalse);
+    expect(should(isDrivingCompanionRemote: true), isFalse);
     expect(should(resumedFromBackground: false), isFalse);
     expect(should(isOffline: true), isFalse);
     expect(should(alreadyShowingProfileSelection: true), isFalse);
@@ -235,6 +235,17 @@ void main() {
       // PiP starting only on the way back in cannot excuse the backgrounding.
       final prompts = [for (final state in comesBack) gate.consumePromptOn(state, sessionContinuesInPip: true)];
       expect(prompts, [false, false, true]);
+    });
+
+    test('prompts once after a tvOS Home round trip (#3076)', () {
+      // The tvOS engine sends no WillEnterForeground: Dart sees `paused` on
+      // Home and `resumed` on return, and the framework walks the states in
+      // between.
+      final gate = ProfileSelectionResumeGate();
+      final prompts = [
+        for (final state in [...goesToBackground, ...comesBack]) gate.consumePromptOn(state),
+      ];
+      expect(prompts, [false, false, false, false, false, true]);
     });
 
     test('one way-out frame without Picture in Picture is enough to prompt', () {

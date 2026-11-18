@@ -119,23 +119,26 @@ bool shouldHandleDesktopRootEscape({
 /// that (#2195). The player stays paused under the picker
 /// ([VideoPlayerScreenState.holdActivePlaybackUntil]). A session that kept
 /// playing in Picture in Picture never left the user's sight, so it never
-/// arms [ProfileSelectionResumeGate]. Never during a live companion-remote
-/// session: a phone driving another device backgrounds and sleeps
-/// constantly, and the picker + PIN would bury a session that already
-/// belongs to the profile that started it (#2087).
+/// arms [ProfileSelectionResumeGate]. Never while this device is a companion
+/// remote driving another device: a phone in that role backgrounds and
+/// sleeps constantly, and the picker + PIN would bury a session that already
+/// belongs to the profile that started it (#2087). The exemption covers the
+/// remote role only. A TV hosting the companion server still prompts: the
+/// picker protects whoever is in front of the TV, and a host reads as in
+/// session from server start to stop, phone paired or not (#3076).
 @visibleForTesting
 bool shouldShowProfileSelectionOnResume({
   required bool resumedFromBackground,
   required bool isOffline,
   required bool alreadyShowingProfileSelection,
   required bool isMobilePlatform,
-  required bool hasActiveCompanionRemoteSession,
+  required bool isDrivingCompanionRemote,
 }) {
   return resumedFromBackground &&
       !isOffline &&
       !alreadyShowingProfileSelection &&
       isMobilePlatform &&
-      !hasActiveCompanionRemoteSession;
+      !isDrivingCompanionRemote;
 }
 
 /// Latches whether the app has genuinely left the foreground since the last
@@ -1145,20 +1148,32 @@ class _MainScreenState extends State<MainScreen>
     if (resumedFromBackground && mounted) {
       unawaited(context.read<SeerrAccountProvider?>()?.refreshUser());
     }
-    if (shouldShowProfileSelectionOnResume(
+    final isMobilePlatform = Platform.isAndroid || Platform.isIOS;
+    // Short-circuit on resumedFromBackground: the provider is lazy and
+    // otherwise unused on phones, so an unconditional read would create it
+    // on the first lifecycle event for users who never open the remote.
+    // Driving counts a remote that is still `reconnecting` (isInSession, not
+    // isConnected): on resume the held reconnect cycle means the session is
+    // typically still `reconnecting` (#2035).
+    final isDrivingCompanionRemote =
+        resumedFromBackground && context.read<CompanionRemoteProvider>().isDrivingRemoteSession;
+    final showProfileSelection = shouldShowProfileSelectionOnResume(
       resumedFromBackground: resumedFromBackground,
       isOffline: _isOffline,
       alreadyShowingProfileSelection: _isShowingProfileSelection,
-      isMobilePlatform: Platform.isAndroid || Platform.isIOS,
-      // Short-circuit on resumedFromBackground: the provider is lazy and
-      // otherwise unused on phones, so an unconditional read would create it
-      // on the first lifecycle event for users who never open the remote.
-      // isInSession, not isConnected: on resume the held reconnect cycle
-      // means the session is typically still `reconnecting` (#2035).
-      hasActiveCompanionRemoteSession: resumedFromBackground && context.read<CompanionRemoteProvider>().isInSession,
-    )) {
-      _showProfileSelectionOnResume();
+      isMobilePlatform: isMobilePlatform,
+      isDrivingCompanionRemote: isDrivingCompanionRemote,
+    );
+    // One line per real resume, so an exported log shows why a resume did or
+    // did not ask for a profile (#3076).
+    if (resumedFromBackground) {
+      appLogger.d(
+        'Resume profile prompt: show=$showProfileSelection (offline=$_isOffline, '
+        'pickerShowing=$_isShowingProfileSelection, mobilePlatform=$isMobilePlatform, '
+        'drivingRemote=$isDrivingCompanionRemote)',
+      );
     }
+    if (showProfileSelection) _showProfileSelectionOnResume();
     if (refreshStaleContent) _refreshContentAfterStaleResume();
   }
 
@@ -1188,9 +1203,17 @@ class _MainScreenState extends State<MainScreen>
     final settingsService = await SettingsService.getInstance();
     if (!mounted) return;
 
-    if (!context.read<ActiveProfileProvider>().requiresSelectionOnOpen(settingsService)) return;
+    final activeProfile = context.read<ActiveProfileProvider>();
+    final requiresSelection = activeProfile.requiresSelectionOnOpen(settingsService);
+    final linkSelectsProfile = DeepLinkService.instance.selectsProfile;
+    appLogger.d(
+      'Resume profile prompt: requiresSelectionOnOpen=$requiresSelection '
+      '(setting=${settingsService.read(SettingsService.requireProfileSelectionOnOpen)}, '
+      'profiles=${activeProfile.profiles.length}), linkSelectsProfile=$linkSelectsProfile',
+    );
+    if (!requiresSelection) return;
     // The link that brought the app forward names the profile to open.
-    if (DeepLinkService.instance.selectsProfile) return;
+    if (linkSelectsProfile) return;
 
     final selection = _pushProfileSelection();
     // Pushed synchronously above; from here on the picker stands between
