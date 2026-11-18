@@ -1,11 +1,21 @@
 import Flutter
 import UIKit
 
-/// Root view controller (set in Main.storyboard). Bridges the iPhone Duo
-/// layout signals Flutter does not expose on iOS — the edge holding the
-/// system's vertical bar, the hinge, and the reserved regions (fold and
-/// camera/status occlusions) — over `com.plezy/iphone_duo`, and lets Dart
-/// opt the video player out of the vertical bar.
+/// Root view controller (set in Main.storyboard), presented for the app's
+/// lifetime.
+///
+/// Registers the scene accessory behind the video-only external-display scene
+/// (`ExternalDisplaySceneDelegate`). Apps built with the iOS 27 SDK get that
+/// scene only for a registered accessory, and iOS mirrors the device without
+/// one; older SDKs get it from the Info.plist scene roles. The registration
+/// lasts as long as this controller, so a connected display stays black
+/// outside playback, as before. The API ships with the iOS 27.0 SDK and Swift
+/// 6.4, so it is gated on the compiler.
+///
+/// Bridges the iPhone Duo layout signals Flutter does not expose on iOS — the
+/// edge holding the system's vertical bar, the hinge, and the reserved regions
+/// (fold and camera/status occlusions) — over `com.plezy/iphone_duo`, and lets
+/// Dart opt the video player out of the vertical bar.
 ///
 /// All geometry is in this view's coordinate space, which is Flutter's
 /// logical pixel space.
@@ -16,6 +26,9 @@ import UIKit
 /// 27.1 SDK's (Xcode 27.0 ships Swift 6.4 with the 27.0 SDK). Older toolchains
 /// build an inert controller whose channel reports no Duo state.
 class PlezyFlutterViewController: FlutterViewController {
+  /// The external-display `UISceneAccessoryRegistration` on iOS 27 and later;
+  /// untyped because stored properties cannot be availability-gated.
+  private(set) var externalDisplayAccessory: AnyObject?
   private var duoChannel: FlutterMethodChannel?
   private var verticalBarDisabled = false
   private var hingeStatus: String?
@@ -29,6 +42,14 @@ class PlezyFlutterViewController: FlutterViewController {
       self?.handle(call, result: result)
     }
     duoChannel = channel
+
+    #if compiler(>=6.4)
+      // An iPhone or iPad app on a Mac or Apple Vision Pro has no external display, and the API is unavailable there.
+      if #available(iOS 27.0, *), !ProcessInfo.processInfo.isiOSAppOnMac, !ProcessInfo.processInfo.isiOSAppOnVision {
+        externalDisplayAccessory = registerSceneAccessory(
+          .externalNonInteractive(sceneConfiguration: ExternalDisplayManager.makeSceneAccessoryConfiguration()))
+      }
+    #endif
 
     #if compiler(>=6.4) && canImport(UIKit, _version: 9127.0.85)
       if #available(iOS 27.1, *) {
