@@ -8,6 +8,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/covered_route_focus_boundary.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/hub_vertical_navigation.dart';
 import '../focus/locked_hub_controller.dart';
@@ -114,7 +115,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// dropping; see [TvBrowseRailState.requestInitialFocus].
   bool _pendingTvBrowseRailFocusIsInitial = false;
 
-  /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
+  /// Primary focus when the rail claim was armed, or the stand-in it parked
+  /// on; see [_railClaimAbandoned] and [_parkRailClaim].
   FocusNode? _railClaimFocusOrigin;
 
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
@@ -127,6 +129,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
   final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
   final _userMenuKey = GlobalKey<AppMenuButtonState<String>>();
+
+  /// The TV error state's Retry action, focusable by the rail claim and the
+  /// toolbar's Down handoff.
+  final _tvRetryFocusNode = FocusNode(debugLabel: 'discover_tv_retry');
 
   /// Backend-neutral hero client lookup. Returns the actual
   /// [MediaServerClient] for the item's server (Plex or Jellyfin) so
@@ -241,7 +247,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusContentFromAppBar() {
     if (PlatformDetector.isTV()) {
-      _focusTvBrowseRailWhenReady(immediate: true);
+      // Without a rail, Down reaches Retry on error and is a no-op on an empty
+      // Home; arming a claim here would later snap focus off the toolbar.
+      if (_tvBrowseHubs.isNotEmpty) {
+        _focusTvBrowseRailWhenReady(immediate: true);
+      } else if (_errorMessage != null) {
+        _tvRetryFocusNode.requestFocus();
+      }
       return;
     }
 
@@ -280,7 +292,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _pendingTvBrowseRailFocus = false;
         return;
       }
-      if (_tvBrowseHubs.isEmpty) return;
+      if (_tvBrowseHubs.isEmpty) {
+        _parkRailClaim();
+        return;
+      }
       final rail = _tvBrowseRailKey.currentState;
       if (rail == null) return;
       _claimTvBrowseRail(rail);
@@ -296,23 +311,54 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
+  /// While the rail has nothing to show, rest the armed claim on the control
+  /// standing in for it — Retry on error, otherwise the toolbar, which holds
+  /// the profile menu (#3117) — and keep it armed so hubs landing later still
+  /// take focus. A spinner has nothing to rest on, so the claim just waits.
+  void _parkRailClaim() {
+    final FocusNode? node;
+    if (_errorMessage != null) {
+      node = _tvRetryFocusNode;
+    } else if (_isLoading || _areHubsLoading) {
+      return;
+    } else {
+      node = _actionBarKey.currentState?.firstEnabledFocusNode;
+    }
+    if (node == null || node.context == null) return;
+    if (_pendingTvBrowseRailFocusIsInitial) {
+      CoveredRouteFocusBoundary.requestInitialFocus(context, node);
+    } else {
+      node.requestFocus();
+    }
+    // A request held under a covering route leaves focus where the claim was
+    // armed; that stays the origin until the cover lifts and replays it.
+    if (node.canRequestFocus) _railClaimFocusOrigin = node;
+  }
+
+  /// Retry leaves the tree as soon as the pass starts, so arm the rail claim
+  /// first: whatever replaces it — the rail, Retry again, or the toolbar on an
+  /// empty result — inherits focus.
+  void _retryTvLoad() {
+    _focusTvBrowseRailWhenReady();
+    unawaited(_discover.load());
+  }
+
   /// A rail-focus request stays armed while the rail has no hubs to focus
   /// (empty first load), so hubs landing later still receive it. It must not
   /// outlive the user's own navigation: hubs arriving minutes later would
-  /// yank the remote off a sidebar item the user has since moved to.
+  /// yank the remote off a control the user has since moved to — a sidebar
+  /// item, or the profile menu on the toolbar the claim parked on.
   ///
   /// Where focus *sits* cannot tell those apart — MainScreen hands a tab over
   /// while focus is still on the sidebar item that selected it, and that
   /// request is as live as one made from a bare scope. What distinguishes a
-  /// stale claim is that focus *moved* after the request was armed and now
-  /// rests on a control off this screen. A bare scope — MainScreen's content
-  /// scope before any child has focus — is "nowhere yet", not a destination.
+  /// stale claim is that focus *moved* off the node it was armed or parked
+  /// on. A bare scope — MainScreen's content scope before any child has
+  /// focus — is "nowhere yet", not a destination.
   bool get _railClaimAbandoned {
     final node = FocusManager.instance.primaryFocus;
-    if (identical(node, _railClaimFocusOrigin)) return false;
-    final focusContext = node?.context;
-    if (node == null || node is FocusScopeNode || focusContext == null) return false;
-    return !identical(focusContext.findAncestorStateOfType<_DiscoverScreenState>(), this);
+    if (node == null || node is FocusScopeNode || node.context == null) return false;
+    return !identical(node, _railClaimFocusOrigin);
   }
 
   void _applyPendingTvBrowseRailFocus() {
@@ -397,9 +443,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _heroFocusNode.requestFocus();
     }
 
-    // On initial load, focus content so the user doesn't start on the toolbar
+    // On initial load, focus content so the user doesn't start on the toolbar.
+    // TV also claims once the first pass settles without content — the claim
+    // then parks on Retry or the toolbar — since an empty Home otherwise
+    // leaves the D-pad nothing to focus (#3117).
     if (!_initialLoadComplete) {
-      if (PlatformDetector.isTV() && (_onDeck.isNotEmpty || _hubs.isNotEmpty)) {
+      final hasContent = _onDeck.isNotEmpty || _hubs.isNotEmpty;
+      if (PlatformDetector.isTV() && (hasContent || (!_isLoading && !_areHubsLoading))) {
         _initialLoadComplete = true;
         _focusTvBrowseRailWhenReady(initial: true);
       } else if (!PlatformDetector.isTV() && _onDeck.isNotEmpty) {
@@ -475,6 +525,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _scrollController.dispose();
     _heroFocusNode.removeListener(_onHeroFocusChanged);
     _heroFocusNode.dispose();
+    _tvRetryFocusNode.dispose();
     super.dispose();
   }
 
@@ -1141,8 +1192,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ErrorStateWidget(
               message: _errorMessage!,
               icon: Symbols.error_outline_rounded,
-              onRetry: _discover.load,
-              actionAutofocus: true,
+              onRetry: _retryTvLoad,
+              actionFocusNode: _tvRetryFocusNode,
+              onActionNavigateUp: _focusTopActions,
+              onActionNavigateLeft: _navigateToSidebar,
               actionUseBackgroundFocus: true,
             ),
           if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)

@@ -787,12 +787,14 @@ void main() {
     );
   });
 
-  testWidgets('a pending TV rail focus still claims the rail while focus sits on a bare scope', (tester) async {
-    // Startup shape: MainScreen has focused its content scope but nothing
-    // below it yet. That is "nowhere", not a destination the user chose, so
-    // the rail keeps its initial-focus claim when hubs finally arrive.
+  testWidgets('a settled-empty first load parks on the toolbar and still claims the rail when hubs land', (
+    tester,
+  ) async {
+    // Startup shape: the first pass found nothing to show. Focus rests on the
+    // toolbar — the only control, and home of the profile menu (#3117) — and
+    // the rail keeps its initial-focus claim for when hubs arrive.
     final gated = await _pumpGatedDiscover(tester);
-    expect(FocusManager.instance.primaryFocus, isA<FocusScopeNode>());
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
 
     await gated.landItems(tester);
 
@@ -816,16 +818,17 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
   });
 
-  testWidgets('a handoff made while hubs are still loading claims the rail when they land', (tester) async {
-    // Same handoff on a slow server: the rail has nothing to focus yet, so the
-    // claim stays armed with focus on the sidebar item. Items landing later
-    // must honor it — focus has not moved since the user selected Home.
+  testWidgets('a handoff to an empty Home parks on the toolbar and claims the rail when hubs land', (tester) async {
+    // Sidebar → Home with nothing to show (#3117): the claim rests on the
+    // toolbar, where the profile menu is, instead of leaving the D-pad on a
+    // bare scope. Items landing later still honor it — focus has not moved.
     final gated = await _pumpGatedDiscover(tester);
     gated.sidebarItem.requestFocus();
     await tester.pump();
     (tester.state(find.byType(DiscoverScreen)) as FocusableTab).focusActiveTabIfReady();
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus, same(gated.sidebarItem));
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
 
     await gated.landItems(tester);
 
@@ -868,20 +871,120 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
   });
+
+  testWidgets('the profile menu is reachable with the D-pad from an empty TV Home (#3117)', (tester) async {
+    await _pumpGatedDiscover(tester);
+    final lastAction = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar)).actions.length - 1;
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+    for (var i = 0; i < lastAction; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+    }
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[$lastAction]');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'ActionBar[$lastAction]',
+      reason: 'with no rail below, Down must not drop focus',
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text(t.profiles.sectionTitle), findsWidgets);
+  });
+
+  testWidgets('hubs landing later leave focus on the toolbar control the user moved to', (tester) async {
+    final gated = await _pumpGatedDiscover(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
+
+    await gated.landItems(tester);
+
+    expect(find.byType(TvBrowseRail), findsOneWidget);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'ActionBar[1]',
+      reason: 'the user navigated on; do not yank focus',
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
+
+  testWidgets('an empty first load under a root route parks on the toolbar when it pops', (tester) async {
+    final gated = await _pumpGatedDiscover(tester, underRootCover: true);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'root_cover');
+
+    gated.rootNavigator!.currentState!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+  });
+
+  testWidgets('a TV Home with no servers parks on Retry, which reaches the toolbar and the sidebar', (tester) async {
+    final gated = await _pumpGatedDiscover(tester, serverOnline: false);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'discover_tv_retry');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'discover_tv_retry');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus, same(gated.sidebarItem));
+  });
+
+  testWidgets('Retry hands focus to the rail once the server is back', (tester) async {
+    final gated = await _pumpGatedDiscover(tester, serverOnline: false);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'discover_tv_retry');
+
+    // The provider reads the manager's online set live; no status emit needed.
+    gated.manager.debugRegisterClientForTesting(gated.client);
+    gated.stockItems();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    gated.client.release();
+    await tester.pump();
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
 }
 
 class _GatedDiscover {
-  _GatedDiscover({required this.client, required this.sidebarItem, required this.otherSidebarItem, this.rootNavigator});
+  _GatedDiscover({
+    required this.client,
+    required this.manager,
+    required this.sidebarItem,
+    required this.otherSidebarItem,
+    this.rootNavigator,
+  });
 
   final _GatedHubsFakeClient client;
+  final MultiServerManager manager;
+
+  /// Also where the screen's sidebar handoff lands.
   final FocusNode sidebarItem;
   final FocusNode otherSidebarItem;
 
   /// Set with `underRootCover`; popping it uncovers the screen.
   final GlobalKey<NavigatorState>? rootNavigator;
 
-  /// Replace the empty-items hub with a populated one and run a full pass.
-  Future<void> landItems(WidgetTester tester) async {
+  /// Replace the empty-items hub with a populated one for the next pass.
+  void stockItems() {
     client.hubs
       ..clear()
       ..add(
@@ -893,6 +996,11 @@ class _GatedDiscover {
           size: 1,
         ),
       );
+  }
+
+  /// Stock items and run a full pass.
+  Future<void> landItems(WidgetTester tester) async {
+    stockItems();
     // skipOffstage: a covering root route leaves the screen offstage.
     (tester.state(find.byType(DiscoverScreen, skipOffstage: false)) as FullRefreshable).fullRefresh();
     await tester.pump();
@@ -910,7 +1018,14 @@ class _GatedDiscover {
 /// [CoveredRouteFocusBoundary] and a nested navigator — and pushes a route on
 /// the root navigator before that first load lands, as when a profile chosen
 /// in the root picker remounts the session beneath it.
-Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester, {bool underRootCover = false}) async {
+///
+/// [serverOnline] false registers the server as unreachable, so the first pass
+/// fails with no servers and the screen shows its error state instead.
+Future<_GatedDiscover> _pumpGatedDiscover(
+  WidgetTester tester, {
+  bool underRootCover = false,
+  bool serverOnline = true,
+}) async {
   await SettingsService.getInstance();
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1280, 720);
@@ -922,7 +1037,8 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester, {bool underRootCo
   final client = _GatedHubsFakeClient(
     hubs: [MediaHub(id: 'hub_1', title: 'Recommended', type: 'movie', items: const [], size: 0)],
   );
-  final multiServerProvider = testMultiServer(clients: [client]).provider;
+  final multiServer = testMultiServer(clients: [client], offline: serverOnline ? const [] : [client]);
+  final multiServerProvider = multiServer.provider;
   final hiddenLibrariesProvider = HiddenLibrariesProvider();
   final librariesProvider = LibrariesProvider();
   final watchTogetherProvider = WatchTogetherProvider();
@@ -979,7 +1095,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester, {bool underRootCo
         ],
       ),
       MainScreenFocusScope(
-        focusSidebar: () {},
+        focusSidebar: sidebarItem.requestFocus,
         sideNavigationWidth: SideNavigationRailState.expandedWidth,
         reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
         foregroundLeft: 80,
@@ -1035,6 +1151,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester, {bool underRootCo
   );
   return _GatedDiscover(
     client: client,
+    manager: multiServer.manager,
     sidebarItem: sidebarItem,
     otherSidebarItem: otherSidebarItem,
     rootNavigator: rootNavigator,

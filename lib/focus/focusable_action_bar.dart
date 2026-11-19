@@ -101,10 +101,14 @@ class FocusableActionBarState extends State<FocusableActionBar> {
 
   FocusNode? getFocusNode(int index) => index >= 0 && index < _focusNodes.length ? _focusNodes[index] : null;
 
-  void requestFocusOnFirst() {
+  /// The first action that can take focus, or null when every action is
+  /// disabled.
+  FocusNode? get firstEnabledFocusNode {
     final index = _nextEnabledIndex(-1);
-    if (index != null) _focusNodes[index].requestFocus();
+    return index == null ? null : _focusNodes[index];
   }
+
+  void requestFocusOnFirst() => firstEnabledFocusNode?.requestFocus();
 
   int? _previousEnabledIndex(int index) {
     for (var candidate = index - 1; candidate >= 0; candidate--) {
