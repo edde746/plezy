@@ -932,6 +932,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return SettingsBuilder(
       prefs: const [
         SettingsService.showServerNameOnHubs,
+        SettingsService.mergedRecentlyAddedLibraries,
         SettingsService.showHeroSection,
         SettingsService.hideSpoilers,
         SettingsService.libraryDensity,

@@ -12,12 +12,14 @@ import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import 'app_icon_setting.dart';
+import 'merged_recently_added_screen.dart';
 import 'settings_utils.dart';
 import 'theme_settings_screen.dart';
 
@@ -122,6 +124,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
               icon: Symbols.home_rounded,
               title: t.settings.useGlobalHubs,
               subtitle: t.settings.useGlobalHubsDescription,
+            ),
+            SettingsBuilder(
+              prefs: const [SettingsService.mergedRecentlyAddedLibraries],
+              builder: (context) => FocusableListTile(
+                leading: const AppIcon(Symbols.merge_rounded, fill: 1),
+                title: Text(t.settings.mergeRecentlyAdded),
+                subtitle: Text(MergedRecentlyAddedScreen.subtitleFor(SettingsService.instance)),
+                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                onTap: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute<void>(builder: (_) => const MergedRecentlyAddedScreen())),
+              ),
             ),
             SettingSwitchTile(
               pref: SettingsService.showServerNameOnHubs,

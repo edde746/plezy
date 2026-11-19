@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/library_change_event.dart';
@@ -18,6 +19,7 @@ import '../utils/deletion_notifier.dart';
 import '../utils/media_event_keys.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/media_hub_ordering.dart';
+import '../utils/merged_recent_hubs.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/library_content_notifier.dart';
 import '../utils/refresh_pacer.dart';
@@ -278,7 +280,26 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return [for (final copy in copies) copy.globalKey == item.globalKey ? item : copy];
   }
 
-  List<MediaHub> get hubs => _hubs;
+  /// Home rows as shown: [_hubs] with the libraries picked in
+  /// [SettingsService.mergedRecentlyAddedLibraries] folded into one Recently
+  /// Added row (#1652). [_hubs] stays the per-library source so in-place
+  /// patches (watch state, deletions, delta merges) keep working; the merged
+  /// view is rebuilt only when the rows or the setting change.
+  List<MediaHub> get hubs {
+    final keys = SettingsService.instanceOrNull?.read(SettingsService.mergedRecentlyAddedLibraries) ?? const [];
+    if (keys.length < 2) return _hubs;
+    if (!identical(_mergedHubsSource, _hubs) || !listEquals(_mergedHubsKeys, keys)) {
+      _mergedHubsSource = _hubs;
+      _mergedHubsKeys = keys;
+      _mergedHubs = mergeRecentlyAddedHubs(_hubs, keys.toSet(), title: t.discover.recentlyAdded);
+    }
+    return _mergedHubs;
+  }
+
+  List<MediaHub>? _mergedHubsSource;
+  List<String> _mergedHubsKeys = const [];
+  List<MediaHub> _mergedHubs = const [];
+
   bool get hasMoreContinueWatching => _hasMoreContinueWatching;
 
   /// Raw load failure (unlocalized); the screen wraps it for display.
