@@ -67,9 +67,11 @@ class PlexLibraryEventSocket extends LibraryEventSocket {
       final sectionId = entry['sectionID']?.toString();
       final itemId = entry['itemID']?.toString();
       final removed = entry['type'] == _typeDeleted;
+      final hasItemId = itemId != null && itemId.isNotEmpty;
       scheduleLibraryChange(
         libraryIds: [if (sectionId != null && sectionId.isNotEmpty) sectionId],
-        removedItemIds: [if (removed && itemId != null && itemId.isNotEmpty) itemId],
+        removedItemIds: [if (removed && hasItemId) itemId],
+        updatedItemIds: [if (!removed && hasItemId) itemId],
         added: !removed,
         updated: !removed,
         removed: removed,

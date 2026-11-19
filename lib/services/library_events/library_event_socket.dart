@@ -107,6 +107,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   bool _pendingWholeServer = false;
   final Set<String> _pendingLibraryIds = {};
   final Set<String> _pendingRemovedItemIds = {};
+  final Set<String> _pendingUpdatedItemIds = {};
 
   /// When the last event was emitted, for the leading-edge/min-interval check.
   DateTime? _lastEmitAt;
@@ -186,6 +187,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   void scheduleLibraryChange({
     Iterable<String> libraryIds = const [],
     Iterable<String> removedItemIds = const [],
+    Iterable<String> updatedItemIds = const [],
     bool added = false,
     bool removed = false,
     bool updated = false,
@@ -203,6 +205,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
       }
     }
     _pendingRemovedItemIds.addAll(removedItemIds);
+    _pendingUpdatedItemIds.addAll(updatedItemIds);
     final now = DateTime.now();
     final lastEmitAt = _lastEmitAt;
     if (lastEmitAt == null || now.difference(lastEmitAt) >= debounce) {
@@ -220,6 +223,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
       serverId: serverId,
       libraryIds: _pendingWholeServer ? const {} : Set.unmodifiable(_pendingLibraryIds),
       removedItemIds: Set.unmodifiable(_pendingRemovedItemIds),
+      updatedItemIds: Set.unmodifiable(_pendingUpdatedItemIds),
       itemsAdded: _pendingAdded,
       itemsRemoved: _pendingRemoved,
       itemsUpdated: _pendingUpdated,
@@ -238,6 +242,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     _pendingWholeServer = false;
     _pendingLibraryIds.clear();
     _pendingRemovedItemIds.clear();
+    _pendingUpdatedItemIds.clear();
   }
 
   Future<void> _connect() async {

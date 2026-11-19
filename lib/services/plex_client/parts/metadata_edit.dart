@@ -136,6 +136,15 @@ mixin _PlexMetadataEditMethods on _PlexClientInternals {
     return result;
   }
 
+  Future<bool> refreshItemMetadata(String ratingKey) async {
+    return _wrapBoolApiCall(
+      () => _http.put('/library/metadata/$ratingKey/refresh'),
+      'Failed to refresh metadata',
+    );
+  }
+
+  Future<void> invalidateItemCache(String ratingKey) => _deleteMetadataEditCache(ratingKey);
+
   Future<List<Map<String, dynamic>>> getAvailableArtwork(String ratingKey, String element) async {
     try {
       final response = await _getWithFailover('/library/metadata/$ratingKey/$element');

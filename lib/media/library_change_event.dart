@@ -24,6 +24,10 @@ class LibraryChangeEvent {
   /// settled `type: -1` timeline entries, MediaBrowser `ItemsRemoved`).
   final Set<String> removedItemIds;
 
+  /// Backend-native ids of updated/settled items, when the backend named them
+  /// (Plex settled non-deletion timeline entries, MediaBrowser `ItemsUpdated`).
+  final Set<String> updatedItemIds;
+
   /// Advisory flags describing what the change contained. A backend that
   /// cannot distinguish (Plex settles adds and metadata updates identically)
   /// sets the closest superset.
@@ -35,6 +39,7 @@ class LibraryChangeEvent {
     required this.serverId,
     this.libraryIds = const {},
     this.removedItemIds = const {},
+    this.updatedItemIds = const {},
     this.itemsAdded = false,
     this.itemsRemoved = false,
     this.itemsUpdated = false,
@@ -51,7 +56,8 @@ class LibraryChangeEvent {
   @override
   String toString() =>
       'LibraryChangeEvent($serverId, libraries: $libraryIds, '
-      'added: $itemsAdded, removed: $itemsRemoved (${removedItemIds.length} ids), updated: $itemsUpdated)';
+      'added: $itemsAdded, removed: $itemsRemoved (${removedItemIds.length} ids), '
+      'updated: $itemsUpdated (${updatedItemIds.length} ids))';
 }
 
 /// A live push subscription to one server's library-change notifications.
