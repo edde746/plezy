@@ -68,45 +68,6 @@ jobs:
 
           echo "tag=$RESOLVED_TAG" >> "$GITHUB_OUTPUT"
 
-  update-homebrew:
-    needs: resolve-release
-    runs-on: macos-latest
-    permissions:
-      contents: write
-    env:
-      RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          fetch-depth: 0
-
-      - name: Download and hash release
-        id: release
-        run: |
-          curl --fail-with-body -L -o plezy-macos.dmg \
-            "https://github.com/edde746/plezy/releases/download/$RELEASE_TAG/plezy-macos.dmg"
-          SHA256=$(shasum -a 256 plezy-macos.dmg | cut -d' ' -f1)
-          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
-
-      - name: Update cask
-        run: |
-          sed -i '' "s/version \".*\"/version \"$RELEASE_TAG\"/" Casks/plezy.rb
-          sed -i '' "s/sha256 \".*\"/sha256 \"${{ steps.release.outputs.sha256 }}\"/" Casks/plezy.rb
-
-      - name: Commit
-        run: |
-          BRANCH="${{ github.event.repository.default_branch }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/plezy.rb
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: update cask to $RELEASE_TAG"
-            git push origin "HEAD:$BRANCH"
-          else
-            echo "No cask changes to commit."
-          fi
-
   update-winget:
     needs: resolve-release
     runs-on: windows-latest

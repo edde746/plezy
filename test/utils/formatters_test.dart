@@ -1,3 +1,4 @@
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/app_locale_utils.dart';
@@ -122,6 +123,16 @@ void main() {
 
       await LocaleSettings.setLocale(AppLocale.zhHant);
       expect(formatDurationTextual(duration.inMilliseconds), '1小時 2分鐘');
+    });
+  });
+
+  group('European Portuguese formatting', () {
+    test('uses European date and compact-number formats', () async {
+      await initializeDateFormatting();
+      await LocaleSettings.setLocale(AppLocale.ptPt);
+
+      expect(formatAbbreviatedDate('2026-11-12'), '12/11/2026');
+      expect(NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName).format(1500000), '1,5\u00A0M');
     });
   });
 

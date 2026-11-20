@@ -115,8 +115,8 @@ class _Translations$appIcon$az extends Translations$appIcon$en {
 	@override String get title => 'Tətbiq ikonu';
 	@override String get defaultIcon => 'Defolt';
 	@override String get current => 'Cari ikon';
-	@override String get locked => 'Supporter imtiyazı';
-	@override String get lockedHint => 'Alternativ ikonlar Supporter imtiyazıdır.';
+	@override String get locked => 'Mövzu və ikon paketinə daxildir';
+	@override String get lockedHint => 'Alternativ ikonlar Mövzu və ikon paketinə daxildir.';
 	@override String get changeFailed => 'Tətbiq ikonu dəyişdirilə bilmədi';
 	@override String get launcherHint => 'Plezy-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.';
 	@override String get tvLauncherHint => 'Plezy-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.';
@@ -246,8 +246,8 @@ class _Translations$supporter$az extends Translations$supporter$en {
 	final TranslationsAz _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Plezy-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:';
+	@override String get title => 'Mövzu və ikon paketi';
+	@override String get intro => 'Kosmetik əlavələr gətirən istəyə bağlı birdəfəlik alış:';
 	@override String get presetThemes => 'Hazır mövzular';
 	@override String get presetThemesDescription => 'Köz, Buzlaq, Meşə, Gavalı və Kağız';
 	@override String get customTheme => 'Xüsusi mövzu';
@@ -258,11 +258,11 @@ class _Translations$supporter$az extends Translations$supporter$en {
 	@override String get loadingPrice => 'Qiymət yüklənir...';
 	@override String get restore => 'Alışları bərpa et';
 	@override String get pending => 'Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.';
-	@override String get thankYouTitle => 'Plezy-ni dəstəklədiyiniz üçün təşəkkür edirik';
-	@override String get thankYouBody => 'Supporter əlavələriniz açıldı.';
+	@override String get thankYouTitle => 'Alışınız üçün təşəkkür edirik';
+	@override String get thankYouBody => 'Mövzu və ikon paketi açıldı.';
 	@override String get tileSubtitle => 'Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın';
 	@override String get tileSubtitleThemesOnly => 'Mövzuları birdəfəlik alışla açın';
-	@override String get tileUnlocked => 'Dəstəyiniz üçün təşəkkür edirik';
+	@override String get tileUnlocked => 'Açıldı — alışınız üçün təşəkkür edirik';
 	@override late final _Translations$supporter$errors$az errors = _Translations$supporter$errors$az._(_root);
 }
 
@@ -624,8 +624,8 @@ class _Translations$themeEditor$az extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Hələ yaradılmayıb';
 	@override String get editCustom => 'Xüsusi mövzuya düzəliş et';
 	@override String get editCustomDescription => 'Bütün rəngləri özünüz seçin';
-	@override String get locked => 'Supporter ilə açın';
-	@override String get savedLocked => 'Yadda saxlanılıb — Supporter ilə açılır';
+	@override String get locked => 'Mövzu və ikon paketi ilə açın';
+	@override String get savedLocked => 'Yadda saxlanılıb — Mövzu və ikon paketi ilə açılır';
 	@override String get title => 'Xüsusi mövzu';
 	@override String get startFrom => 'Başlanğıc mövzu';
 	@override String get startFromDescription => 'Bütün rəngləri başqa mövzudan kopyala';
@@ -2542,11 +2542,11 @@ class _Translations$supporter$errors$az extends Translations$supporter$errors$en
 
 	// Translations
 	@override String get storeUnavailable => 'Alışlar əlçatan deyil. Mağazaya daxil olduğunuzu və bu cihazda alışlara icazə verildiyini yoxlayın.';
-	@override String get productNotFound => 'Supporter alışı hazırda mağazanızda əlçatan deyil.';
+	@override String get productNotFound => 'Mövzu və ikon paketi hazırda mağazanızda əlçatan deyil.';
 	@override String get productQueryFailed => 'Qiymət yüklənə bilmədi. Bağlantınızı yoxlayın və yenidən cəhd edin.';
 	@override String get purchaseFailed => 'Alış baş tutmadı. Yenidən cəhd edin.';
 	@override String get restoreFailed => 'Alışınızı bərpa etmək üçün mağazaya qoşulmaq mümkün olmadı. Yenidən cəhd edin.';
-	@override String get nothingToRestore => 'Bu mağaza hesabı üçün Supporter alışı tapılmadı.';
+	@override String get nothingToRestore => 'Bu mağaza hesabı üçün Mövzu və ikon paketi alışı tapılmadı.';
 }
 
 // Path: themeEditor.slots
@@ -3402,8 +3402,8 @@ extension on TranslationsAz {
 			'appIcon.title' => 'Tətbiq ikonu',
 			'appIcon.defaultIcon' => 'Defolt',
 			'appIcon.current' => 'Cari ikon',
-			'appIcon.locked' => 'Supporter imtiyazı',
-			'appIcon.lockedHint' => 'Alternativ ikonlar Supporter imtiyazıdır.',
+			'appIcon.locked' => 'Mövzu və ikon paketinə daxildir',
+			'appIcon.lockedHint' => 'Alternativ ikonlar Mövzu və ikon paketinə daxildir.',
 			'appIcon.changeFailed' => 'Tətbiq ikonu dəyişdirilə bilmədi',
 			'appIcon.launcherHint' => 'Plezy-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.',
 			'appIcon.tvLauncherHint' => 'Plezy-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.',
@@ -3533,8 +3533,8 @@ extension on TranslationsAz {
 			'update.viewRelease' => 'Buraxılışa bax',
 			'update.latestVersion' => 'Siz ən son versiyadasınız',
 			'update.checkFailed' => 'Yenilənmələr yoxlanıla bilmədi',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Plezy-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:',
+			'supporter.title' => 'Mövzu və ikon paketi',
+			'supporter.intro' => 'Kosmetik əlavələr gətirən istəyə bağlı birdəfəlik alış:',
 			'supporter.presetThemes' => 'Hazır mövzular',
 			'supporter.presetThemesDescription' => 'Köz, Buzlaq, Meşə, Gavalı və Kağız',
 			'supporter.customTheme' => 'Xüsusi mövzu',
@@ -3545,17 +3545,17 @@ extension on TranslationsAz {
 			'supporter.loadingPrice' => 'Qiymət yüklənir...',
 			'supporter.restore' => 'Alışları bərpa et',
 			'supporter.pending' => 'Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.',
-			'supporter.thankYouTitle' => 'Plezy-ni dəstəklədiyiniz üçün təşəkkür edirik',
-			'supporter.thankYouBody' => 'Supporter əlavələriniz açıldı.',
+			'supporter.thankYouTitle' => 'Alışınız üçün təşəkkür edirik',
+			'supporter.thankYouBody' => 'Mövzu və ikon paketi açıldı.',
 			'supporter.tileSubtitle' => 'Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın',
 			'supporter.tileSubtitleThemesOnly' => 'Mövzuları birdəfəlik alışla açın',
-			'supporter.tileUnlocked' => 'Dəstəyiniz üçün təşəkkür edirik',
+			'supporter.tileUnlocked' => 'Açıldı — alışınız üçün təşəkkür edirik',
 			'supporter.errors.storeUnavailable' => 'Alışlar əlçatan deyil. Mağazaya daxil olduğunuzu və bu cihazda alışlara icazə verildiyini yoxlayın.',
-			'supporter.errors.productNotFound' => 'Supporter alışı hazırda mağazanızda əlçatan deyil.',
+			'supporter.errors.productNotFound' => 'Mövzu və ikon paketi hazırda mağazanızda əlçatan deyil.',
 			'supporter.errors.productQueryFailed' => 'Qiymət yüklənə bilmədi. Bağlantınızı yoxlayın və yenidən cəhd edin.',
 			'supporter.errors.purchaseFailed' => 'Alış baş tutmadı. Yenidən cəhd edin.',
 			'supporter.errors.restoreFailed' => 'Alışınızı bərpa etmək üçün mağazaya qoşulmaq mümkün olmadı. Yenidən cəhd edin.',
-			'supporter.errors.nothingToRestore' => 'Bu mağaza hesabı üçün Supporter alışı tapılmadı.',
+			'supporter.errors.nothingToRestore' => 'Bu mağaza hesabı üçün Mövzu və ikon paketi alışı tapılmadı.',
 			'settings.title' => 'Tənzimləmələr',
 			'settings.supportDeveloper' => 'Plezy-yə dəstək ol',
 			'settings.supportDeveloperDescription' => 'İnkişafı maliyyələşdirmək üçün Liberapay vasitəsilə iyanə edin',
@@ -3898,8 +3898,8 @@ extension on TranslationsAz {
 			'themeEditor.customEmpty' => 'Hələ yaradılmayıb',
 			'themeEditor.editCustom' => 'Xüsusi mövzuya düzəliş et',
 			'themeEditor.editCustomDescription' => 'Bütün rəngləri özünüz seçin',
-			'themeEditor.locked' => 'Supporter ilə açın',
-			'themeEditor.savedLocked' => 'Yadda saxlanılıb — Supporter ilə açılır',
+			'themeEditor.locked' => 'Mövzu və ikon paketi ilə açın',
+			'themeEditor.savedLocked' => 'Yadda saxlanılıb — Mövzu və ikon paketi ilə açılır',
 			'themeEditor.title' => 'Xüsusi mövzu',
 			'themeEditor.startFrom' => 'Başlanğıc mövzu',
 			'themeEditor.startFromDescription' => 'Bütün rəngləri başqa mövzudan kopyala',

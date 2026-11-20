@@ -36,9 +36,10 @@ A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built w
 ### macOS — Homebrew
 
 ```bash
-brew tap edde746/plezy https://github.com/edde746/plezy
 brew install --cask plezy
 ```
+
+Installed from the old `edde746/plezy` tap? After `brew update` moves Plezy to the official cask, run `brew untap edde746/plezy`.
 
 ### Windows — WinGet
 

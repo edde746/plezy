@@ -343,26 +343,29 @@ class DataAggregationService {
   }
 
   /// Merge an [existing] Continue Watching list, with the [existingCopies]
-  /// its rows absorbed, and [fresh] rows from newly-online servers: same
-  /// recency ordering and cross-server identity dedup as
-  /// [getOnDeckFromAllServers], applied to the union. Absorbed copies rejoin
-  /// the pool so a regrouped row still offers them, and a fresh row replaces
-  /// any existing one with its global key.
+  /// its rows absorbed, and [fresh] rows from newly-online servers, with the
+  /// [freshCopies] their own dedup absorbed: same recency ordering and
+  /// cross-server identity dedup as [getOnDeckFromAllServers], applied to the
+  /// union. Absorbed copies rejoin the pool so a regrouped row still offers
+  /// them, and a fresh row replaces any existing one with its global key.
   Future<ContinueWatchingRows> mergeContinueWatching(
     List<MediaItem> existing,
     List<MediaItem> fresh, {
     required Map<String, List<MediaItem>> existingCopies,
+    required Map<String, List<MediaItem>> freshCopies,
     int? limit,
   }) async {
     final byKey = <String, MediaItem>{};
-    for (final row in existing) {
-      for (final copy in existingCopies[row.globalKey] ?? [row]) {
-        byKey[copy.globalKey] = copy.globalKey == row.globalKey ? row : copy;
+    void pool(List<MediaItem> rows, Map<String, List<MediaItem>> copies) {
+      for (final row in rows) {
+        for (final copy in copies[row.globalKey] ?? [row]) {
+          byKey[copy.globalKey] = copy.globalKey == row.globalKey ? row : copy;
+        }
       }
     }
-    for (final item in fresh) {
-      byKey[item.globalKey] = item;
-    }
+
+    pool(existing, existingCopies);
+    pool(fresh, freshCopies);
     final combined = byKey.values.toList()..sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
     return _limitContinueWatching(await _deduplicateContinueWatching(combined), limit);
   }

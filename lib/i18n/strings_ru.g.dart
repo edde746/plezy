@@ -115,8 +115,8 @@ class _Translations$appIcon$ru extends Translations$appIcon$en {
 	@override String get title => 'Значок приложения';
 	@override String get defaultIcon => 'Стандартный';
 	@override String get current => 'Текущий значок';
-	@override String get locked => 'Бонус Supporter';
-	@override String get lockedHint => 'Альтернативные значки — бонус Supporter.';
+	@override String get locked => 'Входит в набор тем и значков';
+	@override String get lockedHint => 'Альтернативные значки входят в набор тем и значков.';
 	@override String get changeFailed => 'Не удалось сменить значок приложения';
 	@override String get launcherHint => 'Новый значок появится на главном экране, когда вы выйдете из Plezy.';
 	@override String get tvLauncherHint => 'Новый баннер появится, когда вы выйдете из Plezy. Android TV может показывать старый до перезапуска телевизора.';
@@ -246,8 +246,8 @@ class _Translations$supporter$ru extends Translations$supporter$en {
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Разовая покупка, которая поддерживает разработку Plezy и открывает косметические дополнения:';
+	@override String get title => 'Набор тем и значков';
+	@override String get intro => 'Необязательная разовая покупка, которая добавляет косметические дополнения:';
 	@override String get presetThemes => 'Готовые темы';
 	@override String get presetThemesDescription => 'Уголёк, Ледник, Лес, Слива и Бумага';
 	@override String get customTheme => 'Своя тема';
@@ -258,11 +258,11 @@ class _Translations$supporter$ru extends Translations$supporter$en {
 	@override String get loadingPrice => 'Загрузка цены...';
 	@override String get restore => 'Восстановить покупки';
 	@override String get pending => 'Покупка ожидает оплаты или подтверждения. Дополнения откроются, как только магазин её завершит.';
-	@override String get thankYouTitle => 'Спасибо за поддержку Plezy';
-	@override String get thankYouBody => 'Дополнения Supporter разблокированы.';
+	@override String get thankYouTitle => 'Спасибо за покупку';
+	@override String get thankYouBody => 'Набор тем и значков разблокирован.';
 	@override String get tileSubtitle => 'Откройте темы и значки приложения разовой покупкой';
 	@override String get tileSubtitleThemesOnly => 'Откройте темы разовой покупкой';
-	@override String get tileUnlocked => 'Спасибо за вашу поддержку';
+	@override String get tileUnlocked => 'Разблокировано — спасибо за покупку';
 	@override late final _Translations$supporter$errors$ru errors = _Translations$supporter$errors$ru._(_root);
 }
 
@@ -624,8 +624,8 @@ class _Translations$themeEditor$ru extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Ещё не создана';
 	@override String get editCustom => 'Изменить свою тему';
 	@override String get editCustomDescription => 'Выберите каждый цвет сами';
-	@override String get locked => 'Доступно с Supporter';
-	@override String get savedLocked => 'Сохранено — станет доступно с Supporter';
+	@override String get locked => 'Доступно с набором тем и значков';
+	@override String get savedLocked => 'Сохранено — станет доступно с набором тем и значков';
 	@override String get title => 'Своя тема';
 	@override String get startFrom => 'Взять за основу';
 	@override String get startFromDescription => 'Скопировать все цвета из другой темы';
@@ -2562,11 +2562,11 @@ class _Translations$supporter$errors$ru extends Translations$supporter$errors$en
 
 	// Translations
 	@override String get storeUnavailable => 'Покупки недоступны. Убедитесь, что вы вошли в магазин и покупки разрешены на этом устройстве.';
-	@override String get productNotFound => 'Покупка Supporter сейчас недоступна в вашем магазине.';
+	@override String get productNotFound => 'Набор тем и значков сейчас недоступен в вашем магазине.';
 	@override String get productQueryFailed => 'Не удалось загрузить цену. Проверьте подключение и попробуйте снова.';
 	@override String get purchaseFailed => 'Покупка не прошла. Попробуйте снова.';
 	@override String get restoreFailed => 'Не удалось связаться с магазином для восстановления покупки. Попробуйте снова.';
-	@override String get nothingToRestore => 'Для этой учётной записи магазина покупка Supporter не найдена.';
+	@override String get nothingToRestore => 'Для этой учётной записи магазина покупка набора тем и значков не найдена.';
 }
 
 // Path: themeEditor.slots
@@ -3426,8 +3426,8 @@ extension on TranslationsRu {
 			'appIcon.title' => 'Значок приложения',
 			'appIcon.defaultIcon' => 'Стандартный',
 			'appIcon.current' => 'Текущий значок',
-			'appIcon.locked' => 'Бонус Supporter',
-			'appIcon.lockedHint' => 'Альтернативные значки — бонус Supporter.',
+			'appIcon.locked' => 'Входит в набор тем и значков',
+			'appIcon.lockedHint' => 'Альтернативные значки входят в набор тем и значков.',
 			'appIcon.changeFailed' => 'Не удалось сменить значок приложения',
 			'appIcon.launcherHint' => 'Новый значок появится на главном экране, когда вы выйдете из Plezy.',
 			'appIcon.tvLauncherHint' => 'Новый баннер появится, когда вы выйдете из Plezy. Android TV может показывать старый до перезапуска телевизора.',
@@ -3557,8 +3557,8 @@ extension on TranslationsRu {
 			'update.viewRelease' => 'Посмотреть релиз',
 			'update.latestVersion' => 'У вас последняя версия',
 			'update.checkFailed' => 'Не удалось проверить обновления',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Разовая покупка, которая поддерживает разработку Plezy и открывает косметические дополнения:',
+			'supporter.title' => 'Набор тем и значков',
+			'supporter.intro' => 'Необязательная разовая покупка, которая добавляет косметические дополнения:',
 			'supporter.presetThemes' => 'Готовые темы',
 			'supporter.presetThemesDescription' => 'Уголёк, Ледник, Лес, Слива и Бумага',
 			'supporter.customTheme' => 'Своя тема',
@@ -3569,17 +3569,17 @@ extension on TranslationsRu {
 			'supporter.loadingPrice' => 'Загрузка цены...',
 			'supporter.restore' => 'Восстановить покупки',
 			'supporter.pending' => 'Покупка ожидает оплаты или подтверждения. Дополнения откроются, как только магазин её завершит.',
-			'supporter.thankYouTitle' => 'Спасибо за поддержку Plezy',
-			'supporter.thankYouBody' => 'Дополнения Supporter разблокированы.',
+			'supporter.thankYouTitle' => 'Спасибо за покупку',
+			'supporter.thankYouBody' => 'Набор тем и значков разблокирован.',
 			'supporter.tileSubtitle' => 'Откройте темы и значки приложения разовой покупкой',
 			'supporter.tileSubtitleThemesOnly' => 'Откройте темы разовой покупкой',
-			'supporter.tileUnlocked' => 'Спасибо за вашу поддержку',
+			'supporter.tileUnlocked' => 'Разблокировано — спасибо за покупку',
 			'supporter.errors.storeUnavailable' => 'Покупки недоступны. Убедитесь, что вы вошли в магазин и покупки разрешены на этом устройстве.',
-			'supporter.errors.productNotFound' => 'Покупка Supporter сейчас недоступна в вашем магазине.',
+			'supporter.errors.productNotFound' => 'Набор тем и значков сейчас недоступен в вашем магазине.',
 			'supporter.errors.productQueryFailed' => 'Не удалось загрузить цену. Проверьте подключение и попробуйте снова.',
 			'supporter.errors.purchaseFailed' => 'Покупка не прошла. Попробуйте снова.',
 			'supporter.errors.restoreFailed' => 'Не удалось связаться с магазином для восстановления покупки. Попробуйте снова.',
-			'supporter.errors.nothingToRestore' => 'Для этой учётной записи магазина покупка Supporter не найдена.',
+			'supporter.errors.nothingToRestore' => 'Для этой учётной записи магазина покупка набора тем и значков не найдена.',
 			'settings.title' => 'Настройки',
 			'settings.supportDeveloper' => 'Поддержать Plezy',
 			'settings.supportDeveloperDescription' => 'Пожертвуйте через Liberapay на развитие',
@@ -3922,8 +3922,8 @@ extension on TranslationsRu {
 			'themeEditor.customEmpty' => 'Ещё не создана',
 			'themeEditor.editCustom' => 'Изменить свою тему',
 			'themeEditor.editCustomDescription' => 'Выберите каждый цвет сами',
-			'themeEditor.locked' => 'Доступно с Supporter',
-			'themeEditor.savedLocked' => 'Сохранено — станет доступно с Supporter',
+			'themeEditor.locked' => 'Доступно с набором тем и значков',
+			'themeEditor.savedLocked' => 'Сохранено — станет доступно с набором тем и значков',
 			'themeEditor.title' => 'Своя тема',
 			'themeEditor.startFrom' => 'Взять за основу',
 			'themeEditor.startFromDescription' => 'Скопировать все цвета из другой темы',

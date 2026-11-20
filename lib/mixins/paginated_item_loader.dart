@@ -322,12 +322,19 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     if (totalSize == 0 || index >= totalSize || index < 0) return;
     if (loadedItems.containsKey(index) || _loadingRanges.contains(index)) return;
     final pageStart = (index ~/ pageSize) * pageSize;
+    // Start past the page's loaded prefix: a page that came back short of
+    // [index] would come back short again, and the skeleton that asked would
+    // ask again on every rebuild.
+    var start = pageStart;
+    while (start < index && loadedItems.containsKey(start)) {
+      start++;
+    }
     // Wire up the backoff retry: if this fetch fails, the retry timer in
     // _fetchRange needs something to call. Without this, a failed fetch on a
     // skeleton-only screen leaves the skeleton stuck until something else
     // triggers a rebuild.
     _scheduledRetry = () => ensureIndexLoaded(index, pageSize: pageSize);
-    _fetchRange(pageStart, pageSize);
+    _fetchRange(start, pageStart + pageSize - start);
   }
 
   /// Aborts in-flight requests and cancels timers. Call from `dispose()`.
@@ -368,11 +375,16 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
       final result = await fetchPage(start, requestSize, _cancelToken);
       if (generation != _requestId || !mounted) return false;
 
+      // An empty page means nothing exists from [start] on, whatever count
+      // came with it. Trusting a count that runs ahead of what the server
+      // serves (a library mid-scan) would request this range forever.
+      final total = result.items.isEmpty ? math.min(start, result.totalCount) : result.totalCount;
       setState(() {
         for (var i = 0; i < result.items.length; i++) {
           loadedItems[start + i] = result.items[i];
         }
-        if (result.totalCount != totalSize) totalSize = result.totalCount;
+        if (total != totalSize) totalSize = total;
+        if (result.items.isEmpty) loadedItems.removeWhere((index, _) => index >= totalSize);
       });
       _trackOpenEndedTotal(start, requestSize, result);
 

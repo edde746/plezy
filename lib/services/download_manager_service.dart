@@ -322,6 +322,10 @@ class DownloadManagerService {
 
   bool get downloadsSupported => _downloadsSupportedOverride ?? platformDownloadsSupported;
 
+  /// Whether a storage failure has stopped the queue. Only an explicit user
+  /// request ([beginUserDownloadRequest], retry, resume) or a restart lifts it.
+  bool get queueBlockedByStorageFailure => _queueBlockedByStorageFailure;
+
   NativeDownloaderOps get _nativeOps =>
       _nativeOpsOverride ??
       (
@@ -1773,6 +1777,9 @@ class DownloadManagerService {
   /// Queue [metadata] for download. Returns the item actually stored —
   /// identical to [metadata] unless library stamping filled `libraryId`/
   /// `libraryTitle`, so the caller can keep its in-memory copy in sync.
+  ///
+  /// Does not lift a storage stop: the item waits behind it unless the caller
+  /// began an explicit request with [beginUserDownloadRequest].
   Future<MediaItem> queueDownload({
     required MediaItem metadata,
     required MediaServerClient client,
@@ -1782,7 +1789,6 @@ class DownloadManagerService {
     int mediaIndex = 0,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return metadata;
-    _rearmQueueForUserAction('new download');
 
     final globalKey = metadata.globalKey;
 
@@ -2651,6 +2657,12 @@ class DownloadManagerService {
     _queueBlockedByStorageFailure = false;
   }
 
+  /// Re-arms the queue for an explicit download request. Call once per
+  /// request, before its items are queued: automatic enqueues (sync rules)
+  /// must not lift a storage stop, or every pass would retry the refused
+  /// file and stop all downloads again.
+  void beginUserDownloadRequest() => _rearmQueueForUserAction('new download');
+
   Future<void> _handleStorageFullFailure(String globalKey, String taskId, {String? message}) async {
     _queueBlockedByStorageFailure = true;
     for (final timer in _autoRetryTimers.values) {
@@ -2859,9 +2871,12 @@ class DownloadManagerService {
       // Download was cancelled/deleted/retried by user during the delay
       return;
     }
+    // Stopping for storage cancels the retry timers, not a retry already past them.
+    if (_queueBlockedByStorageFailure) return;
 
     appLogger.i('Auto-retrying download for $globalKey');
     await _cleanupStaleDownload(globalKey);
+    if (_queueBlockedByStorageFailure) return;
     // The retry delay already throttles preparation failures; do not let the
     // immediate queue circuit breaker suppress the next scheduled attempt.
     _consecutiveQueueFailures = 0;

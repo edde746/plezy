@@ -47,6 +47,7 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
@@ -240,23 +241,25 @@ void main() {
       );
     });
 
-    test('Plex keeps its account-level gate', () {
-      expect(
-        isMediaDeletionAllowed(
+    test('Plex needs both the owner/admin gate and the server switch (#2897)', () {
+      bool plexAllows({required bool isOwner, Profile? profile, required bool? serverAllows}) => isMediaDeletionAllowed(
+        itemBackend: MediaBackend.plex,
+        resolvedItemPermission: serverAllows,
+        isAdminActionAllowed: isAdminActionAllowedForMediaItem(
+          isOwnerOrAdmin: isOwner,
           itemBackend: MediaBackend.plex,
-          resolvedItemPermission: null,
-          isAdminActionAllowed: true,
+          activeProfile: profile,
         ),
-        isTrue,
       );
-      expect(
-        isMediaDeletionAllowed(
-          itemBackend: MediaBackend.plex,
-          resolvedItemPermission: null,
-          isAdminActionAllowed: false,
-        ),
-        isFalse,
-      );
+      final managedHomeUser = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: false));
+      final adminHomeUser = Profile.virtualPlexHome(connectionId: 'plex-1', homeUser: _homeUser(admin: true));
+
+      expect(plexAllows(isOwner: true, serverAllows: true), isTrue);
+      expect(plexAllows(isOwner: true, serverAllows: false), isFalse, reason: 'PMS deletes even with the switch off');
+      expect(plexAllows(isOwner: true, serverAllows: null), isFalse, reason: 'an unknown switch stays hidden');
+      expect(plexAllows(isOwner: false, serverAllows: true), isFalse, reason: 'only the owning account may delete');
+      expect(plexAllows(isOwner: true, profile: managedHomeUser, serverAllows: true), isFalse);
+      expect(plexAllows(isOwner: true, profile: adminHomeUser, serverAllows: true), isTrue);
     });
 
     test('an item with no backend marker is never deletable', () {
@@ -365,11 +368,161 @@ void main() {
       await tester.pump();
       expect(find.text(t.mediaMenu.fileInfo), findsNothing, reason: 'the menu waits for the permission answer');
 
-      await tester.pump(MediaServerTimeouts.jellyfinDeletePermission + const Duration(milliseconds: 1));
+      await tester.pump(MediaServerTimeouts.deletePermissionProbe + const Duration(milliseconds: 1));
       await tester.pumpAndSettle();
 
       expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
       expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
+    });
+  });
+
+  group('MediaContextMenu Plex delete gate (#2897)', () {
+    http.Response root(Object? allowMediaDeletion) => jsonResponse({
+      'MediaContainer': {'friendlyName': 'Plex', 'allowMediaDeletion': ?allowMediaDeletion},
+    });
+
+    for (final (label, allowMediaDeletion) in [('off', false), ('missing', null)]) {
+      testWidgets('hides delete for the owner when the server switch is $label', (tester) async {
+        final menuKey = await _pumpPlexItemMenu(tester, handler: (_) async => root(allowMediaDeletion));
+
+        await _openMenu(tester, menuKey);
+
+        expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
+        // The rest of the menu is unaffected.
+        expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
+      });
+    }
+
+    testWidgets('shows delete for the owner when the server allows it, after one probe', (tester) async {
+      final requests = <http.Request>[];
+      final menuKey = await _pumpPlexItemMenu(tester, requests: requests, handler: (_) async => root(true));
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsOneWidget);
+      expect(requests.where((r) => r.url.path == '/'), hasLength(1));
+    });
+
+    testWidgets('hides delete, and still opens the menu, when the probe fails', (tester) async {
+      final menuKey = await _pumpPlexItemMenu(tester, handler: (_) async => http.Response('boom', 500));
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
+      expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('still opens the menu, without delete, when the probe hangs', (tester) async {
+      final menuKey = await _pumpPlexItemMenu(tester, handler: (_) => Completer<http.Response>().future);
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('delete target')));
+      await tester.pump();
+      expect(find.text(t.mediaMenu.fileInfo), findsNothing, reason: 'the menu waits for the switch');
+
+      await tester.pump(MediaServerTimeouts.deletePermissionProbe + const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
+    });
+
+    testWidgets('sends no probe for an account that does not own the server', (tester) async {
+      final requests = <http.Request>[];
+      final menuKey = await _pumpPlexItemMenu(
+        tester,
+        owned: false,
+        requests: requests,
+        handler: (_) async => root(true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
+      expect(requests.where((r) => r.url.path == '/'), isEmpty);
+    });
+
+    testWidgets('restores keyboard focus after a menu the switch kept delete out of', (tester) async {
+      final destination = FocusNode();
+      addTearDown(destination.dispose);
+      final menuKey = await _pumpPlexItemMenu(
+        tester,
+        handler: (_) async => root(false),
+        wrapMenu: (menu) => FocusableWrapper(focusNode: destination, onSelect: () {}, child: menu),
+      );
+      destination.requestFocus();
+      await tester.pump();
+
+      // No position: the keyboard/D-pad path, which focuses the first entry.
+      menuKey.currentState!.showContextMenu(tester.element(find.text('delete target')));
+      await tester.pumpAndSettle();
+      expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
+      expect(destination.hasPrimaryFocus, isFalse);
+
+      Navigator.of(menuKey.currentContext!).pop();
+      await tester.pumpAndSettle();
+      expect(destination.hasPrimaryFocus, isTrue);
+    });
+
+    testWidgets('confirming deletes the movie once and reports it deleted', (tester) async {
+      final events = <String>[];
+      final subscription = DeletionNotifier().stream.listen((event) => events.add(event.itemId));
+      addTearDown(subscription.cancel);
+      final deleted = <String>[];
+      final menuKey = await _pumpPlexItemMenu(
+        tester,
+        handler: (request) async {
+          if (request.method == 'DELETE') {
+            deleted.add(request.url.path);
+            return http.Response('', 200);
+          }
+          return root(true);
+        },
+      );
+
+      await _openMenu(tester, menuKey);
+      await _tapMenuEntry(tester, t.mediaMenu.deleteMovieFromServer);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.mediaMenu.deleteMovieConfirm));
+      await tester.pumpAndSettle();
+
+      expect(deleted, ['/library/metadata/movie-1']);
+      expect(events, ['movie-1']);
+      expect(find.text(t.mediaMenu.mediaDeletedSuccessfully), findsOneWidget);
+    });
+
+    testWidgets('refuses at confirm when the switch was turned off after the menu opened', (tester) async {
+      final events = <String>[];
+      final subscription = DeletionNotifier().stream.listen((event) => events.add(event.itemId));
+      addTearDown(subscription.cancel);
+      final deleted = <String>[];
+      var allowed = true;
+      final menuKey = await _pumpPlexItemMenu(
+        tester,
+        handler: (request) async {
+          if (request.method == 'DELETE') {
+            deleted.add(request.url.path);
+            return http.Response('', 200);
+          }
+          return root(allowed);
+        },
+      );
+
+      await _openMenu(tester, menuKey);
+      await _tapMenuEntry(tester, t.mediaMenu.deleteMovieFromServer);
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+
+      // The admin turns the switch off in Plex Web while the dialog is open.
+      allowed = false;
+      await tester.tap(find.text(t.mediaMenu.deleteMovieConfirm));
+      await tester.pumpAndSettle();
+
+      expect(deleted, isEmpty);
+      expect(events, isEmpty);
+      expect(find.text(t.mediaMenu.mediaDeletionDisabledOnServer), findsOneWidget);
+      expect(find.text(t.mediaMenu.mediaDeletedSuccessfully), findsNothing);
     });
   });
 
@@ -1795,6 +1948,98 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+        ],
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: Scaffold(body: Center(child: wrapMenu?.call(menu) ?? menu)),
+        ),
+      ),
+    ),
+  );
+  return menuKey;
+}
+
+/// A Plex movie menu for an account whose server list says [owned], with a
+/// probe-capable harness: an [OfflineModeProvider] and a recorded transport.
+/// The movie carries its file path inline, so a delete confirmation needs no
+/// impact lookup and the only requests are the switch read and the DELETE.
+Future<GlobalKey<MediaContextMenuState>> _pumpPlexItemMenu(
+  WidgetTester tester, {
+  required Future<http.Response> Function(http.Request request) handler,
+  bool owned = true,
+  List<http.Request>? requests,
+  Widget Function(Widget menu)? wrapMenu,
+}) async {
+  LocaleSettings.setLocaleSync(AppLocale.en);
+  TvDetectionService.debugSetAppleTVOverride(true);
+  addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  PlexApiCache.initialize(db);
+  final client = testPlexClient(
+    serverId: ServerId('plex-1'),
+    httpClient: MockClient((request) async {
+      requests?.add(request);
+      return handler(request);
+    }),
+  );
+  final manager = MultiServerManager()
+    ..debugRegisterClientForTesting(
+      client,
+      plexServer: PlexServer(
+        name: 'Plex',
+        clientIdentifier: 'plex-1',
+        accessToken: 'token',
+        connections: [
+          PlexConnection(
+            protocol: 'https',
+            address: 'plex.example.com',
+            port: 443,
+            uri: 'https://plex.example.com',
+            local: false,
+            relay: false,
+            ipv6: false,
+          ),
+        ],
+        owned: owned,
+      ),
+    );
+  final multiServerProvider = testMultiServerProvider(manager);
+  final offlineMode = OfflineModeProvider(manager);
+  final stack = await ProfileStack.create(db: db, withStorage: false);
+  addTearDown(() async {
+    await stack.dispose();
+    offlineMode.dispose();
+    multiServerProvider.dispose();
+    manager.dispose();
+    await db.close();
+  });
+
+  final menuKey = GlobalKey<MediaContextMenuState>();
+  final menu = MediaContextMenu(
+    key: menuKey,
+    item: testMediaItem(
+      id: 'movie-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie',
+      serverId: 'plex-1',
+      mediaVersions: const [
+        MediaVersion(
+          id: 'v-1',
+          parts: [MediaPart(id: 'p-1', file: '/movies/Movie.mkv')],
+        ),
+      ],
+    ),
+    child: const SizedBox(width: 120, height: 80, child: Text('delete target')),
+  );
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
         ],
         child: MaterialApp(
           theme: monoTheme(MonoPalette.dark),

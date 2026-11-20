@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../models/trackers/device_code.dart';
 import '../../../utils/abortable_http_request.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/app_version.dart';
 import '../device_code_auth_service.dart';
 import '../tracker_constants.dart';
 import '../tracker_exceptions.dart';
@@ -39,7 +40,7 @@ class SimklAuthService extends DeviceCodeAuthServiceBase {
       httpClient,
       'POST',
       uri,
-      headers: SimklConstants.oauthHeaders(appVersion: await SimklConstants.appVersion()),
+      headers: SimklConstants.oauthHeaders(appVersion: (await AppVersion.current()).versionOrUnknown),
       body: {'client_id': SimklConstants.v2ClientId, 'scope': SimklConstants.scope},
       timeout: TrackerConstants.authRequestTimeout,
       operation: 'Simkl device code request',
@@ -69,7 +70,7 @@ class SimklAuthService extends DeviceCodeAuthServiceBase {
         httpClient,
         'POST',
         Uri.parse(SimklConstants.tokenUrl),
-        headers: SimklConstants.oauthHeaders(appVersion: await SimklConstants.appVersion()),
+        headers: SimklConstants.oauthHeaders(appVersion: (await AppVersion.current()).versionOrUnknown),
         body: {
           'grant_type': SimklConstants.deviceCodeGrantType,
           'client_id': SimklConstants.v2ClientId,
@@ -144,7 +145,7 @@ class SimklAuthService extends DeviceCodeAuthServiceBase {
       httpClient,
       'POST',
       Uri.parse(SimklConstants.tokenUrl),
-      headers: SimklConstants.oauthHeaders(appVersion: await SimklConstants.appVersion()),
+      headers: SimklConstants.oauthHeaders(appVersion: (await AppVersion.current()).versionOrUnknown),
       body: {'grant_type': 'refresh_token', 'client_id': SimklConstants.v2ClientId, 'refresh_token': refreshToken},
       timeout: TrackerConstants.refreshTimeout,
       operation: 'Simkl token refresh',

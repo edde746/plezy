@@ -85,6 +85,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
   PlayerCommands _watchTogetherCommands(Player currentPlayer) => PlayerCommands(
     play: () async {
       if (!automotivePlaybackAllowedNow()) throw StateError('playback is restricted while driving');
+      if (_playbackHeldForProfileSelection) throw StateError('playback is held for profile selection');
       await _playWithPlaybackIntent(currentPlayer);
     },
     pause: () => _pauseWithPlaybackIntent(currentPlayer),
@@ -150,10 +151,12 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     if (watchTogether == null) return Future<void>.value();
     watchTogether.unregisterPlayer(this);
     if (adapter != null) _wtReleased = watchTogether.playerClosed(adapter, continuing: continuing);
-    // A car's restriction and the background belonged to this player (its
-    // resume never comes once it closed); the next one starts fresh.
+    // A car's restriction, the background and the profile picker belonged to
+    // this player (their release never comes once it closed); the next one
+    // starts fresh.
     watchTogether.setVehicleRestricted(false);
     watchTogether.setBackgrounded(false);
+    watchTogether.setAwaitingProfileSelection(false);
     return _wtReleased ?? Future<void>.value();
   }
 
@@ -180,6 +183,9 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
         TransportCommand.pause => false,
         TransportCommand.toggle => !currentPlayer.state.playing,
       };
+      // Under the profile picker a press must not start the room for
+      // everyone either; the wrappers below keep this player paused.
+      if (play && _playbackHeldForProfileSelection) return _playWithPlaybackIntent(currentPlayer);
       if (play ? room.play() : room.pause()) {
         _playbackIntentShouldPlay = play;
         return Future<void>.value();

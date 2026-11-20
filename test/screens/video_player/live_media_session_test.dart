@@ -428,6 +428,7 @@ MediaControlsScreenController _liveController({
     hasLiveSeekWindow: hasSeekWindow ?? () => false,
     hasNextLiveChannel: hasNextChannel ?? () => false,
     hasPreviousLiveChannel: hasPreviousChannel ?? () => false,
+    isPlaybackHeld: () => false,
     shouldSkipForPip: () => false,
     isPlayerInitialized: () => true,
     metadata: () => testMediaItem(kind: MediaKind.clip, title: 'Channel 5'),

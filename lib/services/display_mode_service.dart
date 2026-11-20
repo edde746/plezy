@@ -22,6 +22,10 @@ class DisplayModeService {
   bool _displayModeChanged = false;
   bool _hdrStateChanged = false;
 
+  /// Bumped by [restoreAll]. A match whose native calls straddle a restore
+  /// lands after the restore had nothing to undo, so it undoes itself.
+  int _restoreEpoch = 0;
+
   bool get hdrStateChanged => _hdrStateChanged;
   bool get anyChangeApplied => _displayModeChanged || _hdrStateChanged;
 
@@ -56,6 +60,7 @@ class DisplayModeService {
       appLogger.d('Display matching skipped: not in fullscreen');
       return Duration.zero;
     }
+    final epoch = _restoreEpoch;
 
     bool anyChange = false;
 
@@ -77,6 +82,14 @@ class DisplayModeService {
       }
     }
 
+    // Leaving fullscreen or closing the player while the native calls were in
+    // flight already ran its restore, which found nothing applied yet.
+    if (anyChange && (epoch != _restoreEpoch || !_fullscreen.isFullscreen)) {
+      appLogger.d('Display matching outlived its fullscreen session; restoring');
+      await _restoreChanges();
+      return Duration.zero;
+    }
+
     if (anyChange) {
       final delaySec = _settings.read(SettingsService.displaySwitchDelay);
       return Duration(seconds: delaySec);
@@ -85,9 +98,15 @@ class DisplayModeService {
     return Duration.zero;
   }
 
+  /// Restore every change applied so far, and make any match still in flight
+  /// undo its own change when it lands.
   Future<void> restoreAll() async {
     if (!_isSupported) return;
+    _restoreEpoch++;
+    await _restoreChanges();
+  }
 
+  Future<void> _restoreChanges() async {
     if (_hdrStateChanged) {
       try {
         final restored = await _channel.invokeMethod<bool>('restoreSystemHDR');
@@ -174,11 +193,23 @@ class DisplayModeService {
     return rate.toDouble();
   }
 
+  /// 25 and 30 fps-class content, which 50/60 Hz modes show at exactly twice
+  /// its rate.
+  static const _halfRateMinFps = 24.5;
+  static const _halfRateMaxFps = 30.5;
+
+  /// Relative rate error below which two matches are equally precise: above
+  /// the float noise in reported rates, below the 0.1% NTSC mismatch.
+  static const _preciseDeviation = 0.0002;
+
   /// Find the best matching refresh rate for a video fps: the lowest whole
   /// multiple of it within 0.5%, and of those the closest match — so
   /// 23.976fps content takes a 23 (23.976) Hz mode over 24 Hz on Windows, and
-  /// 47.95 Hz over 48 Hz on a MacBook Pro. Returns the rate as the platform
-  /// reported it, which is what `setDisplayMode` takes back; 0 for no match.
+  /// 47.95 Hz over 48 Hz on a MacBook Pro. 25 and 30 fps-class content takes
+  /// 50/60 Hz over its own 25/30 Hz modes unless they are more precise, as
+  /// Android's DisplayModeSelector does (#3090). Returns the rate as the
+  /// platform reported it, which is what `setDisplayMode` takes back; 0 for no
+  /// match.
   @visibleForTesting
   static num findBestRefreshRate(double videoFps, List<Map> modes, int currentWidth, int currentHeight) {
     if (videoFps <= 0) return 0;
@@ -194,6 +225,19 @@ class DisplayModeService {
 
     if (rates.isEmpty) return 0;
 
+    final own = _lowestMultiple(videoFps, rates);
+    if (videoFps >= _halfRateMinFps && videoFps <= _halfRateMaxFps) {
+      // Precision leads: 60 Hz, 0.1% off for 29.97 fps, does not replace an
+      // exact 29.97 Hz mode.
+      final doubled = _lowestMultiple(videoFps * 2, rates);
+      if (doubled != null && (own == null || doubled.deviation - own.deviation < _preciseDeviation)) {
+        return doubled.rate;
+      }
+    }
+    return own?.rate ?? 0;
+  }
+
+  static ({num rate, double deviation})? _lowestMultiple(double videoFps, Set<num> rates) {
     num bestRate = 0;
     int bestMultiplier = 0;
     double bestDeviation = 0;
@@ -222,7 +266,7 @@ class DisplayModeService {
       }
     }
 
-    return bestRate;
+    return bestRate == 0 ? null : (rate: bestRate, deviation: bestDeviation);
   }
 
   Future<void> syncWithNative() async {

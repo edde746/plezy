@@ -49,9 +49,23 @@ class SystemShelfService {
   final Future<bool> Function()? _supportOverride;
   final bool Function()? _tvosTargetOverride;
 
+  /// Decides whether a profile's session may publish. Installed by the
+  /// profile session root; null admits every session.
+  bool Function(String profileId)? publicationPolicy;
+
+  /// The profile whose session is open, published or withheld.
+  String? _sessionProfile;
+
+  /// The open session when [publicationPolicy] admits it, else null.
   String? _activeOwner;
   int _generation = 0;
   Future<void> _mutationTail = Future<void>.value();
+  final StreamController<String> _publicationResumed = StreamController<String>.broadcast();
+
+  /// Emits a profile whose open session [refreshPublicationPolicy] just
+  /// admitted after withholding it. Nothing of that profile is on the shelf,
+  /// so its publisher republishes.
+  Stream<String> get publicationResumed => _publicationResumed.stream;
 
   @visibleForTesting
   String? get debugActiveOwner => _activeOwner;
@@ -59,14 +73,16 @@ class SystemShelfService {
   @visibleForTesting
   int get debugGeneration => _generation;
 
-  /// Forgets the owner and drops the mutation queue. Deliberately does not
-  /// await the old tail: a widget test's FakeAsync zone ends without
-  /// flushing the microtasks that settle a chained future, so the previous
-  /// test's final clear would leave a tail that never completes and hang the
-  /// next test's setUp. Tests own their channel fakes, so nothing native is
-  /// lost by abandoning the chain.
+  /// Forgets the session, owner, and policy, and drops the mutation queue.
+  /// Deliberately does not await the old tail: a widget test's FakeAsync zone
+  /// ends without flushing the microtasks that settle a chained future, so
+  /// the previous test's final clear would leave a tail that never completes
+  /// and hang the next test's setUp. Tests own their channel fakes, so
+  /// nothing native is lost by abandoning the chain.
   @visibleForTesting
   void debugReset() {
+    publicationPolicy = null;
+    _sessionProfile = null;
     _activeOwner = null;
     _generation = 0;
     _mutationTail = Future<void>.value();
@@ -89,7 +105,9 @@ class SystemShelfService {
     return null;
   }
 
-  /// Establishes the only owner allowed to publish launcher shelf state.
+  /// Opens [profileId]'s session, the only owner allowed to publish launcher
+  /// shelf state unless [publicationPolicy] withholds it. A withheld session
+  /// clears the shelf instead, including what an earlier launch published.
   ///
   /// Ownership changes are synchronous. Native mutations remain serialized
   /// behind any clear already queued for the previous owner.
@@ -97,15 +115,51 @@ class SystemShelfService {
     if (profileId.isEmpty) {
       throw ArgumentError.value(profileId, 'profileId', 'must not be empty');
     }
-    if (_activeOwner == profileId) return;
+    if (_sessionProfile == profileId) return;
+    _sessionProfile = profileId;
+    if (_mayPublish(profileId)) {
+      _admit(profileId);
+    } else {
+      unawaited(_revoke(profileId));
+    }
+  }
+
+  /// Closes [profileId]'s session synchronously, then clears its native shelf
+  /// after every already-dispatched mutation has settled.
+  Future<void> endProfileSession(String profileId) async {
+    if (_sessionProfile != profileId) return;
+    _sessionProfile = null;
+    // A withheld session cleared the shelf when it was withheld.
+    if (_activeOwner != profileId) return;
+    await _revoke(profileId);
+  }
+
+  /// Re-applies [publicationPolicy] to the open session after one of its
+  /// inputs changed: withholding clears the shelf, admitting announces
+  /// [publicationResumed].
+  void refreshPublicationPolicy() {
+    final profileId = _sessionProfile;
+    if (profileId == null) return;
+    final admitted = _activeOwner == profileId;
+    if (_mayPublish(profileId) == admitted) return;
+    if (admitted) {
+      unawaited(_revoke(profileId));
+    } else {
+      _admit(profileId);
+      _publicationResumed.add(profileId);
+    }
+  }
+
+  bool _mayPublish(String profileId) => publicationPolicy?.call(profileId) ?? true;
+
+  void _admit(String profileId) {
     _activeOwner = profileId;
     _generation++;
   }
 
-  /// Invalidates [profileId] synchronously, then clears its native shelf after
-  /// every already-dispatched mutation has settled.
-  Future<void> endProfileSession(String profileId) async {
-    if (_activeOwner != profileId) return;
+  /// Invalidates publication synchronously and queues a clear of the native
+  /// shelf. The fresh generation lets the clear supersede any owner.
+  Future<void> _revoke(String profileId) async {
     _activeOwner = null;
     final generation = ++_generation;
     await _enqueueMutation<void>(() async {

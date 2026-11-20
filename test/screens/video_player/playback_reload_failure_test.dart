@@ -801,6 +801,65 @@ void main() {
     });
   });
 
+  testWidgets('the Play Next countdown holds while the resume profile picker covers the player (#2195)', (
+    tester,
+  ) async {
+    // The TV controls, as in the suspend test above: the TV is where a show is
+    // most often left at its Play Next prompt overnight.
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final screen = await pumpReloadScreen(tester);
+        final state = screen.key.currentState!;
+        final fakePlayer = screen.player;
+        await state.debugWirePlayerStreamsForTesting();
+        fakePlayer.emitPlaybackRestart();
+        await state.debugMarkPlaybackStartedForTesting();
+        await tester.pump();
+        final next = testMediaItem(
+          id: 'next',
+          title: 'Next episode',
+          serverId: 'srv-1',
+          backend: MediaBackend.jellyfin,
+        );
+        Provider.of<PlaybackStateProvider>(
+          screen.key.currentContext!,
+          listen: false,
+        ).setPlaybackFromLocalQueue(LocalPlayQueue(items: [state.widget.metadata, next], currentIndex: 0));
+        state.debugCommitAdjacentEpisodesForTesting(
+          AdjacentEpisodes(
+            next: next,
+            nextStatus: QueueNavigationStatus.found,
+            previousStatus: QueueNavigationStatus.boundary,
+          ),
+        );
+
+        fakePlayer.setPosition(fakePlayer.state.duration - const Duration(seconds: 2));
+        fakePlayer.emitPlaying(false);
+        fakePlayer.setCompleted(true);
+        state.debugCompleteVideoForTesting();
+        await pumpUntil(tester, () => state.debugPlayNextPromptVisibleForTesting);
+        final countdown = state.debugAutoPlayCountdownForTesting;
+        expect(countdown, greaterThan(0));
+
+        final selection = Completer<void>();
+        VideoPlayerScreenState.holdActivePlaybackUntil(selection.future);
+        final opensBefore = fakePlayer.openCalls;
+        await tester.pump(Duration(seconds: countdown + 2));
+        expect(state.debugAutoPlayCountdownForTesting, countdown);
+        expect(fakePlayer.openCalls, opensBefore, reason: 'the next episode must not start behind the picker');
+
+        selection.complete();
+        await tester.pump(const Duration(seconds: 1));
+        expect(state.debugAutoPlayCountdownForTesting, countdown - 1, reason: 'the countdown resumes');
+      },
+    );
+  });
+
   for (final autoPlay in [false, true]) {
     testWidgets('Back on the end-of-episode Play Next prompt leaves the player in one press '
         '(auto-play ${autoPlay ? 'on' : 'off'}, #2686)', (tester) async {

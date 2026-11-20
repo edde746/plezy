@@ -436,6 +436,9 @@ class ActiveProfileBinder {
       }
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
       multiServerProvider.setVisibleServerIds(visibleServerIds);
+      // A server the pass could not reach may answer seconds later — one that
+      // sleeps to save power can be woken by these very probes (#3075).
+      serverManager.scheduleOfflineReconnectRetries();
       success = (profile.isLocal && !localProfileHasJoinRows) || visibleServerIds.isNotEmpty;
       if (!success) {
         // A failed pass that expected servers, reached none (`!success`

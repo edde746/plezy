@@ -1,5 +1,4 @@
-import 'package:package_info_plus/package_info_plus.dart';
-
+import '../../utils/app_version.dart';
 import '../../utils/device_identity.dart';
 
 class PlexConfig {
@@ -40,14 +39,14 @@ class PlexConfig {
     String? machineIdentifier,
     String? languageCode,
   }) async {
-    final packageInfo = await PackageInfo.fromPlatform();
+    final appVersion = await AppVersion.current();
     final identity = await DeviceIdentityService.resolve();
     return PlexConfig(
       baseUrl: baseUrl,
       token: token,
       clientIdentifier: clientIdentifier,
       product: product ?? 'Plezy',
-      version: packageInfo.version,
+      version: appVersion.versionOrUnknown,
       platform: platform ?? identity.platform,
       device: device ?? sanitizeHeaderValue(identity.deviceModel),
       deviceName: sanitizeHeaderValue(identity.deviceName),

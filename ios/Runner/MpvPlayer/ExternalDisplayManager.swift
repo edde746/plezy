@@ -141,6 +141,23 @@ final class ExternalDisplayManager {
   }
 }
 
+#if compiler(>=6.4)
+  extension ExternalDisplayManager {
+    /// Apps built with the iOS 27 SDK get the non-interactive external-display
+    /// scene only for a registered scene accessory; without one, iOS mirrors
+    /// the device (#2471). The Info.plist scene roles still serve iOS 26 and
+    /// earlier, and builds made with older SDKs.
+    @available(iOS 27.0, *)
+    static func makeSceneAccessoryConfiguration() -> UISceneConfiguration {
+      let configuration = UISceneConfiguration(
+        name: "external-display", sessionRole: .windowExternalDisplayNonInteractive)
+      configuration.sceneClass = UIWindowScene.self
+      configuration.delegateClass = ExternalDisplaySceneDelegate.self
+      return configuration
+    }
+  }
+#endif
+
 class ExternalDisplaySceneDelegate: UIResponder, UIWindowSceneDelegate {
   var window: UIWindow?
 

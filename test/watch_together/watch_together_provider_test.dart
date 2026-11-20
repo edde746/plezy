@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openwatchparty/openwatchparty.dart' as owp;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/title_copies.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/app_version.dart';
 import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/watch_together/models/watch_copy.dart';
 import 'package:plezy/watch_together/models/watch_notice.dart';
@@ -423,6 +425,25 @@ void main() {
       expect(h.provider.participants.single.name, 'Plezy');
     });
 
+    _roomTest('a build without a package version creates rooms as Plezy/unknown', (world) async {
+      // A distro package that splits the Linux bundle leaves package_info_plus
+      // no version.json, and the SDK refuses a `client` of `Plezy/` (#3074).
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '',
+        buildNumber: '',
+        buildSignature: '',
+      );
+      AppVersion.resetForTesting();
+      addTearDown(AppVersion.resetForTesting);
+      final h = _Member(WatchTogetherProvider(partyFactory: world.relay.party, displayName: () => 'Host'));
+      world._members.add(h);
+
+      expect(await world.settle(h.provider.createRoom()), FakeOwpRelay.code);
+      expect(h.provider.participants.single.client, 'Plezy/${AppVersion.unknown}');
+    });
+
     _roomTest('host transfer, control mode and lock; a guest is refused host commands', (world) async {
       final h = world.host();
       final g = world.guest();
@@ -815,6 +836,44 @@ void main() {
       await world.until(() => g.provider.isFollowing, 'the guest follows');
       expect(screen.players.single.adapter.copy, _copyOf(_guestAlien));
       expect(g.provider.canJoinPlayback, isFalse);
+    });
+
+    _roomTest('a guest that switches to another version of its file keeps following, and the room seeks it', (
+      world,
+    ) async {
+      final (host: h, guest: g, hostPlayer: _, :screen) = await world.following();
+      final remux = _openPlayer(
+        _copyOf(_alien('g-alien', 'guest-nas', durationMs: _alienMs + 800, version: 'g-remux')),
+      );
+
+      g.provider.playerOpened(remux.adapter, shareable: true, roomLaunch: false);
+      await world.until(() => g.provider.isFollowing, 'the guest follows the other version');
+      expect(g.provider.roomCopy?.ref, remux.adapter.copy);
+      expect(g.provider.canJoinPlayback, isFalse);
+      expect(screen.players, hasLength(1), reason: 'the switched file is the guest pick, so nothing reopens');
+
+      expect(h.provider.seek(const Duration(minutes: 20)), isTrue);
+      await world.until(
+        () => remux.player.commandLog.any(
+          (command) => command.startsWith('seek:') && int.parse(command.substring(5)) >= 1200000,
+        ),
+        'the room seeks the other version',
+      );
+    });
+
+    _roomTest('a version the room cannot take sits out instead of holding the room', (world) async {
+      final (host: h, guest: g, hostPlayer: _, screen: _) = await world.following();
+      // No length anywhere and no server to read it from: the party refuses it.
+      final unknown = _openPlayer(_copyOf(_alien('g-alien', 'guest-nas', durationMs: null, version: 'g-remux')));
+
+      g.provider.playerOpened(unknown.adapter, shareable: true, roomLaunch: false);
+      await world.noticed<ChoiceFailedNotice>(g, 'the guest is told');
+      expect(g.provider.isFollowing, isFalse);
+      expect(g.provider.roomCopy?.ref, _copyOf(_guestAlien), reason: 'the room keeps the guest earlier pick');
+      await world.until(
+        () => h.participant(g.peerId).player == owp.PlayerState.idle,
+        'the room stops waiting for the guest',
+      );
     });
   });
 

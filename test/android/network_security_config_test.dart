@@ -15,8 +15,13 @@ const _expectedDomains = <String>{
   'simkl.in',
   'jsdelivr.net',
   'github.com',
+  'githubusercontent.com',
   'image.tmdb.org',
 };
+// Reached only through a redirect from a listed domain, so no source literal
+// names them: github.com's release asset downloads land on
+// release-assets.githubusercontent.com.
+const _redirectTargetDomains = <String>{'githubusercontent.com'};
 const _fixedEndpointSourcePaths = <String>[
   'lib/services/plex_auth_service.dart',
   'lib/services/plex_discover_client.dart',
@@ -109,6 +114,7 @@ void main() {
     // the scan lost sight of the file that owns it, and a host change there would
     // silently fall through to base-config and its user certificate authorities.
     final unobservedDomains = _expectedDomains
+        .difference(_redirectTargetDomains)
         .where((domain) => !discoveredHosts.any((host) => host == domain || host.endsWith('.$domain')))
         .toList();
     expect(

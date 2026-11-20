@@ -53,6 +53,9 @@
              github.com: anime mappings release asset
              (lib/services/trackers/anime_mappings_store.dart:29). -->
         <domain includeSubdomains="true">github.com</domain>
+        <!-- release-assets.githubusercontent.com: where github.com redirects
+             that release asset download. -->
+        <domain includeSubdomains="true">githubusercontent.com</domain>
         <!-- TMDB artwork (lib/services/catalog/seerr_catalog_source.dart:163). -->
         <domain includeSubdomains="true">image.tmdb.org</domain>
         <trust-anchors>

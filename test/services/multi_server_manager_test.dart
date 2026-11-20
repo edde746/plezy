@@ -1163,6 +1163,177 @@ void main() {
     });
   });
 
+  group('offline reconnect retries (#3075)', () {
+    /// Connects that succeed run in real async: creating the client does not
+    /// complete inside `fakeAsync`.
+    MultiServerManager newManager({
+      Stream<List<ConnectivityResult>> Function()? connectivityChanges,
+      List<Duration>? offlineRetryDelays,
+    }) {
+      final manager = MultiServerManager(
+        plexClientFactory: _RecordingPlexFactory().create,
+        connectivityChanges: connectivityChanges ?? () => const Stream.empty(),
+        connectivityDebounceDuration: Duration.zero,
+        offlineRetryDelays: offlineRetryDelays,
+      );
+      addTearDown(manager.dispose);
+      return manager;
+    }
+
+    test('a server the bind could not reach comes online by itself once it answers', () async {
+      await _prepareFreshPlexManagerTest();
+      final endpoint = _plexEndpoint('waking');
+      // Asleep for the bind's probe and the first retry, awake for the second.
+      final server = _ControlledPlexServer(
+        serverId: 'waking-server',
+        endpoints: [endpoint],
+        discoveryStreams: [() => const Stream.empty(), () => const Stream.empty(), () => Stream.value(endpoint)],
+      );
+      final manager = newManager(offlineRetryDelays: const [Duration.zero, Duration.zero, Duration.zero]);
+      expect(
+        await manager.refreshTokensForProfile(_plexAccount('waking-account', [server]), profileId: 'profile-a'),
+        isEmpty,
+      );
+
+      final online = manager.statusStream.firstWhere((status) => status['waking-server'] == true);
+      manager.scheduleOfflineReconnectRetries();
+      await online.timeout(const Duration(seconds: 5));
+
+      expect(server.discoveryCalls, 3);
+      expect(manager.getClient(ServerId('waking-server')), isNotNull);
+      await pumpEventQueue();
+      expect(server.discoveryCalls, 3, reason: 'nothing is left to retry once the server is online');
+    });
+
+    test('the retries give up after about a minute, and a profile refresh does not restart them', () async {
+      await _prepareFreshPlexManagerTest();
+      final server = _ControlledPlexServer(
+        serverId: 'asleep-server',
+        endpoints: [_plexEndpoint('asleep')],
+        discoveryStreams: [],
+      );
+      final manager = newManager();
+      final account = _plexAccount('asleep-account', [server]);
+      expect(await manager.refreshTokensForProfile(account, profileId: 'profile-a'), isEmpty);
+
+      fakeAsync((async) {
+        manager.scheduleOfflineReconnectRetries();
+        // Attempts 2, 4, 8, 15 and 30 seconds after the previous one.
+        async.elapse(const Duration(seconds: 58));
+        expect(server.discoveryCalls, 5);
+        async.elapse(const Duration(seconds: 1));
+        expect(server.discoveryCalls, 6);
+        async.elapse(const Duration(hours: 1));
+        expect(server.discoveryCalls, 6);
+
+        // A failed reconnect re-fetches the server list through this path, so
+        // restarting the retries from it would retry forever.
+        unawaited(manager.refreshTokensForProfile(account, profileId: 'profile-a'));
+        async.elapse(const Duration(seconds: 10));
+        expect(server.discoveryCalls, 7);
+        async.elapse(const Duration(hours: 1));
+        expect(server.discoveryCalls, 7);
+      });
+    });
+
+    test('a server that refused the account is not retried', () async {
+      await _prepareFreshPlexManagerTest();
+      final asleep = _ControlledPlexServer(
+        serverId: 'asleep-server',
+        endpoints: [_plexEndpoint('asleep')],
+        discoveryStreams: [],
+      );
+      final refusing = _ControlledPlexServer(
+        serverId: 'refusing-server',
+        endpoints: [_plexEndpoint('refusing')],
+        discoveryStreams: [],
+      );
+      final manager = newManager();
+      await manager.refreshTokensForProfile(_plexAccount('mixed-account', [asleep, refusing]), profileId: 'profile-a');
+      manager.debugMarkAuthErrorForTesting(ServerId('refusing-server'));
+
+      fakeAsync((async) {
+        manager.scheduleOfflineReconnectRetries();
+        async.elapse(const Duration(minutes: 2));
+        expect(asleep.discoveryCalls, 6);
+        expect(refusing.discoveryCalls, 1);
+      });
+    });
+
+    test('a retry that comes due during a profile refresh leaves the connect to the refresh', () async {
+      await _prepareFreshPlexManagerTest();
+      final refreshDiscovery = StreamController<PlexConnection>(sync: true);
+      addTearDown(refreshDiscovery.close);
+      final server = _ControlledPlexServer(
+        serverId: 'busy-server',
+        endpoints: [_plexEndpoint('busy')],
+        discoveryStreams: [() => const Stream.empty(), () => refreshDiscovery.stream, () => const Stream.empty()],
+      );
+      final manager = newManager();
+      final account = _plexAccount('busy-account', [server]);
+      expect(await manager.refreshTokensForProfile(account, profileId: 'profile-a'), isEmpty);
+
+      fakeAsync((async) {
+        manager.scheduleOfflineReconnectRetries();
+        unawaited(manager.refreshTokensForProfile(account, profileId: 'profile-a'));
+        async.flushMicrotasks();
+        expect(server.discoveryCalls, 2);
+
+        async.elapse(const Duration(seconds: 2));
+        expect(server.discoveryCalls, 2, reason: 'the refresh is still connecting the server');
+
+        // The refresh fails; the schedule carries on from the skipped attempt.
+        async.elapse(const Duration(seconds: 1));
+        refreshDiscovery.close();
+        async.flushMicrotasks();
+        expect(manager.isServerOnline(ServerId('busy-server')), isFalse);
+        async.elapse(const Duration(seconds: 3));
+        expect(server.discoveryCalls, 3);
+      });
+    });
+
+    test('a bind that reached no server still re-probes it when the network changes', () async {
+      await _prepareFreshPlexManagerTest();
+      final endpoint = _plexEndpoint('late-network');
+      final connectivity = _DirectConnectivityStream();
+      final server = _ControlledPlexServer(
+        serverId: 'late-network-server',
+        endpoints: [endpoint],
+        discoveryStreams: [() => const Stream.empty(), () => Stream.value(endpoint)],
+      );
+      final manager = newManager(connectivityChanges: () => connectivity);
+      expect(
+        await manager.refreshTokensForProfile(_plexAccount('late-network-account', [server]), profileId: 'profile-a'),
+        isEmpty,
+      );
+      expect(connectivity.listenCount, 1);
+
+      final online = manager.statusStream.firstWhere((status) => status['late-network-server'] == true);
+      connectivity.add(const [ConnectivityResult.wifi]);
+      await online.timeout(const Duration(seconds: 5));
+      expect(server.discoveryCalls, 2);
+    });
+
+    test('dispose cancels pending retries', () async {
+      await _prepareFreshPlexManagerTest();
+      final server = _ControlledPlexServer(
+        serverId: 'disposed-server',
+        endpoints: [_plexEndpoint('disposed')],
+        discoveryStreams: [],
+      );
+      final manager = newManager();
+      await manager.refreshTokensForProfile(_plexAccount('disposed-account', [server]), profileId: 'profile-a');
+
+      fakeAsync((async) {
+        manager.scheduleOfflineReconnectRetries();
+        async.elapse(const Duration(seconds: 1));
+        manager.dispose();
+        async.elapse(const Duration(minutes: 2));
+        expect(server.discoveryCalls, 1);
+      });
+    });
+  });
+
   group('checkServerHealth', () {
     test('a probe result from a client replaced mid-probe is not applied', () async {
       final probeStarted = Completer<void>();

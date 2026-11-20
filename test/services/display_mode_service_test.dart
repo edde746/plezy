@@ -161,7 +161,7 @@ void main() {
 
     test('reads Windows 23/29/59 Hz modes as their 1000/1001 rates', () {
       expect(best(23.976, [23, 24, 60]), 23);
-      expect(best(29.97, [29, 30, 59, 60]), 29);
+      expect(best(29.97, [29, 30]), 29);
       expect(best(59.94, [59, 60]), 59);
       // Film-rate content on a panel with only NTSC-family modes.
       expect(best(23.976, [59, 119]), 119);
@@ -169,9 +169,19 @@ void main() {
 
     test('whole-number content keeps its whole-number modes', () {
       expect(best(24, [23, 24, 60]), 24);
-      expect(best(30, [29, 30, 60]), 30);
+      expect(best(30, [29, 30]), 30);
       expect(best(25, [50, 59, 60]), 50);
       expect(best(60, [59, 60, 120]), 60);
+    });
+
+    test('25 and 30 fps-class content takes its doubled rate over its own', () {
+      expect(best(25, [25, 50, 100]), 50);
+      expect(best(29.97, [29, 30, 59, 60, 119]), 59);
+      expect(best(30, [29, 30, 59, 60]), 60);
+      // Precision leads: 60 Hz is 0.1% off for 29.97 fps.
+      expect(best(29.97, [29, 60]), 29);
+      // Film rates are not doubled.
+      expect(best(24, [24, 48, 120]), 24);
     });
 
     test('takes macOS rates exactly as reported', () {
@@ -241,6 +251,59 @@ void main() {
       'restoreDisplayMode',
     ]);
     expect(service.anyChangeApplied, isFalse);
+  });
+
+  group('a refresh-rate switch landing after its fullscreen session ended', () {
+    // setDisplayMode answers only after [duringSwitch] ran, the way the
+    // native switch can land after Dart's fullscreen check went stale.
+    Future<Duration> matchWhile(Future<void> Function() duringSwitch) async {
+      service = DisplayModeService.forTesting(
+        SettingsService.instance,
+        FullscreenStateManager(),
+        channel: channel,
+        isWindows: false,
+        isMacOS: true,
+      );
+      await SettingsService.instance.write(SettingsService.matchRefreshRate, true);
+      await SettingsService.instance.write(SettingsService.displaySwitchDelay, 2);
+      FullscreenStateManager().setFullscreen(true);
+      addTearDown(() => FullscreenStateManager().setFullscreen(false));
+
+      setHandler((call) async {
+        calls.add(call.method);
+        switch (call.method) {
+          case 'getCurrentDisplayMode':
+            return {'width': 1512, 'height': 982, 'refreshRate': 120.0};
+          case 'getDisplayModes':
+            return [
+              for (final rate in [120.0, 48.0]) {'width': 1512, 'height': 982, 'refreshRate': rate},
+            ];
+          case 'setDisplayMode':
+            await duringSwitch();
+            return true;
+          case 'restoreDisplayMode':
+            return true;
+        }
+        throw MissingPluginException('No implementation for ${call.method}');
+      });
+      return service.applyDisplayMatching(fps: 24, sigPeak: null);
+    }
+
+    test('is undone when fullscreen was exited', () async {
+      final delay = await matchWhile(() async => FullscreenStateManager().setFullscreen(false));
+
+      expect(delay, Duration.zero);
+      expect(calls, ['getCurrentDisplayMode', 'getDisplayModes', 'setDisplayMode', 'restoreDisplayMode']);
+      expect(service.anyChangeApplied, isFalse);
+    });
+
+    test('is undone when the player closed with nothing applied yet', () async {
+      final delay = await matchWhile(() => service.restoreAll());
+
+      expect(delay, Duration.zero);
+      expect(calls, ['getCurrentDisplayMode', 'getDisplayModes', 'setDisplayMode', 'restoreDisplayMode']);
+      expect(service.anyChangeApplied, isFalse);
+    });
   });
 
   test('a platform without a display mode backend performs no native work', () async {

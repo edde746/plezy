@@ -225,6 +225,59 @@ void main() {
       }
     });
 
+    testWidgets('a count that runs ahead of the served items ends at the last served item', (tester) async {
+      late _PaginatedProbeState state;
+      const served = 30;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          // Claims 50 items, serves 30 (a library mid-scan).
+          fetcher: (start, size, abort) async =>
+              _result(start: start, size: (served - start).clamp(0, size), totalSize: 50),
+        ),
+      );
+
+      await state.loadInitialPage(10);
+      await tester.pump();
+
+      await state.ensureRangeLoaded(10, 10);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump();
+      }
+      final settledFetches = state.fetchCalls;
+      for (var i = 0; i < 10; i++) {
+        await tester.pump();
+      }
+
+      expect(state.totalSize, served);
+      expect(state.loadedItems.length, served);
+      expect(state.fetchCalls, settledFetches, reason: 'no request may repeat once the end is known');
+    });
+
+    testWidgets('a skeleton past a short page asks only for the part still missing', (tester) async {
+      late _PaginatedProbeState state;
+      const served = 90;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async =>
+              _result(start: start, size: (served - start).clamp(0, size), totalSize: 100),
+        ),
+      );
+
+      await state.loadInitialPage(10);
+      state.ensureIndexLoaded(95, pageSize: 50);
+      await tester.pumpAndSettle();
+      expect(state.loadedItems.containsKey(95), isFalse);
+
+      // The skeleton at 95 rebuilds and asks again.
+      state.ensureIndexLoaded(95, pageSize: 50);
+      await tester.pumpAndSettle();
+
+      expect(state.fetchArgs.skip(1), [(start: 50, size: 50), (start: 90, size: 10)]);
+      expect(state.totalSize, served);
+    });
+
     testWidgets('ensureIndexLoaded fetches the page containing the requested index', (tester) async {
       late _PaginatedProbeState state;
       await tester.pumpWidget(

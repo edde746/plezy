@@ -308,8 +308,10 @@ void main() {
     );
 
     expect(find.byIcon(Symbols.image_not_supported_rounded), findsNothing);
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pump();
+    await pumpUntilLocalFileResolved(
+      tester,
+      () => find.byIcon(Symbols.image_not_supported_rounded).evaluate().isNotEmpty,
+    );
     expect(find.byIcon(Symbols.image_not_supported_rounded), findsOneWidget);
 
     file.writeAsBytesSync(
@@ -320,9 +322,7 @@ void main() {
     await tester.pump();
 
     expect(find.byIcon(Symbols.image_not_supported_rounded), findsNothing);
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-    await tester.pump();
-    await tester.pump();
+    await pumpUntilLocalFileResolved(tester, () => find.byType(Image).evaluate().isNotEmpty);
     expect(file.existsSync(), isTrue);
     expect(find.byIcon(Symbols.image_not_supported_rounded), findsNothing);
     expect(find.byType(Image), findsOneWidget);
@@ -934,4 +934,14 @@ void main() {
     expect(resizeProvider.width, 560);
     expect(resizeProvider.height, 480);
   });
+}
+
+/// Gives the real `File.exists()` behind a local artwork path as long as the
+/// test runner needs to answer it, rebuilding until [resolved] holds. A fixed
+/// wait raced the file system when the full suite loaded the machine.
+Future<void> pumpUntilLocalFileResolved(WidgetTester tester, bool Function() resolved) async {
+  for (var attempt = 0; attempt < 500 && !resolved(); attempt++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+    await tester.pump();
+  }
 }

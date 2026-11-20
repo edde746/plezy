@@ -172,10 +172,11 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         timer.cancel();
         return;
       }
-      // A backgrounded app on a platform that pauses there has nobody to
-      // answer the prompt, and advancing would start the next episode behind
-      // the viewer's back; the countdown holds until they return.
-      if (_playNextPromptBackgrounded()) return;
+      // Nobody can answer the prompt from the background on a platform that
+      // pauses there, or from behind the resume profile picker, and advancing
+      // would start the next episode behind the viewer's back; the countdown
+      // holds until they return.
+      if (_playNextPromptOutOfSight()) return;
       final nextCountdown = _episode.autoPlayCountdown.value - 1;
       _episode.autoPlayCountdown.value = nextCountdown;
       if (nextCountdown <= 0) {
@@ -185,11 +186,12 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     });
   }
 
-  /// Whether the Play Next prompt is out of the viewer's sight: the app is in
-  /// the background on a platform that pauses playback there
-  /// ([shouldPauseVideoForBackground]). PiP stays visible, and its own path
-  /// advances without a prompt.
-  bool _playNextPromptBackgrounded() {
+  /// Whether the Play Next prompt is out of the viewer's sight: the resume
+  /// profile picker covers the player, or the app is in the background on a
+  /// platform that pauses playback there ([shouldPauseVideoForBackground]).
+  /// PiP stays visible, and its own path advances without a prompt.
+  bool _playNextPromptOutOfSight() {
+    if (_playbackHeldForProfileSelection) return true;
     if (PipService().isPipActive.value) return false;
     final isAutomotive = PlatformDetector.isAutomotive();
     final state = WidgetsBinding.instance.lifecycleState;

@@ -73,6 +73,11 @@ protocol MpvPipDelegate: AnyObject {
     private let retryScheduler: (@escaping () -> Void) -> Void
     private let startTimeoutScheduler: (@escaping () -> Void) -> Void
     private var autoStartEnabled = false
+    /// False until the main queue has turned once since `pipController` was
+    /// created. AVKit drops a start issued in the turn that created its
+    /// controller without telling the delegate, and already reports PiP as
+    /// possible in that turn (#3016).
+    private var controllerSettled = false
     /// Start, length and playback position of the last range handed to PiP,
     /// on the display layer's timeline; start is nil while PiP has none or a
     /// live one.
@@ -108,7 +113,8 @@ protocol MpvPipDelegate: AnyObject {
       retryScheduler: @escaping (@escaping () -> Void) -> Void,
       startTimeoutScheduler: @escaping (@escaping () -> Void) -> Void = { work in
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: work)
-      }
+      },
+      controllerSettles: (@escaping () -> Void) -> Void = { $0() }
     ) {
       self.pipController = controller
       self.sampleBufferLayer = sampleBufferDisplayLayer
@@ -116,6 +122,7 @@ protocol MpvPipDelegate: AnyObject {
       self.retryScheduler = retryScheduler
       self.startTimeoutScheduler = startTimeoutScheduler
       super.init()
+      controllerSettles { [weak self] in self?.controllerSettled = true }
     }
 
     deinit {
@@ -156,6 +163,7 @@ protocol MpvPipDelegate: AnyObject {
       pipController = AVPictureInPictureController(contentSource: contentSource)
       (pipController as? AVPictureInPictureController)?.delegate = helper
       pipController?.setAutomaticStart(autoStartEnabled)
+      DispatchQueue.main.async { [weak self] in self?.controllerSettled = true }
     }
 
     /// Enable/disable system auto-PiP (starts PiP automatically on background transition)
@@ -244,7 +252,7 @@ protocol MpvPipDelegate: AnyObject {
       else { return }
 
       let readiness = readiness(waitForFrame: waitForFrame)
-      if readiness.possible && readiness.timebase && readiness.frame {
+      if controllerSettled && readiness.possible && readiness.timebase && readiness.frame {
         guard !startRequested else { return }
         startRequested = true
         MpvLog.debug("[MpvPipController] vo_avfoundation ready after \(attempts) retries, starting PiP")

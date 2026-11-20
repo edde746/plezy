@@ -221,6 +221,33 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     _recordLifecycleState('resumed', action: 'complete');
   }
 
+  /// The resume profile picker now covers this player
+  /// ([VideoPlayerScreenState.holdActivePlaybackUntil]); the play-intent gates
+  /// stay shut until [until] completes. Whatever already started is paused:
+  /// the app's return races the picker's push, and the resume restore, a
+  /// room's catch-up or a native resume may have got there first. A room stops
+  /// waiting for this user meanwhile instead of pausing for everyone, and
+  /// catches the player up once a profile is chosen.
+  void _holdPlaybackForProfileSelection(Future<void> until) {
+    if (!mounted || _shuttingDown) return;
+    _profileSelectionHolds++;
+    _recordLifecycleState('profile_selection', action: 'hold');
+    _watchTogetherProvider?.setAwaitingProfileSelection(true);
+    final currentPlayer = player;
+    if (currentPlayer != null && (currentPlayer.state.playing || _playbackIntentShouldPlay)) {
+      _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'Profile selection');
+    }
+    unawaited(
+      until.catchError((Object _) {}).whenComplete(() {
+        if (!mounted) return;
+        _profileSelectionHolds--;
+        if (_playbackHeldForProfileSelection) return;
+        _recordLifecycleState('profile_selection', action: 'released');
+        _watchTogetherProvider?.setAwaitingProfileSelection(false);
+      }),
+    );
+  }
+
   /// Arm the grace timer that releases the native AV pipeline if the app
   /// stays backgrounded (Android TV only). Returns whether it was armed.
   bool _armTvBackgroundPlayerSuspendTimer() {

@@ -115,6 +115,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         await _initVideoFilterAndPip();
         if (!mounted || !attempt.isCurrent) return;
+        _armAutoPip(currentPlayer);
 
         if (mounted) {
           // Live TV never commits a PlaybackSession, so the session-derived
@@ -341,20 +342,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           if (!attempt.isCurrent) return false;
 
           if (player == currentPlayer) {
-            // Auto-PiP: set up callback for API 26-30 path and initial state
-            if (_autoPipEnabled) {
-              void autoPipEnteringCallback() {
-                if (!mounted || player != currentPlayer) return;
-                _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
-                _preparePipFiltersForEntry();
-              }
-
-              _autoPipEnteringCallback = autoPipEnteringCallback;
-              PipService.onAutoPipEntering = autoPipEnteringCallback;
-              if (currentPlayer.state.playing) {
-                unawaited(_updateAutoPipState(isPlaying: true));
-              }
-            }
+            _armAutoPip(currentPlayer);
 
             // Shader Service (MPV only)
             _shaderService = ShaderService(currentPlayer);

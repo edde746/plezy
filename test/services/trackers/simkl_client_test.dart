@@ -11,6 +11,7 @@ import 'package:plezy/services/trackers/simkl/simkl_constants.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
+import 'package:plezy/utils/app_version.dart';
 
 int get _nowSeconds => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
@@ -46,7 +47,7 @@ void main() {
   late String appVersion;
 
   setUpAll(() async {
-    appVersion = await SimklConstants.appVersion();
+    appVersion = (await AppVersion.current()).versionOrUnknown;
   });
 
   group('app identity', () {

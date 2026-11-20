@@ -115,8 +115,8 @@ class _Translations$appIcon$nl extends Translations$appIcon$en {
 	@override String get title => 'App-icoon';
 	@override String get defaultIcon => 'Standaard';
 	@override String get current => 'Huidig icoon';
-	@override String get locked => 'Supporter-voordeel';
-	@override String get lockedHint => 'Alternatieve iconen zijn een Supporter-voordeel.';
+	@override String get locked => 'Onderdeel van het Thema- en iconenpakket';
+	@override String get lockedHint => 'Alternatieve iconen zijn onderdeel van het Thema- en iconenpakket.';
 	@override String get changeFailed => 'Het app-icoon kon niet worden gewijzigd';
 	@override String get launcherHint => 'Het nieuwe icoon verschijnt op je beginscherm zodra je Plezy verlaat.';
 	@override String get tvLauncherHint => 'De nieuwe banner verschijnt zodra je Plezy verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.';
@@ -246,8 +246,8 @@ class _Translations$supporter$nl extends Translations$supporter$en {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Een eenmalige aankoop die de ontwikkeling van Plezy steunt en cosmetische extra\'s ontgrendelt:';
+	@override String get title => 'Thema- en iconenpakket';
+	@override String get intro => 'Een optionele eenmalige aankoop met cosmetische extra\'s:';
 	@override String get presetThemes => 'Kant-en-klare thema\'s';
 	@override String get presetThemesDescription => 'Sintel, Gletsjer, Woud, Pruim en Papier';
 	@override String get customTheme => 'Aangepast thema';
@@ -258,11 +258,11 @@ class _Translations$supporter$nl extends Translations$supporter$en {
 	@override String get loadingPrice => 'Prijs laden...';
 	@override String get restore => 'Aankopen herstellen';
 	@override String get pending => 'Je aankoop wacht op betaling of goedkeuring. De extra\'s worden ontgrendeld zodra de store de aankoop afrondt.';
-	@override String get thankYouTitle => 'Bedankt dat je Plezy steunt';
-	@override String get thankYouBody => 'Je Supporter-extra\'s zijn ontgrendeld.';
+	@override String get thankYouTitle => 'Bedankt voor je aankoop';
+	@override String get thankYouBody => 'Het Thema- en iconenpakket is ontgrendeld.';
 	@override String get tileSubtitle => 'Ontgrendel thema\'s en app-iconen met een eenmalige aankoop';
 	@override String get tileSubtitleThemesOnly => 'Ontgrendel thema\'s met een eenmalige aankoop';
-	@override String get tileUnlocked => 'Bedankt voor je steun';
+	@override String get tileUnlocked => 'Ontgrendeld — bedankt voor je aankoop';
 	@override late final _Translations$supporter$errors$nl errors = _Translations$supporter$errors$nl._(_root);
 }
 
@@ -624,8 +624,8 @@ class _Translations$themeEditor$nl extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Nog niet gemaakt';
 	@override String get editCustom => 'Aangepast thema bewerken';
 	@override String get editCustomDescription => 'Kies elke kleur zelf';
-	@override String get locked => 'Ontgrendelen met Supporter';
-	@override String get savedLocked => 'Opgeslagen — wordt ontgrendeld met Supporter';
+	@override String get locked => 'Ontgrendelen met het Thema- en iconenpakket';
+	@override String get savedLocked => 'Opgeslagen — wordt ontgrendeld met het Thema- en iconenpakket';
 	@override String get title => 'Aangepast thema';
 	@override String get startFrom => 'Beginnen vanaf';
 	@override String get startFromDescription => 'Kopieer alle kleuren van een ander thema';
@@ -2542,11 +2542,11 @@ class _Translations$supporter$errors$nl extends Translations$supporter$errors$en
 
 	// Translations
 	@override String get storeUnavailable => 'Aankopen zijn niet beschikbaar. Controleer of je bent aangemeld bij de store en of aankopen op dit apparaat zijn toegestaan.';
-	@override String get productNotFound => 'De Supporter-aankoop is momenteel niet beschikbaar in jouw store.';
+	@override String get productNotFound => 'Het Thema- en iconenpakket is momenteel niet beschikbaar in jouw store.';
 	@override String get productQueryFailed => 'De prijs kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.';
 	@override String get purchaseFailed => 'De aankoop is niet gelukt. Probeer het opnieuw.';
 	@override String get restoreFailed => 'De store kon niet worden bereikt om je aankoop te herstellen. Probeer het opnieuw.';
-	@override String get nothingToRestore => 'Er is geen Supporter-aankoop gevonden voor dit store-account.';
+	@override String get nothingToRestore => 'Er is geen aankoop van het Thema- en iconenpakket gevonden voor dit store-account.';
 }
 
 // Path: themeEditor.slots
@@ -3402,8 +3402,8 @@ extension on TranslationsNl {
 			'appIcon.title' => 'App-icoon',
 			'appIcon.defaultIcon' => 'Standaard',
 			'appIcon.current' => 'Huidig icoon',
-			'appIcon.locked' => 'Supporter-voordeel',
-			'appIcon.lockedHint' => 'Alternatieve iconen zijn een Supporter-voordeel.',
+			'appIcon.locked' => 'Onderdeel van het Thema- en iconenpakket',
+			'appIcon.lockedHint' => 'Alternatieve iconen zijn onderdeel van het Thema- en iconenpakket.',
 			'appIcon.changeFailed' => 'Het app-icoon kon niet worden gewijzigd',
 			'appIcon.launcherHint' => 'Het nieuwe icoon verschijnt op je beginscherm zodra je Plezy verlaat.',
 			'appIcon.tvLauncherHint' => 'De nieuwe banner verschijnt zodra je Plezy verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.',
@@ -3533,8 +3533,8 @@ extension on TranslationsNl {
 			'update.viewRelease' => 'Bekijk release',
 			'update.latestVersion' => 'Je hebt de nieuwste versie',
 			'update.checkFailed' => 'Kon niet controleren op updates',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Een eenmalige aankoop die de ontwikkeling van Plezy steunt en cosmetische extra\'s ontgrendelt:',
+			'supporter.title' => 'Thema- en iconenpakket',
+			'supporter.intro' => 'Een optionele eenmalige aankoop met cosmetische extra\'s:',
 			'supporter.presetThemes' => 'Kant-en-klare thema\'s',
 			'supporter.presetThemesDescription' => 'Sintel, Gletsjer, Woud, Pruim en Papier',
 			'supporter.customTheme' => 'Aangepast thema',
@@ -3545,17 +3545,17 @@ extension on TranslationsNl {
 			'supporter.loadingPrice' => 'Prijs laden...',
 			'supporter.restore' => 'Aankopen herstellen',
 			'supporter.pending' => 'Je aankoop wacht op betaling of goedkeuring. De extra\'s worden ontgrendeld zodra de store de aankoop afrondt.',
-			'supporter.thankYouTitle' => 'Bedankt dat je Plezy steunt',
-			'supporter.thankYouBody' => 'Je Supporter-extra\'s zijn ontgrendeld.',
+			'supporter.thankYouTitle' => 'Bedankt voor je aankoop',
+			'supporter.thankYouBody' => 'Het Thema- en iconenpakket is ontgrendeld.',
 			'supporter.tileSubtitle' => 'Ontgrendel thema\'s en app-iconen met een eenmalige aankoop',
 			'supporter.tileSubtitleThemesOnly' => 'Ontgrendel thema\'s met een eenmalige aankoop',
-			'supporter.tileUnlocked' => 'Bedankt voor je steun',
+			'supporter.tileUnlocked' => 'Ontgrendeld — bedankt voor je aankoop',
 			'supporter.errors.storeUnavailable' => 'Aankopen zijn niet beschikbaar. Controleer of je bent aangemeld bij de store en of aankopen op dit apparaat zijn toegestaan.',
-			'supporter.errors.productNotFound' => 'De Supporter-aankoop is momenteel niet beschikbaar in jouw store.',
+			'supporter.errors.productNotFound' => 'Het Thema- en iconenpakket is momenteel niet beschikbaar in jouw store.',
 			'supporter.errors.productQueryFailed' => 'De prijs kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.',
 			'supporter.errors.purchaseFailed' => 'De aankoop is niet gelukt. Probeer het opnieuw.',
 			'supporter.errors.restoreFailed' => 'De store kon niet worden bereikt om je aankoop te herstellen. Probeer het opnieuw.',
-			'supporter.errors.nothingToRestore' => 'Er is geen Supporter-aankoop gevonden voor dit store-account.',
+			'supporter.errors.nothingToRestore' => 'Er is geen aankoop van het Thema- en iconenpakket gevonden voor dit store-account.',
 			'settings.title' => 'Instellingen',
 			'settings.supportDeveloper' => 'Steun Plezy',
 			'settings.supportDeveloperDescription' => 'Doneer via Liberapay om de ontwikkeling te steunen',
@@ -3898,8 +3898,8 @@ extension on TranslationsNl {
 			'themeEditor.customEmpty' => 'Nog niet gemaakt',
 			'themeEditor.editCustom' => 'Aangepast thema bewerken',
 			'themeEditor.editCustomDescription' => 'Kies elke kleur zelf',
-			'themeEditor.locked' => 'Ontgrendelen met Supporter',
-			'themeEditor.savedLocked' => 'Opgeslagen — wordt ontgrendeld met Supporter',
+			'themeEditor.locked' => 'Ontgrendelen met het Thema- en iconenpakket',
+			'themeEditor.savedLocked' => 'Opgeslagen — wordt ontgrendeld met het Thema- en iconenpakket',
 			'themeEditor.title' => 'Aangepast thema',
 			'themeEditor.startFrom' => 'Beginnen vanaf',
 			'themeEditor.startFromDescription' => 'Kopieer alle kleuren van een ander thema',

@@ -9,6 +9,7 @@ import '../../../models/simkl/simkl_detail.dart';
 import '../../../models/simkl/simkl_search_result.dart';
 import '../../../models/simkl/simkl_trending_item.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/app_version.dart';
 import '../../../utils/serial_future_queue.dart';
 import '../future_coalescer.dart';
 import '../tracker.dart';
@@ -224,7 +225,7 @@ class SimklClient implements DisposableTrackerClient {
       await _http.sendForm(
         'POST',
         Uri.parse(SimklConstants.revokeUrl),
-        headers: SimklConstants.oauthHeaders(appVersion: await SimklConstants.appVersion()),
+        headers: SimklConstants.oauthHeaders(appVersion: (await AppVersion.current()).versionOrUnknown),
         body: {'client_id': SimklConstants.v2ClientId, 'token': session.refreshToken ?? session.accessToken},
         timeout: TrackerConstants.revokeTimeout,
         operation: 'Simkl token revoke',
@@ -296,7 +297,7 @@ class SimklClient implements DisposableTrackerClient {
   /// The public CDN. Called without a token, so its 401s say nothing about
   /// the session, and its refusals say nothing about the API's.
   Future<http.Response> _sendToDataHost(String method, String url, {Map<String, String>? query}) async {
-    final appVersion = await SimklConstants.appVersion();
+    final appVersion = (await AppVersion.current()).versionOrUnknown;
     final clientId = SimklConstants.clientIdFor(_session.accessToken);
     final uri = Uri.parse(url).replace(
       queryParameters: SimklConstants.queryParameters(clientId: clientId, appVersion: appVersion, query: query),
@@ -363,7 +364,7 @@ class SimklClient implements DisposableTrackerClient {
     Map<String, String>? query,
     bool followRedirects = true,
   }) async {
-    final appVersion = await SimklConstants.appVersion();
+    final appVersion = (await AppVersion.current()).versionOrUnknown;
     final accessToken = _session.accessToken;
     final clientId = SimklConstants.clientIdFor(accessToken);
     final uri = Uri.parse('${SimklConstants.apiBase}$path').replace(

@@ -115,6 +115,47 @@ final class ReleaseTrackingCore: MpvPlayerCoreBase {
   deinit { onDeinit() }
 }
 
+/// Stands in for `AVAudioSession` behind `MpvAudioSessionActivation`.
+final class RecordingAudioSession {
+  private let lock = NSLock()
+  private var recordedCalls: [String] = []
+  private var activatedOnMainThread = false
+  /// Held by `activate` until signalled, when set.
+  var activationGate: DispatchSemaphore?
+  /// Thrown by `activate`, after it is recorded, when set.
+  var activationError: Error?
+
+  var calls: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return recordedCalls
+  }
+
+  var didActivateOnMainThread: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return activatedOnMainThread
+  }
+
+  var session: MpvAudioSessionActivation.Session {
+    .init(
+      activate: { [self] in
+        activationGate?.wait()
+        lock.lock()
+        recordedCalls.append("activate")
+        activatedOnMainThread = Thread.isMainThread
+        lock.unlock()
+        if let activationError { throw activationError }
+      },
+      deactivate: { [self] in
+        lock.lock()
+        recordedCalls.append("deactivate")
+        lock.unlock()
+      }
+    )
+  }
+}
+
 final class MpvPlayerContractTests: XCTestCase {
   private let failure = NSError(
     domain: "MpvPlayerContractTests",
@@ -242,6 +283,173 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), expected)
   }
 
+  func testVideoContextActivatesTheAudioSessionOffTheMainThreadWithoutBlockingItsCaller() {
+    let session = RecordingAudioSession()
+    let gate = DispatchSemaphore(value: 0)
+    session.activationGate = gate
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    // Returns while the activation is still held: the main thread, where the
+    // player screen is opening, never waits for the audio server.
+    activation.contextWillBeCreated(activating: true)
+    XCTAssertEqual(session.calls, [])
+
+    gate.signal()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+    XCTAssertFalse(session.didActivateOnMainThread)
+  }
+
+  func testLastMpvContextDeactivatesTheAudioSessionAVideoContextActivated() {
+    // A video core whose open failed, or whose file had no audio, never opens
+    // the audio output that would deactivate the session.
+    let session = RecordingAudioSession()
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "deactivate"])
+
+    // Nothing is left to deactivate for a later music core.
+    activation.contextWillBeCreated(activating: false)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "deactivate"])
+  }
+
+  func testAudioSessionStaysActiveWhileAnotherMpvContextIsAlive() {
+    let session = RecordingAudioSession()
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    // A video core replaced by another: the old one is destroyed after the
+    // new one exists.
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "activate"])
+
+    // Music started while the video core was still being torn down must not
+    // have its session deactivated under it.
+    activation.contextWillBeCreated(activating: false)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "activate"])
+
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "activate", "deactivate"])
+  }
+
+  func testMusicContextsLeaveTheAudioSessionToMpv() {
+    // A music core can exist long before it plays; activating for it would
+    // stop other apps' audio with nothing to play.
+    let session = RecordingAudioSession()
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: false)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, [])
+  }
+
+  func testADeactivationQueuedBehindAnActivationSparesAContextCreatedSince() {
+    // A video core torn down while its activation still waits on the audio
+    // server, and music started before that activation returns: the music
+    // core's output may already have activated the session itself.
+    let session = RecordingAudioSession()
+    let gate = DispatchSemaphore(value: 0)
+    session.activationGate = gate
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.contextWillBeCreated(activating: false)
+    gate.signal()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate", "deactivate"])
+  }
+
+  func testAFailedActivationLeavesTheSessionToWhoeverActivatedIt() {
+    // During a call, say: whatever activates the session later (mpv's audio
+    // output, the media controls) deactivates it too.
+    let session = RecordingAudioSession()
+    session.activationError = failure
+    let activation = MpvAudioSessionActivation(session: session.session)
+
+    activation.contextWillBeCreated(activating: true)
+    activation.contextWasDestroyed()
+    activation.queue.sync {}
+    XCTAssertEqual(session.calls, ["activate"])
+  }
+
+  func testVideoCoreActivatesTheAudioSessionBeforeItsFirstFileAndStillPlays() throws {
+    let audioSession = AVAudioSession.sharedInstance()
+    // As the app delegate leaves it at launch.
+    try audioSession.setCategory(.playback, mode: .default)
+
+    let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+    let window = UIWindow(windowScene: scene)
+    let core = MpvPlayerCore()
+    XCTAssertTrue(core.initialize(in: window))
+    let file = FileManager.default.temporaryDirectory
+      .appendingPathComponent("plezy-silence-\(UUID().uuidString).wav")
+    defer {
+      core.dispose()
+      // Waited for on the run loop: a video core's teardown may need the
+      // main thread.
+      let destroyed = expectation(description: "core destroyed")
+      core.queue.async { destroyed.fulfill() }
+      wait(for: [destroyed], timeout: 10)
+      MpvAudioSessionActivation.shared.queue.sync {}
+      // The process-wide session as the app delegate leaves it, for the tests after this one.
+      try? audioSession.setCategory(.playback, mode: .default)
+      try? FileManager.default.removeItem(at: file)
+    }
+
+    // No file is loaded, so mpv has opened no audio output: the mode the
+    // output would set can only come from the core's own activation.
+    MpvAudioSessionActivation.shared.queue.sync {}
+    XCTAssertEqual(audioSession.category, .playback)
+    XCTAssertEqual(audioSession.mode, .moviePlayback)
+
+    // The output's own activation, on a session that is already active.
+    try silentWav(seconds: 30).write(to: file)
+    core.command(["loadfile", file.path])
+    XCTAssertSuccess(awaitProperty(core, name: "pause", value: "no"))
+    // time-pos is unavailable until the file has loaded.
+    var position = 0.0
+    let deadline = Date().addingTimeInterval(10)
+    while position < 0.5, Date() < deadline {
+      pump(0.25)
+      if case .success(let value?) = awaitGetProperty(core, name: "time-pos") {
+        position = Double(value) ?? 0
+      }
+    }
+    XCTAssertEqual(try awaitGetProperty(core, name: "current-ao").get(), "avfoundation")
+    XCTAssertGreaterThanOrEqual(position, 0.5)
+  }
+
+  func testMpvContextsKeepAConstantTitle() {
+    // mpv's default title is a `media-title` expansion redone on every OSD
+    // update, for a window and an audio stream name iPhone and iPad lack.
+    // The video and the music core share this context setup.
+    let core = MpvAudioPlayerCore()
+    XCTAssertTrue(core.initialize())
+    defer {
+      core.dispose()
+      core.queue.sync {}
+    }
+
+    XCTAssertEqual(try awaitGetProperty(core, name: "options/title").get(), "mpv")
+    XCTAssertEqual(try awaitGetProperty(core, name: "title").get(), "mpv")
+  }
+
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
     let core = MpvAudioPlayerCore()
     XCTAssertTrue(core.initialize())
@@ -275,10 +483,13 @@ final class MpvPlayerContractTests: XCTestCase {
   // Together room pauses, changes its rate and plays; playback must run at the
   // new rate from the paused position, not drift off while that queue drains.
   //
-  // Unflushed, that queue lands playback about 4 s off. The flush is a seek,
-  // and restarting output after it costs about 0.25 s of wall time, which is
-  // 0.5 s of position at 2x, and more on a loaded CI simulator.
-  private let speedChangeTolerance: TimeInterval = 1.5
+  // Unflushed, mpv's audio clock drops by that queue the moment the write
+  // lands, about 3 s on the iOS 26.5 simulator, and playback stays about 4 s
+  // behind. Each test checks the position right after the write, then the
+  // rate once output has restarted. One wall-clock span measured from before
+  // the restart kept failing CI even at 1.5 s: it also carries the restart
+  // itself, and the paused flush reads 0.5 s ahead until playback resumes.
+  private let speedWriteJumpTolerance: TimeInterval = 1
 
   func testSpeedWrittenWhilePausedTakesEffectOnPlay() throws {
     let (core, file) = try startSilentPlayback()
@@ -288,13 +499,10 @@ final class MpvPlayerContractTests: XCTestCase {
     pump(0.5)
     let pausedAt = try timePos(core)
     XCTAssertSuccess(awaitProperty(core, name: "speed", value: "2"))
+    XCTAssertEqual(try timePos(core), pausedAt, accuracy: speedWriteJumpTolerance)
     pump(0.5)
     XCTAssertSuccess(awaitProperty(core, name: "pause", value: "no"))
-    let playedAt = Date()
-    pump(3)
-
-    let expected = pausedAt + 2 * Date().timeIntervalSince(playedAt)
-    XCTAssertEqual(try timePos(core), expected, accuracy: speedChangeTolerance)
+    try assertPlaysAtDoubleSpeed(core)
   }
 
   func testSpeedWrittenWhilePlayingTakesEffectAtOnce() throws {
@@ -302,12 +510,9 @@ final class MpvPlayerContractTests: XCTestCase {
     defer { stopSilentPlayback(core, file: file) }
 
     let changedFrom = try timePos(core)
-    let changedAt = Date()
     XCTAssertSuccess(awaitProperty(core, name: "speed", value: "2"))
-    pump(3)
-
-    let expected = changedFrom + 2 * Date().timeIntervalSince(changedAt)
-    XCTAssertEqual(try timePos(core), expected, accuracy: speedChangeTolerance)
+    XCTAssertEqual(try timePos(core), changedFrom, accuracy: speedWriteJumpTolerance)
+    try assertPlaysAtDoubleSpeed(core)
   }
 
   func testOlderPauseReplyCannotOverwriteNewerUserIntent() {
@@ -629,6 +834,32 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual(results, [true])
   }
 
+  func testPipStartWaitsOutTheTurnThatCreatedItsController() {
+    // AVKit drops a start issued in the turn that created its controller,
+    // with no delegate callback, while PiP already reads as possible (#3016).
+    let fake = FakePictureInPictureController()
+    var settle: (() -> Void)?
+    var retries: [() -> Void] = []
+    let controller = MpvPipController(
+      controller: fake,
+      readiness: { (true, true, true) },
+      retryScheduler: { retries.append($0) },
+      controllerSettles: { settle = $0 }
+    )
+    var results: [Bool] = []
+
+    controller.startPip { results.append($0) }
+    XCTAssertEqual(fake.startCount, 0, "A start in the creating turn never reports back")
+    XCTAssertEqual(retries.count, 1)
+
+    settle?()
+    retries[0]()
+    XCTAssertEqual(fake.startCount, 1)
+    controller.pictureInPictureWillStart()
+    controller.pictureInPictureDidStart()
+    XCTAssertEqual(results, [true])
+  }
+
   func testRepeatedAutoStartDuringCurrentControllerStartDoesNotRejectDidStart() {
     let fake = FakePictureInPictureController()
     let controller = MpvPipController(
@@ -857,6 +1088,23 @@ final class MpvPlayerContractTests: XCTestCase {
     try? FileManager.default.removeItem(at: file)
   }
 
+  /// Measures from a second after the caller's write or resume, once output
+  /// has restarted, over three seconds: time-pos advances in steps of up to a
+  /// second at 2x, so a shorter span reads well off the rate. Playback left at
+  /// 1x reads about 1.
+  private func assertPlaysAtDoubleSpeed(
+    _ core: MpvPlayerCoreBase,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) throws {
+    pump(1)
+    let startPosition = try timePos(core)
+    let startedAt = Date()
+    pump(3)
+    let rate = (try timePos(core) - startPosition) / Date().timeIntervalSince(startedAt)
+    XCTAssertEqual(rate, 2, accuracy: 0.5, "Playback rate after the speed write", file: file, line: line)
+  }
+
   /// 48 kHz stereo 16-bit PCM silence.
   private func silentWav(seconds: Int) -> Data {
     let sampleRate = 48_000
@@ -938,3 +1186,36 @@ final class MpvPlayerContractTests: XCTestCase {
     }
   }
 }
+
+#if compiler(>=6.4)
+  /// Built with the iOS 27 SDK, the app gets its video-only external-display
+  /// scene only for a registered scene accessory; iOS mirrors the device
+  /// without one (#2471).
+  final class ExternalDisplayAccessoryTests: XCTestCase {
+    @MainActor
+    func testRootViewControllerRegistersExternalDisplayAccessory() throws {
+      guard #available(iOS 27.0, *) else { throw XCTSkip("Scene accessories need iOS 27") }
+
+      let controller = try XCTUnwrap(
+        UIApplication.shared.connectedScenes
+          .compactMap { $0 as? UIWindowScene }
+          .filter { !ExternalDisplayManager.isExternalDisplayRole($0.session.role) }
+          .flatMap(\.windows)
+          .lazy.compactMap { $0.rootViewController as? PlezyFlutterViewController }
+          .first)
+      let registration = try XCTUnwrap(controller.externalDisplayAccessory as? UISceneAccessoryRegistration)
+      XCTAssertTrue(registration.isEnabled)
+    }
+
+    @MainActor
+    func testExternalDisplayAccessoryConfigurationUsesExternalDisplaySceneDelegate() throws {
+      guard #available(iOS 27.0, *) else { throw XCTSkip("Scene accessories need iOS 27") }
+
+      let configuration = ExternalDisplayManager.makeSceneAccessoryConfiguration()
+      XCTAssertEqual(configuration.name, "external-display")
+      XCTAssertEqual(configuration.role, .windowExternalDisplayNonInteractive)
+      XCTAssertTrue(configuration.sceneClass == UIWindowScene.self)
+      XCTAssertTrue(configuration.delegateClass == ExternalDisplaySceneDelegate.self)
+    }
+  }
+#endif

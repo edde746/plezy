@@ -151,6 +151,62 @@ void main() {
     });
   });
 
+  // MainScreen skips the "ask for a profile on open" resume prompt only while
+  // this device drives another one (#2087). A TV hosting the server reads as in
+  // session from start to stop, phone paired or not, and must still prompt.
+  group('CompanionRemoteProvider — driving a remote session (#3076)', () {
+    test('a running host server with no paired remote is not driving', () async {
+      final host = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(
+        _FakePeerFactory([host]).call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(harness.close);
+      await harness.provider.startHostServer();
+
+      expect(harness.provider.isHost, isTrue);
+      expect(harness.provider.isInSession, isTrue);
+      expect(harness.provider.isDrivingRemoteSession, isFalse);
+    });
+
+    test('a host whose remote dropped unintentionally is not driving', () async {
+      final host = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(
+        _FakePeerFactory([host]).call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(harness.close);
+      await harness.provider.startHostServer();
+      host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
+      expect(harness.provider.isDrivingRemoteSession, isFalse);
+
+      host.emitDeviceDisconnected();
+
+      expect(harness.provider.status, RemoteSessionStatus.reconnecting);
+      expect(harness.provider.isInSession, isTrue);
+      expect(harness.provider.isDrivingRemoteSession, isFalse);
+    });
+
+    test('a remote that is connected or reconnecting is driving (#2035)', () async {
+      final remote = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(_FakePeerFactory([remote]).call);
+      addTearDown(harness.close);
+      await harness.provider.connectToManualHost('192.0.2.40:48634');
+
+      expect(harness.provider.isRemote, isTrue);
+      expect(harness.provider.status, RemoteSessionStatus.connected);
+      expect(harness.provider.isDrivingRemoteSession, isTrue);
+
+      // On resume the held reconnect cycle typically still reads `reconnecting`.
+      remote.emitDeviceDisconnected();
+
+      expect(harness.provider.status, RemoteSessionStatus.reconnecting);
+      expect(harness.provider.isDrivingRemoteSession, isTrue);
+
+      await harness.provider.cancelReconnect();
+    });
+  });
+
   group('CompanionRemoteProvider — dispose hygiene', () {
     test('cancelReconnect on a fresh provider does not throw', () {
       final p = CompanionRemoteProvider();

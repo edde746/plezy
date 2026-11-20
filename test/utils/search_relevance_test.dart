@@ -59,6 +59,16 @@ void main() {
 
       expect(_ids(rankMediaSearchResults(items, 'Target')), ['original', 'parent']);
     });
+
+    test("ranks an artist's albums above titles that merely contain the artist's name", () {
+      final items = [
+        testMediaItem(id: 'mashup', kind: MediaKind.album, title: 'Portishead vs Radiohead Mashups', parentTitle: 'DJ'),
+        testMediaItem(id: 'album', kind: MediaKind.album, title: 'OK Computer', parentTitle: 'Radiohead'),
+        testMediaItem(id: 'artist', kind: MediaKind.artist, title: 'Radiohead'),
+      ];
+
+      expect(_ids(rankMediaSearchResults(items, 'radiohead')), ['artist', 'album', 'mashup']);
+    });
   });
 
   group('rankMediaSearchResults', () {

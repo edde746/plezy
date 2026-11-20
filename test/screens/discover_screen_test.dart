@@ -43,9 +43,11 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/watch_together.dart';
+import 'package:plezy/widgets/rasterized_gradient.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:plezy/widgets/system_clock.dart';
+import 'package:plezy/widgets/toolbar_scrim.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
 import 'package:provider/provider.dart';
 
@@ -715,15 +717,15 @@ void main() {
     // edge so the artwork cannot ghost through at the hero/content boundary.
     final scaffoldBg = Theme.of(tester.element(find.byType(DiscoverScreen))).scaffoldBackgroundColor;
     final heroFades = tester
-        .widgetList<Container>(
+        .widgetList<RasterizedGradient>(
+          // The overlaid toolbar paints its own rasterised scrim; skip it.
           find.byWidgetPredicate(
             (w) =>
-                w is Container &&
-                w.decoration is BoxDecoration &&
-                (w.decoration! as BoxDecoration).gradient is LinearGradient,
+                w is RasterizedGradient &&
+                find.ancestor(of: find.byWidget(w), matching: find.byType(ToolbarScrim)).evaluate().isEmpty,
           ),
         )
-        .map((c) => (c.decoration! as BoxDecoration).gradient! as LinearGradient)
+        .map((r) => r.gradient)
         .where((g) => g.begin == Alignment.topCenter && g.end == Alignment.bottomCenter && g.colors.length == 4)
         .toList();
     expect(heroFades, isNotEmpty, reason: 'hero bottom fade overlay renders');

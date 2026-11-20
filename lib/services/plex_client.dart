@@ -402,7 +402,7 @@ class PlexClient
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
         _PlexMetadataEditMethods
-    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
+    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable, MediaDeletionPermissionClient {
   @override
   PlexConfig config;
 
@@ -2237,11 +2237,61 @@ class PlexClient
     throwIfHttpError(response);
   }
 
+  /// Whether the server's "Allow media deletion" switch is on right now.
+  ///
+  /// PMS has no per-item delete permission: deletion is one server-wide
+  /// switch (Settings → Library), reported as `allowMediaDeletion` on the root
+  /// MediaContainer and omitted when it is off, so a missing field reads as
+  /// `false`. Returns `null` only for a body without a MediaContainer. The
+  /// switch does not say who may delete — Plex allows only the owning account
+  /// even with it on — so the menu still applies its owner/admin gate.
+  ///
+  /// Read live on every call, never from [PlexApiCache], the health probe or
+  /// `serverPrefs`: the switch flips server-side with no event. Like the
+  /// Jellyfin probe, it carries a whole-request deadline and does not chase
+  /// failover endpoints, because a context menu waits on it; on expiry the
+  /// request is aborted and the timeout propagates so callers fail closed.
+  @override
+  Future<bool?> fetchDeletePermission(MediaItem item) async {
+    final abort = AbortController();
+    try {
+      final response = await _getWithFailover(
+        '/',
+        timeout: MediaServerTimeouts.deletePermissionProbe,
+        abort: abort,
+        allowEndpointFailover: false,
+      ).namedTimeout(MediaServerTimeouts.deletePermissionProbe, operation: 'plex delete permission');
+      final container = _getMediaContainer(response);
+      if (container == null) return null;
+      return flexibleBoolNullable(container['allowMediaDeletion']) ?? false;
+    } on TimeoutException catch (e) {
+      abort.abort();
+      throw MediaServerHttpException.from(e);
+    }
+  }
+
   /// Delete a media item from the library
   /// This permanently removes the item and its associated files from the server
   /// Returns true if deletion was successful, false otherwise
+  ///
+  /// PMS carries out this DELETE even with "Allow media deletion" off (#2897),
+  /// so the switch is read again right before sending it: the menu that
+  /// offered the entry, and the confirmation dialog after it, can be stale.
+  /// A switch that is not a fresh `true` throws [MediaDeletionRefusedException];
+  /// an answer read under an authentication session that has since changed
+  /// returns `false`; a failed read propagates. In every case no DELETE is
+  /// sent.
   @override
-  Future<bool> deleteMediaItem(MediaItem item) {
+  Future<bool> deleteMediaItem(MediaItem item) async {
+    // An answer fetched under one Plex Home token must not authorize a DELETE
+    // sent under a token [applyProfileUpdate] swapped in meanwhile. That is a
+    // plain failure, not "deletion is turned off on this server".
+    final session = _authenticationSessionId;
+    final allowed = await fetchDeletePermission(item);
+    if (!identical(session, _authenticationSessionId)) return false;
+    if (allowed != true) {
+      throw const MediaDeletionRefusedException('Media deletion is disabled on this server');
+    }
     return _wrapBoolApiCall(() => _http.delete('/library/metadata/${item.id}'), 'Failed to delete media item');
   }
 

@@ -39,12 +39,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   final List<LiveTvServerInfo> _liveTvServers = [];
   List<LiveTvServerInfo> get liveTvServers => List.unmodifiable(_liveTvServers);
 
-  /// The client, and its authentication session at probe time, whose probe
-  /// produced each server's [_liveTvServers] entries. A failed re-probe may
-  /// carry entries over only on this same client and session: a replaced
-  /// client (reconnect) or an in-place profile switch
-  /// (`PlexClient.applyProfileUpdate` rotates the session) must earn them
-  /// again.
+  /// The client, and its authentication session at probe time, that the last
+  /// check probed on each server, whatever the answer; each server's
+  /// [_liveTvServers] entries come from that probe. A failed re-probe may
+  /// carry entries over only on this same client and session, and a status
+  /// event that finds an online server on another client or session re-checks:
+  /// Live TV access is per user, so a replaced client (reconnect) or an
+  /// in-place profile switch (`PlexClient.applyProfileUpdate` rotates the
+  /// session) must earn its entries again.
   Map<String, ({MediaServerClient client, Object authentication})> _liveTvProbes = {};
 
   /// Previously-seen set of online server IDs, used to detect new servers
@@ -166,8 +168,10 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
         listener(immutableOnline);
       }
 
-      // Only re-check live TV when a new server came online
-      if (hasNewServer) {
+      // Re-check Live TV when a server came online, or when a server answers
+      // through another client or session than the last check probed: an
+      // in-place profile switch leaves the online set unchanged.
+      if (hasNewServer || currentOnline.any(_liveTvProbeOutdated)) {
         checkLiveTvAvailability();
       }
     });
@@ -182,6 +186,15 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     if (onlineExpected.isEmpty) return;
 
     _serverManager.setVisibleServerIds({...visible, ...onlineExpected});
+  }
+
+  bool _liveTvProbeOutdated(String serverId) {
+    final client = _serverManager.getClient(ServerId(serverId));
+    if (client == null) return false;
+    final probe = _liveTvProbes[serverId];
+    return probe == null ||
+        !identical(probe.client, client) ||
+        !identical(probe.authentication, client.authenticationSessionId);
   }
 
   MultiServerManager get serverManager => _serverManager;
@@ -289,6 +302,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
       final genericClient = _serverManager.getClient(ServerId(serverId));
       if (genericClient == null) continue;
       final probe = (client: genericClient, authentication: genericClient.authenticationSessionId);
+      newProbes[serverId] = probe;
       // An answer obtained under a session the client has since left belongs
       // to the previous profile; drop it rather than show or carry it over.
       bool sessionChanged() => !identical(genericClient.authenticationSessionId, probe.authentication);
@@ -310,14 +324,12 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
             LiveTvServerInfo(serverId: serverId, dvrKey: genericClient.backend.id, lineup: null, dvrs: const []),
           );
         }
-        if (sessionChanged()) continue;
-        newProbes[serverId] = probe;
       } catch (e) {
         appLogger.d('LiveTV check failed for server $serverId', error: e);
         // A transient failure (timeout, connection error, 5xx) is no evidence
-        // the DVR went away; keep what the last successful check on this same
-        // client and session found instead of dropping Live TV on a blip. A
-        // definitive answer (401/403, other 4xx, bad data) drops the entry.
+        // the DVR went away; keep what the last check on this same client and
+        // session found instead of dropping Live TV on a blip. A definitive
+        // answer (401/403, other 4xx, bad data) drops the entry.
         final previous = _liveTvProbes[serverId];
         if (_isTransientLiveTvProbeFailure(e) &&
             !sessionChanged() &&
@@ -325,7 +337,6 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
             identical(previous.client, genericClient) &&
             identical(previous.authentication, probe.authentication)) {
           newLiveTvServers.addAll(_liveTvServers.where((s) => s.serverId == serverId));
-          newProbes[serverId] = probe;
         }
       }
     }

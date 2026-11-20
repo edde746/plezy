@@ -68,6 +68,7 @@ String? watchNoticeText(WatchNotice notice, {owp.Media? media, owp.Participant? 
     ShareFailedNotice() => notices.shareFailed,
     NotSharedNotice() => notices.downloadNotShared,
     OpenFailedNotice() => notices.openFailed,
+    ChoiceFailedNotice() => t.watchTogether.choiceFailed,
   };
 }
 
