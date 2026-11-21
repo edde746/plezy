@@ -5850,5 +5850,54 @@ void main() {
       expect(page.items, isEmpty);
       expect(requestCount, 0);
     });
+
+    test('fetchAdditionalParts requests /Videos/{id}/AdditionalParts and maps video parts', () async {
+      Uri? capturedUri;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          return jsonResponse({
+            'Items': [
+              {
+                'Id': 'part-2',
+                'Name': 'Movie - part2',
+                'Type': 'Video',
+                'RunTimeTicks': 36000000000,
+                'UserData': {'PlaybackPositionTicks': 6000000000, 'Played': false},
+              },
+              {
+                'Id': 'part-3',
+                'Name': 'Movie - part3',
+                'Type': 'Video',
+                'RunTimeTicks': 30000000000,
+                'UserData': {'PlaybackPositionTicks': 0, 'Played': false},
+              },
+            ],
+            'TotalRecordCount': 2,
+          });
+        }),
+      );
+      addTearDown(client.close);
+
+      final parts = await client.fetchAdditionalParts('movie-1');
+
+      expect(capturedUri, isNotNull);
+      expect(capturedUri!.path, '/Videos/movie-1/AdditionalParts');
+      expect(capturedUri!.queryParameters['userId'], 'user-1');
+      expect(parts.map((p) => p.id), ['part-2', 'part-3']);
+      expect(parts.first.durationMs, 3600000);
+      expect(parts.first.viewOffsetMs, 600000);
+    });
+
+    test('fetchAdditionalParts degrades to empty list on server error', () async {
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((_) async => http.Response('Server Error', 500)),
+      );
+      addTearDown(client.close);
+
+      expect(await client.fetchAdditionalParts('movie-1'), isEmpty);
+    });
   });
 }

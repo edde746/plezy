@@ -2383,6 +2383,21 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _playableExtrasFromRaw(results.expand((items) => items));
   }
 
+  /// Additional split-file parts (`Part 2`, `Part 3`, …) of a multi-part video
+  /// (`PartCount > 1`). Jellyfin and Emby return them in `SortName` order from
+  /// `/Videos/{itemId}/AdditionalParts` with full `DtoOptions` (`MediaSources`,
+  /// `Chapters`, `Trickplay`, and `UserData`).
+  @override
+  Future<List<MediaItem>> fetchAdditionalParts(String itemId) async {
+    if (isOfflineMode) return const [];
+
+    final rows = await _safeFetchItemsArray('/Videos/${_segment(itemId)}/AdditionalParts', {
+      'userId': connection.userId,
+      ...jellyfinImageQueryParameters,
+    });
+    return _playableExtrasFromRaw(rows);
+  }
+
   List<MediaItem> _playableExtrasFromRaw(Iterable<Map<String, dynamic>> rawExtras) {
     final extras = <MediaItem>[];
     final seenIds = <String>{};

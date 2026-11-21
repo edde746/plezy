@@ -52,6 +52,7 @@ MediaItem _plexEpisode(String id, {required String seriesId, int? viewCount}) =>
 class _RecordingClient implements MediaServerClient {
   _RecordingClient({
     required this.seriesEpisodes,
+    this.additionalParts = const <MediaItem>[],
     this.clientBackend = MediaBackend.jellyfin,
     this.fetchError,
     String serverId = 'srv-jf',
@@ -60,9 +61,11 @@ class _RecordingClient implements MediaServerClient {
   @override
   final ServerId serverId;
   final List<MediaItem> seriesEpisodes;
+  final List<MediaItem> additionalParts;
   final MediaBackend clientBackend;
   final Object? fetchError;
   final List<String> seriesQueueCalls = [];
+  final List<String> additionalPartsCalls = [];
 
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
@@ -70,6 +73,14 @@ class _RecordingClient implements MediaServerClient {
     final error = fetchError;
     if (error != null) throw error;
     return seriesEpisodes;
+  }
+
+  @override
+  Future<List<MediaItem>> fetchAdditionalParts(String itemId) async {
+    additionalPartsCalls.add(itemId);
+    final error = fetchError;
+    if (error != null) throw error;
+    return additionalParts;
   }
 
   @override
@@ -477,6 +488,46 @@ void main() {
       expect(result!.nextStatus, QueueNavigationStatus.boundary);
       expect(result!.isEndConfirmed, isTrue);
       expect(result!.next, isNull);
+    });
+
+    testWidgets('builds a local queue from AdditionalParts for a multi-part Jellyfin movie (#2825)', (tester) async {
+      final part1 = _jfMovie('movie-1').copyWith(raw: const {'PartCount': 2});
+      final part2 = testMediaItem(
+        id: 'part-2',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.clip,
+        title: 'Movie movie-1 - part2',
+        serverId: ServerId('srv-jf'),
+        viewOffsetMs: 50000,
+      );
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(seriesEpisodes: const [], additionalParts: [part2]);
+      final serverProvider = testMultiServer(clients: [client]).provider;
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: part1, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(client.additionalPartsCalls, ['movie-1']);
+      expect(playback.isQueueActive, isTrue);
+      expect(playback.shuffleContextKey, 'movie-1');
+      expect(playback.loadedItems.map((item) => item.id), ['movie-1', 'part-2']);
+      expect(result, isNotNull);
+      expect(result!.nextStatus, QueueNavigationStatus.found);
+      expect(result!.next?.id, 'part-2');
+      expect(result!.next?.additionalPartOfId, 'movie-1');
+      expect(result!.next?.viewOffsetMs, 0);
+      expect(result!.previous, isNull);
     });
   });
 

@@ -169,6 +169,36 @@ void main() {
       },
     );
   });
+
+  testWidgets(
+    'Jellyfin multi-part movie (AdditionalParts) immediately advances to Part 2 on EOF even with autoPlayNextEpisode disabled (#2825)',
+    (tester) async {
+      await SettingsService.instance.write(SettingsService.autoPlayNextEpisode, false);
+      final player = _StackedPlayer();
+      final client = _AdditionalPartsClient();
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final key = await _pushAdditionalPartsScreen(tester, db: db, player: player, client: client);
+          unawaited(key.currentState!.debugSwitchPlaybackSourceForTesting(newAudioStreamId: 2));
+          await pumpUntilOpened(tester, player, 1);
+          expect(player.opens.single.uri, 'https://example.invalid/jf-part-1');
+
+          player.setPosition(const Duration(minutes: 50));
+          player.emitCompleted();
+          await pumpUntilOpened(tester, player, 2);
+
+          expect(player.opens.last.uri, 'https://example.invalid/jf-part-2');
+          expect(player.opens.last.start, Duration.zero);
+          expect(find.text('Browse'), findsNothing);
+
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+        },
+      );
+    },
+  );
 }
 
 typedef _Open = ({String uri, Duration? start, Duration offset, Duration? duration});
@@ -362,6 +392,140 @@ class _StackedClient with PlaybackReportRecorder implements MediaServerClient {
         mediaIndex: 0,
         partIndex: index,
         partTimeline: MediaPartTimeline.fromParts(_parts, currentIndex: index),
+      ),
+    );
+  }
+
+  @override
+  Future<ScrubPreviewSource?> createScrubPreviewSource({
+    required MediaItem item,
+    required MediaSourceInfo mediaSource,
+  }) async => null;
+
+  @override
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {}
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+Future<GlobalKey<VideoPlayerScreenState>> _pushAdditionalPartsScreen(
+  WidgetTester tester, {
+  required AppDatabase db,
+  required _StackedPlayer player,
+  required _AdditionalPartsClient client,
+}) async {
+  final multi = testMultiServer(clients: [client]);
+  final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
+  final offlineMode = OfflineModeProvider(multi.manager, multiServerProvider: multi.provider);
+  final accountPreferences = AccountPreferencesController();
+  final initializationHold = Completer<void>();
+  Future<void> holdInitialization() => initializationHold.future;
+  PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    PlaybackCoordinator.instance.unregisterMusicSession(holdInitialization);
+    initializationHold.complete();
+    await tester.pump();
+    offlineWatch.dispose();
+    offlineMode.dispose();
+    accountPreferences.dispose();
+    await player.dispose();
+  });
+  final navigator = GlobalKey<NavigatorState>();
+  final key = GlobalKey<VideoPlayerScreenState>();
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
+        ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
+        ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+        ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
+        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
+        ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
+        Provider<AppDatabase>.value(value: db),
+      ],
+      child: MaterialApp(
+        navigatorKey: navigator,
+        home: const Scaffold(body: Text('Browse')),
+      ),
+    ),
+  );
+  unawaited(
+    VideoPlayerRoute(
+      builder: (_) => VideoPlayerScreen(
+        key: key,
+        metadata: testMediaItem(
+          id: 'jf-part-1',
+          serverId: 'srv-1',
+          backend: MediaBackend.jellyfin,
+          durationMs: const Duration(minutes: 50).inMilliseconds,
+        ).copyWith(raw: const {'PartCount': 2}),
+        selectedQualityPreset: TranscodeQualityPreset.original,
+        selectedAudioStreamId: 1,
+      ),
+    ).push(navigator.currentState!),
+  );
+  await tester.pump();
+  key.currentState!.player = player;
+  await key.currentState!.debugWirePlayerStreamsForTesting();
+  player.emitPlaybackRestart();
+  await tester.pump();
+  return key;
+}
+
+class _AdditionalPartsClient with PlaybackReportRecorder implements MediaServerClient {
+  @override
+  ServerId get serverId => ServerId('srv-1');
+  @override
+  String get serverName => 'Server';
+  @override
+  MediaBackend get backend => MediaBackend.jellyfin;
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  @override
+  double get watchedThreshold => 0.9;
+  @override
+  bool get marksWatchedOnPlaybackStopped => true;
+  @override
+  Map<String, String> get streamHeaders => const {};
+
+  @override
+  Future<List<MediaItem>> fetchAdditionalParts(String itemId) async => [
+    testMediaItem(
+      id: 'jf-part-2',
+      serverId: 'srv-1',
+      backend: MediaBackend.jellyfin,
+      durationMs: const Duration(minutes: 40).inMilliseconds,
+    ),
+  ];
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => testMediaItem(
+    id: id,
+    serverId: 'srv-1',
+    backend: MediaBackend.jellyfin,
+    durationMs: const Duration(minutes: 40).inMilliseconds,
+  );
+
+  @override
+  Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
+    final url = 'https://example.invalid/${options.metadata.id}';
+    return PlaybackInitializationResult(
+      availableVersions: const [],
+      activeAudioStreamId: options.selectedAudioStreamId,
+      videoUrl: url,
+      mediaInfo: MediaSourceInfo(
+        videoUrl: url,
+        audioTracks: const [],
+        subtitleTracks: const [],
+        chapters: const [],
+        partId: 1,
+        mediaSourceId: 'src-${options.metadata.id}',
+        mediaIndex: 0,
       ),
     );
   }
