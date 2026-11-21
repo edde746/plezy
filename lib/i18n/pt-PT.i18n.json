@@ -2083,6 +2083,23 @@
     "unknownSeason": "Temporada desconhecida",
     "unknownAlbum": "Álbum desconhecido",
     "completedOfTotal": "${completed}/${total} concluídas",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Ficheiro não encontrado (404)",
     "errorDownloadNotAllowed": "Transferência não permitida pelo servidor (403)",
     "errorDownloadFailed": "Falha na transferência",

@@ -40,6 +40,9 @@ class FakeSafStorage implements SafStorageOperations {
   Future<List<SafDocumentFile>?> list(String uri) => throw UnsupportedError('list');
 
   @override
+  Future<SafDocumentFile?> stat(String uri, {required bool isDir}) => throw UnsupportedError('stat');
+
+  @override
   Future<String?> resolvePersistedPermissionUri(String uri) => throw UnsupportedError('resolvePersistedPermissionUri');
 
   @override
