@@ -8,6 +8,7 @@ import '../../media/episode_collection.dart';
 import '../../media/ids.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
+import '../../media/media_playlist.dart';
 import '../../media/media_server_client.dart';
 import '../../models/livetv_channel.dart';
 import '../../providers/catalog_sources_provider.dart';
@@ -87,6 +88,14 @@ Future<void> _launchPlayLink(BuildContext context, PlayLink link, {required bool
     case PlayLinkShuffle(:final item):
       // Reports its own failures.
       unawaited(MediaListPlaybackLauncher.forItem(context, item).launchShuffledShow(metadata: item));
+    case PlayLinkPlaylist(:final playlist, :final shuffle):
+      // Reports its own failures.
+      unawaited(
+        MediaListPlaybackLauncher.forItem(
+          context,
+          playlist,
+        ).launchFromCollectionOrPlaylist(item: playlist, shuffle: shuffle),
+      );
   }
 }
 
@@ -110,6 +119,14 @@ final class PlayLinkShuffle extends PlayLinkResolution {
   final MediaItem item;
 }
 
+/// Play the video [playlist] from its first item, or shuffled.
+final class PlayLinkPlaylist extends PlayLinkResolution {
+  const PlayLinkPlaylist(this.playlist, {required this.shuffle});
+
+  final MediaPlaylist playlist;
+  final bool shuffle;
+}
+
 enum PlayLinkFailureReason {
   /// The server the link needs is not reachable, or a server that may hold
   /// the title failed to answer.
@@ -119,7 +136,7 @@ enum PlayLinkFailureReason {
   notFound,
 
   /// The link names something Plezy cannot play from a link (music, photos,
-  /// collections).
+  /// collections, music and photo playlists).
   unsupportedItem,
 }
 
@@ -198,7 +215,8 @@ class PlayLinkResolver {
       if (download != null) return PlayLinkItem(download, offline: true);
       return const PlayLinkFailure(PlayLinkFailureReason.serverUnavailable);
     }
-    if (item == null) return const PlayLinkFailure(PlayLinkFailureReason.notFound);
+    // A server may not serve a playlist as an item, so a miss may still be one.
+    if (item == null || item.kind == MediaKind.playlist) return _forPlaylist(client, target, mode);
     return _forItem(client, _onServer(item, target.serverId), mode);
   }
 
@@ -286,6 +304,23 @@ class PlayLinkResolver {
       appLogger.w('Play link: On Deck lookup for ${copy.item.globalKey} failed', error: e, stackTrace: stackTrace);
       return (copy: copy, show: copy.item, episode: null);
     }
+  }
+
+  Future<PlayLinkResolution> _forPlaylist(MediaServerClient client, ItemPlayTarget target, PlayMode mode) async {
+    final MediaPlaylist? playlist;
+    try {
+      playlist = await client.fetchPlaylistMetadata(target.itemId);
+    } catch (e, stackTrace) {
+      appLogger.w(
+        'Play link: fetching playlist ${target.itemId} on ${target.serverId} failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return const PlayLinkFailure(PlayLinkFailureReason.notFound);
+    }
+    if (playlist == null) return const PlayLinkFailure(PlayLinkFailureReason.notFound);
+    if (playlist.playlistType != 'video') return const PlayLinkFailure(PlayLinkFailureReason.unsupportedItem);
+    return PlayLinkPlaylist(playlist, shuffle: mode == PlayMode.shuffle);
   }
 
   Future<PlayLinkResolution> _forItem(MediaServerClient client, MediaItem item, PlayMode mode) async {
