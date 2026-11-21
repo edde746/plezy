@@ -644,6 +644,18 @@ class Translations$settings$en {
 	/// en: 'Always show server names in hub titles.'
 	String get showServerNameOnHubsDescription => 'Always show server names in hub titles.';
 
+	/// en: 'Merge Recently Added'
+	String get mergeRecentlyAdded => 'Merge Recently Added';
+
+	/// en: 'Off: one row per library'
+	String get mergeRecentlyAddedOff => 'Off: one row per library';
+
+	/// en: '${count} libraries in one row'
+	String mergeRecentlyAddedCount({required Object count}) => '${count} libraries in one row';
+
+	/// en: 'The Recently Added rows of the libraries checked below show as one row on Home, newest first. Pick at least two. Libraries left unchecked keep their own rows.'
+	String get mergeRecentlyAddedHint => 'The Recently Added rows of the libraries checked below show as one row on Home, newest first. Pick at least two. Libraries left unchecked keep their own rows.';
+
 	/// en: 'Group Libraries by Server'
 	String get groupLibrariesByServer => 'Group Libraries by Server';
 
@@ -8332,6 +8344,10 @@ extension on Translations {
 			'settings.useGlobalHubsDescription' => 'Show unified home hubs. Otherwise use library recommendations.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Always show server names in hub titles.',
+			'settings.mergeRecentlyAdded' => 'Merge Recently Added',
+			'settings.mergeRecentlyAddedOff' => 'Off: one row per library',
+			'settings.mergeRecentlyAddedCount' => ({required Object count}) => '${count} libraries in one row',
+			'settings.mergeRecentlyAddedHint' => 'The Recently Added rows of the libraries checked below show as one row on Home, newest first. Pick at least two. Libraries left unchecked keep their own rows.',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
 			'settings.groupLibrariesByServerDescription' => 'Group sidebar libraries under each media server.',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
@@ -8630,12 +8646,12 @@ extension on Translations {
 			'themeEditor.colors' => 'Colors',
 			'themeEditor.preview' => 'Preview',
 			'themeEditor.slots.bg' => 'Background',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -9144,12 +9160,12 @@ extension on Translations {
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
@@ -9658,12 +9674,12 @@ extension on Translations {
 			'liveTv.recordingsCount' => ({required Object count}) => '${count} scheduled',
 			'liveTv.editRule' => 'Edit rule',
 			'liveTv.editRuleAction' => 'Edit',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
@@ -10172,12 +10188,12 @@ extension on Translations {
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',

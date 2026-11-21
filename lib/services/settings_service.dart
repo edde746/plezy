@@ -658,6 +658,10 @@ class SettingsService extends BaseSharedPreferencesService {
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
+
+  /// Libraries (global keys) whose Recently Added rows Home folds into one
+  /// row (#1652). Fewer than two keeps the stock per-library rows.
+  static const mergedRecentlyAddedLibraries = StringListPref('merged_recently_added_libraries');
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
@@ -1598,6 +1602,7 @@ class SettingsService extends BaseSharedPreferencesService {
     focusGlow,
     useGlobalHubs,
     showServerNameOnHubs,
+    mergedRecentlyAddedLibraries,
     groupLibrariesByServer,
     rotationLocked,
     subAssOverride,
