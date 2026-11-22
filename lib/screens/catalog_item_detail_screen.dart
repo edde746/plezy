@@ -228,6 +228,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     if (!mounted) return;
     final focused = _libraryMatchNodesByKey.values.firstWhereOrNull((node) => node.hasPrimaryFocus);
     final merged = mergeLibraryCopies(_matches ?? const [], matches);
+    final previousFirstKey = (_matches?.isNotEmpty ?? false) ? _matches!.first.globalKey : null;
+    final newFirstKey = merged.isNotEmpty ? merged.first.globalKey : null;
     final keys = {for (final match in merged) match.globalKey};
     for (final key in _libraryMatchNodesByKey.keys.toList()) {
       if (!keys.contains(key)) _libraryMatchNodesByKey.remove(key)!.dispose();
@@ -249,6 +251,21 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     ];
     setState(() => _matches = merged);
     unawaited(_resolveLibraryTrailer());
+    // When library copies arrive (or a higher-quality copy sorts to position 0)
+    // on TV while focus hasn't been moved off the default top action bar slot,
+    // focus the leading library button so the primary call to action is
+    // immediately highlighted.
+    if (newFirstKey != null && newFirstKey != previousFirstKey && PlatformDetector.isTV()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final label = FocusManager.instance.primaryFocus?.debugLabel;
+        if (label == null ||
+            label == 'catalog_watchlist' ||
+            (previousFirstKey != null && label == 'catalog_top_library_$previousFirstKey')) {
+          _actionBarKey.currentState?.requestFocusOnFirst();
+        }
+      });
+    }
     // A merge re-sorts, and SettingsGroup shapes its cards by list index, so
     // the tile holding the focused node can be rebuilt from scratch and drop
     // it. Reclaim it rather than dumping a dpad user on another copy.
@@ -421,7 +438,11 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
+  bool get _hasBaseActions => _watchlistSource != null || _canRequest || _hasTrailer;
+
+  bool get _hasTopLibraryActions => PlatformDetector.isTV() && _hasBaseActions && (_matches?.isNotEmpty ?? false);
+
+  bool get _hasActions => _hasBaseActions;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -722,6 +743,55 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
+  String _libraryMatchPrimaryLabel(MediaItem match) =>
+      match.libraryTitle ?? match.serverName ?? match.backend.dialect?.productName ?? 'Plex';
+
+  String? _libraryMatchShortResolutionLabel(MediaItem match) {
+    final full = libraryCopyQualityLabel(match);
+    if (full == null) return null;
+    final token = full.split(' ').first.trim();
+    return token.isEmpty ? null : token;
+  }
+
+  FocusableAction _buildTopLibraryMatchAction(ThemeData theme, MediaItem match) {
+    final primary = _libraryMatchPrimaryLabel(match);
+    final shortQuality = _libraryMatchShortResolutionLabel(match);
+    final label = shortQuality != null && !primary.toLowerCase().contains(shortQuality.toLowerCase())
+        ? '$primary ($shortQuality)'
+        : primary;
+    final details = [?libraryCopyQualityLabel(match), ?(match.libraryTitle == null ? null : match.serverName)];
+    final tooltip = details.isEmpty ? primary : '$primary • ${details.join(' • ')}';
+    void open() => unawaited(navigateToMediaItemDetails(context, match));
+    return FocusableAction(
+      debugLabel: 'catalog_top_library_${match.globalKey}',
+      tooltip: tooltip,
+      onPressed: open,
+      spacingBefore: 6,
+      child: Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: open,
+          canRequestFocus: false,
+          customBorder: const StadiumBorder(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisSize: .min,
+              children: [
+                BackendBadge(backend: match.backend, size: 16, color: theme.colorScheme.onSurface),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurface, fontWeight: .w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
     // Plex matches carry their library title; MediaBrowser search-based lookup
     // only does when the ancestors call succeeded, so fall back to the server
@@ -730,7 +800,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
       leading: BackendBadge(backend: match.backend, size: 24),
-      title: Text(match.libraryTitle ?? match.serverName ?? match.backend.dialect?.productName ?? 'Plex'),
+      title: Text(_libraryMatchPrimaryLabel(match)),
       subtitle: details.isEmpty ? null : Text(details.join(' • ')),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () => unawaited(navigateToMediaItemDetails(context, match)),
@@ -1503,48 +1573,55 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                         ],
                                         const SizedBox(height: 16),
                                         if (_hasActions)
-                                          FocusableActionBar(
-                                            key: _actionBarKey,
-                                            onNavigateDown: _focusSectionBelowActions,
-                                            actions: [
-                                              if (_watchlistSource != null)
-                                                FocusableAction(
-                                                  // Stable identities so the focused binding survives the
-                                                  // list-shape changes of async enrichment (watchlist/request
-                                                  // sources and trailer URL arrive at different times).
-                                                  debugLabel: 'catalog_watchlist',
-                                                  icon: onWatchlist ?? false
-                                                      ? Symbols.bookmark_added_rounded
-                                                      : Symbols.bookmark_add_rounded,
-                                                  tooltip: onWatchlist ?? false
-                                                      ? t.explore.removeFromWatchlist
-                                                      : t.explore.addToWatchlist,
-                                                  onPressed: () => unawaited(_toggleWatchlist()),
-                                                ),
-                                              if (_requestSource case final SeerrCatalogSource seerr
-                                                  when tmdbId != null)
-                                                FocusableAction(
-                                                  debugLabel: 'catalog_request',
-                                                  icon: Symbols.download_rounded,
-                                                  tooltip: t.seerr.request,
-                                                  onPressed: () => unawaited(
-                                                    showSeerrRequestSheet(
-                                                      hostContext,
-                                                      source: seerr,
-                                                      kind: item.kind,
-                                                      tmdbId: tmdbId,
-                                                      title: item.title,
+                                          SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: FocusableActionBar(
+                                              key: _actionBarKey,
+                                              onNavigateDown: _focusSectionBelowActions,
+                                              actions: [
+                                                if (_hasTopLibraryActions)
+                                                  for (final match in _matches!)
+                                                    _buildTopLibraryMatchAction(theme, match),
+                                                if (_watchlistSource != null)
+                                                  FocusableAction(
+                                                    // Stable identities so the focused binding survives the
+                                                    // list-shape changes of async enrichment (watchlist/request
+                                                    // sources and trailer URL arrive at different times).
+                                                    debugLabel: 'catalog_watchlist',
+                                                    spacingBefore: _hasTopLibraryActions ? 6 : null,
+                                                    icon: onWatchlist ?? false
+                                                        ? Symbols.bookmark_added_rounded
+                                                        : Symbols.bookmark_add_rounded,
+                                                    tooltip: onWatchlist ?? false
+                                                        ? t.explore.removeFromWatchlist
+                                                        : t.explore.addToWatchlist,
+                                                    onPressed: () => unawaited(_toggleWatchlist()),
+                                                  ),
+                                                if (_requestSource case final SeerrCatalogSource seerr
+                                                    when tmdbId != null)
+                                                  FocusableAction(
+                                                    debugLabel: 'catalog_request',
+                                                    icon: Symbols.download_rounded,
+                                                    tooltip: t.seerr.request,
+                                                    onPressed: () => unawaited(
+                                                      showSeerrRequestSheet(
+                                                        hostContext,
+                                                        source: seerr,
+                                                        kind: item.kind,
+                                                        tmdbId: tmdbId,
+                                                        title: item.title,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              if (_hasTrailer)
-                                                FocusableAction(
-                                                  debugLabel: 'catalog_trailer',
-                                                  icon: Symbols.play_circle_rounded,
-                                                  tooltip: t.explore.detail.watchTrailer,
-                                                  onPressed: () => unawaited(_playTrailer()),
-                                                ),
-                                            ],
+                                                if (_hasTrailer)
+                                                  FocusableAction(
+                                                    debugLabel: 'catalog_trailer',
+                                                    icon: Symbols.theaters_rounded,
+                                                    tooltip: t.explore.detail.watchTrailer,
+                                                    onPressed: () => unawaited(_playTrailer()),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
                                       ],
                                     ),

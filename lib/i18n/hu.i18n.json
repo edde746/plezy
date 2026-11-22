@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Egyesített kezdőlapi blokkok megjelenítése. Egyébként a könyvtári ajánlások jelennek meg.",
     "showServerNameOnHubs": "Szervernév megjelenítése a blokkoknál",
     "showServerNameOnHubsDescription": "Mindig jelenjen meg a szerver neve a blokkok címében.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Könyvtárak csoportosítása szerver szerint",
     "groupLibrariesByServerDescription": "Az oldalsáv könyvtárainak csoportosítása a médiaszerverek alatt.",
     "alwaysKeepSidebarOpen": "Oldalsáv mindig nyitva",

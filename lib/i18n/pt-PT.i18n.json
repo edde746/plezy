@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Mostrar hubs iniciais unificados. Caso contrário, usar recomendações da biblioteca.",
     "showServerNameOnHubs": "Mostrar nome do servidor nos hubs",
     "showServerNameOnHubsDescription": "Mostrar sempre os nomes dos servidores nos títulos dos hubs.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Agrupar bibliotecas por servidor",
     "groupLibrariesByServerDescription": "Agrupar as bibliotecas da barra lateral por servidor multimédia.",
     "alwaysKeepSidebarOpen": "Manter a barra lateral sempre aberta",

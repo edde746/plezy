@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "統合ホームハブを表示します。オフの場合はライブラリのおすすめを使用します。",
     "showServerNameOnHubs": "ハブにサーバー名を表示",
     "showServerNameOnHubsDescription": "ハブのタイトルに常にサーバー名を表示します。",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "サーバーごとにライブラリをグループ化",
     "groupLibrariesByServerDescription": "サイドバーのライブラリをメディアサーバーごとにまとめます。",
     "alwaysKeepSidebarOpen": "サイドバーを常に開いておく",

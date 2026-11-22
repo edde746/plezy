@@ -92,6 +92,15 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
   /// Raw load failure (unlocalized); the screen wraps it for display.
   String? get errorMessage => _errorMessage;
 
+  /// The active catalog source's Watchlist row, or null when no watchlist is
+  /// loaded or it has no items.
+  ExploreRowHub? get watchlistRowHub {
+    for (final rowHub in rowHubs) {
+      if (rowHub.row == CatalogRowId.watchlist) return rowHub;
+    }
+    return null;
+  }
+
   /// Non-empty rows of the active source in display order. Memoized on row
   /// content (and one localized string, so a locale change busts the cache).
   List<ExploreRowHub> get rowHubs {

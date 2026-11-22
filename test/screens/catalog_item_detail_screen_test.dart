@@ -469,7 +469,7 @@ void main() {
     expect(matcher.calls.map((call) => call.ids.tmdb), [null, 99]);
     expect(find.text(t.explore.notInLibrary), findsNothing);
     expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')), findsOneWidget);
   });
 
   testWidgets('detail enrichment that adds the native title re-resolves library matches', (tester) async {
@@ -504,7 +504,7 @@ void main() {
 
     expect(matcher.calls, 2);
     expect(find.text(t.explore.notInLibrary), findsNothing);
-    expect(find.text('Anime (romaji)'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Anime (romaji)')), findsOneWidget);
   });
 
   group('Seerr request action', () {
@@ -592,8 +592,8 @@ void main() {
     );
 
     expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
-    expect(find.text('4K Movies'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('4K Movies')), findsOneWidget);
 
     final subtitles = tester.widgetList<Text>(find.textContaining('Living Room')).map((text) => text.data!).toList();
     expect(subtitles, hasLength(2));
@@ -620,7 +620,7 @@ void main() {
 
     expect(matcher.calls, 2);
     expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')), findsOneWidget);
     expect(find.text(t.explore.notInLibrary), findsNothing);
   });
 
@@ -639,7 +639,7 @@ void main() {
     );
 
     expect(matcher.calls, 2);
-    expect(find.text('Movies'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')), findsOneWidget);
     expect(find.text(t.explore.notInLibrary), findsNothing);
   });
 
@@ -697,7 +697,7 @@ void main() {
     );
 
     expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')), findsOneWidget);
     expect(find.text(t.explore.libraryCheckFailed(n: 2)), findsOneWidget);
   });
 
@@ -749,7 +749,10 @@ void main() {
         if (!richerFinishesFirst) {
           weaker.complete(libraryLookupResult([copy], succeeded: {'server-1'}));
           await tester.pumpAndSettle();
-          expect(find.text('Verified Movies'), findsOneWidget);
+          expect(
+            find.descendant(of: find.byType(FocusableListTile), matching: find.text('Verified Movies')),
+            findsOneWidget,
+          );
         }
         detail.complete(CatalogDetail(item: enriched));
         await tester.pump();
@@ -766,7 +769,10 @@ void main() {
           weaker.complete(libraryLookupResult([copy], succeeded: {'server-1'}));
           await tester.pumpAndSettle();
         }
-        expect(find.text('Verified Movies'), findsOneWidget);
+        expect(
+          find.descendant(of: find.byType(FocusableListTile), matching: find.text('Verified Movies')),
+          findsOneWidget,
+        );
         expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
       });
     }
@@ -827,7 +833,7 @@ void main() {
     );
 
     expect(matcher.calls, 2);
-    expect(find.text('Movies'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')), findsOneWidget);
     final subtitles = tester.widgetList<Text>(find.textContaining('Living Room')).map((text) => text.data!);
     expect(subtitles.single, contains('1080p'), reason: 'the quality hint survives an unstamped re-resolve too');
   });
@@ -853,8 +859,12 @@ void main() {
     );
 
     expect(matcher.calls, 2);
-    expect(find.text('4K Movies'), findsOneWidget, reason: 'the copy both passes agree on is not doubled');
-    expect(find.text('Movies'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(FocusableListTile), matching: find.text('4K Movies')),
+      findsOneWidget,
+      reason: 'the copy both passes agree on is not doubled',
+    );
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')), findsOneWidget);
   });
 
   testWidgets('focus stays on a library copy when a later pass adds one above it', (tester) async {
@@ -877,7 +887,10 @@ void main() {
     );
 
     final tile = tester.widget<FocusableListTile>(
-      find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),
+      find.ancestor(
+        of: find.descendant(of: find.byType(FocusableListTile), matching: find.text('Movies')),
+        matching: find.byType(FocusableListTile),
+      ),
     );
     tile.focusNode!.requestFocus();
     await tester.pump();
@@ -886,7 +899,7 @@ void main() {
     detailCompleter.complete(const CatalogDetail(item: _enrichedRow));
     await tester.pumpAndSettle();
 
-    expect(find.text('4K Movies'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableListTile), matching: find.text('4K Movies')), findsOneWidget);
     expect(
       FocusManager.instance.primaryFocus?.debugLabel,
       'catalog_library_match_server-1:hd-copy',
@@ -1810,5 +1823,37 @@ void main() {
     await _pumpDetail(tester, _FakeCatalogSource());
 
     expect(tester.getSize(find.byType(MediaCard).first).width, lessThan(210));
+  });
+
+  testWidgets('TV action bar surfaces library copies to the left of the theaters trailer icon', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'TV Action Bar Movie',
+      ids: CatalogItemIds(tmdb: 77),
+      trailerUrl: 'https://example.com/trailer',
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: item,
+      matches: [
+        _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080'),
+        _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
+      ],
+    );
+
+    final actionBar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
+    expect(actionBar.actions.map((a) => a.debugLabel).toList(), [
+      'catalog_top_library_server-1:uhd-copy',
+      'catalog_top_library_server-1:hd-copy',
+      'catalog_watchlist',
+      'catalog_trailer',
+    ]);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_top_library_server-1:uhd-copy');
+    expect(find.descendant(of: find.byType(FocusableActionBar), matching: find.text('4K Movies')), findsOneWidget);
+    expect(find.descendant(of: find.byType(FocusableActionBar), matching: find.text('Movies (1080p)')), findsOneWidget);
   });
 }

@@ -129,6 +129,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
               title: t.settings.showServerNameOnHubs,
               subtitle: t.settings.showServerNameOnHubsDescription,
             ),
+            if (hasExplore)
+              SettingSwitchTile(
+                pref: SettingsService.showWatchlistOnHome,
+                icon: Symbols.bookmark_rounded,
+                title: t.settings.showWatchlistOnHome,
+                subtitle: t.settings.showWatchlistOnHomeDescription,
+              ),
           ],
         ),
 

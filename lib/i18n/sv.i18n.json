@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Visa en gemensam layout på startsidan. Annars används bibliotekens rekommendationer.",
     "showServerNameOnHubs": "Visa servernamn i innehållssektioner",
     "showServerNameOnHubsDescription": "Visa alltid servernamnet i innehållssektionernas rubriker.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Gruppera bibliotek efter server",
     "groupLibrariesByServerDescription": "Gruppera biblioteken i sidofältet under respektive medieserver.",
     "alwaysKeepSidebarOpen": "Håll alltid sidofältet öppet",

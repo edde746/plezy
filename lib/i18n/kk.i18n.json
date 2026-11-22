@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Біріктірілген басты бет бөлімдерін көрсету.",
     "showServerNameOnHubs": "Бөлімдерде сервер атын көрсету",
     "showServerNameOnHubsDescription": "Бөлім тақырыптарында әрдайым сервер атын көрсету.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Кітапханаларды сервер бойынша топтау",
     "groupLibrariesByServerDescription": "Мүйістік мәзірдегі кітапханаларды серверлер бойынша топтау.",
     "alwaysKeepSidebarOpen": "Сүйістік мәзірді әрдайым ашық ұстау",

@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.",
     "showServerNameOnHubs": "Vis servernavn på hubber",
     "showServerNameOnHubsDescription": "Vis altid servernavne i titler på hubber.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Grupper biblioteker efter server",
     "groupLibrariesByServerDescription": "Gruppér bibliotekerne i sidepanelet under hver medieserver.",
     "alwaysKeepSidebarOpen": "Hold altid sidepanelet åbent",

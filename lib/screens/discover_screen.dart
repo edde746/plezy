@@ -28,6 +28,7 @@ import '../widgets/rasterized_gradient.dart';
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
+import '../providers/explore_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
@@ -86,10 +87,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// UI concerns (hero carousel, focus, spotlight). The proxy getters keep
   /// the build code reading naturally.
   late final DiscoverProvider _discover;
+  ExploreProvider? _explore;
   int _seenLoadGeneration = 0;
 
   List<MediaItem> get _onDeck => _discover.onDeck;
   List<MediaHub> get _hubs => _discover.hubs;
+  ExploreRowHub? get _watchlistRowHub {
+    if (!(SettingsService.instanceOrNull?.read(SettingsService.showWatchlistOnHome) ?? false)) return null;
+    return _explore?.watchlistRowHub;
+  }
+
+  MediaHub? get _watchlistHub => _watchlistRowHub?.hub;
   bool get _hasMoreContinueWatching => _discover.hasMoreContinueWatching;
   bool get _isLoading => _discover.isLoading;
   bool get _areHubsLoading => _discover.areHubsLoading;
@@ -120,6 +128,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   FocusNode? _railClaimFocusOrigin;
 
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
+  GlobalKey<HubSectionState>? _watchlistHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
@@ -167,6 +176,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _hubKeysByIdentity.removeWhere((identity, _) => !liveIdentities.contains(identity));
     _orderedHubKeys = ordered;
     _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+    _watchlistHubKey ??= GlobalKey<HubSectionState>();
   }
 
   List<GlobalKey<HubSectionState>> get _allHubKeys {
@@ -175,6 +185,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       keys.add(_continueWatchingHubKey!);
     }
     keys.addAll(_orderedHubKeys);
+    if (_watchlistHubKey != null && _watchlistHub != null) {
+      keys.add(_watchlistHubKey!);
+    }
     return keys;
   }
 
@@ -185,16 +198,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
   // fast path — and the cached rail widget below — kick in.
   List<MediaHub>? _tvBrowseHubsCache;
-  (List<MediaItem>, List<MediaHub>, bool, String)? _tvBrowseHubsCacheKey;
+  (List<MediaItem>, List<MediaHub>, MediaHub?, bool, String)? _tvBrowseHubsCacheKey;
 
   List<MediaHub> get _tvBrowseHubs {
-    final key = (_onDeck, _hubs, _hasMoreContinueWatching, t.discover.continueWatching);
+    final watchlistHub = _watchlistHub;
+    final key = (_onDeck, _hubs, watchlistHub, _hasMoreContinueWatching, t.discover.continueWatching);
     if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
     final hubs = <MediaHub>[];
     if (_onDeck.isNotEmpty) {
       hubs.add(_continueWatchingHub);
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
+    if (watchlistHub != null && watchlistHub.items.isNotEmpty) {
+      hubs.add(watchlistHub);
+    }
     _tvBrowseHubsCache = hubs;
     _tvBrowseHubsCacheKey = key;
     return hubs;
@@ -396,11 +413,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _heroFocusNode.addListener(_onHeroFocusChanged);
     _discover = context.read<DiscoverProvider>();
+    _explore = context.read<ExploreProvider?>();
     _seenLoadGeneration = _discover.loadGeneration;
     _discover.addListener(_onDiscoverChanged);
+    _explore?.addListener(_onExploreChanged);
     _updateHubKeys();
     unawaited(_discover.load());
+    _explore?.ensureFresh();
     _startAutoScroll();
+  }
+
+  void _onExploreChanged() {
+    if (!mounted) return;
+    setState(_updateHubKeys);
+    _applyPendingTvBrowseRailFocus();
   }
 
   /// Mirror provider changes into this state's UI concerns: rebuild, apply
@@ -515,6 +541,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void dispose() {
     _discover.removeListener(_onDiscoverChanged);
+    _explore?.removeListener(_onExploreChanged);
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
@@ -629,6 +656,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void onTabShown() {
     _isTabVisible = true;
     _discover.refreshIfStale();
+    _explore?.ensureFresh();
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
@@ -682,6 +710,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void manualRefresh() => unawaited(_refreshFromToolbar());
 
   Future<void> _refreshFromToolbar() async {
+    unawaited(_explore?.load() ?? Future<void>.value());
     final outcome = await _discover.refreshNow();
     if (!mounted) return;
     switch (outcome) {
@@ -698,6 +727,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
+    _explore?.ensureFresh();
     // A stale-resume refresh must also refetch the home hubs; otherwise new
     // server-side media never appears until a restart (#1646). When fresh,
     // only Continue Watching refetches — one on-deck call, zero hub calls.
@@ -709,6 +739,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void fullRefresh() {
     unawaited(_discover.load());
+    unawaited(_explore?.load() ?? Future<void>.value());
   }
 
   @override
@@ -983,6 +1014,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return SettingsBuilder(
       prefs: const [
         SettingsService.showServerNameOnHubs,
+        SettingsService.showWatchlistOnHome,
         SettingsService.showHeroSection,
         SettingsService.hideSpoilers,
         SettingsService.libraryDensity,
@@ -1002,6 +1034,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
+    final watchlistRowHub = _watchlistRowHub;
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final theme = Theme.of(context);
@@ -1062,6 +1095,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                   ),
 
+                // Watchlist Hub (bottom row on Home when enabled)
+                if (watchlistRowHub != null)
+                  SliverToBoxAdapter(
+                    child: HubSection(
+                      key: _watchlistHubKey,
+                      hub: watchlistRowHub.hub,
+                      totalResults: watchlistRowHub.totalResults,
+                      focusMemory: _hubFocusMemory,
+                      icon: Symbols.bookmark_rounded,
+                      loadMoreItems: watchlistRowHub.hub.more ? () => _explore!.loadAllForHub(watchlistRowHub) : null,
+                      onVerticalNavigation: (isUp) =>
+                          _handleVerticalNavigation((_onDeck.isNotEmpty ? 1 : 0) + _hubs.length, isUp),
+                      onNavigateUp: (_onDeck.isEmpty && _hubs.isEmpty) ? _focusTopBoundary : null,
+                      onNavigateToSidebar: _navigateToSidebar,
+                    ),
+                  ),
+
                 // Show loading skeleton for hubs while they're loading
                 if (_areHubsLoading && _hubs.isEmpty)
                   for (int i = 0; i < 3; i++)
@@ -1102,7 +1152,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ),
                     ),
 
-                if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
+                if (_onDeck.isEmpty && _hubs.isEmpty && watchlistRowHub == null && !_areHubsLoading)
                   SliverEmptyState(
                     message: t.discover.noContentAvailable,
                     subtitle: t.discover.addMediaToLibraries,
@@ -1139,7 +1189,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       initialHubId: 'continue_watching',
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
-      iconForHub: (hub, _) => hubIconFor(hub),
+      iconForHub: (hub, _) => hub.identifier == 'explore.watchlist' ? Symbols.bookmark_rounded : hubIconFor(hub),
       onFocusedItemChanged: _setSpotlightItem,
       onRefresh: _discover.updateItem,
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
@@ -1147,7 +1197,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
       // Every other hub pages from its server in View All, as on phones; handing
       // it the preview items only showed that preview again.
-      loadMoreItems: (hub) => hub.id == 'continue_watching' ? _discover.loadAllContinueWatching : null,
+      loadMoreItems: (hub) {
+        if (hub.id == 'continue_watching') return _discover.loadAllContinueWatching;
+        final wl = _watchlistRowHub;
+        if (wl != null && hub.id == wl.hub.id && wl.hub.more) {
+          return () => _explore!.loadAllForHub(wl);
+        }
+        return null;
+      },
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,

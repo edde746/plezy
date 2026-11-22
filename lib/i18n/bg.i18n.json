@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Показвай обединени начални хъбове. В противен случай използвай препоръките на библиотеката.",
     "showServerNameOnHubs": "Показвай името на сървъра в хъбовете",
     "showServerNameOnHubsDescription": "Винаги показвай имената на сървърите в заглавията на хъбовете.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Групирай библиотеките по сървър",
     "groupLibrariesByServerDescription": "Групирай библиотеките в страничната лента под всеки медиен сървър.",
     "alwaysKeepSidebarOpen": "Винаги дръж страничната лента отворена",

@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Birlashtirilgan bosh sahifa boʻlimlarini koʻrsatish.",
     "showServerNameOnHubs": "Boʻlimlarda server nomini koʻrsatish",
     "showServerNameOnHubsDescription": "Boʻlim sarlavhalarida har doim server nomini koʻrsatish.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Kutubxonalarni server boʻyicha guruhlash",
     "groupLibrariesByServerDescription": "Yon menyudagi kutubxonalarni serverlar boʻyicha guruhlash.",
     "alwaysKeepSidebarOpen": "Yon menyuni har doim ochiq saqlash",

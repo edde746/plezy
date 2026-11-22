@@ -232,6 +232,8 @@
     "useGlobalHubsDescription": "Wyświetlaj ujednolicone sekcje ekranu głównego. W przeciwnym razie używaj rekomendacji bibliotek.",
     "showServerNameOnHubs": "Pokaż nazwę serwera w sekcjach",
     "showServerNameOnHubsDescription": "Zawsze pokazuj nazwy serwerów w tytułach sekcji.",
+    "showWatchlistOnHome": "",
+    "showWatchlistOnHomeDescription": "",
     "groupLibrariesByServer": "Grupuj biblioteki według serwera",
     "groupLibrariesByServerDescription": "Grupuj biblioteki paska bocznego pod każdym serwerem multimediów.",
     "alwaysKeepSidebarOpen": "Zawsze utrzymuj panel boczny otwarty",
