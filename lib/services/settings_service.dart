@@ -1008,6 +1008,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
+  static const showOsdOnPause = BoolPref('show_osd_on_pause');
 
   static const playbackBufferTier = EnumPref<PlaybackBufferTier>(
     'playback_buffer_tier',
@@ -1606,6 +1607,7 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleItalic,
     showChapterMarkersOnTimeline,
     clickVideoTogglesPlayback,
+    showOsdOnPause,
     skipIntroMode,
     skipCreditsMode,
     forceSkipMarkerFallback,

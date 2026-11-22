@@ -1025,6 +1025,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   KeyEventResult _handleMediaDetailBackKey(FocusNode _, KeyEvent event) {
     if (_consumeBackAfterChildPop(event)) return KeyEventResult.handled;
+    if (event.logicalKey.isContextMenuKey) {
+      final menuContext = _contextMenuKey.currentContext ?? context;
+      if (!widget.isOffline && event.isActionable && !(OverlaySheetController.maybeOf(menuContext)?.isOpen ?? false)) {
+        _contextMenuKey.currentState?.showContextMenu(context);
+      }
+      return KeyEventResult.handled;
+    }
     return handleBackKeyNavigation(context, event, result: _watchStateChanged);
   }
 
@@ -2767,6 +2774,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (selectResult != KeyEventResult.ignored) return selectResult;
 
     if (!event.isActionable) return KeyEventResult.ignored;
+
+    if (key.isContextMenuKey) {
+      if (_focusedExtraIndex < _extraCardKeys.length) {
+        _extraCardKeys[_focusedExtraIndex]?.currentState?.showContextMenu();
+      }
+      return KeyEventResult.handled;
+    }
 
     // LEFT: previous extra
     if (key.isLeftKey) {

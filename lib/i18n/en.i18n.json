@@ -292,6 +292,8 @@
     "resumeMusicOnLaunchDescription": "Reopen the last song paused where it left off when the app starts",
     "showChapterMarkersOnTimeline": "Show chapter markers on seek bar",
     "showChapterMarkersOnTimelineDescription": "Segment the seek bar at chapter boundaries",
+    "showOsdOnPause": "Show controls on pause",
+    "showOsdOnPauseDescription": "Show the playback controls when pausing and clear the display when resuming",
     "specialsOrdering": "Specials in episode order",
     "specialsOrderingDescription": "Where specials play in a show's watch order",
     "specialsOrderingServer": "Follow server order",

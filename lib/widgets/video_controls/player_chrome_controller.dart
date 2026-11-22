@@ -18,11 +18,14 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   bool _controlsPresented;
   bool _controlsOpaque;
   bool _contentStripVisible = false;
+  bool _infoOverlayVisible = false;
   bool _playing = false;
   bool _hasFirstFrame = true;
   Duration _hideDelay = const Duration(seconds: 3);
+  static const Duration _infoHideDelay = Duration(seconds: 8);
   bool _directionalNavigation = false;
   Timer? _hideTimer;
+  Timer? _infoHideTimer;
   bool _pendingPlayPauseFocus = false;
   final Set<PlayerChromeHold> _holds = <PlayerChromeHold>{};
   final Stopwatch _pointerActivityStopwatch = Stopwatch()..start();
@@ -38,6 +41,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   /// Whether controls may still be visibly rendered during their fade-out.
   bool get controlsPresented => _controlsPresented;
   bool get contentStripVisible => _contentStripVisible;
+  bool get infoOverlayVisible => _infoOverlayVisible;
   bool isHeld(PlayerChromeHold hold) => _holds.contains(hold);
   bool get pendingPlayPauseFocus => _pendingPlayPauseFocus;
 
@@ -65,6 +69,9 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   void setPlaying(bool playing) {
     if (_playing == playing) return;
     _playing = playing;
+    if (_infoOverlayVisible) {
+      _startInfoAutoHideForCurrentPlaybackState();
+    }
     if (!_controlsVisible) return;
     if (playing) {
       startAutoHide();
@@ -96,6 +103,12 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   void show({bool restartAutoHide = true, bool focusPlayPause = false}) {
     _controlsPresented = true;
     var shouldNotify = false;
+    if (_infoOverlayVisible) {
+      _infoOverlayVisible = false;
+      _infoHideTimer?.cancel();
+      _infoHideTimer = null;
+      shouldNotify = true;
+    }
     if (focusPlayPause) {
       _pendingPlayPauseFocus = true;
       shouldNotify = true;
@@ -155,6 +168,48 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     } else {
       show();
     }
+  }
+
+  void showInfoOverlay() {
+    if (_controlsVisible) {
+      hide(ignoreHolds: true);
+    }
+    if (!_infoOverlayVisible) {
+      _infoOverlayVisible = true;
+      notifyListeners();
+    }
+    _startInfoAutoHideForCurrentPlaybackState();
+  }
+
+  bool hideInfoOverlay() {
+    if (!_infoOverlayVisible) return false;
+    _infoHideTimer?.cancel();
+    _infoHideTimer = null;
+    _infoOverlayVisible = false;
+    notifyListeners();
+    return true;
+  }
+
+  void toggleInfoOverlay() {
+    if (_infoOverlayVisible) {
+      hideInfoOverlay();
+    } else {
+      showInfoOverlay();
+    }
+  }
+
+  void restartInfoAutoHide() {
+    if (_infoOverlayVisible) {
+      _startInfoAutoHideForCurrentPlaybackState();
+    }
+  }
+
+  void _startInfoAutoHideForCurrentPlaybackState() {
+    _infoHideTimer?.cancel();
+    _infoHideTimer = null;
+    if (!_infoOverlayVisible || !_hasFirstFrame) return;
+    if (!_playing && _directionalNavigation) return;
+    _infoHideTimer = Timer(_infoHideDelay, hideInfoOverlay);
   }
 
   bool recordPointerActivity() {
@@ -236,6 +291,11 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   void hold(PlayerChromeHold hold) {
     if (!_holds.add(hold)) return;
     cancelAutoHide();
+    if (_infoOverlayVisible) {
+      _infoOverlayVisible = false;
+      _infoHideTimer?.cancel();
+      _infoHideTimer = null;
+    }
     if (!_controlsVisible) {
       _controlsVisible = true;
     }
@@ -256,6 +316,8 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   @override
   void dispose() {
     cancelAutoHide();
+    _infoHideTimer?.cancel();
+    _infoHideTimer = null;
     super.dispose();
   }
 }

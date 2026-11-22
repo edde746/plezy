@@ -33,6 +33,9 @@ class CompanionRemoteReceiver {
   void Function(String? query)? onSearchAction;
   VoidCallback? onNextTrack;
   VoidCallback? onPreviousTrack;
+  VoidCallback? onPlay;
+  VoidCallback? onPause;
+  VoidCallback? onPlayPause;
   VoidCallback? onStop;
   VoidCallback? onSeekForward;
   VoidCallback? onSeekBackward;
@@ -81,11 +84,23 @@ class CompanionRemoteReceiver {
         simulateKeyPress(LogicalKeyboardKey.contextMenu);
 
       case RemoteCommandType.play:
-        simulateKeyPress(LogicalKeyboardKey.space);
+        if (onPlay != null) {
+          onPlay!.call();
+        } else {
+          simulateKeyPress(LogicalKeyboardKey.mediaPlay);
+        }
       case RemoteCommandType.pause:
-        simulateKeyPress(LogicalKeyboardKey.space);
+        if (onPause != null) {
+          onPause!.call();
+        } else {
+          simulateKeyPress(LogicalKeyboardKey.mediaPause);
+        }
       case RemoteCommandType.playPause:
-        simulateKeyPress(LogicalKeyboardKey.space);
+        if (onPlayPause != null) {
+          onPlayPause!.call();
+        } else {
+          simulateKeyPress(LogicalKeyboardKey.mediaPlayPause);
+        }
       case RemoteCommandType.seekForward:
         onSeekForward?.call();
       case RemoteCommandType.seekBackward:

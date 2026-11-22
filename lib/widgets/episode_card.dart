@@ -139,7 +139,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
           enableLongPress: true,
           onNavigateUp: widget.onNavigateUp,
           onSelect: widget.onTap,
-          onLongPress: showContextMenuFromTap,
+          onLongPress: showContextMenu,
           disableScale: true,
           child: MediaContextMenu(
             key: contextMenuKey,

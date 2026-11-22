@@ -23,6 +23,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/double_tap_feedback.dart';
+import 'package:plezy/widgets/video_controls/widgets/now_playing_info_overlay.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/video_controls/widgets/transport_feedback_indicator.dart';
@@ -687,6 +688,76 @@ void main() {
 
       expect(chrome.controlsVisible, isTrue);
       expect(transportCommands, [TransportCommand.toggle]);
+
+      await settleFeedback(tester);
+    });
+
+    testWidgets('held transport keys consume down, repeat, and up and act once', (tester) async {
+      await pumpControls(tester, wireTransportCallback: true);
+
+      final cases = <(LogicalKeyboardKey, TransportCommand)>[
+        (LogicalKeyboardKey.mediaPause, TransportCommand.pause),
+        (LogicalKeyboardKey.pause, TransportCommand.pause),
+        (LogicalKeyboardKey.mediaPlay, TransportCommand.play),
+        (LogicalKeyboardKey.mediaPlayPause, TransportCommand.toggle),
+      ];
+
+      for (final (key, expectedCommand) in cases) {
+        transportCommands.clear();
+        await _holdMediaKey(tester, key);
+        expect(transportCommands, [expectedCommand], reason: '$key must fire $expectedCommand once per press');
+        expect(chrome.controlsVisible, isFalse);
+      }
+
+      await settleFeedback(tester);
+    });
+
+    testWidgets('the remote Info key toggles the Now Playing Info card without pausing playback', (tester) async {
+      await pumpControls(tester, wireTransportCallback: true);
+
+      await _holdMediaKey(tester, LogicalKeyboardKey.info);
+
+      expect(chrome.infoOverlayVisible, isTrue, reason: 'Info raises the dedicated Now Playing Info card');
+      expect(find.byType(NowPlayingInfoOverlay), findsOneWidget);
+      expect(chrome.controlsVisible, isFalse, reason: 'Info must not raise the interactive transport buttons');
+      expect(transportCommands, isEmpty, reason: 'peeking at Info must not pause playback');
+      expect(player.state.playing, isTrue);
+
+      await _holdMediaKey(tester, LogicalKeyboardKey.info);
+
+      expect(chrome.infoOverlayVisible, isFalse, reason: 'a second Info press dismisses the info card');
+      expect(find.byType(NowPlayingInfoOverlay), findsNothing);
+      expect(transportCommands, isEmpty);
+
+      // The keyboard 'I' alias toggles the same Now Playing Info card.
+      await _holdMediaKey(tester, LogicalKeyboardKey.keyI);
+      expect(chrome.infoOverlayVisible, isTrue);
+      expect(find.byType(NowPlayingInfoOverlay), findsOneWidget);
+
+      await _holdMediaKey(tester, LogicalKeyboardKey.keyI);
+      expect(chrome.infoOverlayVisible, isFalse);
+      expect(find.byType(NowPlayingInfoOverlay), findsNothing);
+
+      await settleFeedback(tester);
+    });
+
+    testWidgets('showOsdOnPause raises the OSD on pause and clears the display on unpause', (tester) async {
+      await SettingsService.instance.write(SettingsService.showOsdOnPause, true);
+      await pumpControls(tester, wireTransportCallback: true);
+
+      await _holdMediaKey(tester, LogicalKeyboardKey.mediaPause);
+
+      expect(transportCommands, [TransportCommand.pause]);
+      expect(player.state.playing, isFalse);
+      expect(chrome.controlsVisible, isTrue, reason: 'pausing with showOsdOnPause enabled raises the OSD');
+
+      transportCommands.clear();
+      await _holdMediaKey(tester, LogicalKeyboardKey.mediaPlay);
+
+      expect(transportCommands, [TransportCommand.play]);
+      expect(player.state.playing, isTrue);
+      expect(chrome.controlsVisible, isFalse, reason: 'unpausing clears the OSD from the display');
+      expect(chrome.infoOverlayVisible, isFalse);
 
       await settleFeedback(tester);
     });

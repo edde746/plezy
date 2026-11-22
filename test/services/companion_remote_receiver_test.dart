@@ -74,6 +74,9 @@ void main() {
     tearDown(() {
       receiver.musicTransport = null;
       receiver.playerOwner = null;
+      receiver.onPlay = null;
+      receiver.onPause = null;
+      receiver.onPlayPause = null;
       receiver.onSeekForward = null;
     });
 
@@ -105,13 +108,25 @@ void main() {
     });
 
     test('a video player owning the transport slots keeps them', () {
+      var plays = 0;
+      var pauses = 0;
+      var toggles = 0;
       var seeks = 0;
       receiver.playerOwner = Object();
+      receiver.onPlay = () => plays++;
+      receiver.onPause = () => pauses++;
+      receiver.onPlayPause = () => toggles++;
       receiver.onSeekForward = () => seeks++;
 
+      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.play), null);
+      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.pause), null);
+      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.playPause), null);
       receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.seekForward), null);
 
       expect(routed, isEmpty);
+      expect(plays, 1);
+      expect(pauses, 1);
+      expect(toggles, 1);
       expect(seeks, 1);
     });
   });

@@ -212,6 +212,10 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       TransportCommand.pause => false,
       TransportCommand.toggle => !widget.player.state.playing,
     };
+    final showOsdOnPause = SettingsService.instanceOrNull?.read(SettingsService.showOsdOnPause) ?? false;
+    if (showOsdOnPause && !willPlay) {
+      _showControlsWithFocus();
+    }
     if (willPlay && !widget.player.state.playing && _rewindOnResume > 0) {
       final target = widget.player.state.position - Duration(seconds: _rewindOnResume);
       final clamped = clampSeekPosition(widget.player, target);
@@ -220,13 +224,18 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     final requested = widget.onPlayPauseRequested;
     if (requested != null) {
       await requested(command);
-      return;
+    } else {
+      await switch (command) {
+        TransportCommand.play => widget.player.play(),
+        TransportCommand.pause => widget.player.pause(),
+        TransportCommand.toggle => widget.player.playOrPause(),
+      };
     }
-    await switch (command) {
-      TransportCommand.play => widget.player.play(),
-      TransportCommand.pause => widget.player.pause(),
-      TransportCommand.toggle => widget.player.playOrPause(),
-    };
+    if (showOsdOnPause && willPlay && mounted) {
+      widget.chromeController.hideInfoOverlay();
+      _hideControls();
+      widget.toastController.hide();
+    }
   }
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms.

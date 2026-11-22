@@ -45,6 +45,7 @@ void main() {
     final keyCases = <(LogicalKeyboardKey, PhysicalKeyboardKey?, String)>[
       (LogicalKeyboardKey.mediaPlay, null, 'play'),
       (LogicalKeyboardKey.mediaPause, null, 'pause'),
+      (LogicalKeyboardKey.pause, null, 'pause'),
       (LogicalKeyboardKey.mediaPlayPause, null, 'toggle'),
       (LogicalKeyboardKey.mediaTrackNext, null, 'next'),
       (LogicalKeyboardKey.mediaTrackPrevious, null, 'previous'),

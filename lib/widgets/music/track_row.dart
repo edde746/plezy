@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/dpad_navigator.dart';
 import '../../focus/focusable_tile_mixin.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
@@ -146,6 +147,10 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
     if (widget.onBack != null) {
       final backResult = handleBackKeyAction(event, widget.onBack!);
       if (backResult != KeyEventResult.ignored) return backResult;
+    }
+    if (event.logicalKey.isContextMenuKey && widget.enableContextMenu && widget.onTrailingTap == null) {
+      if (event.isActionable) showContextMenu();
+      return KeyEventResult.handled;
     }
     return dpadKeyHandler(
       onSelect: _activateFocusedColumn,

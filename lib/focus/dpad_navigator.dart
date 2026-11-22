@@ -46,24 +46,40 @@ final _backKeys = {
   LogicalKeyboardKey.gameButtonB,
 };
 
-final _contextMenuKeys = {LogicalKeyboardKey.contextMenu, LogicalKeyboardKey.gameButtonX};
+final _contextMenuKeys = {
+  LogicalKeyboardKey.contextMenu,
+  LogicalKeyboardKey.gameButtonX,
+  LogicalKeyboardKey.mediaTopMenu,
+  LogicalKeyboardKey.tvContentsMenu,
+  LogicalKeyboardKey.tvMediaContext,
+};
+
+final _infoKeys = {LogicalKeyboardKey.info, LogicalKeyboardKey.keyI};
 
 extension DpadKeyExtension on LogicalKeyboardKey {
   bool get isDpadDirection => _dpadDirectionKeys.contains(this);
   bool get isSelectKey => _selectKeys.contains(this);
   bool get isBackKey => _backKeys.contains(this);
   bool get isContextMenuKey => _contextMenuKeys.contains(this);
+  bool get isInfoKey => _infoKeys.contains(this);
 
   /// Whether this key is a shell / remote control key rather than a text
-  /// character — D-pad direction, select, back, context menu, or Tab.
+  /// character — D-pad direction, select, back, context menu, info, or Tab.
   ///
   /// Use it to decide "is this a printable character?" and "must this route
-  /// consume the key so it cannot leak to the route below?". It is NOT evidence
-  /// that the viewer wants to navigate by focus — `eventRequestsFocusNavigation`
-  /// in focus_navigation_intent.dart answers that, and conflating the two is what
-  /// made a plain Enter switch the whole app into keyboard mode.
+  /// consume the key so it cannot leak to the route below?". The printable
+  /// `keyI` alias stays excluded so physical keyboard typing in text fields
+  /// still inserts 'i'. It is NOT evidence that the viewer wants to navigate by
+  /// focus — `eventRequestsFocusNavigation` in focus_navigation_intent.dart
+  /// answers that, and conflating the two is what made a plain Enter switch the
+  /// whole app into keyboard mode.
   bool get isReservedControlKey =>
-      isDpadDirection || isSelectKey || isBackKey || isContextMenuKey || this == LogicalKeyboardKey.tab;
+      isDpadDirection ||
+      isSelectKey ||
+      isBackKey ||
+      isContextMenuKey ||
+      this == LogicalKeyboardKey.info ||
+      this == LogicalKeyboardKey.tab;
 
   bool get isLeftKey => this == LogicalKeyboardKey.arrowLeft;
   bool get isRightKey => this == LogicalKeyboardKey.arrowRight;
