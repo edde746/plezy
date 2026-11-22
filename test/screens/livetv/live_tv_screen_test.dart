@@ -33,53 +33,31 @@ void main() {
   setUpAll(() => initializeDateFormatting('en'));
 
   setUp(() async {
-    resetSharedPreferencesForTest();
+    resetSharedPreferencesForTest(initialAsync: {'live_tv_default_favorites': true});
     LocaleSettings.setLocaleSync(AppLocale.en);
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.liveTvDefaultFavorites, true);
+    await SettingsService.getInstance();
   });
 
-  testWidgets('loaded empty favorites shows the favorites empty state and can restore all channels', (tester) async {
-    final harness = await _pumpLiveTvScreen(tester);
-    addTearDown(() async {
-      await tester.pumpWidget(const SizedBox.shrink());
-      harness.dispose();
+  for (final staleFavorite in [false, true]) {
+    testWidgets('empty or stale favorites keep all channels visible (stale: $staleFavorite)', (tester) async {
+      final harness = await _pumpLiveTvScreen(tester);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        harness.dispose();
+      });
+      harness.liveTv.favorites.complete([
+        if (staleFavorite) FavoriteChannel(id: 'channel-gone', source: 'server://server-a/provider-a'),
+      ]);
+      await tester.pumpAndSettle();
+      final guide = tester.widget<GuideTab>(find.byType(GuideTab));
+      expect(guide.channels.map((c) => c.key), ['channel-a']);
+      expect(guide.favoriteChannels, isEmpty);
+      expect(find.byTooltip(t.liveTv.favorites), findsNothing);
+      expect(find.text(t.liveTv.favorites), findsNothing);
     });
+  }
 
-    expect(find.byIcon(Symbols.star_rounded), findsOneWidget);
-    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
-
-    harness.liveTv.favorites.complete(const []);
-    await tester.pumpAndSettle();
-
-    expect(find.byType(GuideTab), findsNothing);
-    expect(find.text(t.liveTv.noFavoriteChannels), findsOneWidget);
-    expect(find.text(t.liveTv.showAllChannels), findsOneWidget);
-
-    await tester.tap(find.text(t.liveTv.showAllChannels));
-    await tester.pumpAndSettle();
-
-    expect(find.text(t.liveTv.noFavoriteChannels), findsNothing);
-    expect(find.byIcon(Symbols.star_outline_rounded), findsOneWidget);
-    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
-  });
-
-  testWidgets('favorites matching no loaded channel show the favorites empty state', (tester) async {
-    final harness = await _pumpLiveTvScreen(tester);
-    addTearDown(() async {
-      await tester.pumpWidget(const SizedBox.shrink());
-      harness.dispose();
-    });
-
-    harness.liveTv.favorites.complete([FavoriteChannel(id: 'channel-gone', source: 'server://server-a/provider-a')]);
-    await tester.pumpAndSettle();
-
-    expect(find.byType(GuideTab), findsNothing);
-    expect(find.text(t.liveTv.noFavoriteChannels), findsOneWidget);
-    expect(find.text(t.liveTv.showAllChannels), findsOneWidget);
-  });
-
-  testWidgets('refresh keeps the favorites filter narrow while favorites reload', (tester) async {
+  testWidgets('refresh keeps the favorites group populated while favorites reload', (tester) async {
     final harness = await _pumpLiveTvScreen(tester, channelKeys: const ['channel-a', 'channel-b']);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
@@ -90,22 +68,23 @@ void main() {
     harness.liveTv.favorites.complete([favorite]);
     await tester.pumpAndSettle();
 
-    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+    expect(tester.widget<GuideTab>(find.byType(GuideTab)).favoriteChannels.map((c) => c.key), ['channel-a']);
 
     await tester.tap(find.byIcon(Symbols.refresh_rounded));
     await tester.pumpAndSettle();
 
-    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+    expect(tester.widget<GuideTab>(find.byType(GuideTab)).favoriteChannels.map((c) => c.key), ['channel-a']);
 
     harness.liveTv.favorites.complete([favorite]);
     await tester.pumpAndSettle();
 
-    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+    expect(tester.widget<GuideTab>(find.byType(GuideTab)).favoriteChannels.map((c) => c.key), ['channel-a']);
   });
 
-  testWidgets('guide search covers all channels and selecting a non-favorite drops the favorites filter', (
-    tester,
-  ) async {
+  testWidgets('guide search can reach a channel below the favorites group', (tester) async {
     final harness = await _pumpLiveTvScreen(tester, channelKeys: const ['channel-a', 'channel-b']);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
@@ -114,12 +93,13 @@ void main() {
 
     harness.liveTv.favorites.complete([FavoriteChannel(id: 'channel-a', source: 'server://server-a/provider-a')]);
     await tester.pumpAndSettle();
-    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+    expect(tester.widget<GuideTab>(find.byType(GuideTab)).favoriteChannels.map((c) => c.key), ['channel-a']);
 
     await tester.tap(find.byIcon(Symbols.search_rounded));
     await tester.pumpAndSettle();
 
-    // The sheet searches the full lineup, not the favorites-filtered one.
+    // Search includes favorites and the rest of the lineup.
     final sheet = find.byType(GuideSearchSheet);
     expect(find.descendant(of: sheet, matching: find.text('Unique Channel A')), findsOneWidget);
     expect(find.descendant(of: sheet, matching: find.text('Unique Channel channel-b')), findsOneWidget);
@@ -127,8 +107,7 @@ void main() {
     await tester.tap(find.descendant(of: sheet, matching: find.text('Unique Channel channel-b')));
     await tester.pumpAndSettle();
 
-    // The target row must exist to land on, so the filter is dropped and the
-    // guide widens to the full lineup.
+    // Both groups remain available after the jump.
     expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
   });
 
@@ -144,7 +123,7 @@ void main() {
     harness.liveTv.favorites.completeError(StateError('favorite read failed'));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Symbols.star_rounded), findsOneWidget);
+    expect(find.byTooltip(t.liveTv.favorites), findsNothing);
     expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
   });
   testWidgets('favorite failure keeps favorites loaded from healthy stores', (tester) async {
@@ -182,14 +161,13 @@ void main() {
     final guide = tester.widget<GuideTab>(find.byType(GuideTab));
     final healthyChannel = guide.channels.singleWhere((channel) => channel.serverId == 'server-b');
     expect(guide.isFavoriteChannel!(healthyChannel), isTrue);
-    expect(guide.channels.map((channel) => channel.serverId), ['server-b']);
+    expect(guide.channels.map((channel) => channel.serverId), ['server-a', 'server-b']);
+    expect(guide.favoriteChannels.map((channel) => channel.serverId), ['server-b']);
   });
 
   testWidgets('favorite write failure keeps optimistic state, shows feedback, and leaves the queue usable', (
     tester,
   ) async {
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.liveTvDefaultFavorites, false);
     final harness = await _pumpLiveTvScreen(tester);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
@@ -241,8 +219,6 @@ void main() {
       harness.dispose();
     });
     harness.liveTv.favorites.complete(const []);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(t.liveTv.showAllChannels));
     await tester.pumpAndSettle();
     expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
 

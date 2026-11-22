@@ -917,7 +917,6 @@ class SettingsService extends BaseSharedPreferencesService {
   /// that core lists the device (see `applyPreferredAudioDevice`). Names are
   /// per machine, so reset-only in the registry.
   static const audioOutputDevice = StringPref('audio_output_device', defaultValue: 'auto');
-  static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
   static const appLocale = _AppLocalePref();
@@ -1616,7 +1615,6 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultQualityPreset,
     cellularQualityPreset,
     musicQualityPreset,
-    liveTvDefaultFavorites,
     matchRefreshRate,
     matchDynamicRange,
     displaySwitchDelay,

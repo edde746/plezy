@@ -14,6 +14,38 @@ class LiveTvChannelGroup {
   }
 }
 
+const liveTvFavoritesGroupKey = 'favorites';
+
+/// Favorites keep their saved order across sources. Every other channel
+/// remains in its original source group, with no duplicate favorite rows.
+List<LiveTvChannelGroup> groupLiveTvGuideChannels(
+  List<LiveTvChannel> channels, {
+  List<LiveTvChannel> favorites = const [],
+}) {
+  final available = {for (final channel in channels) liveTvChannelScopeKey(channel): channel};
+  final favoriteKeys = <String>{};
+  final favoriteChannels = <LiveTvChannel>[];
+  for (final favorite in favorites) {
+    final key = liveTvChannelScopeKey(favorite);
+    final channel = available[key];
+    if (channel != null && favoriteKeys.add(key)) favoriteChannels.add(channel);
+  }
+  return [
+    if (favoriteChannels.isNotEmpty)
+      LiveTvChannelGroup(key: liveTvFavoritesGroupKey, label: t.liveTv.favorites, channels: favoriteChannels),
+    for (final group in groupLiveTvChannelsBySource(channels))
+      if (group.channels.any((channel) => !favoriteKeys.contains(liveTvChannelScopeKey(channel))))
+        LiveTvChannelGroup(
+          key: group.key,
+          label: group.label,
+          channels: [
+            for (final channel in group.channels)
+              if (!favoriteKeys.contains(liveTvChannelScopeKey(channel))) channel,
+          ],
+        ),
+  ];
+}
+
 List<LiveTvChannelGroup> groupLiveTvChannelsBySource(List<LiveTvChannel> channels) {
   final order = <String>[];
   final bySource = <String, List<LiveTvChannel>>{};

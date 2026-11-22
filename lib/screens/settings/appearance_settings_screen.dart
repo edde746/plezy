@@ -172,17 +172,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
           ],
         ),
 
-        SettingsGroup(
-          title: t.settings.liveTv,
-          children: [
-            SettingSwitchTile(
-              pref: SettingsService.liveTvDefaultFavorites,
-              icon: Symbols.star_rounded,
-              title: t.settings.liveTvDefaultFavorites,
-              subtitle: t.settings.liveTvDefaultFavoritesDescription,
-            ),
-          ],
-        ),
         const SizedBox(height: 24),
       ],
     );

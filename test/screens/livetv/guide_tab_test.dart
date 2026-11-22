@@ -459,6 +459,77 @@ void main() {
     expect(toggled, ['A']);
   });
 
+  for (final scenario in [
+    (favorites: [1, 3], selected: 1, expected: 3),
+    (favorites: [1, 3], selected: 3, expected: 1),
+    (favorites: [1], selected: 1, expected: 0),
+    (favorites: [0], selected: 0, expected: 1),
+    (favorites: [0, 1, 2], selected: 3, expected: 2),
+    (favorites: [1], selected: 0, expected: 2),
+    (favorites: [1], selected: 3, expected: 2),
+  ]) {
+    testWidgets('favorite regrouping keeps the vacated group row: $scenario', (tester) async {
+      TvDetectionService.debugSetAppleTVOverride(true);
+      final channels = [
+        for (var i = 0; i < 4; i++)
+          _guideChannel(serverId: 'server-a', stationId: i == 0 ? 'station-a' : 'station-$i', callSign: 'Channel $i'),
+      ];
+      final harness = _GuideHarness._create(includeServerB: false, channels: channels);
+      addTearDown(harness.dispose);
+      var favorites = [for (final index in scenario.favorites) channels[index]];
+      void toggle(LiveTvChannel channel) {
+        favorites = favorites.contains(channel)
+            ? favorites.where((c) => c != channel).toList()
+            : [...favorites, channel];
+      }
+
+      await harness.pump(tester, favoriteChannels: favorites, onToggleFavorite: toggle);
+      await harness.completeInitial(tester);
+      await _focusGrid(tester);
+      _expectFocusedChannel(tester, 'Channel ${scenario.favorites.first}');
+      tester.state<GuideTabState>(find.byType(GuideTab)).jumpToChannel(channels[scenario.selected]);
+      await tester.pumpAndSettle();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+      await tester.pump(const Duration(milliseconds: 500));
+      await harness.pump(tester, favoriteChannels: favorites, onToggleFavorite: toggle);
+      await tester.pumpAndSettle();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      _expectFocusedChannel(tester, 'Channel ${scenario.expected}');
+      for (var i = 0; i < 4; i++) {
+        expect(find.text('Channel $i'), findsOneWidget);
+      }
+      expect(harness.serverA.schedule.requests, hasLength(1));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('favorite header reorder is reachable from the first channel by remote and pointer', (tester) async {
+    final channels = [
+      _guideChannel(serverId: 'server-a', stationId: 'station-a', callSign: 'A'),
+      _guideChannel(serverId: 'server-a', stationId: 'station-b', callSign: 'B'),
+    ];
+    final harness = _GuideHarness._create(includeServerB: false, channels: channels);
+    addTearDown(harness.dispose);
+    var reorders = 0;
+    await harness.pump(tester, favoriteChannels: channels.reversed.toList(), onReorderFavorites: () => reorders++);
+    await harness.completeInitial(tester);
+    await _focusGrid(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(reorders, 1);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'B');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    expect(reorders, 2);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.liveTv.reorderFavorites));
+    expect(reorders, 3);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('on TV a SELECT hold on a channel cell toggles its favorite', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     final toggled = <String?>[];
@@ -628,7 +699,12 @@ final class _GuideHarness {
   final MultiServerProvider provider;
   final List<LiveTvChannel> channels;
 
-  Future<void> pump(WidgetTester tester, {void Function(LiveTvChannel)? onToggleFavorite}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    void Function(LiveTvChannel)? onToggleFavorite,
+    List<LiveTvChannel> favoriteChannels = const [],
+    VoidCallback? onReorderFavorites,
+  }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 720);
     addTearDown(() {
@@ -644,7 +720,12 @@ final class _GuideHarness {
             child: MaterialApp(
               theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
-                body: GuideTab(channels: channels, onToggleFavorite: onToggleFavorite),
+                body: GuideTab(
+                  channels: channels,
+                  favoriteChannels: List.of(favoriteChannels),
+                  onToggleFavorite: onToggleFavorite,
+                  onReorderFavorites: onReorderFavorites,
+                ),
               ),
             ),
           ),
