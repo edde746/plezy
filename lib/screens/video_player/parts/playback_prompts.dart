@@ -103,13 +103,6 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       // waits for a person instead of counting down.
       final serverStopped = _progressTracker?.stoppedByServer ?? false;
 
-      // PiP: skip dialog (user can't interact), auto-play immediately
-      if (PipService().isPipActive.value && !serverStopped) {
-        _logVideoCompleted('action=presentNext pip');
-        unawaited(_playNext());
-        return;
-      }
-
       // Capture keyboard mode before async gap
       final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
 
@@ -118,9 +111,11 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       final autoPlayEnabled = !serverStopped && settings.read(SettingsService.autoPlayNextEpisode);
       final countdownSeconds = settings.read(SettingsService.playNextCountdown);
 
-      // A zero countdown (#1827) behaves like the PiP path above: no prompt,
-      // straight into the next episode.
-      if (autoPlayEnabled && (skipAutoPlayCountdown || countdownSeconds == 0)) {
+      // Straight into the next episode, no prompt: auto-play with nothing to
+      // count down — a zero countdown (#1827), or PiP, where nobody can answer
+      // the prompt. With auto-play off, PiP takes the prompt below; it stays
+      // hidden in PiP and waits for the viewer to come back (#3150).
+      if (autoPlayEnabled && (skipAutoPlayCountdown || countdownSeconds == 0 || PipService().isPipActive.value)) {
         _logVideoCompleted('action=presentNext autoplay');
         unawaited(_playNext());
         return;
