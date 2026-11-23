@@ -568,8 +568,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get startupSection => 'Бастапқы бөлім';
 	@override String get showExploreTab => '«Шолу» қойындысын көрсету';
 	@override String get showExploreTabDescription => 'Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету';
-	@override String get liveTvDefaultFavorites => 'Тікелей TV-де таңдаулы арналарды әдепкі ету';
-	@override String get liveTvDefaultFavoritesDescription => 'Тікелей TV ашылғанда тек таңдаулы арналарды көрсету';
 	@override String get general => 'Жалпы';
 	@override String get generalDescription => 'Тіл, іске қосу және терезе мінез-құлқы';
 	@override String get languageAndRegion => 'Тіл және аймақ';
@@ -579,7 +577,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get homeScreen => 'Басты экран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Терезе';
-	@override String get liveTv => 'Тікелей TV';
 	@override String get player => 'Ойнатқыш';
 	@override String get videoAndDisplay => 'Видео және дисплей';
 	@override String get audio => 'Аудио';
@@ -1638,9 +1635,6 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String get watchChannel => 'Арнаны көру';
 	@override String get favorites => 'Таңдаулылар';
 	@override String get reorderFavorites => 'Таңдаулыларды қайта реттеу';
-	@override String get noFavoriteChannels => 'Таңдаулы арналар жоқ';
-	@override String get noFavoriteChannelsHint => 'Барлық арнаны көрсетіп, таңдаулыларға қосу үшін арнаны ұзақ басып тұрыңыз.';
-	@override String get showAllChannels => 'Барлық арнаны көрсету';
 	@override String get favoritesLoadFailed => 'Таңдаулыларды жүктеу мүмкін болмады. Байланысты тексеріп, қайталап көріңіз.';
 	@override String get favoritesUpdateFailed => 'Таңдаулыларды жаңарту мүмкін болмады.';
 	@override String get joinSession => 'Сеансқа қосылу';
@@ -3851,8 +3845,6 @@ extension on TranslationsKk {
 			'settings.startupSection' => 'Бастапқы бөлім',
 			'settings.showExploreTab' => '«Шолу» қойындысын көрсету',
 			'settings.showExploreTabDescription' => 'Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету',
-			'settings.liveTvDefaultFavorites' => 'Тікелей TV-де таңдаулы арналарды әдепкі ету',
-			'settings.liveTvDefaultFavoritesDescription' => 'Тікелей TV ашылғанда тек таңдаулы арналарды көрсету',
 			'settings.general' => 'Жалпы',
 			'settings.generalDescription' => 'Тіл, іске қосу және терезе мінез-құлқы',
 			'settings.languageAndRegion' => 'Тіл және аймақ',
@@ -3862,7 +3854,6 @@ extension on TranslationsKk {
 			'settings.homeScreen' => 'Басты экран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Терезе',
-			'settings.liveTv' => 'Тікелей TV',
 			'settings.player' => 'Ойнатқыш',
 			'settings.videoAndDisplay' => 'Видео және дисплей',
 			'settings.audio' => 'Аудио',
@@ -3910,11 +3901,11 @@ extension on TranslationsKk {
 			'themeEditor.slots.outline' => 'Контур',
 			'themeEditor.slots.text' => 'Мәтін',
 			'themeEditor.slots.textMuted' => 'Қосалқы мәтін',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Мөлдірлік',
 			'themeEditor.hexHint' => '#RRGGBB немесе #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'Басқа тақырыптардан',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme}: ${color}',
 			'themeEditor.contrast.textOnBg' => 'Фондағы мәтін',
@@ -4424,11 +4415,11 @@ extension on TranslationsKk {
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
 			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
 			'connections.sectionTitle' => 'Қосылымдар',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} сервер үшін сеанс мерзімі өтті',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} бұл тіркелгіге кіруден бас тартты',
@@ -4887,9 +4878,6 @@ extension on TranslationsKk {
 			'liveTv.watchChannel' => 'Арнаны көру',
 			'liveTv.favorites' => 'Таңдаулылар',
 			'liveTv.reorderFavorites' => 'Таңдаулыларды қайта реттеу',
-			'liveTv.noFavoriteChannels' => 'Таңдаулы арналар жоқ',
-			'liveTv.noFavoriteChannelsHint' => 'Барлық арнаны көрсетіп, таңдаулыларға қосу үшін арнаны ұзақ басып тұрыңыз.',
-			'liveTv.showAllChannels' => 'Барлық арнаны көрсету',
 			'liveTv.favoritesLoadFailed' => 'Таңдаулыларды жүктеу мүмкін болмады. Байланысты тексеріп, қайталап көріңіз.',
 			'liveTv.favoritesUpdateFailed' => 'Таңдаулыларды жаңарту мүмкін болмады.',
 			'liveTv.joinSession' => 'Сеансқа қосылу',
@@ -4938,14 +4926,14 @@ extension on TranslationsKk {
 			'liveTv.recordSettings.anyTime' => 'Кез келген уақытта жазу',
 			'liveTv.recordSettings.skipInLibrary' => 'Кітапханада бар эпизодтарды өткізіп жіберу',
 			'liveTv.recordSettings.keepUpTo' => 'Сақталатын эпизодтар',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
 			'liveTv.failedToStartChannel' => 'Тікелей эфир арнасын іске қосу мүмкін болмады',
 			'liveTv.failedToBuildStreamUrl' => 'Ағын URL-ін құру мүмкін болмады',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Арнаны іске қосу мүмкін болмады: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Арнаны ауыстыру мүмкін болмады: ${reason}',
 			'collections.title' => 'Топтамалар',
@@ -5452,14 +5440,14 @@ extension on TranslationsKk {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Бағдарламалық',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Аппараттық',
 			'performanceOverlay.tunnelingActive' => 'Белсенді',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			'externalPlayer.title' => 'Сыртқы ойнатқыш',
 			'externalPlayer.useExternalPlayer' => 'Сыртқы ойнатқышты пайдалану',
 			'externalPlayer.useExternalPlayerDescription' => 'Видеоларды басқа қолданбада ашу',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Ойнатқышты таңдау',
 			'externalPlayer.customPlayers' => 'Арнайы ойнатқыштар',
 			'externalPlayer.systemDefault' => 'Жүйелік әдепкі',

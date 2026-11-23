@@ -569,8 +569,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get startupSection => '啟動頁面';
 	@override String get showExploreTab => '顯示探索分頁';
 	@override String get showExploreTabDescription => '顯示探索分頁，其中包含來自 Plex Discover 和已連結追蹤服務的內容';
-	@override String get liveTvDefaultFavorites => '預設顯示最愛頻道';
-	@override String get liveTvDefaultFavoritesDescription => '開啟直播電視時僅顯示最愛頻道';
 	@override String get general => '一般';
 	@override String get generalDescription => '語言、啟動與視窗行為';
 	@override String get languageAndRegion => '語言與地區';
@@ -580,7 +578,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get homeScreen => '主畫面';
 	@override String get navigation => '導覽';
 	@override String get window => '視窗';
-	@override String get liveTv => '直播電視';
 	@override String get player => '播放器';
 	@override String get videoAndDisplay => '影片與顯示器';
 	@override String get audio => '音訊';
@@ -1631,9 +1628,6 @@ class _Translations$liveTv$zh_Hant extends Translations$liveTv$zh {
 	@override String get watchChannel => '觀看頻道';
 	@override String get favorites => '最愛';
 	@override String get reorderFavorites => '重新排序最愛頻道';
-	@override String get noFavoriteChannels => '沒有最愛頻道';
-	@override String get noFavoriteChannelsHint => '顯示所有頻道，然後長按頻道即可將其加入最愛。';
-	@override String get showAllChannels => '顯示所有頻道';
 	@override String get favoritesLoadFailed => '無法載入最愛頻道。請檢查網路連線後重試。';
 	@override String get favoritesUpdateFailed => '無法更新最愛頻道。請檢查網路連線後重試。';
 	@override String get joinSession => '加入進行中的「一起看」';
@@ -3840,8 +3834,6 @@ extension on TranslationsZhHant {
 			'settings.startupSection' => '啟動頁面',
 			'settings.showExploreTab' => '顯示探索分頁',
 			'settings.showExploreTabDescription' => '顯示探索分頁，其中包含來自 Plex Discover 和已連結追蹤服務的內容',
-			'settings.liveTvDefaultFavorites' => '預設顯示最愛頻道',
-			'settings.liveTvDefaultFavoritesDescription' => '開啟直播電視時僅顯示最愛頻道',
 			'settings.general' => '一般',
 			'settings.generalDescription' => '語言、啟動與視窗行為',
 			'settings.languageAndRegion' => '語言與地區',
@@ -3851,7 +3843,6 @@ extension on TranslationsZhHant {
 			'settings.homeScreen' => '主畫面',
 			'settings.navigation' => '導覽',
 			'settings.window' => '視窗',
-			'settings.liveTv' => '直播電視',
 			'settings.player' => '播放器',
 			'settings.videoAndDisplay' => '影片與顯示器',
 			'settings.audio' => '音訊',
@@ -3899,11 +3890,11 @@ extension on TranslationsZhHant {
 			'themeEditor.slots.outline' => '外框',
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => '強調色',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => '來自其他主題',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
 			'themeEditor.contrast.textOnBg' => '背景上的文字',
@@ -4413,11 +4404,11 @@ extension on TranslationsZhHant {
 			'profiles.pinsDontMatch' => 'PIN 碼不符合',
 			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
 			'connections.sectionTitle' => '連線',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => '新增連線',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 個伺服器的工作階段已過期',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} 拒絕此帳戶存取',
@@ -4876,9 +4867,6 @@ extension on TranslationsZhHant {
 			'liveTv.watchChannel' => '觀看頻道',
 			'liveTv.favorites' => '最愛',
 			'liveTv.reorderFavorites' => '重新排序最愛頻道',
-			'liveTv.noFavoriteChannels' => '沒有最愛頻道',
-			'liveTv.noFavoriteChannelsHint' => '顯示所有頻道，然後長按頻道即可將其加入最愛。',
-			'liveTv.showAllChannels' => '顯示所有頻道',
 			'liveTv.favoritesLoadFailed' => '無法載入最愛頻道。請檢查網路連線後重試。',
 			'liveTv.favoritesUpdateFailed' => '無法更新最愛頻道。請檢查網路連線後重試。',
 			'liveTv.joinSession' => '加入進行中的「一起看」',
@@ -4927,14 +4915,14 @@ extension on TranslationsZhHant {
 			'liveTv.recordSettings.anyTime' => '在任何時間錄影',
 			'liveTv.recordSettings.skipInLibrary' => '略過媒體庫中已有的劇集',
 			'liveTv.recordSettings.keepUpTo' => '要保留的劇集數',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留所有劇集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
 			'liveTv.failedToStartChannel' => '無法啟動直播頻道',
 			'liveTv.failedToBuildStreamUrl' => '無法建立串流 URL',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => '無法開始播放此頻道：${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => '無法切換頻道：${reason}',
 			'collections.title' => '收藏集',
@@ -5441,14 +5429,14 @@ extension on TranslationsZhHant {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬體',
 			'performanceOverlay.decoderExynosHw' => 'Exynos 硬體',
 			'performanceOverlay.decoderSoftware' => '軟體',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => '硬體',
 			'performanceOverlay.tunnelingActive' => '已啟用',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他應用程式中開啟影片',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => '選擇播放器',
 			'externalPlayer.customPlayers' => '自訂播放器',
 			'externalPlayer.systemDefault' => '系統預設',

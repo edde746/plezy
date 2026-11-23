@@ -568,8 +568,6 @@ class Translations$settings$pt extends Translations$settings$en {
 	@override String get startupSection => 'Seção inicial';
 	@override String get showExploreTab => 'Mostrar aba Explorar';
 	@override String get showExploreTabDescription => 'Exibir a aba Explorar com conteúdo do Plex Discover e dos rastreadores conectados';
-	@override String get liveTvDefaultFavorites => 'Canais favoritos por padrão';
-	@override String get liveTvDefaultFavoritesDescription => 'Mostrar apenas os canais favoritos ao abrir a TV ao vivo';
 	@override String get general => 'Geral';
 	@override String get generalDescription => 'Idioma, inicialização e comportamento da janela';
 	@override String get languageAndRegion => 'Idioma e Região';
@@ -579,7 +577,6 @@ class Translations$settings$pt extends Translations$settings$en {
 	@override String get homeScreen => 'Tela inicial';
 	@override String get navigation => 'Navegação';
 	@override String get window => 'Janela';
-	@override String get liveTv => 'TV ao Vivo';
 	@override String get player => 'Reprodutor';
 	@override String get videoAndDisplay => 'Vídeo e Tela';
 	@override String get audio => 'Áudio';
@@ -1638,9 +1635,6 @@ class Translations$liveTv$pt extends Translations$liveTv$en {
 	@override String get watchChannel => 'Assistir ao canal';
 	@override String get favorites => 'Favoritos';
 	@override String get reorderFavorites => 'Reordenar favoritos';
-	@override String get noFavoriteChannels => 'Nenhum canal favorito';
-	@override String get noFavoriteChannelsHint => 'Mostre todos os canais e mantenha um canal pressionado para adicioná-lo aos favoritos.';
-	@override String get showAllChannels => 'Mostrar todos os canais';
 	@override String get favoritesLoadFailed => 'Não foi possível carregar os favoritos. Verifique sua conexão e tente novamente.';
 	@override String get favoritesUpdateFailed => 'Não foi possível atualizar os favoritos. Verifique sua conexão e tente novamente.';
 	@override String get joinSession => 'Entrar na sessão em andamento';
@@ -3851,8 +3845,6 @@ extension on TranslationsPt {
 			'settings.startupSection' => 'Seção inicial',
 			'settings.showExploreTab' => 'Mostrar aba Explorar',
 			'settings.showExploreTabDescription' => 'Exibir a aba Explorar com conteúdo do Plex Discover e dos rastreadores conectados',
-			'settings.liveTvDefaultFavorites' => 'Canais favoritos por padrão',
-			'settings.liveTvDefaultFavoritesDescription' => 'Mostrar apenas os canais favoritos ao abrir a TV ao vivo',
 			'settings.general' => 'Geral',
 			'settings.generalDescription' => 'Idioma, inicialização e comportamento da janela',
 			'settings.languageAndRegion' => 'Idioma e Região',
@@ -3862,7 +3854,6 @@ extension on TranslationsPt {
 			'settings.homeScreen' => 'Tela inicial',
 			'settings.navigation' => 'Navegação',
 			'settings.window' => 'Janela',
-			'settings.liveTv' => 'TV ao Vivo',
 			'settings.player' => 'Reprodutor',
 			'settings.videoAndDisplay' => 'Vídeo e Tela',
 			'settings.audio' => 'Áudio',
@@ -3910,11 +3901,11 @@ extension on TranslationsPt {
 			'themeEditor.slots.outline' => 'Contorno',
 			'themeEditor.slots.text' => 'Texto',
 			'themeEditor.slots.textMuted' => 'Texto secundário',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Destaque',
 			'themeEditor.opacity' => 'Opacidade',
 			'themeEditor.hexHint' => '#RRGGBB ou #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'De outros temas',
 			'themeEditor.swatchLabel' => ({required Object color, required Object theme}) => '${color} (${theme})',
 			'themeEditor.contrast.textOnBg' => 'Texto sobre o fundo',
@@ -4424,11 +4415,11 @@ extension on TranslationsPt {
 			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
 			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
 			'connections.sectionTitle' => 'Conexões',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Adicionar conexão',
 			'connections.addConnectionSubtitleNoProfile' => 'Entre com Plex ou conecte um servidor Jellyfin ou Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra conexão de perfil',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessão de ${name} expirada',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessões expiradas em ${count} servidores',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} negou acesso a esta conta',
@@ -4887,9 +4878,6 @@ extension on TranslationsPt {
 			'liveTv.watchChannel' => 'Assistir ao canal',
 			'liveTv.favorites' => 'Favoritos',
 			'liveTv.reorderFavorites' => 'Reordenar favoritos',
-			'liveTv.noFavoriteChannels' => 'Nenhum canal favorito',
-			'liveTv.noFavoriteChannelsHint' => 'Mostre todos os canais e mantenha um canal pressionado para adicioná-lo aos favoritos.',
-			'liveTv.showAllChannels' => 'Mostrar todos os canais',
 			'liveTv.favoritesLoadFailed' => 'Não foi possível carregar os favoritos. Verifique sua conexão e tente novamente.',
 			'liveTv.favoritesUpdateFailed' => 'Não foi possível atualizar os favoritos. Verifique sua conexão e tente novamente.',
 			'liveTv.joinSession' => 'Entrar na sessão em andamento',
@@ -4938,14 +4926,14 @@ extension on TranslationsPt {
 			'liveTv.recordSettings.anyTime' => 'Gravar a qualquer hora',
 			'liveTv.recordSettings.skipInLibrary' => 'Ignorar episódios que já estão na biblioteca',
 			'liveTv.recordSettings.keepUpTo' => 'Episódios a manter',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 mantém todos os episódios',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Começa em ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} às ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} retornou dados inválidos de reprodução de TV ao Vivo',
 			'liveTv.failedToStartChannel' => 'Não foi possível iniciar o canal ao vivo',
 			'liveTv.failedToBuildStreamUrl' => 'Não foi possível gerar a URL da transmissão',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Não foi possível iniciar o canal: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Não foi possível trocar de canal: ${reason}',
 			'collections.title' => 'Coleções',
@@ -5452,14 +5440,14 @@ extension on TranslationsPt {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Ativo',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} com falha)',
 			'externalPlayer.title' => 'Reprodutor externo',
 			'externalPlayer.useExternalPlayer' => 'Usar reprodutor externo',
 			'externalPlayer.useExternalPlayerDescription' => 'Abrir vídeos em outro app',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Selecionar reprodutor',
 			'externalPlayer.customPlayers' => 'Reprodutores personalizados',
 			'externalPlayer.systemDefault' => 'Padrão do sistema',

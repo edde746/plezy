@@ -17,8 +17,6 @@ import '../../models/livetv_program.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
-import '../../services/settings_service.dart';
-import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/desktop_window_padding.dart';
@@ -57,10 +55,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   final _whatsOnTabKey = GlobalKey<WhatsOnTabState>();
   final _recordingsTabKey = GlobalKey<RecordingsTabState>();
 
-  /// Focus target for the "Show all channels" action shown when the favorites
-  /// filter empties the guide; lets D-pad users reach the action from the tab bar.
-  final _guideEmptyStateActionFocusNode = FocusNode(debugLabel: 'guide_empty_state_action');
-
   /// Visible tabs in the current session. What's On is included only when a
   /// Live TV server is Plex (the only backend with Live TV hubs), Recordings
   /// only when at least one Live TV server has `liveTvDvr` capability.
@@ -78,7 +72,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   String? _error;
 
   // Favorites
-  bool _showFavoritesOnly = false;
   Set<String> _favoriteKeys = {};
   List<FavoriteChannel> _favoriteChannels = [];
 
@@ -97,21 +90,16 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   final SerialFutureQueue _favoritesMutationQueue = SerialFutureQueue();
 
   /// True while [_favoriteChannels] holds an authoritative set. A refresh keeps the previous set live until the new
-  /// one commits, so the favorites filter never widens mid-load.
+  /// one commits, so favorite rows do not disappear mid-load.
   bool _favoritesLoaded = false;
   bool _favoritesWritable = false;
 
-  List<LiveTvChannel> get _filteredChannels => filterLiveTvChannelsForFavorites(
+  List<LiveTvChannel> get _guideFavorites => favoriteLiveTvChannels(
     channels: _channels,
-    favoritesOnly: _showFavoritesOnly,
     favoritesLoaded: _favoritesLoaded,
     favorites: _favoriteChannels,
     sourceForChannel: _sourceForChannel,
   );
-
-  /// True when the favorites filter removed every loaded channel, so the guide
-  /// tab shows an explanatory empty state instead of a bare timeline.
-  bool get _guideShowsFavoritesEmptyState => _channels.isNotEmpty && _filteredChannels.isEmpty;
 
   String _liveServerScopeKey(LiveTvServerInfo serverInfo) => '${serverInfo.serverId}\u0000${serverInfo.dvrKey}';
 
@@ -145,7 +133,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void initState() {
     super.initState();
     suppressAutoFocus = true;
-    _showFavoritesOnly = context.settingsRead(SettingsService.liveTvDefaultFavorites);
     final initialTabs = _tabStateFor(context.read<MultiServerProvider>());
     _visibleTabs = initialTabs.tabs;
     _canProcessRules = initialTabs.canProcessRules;
@@ -158,7 +145,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     _guideTabFocusNode.dispose();
     _whatsOnTabFocusNode.dispose();
     _recordingsTabFocusNode.dispose();
-    _guideEmptyStateActionFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
   }
@@ -578,24 +564,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  void _toggleFavoritesFilter() {
-    setState(() {
-      _showFavoritesOnly = !_showFavoritesOnly;
-    });
-  }
-
-  /// Clears the favorites filter from the guide's empty state. When the action
-  /// button owned the focus (TV/D-pad), hand focus to the guide content that
-  /// replaces it so focus is not dropped.
-  void _showAllChannelsFromEmptyState() {
-    final hadFocus = _guideEmptyStateActionFocusNode.hasFocus;
-    _toggleFavoritesFilter();
-    if (!hadFocus) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focusCurrentTab();
-    });
-  }
-
   void _toggleFavorite(LiveTvChannel channel) {
     _enqueueFavoriteMutation(() {
       final source = _sourceForChannel(channel);
@@ -650,11 +618,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _jumpToGuideChannel(LiveTvChannel channel, {LiveTvProgram? program}) {
-    // The guide only shows favorite rows while the filter is on — drop it so
-    // the target channel's row exists to land on.
-    if (_showFavoritesOnly && !_isFavoriteChannel(channel)) {
-      setState(() => _showFavoritesOnly = false);
-    }
     // Search opens from any tab, but results live in the guide grid. A tab
     // switch builds GuideTab fresh (no keep-alive); its jump methods stash
     // the request until the initial program load completes.
@@ -684,9 +647,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         favorites: List.from(_favoriteChannels),
         channelMap: channelMap,
         onReorder: (reordered) {
+          final snapshot = List<FavoriteChannel>.of(reordered);
           _enqueueFavoriteMutation(() {
             setState(() {
-              _favoriteChannels = reordered;
+              _favoriteChannels = snapshot;
               _refreshFavoriteKeys();
             });
           });
@@ -736,8 +700,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           final guideState = _guideTabKey.currentState;
           if (guideState != null) {
             guideState.focusContent();
-          } else if (_guideShowsFavoritesEmptyState && _guideEmptyStateActionFocusNode.context != null) {
-            _guideEmptyStateActionFocusNode.requestFocus();
           }
         case LiveTvTab.whatsOn:
           _whatsOnTabKey.currentState?.focusFirstHub();
@@ -795,19 +757,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               // guide-only action would be unmounted before focus could ever
               // reach it. Selecting a result switches back to the guide tab.
               FocusableAction(icon: Symbols.search_rounded, tooltip: t.liveTv.searchGuide, onPressed: _showGuideSearch),
-              if (!isRecordings)
-                FocusableAction(
-                  icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,
-                  iconFill: _showFavoritesOnly ? 1.0 : 0.0,
-                  tooltip: t.liveTv.favorites,
-                  onPressed: _toggleFavoritesFilter,
-                ),
-              if (!isRecordings && _showFavoritesOnly && _favoriteChannels.length > 1)
-                FocusableAction(
-                  icon: Symbols.swap_vert_rounded,
-                  tooltip: t.liveTv.reorderFavorites,
-                  onPressed: _showReorderFavorites,
-                ),
               // Rule re-evaluation is a Plex-only server operation; hide the
               // bolt when no connected DVR supports it (MediaBrowser).
               if (isRecordings && _canProcessRules)
@@ -831,29 +780,19 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
-  Widget _buildTabContent(LiveTvTab tab, List<LiveTvChannel> guideChannels) {
+  Widget _buildTabContent(LiveTvTab tab) {
+    final favorites = tab == LiveTvTab.guide ? _guideFavorites : const <LiveTvChannel>[];
     return switch (tab) {
-      LiveTvTab.guide =>
-        guideChannels.isEmpty && _channels.isNotEmpty
-            ? EmptyStateWidget(
-                icon: Symbols.star_outline_rounded,
-                message: t.liveTv.noFavoriteChannels,
-                subtitle: t.liveTv.noFavoriteChannelsHint,
-                actionLabel: t.liveTv.showAllChannels,
-                actionIcon: Symbols.list_rounded,
-                actionFocusNode: _guideEmptyStateActionFocusNode,
-                onAction: _showAllChannelsFromEmptyState,
-                onActionNavigateUp: focusTabBar,
-                onActionBack: onTabBarBack,
-              )
-            : GuideTab(
-                key: _guideTabKey,
-                channels: guideChannels,
-                isFavoriteChannel: _isFavoriteChannel,
-                onToggleFavorite: _toggleFavorite,
-                onNavigateUp: focusTabBar,
-                onBack: onTabBarBack,
-              ),
+      LiveTvTab.guide => GuideTab(
+        key: _guideTabKey,
+        channels: _channels,
+        favoriteChannels: favorites,
+        isFavoriteChannel: _isFavoriteChannel,
+        onToggleFavorite: _toggleFavorite,
+        onReorderFavorites: favorites.map(_favoriteKeyForChannel).toSet().length > 1 ? _showReorderFavorites : null,
+        onNavigateUp: focusTabBar,
+        onBack: onTabBarBack,
+      ),
       LiveTvTab.whatsOn => WhatsOnTab(
         key: _whatsOnTabKey,
         channels: _channels,
@@ -881,8 +820,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       return Center(child: Text(t.liveTv.noChannels));
     }
 
-    final guideChannels = _filteredChannels;
-
     return Column(
       children: [
         if (!useSideNav)
@@ -894,7 +831,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         Expanded(
           child: TabBarView(
             controller: tabController,
-            children: [for (final tab in _visibleTabs) _buildTabContent(tab, guideChannels)],
+            children: [for (final tab in _visibleTabs) _buildTabContent(tab)],
           ),
         ),
       ],

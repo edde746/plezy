@@ -31,20 +31,22 @@ String favoriteChannelKey(String source, String id) => '$source\u0000$id';
 String liveTvChannelScopeKey(LiveTvChannel channel) =>
     '${channel.serverId ?? ''}\u0000${channel.liveDvrKey ?? ''}\u0000${channel.key}';
 
-List<LiveTvChannel> filterLiveTvChannelsForFavorites({
+List<LiveTvChannel> favoriteLiveTvChannels({
   required List<LiveTvChannel> channels,
-  required bool favoritesOnly,
   required bool favoritesLoaded,
   required Iterable<FavoriteChannel> favorites,
   required String Function(LiveTvChannel channel) sourceForChannel,
 }) {
-  if (!favoritesOnly || !favoritesLoaded) return channels;
+  if (!favoritesLoaded) return const [];
   if (favorites.isEmpty) return const [];
-  final channelMap = {
-    for (final channel in channels) favoriteChannelKey(sourceForChannel(channel), channel.key): channel,
-  };
-
-  return [for (final favorite in favorites) ?channelMap[favorite.stableKey]];
+  // One persisted favorite can refer to the same station on multiple DVRs.
+  // Resolve every matching lineup row so grouping and favorite state agree.
+  final channelsByFavorite = <String, List<LiveTvChannel>>{};
+  for (final channel in channels) {
+    final key = favoriteChannelKey(sourceForChannel(channel), channel.key);
+    (channelsByFavorite[key] ??= []).add(channel);
+  }
+  return [for (final favorite in favorites) ...?channelsByFavorite[favorite.stableKey]];
 }
 
 @JsonSerializable(createToJson: false)

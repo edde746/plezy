@@ -568,8 +568,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get startupSection => 'Начальный раздел';
 	@override String get showExploreTab => 'Показывать вкладку «Обзор»';
 	@override String get showExploreTabDescription => 'Показывать вкладку «Обзор» с контентом из Plex Discover и подключённых трекеров';
-	@override String get liveTvDefaultFavorites => 'Избранные каналы по умолчанию';
-	@override String get liveTvDefaultFavoritesDescription => 'Показывать только избранные каналы при открытии ТВ';
 	@override String get general => 'Основные';
 	@override String get generalDescription => 'Язык, запуск и поведение окна';
 	@override String get languageAndRegion => 'Язык и регион';
@@ -579,7 +577,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get homeScreen => 'Главный экран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Окно';
-	@override String get liveTv => 'Прямой эфир';
 	@override String get player => 'Плеер';
 	@override String get videoAndDisplay => 'Видео и экран';
 	@override String get audio => 'Аудио';
@@ -1654,9 +1651,6 @@ class _Translations$liveTv$ru extends Translations$liveTv$en {
 	@override String get watchChannel => 'Смотреть канал';
 	@override String get favorites => 'Избранное';
 	@override String get reorderFavorites => 'Изменить порядок избранного';
-	@override String get noFavoriteChannels => 'Нет избранных каналов';
-	@override String get noFavoriteChannelsHint => 'Покажите все каналы, затем нажмите и удерживайте канал, чтобы добавить его в избранное.';
-	@override String get showAllChannels => 'Показать все каналы';
 	@override String get favoritesLoadFailed => 'Не удалось загрузить избранное. Проверьте подключение и повторите попытку.';
 	@override String get favoritesUpdateFailed => 'Не удалось обновить избранное. Проверьте подключение и повторите попытку.';
 	@override String get joinSession => 'Присоединиться к текущему сеансу';
@@ -3875,8 +3869,6 @@ extension on TranslationsRu {
 			'settings.startupSection' => 'Начальный раздел',
 			'settings.showExploreTab' => 'Показывать вкладку «Обзор»',
 			'settings.showExploreTabDescription' => 'Показывать вкладку «Обзор» с контентом из Plex Discover и подключённых трекеров',
-			'settings.liveTvDefaultFavorites' => 'Избранные каналы по умолчанию',
-			'settings.liveTvDefaultFavoritesDescription' => 'Показывать только избранные каналы при открытии ТВ',
 			'settings.general' => 'Основные',
 			'settings.generalDescription' => 'Язык, запуск и поведение окна',
 			'settings.languageAndRegion' => 'Язык и регион',
@@ -3886,7 +3878,6 @@ extension on TranslationsRu {
 			'settings.homeScreen' => 'Главный экран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Окно',
-			'settings.liveTv' => 'Прямой эфир',
 			'settings.player' => 'Плеер',
 			'settings.videoAndDisplay' => 'Видео и экран',
 			'settings.audio' => 'Аудио',
@@ -3934,11 +3925,11 @@ extension on TranslationsRu {
 			'themeEditor.slots.outline' => 'Обводка',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Второстепенный текст',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Непрозрачность',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'Из других тем',
 			'themeEditor.swatchLabel' => ({required Object color, required Object theme}) => '${color} темы «${theme}»',
 			'themeEditor.contrast.textOnBg' => 'Текст на фоне',
@@ -4448,11 +4439,11 @@ extension on TranslationsRu {
 			'profiles.pinsDontMatch' => 'PIN-коды не совпадают',
 			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			'connections.sectionTitle' => 'Подключения',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Добавить подключение',
 			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin или Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сессия истекла для ${count} серверов',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} отказал в доступе этой учётной записи',
@@ -4911,9 +4902,6 @@ extension on TranslationsRu {
 			'liveTv.watchChannel' => 'Смотреть канал',
 			'liveTv.favorites' => 'Избранное',
 			'liveTv.reorderFavorites' => 'Изменить порядок избранного',
-			'liveTv.noFavoriteChannels' => 'Нет избранных каналов',
-			'liveTv.noFavoriteChannelsHint' => 'Покажите все каналы, затем нажмите и удерживайте канал, чтобы добавить его в избранное.',
-			'liveTv.showAllChannels' => 'Показать все каналы',
 			'liveTv.favoritesLoadFailed' => 'Не удалось загрузить избранное. Проверьте подключение и повторите попытку.',
 			'liveTv.favoritesUpdateFailed' => 'Не удалось обновить избранное. Проверьте подключение и повторите попытку.',
 			'liveTv.joinSession' => 'Присоединиться к текущему сеансу',
@@ -4962,14 +4950,14 @@ extension on TranslationsRu {
 			'liveTv.recordSettings.anyTime' => 'Записывать в любое время',
 			'liveTv.recordSettings.skipInLibrary' => 'Пропускать эпизоды, уже имеющиеся в библиотеке',
 			'liveTv.recordSettings.keepUpTo' => 'Сколько эпизодов хранить',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 — хранить все эпизоды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
 			'liveTv.failedToStartChannel' => 'Не удалось запустить канал в прямом эфире',
 			'liveTv.failedToBuildStreamUrl' => 'Не удалось сформировать URL потока',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Не удалось запустить канал: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Не удалось переключить канал: ${reason}',
 			'collections.title' => 'Коллекции',
@@ -5476,14 +5464,14 @@ extension on TranslationsRu {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek, аппаратный',
 			'performanceOverlay.decoderExynosHw' => 'Exynos, аппаратный',
 			'performanceOverlay.decoderSoftware' => 'Программный',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Аппаратный',
 			'performanceOverlay.tunnelingActive' => 'Активно',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})',
 			'externalPlayer.title' => 'Внешний плеер',
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео в другом приложении',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Выбрать плеер',
 			'externalPlayer.customPlayers' => 'Свои плееры',
 			'externalPlayer.systemDefault' => 'Системный по умолчанию',

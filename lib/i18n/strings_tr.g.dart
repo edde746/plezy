@@ -568,8 +568,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get startupSection => 'Başlangıç Bölümü';
 	@override String get showExploreTab => 'Keşfet sekmesini göster';
 	@override String get showExploreTabDescription => 'Plex Keşfet ve bağlı takip hizmetlerinden gelen içeriklerle Keşfet sekmesini göster';
-	@override String get liveTvDefaultFavorites => 'Canlı TV\'de Favorileri Varsayılan Yap';
-	@override String get liveTvDefaultFavoritesDescription => 'Canlı TV açıldığında yalnızca favori kanalları göster';
 	@override String get general => 'Genel';
 	@override String get generalDescription => 'Dil, başlangıç ve pencere davranışı';
 	@override String get languageAndRegion => 'Dil ve Bölge';
@@ -579,7 +577,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get homeScreen => 'Ana Ekran';
 	@override String get navigation => 'Gezinme';
 	@override String get window => 'Pencere';
-	@override String get liveTv => 'Canlı TV';
 	@override String get player => 'Oynatıcı';
 	@override String get videoAndDisplay => 'Video ve Ekran';
 	@override String get audio => 'Ses';
@@ -1638,9 +1635,6 @@ class _Translations$liveTv$tr extends Translations$liveTv$en {
 	@override String get watchChannel => 'Kanalı İzle';
 	@override String get favorites => 'Favoriler';
 	@override String get reorderFavorites => 'Favorileri Yeniden Sırala';
-	@override String get noFavoriteChannels => 'Favori kanal yok';
-	@override String get noFavoriteChannelsHint => 'Tüm kanalları gösterin, ardından favorilerinize eklemek için bir kanalı basılı tutun.';
-	@override String get showAllChannels => 'Tüm kanalları göster';
 	@override String get favoritesLoadFailed => 'Favoriler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.';
 	@override String get favoritesUpdateFailed => 'Favoriler güncellenemedi. Bağlantınızı kontrol edip tekrar deneyin.';
 	@override String get joinSession => 'Devam Eden Oturuma Katıl';
@@ -3851,8 +3845,6 @@ extension on TranslationsTr {
 			'settings.startupSection' => 'Başlangıç Bölümü',
 			'settings.showExploreTab' => 'Keşfet sekmesini göster',
 			'settings.showExploreTabDescription' => 'Plex Keşfet ve bağlı takip hizmetlerinden gelen içeriklerle Keşfet sekmesini göster',
-			'settings.liveTvDefaultFavorites' => 'Canlı TV\'de Favorileri Varsayılan Yap',
-			'settings.liveTvDefaultFavoritesDescription' => 'Canlı TV açıldığında yalnızca favori kanalları göster',
 			'settings.general' => 'Genel',
 			'settings.generalDescription' => 'Dil, başlangıç ve pencere davranışı',
 			'settings.languageAndRegion' => 'Dil ve Bölge',
@@ -3862,7 +3854,6 @@ extension on TranslationsTr {
 			'settings.homeScreen' => 'Ana Ekran',
 			'settings.navigation' => 'Gezinme',
 			'settings.window' => 'Pencere',
-			'settings.liveTv' => 'Canlı TV',
 			'settings.player' => 'Oynatıcı',
 			'settings.videoAndDisplay' => 'Video ve Ekran',
 			'settings.audio' => 'Ses',
@@ -3910,11 +3901,11 @@ extension on TranslationsTr {
 			'themeEditor.slots.outline' => 'Kenarlık',
 			'themeEditor.slots.text' => 'Metin',
 			'themeEditor.slots.textMuted' => 'İkincil metin',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Vurgu',
 			'themeEditor.opacity' => 'Opaklık',
 			'themeEditor.hexHint' => '#RRGGBB veya #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'Diğer temalardan',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} – ${color}',
 			'themeEditor.contrast.textOnBg' => 'Arka plan üzerinde metin',
@@ -4424,11 +4415,11 @@ extension on TranslationsTr {
 			'profiles.pinsDontMatch' => 'PIN\'ler eşleşmiyor',
 			'profiles.tokenIdentityMismatch' => 'Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi',
 			'connections.sectionTitle' => 'Bağlantılar',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Bağlantı ekle',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ile giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} için oturum süresi doldu',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} sunucu için oturum süresi doldu',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} bu hesabın erişimini reddetti',
@@ -4887,9 +4878,6 @@ extension on TranslationsTr {
 			'liveTv.watchChannel' => 'Kanalı İzle',
 			'liveTv.favorites' => 'Favoriler',
 			'liveTv.reorderFavorites' => 'Favorileri Yeniden Sırala',
-			'liveTv.noFavoriteChannels' => 'Favori kanal yok',
-			'liveTv.noFavoriteChannelsHint' => 'Tüm kanalları gösterin, ardından favorilerinize eklemek için bir kanalı basılı tutun.',
-			'liveTv.showAllChannels' => 'Tüm kanalları göster',
 			'liveTv.favoritesLoadFailed' => 'Favoriler yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.',
 			'liveTv.favoritesUpdateFailed' => 'Favoriler güncellenemedi. Bağlantınızı kontrol edip tekrar deneyin.',
 			'liveTv.joinSession' => 'Devam Eden Oturuma Katıl',
@@ -4938,14 +4926,14 @@ extension on TranslationsTr {
 			'liveTv.recordSettings.anyTime' => 'Herhangi bir saatte kaydet',
 			'liveTv.recordSettings.skipInLibrary' => 'Kitaplıkta zaten bulunan bölümleri atla',
 			'liveTv.recordSettings.keepUpTo' => 'Saklanacak bölüm sayısı',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 tüm bölümleri saklar',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dk içinde başlıyor',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü',
 			'liveTv.failedToStartChannel' => 'Canlı kanal başlatılamadı',
 			'liveTv.failedToBuildStreamUrl' => 'Akış URL\'si oluşturulamadı',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanal başlatılamadı: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Kanal değiştirilemedi: ${reason}',
 			'collections.title' => 'Koleksiyonlar',
@@ -5452,14 +5440,14 @@ extension on TranslationsTr {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek Donanım',
 			'performanceOverlay.decoderExynosHw' => 'Exynos Donanım',
 			'performanceOverlay.decoderSoftware' => 'Yazılım',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Donanım',
 			'performanceOverlay.tunnelingActive' => 'Etkin',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)',
 			'externalPlayer.title' => 'Harici Oynatıcı',
 			'externalPlayer.useExternalPlayer' => 'Harici Oynatıcı Kullan',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başka bir uygulamada açın',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Oynatıcı Seç',
 			'externalPlayer.customPlayers' => 'Özel Oynatıcılar',
 			'externalPlayer.systemDefault' => 'Sistem Varsayılanı',

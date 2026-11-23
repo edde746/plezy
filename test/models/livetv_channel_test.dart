@@ -2,6 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/livetv_channel.dart';
 
 void main() {
+  test('a favorite resolves every matching DVR row in lineup order', () {
+    const source = 'server://plex/provider';
+    final first = LiveTvChannel(key: 'station', serverId: 'plex', liveDvrKey: 'dvr-a');
+    final second = LiveTvChannel(key: 'station', serverId: 'plex', liveDvrKey: 'dvr-b');
+    final unrelated = LiveTvChannel(key: 'other', serverId: 'plex', liveDvrKey: 'dvr-b');
+    expect(
+      favoriteLiveTvChannels(
+        channels: [first, unrelated, second],
+        favoritesLoaded: true,
+        favorites: [FavoriteChannel(source: source, id: 'station')],
+        sourceForChannel: (_) => source,
+      ),
+      [first, second],
+    );
+  });
+
   test('favoriteChannelKey includes source and id', () {
     expect(favoriteChannelKey('server://a/provider', '101'), isNot(favoriteChannelKey('server://b/provider', '101')));
     expect(
@@ -17,33 +33,21 @@ void main() {
     expect(liveTvChannelScopeKey(a), isNot(liveTvChannelScopeKey(b)));
   });
 
-  test('favorite filtering distinguishes disabled, loading, and loaded-empty states', () {
+  test('favorite ordering returns no rows until favorites load', () {
     final channels = [LiveTvChannel(key: '101'), LiveTvChannel(key: '102')];
 
     expect(
-      filterLiveTvChannelsForFavorites(
+      favoriteLiveTvChannels(
         channels: channels,
-        favoritesOnly: false,
-        favoritesLoaded: true,
-        favorites: const [],
-        sourceForChannel: (_) => 'server://server-1/provider-a',
-      ),
-      same(channels),
-    );
-    expect(
-      filterLiveTvChannelsForFavorites(
-        channels: channels,
-        favoritesOnly: true,
         favoritesLoaded: false,
         favorites: const [],
         sourceForChannel: (_) => 'server://server-1/provider-a',
       ),
-      same(channels),
+      isEmpty,
     );
     expect(
-      filterLiveTvChannelsForFavorites(
+      favoriteLiveTvChannels(
         channels: channels,
-        favoritesOnly: true,
         favoritesLoaded: true,
         favorites: const [],
         sourceForChannel: (_) => 'server://server-1/provider-a',
@@ -57,9 +61,8 @@ void main() {
     const sourceA = 'server://server-1/provider-a';
     const sourceB = 'server://server-2/provider-a';
 
-    final filtered = filterLiveTvChannelsForFavorites(
+    final filtered = favoriteLiveTvChannels(
       channels: channels,
-      favoritesOnly: true,
       favoritesLoaded: true,
       favorites: [
         FavoriteChannel(source: sourceB, id: '101'),

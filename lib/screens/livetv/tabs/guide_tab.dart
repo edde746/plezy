@@ -1,7 +1,7 @@
 import 'dart:async';
 import '../../../media/ids.dart';
 
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
@@ -39,6 +39,8 @@ import '../livetv_styles.dart';
 
 class GuideTab extends StatefulWidget {
   final List<LiveTvChannel> channels;
+  final List<LiveTvChannel> favoriteChannels;
+  final VoidCallback? onReorderFavorites;
   final bool Function(LiveTvChannel channel)? isFavoriteChannel;
   final void Function(LiveTvChannel)? onToggleFavorite;
   final VoidCallback? onNavigateUp;
@@ -47,6 +49,8 @@ class GuideTab extends StatefulWidget {
   const GuideTab({
     super.key,
     required this.channels,
+    this.favoriteChannels = const [],
+    this.onReorderFavorites,
     this.isFavoriteChannel,
     this.onToggleFavorite,
     this.onNavigateUp,
@@ -81,7 +85,7 @@ class GuideTab extends StatefulWidget {
   );
 }
 
-enum _GuideZone { timeNav, grid }
+enum _GuideZone { timeNav, favorites, grid }
 
 typedef _GuideFocusSnapshot = ({
   bool hasFocus,
@@ -98,8 +102,9 @@ sealed class _GuideRow {
 
 final class _GuideSourceHeaderRow extends _GuideRow {
   final String label;
+  final bool favorites;
 
-  const _GuideSourceHeaderRow({required this.label});
+  const _GuideSourceHeaderRow({required this.label, this.favorites = false});
 }
 
 final class _GuideChannelRow extends _GuideRow {
@@ -166,6 +171,7 @@ class GuideTabState extends State<GuideTab>
   _GuideZone _focusZone = _GuideZone.timeNav;
   int _timeNavIndex = 1; // 0=left arrow, 1=day picker, 2=right arrow
   int _gridChannelIndex = 0;
+  bool _hasEnteredGrid = false;
   int _gridColumn = 0; // 0=channel, 1=program
   bool _hasFocus = false;
   final ValueNotifier<_GuideFocusSnapshot> _focusSnapshot = ValueNotifier((
@@ -201,7 +207,7 @@ class GuideTabState extends State<GuideTab>
       if (widget.channels.isNotEmpty) {
         _focusZone = _GuideZone.grid;
         _gridColumn = 0;
-        _gridChannelIndex = 0;
+        _gridChannelIndex = _displayOrderChannelIndexes.first;
         _focusedProgram = null;
       } else {
         _focusZone = _GuideZone.timeNav;
@@ -295,6 +301,7 @@ class GuideTabState extends State<GuideTab>
   void initState() {
     super.initState();
     _initTimeRange();
+    _gridChannelIndex = _displayOrderChannelIndexes.firstOrNull ?? 0;
     _loadPrograms();
 
     _gridHorizontalController.addListener(_syncGridToHeader);
@@ -334,15 +341,86 @@ class GuideTabState extends State<GuideTab>
   @override
   void didUpdateWidget(GuideTab oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (identical(oldWidget.channels, widget.channels) &&
+        listEquals(oldWidget.favoriteChannels, widget.favoriteChannels)) {
+      return;
+    }
+    final oldGroups = groupLiveTvGuideChannels(oldWidget.channels, favorites: oldWidget.favoriteChannels);
+    final newGroups = _channelGroups;
+    final oldIndex = _gridChannelIndex;
+    final previous = oldWidget.channels.elementAtOrNull(oldIndex);
     if (!identical(oldWidget.channels, widget.channels)) {
       _programsByChannelScope = _indexProgramsByChannel(_programs, widget.channels);
     }
-    if (widget.channels.isNotEmpty && _gridChannelIndex >= widget.channels.length) {
-      _gridChannelIndex = widget.channels.length - 1;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _publishFocusSnapshot();
-      });
+    if (!_hasEnteredGrid) {
+      _gridChannelIndex = _displayOrderChannelIndexes.firstOrNull ?? 0;
+    } else if (previous != null && newGroups.isNotEmpty) {
+      final key = liveTvChannelScopeKey(previous);
+      final oldGroupIndex = oldGroups.indexWhere((group) => group.channels.any((c) => liveTvChannelScopeKey(c) == key));
+      final oldGroup = oldGroups.elementAtOrNull(oldGroupIndex);
+      final newGroup = newGroups.where((group) => group.key == oldGroup?.key).firstOrNull;
+      LiveTvChannel? target;
+      if (newGroup != null) {
+        target = newGroup.channels.where((c) => liveTvChannelScopeKey(c) == key).firstOrNull;
+        if (target == null && oldGroup != null) {
+          // The channel left this group. Keep its row position, or the
+          // previous row when it was last, instead of following it elsewhere.
+          final position = oldGroup.channels.indexWhere((c) => liveTvChannelScopeKey(c) == key);
+          target = newGroup.channels[position.clamp(0, newGroup.channels.length - 1)];
+        }
+      } else if (oldGroup != null) {
+        for (final group in oldGroups.skip(oldGroupIndex + 1)) {
+          target = newGroups
+              .where((g) => g.key == group.key)
+              .firstOrNull
+              ?.channels
+              .where((c) => liveTvChannelScopeKey(c) != key)
+              .firstOrNull;
+          if (target != null) break;
+        }
+        if (target == null) {
+          for (final group in oldGroups.take(oldGroupIndex).toList().reversed) {
+            target = newGroups
+                .where((g) => g.key == group.key)
+                .firstOrNull
+                ?.channels
+                .where((c) => liveTvChannelScopeKey(c) != key)
+                .lastOrNull;
+            if (target != null) break;
+          }
+        }
+        target ??= newGroups.expand((g) => g.channels).where((c) => liveTvChannelScopeKey(c) != key).lastOrNull;
+      }
+      target ??= newGroups.first.channels.first;
+      _gridChannelIndex = _channelIndexFor(target) ?? 0;
+      if (_gridChannelIndex != oldIndex || liveTvChannelScopeKey(target) != key) _resetSelectLongPressState();
+      if (liveTvChannelScopeKey(target) != key) {
+        if (_gridColumn == 1) {
+          final anchor = _focusedProgram;
+          _focusedProgram = anchor == null
+              ? _findCurrentProgram(_gridChannelIndex)
+              : _programNearTime(_gridChannelIndex, _programAnchorEpoch(anchor));
+          if (_focusedProgram == null) _gridColumn = 0;
+        }
+      }
     }
+    if (widget.channels.isEmpty) {
+      _resetSelectLongPressState();
+      _gridChannelIndex = 0;
+      _gridColumn = 0;
+      _focusedProgram = null;
+      _focusZone = _GuideZone.timeNav;
+    } else if (_focusZone == _GuideZone.favorites && !_canReorderFavorites) {
+      _focusZone = _GuideZone.grid;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _publishFocusSnapshot();
+      if (_hasFocus && _focusZone == _GuideZone.grid) {
+        _scrollToChannel(_gridChannelIndex);
+        if (_gridColumn == 1) _scrollToProgramTime(_focusedProgram);
+      }
+    });
   }
 
   @override
@@ -369,6 +447,7 @@ class GuideTabState extends State<GuideTab>
 
   void _updateFocus(VoidCallback update) {
     update();
+    if (_focusZone == _GuideZone.grid) _hasEnteredGrid = true;
     _publishFocusSnapshot();
   }
 
@@ -655,24 +734,24 @@ class GuideTabState extends State<GuideTab>
 
   String _recordingKey(ServerId serverId, String type, String value) => '$serverId\u0000$type\u0000$value';
 
+  List<LiveTvChannelGroup> get _channelGroups =>
+      groupLiveTvGuideChannels(widget.channels, favorites: widget.favoriteChannels);
+
+  bool get _canReorderFavorites {
+    if (widget.onReorderFavorites == null || widget.favoriteChannels.length < 2) return false;
+    final firstGroup = _channelGroups.firstOrNull;
+    return firstGroup?.key == liveTvFavoritesGroupKey && firstGroup!.channels.length > 1;
+  }
+
   List<_GuideRow> get _guideRows {
-    final groups = groupLiveTvChannelsBySource(widget.channels);
-    if (groups.length <= 1) {
-      return [
-        for (var i = 0; i < widget.channels.length; i++) _GuideChannelRow(channel: widget.channels[i], channelIndex: i),
-      ];
-    }
-
-    final channelIndexes = <LiveTvChannel, int>{};
-    for (var i = 0; i < widget.channels.length; i++) {
-      channelIndexes[widget.channels[i]] = i;
-    }
-
+    final groups = _channelGroups;
+    final indexes = {for (var i = 0; i < widget.channels.length; i++) liveTvChannelScopeKey(widget.channels[i]): i};
     return [
       for (final group in groups) ...[
-        _GuideSourceHeaderRow(label: group.label),
+        if (groups.length > 1 || group.key == liveTvFavoritesGroupKey)
+          _GuideSourceHeaderRow(label: group.label, favorites: group.key == liveTvFavoritesGroupKey),
         for (final channel in group.channels)
-          _GuideChannelRow(channel: channel, channelIndex: channelIndexes[channel] ?? 0),
+          _GuideChannelRow(channel: channel, channelIndex: indexes[liveTvChannelScopeKey(channel)]!),
       ],
     ];
   }
@@ -859,7 +938,7 @@ class GuideTabState extends State<GuideTab>
       if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
         return KeyEventResult.handled;
       }
-      if (_focusZone == _GuideZone.grid) {
+      if (_focusZone != _GuideZone.timeNav) {
         if (event is KeyUpEvent) {
           _updateFocus(() {
             _focusZone = _GuideZone.timeNav;
@@ -885,7 +964,11 @@ class GuideTabState extends State<GuideTab>
 
     if (!event.isActionable) return KeyEventResult.ignored;
 
-    return _focusZone == _GuideZone.timeNav ? _handleTimeNavKey(key) : _handleGridKey(key);
+    return switch (_focusZone) {
+      _GuideZone.timeNav => _handleTimeNavKey(key),
+      _GuideZone.favorites => _handleFavoritesHeaderKey(key),
+      _GuideZone.grid => _handleGridKey(key),
+    };
   }
 
   KeyEventResult _handleTimeNavKey(LogicalKeyboardKey key) {
@@ -902,7 +985,9 @@ class GuideTabState extends State<GuideTab>
       return KeyEventResult.handled;
     }
     if (key.isDownKey) {
-      if (widget.channels.isNotEmpty) {
+      if (_canReorderFavorites) {
+        _focusFavoritesHeader();
+      } else if (widget.channels.isNotEmpty) {
         _updateFocus(() {
           _focusZone = _GuideZone.grid;
           _gridColumn = 0;
@@ -933,6 +1018,39 @@ class GuideTabState extends State<GuideTab>
     return KeyEventResult.ignored;
   }
 
+  void _focusFavoritesHeader() {
+    _updateFocus(() => _focusZone = _GuideZone.favorites);
+    if (_gridVerticalController.hasClients) _gridVerticalController.jumpTo(0);
+  }
+
+  void _reorderFavorites() {
+    SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+    widget.onReorderFavorites?.call();
+  }
+
+  KeyEventResult _handleFavoritesHeaderKey(LogicalKeyboardKey key) {
+    if (key.isSelectKey) {
+      _reorderFavorites();
+    } else if (key.isDownKey) {
+      _updateFocus(() {
+        _focusZone = _GuideZone.grid;
+        _gridColumn = 0;
+        _gridChannelIndex = _displayOrderChannelIndexes.first;
+      });
+      _scrollToChannel(_gridChannelIndex);
+    } else if (key.isUpKey) {
+      _updateFocus(() {
+        _focusZone = _GuideZone.timeNav;
+        _timeNavIndex = 1;
+      });
+    } else if (key.isLeftKey) {
+      widget.onBack?.call();
+    } else {
+      return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
   KeyEventResult _handleGridKey(LogicalKeyboardKey key) {
     if (key.isUpKey || key.isDownKey) {
       // Move through rows in displayed (source-grouped) order. Stepping the
@@ -941,10 +1059,14 @@ class GuideTabState extends State<GuideTab>
       final order = _displayOrderChannelIndexes;
       final position = order.indexOf(_gridChannelIndex);
       if (key.isUpKey && position <= 0) {
-        _updateFocus(() {
-          _focusZone = _GuideZone.timeNav;
-          _timeNavIndex = 1;
-        });
+        if (_canReorderFavorites) {
+          _focusFavoritesHeader();
+        } else {
+          _updateFocus(() {
+            _focusZone = _GuideZone.timeNav;
+            _timeNavIndex = 1;
+          });
+        }
       } else if (key.isUpKey || (position != -1 && position < order.length - 1)) {
         _updateFocus(() {
           _gridChannelIndex = order[key.isUpKey ? position - 1 : position + 1];
@@ -1242,7 +1364,8 @@ class GuideTabState extends State<GuideTab>
                                     itemBuilder: (context, index) {
                                       final row = rows[index];
                                       return switch (row) {
-                                        _GuideSourceHeaderRow(:final label) => _buildSourceHeaderGridRow(label, theme),
+                                        _GuideSourceHeaderRow(:final label, :final favorites) =>
+                                          _buildSourceHeaderGridRow(label, theme, favorites: favorites),
                                         _GuideChannelRow(:final channel, :final channelIndex) => _buildProgramRow(
                                           channel,
                                           _getProgramsForChannel(channel),
@@ -1536,7 +1659,7 @@ class GuideTabState extends State<GuideTab>
     );
   }
 
-  Widget _buildSourceHeaderGridRow(String label, ThemeData theme) {
+  Widget _buildSourceHeaderGridRow(String label, ThemeData theme, {bool favorites = false}) {
     return SizedBox(
       height: _sourceHeaderRowHeight,
       child: ClipRect(
@@ -1550,16 +1673,34 @@ class GuideTabState extends State<GuideTab>
             alignment: .centerLeft,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: tokens(context).textMuted,
-                  fontWeight: .w700,
-                  letterSpacing: 0.3,
-                ),
-                maxLines: 1,
-                overflow: .ellipsis,
-              ),
+              child: favorites && _canReorderFavorites
+                  ? _GuideFocusSelector(
+                      valueListenable: _focusSnapshot,
+                      isSelected: (focus) => focus.hasFocus && focus.zone == _GuideZone.favorites,
+                      builder: (context, focused) => Container(
+                        decoration: FocusTheme.textFillFocusDecoration(
+                          context,
+                          isFocused: focused,
+                          borderRadius: MonoTokens.radiusFull,
+                        ),
+                        child: TextButton.icon(
+                          onPressed: widget.onReorderFavorites,
+                          style: TextButton.styleFrom(foregroundColor: focused ? theme.colorScheme.onPrimary : null),
+                          icon: const AppIcon(Symbols.swap_vert_rounded, size: 18),
+                          label: Text(t.liveTv.reorderFavorites),
+                        ),
+                      ),
+                    )
+                  : Text(
+                      label,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: tokens(context).textMuted,
+                        fontWeight: .w700,
+                        letterSpacing: 0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: .ellipsis,
+                    ),
             ),
           ),
         ),

@@ -570,8 +570,6 @@ class _Translations$settings$pt_PT extends Translations$settings$pt {
 	@override String get startupSection => 'Secção inicial';
 	@override String get showExploreTab => 'Mostrar separador Explorar';
 	@override String get showExploreTabDescription => 'Mostrar o separador Explorar com conteúdo do Plex Discover e dos rastreadores ligados';
-	@override String get liveTvDefaultFavorites => 'Canais favoritos por predefinição';
-	@override String get liveTvDefaultFavoritesDescription => 'Mostrar apenas os canais favoritos ao abrir a TV em direto';
 	@override String get general => 'Geral';
 	@override String get generalDescription => 'Idioma, arranque e comportamento da janela';
 	@override String get languageAndRegion => 'Idioma e região';
@@ -581,7 +579,6 @@ class _Translations$settings$pt_PT extends Translations$settings$pt {
 	@override String get homeScreen => 'Ecrã inicial';
 	@override String get navigation => 'Navegação';
 	@override String get window => 'Janela';
-	@override String get liveTv => 'TV em direto';
 	@override String get player => 'Reprodutor';
 	@override String get videoAndDisplay => 'Vídeo e ecrã';
 	@override String get audio => 'Áudio';
@@ -1647,9 +1644,6 @@ class _Translations$liveTv$pt_PT extends Translations$liveTv$pt {
 	@override String get watchChannel => 'Ver o canal';
 	@override String get favorites => 'Favoritos';
 	@override String get reorderFavorites => 'Reordenar favoritos';
-	@override String get noFavoriteChannels => 'Nenhum canal favorito';
-	@override String get noFavoriteChannelsHint => 'Mostre todos os canais e mantenha um canal premido para o adicionar aos favoritos.';
-	@override String get showAllChannels => 'Mostrar todos os canais';
 	@override String get favoritesLoadFailed => 'Não foi possível carregar os favoritos. Verifique a sua ligação e tente novamente.';
 	@override String get favoritesUpdateFailed => 'Não foi possível atualizar os favoritos. Verifique a sua ligação e tente novamente.';
 	@override String get joinSession => 'Entrar na sessão em curso';
@@ -3888,8 +3882,6 @@ extension on TranslationsPtPt {
 			'settings.startupSection' => 'Secção inicial',
 			'settings.showExploreTab' => 'Mostrar separador Explorar',
 			'settings.showExploreTabDescription' => 'Mostrar o separador Explorar com conteúdo do Plex Discover e dos rastreadores ligados',
-			'settings.liveTvDefaultFavorites' => 'Canais favoritos por predefinição',
-			'settings.liveTvDefaultFavoritesDescription' => 'Mostrar apenas os canais favoritos ao abrir a TV em direto',
 			'settings.general' => 'Geral',
 			'settings.generalDescription' => 'Idioma, arranque e comportamento da janela',
 			'settings.languageAndRegion' => 'Idioma e região',
@@ -3899,7 +3891,6 @@ extension on TranslationsPtPt {
 			'settings.homeScreen' => 'Ecrã inicial',
 			'settings.navigation' => 'Navegação',
 			'settings.window' => 'Janela',
-			'settings.liveTv' => 'TV em direto',
 			'settings.player' => 'Reprodutor',
 			'settings.videoAndDisplay' => 'Vídeo e ecrã',
 			'settings.audio' => 'Áudio',
@@ -3947,11 +3938,11 @@ extension on TranslationsPtPt {
 			'themeEditor.slots.outline' => 'Contorno',
 			'themeEditor.slots.text' => 'Texto',
 			'themeEditor.slots.textMuted' => 'Texto secundário',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Destaque',
 			'themeEditor.opacity' => 'Opacidade',
 			'themeEditor.hexHint' => '#RRGGBB ou #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'De outros temas',
 			'themeEditor.swatchLabel' => ({required Object color, required Object theme}) => '${color} (${theme})',
 			'themeEditor.contrast.textOnBg' => 'Texto sobre o fundo',
@@ -4461,11 +4452,11 @@ extension on TranslationsPtPt {
 			'profiles.pinProtectionOptional' => 'Proteção por PIN (opcional)',
 			'profiles.pinExplain' => 'PIN de 4 dígitos necessário para mudar de perfil.',
 			'profiles.continueButton' => 'Continuar',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
 			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
 			'connections.sectionTitle' => 'Ligações',
+			_ => null,
+		} ?? switch (path) {
 			'connections.addConnection' => 'Adicionar ligação',
 			'connections.addConnectionSubtitleNoProfile' => 'Inicie sessão no Plex ou ligue um servidor Jellyfin ou Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra ligação de perfil',
@@ -4932,9 +4923,6 @@ extension on TranslationsPtPt {
 			'liveTv.watchChannel' => 'Ver o canal',
 			'liveTv.favorites' => 'Favoritos',
 			'liveTv.reorderFavorites' => 'Reordenar favoritos',
-			'liveTv.noFavoriteChannels' => 'Nenhum canal favorito',
-			'liveTv.noFavoriteChannelsHint' => 'Mostre todos os canais e mantenha um canal premido para o adicionar aos favoritos.',
-			'liveTv.showAllChannels' => 'Mostrar todos os canais',
 			'liveTv.favoritesLoadFailed' => 'Não foi possível carregar os favoritos. Verifique a sua ligação e tente novamente.',
 			'liveTv.favoritesUpdateFailed' => 'Não foi possível atualizar os favoritos. Verifique a sua ligação e tente novamente.',
 			'liveTv.joinSession' => 'Entrar na sessão em curso',
@@ -4975,14 +4963,14 @@ extension on TranslationsPtPt {
 			'liveTv.guideReloadFailed' => 'Não foi possível atualizar o guia',
 			'liveTv.rulesProcessRequested' => 'Reavaliação de regras pedida',
 			'liveTv.rulesProcessFailed' => 'Não foi possível reavaliar as regras de gravação',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Gravar programa',
 			'liveTv.recordSettings.startEarly' => 'Começar antes (segundos)',
 			'liveTv.recordSettings.endLate' => 'Terminar depois (segundos)',
 			'liveTv.recordSettings.newOnly' => 'Apenas episódios novos',
 			'liveTv.recordSettings.anyChannel' => 'Gravar em qualquer canal',
 			'liveTv.recordSettings.anyTime' => 'Gravar a qualquer hora',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.skipInLibrary' => 'Ignorar episódios que já estão na biblioteca',
 			'liveTv.recordSettings.keepUpTo' => 'Episódios a manter',
 			'liveTv.recordSettings.keepUpToHint' => '0 mantém todos os episódios',
@@ -5489,14 +5477,14 @@ extension on TranslationsPtPt {
 			'performanceOverlay.speed' => 'Velocidade',
 			'performanceOverlay.player' => 'Reprodutor',
 			'performanceOverlay.playMethod' => 'Método de reprodução',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.memory' => 'Memória',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',

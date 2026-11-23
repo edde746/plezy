@@ -568,8 +568,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get startupSection => 'Boshlangʻich boʻlim';
 	@override String get showExploreTab => 'Kashf qilish varagʻini koʻrsatish';
 	@override String get showExploreTabDescription => 'Plex Discover va ulangan kuzatuvchilardagi kontent bilan Kashf qilish varagʻini koʻrsatish';
-	@override String get liveTvDefaultFavorites => 'Jonli TV-da tanlangan kanallarni standart qilish';
-	@override String get liveTvDefaultFavoritesDescription => 'Jonli TV ochilganda faqat tanlangan kanallarni koʻrsatish';
 	@override String get general => 'Umumiy';
 	@override String get generalDescription => 'Til, ishga tushirish va oyna xatti-harakati';
 	@override String get languageAndRegion => 'Til va mintaqa';
@@ -579,7 +577,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get homeScreen => 'Bosh ekran';
 	@override String get navigation => 'Navigatsiya';
 	@override String get window => 'Oyna';
-	@override String get liveTv => 'Jonli TV';
 	@override String get player => 'Pleyer';
 	@override String get videoAndDisplay => 'Video va displey';
 	@override String get audio => 'Audio';
@@ -1638,9 +1635,6 @@ class _Translations$liveTv$uz extends Translations$liveTv$en {
 	@override String get watchChannel => 'Kanalni tomosha qilish';
 	@override String get favorites => 'Tanlanganlar';
 	@override String get reorderFavorites => 'Tanlanganlarni tartiblash';
-	@override String get noFavoriteChannels => 'Sevimli kanallar yoʻq';
-	@override String get noFavoriteChannelsHint => 'Barcha kanallarni koʻrsating, soʻng kanalni sevimlilarga qoʻshish uchun uni bosib turing.';
-	@override String get showAllChannels => 'Barcha kanallarni koʻrsatish';
 	@override String get favoritesLoadFailed => 'Tanlanganlarni yuklab boʻlmadi. Ulanishni tekshirib, qayta urinib koʻring.';
 	@override String get favoritesUpdateFailed => 'Tanlanganlarni yangilab boʻlmadi.';
 	@override String get joinSession => 'Davom etayotgan seansga qoʻshilish';
@@ -3851,8 +3845,6 @@ extension on TranslationsUz {
 			'settings.startupSection' => 'Boshlangʻich boʻlim',
 			'settings.showExploreTab' => 'Kashf qilish varagʻini koʻrsatish',
 			'settings.showExploreTabDescription' => 'Plex Discover va ulangan kuzatuvchilardagi kontent bilan Kashf qilish varagʻini koʻrsatish',
-			'settings.liveTvDefaultFavorites' => 'Jonli TV-da tanlangan kanallarni standart qilish',
-			'settings.liveTvDefaultFavoritesDescription' => 'Jonli TV ochilganda faqat tanlangan kanallarni koʻrsatish',
 			'settings.general' => 'Umumiy',
 			'settings.generalDescription' => 'Til, ishga tushirish va oyna xatti-harakati',
 			'settings.languageAndRegion' => 'Til va mintaqa',
@@ -3862,7 +3854,6 @@ extension on TranslationsUz {
 			'settings.homeScreen' => 'Bosh ekran',
 			'settings.navigation' => 'Navigatsiya',
 			'settings.window' => 'Oyna',
-			'settings.liveTv' => 'Jonli TV',
 			'settings.player' => 'Pleyer',
 			'settings.videoAndDisplay' => 'Video va displey',
 			'settings.audio' => 'Audio',
@@ -3910,11 +3901,11 @@ extension on TranslationsUz {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Matn',
 			'themeEditor.slots.textMuted' => 'Ikkilamchi matn',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Urgʻu rangi',
 			'themeEditor.opacity' => 'Noshaffoflik',
 			'themeEditor.hexHint' => '#RRGGBB yoki #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'Boshqa mavzulardan',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} — ${color}',
 			'themeEditor.contrast.textOnBg' => 'Fondagi matn',
@@ -4424,11 +4415,11 @@ extension on TranslationsUz {
 			'profiles.pinsDontMatch' => 'PIN kodlar mos kelmadi',
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
 			'connections.sectionTitle' => 'Ulanishlar',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Ulanish qoʻshish',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} uchun seans vaqti tugadi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server uchun seans vaqti tugadi',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} ushbu hisobga kirishni rad etdi',
@@ -4887,9 +4878,6 @@ extension on TranslationsUz {
 			'liveTv.watchChannel' => 'Kanalni tomosha qilish',
 			'liveTv.favorites' => 'Tanlanganlar',
 			'liveTv.reorderFavorites' => 'Tanlanganlarni tartiblash',
-			'liveTv.noFavoriteChannels' => 'Sevimli kanallar yoʻq',
-			'liveTv.noFavoriteChannelsHint' => 'Barcha kanallarni koʻrsating, soʻng kanalni sevimlilarga qoʻshish uchun uni bosib turing.',
-			'liveTv.showAllChannels' => 'Barcha kanallarni koʻrsatish',
 			'liveTv.favoritesLoadFailed' => 'Tanlanganlarni yuklab boʻlmadi. Ulanishni tekshirib, qayta urinib koʻring.',
 			'liveTv.favoritesUpdateFailed' => 'Tanlanganlarni yangilab boʻlmadi.',
 			'liveTv.joinSession' => 'Davom etayotgan seansga qoʻshilish',
@@ -4938,14 +4926,14 @@ extension on TranslationsUz {
 			'liveTv.recordSettings.anyTime' => 'Istalgan vaqtda yozib olish',
 			'liveTv.recordSettings.skipInLibrary' => 'Kutubxonada mavjud epizodlarni oʻtkazib yuborish',
 			'liveTv.recordSettings.keepUpTo' => 'Saqlanadigan epizodlar',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 barcha epizodlarni saqlaydi',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, soat ${time} da',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi',
 			'liveTv.failedToStartChannel' => 'Jonli kanalni boshlab boʻlmadi',
 			'liveTv.failedToBuildStreamUrl' => 'Oqim URL-ini tuzib boʻlmadi',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanalni ishga tushirib boʻlmadi: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Kanalni almashtirib boʻlmadi: ${reason}',
 			'collections.title' => 'Toʻplamlar',
@@ -5452,14 +5440,14 @@ extension on TranslationsUz {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Dasturiy',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Apparat',
 			'performanceOverlay.tunnelingActive' => 'Faol',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} ta muvaffaqiyatsiz)',
 			'externalPlayer.title' => 'Tashqi pleyer',
 			'externalPlayer.useExternalPlayer' => 'Tashqi pleyerdan foydalanish',
 			'externalPlayer.useExternalPlayerDescription' => 'Videolarni boshqa ilovada ochish',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Pleyerni tanlash',
 			'externalPlayer.customPlayers' => 'Maxsus pleyerlar',
 			'externalPlayer.systemDefault' => 'Tizim standarti',

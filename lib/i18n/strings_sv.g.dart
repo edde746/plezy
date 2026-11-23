@@ -568,8 +568,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get startupSection => 'Startsida';
 	@override String get showExploreTab => 'Visa fliken Utforska';
 	@override String get showExploreTabDescription => 'Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster';
-	@override String get liveTvDefaultFavorites => 'Öppna med favoriter';
-	@override String get liveTvDefaultFavoritesDescription => 'Visa endast favoritkanaler när Live-TV öppnas';
 	@override String get general => 'Allmänt';
 	@override String get generalDescription => 'Språk, start och fönsterbeteende';
 	@override String get languageAndRegion => 'Språk och region';
@@ -579,7 +577,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get homeScreen => 'Hemskärm';
 	@override String get navigation => 'Navigering';
 	@override String get window => 'Fönster';
-	@override String get liveTv => 'Live-TV';
 	@override String get player => 'Spelare';
 	@override String get videoAndDisplay => 'Video och skärm';
 	@override String get audio => 'Ljud';
@@ -1638,9 +1635,6 @@ class _Translations$liveTv$sv extends Translations$liveTv$en {
 	@override String get watchChannel => 'Titta på kanal';
 	@override String get favorites => 'Favoriter';
 	@override String get reorderFavorites => 'Ordna om favoriter';
-	@override String get noFavoriteChannels => 'Inga favoritkanaler';
-	@override String get noFavoriteChannelsHint => 'Visa alla kanaler och tryck sedan länge på en kanal för att lägga till den som favorit.';
-	@override String get showAllChannels => 'Visa alla kanaler';
 	@override String get favoritesLoadFailed => 'Det gick inte att läsa in favoriter. Kontrollera anslutningen och försök igen.';
 	@override String get favoritesUpdateFailed => 'Det gick inte att uppdatera favoriterna. Kontrollera anslutningen och försök igen.';
 	@override String get joinSession => 'Gå med i pågående session';
@@ -3851,8 +3845,6 @@ extension on TranslationsSv {
 			'settings.startupSection' => 'Startsida',
 			'settings.showExploreTab' => 'Visa fliken Utforska',
 			'settings.showExploreTabDescription' => 'Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster',
-			'settings.liveTvDefaultFavorites' => 'Öppna med favoriter',
-			'settings.liveTvDefaultFavoritesDescription' => 'Visa endast favoritkanaler när Live-TV öppnas',
 			'settings.general' => 'Allmänt',
 			'settings.generalDescription' => 'Språk, start och fönsterbeteende',
 			'settings.languageAndRegion' => 'Språk och region',
@@ -3862,7 +3854,6 @@ extension on TranslationsSv {
 			'settings.homeScreen' => 'Hemskärm',
 			'settings.navigation' => 'Navigering',
 			'settings.window' => 'Fönster',
-			'settings.liveTv' => 'Live-TV',
 			'settings.player' => 'Spelare',
 			'settings.videoAndDisplay' => 'Video och skärm',
 			'settings.audio' => 'Ljud',
@@ -3910,11 +3901,11 @@ extension on TranslationsSv {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Sekundär text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accentfärg',
 			'themeEditor.opacity' => 'Opacitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'Från andra teman',
 			'themeEditor.swatchLabel' => ({required Object color, required Object theme}) => '${color} (${theme})',
 			'themeEditor.contrast.textOnBg' => 'Text på bakgrund',
@@ -4424,11 +4415,11 @@ extension on TranslationsSv {
 			'profiles.pinsDontMatch' => 'PIN-koderna stämmer inte överens',
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
 			'connections.sectionTitle' => 'Anslutningar',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Lägg till anslutning',
 			'connections.addConnectionSubtitleNoProfile' => 'Logga in med Plex eller anslut en Jellyfin- eller Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Lägg till för ${displayName}: Plex, Jellyfin, Emby eller en annan profilanslutning',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen har gått ut för ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessionen har gått ut för ${count} servrar',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} nekade åtkomst för det här kontot',
@@ -4887,9 +4878,6 @@ extension on TranslationsSv {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',
 			'liveTv.reorderFavorites' => 'Ordna om favoriter',
-			'liveTv.noFavoriteChannels' => 'Inga favoritkanaler',
-			'liveTv.noFavoriteChannelsHint' => 'Visa alla kanaler och tryck sedan länge på en kanal för att lägga till den som favorit.',
-			'liveTv.showAllChannels' => 'Visa alla kanaler',
 			'liveTv.favoritesLoadFailed' => 'Det gick inte att läsa in favoriter. Kontrollera anslutningen och försök igen.',
 			'liveTv.favoritesUpdateFailed' => 'Det gick inte att uppdatera favoriterna. Kontrollera anslutningen och försök igen.',
 			'liveTv.joinSession' => 'Gå med i pågående session',
@@ -4938,14 +4926,14 @@ extension on TranslationsSv {
 			'liveTv.recordSettings.anyTime' => 'Spela in när som helst',
 			'liveTv.recordSettings.skipInLibrary' => 'Hoppa över avsnitt som redan finns i biblioteket',
 			'liveTv.recordSettings.keepUpTo' => 'Avsnitt att behålla',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 behåller alla avsnitt',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Börjar om ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV',
 			'liveTv.failedToStartChannel' => 'Kunde inte starta livekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunde inte skapa strömmens URL',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Det gick inte att starta kanalen: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Det gick inte att byta kanal: ${reason}',
 			'collections.title' => 'Samlingar',
@@ -5452,14 +5440,14 @@ extension on TranslationsSv {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Programvara',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Maskinvara',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',
 			'externalPlayer.title' => 'Extern spelare',
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en annan app',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Välj spelare',
 			'externalPlayer.customPlayers' => 'Anpassade spelare',
 			'externalPlayer.systemDefault' => 'Systemstandard',

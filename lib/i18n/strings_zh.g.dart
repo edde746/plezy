@@ -568,8 +568,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get startupSection => '启动页面';
 	@override String get showExploreTab => '显示“探索”标签页';
 	@override String get showExploreTabDescription => '显示“探索”标签页，其中包含来自 Plex Discover 和已连接追踪服务的内容';
-	@override String get liveTvDefaultFavorites => '默认显示收藏频道';
-	@override String get liveTvDefaultFavoritesDescription => '打开直播电视时仅显示收藏频道';
 	@override String get general => '通用';
 	@override String get generalDescription => '语言、启动和窗口行为';
 	@override String get languageAndRegion => '语言与地区';
@@ -579,7 +577,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get homeScreen => '主屏幕';
 	@override String get navigation => '导航';
 	@override String get window => '窗口';
-	@override String get liveTv => '直播电视';
 	@override String get player => '播放器';
 	@override String get videoAndDisplay => '视频与显示';
 	@override String get audio => '音频';
@@ -1630,9 +1627,6 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get watchChannel => '观看频道';
 	@override String get favorites => '收藏';
 	@override String get reorderFavorites => '重新排序收藏';
-	@override String get noFavoriteChannels => '没有收藏的频道';
-	@override String get noFavoriteChannelsHint => '显示所有频道，然后长按某个频道将其加入收藏。';
-	@override String get showAllChannels => '显示所有频道';
 	@override String get favoritesLoadFailed => '无法加载收藏。请检查网络连接后重试。';
 	@override String get favoritesUpdateFailed => '无法更新收藏。请检查网络连接后重试。';
 	@override String get joinSession => '加入正在进行的会话';
@@ -3839,8 +3833,6 @@ extension on TranslationsZh {
 			'settings.startupSection' => '启动页面',
 			'settings.showExploreTab' => '显示“探索”标签页',
 			'settings.showExploreTabDescription' => '显示“探索”标签页，其中包含来自 Plex Discover 和已连接追踪服务的内容',
-			'settings.liveTvDefaultFavorites' => '默认显示收藏频道',
-			'settings.liveTvDefaultFavoritesDescription' => '打开直播电视时仅显示收藏频道',
 			'settings.general' => '通用',
 			'settings.generalDescription' => '语言、启动和窗口行为',
 			'settings.languageAndRegion' => '语言与地区',
@@ -3850,7 +3842,6 @@ extension on TranslationsZh {
 			'settings.homeScreen' => '主屏幕',
 			'settings.navigation' => '导航',
 			'settings.window' => '窗口',
-			'settings.liveTv' => '直播电视',
 			'settings.player' => '播放器',
 			'settings.videoAndDisplay' => '视频与显示',
 			'settings.audio' => '音频',
@@ -3898,11 +3889,11 @@ extension on TranslationsZh {
 			'themeEditor.slots.outline' => '描边',
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => '强调色',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => '来自其他主题',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} · ${color}',
 			'themeEditor.contrast.textOnBg' => '背景上的文字',
@@ -4412,11 +4403,11 @@ extension on TranslationsZh {
 			'profiles.pinsDontMatch' => 'PIN 不匹配',
 			'profiles.tokenIdentityMismatch' => 'Plex 用户资料令牌解析到了非预期服务器',
 			'connections.sectionTitle' => '连接',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => '添加连接',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登录，或连接 Jellyfin 或 Emby 服务器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的会话已过期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 个服务器的会话已过期',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} 拒绝此账户访问',
@@ -4875,9 +4866,6 @@ extension on TranslationsZh {
 			'liveTv.watchChannel' => '观看频道',
 			'liveTv.favorites' => '收藏',
 			'liveTv.reorderFavorites' => '重新排序收藏',
-			'liveTv.noFavoriteChannels' => '没有收藏的频道',
-			'liveTv.noFavoriteChannelsHint' => '显示所有频道，然后长按某个频道将其加入收藏。',
-			'liveTv.showAllChannels' => '显示所有频道',
 			'liveTv.favoritesLoadFailed' => '无法加载收藏。请检查网络连接后重试。',
 			'liveTv.favoritesUpdateFailed' => '无法更新收藏。请检查网络连接后重试。',
 			'liveTv.joinSession' => '加入正在进行的会话',
@@ -4926,14 +4914,14 @@ extension on TranslationsZh {
 			'liveTv.recordSettings.anyTime' => '在任意时间录制',
 			'liveTv.recordSettings.skipInLibrary' => '跳过媒体库中已有的剧集',
 			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留全部剧集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
 			'liveTv.failedToStartChannel' => '无法播放直播频道',
 			'liveTv.failedToBuildStreamUrl' => '无法生成视频流 URL',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => '无法启动该频道：${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => '无法切换频道：${reason}',
 			'collections.title' => '合集',
@@ -5440,14 +5428,14 @@ extension on TranslationsZh {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬件',
 			'performanceOverlay.decoderExynosHw' => 'Exynos 硬件',
 			'performanceOverlay.decoderSoftware' => '软件',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => '硬件',
 			'performanceOverlay.tunnelingActive' => '已启用',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他应用中打开视频',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => '选择播放器',
 			'externalPlayer.customPlayers' => '自定义播放器',
 			'externalPlayer.systemDefault' => '系统默认',

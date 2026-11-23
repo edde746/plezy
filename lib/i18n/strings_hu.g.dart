@@ -568,8 +568,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get startupSection => 'Indítási oldal';
 	@override String get showExploreTab => 'Felfedezés lap megjelenítése';
 	@override String get showExploreTabDescription => 'A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése';
-	@override String get liveTvDefaultFavorites => 'Kedvenc csatornák alapértelmezés szerint';
-	@override String get liveTvDefaultFavoritesDescription => 'Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor';
 	@override String get general => 'Általános';
 	@override String get generalDescription => 'Nyelv, indítás és ablakviselkedés';
 	@override String get languageAndRegion => 'Nyelv és régió';
@@ -579,7 +577,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get homeScreen => 'Kezdőképernyő';
 	@override String get navigation => 'Navigáció';
 	@override String get window => 'Ablak';
-	@override String get liveTv => 'Élő TV';
 	@override String get player => 'Lejátszó';
 	@override String get videoAndDisplay => 'Videó és kijelző';
 	@override String get audio => 'Hang';
@@ -1638,9 +1635,6 @@ class _Translations$liveTv$hu extends Translations$liveTv$en {
 	@override String get watchChannel => 'Csatorna nézése';
 	@override String get favorites => 'Kedvencek';
 	@override String get reorderFavorites => 'Kedvencek rendezése';
-	@override String get noFavoriteChannels => 'Nincsenek kedvenc csatornák';
-	@override String get noFavoriteChannelsHint => 'Jelenítsd meg az összes csatornát, majd hosszan nyomj meg egy csatornát, hogy hozzáadd a kedvenceidhez.';
-	@override String get showAllChannels => 'Összes csatorna megjelenítése';
 	@override String get favoritesLoadFailed => 'Nem sikerült a kedvencek betöltése. Ellenőrizd a kapcsolatot és próbáld újra.';
 	@override String get favoritesUpdateFailed => 'Nem sikerült frissíteni a kedvenceket. Ellenőrizd a kapcsolatot, majd próbáld újra.';
 	@override String get joinSession => 'Csatlakozás a folyamatban lévő adáshoz';
@@ -3851,8 +3845,6 @@ extension on TranslationsHu {
 			'settings.startupSection' => 'Indítási oldal',
 			'settings.showExploreTab' => 'Felfedezés lap megjelenítése',
 			'settings.showExploreTabDescription' => 'A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése',
-			'settings.liveTvDefaultFavorites' => 'Kedvenc csatornák alapértelmezés szerint',
-			'settings.liveTvDefaultFavoritesDescription' => 'Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor',
 			'settings.general' => 'Általános',
 			'settings.generalDescription' => 'Nyelv, indítás és ablakviselkedés',
 			'settings.languageAndRegion' => 'Nyelv és régió',
@@ -3862,7 +3854,6 @@ extension on TranslationsHu {
 			'settings.homeScreen' => 'Kezdőképernyő',
 			'settings.navigation' => 'Navigáció',
 			'settings.window' => 'Ablak',
-			'settings.liveTv' => 'Élő TV',
 			'settings.player' => 'Lejátszó',
 			'settings.videoAndDisplay' => 'Videó és kijelző',
 			'settings.audio' => 'Hang',
@@ -3910,11 +3901,11 @@ extension on TranslationsHu {
 			'themeEditor.slots.outline' => 'Körvonal',
 			'themeEditor.slots.text' => 'Szöveg',
 			'themeEditor.slots.textMuted' => 'Másodlagos szöveg',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Kiemelőszín',
 			'themeEditor.opacity' => 'Átlátszatlanság',
 			'themeEditor.hexHint' => '#RRGGBB vagy #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'Más témákból',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} – ${color}',
 			'themeEditor.contrast.textOnBg' => 'Szöveg a háttéren',
@@ -4424,11 +4415,11 @@ extension on TranslationsHu {
 			'profiles.pinsDontMatch' => 'A PIN-kódok nem egyeznek',
 			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			'connections.sectionTitle' => 'Kapcsolatok',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} szerver munkamenete lejárt',
 			'connections.accessDeniedOne' => ({required Object name}) => 'A(z) ${name} megtagadta a hozzáférést ettől a fióktól',
@@ -4887,9 +4878,6 @@ extension on TranslationsHu {
 			'liveTv.watchChannel' => 'Csatorna nézése',
 			'liveTv.favorites' => 'Kedvencek',
 			'liveTv.reorderFavorites' => 'Kedvencek rendezése',
-			'liveTv.noFavoriteChannels' => 'Nincsenek kedvenc csatornák',
-			'liveTv.noFavoriteChannelsHint' => 'Jelenítsd meg az összes csatornát, majd hosszan nyomj meg egy csatornát, hogy hozzáadd a kedvenceidhez.',
-			'liveTv.showAllChannels' => 'Összes csatorna megjelenítése',
 			'liveTv.favoritesLoadFailed' => 'Nem sikerült a kedvencek betöltése. Ellenőrizd a kapcsolatot és próbáld újra.',
 			'liveTv.favoritesUpdateFailed' => 'Nem sikerült frissíteni a kedvenceket. Ellenőrizd a kapcsolatot, majd próbáld újra.',
 			'liveTv.joinSession' => 'Csatlakozás a folyamatban lévő adáshoz',
@@ -4938,14 +4926,14 @@ extension on TranslationsHu {
 			'liveTv.recordSettings.anyTime' => 'Felvétel bármikor',
 			'liveTv.recordSettings.skipInLibrary' => 'A könyvtárban már meglévő epizódok kihagyása',
 			'liveTv.recordSettings.keepUpTo' => 'Megtartandó epizódok',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpToHint' => 'A 0 minden epizódot megtart',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} perc múlva kezdődik',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
 			'liveTv.failedToStartChannel' => 'Nem sikerült elindítani az élő csatornát',
 			'liveTv.failedToBuildStreamUrl' => 'Nem sikerült összeállítani a stream URL-címét',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Nem sikerült elindítani a csatornát: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Nem sikerült csatornát váltani: ${reason}',
 			'collections.title' => 'Gyűjtemények',
@@ -5452,14 +5440,14 @@ extension on TranslationsHu {
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Szoftveres',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderHardware' => 'Hardveres',
 			'performanceOverlay.tunnelingActive' => 'Aktív',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} sikertelen)',
 			'externalPlayer.title' => 'Külső lejátszó',
 			'externalPlayer.useExternalPlayer' => 'Külső lejátszó használata',
 			'externalPlayer.useExternalPlayerDescription' => 'Videók megnyitása egy másik alkalmazásban',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Lejátszó kiválasztása',
 			'externalPlayer.customPlayers' => 'Egyéni lejátszók',
 			'externalPlayer.systemDefault' => 'Rendszer alapértelmezése',

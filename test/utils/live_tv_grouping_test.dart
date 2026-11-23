@@ -22,6 +22,35 @@ LiveTvChannel _channel({
 }
 
 void main() {
+  test('favorites lead in saved order across sources without duplicate channels', () {
+    final a = LiveTvChannel(key: 'same', serverId: 'plex', liveDvrKey: 'one');
+    final b = LiveTvChannel(key: 'same', serverId: 'jellyfin');
+    final c = LiveTvChannel(key: 'same', serverId: 'emby');
+    final d = LiveTvChannel(key: 'other', serverId: 'plex', liveDvrKey: 'one');
+    final groups = groupLiveTvGuideChannels(
+      [a, b, c, d],
+      favorites: [
+        c,
+        a,
+        c,
+        LiveTvChannel(key: 'gone'),
+      ],
+    );
+    expect(groups.first.key, liveTvFavoritesGroupKey);
+    expect(groups.first.channels, [c, a]);
+    expect(groups.skip(1).expand((g) => g.channels), [d, b]);
+    expect(groups.expand((g) => g.channels).map(liveTvChannelScopeKey).toSet(), hasLength(4));
+  });
+
+  test('no favorites keeps source groups and all favorites leaves just the favorites group', () {
+    final channels = [LiveTvChannel(key: 'a', serverId: 'one'), LiveTvChannel(key: 'b', serverId: 'two')];
+    final regular = groupLiveTvGuideChannels(channels);
+    expect(regular.map((g) => g.key), groupLiveTvChannelsBySource(channels).map((g) => g.key));
+    final favorites = groupLiveTvGuideChannels(channels, favorites: channels.reversed.toList());
+    expect(favorites, hasLength(1));
+    expect(favorites.single.channels, channels.reversed);
+  });
+
   test('groups channels by Live TV source while preserving first source appearance', () {
     final firstHome = _channel(
       key: '101',

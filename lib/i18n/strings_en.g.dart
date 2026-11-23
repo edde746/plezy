@@ -1373,12 +1373,6 @@ class Translations$settings$en {
 	/// en: 'Display the Explore tab with content from Plex Discover and connected trackers'
 	String get showExploreTabDescription => 'Display the Explore tab with content from Plex Discover and connected trackers';
 
-	/// en: 'Default to Favorite Channels'
-	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
-
-	/// en: 'Show only favorite channels when opening Live TV'
-	String get liveTvDefaultFavoritesDescription => 'Show only favorite channels when opening Live TV';
-
 	/// en: 'General'
 	String get general => 'General';
 
@@ -1405,9 +1399,6 @@ class Translations$settings$en {
 
 	/// en: 'Window'
 	String get window => 'Window';
-
-	/// en: 'Live TV'
-	String get liveTv => 'Live TV';
 
 	/// en: 'Player'
 	String get player => 'Player';
@@ -3999,15 +3990,6 @@ class Translations$liveTv$en {
 
 	/// en: 'Reorder Favorites'
 	String get reorderFavorites => 'Reorder Favorites';
-
-	/// en: 'No favorite channels'
-	String get noFavoriteChannels => 'No favorite channels';
-
-	/// en: 'Show all channels, then long-press a channel to add it to your favorites.'
-	String get noFavoriteChannelsHint => 'Show all channels, then long-press a channel to add it to your favorites.';
-
-	/// en: 'Show All Channels'
-	String get showAllChannels => 'Show All Channels';
 
 	/// en: 'Could not load favorites. Check your connection and try again.'
 	String get favoritesLoadFailed => 'Could not load favorites. Check your connection and try again.';
@@ -8575,8 +8557,6 @@ extension on Translations {
 			'settings.startupSection' => 'Startup Section',
 			'settings.showExploreTab' => 'Show Explore Tab',
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
-			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
-			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
 			'settings.general' => 'General',
 			'settings.generalDescription' => 'Language, startup, and window behavior',
 			'settings.languageAndRegion' => 'Language & Region',
@@ -8586,7 +8566,6 @@ extension on Translations {
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Window',
-			'settings.liveTv' => 'Live TV',
 			'settings.player' => 'Player',
 			'settings.videoAndDisplay' => 'Video & Display',
 			'settings.audio' => 'Audio',
@@ -8634,11 +8613,11 @@ extension on Translations {
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.fromOtherThemes' => 'From other themes',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
 			'themeEditor.contrast.textOnBg' => 'Text on background',
@@ -9148,11 +9127,11 @@ extension on Translations {
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
@@ -9620,9 +9599,6 @@ extension on Translations {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
-			'liveTv.noFavoriteChannels' => 'No favorite channels',
-			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
-			'liveTv.showAllChannels' => 'Show All Channels',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
 			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
@@ -9662,14 +9638,14 @@ extension on Translations {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
@@ -10176,14 +10152,14 @@ extension on Translations {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
