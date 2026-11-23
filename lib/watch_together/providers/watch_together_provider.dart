@@ -35,13 +35,18 @@ typedef ChoiceOpener = Future<bool> Function(WatchCopy copy);
 
 /// What an open player screen gives the room.
 class WatchPlayerHooks {
-  const WatchPlayerHooks({required this.openInPlace, required this.exitPlayer});
+  const WatchPlayerHooks({required this.openInPlace, required this.exitPlayer, required this.mediaEnded});
 
   /// Switches the open player to [copy].
   final ChoiceOpener openInPlace;
 
   /// Closes the player: the room stopped its media.
   final VoidCallback exitPlayer;
+
+  /// The room's media reached its end while the room drives [adapter]'s
+  /// player: the item is over for everyone, wherever this user's own file
+  /// stands.
+  final void Function(PlezyPlayerAdapter adapter) mediaEnded;
 }
 
 /// Watch Together on Open Watch Party: one [owp.WatchParty] per room session,
@@ -167,6 +172,19 @@ class WatchTogetherProvider extends ChangeNotifier {
   bool get isLocked => room?.locked ?? false;
   owp.Media? get media => isInSession ? _state.media : null;
   bool get hasMedia => media != null;
+
+  /// The room's media is at its end: it played there, or a controller sought
+  /// it there (SPEC.md §12.11). The room holds there until the host's app
+  /// shares what plays next.
+  bool get isAtMediaEnd => isInSession && _atMediaEnd(_state);
+
+  /// Paused at the end, or waiting there: a room that releases at its end
+  /// pauses there at once.
+  static bool _atMediaEnd(owp.PartyState<WatchCopy> state) {
+    final room = state.room;
+    final media = state.media;
+    return room != null && media != null && room.phase != owp.Phase.playing && room.positionMs >= media.durationMs;
+  }
 
   /// The room's file is open in this user's player and the room drives it.
   bool get isFollowing {
@@ -424,6 +442,21 @@ class WatchTogetherProvider extends ChangeNotifier {
     return true;
   }
 
+  /// Ends the room's media for everyone: the room seeks to its end and pauses
+  /// there, and the host's app decides what plays next. Nothing happens once
+  /// the room is at its end or on its way there.
+  bool endMedia() {
+    if (!_routes()) return false;
+    if (_refuseWithoutControl()) return true;
+    final media = _state.media;
+    if (media == null || isAtMediaEnd) return true;
+    // The party takes this user's own position: the room's end, shifted by
+    // the offset.
+    final local = media.durationMs + _state.offsetMs;
+    _guard(() => _party!.seek(local < 0 ? 0 : local));
+    return true;
+  }
+
   /// The room sets this player's rate, so its rate changes are not the user's.
   bool get syncOwnsRate => isFollowing;
 
@@ -651,6 +684,12 @@ class WatchTogetherProvider extends ChangeNotifier {
         next.connection == owp.Connection.connected &&
         !next.isHost) {
       _playerHooks?.exitPlayer();
+    }
+    // The room's end, not this player's, ends the item: the user's own file
+    // can be longer, shifted, or held a second short of its end.
+    final adapter = _player?.adapter;
+    if (adapter != null && isFollowing && _atMediaEnd(next) && !(wasFollowing && _atMediaEnd(previous))) {
+      _playerHooks?.mediaEnded(adapter);
     }
     _openChoice();
     notifyListeners();

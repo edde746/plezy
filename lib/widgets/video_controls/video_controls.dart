@@ -613,9 +613,10 @@ class PlexVideoControls extends StatefulWidget {
   /// Called when back button is pressed (for Watch Together session leave confirmation)
   final VoidCallback? onBack;
 
-  /// Called when the video has effectively reached the end (e.g. credits extend
-  /// to EOF and can't be seeked past). Parent should route this into its normal
-  /// completion flow so the auto-play-next setting is honored.
+  /// Ends the item ahead of its file (credits extend to EOF and can't be
+  /// seeked past). The parent routes this into its normal completion flow so
+  /// the auto-play-next setting is honored. Null when the item has nothing
+  /// left to end (a Watch Together room already at its end).
   final void Function({required bool skipAutoPlayCountdown})? onReachedEnd;
 
   /// Whether the user can control playback (false in host-only mode for non-host).
@@ -1099,6 +1100,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       });
       _clearCurrentMarker();
       _loadPlaybackExtras();
+    }
+    // Whether credits that run to the end have anywhere to skip to.
+    if ((oldWidget.onNext == null && oldWidget.onReachedEnd == null) !=
+        (widget.onNext == null && widget.onReachedEnd == null)) {
+      _syncCurrentMarkerForCurrentPosition();
     }
     _configureChromeController();
   }

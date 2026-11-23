@@ -21,6 +21,9 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     for (final marker in _markers) {
       // An Off marker kind plays through as if the server had sent no marker.
       if (_skipModeFor(marker) == SkipMarkerMode.off) continue;
+      // Credits that run to the end skip to the next item or end this one;
+      // with neither left (a room already at its end) nothing is skippable.
+      if (_runsToEnd(marker) && widget.onNext == null && widget.onReachedEnd == null) continue;
       if (marker.containsPosition(position)) {
         foundMarker = marker;
         break;
@@ -102,27 +105,28 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     }
   }
 
+  /// Credits that run to the end of the file: skipping them hands off to the
+  /// next item or the end of this one, since a seek to the end is unreliable
+  /// (position stream throttling).
+  bool _runsToEnd(MediaMarker marker) {
+    final duration = widget.player.state.duration;
+    return marker.isCredits && duration > Duration.zero && (duration - marker.endTime).inMilliseconds <= 1000;
+  }
+
   Future<void> _skipMarker({bool skipAutoPlayCountdown = false}) async {
     if (!widget.canControl) return;
     if (_currentMarker == null || !_hasRenderedFirstFrame) return;
 
     final marker = _currentMarker!;
-    final endTime = marker.endTime;
-    final duration = widget.player.state.duration;
-    final isAtEnd = duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
-
-    final handsOffToCompletion = marker.isCredits && isAtEnd;
+    final handsOffToCompletion = _runsToEnd(marker);
     if (handsOffToCompletion) {
       if (!skipAutoPlayCountdown && widget.onNext != null) {
         _abandoningBurst(widget.onNext)!.call();
       } else {
-        // Seeking to EOF is unreliable due to position stream throttling,
-        // so pause and defer to the parent's completion flow.
-        await widget.player.pause();
         widget.onReachedEnd?.call(skipAutoPlayCountdown: skipAutoPlayCountdown);
       }
     } else {
-      await _seekToPosition(endTime);
+      await _seekToPosition(marker.endTime);
     }
 
     if (!mounted) return;
@@ -130,8 +134,9 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
       _currentMarker = null;
     });
     // The play-next flow requests its own focus; claiming the surface here
-    // would race it.
-    if (!handsOffToCompletion) _releaseSkipMarkerFocusToSurface();
+    // would race it. A Watch Together guest gets no prompt: the host decides
+    // what plays next.
+    if (!handsOffToCompletion || !widget.canNavigateMediaItems) _releaseSkipMarkerFocusToSurface();
     _cancelAutoSkipTimer();
     _cancelSkipButtonDismissTimer();
   }

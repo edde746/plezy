@@ -49,7 +49,11 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     if (watchTogether == null) return;
     watchTogether.registerPlayer(
       this,
-      WatchPlayerHooks(openInPlace: _openRoomCopyInPlace, exitPlayer: _exitPlayerForRoom),
+      WatchPlayerHooks(
+        openInPlace: _openRoomCopyInPlace,
+        exitPlayer: _exitPlayerForRoom,
+        mediaEnded: _onRoomMediaEnded,
+      ),
     );
   }
 
@@ -279,6 +283,15 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     if (!mounted || _shuttingDown) return;
     appLogger.d('WatchTogether: the room stopped its media; leaving the player');
     unawaited(_exitPlayerRoute(navigateHome: false));
+  }
+
+  /// The room's media reached its end while it drives this player: the item
+  /// is over wherever this player's own file stands. The host's completion
+  /// decides what plays next; a guest's waits for the host to share it.
+  void _onRoomMediaEnded(PlezyPlayerAdapter adapter) {
+    if (!mounted || _shuttingDown || !identical(_wtAdapter, adapter)) return;
+    appLogger.d('WatchTogether: the room\'s media ended');
+    _onVideoCompleted(true);
   }
 
   /// Pauses for something the environment forced on this user alone (a car

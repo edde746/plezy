@@ -133,6 +133,7 @@ final class _Screen {
   final _Member member;
   final List<_OpenPlayer> players = [];
   int exits = 0;
+  int ends = 0;
   bool refusePlay = false;
 
   WatchTogetherProvider get _provider => member.provider;
@@ -145,7 +146,10 @@ final class _Screen {
     await Future<void>.delayed(Duration.zero);
     final opened = _openPlayer(copy, refusePlay: () => refusePlay);
     players.add(opened);
-    _provider.registerPlayer(this, WatchPlayerHooks(openInPlace: open, exitPlayer: () => exits++));
+    _provider.registerPlayer(
+      this,
+      WatchPlayerHooks(openInPlace: open, exitPlayer: () => exits++, mediaEnded: (_) => ends++),
+    );
     _provider.playerOpened(opened.adapter, shareable: true, roomLaunch: true);
     return true;
   }
@@ -600,6 +604,48 @@ void main() {
       expect(g.noticesOf<ActionNotice>().where((n) => n.name == 'Guest'), isEmpty, reason: 'not its own');
       expect(g.noticesOf<RefusedNotice>(), isEmpty);
       expect(screen.players.single.player.commandLog, contains('rate:2.0'));
+    });
+
+    _roomTest('a controller ends the media: the room pauses at its end, and each following screen hears it once', (
+      world,
+    ) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+      final hostEnds = <PlezyPlayerAdapter>[];
+      h.provider.registerPlayer(
+        hostPlayer,
+        WatchPlayerHooks(openInPlace: (_) async => false, exitPlayer: () {}, mediaEnded: hostEnds.add),
+      );
+      await world.until(() => h.provider.room?.phase == owp.Phase.playing, 'the room plays');
+
+      expect(g.provider.endMedia(), isTrue, reason: 'the screen leaves its player alone');
+      await world.wait(const Duration(milliseconds: 100));
+      expect(g.notices.last, isA<ControlRefusedNotice>());
+      expect(world.relay.sent('seek'), isEmpty);
+
+      h.provider.setControl(owp.Control.everyone);
+      await world.until(() => g.provider.canControl, 'the guest controls');
+      g.provider.setOffset(1500);
+      await world.until(() => h.participant(g.peerId).offsetMs == 1500, 'the host sees the offset');
+
+      expect(g.provider.endMedia(), isTrue);
+      await world.until(() => h.provider.isAtMediaEnd && g.provider.isAtMediaEnd, 'the room is at its end');
+      expect(world.relay.sent('seek').single['positionMs'], _alienMs, reason: 'the room end, not the guest own');
+      expect(h.provider.room?.phase, owp.Phase.paused);
+      await world.noticed<ActionNotice>(h, 'the host is told', (n) => n.kind == 'ended' && n.name == null);
+      expect(hostEnds, [hostPlayer.adapter]);
+      expect(screen.ends, 1);
+
+      expect(g.provider.endMedia(), isTrue);
+      await world.wait(const Duration(milliseconds: 100));
+      expect(world.relay.sent('seek'), hasLength(1), reason: 'a room at its end has nothing left to end');
+      expect((hostEnds.length, screen.ends), (1, 1));
+
+      // Sought back, the paused room can end again.
+      expect(h.provider.seek(const Duration(minutes: 10)), isTrue);
+      await world.until(() => !g.provider.isAtMediaEnd, 'the room left its end');
+      expect(g.provider.endMedia(), isTrue);
+      await world.until(() => hostEnds.length == 2 && screen.ends == 2, 'both screens hear the second end');
+      expect(g.noticesOf<RefusedNotice>(), isEmpty);
     });
 
     _roomTest('a player that refuses to start blocks until the user presses play', (world) async {

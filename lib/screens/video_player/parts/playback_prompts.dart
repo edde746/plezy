@@ -164,6 +164,27 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     );
   }
 
+  /// The viewer ended the item ahead of its file: skipped credits that run to
+  /// the end, where a seek is unreliable (position stream throttling).
+  ///
+  /// While a room drives the player the item ends for everyone: the room
+  /// seeks to its end, and its end completes the item on every screen
+  /// ([_onRoomMediaEnded]). The host completes at once as well so its skip
+  /// keeps the countdown choice; the room's end then finds the latch set.
+  Future<void> _finishItem({required bool skipAutoPlayCountdown}) async {
+    final currentPlayer = player;
+    if (!mounted || _shuttingDown || currentPlayer == null) return;
+    final room = _followedRoom();
+    if (room != null) {
+      room.endMedia();
+      if (!room.isHost) return;
+    } else {
+      await currentPlayer.pause();
+      if (!mounted || player != currentPlayer) return;
+    }
+    _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown);
+  }
+
   void _startAutoPlayTimer() {
     if (!_canNavigateMediaItems()) return;
     _episode.autoPlayTimer?.cancel();
