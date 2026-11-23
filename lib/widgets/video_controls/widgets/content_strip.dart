@@ -7,7 +7,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/dpad_navigator.dart';
-import '../../../focus/focus_theme.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_item.dart';
@@ -28,6 +27,10 @@ import '../../clickable_cursor.dart';
 import '../../optimized_media_image.dart';
 import '../../settings_builder.dart';
 import 'media_selector_thumbnail.dart';
+
+/// Focused chapter/episode thumbnails grow a little more than library cards
+/// so the selection reads at TV distance over video.
+const double _focusedStripItemScale = 1.05;
 
 /// Horizontal scrollable strip of chapter/queue items shown on swipe-up.
 class ContentStrip extends StatefulWidget {
@@ -441,8 +444,10 @@ class ContentStripState extends State<ContentStrip> {
             },
             borderRadius: 6,
             autoScroll: false,
-            useBackgroundFocus: true,
-            focusColor: FocusTheme.onMediaFocusFill,
+            // A solid white outline over video: the translucent fill sat
+            // behind the thumbnail and was barely visible on dark frames.
+            focusColor: Colors.white,
+            focusScale: _focusedStripItemScale,
             child: item,
           ),
         );

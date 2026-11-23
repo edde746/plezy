@@ -63,17 +63,35 @@ class PlayerFocusDisc extends StatelessWidget {
 const BoxShadow playerFocusShadow = BoxShadow(color: Color(0x59000000), blurRadius: 14, offset: Offset(0, 4));
 
 /// Radius of the knob a focused timeline shows in place of its handle.
-const double playerFocusKnobRadius = 9;
+const double playerFocusKnobRadius = 11;
+
+/// Gap between the knob and its focus halo ring, and the ring's stroke.
+const double _playerFocusHaloGap = 4;
+const double _playerFocusHaloWidth = 2.5;
 
 /// Paints the focused-timeline knob: a white disc with the same shadow as
 /// [PlayerFocusDisc], shared by the VOD slider thumb and the live-TV painter.
+///
+/// The played part of the track is white too, so a plain white disc blended
+/// into it and the timeline barely looked selected. A dark edge separates the
+/// knob from the track and a white halo ring marks it as the focused control,
+/// readable on dark (OLED) and bright frames alike.
 void paintPlayerFocusKnob(Canvas canvas, Offset center) {
   canvas.drawCircle(
     center + playerFocusShadow.offset / 2,
-    playerFocusKnobRadius,
+    playerFocusKnobRadius + _playerFocusHaloGap,
     Paint()
       ..color = playerFocusShadow.color
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, playerFocusShadow.blurSigma),
   );
+  canvas.drawCircle(
+    center,
+    playerFocusKnobRadius + _playerFocusHaloGap + _playerFocusHaloWidth / 2,
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _playerFocusHaloWidth
+      ..color = Colors.white.withValues(alpha: 0.9),
+  );
+  canvas.drawCircle(center, playerFocusKnobRadius + 1.5, Paint()..color = Colors.black.withValues(alpha: 0.6));
   canvas.drawCircle(center, playerFocusKnobRadius, Paint()..color = Colors.white);
 }
