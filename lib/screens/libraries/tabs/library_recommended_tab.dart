@@ -26,6 +26,7 @@ import '../../../widgets/settings_builder.dart';
 import '../../../widgets/tv_browse_rail.dart';
 import '../../../widgets/tv_spotlight_scaffold.dart';
 import '../../main_screen.dart';
+import '../../video_player_screen.dart';
 import 'base_library_tab.dart';
 
 /// Recommended tab for library screen
@@ -66,10 +67,71 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     }
   }
 
+  /// Set when a watch event (playback progress, a scrobble, a mark) touched
+  /// this library while the hubs could not be refetched — typically while
+  /// the video player covers the tab. Consumed by [_runWatchStateReload] once
+  /// the tab is on screen again, so Continue Watching reflects the episode
+  /// that was just played without a manual refresh.
+  bool _watchStateStale = false;
+  Timer? _watchStateReloadTimer;
+  StreamSubscription<WatchStateEvent>? _libraryWatchSubscription;
+
+  /// Short debounce so the burst at player exit (route pop, final stopped
+  /// report, scrobble) collapses into one refetch, and the refetch runs after
+  /// the server has accepted the stopped report.
+  static const _watchStateReloadDebounce = Duration(milliseconds: 600);
+  static const _watchStateReloadPlayerRetry = Duration(milliseconds: 750);
+
+  @override
+  void initState() {
+    super.initState();
+    // [WatchStateAware] only delivers events for items already on screen.
+    // Playing something from this library that is not in Continue Watching
+    // yet must still bring it in, so listen library-wide just to mark stale.
+    _libraryWatchSubscription = WatchStateNotifier().stream.listen((event) {
+      if (!mounted) return;
+      if (event.serverId.value != widget.library.serverId) return;
+      if (event.librarySectionID != widget.library.id) return;
+      _markWatchStateStale();
+    });
+  }
+
   @override
   void dispose() {
+    _libraryWatchSubscription?.cancel();
+    _watchStateReloadTimer?.cancel();
     _spotlight.dispose();
     super.dispose();
+  }
+
+  void _markWatchStateStale() {
+    _watchStateStale = true;
+    if (isSurfaceVisible) _scheduleWatchStateReload();
+  }
+
+  void _scheduleWatchStateReload([Duration delay = _watchStateReloadDebounce]) {
+    _watchStateReloadTimer?.cancel();
+    _watchStateReloadTimer = Timer(delay, _runWatchStateReload);
+  }
+
+  void _runWatchStateReload() {
+    _watchStateReloadTimer = null;
+    if (!mounted || !_watchStateStale) return;
+    // Hidden again: the next [onSurfaceShown] picks it up.
+    if (!isSurfaceVisible) return;
+    // The player route is still tearing down (pop transition): try again
+    // shortly rather than racing its final stopped report.
+    if (VideoPlayerScreenState.activeGlobalKey != null) {
+      _scheduleWatchStateReload(_watchStateReloadPlayerRetry);
+      return;
+    }
+    _watchStateStale = false;
+    unawaited(performLiveLibraryRefresh());
+  }
+
+  @override
+  void onSurfaceShown() {
+    if (_watchStateStale) _scheduleWatchStateReload();
   }
 
   @override
@@ -108,7 +170,14 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   @override
   void onWatchStateChanged(WatchStateEvent event) {
-    if (event.changeType == WatchStateChangeType.progressUpdate) return;
+    if (event.changeType == WatchStateChangeType.progressUpdate) {
+      // Patch the progress bar in place right away; the refetch scheduled by
+      // _markWatchStateStale then brings the authoritative order (the series
+      // just played moves to the front) and the next episode once finished.
+      _patchViewOffset(event);
+      _markWatchStateStale();
+      return;
+    }
 
     if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
       _removeContinueWatchingItem(event.itemId);
@@ -128,6 +197,33 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     for (final item in refreshItems.values) {
       unawaited(updateItem(item));
     }
+    // A watched/unwatched flip changes what Continue Watching should show for
+    // the series (finished episode → next episode), which only a refetch knows.
+    _markWatchStateStale();
+  }
+
+  void _patchViewOffset(WatchStateEvent event) {
+    final viewOffset = event.viewOffset;
+    if (viewOffset == null || event.isNowWatched == true) return;
+    var changed = false;
+    final patched = <MediaHub>[];
+    for (final hub in items) {
+      final index = hub.items.indexWhere((item) => item.globalKey == event.globalKey);
+      if (index == -1 || hub.items[index].viewOffsetMs == viewOffset) {
+        patched.add(hub);
+        continue;
+      }
+      final newItems = List<MediaItem>.from(hub.items);
+      newItems[index] = newItems[index].copyWith(viewOffsetMs: viewOffset);
+      patched.add(hub.copyWith(items: newItems));
+      changed = true;
+    }
+    if (!changed || !mounted) return;
+    setState(() {
+      for (var i = 0; i < patched.length; i++) {
+        items[i] = patched[i];
+      }
+    });
   }
 
   void _removeContinueWatchingItem(String itemId) {
