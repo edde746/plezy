@@ -43,6 +43,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/desktop_window_padding.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/library_content_notifier.dart';
+import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/widgets/backend_badge.dart';
 import 'package:plezy/widgets/focusable_tab_chip.dart';
@@ -494,6 +495,37 @@ void main() {
     controller.close();
     await tester.pumpAndSettle();
     expect(_focusedHub(), 'B');
+  });
+
+  testWidgets('Recommended refetches once playback progress landed while a route covered it', (tester) async {
+    final client = _HubClient();
+    final harness = await _Harness.create(
+      _GatedPreferences({'selected_library_key': _libraryA.globalKey}),
+      clients: [client],
+      libraryOrder: const [_libraryA],
+    );
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    final callsBefore = client.libraryHubCalls;
+    final played = client.hubs.first.items.first;
+
+    // Stand-in for the video player: an opaque route over the library.
+    final navigator = Navigator.of(tester.element(find.byType(LibraryRecommendedTab)));
+    unawaited(navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Player')))));
+    await tester.pumpAndSettle();
+
+    WatchStateNotifier().notifyProgress(item: played, viewOffset: 60000, duration: 600000);
+    await tester.pump(const Duration(seconds: 2));
+    expect(client.libraryHubCalls, callsBefore, reason: 'a covered tab must not fetch');
+
+    navigator.pop();
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(client.libraryHubCalls, callsBefore + 1, reason: 'returning from playback refreshes Continue Watching');
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(client.libraryHubCalls, callsBefore + 1, reason: 'the staleness is consumed by one refetch');
   });
 
   testWidgets('entering the screen while its tab loads focuses the content once it lands', (tester) async {

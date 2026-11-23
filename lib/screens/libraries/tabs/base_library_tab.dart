@@ -224,9 +224,23 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   /// snapshot keeps the epoch from reading stale here.
   void _onSurfaceVisibilityChanged() {
     if (!mounted || !_isLiveSurfaceVisible) return;
+    onSurfaceShown();
     if (!_isLibraryContentStale) return;
     _livePacer.schedule();
   }
+
+  /// Whether this tab is the active library tab *and* actually on screen
+  /// (no opaque route such as the video player covering it).
+  @protected
+  bool get isSurfaceVisible => mounted && _isLiveSurfaceVisible;
+
+  /// Called whenever this tab becomes visible again: a covering route (the
+  /// video player, a detail screen) popped, its main tab was re-shown, or it
+  /// became the active library tab. Subclasses consume their own staleness
+  /// here; the default does nothing.
+  @protected
+  // ignore: no-empty-block - default no-op hook for subclasses
+  void onSurfaceShown() {}
 
   @override
   void didUpdateWidget(W oldWidget) {
@@ -250,6 +264,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
       // Became the visible tab again: consume push-marked staleness (#1646).
       // The library-changed branch above already reloads unconditionally.
       refreshIfLibraryContentStale();
+      if (_isLiveSurfaceVisible) onSurfaceShown();
     }
 
     // Check if we should focus (became active after data loaded)
