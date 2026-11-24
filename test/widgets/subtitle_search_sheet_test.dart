@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/subtitle_search_result.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -143,13 +144,36 @@ void main() {
       await _pumpSearchSheet(
         tester,
         multiServer: provider,
-        onSubtitleDownloaded: ({required serverId, required ratingKey}) async => SubtitleDownloadApplyOutcome.timedOut,
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result}) async =>
+            SubtitleDownloadApplyOutcome.timedOut,
       );
       await tester.tap(find.text('Film.2024.srt'));
       await tester.pumpAndSettle();
 
       expect(find.text(t.videoControls.subtitleDownloadTimedOut), findsOneWidget);
       expect(find.text(t.videoControls.subtitleDownloadedNotApplied), findsNothing);
+    });
+
+    testWidgets('a download the server refused says the download failed', (tester) async {
+      final client = testPlexClient(
+        serverId: ServerId('server'),
+        handler: (request) async => http.Response(
+          '{"MediaContainer":{"Stream":[{"id":1,"key":"/sub/1","title":"Film.2024.srt","displayTitle":"English"}]}}',
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+
+      await _pumpSearchSheet(
+        tester,
+        multiServer: testMultiServer(clients: [client]).provider,
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result}) async =>
+            SubtitleDownloadApplyOutcome.notDownloaded,
+      );
+      await tester.tap(find.text('Film.2024.srt'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.videoControls.subtitleDownloadFailed), findsOneWidget);
     });
   });
 }
@@ -162,8 +186,12 @@ double _sheetHeight(WidgetTester tester) {
 Future<void> _pumpSearchSheet(
   WidgetTester tester, {
   MultiServerProvider? multiServer,
-  Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded,
+  Future<SubtitleDownloadApplyOutcome> Function({
+    required String serverId,
+    required String ratingKey,
+    required SubtitleSearchResult result,
+  })?
+  onDownloadSubtitle,
 }) async {
   final app = MaterialApp(
     theme: ThemeData(extensions: const [testMonoTokens]),
@@ -173,7 +201,7 @@ Future<void> _pumpSearchSheet(
           body: ElevatedButton(
             onPressed: () => OverlaySheetController.of(context).show<void>(
               builder: (_) =>
-                  SubtitleSearchSheet(ratingKey: '1', serverId: 'server', onSubtitleDownloaded: onSubtitleDownloaded),
+                  SubtitleSearchSheet(ratingKey: '1', serverId: 'server', onDownloadSubtitle: onDownloadSubtitle),
             ),
             child: const Text('Open'),
           ),

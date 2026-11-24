@@ -1522,8 +1522,13 @@ class PlexClient
   /// Download a subtitle from an external provider and add it to the media item.
   /// The server downloads the file asynchronously; the new stream appears after a short delay.
   @override
-  Future<bool> downloadSubtitle(String ratingKey, SubtitleSearchResult result) async {
-    return _wrapBoolApiCall(
+  Future<SubtitleDownload?> downloadSubtitle(
+    String ratingKey,
+    SubtitleSearchResult result, {
+    required Set<int> existingTrackIds,
+    Duration? position,
+  }) async {
+    final downloaded = await _wrapBoolApiCall(
       () => _http.put(
         '/library/metadata/$ratingKey/subtitles',
         queryParameters: {
@@ -1537,6 +1542,7 @@ class PlexClient
       ),
       'Failed to download subtitle',
     );
+    return downloaded ? () => _findDownloadedSubtitle(ratingKey, existingTrackIds, position) : null;
   }
 
   /// One stream of Plex's OpenSubtitles search; [language] is the searched
@@ -1557,12 +1563,11 @@ class PlexClient
         forced: s['forced'] != null && flexibleBool(s['forced']),
       );
 
-  @override
-  Future<MediaSubtitleTrack?> findDownloadedSubtitle(
-    String ratingKey, {
-    required Set<int> existingTrackIds,
+  Future<MediaSubtitleTrack?> _findDownloadedSubtitle(
+    String ratingKey,
+    Set<int> existingTrackIds,
     Duration? position,
-  }) async {
+  ) async {
     // forceRefresh: playback start left a fresh /library/metadata row in
     // the cache (and each network poll would re-stamp it), so a
     // cache-eligible read here would never observe the new stream.

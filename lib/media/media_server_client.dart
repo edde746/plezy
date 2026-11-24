@@ -1059,7 +1059,7 @@ abstract interface class ExternalSubtitleSearchClient {
 
   /// Whether a download leaves the item's other stream ids as they were. When
   /// false the server renumbers them on its rescan, so the player reloads from
-  /// the row [findDownloadedSubtitle] returned rather than from a stream id.
+  /// the row its [SubtitleDownload] returned rather than from a stream id.
   bool get subtitleDownloadKeepsStreamIds;
 
   /// Whether the server's subtitle providers can search items of [kind].
@@ -1076,19 +1076,21 @@ abstract interface class ExternalSubtitleSearchClient {
   /// [language] is an ISO 639-1 code.
   Future<List<SubtitleSearchResult>> searchSubtitles(String ratingKey, {required String language, String? title});
 
-  /// Downloads [result], one of the rows [searchSubtitles] returned.
-  Future<bool> downloadSubtitle(String ratingKey, SubtitleSearchResult result);
-
-  /// The external subtitle track a [downloadSubtitle] added, once the server
-  /// lists it; null until then. [existingTrackIds] (the player's source ids)
-  /// and [position] (which file of a stacked item plays) serve a server that
-  /// keeps stream ids; one that renumbers them tracks the download itself.
-  Future<MediaSubtitleTrack?> findDownloadedSubtitle(
-    String ratingKey, {
+  /// Downloads [result], one of the rows [searchSubtitles] returned; null when
+  /// the server didn't confirm it. [existingTrackIds] (the player's source ids) and
+  /// [position] (which file of a stacked item plays) serve a server that keeps
+  /// stream ids; one that renumbers them snapshots the item itself.
+  Future<SubtitleDownload?> downloadSubtitle(
+    String ratingKey,
+    SubtitleSearchResult result, {
     required Set<int> existingTrackIds,
     Duration? position,
   });
 }
+
+/// Polls one [ExternalSubtitleSearchClient.downloadSubtitle]: the external
+/// subtitle track it added, or null until the server lists it.
+typedef SubtitleDownload = Future<MediaSubtitleTrack?> Function();
 
 /// Bounds how old a cached metadata row may be to be served without a network
 /// round trip on playback start. Sized to cover the detail-screen-visit →

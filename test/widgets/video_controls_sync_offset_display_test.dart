@@ -6,9 +6,16 @@ import 'package:provider/provider.dart';
 
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/media/subtitle_search_result.dart';
 import 'package:plezy/models/player_setting_scope.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/player_sync_offsets.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -22,6 +29,7 @@ import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart
 import 'package:plezy/widgets/video_controls/widgets/track_chapter_controls.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
@@ -75,13 +83,18 @@ void main() {
     await database.close();
   });
 
-  Future<void> pumpControls(WidgetTester tester) async {
+  Future<void> pumpControls(
+    WidgetTester tester, {
+    List<MediaServerClient> clients = const [],
+    PlaybackSourceChangeCallback? onPlaybackSourceChanged,
+  }) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           Provider<AppDatabase>.value(value: database),
           ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
           ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: testMultiServer(clients: clients).provider),
         ],
         child: MaterialApp(
           theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
@@ -96,6 +109,7 @@ void main() {
                 toastController: toast,
                 chromeController: chrome,
                 canNavigateMediaItems: false,
+                onPlaybackSourceChanged: onPlaybackSourceChanged,
               ),
             ),
           ),
@@ -142,6 +156,73 @@ void main() {
 
     await unmountControls(tester);
   });
+
+  /// The user downloads a subtitle, closes the sheet and downloads another before
+  /// the first lands: both polls then take the landed file for theirs. Only the
+  /// newer may reload; a second reload is refused as busy and its sheet reports failure.
+  testWidgets('a newer subtitle download stops the older one polling', (tester) async {
+    var reloads = 0;
+    await pumpControls(
+      tester,
+      clients: [_LandedSubtitleClient()],
+      onPlaybackSourceChanged: ({newMediaIndex, newPreset, newAudioStreamId, newSubtitleChoice}) async {
+        reloads++;
+        return PlaybackSourceChangeOutcome.applied;
+      },
+    );
+    Future<SubtitleDownloadApplyOutcome> download() => displayedTrackState(tester).onDownloadSubtitle!(
+      serverId: 'server-a',
+      ratingKey: metadata.id,
+      result: const SubtitleSearchResult(key: 'sub'),
+    );
+
+    final older = download();
+    await tester.pump(const Duration(seconds: 1));
+    final newer = download();
+    await tester.pump(const Duration(seconds: 2)); // each poll's first look, a second apart
+
+    expect(await older, SubtitleDownloadApplyOutcome.superseded);
+    expect(await newer, SubtitleDownloadApplyOutcome.applied);
+    expect(reloads, 1);
+
+    await unmountControls(tester);
+  });
+}
+
+/// A server whose downloaded subtitle has landed: every poll finds it.
+class _LandedSubtitleClient implements MediaServerClient, ExternalSubtitleSearchClient {
+  @override
+  ServerId get serverId => ServerId('server-a');
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  Duration get subtitleDownloadTimeout => const Duration(seconds: 15);
+
+  @override
+  bool get subtitleDownloadKeepsStreamIds => true;
+
+  @override
+  bool canSearchSubtitlesFor(MediaKind kind) => true;
+
+  @override
+  String subtitleItemIdFor(String itemId, {String? mediaSourceId}) => itemId;
+
+  @override
+  Future<SubtitleDownload?> downloadSubtitle(
+    String ratingKey,
+    SubtitleSearchResult result, {
+    required Set<int> existingTrackIds,
+    Duration? position,
+  }) async =>
+      () async => MediaSubtitleTrack(id: 9, external: true, selected: false, forced: false);
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// Minimal [Player] with static state so the controls have no stream activity

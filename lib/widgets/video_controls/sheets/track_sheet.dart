@@ -504,7 +504,7 @@ List<Widget> _buildSubtitleSearchFooter(BuildContext context, TrackControlsState
             ratingKey: state.ratingKey,
             serverId: state.serverId!,
             mediaTitle: state.mediaTitle,
-            onSubtitleDownloaded: state.onSubtitleDownloaded,
+            onDownloadSubtitle: state.onDownloadSubtitle,
           ),
         );
       },

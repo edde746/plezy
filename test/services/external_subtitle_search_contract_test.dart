@@ -95,7 +95,7 @@ void main() {
     );
     expect(row.languageCode, 'en', reason: 'Plex left it out, so the searched language stands in, as the sheet did');
 
-    expect(await client.downloadSubtitle('item-1', row), isTrue);
+    expect(await client.downloadSubtitle('item-1', row, existingTrackIds: const {}), isNotNull);
     expect(put!.path, '/library/metadata/item-1/subtitles');
     expect(put!.queryParameters, {
       'key': '/sub/7',

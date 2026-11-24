@@ -8,10 +8,6 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
 
   bool _remoteSubtitleSearchAvailable = false;
 
-  /// Per item, its external subtitle paths before the last [downloadSubtitle],
-  /// and the language, format and forced-ness that download asked for.
-  final _pendingSubtitleDownloads = <String, ({Set<String> paths, String language, String codec, bool forced})>{};
-
   /// Cached result of [probeRemoteSubtitleSearch]; false until it resolves.
   bool get remoteSubtitleSearchAvailable => _remoteSubtitleSearchAvailable;
 
@@ -105,33 +101,30 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
   }
 
   /// Jellyfin answers 204 even when the provider failed and rescans the item
-  /// in the background, so success shows only in [findDownloadedSubtitle].
-  Future<bool> downloadSubtitle(String ratingKey, SubtitleSearchResult result) async {
-    final language = result.languageCode ?? '';
-    final codec = result.codec ?? 'srt';
-    _pendingSubtitleDownloads[ratingKey] = (
-      paths: (await _externalSubtitlesByPath(ratingKey)).tracks.keys.toSet(),
-      language: language,
-      codec: codec,
-      forced: result.forced,
-    );
+  /// in the background, so success shows only in the returned download's poll.
+  Future<SubtitleDownload?> downloadSubtitle(
+    String ratingKey,
+    SubtitleSearchResult result, {
+    required Set<int> existingTrackIds,
+    Duration? position,
+  }) async {
+    final before = (await _externalSubtitlesByPath(ratingKey)).tracks.keys.toSet();
     final response = await _http.post('/Items/${_segment(ratingKey)}/RemoteSearch/Subtitles/${_segment(result.key)}');
     throwIfHttpError(response);
-    return true;
+    return () => _findDownloadedSubtitle(ratingKey, result, before);
   }
 
   /// The rescan inserts external streams ahead of the container's and
   /// renumbers every index, and same-language files share every label, so the
-  /// new file is found by path, not by [existingTrackIds].
-  Future<MediaSubtitleTrack?> findDownloadedSubtitle(
-    String ratingKey, {
-    required Set<int> existingTrackIds,
-    Duration? position,
-  }) async {
-    final pending = _pendingSubtitleDownloads[ratingKey];
-    if (pending == null) return null;
-    final languages = LanguageCodes.getVariations(pending.language);
-    final format = CodecUtils.getSubtitleExtension(pending.codec);
+  /// new file is found by path, against the paths listed [before] the download.
+  Future<MediaSubtitleTrack?> _findDownloadedSubtitle(
+    String ratingKey,
+    SubtitleSearchResult result,
+    Set<String> before,
+  ) async {
+    final searched = result.languageCode ?? '';
+    final languages = LanguageCodes.getVariations(searched);
+    final format = CodecUtils.getSubtitleExtension(result.codec ?? 'srt');
     // Bazarr, a scan or another client can add a file in the same window, so
     // only a new file in the chosen language, format and forced-ness counts,
     // and only one. Jellyfin reads the language from the name it saves under,
@@ -141,22 +134,21 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
         languages.contains(language?.toLowerCase()) ||
         (language != null &&
             LanguageCodes.getLanguageName(language) == null &&
-            path.split('/').last.toLowerCase().contains('.${pending.language.toLowerCase()}.'));
+            path.split('/').last.toLowerCase().contains('.${searched.toLowerCase()}.'));
     final now = await _externalSubtitlesByPath(ratingKey);
     final added = [
       for (final MapEntry(key: path, value: track) in now.tracks.entries)
-        if (!pending.paths.contains(path) &&
+        if (!before.contains(path) &&
             inLanguage(path, track.languageCode) &&
-            track.forced == pending.forced &&
+            track.forced == result.forced &&
             CodecUtils.getSubtitleExtension(track.codec) == format)
           track,
     ];
     if (added.length != 1) return null;
     // For a merged version, the row playback reads cache-first is the primary
     // item's, one of the other versions this item lists: refresh those too,
-    // before forgetting the download, so a failed refresh is retried.
+    // before reporting the find, so the next poll retries a failed refresh.
     await Future.wait([for (final id in now.otherVersionIds) fetchItem(id)]);
-    _pendingSubtitleDownloads.remove(ratingKey);
     return added.single;
   }
 

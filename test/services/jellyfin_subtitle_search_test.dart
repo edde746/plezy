@@ -234,11 +234,12 @@ void main() {
       }) async {
         downloaded = false;
         after = listed;
-        await fake.client.downloadSubtitle(
+        final download = await fake.client.downloadSubtitle(
           'item-1',
           SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: language, forced: forced),
+          existingTrackIds: const {0},
         );
-        final found = await fake.client.findDownloadedSubtitle('item-1', existingTrackIds: const {0});
+        final found = await download!();
         return found?.languageCode;
       }
 
@@ -310,15 +311,13 @@ void main() {
       });
       await fake.client.fetchItem('item-1'); // playback start caches the primary row
 
-      await fake.client.downloadSubtitle(
+      final download = await fake.client.downloadSubtitle(
         'alt-2',
         const SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: 'de'),
+        existingTrackIds: const {},
       );
-      await expectLater(
-        fake.client.findDownloadedSubtitle('alt-2', existingTrackIds: const {}),
-        throwsA(isA<MediaServerHttpException>()),
-      );
-      final found = await fake.client.findDownloadedSubtitle('alt-2', existingTrackIds: const {});
+      await expectLater(download!(), throwsA(isA<MediaServerHttpException>()));
+      final found = await download();
 
       expect(found?.language, 'ger', reason: 'the next poll still finds the download');
       final cached = await fake.client.fetchItemFreshCacheFirst('item-1');
@@ -328,6 +327,55 @@ void main() {
         contains('/m/Film - 720p.de.srt'),
         reason: 'the reload reads the primary row cache-first; a stale one resolves tracks against the old numbering',
       );
+    });
+
+    test('each download of an item polls against its own snapshot', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      JellyfinApiCache.initialize(db);
+      var files = <String>[];
+      final fake = clientAnswering({
+        '/Users/user-1/Items/item-1': (_) => {
+          'Id': 'item-1',
+          'Type': 'Movie',
+          'MediaSources': [
+            {
+              'Id': 'item-1',
+              'MediaStreams': [
+                for (final (index, file) in files.indexed)
+                  {
+                    'Index': index,
+                    'Type': 'Subtitle',
+                    'Language': 'ger',
+                    'Codec': 'subrip',
+                    'IsExternal': true,
+                    'Title': file,
+                    'Path': '/movies/$file',
+                  },
+                {'Index': files.length, 'Type': 'Video'},
+              ],
+            },
+          ],
+        },
+        '/Items/item-1/RemoteSearch/Subtitles/sub-1': (_) => http.Response('', 204),
+        '/Items/item-1/RemoteSearch/Subtitles/sub-2': (_) => http.Response('', 204),
+      });
+      download(String key) => fake.client.downloadSubtitle(
+        'item-1',
+        SubtitleSearchResult(key: key, codec: 'srt', languageCode: 'de'),
+        existingTrackIds: const {},
+      );
+
+      // Download, close the sheet (its poll keeps running), reopen it and download again.
+      final first = await download('sub-1');
+      files = ['Film.de.srt']; // the first lands
+      final second = await download('sub-2');
+      final firstPoll = await first!();
+      files = ['Film.de.0.srt', 'Film.de.srt']; // then the second
+      final secondPoll = await second!();
+
+      expect(firstPoll?.title, 'Film.de.srt');
+      expect(secondPoll?.title, 'Film.de.0.srt', reason: 'the second sheet would time out although it was applied');
     });
 
     test('finds the downloaded file by path, and leaves playback a fresh catalog', () async {
@@ -367,14 +415,13 @@ void main() {
         },
       });
 
-      expect(await fake.client.findDownloadedSubtitle('item-1', existingTrackIds: const {0}), isNull);
-      final ok = await fake.client.downloadSubtitle(
+      final download = await fake.client.downloadSubtitle(
         'item-1',
         const SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: 'de'),
+        existingTrackIds: const {0},
       );
-      final found = await fake.client.findDownloadedSubtitle('item-1', existingTrackIds: const {0});
+      final found = await download!();
 
-      expect(ok, isTrue);
       expect(
         fake.requests.where((r) => r.method == 'POST').single.url.path,
         '/Items/item-1/RemoteSearch/Subtitles/sub-1',

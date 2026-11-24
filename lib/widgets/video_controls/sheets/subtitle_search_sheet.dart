@@ -35,15 +35,19 @@ class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
   final String? mediaTitle;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded;
+  final Future<SubtitleDownloadApplyOutcome> Function({
+    required String serverId,
+    required String ratingKey,
+    required SubtitleSearchResult result,
+  })?
+  onDownloadSubtitle;
 
   const SubtitleSearchSheet({
     super.key,
     required this.ratingKey,
     required this.serverId,
     this.mediaTitle,
-    this.onSubtitleDownloaded,
+    this.onDownloadSubtitle,
   });
 
   @override
@@ -191,35 +195,23 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     setState(() => _downloadingKey = result.key);
 
     try {
-      final client = _searchClient();
-      if (client == null) {
-        if (!mounted) return;
-        setState(() => _downloadingKey = null);
-        return;
-      }
-      final success = await client.downloadSubtitle(widget.ratingKey, result);
-
+      final outcome =
+          await widget.onDownloadSubtitle?.call(
+            serverId: widget.serverId,
+            ratingKey: widget.ratingKey,
+            result: result,
+          ) ??
+          SubtitleDownloadApplyOutcome.notDownloaded;
       if (!mounted) return;
-
-      if (success) {
-        final outcome =
-            await widget.onSubtitleDownloaded?.call(serverId: widget.serverId, ratingKey: widget.ratingKey) ??
-            SubtitleDownloadApplyOutcome.unavailable;
-        if (!mounted) return;
-        if (outcome == SubtitleDownloadApplyOutcome.applied) {
-          showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
-          OverlaySheetController.of(context).close();
-        } else {
-          showErrorSnackBar(
-            context,
-            outcome == SubtitleDownloadApplyOutcome.timedOut
-                ? t.videoControls.subtitleDownloadTimedOut
-                : t.videoControls.subtitleDownloadedNotApplied,
-          );
-          setState(() => _downloadingKey = null);
-        }
+      if (outcome == SubtitleDownloadApplyOutcome.applied) {
+        showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+        OverlaySheetController.of(context).close();
       } else {
-        showErrorSnackBar(context, t.videoControls.subtitleDownloadFailed);
+        showErrorSnackBar(context, switch (outcome) {
+          SubtitleDownloadApplyOutcome.timedOut => t.videoControls.subtitleDownloadTimedOut,
+          SubtitleDownloadApplyOutcome.notDownloaded => t.videoControls.subtitleDownloadFailed,
+          _ => t.videoControls.subtitleDownloadedNotApplied,
+        });
         setState(() => _downloadingKey = null);
       }
     } catch (e) {

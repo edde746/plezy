@@ -42,6 +42,7 @@ import '../../providers/multi_server_provider.dart';
 import '../../media/media_source_info.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../media/media_version.dart';
+import '../../media/subtitle_search_result.dart';
 import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
@@ -896,6 +897,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _subtitlesVisible = true;
   bool _confirmedSubtitlesVisible = true;
   int _subtitleVisibilityWriteGeneration = 0;
+  int _subtitleDownloadGeneration = 0;
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_version.dart';
 import '../../../media/media_source_info.dart';
+import '../../../media/subtitle_search_result.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/playback_initialization_types.dart';
@@ -10,7 +11,7 @@ import '../../../services/playback_subtitle_resolver.dart';
 import '../../../services/shader_service.dart';
 import '../helpers/track_filter_helper.dart';
 
-enum SubtitleDownloadApplyOutcome { applied, timedOut, busy, superseded, unavailable, failed }
+enum SubtitleDownloadApplyOutcome { applied, timedOut, busy, superseded, unavailable, failed, notDownloaded }
 
 /// Immutable configuration for track/chapter control widgets.
 class TrackControlsState {
@@ -75,8 +76,12 @@ class TrackControlsState {
   /// Item currently playing, used to key scope-persisted player settings
   /// ([ScopedPlayerPrefs]). Null only for embedders without item identity.
   final MediaItem? metadata;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
-  onSubtitleDownloaded;
+  final Future<SubtitleDownloadApplyOutcome> Function({
+    required String serverId,
+    required String ratingKey,
+    required SubtitleSearchResult result,
+  })?
+  onDownloadSubtitle;
 
   /// Whether OpenSubtitles search is reachable for this server
   /// ([ServerCapabilities.externalSubtitleSearch]). The track sheet hides the
@@ -135,7 +140,7 @@ class TrackControlsState {
     this.onQueueItemSelected,
     this.ratingKey = '',
     this.mediaTitle,
-    this.onSubtitleDownloaded,
+    this.onDownloadSubtitle,
     this.subtitleSearchSupported = true,
   });
 

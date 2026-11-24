@@ -71,35 +71,47 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     videoPlayerState?.navigateToQueueItem(item);
   }
 
-  Future<SubtitleDownloadApplyOutcome> _onSubtitleDownloaded({
+  Future<SubtitleDownloadApplyOutcome> _onDownloadSubtitle({
     required String serverId,
     required String ratingKey,
+    required SubtitleSearchResult result,
   }) async {
-    if (!mounted) return SubtitleDownloadApplyOutcome.unavailable;
+    // Nothing is requested unless the item is still this one and can reload.
+    if (!mounted) return SubtitleDownloadApplyOutcome.notDownloaded;
     if (widget.metadata.serverId != serverId || _subtitleItemId() != ratingKey) {
-      return SubtitleDownloadApplyOutcome.superseded;
+      return SubtitleDownloadApplyOutcome.notDownloaded;
     }
     final switchSource = widget.onPlaybackSourceChanged;
-    if (switchSource == null) return SubtitleDownloadApplyOutcome.unavailable;
+    if (switchSource == null) return SubtitleDownloadApplyOutcome.notDownloaded;
 
     final itemKey = widget.metadata.globalKey;
+    // A newer download stops this poll: both would take a file that lands
+    // after both requests for their own, and reload twice.
+    final generation = ++_subtitleDownloadGeneration;
     bool targetIsCurrent() =>
         mounted &&
+        generation == _subtitleDownloadGeneration &&
         widget.metadata.globalKey == itemKey &&
         widget.metadata.serverId == serverId &&
         _subtitleItemId() == ratingKey;
 
-    try {
-      final client = _subtitleSearchClient();
-      if (client == null) return SubtitleDownloadApplyOutcome.unavailable;
+    final client = _subtitleSearchClient();
+    if (client == null) return SubtitleDownloadApplyOutcome.notDownloaded;
+    // Snapshot the authoritative source IDs so we can identify the new
+    // download without asking mpv to synchronously open its remote URL.
+    // A failed request throws to the sheet, which reports it.
+    final findTrack = await client.downloadSubtitle(
+      ratingKey,
+      result,
+      existingTrackIds: widget.sourceSubtitleTracks.map((track) => track.id).toSet(),
+      position: widget.player.state.position,
+    );
+    if (findTrack == null) return SubtitleDownloadApplyOutcome.notDownloaded;
 
+    try {
       // The server downloads asynchronously: the request returns immediately
       // but the new stream entry shows up in metadata seconds later. Poll until it
       // appears, for as long as the client says its server may take.
-      // Snapshot the authoritative source IDs so we can identify the new
-      // download without asking mpv to synchronously open its remote URL.
-      final existingSourceIds = widget.sourceSubtitleTracks.map((track) => track.id).toSet();
-
       final deadline = DateTime.now().add(client.subtitleDownloadTimeout);
       MediaSubtitleTrack? newTrack;
 
@@ -109,11 +121,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
         try {
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
-          newTrack = await client.findDownloadedSubtitle(
-            ratingKey,
-            existingTrackIds: existingSourceIds,
-            position: widget.player.state.position,
-          );
+          newTrack = await findTrack();
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
           if (newTrack != null) break;
         } catch (e) {

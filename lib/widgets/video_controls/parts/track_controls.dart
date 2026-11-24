@@ -215,7 +215,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onQueueItemSelected: playbackState.isQueueActive && widget.canNavigateMediaItems ? _onQueueItemSelected : null,
       ratingKey: _subtitleItemId(),
       mediaTitle: widget.metadata.title,
-      onSubtitleDownloaded: _onSubtitleDownloaded,
+      onDownloadSubtitle: _onDownloadSubtitle,
       subtitleSearchSupported: versionQuality.subtitleSearchSupported,
     );
   }
