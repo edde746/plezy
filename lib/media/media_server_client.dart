@@ -1065,8 +1065,8 @@ abstract interface class ExternalSubtitleSearchClient {
   /// Whether the server's subtitle providers can search items of [kind].
   bool canSearchSubtitlesFor(MediaKind kind);
 
-  /// Whether [searchSubtitles]' title narrows the results by release name (true)
-  /// rather than being sent to the server as a title search (false).
+  /// Whether the sheet's title field narrows the rows already loaded by release
+  /// name (true) rather than going to [searchSubtitles] as a title search (false).
   bool get subtitleTitleFiltersByReleaseName;
 
   /// The item id the other methods take while [mediaSourceId] of [itemId]

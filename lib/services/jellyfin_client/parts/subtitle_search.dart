@@ -63,11 +63,11 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
   String subtitleItemIdFor(String itemId, {String? mediaSourceId}) =>
       mediaSourceId == null || mediaSourceId.isEmpty || int.tryParse(mediaSourceId) != null ? itemId : mediaSourceId;
 
-  /// Jellyfin's search takes no title, so [searchSubtitles] filters by release name.
+  /// Jellyfin's search takes no title, so the sheet filters its rows by release name.
   bool get subtitleTitleFiltersByReleaseName => true;
 
   /// Jellyfin resolves two- and three-letter [language] codes alike. Its
-  /// search takes no title, so [title] filters the rows by name instead.
+  /// search takes no [title] ([subtitleTitleFiltersByReleaseName]).
   Future<List<SubtitleSearchResult>> searchSubtitles(
     String ratingKey, {
     required String language,
@@ -78,11 +78,9 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     final rows = response.data is List
         ? (response.data as List).whereType<Map<String, dynamic>>()
         : const <Map<String, dynamic>>[];
-    String letters(String s) => s.toLowerCase().replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
-    final filter = letters(title ?? '');
     return [
       for (final row in rows)
-        if (row['Id'] is String && letters('${row['Name'] ?? ''}').contains(filter))
+        if (row['Id'] is String)
           SubtitleSearchResult(
             key: row['Id'] as String,
             languageCode: language,

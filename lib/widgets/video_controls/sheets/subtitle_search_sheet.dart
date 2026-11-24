@@ -64,6 +64,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   Timer? _debounceTimer;
 
   List<SubtitleSearchResult>? _results;
+  List<SubtitleSearchResult>? _loaded; // every row the last search returned
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
@@ -119,11 +120,11 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       final results = await client.searchSubtitles(
         widget.ratingKey,
         language: language,
-        title: title.isEmpty ? null : title,
+        title: title.isEmpty || _filtersByReleaseName ? null : title,
       );
       if (!mounted || generation != _searchGeneration) return;
       setState(() {
-        _results = results;
+        _results = _filterByReleaseName(_loaded = results);
         _isSearching = false;
       });
     } catch (e) {
@@ -137,7 +138,22 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   void _onTitleChanged(String _) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 500), _search);
+    if (_filtersByReleaseName) {
+      setState(() => _results = _filterByReleaseName(_loaded));
+    } else {
+      _debounceTimer = Timer(const Duration(milliseconds: 500), _search);
+    }
+  }
+
+  bool get _filtersByReleaseName => _searchClient()?.subtitleTitleFiltersByReleaseName ?? false;
+
+  /// [rows] whose release name holds the title field's letters and digits
+  /// (release names use punctuation for spaces), where the field filters.
+  List<SubtitleSearchResult>? _filterByReleaseName(List<SubtitleSearchResult>? rows) {
+    if (!_filtersByReleaseName) return rows;
+    String letters(String s) => s.toLowerCase().replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), '');
+    final filter = letters(_titleController.text);
+    return rows?.where((row) => letters(row.title ?? '').contains(filter)).toList();
   }
 
   void _showLanguagePickerView() {
@@ -160,7 +176,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   Future<void> _submitSearchAndFocusFirstResult() async {
     _debounceTimer?.cancel();
-    await _search();
+    if (!_filtersByReleaseName || _isSearching || _error != null) await _search();
     if (!mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -233,7 +249,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
     final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
     final hasResults = _results != null && _results!.isNotEmpty && !_isSearching && _error == null;
-    final filtersByReleaseName = _searchClient()?.subtitleTitleFiltersByReleaseName ?? false;
+    final filtersByReleaseName = _filtersByReleaseName;
 
     return BaseVideoControlSheet(
       title: t.videoControls.searchSubtitles,

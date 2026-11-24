@@ -176,10 +176,6 @@ void main() {
       });
 
       final all = await fake.client.searchSubtitles('item-1', language: 'en');
-      // Jellyfin's search takes no title, so the sheet's title field filters by
-      // name, ignoring the punctuation release names use for spaces.
-      final byTitle = await fake.client.searchSubtitles('item-1', language: 'en', title: 'The Crow 2024');
-      final filtered = await fake.client.searchSubtitles('item-1', language: 'en', title: 'bluray');
 
       expect(all.map((r) => r.key), ['sub-1', 'sub-2']);
       expect(all.first.title, 'The Crow (2024) BLURAY');
@@ -188,8 +184,6 @@ void main() {
       expect(all.last.perfectMatch, isTrue);
       // Downloading needs the language back; the client reads none from Jellyfin's rows.
       expect(all.map((r) => r.languageCode).toSet(), {'en'});
-      expect(byTitle.map((r) => r.key), ['sub-1', 'sub-2']);
-      expect(filtered.map((r) => r.key), ['sub-1']);
     });
 
     test('takes only a new file in the chosen language and format, and declines an ambiguous one', () async {

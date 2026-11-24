@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -111,6 +113,41 @@ void main() {
       addTearDown(jellyfin.close);
       await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [jellyfin]).provider);
       expect(find.text(t.videoControls.filterSubtitlesByReleaseName), findsOneWidget);
+    });
+
+    testWidgets('on Jellyfin typing filters the rows already loaded instead of searching again', (tester) async {
+      var searches = 0;
+      final jellyfin = JellyfinClient.forTesting(
+        connection: testJellyfinConnection(machineId: 'server'),
+        httpClient: MockClient((request) async {
+          // The first search fails, as OpenSubtitles sometimes does.
+          if (searches++ == 0) return http.Response('', 500);
+          return http.Response(
+            jsonEncode([
+              {'Id': 'sub-1', 'Name': 'The Crow (2024) BLURAY', 'Format': 'srt'},
+              {'Id': 'sub-2', 'Name': 'The.Crow.2024.1080p.WEBRip', 'Format': 'srt'},
+            ]),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(jellyfin.close);
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [jellyfin]).provider);
+      await tester.enterText(find.byType(TextField), 'crow');
+      await tester.testTextInput.receiveAction(TextInputAction.done); // Enter retries the failed search
+      await tester.pumpAndSettle();
+      expect(find.text('The.Crow.2024.1080p.WEBRip'), findsOneWidget);
+
+      // Release names use punctuation for spaces, so only letters and digits count.
+      await tester.enterText(find.byType(TextField), 'blu ray');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.testTextInput.receiveAction(TextInputAction.done); // with rows loaded, Enter only moves to them
+      await tester.pumpAndSettle();
+
+      expect(searches, 2, reason: 'each search goes to OpenSubtitles through the plugin');
+      expect(find.text('The Crow (2024) BLURAY'), findsOneWidget);
+      expect(find.text('The.Crow.2024.1080p.WEBRip'), findsNothing);
     });
 
     testWidgets('HTTP 500 from searchSubtitles shows the sheet error state, not "no subtitles found"', (tester) async {
