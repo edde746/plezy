@@ -179,14 +179,16 @@ Future<void> runPlayerScreen(
       );
       unawaited(VideoPlayerRoute(builder: (_) => screen(key)).push(navigator.currentState!));
 
-      await body(run);
-
-      var shutdownDone = false;
-      final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);
-      await pumpUntil(tester, () => shutdownDone);
-      await shutdown;
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump();
+      try {
+        await body(run);
+      } finally {
+        var shutdownDone = false;
+        final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);
+        await pumpUntil(tester, () => shutdownDone);
+        await shutdown;
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      }
     },
   );
 }
