@@ -1051,7 +1051,7 @@ abstract interface class MediaDeletionPermissionClient {
 
 /// Optional capability for clients whose server searches and downloads
 /// subtitles from an external provider (Plex's OpenSubtitles agent,
-/// Jellyfin's Open Subtitles plugin), returning [SubtitleSearchResult] rows.
+/// Jellyfin's subtitle plugins), returning [SubtitleSearchResult] rows.
 /// Offered only while [ServerCapabilities.externalSubtitleSearch] is true.
 abstract interface class ExternalSubtitleSearchClient {
   /// How long the player waits for a download to show up in the item.

@@ -1,11 +1,9 @@
 part of '../../jellyfin_client.dart';
 
-/// [ExternalSubtitleSearchClient] over the server's Open Subtitles plugin
+/// [ExternalSubtitleSearchClient] over the server's subtitle plugins
 /// (`/Items/{id}/RemoteSearch/Subtitles`). Jellyfin only: Emby gates the same
 /// routes behind Premiere, so the probe never runs there.
 mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
-  static const _openSubtitlesFetcher = 'Open Subtitles';
-
   bool _remoteSubtitleSearchAvailable = false;
 
   /// Cached result of [probeRemoteSubtitleSearch]; false until it resolves.
@@ -33,15 +31,10 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
           userPolicy is Map<String, dynamic> &&
           (userPolicy['IsAdministrator'] == true || userPolicy['EnableSubtitleManagement'] == true);
       if (!canManage) return _remoteSubtitleSearchAvailable = false;
-      final options = await _http.get(
-        '/Libraries/AvailableOptions',
-        queryParameters: {'libraryContentType': 'movies'},
-        allowEndpointFailover: false,
-      );
+      final options = await _http.get('/Libraries/AvailableOptions', allowEndpointFailover: false);
       throwIfHttpError(options);
       final fetchers = options.data is Map<String, dynamic> ? options.data['SubtitleFetchers'] : null;
-      return _remoteSubtitleSearchAvailable =
-          fetchers is List && fetchers.any((f) => f is Map && f['Name'] == _openSubtitlesFetcher);
+      return _remoteSubtitleSearchAvailable = fetchers is List && fetchers.isNotEmpty;
     } catch (e) {
       appLogger.d('JellyfinClient: remote subtitle search probe failed', error: e);
       return _remoteSubtitleSearchAvailable;

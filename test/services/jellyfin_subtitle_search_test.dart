@@ -15,8 +15,8 @@ import '../test_helpers/http_fixtures.dart';
 /// Jellyfin searches and downloads subtitles through whichever subtitle
 /// plugin the server has loaded (`/Items/{id}/RemoteSearch/Subtitles`). The
 /// client only offers it when the server can actually answer: a Jellyfin
-/// server, a user allowed to manage subtitles (admins always are), and the
-/// Open Subtitles plugin loaded, as any signed-in user can read it.
+/// server, a user allowed to manage subtitles (admins always are), and a
+/// subtitle plugin loaded, as any signed-in user can read it.
 void main() {
   ({JellyfinClient client, List<http.Request> requests}) clientAnswering(
     Map<String, Object? Function(http.Request request)> routes, {
@@ -63,6 +63,8 @@ void main() {
       expect(fake.client.capabilities.externalSubtitleSearch, isTrue);
       // A non-admin is judged on the loaded fetchers alone: /Plugins is admin-only.
       expect(fake.requests.map((r) => r.url.path), isNot(contains('/Plugins')));
+      final options = fake.requests.singleWhere((r) => r.url.path == '/Libraries/AvailableOptions');
+      expect(options.url.queryParameters, isNot(contains('libraryContentType')), reason: 'films and series alike');
     });
 
     test('an admin is judged exactly like everyone else, without the admin-only /Plugins', () async {
@@ -87,12 +89,12 @@ void main() {
       expect(await admin.client.probeRemoteSubtitleSearch(), isTrue);
     });
 
-    test('stays off when the Open Subtitles fetcher is not loaded', () async {
+    test('stays off only when no subtitle fetcher is loaded', () async {
       final none = clientAnswering(serverWithPlugin(fetchers: const []));
       final other = clientAnswering(serverWithPlugin(fetchers: const ['Some Other Fetcher']));
 
       expect(await none.client.probeRemoteSubtitleSearch(), isFalse);
-      expect(await other.client.probeRemoteSubtitleSearch(), isFalse);
+      expect(await other.client.probeRemoteSubtitleSearch(), isTrue);
     });
 
     test('degrades to off on any server error', () async {

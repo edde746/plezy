@@ -83,7 +83,7 @@ class TrackControlsState {
   })?
   onDownloadSubtitle;
 
-  /// Whether OpenSubtitles search is reachable for this server
+  /// Whether external subtitle search is reachable for this server
   /// ([ServerCapabilities.externalSubtitleSearch]). The track sheet hides the
   /// "Search subtitles" tile when this is false.
   final bool subtitleSearchSupported;

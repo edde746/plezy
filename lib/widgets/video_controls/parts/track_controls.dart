@@ -152,7 +152,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       sourceSubtitleTracks: widget.sourceSubtitleTracks,
       selectedSubtitleChoice: widget.selectedSubtitleChoice,
       // Plex proxies OpenSubtitles via its server-side plugin; Jellyfin via
-      // its Open Subtitles plugin once the client's probe found it. The check
+      // a subtitle plugin once the client's probe found one. The check
       // uses the registered client for this metadata's serverId.
       subtitleSearchSupported: _supportsSubtitleSearch(),
     );
