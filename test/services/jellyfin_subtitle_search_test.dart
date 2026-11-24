@@ -264,6 +264,11 @@ void main() {
       expect(await downloadThenFind([...before, ('Film.WEB-DL.srt', null, 'subrip')]), isNull);
       expect(await downloadThenFind([...before, ('Film.de.ass', 'ger', 'ass')]), isNull, reason: 'wrong format');
       expect(
+        await downloadThenFind([...before, ('Film.de.smi', 'ger', 'smi')]),
+        isNull,
+        reason: 'a format Plezy has no name for',
+      );
+      expect(
         await downloadThenFind([...before, ('Film.de.srt', 'ger', 'subrip'), ('Film.de.0.srt', 'ger', 'subrip')]),
         isNull,
         reason: 'two candidates: decline rather than guess',
@@ -327,6 +332,67 @@ void main() {
         contains('/m/Film - 720p.de.srt'),
         reason: 'the reload reads the primary row cache-first; a stale one resolves tracks against the old numbering',
       );
+    });
+
+    test('never takes an empty or cached listing, before the download or after it', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      JellyfinApiCache.initialize(db);
+      var answer = 'listing';
+      final fake = clientAnswering({
+        '/Users/user-1/Items/item-1': (_) => switch (answer) {
+          'listing' => {
+            'Id': 'item-1',
+            'Type': 'Movie',
+            'MediaSources': [
+              {
+                'Id': 'item-1',
+                'MediaStreams': [
+                  {
+                    'Index': 0,
+                    'Type': 'Subtitle',
+                    'Language': 'ger',
+                    'Codec': 'subrip',
+                    'IsExternal': true,
+                    'Path': '/movies/Film.de.srt',
+                  },
+                ],
+              },
+            ],
+          },
+          'none' => {
+            'Id': 'item-1',
+            'Type': 'Movie',
+            'MediaSources': [
+              {'Id': 'item-1', 'MediaStreams': <Object>[]},
+            ],
+          },
+          'bare' => {'Id': 'item-1', 'Type': 'Movie'},
+          'sourceless' => {'Id': 'item-1', 'Type': 'Movie', 'MediaSources': <Object>[]},
+          'html' => http.Response('<html>proxy</html>', 200, headers: {'content-type': 'text/html'}),
+          'missing' => http.Response('', 404),
+          _ => throw http.ClientException('connection reset'),
+        },
+        '/Items/item-1/RemoteSearch/Subtitles/sub-1': (_) => http.Response('', 204),
+      });
+      await fake.client.fetchItem('item-1'); // playback start caches a row listing Film.de.srt
+      const row = SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: 'de');
+
+      for (final failure in ['html', 'missing', 'bare', 'sourceless', 'transport']) {
+        answer = failure;
+        await expectLater(
+          fake.client.downloadSubtitle('item-1', row, existingTrackIds: const {}),
+          throwsA(anything),
+          reason: '$failure: an empty or cached snapshot would pass a file already there as the download',
+        );
+      }
+      expect(fake.requests.where((r) => r.method == 'POST'), isEmpty);
+
+      // Nor may a poll fall back to the cached row.
+      answer = 'none';
+      final download = await fake.client.downloadSubtitle('item-1', row, existingTrackIds: const {});
+      answer = 'transport';
+      await expectLater(download!(), throwsA(anything));
     });
 
     test('each download of an item polls against its own snapshot', () async {

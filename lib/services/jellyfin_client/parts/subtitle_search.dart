@@ -124,7 +124,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
   ) async {
     final searched = result.languageCode ?? '';
     final languages = LanguageCodes.getVariations(searched);
-    final format = CodecUtils.getSubtitleExtension(result.codec ?? 'srt');
+    final format = (result.codec ?? 'srt').toLowerCase();
     // Bazarr, a scan or another client can add a file in the same window, so
     // only a new file in the chosen language, format and forced-ness counts,
     // and only one. Jellyfin reads the language from the name it saves under,
@@ -141,7 +141,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
         if (!before.contains(path) &&
             inLanguage(path, track.languageCode) &&
             track.forced == result.forced &&
-            CodecUtils.getSubtitleExtension(track.codec) == format)
+            path.toLowerCase().endsWith('.$format'))
           track,
     ];
     if (added.length != 1) return null;
@@ -152,17 +152,23 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     return added.single;
   }
 
-  /// Through [fetchItem], which always hits the network and rewrites the row
-  /// playback reads cache-first, so the reload after a download sees the
-  /// renumbered streams too. Also returns the item's other versions.
+  /// Straight from the server: an empty or cached listing would pass a file
+  /// already there as new. Rewrites the row playback reads cache-first, so the
+  /// reload after a download sees the renumbered streams too. Also returns the
+  /// item's other versions.
   Future<({Map<String, MediaSubtitleTrack> tracks, List<String> otherVersionIds})> _externalSubtitlesByPath(
     String itemId,
   ) async {
-    final raw = (await fetchItem(itemId))?.raw;
-    final sources = [
-      if (raw is Map<String, dynamic> && raw['MediaSources'] is List)
-        ...(raw['MediaSources'] as List).whereType<Map<String, dynamic>>(),
-    ];
+    final endpoint = '/Users/${_segment(connection.userId)}/Items/${_segment(itemId)}';
+    final response = await _http.get(endpoint, queryParameters: {'Fields': _detailFields});
+    throwIfHttpError(response);
+    final raw = response.data;
+    if (raw is! Map<String, dynamic> || raw['MediaSources'] is! List) throw const FormatException('No item listing');
+    final sources = (raw['MediaSources'] as List).whereType<Map<String, dynamic>>().toList();
+    if (sources.isEmpty) throw const FormatException('No item listing');
+    await cache
+        .put(ServerId(cacheServerId), endpoint, raw)
+        .catchError((Object e) => appLogger.w('Cache write', error: e));
     final otherVersionIds = [
       for (final s in sources)
         if (s['Id'] is String && s['Id'] != itemId) s['Id'] as String,
