@@ -50,5 +50,30 @@ void main() {
       await store.clear(_fullProfileId);
       expect(await store.load(_homeUserUuid), isNull);
     });
+
+    test('an invalidation survives a cache reload and stays with its service and profile', () async {
+      final store = trackerAccountStore(TrackerService.trakt);
+      await store.save(_fullProfileId, _session());
+      await store.clear(_fullProfileId, reconnectRequired: true);
+      BaseSharedPreferencesService.resetForTesting();
+
+      expect(await store.load(_homeUserUuid), isNull);
+      expect(await store.needsReconnect(_homeUserUuid), isTrue);
+      expect(await store.needsReconnect('another-profile'), isFalse);
+      expect(await trackerAccountStore(TrackerService.mal).needsReconnect(_homeUserUuid), isFalse);
+    });
+
+    test('a saved replacement or an intentional disconnect clears the warning', () async {
+      final store = trackerAccountStore(TrackerService.trakt);
+      await store.clear(_homeUserUuid, reconnectRequired: true);
+      await store.save(_homeUserUuid, _session());
+      expect(await store.load(_fullProfileId), isNotNull);
+      expect(await store.needsReconnect(_fullProfileId), isFalse);
+
+      await store.clear(_homeUserUuid, reconnectRequired: true);
+      await store.clear(_homeUserUuid);
+      expect(await store.load(_fullProfileId), isNull);
+      expect(await store.needsReconnect(_fullProfileId), isFalse);
+    });
   });
 }
