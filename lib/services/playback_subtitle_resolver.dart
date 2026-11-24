@@ -338,14 +338,6 @@ class PlaybackSubtitleResolver {
     );
   }
 
-  /// Stable source descriptor used for an explicit user selection. Supplying
-  /// this as the next open's preferred track makes it the highest-priority
-  /// choice without retaining a stale sidecar URL.
-  static SubtitleTrack? preferredTrackForSource(MediaSourceInfo? mediaInfo, int sourceStreamId) {
-    final sourceTrack = mediaInfo?.subtitleTracks.where((track) => track.id == sourceStreamId).firstOrNull;
-    return sourceTrack == null ? null : subtitleTrackForSource(sourceTrack);
-  }
-
   static SubtitleTrack subtitleTrackForSource(MediaSubtitleTrack sourceTrack, {PlaybackSubtitleSidecar? sidecar}) {
     final playable = sidecar?.track;
     return SubtitleTrack(
