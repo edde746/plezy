@@ -223,7 +223,7 @@ Links start Plezy from outside the app. Any link may add `profile=<profile>`: a 
 | `plezy://play?type=movie\|show&tmdb=<n>` | Plays a title from whichever server has it. Use `tmdb`, `tvdb`, `imdb=tt<n>`, or `plex=<hash>` (the Plex GUID without `plex://movie/`) |
 | `plezy://live?channel=<channel>` | Tunes a Live TV channel by key, number, or call sign. Optional `server=<server>` and `start=beginning\|live` |
 
-For a show, `mode=next` (the default) plays the next episode to watch, and `mode=shuffle` plays the show shuffled. The menu of any movie, show, or episode has **Show link**, and each profile's menu in **Switch Profile** has **Show profile link**. Both show the link as text and a QR code.
+For a show, `mode=next` (the default) plays the next episode to watch, and `mode=shuffle` plays the show shuffled. An `id` may also name a video playlist: it plays from the top, or shuffled with `mode=shuffle`. The menu of any movie, show, or episode has **Show link**, and each profile's menu in **Switch Profile** has **Show profile link**. Both show the link as text and a QR code.
 
 ```sh
 # Android / Android TV, over adb (Home Assistant: remote.turn_on with activity: plezy://...)

@@ -4,6 +4,7 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/deep_links/deep_link.dart';
@@ -25,6 +26,7 @@ class _Client implements MediaServerClient {
   final items = <String, MediaItem>{};
   final onDeck = <String, MediaItem>{};
   final descendants = <String, List<MediaItem>>{};
+  final playlists = <String, MediaPlaylist>{};
   Object? fetchError;
 
   @override
@@ -38,6 +40,9 @@ class _Client implements MediaServerClient {
     String id, {
     void Function(MediaItem item)? onItemReady,
   }) async => (item: items[id], onDeckEpisode: onDeck[id]);
+
+  @override
+  Future<MediaPlaylist?> fetchPlaylistMetadata(String id) async => playlists[id];
 
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => descendants[parentId] ?? const [];
@@ -63,6 +68,9 @@ MediaItem _item(
   index: episode,
   viewCount: viewCount,
 );
+
+MediaPlaylist _playlist(String id, String serverId, {String type = 'video'}) =>
+    MediaPlaylist(id: id, backend: MediaBackend.plex, title: id, playlistType: type, serverId: serverId);
 
 LibraryLookupResult _lookup(List<MediaItem> items, {Set<String> failed = const {}, Set<String> unqueried = const {}}) =>
     (
@@ -171,6 +179,30 @@ void main() {
       servers.add(_Client('s1')..items['show'] = _item('show', MediaKind.show, 's1'));
       final resolution = await servers.resolver().resolve(_itemLink('s1', 'show', mode: PlayMode.shuffle));
       expect(resolution, isA<PlayLinkShuffle>().having((r) => r.item.id, 'item', 'show'));
+    });
+
+    test('plays a video playlist in order, or shuffled', () async {
+      servers.add(
+        _Client('s1')
+          ..items['pl'] = _item('pl', MediaKind.playlist, 's1')
+          ..playlists['pl'] = _playlist('pl', 's1'),
+      );
+      Matcher playlist({required bool shuffle}) => isA<PlayLinkPlaylist>()
+          .having((r) => r.playlist.id, 'playlist', 'pl')
+          .having((r) => r.shuffle, 'shuffle', shuffle);
+      expect(await servers.resolver().resolve(_itemLink('s1', 'pl')), playlist(shuffle: false));
+      expect(await servers.resolver().resolve(_itemLink('s1', 'pl', mode: PlayMode.shuffle)), playlist(shuffle: true));
+    });
+
+    test('finds a playlist the server does not serve as an item', () async {
+      servers.add(_Client('s1')..playlists['pl'] = _playlist('pl', 's1'));
+      final resolution = await servers.resolver().resolve(_itemLink('s1', 'pl', mode: PlayMode.shuffle));
+      expect(resolution, isA<PlayLinkPlaylist>().having((r) => r.shuffle, 'shuffle', true));
+    });
+
+    test('refuses a music or photo playlist', () async {
+      servers.add(_Client('s1')..playlists['pl'] = _playlist('pl', 's1', type: 'audio'));
+      expect(await servers.resolver().resolve(_itemLink('s1', 'pl')), _fails(PlayLinkFailureReason.unsupportedItem));
     });
 
     test('refuses what a link cannot play', () async {
