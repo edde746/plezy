@@ -364,9 +364,8 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
       value: code1 ?? _noLanguage,
       icon: icon,
       title: title,
-      subtitleBuilder: (code) => code == null || code == _noLanguage
-          ? t.accountPreferences.noPreference
-          : LanguageCodes.getLanguageName(code) ?? code,
+      subtitleBuilder: (code) =>
+          code == null || code == _noLanguage ? t.accountPreferences.noPreference : LanguageCodes.getDisplayName(code),
       options: options,
       onChanged: (code) => _write(preferenceKey, code == _noLanguage ? null : code),
     );

@@ -23,9 +23,19 @@ void main() {
       expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'fr', systemLocale: const Locale('nl')), 'fr');
     });
 
-    test('normalizes saved locale or three-letter language', () {
-      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'pt_BR', systemLocale: const Locale('nl')), 'pt');
+    test('preserves supported regional language variants and normalizes three-letter languages', () {
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'pt-BR', systemLocale: const Locale('nl')), 'pt-BR');
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'pt_BR', systemLocale: const Locale('nl')), 'pt-BR');
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'pob', systemLocale: const Locale('nl')), 'pt-BR');
       expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'eng', systemLocale: const Locale('nl')), 'en');
+    });
+
+    test('resolves regional language from system locale when not explicitly saved', () {
+      expect(
+        resolveSubtitleSearchLanguageCode(savedLanguageCode: null, systemLocale: const Locale('pt', 'BR')),
+        'pt-BR',
+      );
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: '', systemLocale: const Locale('pt', 'PT')), 'pt-PT');
     });
 
     test('falls back to system language when saved language is invalid', () {
