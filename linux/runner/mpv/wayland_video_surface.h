@@ -187,7 +187,12 @@ class WaylandVideoSurface {
   // OutputHasHdrHeadroom explains why no signal in this protocol answers that,
   // and why the margin it applies is not a magic number.
   bool output_is_hdr() const {
-    return preferred_.valid && OutputHasHdrHeadroom(preferred_.max_luminance, preferred_.reference_luminance);
+    // PLEZY_FORCE_HDR opts out of the headroom test: a compositor with legacy
+    // HDR and a non-PQ preferred description still has an HDR output, and this
+    // is the only place the decision reads that. supports_hdr() remains a hard
+    // gate above it, so a plane that cannot be described stays SDR regardless.
+    return ForceHdrPassthrough() ||
+           (preferred_.valid && OutputHasHdrHeadroom(preferred_.max_luminance, preferred_.reference_luminance));
   }
 
   // Invoked on the GTK main thread when the compositor's preferred description

@@ -2,6 +2,7 @@
 #define PLEZY_LINUX_MPV_HDR_METADATA_H_
 
 #include <cstdint>
+#include <cstdlib>
 
 // Source HDR10 static metadata, and the rules for turning it into a set of
 // colour-management-v1 luminance requests the compositor will accept.
@@ -258,6 +259,24 @@ inline HdrMetadata DescribeTonemappedTo(const HdrMetadata& source, uint32_t peak
   // figure is kept when it still fits, since it remains the better estimate.
   described.max_fall = (source.max_fall > 0 && source.max_fall <= peak_nits) ? source.max_fall : 0;
   return described;
+}
+
+// Opt-in escape hatch for compositors that are running an HDR output but describe
+// it with a non-PQ curve, so the headroom test below reads it as SDR.
+//
+// KWin with NVIDIA is the case this exists for: EDR is unsupported, so the
+// compositor uses legacy HDR and advertises a gamma 2.2 parametric description
+// for the output. Its target luminance is still the panel's peak (564 nits over a
+// 500-nit reference here), which fails the half-stop margin even though the
+// output genuinely shows HDR. Standalone mpv works around the same gap with
+// target-colorspace-hint; this is that workaround for the plane.
+//
+// Non-empty means "treat the output as HDR and take the PQ passthrough path".
+// Unset or empty keeps the normal compositor-driven decision, so default
+// behaviour is untouched.
+inline bool ForceHdrPassthrough() {
+  const char* value = std::getenv("PLEZY_FORCE_HDR");
+  return value != nullptr && value[0] != '\0';
 }
 
 // Whether an output's reported luminances leave enough room above its own
