@@ -8,12 +8,17 @@ enum TransportCommand { play, pause, toggle }
 /// that are not transport keys (including the configured play/pause hotkey,
 /// which callers resolve to [TransportCommand.toggle] themselves).
 ///
+/// Android's `Generic.kl` maps Linux `KEY_PAUSE` (scancode 119) to
+/// `KEYCODE_BREAK` ([LogicalKeyboardKey.pause]), while `KEY_PAUSECD` (201)
+/// maps to `KEYCODE_MEDIA_PAUSE` ([LogicalKeyboardKey.mediaPause]); TV/IR/CEC
+/// remotes emit both, along with [LogicalKeyboardKey.play].
+///
 /// Shared by the video player screen (foreground remote transport, #1375) and
 /// the music hardware-transport handler (#1948); it deliberately lives outside
 /// `lib/widgets/` so the music service layer does not import widget code.
 TransportCommand? classifyTransportKey(LogicalKeyboardKey key) {
-  if (key == LogicalKeyboardKey.mediaPlay) return TransportCommand.play;
-  if (key == LogicalKeyboardKey.mediaPause) return TransportCommand.pause;
+  if (key == LogicalKeyboardKey.mediaPlay || key == LogicalKeyboardKey.play) return TransportCommand.play;
+  if (key == LogicalKeyboardKey.mediaPause || key == LogicalKeyboardKey.pause) return TransportCommand.pause;
   if (key == LogicalKeyboardKey.mediaPlayPause) return TransportCommand.toggle;
   return null;
 }

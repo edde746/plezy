@@ -84,6 +84,43 @@ void main() {
       },
     );
   });
+
+  testWidgets('the screen node consumes held transport keys and toggles the OSD on Info', (tester) async {
+    final screenKey = GlobalKey<VideoPlayerScreenState>();
+    final player = _SeekRecordingPlayer(position: const Duration(minutes: 4));
+
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        await tester.pumpWidget(
+          ChangeNotifierProvider(
+            create: (_) => PlaybackStateProvider(),
+            child: MaterialApp(
+              home: VideoPlayerScreen(
+                key: screenKey,
+                metadata: testMediaItem(title: 'Screen-node transport and info keys'),
+                isOffline: true,
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        screenKey.currentState!.player = player;
+
+        for (final key in [LogicalKeyboardKey.mediaPause, LogicalKeyboardKey.pause, LogicalKeyboardKey.info]) {
+          expect(await tester.sendKeyDownEvent(key), isTrue, reason: '$key down');
+          await tester.pump();
+          expect(await tester.sendKeyRepeatEvent(key), isTrue, reason: '$key repeat');
+          await tester.pump();
+          expect(await tester.sendKeyUpEvent(key), isTrue, reason: '$key up');
+          await tester.pump();
+        }
+
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  });
 }
 
 /// Sends [key] to a freshly opened player route — whose screen node still owns

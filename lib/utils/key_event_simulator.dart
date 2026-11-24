@@ -301,5 +301,11 @@ PhysicalKeyboardKey _getPhysicalKey(LogicalKeyboardKey logicalKey) {
   if (logicalKey == LogicalKeyboardKey.gameButtonA) return PhysicalKeyboardKey.gameButtonA;
   if (logicalKey == LogicalKeyboardKey.gameButtonB) return PhysicalKeyboardKey.gameButtonB;
   if (logicalKey == LogicalKeyboardKey.gameButtonX) return PhysicalKeyboardKey.gameButtonX;
+  if (logicalKey == LogicalKeyboardKey.mediaPlay) return PhysicalKeyboardKey.mediaPlay;
+  if (logicalKey == LogicalKeyboardKey.mediaPause) return PhysicalKeyboardKey.mediaPause;
+  if (logicalKey == LogicalKeyboardKey.mediaPlayPause) return PhysicalKeyboardKey.mediaPlayPause;
+  if (logicalKey == LogicalKeyboardKey.pause) return PhysicalKeyboardKey.pause;
+  if (logicalKey == LogicalKeyboardKey.info) return PhysicalKeyboardKey.info;
+  if (logicalKey == LogicalKeyboardKey.keyI) return PhysicalKeyboardKey.keyI;
   return PhysicalKeyboardKey.enter;
 }

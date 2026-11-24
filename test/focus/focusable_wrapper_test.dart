@@ -6,6 +6,7 @@ import 'package:flutter/semantics.dart' show SemanticsNode;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/card_focus_scope.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
@@ -255,10 +256,18 @@ void main() {
     await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonX);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
 
-    expect(longPressed, 1);
+    expect(longPressed, 2);
     expect(selected, 1);
+    for (final tvMenuKey in [
+      LogicalKeyboardKey.mediaTopMenu,
+      LogicalKeyboardKey.tvContentsMenu,
+      LogicalKeyboardKey.tvMediaContext,
+    ]) {
+      expect(tvMenuKey.isContextMenuKey, isTrue, reason: '$tvMenuKey must be classified as a context menu key');
+    }
   });
 
   Future<Color> focusedFill(WidgetTester tester, MonoPalette palette, {Color? focusColor}) async {

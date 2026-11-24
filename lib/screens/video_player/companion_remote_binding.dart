@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../focus/transport_keys.dart';
 import '../../mpv/mpv.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/companion_remote/companion_remote_receiver.dart';
@@ -27,6 +28,7 @@ class CompanionRemoteBinding {
     required this._canControlPlayback,
     required this._volumeController,
     required this._hasNextItem,
+    required this._onTransport,
     required this._onStop,
     required this._onNavigateToNextItem,
     required this._onNavigateToPreviousItem,
@@ -42,6 +44,7 @@ class CompanionRemoteBinding {
   final bool Function() _canControlPlayback;
   final VideoVolumeController? Function() _volumeController;
   final bool Function() _hasNextItem;
+  final Future<void> Function(TransportCommand command) _onTransport;
   final void Function() _onStop;
   final Future<void> Function() _onNavigateToNextItem;
   final Future<void> Function() _onNavigateToPreviousItem;
@@ -63,6 +66,15 @@ class CompanionRemoteBinding {
     final receiver = CompanionRemoteReceiver.instance;
     receiver.playerHomeFallback ??= receiver.onHome;
     receiver.playerOwner = this;
+    receiver.onPlay = () {
+      if (_isMounted()) unawaited(_onTransport(TransportCommand.play));
+    };
+    receiver.onPause = () {
+      if (_isMounted()) unawaited(_onTransport(TransportCommand.pause));
+    };
+    receiver.onPlayPause = () {
+      if (_isMounted()) unawaited(_onTransport(TransportCommand.toggle));
+    };
     receiver.onStop = () {
       if (_isMounted()) _onStop();
     };
@@ -139,6 +151,9 @@ class CompanionRemoteBinding {
       _provider = null;
       return;
     }
+    receiver.onPlay = null;
+    receiver.onPause = null;
+    receiver.onPlayPause = null;
     receiver.onStop = null;
     receiver.onNextTrack = null;
     receiver.onPreviousTrack = null;

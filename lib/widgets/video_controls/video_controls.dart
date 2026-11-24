@@ -81,6 +81,7 @@ import 'widgets/mobile_skip_zones.dart';
 import 'widgets/skip_marker_button.dart';
 import 'widgets/screen_lock_overlay.dart';
 import 'widgets/track_chapter_controls.dart';
+import 'widgets/now_playing_info_overlay.dart';
 import 'widgets/performance_overlay/performance_overlay.dart';
 import '../rasterized_gradient.dart';
 import 'mobile_video_controls.dart';
@@ -353,6 +354,10 @@ class PlayerNavigationCoordinator {
       // Mobile Back exits even with the chrome up (#1938); the staged
       // strip/fullscreen/hide/exit chain is TV and desktop behavior.
       exitPlayer();
+      return;
+    }
+    if (chromeController.infoOverlayVisible) {
+      chromeController.hideInfoOverlay();
       return;
     }
     final disposition = resolvePlayerBackDisposition(
@@ -1483,6 +1488,29 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ),
                     ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
+                  ListenableBuilder(
+                    listenable: widget.chromeController,
+                    builder: (context, _) {
+                      if (!widget.chromeController.infoOverlayVisible) {
+                        return const SizedBox.shrink();
+                      }
+                      return Positioned(
+                        left: 32,
+                        right: 32,
+                        bottom: 28,
+                        child: IgnorePointer(
+                          child: NowPlayingInfoOverlay(
+                            player: widget.player,
+                            metadata: widget.metadata,
+                            chapters: _chapters,
+                            isLive: widget.isLive,
+                            liveChannelName: widget.liveChannelName,
+                            isTranscoding: widget.isLive || widget.isOfflinePlayback ? null : widget.isTranscoding,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   if (_isSkipMarkerButtonVisible)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),

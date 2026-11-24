@@ -1065,6 +1065,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     canControlPlayback: () => _canControlPlayback(),
     volumeController: () => _volumeController,
     hasNextItem: () => _hasNextItem,
+    onTransport: (command) => _remoteTransport(command, source: 'Companion remote'),
     onStop: () => _handleBackButton(),
     onNavigateToNextItem: _navigateToNextItem,
     onNavigateToPreviousItem: _navigateToPreviousItem,
@@ -2738,19 +2739,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     // Rewind-on-resume follows the resolved intent, never the current state: a
     // directed pause on an already-paused video must not jump backwards.
-    final resumes = switch (command) {
-      TransportCommand.play => !currentPlayer.state.playing,
+    final willPlay = switch (command) {
+      TransportCommand.play => true,
       TransportCommand.pause => false,
       TransportCommand.toggle => !currentPlayer.state.playing,
     };
+    final resumes = willPlay && !currentPlayer.state.playing;
+    final showOsdOnPause = SettingsService.instanceOrNull?.read(SettingsService.showOsdOnPause) ?? false;
 
     try {
+      if (showOsdOnPause && !willPlay) {
+        _chromeController.show(focusPlayPause: playerDirectionalNavigationEnabled());
+      }
       if (resumes) {
         await _mediaControls.seekBackForRewind(currentPlayer);
         if (!mounted || player != currentPlayer) return;
       }
       await _transportIntent(currentPlayer, command);
-      _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
+      if (showOsdOnPause && willPlay) {
+        _chromeController.hideInfoOverlay();
+        _chromeController.hide();
+        _toastController.hide();
+      } else {
+        _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
+      }
     } catch (e, st) {
       appLogger.w('$source play/pause failed', error: e, stackTrace: st);
     }
@@ -3059,17 +3071,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             () => _handleScreenPlayerNavigation(navigationKey),
           );
         }
-        // Hardware media transport must act even when focus rests on this
-        // node or a sibling overlay — otherwise the key only reveals the
-        // chrome and leaks to the (possibly stale/suspended) Android
-        // MediaSession (#1375). Gated to TV-style nav: on desktop the global
-        // HardwareKeyboard handler already acts (handlers don't stop focus
-        // dispatch), and Apple TV delivers play/pause via its native bridge.
-        // The chrome deliberately stays down; _remoteTransport announces the
-        // accepted command with a centred transient disc instead (#1676).
+        // Hardware media transport must be consumed for down, repeat, and up
+        // even when focus rests on this node or a sibling overlay — otherwise
+        // the key leaks to the (possibly stale/suspended) Android MediaSession
+        // (#1375). Dispatch is skipped only when the controls' global
+        // HardwareKeyboard handler already acted on the KeyDown (handlers do
+        // not stop focus dispatch); Apple TV delivers play/pause via its
+        // native bridge. The chrome deliberately stays down; _remoteTransport
+        // announces the accepted command with a centred transient disc (#1676).
         final transportCommand = classifyTransportKey(event.logicalKey);
-        if (videoPlayerNavigationPreference() && !PlatformDetector.isAppleTV() && transportCommand != null) {
-          if (event is KeyDownEvent) {
+        if (!PlatformDetector.isAppleTV() && transportCommand != null) {
+          final sheetOpen = OverlaySheetController.maybeOf(_sheetContext)?.isOpen ?? false;
+          if ((videoPlayerNavigationPreference() || sheetOpen || !_isPlayerInitialized || player == null) &&
+              event is KeyDownEvent) {
             unawaited(_remoteTransport(transportCommand, source: 'Hardware media key'));
           }
           return KeyEventResult.handled; // consume down, repeat, and up
@@ -3103,6 +3117,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             }
           }
           return KeyEventResult.handled; // consume down, repeat, and up
+        }
+        if (event.logicalKey.isInfoKey) {
+          final sheetOpen = OverlaySheetController.maybeOf(_sheetContext)?.isOpen ?? false;
+          if (event is KeyDownEvent && _isPlayerInitialized && player != null && !sheetOpen) {
+            _chromeController.toggleInfoOverlay();
+          }
+          return KeyEventResult.handled;
         }
         // Self-heal: if this node itself has primary focus (no descendant
         // focused, e.g. during loading or after a window re-activation),

@@ -142,6 +142,8 @@ class CastMemberStripState extends State<CastMemberStrip> {
     }
     if (!event.isActionable) return KeyEventResult.ignored;
 
+    if (key.isContextMenuKey) return KeyEventResult.handled;
+
     if (key.isLeftKey) {
       _moveFocus(-1);
       return KeyEventResult.handled;

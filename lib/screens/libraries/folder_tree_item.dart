@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import '../../media/ids.dart';
 
@@ -116,11 +117,15 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     }
   }
 
-  void _showRowMenu() {
+  void _showRowMenu({bool fromTap = false}) {
     if (_isMediaRow) {
-      showContextMenuFromTap();
+      if (fromTap) {
+        showContextMenuFromTap();
+      } else {
+        showContextMenu();
+      }
     } else {
-      _showFolderMenu();
+      unawaited(_showFolderMenu(fromTap: fromTap));
     }
   }
 
@@ -137,7 +142,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
   /// Ad-hoc Play/Shuffle menu for plain folder rows. These map to pseudo
   /// [MediaItem]s (Plex directories, Jellyfin folders), so [MediaContextMenu]
   /// would offer actions that don't apply to them.
-  Future<void> _showFolderMenu() async {
+  Future<void> _showFolderMenu({bool fromTap = false}) async {
     final entries = <AppMenuEntry<String>>[
       if (widget.onPlayAll != null)
         AppMenuItem<String>(value: 'play', icon: Symbols.play_arrow_rounded, label: t.common.play),
@@ -147,7 +152,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     if (entries.isEmpty) return;
 
     final previousFocus = FocusManager.instance.primaryFocus;
-    final position = lastTapPosition;
+    final position = fromTap ? lastTapPosition : null;
     final fromKeyboard = position == null;
     final selected = await showAdaptiveAppMenu<String>(
       context,
@@ -400,9 +405,9 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     Widget gesture = GestureDetector(
       onTap: _handleTap,
       onTapDown: hasMenu ? storeTapPosition : null,
-      onLongPress: hasMenu ? _showRowMenu : null,
+      onLongPress: hasMenu ? () => _showRowMenu(fromTap: true) : null,
       onSecondaryTapDown: hasMenu ? storeTapPosition : null,
-      onSecondaryTap: hasMenu ? _showRowMenu : null,
+      onSecondaryTap: hasMenu ? () => _showRowMenu(fromTap: true) : null,
       behavior: HitTestBehavior.opaque,
       child: rowContent,
     );

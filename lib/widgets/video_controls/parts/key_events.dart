@@ -100,6 +100,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       });
     }
 
+    if (widget.chromeController.infoOverlayVisible) {
+      return handlePlayerNavigationKeyAction(event, navigationKey, widget.chromeController.hideInfoOverlay);
+    }
+
     // A skip prompt is a local layer like the sheet and the content strip
     // above it: Select takes the skip, Back declines it. Without this stage the
     // only key that reads as "no thanks" on a remote is also the one that walks
@@ -271,11 +275,42 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       // OSD stays up for the press, a hidden one stays down (#1676).
       if (_showControls && event.isActionable) {
         _restartHideTimerForCurrentPlaybackState();
+      } else if (widget.chromeController.infoOverlayVisible && event.isActionable) {
+        widget.chromeController.restartInfoAutoHide();
       }
       // Uses chapter navigation when the item has chapters, otherwise a
       // coalesced skip by the configured time.
       if (event is KeyDownEvent && widget.canControl) {
         _seekToChapterWithFeedback(forward: seekDirection == MediaSeekDirection.forward);
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Consume down, repeat, and up for transport keys ahead of the actionable
+    // filter so KeyUp cannot escape to Android's fallback MediaSession (#1375).
+    // On TV/mobile, handle them here; on desktop, the global handler does it.
+    // The chrome deliberately stays down — the screen announces the accepted
+    // command with a centred transient disc instead (#1676).
+    final transportCommand = _transportCommandFor(event);
+    if (transportCommand != null) {
+      if (_showControls && event.isActionable) {
+        _restartHideTimerForCurrentPlaybackState();
+      } else if (widget.chromeController.infoOverlayVisible && event.isActionable) {
+        widget.chromeController.restartInfoAutoHide();
+      }
+      if ((videoPlayerNavigationPreference() || isMobile) && event is KeyDownEvent) {
+        unawaited(_playOrPause(command: transportCommand));
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Remote Info (or its 'I' keyboard alias) toggles the Now Playing Info
+    // card without pausing playback or raising the interactive transport
+    // buttons; handled ahead of the actionable filter so KeyUp is consumed
+    // even for the printable 'I' alias.
+    if (event.logicalKey.isInfoKey) {
+      if (event is KeyDownEvent) {
+        widget.chromeController.toggleInfoOverlay();
       }
       return KeyEventResult.handled;
     }
@@ -288,23 +323,13 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return KeyEventResult.handled;
     }
 
+    final key = event.logicalKey;
+
     // Reset hide timer on any keyboard/controller input when controls are visible.
     if (_showControls) {
       _restartHideTimerForCurrentPlaybackState();
-    }
-
-    final key = event.logicalKey;
-    final transportCommand = _transportCommandFor(event);
-
-    // Always consume transport keys to prevent propagation to background routes.
-    // On TV/mobile, handle them here; on desktop, the global handler does it.
-    // The chrome deliberately stays down — the screen announces the accepted
-    // command with a centred transient disc instead (#1676).
-    if (transportCommand != null) {
-      if ((videoPlayerNavigationPreference() || isMobile) && event is KeyDownEvent) {
-        unawaited(_playOrPause(command: transportCommand));
-      }
-      return KeyEventResult.handled;
+    } else if (widget.chromeController.infoOverlayVisible) {
+      widget.chromeController.restartInfoAutoHide();
     }
 
     // Select on the player surface. Only intercept when this Focus node itself
