@@ -220,8 +220,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
             return;
           }
 
-          final zoomScale = _videoFilterManager?.zoomScale ?? 1.0;
-          _visualEffects.showZoomToast(zoomScale);
+          _visualEffects.commitPinchZoom();
           _clearMobileZoomGesture();
           _setPlayerState(() {});
         },
@@ -240,6 +239,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     _scheduleVideoLayoutUpdate(newSize);
 
                     var authority = (canControlPlayback: true, canNavigateMediaItems: true);
+                    // A room at its media's end has no item left to end.
+                    var canEndItem = true;
                     try {
                       authority = context
                           .select<WatchTogetherProvider, ({bool canControlPlayback, bool canNavigateMediaItems})>((wt) {
@@ -250,6 +251,10 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                               canNavigateMediaItems: !following || wt.isHost,
                             );
                           });
+                      canEndItem = context.select<WatchTogetherProvider, bool>((wt) {
+                        final adapter = _wtAdapter;
+                        return adapter == null || !wt.follows(adapter) || !wt.isAtMediaEnd;
+                      });
                     } catch (_) {
                       // Watch Together is optional outside the main app shell.
                     }
@@ -315,8 +320,10 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onRateRequested: _setPlaybackRate,
                         onPlayPauseRequested: _handleControlsTransport,
                         onBack: _handleBackButton,
-                        onReachedEnd: ({skipAutoPlayCountdown = false}) =>
-                            _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
+                        onReachedEnd: canEndItem
+                            ? ({required skipAutoPlayCountdown}) =>
+                                  unawaited(_finishItem(skipAutoPlayCountdown: skipAutoPlayCountdown))
+                            : null,
                         canControl: authority.canControlPlayback,
                         canNavigateMediaItems: authority.canNavigateMediaItems,
                         hasFirstFrame: _firstFrame.uiReady,

@@ -7,8 +7,8 @@ import '../../services/supporter/supporter_service.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/supporter_sheet.dart';
 
-/// The top Settings tile in purchasable builds: opens the Supporter sheet
-/// while locked, and thanks the user once the perks are unlocked.
+/// The top Settings tile in purchasable builds: names the Theme & Icon Pack,
+/// opens its sheet while locked, and thanks the user once it is unlocked.
 class SupporterSettingsTile extends StatelessWidget {
   const SupporterSettingsTile({super.key, this.focusNode});
 
@@ -19,8 +19,8 @@ class SupporterSettingsTile extends StatelessWidget {
     final unlocked = context.select<SupporterService, bool>((s) => s.isUnlocked);
     return SettingNavigationTile(
       focusNode: focusNode,
-      icon: unlocked ? Symbols.favorite_rounded : Symbols.volunteer_activism_rounded,
-      title: unlocked ? t.supporter.title : t.settings.supportDeveloper,
+      icon: Symbols.palette_rounded,
+      title: t.supporter.title,
       subtitle: unlocked
           ? t.supporter.tileUnlocked
           : supporterOffersAppIcons()

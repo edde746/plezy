@@ -115,8 +115,8 @@ class Translations$appIcon$zh extends Translations$appIcon$en {
 	@override String get title => '应用图标';
 	@override String get defaultIcon => '默认';
 	@override String get current => '当前图标';
-	@override String get locked => 'Supporter 专属';
-	@override String get lockedHint => '备用图标是 Supporter 专属福利。';
+	@override String get locked => '包含在主题与图标包中';
+	@override String get lockedHint => '备用图标包含在主题与图标包中。';
 	@override String get changeFailed => '无法更改应用图标';
 	@override String get launcherHint => '离开 Plezy 后，新图标将显示在主屏幕上。';
 	@override String get tvLauncherHint => '离开 Plezy 后将显示新横幅。在电视重启之前，Android TV 可能仍会显示旧横幅。';
@@ -246,8 +246,8 @@ class Translations$supporter$zh extends Translations$supporter$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => '一次性购买，支持 Plezy 的开发，并解锁以下外观类附加内容：';
+	@override String get title => '主题与图标包';
+	@override String get intro => '可选的一次性购买，提供以下外观类附加内容：';
 	@override String get presetThemes => '预设主题';
 	@override String get presetThemesDescription => '余烬、冰川、森林、梅子和纸张';
 	@override String get customTheme => '自定义主题';
@@ -258,11 +258,11 @@ class Translations$supporter$zh extends Translations$supporter$en {
 	@override String get loadingPrice => '正在加载价格…';
 	@override String get restore => '恢复购买';
 	@override String get pending => '你的购买正在等待付款或批准。商店完成处理后，附加内容将立即解锁。';
-	@override String get thankYouTitle => '感谢你支持 Plezy';
-	@override String get thankYouBody => '你的 Supporter 附加内容已解锁。';
+	@override String get thankYouTitle => '感谢你的购买';
+	@override String get thankYouBody => '主题与图标包已解锁。';
 	@override String get tileSubtitle => '一次性购买即可解锁主题和应用图标';
 	@override String get tileSubtitleThemesOnly => '一次性购买即可解锁主题';
-	@override String get tileUnlocked => '感谢你的支持';
+	@override String get tileUnlocked => '已解锁 — 感谢你的购买';
 	@override late final Translations$supporter$errors$zh errors = Translations$supporter$errors$zh.internal(_root);
 }
 
@@ -602,6 +602,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => '播放速度';
 	@override String get scopeShaderPreset => '着色器预设';
 	@override String get scopeAspectRatio => '宽高比';
+	@override String get scopeZoom => '缩放';
 	@override String get scopeSyncOffsets => '音频和字幕同步';
 	@override String get playerScopeOff => '不保存';
 	@override String get playerScopeGlobal => '所有位置';
@@ -623,8 +624,8 @@ class Translations$themeEditor$zh extends Translations$themeEditor$en {
 	@override String get customEmpty => '尚未创建';
 	@override String get editCustom => '编辑自定义主题';
 	@override String get editCustomDescription => '自行选择每种颜色';
-	@override String get locked => '通过 Supporter 解锁';
-	@override String get savedLocked => '已保存 — 通过 Supporter 解锁';
+	@override String get locked => '通过主题与图标包解锁';
+	@override String get savedLocked => '已保存 — 通过主题与图标包解锁';
 	@override String get title => '自定义主题';
 	@override String get startFrom => '从现有主题开始';
 	@override String get startFromDescription => '从其他主题复制所有颜色';
@@ -2532,11 +2533,11 @@ class Translations$supporter$errors$zh extends Translations$supporter$errors$en 
 
 	// Translations
 	@override String get storeUnavailable => '无法进行购买。请确认你已登录商店，且此设备允许购买。';
-	@override String get productNotFound => '你的商店目前无法购买 Supporter。';
+	@override String get productNotFound => '你的商店目前无法购买主题与图标包。';
 	@override String get productQueryFailed => '无法加载价格。请检查网络连接后重试。';
 	@override String get purchaseFailed => '购买未完成。请重试。';
 	@override String get restoreFailed => '无法连接到商店以恢复你的购买。请重试。';
-	@override String get nothingToRestore => '未在此商店账户中找到 Supporter 购买记录。';
+	@override String get nothingToRestore => '未在此商店账户中找到主题与图标包购买记录。';
 }
 
 // Path: themeEditor.slots
@@ -3034,6 +3035,8 @@ class Translations$explore$detail$zh extends Translations$explore$detail$en {
 	@override String get watchOn => '观看平台';
 	@override String get watchTrailer => '观看预告片';
 	@override String openOn({required Object site}) => '在 ${site} 打开';
+	@override String get trailerUnavailable => '无法在此设备上打开预告片';
+	@override String get linkUnavailable => '无法在此设备上打开链接';
 	@override String get crew => '演职人员';
 	@override String get ratings => '评分';
 	@override String get schedule => '播出时间';
@@ -3388,8 +3391,8 @@ extension on TranslationsZh {
 			'appIcon.title' => '应用图标',
 			'appIcon.defaultIcon' => '默认',
 			'appIcon.current' => '当前图标',
-			'appIcon.locked' => 'Supporter 专属',
-			'appIcon.lockedHint' => '备用图标是 Supporter 专属福利。',
+			'appIcon.locked' => '包含在主题与图标包中',
+			'appIcon.lockedHint' => '备用图标包含在主题与图标包中。',
 			'appIcon.changeFailed' => '无法更改应用图标',
 			'appIcon.launcherHint' => '离开 Plezy 后，新图标将显示在主屏幕上。',
 			'appIcon.tvLauncherHint' => '离开 Plezy 后将显示新横幅。在电视重启之前，Android TV 可能仍会显示旧横幅。',
@@ -3519,8 +3522,8 @@ extension on TranslationsZh {
 			'update.viewRelease' => '查看发布详情',
 			'update.latestVersion' => '当前已是最新版本',
 			'update.checkFailed' => '无法检查更新',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => '一次性购买，支持 Plezy 的开发，并解锁以下外观类附加内容：',
+			'supporter.title' => '主题与图标包',
+			'supporter.intro' => '可选的一次性购买，提供以下外观类附加内容：',
 			'supporter.presetThemes' => '预设主题',
 			'supporter.presetThemesDescription' => '余烬、冰川、森林、梅子和纸张',
 			'supporter.customTheme' => '自定义主题',
@@ -3531,17 +3534,17 @@ extension on TranslationsZh {
 			'supporter.loadingPrice' => '正在加载价格…',
 			'supporter.restore' => '恢复购买',
 			'supporter.pending' => '你的购买正在等待付款或批准。商店完成处理后，附加内容将立即解锁。',
-			'supporter.thankYouTitle' => '感谢你支持 Plezy',
-			'supporter.thankYouBody' => '你的 Supporter 附加内容已解锁。',
+			'supporter.thankYouTitle' => '感谢你的购买',
+			'supporter.thankYouBody' => '主题与图标包已解锁。',
 			'supporter.tileSubtitle' => '一次性购买即可解锁主题和应用图标',
 			'supporter.tileSubtitleThemesOnly' => '一次性购买即可解锁主题',
-			'supporter.tileUnlocked' => '感谢你的支持',
+			'supporter.tileUnlocked' => '已解锁 — 感谢你的购买',
 			'supporter.errors.storeUnavailable' => '无法进行购买。请确认你已登录商店，且此设备允许购买。',
-			'supporter.errors.productNotFound' => '你的商店目前无法购买 Supporter。',
+			'supporter.errors.productNotFound' => '你的商店目前无法购买主题与图标包。',
 			'supporter.errors.productQueryFailed' => '无法加载价格。请检查网络连接后重试。',
 			'supporter.errors.purchaseFailed' => '购买未完成。请重试。',
 			'supporter.errors.restoreFailed' => '无法连接到商店以恢复你的购买。请重试。',
-			'supporter.errors.nothingToRestore' => '未在此商店账户中找到 Supporter 购买记录。',
+			'supporter.errors.nothingToRestore' => '未在此商店账户中找到主题与图标包购买记录。',
 			'settings.title' => '设置',
 			'settings.supportDeveloper' => '支持 Plezy',
 			'settings.supportDeveloperDescription' => '通过 Liberapay 捐赠支持开发',
@@ -3871,6 +3874,7 @@ extension on TranslationsZh {
 			'settings.scopePlaybackSpeed' => '播放速度',
 			'settings.scopeShaderPreset' => '着色器预设',
 			'settings.scopeAspectRatio' => '宽高比',
+			'settings.scopeZoom' => '缩放',
 			'settings.scopeSyncOffsets' => '音频和字幕同步',
 			'settings.playerScopeOff' => '不保存',
 			'settings.playerScopeGlobal' => '所有位置',
@@ -3883,8 +3887,8 @@ extension on TranslationsZh {
 			'themeEditor.customEmpty' => '尚未创建',
 			'themeEditor.editCustom' => '编辑自定义主题',
 			'themeEditor.editCustomDescription' => '自行选择每种颜色',
-			'themeEditor.locked' => '通过 Supporter 解锁',
-			'themeEditor.savedLocked' => '已保存 — 通过 Supporter 解锁',
+			'themeEditor.locked' => '通过主题与图标包解锁',
+			'themeEditor.savedLocked' => '已保存 — 通过主题与图标包解锁',
 			'themeEditor.title' => '自定义主题',
 			'themeEditor.startFrom' => '从现有主题开始',
 			'themeEditor.startFromDescription' => '从其他主题复制所有颜色',
@@ -3895,9 +3899,9 @@ extension on TranslationsZh {
 			'themeEditor.slots.outline' => '描边',
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
-			'themeEditor.slots.accent' => '强调色',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => '强调色',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '来自其他主题',
@@ -4409,9 +4413,9 @@ extension on TranslationsZh {
 			'profiles.continueButton' => '继续',
 			'profiles.pinsDontMatch' => 'PIN 不匹配',
 			'profiles.tokenIdentityMismatch' => 'Plex 用户资料令牌解析到了非预期服务器',
-			'connections.sectionTitle' => '连接',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => '连接',
 			'connections.addConnection' => '添加连接',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登录，或连接 Jellyfin 或 Emby 服务器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接',
@@ -4827,6 +4831,8 @@ extension on TranslationsZh {
 			'explore.detail.watchOn' => '观看平台',
 			'explore.detail.watchTrailer' => '观看预告片',
 			'explore.detail.openOn' => ({required Object site}) => '在 ${site} 打开',
+			'explore.detail.trailerUnavailable' => '无法在此设备上打开预告片',
+			'explore.detail.linkUnavailable' => '无法在此设备上打开链接',
 			'explore.detail.crew' => '演职人员',
 			'explore.detail.ratings' => '评分',
 			'explore.detail.schedule' => '播出时间',
@@ -4921,11 +4927,11 @@ extension on TranslationsZh {
 			'liveTv.recordSettings.anyChannel' => '在任意频道录制',
 			'liveTv.recordSettings.anyTime' => '在任意时间录制',
 			'liveTv.recordSettings.skipInLibrary' => '跳过媒体库中已有的剧集',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留全部剧集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
 			'liveTv.failedToStartChannel' => '无法播放直播频道',
@@ -5435,11 +5441,11 @@ extension on TranslationsZh {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm 硬件',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬件',
 			'performanceOverlay.decoderExynosHw' => 'Exynos 硬件',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderSoftware' => '软件',
 			'performanceOverlay.decoderHardware' => '硬件',
 			'performanceOverlay.tunnelingActive' => '已启用',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',

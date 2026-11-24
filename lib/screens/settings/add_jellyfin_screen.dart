@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -28,6 +27,7 @@ import '../../services/jellyfin_lan_discovery_service.dart';
 import '../../services/storage_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/app_version.dart';
 import '../../utils/device_identity.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -37,24 +37,6 @@ import '../profile/profile_switch_screen.dart';
 import 'async_form_state_mixin.dart';
 import 'connection_persistence.dart';
 import 'quick_connect_flow_mixin.dart';
-
-@visibleForTesting
-Future<String> resolveJellyfinClientVersion({Future<PackageInfo> Function()? packageInfoLoader}) async {
-  const fallbackVersion = '1.0';
-  try {
-    final packageInfo = await (packageInfoLoader == null ? PackageInfo.fromPlatform() : packageInfoLoader());
-    final version = packageInfo.version.trim();
-    if (version.isNotEmpty) return version;
-    appLogger.w('Package version is empty; using Jellyfin client version $fallbackVersion');
-  } catch (error, stackTrace) {
-    appLogger.w(
-      'Failed to resolve package version; using Jellyfin client version $fallbackVersion',
-      error: error,
-      stackTrace: stackTrace,
-    );
-  }
-  return fallbackVersion;
-}
 
 @visibleForTesting
 bool shouldCreateLocalJellyfinProfile({
@@ -447,7 +429,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
   Future<JellyfinConnectionAuthService> _buildAuthService() async {
     final authServiceFactory = widget._authServiceFactory;
     if (authServiceFactory != null) return await authServiceFactory();
-    final clientVersion = await resolveJellyfinClientVersion();
+    final clientVersion = (await AppVersion.current()).versionOrUnknown;
     final identity = await DeviceIdentityService.resolve();
     return JellyfinConnectionAuthService(
       clientName: jellyfinClientName(identity),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/covered_route_focus_boundary.dart';
 
@@ -281,6 +282,35 @@ void main() {
     await h.popDetail();
 
     expect(h.secondTile.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('a sibling route that claims no focus of its own still gets it over the focused screen (#2302)', (
+    tester,
+  ) async {
+    // The Logs screen sets no first focus and relies on its route scope
+    // receiving it. Excluding the focused screen below made Flutter refocus
+    // the covered route's scope instead, so the D-pad drove the hidden screen.
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump(innerBoundary: true);
+    final pageItem = FocusNode(debugLabel: 'UnclaimedPageItem');
+    addTearDown(pageItem.dispose);
+
+    Navigator.of(h.nestedContext).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Align(
+          alignment: Alignment.topLeft,
+          child: Focus(focusNode: pageItem, child: const SizedBox(height: 10, width: 10)),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(pageItem.hasPrimaryFocus, isTrue);
   });
 
   testWidgets('an initial focus request passes an uncovered inner boundary to the covered outer one', (tester) async {

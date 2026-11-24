@@ -136,10 +136,37 @@ class DisplayModeSelectorTest {
   }
 
   @Test
-  fun exactRateBeatsMultipleRate() {
-    val uhd30 = ModeInfo(9, 3840, 2160, 29.97f)
-    val selection = select(29.97f, modes = allModes + uhd30)
-    assertEquals(uhd30, selection?.mode)
+  fun halfRateContentTakesItsDoubledRateOverItsOwn() {
+    // 25 and 29.97/30 fps show 2:2 at 50/60 Hz; the panel's 25/30 Hz modes
+    // are a last resort (#3090). Precision still leads, so 29.97 fps takes
+    // 59.94 over 60 as 59.94 fps content does, and the lowest multiple wins
+    // over 100/120 Hz.
+    val uhd25 = ModeInfo(60, 3840, 2160, 25f)
+    val uhd2997 = ModeInfo(61, 3840, 2160, 29.97f)
+    val uhd30 = ModeInfo(62, 3840, 2160, 30f)
+    val uhd5994 = ModeInfo(63, 3840, 2160, 59.94f)
+    val uhd100 = ModeInfo(64, 3840, 2160, 100f)
+    val uhd120 = ModeInfo(65, 3840, 2160, 120f)
+    val panel = allModes + listOf(uhd25, uhd2997, uhd30, uhd5994, uhd100, uhd120)
+    assertEquals(uhd50, select(25f, modes = panel)?.mode)
+    assertEquals(uhd5994, select(29.97f, modes = panel)?.mode)
+    // Already at the doubled rate: nothing to renegotiate.
+    assertEquals(uhd60, select(30f, modes = panel)?.mode)
+  }
+
+  @Test
+  fun halfRateContentFallsBackToItsOwnRateWithoutADoubledMode() {
+    // 60 Hz never settles 25 fps into a short cadence; 25 Hz still beats it.
+    val uhd25 = ModeInfo(60, 3840, 2160, 25f)
+    assertEquals(uhd25, select(25f, modes = listOf(uhd60, uhd25, uhd24))?.mode)
+  }
+
+  @Test
+  fun offNominalHalfRateContentStillTakesItsDoubledRate() {
+    // The tolerance scales with the multiple as for any content: 25.06 fps
+    // is 2:2 at 50 Hz like 25 fps.
+    val uhd25 = ModeInfo(60, 3840, 2160, 25f)
+    assertEquals(uhd50, select(25.06f, modes = listOf(uhd60, uhd50, uhd25))?.mode)
   }
 
   @Test
@@ -182,6 +209,14 @@ class DisplayModeSelectorTest {
     assertEquals(tv120, selection?.mode)
     val stay = select(29.97f, current = tv60, modes = listOf(tv60, tv120))
     assertEquals(tv60, stay?.mode)
+  }
+
+  @Test
+  fun halfRateContentRanksPrecisionThenTheActiveMode() {
+    // 4:4 at 120 Hz is as clean as 2:2 at 60: no renegotiation down.
+    assertEquals(tv120, select(30f, current = tv120, modes = listOf(tv60, tv120))?.mode)
+    // 60 Hz repeats a 29.97 fps frame every ~17 s; 119.88 Hz is an exact 4:4.
+    assertEquals(tv11988, select(29.97f, current = tv24, modes = listOf(tv24, tv60, tv11988))?.mode)
   }
 
   @Test

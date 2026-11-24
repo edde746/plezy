@@ -41,6 +41,7 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
         // passthrough.
         nativeVideoZoom: Platform.isIOS || Platform.isMacOS,
         initialBoxFitMode: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, _currentMetadata),
+        initialZoomScale: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.videoZoom, _currentMetadata),
         initialPlayerSize: initialPlayerSize,
         // Reads _currentMetadata at invocation time so a cycle after an
         // in-place episode swap keys against the item actually on screen.
@@ -52,6 +53,26 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
 
     _pipInitialized = true;
     _attachPipStateListener();
+  }
+
+  /// Arm auto-PiP for the playback [currentPlayer] just opened: the callback
+  /// for the API 26-30 path and the initial native state. A player that
+  /// opened already playing reports no later `playing` change for
+  /// [_onPlayingStateChanged] to arm it from.
+  void _armAutoPip(Player currentPlayer) {
+    if (!_autoPipEnabled) return;
+
+    void autoPipEnteringCallback() {
+      if (!mounted || player != currentPlayer) return;
+      _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
+      _preparePipFiltersForEntry();
+    }
+
+    _autoPipEnteringCallback = autoPipEnteringCallback;
+    PipService.onAutoPipEntering = autoPipEnteringCallback;
+    if (currentPlayer.state.playing) {
+      unawaited(_updateAutoPipState(isPlaying: true));
+    }
   }
 
   Future<void> _togglePIPMode() async {

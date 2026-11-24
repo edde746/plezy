@@ -22,6 +22,7 @@ import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/content_utils.dart';
+import '../../utils/layout_constants.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
@@ -51,6 +52,9 @@ List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
       if (tab != LibraryTabType.genres || hasGenres) tab,
   ];
 }
+
+/// Entries of the narrow-phone toolbar's ⋮ menu.
+enum _LibrariesToolbarAction { manageLibraries, refresh }
 
 class LibrariesScreen extends StatefulWidget {
   final VoidCallback? onLibraryOrderChanged;
@@ -93,6 +97,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   bool _browseFiltersActive = false;
 
   final _libraryDropdownKey = GlobalKey<AppMenuButtonState<String>>();
+  final _toolbarMenuKey = GlobalKey<AppMenuButtonState<_LibrariesToolbarAction>>();
 
   List<LibraryTabType> _visibleTabs = LibraryTabType.values;
   List<FocusNode> _tabFocusNodes = List.generate(
@@ -663,6 +668,39 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
+  /// The narrow-phone ⋮ holding Manage Libraries and Refresh. The action owns
+  /// keyboard and D-pad Select; the menu button inside it owns pointer taps.
+  FocusableAction _buildToolbarMenuAction() {
+    return FocusableAction(
+      debugLabel: 'libraries_more',
+      tooltip: t.common.options,
+      onPressed: () => _toolbarMenuKey.currentState?.showButtonMenu(focusFirstItem: true),
+      child: AppMenuButton<_LibrariesToolbarAction>(
+        key: _toolbarMenuKey,
+        icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+        tooltip: t.common.options,
+        adaptiveSheet: true,
+        anchorAlignment: AppMenuAnchorAlignment.end,
+        onSelected: (action) {
+          switch (action) {
+            case _LibrariesToolbarAction.manageLibraries:
+              _showLibraryManagementSheet();
+            case _LibrariesToolbarAction.refresh:
+              manualRefresh();
+          }
+        },
+        entriesBuilder: (_) => [
+          AppMenuItem(
+            value: _LibrariesToolbarAction.manageLibraries,
+            icon: Symbols.edit_rounded,
+            label: t.libraries.manageLibraries,
+          ),
+          AppMenuItem(value: _LibrariesToolbarAction.refresh, icon: Symbols.refresh_rounded, label: t.common.refresh),
+        ],
+      ),
+    );
+  }
+
   AppMenuHeader<String> _buildLibraryServerHeaderMenuItem(MediaLibrary library, String serverKey) {
     return AppMenuHeader<String>(
       child: LibraryServerLabel(
@@ -764,23 +802,42 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           children: [
             AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.kind.id), fill: 1, size: 20),
             const SizedBox(width: 8),
+            // Flexible bounds the name to the space the toolbar actions leave,
+            // so a long name ellipsizes instead of painting under them (#3021).
             if (librariesSpanMultipleServers(visibleLibraries) && selectedLibrary.serverName != null)
-              Column(
-                crossAxisAlignment: .start,
-                mainAxisSize: .min,
-                children: [
-                  Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleMedium),
-                  LibraryServerLabel(
-                    library: selectedLibrary,
-                    badgeSize: 10,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: .start,
+                  mainAxisSize: .min,
+                  children: [
+                    Text(
+                      selectedLibrary.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: .ellipsis,
                     ),
-                  ),
-                ],
+                    LibraryServerLabel(
+                      library: selectedLibrary,
+                      badgeSize: 10,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      ),
+                      constrainText: true,
+                    ),
+                  ],
+                ),
               )
             else
-              Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleLarge),
+              Flexible(
+                child: Text(
+                  selectedLibrary.title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: .ellipsis,
+                ),
+              ),
             const SizedBox(width: 4),
             const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1, size: 24),
           ],
@@ -829,15 +886,27 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       return provider.getClientForServer(serverId)?.capabilities.folderGrouping ?? false;
     });
 
+    // Narrow phones fold Manage Libraries and Refresh into a ⋮ menu so the
+    // library picker keeps room for its name (#3021); Library options and
+    // Shuffle stay direct. With no libraries the menu would hold Refresh
+    // alone, so the empty and error states keep it as a button.
+    final collapseSecondaryActions =
+        !useSideNavigation && MediaQuery.sizeOf(context).width < ScreenBreakpoints.mobile && allLibraries.isNotEmpty;
+
+    // Stable labels let the action bar keep focus on a surviving action when
+    // the list changes shape: Library options comes and goes with Browse, and
+    // Manage and Refresh with the window width.
     List<FocusableAction> appBarActions() => [
-      if (allLibraries.isNotEmpty)
+      if (allLibraries.isNotEmpty && !collapseSecondaryActions)
         FocusableAction(
+          debugLabel: 'libraries_manage',
           icon: Symbols.edit_rounded,
           tooltip: t.libraries.manageLibraries,
           onPressed: _showLibraryManagementSheet,
         ),
       if (showBrowseOptionsAction)
         FocusableAction(
+          debugLabel: 'libraries_browse_options',
           icon: Symbols.tune_rounded,
           tooltip: t.libraries.libraryOptions,
           onPressed: _showBrowseOptionsForCurrentTab,
@@ -870,11 +939,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ),
       if (selectedLibrary != null && MediaListPlaybackLauncher.canShuffleLibrary(selectedLibrary))
         FocusableAction(
+          debugLabel: 'libraries_shuffle',
           icon: Symbols.shuffle_rounded,
           tooltip: t.libraries.shuffleLibrary,
           onPressed: () => unawaited(MediaListPlaybackLauncher.shuffleLibrary(context, selectedLibrary)),
         ),
-      FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
+      if (collapseSecondaryActions)
+        _buildToolbarMenuAction()
+      else
+        FocusableAction(
+          debugLabel: 'libraries_refresh',
+          icon: Symbols.refresh_rounded,
+          tooltip: t.common.refresh,
+          onPressed: manualRefresh,
+        ),
     ];
 
     Widget appBar({required bool floating}) => DesktopSliverAppBar(

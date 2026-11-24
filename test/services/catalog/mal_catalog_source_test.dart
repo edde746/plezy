@@ -20,7 +20,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/trackers/fribb_mapping_store.dart';
+import 'package:plezy/services/trackers/fribb_index.dart';
 import 'package:plezy/services/trackers/mal/mal_client.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
@@ -842,18 +842,13 @@ void main() {
     });
   });
 
-  group('parseFribbIndex byMal', () {
+  group('FribbIndex byMal', () {
     test('indexes rows by mal_id for reverse lookup', () {
-      final index = parseFribbIndex(
-        json.encode([
-          {'mal_id': 16498, 'tvdb_id': 267440},
-          {
-            'mal_id': 32281,
-            'imdb_id': ['tt5311514'],
-          },
-          {'anidb_id': 1}, // no mal id — must not appear
-        ]),
-      );
+      final index = FribbIndex.fromRows(const [
+        FribbMappingRow(malId: 16498, tvdbId: 267440),
+        FribbMappingRow(malId: 32281, imdbIds: ['tt5311514']),
+        FribbMappingRow(anidbId: 1), // no mal id — must not appear
+      ]);
 
       expect(index.byMal[16498]?.tvdbId, 267440);
       expect(index.byMal[32281]?.imdbIds, ['tt5311514']);

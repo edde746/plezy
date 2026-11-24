@@ -14,9 +14,14 @@ const _expectedDomains = <String>{
   'simkl.com',
   'simkl.in',
   'jsdelivr.net',
-  'api.github.com',
+  'github.com',
+  'githubusercontent.com',
   'image.tmdb.org',
 };
+// Reached only through a redirect from a listed domain, so no source literal
+// names them: github.com's release asset downloads land on
+// release-assets.githubusercontent.com.
+const _redirectTargetDomains = <String>{'githubusercontent.com'};
 const _fixedEndpointSourcePaths = <String>[
   'lib/services/plex_auth_service.dart',
   'lib/services/plex_discover_client.dart',
@@ -26,8 +31,7 @@ const _fixedEndpointSourcePaths = <String>[
   'lib/services/trackers/anilist/anilist_constants.dart',
   'lib/services/trackers/simkl/simkl_constants.dart',
   'lib/services/trackers/oauth_proxy_client.dart',
-  'lib/services/trackers/anime_lists_mapping_store.dart',
-  'lib/services/trackers/fribb_mapping_store.dart',
+  'lib/services/trackers/anime_mappings_store.dart',
   'lib/services/catalog/seerr_catalog_source.dart',
   'lib/services/discord_rpc_service.dart',
   'lib/services/update_service.dart',
@@ -110,6 +114,7 @@ void main() {
     // the scan lost sight of the file that owns it, and a host change there would
     // silently fall through to base-config and its user certificate authorities.
     final unobservedDomains = _expectedDomains
+        .difference(_redirectTargetDomains)
         .where((domain) => !discoveredHosts.any((host) => host == domain || host.endsWith('.$domain')))
         .toList();
     expect(

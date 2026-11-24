@@ -15,6 +15,7 @@ import 'package:plezy/services/trackers/simkl/simkl_client.dart';
 import 'package:plezy/services/trackers/simkl/simkl_constants.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
+import 'package:plezy/utils/app_version.dart';
 
 TrackerSession _session() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -224,7 +225,7 @@ void main() {
       final request = requests.single;
       expect(request.url.host, 'data.simkl.in');
       expect(request.url.path, '/discover/trending/movies/week_100.json');
-      final appVersion = await SimklConstants.appVersion();
+      final appVersion = (await AppVersion.current()).versionOrUnknown;
       expect(request.url.queryParameters['client_id'], SimklConstants.legacyClientId);
       expect(request.url.queryParameters['app-name'], SimklConstants.appName);
       expect(request.url.queryParameters['app-version'], appVersion);

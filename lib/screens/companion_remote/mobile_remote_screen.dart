@@ -28,6 +28,14 @@ class MobileRemoteScreen extends StatefulWidget {
 }
 
 class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
+  // Owned here rather than by the remote controls: a reconnect swaps those
+  // controls out for the progress view, and the selected tab has to outlive it.
+  int _selectedTab = 0;
+
+  void _selectTab(int tab) {
+    setState(() => _selectedTab = tab);
+  }
+
   @override
   Widget build(BuildContext context) {
     return OverlaySheetHost(
@@ -106,7 +114,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
               return const DiscoveryView();
             }
 
-            return const _RemoteControlLayout();
+            return _RemoteControlLayout(selectedTab: _selectedTab, onTabSelected: _selectTab);
           },
         ),
       ),
@@ -115,30 +123,35 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
 }
 
 class _RemoteControlLayout extends StatelessWidget {
-  const _RemoteControlLayout();
+  const _RemoteControlLayout({required this.selectedTab, required this.onTabSelected});
+
+  final int selectedTab;
+  final ValueChanged<int> onTabSelected;
 
   @override
   Widget build(BuildContext context) {
+    final content = _RemoteControlContent(selectedTab: selectedTab, onTabSelected: onTabSelected);
     if (PlatformDetector.isDesktop(context)) {
       return Center(
-        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 400), child: const _RemoteControlContent()),
+        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 400), child: content),
       );
     }
 
-    return const _RemoteControlContent();
+    return content;
   }
 }
 
 class _RemoteControlContent extends StatefulWidget {
-  const _RemoteControlContent();
+  const _RemoteControlContent({required this.selectedTab, required this.onTabSelected});
+
+  final int selectedTab;
+  final ValueChanged<int> onTabSelected;
 
   @override
   State<_RemoteControlContent> createState() => _RemoteControlContentState();
 }
 
 class _RemoteControlContentState extends State<_RemoteControlContent> {
-  int _selectedTab = 0;
-
   void _showSearchSheet({bool switchToSearchTab = false}) {
     if (switchToSearchTab) {
       _sendCommand(RemoteCommandType.tabSearch);
@@ -203,6 +216,8 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         ),
         Expanded(
           child: ListView(
+            // Restores the scroll offset when a reconnect rebuilds the controls.
+            key: const PageStorageKey('companionRemoteControls'),
             padding: .fromLTRB(16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
             children: [
               SegmentedButton<int>(
@@ -224,17 +239,13 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
                     icon: const AppIcon(Symbols.flash_on_rounded),
                   ),
                 ],
-                selected: {_selectedTab},
-                onSelectionChanged: (Set<int> selection) {
-                  setState(() {
-                    _selectedTab = selection.first;
-                  });
-                },
+                selected: {widget.selectedTab},
+                onSelectionChanged: (Set<int> selection) => widget.onTabSelected(selection.first),
               ),
               const SizedBox(height: 24),
-              if (_selectedTab == 0) _buildNavigationTab(),
-              if (_selectedTab == 1) _buildPlaybackTab(),
-              if (_selectedTab == 2) _buildQuickActionsTab(),
+              if (widget.selectedTab == 0) _buildNavigationTab(),
+              if (widget.selectedTab == 1) _buildPlaybackTab(),
+              if (widget.selectedTab == 2) _buildQuickActionsTab(),
             ],
           ),
         ),

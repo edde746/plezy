@@ -13,6 +13,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_rate.dart';
+import '../media/video_zoom.dart';
 import '../models/player_setting_scope.dart';
 import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
@@ -32,7 +33,6 @@ import 'agent_control_protocol.dart';
 import 'plex_client.dart';
 import 'scoped_player_prefs.dart';
 import 'settings_service.dart';
-import 'shader_service.dart';
 import 'storage_service.dart';
 
 typedef _ApplySetting = Future<Map<String, dynamic>> Function();
@@ -192,8 +192,7 @@ class AgentScopedSettingsCommands {
         type: 'string',
         defaultValue: SettingsService.globalShaderPreset.defaultValue,
         choices: shaderProvider.allPresets.map((p) => p.id).toList(),
-        isSupported: () =>
-            ShaderService.isPlatformSupported && !(Platform.isAndroid && settings.read(SettingsService.useExoPlayer)),
+        isSupported: () => !(Platform.isAndroid && settings.read(SettingsService.useExoPlayer)),
         decode: (v) {
           if (v is! String || shaderProvider.findPresetById(v) == null) _invalid('Select an available shader preset.');
           return v;
@@ -210,6 +209,23 @@ class AgentScopedSettingsCommands {
         defaultValue: SettingsService.defaultBoxFitMode.defaultValue,
         choices: const [0, 1, 2],
         decode: (v) => _integer(v, min: 0, max: 2),
+      ),
+      _playerValue(
+        ScopedPlayerPrefs.videoZoom,
+        settings,
+        guard,
+        item,
+        library,
+        persistence,
+        type: 'number',
+        defaultValue: SettingsService.defaultVideoZoom.defaultValue,
+        constraints: {'minimum': minimumVideoZoom, 'maximum': maximumVideoZoom},
+        decode: (v) {
+          if (v is! num || !v.isFinite || v < minimumVideoZoom || v > maximumVideoZoom) {
+            _invalid('Video zoom is outside the supported range.');
+          }
+          return (v).toDouble();
+        },
       ),
       _playerValue(
         ScopedPlayerPrefs.audioSyncOffset,
@@ -250,6 +266,7 @@ class AgentScopedSettingsCommands {
       SettingsService.playbackSpeedScope,
       SettingsService.shaderPresetScope,
       SettingsService.boxFitScope,
+      SettingsService.videoZoomScope,
       SettingsService.syncOffsetScope,
     ]) {
       entries.add(

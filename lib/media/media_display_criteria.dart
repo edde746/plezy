@@ -59,11 +59,12 @@ MediaDisplayColorType classifyMediaDisplayColor({
 }
 
 /// Backend-neutral description of a source's video stream as the server
-/// reports it. Display matching itself reads the decoded stream from mpv
-/// (server metadata is missing or wrong for transcodes and Live TV, and
-/// cannot see what the filter chain does to the rate); this feeds the HDR
-/// classification of stream details and ExoPlayer's pre-open switch, which
-/// has no decoded stream to read before it creates its renderers.
+/// reports it. Display matching itself reads the stream from mpv, as
+/// demuxed and then as decoded (server metadata is missing or wrong for
+/// transcodes and Live TV, and cannot see what the filter chain does to the
+/// rate); this feeds the HDR classification of stream details and
+/// ExoPlayer's pre-open switch, which has no stream of its own to read
+/// before it creates its renderers.
 class MediaDisplayCriteria {
   final double? fps;
   final int? width;

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../media/ids.dart';
 import '../media/playback_rate.dart';
+import '../media/video_zoom.dart';
 import '../media/media_version_preference.dart';
 import '../media/media_source_info.dart' show PlaybackExtras;
 import 'dart:io';
@@ -349,8 +350,11 @@ class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
 class PlayerSettingScopePref extends EnumPref<PlayerSettingScope> {
   final List<Pref<Object?>> globals;
 
-  const PlayerSettingScopePref(super.key, this.globals)
-    : super(values: PlayerSettingScope.values, defaultValue: PlayerSettingScope.global);
+  const PlayerSettingScopePref(
+    super.key,
+    this.globals, {
+    PlayerSettingScope super.defaultValue = PlayerSettingScope.global,
+  }) : super(values: PlayerSettingScope.values);
 
   @override
   Future<void> writeTo(BaseSharedPreferencesService svc, PlayerSettingScope value) async {
@@ -955,12 +959,23 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
 
+  /// Custom zoom layered on the fit mode; 1.0 is no zoom.
+  static final defaultVideoZoom = DoublePref(
+    'default_video_zoom',
+    defaultValue: 1.0,
+    transform: (v) => v.clamp(minimumVideoZoom, maximumVideoZoom),
+  );
+
   // Where a change made in the player's settings sheet persists (see
   // [PlayerSettingScope]). Defaults preserve the pre-existing behavior:
-  // every change updates the global default.
+  // every change updates the global default, except zoom, which was
+  // session-only before it could be scoped.
   static final playbackSpeedScope = PlayerSettingScopePref('playback_speed_scope', [defaultPlaybackSpeed]);
   static final shaderPresetScope = PlayerSettingScopePref('shader_preset_scope', [globalShaderPreset]);
   static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
+  static final videoZoomScope = PlayerSettingScopePref('video_zoom_scope', [
+    defaultVideoZoom,
+  ], defaultValue: PlayerSettingScope.off);
 
   /// One scope for both sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
@@ -1551,9 +1566,11 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleAnchorToScreen,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
+    defaultVideoZoom,
     playbackSpeedScope,
     shaderPresetScope,
     boxFitScope,
+    videoZoomScope,
     syncOffsetScope,
     scopedPlayerPrefValues,
     themeMode,
@@ -1665,6 +1682,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'downmix_center_boost' => (0, 12),
     'default_playback_speed' => (minimumPlaybackRate, maximumPlaybackRate),
     'default_box_fit_mode' => (0, 2),
+    'default_video_zoom' => (minimumVideoZoom, maximumVideoZoom),
     'library_density' => (LibraryDensity.min, LibraryDensity.max),
     'automotive_ui_scale' => (AutomotiveUiScale.min, AutomotiveUiScale.max),
     'remembered_brightness_level' => (-1, 1),

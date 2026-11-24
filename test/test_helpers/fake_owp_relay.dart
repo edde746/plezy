@@ -13,8 +13,9 @@ import 'package:web_socket/web_socket.dart';
 /// the room, share and clear media, play, pause, seek, change the rate,
 /// report status, hand over the host, kick, lock, end and leave. The
 /// readiness barrier releases as soon as every counted participant is ready,
-/// at once (no start delay), and no barrier or end-of-media timer runs, so a
-/// widget test has no relay timers to drain.
+/// at once (no start delay), and a release at the media's end pauses there
+/// with the action `ended` (SPEC.md §12.11). No barrier or end-of-media timer
+/// runs, so a widget test has no relay timers to drain.
 ///
 /// Pass [party] as a `WatchTogetherProvider`'s `partyFactory`. Relay time is
 /// [clock]'s, so `fakeAsync` and `testWidgets` drive it.
@@ -53,6 +54,10 @@ final class FakeOwpRelay {
   Map<String, Object?>? _media;
   List<String> _waitingOn = const [];
   var _open = true;
+
+  /// A release reached the media's end; the next broadcast is followed by the
+  /// `ended` one.
+  var _ended = false;
 
   /// When set, the relay refuses every join with this error code, as a full
   /// room (`room_full`) or a busy relay (`relay_full`) would.
@@ -353,7 +358,17 @@ final class FakeOwpRelay {
     if (_waitingOn.isEmpty) {
       _phase = 'playing';
       _atMs = nowMs();
+      _endAtEnd();
     }
+  }
+
+  /// SPEC.md §12.11 at a release: a room that would play from its end pauses
+  /// there at once.
+  void _endAtEnd() {
+    if (_positionMs < _durationMs) return;
+    _phase = 'paused';
+    _positionMs = _durationMs;
+    _ended = true;
   }
 
   /// SDK.md §12.5, without the stall grace.
@@ -403,6 +418,10 @@ final class FakeOwpRelay {
     final message = {'type': 'room', ..._snapshot(), 'action': ?action, if (withMedia) 'media': _media};
     for (final member in _members) {
       if (!identical(member, except) && member.connected) member.conn.send(message);
+    }
+    if (_ended) {
+      _ended = false;
+      _broadcast(action: {'kind': 'ended', 'by': null});
     }
   }
 }

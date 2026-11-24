@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io' show InternetAddress, InternetAddressType, Platform;
 import 'package:flutter/foundation.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
 import '../exceptions/media_server_exceptions.dart';
@@ -12,6 +11,7 @@ import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
 import '../models/plex/plex_switch_response.dart';
 import '../utils/app_logger.dart';
+import '../utils/app_version.dart';
 import '../utils/device_identity.dart';
 import '../utils/endpoint_race.dart';
 import '../utils/json_utils.dart';
@@ -93,12 +93,12 @@ class PlexAuthService {
       receiveTimeout: MediaServerTimeouts.plexTvReceive,
     );
     final clientIdentifier = await storage.getOrCreateClientIdentifier();
-    final packageInfo = await PackageInfo.fromPlatform();
+    final appVersion = await AppVersion.current();
     final identity = await DeviceIdentityService.resolve();
     return PlexAuthService._(
       http,
       clientIdentifier,
-      packageInfo.version,
+      appVersion.versionOrUnknown,
       Platform.operatingSystemVersion,
       identity.platform,
       sanitizeHeaderValue(identity.deviceName),

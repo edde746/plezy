@@ -33,6 +33,29 @@ object DisplayModeSelector {
    */
   const val CADENCE_TOLERANCE = 0.05f
 
+  /**
+   * Content rates a 50/60 Hz-class mode shows at exactly twice their rate:
+   * 25 and 29.97/30 fps. [halfRateRanking] ranks their own 25/30 Hz modes
+   * after any equally precise multiple (#3090): 2:2 at 50/60 Hz has no
+   * judder, while a 25/30 Hz mode drags the OSD and subtitle animation down
+   * to that rate. Kodi's default whitelist leaves out the same 25/29.97/30 Hz
+   * modes.
+   *
+   * Film rates are deliberately not doubled: 48 Hz is no broadcast rate, and
+   * a 120 Hz panel presents it as a permanent 2:3 (#2255) where 24 Hz input
+   * gets the panel's own 5:5.
+   */
+  private const val HALF_RATE_MIN_FPS = 24.5f
+  private const val HALF_RATE_MAX_FPS = 30.5f
+
+  /**
+   * Content-rate error, `|refreshRate / multiple - fps|` in Hz, below which
+   * [halfRateRanking] counts a match as precise: far above the float noise in
+   * reported rates (60.000004), far below the 0.1% NTSC mismatch (0.03 Hz for
+   * 29.97 fps at 60 Hz).
+   */
+  private const val PRECISE_RATE_ERROR = 0.005f
+
   /** JVM-testable mirror of android.view.Display.Mode. */
   data class ModeInfo(val modeId: Int, val width: Int, val height: Int, val refreshRate: Float) {
     val area: Long get() = width.toLong() * height
@@ -98,12 +121,38 @@ object DisplayModeSelector {
    * Deliberately not SurfaceFlinger's tie-break: its layer-vote scoring
    * ranks 48 and 120 equal for 23.976 and settles on the lower rate unless a
    * layer voted Max.
+   *
+   * Half-rate content ranks by [halfRateRanking] instead.
    */
-  private fun rateRanking(currentMode: ModeInfo): Comparator<Candidate> = compareBy<Candidate> { it.match.priority }
-    .thenBy { it.match.priority != 0 && it.mode.modeId != currentMode.modeId }
-    .thenByDescending { it.match.multiple }
-    .thenBy { it.match.error }
+  private fun rateRanking(fps: Float, currentMode: ModeInfo): Comparator<Candidate> {
+    if (fps >= HALF_RATE_MIN_FPS && fps <= HALF_RATE_MAX_FPS) return halfRateRanking(currentMode)
+    return compareBy<Candidate> { it.match.priority }
+      .thenBy { it.match.priority != 0 && it.mode.modeId != currentMode.modeId }
+      .thenByDescending { it.match.multiple }
+      .thenBy { it.match.error }
+      .thenBy { it.mode.modeId != currentMode.modeId }
+  }
+
+  /**
+   * Ranks rate matches for content between [HALF_RATE_MIN_FPS] and
+   * [HALF_RATE_MAX_FPS]: a precise match first, then a multiple over the
+   * content's own rate, then the mode already active, then the lowest
+   * multiple, then the smaller error.
+   *
+   * Precision leads for the reason [rateRanking]'s exact tier ignores the
+   * active mode: 60.000004 Hz is a 2x of 29.97 fps within tolerance but
+   * repeats a frame every ~17 s, where 59.94 Hz (or 29.97 Hz itself, on a
+   * panel without a 59.94 mode) presents it evenly. Among equally precise
+   * modes the active one stays, so a display already at 120 Hz keeps 30 fps
+   * at 4:4 instead of renegotiating down to 2:2 at 60. Otherwise the lowest
+   * multiple wins: 2:2 at 50/60 Hz is already judder-free, and 100/120 Hz
+   * only adds HDMI bandwidth for no cadence gain.
+   */
+  private fun halfRateRanking(currentMode: ModeInfo): Comparator<Candidate> = compareBy<Candidate> { it.match.error / it.match.multiple >= PRECISE_RATE_ERROR }
+    .thenBy { it.match.multiple == 1 }
     .thenBy { it.mode.modeId != currentMode.modeId }
+    .thenBy { it.match.multiple }
+    .thenBy { it.match.error }
 
   /**
    * The cadence [fps] content presents with on a [refreshRate] display, or
@@ -203,7 +252,7 @@ object DisplayModeSelector {
     if (fps > 0f) {
       bucket
         .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
-        .minWithOrNull(rateRanking(currentMode))
+        .minWithOrNull(rateRanking(fps, currentMode))
         ?.let { return Selection(it.mode, "resolution + ${it.match.reason} rate, error=${it.match.error}") }
 
       // No mode at this resolution divides the content rate: take the shortest
@@ -234,7 +283,7 @@ object DisplayModeSelector {
     supportedModes.asSequence()
       .filter { it.width == currentMode.width && it.height == currentMode.height }
       .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
-      .minWithOrNull(rateRanking(currentMode))
+      .minWithOrNull(rateRanking(fps, currentMode))
       ?.let { return Selection(it.mode, "${it.match.reason}, error=${it.match.error}") }
 
     // Tier 2 — no same-resolution match (e.g. a 4K panel with no 4K@24 mode, but a
@@ -248,7 +297,7 @@ object DisplayModeSelector {
         .minWithOrNull(
           // Prefer the resolution closest to the panel's current one (least change,
           // keeps panel-native res when a high-res match exists), then the rate ranking.
-          compareBy<Candidate> { abs(it.mode.area - currentMode.area) }.then(rateRanking(currentMode))
+          compareBy<Candidate> { abs(it.mode.area - currentMode.area) }.then(rateRanking(fps, currentMode))
         )
         ?.let { return Selection(it.mode, "${it.match.reason}, error=${it.match.error}") }
     }

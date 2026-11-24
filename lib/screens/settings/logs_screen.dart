@@ -8,7 +8,6 @@ import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/app_icon.dart';
@@ -24,6 +23,7 @@ import '../../services/log_upload_service.dart';
 import '../../services/startup_diagnostics.dart';
 import '../../services/video_decode_capabilities.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/app_version.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
@@ -125,11 +125,13 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   }
 
   Future<void> _loadDeviceInfo() async {
-    final packageInfo = await PackageInfo.fromPlatform();
+    final appVersion = await AppVersion.current();
     final deviceInfo = widget.deviceInfoPlugin ?? DeviceInfoPlugin();
     final buffer = StringBuffer();
     final commitSuffix = gitCommit.isNotEmpty ? ' ${gitCommit.substring(0, 7)}' : '';
-    buffer.writeln('${t.app.title} v${packageInfo.version} (${packageInfo.buildNumber})$commitSuffix');
+    buffer.writeln(
+      '${t.app.title} v${appVersion.versionOrUnknown} (${appVersion.buildNumber ?? AppVersion.unknown})$commitSuffix',
+    );
 
     if (Platform.isAndroid) {
       final info = await deviceInfo.androidInfo;

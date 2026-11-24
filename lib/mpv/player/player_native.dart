@@ -11,6 +11,7 @@ import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
 import 'player_base.dart';
+import 'video_decoder_hold.dart';
 
 typedef _AudioStateRequest = ({
   bool passthrough,
@@ -256,10 +257,8 @@ class PlayerNative extends PlayerBase {
       // choose its vo before mpv_initialize, and the subtitle "Render
       // Resolution" fraction for its vo=mediacodec OSD plane (the same knob the
       // ExoPlayer overlay honors; other platforms size the OSD themselves).
-      // The OSD plane is presented on the video's own timestamp: shifting it
-      // by a display period put it on the vsync Amlogic's compositor latches
-      // the next picture on and pushed that picture a vsync late (a 4:1 hold
-      // pair every couple of seconds of 24p on 60 Hz). `instanceId` names
+      // The core picks the OSD plane's presentation delay itself, from the SoC
+      // (DeviceQuirks.videoPlaneLagsGraphics). `instanceId` names
       // this Dart instance so a later `dispose` that lost the ownership race
       // is provably stale; handlers that predate any of these arguments
       // ignore them.
@@ -1001,6 +1000,39 @@ class PlayerNative extends PlayerBase {
     if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
     await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs});
+  }
+
+  /// Tells this player's holds apart, so a superseded open's late release
+  /// cannot let go of a newer open's hold.
+  int _decoderHoldTokens = 0;
+
+  @override
+  VideoDecoderHold? holdVideoDecoderAtPreload() {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isAndroid || !initialized) return null;
+    final token = ++_decoderHoldTokens;
+    final format = invoke<Map<Object?, Object?>>('holdVideoDecoder', {'token': token}).then<DemuxedVideoFormat?>(
+      (answer) => answer == null
+          ? null
+          : (
+              fps: (answer['fps'] as num?)?.toDouble(),
+              width: (answer['width'] as num?)?.toInt() ?? 0,
+              height: (answer['height'] as num?)?.toInt() ?? 0,
+            ),
+      onError: (Object e, StackTrace stackTrace) {
+        appLogger.w('Video decoder hold failed', error: e, stackTrace: stackTrace);
+        return null;
+      },
+    );
+    return VideoDecoderHold(
+      format: format,
+      release: () async {
+        try {
+          await invoke<void>('releaseVideoDecoderHold', {'token': token});
+        } catch (e, stackTrace) {
+          appLogger.w('Video decoder hold release failed', error: e, stackTrace: stackTrace);
+        }
+      },
+    );
   }
 
   @override

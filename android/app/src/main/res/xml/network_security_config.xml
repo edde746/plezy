@@ -47,12 +47,15 @@
         <domain includeSubdomains="true">simkl.com</domain>
         <!-- data.simkl.in (lib/services/trackers/simkl/simkl_constants.dart:22). -->
         <domain includeSubdomains="true">simkl.in</domain>
-        <!-- cdn.jsdelivr.net: appcast (lib/services/update_service.dart:18) and
-             anime-list mappings (anime_lists_mapping_store.dart:37,
-             fribb_mapping_store.dart:49). -->
+        <!-- cdn.jsdelivr.net: appcast (lib/services/update_service.dart:19). -->
         <domain includeSubdomains="true">jsdelivr.net</domain>
-        <!-- Release check (lib/services/update_service.dart:161). -->
-        <domain includeSubdomains="true">api.github.com</domain>
+        <!-- api.github.com: release check (lib/services/update_service.dart:157);
+             github.com: anime mappings release asset
+             (lib/services/trackers/anime_mappings_store.dart:29). -->
+        <domain includeSubdomains="true">github.com</domain>
+        <!-- release-assets.githubusercontent.com: where github.com redirects
+             that release asset download. -->
+        <domain includeSubdomains="true">githubusercontent.com</domain>
         <!-- TMDB artwork (lib/services/catalog/seerr_catalog_source.dart:163). -->
         <domain includeSubdomains="true">image.tmdb.org</domain>
         <trust-anchors>

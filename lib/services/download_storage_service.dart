@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
@@ -44,7 +45,24 @@ class DownloadStorageService {
   @visibleForTesting
   static void resetForTesting() {
     _instance = null;
+    _excludesFromBackupOverride = null;
   }
+
+  static const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
+  static const MethodChannel _backupExclusionChannel = MethodChannel('com.plezy/backup_exclusion');
+
+  /// Whether the default download and artwork roots are marked excluded from
+  /// device backup. iOS includes `Documents` in iCloud Backup, and hundreds of
+  /// GB of downloads made backups fail (#2958); the media is re-downloadable.
+  /// The mark is set on the directory, so it also covers every file written
+  /// into it later. tvOS has no downloads and no device backup.
+  static bool get _excludesFromBackup => _excludesFromBackupOverride ?? (Platform.isIOS && !_tvosBuild);
+
+  static bool? _excludesFromBackupOverride;
+
+  /// Test seam: the host suite never runs on iOS.
+  @visibleForTesting
+  static void debugSetExcludesFromBackupOverride(bool? value) => _excludesFromBackupOverride = value;
 
   Directory? _baseDownloadsDir;
   String? _artworkDirectoryPath;
@@ -68,6 +86,9 @@ class DownloadStorageService {
     _artworkDirectoryPath = null;
 
     await getArtworkDirectory();
+    // Resolving the root marks it, so downloads made before the exclusion
+    // existed leave the backup on this launch, not on the next download.
+    if (_excludesFromBackup) await getDownloadsDirectory();
   }
 
   Future<void> refreshCustomPath() async {
@@ -156,8 +177,10 @@ class DownloadStorageService {
     }
 
     final baseDir = await _getBaseAppDir();
-    _baseDownloadsDir = await _ensureDirectoryExists(Directory(path.join(baseDir.path, 'downloads')));
-    return _baseDownloadsDir!;
+    final downloadsDir = await _ensureDirectoryExists(Directory(path.join(baseDir.path, 'downloads')));
+    await _excludeFromBackup(downloadsDir);
+    _baseDownloadsDir = downloadsDir;
+    return downloadsDir;
   }
 
   /// Get centralized artwork directory for offline artwork caching
@@ -182,9 +205,25 @@ class DownloadStorageService {
     // Default: Get the app base directory directly (not downloads directory)
     final baseDir = await _getBaseAppDir();
     final artworkDir = await _ensureDirectoryExists(Directory(path.join(baseDir.path, 'artwork')));
+    await _excludeFromBackup(artworkDir);
     // Cache the path for synchronous access
     _artworkDirectoryPath = artworkDir.path;
     return artworkDir;
+  }
+
+  /// Marks an app-owned directory as excluded from device backup (see
+  /// [_excludesFromBackup]). Only the default roots inside the app container
+  /// are marked; a custom download folder belongs to the user. Best effort:
+  /// failing to mark it must not stop downloads, so failures are only logged.
+  Future<void> _excludeFromBackup(Directory dir) async {
+    if (!_excludesFromBackup) return;
+    try {
+      await _backupExclusionChannel.invokeMethod<void>('excludeFromBackup', dir.path);
+    } on PlatformException catch (error, stackTrace) {
+      appLogger.w('Failed to exclude ${dir.path} from backup', error: error, stackTrace: stackTrace);
+    } on MissingPluginException catch (error, stackTrace) {
+      appLogger.w('Backup exclusion channel unavailable', error: error, stackTrace: stackTrace);
+    }
   }
 
   /// Get artwork file path from a server-side thumb path (synchronous, requires initialization).

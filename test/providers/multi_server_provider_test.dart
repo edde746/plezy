@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
@@ -21,7 +23,7 @@ void main() {
   late DataAggregationService aggregation;
 
   setUp(() {
-    manager = MultiServerManager();
+    manager = MultiServerManager(connectivityChanges: () => const Stream.empty());
     aggregation = DataAggregationService(manager);
   });
 
@@ -369,6 +371,126 @@ void main() {
         failure = http.Response('', 503);
         await p.checkLiveTvAvailability();
         expect(p.liveTvServers, isEmpty);
+      });
+    });
+
+    group('Live TV after an in-place profile switch', () {
+      final dvrProbeTokens = <String?>[];
+      late http.Response noAccessResponse;
+
+      setUp(() {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        PlexApiCache.initialize(db);
+        dvrProbeTokens.clear();
+        noAccessResponse = http.Response(
+          jsonEncode({
+            'MediaContainer': {'size': 0},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      /// One server whose `/livetv/dvrs` answer depends on the user: only
+      /// `token-dvr` has Live TV access.
+      Future<http.Response> handler(http.Request request) async {
+        final token = request.headers['X-Plex-Token'];
+        http.Response json(Object body) =>
+            http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+        switch (request.url.path) {
+          case '/':
+            return json({
+              'MediaContainer': {'machineIdentifier': 'srv-1'},
+            });
+          case '/media/providers':
+            return json({
+              'MediaContainer': {'MediaProvider': <Object>[]},
+            });
+          case '/livetv/dvrs':
+            dvrProbeTokens.add(token);
+            if (token != 'token-dvr') return noAccessResponse;
+            return json({
+              'MediaContainer': {
+                'Dvr': [
+                  {'key': 'dvr-1', 'uuid': 'dvr-1'},
+                ],
+              },
+            });
+        }
+        return http.Response('{}', 404);
+      }
+
+      Future<MultiServerProvider> providerOnlineAs(String token) async {
+        manager.debugRegisterClientForTesting(
+          testPlexClient(
+            serverId: ServerId('srv-1'),
+            token: token,
+            profileScopeId: buildPlexProfileScopeId(serverId: ServerId('srv-1'), profileId: 'profile-a'),
+            handler: handler,
+          ),
+          online: false,
+        );
+        final p = MultiServerProvider(manager, aggregation);
+        addTearDown(p.dispose);
+        p.setVisibleServerIds({'srv-1'});
+        manager.updateServerStatus(ServerId('srv-1'), true);
+        await pumpEventQueue();
+        return p;
+      }
+
+      /// What `ActiveProfileBinder` does for a Plex Home switch: rotate the
+      /// online client's token in place, then publish the same visible set.
+      Future<void> switchTo(MultiServerProvider p, String token) async {
+        final account = PlexAccountConnection(
+          id: 'account',
+          accountToken: 'account-token',
+          clientIdentifier: 'test-client',
+          accountLabel: 'Account',
+          servers: [
+            PlexServer(
+              name: 'srv-1',
+              clientIdentifier: 'srv-1',
+              accessToken: token,
+              connections: const [],
+              owned: true,
+            ),
+          ],
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        );
+        expect(await manager.refreshTokensForProfile(account, profileId: 'profile-b'), {'srv-1'});
+        p.setVisibleServerIds({'srv-1'});
+        await pumpEventQueue();
+      }
+
+      test('switching to a user without Live TV access hides it', () async {
+        final p = await providerOnlineAs('token-dvr');
+        expect(p.hasLiveTv, isTrue);
+
+        await switchTo(p, 'token-no-dvr');
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+      });
+
+      test('switching to a user with Live TV access shows it', () async {
+        final p = await providerOnlineAs('token-no-dvr');
+        expect(p.hasLiveTv, isFalse);
+
+        await switchTo(p, 'token-dvr');
+        expect(p.hasLiveTv, isTrue);
+        expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+      });
+
+      test('a refused user is not re-probed on unrelated status changes', () async {
+        noAccessResponse = http.Response('', 403);
+        final p = await providerOnlineAs('token-dvr');
+        await switchTo(p, 'token-no-dvr');
+        expect(p.hasLiveTv, isFalse);
+        final probes = dvrProbeTokens.length;
+
+        manager.updateServerStatus(ServerId('srv-2'), false);
+        await pumpEventQueue();
+        expect(dvrProbeTokens, hasLength(probes));
       });
     });
 

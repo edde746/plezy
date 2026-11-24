@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/app_logger.dart';
+import '../utils/external_url.dart';
 
 typedef PlayerLauncher = Future<bool> Function(String url);
 typedef PlayerOptionsLauncher = Future<bool> Function(String url, ExternalPlayerLaunchOptions options);
@@ -187,13 +188,9 @@ class ExternalPlayer {
 
 const _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
 
-/// The tvOS Runner has no url_launcher implementation; it answers the two
-/// handoff questions itself on this channel (Android's `openVideo` shares it).
-const _tvosHandoffChannel = MethodChannel('com.plezy/external_player');
-
 Future<bool> _canOpenAppUrl(Uri uri) async {
   if (!_tvosBuild) return canLaunchUrl(uri);
-  return await _tvosHandoffChannel.invokeMethod<bool>('canOpenUrl', {'url': uri.toString()}) ?? false;
+  return tvosCanOpenUrl(uri);
 }
 
 Future<bool> _launchWithUrl(String url) {
@@ -231,9 +228,7 @@ Future<bool> _openPlayerUri(Uri uri) async {
   // Apple platforms skip the canOpenURL gate: it answers false for any scheme
   // missing from LSApplicationQueriesSchemes, which is every custom player.
   // The open call reports a missing handler itself.
-  if (_tvosBuild) {
-    return await _tvosHandoffChannel.invokeMethod<bool>('openUrl', {'url': uri.toString()}) ?? false;
-  }
+  if (_tvosBuild) return tvosOpenUrl(uri);
   if (Platform.isIOS) return launchUrl(uri, mode: LaunchMode.externalApplication);
   if (await canLaunchUrl(uri)) {
     return launchUrl(uri, mode: LaunchMode.externalApplication);

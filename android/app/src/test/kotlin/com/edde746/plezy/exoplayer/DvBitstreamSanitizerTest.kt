@@ -52,6 +52,38 @@ class DvBitstreamSanitizerTest {
   }
 
   @Test
+  fun stripsSamsungApplication4SeiWithAnotherOrientedCode() {
+    // The second T.35 message every frame of #3062's hybrid release carries beside standard
+    // HDR10+: oriented code 0x0010 instead of 0x0001, which the Fire TV DV decoder still
+    // takes as HDR10+.
+    val t35 = hex("b5003c0010040100619000080008000c000800050004c002e001d0012000e8009a40")
+    val sei = annexBNal(39, concat(byteArrayOf(0x04, t35.size.toByte()), t35, byteArrayOf(0x80.toByte())))
+    val vcl1 = annexBNal(1, byteArrayOf(0x01, 0x02))
+    val vcl2 = annexBNal(1, byteArrayOf(0x03))
+    val buffer = bufferOf(vcl1, hdr10PlusSei(), sei, vcl2)
+
+    val stripped = sanitizer.sanitize(buffer, stripHdr10PlusSei = true, stripDvRpu = false)
+
+    assertEquals(2, stripped)
+    assertArrayEquals(concat(vcl1, vcl2), remainingBytes(buffer))
+  }
+
+  @Test
+  fun preservesSamsungT35SeiForAnotherApplication() {
+    // Samsung provider code, application identifier 5: not ST 2094-40.
+    val sei = annexBNal(
+      39,
+      byteArrayOf(0x04, 0x07, 0xB5.toByte(), 0x00, 0x3C, 0x00, 0x01, 0x05, 0x00, 0x80.toByte())
+    )
+    val buffer = bufferOf(annexBNal(1, byteArrayOf(0x01)), sei, annexBNal(1, byteArrayOf(0x02)))
+    val original = remainingBytes(buffer)
+
+    sanitizer.sanitize(buffer, stripHdr10PlusSei = true, stripDvRpu = false)
+
+    assertArrayEquals(original, remainingBytes(buffer))
+  }
+
+  @Test
   fun noOpWithoutSeiNals() {
     val buffer = bufferOf(annexBNal(1, byteArrayOf(0x01, 0x02)), annexBNal(1, byteArrayOf(0x03)))
     val original = remainingBytes(buffer)
@@ -255,6 +287,8 @@ class DvBitstreamSanitizerTest {
   private fun hdr10PlusSeiPayload(): ByteArray = byteArrayOf(0x04, 0x07, 0xB5.toByte(), 0x00, 0x3C, 0x00, 0x01, 0x04, 0x00, 0x80.toByte())
 
   private fun hdr10PlusSei(): ByteArray = annexBNal(39, hdr10PlusSeiPayload())
+
+  private fun hex(value: String): ByteArray = ByteArray(value.length / 2) { value.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
 
   private fun concat(vararg parts: ByteArray): ByteArray {
     val result = ByteArray(parts.sumOf { it.size })

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:background_downloader/background_downloader.dart'
+    show DownloadTask, Task, TaskFileSystemException, TaskRecord, TaskStatus, TaskStatusUpdate;
 import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryInterceptor;
 import 'package:plezy/media/ids.dart';
 
@@ -7,6 +9,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -306,6 +309,56 @@ class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource
     _isOffline = value;
     notifyListeners();
   }
+}
+
+/// A server for each backend whose show (and season) holds [episodes]. Jellyfin
+/// and Emby clients are user-scoped, as in production. [onFetchItem] runs
+/// inside the metadata fetch that precedes each queued item.
+class _StorageStopClient implements MediaServerClient, ScopedMediaServerClient {
+  _StorageStopClient(this.clientBackend, this.episodes, {this.onFetchItem});
+
+  final MediaBackend clientBackend;
+  final List<MediaItem> episodes;
+  final Future<void> Function(String id)? onFetchItem;
+  final fetchItemCalls = <String>[];
+
+  @override
+  ServerId get serverId => ServerId('${clientBackend.id}-machine');
+
+  @override
+  String get scopedServerId =>
+      clientBackend == MediaBackend.plex ? '${clientBackend.id}-machine' : '${clientBackend.id}-machine/user-a';
+
+  @override
+  MediaBackend get backend => clientBackend;
+
+  @override
+  ApiCache get cache => ApiCache.forBackend(clientBackend);
+
+  @override
+  bool get isOfflineMode => false;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => episodes;
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    fetchItemCalls.add(id);
+    await onFetchItem?.call(id);
+    return null;
+  }
+
+  @override
+  Future<MediaItem> stampLibrary(MediaItem item) async => item;
+
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => const [];
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -4353,6 +4406,211 @@ void main() {
 
       expect(p.downloadActivitySnapshot, equals(p.downloadActivitySnapshot));
       p.dispose();
+    });
+  });
+
+  group('DownloadProvider — storage stop', () {
+    const refusal =
+        'Insufficient space to store the downloaded file: needs 4294967296 bytes above a reserve of 5368709120 '
+        'bytes; 6442450944 bytes free, 7516192768 for important usage, on /private/var/mobile/tmp';
+
+    late DownloadManagerService manager;
+    var queueRuns = 0;
+
+    setUp(() {
+      queueRuns = 0;
+      manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+        queueProcessorOverride: (_) async {
+          queueRuns++;
+        },
+        nativeOpsOverride: (
+          allTasks: () async => const <Task>[],
+          allRecords: () async => const <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (_) async => true,
+          resetGroup: () async => 0,
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+      )..recoveryFuture = Future<void>.value();
+    });
+
+    tearDown(() => manager.dispose());
+
+    MediaItem episode(MediaBackend backend, int index) => testMediaItem(
+      id: 'ep-$index',
+      backend: backend,
+      kind: MediaKind.episode,
+      title: 'Episode $index',
+      serverId: ServerId('${backend.id}-machine'),
+      parentIndex: 1,
+      index: index,
+    );
+
+    Future<({DownloadProvider provider, MultiServerManager servers})> setUpRule(_StorageStopClient client) async {
+      final servers = MultiServerManager();
+      addTearDown(servers.dispose);
+      servers.debugRegisterClientForTesting(client);
+      final provider = DownloadProvider.forTesting(downloadManager: manager, database: db);
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      await provider.createSyncRule(
+        serverId: client.serverId,
+        ratingKey: 'show-1',
+        targetType: 'show',
+        episodeCount: 0,
+      );
+      return (provider: provider, servers: servers);
+    }
+
+    /// An owned download in flight, which the storage refusal will hit.
+    Future<void> seedDownloading(DownloadProvider provider, MediaItem item, _StorageStopClient client) async {
+      final globalKey = item.globalKey;
+      await db.insertDownload(
+        serverId: client.serverId,
+        clientScopeId: client.cacheServerId == item.serverId ? null : client.cacheServerId,
+        ratingKey: item.id,
+        globalKey: globalKey,
+        type: item.kind.id,
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'task-${item.id}');
+      await db.addToQueue(mediaGlobalKey: globalKey);
+      await db.addDownloadOwner(
+        profileId: 'test-profile',
+        globalKey: globalKey,
+        backendId: client.backend.id,
+        clientScopeId: client.cacheServerId,
+      );
+      provider.debugSeedState(
+        downloads: {globalKey: DownloadProgress(globalKey: globalKey, status: DownloadStatus.downloading)},
+        metadata: {globalKey: item},
+        ownedDownloadKeys: {globalKey},
+      );
+    }
+
+    Future<void> refuseForStorage(MediaItem item) async {
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          DownloadTask(
+            taskId: 'task-${item.id}',
+            url: 'https://example.test/video.mp4',
+            filename: 'video.mp4',
+            directory: 'downloads',
+            metaData: item.globalKey,
+          ),
+          TaskStatus.failed,
+          TaskFileSystemException(refusal),
+        ),
+      );
+      // Let the provider see the stop's progress events.
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    for (final backend in MediaBackend.values) {
+      test('forced ${backend.id} sync passes neither lift a storage stop nor queue; a retry does', () async {
+        final first = episode(backend, 1);
+        final second = episode(backend, 2);
+        final client = _StorageStopClient(backend, [first, second]);
+        final (:provider, :servers) = await setUpRule(client);
+        await seedDownloading(provider, first, client);
+        await refuseForStorage(first);
+        expect(manager.queueBlockedByStorageFailure, isTrue);
+
+        expect(await provider.executeSyncRules(servers, force: true), isEmpty);
+        expect(await provider.executeSyncRuleFor(provider.syncRuleKeyFor(client.serverId, 'show-1'), servers), isNull);
+
+        expect(manager.queueBlockedByStorageFailure, isTrue);
+        final refused = await db.getDownloadedMedia(first.globalKey);
+        expect(refused?.status, DownloadStatus.failed.index);
+        expect(refused?.errorMessage, t.downloads.storageFull);
+        expect(provider.downloads[first.globalKey]?.status, DownloadStatus.failed);
+        expect(await db.getDownloadedMedia(second.globalKey), isNull);
+        expect(await db.select(db.downloadQueue).get(), isEmpty);
+        expect(queueRuns, 0);
+        expect(client.fetchItemCalls, isEmpty, reason: 'a blocked pass makes no server requests');
+
+        await provider.retryDownload(first.globalKey, client);
+        expect(manager.queueBlockedByStorageFailure, isFalse);
+        await Future<void>.delayed(Duration.zero);
+        expect(provider.downloads[first.globalKey]?.status, DownloadStatus.queued);
+
+        await provider.executeSyncRules(servers, force: true);
+        expect((await db.getDownloadedMedia(second.globalKey))?.status, DownloadStatus.queued.index);
+      });
+    }
+
+    test('a storage stop during a sync pass holds the rest of the pass', () async {
+      final episodes = [for (var index = 1; index <= 3; index++) episode(MediaBackend.plex, index)];
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: ServerId('plex-machine'),
+      );
+      final client = _StorageStopClient(
+        MediaBackend.plex,
+        episodes,
+        onFetchItem: (id) async {
+          if (id == 'ep-2') await refuseForStorage(movie);
+        },
+      );
+      final (:provider, :servers) = await setUpRule(client);
+      await seedDownloading(provider, movie, client);
+
+      await provider.executeSyncRules(servers, force: true);
+
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+      expect(queueRuns, 1, reason: 'only the episode queued before the stop ran the queue');
+      expect((await db.getDownloadedMedia(episodes[0].globalKey))?.errorMessage, t.downloads.storageFull);
+      expect(await db.getDownloadedMedia(episodes[1].globalKey), isNull);
+      expect(await db.getDownloadedMedia(episodes[2].globalKey), isNull);
+      expect(client.fetchItemCalls, isNot(contains('ep-3')));
+    });
+
+    test('a storage stop during a season download holds its other episodes until the next request', () async {
+      final episodes = [for (var index = 1; index <= 3; index++) episode(MediaBackend.plex, index)];
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: ServerId('plex-machine'),
+      );
+      final client = _StorageStopClient(
+        MediaBackend.plex,
+        episodes,
+        onFetchItem: (id) async {
+          if (id == 'ep-2') await refuseForStorage(movie);
+        },
+      );
+      final (:provider, servers: _) = await setUpRule(client);
+      await seedDownloading(provider, movie, client);
+      final season = testMediaItem(
+        id: 'season-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.season,
+        title: 'Season 1',
+        serverId: ServerId('plex-machine'),
+        index: 1,
+      );
+
+      await provider.queueDownload(season, client);
+
+      expect(manager.queueBlockedByStorageFailure, isTrue);
+      expect(queueRuns, 1);
+      for (final held in episodes.skip(1)) {
+        expect((await db.getDownloadedMedia(held.globalKey))?.status, DownloadStatus.queued.index);
+      }
+
+      await provider.queueDownload(movie.copyWith(id: 'movie-2'), client);
+      expect(manager.queueBlockedByStorageFailure, isFalse);
+      expect(queueRuns, 2);
     });
   });
 

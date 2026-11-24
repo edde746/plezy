@@ -55,11 +55,9 @@ require(
     "resolver must expose one validated tag output",
 )
 
-homebrew = job("update-homebrew")
 winget = job("update-winget")
 appcast = job("update-appcast-branch")
 for name, block in (
-    ("update-homebrew", homebrew),
     ("update-winget", winget),
     ("update-appcast-branch", appcast),
 ):
@@ -67,7 +65,6 @@ for name, block in (
 
 for name, block in (
     ("resolve-release", resolver),
-    ("update-homebrew", homebrew),
     ("update-winget", winget),
     ("update-appcast-branch", appcast),
 ):
@@ -81,13 +78,8 @@ require(
 )
 
 resolved_output = "${{ needs.resolve-release.outputs.tag }}"
-require(f"RELEASE_TAG: {resolved_output}" in homebrew, "Homebrew must use the resolved tag")
 require(f"release-tag: {resolved_output}" in winget, "WinGet must use the resolved tag")
 require(f"RELEASE_TAG: {resolved_output}" in appcast, "appcast must use the resolved tag")
-require(
-    'git commit -m "chore: update cask to $RELEASE_TAG"' in homebrew,
-    "Homebrew commit text must include the resolved tag",
-)
 require(
     'git commit-tree "$TREE" -m "Update appcast for $RELEASE_TAG"' in appcast,
     "appcast commit text must include the resolved tag",

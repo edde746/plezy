@@ -100,8 +100,10 @@ void main() {
     final data = Map<String, dynamic>.of(breadcrumb.data!);
     final rssMb = data.remove('rssMb') as int;
     final maxRssMb = data.remove('maxRssMb') as int;
+    // currentRss and maxRss read separate OS counters, and the peak can trail
+    // the current value: CI's Linux runner reported rssMb=386, maxRssMb=385.
     expect(rssMb, greaterThan(0));
-    expect(maxRssMb, greaterThanOrEqualTo(rssMb));
+    expect(maxRssMb, greaterThan(0));
     expect(data, {
       'imageCacheMb': 6,
       'imageCacheImages': 2,

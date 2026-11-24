@@ -153,12 +153,33 @@ void main() {
     ),
   );
 
+  PlexVideoControls controls({
+    List<MediaMarker>? markers,
+    bool canControl = true,
+    bool playbackPromptOpen = false,
+    void Function({required bool skipAutoPlayCountdown})? onReachedEnd,
+  }) => PlexVideoControls(
+    player: player,
+    volumeController: volume,
+    metadata: testMediaItem(id: 'select-key'),
+    initialMarkers: markers,
+    toastController: toast,
+    chromeController: chrome,
+    hasFirstFrame: hasFirstFrame,
+    canNavigateMediaItems: false,
+    canControl: canControl,
+    playbackPromptOpen: playbackPromptOpen,
+    onPlayPauseRequested: (_) async => toggles++,
+    onReachedEnd: onReachedEnd,
+  );
+
   Future<void> pumpPlayer(
     WidgetTester tester, {
     List<MediaMarker>? markers,
     TargetPlatform platform = TargetPlatform.windows,
     bool canControl = true,
     bool playbackPromptOpen = false,
+    void Function({required bool skipAutoPlayCountdown})? onReachedEnd,
   }) async {
     await tester.pumpWidget(shell(const SizedBox.expand(), platform: platform));
     await tester.pump();
@@ -167,18 +188,11 @@ void main() {
     await tester.pumpWidget(
       shell(
         platform: platform,
-        PlexVideoControls(
-          player: player,
-          volumeController: volume,
-          metadata: testMediaItem(id: 'select-key'),
-          initialMarkers: markers,
-          toastController: toast,
-          chromeController: chrome,
-          hasFirstFrame: hasFirstFrame,
-          canNavigateMediaItems: false,
+        controls(
+          markers: markers,
           canControl: canControl,
           playbackPromptOpen: playbackPromptOpen,
-          onPlayPauseRequested: (_) async => toggles++,
+          onReachedEnd: onReachedEnd,
         ),
       ),
     );
@@ -206,6 +220,7 @@ void main() {
     TargetPlatform platform = TargetPlatform.windows,
     bool canControl = true,
     bool playbackPromptOpen = false,
+    void Function({required bool skipAutoPlayCountdown})? onReachedEnd,
   }) {
     testWidgets(description, (tester) async {
       await pumpPlayer(
@@ -214,6 +229,7 @@ void main() {
         platform: platform,
         canControl: canControl,
         playbackPromptOpen: playbackPromptOpen,
+        onReachedEnd: onReachedEnd,
       );
       await body(tester);
       chrome.cancelAutoHide();
@@ -712,6 +728,136 @@ void main() {
       },
     );
   });
+
+  // Credits that run to the end of the file end the item instead of seeking.
+  // A Watch Together guest gets no Play Next prompt to take the remote, so
+  // the vanished button must hand it back to the surface (#1890, #3147).
+  group('credits that run to the end on a television', () {
+    final creditsMarker = MediaMarker(id: 1, type: 'credits', startTimeOffset: 2640000, endTimeOffset: 2700000);
+    final endings = <bool>[];
+
+    setUp(() async {
+      endings.clear();
+      TvDetectionService.debugSetAppleTVOverride(true);
+      PlatformDetector.debugSetIsDesktopOSOverride(false);
+      await setNavigationEnabled(true);
+    });
+
+    playerTest(
+      'Select ends the item without touching the player, and the next Select toggles playback',
+      markers: [creditsMarker],
+      onReachedEnd: ({required skipAutoPlayCountdown}) => endings.add(skipAutoPlayCountdown),
+      (tester) async {
+        InputModeTracker.reportNonPointerInput();
+        player.emitPosition(const Duration(minutes: 44, seconds: 30));
+        await tester.pumpAndSettle();
+        expect(focusLabel(), 'SkipMarkerButton', reason: 'precondition: TV autofocuses the sole affordance');
+
+        await press(tester, LogicalKeyboardKey.select);
+
+        expect(endings, [false], reason: 'the screen ends the item');
+        expect(player.pauses, 0, reason: 'the screen, not the controls, decides how the item ends');
+        expect(player.state.position, const Duration(minutes: 44, seconds: 30), reason: 'no seek to EOF');
+        expect(focusLabel(), 'PlayerSurface', reason: 'the vanished button must hand the remote back');
+
+        await press(tester, LogicalKeyboardKey.select);
+
+        expect(toggles, 1, reason: 'one press must toggle playback, not merely raise the chrome');
+      },
+    );
+
+    playerTest(
+      'with nothing left to end, the prompt goes away and does not come back',
+      markers: [creditsMarker],
+      onReachedEnd: ({required skipAutoPlayCountdown}) => endings.add(skipAutoPlayCountdown),
+      (tester) async {
+        player.emitPosition(const Duration(minutes: 44, seconds: 30));
+        await tester.pumpAndSettle();
+        expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'precondition: the prompt is up');
+
+        // A Watch Together room reached its end.
+        await tester.pumpWidget(shell(controls(markers: [creditsMarker])));
+        await tester.pumpAndSettle();
+        expect(find.byType(SkipMarkerButton), findsNothing);
+
+        player.emitPosition(const Duration(minutes: 44, seconds: 59));
+        await tester.pumpAndSettle();
+        expect(find.byType(SkipMarkerButton), findsNothing);
+        expect(endings, isEmpty);
+      },
+    );
+  });
+
+  // An in-place open (a TV wake-up restore, a quality switch) closes the
+  // first-frame gate, and the guard unmounts the transport row under a focused
+  // Play/Pause. Focus fell to the chrome's own scope, which no key stage
+  // answers, so a paused viewer's remote went dead under visible chrome
+  // (#3022).
+  group('an open that unmounts the focused control', () {
+    setUp(() async {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      await TvDetectionService.getInstance(forceTv: true);
+      TvDetectionService.setForceTVSync(true);
+      PlatformDetector.debugSetIsDesktopOSOverride(false);
+      await setNavigationEnabled(true);
+    });
+
+    Future<void> focusPlayPause(WidgetTester tester) async {
+      await press(tester, LogicalKeyboardKey.arrowUp);
+      expect(focusLabel(), 'PlayPause', reason: 'precondition: the remote is on Play/Pause');
+    }
+
+    playerTest('the remote waits on the surface and returns to Play/Pause with the frame', (tester) async {
+      await focusPlayPause(tester);
+
+      hasFirstFrame.value = false;
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayerSurface', reason: 'the emptied chrome scope must not keep the remote');
+
+      hasFirstFrame.value = true;
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayPause', reason: 'the frame brings back the control the open took away');
+
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      expect(focusLabel(), isNot(anyOf('PlayPause', 'PlayerSurface')), reason: 'arrows traverse the row again');
+    });
+
+    playerTest('OK toggles playback while the open is still loading', (tester) async {
+      await focusPlayPause(tester);
+      hasFirstFrame.value = false;
+      await tester.pumpAndSettle();
+
+      await press(tester, LogicalKeyboardKey.select);
+
+      expect(toggles, 1, reason: 'OK must not be swallowed while the row is gone');
+    });
+
+    playerTest('a remote resting on the surface stays there', (tester) async {
+      InputModeTracker.reportNonPointerInput();
+      chrome.show();
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayerSurface', reason: 'precondition: nothing in the chrome owns focus');
+
+      hasFirstFrame.value = false;
+      await tester.pumpAndSettle();
+      hasFirstFrame.value = true;
+      await tester.pumpAndSettle();
+
+      expect(focusLabel(), 'PlayerSurface', reason: 'the open hands back what it took; it does not grab');
+    });
+
+    // The chrome scope node outlives each hide. A rebuild while hiding must not
+    // leave it refusing focus to its controls once the chrome is back.
+    playerTest('the chrome takes the remote again after hiding and showing', (tester) async {
+      await focusPlayPause(tester);
+
+      chrome.hide();
+      await tester.pumpAndSettle();
+      expect(focusLabel(), 'PlayerSurface', reason: 'precondition: the hidden chrome handed the remote back');
+
+      await focusPlayPause(tester);
+    });
+  });
 }
 
 /// Minimal [Player] reporting steady playback; transport is routed to the
@@ -719,6 +865,7 @@ void main() {
 class _TogglePlayer implements Player {
   Duration _position = const Duration(minutes: 5);
   final StreamController<Duration> _positionController = StreamController<Duration>.broadcast();
+  var pauses = 0;
 
   /// Moves the playhead and announces it on the position stream, the way a
   /// real player drives marker detection.
@@ -740,6 +887,9 @@ class _TogglePlayer implements Player {
   /// detection (and its focus handling) rides on that event.
   @override
   Future<void> seek(Duration position) async => emitPosition(position);
+
+  @override
+  Future<void> pause() async => pauses++;
 
   @override
   PlayerStreams get streams => PlayerStreams(

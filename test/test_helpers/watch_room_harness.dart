@@ -120,7 +120,7 @@ final class WatchTestScreen {
     await Future<void>.delayed(Duration.zero);
     final opened = watchTestPlayer(copy, refusePlay: () => refusePlay);
     players.add(opened);
-    provider.registerPlayer(this, WatchPlayerHooks(openInPlace: open, exitPlayer: () {}));
+    provider.registerPlayer(this, WatchPlayerHooks(openInPlace: open, exitPlayer: () {}, mediaEnded: (_) {}));
     provider.playerOpened(opened.adapter, shareable: true, roomLaunch: true);
     return true;
   }

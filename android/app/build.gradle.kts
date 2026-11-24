@@ -92,16 +92,18 @@ val extractMpvNatives = tasks.register<Sync>("extractMpvNatives") {
 
 val media3Version = "1.11.0"
 val mpvFfmpegVersion = "8.0.1"
-val mpvFfmpegSourceSha256 = "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41"
-val mpvFfmpegSourceUrl = "https://ffmpeg.org/releases/ffmpeg-$mpvFfmpegVersion.tar.xz"
+val mpvFfmpegSourceSha256 = "679aa13a19415d5ddab91e580084e3ab20c963c8240001e5cbb955a97bdd81b1"
+val mpvFfmpegSourceUrl = "https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n$mpvFfmpegVersion.tar.gz"
 val mpvFfmpegDevelopmentDir = layout.buildDirectory.dir("libmpv-ffmpeg-development").get().asFile
 
 // Build the Media3 JNI adapter against the same shared FFmpeg libraries that
 // libmpv packages. Headers are pinned to libmpv's FFmpeg version and remain
 // build-only; the APK contains one FFmpeg implementation for both players.
-// The AAR carries no headers, so they come from FFmpeg's release source: the
-// Media3 adapter uses none of the declarations mpv-build's patches change
-// (libavcodec/mediacodec.h, libavcodec/jni.h).
+// The AAR carries no headers, so they come from the FFmpeg tag mpv-build
+// builds (versions.json `ffmpeg`), served by GitHub like the AAR: downloads
+// from ffmpeg.org's release server failed CI runs. The Media3 adapter uses
+// none of the declarations mpv-build's patches change (libavcodec/mediacodec.h,
+// libavcodec/jni.h).
 val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") {
   dependsOn(extractMpvNatives)
   val manifest = File(mpvFfmpegDevelopmentDir, ".manifest")
@@ -127,7 +129,7 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       "${mpvFfmpegDevelopmentDir.name}.staging-${UUID.randomUUID()}"
     )
     try {
-      val sourceArchive = File(staging, "ffmpeg-$mpvFfmpegVersion.tar.xz")
+      val sourceArchive = File(staging, "ffmpeg-$mpvFfmpegVersion.tar.gz")
       val includeDir = File(staging, "include")
       val nativeDir = File(staging, "native")
       staging.mkdirs()
@@ -145,7 +147,7 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
         providers.exec {
           commandLine(
             "tar",
-            "-xJf",
+            "-xzf",
             sourceArchive.absolutePath,
             "--strip-components=1",
             "-C",

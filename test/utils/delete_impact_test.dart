@@ -83,7 +83,9 @@ void main() {
 
   /// A real PlexClient over [handler], with the metadata cache backed by an
   /// in-memory database. Recorded request paths let a test prove which
-  /// endpoints the resolver actually consulted.
+  /// endpoints the resolver actually consulted. The server root reports
+  /// "Allow media deletion" on, which [PlexClient.deleteMediaItem] checks
+  /// before sending the DELETE (#2897).
   ({PlexClient client, List<String> paths, List<String> deleted}) plexClient(
     Future<http.Response> Function(String path) handler,
   ) {
@@ -102,6 +104,15 @@ void main() {
       serverId: ServerId('plex-1'),
       httpClient: MockClient((request) async {
         paths.add(request.url.path);
+        if (request.url.path == '/') {
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'allowMediaDeletion': true},
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
         if (request.method == 'DELETE') {
           deleted.add(request.url.path.split('/').last);
           return http.Response('', 200);

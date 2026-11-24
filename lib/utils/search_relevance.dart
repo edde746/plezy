@@ -5,6 +5,7 @@ import 'package:string_similarity/string_similarity.dart';
 import 'package:unorm_dart/unorm_dart.dart';
 
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_person.dart';
 import '../media/search_hit.dart';
 
@@ -80,7 +81,8 @@ double _mediaScore(MediaItem item, _NormalizedSearchQuery query) {
   best = math.max(best, query.score(item.titleSort, 0.98));
   best = math.max(best, query.score(item.originalTitle, 0.96));
   best = math.max(best, query.score(item.grandparentTitle, 0.9));
-  best = math.max(best, query.score(item.parentTitle, 0.8));
+  // An album's parent is its artist, which a track carries as grandparentTitle.
+  best = math.max(best, query.score(item.parentTitle, item.kind == MediaKind.album ? 0.9 : 0.8));
   return best;
 }
 

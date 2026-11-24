@@ -30,6 +30,7 @@ class MediaControlsScreenController {
     required this._hasLiveSeekWindow,
     required this._hasNextLiveChannel,
     required this._hasPreviousLiveChannel,
+    required this._isPlaybackHeld,
     required this._shouldSkipForPip,
     required this._isPlayerInitialized,
     required this._metadata,
@@ -61,6 +62,10 @@ class MediaControlsScreenController {
   /// that has a channel to zap to.
   final bool Function() _hasNextLiveChannel;
   final bool Function() _hasPreviousLiveChannel;
+
+  /// Whether the resume profile picker holds playback paused: no resume may
+  /// start, nor rewind for one.
+  final bool Function() _isPlaybackHeld;
   final bool Function() _shouldSkipForPip;
   final bool Function() _isPlayerInitialized;
   final MediaItem Function() _metadata;
@@ -152,6 +157,9 @@ class MediaControlsScreenController {
     // live seek accumulator owns that motion, and without one an absolute
     // rewind would drag the playhead off the live edge.
     if (isLive) return;
+    // Nothing resumes under the profile picker, so nothing rewinds for it:
+    // the press that does resume once a profile is chosen rewinds then.
+    if (_isPlaybackHeld()) return;
     final rewindOnResume = _rewindOnResumeSeconds();
     if (rewindOnResume <= 0) return;
     final target = p.state.position - Duration(seconds: rewindOnResume);
@@ -181,9 +189,15 @@ class MediaControlsScreenController {
     final wasPlayingBeforeInactive = _wasPlayingBeforeInactive();
     if (wasPlayingBeforeInactive) {
       try {
-        await seekBackForRewind(currentPlayer);
-        await _play(currentPlayer);
-        appLogger.d('Video resumed after returning from inactive state');
+        if (_isPlaybackHeld()) {
+          // The profile picker covers the player: choosing a profile, not the
+          // app's return, decides whether this session plays again (#2195).
+          appLogger.d('Video stays paused on resume: the profile picker covers it');
+        } else {
+          await seekBackForRewind(currentPlayer);
+          await _play(currentPlayer);
+          appLogger.d('Video resumed after returning from inactive state');
+        }
       } catch (e) {
         appLogger.w('Failed to resume playback after returning from inactive state', error: e);
       } finally {

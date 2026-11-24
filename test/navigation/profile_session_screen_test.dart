@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
@@ -21,6 +22,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/system_shelf_service.dart';
 import 'package:provider/provider.dart';
@@ -145,6 +147,73 @@ void main() {
     await tester.pumpAndSettle();
     expect(trackerHttpClients.toSet(), hasLength(trackerAuthClientsPerProfile * 3));
     _expectCloseCount(trackerHttpClients, 1);
+  });
+
+  testWidgets('a PIN-protected profile stays off the launcher shelf while the app asks for a profile on open', (
+    tester,
+  ) async {
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.requireProfileSelectionOnOpen, true);
+    const channel = MethodChannel('test/profile_session_shelf');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <(String, Object?)>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add((call.method, (call.arguments as Map)['ownerId']));
+      return true;
+    });
+    SystemShelfService.debugOverrideInstance(
+      SystemShelfService.forTesting(channel: channel, isSupported: () async => true),
+    );
+    final graph = await _SessionGraph.create();
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await graph.dispose();
+      SystemShelfService.debugOverrideInstance(null);
+      messenger.setMockMethodCallHandler(channel, null);
+    });
+
+    final owner = Profile.local(
+      id: 'local-owner',
+      displayName: 'Owner',
+      pinHash: computePinHash('1234'),
+      createdAt: DateTime(2026, 1, 1),
+    );
+    final kids = Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2));
+    await graph.profileRegistry.upsert(owner);
+    await graph.profileRegistry.upsert(kids);
+    await graph.storage.setActiveProfileId(owner.id);
+    await graph.activeProfile.initialize();
+
+    await graph.pump(
+      tester,
+      httpClientFactory: () => FakeHttpClient(200, const <int>[]),
+      profileShellBuilder: (context) {
+        context.watch<DiscoverProvider>();
+        return const SizedBox.shrink();
+      },
+    );
+    await tester.pumpAndSettle();
+    final shelf = SystemShelfService();
+    expect(shelf.debugActiveOwner, isNull);
+    expect(calls, [('clear', owner.id)]);
+
+    // Without the open-time picker the app reopens straight into the profile,
+    // so the shelf shows nothing more; Discover republishes on admission.
+    await settings.write(SettingsService.requireProfileSelectionOnOpen, false);
+    await tester.pumpAndSettle();
+    expect(shelf.debugActiveOwner, owner.id);
+    expect(calls.last, ('sync', owner.id));
+
+    await settings.write(SettingsService.requireProfileSelectionOnOpen, true);
+    await tester.pumpAndSettle();
+    expect(shelf.debugActiveOwner, isNull);
+    expect(calls.last, ('clear', owner.id));
+
+    // A profile without a PIN has nothing for the picker to protect.
+    expect(await graph.activeProfile.activate(kids), isTrue);
+    await tester.pumpAndSettle();
+    expect(shelf.debugActiveOwner, kids.id);
   });
 
   testWidgets(

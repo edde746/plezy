@@ -10,7 +10,8 @@ import '../../models/trackers/fribb_mapping_row.dart';
 import '../../utils/country_codes.dart';
 import '../../utils/external_ids.dart';
 import '../trackers/anilist/anilist_client.dart';
-import '../trackers/fribb_mapping_store.dart';
+import '../trackers/anime_mappings_store.dart';
+import '../trackers/fribb_index.dart';
 import '../trackers/future_coalescer.dart';
 import 'catalog_source.dart';
 import 'catalog_watchlist_machinery.dart';
@@ -27,7 +28,7 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   final FutureCoalescer<int> _viewerIdLoad = FutureCoalescer<int>();
   int? _viewerId;
 
-  AnilistCatalogSource(this._client, {FribbMappingLookup? fribb}) : _fribb = fribb ?? FribbMappingStore.instance;
+  AnilistCatalogSource(this._client, {FribbMappingLookup? fribb}) : _fribb = fribb ?? AnimeMappingsStore.instance;
 
   @override
   CatalogSourceId get id => CatalogSourceId.anilist;

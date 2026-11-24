@@ -9,6 +9,7 @@ import 'package:plezy/services/trackers/simkl/simkl_auth_service.dart';
 import 'package:plezy/services/trackers/simkl/simkl_constants.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
+import 'package:plezy/utils/app_version.dart';
 
 const _code = DeviceCode(
   deviceCode: 'dev-code',
@@ -46,7 +47,7 @@ void main() {
   late String appVersion;
 
   setUpAll(() async {
-    appVersion = await SimklConstants.appVersion();
+    appVersion = (await AppVersion.current()).versionOrUnknown;
   });
 
   group('createDeviceCode', () {

@@ -212,6 +212,11 @@ class PlaybackSettingsScreen extends StatelessWidget {
         title: t.settings.scopeAspectRatio,
       ),
       _playerScopeTile(
+        pref: SettingsService.videoZoomScope,
+        icon: Symbols.zoom_in_rounded,
+        title: t.settings.scopeZoom,
+      ),
+      _playerScopeTile(
         pref: SettingsService.syncOffsetScope,
         icon: Symbols.sync_rounded,
         title: t.settings.scopeSyncOffsets,

@@ -120,6 +120,12 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   bool get isInSession => _session != null && _session!.status != RemoteSessionStatus.disconnected;
   bool get isHost => _session?.isHost ?? false;
   bool get isRemote => _session?.isRemote ?? false;
+
+  /// This device is the remote driving another device's session (live or
+  /// reconnecting). A host serving remotes is not driving anything: its
+  /// session reads as in session from server start to stop, phone or not.
+  bool get isDrivingRemoteSession => isRemote && isInSession;
+
   bool get isConnected => _session?.isConnected ?? false;
   RemoteSession? get session => _session;
   RemoteSessionStatus get status => _session?.status ?? RemoteSessionStatus.disconnected;

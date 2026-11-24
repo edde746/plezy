@@ -700,6 +700,52 @@ class SetNativeRevisionTest(unittest.TestCase):
         self.assertEqual(self._snapshot(), before)
         self.assertFalse((self.root / "mpv-build.lock.json").exists())
 
+    # ---- per-run releases ---------------------------------------------------
+
+    def test_assets_recorded_in_a_per_run_release_pin_that_release(self) -> None:
+        # Since per-run releases, artifacts.json records each new asset's
+        # release beside its name; the group's assetBase is the legacy release
+        # it never uploaded to, and a lock naming it would 404.
+        artifacts = artifacts_fixture()
+        run = "https://github.com/edde746/mpv-build/releases/download/binaries-2a005d0d6ff8"
+        aar = artifacts["platforms"]["android"]["libraries"]["mpv-android"]
+        aar["assetBase"] = run
+        aar["symbols"] = {
+            "arm64-v8a": {
+                "asset": f"mpv-android-{NEW_KEY_AAR}-arm64-v8a-symbols.zip",
+                "assetBase": run,
+                "checksum": "d" * 64,
+            }
+        }
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lock = json.loads((self.root / "mpv-build.lock.json").read_text(encoding="utf-8"))
+        self.assertEqual(lock["artifacts"]["android"]["assetBase"], run)
+        # A group still in its legacy release keeps that one.
+        self.assertEqual(lock["artifacts"]["linux"]["assetBase"], linux_section()["assetBase"])
+
+    def test_refuses_a_group_whose_assets_sit_in_several_releases(self) -> None:
+        artifacts = artifacts_fixture()
+        artifacts["platforms"]["android"]["libraries"]["mpv-android"]["symbols"] = {
+            "arm64-v8a": {
+                "asset": f"mpv-android-{NEW_KEY_AAR}-arm64-v8a-symbols.zip",
+                "assetBase": "https://github.com/edde746/mpv-build/releases/download/binaries-2a005d0d6ff8",
+                "checksum": "d" * 64,
+            }
+        }
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+        before = self._snapshot()
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("download from 2 releases", result.stderr)
+        self.assertEqual(self._snapshot(), before)
+        self.assertFalse((self.root / "mpv-build.lock.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

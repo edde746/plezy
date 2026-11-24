@@ -1,9 +1,58 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+
 /// mpv's built-in `stream-buffer-size` default (128 KiB). Written back for
 /// opens that don't qualify for an enlarged ring so a reused player instance
 /// never carries one item's tuning into the next.
 const mpvDefaultStreamBufferBytes = 128 * 1024;
+
+/// Whether mpv reads the downloaded copy at [uri] straight off the device's
+/// own storage, with no demuxer cache in front of it.
+///
+/// mpv caches a file like a network stream when a network may be behind its
+/// filesystem: FUSE, which is Android's shared storage (from Android 11) and
+/// every SAF `content://` document, and NFS or SMB mounts elsewhere. Only the
+/// app's own data directory is known to be neither, and only on the two
+/// platforms where that directory is always on the device: a custom download
+/// folder, a memory card and every desktop path answer false. The test is a
+/// prefix anchored at the root of the path: `/data/` on Android, the app
+/// containers of an iPhone or iPad (`/var/mobile/Containers/Data/Application/`
+/// and its `/private` alias) on iOS, so a folder elsewhere that merely
+/// contains those names does not qualify.
+bool readsUncachedLocalFile(String uri, {required TargetPlatform platform}) => switch (platform) {
+  TargetPlatform.android => uri.startsWith('file:///data/'),
+  TargetPlatform.iOS => _iosAppContainerPrefixes.any(uri.startsWith),
+  _ => false,
+};
+
+const _iosAppContainerPrefixes = [
+  'file:///var/mobile/Containers/Data/Application/',
+  'file:///private/var/mobile/Containers/Data/Application/',
+];
+
+/// mpv `demuxer-hysteresis-secs` for an open: half a second for a file mpv
+/// reads uncached ([readsUncachedLocalFile]), mpv's default (off) for
+/// everything else, and null (leave it alone) when [customMpvConfig] names
+/// the option.
+///
+/// Without it the demuxer thread wakes for every packet the decoders take, to
+/// read one more and keep the read-ahead (`demuxer-readahead-secs`, a second
+/// for an uncached file) full. With it the thread sleeps until half a second
+/// is left and then reads the next half second in one go. The value is
+/// absolute, so it stays off wherever mpv caches: there the read-ahead is the
+/// cache, which would drain to half a second before every refill. A
+/// `cache=yes` line in [customMpvConfig] puts the cache in front of every
+/// file, local ones included.
+///
+/// The custom mpv config is applied when the player is set up, before any
+/// open. A line for this option there stays the user's, for every stream, as
+/// it was before the app wrote the property at all.
+String? demuxerHysteresisSecs({required bool uncachedLocalFile, required Map<String, String> customMpvConfig}) {
+  if (customMpvConfig.containsKey('demuxer-hysteresis-secs')) return null;
+  final cacheForced = customMpvConfig['cache'] == 'yes';
+  return uncachedLocalFile && !cacheForced ? '0.5' : '0';
+}
 
 /// QuickTime/MP4 muxer family. Apple capture muxers (iPhone recordings and
 /// friends) can store audio packets seconds away from coeval video packets —

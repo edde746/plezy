@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
+import '../media/video_zoom.dart';
 import '../mpv/mpv.dart';
 
 import '../utils/app_logger.dart';
@@ -17,8 +18,6 @@ import 'ambient_lighting_service.dart';
 /// - Debounced video filter updates on resize events
 /// - Ambient-lighting-friendly reset to contain mode
 class VideoFilterManager {
-  static const double minZoomScale = 0.5;
-  static const double maxZoomScale = 2.0;
   static const double zoomStep = 0.01;
 
   /// How close a pinch has to get to 100%, in whole percent, before it snaps
@@ -68,7 +67,7 @@ class VideoFilterManager {
   AmbientLightingService? ambientLightingService;
 
   /// Custom video zoom layered on top of the selected fit mode.
-  double _zoomScale = 1.0;
+  double _zoomScale;
 
   /// Current player viewport size
   Size? _playerSize;
@@ -93,9 +92,11 @@ class VideoFilterManager {
     required this.player,
     this.nativeVideoZoom = false,
     int initialBoxFitMode = 0,
+    double initialZoomScale = 1.0,
     Size? initialPlayerSize,
     this.onBoxFitModeChanged,
   }) : _boxFitMode = initialBoxFitMode,
+       _zoomScale = normalizeZoomScale(initialZoomScale),
        _playerSize = initialPlayerSize {
     _debouncedUpdateVideoFilter = debounce(
       updateVideoFilter,
@@ -113,7 +114,7 @@ class VideoFilterManager {
   Size? get playerSize => _playerSize;
 
   static double normalizeZoomScale(double scale) {
-    final clamped = scale.clamp(minZoomScale, maxZoomScale).toDouble();
+    final clamped = scale.clamp(minimumVideoZoom, maximumVideoZoom).toDouble();
     final percent = (clamped * 100).round();
     if (percent == 100) return 1.0;
     return percent / 100;

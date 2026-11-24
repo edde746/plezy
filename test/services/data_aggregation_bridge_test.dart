@@ -1255,18 +1255,40 @@ void main() {
       // A newly-online server answers with an unrelated row. The 1080p copy
       // left the list when the 4K copy took the row, but it must come back
       // through the regrouped row, not vanish from the picker.
-      final merged = await service.mergeContinueWatching(first.items, [
-        testMediaItem(
-          id: 'fresh',
-          backend: MediaBackend.plex,
-          kind: MediaKind.movie,
-          title: 'Fresh',
-          serverId: 'plex-2',
-        ),
-      ], existingCopies: first.copies);
+      final merged = await service.mergeContinueWatching(
+        first.items,
+        [
+          testMediaItem(
+            id: 'fresh',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            title: 'Fresh',
+            serverId: 'plex-2',
+          ),
+        ],
+        existingCopies: first.copies,
+        freshCopies: const {},
+      );
 
       expect(merged.items.map((item) => item.id), ['movie-uhd', 'movie-alone', 'fresh']);
       expect(merged.copies['plex-1:movie-uhd']!.map((copy) => copy.id), ['movie-uhd', 'movie-hd']);
+    });
+
+    test('mergeContinueWatching keeps the copies a newly-online server deduplicated', () async {
+      // The duplicate pair arrives from a server that came online after the
+      // first load: its fetch already folded movie-uhd into movie-hd's row.
+      registerDuplicateMovieLibraries();
+      final fresh = await service.getOnDeckFromAllServers(limit: 10);
+
+      final merged = await service.mergeContinueWatching(
+        const [],
+        fresh.items,
+        existingCopies: const {},
+        freshCopies: fresh.copies,
+      );
+
+      expect(merged.items.map((item) => item.id), ['movie-hd', 'movie-alone']);
+      expect(merged.copies['plex-1:movie-hd']!.map((copy) => copy.id), ['movie-uhd', 'movie-hd']);
     });
 
     test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {

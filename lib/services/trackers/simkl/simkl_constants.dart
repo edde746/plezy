@@ -1,7 +1,3 @@
-import 'package:package_info_plus/package_info_plus.dart';
-
-import '../../../utils/app_logger.dart';
-
 enum SimklCatalogType { movies, tv, anime }
 
 extension SimklCatalogTypeApi on SimklCatalogType {
@@ -33,9 +29,6 @@ class SimklConstants {
   static const String dataBase = 'https://data.simkl.in';
   static const String appName = 'plezy';
 
-  /// Sent as `app-version` when the platform cannot report the real one.
-  static const String fallbackAppVersion = 'unknown';
-
   // AUTH V2 endpoints.
   static const String deviceAuthorizationUrl = '$apiBase/oauth2/device';
   static const String tokenUrl = '$apiBase/oauth2/token';
@@ -64,30 +57,6 @@ class SimklConstants {
   /// (a new sign-in) uses the V2 app.
   static String clientIdFor(String? accessToken) =>
       accessToken == null || isV2AccessToken(accessToken) ? v2ClientId : legacyClientId;
-
-  static String? _appVersion;
-  static Future<String>? _appVersionLoad;
-
-  /// The running app's version, read once from the platform. Once known it is
-  /// handed out as a fresh future in the caller's zone rather than through the
-  /// shared load future, which belongs to whichever zone first asked.
-  static Future<String> appVersion() {
-    final known = _appVersion;
-    if (known != null) return Future.value(known);
-    return _appVersionLoad ??= _loadAppVersion().then((version) => _appVersion = version);
-  }
-
-  static Future<String> _loadAppVersion() async {
-    try {
-      final version = (await PackageInfo.fromPlatform()).version.trim();
-      if (version.isNotEmpty) return version;
-    } catch (e) {
-      // Tests and platforms whose version read fails (see main.dart) still
-      // identify the app; only the version degrades.
-      appLogger.d('Simkl: app version unavailable, sending "$fallbackAppVersion"', error: e);
-    }
-    return fallbackAppVersion;
-  }
 
   static String userAgent(String appVersion) => '$appName/$appVersion';
 

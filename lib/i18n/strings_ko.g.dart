@@ -115,8 +115,8 @@ class _Translations$appIcon$ko extends Translations$appIcon$en {
 	@override String get title => '앱 아이콘';
 	@override String get defaultIcon => '기본';
 	@override String get current => '현재 아이콘';
-	@override String get locked => 'Supporter 혜택';
-	@override String get lockedHint => '대체 아이콘은 Supporter 혜택입니다.';
+	@override String get locked => '테마 & 아이콘 팩에 포함';
+	@override String get lockedHint => '대체 아이콘은 테마 & 아이콘 팩에 포함되어 있습니다.';
 	@override String get changeFailed => '앱 아이콘을 변경하지 못했습니다';
 	@override String get launcherHint => 'Plezy를 나가면 홈 화면에 새 아이콘이 표시됩니다.';
 	@override String get tvLauncherHint => 'Plezy를 나가면 새 배너가 표시됩니다. Android TV에서는 TV를 다시 시작할 때까지 이전 배너가 계속 표시될 수 있습니다.';
@@ -246,8 +246,8 @@ class _Translations$supporter$ko extends Translations$supporter$en {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Plezy 개발을 후원하고 외형 꾸미기 기능을 잠금 해제하는 1회성 구매입니다:';
+	@override String get title => '테마 & 아이콘 팩';
+	@override String get intro => '외형 꾸미기 기능을 추가하는 선택형 1회성 구매입니다:';
 	@override String get presetThemes => '프리셋 테마';
 	@override String get presetThemesDescription => '불씨, 빙하, 숲, 자두, 종이';
 	@override String get customTheme => '사용자 지정 테마';
@@ -258,11 +258,11 @@ class _Translations$supporter$ko extends Translations$supporter$en {
 	@override String get loadingPrice => '가격 불러오는 중...';
 	@override String get restore => '구매 복원';
 	@override String get pending => '구매가 결제 또는 승인 대기 중입니다. 스토어에서 처리가 완료되는 즉시 추가 기능이 잠금 해제됩니다.';
-	@override String get thankYouTitle => 'Plezy를 후원해 주셔서 감사합니다';
-	@override String get thankYouBody => 'Supporter 추가 기능이 잠금 해제되었습니다.';
+	@override String get thankYouTitle => '구매해 주셔서 감사합니다';
+	@override String get thankYouBody => '테마 & 아이콘 팩이 잠금 해제되었습니다.';
 	@override String get tileSubtitle => '1회성 구매로 테마와 앱 아이콘 잠금 해제';
 	@override String get tileSubtitleThemesOnly => '1회성 구매로 테마 잠금 해제';
-	@override String get tileUnlocked => '후원해 주셔서 감사합니다';
+	@override String get tileUnlocked => '잠금 해제됨 — 구매해 주셔서 감사합니다';
 	@override late final _Translations$supporter$errors$ko errors = _Translations$supporter$errors$ko._(_root);
 }
 
@@ -602,6 +602,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get scopePlaybackSpeed => '재생 속도';
 	@override String get scopeShaderPreset => '셰이더 프리셋';
 	@override String get scopeAspectRatio => '화면 비율';
+	@override String get scopeZoom => '확대/축소';
 	@override String get scopeSyncOffsets => '오디오 및 자막 동기화';
 	@override String get playerScopeOff => '저장하지 않음';
 	@override String get playerScopeGlobal => '모든 곳';
@@ -623,8 +624,8 @@ class _Translations$themeEditor$ko extends Translations$themeEditor$en {
 	@override String get customEmpty => '아직 만들지 않음';
 	@override String get editCustom => '사용자 지정 테마 편집';
 	@override String get editCustomDescription => '모든 색상을 직접 선택';
-	@override String get locked => 'Supporter로 잠금 해제';
-	@override String get savedLocked => '저장됨 — Supporter로 잠금 해제';
+	@override String get locked => '테마 & 아이콘 팩으로 잠금 해제';
+	@override String get savedLocked => '저장됨 — 테마 & 아이콘 팩으로 잠금 해제';
 	@override String get title => '사용자 지정 테마';
 	@override String get startFrom => '기반 테마';
 	@override String get startFromDescription => '다른 테마의 모든 색상을 복사합니다';
@@ -2532,11 +2533,11 @@ class _Translations$supporter$errors$ko extends Translations$supporter$errors$en
 
 	// Translations
 	@override String get storeUnavailable => '구매를 이용할 수 없습니다. 스토어에 로그인되어 있고 이 기기에서 구매가 허용되어 있는지 확인하세요.';
-	@override String get productNotFound => '현재 스토어에서 Supporter를 구매할 수 없습니다.';
+	@override String get productNotFound => '현재 스토어에서 테마 & 아이콘 팩을 구매할 수 없습니다.';
 	@override String get productQueryFailed => '가격을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.';
 	@override String get purchaseFailed => '구매가 완료되지 않았습니다. 다시 시도하세요.';
 	@override String get restoreFailed => '구매를 복원하기 위해 스토어에 연결하지 못했습니다. 다시 시도하세요.';
-	@override String get nothingToRestore => '이 스토어 계정에서 Supporter 구매 내역을 찾을 수 없습니다.';
+	@override String get nothingToRestore => '이 스토어 계정에서 테마 & 아이콘 팩 구매 내역을 찾을 수 없습니다.';
 }
 
 // Path: themeEditor.slots
@@ -3034,6 +3035,8 @@ class _Translations$explore$detail$ko extends Translations$explore$detail$en {
 	@override String get watchOn => '시청처';
 	@override String get watchTrailer => '예고편 보기';
 	@override String openOn({required Object site}) => '${site}에서 열기';
+	@override String get trailerUnavailable => '이 기기에서 예고편을 열 수 없습니다';
+	@override String get linkUnavailable => '이 기기에서 링크를 열 수 없습니다';
 	@override String get crew => '제작진';
 	@override String get ratings => '평점';
 	@override String get schedule => '방영 일정';
@@ -3388,8 +3391,8 @@ extension on TranslationsKo {
 			'appIcon.title' => '앱 아이콘',
 			'appIcon.defaultIcon' => '기본',
 			'appIcon.current' => '현재 아이콘',
-			'appIcon.locked' => 'Supporter 혜택',
-			'appIcon.lockedHint' => '대체 아이콘은 Supporter 혜택입니다.',
+			'appIcon.locked' => '테마 & 아이콘 팩에 포함',
+			'appIcon.lockedHint' => '대체 아이콘은 테마 & 아이콘 팩에 포함되어 있습니다.',
 			'appIcon.changeFailed' => '앱 아이콘을 변경하지 못했습니다',
 			'appIcon.launcherHint' => 'Plezy를 나가면 홈 화면에 새 아이콘이 표시됩니다.',
 			'appIcon.tvLauncherHint' => 'Plezy를 나가면 새 배너가 표시됩니다. Android TV에서는 TV를 다시 시작할 때까지 이전 배너가 계속 표시될 수 있습니다.',
@@ -3519,8 +3522,8 @@ extension on TranslationsKo {
 			'update.viewRelease' => '릴리스 정보 보기',
 			'update.latestVersion' => '최신 버전을 사용 중입니다',
 			'update.checkFailed' => '업데이트 확인 실패',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Plezy 개발을 후원하고 외형 꾸미기 기능을 잠금 해제하는 1회성 구매입니다:',
+			'supporter.title' => '테마 & 아이콘 팩',
+			'supporter.intro' => '외형 꾸미기 기능을 추가하는 선택형 1회성 구매입니다:',
 			'supporter.presetThemes' => '프리셋 테마',
 			'supporter.presetThemesDescription' => '불씨, 빙하, 숲, 자두, 종이',
 			'supporter.customTheme' => '사용자 지정 테마',
@@ -3531,17 +3534,17 @@ extension on TranslationsKo {
 			'supporter.loadingPrice' => '가격 불러오는 중...',
 			'supporter.restore' => '구매 복원',
 			'supporter.pending' => '구매가 결제 또는 승인 대기 중입니다. 스토어에서 처리가 완료되는 즉시 추가 기능이 잠금 해제됩니다.',
-			'supporter.thankYouTitle' => 'Plezy를 후원해 주셔서 감사합니다',
-			'supporter.thankYouBody' => 'Supporter 추가 기능이 잠금 해제되었습니다.',
+			'supporter.thankYouTitle' => '구매해 주셔서 감사합니다',
+			'supporter.thankYouBody' => '테마 & 아이콘 팩이 잠금 해제되었습니다.',
 			'supporter.tileSubtitle' => '1회성 구매로 테마와 앱 아이콘 잠금 해제',
 			'supporter.tileSubtitleThemesOnly' => '1회성 구매로 테마 잠금 해제',
-			'supporter.tileUnlocked' => '후원해 주셔서 감사합니다',
+			'supporter.tileUnlocked' => '잠금 해제됨 — 구매해 주셔서 감사합니다',
 			'supporter.errors.storeUnavailable' => '구매를 이용할 수 없습니다. 스토어에 로그인되어 있고 이 기기에서 구매가 허용되어 있는지 확인하세요.',
-			'supporter.errors.productNotFound' => '현재 스토어에서 Supporter를 구매할 수 없습니다.',
+			'supporter.errors.productNotFound' => '현재 스토어에서 테마 & 아이콘 팩을 구매할 수 없습니다.',
 			'supporter.errors.productQueryFailed' => '가격을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.',
 			'supporter.errors.purchaseFailed' => '구매가 완료되지 않았습니다. 다시 시도하세요.',
 			'supporter.errors.restoreFailed' => '구매를 복원하기 위해 스토어에 연결하지 못했습니다. 다시 시도하세요.',
-			'supporter.errors.nothingToRestore' => '이 스토어 계정에서 Supporter 구매 내역을 찾을 수 없습니다.',
+			'supporter.errors.nothingToRestore' => '이 스토어 계정에서 테마 & 아이콘 팩 구매 내역을 찾을 수 없습니다.',
 			'settings.title' => '설정',
 			'settings.supportDeveloper' => 'Plezy 후원하기',
 			'settings.supportDeveloperDescription' => 'Liberapay로 후원하여 개발 지원',
@@ -3871,6 +3874,7 @@ extension on TranslationsKo {
 			'settings.scopePlaybackSpeed' => '재생 속도',
 			'settings.scopeShaderPreset' => '셰이더 프리셋',
 			'settings.scopeAspectRatio' => '화면 비율',
+			'settings.scopeZoom' => '확대/축소',
 			'settings.scopeSyncOffsets' => '오디오 및 자막 동기화',
 			'settings.playerScopeOff' => '저장하지 않음',
 			'settings.playerScopeGlobal' => '모든 곳',
@@ -3883,8 +3887,8 @@ extension on TranslationsKo {
 			'themeEditor.customEmpty' => '아직 만들지 않음',
 			'themeEditor.editCustom' => '사용자 지정 테마 편집',
 			'themeEditor.editCustomDescription' => '모든 색상을 직접 선택',
-			'themeEditor.locked' => 'Supporter로 잠금 해제',
-			'themeEditor.savedLocked' => '저장됨 — Supporter로 잠금 해제',
+			'themeEditor.locked' => '테마 & 아이콘 팩으로 잠금 해제',
+			'themeEditor.savedLocked' => '저장됨 — 테마 & 아이콘 팩으로 잠금 해제',
 			'themeEditor.title' => '사용자 지정 테마',
 			'themeEditor.startFrom' => '기반 테마',
 			'themeEditor.startFromDescription' => '다른 테마의 모든 색상을 복사합니다',
@@ -3895,9 +3899,9 @@ extension on TranslationsKo {
 			'themeEditor.slots.outline' => '윤곽선',
 			'themeEditor.slots.text' => '텍스트',
 			'themeEditor.slots.textMuted' => '보조 텍스트',
-			'themeEditor.slots.accent' => '강조색',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => '강조색',
 			'themeEditor.opacity' => '불투명도',
 			'themeEditor.hexHint' => '#RRGGBB 또는 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '다른 테마에서',
@@ -4409,9 +4413,9 @@ extension on TranslationsKo {
 			'profiles.continueButton' => '계속',
 			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
 			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
-			'connections.sectionTitle' => '연결',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결',
@@ -4827,6 +4831,8 @@ extension on TranslationsKo {
 			'explore.detail.watchOn' => '시청처',
 			'explore.detail.watchTrailer' => '예고편 보기',
 			'explore.detail.openOn' => ({required Object site}) => '${site}에서 열기',
+			'explore.detail.trailerUnavailable' => '이 기기에서 예고편을 열 수 없습니다',
+			'explore.detail.linkUnavailable' => '이 기기에서 링크를 열 수 없습니다',
 			'explore.detail.crew' => '제작진',
 			'explore.detail.ratings' => '평점',
 			'explore.detail.schedule' => '방영 일정',
@@ -4921,11 +4927,11 @@ extension on TranslationsKo {
 			'liveTv.recordSettings.anyChannel' => '모든 채널에서 녹화',
 			'liveTv.recordSettings.anyTime' => '모든 시간대에 녹화',
 			'liveTv.recordSettings.skipInLibrary' => '라이브러리에 이미 있는 에피소드 건너뛰기',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
 			'liveTv.recordSettings.keepUpToHint' => '0이면 모든 에피소드 보관',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
 			'liveTv.failedToStartChannel' => '실시간 채널을 시작할 수 없습니다',
@@ -5435,11 +5441,11 @@ extension on TranslationsKo {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderSoftware' => '소프트웨어',
 			'performanceOverlay.decoderHardware' => '하드웨어',
 			'performanceOverlay.tunnelingActive' => '활성',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)',
 			'externalPlayer.title' => '외부 플레이어',
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',

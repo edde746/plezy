@@ -4,6 +4,7 @@ import 'package:plezy/media/ids.dart';
 
 import 'package:background_downloader/background_downloader.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -232,6 +233,63 @@ void main() {
       final filePath = await dss.getArtworkPathFromThumb(ServerId('srv'), '/thumb/1');
       await File(filePath).writeAsString('fake-artwork');
       expect(await dss.artworkExists(ServerId('srv'), '/thumb/1'), isTrue);
+    });
+  });
+
+  group('backup exclusion', () {
+    const channel = MethodChannel('com.plezy/backup_exclusion');
+    late List<String> excluded;
+
+    void handleExclusion(Future<Object?> Function(MethodCall call) handler) {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, handler);
+    }
+
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      excluded = [];
+      DownloadStorageService.debugSetExcludesFromBackupOverride(true);
+      handleExclusion((call) async {
+        expect(call.method, 'excludeFromBackup');
+        excluded.add(call.arguments as String);
+        return null;
+      });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+    });
+
+    test('initialize marks the default download and artwork roots, covering existing downloads', () async {
+      final settings = await SettingsService.getInstance();
+      await DownloadStorageService.instance.initialize(settings);
+
+      expect(
+        excluded,
+        unorderedEquals([p.join(tmpRoot.path, 'support', 'downloads'), p.join(tmpRoot.path, 'support', 'artwork')]),
+      );
+    });
+
+    test('leaves a custom download folder and the artwork beside it unmarked', () async {
+      final settings = await SettingsService.getInstance();
+      final customDir = Directory(p.join(tmpRoot.path, 'media-root', 'downloads'))..createSync(recursive: true);
+      await settings.write(SettingsService.customDownloadPathType, 'file');
+      await settings.write(SettingsService.customDownloadPath, customDir.path);
+
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      expect(await dss.getDownloadsDirectory(), isA<Directory>().having((d) => d.path, 'path', customDir.path));
+      expect(excluded, isEmpty);
+    });
+
+    test('a refused mark still resolves both roots', () async {
+      handleExclusion((call) async => throw PlatformException(code: 'EXCLUDE_FROM_BACKUP_FAILED'));
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      expect((await dss.getDownloadsDirectory()).path, p.join(tmpRoot.path, 'support', 'downloads'));
+      expect(dss.artworkDirectoryPath, p.join(tmpRoot.path, 'support', 'artwork'));
     });
   });
 

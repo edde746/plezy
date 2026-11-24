@@ -43,7 +43,16 @@ class FlutterRendererPolicyTest {
   fun ordinaryAndroidDevicesKeepAutomaticImpellerBackend() {
     assertEquals(
       FlutterRenderer.IMPELLER,
-      select(manufacturer = "Samsung", isAndroidTv = false, sdkInt = 28, supportsVulkan11 = false, is64Bit = false)
+      select(manufacturer = "Samsung", isAndroidTv = false, sdkInt = 28, is64Bit = false)
+    )
+  }
+
+  @Test
+  fun nonTvDevicesWithoutVulkan11UseSkia() {
+    // Nexus 7 (2013) on LineageOS 21: modern API level, Adreno 320 without Vulkan (#2948).
+    assertEquals(
+      FlutterRenderer.SKIA,
+      select(manufacturer = "asus", isAndroidTv = false, sdkInt = 34, supportsVulkan11 = false, is64Bit = false)
     )
   }
 

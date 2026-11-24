@@ -36,9 +36,10 @@ A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built w
 ### macOS — Homebrew
 
 ```bash
-brew tap edde746/plezy https://github.com/edde746/plezy
 brew install --cask plezy
 ```
+
+Installed from the old `edde746/plezy` tap? After `brew update` moves Plezy to the official cask, run `brew untap edde746/plezy`.
 
 ### Windows — WinGet
 
@@ -199,7 +200,7 @@ sudo moss pad plezy
 [^connect]: Requires connecting the service under Settings > Services.
 [^hdr]: In-app HDR toggle on Windows, macOS, iOS, tvOS, and Linux — Linux needs a colour-managed Wayland compositor. Dolby Vision on Android, macOS, and Apple TV.
 [^pass]: Desktop, Android TV, and Apple TV.
-[^mpv]: Requires mpv's GPU renderer — unavailable on iOS, tvOS, and macOS, and Android defaults to ExoPlayer.
+[^mpv]: Requires the mpv player backend — Android defaults to ExoPlayer. Not applied to Dolby Vision on Apple platforms.
 [^pip]: Android, iOS, and macOS — not on Android TV or Apple TV.
 [^rrm]: Windows, Android, and tvOS.
 [^android]: Progress sync on Android.

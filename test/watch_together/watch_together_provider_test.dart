@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openwatchparty/openwatchparty.dart' as owp;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/title_copies.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/app_version.dart';
 import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/watch_together/models/watch_copy.dart';
 import 'package:plezy/watch_together/models/watch_notice.dart';
@@ -131,6 +133,7 @@ final class _Screen {
   final _Member member;
   final List<_OpenPlayer> players = [];
   int exits = 0;
+  int ends = 0;
   bool refusePlay = false;
 
   WatchTogetherProvider get _provider => member.provider;
@@ -143,7 +146,10 @@ final class _Screen {
     await Future<void>.delayed(Duration.zero);
     final opened = _openPlayer(copy, refusePlay: () => refusePlay);
     players.add(opened);
-    _provider.registerPlayer(this, WatchPlayerHooks(openInPlace: open, exitPlayer: () => exits++));
+    _provider.registerPlayer(
+      this,
+      WatchPlayerHooks(openInPlace: open, exitPlayer: () => exits++, mediaEnded: (_) => ends++),
+    );
     _provider.playerOpened(opened.adapter, shareable: true, roomLaunch: true);
     return true;
   }
@@ -423,6 +429,25 @@ void main() {
       expect(h.provider.participants.single.name, 'Plezy');
     });
 
+    _roomTest('a build without a package version creates rooms as Plezy/unknown', (world) async {
+      // A distro package that splits the Linux bundle leaves package_info_plus
+      // no version.json, and the SDK refuses a `client` of `Plezy/` (#3074).
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '',
+        buildNumber: '',
+        buildSignature: '',
+      );
+      AppVersion.resetForTesting();
+      addTearDown(AppVersion.resetForTesting);
+      final h = _Member(WatchTogetherProvider(partyFactory: world.relay.party, displayName: () => 'Host'));
+      world._members.add(h);
+
+      expect(await world.settle(h.provider.createRoom()), FakeOwpRelay.code);
+      expect(h.provider.participants.single.client, 'Plezy/${AppVersion.unknown}');
+    });
+
     _roomTest('host transfer, control mode and lock; a guest is refused host commands', (world) async {
       final h = world.host();
       final g = world.guest();
@@ -579,6 +604,48 @@ void main() {
       expect(g.noticesOf<ActionNotice>().where((n) => n.name == 'Guest'), isEmpty, reason: 'not its own');
       expect(g.noticesOf<RefusedNotice>(), isEmpty);
       expect(screen.players.single.player.commandLog, contains('rate:2.0'));
+    });
+
+    _roomTest('a controller ends the media: the room pauses at its end, and each following screen hears it once', (
+      world,
+    ) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+      final hostEnds = <PlezyPlayerAdapter>[];
+      h.provider.registerPlayer(
+        hostPlayer,
+        WatchPlayerHooks(openInPlace: (_) async => false, exitPlayer: () {}, mediaEnded: hostEnds.add),
+      );
+      await world.until(() => h.provider.room?.phase == owp.Phase.playing, 'the room plays');
+
+      expect(g.provider.endMedia(), isTrue, reason: 'the screen leaves its player alone');
+      await world.wait(const Duration(milliseconds: 100));
+      expect(g.notices.last, isA<ControlRefusedNotice>());
+      expect(world.relay.sent('seek'), isEmpty);
+
+      h.provider.setControl(owp.Control.everyone);
+      await world.until(() => g.provider.canControl, 'the guest controls');
+      g.provider.setOffset(1500);
+      await world.until(() => h.participant(g.peerId).offsetMs == 1500, 'the host sees the offset');
+
+      expect(g.provider.endMedia(), isTrue);
+      await world.until(() => h.provider.isAtMediaEnd && g.provider.isAtMediaEnd, 'the room is at its end');
+      expect(world.relay.sent('seek').single['positionMs'], _alienMs, reason: 'the room end, not the guest own');
+      expect(h.provider.room?.phase, owp.Phase.paused);
+      await world.noticed<ActionNotice>(h, 'the host is told', (n) => n.kind == 'ended' && n.name == null);
+      expect(hostEnds, [hostPlayer.adapter]);
+      expect(screen.ends, 1);
+
+      expect(g.provider.endMedia(), isTrue);
+      await world.wait(const Duration(milliseconds: 100));
+      expect(world.relay.sent('seek'), hasLength(1), reason: 'a room at its end has nothing left to end');
+      expect((hostEnds.length, screen.ends), (1, 1));
+
+      // Sought back, the paused room can end again.
+      expect(h.provider.seek(const Duration(minutes: 10)), isTrue);
+      await world.until(() => !g.provider.isAtMediaEnd, 'the room left its end');
+      expect(g.provider.endMedia(), isTrue);
+      await world.until(() => hostEnds.length == 2 && screen.ends == 2, 'both screens hear the second end');
+      expect(g.noticesOf<RefusedNotice>(), isEmpty);
     });
 
     _roomTest('a player that refuses to start blocks until the user presses play', (world) async {
@@ -815,6 +882,44 @@ void main() {
       await world.until(() => g.provider.isFollowing, 'the guest follows');
       expect(screen.players.single.adapter.copy, _copyOf(_guestAlien));
       expect(g.provider.canJoinPlayback, isFalse);
+    });
+
+    _roomTest('a guest that switches to another version of its file keeps following, and the room seeks it', (
+      world,
+    ) async {
+      final (host: h, guest: g, hostPlayer: _, :screen) = await world.following();
+      final remux = _openPlayer(
+        _copyOf(_alien('g-alien', 'guest-nas', durationMs: _alienMs + 800, version: 'g-remux')),
+      );
+
+      g.provider.playerOpened(remux.adapter, shareable: true, roomLaunch: false);
+      await world.until(() => g.provider.isFollowing, 'the guest follows the other version');
+      expect(g.provider.roomCopy?.ref, remux.adapter.copy);
+      expect(g.provider.canJoinPlayback, isFalse);
+      expect(screen.players, hasLength(1), reason: 'the switched file is the guest pick, so nothing reopens');
+
+      expect(h.provider.seek(const Duration(minutes: 20)), isTrue);
+      await world.until(
+        () => remux.player.commandLog.any(
+          (command) => command.startsWith('seek:') && int.parse(command.substring(5)) >= 1200000,
+        ),
+        'the room seeks the other version',
+      );
+    });
+
+    _roomTest('a version the room cannot take sits out instead of holding the room', (world) async {
+      final (host: h, guest: g, hostPlayer: _, screen: _) = await world.following();
+      // No length anywhere and no server to read it from: the party refuses it.
+      final unknown = _openPlayer(_copyOf(_alien('g-alien', 'guest-nas', durationMs: null, version: 'g-remux')));
+
+      g.provider.playerOpened(unknown.adapter, shareable: true, roomLaunch: false);
+      await world.noticed<ChoiceFailedNotice>(g, 'the guest is told');
+      expect(g.provider.isFollowing, isFalse);
+      expect(g.provider.roomCopy?.ref, _copyOf(_guestAlien), reason: 'the room keeps the guest earlier pick');
+      await world.until(
+        () => h.participant(g.peerId).player == owp.PlayerState.idle,
+        'the room stops waiting for the guest',
+      );
     });
   });
 

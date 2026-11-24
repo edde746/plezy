@@ -55,4 +55,44 @@ class DeviceQuirksTest {
   fun buildStringCasingDoesNotDefeatTheMatch() {
     assertTrue(unreliable(manufacturer = "amazon", model = "aftmm"))
   }
+
+  @Test
+  fun amlogicGoogleTvBoxesRaiseGraphicsBlackInDolbyVision() {
+    // #2926: Xiaomi TV Box S 3rd Gen; the onn boxes report the same vendor string.
+    assertTrue(DeviceQuirks.raisesGraphicsBlackInDolbyVision("Amlogic", "Xiaomi"))
+    assertTrue(DeviceQuirks.raisesGraphicsBlackInDolbyVision("amlogic", "onn."))
+  }
+
+  @Test
+  fun amlogicFireTvKeepsTheOpaqueLetterbox() {
+    // The Fire TV Cube 3 is Amlogic but needs opaque black like the MediaTek Fire TVs.
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("Amlogic", "Amazon"))
+  }
+
+  @Test
+  fun otherSocsAndUnreportedVendorsKeepTheOpaqueLetterbox() {
+    // MediaTek is where the opaque fill fixed gray bars (#2163); pre-S devices report no vendor.
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("Mediatek", "Google"))
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("NVIDIA", "NVIDIA"))
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision("unknown", "Xiaomi"))
+    assertFalse(DeviceQuirks.raisesGraphicsBlackInDolbyVision(null, "Xiaomi"))
+  }
+
+  @Test
+  fun amlogicAndMediatekTvBoxesDelayTheSubtitlePlane() {
+    // #2894: SEI Box R 4K Plus (S905X4) and Google TV Streamer (MT8696) report these strings.
+    assertTrue(DeviceQuirks.videoPlaneLagsGraphics("Amlogic", isTv = true))
+    assertTrue(DeviceQuirks.videoPlaneLagsGraphics("Mediatek", isTv = true))
+    assertTrue(DeviceQuirks.videoPlaneLagsGraphics("MediaTek", isTv = true))
+  }
+
+  @Test
+  fun otherSocsPhonesAndUnreportedVendorsKeepTheSubtitlePlaneOnTheVideoTimestamp() {
+    // The Shield (Tegra, API 28) reports no vendor and shows both planes on one refresh.
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics(null, isTv = true))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("NVIDIA", isTv = true))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Realtek", isTv = true))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Mediatek", isTv = false))
+    assertFalse(DeviceQuirks.videoPlaneLagsGraphics("Amlogic", isTv = false))
+  }
 }

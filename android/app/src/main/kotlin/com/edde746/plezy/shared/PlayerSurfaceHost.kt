@@ -45,13 +45,20 @@ internal object PlayerSurfaceHost {
    *
    * Being a full-size below-window SurfaceView, it punches the whole
    * container out of the window canvas, so the letterbox around the picture
-   * is whatever this plane shows there. The fork fills those margins opaque
-   * black (mpv-build patch 0106): a transparent margin scans out as the
-   * compositor's own background, which MediaTek TV pipelines render above
-   * black in HDR/Dolby Vision output (gray bars, #2163), and any extra layer
-   * to paint them instead demotes the video plane to GPU composition and
-   * drops the HDR output (#2287). Subtitles placed in the margins draw over
-   * the fill in the same buffer.
+   * is whatever this plane shows there. Which black survives HDR/Dolby Vision
+   * output depends on the device, and any extra layer to paint the bars
+   * demotes the video plane to GPU composition and drops the HDR output
+   * (#2287), so the plane itself carries them:
+   * - By default the fork fills the margins opaque black (mpv-build patch
+   *   0106). A transparent margin scans out as the compositor's own
+   *   background, which MediaTek TV pipelines render above black (gray
+   *   bars, #2163). Subtitles placed in the margins draw over the fill in
+   *   the same buffer.
+   * - Where [DeviceQuirks.raisesGraphicsBlackInDolbyVision] holds (Amlogic
+   *   Google TV boxes), that fill comes out gray and a transparent margin
+   *   stays black (#2926), so mpv runs with
+   *   `vo-mediacodec-letterbox-fill=no`, which leaves the margins as
+   *   ExoPlayer's overlay leaves them.
    *
    * [renderScale] < 1 gives the plane a fixed buffer size below its view size
    * (see [OsdPlanePolicy]); mpv then rasterizes at that size and the

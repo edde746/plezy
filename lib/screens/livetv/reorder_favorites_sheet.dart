@@ -204,7 +204,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet>
             )
           : null,
       trailing: Container(
-        decoration: FocusTheme.focusBackgroundDecoration(isFocused: isRemoveButtonFocused, borderRadius: 20),
+        decoration: FocusTheme.focusBackgroundDecoration(context, isFocused: isRemoveButtonFocused, borderRadius: 20),
         child: IconButton(
           icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
           onPressed: () => _removeItem(index),

@@ -5,7 +5,6 @@ import 'package:path/path.dart' as path;
 
 import '../mpv/player/player.dart';
 import '../utils/app_logger.dart';
-import 'shader_service.dart';
 
 /// Generates and manages an ambient lighting GLSL shader that fills letterbox/pillarbox
 /// bars with a blurred, dimmed version of the video edges.
@@ -25,6 +24,10 @@ import 'shader_service.dart';
 /// into the whole window; `sub-video-rect-aspect` (a Plezy mpv patch) hands it
 /// the picture's real aspect so corner-anchored ASS events and PGS bitmaps stay
 /// on the picture the shader composites (#2120).
+///
+/// On Apple (vo=avfoundation) `keepaspect=no` stretches only the shaded output
+/// over the display layer: a frame the VO presents without shaders (Dolby
+/// Vision, for one) stays letterboxed rather than stretched.
 class AmbientLightingService {
   final Player _player;
   String? _shaderPath;
@@ -37,8 +40,7 @@ class AmbientLightingService {
 
   bool get isEnabled => _enabled;
 
-  /// A GLSL shader effect, so unavailable where shaders are (vo=avfoundation).
-  bool get isSupported => _player.playerType == 'mpv' && ShaderService.isPlatformSupported;
+  bool get isSupported => _player.playerType == 'mpv';
 
   /// Enable ambient lighting effect.
   ///

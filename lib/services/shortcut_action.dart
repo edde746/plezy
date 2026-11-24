@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 
 import '../i18n/strings.g.dart';
 import '../models/hotkey_model.dart';
-import 'shader_service.dart';
 
 /// Every keyboard shortcut the video player understands.
 ///
@@ -68,7 +67,7 @@ enum ShortcutAction {
     HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
     requiresPlayback: true,
   ),
-  shaderToggle('shader_toggle', HotKey(key: PhysicalKeyboardKey.keyG), requiresShaderSupport: true),
+  shaderToggle('shader_toggle', HotKey(key: PhysicalKeyboardKey.keyG)),
   skipMarker('skip_marker', HotKey(key: PhysicalKeyboardKey.enter), requiresPlayback: true),
   screenshot('screenshot', HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]));
 
@@ -78,7 +77,6 @@ enum ShortcutAction {
     this.repeatable = false,
     this.requiresPlayback = false,
     this.requiresMediaNavigation = false,
-    this.requiresShaderSupport = false,
   });
 
   /// Stable key this action is stored under in preferences.
@@ -96,16 +94,10 @@ enum ShortcutAction {
   /// Whether the action switches media item and needs navigation authority.
   final bool requiresMediaNavigation;
 
-  /// Whether the action is only meaningful where shaders are available.
-  final bool requiresShaderSupport;
-
   static final Map<String, ShortcutAction> _byId = {for (final action in values) action.id: action};
 
   /// The action stored under [id], or null for an id this build does not know.
   static ShortcutAction? fromId(String id) => _byId[id];
-
-  /// Whether this action can be used on the current platform.
-  bool get isSupported => !requiresShaderSupport || ShaderService.isPlatformSupported;
 
   /// Localized name shown in settings; seek labels embed the configured steps.
   String label({required int seekTimeSmall, required int seekTimeLarge}) => switch (this) {

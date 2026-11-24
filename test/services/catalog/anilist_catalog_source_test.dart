@@ -14,7 +14,7 @@ import 'package:plezy/models/trackers/fribb_mapping_row.dart';
 import 'package:plezy/services/catalog/anilist_catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/trackers/anilist/anilist_client.dart';
-import 'package:plezy/services/trackers/fribb_mapping_store.dart';
+import 'package:plezy/services/trackers/fribb_index.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';

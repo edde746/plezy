@@ -6,14 +6,37 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     final hasFrame = widget.hasFirstFrame?.value ?? true;
     widget.chromeController.setHasFirstFrame(hasFrame);
     if (hasFrame) {
+      if (_chromeFocusLostToFirstFrameGate) {
+        _chromeFocusLostToFirstFrameGate = false;
+        _restoreChromeFocusAfterOpen();
+      }
       // Retry with network-first if initial cache-first returned empty
       if (_chapters.isEmpty && _markers.isEmpty) {
         _loadPlaybackExtras(forceRefresh: true);
       }
       _syncCurrentMarkerForCurrentPosition();
     } else {
+      // Read now: the guard unmounts the transport row on the next build.
+      _chromeFocusLostToFirstFrameGate = _chromeScopeNode.hasFocus && !_chromeScopeNode.hasPrimaryFocus;
       _clearCurrentMarker();
     }
+  }
+
+  /// Gives Play/Pause the remote back once the first frame remounts the
+  /// transport row an open's [FirstFrameGuard] unmounted from under it
+  /// (#3022). [_onChromeScopeFocusChanged] parked the remote on the surface
+  /// meanwhile, and a paused viewer's chrome never auto-hides, so the focus
+  /// ring would otherwise stay gone until the next key. Whatever took focus
+  /// since — the viewer, a sheet, a prompt, the skip button's TV autofocus —
+  /// keeps it, and the automatic-grab policy of [_focusPlayPauseIfKeyboardMode]
+  /// still applies.
+  void _restoreChromeFocusAfterOpen() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_focusNode.hasPrimaryFocus || _sheetIsOpen()) return;
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      if (widget.playNextFocusNode != null || widget.playbackPromptOpen || _isSkipMarkerButtonVisible) return;
+      _focusPlayPauseIfKeyboardMode();
+    });
   }
 
   /// Focus Play/Pause when the viewer is already driving with keyboard/D-pad
@@ -327,6 +350,17 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       if (ModalRoute.of(context)?.isCurrent != true) return;
       _focusNode.requestFocus();
     });
+  }
+
+  /// The chrome's own scope holds primary focus only after the control that
+  /// had it left the tree with nothing focusable remembered behind it: an
+  /// open's [FirstFrameGuard] unmounting the transport row under a focused
+  /// button, or a sheet closing back into that emptied scope (#3022). No key
+  /// stage answers there — the surface's Select, Tab and arrow stages need the
+  /// surface itself focused — so the remote went dead under visible chrome.
+  /// Park it on the surface, as the hide path and the vanishing skip button do.
+  void _onChromeScopeFocusChanged() {
+    if (_chromeScopeNode.hasPrimaryFocus) _claimPlayerSurfaceFocus();
   }
 
   bool _sheetIsOpen() => OverlaySheetController.maybeOf(context)?.isOpen ?? false;

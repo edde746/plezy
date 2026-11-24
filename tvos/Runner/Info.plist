@@ -89,11 +89,13 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- canOpenURL returns false for undeclared schemes, which both blocks the
-	     external-player handoff and hides the players from Settings. -->
+	     external-player handoff and hides the players from Settings. youtube
+	     decides whether Explore can hand a trailer to the YouTube app. -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>vlc</string>
 		<string>infuse</string>
+		<string>youtube</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

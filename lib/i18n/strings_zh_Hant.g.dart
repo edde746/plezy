@@ -116,8 +116,8 @@ class _Translations$appIcon$zh_Hant extends Translations$appIcon$zh {
 	@override String get title => '應用程式圖示';
 	@override String get defaultIcon => '預設';
 	@override String get current => '目前圖示';
-	@override String get locked => 'Supporter 專屬';
-	@override String get lockedHint => '其他圖示為 Supporter 專屬福利。';
+	@override String get locked => '包含在主題與圖示包中';
+	@override String get lockedHint => '其他圖示包含在主題與圖示包中。';
 	@override String get changeFailed => '無法變更應用程式圖示';
 	@override String get launcherHint => '離開 Plezy 後，新圖示就會出現在主畫面上。';
 	@override String get tvLauncherHint => '離開 Plezy 後就會顯示新橫幅。在電視重新啟動前，Android TV 可能仍會顯示舊橫幅。';
@@ -247,8 +247,8 @@ class _Translations$supporter$zh_Hant extends Translations$supporter$zh {
 	final TranslationsZhHant _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => '一次性購買，支持 Plezy 的開發並解鎖外觀加值項目：';
+	@override String get title => '主題與圖示包';
+	@override String get intro => '可選的一次性購買，提供外觀加值項目：';
 	@override String get presetThemes => '精選主題';
 	@override String get presetThemesDescription => '餘燼、冰河、森林、李子與紙張';
 	@override String get customTheme => '自訂主題';
@@ -259,11 +259,11 @@ class _Translations$supporter$zh_Hant extends Translations$supporter$zh {
 	@override String get loadingPrice => '正在載入價格…';
 	@override String get restore => '恢復購買';
 	@override String get pending => '您的購買正在等待付款或核准。商店完成交易後，加值項目就會立即解鎖。';
-	@override String get thankYouTitle => '感謝您支持 Plezy';
-	@override String get thankYouBody => '您的 Supporter 加值項目已解鎖。';
+	@override String get thankYouTitle => '感謝您的購買';
+	@override String get thankYouBody => '主題與圖示包已解鎖。';
 	@override String get tileSubtitle => '一次性購買即可解鎖主題與應用程式圖示';
 	@override String get tileSubtitleThemesOnly => '一次性購買即可解鎖主題';
-	@override String get tileUnlocked => '感謝您的支持';
+	@override String get tileUnlocked => '已解鎖 — 感謝您的購買';
 	@override late final _Translations$supporter$errors$zh_Hant errors = _Translations$supporter$errors$zh_Hant._(_root);
 }
 
@@ -603,6 +603,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get scopePlaybackSpeed => '播放速度';
 	@override String get scopeShaderPreset => '著色器預設';
 	@override String get scopeAspectRatio => '顯示比例';
+	@override String get scopeZoom => '縮放';
 	@override String get scopeSyncOffsets => '音訊與字幕同步';
 	@override String get playerScopeOff => '不要儲存';
 	@override String get playerScopeGlobal => '全部';
@@ -624,8 +625,8 @@ class _Translations$themeEditor$zh_Hant extends Translations$themeEditor$zh {
 	@override String get customEmpty => '尚未建立';
 	@override String get editCustom => '編輯自訂主題';
 	@override String get editCustomDescription => '自行選擇每一種顏色';
-	@override String get locked => '透過 Supporter 解鎖';
-	@override String get savedLocked => '已儲存 — 透過 Supporter 解鎖';
+	@override String get locked => '透過主題與圖示包解鎖';
+	@override String get savedLocked => '已儲存 — 透過主題與圖示包解鎖';
 	@override String get title => '自訂主題';
 	@override String get startFrom => '從現有主題開始';
 	@override String get startFromDescription => '從其他主題複製所有顏色';
@@ -2533,11 +2534,11 @@ class _Translations$supporter$errors$zh_Hant extends Translations$supporter$erro
 
 	// Translations
 	@override String get storeUnavailable => '目前無法購買。請確認您已登入商店，且此裝置允許購買。';
-	@override String get productNotFound => '您的商店目前無法購買 Supporter。';
+	@override String get productNotFound => '您的商店目前無法購買主題與圖示包。';
 	@override String get productQueryFailed => '無法載入價格。請檢查網路連線後重試。';
 	@override String get purchaseFailed => '購買未完成。請重試。';
 	@override String get restoreFailed => '無法連線至商店以恢復您的購買。請重試。';
-	@override String get nothingToRestore => '此商店帳號找不到 Supporter 購買紀錄。';
+	@override String get nothingToRestore => '此商店帳號找不到主題與圖示包的購買紀錄。';
 }
 
 // Path: themeEditor.slots
@@ -3035,6 +3036,8 @@ class _Translations$explore$detail$zh_Hant extends Translations$explore$detail$z
 	@override String get watchOn => '觀看平台';
 	@override String get watchTrailer => '觀看預告片';
 	@override String openOn({required Object site}) => '在 ${site} 開啟';
+	@override String get trailerUnavailable => '無法在這部裝置上開啟預告片';
+	@override String get linkUnavailable => '無法在這部裝置上開啟連結';
 	@override String get crew => '幕後團隊';
 	@override String get ratings => '評分';
 	@override String get schedule => '播出時間';
@@ -3389,8 +3392,8 @@ extension on TranslationsZhHant {
 			'appIcon.title' => '應用程式圖示',
 			'appIcon.defaultIcon' => '預設',
 			'appIcon.current' => '目前圖示',
-			'appIcon.locked' => 'Supporter 專屬',
-			'appIcon.lockedHint' => '其他圖示為 Supporter 專屬福利。',
+			'appIcon.locked' => '包含在主題與圖示包中',
+			'appIcon.lockedHint' => '其他圖示包含在主題與圖示包中。',
 			'appIcon.changeFailed' => '無法變更應用程式圖示',
 			'appIcon.launcherHint' => '離開 Plezy 後，新圖示就會出現在主畫面上。',
 			'appIcon.tvLauncherHint' => '離開 Plezy 後就會顯示新橫幅。在電視重新啟動前，Android TV 可能仍會顯示舊橫幅。',
@@ -3520,8 +3523,8 @@ extension on TranslationsZhHant {
 			'update.viewRelease' => '查看版本詳情',
 			'update.latestVersion' => '已安裝的版本為最新版本',
 			'update.checkFailed' => '無法檢查更新',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => '一次性購買，支持 Plezy 的開發並解鎖外觀加值項目：',
+			'supporter.title' => '主題與圖示包',
+			'supporter.intro' => '可選的一次性購買，提供外觀加值項目：',
 			'supporter.presetThemes' => '精選主題',
 			'supporter.presetThemesDescription' => '餘燼、冰河、森林、李子與紙張',
 			'supporter.customTheme' => '自訂主題',
@@ -3532,17 +3535,17 @@ extension on TranslationsZhHant {
 			'supporter.loadingPrice' => '正在載入價格…',
 			'supporter.restore' => '恢復購買',
 			'supporter.pending' => '您的購買正在等待付款或核准。商店完成交易後，加值項目就會立即解鎖。',
-			'supporter.thankYouTitle' => '感謝您支持 Plezy',
-			'supporter.thankYouBody' => '您的 Supporter 加值項目已解鎖。',
+			'supporter.thankYouTitle' => '感謝您的購買',
+			'supporter.thankYouBody' => '主題與圖示包已解鎖。',
 			'supporter.tileSubtitle' => '一次性購買即可解鎖主題與應用程式圖示',
 			'supporter.tileSubtitleThemesOnly' => '一次性購買即可解鎖主題',
-			'supporter.tileUnlocked' => '感謝您的支持',
+			'supporter.tileUnlocked' => '已解鎖 — 感謝您的購買',
 			'supporter.errors.storeUnavailable' => '目前無法購買。請確認您已登入商店，且此裝置允許購買。',
-			'supporter.errors.productNotFound' => '您的商店目前無法購買 Supporter。',
+			'supporter.errors.productNotFound' => '您的商店目前無法購買主題與圖示包。',
 			'supporter.errors.productQueryFailed' => '無法載入價格。請檢查網路連線後重試。',
 			'supporter.errors.purchaseFailed' => '購買未完成。請重試。',
 			'supporter.errors.restoreFailed' => '無法連線至商店以恢復您的購買。請重試。',
-			'supporter.errors.nothingToRestore' => '此商店帳號找不到 Supporter 購買紀錄。',
+			'supporter.errors.nothingToRestore' => '此商店帳號找不到主題與圖示包的購買紀錄。',
 			'settings.title' => '設定',
 			'settings.supportDeveloper' => '贊助 Plezy',
 			'settings.supportDeveloperDescription' => '透過 Liberapay 捐款支持開發者',
@@ -3872,6 +3875,7 @@ extension on TranslationsZhHant {
 			'settings.scopePlaybackSpeed' => '播放速度',
 			'settings.scopeShaderPreset' => '著色器預設',
 			'settings.scopeAspectRatio' => '顯示比例',
+			'settings.scopeZoom' => '縮放',
 			'settings.scopeSyncOffsets' => '音訊與字幕同步',
 			'settings.playerScopeOff' => '不要儲存',
 			'settings.playerScopeGlobal' => '全部',
@@ -3884,8 +3888,8 @@ extension on TranslationsZhHant {
 			'themeEditor.customEmpty' => '尚未建立',
 			'themeEditor.editCustom' => '編輯自訂主題',
 			'themeEditor.editCustomDescription' => '自行選擇每一種顏色',
-			'themeEditor.locked' => '透過 Supporter 解鎖',
-			'themeEditor.savedLocked' => '已儲存 — 透過 Supporter 解鎖',
+			'themeEditor.locked' => '透過主題與圖示包解鎖',
+			'themeEditor.savedLocked' => '已儲存 — 透過主題與圖示包解鎖',
 			'themeEditor.title' => '自訂主題',
 			'themeEditor.startFrom' => '從現有主題開始',
 			'themeEditor.startFromDescription' => '從其他主題複製所有顏色',
@@ -3896,9 +3900,9 @@ extension on TranslationsZhHant {
 			'themeEditor.slots.outline' => '外框',
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
-			'themeEditor.slots.accent' => '強調色',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => '強調色',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '來自其他主題',
@@ -4410,9 +4414,9 @@ extension on TranslationsZhHant {
 			'profiles.continueButton' => '繼續',
 			'profiles.pinsDontMatch' => 'PIN 碼不符合',
 			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
-			'connections.sectionTitle' => '連線',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => '連線',
 			'connections.addConnection' => '新增連線',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
@@ -4828,6 +4832,8 @@ extension on TranslationsZhHant {
 			'explore.detail.watchOn' => '觀看平台',
 			'explore.detail.watchTrailer' => '觀看預告片',
 			'explore.detail.openOn' => ({required Object site}) => '在 ${site} 開啟',
+			'explore.detail.trailerUnavailable' => '無法在這部裝置上開啟預告片',
+			'explore.detail.linkUnavailable' => '無法在這部裝置上開啟連結',
 			'explore.detail.crew' => '幕後團隊',
 			'explore.detail.ratings' => '評分',
 			'explore.detail.schedule' => '播出時間',
@@ -4922,11 +4928,11 @@ extension on TranslationsZhHant {
 			'liveTv.recordSettings.anyChannel' => '在任何頻道錄影',
 			'liveTv.recordSettings.anyTime' => '在任何時間錄影',
 			'liveTv.recordSettings.skipInLibrary' => '略過媒體庫中已有的劇集',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpTo' => '要保留的劇集數',
 			'liveTv.recordSettings.keepUpToHint' => '0 表示保留所有劇集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分鐘後開始',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
 			'liveTv.failedToStartChannel' => '無法啟動直播頻道',
@@ -5436,11 +5442,11 @@ extension on TranslationsZhHant {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm 硬體',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬體',
 			'performanceOverlay.decoderExynosHw' => 'Exynos 硬體',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderSoftware' => '軟體',
 			'performanceOverlay.decoderHardware' => '硬體',
 			'performanceOverlay.tunnelingActive' => '已啟用',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 個失敗）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
