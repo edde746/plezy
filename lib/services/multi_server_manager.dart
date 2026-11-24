@@ -382,10 +382,21 @@ class MultiServerManager {
   /// [plexServer] registers the discovery record a Plex client normally comes
   /// with, so a test can make [isOwnerOrAdmin] answer for an owned server.
   @visibleForTesting
-  void debugRegisterClientForTesting(MediaServerClient client, {bool online = true, PlexServer? plexServer}) {
+  void debugRegisterClientForTesting(MediaServerClient client, {bool online = true, bool owned = false, PlexServer? plexServer}) {
     _clients[client.serverId] = client;
     _serverStatus[client.serverId] = online;
-    if (client is PlexClient) _plexScopeByServer[client.serverId] = client.profileScopeId;
+    if (client is PlexClient) {
+      _plexScopeByServer[client.serverId] = client.profileScopeId;
+      if (owned) {
+        _plexServers[client.serverId] = PlexServer(
+          name: client.serverName ?? 'Plex',
+          clientIdentifier: client.serverId,
+          accessToken: client.config.token ?? 'token',
+          connections: const [],
+          owned: true,
+        );
+      }
+    }
     if (plexServer != null) _plexServers[client.serverId] = plexServer;
   }
 

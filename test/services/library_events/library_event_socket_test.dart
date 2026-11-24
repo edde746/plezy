@@ -207,6 +207,8 @@ void main() {
       final first = await channel.events.first.timeout(const Duration(milliseconds: 500));
       expect(first.serverId, 'plex_1');
       expect(first.libraryIds, {'1'});
+      expect(first.updatedItemIds, {'10141'});
+      expect(first.removedItemIds, isEmpty);
       expect(first.itemsAdded, isTrue);
       expect(first.itemsUpdated, isTrue);
       expect(first.itemsRemoved, isFalse);
@@ -215,6 +217,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       expect(events, hasLength(2));
       expect(events[1].libraryIds, {'1', '2'});
+      expect(events[1].updatedItemIds, {'10141'});
     });
 
     test('an entry without a section absorbs the named ones in its window, in either order', () async {
@@ -497,6 +500,7 @@ void main() {
       expect(events[1].targetsWholeServer, isTrue);
       expect(events[1].itemsAdded, isTrue);
       expect(events[1].itemsUpdated, isTrue);
+      expect(events[1].updatedItemIds, {'6f91bbba468dfbb00984986c4e5d0a74'});
     });
 
     test('LibraryChanged removals carry the removed item ids', () async {
