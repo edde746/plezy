@@ -237,6 +237,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         preservedAudioTrack: carriedAudioRow == null
             ? null
             : PlaybackSubtitleResolver.audioTrackForSource(carriedAudioRow),
+        // A subtitle rescan keeps the audio rows' order, so the position tells twins apart.
+        preservedAudioOrdinal: carriedAudioRow == null ? null : _currentMediaInfo?.audioTracks.indexOf(carriedAudioRow),
         preservedSecondarySubtitleTrack: streamIdsMayHaveShifted
             ? SubtitlePreference.demoteToIntent(
                     SubtitlePreference.trackOrNull(currentPlayer.state.track.secondarySubtitle),
@@ -396,6 +398,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     Duration? resumePosition,
     bool preserveCurrentTrackSelection = false,
     AudioTrack? preservedAudioTrack,
+    int? preservedAudioOrdinal,
     SubtitlePreference? preservedSubtitleTrack,
     SubtitlePreference? preservedSecondarySubtitleTrack,
     SubtitlePreference? preferredSubtitleTrackOverride,
@@ -608,6 +611,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             qualityPreset: targetQualityPreset,
             selectedAudioStreamId: targetAudioStreamId,
             preferredAudioTrack: initializationAudioTrack,
+            preferredAudioOrdinal: preservedAudioOrdinal,
             preferredSubtitleTrack: initializationSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,

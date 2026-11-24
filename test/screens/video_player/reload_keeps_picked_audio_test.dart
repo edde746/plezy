@@ -26,12 +26,12 @@ void main() {
   testWidgets('a reload carries the audio picked in the player, not the stream first opened', (tester) async {
     final client = _StreamClient();
     var loads = 0;
-    // The engine's audio list, in source order; the selected one plays.
-    var playing = 'eng';
+    // The engine's audio list, in source order; the one at [playing] plays.
+    var playing = 0;
 
     void emitTrackList(PlayerScreenRun run, int sourceId) => run.player.handlePropertyChange('track-list', [
-      for (final (index, language) in ['eng', 'fre', 'ger'].indexed)
-        {'type': 'audio', 'id': '${index + 1}', 'lang': language, 'selected': language == playing},
+      for (final (index, language) in ['eng', 'fre', 'ger', 'ger'].indexed)
+        {'type': 'audio', 'id': '${index + 1}', 'lang': language, 'selected': index == playing},
     ], sourceId: sourceId);
 
     await runPlayerScreen(
@@ -57,7 +57,7 @@ void main() {
         expect(client.opens.single.preferredAudioTrack?.language, 'eng');
 
         // French picked in the player; then a downloaded subtitle reloads.
-        playing = 'fre';
+        playing = 1;
         emitTrackList(run, loads);
         await run.state.debugPickAudioTrackForTesting(run.player.state.track.audio!);
         final downloaded = MediaSubtitleTrack(id: 9, languageCode: 'ger', codec: 'srt', selected: false, forced: false);
@@ -75,7 +75,7 @@ void main() {
 
         // The cycle-audio hotkey moves on to German; then a quality switch reloads.
         run.state.debugCycleAudioTrackForTesting();
-        playing = 'ger';
+        playing = 2;
         emitTrackList(run, loads);
         await tester.pump();
         expect(
@@ -86,33 +86,62 @@ void main() {
         );
         expect(client.opens, hasLength(3));
         expect(client.opens.last.selectedAudioStreamId, 6, reason: 'the reload carries the cycled track');
+
+        // The second of two identically tagged German tracks picked; then another download reloads.
+        playing = 3;
+        emitTrackList(run, loads);
+        await run.state.debugPickAudioTrackForTesting(run.player.state.track.audio!);
+        expect(
+          await run.switchSource(
+            (state) => state.debugSwitchPlaybackSourceForTesting(
+              newSubtitleChoice: PlaybackSourceSubtitleChoice.downloaded(downloaded),
+            ),
+          ),
+          PlaybackSourceChangeOutcome.applied,
+        );
+        expect(client.activeAudioStreamIds.last, 7, reason: 'only its position tells the twin German tracks apart');
       },
     );
   });
 }
 
-/// A Jellyfin file with English, French and German audio (rows 4, 5 and 6),
-/// recording every open it is asked for. Like [JellyfinClient], it reports as
-/// active the stream it was asked for, by id or by intent, or none.
+/// A Jellyfin file with English, French and two identically tagged German
+/// audio tracks (rows 4 to 7), recording every open it is asked for and the
+/// stream it reports as active and selected: like [JellyfinClient], the one
+/// asked for by id, else by intent with the position breaking a tie, or none.
 class _StreamClient extends FakeStreamClient {
   final opens = <PlaybackInitializationOptions>[];
+  final activeAudioStreamIds = <int?>[];
 
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     opens.add(options);
     final url = 'https://example.invalid/${options.metadata.id}/${opens.length}';
-    final rows = [
-      for (final (id, language) in [(4, 'eng'), (5, 'fre'), (6, 'ger')])
-        MediaAudioTrack(id: id, languageCode: language, codec: 'aac', channels: 2, selected: id == 4),
+    List<MediaAudioTrack> rows(int? active) => [
+      for (final (id, language) in [(4, 'eng'), (5, 'fre'), (6, 'ger'), (7, 'ger')])
+        MediaAudioTrack(id: id, languageCode: language, codec: 'aac', channels: 2, selected: id == (active ?? 4)),
     ];
     final preferred = options.preferredAudioTrack;
+    final ordinal = options.preferredAudioOrdinal;
+    final atOrdinal = ordinal == null ? null : rows(null).elementAtOrNull(ordinal);
+    final active =
+        options.selectedAudioStreamId ??
+        (preferred == null
+            ? null
+            : (findSourceAudioTrackForIntent(preferred, rows(null)) ??
+                      (atOrdinal == null ? null : findSourceAudioTrackForIntent(preferred, [atOrdinal])))
+                  ?.id);
+    activeAudioStreamIds.add(active);
     return PlaybackInitializationResult(
       availableVersions: const [],
       videoUrl: url,
-      activeAudioStreamId:
-          options.selectedAudioStreamId ??
-          (preferred == null ? null : findSourceAudioTrackForIntent(preferred, rows)?.id),
-      mediaInfo: MediaSourceInfo(videoUrl: url, audioTracks: rows, subtitleTracks: const [], chapters: const []),
+      activeAudioStreamId: active,
+      mediaInfo: MediaSourceInfo(
+        videoUrl: url,
+        audioTracks: rows(active),
+        subtitleTracks: const [],
+        chapters: const [],
+      ),
     );
   }
 }
