@@ -108,9 +108,17 @@ void main() {
     testWidgets('on Jellyfin the title field says it filters by release name', (tester) async {
       final jellyfin = JellyfinClient.forTesting(
         connection: testJellyfinConnection(machineId: 'server'),
-        httpClient: MockClient((_) async => http.Response('[]', 200, headers: {'content-type': 'application/json'})),
+        httpClient: MockClient((request) async {
+          final body = switch (request.url.path) {
+            '/Users/Me' => '{"Policy":{"EnableSubtitleManagement":true}}',
+            '/Libraries/AvailableOptions' => '{"SubtitleFetchers":[{"Name":"Open Subtitles"}]}',
+            _ => '[]',
+          };
+          return http.Response(body, 200, headers: {'content-type': 'application/json'});
+        }),
       );
       addTearDown(jellyfin.close);
+      await jellyfin.probeRemoteSubtitleSearch();
       await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [jellyfin]).provider);
       expect(find.text(t.videoControls.filterSubtitlesByReleaseName), findsOneWidget);
     });
@@ -120,6 +128,12 @@ void main() {
       final jellyfin = JellyfinClient.forTesting(
         connection: testJellyfinConnection(machineId: 'server'),
         httpClient: MockClient((request) async {
+          final probe = switch (request.url.path) {
+            '/Users/Me' => '{"Policy":{"EnableSubtitleManagement":true}}',
+            '/Libraries/AvailableOptions' => '{"SubtitleFetchers":[{"Name":"Open Subtitles"}]}',
+            _ => null,
+          };
+          if (probe != null) return http.Response(probe, 200, headers: {'content-type': 'application/json'});
           // The first search fails, as OpenSubtitles sometimes does.
           if (searches++ == 0) return http.Response('', 500);
           return http.Response(
@@ -133,6 +147,7 @@ void main() {
         }),
       );
       addTearDown(jellyfin.close);
+      await jellyfin.probeRemoteSubtitleSearch();
       await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [jellyfin]).provider);
       await tester.enterText(find.byType(TextField), 'crow');
       await tester.testTextInput.receiveAction(TextInputAction.done); // Enter retries the failed search
@@ -148,6 +163,20 @@ void main() {
       expect(searches, 2, reason: 'each search goes to OpenSubtitles through the plugin');
       expect(find.text('The Crow (2024) BLURAY'), findsOneWidget);
       expect(find.text('The.Crow.2024.1080p.WEBRip'), findsNothing);
+    });
+
+    testWidgets('on Emby, whose subtitle search needs Premiere, the sheet sends no search', (tester) async {
+      final requests = <String>[];
+      final emby = JellyfinClient.forTesting(
+        connection: testEmbyConnection(machineId: 'server'),
+        httpClient: MockClient((request) async {
+          requests.add(request.url.path);
+          return http.Response('[]', 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(emby.close);
+      await _pumpSearchSheet(tester, multiServer: testMultiServer(clients: [emby]).provider);
+      expect(requests, isEmpty);
     });
 
     testWidgets('HTTP 500 from searchSubtitles shows the sheet error state, not "no subtitles found"', (tester) async {

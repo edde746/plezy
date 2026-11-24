@@ -203,7 +203,9 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   /// Null for a server that is gone, or whose client has no subtitle search.
   ExternalSubtitleSearchClient? _searchClient() {
     final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-    return client is ExternalSubtitleSearchClient ? client as ExternalSubtitleSearchClient : null;
+    return client is ExternalSubtitleSearchClient && client!.capabilities.externalSubtitleSearch
+        ? client as ExternalSubtitleSearchClient
+        : null;
   }
 
   Future<void> _downloadSubtitle(SubtitleSearchResult result) async {
