@@ -69,6 +69,11 @@ class ServerCapabilities {
   /// silent degradation.
   final bool libraryChangeEvents;
 
+  /// Season folders carry their own extras, separate from the show's.
+  /// Jellyfin attaches `Season 01/Featurettes/…` to the season, so
+  /// `/Items/{seasonId}/SpecialFeatures` is the only route to them (#2403).
+  final bool seasonExtras;
+
   const ServerCapabilities({
     this.liveTv = false,
     this.liveTvDvr = false,
@@ -83,6 +88,7 @@ class ServerCapabilities {
     this.folderGrouping = false,
     this.instantMix = false,
     this.libraryChangeEvents = false,
+    this.seasonExtras = false,
   });
 
   /// Defaults for a fully-featured Plex server.
@@ -124,6 +130,7 @@ class ServerCapabilities {
     folderGrouping: true,
     instantMix: true,
     libraryChangeEvents: true,
+    seasonExtras: true,
   );
 
   /// Defaults for an Emby server.
@@ -175,6 +182,7 @@ class ServerCapabilities {
       folderGrouping: folderGrouping,
       instantMix: instantMix,
       libraryChangeEvents: libraryChangeEvents,
+      seasonExtras: seasonExtras,
     );
   }
 }
