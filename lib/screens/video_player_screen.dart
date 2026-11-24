@@ -336,8 +336,8 @@ SubtitlePreference? sessionPreferenceForSourceSubtitleChoice(
 
 /// The source audio stream a pick in the player commits, so that a reload
 /// carries it; null keeps the committed one. Under a transcode the engine's
-/// tracks describe the output, and with external rows or a single engine track
-/// its list does not line up with the rows.
+/// tracks describe the output, and with external rows or more or fewer engine
+/// tracks than rows its list does not line up with the rows.
 int? sourceAudioStreamIdForPick({
   required bool isTranscoding,
   required AudioTrack pick,
@@ -345,7 +345,9 @@ int? sourceAudioStreamIdForPick({
   required List<MediaAudioTrack> rows,
 }) {
   if (isTranscoding || rows.any((row) => row.isExternal)) return null;
-  if (engineTracks.where((t) => t.id != AudioTrack.auto.id && t.id != AudioTrack.off.id).length <= 1) return null;
+  if (engineTracks.where((t) => t.id != AudioTrack.auto.id && t.id != AudioTrack.off.id).length != rows.length) {
+    return null;
+  }
   return playingSourceAudioTrack(selectedMpvTrack: pick, mpvTracks: engineTracks, sourceTracks: rows)?.id;
 }
 

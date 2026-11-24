@@ -368,6 +368,7 @@ void main() {
     );
     const english = AudioTrack(id: '1', language: 'eng', codec: 'aac', channels: 2);
     const french = AudioTrack(id: '2', language: 'fre', codec: 'aac', channels: 2);
+    const german = AudioTrack(id: '3', language: 'ger', codec: 'aac', channels: 2);
     int? picked({
       bool isTranscoding = false,
       List<AudioTrack> engine = const [english, french],
@@ -387,6 +388,8 @@ void main() {
     expect(picked(isTranscoding: true), isNull);
     // Where the engine's list does not line up with the rows, keep the committed id.
     expect(picked(engine: const [french]), isNull);
+    // An engine track with no row shifts the positions: French would commit row 4, English.
+    expect(picked(engine: const [french, english, german]), isNull);
     expect(picked(external: true), isNull);
   });
 
