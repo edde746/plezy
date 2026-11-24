@@ -366,6 +366,9 @@ class TvBrowseRail extends StatefulWidget {
   /// (Continue Watching, catalog rows) need one.
   final Future<List<MediaItem>> Function()? Function(MediaHub hub)? loadMoreItems;
 
+  /// Filters the provider applies on a hub's View All screen.
+  final HubFilterSource? Function(MediaHub hub)? filterSourceFor;
+
   /// Optional per-hub trailing-slot state (loading/error/viewAll). When null the
   /// rail keeps the legacy "[MediaHub.more] → View All" behavior.
   final TvRailTrailing Function(MediaHub hub)? trailingForHub;
@@ -415,6 +418,7 @@ class TvBrowseRail extends StatefulWidget {
     this.isContinueWatchingHub,
     this.usesContinueWatchingAction,
     this.loadMoreItems,
+    this.filterSourceFor,
     this.trailingForHub,
     this.leadingItemForHub,
     this.onRetryHub,
@@ -1217,6 +1221,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         builder: (context) => HubDetailScreen(
           hub: hub,
           loadItems: widget.loadMoreItems?.call(hub),
+          filterSource: widget.filterSourceFor?.call(hub),
           isInContinueWatching: _isContinueWatchingHub(hub),
           usesContinueWatchingAction: _usesContinueWatchingAction(hub),
           onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
