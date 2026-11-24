@@ -166,6 +166,11 @@ sealed class MediaItem with _$MediaItem {
     bool? isFavorite,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
+
+    /// Directors with their person id (and portrait when the server has one),
+    /// parallel to [directors]; lets a director open the same person page as a
+    /// cast member.
+    @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? directorRoles,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? writers,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? producers,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? countries,
@@ -258,6 +263,11 @@ sealed class MediaItem with _$MediaItem {
     bool? isFavorite,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
+
+    /// Directors with their person id (and portrait when the server has one),
+    /// parallel to [directors]; lets a director open the same person page as a
+    /// cast member.
+    @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? directorRoles,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? writers,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? producers,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? countries,
