@@ -19,6 +19,9 @@ class AppExitService {
   static Future<bool> requestExit({AppExitApplication? exitApplicationForTesting}) async {
     if (_tvosBuild || PlatformDetector.isAppleTV()) return false;
 
+    final response = await ServicesBinding.instance.handleRequestAppExit();
+    if (response != ui.AppExitResponse.exit) return false;
+
     if (Platform.isAndroid) {
       try {
         return await _channel.invokeMethod<bool>('requestExit') ?? true;
