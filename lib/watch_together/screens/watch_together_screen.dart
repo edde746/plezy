@@ -9,6 +9,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
+import '../../services/deep_links/deep_link.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../widgets/app_icon.dart';
@@ -28,7 +29,9 @@ enum _View { lobby, connecting, room }
 /// Watch Together: create or join a room (with recent rooms) when out of one,
 /// and the room itself when in one.
 class WatchTogetherScreen extends StatefulWidget {
-  const WatchTogetherScreen({super.key});
+  const WatchTogetherScreen({super.key, this.invite});
+
+  final WatchTogetherLink? invite;
 
   @override
   State<WatchTogetherScreen> createState() => _WatchTogetherScreenState();
@@ -39,6 +42,20 @@ class _WatchTogetherScreenState extends State<WatchTogetherScreen> with MountedS
   /// recent room's code.
   String? _attempt;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final invite = widget.invite;
+    if (invite != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final provider = context.read<WatchTogetherProvider>();
+        if (provider.isInSession && provider.roomCode == invite.code) return;
+        unawaited(_run(invite.code, (provider) => provider.joinRoom(invite.code)));
+      });
+    }
+  }
 
   Future<void> _run(String attempt, Future<void> Function(WatchTogetherProvider provider) action) async {
     final provider = context.read<WatchTogetherProvider>();
