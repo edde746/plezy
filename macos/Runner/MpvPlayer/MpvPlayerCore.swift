@@ -258,7 +258,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   /// PiP closed: the layers it hosted come back into the container at the
-  /// container's size, with the viewer's zoom.
+  /// container's size, with the viewer's zoom. Reconcile visibility here:
+  /// occlusion and Flutter visibility changes are ignored while PiP is active.
   func takeBackVideoLayers(_ layers: [CALayer]) {
     guard let containerLayer else { return }
     withoutLayerAnimations {
@@ -266,6 +267,18 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
     if let contentView = window?.contentView, let contentLayer = contentView.layer {
       attachContainerLayer(to: contentLayer, frame: contentView.bounds)
+    }
+    layerHiddenForOcclusion = !(window?.occlusionState.contains(.visible) ?? true)
+    if shouldRestoreOnWindowVisible && !hasLayerHideReason {
+      restoreContainerAfterOcclusion()
+    } else {
+      setContainerHidden(!isVisible || hasLayerHideReason)
+    }
+    setBackgrounded(containerLayer.isHidden)
+    if !containerLayer.isHidden && !pausedState {
+      beginPlaybackActivity()
+    } else {
+      endPlaybackActivity()
     }
     applyVideoZoom()
     recoverDisplayLayerIfNeeded()

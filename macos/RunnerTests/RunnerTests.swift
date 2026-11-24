@@ -68,6 +68,142 @@ final class EventOrderRecorder: MpvPlayerDelegate {
   }
 }
 
+@MainActor
+final class MpvPipVisibilityTests: XCTestCase {
+  private final class TestWindow: NSWindow {
+    var videoIsVisible = true
+    override var occlusionState: NSWindow.OcclusionState { videoIsVisible ? [.visible] : [] }
+  }
+
+  private final class TestCore: MpvPlayerCore {
+    private(set) var backgrounded = false
+
+    override func setupMpv() -> Bool { true }
+    override var hasActiveMpv: Bool { isInitialized }
+    override func setBackgrounded(_ backgrounded: Bool) { self.backgrounded = backgrounded }
+  }
+
+  func testReturnFromPipUnhidesContainerWhenVisibilityNotificationArrivedDuringPip() throws {
+    try withPlayer { core, window, container in
+      window.videoIsVisible = false
+      notifyOcclusion(window)
+      XCTAssertTrue(container.isHidden)
+      let layers = try enterPip(core)
+
+      window.videoIsVisible = true
+      notifyOcclusion(window)
+      core.isPipActive = false
+      core.takeBackVideoLayers(layers)
+
+      XCTAssertFalse(container.isHidden)
+      XCTAssertFalse(core.backgrounded)
+      XCTAssertTrue(core.videoLayer?.superlayer === container)
+      core.setVisible(true)
+      XCTAssertFalse(container.isHidden, "A stale occlusion flag must not hide the restored video")
+    }
+  }
+
+  func testReturnFromPipRestoresPendingBackgroundVisibilityEvenIfResumeArrivedDuringPip() throws {
+    try withPlayer { core, window, container in
+      core.setVisible(false, restoreOnWindowVisible: true)
+      let layers = try enterPip(core)
+      core.setVisible(true)
+      core.isPipActive = false
+      core.takeBackVideoLayers(layers)
+
+      XCTAssertFalse(container.isHidden)
+      XCTAssertFalse(core.backgrounded)
+    }
+  }
+
+  func testReturnBeforeSpaceBecomesVisibleWaitsForOcclusionNotification() throws {
+    try withPlayer { core, window, container in
+      let layers = try enterPip(core)
+      window.videoIsVisible = false
+      notifyOcclusion(window)
+      core.isPipActive = false
+      core.takeBackVideoLayers(layers)
+
+      XCTAssertTrue(container.isHidden)
+      XCTAssertTrue(core.backgrounded)
+      window.videoIsVisible = true
+      notifyOcclusion(window)
+      XCTAssertFalse(container.isHidden)
+      XCTAssertFalse(core.backgrounded)
+    }
+  }
+
+  func testReturnFromPipDoesNotShowVideoWhileScreensAreAsleep() throws {
+    try withPlayer { core, window, container in
+      let layers = try enterPip(core)
+      NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.screensDidSleepNotification, object: nil)
+      core.isPipActive = false
+      core.takeBackVideoLayers(layers)
+
+      XCTAssertTrue(container.isHidden)
+      XCTAssertTrue(core.backgrounded)
+      NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.screensDidWakeNotification, object: nil)
+      XCTAssertFalse(container.isHidden)
+      XCTAssertFalse(core.backgrounded)
+    }
+  }
+
+  func testReturnFromPipKeepsExplicitlyHiddenPlayerHidden() throws {
+    try withPlayer { core, window, container in
+      core.setVisible(false)
+      let layers = try enterPip(core)
+      core.isPipActive = false
+      core.takeBackVideoLayers(layers)
+
+      XCTAssertTrue(container.isHidden)
+      XCTAssertTrue(core.backgrounded)
+    }
+  }
+
+  func testRepeatedPipRoundTripsRestorePlayingAndPausedVideoLayers() throws {
+    try withPlayer { core, window, container in
+      for paused in [false, true, false] {
+        core.setPaused(paused)
+        window.videoIsVisible = false
+        notifyOcclusion(window)
+        let layers = try enterPip(core)
+        window.videoIsVisible = true
+        notifyOcclusion(window)
+        core.isPipActive = false
+        core.takeBackVideoLayers(layers)
+
+        XCTAssertFalse(container.isHidden)
+        XCTAssertFalse(core.backgrounded)
+        XCTAssertTrue(core.videoLayer?.superlayer === container)
+      }
+    }
+  }
+
+  private func withPlayer(_ body: (TestCore, TestWindow, CALayer) throws -> Void) throws {
+    let window = TestWindow(
+      contentRect: NSRect(x: 0, y: 0, width: 1280, height: 720),
+      styleMask: [.borderless], backing: .buffered, defer: true
+    )
+    let core = TestCore()
+    XCTAssertTrue(core.initialize(in: window))
+    defer { core.dispose() }
+    core.setVisible(true)
+    core.setPaused(false)
+    let container = try XCTUnwrap(core.videoLayer?.superlayer)
+    try body(core, window, container)
+  }
+
+  private func enterPip(_ core: TestCore) throws -> [CALayer] {
+    let layers = try XCTUnwrap(core.lendVideoLayersForPip())
+    core.isPipActive = true
+    return layers
+  }
+
+  private func notifyOcclusion(_ window: NSWindow) {
+    NotificationCenter.default.post(name: NSWindow.didChangeOcclusionStateNotification, object: window)
+  }
+}
+
 final class MpvPlayerContractTests: XCTestCase {
   private let failure = NSError(
     domain: "MpvPlayerContractTests",
