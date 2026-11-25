@@ -274,6 +274,13 @@ protocol MpvPipDelegate: AnyObject {
 
     func pictureInPictureWillStart(from controller: MpvPictureInPictureControlling) {
       guard !isTornDown, isCurrentController(controller) else { return }
+      // iOS can deliver a queued system start after automatic PiP was disabled.
+      // A pending explicit start still takes precedence over the auto-start policy.
+      guard pendingStartCompletion != nil || autoStartEnabled else {
+        systemStartExpected = false
+        controller.stopPictureInPicture()
+        return
+      }
       systemStartExpected = true
       startTimelineTracking()
       delegate?.pipWillStart()
@@ -286,8 +293,12 @@ protocol MpvPipDelegate: AnyObject {
 
     func pictureInPictureDidStart(from controller: MpvPictureInPictureControlling) {
       guard !isTornDown, isCurrentController(controller) else { return }
-      guard systemStartExpected || pendingStartCompletion != nil else {
+      guard pendingStartCompletion != nil || (systemStartExpected && autoStartEnabled) else {
+        let prepared = systemStartExpected
+        systemStartExpected = false
         controller.stopPictureInPicture()
+        // Undo any preparation if external playback took priority during the animation.
+        if prepared { delegate?.pipDidFailToStart(error: nil) }
         return
       }
       hasActiveSession = true
