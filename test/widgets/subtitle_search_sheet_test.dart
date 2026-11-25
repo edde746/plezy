@@ -210,7 +210,7 @@ void main() {
       await _pumpSearchSheet(
         tester,
         multiServer: provider,
-        onDownloadSubtitle: ({required serverId, required ratingKey, required result}) async =>
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result, required sheetIsOpen}) async =>
             SubtitleDownloadApplyOutcome.timedOut,
       );
       await tester.tap(find.text('Film.2024.srt'));
@@ -233,13 +233,42 @@ void main() {
       await _pumpSearchSheet(
         tester,
         multiServer: testMultiServer(clients: [client]).provider,
-        onDownloadSubtitle: ({required serverId, required ratingKey, required result}) async =>
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result, required sheetIsOpen}) async =>
             SubtitleDownloadApplyOutcome.notDownloaded,
       );
       await tester.tap(find.text('Film.2024.srt'));
       await tester.pumpAndSettle();
 
       expect(find.text(t.videoControls.subtitleDownloadFailed), findsOneWidget);
+    });
+
+    /// Once the sheet has closed, the player reports the download instead.
+    testWidgets('the download hears when its sheet has closed', (tester) async {
+      final client = testPlexClient(
+        serverId: ServerId('server'),
+        handler: (request) async => http.Response(
+          '{"MediaContainer":{"Stream":[{"id":1,"key":"/sub/1","title":"Film.2024.srt","displayTitle":"English"}]}}',
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      late bool Function() isOpen;
+
+      await _pumpSearchSheet(
+        tester,
+        multiServer: testMultiServer(clients: [client]).provider,
+        onDownloadSubtitle: ({required serverId, required ratingKey, required result, required sheetIsOpen}) async {
+          isOpen = sheetIsOpen;
+          return SubtitleDownloadApplyOutcome.timedOut;
+        },
+      );
+      await tester.tap(find.text('Film.2024.srt'));
+      await tester.pumpAndSettle();
+      expect(isOpen(), isTrue);
+
+      OverlaySheetController.of(tester.element(find.byType(SubtitleSearchSheet))).close();
+      await tester.pumpAndSettle();
+      expect(isOpen(), isFalse);
     });
   });
 }
@@ -256,6 +285,7 @@ Future<void> _pumpSearchSheet(
     required String serverId,
     required String ratingKey,
     required SubtitleSearchResult result,
+    required bool Function() sheetIsOpen,
   })?
   onDownloadSubtitle,
 }) async {

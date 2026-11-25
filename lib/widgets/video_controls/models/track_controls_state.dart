@@ -80,6 +80,7 @@ class TrackControlsState {
     required String serverId,
     required String ratingKey,
     required SubtitleSearchResult result,
+    required bool Function() sheetIsOpen,
   })?
   onDownloadSubtitle;
 

@@ -72,6 +72,7 @@ import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
+import 'sheets/subtitle_search_sheet.dart' show showSubtitleDownloadOutcome;
 import 'widgets/double_tap_feedback.dart';
 import 'helpers/mobile_edge_adjustment_tracker.dart';
 import 'helpers/render_geometry.dart';

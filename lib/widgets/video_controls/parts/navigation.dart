@@ -75,6 +75,24 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     required String serverId,
     required String ratingKey,
     required SubtitleSearchResult result,
+    required bool Function() sheetIsOpen,
+  }) async {
+    var outcome = SubtitleDownloadApplyOutcome.notDownloaded; // what a request that throws comes to
+    try {
+      return outcome = await _downloadSubtitle(serverId: serverId, ratingKey: ratingKey, result: result);
+    } finally {
+      // The poll and the reload outlive a closed sheet: the player then says how the download ended,
+      // unless something else took it over: a newer download, another item, or a playback restart during its reload.
+      if (mounted && !sheetIsOpen() && outcome != SubtitleDownloadApplyOutcome.superseded) {
+        showSubtitleDownloadOutcome(context, outcome);
+      }
+    }
+  }
+
+  Future<SubtitleDownloadApplyOutcome> _downloadSubtitle({
+    required String serverId,
+    required String ratingKey,
+    required SubtitleSearchResult result,
   }) async {
     // Nothing is requested unless the item is still this one and can reload.
     if (!mounted) return SubtitleDownloadApplyOutcome.notDownloaded;
@@ -97,7 +115,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
     final client = _subtitleSearchClient();
     if (client == null) return SubtitleDownloadApplyOutcome.notDownloaded;
-    // A failed request throws to the sheet, which reports it.
+    // A failed request throws: the sheet reports it, or the player once the sheet has closed.
     final findTrack = await client.downloadSubtitle(ratingKey, result, position: widget.player.state.position);
     if (findTrack == null) return SubtitleDownloadApplyOutcome.notDownloaded;
 
@@ -128,12 +146,15 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
       // Where the rescan keeps stream ids (Plex, which also selects the new
       // subtitle itself) the reload follows the id; where it renumbers them
       // (Jellyfin), the pick travels as the freshly read row instead.
-      final outcome = await switchSource(
-        newSubtitleChoice: client.subtitleDownloadKeepsStreamIds
-            ? PlaybackSourceSubtitleChoice.source(newTrack.id)
-            : PlaybackSourceSubtitleChoice.downloaded(newTrack),
-      );
-      return subtitleDownloadApplyOutcomeFor(outcome);
+      final choice = client.subtitleDownloadKeepsStreamIds
+          ? PlaybackSourceSubtitleChoice.source(newTrack.id)
+          : PlaybackSourceSubtitleChoice.downloaded(newTrack);
+      final outcome = subtitleDownloadApplyOutcomeFor(await switchSource(newSubtitleChoice: choice));
+      // The screen's next build shows any item that took over during the reload, and the subtitle the reload selected.
+      await WidgetsBinding.instance.endOfFrame;
+      if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
+      if (outcome != SubtitleDownloadApplyOutcome.applied) return outcome;
+      return widget.selectedSubtitleChoice == choice ? outcome : SubtitleDownloadApplyOutcome.failed;
     } catch (e) {
       appLogger.w('Failed to refresh subtitles after download', error: e);
       return SubtitleDownloadApplyOutcome.failed;

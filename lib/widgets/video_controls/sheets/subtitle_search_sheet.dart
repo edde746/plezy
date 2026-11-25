@@ -31,6 +31,19 @@ String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Lo
       'en';
 }
 
+/// Says how a download from this sheet ended: from the sheet, or from the player once the sheet has closed.
+void showSubtitleDownloadOutcome(BuildContext context, SubtitleDownloadApplyOutcome outcome) {
+  if (outcome == SubtitleDownloadApplyOutcome.applied) {
+    showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+  } else {
+    showErrorSnackBar(context, switch (outcome) {
+      SubtitleDownloadApplyOutcome.timedOut => t.videoControls.subtitleDownloadTimedOut,
+      SubtitleDownloadApplyOutcome.notDownloaded => t.videoControls.subtitleDownloadFailed,
+      _ => t.videoControls.subtitleDownloadedNotApplied,
+    });
+  }
+}
+
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
@@ -39,6 +52,7 @@ class SubtitleSearchSheet extends StatefulWidget {
     required String serverId,
     required String ratingKey,
     required SubtitleSearchResult result,
+    required bool Function() sheetIsOpen,
   })?
   onDownloadSubtitle;
 
@@ -218,18 +232,14 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
             serverId: widget.serverId,
             ratingKey: widget.ratingKey,
             result: result,
+            sheetIsOpen: () => mounted,
           ) ??
           SubtitleDownloadApplyOutcome.notDownloaded;
       if (!mounted) return;
+      showSubtitleDownloadOutcome(context, outcome);
       if (outcome == SubtitleDownloadApplyOutcome.applied) {
-        showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
         OverlaySheetController.of(context).close();
       } else {
-        showErrorSnackBar(context, switch (outcome) {
-          SubtitleDownloadApplyOutcome.timedOut => t.videoControls.subtitleDownloadTimedOut,
-          SubtitleDownloadApplyOutcome.notDownloaded => t.videoControls.subtitleDownloadFailed,
-          _ => t.videoControls.subtitleDownloadedNotApplied,
-        });
         setState(() => _downloadingKey = null);
       }
     } catch (e) {
