@@ -1,0 +1,357 @@
+# Plezy for iOS/iPadOS, macOS and tvOS: SwiftUI over the shared Kotlin core (PlezyKit), with mpv through MPVKit.
+# Generate the Xcode project with XcodeGen in this directory: `"$(../tools/install_xcodegen.sh <dir>)" generate` (the
+# pinned release); the .xcodeproj is not committed. This file is the only place the Apple build is described, and
+# tools/set_native_revision.sh keeps the MPVKit pin below equal to mpv-build.lock.json's apple commit by rewriting one
+# line (the Gradle build fails when they differ). A committed project.pbxproj would carry a second copy of that pin
+# for the script to miss.
+name: Plezy
+
+options:
+  bundleIdPrefix: com.edde746
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "17.0"
+    tvOS: "18.0"
+    macOS: "14.0"
+  # The version tools/install_xcodegen.sh installs (CI, the release workflow, the UI tests): an older XcodeGen
+  # refuses to generate.
+  minimumXcodeGenVersion: 2.46.0
+  # An Icon Composer document (AppIcon.icon) is a folder Xcode treats as one resource file; listed file by file, its
+  # icon.json and images would be copied as loose resources and the icon wouldn't build (XcodeGen issue #1556).
+  fileTypes:
+    icon:
+      file: true
+
+# MARKETING_VERSION and CURRENT_PROJECT_VERSION: the app's version on every platform lives in one file.
+configFiles:
+  Debug: ../version.xcconfig
+  Release: ../version.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    # Kotlin/Native builds the shared core for arm64 only, so neither the simulators nor the Mac get an x86_64 slice.
+    ARCHS: arm64
+    # Ad-hoc signing for simulators and the Mac by default. The iOS and tvOS apps sign with the team (their targets
+    # below), for real devices; the Mac signs with the team in development-signed UI-test
+    # builds and in the release workflow. An ad-hoc Mac build compiles but can't use the keychain (CONTRIBUTING.md,
+    # Building and running), so it can't sign in.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    GENERATE_INFOPLIST_FILE: YES
+    DEAD_CODE_STRIPPING: YES
+  configs:
+    # Release builds keep their symbols in dSYMs, which the release workflow uploads to the crash-report server so
+    # crash reports symbolicate (Kotlin's frames too: PlezyKit is static, linked into the app's binary).
+    Release:
+      DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+
+packages:
+  # MPVKit is mpv-build's Apple distribution: libmpv, FFmpeg and libass as XCFrameworks, and in its resource bundle
+  # (MPVKit__MPVKit.bundle, which the apps embed) the licence texts of every component it links.
+  MPVKit:
+    url: https://github.com/edde746/mpv-build
+    revision: b92612fd1950fa4e9cf44e2d06e5cfc08219bf3a # mpv-build pin
+  # Image loading and caching for posters and backgrounds: image loading is native, not in the shared core.
+  Nuke:
+    url: https://github.com/kean/Nuke
+    exactVersion: 13.2.0
+  # Updates for the macOS DMG (Plezy-macOS only; AppKit/Updates.swift). The release workflow signs each
+  # DMG with the package's sign_update tool.
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.0
+  # Crash reports, on every platform (App/CrashReporting.swift): its crash handler also records the Kotlin exceptions
+  # nothing caught. Its framework carries its own privacy manifest (crash, performance and other diagnostic data, not
+  # linked to the user, no tracking).
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    exactVersion: 9.31.0
+
+targetTemplates:
+  PlezyApp:
+    type: application
+    settings:
+      base:
+        PRODUCT_NAME: Plezy
+        PRODUCT_MODULE_NAME: Plezy
+        # One bundle ID for all three apps' releases; the Mac's Debug build has its own (Plezy-macOS below).
+        PRODUCT_BUNDLE_IDENTIFIER: com.edde746.plezy
+        INFOPLIST_FILE: Plezy/Shared/Info.plist
+        # The one Info.plist goes through the C preprocessor, in traditional mode, where two slashes start no comment
+        # (Sparkle's feed URL), and without the warning for each apostrophe in its comment, which C would read as an
+        # unclosed character constant. Each target defines its platform's name for that platform's keys (PLEZY_IOS,
+        # PLEZY_TVOS, PLEZY_MACOS).
+        INFOPLIST_PREPROCESS: YES
+        INFOPLIST_OTHER_PREPROCESSOR_FLAGS: -traditional -Wno-invalid-pp-token
+        INFOPLIST_KEY_CFBundleDisplayName: Plezy
+        # The local network prompt's purpose (iPhone, iPad; the Mac from macOS 15): reaching a media server at home. This English text is the key's base value; the prompt shows i18n's app.localNetworkUsage in
+        # the app's language, from the InfoPlist.strings the Kotlin phase below copies in.
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: Plezy connects to your media servers on your local network.
+        # Export compliance: Plezy's own code only hashes, and its encryption is HTTPS (URLSession,
+        # and MPVKit's OpenSSL for FFmpeg's streams), which is exempt; App Store Connect then asks nothing at upload.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        # Where the build is distributed (Info.plist's PlezyFlavor, a BuildFlavor name): the App Store's iOS and tvOS
+        # builds by default; the release workflow builds the GitHub release's IPA with PLEZY_APPLE_FLAVOR=SIDELOADED, and the
+        # Mac, which ships only as the DMG, is always SIDELOADED (its target below).
+        PLEZY_APPLE_FLAVOR: STORE
+        # The Kotlin script phase reads the repo and writes shared/build, dev/build and ~/.gradle, outside Xcode's
+        # script sandbox.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        # PlezyKit (the KMP umbrella framework, static) is built per platform by the script phase below, from the
+        # configuration's Gradle module (PLEZY_KIT_MODULE). A static framework records no library dependencies, so the
+        # app links what it uses: SQLDelight's native driver needs the system libsqlite3. A target adds its own linker
+        # flags in PLEZY_TARGET_LDFLAGS.
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../$(PLEZY_KIT_MODULE)/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        OTHER_LDFLAGS: $(inherited) -framework PlezyKit -lsqlite3 $(PLEZY_TARGET_LDFLAGS)
+      configs:
+        # Debug's PlezyKit is :dev's, which exports :shared with the development session (`--dev`, LaunchOptions);
+        # Release's is :shared's, without it.
+        Debug:
+          PLEZY_KIT_MODULE: dev
+        Release:
+          PLEZY_KIT_MODULE: shared
+          # Plezy/Debug (the UI tests' probes, the `--dev` start) needs :dev's PlezyKit and stays out of what ships.
+          EXCLUDED_SOURCE_FILE_NAMES: $(SRCROOT)/Plezy/Debug/*
+    dependencies:
+      - package: MPVKit
+        product: MPVKit
+      - package: Nuke
+        product: Nuke
+      - package: Nuke
+        product: NukeUI
+      - package: Sentry
+        product: Sentry
+    preBuildScripts:
+      # Kotlin integration: PLEZY_KIT_MODULE's embedAndSignAppleFrameworkForXcode reads SDK_NAME, ARCHS and
+      # CONFIGURATION from Xcode and links only the slice this build needs (iosArm64, iosSimulatorArm64, macosArm64,
+      # tvosArm64 or tvosSimulatorArm64; :dev's Debug or :shared's Release) into
+      # <module>/build/xcode-frameworks/<CONFIGURATION>/<SDK_NAME>, with SKIE's Swift layer compiled in. One phase
+      # serves all three platforms, and nothing unused is built. The framework is static, so there is nothing to
+      # embed or sign. Gradle's up-to-date checks keep repeat builds cheap. Android is disabled because an Apple build
+      # does not need it, and a Mac without an Android SDK can still build.
+      #
+      # The same Gradle run writes <locale>.lproj/InfoPlist.strings, the Info.plist's purpose strings in every language
+      # (build-logic's generateInfoPlistStrings, from shared/i18n), which the phase copies into the app's resources.
+      - name: Build PlezyKit (Kotlin)
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
+        script: |
+          set -e
+          cd "$SRCROOT/.."
+          ./gradlew ":$PLEZY_KIT_MODULE:embedAndSignAppleFrameworkForXcode" :shared:generateInfoPlistStrings -Pplezy.android=false
+          mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          ditto shared/build/generated/plezy/strings/apple "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+    postBuildScripts:
+      # The licence texts About shows: the app's groups of the repository's licenses/ (licenses/apps.json) in its
+      # resources' licenses/, which license-texts.py checks after copying, so a build without one of them fails, and
+      # mpv-build's, which MPVKit's resource bundle brings and license-texts.py checks there.
+      - name: Licence texts
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
+        script: |
+          set -e
+          case "$PLATFORM_NAME" in
+            iphoneos|iphonesimulator) app=ios ;;
+            appletvos|appletvsimulator) app=tvos ;;
+            macosx) app=macos ;;
+            *) echo "error: no licence texts for $PLATFORM_NAME" >&2; exit 1 ;;
+          esac
+          python3 "$SRCROOT/license-texts.py" "$app" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+
+  # The UI tests: XCUITest drives the app as a user would, with the remote on tvOS and touches on iOS, finding controls
+  # by accessibility identifiers (the Compose UI's probe names). Each platform's tests sit in their own folder beside
+  # the shared base class.
+  PlezyUITests:
+    type: bundle.ui-testing
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.edde746.plezy.uitests
+
+targets:
+  Plezy-iOS:
+    templates: [PlezyApp]
+    platform: iOS
+    sources:
+      - Plezy/Shared
+      - Plezy/UIKit
+      # Debug builds only: the UI tests' probes and the `--dev` start (the template's Release excludes it).
+      - Plezy/Debug
+      # The app icon: an Icon Composer document (edited in Icon Composer), shared with the Mac.
+      - AppIcon.icon
+      # The alternate app icons, AppIcon-<id>, one app icon set each (Plezy/Shared/Info.plist's comment).
+      - AlternateAppIcons-iOS.xcassets
+      # The app icon picker's thumbnails, shared with Android (AppIconPreview in Settings/SupporterViews.swift).
+      - path: ../android/app/src/main/assets/app_icons
+        type: folder
+      # The subtitle fonts, Go Noto Current and its Hangul companion (MpvPlayerEngine.swift, subtitleFontDirectory),
+      # shared with Android: a folder reference, so the bundle keeps subtitle-fonts/, mpv's sub-fonts-dir. Their SIL
+      # OFL 1.1 licence is among the licence texts (licenses/subtitle-font).
+      - path: ../android/mpv/src/main/assets/subtitle-fonts
+        type: folder
+      # The video shader presets' GLSL files, shared with Android and the desktop: a folder reference, so the bundle
+      # keeps shaders/<preset family>/<file> (ApplePlatform's shaderFiles).
+      - path: ../android/mpv/src/main/assets/shaders
+        type: folder
+    settings:
+      base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Every other app icon set (AlternateAppIcons-iOS.xcassets) compiles as an alternate icon, and actool declares
+        # it in CFBundleIcons.
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown
+        # Background audio for picture in picture, Files app access (Plezy/Shared/Info.plist's `#if PLEZY_IOS`).
+        INFOPLIST_PREPROCESSOR_DEFINITIONS: PLEZY_IOS
+        # Team signing for real devices: Xcode makes the development profile; simulators still sign to run locally.
+        DEVELOPMENT_TEAM: G88U5B5783
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+    scheme:
+      testTargets: [Plezy-iOS-UITests]
+
+  Plezy-tvOS:
+    templates: [PlezyApp]
+    platform: tvOS
+    sources:
+      - Plezy/Shared
+      - Plezy/UIKit
+      - Plezy/Debug
+      # Icon Composer has no tvOS icons: the Apple TV keeps the layered icon (and the Top Shelf) in this catalog.
+      - Brand.xcassets
+      # The alternate app icons, AppIcon-<id>, one layered image stack each; Plezy/Shared/Info.plist names them.
+      - AlternateAppIcons-tvOS.xcassets
+      # As the iOS app's.
+      - path: ../android/app/src/main/assets/app_icons
+        type: folder
+      # As the iOS app's.
+      - path: ../android/mpv/src/main/assets/subtitle-fonts
+        type: folder
+      - path: ../android/mpv/src/main/assets/shaders
+        type: folder
+      # The Top Shelf's App Group and payload key, where the app writes the shelf (TopShelfPublisher).
+      - TopShelf/TopShelfContent.swift
+    # Added to the template's MPVKit, Nuke and Sentry: the Top Shelf extension, embedded in the app's PlugIns.
+    dependencies:
+      - target: Plezy-tvOS-TopShelf
+    settings:
+      base:
+        # The brand assets hold the layered App Icon and both Top Shelf images; actool writes their Info.plist keys.
+        ASSETCATALOG_COMPILER_APPICON_NAME: App Icon & Top Shelf Image
+        TARGETED_DEVICE_FAMILY: "3"
+        # The Apple TV's keys: the remote and controllers, the alternate icons (Plezy/Shared/Info.plist's
+        # `#if PLEZY_TVOS`).
+        INFOPLIST_PREPROCESSOR_DEFINITIONS: PLEZY_TVOS
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # As the iOS app: team signing for a real Apple TV.
+        DEVELOPMENT_TEAM: G88U5B5783
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+        CODE_SIGN_ENTITLEMENTS: Plezy/Shared/Plezy-tvOS.entitlements
+    scheme:
+      testTargets: [Plezy-tvOS-UITests]
+
+  # The Apple TV's Top Shelf: Continue Watching above the app's icon (TopShelf/TopShelfProvider),
+  # read from the App Group the app writes it to, posters included: the extension makes no network call. Swift alone,
+  # without PlezyKit: the shared core builds the payload in the app.
+  Plezy-tvOS-TopShelf:
+    type: app-extension
+    platform: tvOS
+    sources:
+      - path: TopShelf
+        excludes: [Info.plist, TopShelf.entitlements]
+    settings:
+      base:
+        PRODUCT_NAME: PlezyTopShelf
+        PRODUCT_BUNDLE_IDENTIFIER: com.edde746.plezy.TopShelfExtension
+        INFOPLIST_FILE: TopShelf/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Plezy Top Shelf
+        TARGETED_DEVICE_FAMILY: "3"
+        # App Store Connect rejects an extension with a 64-bit slice whose Info.plist doesn't require arm64; Xcode
+        # writes the key for the app, not for an extension.
+        INFOPLIST_KEY_UIRequiredDeviceCapabilities: arm64
+        # As the app's: team signing for a real Apple TV.
+        DEVELOPMENT_TEAM: G88U5B5783
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+        CODE_SIGN_ENTITLEMENTS: TopShelf/TopShelf.entitlements
+
+  Plezy-macOS:
+    templates: [PlezyApp]
+    platform: macOS
+    sources:
+      - Plezy/Shared
+      - Plezy/AppKit
+      - Plezy/Debug
+      - AppIcon.icon
+      # As the iOS app's.
+      - path: ../android/mpv/src/main/assets/subtitle-fonts
+        type: folder
+      - path: ../android/mpv/src/main/assets/shaders
+        type: folder
+    # Added to the template's MPVKit, Nuke and Sentry.
+    dependencies:
+      - package: Sparkle
+        product: Sparkle
+    settings:
+      base:
+        # Sparkle's feed and key and the ordered-row type, without UIKit's keys (Plezy/Shared/Info.plist's
+        # `#if PLEZY_MACOS`).
+        INFOPLIST_PREPROCESSOR_DEFINITIONS: PLEZY_MACOS
+        PLEZY_APPLE_FLAVOR: SIDELOADED
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.entertainment
+        INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2025 edde746
+        # Picture in picture's PIP.framework, private API (AppKit/PictureInPicture.swift, declared in the bridging
+        # header), weakly linked: the Mac app ships as a notarized DMG outside the Mac App Store. The linker
+        # finds the SDK's stub of it under its PrivateFrameworks (it prefixes the SDK's root).
+        SWIFT_OBJC_BRIDGING_HEADER: Plezy/AppKit/Plezy-Bridging-Header.h
+        PLEZY_TARGET_LDFLAGS: -F/System/Library/PrivateFrameworks -weak_framework PIP
+      configs:
+        # A Mac app isn't sandboxed and keeps its data under its bundle ID (~/Library/Application Support/<bundle id>,
+        # its user defaults domain), so a Debug build under the release's ID would read and write the released app's
+        # data on the same Mac. Debug builds (the UI tests') get their own ID and data; iPhone, iPad and Apple TV apps
+        # keep theirs in their own containers on each device.
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: com.edde746.plezy.dev
+    scheme:
+      testTargets: [Plezy-macOS-UITests]
+
+  Plezy-iOS-UITests:
+    templates: [PlezyUITests]
+    platform: iOS
+    sources: [PlezyUITests/Shared, PlezyUITests/iOS]
+    dependencies:
+      - target: Plezy-iOS
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+  Plezy-tvOS-UITests:
+    templates: [PlezyUITests]
+    platform: tvOS
+    sources: [PlezyUITests/Shared, PlezyUITests/tvOS]
+    dependencies:
+      - target: Plezy-tvOS
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "3"
+
+  Plezy-macOS-UITests:
+    templates: [PlezyUITests]
+    platform: macOS
+    sources:
+      - PlezyUITests/Shared
+      - PlezyUITests/macOS
+      # The full-screen title bar's placement, a pure function the tests check with screens (a camera housing's) the
+      # test Mac may not have.
+      - Plezy/AppKit/FullScreenTitleBarPlacement.swift
+    dependencies:
+      - target: Plezy-macOS
+    settings:
+      base:
+        # The runner may listen on 127.0.0.1: the proxy in front of the test server (ServerProxy).
+        CODE_SIGN_ENTITLEMENTS: PlezyUITests/Plezy-macOS-UITests.entitlements

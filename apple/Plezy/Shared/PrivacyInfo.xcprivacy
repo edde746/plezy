@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+The apps' privacy manifest (iOS, iPadOS, tvOS; the Mac carries it too): App Store Connect refuses an upload whose
+binary calls an API on Apple's required-reason list without a reason here (ITMS-91053). No tracking.
+
+- UserDefaults, CA92.1 (the app's own values): BackgroundTransport's download records, the Mac's double-click setting
+  (ScreenHeader), the UI tests' launch arguments (EngineDebug's mpvMute, SimulatedMatchContent,
+  SimulatedAssistiveTechnology); 1C8F.1 (defaults shared within the App Group): the Apple TV's Top Shelf, which the
+  app writes for its extension (TopShelfPublisher; the extension's own manifest declares its reading).
+- Disk space, E174.1 (enough room before and while writing a download: TaskDownloader, BackgroundTransport) and 85F4.1
+  (shown: Settings → Downloads' free space), both through BackgroundTransport.capacity.
+- File timestamp, C617.1 (files in the app's container): BackgroundTransport reads a download's size with
+  attributesOfItem(atPath:); SQLite, libmpv and FFmpeg stat the files they open.
+- System boot time, 35F9.1 (time between events in the app): libmpv's clock (mach_absolute_time).
+MPVKit (libmpv, FFmpeg) and Nuke ship no manifest of their own, so this one covers their calls; Sentry ships its own.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+				<string>85F4.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

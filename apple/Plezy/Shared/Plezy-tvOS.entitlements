@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+The tvOS app's entitlements (project.yml): the App Group group.com.edde746.plezy, shared with the Top Shelf extension
+(../../TopShelf/TopShelf.entitlements), where the app writes the shelf's payload (TopShelfPublisher). A profile carries
+the group only once team G88U5B5783 has registered it and enabled it on the App IDs com.edde746.plezy and
+com.edde746.plezy.TopShelfExtension; simulator builds need no profile.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.edde746.plezy</string>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+The Developer ID build's entitlements: the release workflow signs the macOS app with them (hardened runtime),
+under team G88U5B5783.
+
+- application-identifier, team-identifier, keychain-access-groups: KeychainSecretStore keeps the app's secrets in
+  the data protection keychain, which on macOS needs the app's access group. These are restricted entitlements, so the
+  app must carry a Developer ID provisioning profile for com.edde746.plezy that grants them
+  (Contents/embedded.provisionprofile, from the MACOS_PROVISIONING_PROFILE_BASE64 secret); without one macOS refuses
+  to launch the app.
+- allow-jit, allow-unsigned-executable-memory: the exceptions for the embedded MPVKit (LuaJIT).
+- No App Sandbox, so none of the sandbox's entitlements (network.client, files.user-selected.read-write): outside
+  the sandbox the app reaches the network and the files the user picks without them.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.application-identifier</key>
+	<string>G88U5B5783.com.edde746.plezy</string>
+	<key>com.apple.developer.team-identifier</key>
+	<string>G88U5B5783</string>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>G88U5B5783.com.edde746.plezy</string>
+	</array>
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+</dict>
+</plist>

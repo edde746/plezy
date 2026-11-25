@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+The Top Shelf extension's keys the build settings cannot express; Xcode merges the generated ones
+(GENERATE_INFOPLIST_FILE: the bundle's identifier, name and the app's version) into this file.
+
+NSExtension: a Top Shelf content provider (TopShelfProvider), which tvOS asks for the shelf above the app's icon. The
+extension makes no network call: the app writes the shelf, posters included, to the App Group (TopShelfPublisher).
+-->
+<plist version="1.0">
+<dict>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.tv-top-shelf</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).TopShelfProvider</string>
+	</dict>
+</dict>
+</plist>
