@@ -1,6 +1,0 @@
-# wayland-scanner output, vendored verbatim so the deb/rpm/pacman builds do not
-# need wayland-scanner as a build dependency. Reformatting it would make every
-# future regeneration a diff against our style instead of against upstream's, so
-# it is left exactly as the generator emitted it.
-DisableFormat: true
-SortIncludes: false

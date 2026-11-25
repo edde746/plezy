@@ -1,6 +1,0 @@
-input_directory: lib/i18n
-input_file_pattern: .i18n.json
-output_directory: lib/i18n
-timestamp: false
-# Use English for missing keys and empty translation placeholders.
-fallback_strategy: base_locale_empty_string

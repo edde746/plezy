@@ -1,7 +1,0 @@
-**
-!.maestro/
-!.maestro/jellyfin-demo/
-!.maestro/jellyfin-demo/**
-!scripts/
-!scripts/maestro/maestro_fixtures.py
-!scripts/maestro/maestro_real_jellyfin.py
