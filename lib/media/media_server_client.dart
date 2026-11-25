@@ -1077,15 +1077,10 @@ abstract interface class ExternalSubtitleSearchClient {
   Future<List<SubtitleSearchResult>> searchSubtitles(String ratingKey, {required String language, String? title});
 
   /// Downloads [result], one of the rows [searchSubtitles] returned; null when
-  /// the server didn't confirm it. [existingTrackIds] (the player's source ids) and
-  /// [position] (which file of a stacked item plays) serve a server that keeps
-  /// stream ids; one that renumbers them snapshots the item itself.
-  Future<SubtitleDownload?> downloadSubtitle(
-    String ratingKey,
-    SubtitleSearchResult result, {
-    required Set<int> existingTrackIds,
-    Duration? position,
-  });
+  /// the server didn't confirm it. The client reads what its server lists
+  /// before the request, to tell the new track; [position] (which file of a
+  /// stacked item plays) serves a server whose items can span several files.
+  Future<SubtitleDownload?> downloadSubtitle(String ratingKey, SubtitleSearchResult result, {Duration? position});
 }
 
 /// Polls one [ExternalSubtitleSearchClient.downloadSubtitle]: the external

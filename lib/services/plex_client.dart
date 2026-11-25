@@ -1525,9 +1525,19 @@ class PlexClient
   Future<SubtitleDownload?> downloadSubtitle(
     String ratingKey,
     SubtitleSearchResult result, {
-    required Set<int> existingTrackIds,
     Duration? position,
   }) async {
+    // Straight from the server, as on Jellyfin, and asked like the poll so it
+    // reads the same version and file: the player's list, or a cached row, can
+    // miss a subtitle already there, which the poll would take as new.
+    final response = await _getWithFailover(
+      '/library/metadata/$ratingKey',
+      queryParameters: {'includeMarkers': 1, 'includeChapters': 1, 'checkFiles': 1, 'includeStreams': 1},
+    );
+    final metadata = _validatedPlaybackMetadataJson(response.data as Map<String, dynamic>?);
+    final before = parseVideoPlaybackDataFromJson(metadata, position: position).mediaInfo;
+    if (before == null) throw const FormatException('No Plex item listing');
+    final existingTrackIds = {for (final track in before.subtitleTracks) track.id};
     final downloaded = await _wrapBoolApiCall(
       () => _http.put(
         '/library/metadata/$ratingKey/subtitles',

@@ -213,7 +213,6 @@ class _LandedSubtitleClient implements MediaServerClient, ExternalSubtitleSearch
   Future<SubtitleDownload?> downloadSubtitle(
     String ratingKey,
     SubtitleSearchResult result, {
-    required Set<int> existingTrackIds,
     Duration? position,
   }) async =>
       () async => MediaSubtitleTrack(id: 9, external: true, selected: false, forced: false);

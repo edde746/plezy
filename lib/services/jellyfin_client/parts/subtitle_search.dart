@@ -96,7 +96,6 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
   Future<SubtitleDownload?> downloadSubtitle(
     String ratingKey,
     SubtitleSearchResult result, {
-    required Set<int> existingTrackIds,
     Duration? position,
   }) async {
     final before = (await _externalSubtitlesByPath(ratingKey)).tracks.keys.toSet();

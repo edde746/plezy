@@ -233,7 +233,6 @@ void main() {
         final download = await fake.client.downloadSubtitle(
           'item-1',
           SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: language, forced: forced),
-          existingTrackIds: const {0},
         );
         final found = await download!();
         return found?.languageCode;
@@ -315,7 +314,6 @@ void main() {
       final download = await fake.client.downloadSubtitle(
         'alt-2',
         const SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: 'de'),
-        existingTrackIds: const {},
       );
       await expectLater(download!(), throwsA(isA<MediaServerHttpException>()));
       final found = await download();
@@ -377,7 +375,7 @@ void main() {
       for (final failure in ['html', 'missing', 'bare', 'sourceless', 'transport']) {
         answer = failure;
         await expectLater(
-          fake.client.downloadSubtitle('item-1', row, existingTrackIds: const {}),
+          fake.client.downloadSubtitle('item-1', row),
           throwsA(anything),
           reason: '$failure: an empty or cached snapshot would pass a file already there as the download',
         );
@@ -386,7 +384,7 @@ void main() {
 
       // Nor may a poll fall back to the cached row.
       answer = 'none';
-      final download = await fake.client.downloadSubtitle('item-1', row, existingTrackIds: const {});
+      final download = await fake.client.downloadSubtitle('item-1', row);
       answer = 'transport';
       await expectLater(download!(), throwsA(anything));
     });
@@ -422,11 +420,8 @@ void main() {
         '/Items/item-1/RemoteSearch/Subtitles/sub-1': (_) => http.Response('', 204),
         '/Items/item-1/RemoteSearch/Subtitles/sub-2': (_) => http.Response('', 204),
       });
-      download(String key) => fake.client.downloadSubtitle(
-        'item-1',
-        SubtitleSearchResult(key: key, codec: 'srt', languageCode: 'de'),
-        existingTrackIds: const {},
-      );
+      download(String key) =>
+          fake.client.downloadSubtitle('item-1', SubtitleSearchResult(key: key, codec: 'srt', languageCode: 'de'));
 
       // Download, close the sheet (its poll keeps running), reopen it and download again.
       final first = await download('sub-1');
@@ -480,7 +475,6 @@ void main() {
       final download = await fake.client.downloadSubtitle(
         'item-1',
         const SubtitleSearchResult(key: 'sub-1', codec: 'srt', languageCode: 'de'),
-        existingTrackIds: const {0},
       );
       final found = await download!();
 

@@ -97,15 +97,8 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
     final client = _subtitleSearchClient();
     if (client == null) return SubtitleDownloadApplyOutcome.notDownloaded;
-    // Snapshot the authoritative source IDs so we can identify the new
-    // download without asking mpv to synchronously open its remote URL.
     // A failed request throws to the sheet, which reports it.
-    final findTrack = await client.downloadSubtitle(
-      ratingKey,
-      result,
-      existingTrackIds: widget.sourceSubtitleTracks.map((track) => track.id).toSet(),
-      position: widget.player.state.position,
-    );
+    final findTrack = await client.downloadSubtitle(ratingKey, result, position: widget.player.state.position);
     if (findTrack == null) return SubtitleDownloadApplyOutcome.notDownloaded;
 
     try {
