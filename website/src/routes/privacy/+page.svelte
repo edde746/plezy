@@ -57,7 +57,7 @@
         own privacy terms.
       </p>
       <p>
-        Jellyfin and Companion Remote can send discovery traffic on your local network. If you use an external
+        Jellyfin and casting can send discovery traffic on your local network. If you use an external
         player, that app receives the media URL, which may contain a server access credential, together with
         playback details. TV home-screen features can automatically fetch artwork from your media server. A
         server or relay you configure may use HTTP instead of HTTPS.
@@ -96,7 +96,7 @@
       <h2 id="choices">Your choices</h2>
       <p>
         You can remove media-server and tracker connections, disable crash reporting, update checks, scrobbling,
-        Companion Remote, Discord Rich Presence, and external-player routing, or leave a Watch Together room,
+        Discord Rich Presence, and external-player routing, or leave a Watch Together room,
         which removes you and your details from it. You can
         delete downloads, clear the artwork cache, remove profiles, or delete app data. Support-log uploads are
         always explicit. Removing local data does not remove copies already held by a connected service, custom

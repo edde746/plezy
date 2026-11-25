@@ -1,0 +1,25 @@
+[Script Info]
+Title: Plezy playback matrix - styled ASS
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,60,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,1,2,60,60,60,1
+Style: Sign,Arial,48,&H0000D7FF,&H000000FF,&H00202020,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,8,60,60,40,1
+Style: Box,Arial,48,&H00FFFFFF,&H000000FF,&H00A05000,&H00000000,0,-1,0,0,100,100,0,0,3,8,0,2,60,60,80,1
+Style: Karaoke,Arial,56,&H00FFFFFF,&H0000A5FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,3,0,2,60,60,60,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,ASS 1 of 7 · default style, bottom centre (00:01–00:04)
+Dialogue: 0,0:00:04.00,0:00:07.00,Sign,,0,0,0,,ASS 2 of 7 · bold yellow sign, top centre (00:04–00:07)
+Dialogue: 0,0:00:07.00,0:00:10.00,Default,,0,0,0,,{\an5\pos(1300,800)\frz12\c&H80FF00&}ASS 3 of 7 · green, rotated 12°
+Dialogue: 0,0:00:10.00,0:00:13.00,Box,,0,0,0,,ASS 4 of 7 · italic on an opaque box (00:10–00:13)
+Dialogue: 0,0:00:13.00,0:00:16.00,Default,,0,0,0,,{\move(420,1000,1500,1000)\fad(400,400)}ASS 5 of 7 · moving, fading
+Dialogue: 0,0:00:16.00,0:00:19.50,Karaoke,,0,0,0,,{\k40}ASS {\k40}6 {\k40}of {\k40}7 {\k60}· {\k80}karaoke {\k100}sweep
+Dialogue: 1,0:00:16.00,0:00:19.50,Sign,,0,0,0,,{\an9\blur4\bord0\c&HFFFFFF&}ASS 7 of 7 · blurred, top right, over 6

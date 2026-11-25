@@ -1,5 +1,12 @@
 name: Update Packages
 
+# After a release is published (the draft build.yml made, published by hand): the Homebrew cask (Casks/plezy.rb, this
+# repository is the tap), the WinGet manifest (edde746.Plezy) and the appcast branch, whose appcast.xml the macOS and
+# Windows apps read for updates through jsDelivr (https://cdn.jsdelivr.net/gh/edde746/plezy@appcast/appcast.xml).
+# Stable releases only. A manual run redoes them for a published release tag.
+#
+# Secrets: WINGET_TOKEN (a GitHub token of the account that forks winget-pkgs and opens the manifest's pull request).
+
 on:
   release:
     types: [published]
@@ -10,8 +17,11 @@ on:
         required: true
         type: string
 
+permissions: {}
+
 jobs:
   resolve-release:
+    name: Resolve release
     # Packages track stable releases only. A skipped job also skips every job that needs it.
     if: github.event_name != 'release' || !github.event.release.prerelease
     runs-on: ubuntu-latest
@@ -22,8 +32,10 @@ jobs:
     steps:
       - name: Require the default branch for manual runs
         if: github.event_name == 'workflow_dispatch'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/${{ github.event.repository.default_branch }}" ]]; then
+          if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
             echo "Manual package updates may only run from the default branch." >&2
             exit 1
           fi
@@ -69,14 +81,17 @@ jobs:
           echo "tag=$RESOLVED_TAG" >> "$GITHUB_OUTPUT"
 
   update-homebrew:
+    name: Update Homebrew cask
     needs: resolve-release
     runs-on: macos-latest
     permissions:
       contents: write
     env:
       RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Credentials kept: the job pushes the cask's commit with them.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
@@ -90,29 +105,32 @@ jobs:
           echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
 
       - name: Update cask
+        env:
+          SHA256: ${{ steps.release.outputs.sha256 }}
         run: |
           sed -i '' "s/version \".*\"/version \"$RELEASE_TAG\"/" Casks/plezy.rb
-          sed -i '' "s/sha256 \".*\"/sha256 \"${{ steps.release.outputs.sha256 }}\"/" Casks/plezy.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"$SHA256\"/" Casks/plezy.rb
 
       - name: Commit
         run: |
-          BRANCH="${{ github.event.repository.default_branch }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/plezy.rb
           if ! git diff --staged --quiet; then
             git commit -m "chore: update cask to $RELEASE_TAG"
-            git push origin "HEAD:$BRANCH"
+            git push origin "HEAD:$DEFAULT_BRANCH"
           else
             echo "No cask changes to commit."
           fi
 
   update-winget:
+    name: Update WinGet manifest
     needs: resolve-release
     runs-on: windows-latest
     # The releaser authenticates with WINGET_TOKEN; GITHUB_TOKEN needs no scopes.
     permissions: {}
     steps:
+      # The manifest passes /WINGET=1 to the installer, which then records that WinGet installed it.
       - uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
         with:
           identifier: edde746.Plezy
@@ -121,6 +139,7 @@ jobs:
           token: ${{ secrets.WINGET_TOKEN }}
 
   update-appcast-branch:
+    name: Update appcast branch
     needs: resolve-release
     runs-on: ubuntu-latest
     permissions:
@@ -128,17 +147,17 @@ jobs:
     env:
       RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Credentials kept: the job pushes the appcast branch with them.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Download appcast.xml from release
-        run: |
-          gh release download "$RELEASE_TAG" \
-            --pattern "appcast.xml"
+        run: gh release download "$RELEASE_TAG" --pattern appcast.xml
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # The branch holds one commit with appcast.xml alone, replaced on every release.
       - name: Push to appcast branch
         run: |
           git config user.name "github-actions[bot]"

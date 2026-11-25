@@ -1,0 +1,22 @@
+[Script Info]
+Title: Plezy playback matrix - REMUX, español
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,58,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,1,2,60,60,60,1
+Style: Sign,Arial,50,&H00FFFFFF,&H000000FF,&H00202020,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,8,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,[Español ASS] Línea 1 de 6, de 00:01 a 00:04\NCapítulo 1: Apertura
+Dialogue: 0,0:00:05.00,0:00:08.00,Default,,0,0,0,,[Español ASS] Línea 2 de 6: «¿Dónde está la señal?»
+Dialogue: 0,0:00:11.00,0:00:14.00,Default,,0,0,0,,[Español ASS] Línea 3 de 6, de 00:11 a 00:14\NCapítulo 2: Pistas de audio
+Dialogue: 0,0:00:15.00,0:00:18.00,Sign,,0,0,0,,[Español ASS] Línea 4 de 6: un cartel dice «SALIDA»
+Dialogue: 0,0:00:21.00,0:00:24.00,Default,,0,0,0,,[Español ASS] Línea 5 de 6, de 00:21 a 00:24\NCapítulo 3: Pistas de subtítulos
+Dialogue: 0,0:00:25.00,0:00:28.00,Default,,0,0,0,,[Español ASS] Línea 6 de 6: ¡Adiós, pingüino!

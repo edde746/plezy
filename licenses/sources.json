@@ -1,0 +1,753 @@
+{
+  "common/kotlin": {
+    "notices": [
+      "Kotlin"
+    ],
+    "version": "2.4.10",
+    "files": {
+      "license/LICENSE.txt": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.10/license/LICENSE.txt",
+      "license/NOTICE.txt": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.10/license/NOTICE.txt",
+      "license/third_party/boost_LICENSE.txt": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.10/license/third_party/boost_LICENSE.txt",
+      "license/third_party/guava_license.txt": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.10/license/third_party/guava_license.txt",
+      "license/third_party/gwt_license.txt": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.10/license/third_party/gwt_license.txt",
+      "license/third_party/threetenbp_license.txt": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.10/license/third_party/threetenbp_license.txt"
+    }
+  },
+  "common/kotlinx.coroutines": {
+    "notices": [
+      "kotlinx.coroutines"
+    ],
+    "version": "1.11.0",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx.coroutines/1.11.0/LICENSE.txt",
+      "license/NOTICE.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx.coroutines/1.11.0/license/NOTICE.txt"
+    }
+  },
+  "common/kotlinx.serialization": {
+    "notices": [
+      "kotlinx.serialization"
+    ],
+    "version": "1.11.0",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx.serialization/v1.11.0/LICENSE.txt",
+      "license/NOTICE.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx.serialization/v1.11.0/license/NOTICE.txt"
+    }
+  },
+  "common/kotlinx-io": {
+    "notices": [
+      "kotlinx-io"
+    ],
+    "version": "0.9.1",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/Kotlin/kotlinx-io/0.9.1/LICENSE",
+      "NOTICE": "https://raw.githubusercontent.com/Kotlin/kotlinx-io/0.9.1/NOTICE"
+    }
+  },
+  "common/kotlinx-atomicfu": {
+    "notices": [
+      "kotlinx-atomicfu"
+    ],
+    "version": "0.33.0 (Apple), 0.28.0 (desktop); the same files",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx-atomicfu/0.33.0/LICENSE.txt",
+      "license/NOTICE.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx-atomicfu/0.33.0/license/NOTICE.txt",
+      "LICENSE-2.0.txt": "https://raw.githubusercontent.com/apache/www-site/01b1be9fbc5cd93b6794f5653a58b9b863807f84/content/licenses/LICENSE-2.0.txt"
+    }
+  },
+  "common/ktor": {
+    "notices": [
+      "Ktor"
+    ],
+    "version": "3.6.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/ktorio/ktor/3.6.0/LICENSE"
+    }
+  },
+  "common/sqldelight": {
+    "notices": [
+      "SQLDelight"
+    ],
+    "version": "2.3.2",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/sqldelight/sqldelight/2.3.2/LICENSE.txt"
+    }
+  },
+  "common/cryptography-kotlin": {
+    "notices": [
+      "cryptography-kotlin"
+    ],
+    "version": "0.6.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/whyoleg/cryptography-kotlin/0.6.0/LICENSE"
+    }
+  },
+  "common/open-watch-party": {
+    "notices": [
+      "Open Watch Party"
+    ],
+    "version": "1.1.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/edde746/openwatchparty/1.1.0/LICENSE"
+    }
+  },
+  "common/nvidia-image-scaling": {
+    "notices": [
+      "NVIDIA Image Scaling"
+    ],
+    "version": "v1.0.2 for mpv (agyild's port, gist revision 05f00864228871ffd157daa9beb2db8fa7412cfa; shipped with its coefficient tables declared rgba16f)",
+    "files": {
+      "NVScaler.txt": {
+        "url": "https://gist.githubusercontent.com/agyild/7e8951915b2bf24526a9343d951db214/raw/25c4f64f94374fe3700bcee0568a0e51aa141d6b/NVScaler.glsl",
+        "lines": [
+          1,
+          20
+        ]
+      }
+    }
+  },
+  "common/artcnn": {
+    "notices": [
+      "ArtCNN"
+    ],
+    "version": "v1.6.2",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/Artoriuz/ArtCNN/v1.6.2/LICENSE",
+      "ArtCNN_C4F16.txt": {
+        "url": "https://raw.githubusercontent.com/Artoriuz/ArtCNN/v1.6.2/GLSL/ArtCNN_C4F16.glsl",
+        "lines": [
+          1,
+          21
+        ]
+      }
+    }
+  },
+  "common/anime4k": {
+    "notices": [
+      "Anime4K"
+    ],
+    "version": "v4.0.1",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/bloc97/Anime4K/v4.0.1/LICENSE",
+      "Anime4K_Clamp_Highlights.txt": {
+        "url": "https://raw.githubusercontent.com/bloc97/Anime4K/v4.0.1/glsl/Restore/Anime4K_Clamp_Highlights.glsl",
+        "lines": [
+          1,
+          21
+        ]
+      },
+      "Anime4K_AutoDownscalePre_x2.txt": {
+        "url": "https://raw.githubusercontent.com/bloc97/Anime4K/v4.0.1/glsl/Upscale/Anime4K_AutoDownscalePre_x2.glsl",
+        "lines": [
+          1,
+          24
+        ]
+      }
+    }
+  },
+  "compose/compose-multiplatform": {
+    "notices": [
+      "Compose Multiplatform"
+    ],
+    "version": "1.12.1",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/JetBrains/compose-multiplatform/v1.12.1/LICENSE.txt"
+    }
+  },
+  "compose/compose-multiplatform-core": {
+    "notices": [
+      "Material 3 for Compose",
+      "Navigation 3",
+      "Lifecycle"
+    ],
+    "version": "1.12.1 (Material 3 1.12.0-alpha03, Navigation 3 1.1.2, Lifecycle 2.9.6)",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/JetBrains/compose-multiplatform-core/v1.12.1/LICENSE.txt"
+    }
+  },
+  "compose/androidx": {
+    "notices": [
+      "AndroidX",
+      "AndroidX Core",
+      "AndroidX Activity",
+      "AndroidX Browser"
+    ],
+    "version": "Core 1.18.0 release commit (Activity 1.13.0, Browser 1.9.0, Compose 1.12.1: the same file)",
+    "files": {
+      "LICENSE.txt": "https://android.googlesource.com/platform/frameworks/support/+/d0311626e34d3399038ccd85c9ea91f7297de350/LICENSE.txt?format=TEXT"
+    }
+  },
+  "compose/coil": {
+    "notices": [
+      "Coil"
+    ],
+    "version": "3.6.3",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/coil-kt/coil/3.6.3/LICENSE.txt"
+    }
+  },
+  "compose/zxing": {
+    "notices": [
+      "ZXing"
+    ],
+    "version": "3.5.4",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/zxing/zxing/zxing-3.5.4/LICENSE",
+      "NOTICE": "https://raw.githubusercontent.com/zxing/zxing/zxing-3.5.4/NOTICE"
+    }
+  },
+  "compose/okhttp": {
+    "notices": [
+      "OkHttp"
+    ],
+    "version": "5.5.0",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/lysine-dev/okhttp/parent-5.5.0/LICENSE.txt"
+    }
+  },
+  "compose/okio": {
+    "notices": [
+      "Okio"
+    ],
+    "version": "3.18.2",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/lysine-dev/okio/parent-3.18.2/LICENSE.txt"
+    }
+  },
+  "compose/public-suffix-list": {
+    "notices": [
+      "Public Suffix List"
+    ],
+    "version": "OkHttp 5.5.0's copy (publicsuffix/list main before OkHttp 5.5.0's tag)",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/publicsuffix/list/a77cfe0674a4b05c6e2448c01f3cb2c965a1b6d8/LICENSE"
+    }
+  },
+  "compose/slf4j": {
+    "notices": [
+      "SLF4J"
+    ],
+    "version": "2.0.19",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/qos-ch/slf4j/v_2.0.19/LICENSE.txt"
+    }
+  },
+  "compose/jspecify": {
+    "notices": [
+      "JSpecify"
+    ],
+    "version": "1.0.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/jspecify/jspecify/v1.0.0/LICENSE"
+    }
+  },
+  "compose/jetbrains-java-annotations": {
+    "notices": [
+      "JetBrains Java Annotations"
+    ],
+    "version": "23.0.0",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/JetBrains/java-annotations/23.0.0/LICENSE.txt"
+    }
+  },
+  "compose/sentry-java-sdk": {
+    "notices": [
+      "Sentry Java SDK",
+      "Sentry Android SDK"
+    ],
+    "version": "8.61.1",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/getsentry/sentry-java/8.61.1/LICENSE",
+      "THIRD_PARTY_NOTICES.md": "https://raw.githubusercontent.com/getsentry/sentry-java/8.61.1/THIRD_PARTY_NOTICES.md"
+    }
+  },
+  "android/guava": {
+    "notices": [
+      "Guava"
+    ],
+    "version": "listenablefuture 1.0 (AndroidX Core's), from Guava's repository",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/google/guava/v33.3.1/LICENSE"
+    }
+  },
+  "android/google-play-services": {
+    "notices": [
+      "Google Play services"
+    ],
+    "version": "play-services-base 18.5.0, play-services-basement 18.9.0, play-services-location 19.0.0, play-services-places-placereport 17.0.0, play-services-tasks 18.2.0",
+    "files": {
+      "play-services-base/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-base/18.5.0/play-services-base-18.5.0.aar",
+        "member": "third_party_licenses.txt"
+      },
+      "play-services-basement/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-basement/18.9.0/play-services-basement-18.9.0.aar",
+        "member": "third_party_licenses.txt"
+      },
+      "play-services-location/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-location/19.0.0/play-services-location-19.0.0.aar",
+        "member": "third_party_licenses.txt"
+      },
+      "play-services-places-placereport/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-places-placereport/17.0.0/play-services-places-placereport-17.0.0.aar",
+        "member": "third_party_licenses.txt"
+      },
+      "play-services-tasks/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-tasks/18.2.0/play-services-tasks-18.2.0.aar",
+        "member": "third_party_licenses.txt"
+      }
+    }
+  },
+  "android/google-play-billing-library": {
+    "notices": [
+      "Google Play Billing Library"
+    ],
+    "version": "billing 8.3.0, billing-ktx 8.3.0",
+    "files": {
+      "billing/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/android/billingclient/billing/8.3.0/billing-8.3.0.aar",
+        "member": "third_party_licenses.txt"
+      },
+      "billing-ktx/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/android/billingclient/billing-ktx/8.3.0/billing-ktx-8.3.0.aar",
+        "member": "third_party_licenses.txt"
+      }
+    }
+  },
+  "android/firebase-android-sdk": {
+    "notices": [
+      "Firebase Android SDK"
+    ],
+    "version": "transport-api 3.0.0, transport-backend-cct 3.1.8, transport-runtime 3.1.8, firebase-encoders 17.0.0, firebase-encoders-json 18.0.0, firebase-encoders-proto 16.0.0, whose Maven POMs name Apache-2.0 (transport-api's, transport-backend-cct's and firebase-encoders-json's third_party_licenses.txt are empty)",
+    "files": {
+      "LICENSE-2.0.txt": "https://raw.githubusercontent.com/apache/www-site/01b1be9fbc5cd93b6794f5653a58b9b863807f84/content/licenses/LICENSE-2.0.txt",
+      "transport-runtime/third_party_licenses.txt": {
+        "url": "https://dl.google.com/dl/android/maven2/com/google/android/datatransport/transport-runtime/3.1.8/transport-runtime-3.1.8.aar",
+        "member": "third_party_licenses.txt"
+      }
+    }
+  },
+  "android/javax.inject": {
+    "notices": [
+      "javax.inject"
+    ],
+    "version": "1, whose Maven POM names Apache-2.0 and which carries no licence file",
+    "files": {
+      "LICENSE-2.0.txt": "https://raw.githubusercontent.com/apache/www-site/01b1be9fbc5cd93b6794f5653a58b9b863807f84/content/licenses/LICENSE-2.0.txt"
+    }
+  },
+  "android/accompanist": {
+    "notices": [
+      "Accompanist"
+    ],
+    "version": "0.37.3",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/google/accompanist/v0.37.3/LICENSE"
+    }
+  },
+  "android/epitaph": {
+    "notices": [
+      "Epitaph"
+    ],
+    "version": "0.1.1",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/abovevacant/epitaph/v0.1.1/LICENSE"
+    }
+  },
+  "android/sentry-native-sdk": {
+    "notices": [
+      "Sentry Native SDK"
+    ],
+    "version": "0.17.4",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/getsentry/sentry-native/0.17.4/LICENSE"
+    }
+  },
+  "android/libunwindstack": {
+    "notices": [
+      "libunwindstack"
+    ],
+    "version": "sentry-native 0.17.4's external/libunwindstack-ndk",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/getsentry/libunwindstack-ndk/284202fb1e42dbeba6598e26ced2e1ec404eecd1/LICENSE"
+    }
+  },
+  "desktop/skiko": {
+    "notices": [
+      "Skiko"
+    ],
+    "version": "0.150.1",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/JetBrains/skiko/v0.150.1/LICENSE",
+      "NOTICE": "https://raw.githubusercontent.com/JetBrains/skiko/v0.150.1/NOTICE"
+    }
+  },
+  "desktop/skia": {
+    "notices": [
+      "Skia"
+    ],
+    "version": "m150 (JetBrains/skia m150-1f14f1166a)",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/JetBrains/skia/1f14f1166a847cb0e148f981600bf1e3e6ca6e46/LICENSE"
+    }
+  },
+  "desktop/icu": {
+    "notices": [
+      "ICU"
+    ],
+    "version": "74-2",
+    "files": {
+      "LICENSE": "https://chromium.googlesource.com/chromium/deps/icu/+/364118a1d9da24bb5b770ac3d762ac144d6da5a4/LICENSE?format=TEXT"
+    }
+  },
+  "desktop/harfbuzz": {
+    "notices": [
+      "HarfBuzz"
+    ],
+    "version": "13.1.0",
+    "files": {
+      "COPYING": "https://raw.githubusercontent.com/harfbuzz/harfbuzz/9cb1fee51069b206effb4736e443b038d230789d/COPYING",
+      "src/ms-use/COPYING": "https://raw.githubusercontent.com/harfbuzz/harfbuzz/9cb1fee51069b206effb4736e443b038d230789d/src/ms-use/COPYING"
+    }
+  },
+  "desktop/libpng": {
+    "notices": [
+      "libpng"
+    ],
+    "version": "1.6.56",
+    "files": {
+      "LICENSE": "https://skia.googlesource.com/third_party/libpng/+/d5515b5b8be3901aac04e5bd8bd5c89f287bcd33/LICENSE?format=TEXT"
+    }
+  },
+  "desktop/libjpeg-turbo": {
+    "notices": [
+      "libjpeg-turbo"
+    ],
+    "version": "3.1.0",
+    "files": {
+      "LICENSE.md": "https://chromium.googlesource.com/chromium/deps/libjpeg_turbo/+/e14cbfaa85529d47f9f55b0f104a579c1061f9ad/LICENSE.md?format=TEXT",
+      "README.ijg": "https://chromium.googlesource.com/chromium/deps/libjpeg_turbo/+/e14cbfaa85529d47f9f55b0f104a579c1061f9ad/README.ijg?format=TEXT"
+    }
+  },
+  "desktop/libwebp": {
+    "notices": [
+      "libwebp"
+    ],
+    "version": "1.4.0",
+    "files": {
+      "COPYING": "https://chromium.googlesource.com/webm/libwebp/+/845d5476a866141ba35ac133f856fa62f0b7445f/COPYING?format=TEXT",
+      "PATENTS": "https://chromium.googlesource.com/webm/libwebp/+/845d5476a866141ba35ac133f856fa62f0b7445f/PATENTS?format=TEXT"
+    }
+  },
+  "desktop/zlib": {
+    "notices": [
+      "zlib"
+    ],
+    "version": "1.3.0.1",
+    "files": {
+      "LICENSE": "https://chromium.googlesource.com/chromium/src/third_party/zlib/+/646b7f569718921d7d4b5b8e22572ff6c76f2596/LICENSE?format=TEXT",
+      "LICENSE.chromium": "https://chromium.googlesource.com/chromium/src/+/f7bb1feb08ea12e12f7f070e747e93b3eb5a12da/LICENSE?format=TEXT"
+    }
+  },
+  "desktop/expat": {
+    "notices": [
+      "Expat"
+    ],
+    "version": "2.7.4",
+    "files": {
+      "COPYING": "https://raw.githubusercontent.com/libexpat/libexpat/6154446fccefbf3ca644894f598969113b0c7bcd/COPYING"
+    }
+  },
+  "desktop/wuffs": {
+    "notices": [
+      "Wuffs"
+    ],
+    "version": "0.3.3",
+    "files": {
+      "LICENSE": "https://skia.googlesource.com/external/github.com/google/wuffs-mirror-release-c/+/e3f919ccfe3ef542cfc983a82146070258fb57f8/LICENSE?format=TEXT"
+    }
+  },
+  "desktop/android-open-source-project": {
+    "notices": [
+      "Android Open Source Project"
+    ],
+    "version": "android-17.0.0_r1",
+    "files": {
+      "NOTICE": "https://android.googlesource.com/platform/frameworks/base/+/94b4c163b7dfe5ce3607f7bb8456f9573f7de57d/NOTICE?format=TEXT"
+    }
+  },
+  "desktop/sqlite-jdbc": {
+    "notices": [
+      "SQLite JDBC"
+    ],
+    "version": "3.51.3.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/xerial/sqlite-jdbc/3.51.3.0/LICENSE",
+      "LICENSE.zentus": "https://raw.githubusercontent.com/xerial/sqlite-jdbc/3.51.3.0/LICENSE.zentus",
+      "NOTICE": "https://raw.githubusercontent.com/xerial/sqlite-jdbc/3.51.3.0/NOTICE"
+    }
+  },
+  "desktop/sqlite": {
+    "notices": [
+      "SQLite"
+    ],
+    "version": "3.51.3 (in SQLite JDBC 3.51.3.0)",
+    "files": {
+      "LICENSE.md": "https://raw.githubusercontent.com/sqlite/sqlite/version-3.51.3/LICENSE.md"
+    }
+  },
+  "desktop/kotlinx-datetime": {
+    "notices": [
+      "kotlinx-datetime"
+    ],
+    "version": "0.7.1",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx-datetime/v0.7.1/LICENSE.txt",
+      "license/thirdparty/threetenbp_license.txt": "https://raw.githubusercontent.com/Kotlin/kotlinx-datetime/v0.7.1/license/thirdparty/threetenbp_license.txt"
+    }
+  },
+  "desktop/jetbrains-runtime-api": {
+    "notices": [
+      "JetBrains Runtime API"
+    ],
+    "version": "1.9.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/JetBrains/JetBrainsRuntimeApi/v1.9.0/LICENSE"
+    }
+  },
+  "desktop/jmdns": {
+    "notices": [
+      "JmDNS"
+    ],
+    "version": "3.6.5",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/jmdns/jmdns/v3.6.5/LICENSE",
+      "NOTICE.txt": "https://raw.githubusercontent.com/jmdns/jmdns/v3.6.5/NOTICE.txt"
+    }
+  },
+  "windows/spirv-cross": {
+    "notices": [
+      "SPIRV-Cross"
+    ],
+    "version": "commit b8fcf307f1f3",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Cross/b8fcf307f1f347089e3c46eb4451d27f32ebc8d3/LICENSE",
+      "LICENSES/LicenseRef-KhronosFreeUse.txt": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Cross/b8fcf307f1f347089e3c46eb4451d27f32ebc8d3/LICENSES/LicenseRef-KhronosFreeUse.txt",
+      "LICENSES/MIT.txt": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Cross/b8fcf307f1f347089e3c46eb4451d27f32ebc8d3/LICENSES/MIT.txt"
+    }
+  },
+  "windows/d3d12-memory-allocator": {
+    "notices": [
+      "D3D12 Memory Allocator"
+    ],
+    "version": "commit 169895d529df",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/169895d529dfce00390a20e69c2f516066fe7a3b/LICENSE.txt",
+      "NOTICES.txt": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator/169895d529dfce00390a20e69c2f516066fe7a3b/NOTICES.txt"
+    }
+  },
+  "windows/openjdk": {
+    "notices": [
+      "OpenJDK"
+    ],
+    "version": "25.0.4.1+1 (Temurin 25.0.4+101)",
+    "files": {
+      "ADDITIONAL_LICENSE_INFO": "https://raw.githubusercontent.com/openjdk/jdk25u/jdk-25.0.4.1-ga/ADDITIONAL_LICENSE_INFO",
+      "ASSEMBLY_EXCEPTION": "https://raw.githubusercontent.com/openjdk/jdk25u/jdk-25.0.4.1-ga/ASSEMBLY_EXCEPTION",
+      "LICENSE": "https://raw.githubusercontent.com/openjdk/jdk25u/jdk-25.0.4.1-ga/LICENSE"
+    }
+  },
+  "linux/freetype": {
+    "notices": [
+      "FreeType"
+    ],
+    "version": "2.14.2",
+    "files": {
+      "LICENSE.TXT": "https://chromium.googlesource.com/chromium/src/third_party/freetype2/+/264b5fbf5b912b39f98d038bf75d39be0a73f21b/LICENSE.TXT?format=TEXT",
+      "docs/FTL.TXT": "https://chromium.googlesource.com/chromium/src/third_party/freetype2/+/264b5fbf5b912b39f98d038bf75d39be0a73f21b/docs/FTL.TXT?format=TEXT",
+      "fthash.txt": {
+        "url": "https://chromium.googlesource.com/chromium/src/third_party/freetype2/+/264b5fbf5b912b39f98d038bf75d39be0a73f21b/src/base/fthash.c?format=TEXT",
+        "lines": [
+          9,
+          31
+        ]
+      }
+    }
+  },
+  "linux/piex": {
+    "notices": [
+      "piex"
+    ],
+    "version": "commit bb217acdca1c",
+    "files": {
+      "LICENSE": "https://android.googlesource.com/platform/external/piex/+/bb217acdca1cc0c16b704669dd6f91a1b509c406/LICENSE?format=TEXT"
+    }
+  },
+  "linux/dng-sdk": {
+    "notices": [
+      "DNG SDK"
+    ],
+    "version": "1.4",
+    "files": {
+      "LICENSE": "https://android.googlesource.com/platform/external/dng_sdk/+/dbe0a676450d9b8c71bf00688bb306409b779e90/LICENSE?format=TEXT"
+    }
+  },
+  "linux/jetbrains-runtime": {
+    "notices": [
+      "JetBrains Runtime"
+    ],
+    "version": "25.0.4.1 b635.75",
+    "files": {
+      "ADDITIONAL_LICENSE_INFO": "https://raw.githubusercontent.com/JetBrains/JetBrainsRuntime/jbr-release-25.0.4.1b635.75/ADDITIONAL_LICENSE_INFO",
+      "ASSEMBLY_EXCEPTION": "https://raw.githubusercontent.com/JetBrains/JetBrainsRuntime/jbr-release-25.0.4.1b635.75/ASSEMBLY_EXCEPTION",
+      "LICENSE": "https://raw.githubusercontent.com/JetBrains/JetBrainsRuntime/jbr-release-25.0.4.1b635.75/LICENSE"
+    }
+  },
+  "linux/dbus-java": {
+    "notices": [
+      "dbus-java"
+    ],
+    "version": "5.2.2",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/hypfvieh/dbus-java/dbus-java-parent-5.2.2/LICENSE"
+    }
+  },
+  "linux/noto-sans": {
+    "notices": [
+      "Noto Sans"
+    ],
+    "version": "2.015",
+    "files": {
+      "OFL.txt": {
+        "url": "https://github.com/notofonts/latin-greek-cyrillic/releases/download/NotoSans-v2.015/NotoSans-v2.015.zip",
+        "member": "OFL.txt"
+      }
+    }
+  },
+  "linux/lua": {
+    "notices": [
+      "Lua"
+    ],
+    "version": "5.2.4 (Ubuntu liblua5.2-0 5.2.4-3build2)",
+    "files": {
+      "copyright": {
+        "url": "https://launchpad.net/ubuntu/+archive/primary/+files/liblua5.2-0_5.2.4-3build2_amd64.deb",
+        "member": "usr/share/doc/liblua5.2-0/copyright"
+      }
+    }
+  },
+  "linux/mujs": {
+    "notices": [
+      "MuJS"
+    ],
+    "version": "1.3.3 (Ubuntu libmujs3 1.3.3-3build2)",
+    "files": {
+      "copyright": {
+        "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libmujs3_1.3.3-3build2_amd64.deb",
+        "member": "usr/share/doc/libmujs3/copyright"
+      }
+    }
+  },
+  "linux/libdisplay-info": {
+    "notices": [
+      "libdisplay-info"
+    ],
+    "version": "0.1.1 (Ubuntu libdisplay-info1 0.1.1-2build1)",
+    "files": {
+      "copyright": {
+        "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libdisplay-info1_0.1.1-2build1_amd64.deb",
+        "member": "usr/share/doc/libdisplay-info1/copyright"
+      }
+    }
+  },
+  "linux/bzip2": {
+    "notices": [
+      "bzip2"
+    ],
+    "version": "1.0.8 (Ubuntu libbz2-1.0 1.0.8-5.1ubuntu0.1)",
+    "files": {
+      "copyright": {
+        "url": "https://launchpad.net/ubuntu/+archive/primary/+files/libbz2-1.0_1.0.8-5.1ubuntu0.1_amd64.deb",
+        "member": "usr/share/doc/libbz2-1.0/copyright"
+      }
+    }
+  },
+  "apple/nuke": {
+    "notices": [
+      "Nuke"
+    ],
+    "version": "13.2.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/kean/Nuke/13.2.0/LICENSE"
+    }
+  },
+  "apple/skie": {
+    "notices": [
+      "SKIE"
+    ],
+    "version": "0.10.14",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/touchlab/SKIE/0.10.14/LICENSE"
+    }
+  },
+  "apple/sqliter": {
+    "notices": [
+      "SQLiter"
+    ],
+    "version": "1.3.3",
+    "files": {
+      "sqliter-driver/LICENSE.txt": "https://raw.githubusercontent.com/touchlab/SQLiter/1.3.3/sqliter-driver/LICENSE.txt"
+    }
+  },
+  "apple/stately": {
+    "notices": [
+      "Stately"
+    ],
+    "version": "2.1.0",
+    "files": {
+      "LICENSE.txt": "https://raw.githubusercontent.com/touchlab/Stately/2.1.0/LICENSE.txt"
+    }
+  },
+  "apple/sentry-cocoa-sdk": {
+    "notices": [
+      "Sentry Cocoa SDK"
+    ],
+    "version": "9.31.0",
+    "files": {
+      "LICENSE.md": "https://raw.githubusercontent.com/getsentry/sentry-cocoa/9.31.0/LICENSE.md",
+      "THIRD_PARTY_NOTICES.md": "https://raw.githubusercontent.com/getsentry/sentry-cocoa/9.31.0/THIRD_PARTY_NOTICES.md",
+      "SentryCPU.txt": {
+        "url": "https://raw.githubusercontent.com/getsentry/sentry-cocoa/9.31.0/Sources/Sentry/include/SentryCPU.h",
+        "lines": [
+          2,
+          29
+        ]
+      },
+      "SentryCompiler.txt": {
+        "url": "https://raw.githubusercontent.com/getsentry/sentry-cocoa/9.31.0/Sources/Sentry/include/SentryCompiler.h",
+        "lines": [
+          2,
+          27
+        ]
+      }
+    }
+  },
+  "macos/sparkle": {
+    "notices": [
+      "Sparkle"
+    ],
+    "version": "2.10.0",
+    "files": {
+      "LICENSE": "https://raw.githubusercontent.com/sparkle-project/Sparkle/2.10.0/LICENSE"
+    }
+  },
+  "subtitle-font/go-noto-current": {
+    "notices": [
+      "Go Noto Current"
+    ],
+    "version": "v7.0 (go-noto-universal 0f4be64: Noto Sans 2.012, Noto Sans CJK from noto-cjk 1c7ca85)",
+    "files": {
+      "OFL.txt": "https://raw.githubusercontent.com/notofonts/latin-greek-cyrillic/NotoSans-v2.012/OFL.txt",
+      "Sans/LICENSE": "https://raw.githubusercontent.com/googlefonts/noto-cjk/1c7ca85cb5195a3332e18c2b5cfe196ffb084e72/Sans/LICENSE"
+    }
+  }
+}

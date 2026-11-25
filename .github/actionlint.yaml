@@ -1,0 +1,4 @@
+# actionlint's configuration. xcode-27 is the repository's macOS runner with Xcode 27.2 (ci.yml, build.yml).
+self-hosted-runner:
+  labels:
+    - xcode-27

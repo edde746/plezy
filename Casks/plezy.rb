@@ -4,7 +4,7 @@ cask "plezy" do
 
   url "https://github.com/edde746/plezy/releases/download/#{version}/plezy-macos.dmg"
   name "Plezy"
-  desc "Modern Plex and Jellyfin client built with Flutter"
+  desc "Client for Plex, Jellyfin and Emby media servers"
   homepage "https://github.com/edde746/plezy"
 
   livecheck do
@@ -13,6 +13,8 @@ cask "plezy" do
   end
 
   auto_updates true
+  depends_on arch: :arm64
+  depends_on macos: ">= :sonoma"
 
   app "Plezy.app"
 

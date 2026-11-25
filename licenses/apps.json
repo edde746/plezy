@@ -1,0 +1,8 @@
+{
+  "android": ["common", "compose", "android", "subtitle-font"],
+  "windows": ["common", "compose", "desktop", "windows"],
+  "linux": ["common", "compose", "desktop", "linux"],
+  "ios": ["common", "apple", "subtitle-font"],
+  "macos": ["common", "apple", "macos", "subtitle-font"],
+  "tvos": ["common", "apple", "subtitle-font"]
+}

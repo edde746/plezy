@@ -13,23 +13,26 @@
 
 One command releases to every channel:
 
-    uv run scripts/release/deploy.py release --version 2.13.0 --notes cl.txt
+    uv run scripts/release/deploy.py release --version 2.27.0 --notes cl.txt
 
 Phases (in order):
     preflight   validate tools, credentials, git state
     changelog   generate per-channel release notes via the claude CLI
-    bump        bump pubspec version, commit, push
+    bump        set version.xcconfig (MARKETING_VERSION, CURRENT_PROJECT_VERSION) and the Flatpak metainfo's
+                first <release>, commit those two files, push main
     farm_start  trigger .github/workflows/build.yml for a tagged draft release
-    play        build AAB, upload symbols, publish to Google Play production
-    amazon      build APK, upload via the App Submission API, commit the edit
-    ios         flutter build ipa, upload the signed IPA to App Store Connect
-    tvos        xcodebuild archive/export, upload the signed IPA to App Store Connect
+    play        build the Play bundle (Gradle, -Pplezy.flavor=store), upload its native symbols, publish it to
+                Google Play production
+    amazon      build the Amazon APK (Gradle, -Pplezy.flavor=amazon), replace the APK in an Amazon Appstore edit
+                through the App Submission API, commit the edit
+    ios         archive Plezy-iOS (XcodeGen + xcodebuild), export the App Store IPA, upload its dSYMs, upload the
+                IPA to App Store Connect
+    tvos        the same for Plezy-tvOS (with its Top Shelf extension)
     asc         App Store Connect metadata: wait for builds, set What's New,
                 attach builds to iOS + tvOS versions (submit with --submit)
     farm_wait   wait for the build workflow, download the Microsoft Store artifact
     release     verify the build workflow's draft release and attach release notes
-    msstore     submit the Store msixbundle via the Microsoft Store
-                Submission API (replaces the manual Partner Center upload)
+    msstore     submit the Store msixbundle via the Microsoft Store Submission API
     publish     flip the GitHub release out of draft; the release event updates
                 Homebrew, WinGet, and the appcast branch
 
@@ -37,24 +40,33 @@ State is checkpointed to build/deploy/state.json; a failed run resumes where
 it stopped (`release` again, optionally with --only/--skip). `--dry-run`
 prints every external action without performing any.
 
-Credentials come from .env at the repository root (same file fastlane used):
+Credentials come from .env at the repository root:
     SUPPLY_JSON_KEY_DATA / SUPPLY_JSON_KEY   Play service-account JSON (data or path)
-    SUPPLY_PACKAGE_NAME                      Android package name
+    SUPPLY_PACKAGE_NAME                      Android package name (com.edde746.plezy)
     AMAZON_APPSTORE_CLIENT_ID / _CLIENT_SECRET / _PACKAGE_NAME
     AMAZON_APPSTORE_APP_ID                   Amazon App ID (amzn1.devportal.
                                              mobileapp...., from the console URL)
-    DELIVER_APP_IDENTIFIER                   Apple bundle id
+    DELIVER_APP_IDENTIFIER                   Apple bundle id (com.edde746.plezy)
     ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_PATH
-                                             App Store Connect team API key
-                                             (.p8; replaces Apple-ID auth)
-    APPLE_TEAM_ID                            Apple distribution team id
+                                             App Store Connect team API key (.p8)
+    APPLE_TEAM_ID                            Apple distribution team id (G88U5B5783,
+                                             the team project.yml and ExportOptions.plist name)
     MSSTORE_TENANT_ID / MSSTORE_CLIENT_ID / MSSTORE_CLIENT_SECRET
                                              Azure AD app linked to Partner Center
     MSSTORE_APP_ID                           Store application id (from the
                                              Partner Center product URL)
     MSSTORE_PRICE_ID                         Store price tier to keep on every
                                              submission (see the Store caveat)
+    PLEZY_SENTRY_DSN                         crash reports' DSN, built into the store builds
+    SENTRY_AUTH_TOKEN (or BUGS_ADMIN_TOKEN)  the crash-report server's token for tools/upload_symbols.sh;
+                                             SENTRY_URL, SENTRY_ORG, SENTRY_PROJECT default to
+                                             https://bugs.plezy.app, plezy, plezy
+The Play bundle and the Amazon APK are signed with the upload keystore android/app/key.properties names.
+The App Store export signs with the Xcode account signed in on this Mac (team G88U5B5783).
 GitHub auth comes from the `gh` CLI login.
+
+In-app purchases (the `supporter` product on the App Store and Google Play) live on the store records; no phase
+creates, changes or submits them.
 
 Amazon caveat: the "touch capabilities" / "offline capabilities" questions are
 not exposed by the public App Submission API (verified against its OpenAPI
@@ -78,6 +90,7 @@ price changes.
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import os
 import plistlib
@@ -91,20 +104,28 @@ import time
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
+from xml.etree import ElementTree as ET
+from xml.sax.saxutils import escape
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SCRIPTS_DIR = SCRIPT_DIR.parent
-ROOT = SCRIPTS_DIR.parent
-sys.path.insert(0, str(SCRIPTS_DIR))
-
-from pubspec_version import parse_pubspec_version  # noqa: E402
+ROOT = SCRIPT_DIR.parent.parent
 
 DEPLOY_DIR = ROOT / "build" / "deploy"
 STATE_PATH = DEPLOY_DIR / "state.json"
 NOTES_DIR = DEPLOY_DIR / "notes"
 ARTIFACTS_DIR = DEPLOY_DIR / "artifacts"
+APPLE_DIR = DEPLOY_DIR / "apple"
+MAPPINGS_DIR = DEPLOY_DIR / "r8-mappings"
+
+VERSION_FILE = "version.xcconfig"
+METAINFO_FILE = "desktop/app/packaging/linux/com.edde746.plezy.metainfo.xml"
+EXPORT_OPTIONS = SCRIPT_DIR / "ExportOptions.plist"
 
 REPO = "edde746/plezy"
+APPLE_TEAM_ID = "G88U5B5783"
+BUNDLE_ID = "com.edde746.plezy"
+TOP_SHELF_BUNDLE_ID = "com.edde746.plezy.TopShelfExtension"
+AMAZON_VERSION_CODE_OFFSET = 3000
 
 PHASES = [
     "preflight",
@@ -135,27 +156,65 @@ AMAZON_AUTH_URL = "https://api.amazon.com/auth/o2/token"
 ASC_API_BASE = "https://api.appstoreconnect.apple.com/v1"
 MSSTORE_API_BASE = "https://manage.devcenter.microsoft.com/v1.0/my/applications"
 
+
+@dataclass(frozen=True)
+class GradleBuild:
+    flavor: str
+    task: str
+    output: str
+    # The zip member holding the Sentry Gradle plugin's properties, which name the R8 mapping's UUID.
+    debug_meta: str
+
+
+GRADLE_BUILDS = {
+    "play": GradleBuild(
+        flavor="store",
+        task=":app-android:bundleRelease",
+        output="android/app/build/outputs/bundle/release/app-android-release.aab",
+        debug_meta="base/assets/sentry-debug-meta.properties",
+    ),
+    "amazon": GradleBuild(
+        flavor="amazon",
+        task=":app-android:assembleRelease",
+        output="android/app/build/outputs/apk/release/app-android-release.apk",
+        debug_meta="assets/sentry-debug-meta.properties",
+    ),
+}
+R8_MAPPING = "android/app/build/outputs/mapping/release/mapping.txt"
+
+
+@dataclass(frozen=True)
+class ApplePlatform:
+    scheme: str
+    destination: str
+    asc_platform: str
+    altool_type: str
+
+
+APPLE_PLATFORMS = {
+    "ios": ApplePlatform("Plezy-iOS", "generic/platform=iOS", "IOS", "ios"),
+    "tvos": ApplePlatform("Plezy-tvOS", "generic/platform=tvOS", "TV_OS", "appletvos"),
+}
+
+# The draft release build.yml makes: every public asset (the msixbundle is a workflow artifact only), the Sparkle
+# appcast and the checksums file.
 RELEASE_ASSET_NAMES = frozenset(
     {
+        "SHA256SUMS",
         "appcast.xml",
         "plezy-android-arm64-v8a.tar.gz",
         "plezy-android-armeabi-v7a.tar.gz",
         "plezy-android-x86_64.tar.gz",
         "plezy-ios.ipa",
-        "plezy-linux-arm64.deb",
-        "plezy-linux-arm64.flatpak",
-        "plezy-linux-arm64.pkg.tar.zst",
-        "plezy-linux-arm64.rpm",
-        "plezy-linux-arm64.tar.gz",
-        "plezy-linux-x64.deb",
-        "plezy-linux-x64.flatpak",
-        "plezy-linux-x64.pkg.tar.zst",
-        "plezy-linux-x64.rpm",
-        "plezy-linux-x64.tar.gz",
         "plezy-macos.dmg",
-        "plezy-windows-arm64-portable.7z",
         "plezy-windows-installer.exe",
         "plezy-windows-x64-portable.7z",
+        "plezy-windows-arm64-portable.7z",
+        *(
+            f"plezy-linux-{arch}.{kind}"
+            for arch in ("x64", "arm64")
+            for kind in ("tar.gz", "deb", "rpm", "pkg.tar.zst", "flatpak", "AppImage", "AppImage.zsync")
+        ),
     }
 )
 
@@ -210,29 +269,92 @@ def parse_env_text(text: str, base: dict[str, str] | None = None) -> dict[str, s
     return values
 
 
-def bump_pubspec_text(text: str, new_version: str, new_build: int) -> str:
-    """Replace the single top-level version line, validating both sides."""
-    parse_pubspec_version(text)  # raises on malformed/missing version
-    replacement = f"version: {new_version}+{new_build}"
-    lines = text.splitlines(keepends=True)
-    out: list[str] = []
-    replaced = False
-    for line in lines:
-        if not replaced and re.match(r"^version:[ \t]", line):
-            newline = "\n" if line.endswith("\n") else ""
-            out.append(replacement + newline)
-            replaced = True
-        else:
-            out.append(line)
-    if not replaced:
-        raise DeployError("pubspec.yaml has no top-level version line")
-    result = "".join(out)
-    parse_pubspec_version(result)
+def semver(version: str) -> tuple[int, int, int]:
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise DeployError(f"version must be major.minor.patch (e.g. 2.27.0); got {version!r}")
+    major, minor, patch = (int(part) for part in version.split("."))
+    return major, minor, patch
+
+
+def parse_version_text(text: str) -> tuple[str, int]:
+    """version.xcconfig's MARKETING_VERSION and CURRENT_PROJECT_VERSION."""
+    values = dict(re.findall(r"^([A-Z_]+) = (\S+)$", text, re.M))
+    marketing, build = values.get("MARKETING_VERSION"), values.get("CURRENT_PROJECT_VERSION")
+    if not marketing or not re.fullmatch(r"\d+\.\d+\.\d+", marketing):
+        raise DeployError(f"{VERSION_FILE}: MARKETING_VERSION is {marketing!r}, not major.minor.patch")
+    if not build or not re.fullmatch(r"[1-9]\d*", build):
+        raise DeployError(f"{VERSION_FILE}: CURRENT_PROJECT_VERSION is {build!r}, not a positive integer")
+    return marketing, int(build)
+
+
+def bump_version_text(text: str, version: str, build: int) -> str:
+    """version.xcconfig with MARKETING_VERSION = version and CURRENT_PROJECT_VERSION = build.
+
+    The version may stay (a build-number-only release) but never goes back; the build always grows.
+    """
+    current, current_build = parse_version_text(text)
+    if semver(version) < semver(current):
+        raise DeployError(f"version {version} is below {VERSION_FILE}'s {current}")
+    if build <= current_build:
+        raise DeployError(f"build {build} is not above {VERSION_FILE}'s {current_build}")
+    text = re.sub(r"^MARKETING_VERSION = \S+$", f"MARKETING_VERSION = {version}", text, count=1, flags=re.M)
+    text = re.sub(r"^CURRENT_PROJECT_VERSION = \S+$", f"CURRENT_PROJECT_VERSION = {build}", text, count=1, flags=re.M)
+    if parse_version_text(text) != (version, build):
+        raise DeployError(f"{VERSION_FILE}: the bump did not take")
+    return text
+
+
+def release_description(notes: str) -> str:
+    """AppStream markup for release notes: `- `, `* ` or `• ` lines as a list, other lines (headings without their
+    `#`s) as paragraphs."""
+    parts: list[str] = []
+    items: list[str] = []
+    for raw in notes.splitlines():
+        line = raw.strip()
+        bullet = re.match(r"[-*•]\s+(.*)", line)
+        if bullet:
+            items.append(f"<li>{escape(bullet.group(1))}</li>")
+            continue
+        if items:
+            parts.append(f"<ul>{''.join(items)}</ul>")
+            items = []
+        text = line.lstrip("#").strip()
+        if text:
+            parts.append(f"<p>{escape(text)}</p>")
+    if items:
+        parts.append(f"<ul>{''.join(items)}</ul>")
+    if not parts:
+        raise DeployError("release notes are empty")
+    return "\n".join(f"        {part}" for part in parts)
+
+
+def metainfo_with_release(text: str, version: str, date: str, notes: str) -> str:
+    """The Flatpak metainfo with <release version date> and its notes first in <releases> (build-flatpak.py requires
+    the first release to be version.xcconfig's MARKETING_VERSION). Unchanged when that release is already first."""
+    root = ET.fromstring(text)
+    releases = root.find("releases")
+    first = releases.find("release") if releases is not None else None
+    if first is not None and first.get("version") == version:
+        return text
+    block = (
+        f'    <release version="{version}" date="{date}">\n'
+        "      <description>\n"
+        f"{release_description(notes)}\n"
+        "      </description>\n"
+        "    </release>\n"
+    )
+    if releases is None:
+        match = re.search(r"^</component>", text, re.M)
+        if not match:
+            raise DeployError(f"{METAINFO_FILE}: no </component> line")
+        result = text[: match.start()] + "  <releases>\n" + block + "  </releases>\n" + text[match.start():]
+    else:
+        match = re.search(r"^\s*<releases>\n", text, re.M)
+        if not match:
+            raise DeployError(f"{METAINFO_FILE}: no <releases> line")
+        result = text[: match.end()] + block + text[match.end():]
+    ET.fromstring(result)
     return result
-
-
-
-
 
 
 def resolve_phases(only: list[str] | None, skip: list[str] | None) -> list[str]:
@@ -250,6 +372,79 @@ def resolve_phases(only: list[str] | None, skip: list[str] | None) -> list[str]:
             continue
         selected.append(phase)
     return selected
+
+
+def gradle_command(channel: str) -> list[str]:
+    """The Gradle build of a store channel's Android package (signed with android/app/key.properties' keystore)."""
+    build = GRADLE_BUILDS[channel]
+    return ["./gradlew", "--console=plain", f"-Pplezy.flavor={build.flavor}", build.task]
+
+
+def expected_version_code(channel: str, build: int) -> int:
+    """android/app/build.gradle.kts' versionCode of a channel: Play N, Amazon N + 3000."""
+    return build + AMAZON_VERSION_CODE_OFFSET if channel == "amazon" else build
+
+
+def apple_archive_command(platform: str, archive: Path, extra: list[str]) -> list[str]:
+    """xcodebuild archive of a platform's app scheme (Release) from the XcodeGen project, into ``archive``."""
+    target = APPLE_PLATFORMS[platform]
+    return [
+        "xcodebuild", "archive",
+        "-project", str(ROOT / "apple" / "Plezy.xcodeproj"),
+        "-scheme", target.scheme,
+        "-configuration", "Release",
+        "-destination", target.destination,
+        "-archivePath", str(archive),
+        "-derivedDataPath", str(APPLE_DIR / f"dd-{platform}"),
+        *extra,
+    ]
+
+
+def archive_problems(archive: Path, platform: str, version: str, build: int) -> list[str]:
+    """What is wrong with an xcarchive for the App Store: the app's identity and version, and on tvOS its Top Shelf
+    extension."""
+    app = archive / "Products" / "Applications" / "Plezy.app"
+    info_path = app / "Info.plist"
+    if not info_path.is_file():
+        return [f"{archive} holds no Products/Applications/Plezy.app"]
+    info = plistlib.loads(info_path.read_bytes())
+    problems = []
+    found = (info.get("CFBundleIdentifier"), info.get("CFBundleShortVersionString"), info.get("CFBundleVersion"))
+    wanted = (BUNDLE_ID, version, str(build))
+    if found != wanted:
+        problems.append(f"Plezy.app is {found}, not {wanted}")
+    if platform == "tvos":
+        extension = app / "PlugIns" / "PlezyTopShelf.appex" / "Info.plist"
+        if not extension.is_file():
+            problems.append("Plezy.app embeds no PlugIns/PlezyTopShelf.appex")
+        else:
+            ext = plistlib.loads(extension.read_bytes())
+            ext_found = (ext.get("CFBundleIdentifier"), ext.get("CFBundleShortVersionString"), ext.get("CFBundleVersion"))
+            ext_wanted = (TOP_SHELF_BUNDLE_ID, version, str(build))
+            if ext_found != ext_wanted:
+                problems.append(f"PlezyTopShelf.appex is {ext_found}, not {ext_wanted}")
+    return problems
+
+
+def release_asset_problems(expected: frozenset[str], actual: set[str]) -> list[str]:
+    problems = []
+    missing = sorted(expected - actual)
+    unexpected = sorted(actual - expected)
+    if missing:
+        problems.append("missing: " + ", ".join(missing))
+    if unexpected:
+        problems.append("unexpected: " + ", ".join(unexpected))
+    return problems
+
+
+def mapping_uuid(package: Path, member: str) -> str:
+    """The R8 mapping UUID the Sentry Gradle plugin wrote into an AAB or APK (io.sentry.ProguardUuids)."""
+    with zipfile.ZipFile(package) as archive:
+        text = archive.read(member).decode("utf-8")
+    match = re.search(r"^io\.sentry\.ProguardUuids=(\S+)$", text, re.M)
+    if not match:
+        raise DeployError(f"{package.name}: {member} names no R8 mapping UUID")
+    return match.group(1)
 
 
 # Price tiers the ingestion API echoes on GET but refuses on PUT.
@@ -382,19 +577,20 @@ def log(message: str) -> None:
 def run(
     cmd: list[str],
     *,
-    cwd: Path = ROOT,
+    cwd: Path | None = None,
     env: dict[str, str] | None = None,
     check: bool = True,
     capture: bool = False,
     input_text: str | None = None,
     echo: bool = True,
 ) -> subprocess.CompletedProcess:
+    cmd = [str(part) for part in cmd]
     if echo:
         print(f"    $ {shlex.join(cmd)}", flush=True)
     merged_env = {**os.environ, **(env or {})}
     result = subprocess.run(
         cmd,
-        cwd=cwd,
+        cwd=cwd or ROOT,
         env=merged_env,
         input=input_text,
         capture_output=capture,
@@ -408,10 +604,11 @@ def run(
     return result
 
 
-def dry_guard(ctx: Context, description: str) -> bool:
-    """True when the action must be skipped because of --dry-run."""
+def dry_guard(ctx: Context, *actions: str) -> bool:
+    """True when the actions must be skipped because of --dry-run (each is printed as the plan)."""
     if ctx.dry_run:
-        log(f"[dry-run] would {description}")
+        for action in actions:
+            log(f"[dry-run] would {action}")
         return True
     return False
 
@@ -428,10 +625,13 @@ def require_tool(name: str, hint: str = "") -> None:
         raise DeployError(f"required tool not found on PATH: {name}{suffix}")
 
 
-def load_env_file() -> dict[str, str]:
+def load_env_file(*, required: bool = True) -> dict[str, str]:
     env_path = ROOT / ".env"
     if not env_path.is_file():
-        raise DeployError(f".env not found at {env_path}")
+        if required:
+            raise DeployError(f".env not found at {env_path}")
+        log(f".env not found at {env_path}; the dry run reads the process environment only")
+        return dict(os.environ)
     values = parse_env_text(env_path.read_text(encoding="utf-8"), dict(os.environ))
     # The checked release configuration is authoritative. Ambient variables can
     # otherwise invisibly retain stale bundle IDs or signing teams between runs.
@@ -443,8 +643,22 @@ def git_output(args: list[str]) -> str:
     return run(["git", *args], capture=True, echo=False).stdout.strip()
 
 
-def short_sha() -> str:
-    return git_output(["rev-parse", "--short", "HEAD"])
+def current_version() -> tuple[str, int]:
+    return parse_version_text((ROOT / VERSION_FILE).read_text(encoding="utf-8"))
+
+
+def symbols_env(env: dict[str, str]) -> dict[str, str]:
+    """tools/upload_symbols.sh's environment: the crash-report server, its organization and project, its token."""
+    return {
+        "SENTRY_URL": env.get("SENTRY_URL") or "https://bugs.plezy.app",
+        "SENTRY_ORG": env.get("SENTRY_ORG") or "plezy",
+        "SENTRY_PROJECT": env.get("SENTRY_PROJECT") or "plezy",
+        "SENTRY_AUTH_TOKEN": env.get("SENTRY_AUTH_TOKEN") or env.get("BUGS_ADMIN_TOKEN", ""),
+    }
+
+
+def upload_symbols(ctx: Context, kind: str, path: Path) -> None:
+    run([ROOT / "tools" / "upload_symbols.sh", kind, path], env=symbols_env(ctx.env))
 
 
 # ---------------------------------------------------------------------------
@@ -452,68 +666,100 @@ def short_sha() -> str:
 # ---------------------------------------------------------------------------
 
 
-def phase_preflight(ctx: Context) -> None:
+def preflight_problems(ctx: Context) -> list[str]:
     # Requirements are checked only for phases that will actually run this
     # invocation; a resume after e.g. `changelog` must not re-demand --notes.
     pending = set(ctx.phases) - set(ctx.state.done)
+    problems: list[str] = []
+
+    def check(condition: bool, problem: str) -> None:
+        if not condition:
+            problems.append(problem)
+
+    def need_env(keys: list[str], purpose: str) -> None:
+        missing = [k for k in keys if not ctx.env.get(k)]
+        check(not missing, f"{purpose}: missing environment values: {', '.join(missing)}")
+
+    def need_tool(name: str, hint: str) -> None:
+        check(shutil.which(name) is not None, f"required tool not found on PATH: {name} ({hint})")
 
     require_tool("git")
     branch = git_output(["branch", "--show-current"])
-    if branch != "main":
-        raise DeployError(f"releases run from main; current branch is {branch!r}")
+    check(branch == "main", f"releases run from main; current branch is {branch!r}")
 
     dirty = [
         line
-        for line in git_output(["status", "--porcelain"]).splitlines()
+        # Unstripped: each line's first two columns are its status, the path follows from the fourth.
+        for line in run(["git", "status", "--porcelain"], capture=True, echo=False).stdout.splitlines()
         if line and not line.startswith("??")
     ]
-    if dirty and "bump" in pending and not ctx.dry_run:
-        raise DeployError(
-            "tracked files have uncommitted changes; commit or stash before releasing:\n  "
-            + "\n  ".join(dirty)
+    if "bump" in pending:
+        # An interrupted bump leaves its two files written and uncommitted; the rerun's bump commits them.
+        bumped: dict[str, str] = {}
+        if any(line[3:] in (VERSION_FILE, METAINFO_FILE) for line in dirty):
+            try:
+                bumped = bump_texts(ctx)
+            except DeployError:
+                pass
+        dirty = [
+            line for line in dirty
+            if line[3:] not in bumped or bumped[line[3:]] != (ROOT / line[3:]).read_text(encoding="utf-8")
+        ]
+        check(
+            not dirty,
+            "tracked files have uncommitted changes; commit or stash before releasing:\n  " + "\n  ".join(dirty),
         )
 
-    if not re.fullmatch(r"\d+\.\d+\.\d+", ctx.version):
-        raise DeployError(f"version must be semver (e.g. 2.13.0); got {ctx.version!r}")
+    try:
+        semver(ctx.version)
+    except DeployError as error:
+        problems.append(str(error))
 
     tag_exists = bool(git_output(["tag", "-l", ctx.tag]))
-    if tag_exists and {"bump", "release"} <= pending:
-        raise DeployError(
-            f"tag {ctx.tag} already exists; pick a new version, or drop the "
-            "release phase for a store-only push that reuses it"
+    check(
+        not (tag_exists and {"bump", "release"} <= pending),
+        f"tag {ctx.tag} already exists; pick a new version, or drop the "
+        "release phase for a store-only push that reuses it",
+    )
+    if "bump" not in pending and pending & {"play", "amazon", "ios", "tvos"}:
+        check(
+            current_version() == (ctx.version, ctx.build_number),
+            f"{VERSION_FILE} is {current_version()}, not ({ctx.version!r}, {ctx.build_number}); "
+            "the store builds read it, so run bump or check out the release commit",
         )
 
-    if pending & {"play", "amazon", "ios"}:
-        require_tool("flutter")
+    env = ctx.env
+    if pending & {"play", "amazon"}:
+        check((ROOT / "android/app/key.properties").is_file(),
+              "android/app/key.properties (the upload keystore) is missing; the store builds would be debug-signed")
+    if pending & {"play", "amazon", "ios", "tvos"}:
+        need_env(["PLEZY_SENTRY_DSN"], "store builds (crash reports)")
+        check(bool(symbols_env(env)["SENTRY_AUTH_TOKEN"]),
+              "symbols: set SENTRY_AUTH_TOKEN or BUGS_ADMIN_TOKEN in .env (tools/upload_symbols.sh)")
     if pending & {"ios", "tvos"}:
-        require_tool("xcodebuild", "Xcode command line tools")
-        require_tool("xcrun", "Xcode command line tools")
+        need_tool("xcodebuild", "Xcode command line tools")
+        need_tool("xcrun", "Xcode command line tools")
     if pending & {"farm_start", "farm_wait", "release", "publish"}:
-        require_tool("gh", "GitHub CLI")
-        run(["gh", "auth", "status"], capture=True, echo=False)
+        need_tool("gh", "GitHub CLI")
+        if shutil.which("gh"):
+            status = run(["gh", "auth", "status"], capture=True, echo=False, check=False)
+            check(status.returncode == 0, "gh is not logged in (gh auth login)")
     if "changelog" in pending and not ctx.dry_run:
-        require_tool("claude", "used to generate per-channel changelogs")
+        need_tool("claude", "used to generate per-channel changelogs")
 
     notes = getattr(ctx.args, "notes", None)
     if "changelog" in pending:
-        if not notes:
-            raise DeployError("changelog phase requires --notes <file>")
-        if not Path(notes).is_file():
-            raise DeployError(f"notes file not found: {notes}")
+        check(bool(notes), "changelog phase requires --notes <file>")
+        check(not notes or Path(notes).is_file(), f"notes file not found: {notes}")
 
-    env = ctx.env
     if "play" in pending:
-        if not (env.get("SUPPLY_JSON_KEY_DATA") or env.get("SUPPLY_JSON_KEY")):
-            raise DeployError("play: set SUPPLY_JSON_KEY_DATA or SUPPLY_JSON_KEY in .env")
-        require_env(env, ["SUPPLY_PACKAGE_NAME"], "play")
-        if env["SUPPLY_PACKAGE_NAME"] != "com.edde746.plezy":
-            raise DeployError(
-                "play: SUPPLY_PACKAGE_NAME must be com.edde746.plezy; "
-                f"got {env['SUPPLY_PACKAGE_NAME']!r}"
-            )
+        check(bool(env.get("SUPPLY_JSON_KEY_DATA") or env.get("SUPPLY_JSON_KEY")),
+              "play: set SUPPLY_JSON_KEY_DATA or SUPPLY_JSON_KEY in .env")
+        need_env(["SUPPLY_PACKAGE_NAME"], "play")
+        check(env.get("SUPPLY_PACKAGE_NAME") in (None, "", BUNDLE_ID),
+              f"play: SUPPLY_PACKAGE_NAME must be {BUNDLE_ID}; got {env.get('SUPPLY_PACKAGE_NAME')!r}")
     if "amazon" in pending:
-        require_env(
-            env,
+        need_env(
             [
                 "AMAZON_APPSTORE_CLIENT_ID",
                 "AMAZON_APPSTORE_CLIENT_SECRET",
@@ -522,40 +768,38 @@ def phase_preflight(ctx: Context) -> None:
             ],
             "amazon",
         )
-        if env["AMAZON_APPSTORE_PACKAGE_NAME"] != "com.edde746.plezy3":
-            raise DeployError(
-                "amazon: AMAZON_APPSTORE_PACKAGE_NAME must be com.edde746.plezy3; "
-                f"got {env['AMAZON_APPSTORE_PACKAGE_NAME']!r}"
-            )
-        if not env["AMAZON_APPSTORE_APP_ID"].startswith("amzn1.devportal.mobileapp."):
-            raise DeployError(
-                "amazon: AMAZON_APPSTORE_APP_ID must be the amzn1.devportal.mobileapp. "
-                "app id from the developer-console URL; the API no longer accepts "
-                f"package names; got {env['AMAZON_APPSTORE_APP_ID']!r}"
-            )
+        check(env.get("AMAZON_APPSTORE_PACKAGE_NAME") in (None, "", "com.edde746.plezy3"),
+              "amazon: AMAZON_APPSTORE_PACKAGE_NAME must be com.edde746.plezy3; "
+              f"got {env.get('AMAZON_APPSTORE_PACKAGE_NAME')!r}")
+        app_id = env.get("AMAZON_APPSTORE_APP_ID") or ""
+        check(not app_id or app_id.startswith("amzn1.devportal.mobileapp."),
+              "amazon: AMAZON_APPSTORE_APP_ID must be the amzn1.devportal.mobileapp. "
+              "app id from the developer-console URL; the API no longer accepts "
+              f"package names; got {app_id!r}")
     if pending & {"ios", "tvos", "asc"}:
-        require_env(
-            env,
-            ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_PATH", "APPLE_TEAM_ID"],
-            "app store connect",
-        )
-        require_env(env, ["DELIVER_APP_IDENTIFIER"], "app store connect")
-        if env["DELIVER_APP_IDENTIFIER"] != "com.edde746.plezy":
-            raise DeployError(
-                "app store connect: DELIVER_APP_IDENTIFIER must be com.edde746.plezy; "
-                f"got {env['DELIVER_APP_IDENTIFIER']!r}"
-            )
-        key_path = Path(env["ASC_KEY_PATH"]).expanduser()
-        if not key_path.is_file():
-            raise DeployError(f"ASC_KEY_PATH does not exist: {key_path}")
+        need_env(["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_PATH", "APPLE_TEAM_ID", "DELIVER_APP_IDENTIFIER"],
+                 "app store connect")
+        check(env.get("DELIVER_APP_IDENTIFIER") in (None, "", BUNDLE_ID),
+              f"app store connect: DELIVER_APP_IDENTIFIER must be {BUNDLE_ID}; "
+              f"got {env.get('DELIVER_APP_IDENTIFIER')!r}")
+        check(env.get("APPLE_TEAM_ID") in (None, "", APPLE_TEAM_ID),
+              f"app store connect: APPLE_TEAM_ID must be {APPLE_TEAM_ID} (apple/project.yml, ExportOptions.plist); "
+              f"got {env.get('APPLE_TEAM_ID')!r}")
+        if env.get("ASC_KEY_PATH"):
+            key_path = Path(env["ASC_KEY_PATH"]).expanduser()
+            check(key_path.is_file(), f"ASC_KEY_PATH does not exist: {key_path}")
     if "msstore" in pending:
-        require_env(
-            env,
-            ["MSSTORE_TENANT_ID", "MSSTORE_CLIENT_ID", "MSSTORE_CLIENT_SECRET", "MSSTORE_APP_ID"],
-            "msstore",
-        )
+        need_env(["MSSTORE_TENANT_ID", "MSSTORE_CLIENT_ID", "MSSTORE_CLIENT_SECRET", "MSSTORE_APP_ID"], "msstore")
+    return problems
 
-    log("preflight OK")
+
+def phase_preflight(ctx: Context) -> None:
+    problems = preflight_problems(ctx)
+    if problems and not ctx.dry_run:
+        raise DeployError("preflight:\n  " + "\n  ".join(problems))
+    for problem in problems:
+        log(f"[dry-run] preflight problem (a real run stops here): {problem}")
+    log("preflight OK" if not problems else "preflight: problems above")
 
 
 # ---------------------------------------------------------------------------
@@ -563,7 +807,7 @@ def phase_preflight(ctx: Context) -> None:
 # ---------------------------------------------------------------------------
 
 CHANGELOG_PROMPT = (
-    "Below is a changelog for a cross-platform Flutter app (iOS, Android, macOS, "
+    "Below is a changelog for a cross-platform app (iOS, tvOS, Android, macOS, "
     "Linux, Windows). Return ONLY the entries relevant to the given platform. "
     "Keep the same format (section headers + bullet points). If a section has no "
     "relevant entries, omit it entirely. If an entry is not platform-specific, "
@@ -578,7 +822,7 @@ def generate_channel_notes(notes_text: str, platform: str, limit: int) -> str:
     # land a few characters over an exact target, so build in headroom.
     target = limit
     previous_length = 0
-    for attempt in (1, 2, 3):
+    for _attempt in (1, 2, 3):
         prompt = f"{CHANGELOG_PROMPT} Platform: {platform}. Max {target} characters."
         if previous_length:
             prompt += (
@@ -611,13 +855,17 @@ def notes_path(channel: str) -> Path:
 
 def phase_changelog(ctx: Context) -> None:
     notes_file = Path(ctx.args.notes)
-    notes_text = notes_file.read_text(encoding="utf-8")
-
-    if dry_guard(ctx, f"generate channel notes from {notes_file} via claude"):
+    if dry_guard(
+        ctx,
+        f"copy {notes_file} to {notes_path('github')} (the GitHub release and the Flatpak metainfo)",
+        *(
+            f"generate {notes_path(channel)} for {platform} (max {limit} chars) with claude --print"
+            for channel, (platform, limit) in CHANNEL_SPECS.items()
+        ),
+    ):
         return
-
+    notes_text = notes_file.read_text(encoding="utf-8")
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
-
     notes_path("github").write_text(notes_text, encoding="utf-8")
     for channel, (platform, limit) in CHANNEL_SPECS.items():
         target = notes_path(channel)
@@ -628,49 +876,59 @@ def phase_changelog(ctx: Context) -> None:
         target.write_text(text + "\n", encoding="utf-8")
         log(f"changelog: {channel} ({len(text)}/{limit} chars)")
 
-    # Compatibility copies for the fastlane fallback until it is deleted.
-    ios_meta = ROOT / "ios/fastlane/metadata/en-US/release_notes.txt"
-    android_meta = (
-        ROOT
-        / "android/fastlane/metadata/android/en-GB/changelogs"
-        / f"{ctx.build_number}.txt"
-    )
-    ios_meta.parent.mkdir(parents=True, exist_ok=True)
-    android_meta.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(notes_path("appstore"), ios_meta)
-    shutil.copyfile(notes_path("play"), android_meta)
-
 
 # ---------------------------------------------------------------------------
 # Phase: bump
 # ---------------------------------------------------------------------------
 
 
-def phase_bump(ctx: Context) -> None:
-    """Bump pubspec and push main.
+def head_text(path: str) -> str:
+    return run(["git", "show", f"HEAD:{path}"], capture=True, echo=False).stdout
 
+
+def bump_texts(ctx: Context) -> dict[str, str]:
+    """The version file and the metainfo as bump writes them from HEAD's, by path."""
+    github_notes = notes_path("github")
+    if not github_notes.is_file():
+        raise DeployError(f"bump: {github_notes} is missing (the metainfo's release notes); run changelog first")
+    today = datetime.date.today().isoformat()
+    return {
+        VERSION_FILE: bump_version_text(head_text(VERSION_FILE), ctx.version, ctx.build_number),
+        METAINFO_FILE: metainfo_with_release(
+            head_text(METAINFO_FILE), ctx.version, today, github_notes.read_text(encoding="utf-8")
+        ),
+    }
+
+
+def phase_bump(ctx: Context) -> None:
+    """Set version.xcconfig and the metainfo's first release, commit those two files, push main.
+
+    The files are written from HEAD's, so a rerun after a bump interrupted before its commit commits what it wrote.
     The build workflow creates the tag and draft release only after every
     release artifact succeeds. Store-only pushes can reuse an existing tag by
     omitting the farm and GitHub release phases.
     """
-    pubspec = ROOT / "pubspec.yaml"
-    text = pubspec.read_text(encoding="utf-8")
-    current_full, _ = parse_pubspec_version(text)
-    current_name = current_full.split("+", 1)[0]
-    target_full = f"{ctx.version}+{ctx.build_number}"
-    if current_full == target_full:
-        log(f"bump: pubspec already at {target_full}")
+    current = parse_version_text(head_text(VERSION_FILE))
+    target = (ctx.version, ctx.build_number)
+    if current[0] == ctx.version:
+        message = f"chore: bump build number to {ctx.build_number}"
     else:
-        if dry_guard(ctx, f"bump pubspec {current_full} -> {target_full}, commit, push"):
-            return
-        pubspec.write_text(bump_pubspec_text(text, ctx.version, ctx.build_number), encoding="utf-8")
-        if current_name == ctx.version:
-            message = f"chore: bump build number to {ctx.build_number}"
-        else:
-            message = f"chore: bump version to {ctx.version}"
+        message = f"chore: bump version to {ctx.version}"
+    if current == target:
+        log(f"bump: {VERSION_FILE} already at {ctx.version} ({ctx.build_number})")
+    elif not dry_guard(
+        ctx,
+        f"set {VERSION_FILE} {current[0]} ({current[1]}) -> MARKETING_VERSION {ctx.version}, "
+        f"CURRENT_PROJECT_VERSION {ctx.build_number}",
+        f"add <release version=\"{ctx.version}\" date=\"{datetime.date.today().isoformat()}\"> with "
+        f"{notes_path('github')} first in {METAINFO_FILE}",
+        f"git commit -m {message!r} -- {VERSION_FILE} {METAINFO_FILE}",
+    ):
+        for path, text in bump_texts(ctx).items():
+            (ROOT / path).write_text(text, encoding="utf-8")
         # Pathspec commit: never sweeps unrelated staged work into the bump.
-        run(["git", "commit", "-m", message, "--", "pubspec.yaml"])
-    if dry_guard(ctx, "push main"):
+        run(["git", "commit", "-m", message, "--", VERSION_FILE, METAINFO_FILE])
+    if dry_guard(ctx, "git push origin main"):
         return
     run(["git", "push", "origin", "main"])
     ctx.state.data["release_sha"] = git_output(["rev-parse", "HEAD"])
@@ -683,7 +941,11 @@ def phase_bump(ctx: Context) -> None:
 
 
 def phase_farm_start(ctx: Context) -> None:
-    if dry_guard(ctx, "trigger build.yml for the tagged draft release and record the run id"):
+    if dry_guard(
+        ctx,
+        f"gh workflow run build.yml --ref main --field release_tag={ctx.tag}",
+        f"find the run titled 'Release {ctx.tag}' on the release commit and record its id",
+    ):
         return
     head = ctx.state.data.get("release_sha") or git_output(["rev-parse", "HEAD"])
     dispatch = ctx.state.data.get("farm_dispatch")
@@ -693,58 +955,33 @@ def phase_farm_start(ctx: Context) -> None:
     else:
         previous = run(
             [
-                "gh",
-                "run",
-                "list",
-                "--workflow",
-                "build.yml",
-                "--branch",
-                "main",
-                "--limit",
-                "20",
-                "--json",
-                "databaseId",
+                "gh", "run", "list",
+                "--workflow", "build.yml",
+                "--branch", "main",
+                "--limit", "20",
+                "--json", "databaseId",
             ],
             capture=True,
             echo=False,
         )
-        previous_ids = {
-            entry["databaseId"] for entry in json.loads(previous.stdout or "[]")
-        }
+        previous_ids = {entry["databaseId"] for entry in json.loads(previous.stdout or "[]")}
         ctx.state.data["farm_dispatch"] = {
             "headSha": head,
             "previousRunIds": sorted(previous_ids),
         }
         ctx.state.save()
-        run(
-            [
-                "gh",
-                "workflow",
-                "run",
-                "build.yml",
-                "--ref",
-                "main",
-                "--field",
-                f"release_tag={ctx.tag}",
-            ]
-        )
+        run(["gh", "workflow", "run", "build.yml", "--ref", "main", "--field", f"release_tag={ctx.tag}"])
     log("farm: waiting for the workflow run to appear")
     deadline = time.monotonic() + 180
     while time.monotonic() < deadline:
         time.sleep(10)
         result = run(
             [
-                "gh",
-                "run",
-                "list",
-                "--workflow",
-                "build.yml",
-                "--branch",
-                "main",
-                "--limit",
-                "20",
-                "--json",
-                "databaseId,displayTitle,headSha,status,createdAt",
+                "gh", "run", "list",
+                "--workflow", "build.yml",
+                "--branch", "main",
+                "--limit", "20",
+                "--json", "databaseId,displayTitle,headSha,status,createdAt",
             ],
             capture=True,
             echo=False,
@@ -770,7 +1007,12 @@ def phase_farm_start(ctx: Context) -> None:
 
 
 def phase_farm_wait(ctx: Context) -> None:
-    if dry_guard(ctx, "wait for build.yml and download the Microsoft Store package"):
+    if dry_guard(
+        ctx,
+        "wait for the build.yml run to succeed (gh run view, every 30 s)",
+        f"gh run download <run> --name windows-msix into {ARTIFACTS_DIR / 'windows-msix'} "
+        "(plezy-windows.msixbundle)",
+    ):
         return
     run_id = ctx.state.data.get("farm_run_id")
     if not run_id:
@@ -795,22 +1037,43 @@ def phase_farm_wait(ctx: Context) -> None:
         shutil.rmtree(ARTIFACTS_DIR)
     msix_dir = ARTIFACTS_DIR / "windows-msix"
     msix_dir.mkdir(parents=True)
-    run(
-        [
-            "gh",
-            "run",
-            "download",
-            str(run_id),
-            "--name",
-            "windows-msix",
-            "--dir",
-            str(msix_dir),
-        ]
-    )
+    run(["gh", "run", "download", str(run_id), "--name", "windows-msix", "--dir", str(msix_dir)])
     log(
         "farm: release assets were attached in GitHub Actions; "
         f"Microsoft Store package downloaded to {msix_dir}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Android builds (play, amazon)
+# ---------------------------------------------------------------------------
+
+
+def build_android(ctx: Context, channel: str) -> Path:
+    """Build a store channel's package with Gradle, keep its R8 mapping by UUID, upload its native symbols."""
+    build = GRADLE_BUILDS[channel]
+    package = ROOT / build.output
+    if package.exists():
+        package.unlink()
+    run(gradle_command(channel))
+    if not package.is_file():
+        raise DeployError(f"{channel}: {package} not found after {build.task}")
+    # The crash-report server takes no R8 mapping; a report names the UUID of the mapping that retraces it.
+    uuid = mapping_uuid(package, build.debug_meta)
+    MAPPINGS_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(ROOT / R8_MAPPING, MAPPINGS_DIR / f"{uuid}.txt")
+    log(f"{channel}: R8 mapping kept as {MAPPINGS_DIR / f'{uuid}.txt'}")
+    upload_symbols(ctx, "android", package)
+    return package
+
+
+def android_build_plan(channel: str) -> list[str]:
+    build = GRADLE_BUILDS[channel]
+    return [
+        f"{shlex.join(gradle_command(channel))} (signed with android/app/key.properties) -> {build.output}",
+        f"keep {R8_MAPPING} as {MAPPINGS_DIR}/<{build.debug_meta} UUID>.txt",
+        f"tools/upload_symbols.sh android {build.output}",
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -852,7 +1115,7 @@ def _play_publisher(ctx: Context):
     if ctx.env.get("SUPPLY_JSON_KEY_DATA"):
         info = json.loads(ctx.env["SUPPLY_JSON_KEY_DATA"])
     else:
-        info = json.loads(Path(ctx.env["SUPPLY_JSON_KEY"]).read_text(encoding="utf-8"))
+        info = json.loads(Path(ctx.env["SUPPLY_JSON_KEY"]).expanduser().read_text(encoding="utf-8"))
     credentials = service_account.Credentials.from_service_account_info(
         info, scopes=["https://www.googleapis.com/auth/androidpublisher"]
     )
@@ -862,9 +1125,7 @@ def _play_publisher(ctx: Context):
     previous_timeout = socket.getdefaulttimeout()
     socket.setdefaulttimeout(1800)
     try:
-        return gapi_build(
-            "androidpublisher", "v3", credentials=credentials, cache_discovery=False
-        )
+        return gapi_build("androidpublisher", "v3", credentials=credentials, cache_discovery=False)
     finally:
         socket.setdefaulttimeout(previous_timeout)
 
@@ -894,9 +1155,15 @@ def _play_pending_edit(ctx: Context, edits, package: str) -> str | None:
 
 
 def phase_play(ctx: Context) -> None:
-    package = ctx.env["SUPPLY_PACKAGE_NAME"]
-    aab = ROOT / "build/app/outputs/bundle/release/app-release.aab"
-    if dry_guard(ctx, f"build AAB, upload symbols, publish {package} to Play production"):
+    package = ctx.env.get("SUPPLY_PACKAGE_NAME", BUNDLE_ID)
+    if dry_guard(
+        ctx,
+        *android_build_plan("play"),
+        f"Play Developer API for {package}: insert an edit, upload the bundle (resumable, 30-min read timeout), "
+        f"check versionCode {expected_version_code('play', ctx.build_number)}",
+        f"set track production: release {ctx.version}, status completed, en-GB notes {notes_path('play')}",
+        "validate and commit the edit (sent for review)",
+    ):
         return
 
     from googleapiclient.http import MediaFileUpload  # noqa: PLC0415
@@ -907,25 +1174,7 @@ def phase_play(ctx: Context) -> None:
         log(f"play: resuming edit {edit_id}, which already holds versionCode {ctx.build_number}")
         version_code = ctx.build_number
     else:
-        commit = short_sha()
-        run([
-            "flutter", "build", "appbundle",
-            "--dart-define=ENABLE_SENTRY=true",
-            f"--dart-define=GIT_COMMIT={commit}",
-            "--dart-define=SENTRY_ENVIRONMENT=play-store",
-            "--dart-define=SENTRY_DIST=play-store",
-            "--dart-define=SUPPORTER_MODE=iap",
-            "--obfuscate",
-            "--split-debug-info=debug-info/android-aab",
-            "--extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-aab/obfuscation.map.json",
-        ])
-        run(
-            [str(SCRIPTS_DIR / "upload-symbols.sh"), "android-aab"],
-            env={"SENTRY_DIST": "play-store"},
-        )
-        if not aab.is_file():
-            raise DeployError(f"play: AAB not found at {aab}")
-
+        aab = build_android(ctx, "play")
         edit_id = _execute_google_request(edits.insert(packageName=package, body={}))["id"]
         log(f"play: created edit {edit_id}")
         # Recorded before the upload so a run that dies after Play accepted the
@@ -944,10 +1193,8 @@ def phase_play(ctx: Context) -> None:
         )
         uploaded = _execute_resumable_google_upload(upload, "play")
         version_code = uploaded["versionCode"]
-        if version_code != ctx.build_number:
-            raise DeployError(
-                f"play: uploaded versionCode {version_code} != expected {ctx.build_number}"
-            )
+        if version_code != expected_version_code("play", ctx.build_number):
+            raise DeployError(f"play: uploaded versionCode {version_code} != expected {ctx.build_number}")
     release_notes = notes_path("play").read_text(encoding="utf-8").strip()
     _execute_google_request(
         edits.tracks().update(
@@ -1064,11 +1311,18 @@ def _commit_amazon_edit(ctx: Context, client: AmazonClient, edit_id: str) -> Non
 
 
 def phase_amazon(ctx: Context) -> None:
-    package = ctx.env["AMAZON_APPSTORE_PACKAGE_NAME"]
+    package = ctx.env.get("AMAZON_APPSTORE_PACKAGE_NAME", "")
     # The submission API addresses apps by Amazon app id; package names 400.
-    app_id = ctx.env["AMAZON_APPSTORE_APP_ID"]
-    apk = ROOT / "build/app/outputs/flutter-apk/app-release.apk"
-    if dry_guard(ctx, f"build Amazon APK, replace binary in an edit for {package}, commit"):
+    app_id = ctx.env.get("AMAZON_APPSTORE_APP_ID", "")
+    if dry_guard(
+        ctx,
+        *android_build_plan("amazon"),
+        f"App Submission API for app {app_id or '<AMAZON_APPSTORE_APP_ID>'}: open (or reuse) an edit, replace its "
+        f"APK (keeps device targeting), check versionCode {expected_version_code('amazon', ctx.build_number)}",
+        f"set every listing's recentChanges to {notes_path('amazon')}",
+        "pause for the console's touch/offline capability checkboxes, then commit (submit) the edit"
+        + (" -- skipped: --amazon-skip-commit" if getattr(ctx.args, "amazon_skip_commit", False) else ""),
+    ):
         return
     pending_edit_id = ctx.state.data.get("amazon_pending_edit_id")
     if pending_edit_id:
@@ -1077,29 +1331,7 @@ def phase_amazon(ctx: Context) -> None:
         _commit_amazon_edit(ctx, client, str(pending_edit_id))
         return
 
-
-    commit = short_sha()
-    run(
-        [
-            "flutter", "build", "apk", "--release",
-            "--dart-define=ENABLE_SENTRY=true",
-            f"--dart-define=GIT_COMMIT={commit}",
-            "--dart-define=SENTRY_ENVIRONMENT=amazon",
-            "--dart-define=SENTRY_DIST=amazon",
-            "--dart-define=SUPPORTER_MODE=unlocked",
-            "--obfuscate",
-            "--split-debug-info=debug-info/android-apk",
-            "--extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json",
-        ],
-        env={"AMAZON": "1"},
-    )
-    run(
-        [str(SCRIPTS_DIR / "upload-symbols.sh"), "android-apk"],
-        env={"SENTRY_DIST": "amazon"},
-    )
-    if not apk.is_file():
-        raise DeployError(f"amazon: APK not found at {apk}")
-
+    apk = build_android(ctx, "amazon")
     client = AmazonClient(app_id, _amazon_token(ctx.env))
 
     edits_response = client.request("GET", "/edits")
@@ -1119,14 +1351,20 @@ def phase_amazon(ctx: Context) -> None:
         log(f"amazon: warning: {len(apks)} APK slots present, replacing only {apk_id}")
 
     etag = client.etag(f"/edits/{edit_id}/apks/{apk_id}")
-    log("amazon: uploading APK (replace, preserves device targeting)")
+    log(f"amazon: uploading APK of {package} (replace, preserves device targeting)")
     replaced = client.request(
         "PUT",
         f"/edits/{edit_id}/apks/{apk_id}/replace",
         headers={"Content-Type": "application/octet-stream", "If-Match": etag},
         data=apk.read_bytes(),
     ).json()
-    log(f"amazon: uploaded versionCode {replaced.get('versionCode')}")
+    version_code = replaced.get("versionCode")
+    if version_code != expected_version_code("amazon", ctx.build_number):
+        raise DeployError(
+            f"amazon: uploaded versionCode {version_code} != expected "
+            f"{expected_version_code('amazon', ctx.build_number)}; edit {edit_id} left uncommitted"
+        )
+    log(f"amazon: uploaded versionCode {version_code}")
 
     release_notes = notes_path("amazon").read_text(encoding="utf-8").strip() or "-"
     listings = client.request("GET", f"/edits/{edit_id}/listings").json().get("listings", {})
@@ -1152,7 +1390,7 @@ def phase_amazon(ctx: Context) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Phases: ios / tvos (build + upload to App Store Connect)
+# Phases: ios / tvos (archive, export, upload to App Store Connect)
 # ---------------------------------------------------------------------------
 
 
@@ -1172,6 +1410,24 @@ def _find_single_ipa(directory: Path, label: str) -> Path:
     return ipas[0]
 
 
+def generate_xcode_project() -> None:
+    """apple/Plezy.xcodeproj from apple/project.yml, with the XcodeGen release tools/install_xcodegen.sh pins."""
+    xcodegen = run([ROOT / "tools" / "install_xcodegen.sh", ROOT / "build" / "tools"], capture=True).stdout.strip()
+    run([xcodegen, "generate", "--quiet"], cwd=ROOT / "apple")
+
+
+def _archive(ctx: Context, platform: str) -> Path:
+    archive = APPLE_DIR / f"{APPLE_PLATFORMS[platform].scheme}.xcarchive"
+    if archive.exists():
+        shutil.rmtree(archive)
+    # The Kotlin phase inside the archive builds PlezyKit with PLEZY_SENTRY_DSN from this environment (.env).
+    run(apple_archive_command(platform, archive, _asc_auth_args(ctx.env)))
+    problems = archive_problems(archive, platform, ctx.version, ctx.build_number)
+    if problems:
+        raise DeployError(f"{platform}: " + "; ".join(problems))
+    return archive
+
+
 def _export_archive(ctx: Context, archive: Path, label: str) -> Path:
     """Export a signed IPA with the local Xcode account.
 
@@ -1180,23 +1436,13 @@ def _export_archive(ctx: Context, archive: Path, label: str) -> Path:
     """
     if not archive.is_dir():
         raise DeployError(f"{label}: archive not found at {archive}")
-    options: dict[str, object] = {
-        "method": "app-store-connect",
-        "destination": "export",
-        "signingStyle": "automatic",
-        "manageAppVersionAndBuildNumber": False,
-        "teamID": ctx.env["APPLE_TEAM_ID"],
-    }
-    plist_path = DEPLOY_DIR / f"export-options-{label}.plist"
-    export_path = DEPLOY_DIR / f"export-{label}"
-    plist_path.parent.mkdir(parents=True, exist_ok=True)
-    plist_path.write_bytes(plistlib.dumps(options))
+    export_path = APPLE_DIR / f"export-{label}"
     if export_path.exists():
         shutil.rmtree(export_path)
     run([
         "xcodebuild", "-exportArchive",
         "-archivePath", str(archive),
-        "-exportOptionsPlist", str(plist_path),
+        "-exportOptionsPlist", str(EXPORT_OPTIONS),
         "-exportPath", str(export_path),
         "-allowProvisioningUpdates",
     ])
@@ -1204,74 +1450,59 @@ def _export_archive(ctx: Context, archive: Path, label: str) -> Path:
 
 
 def _upload_ipa(ctx: Context, ipa: Path, platform: str) -> None:
+    """Upload with altool and the App Store Connect API key, a step of its own after the export: the IPA is on disk
+    for a retry without re-exporting, and the key (not the Xcode account) authorizes the upload, as it does the
+    ASC API calls."""
     if not ipa.is_file():
         raise DeployError(f"{platform}: IPA not found at {ipa}")
     run(
         [
-            "xcrun",
-            "altool",
-            "--upload-app",
-            "--type",
-            platform,
-            "-f",
-            str(ipa),
-            "--apiKey",
-            ctx.env["ASC_KEY_ID"],
-            "--apiIssuer",
-            ctx.env["ASC_ISSUER_ID"],
+            "xcrun", "altool", "--upload-app",
+            "--type", APPLE_PLATFORMS[platform].altool_type,
+            "-f", str(ipa),
+            "--apiKey", ctx.env["ASC_KEY_ID"],
+            "--apiIssuer", ctx.env["ASC_ISSUER_ID"],
+            "--p8-file-path", str(Path(ctx.env["ASC_KEY_PATH"]).expanduser().resolve()),
         ]
     )
     log(f"{platform}: uploaded {ipa.name} to App Store Connect")
 
 
+def phase_apple(ctx: Context, platform: str) -> None:
+    target = APPLE_PLATFORMS[platform]
+    archive = APPLE_DIR / f"{target.scheme}.xcarchive"
+    if dry_guard(
+        ctx,
+        f"skip {platform} when App Store Connect already has {target.asc_platform} build {ctx.build_number}",
+        "generate apple/Plezy.xcodeproj with tools/install_xcodegen.sh's XcodeGen",
+        shlex.join(apple_archive_command(platform, archive, [
+            "-allowProvisioningUpdates", "-authenticationKeyPath", "<ASC_KEY_PATH>",
+            "-authenticationKeyID", "<ASC_KEY_ID>", "-authenticationKeyIssuerID", "<ASC_ISSUER_ID>",
+        ])),
+        f"check the archive is {BUNDLE_ID} {ctx.version} ({ctx.build_number})"
+        + (f" embedding PlugIns/PlezyTopShelf.appex ({TOP_SHELF_BUNDLE_ID})" if platform == "tvos" else ""),
+        f"xcodebuild -exportArchive -exportOptionsPlist {EXPORT_OPTIONS.relative_to(ROOT)} "
+        f"-exportPath {APPLE_DIR / f'export-{platform}'} -allowProvisioningUpdates (Xcode account, team {APPLE_TEAM_ID})",
+        f"tools/upload_symbols.sh dsym {archive / 'dSYMs'}",
+        f"xcrun altool --upload-app --type {target.altool_type} -f <ipa> --apiKey --apiIssuer --p8-file-path",
+    ):
+        return
+    if _asc_has_uploaded_build(ctx, target.asc_platform):
+        log(f"{platform}: App Store Connect already has build {ctx.build_number}; skipping upload")
+        return
+    generate_xcode_project()
+    archive = _archive(ctx, platform)
+    ipa = _export_archive(ctx, archive, platform)
+    upload_symbols(ctx, "dsym", archive / "dSYMs")
+    _upload_ipa(ctx, ipa, platform)
+
+
 def phase_ios(ctx: Context) -> None:
-    if dry_guard(ctx, "flutter build ipa, upload symbols, upload IPA to ASC"):
-        return
-    if _asc_has_uploaded_build(ctx, "IOS"):
-        log(f"ios: App Store Connect already has build {ctx.build_number}; skipping upload")
-        return
-    commit = short_sha()
-    run([
-        "flutter", "build", "ipa",
-        "--dart-define=ENABLE_SENTRY=true",
-        f"--dart-define=GIT_COMMIT={commit}",
-        "--dart-define=SENTRY_ENVIRONMENT=app-store",
-        "--dart-define=SENTRY_DIST=app-store",
-        "--dart-define=SUPPORTER_MODE=iap",
-        "--split-debug-info=debug-info/ios",
-    ])
-    run(
-        [str(SCRIPTS_DIR / "upload-symbols.sh"), "ios"],
-        env={"SENTRY_DIST": "app-store", "BUGS_APPLE_ARCHIVE": "build/ios/archive/Plezy.xcarchive"},
-    )
-    _upload_ipa(ctx, ROOT / "build/ios/ipa/Plezy.ipa", "ios")
+    phase_apple(ctx, "ios")
 
 
 def phase_tvos(ctx: Context) -> None:
-    if dry_guard(ctx, "archive and export tvOS IPA, then upload it to ASC"):
-        return
-    if _asc_has_uploaded_build(ctx, "TV_OS"):
-        log(f"tvos: App Store Connect already has build {ctx.build_number}; skipping upload")
-        return
-    # The tvOS build reads gitignored inputs that nothing else refreshes:
-    # Generated.xcconfig (engine path, version, deployment target) and the Pods
-    # project. Prepare them the way CI does so a stale checkout cannot archive
-    # an old version or a deployment target the current Xcode rejects.
-    run([str(ROOT / "tvos/scripts/fetch_engine.sh")])
-    run([str(ROOT / "tvos/scripts/pod_install.sh")])
-    archive = ROOT / "build/tvos/Runner.xcarchive"
-    run([
-        "xcodebuild",
-        "-workspace", str(ROOT / "tvos/Runner.xcworkspace"),
-        "-scheme", "Runner",
-        "-configuration", "Release",
-        "-destination", "generic/platform=tvOS",
-        "-archivePath", str(archive),
-        "archive",
-        *_asc_auth_args(ctx.env),
-    ])
-    ipa = _export_archive(ctx, archive, "tvos")
-    _upload_ipa(ctx, ipa, "tvos")
+    phase_apple(ctx, "tvos")
 
 
 # ---------------------------------------------------------------------------
@@ -1404,6 +1635,7 @@ def _asc_set_whats_new(client: AscClient, version_id: str, whats_new: str) -> No
 
 
 def _asc_submit_for_review(client: AscClient, app_id: str, version_id: str, platform: str) -> None:
+    # The submission holds the app version alone; in-app purchases (supporter) are left as they are.
     submission = client.request(
         "POST",
         "/reviewSubmissions",
@@ -1456,7 +1688,15 @@ def phase_asc(ctx: Context) -> None:
     if not platforms:
         log("asc: no Apple upload phases selected; nothing to do")
         return
-    if dry_guard(ctx, f"wait for builds and update ASC metadata for {', '.join(platforms)}"):
+    if dry_guard(
+        ctx,
+        *(
+            f"App Store Connect API ({platform}): wait for build {ctx.build_number} to be VALID, ensure version "
+            f"{ctx.version}, set en-US whatsNew from {notes_path('appstore')}, attach the build"
+            + (", submit for review" if ctx.args.submit else " (not submitted: no --submit)")
+            for platform in platforms
+        ),
+    ):
         return
 
     whats_new = notes_path("appstore").read_text(encoding="utf-8").strip()
@@ -1484,17 +1724,15 @@ def phase_asc(ctx: Context) -> None:
 
 
 def phase_release(ctx: Context) -> None:
-    if dry_guard(ctx, "verify the build workflow's draft release and attach release notes"):
+    if dry_guard(
+        ctx,
+        f"gh release view {ctx.tag}: a draft on the release commit with exactly these "
+        f"{len(RELEASE_ASSET_NAMES)} assets: {', '.join(sorted(RELEASE_ASSET_NAMES))}",
+        f"gh release edit {ctx.tag} --title {ctx.version} --notes-file {notes_path('github')}",
+    ):
         return
     result = run(
-        [
-            "gh",
-            "release",
-            "view",
-            ctx.tag,
-            "--json",
-            "isDraft,targetCommitish,assets",
-        ],
+        ["gh", "release", "view", ctx.tag, "--json", "isDraft,targetCommitish,assets"],
         capture=True,
         check=False,
         echo=False,
@@ -1515,31 +1753,14 @@ def phase_release(ctx: Context) -> None:
         )
 
     actual_assets = {asset["name"] for asset in info.get("assets", [])}
-    if actual_assets != RELEASE_ASSET_NAMES:
-        missing = sorted(RELEASE_ASSET_NAMES - actual_assets)
-        unexpected = sorted(actual_assets - RELEASE_ASSET_NAMES)
-        details = []
-        if missing:
-            details.append("missing: " + ", ".join(missing))
-        if unexpected:
-            details.append("unexpected: " + ", ".join(unexpected))
-        raise DeployError("release: draft asset set is invalid (" + "; ".join(details) + ")")
+    problems = release_asset_problems(RELEASE_ASSET_NAMES, actual_assets)
+    if problems:
+        raise DeployError("release: draft asset set is invalid (" + "; ".join(problems) + ")")
 
     body = notes_path("github")
     if not body.is_file():
         raise DeployError(f"release: notes not found at {body}")
-    run(
-        [
-            "gh",
-            "release",
-            "edit",
-            ctx.tag,
-            "--title",
-            ctx.version,
-            "--notes-file",
-            str(body),
-        ]
-    )
+    run(["gh", "release", "edit", ctx.tag, "--title", ctx.version, "--notes-file", str(body)])
     log(f"release: verified draft {ctx.tag} with {len(actual_assets)} assets")
 
 
@@ -1569,9 +1790,17 @@ def _msstore_token(env: dict[str, str]) -> str:
 
 
 def phase_msstore(ctx: Context) -> None:
-    if dry_guard(ctx, "create a Store submission, upload the msixbundle, commit it"):
-        return
     bundle = ARTIFACTS_DIR / "windows-msix/plezy-windows.msixbundle"
+    if dry_guard(
+        ctx,
+        f"Microsoft Store submission API for app {ctx.env.get('MSSTORE_APP_ID') or '<MSSTORE_APP_ID>'}: refuse a "
+        "pending submission (delete it with --msstore-replace-pending), clone the published one",
+        f"mark its packages PendingDelete, add {bundle.name}, pin base price "
+        f"{ctx.env.get('MSSTORE_PRICE_ID') or '<MSSTORE_PRICE_ID, else the cloned tier unless Base>'}",
+        f"upload {bundle} zipped to the submission's blob, PUT the submission, check the stored priceId",
+        "commit the submission and poll its status (at most 30 min)",
+    ):
+        return
     if not bundle.is_file():
         raise DeployError(f"msstore: msixbundle not found at {bundle}; run farm_wait first")
 
@@ -1679,7 +1908,11 @@ def phase_msstore(ctx: Context) -> None:
 
 
 def phase_publish(ctx: Context) -> None:
-    if dry_guard(ctx, "publish the GitHub release"):
+    if dry_guard(
+        ctx,
+        f"ask, then gh release edit {ctx.tag} --draft=false (the release event runs update-packages.yml: "
+        "Homebrew, WinGet, the appcast branch)",
+    ):
         return
     if not ctx.confirm(
         f"Publish GitHub release {ctx.tag}? "
@@ -1709,7 +1942,7 @@ PHASE_LINKS = {
 
 
 def print_summary(ctx: Context) -> None:
-    print(f"\nRelease {ctx.version}+{ctx.build_number} summary")
+    print(f"\nRelease {ctx.version} ({ctx.build_number}) summary")
     for phase in PHASES:
         if phase == "preflight":
             continue
@@ -1763,13 +1996,13 @@ def initialize_state(args: argparse.Namespace) -> State:
                 f"state at {STATE_PATH} is for build {state.build_number}; pass "
                 "--fresh to discard it"
             )
-        log(f"resuming release {state.version}+{state.build_number} "
+        log(f"resuming release {state.version} ({state.build_number}) "
             f"(done: {', '.join(state.done) or 'nothing'})")
         return state
     if not args.version:
         raise DeployError("--version is required for a new release")
-    _, current_build = parse_pubspec_version((ROOT / "pubspec.yaml").read_text(encoding="utf-8"))
-    build_number = args.build_number or int(current_build) + 1
+    _, current_build = current_version()
+    build_number = args.build_number or current_build + 1
     state = State(version=args.version, build_number=build_number)
     if not getattr(args, "dry_run", False):
         state.save()
@@ -1777,7 +2010,7 @@ def initialize_state(args: argparse.Namespace) -> State:
 
 
 def cmd_release(args: argparse.Namespace) -> int:
-    env = load_env_file()
+    env = load_env_file(required=not args.dry_run)
     state = initialize_state(args)
     # The release plan (phase selection + notes source) persists in state so a
     # bare `release` resume repeats the original invocation instead of widening.
@@ -1795,6 +2028,8 @@ def cmd_release(args: argparse.Namespace) -> int:
     phases = resolve_phases(args.only, args.skip)
     ctx = Context(args=args, env=env, state=state, phases=phases)
 
+    if args.dry_run:
+        log(f"dry run: release {state.version} ({state.build_number}), phases: {', '.join(phases)}")
     for phase in phases:
         if phase in state.done:
             log(f"{phase}: already done, skipping")
@@ -1826,8 +2061,8 @@ def cmd_release(args: argparse.Namespace) -> int:
 
 def cmd_changelog(args: argparse.Namespace) -> int:
     load_env_file()
-    _, current_build = parse_pubspec_version((ROOT / "pubspec.yaml").read_text(encoding="utf-8"))
-    state = State.load() or State(version="unreleased", build_number=int(current_build) + 1)
+    _, current_build = current_version()
+    state = State.load() or State(version="unreleased", build_number=current_build + 1)
     args.dry_run = False
     args.yes = True
     ctx = Context(args=args, env=dict(os.environ), state=state, phases=["changelog"])
@@ -1842,7 +2077,7 @@ def cmd_status(_args: argparse.Namespace) -> int:
     if not state:
         print("no release in progress")
         return 0
-    print(f"release {state.version}+{state.build_number}")
+    print(f"release {state.version} ({state.build_number})")
     for phase in PHASES:
         marker = "x" if phase in state.done else " "
         print(f"  [{marker}] {phase}")
@@ -1852,13 +2087,7 @@ def cmd_status(_args: argparse.Namespace) -> int:
 
 
 def cmd_clean(_args: argparse.Namespace) -> int:
-    subprocess.run(["./gradlew", "clean"], cwd=ROOT / "android", check=False)
-    subprocess.run(
-        ["xcodebuild", "clean", "-workspace", "Runner.xcworkspace", "-scheme", "Runner"],
-        cwd=ROOT / "ios",
-        check=False,
-    )
-    subprocess.run(["flutter", "clean"], cwd=ROOT, check=False)
+    run(["./gradlew", "--console=plain", "clean"])
     if DEPLOY_DIR.exists():
         shutil.rmtree(DEPLOY_DIR)
     return 0
@@ -1874,10 +2103,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     release = sub.add_parser("release", help="run the release pipeline")
-    release.add_argument("--version", help="semver for a new release (e.g. 2.13.0)")
+    release.add_argument("--version", help="semver for a new release (e.g. 2.27.0)")
     release.add_argument("--notes", help="path to the raw release notes file")
     release.add_argument("--build-number", type=int,
-                         help="use this build number instead of pubspec+1 "
+                         help=f"use this build number instead of {VERSION_FILE}'s CURRENT_PROJECT_VERSION + 1 "
                               "(for a tree whose version was already bumped)")
     release.add_argument("--only", action="append", metavar="PHASE",
                          help="run only these phases (repeatable, comma-separated)")
@@ -1904,7 +2133,7 @@ def build_parser() -> argparse.ArgumentParser:
     status = sub.add_parser("status", help="show in-progress release state")
     status.set_defaults(func=cmd_status)
 
-    clean = sub.add_parser("clean", help="clean build artifacts (gradle, xcode, flutter)")
+    clean = sub.add_parser("clean", help="clean build outputs (gradle) and build/deploy")
     clean.set_defaults(func=cmd_clean)
 
     return parser

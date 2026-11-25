@@ -25,7 +25,7 @@ export const faqs: Faq[] = [
     id: "free",
     question: "Is Plezy free?",
     answer:
-      "Plezy is open-source and free to download from GitHub. The App Store and Play Store versions are a paid, one-time purchase (price varies by region), which helps cover developer account fees, test devices, and the time spent developing and maintaining the app.<br><br>On the App Store and Play Store, an optional one-time Supporter purchase adds cosmetic extras: preset themes, a custom theme, and alternate app icons. It doesn't unlock any features. The Microsoft Store, Amazon Appstore, macOS, and Linux versions include the themes at no extra charge.<br><br>There's no free trial because the app stores don't natively support trials for paid apps. If you'd like to try before you buy, you can sideload the binaries from GitHub or try it on desktop first.",
+      "Plezy is open-source and free to download from GitHub. The App Store and Play Store versions are a paid, one-time purchase (price varies by region), which helps cover developer account fees, test devices, and the time spent developing and maintaining the app.<br><br>On the App Store and Play Store, the optional one-time Theme & Icon Pack adds cosmetic extras: preset themes, a custom theme, and alternate app icons. It doesn't unlock any features. The Microsoft Store, Amazon Appstore, macOS, and Linux versions include the themes at no extra charge.<br><br>There's no free trial because the app stores don't natively support trials for paid apps. If you'd like to try before you buy, you can sideload the binaries from GitHub or try it on desktop first.",
   },
   {
     id: "apple-tv",
@@ -46,9 +46,8 @@ export const faqs: Faq[] = [
     id: "video-player",
     question: "What video player does Plezy use?",
     answer:
-      'mpv on most platforms, with ExoPlayer available on Android for HDR support and better performance. ExoPlayer also has libass support via <a href="https://github.com/peerless2012/libass-android" target="_blank" rel="noopener">libass-android</a>.',
-    schemaAnswer:
-      "mpv on most platforms, with ExoPlayer available on Android for HDR support and better performance. ExoPlayer also has libass support via libass-android.",
+      'mpv on every platform, built by our <a href="https://github.com/edde746/mpv-build" target="_blank" rel="noopener">mpv-build</a> pipeline, with libass for subtitles.',
+    schemaAnswer: "mpv on every platform, built by our mpv-build pipeline, with libass for subtitles.",
   },
   {
     id: "plex-block",

@@ -32,16 +32,23 @@ jobs:
         )
         self.assertEqual(errors, [])
 
-    def test_accepts_benign_ci_names_runners_matrices_and_commands(self) -> None:
-        workflow = (ROOT / CI_PATH).read_text(encoding="utf-8")
-        changed = (
-            workflow.replace("name: CI - Sanity Checks", "name: Continuous integration")
-            .replace("  analyze:\n", "  static-analysis:\n", 1)
-            .replace("name: Code Analysis", "name: Repository checks", 1)
-            .replace("runs-on: ubuntu-latest", "runs-on: internal-linux", 1)
-            .replace("- sanitizer: address", "- sanitizer: memory", 1)
-            .replace("dart run scripts/checks/check_analyzer.dart", "dart run tool/check.dart", 1)
-        )
+    def test_accepts_the_repositorys_workflows(self) -> None:
+        for path in sorted((ROOT / ".github/workflows").glob("*.yml")):
+            with self.subTest(workflow=path.name):
+                relative = path.relative_to(ROOT)
+                self.assertEqual(self.check(path.read_text(encoding="utf-8"), relative), [])
+
+    def test_accepts_benign_ci_names_runners_and_commands(self) -> None:
+        changed = (ROOT / CI_PATH).read_text(encoding="utf-8")
+        for old, new in (
+            ("name: CI\n", "name: Continuous integration\n"),
+            ("  linux:\n", "  ubuntu:\n"),
+            ("name: Website\n", "name: Site checks\n"),
+            ("runs-on: ubuntu-latest", "runs-on: internal-linux"),
+            ("scripts/ci_server_checks.sh", "scripts/server_checks.sh"),
+        ):
+            self.assertIn(old, changed)
+            changed = changed.replace(old, new, 1)
 
         self.assertEqual(self.check(changed, CI_PATH), [])
 

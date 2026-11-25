@@ -1,0 +1,26 @@
+1
+00:00:01,000 --> 00:00:04,000
+[Français SRT] Ligne 1 sur 6, de 00:01 à 00:04
+Chapitre 1 : Ouverture
+
+2
+00:00:05,000 --> 00:00:08,000
+[Français SRT] Ligne 2 sur 6 : « Où est le signal ? »
+
+3
+00:00:11,000 --> 00:00:14,000
+[Français SRT] Ligne 3 sur 6, de 00:11 à 00:14
+Chapitre 2 : Pistes audio
+
+4
+00:00:15,000 --> 00:00:18,000
+{\an8}[Français SRT] Ligne 4 sur 6 : un panneau indique <i>« SORTIE »</i>
+
+5
+00:00:21,000 --> 00:00:24,000
+[Français SRT] Ligne 5 sur 6, de 00:21 à 00:24
+Chapitre 3 : Pistes de sous-titres
+
+6
+00:00:25,000 --> 00:00:28,000
+[Français SRT] Ligne 6 sur 6 : « Ça va, déjà vu ? »

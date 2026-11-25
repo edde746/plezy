@@ -1,0 +1,24 @@
+1
+00:00:01,000 --> 00:00:04,000
+[Épisode 2 · Français SRT] Ligne 1 sur 6, de 00:01 à 00:04
+Première piste de sous-titres ici
+
+2
+00:00:05,000 --> 00:00:08,000
+[Épisode 2 · Français SRT] Ligne 2 sur 6 : « Le signal est revenu ? »
+
+3
+00:00:11,000 --> 00:00:14,000
+[Épisode 2 · Français SRT] Ligne 3 sur 6, de 00:11 à 00:14
+
+4
+00:00:15,000 --> 00:00:18,000
+{\an8}[Épisode 2 · Français SRT] Ligne 4 sur 6 : un panneau indique <i>« ENTRÉE »</i>
+
+5
+00:00:21,000 --> 00:00:24,000
+[Épisode 2 · Français SRT] Ligne 5 sur 6, de 00:21 à 00:24
+
+6
+00:00:25,000 --> 00:00:28,000
+[Épisode 2 · Français SRT] Ligne 6 sur 6 : « À la prochaine ! »

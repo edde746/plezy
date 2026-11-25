@@ -1,0 +1,17 @@
+===============================================================
+==     NOTICE File for JmDNS                                 ==
+===============================================================
+
+Java Multicast Domain Name Server (JmDNS)
+
+This project was originally developed by Arthur van Hoff under the GNU 
+Lesser General Public License as jRendevous.  It was moved to Sourceforge 
+by Rick Blair and renamed to JmDNS with the Arthur's kind permission.
+It has been re-released under the Apache License, Version 2.0. 
+In 2014, it has been moved from Sourceforge to Github by Kai Kreuzer
+with the kind approval from Arthur and Rick.
+
+Details of the Apache License, Version 2.0 can be found at:
+http://www.apache.org/licenses/
+
+For other details please see the README.txt file.

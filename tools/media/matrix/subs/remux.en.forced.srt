@@ -1,0 +1,8 @@
+1
+00:00:05,000 --> 00:00:08,000
+[English forced PGS] "Where is the signal?"
+(translated dialogue, forced cue 1 of 2)
+
+2
+00:00:15,000 --> 00:00:18,000
+{\an8}[English forced PGS] A sign reads "EXIT" (forced cue 2 of 2)

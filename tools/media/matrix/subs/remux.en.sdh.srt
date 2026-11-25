@@ -1,0 +1,28 @@
+1
+00:00:01,000 --> 00:00:04,000
+[English SDH PGS] [STEADY TONES, A BEEP EVERY SECOND]
+Line 1 of 6, 00:01 to 00:04
+
+2
+00:00:05,000 --> 00:00:08,000
+[English SDH PGS] WOMAN (in Spanish):
+"Where is the signal?"
+
+3
+00:00:11,000 --> 00:00:14,000
+[English SDH PGS] [BEEPING CONTINUES]
+Line 3 of 6, 00:11 to 00:14
+
+4
+00:00:15,000 --> 00:00:18,000
+{\an8}[English SDH PGS] A sign reads "EXIT"
+
+5
+00:00:21,000 --> 00:00:24,000
+[English SDH PGS] [TONES HUM]
+Line 5 of 6, 00:21 to 00:24
+
+6
+00:00:25,000 --> 00:00:28,000
+[English SDH PGS] [BEEPING STOPS]
+Line 6 of 6, 00:25 to 00:28

@@ -1,0 +1,16 @@
+1
+00:00:00,500 --> 00:00:05,000
+[English SRT] Line 1 of 4, from 00:00.5 to 00:05
+A 4:3 picture: bars at its sides on a wide screen
+
+2
+00:00:05,000 --> 00:00:10,000
+[English SRT] Line 2 of 4, from 00:05 to 00:10
+
+3
+00:00:10,000 --> 00:00:15,000
+[English SRT] Line 3 of 4, from 00:10 to 00:15
+
+4
+00:00:15,000 --> 00:00:20,000
+[English SRT] Line 4 of 4, from 00:15 to 00:20

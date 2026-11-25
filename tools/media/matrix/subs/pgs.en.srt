@@ -1,0 +1,22 @@
+1
+00:00:01,000 --> 00:00:04,000
+PGS cue 1 of 5: bottom centre
+shown from 00:01 to 00:04
+
+2
+00:00:05,000 --> 00:00:08,000
+{\an8}PGS cue 2 of 5: top centre, 00:05 to 00:08
+
+3
+00:00:09,000 --> 00:00:12,000
+PGS cue 3 of 5: one line, 00:09 to 00:12
+
+4
+00:00:12,500 --> 00:00:15,500
+PGS cue 4 of 5: three lines,
+the middle line is longer than the others to check centring,
+00:12.5 to 00:15.5
+
+5
+00:00:16,500 --> 00:00:19,500
+PGS cue 5 of 5: last cue, 00:16.5 to 00:19.5
