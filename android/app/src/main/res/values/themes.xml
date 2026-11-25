@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws everything. The window shows the launch colour (splash_background: the device's light or dark,
+         black on a TV) until the app's first frame, behind the splash, which leaves it on display, and behind the
+         system bars; PlezyActivity paints it in the user's theme first (SplashTheme), and the video view paints its
+         own black. -->
+    <style name="Theme.Plezy" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:colorControlHighlight">@android:color/transparent</item>
+    </style>
+
+    <!-- The system splash of the next start in the user's theme (Android 13+: SplashTheme), one per launch colour. -->
+    <style name="SplashTheme.Dark" parent="Theme.Plezy">
+        <item name="android:windowBackground">@color/splash_dark</item>
+    </style>
+    <style name="SplashTheme.Oled" parent="Theme.Plezy">
+        <item name="android:windowBackground">@color/splash_oled</item>
+    </style>
+    <style name="SplashTheme.Light" parent="Theme.Plezy">
+        <item name="android:windowBackground">@color/splash_light</item>
+    </style>
+
+    <color name="splash_background">#FFF7F7F8</color>
+    <color name="splash_dark">#FF0E0F12</color>
+    <color name="splash_oled">#FF000000</color>
+    <color name="splash_light">#FFF7F7F8</color>
+</resources>

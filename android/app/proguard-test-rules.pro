@@ -1,11 +1,7 @@
-# Shrinker rules for the instrumentation APK of the `minified` variant.
-#
-# That variant exists to run R8 over the app under test, not over the harness. AGP
-# applies the app's rules to the test APK too, which deletes the instrumentation runner
-# and every test class the runner resolves by name — the run then dies with
-# ClassNotFoundException before a single test starts. The harness is never shipped, so
-# it has nothing to gain from shrinking.
+# The harness build's test APK (testBuildType harness). R8 runs on it because it runs on the app; without these rules
+# it strips the instrumentation runner and the tests, which the runner finds by name. The test APK ships nowhere.
 -dontshrink
 -dontoptimize
-# The runner resolves the instrumentation class and every -e class filter by name.
 -dontobfuscate
+# androidx.test's compile-time annotations, absent at runtime.
+-dontwarn com.google.errorprone.annotations.**

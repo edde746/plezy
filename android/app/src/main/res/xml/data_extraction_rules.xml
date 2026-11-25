@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+. Same rule as backup_rules.xml, for cloud backups and device-to-device transfers. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="com.edde746.plezy.secrets.xml" />
+        <exclude domain="sharedpref" path="FlutterSharedPreferences.xml" />
+        <exclude domain="file" path="datastore/FlutterSharedPreferences.preferences_pb" />
+        <exclude domain="root" path="app_flutter/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="com.edde746.plezy.secrets.xml" />
+        <exclude domain="sharedpref" path="FlutterSharedPreferences.xml" />
+        <exclude domain="file" path="datastore/FlutterSharedPreferences.preferences_pb" />
+        <exclude domain="root" path="app_flutter/" />
+    </device-transfer>
+</data-extraction-rules>

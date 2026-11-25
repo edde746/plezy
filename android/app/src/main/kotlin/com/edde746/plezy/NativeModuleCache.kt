@@ -1,28 +1,25 @@
 package com.edde746.plezy
 
-import android.util.Log
+import com.edde746.plezy.log.Log
 import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroidOptions
 
 /**
- * sentry-native caches the process's loaded-library list the first time
- * anything asks for debug images; sentry_flutter does so for every Dart error
- * event. A native crash in a library loaded after that, such as libmpv and its
- * FFmpeg libraries opened by the first player, then carries no debug image for
- * those frames, so no uploaded symbol file can ever match them. Dropping the
- * cache once such libraries are loaded makes the next event re-read the
- * process's mappings.
+ * sentry-native lists the process's loaded native libraries (its debug images) the first time an event asks for them
+ * and keeps that list. A native crash in a library loaded later, as libmpv and its FFmpeg libraries are by the first
+ * player, then names no debug image for those frames and no uploaded symbol file matches them. Dropping the list once
+ * they are loaded ([com.edde746.plezy.mpv.MpvNativeLibraries]) makes the next event read the process's mappings again.
  */
 internal object NativeModuleCache {
-  private const val TAG = "NativeModuleCache"
+    private const val TAG = "crash"
 
-  fun invalidate() {
-    // Not SentryAndroidOptions when crash reporting never initialized Sentry.
-    val options = Sentry.getCurrentScopes().options as? SentryAndroidOptions ?: return
-    try {
-      options.debugImagesLoader.clearDebugImages()
-    } catch (e: Throwable) {
-      Log.w(TAG, "Could not clear Sentry's native module cache", e)
+    fun invalidate() {
+        // Not SentryAndroidOptions while crash reporting hasn't started Sentry (or never will).
+        val options = Sentry.getCurrentScopes().options as? SentryAndroidOptions ?: return
+        try {
+            options.debugImagesLoader.clearDebugImages()
+        } catch (e: Throwable) {
+            Log.w(TAG, e) { "could not clear the native module cache" }
+        }
     }
-  }
 }

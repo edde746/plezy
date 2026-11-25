@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- What the file provider (PlayerFiles) can name: a download's file and its saved subtitles wherever they are kept,
+     shared with a player app one URI at a time. The roots and their names are the earlier releases', so URIs keep their
+     shape. -->
 <paths>
-    <!-- App-internal files directory (getApplicationDocumentsDirectory on Android) -->
+    <!-- Internal storage. -->
     <files-path name="app_files" path="." />
-    <!-- External files directory (fallback) -->
+    <!-- The primary volume's app directory. -->
     <external-files-path name="external_files" path="." />
-    <!-- External storage root (for custom download paths on shared storage) -->
+    <!-- Shared storage (custom download folders). -->
     <external-path name="external" path="." />
-    <!-- Cache directories -->
+    <!-- The caches. -->
     <cache-path name="cache" path="." />
     <external-cache-path name="external_cache" path="." />
-    <!-- Filesystem root (ultimate fallback for any absolute path) -->
+    <!-- Any other absolute path: other volumes, and internal folders beside files/ such as app_flutter/. -->
     <root-path name="root" path="" />
 </paths>

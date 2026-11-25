@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The device tests read their media from the harness's plain-HTTP server on the device's loopback (adb reverse): a
+     test copying a file into a document fetches it itself, which Android 9 and later refuse over cleartext otherwise. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true" />
+</manifest>

@@ -1,3 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The system splash's icon (Android 12+): the launcher icon's foreground, without its background. -->
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/ic_launcher_foreground" />
+    android:drawable="@mipmap/ic_launcher_foreground" />

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The interface languages (the shared/i18n/*.i18n.json files): Android 13+ lists them as this app's languages in the system settings. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="az" />
+    <locale android:name="bg" />
+    <locale android:name="da" />
+    <locale android:name="de" />
+    <locale android:name="en" />
+    <locale android:name="es" />
+    <locale android:name="fr" />
+    <locale android:name="hu" />
+    <locale android:name="it" />
+    <locale android:name="ja" />
+    <locale android:name="kk" />
+    <locale android:name="ko" />
+    <locale android:name="nb" />
+    <locale android:name="nl" />
+    <locale android:name="pl" />
+    <locale android:name="pt" />
+    <locale android:name="pt-PT" />
+    <locale android:name="ru" />
+    <locale android:name="sv" />
+    <locale android:name="tr" />
+    <locale android:name="uz" />
+    <locale android:name="zh" />
+    <locale android:name="zh-Hant" />
+</locale-config>

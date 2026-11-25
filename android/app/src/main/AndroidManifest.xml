@@ -1,103 +1,143 @@
-<!-- android:installLocation="auto" is what makes the app eligible to be moved to adoptable
-     storage (a USB drive adopted by an Android TV, an adopted SD card), which relocates the
-     private data directory — and therefore downloads — along with the APK. Plezy declares none
-     of the components this is unsafe for: no app widget, IME, live wallpaper, device admin,
-     accessibility service, sync adapter or account authenticator. -->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- installLocation auto lets the system move the app to adoptable storage (a USB drive an Android TV adopted, an adopted
+     SD card), which moves its private data, the downloads with it. The app declares none of the components that is
+     unsafe for (app widgets, input methods, live wallpapers, device admins, accessibility services, sync adapters,
+     account authenticators). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 
+    <!-- The app runs from Android 7.1 (Fire OS 6, minSdk 25); the watch-together relay client (party.openwatch) declares
+         26 but needs nothing above 25: its classes call no platform API newer than 25 (java.lang and java.util only; D8
+         desugars its lambdas and string concatenation at minSdk 25), and it runs on the app's own Ktor, coroutines and
+         serialization. -->
+    <uses-sdk tools:overrideLibrary="party.openwatch" />
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-    <uses-permission android:name="android.permission.REORDER_TASKS"/>
-
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
-
-    <!-- Explicitly remove media permissions that media_kit may add -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The process follows the default network (ProcessNetwork): offline states, Wi-Fi only downloads. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The media session's service runs in the foreground while a playback plays (PlaybackService). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Downloads run in a foreground dataSync worker (DownloadWorker) with a progress notification, asked for at the
+         first download (Android 13+); the media notification is exempt and never asks. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android TV's Watch Next row (WatchNext): the TV provider takes this app's rows only with it on some boxes. -->
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
+    <!-- The Watch Next posters' read grants don't survive a reboot: they are granted again at boot
+         (WatchNextGrantReceiver). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- The audio output's settings (passthrough, the audio focus of playback) and moving the app's task to the front. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
+    <!-- No library brings storage or media permissions: downloads go to the app's folders or a folder the user picked
+         through the system's picker. -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
 
-
+    <!-- One APK for phones, tablets, Android TV, Fire TV and Android Automotive (whose car service tells driving from
+         parked: CarRestrictionsMonitor, through the optional android.car library). -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
-    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-
     <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
 
+    <!-- Package visibility (API 30+): whether a browser can open a link, and which player apps play
+         video (AndroidPlayerApps: a stream at an http(s) URL, a download's content:// URI). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+        <!-- Every launcher, which reads the Watch Next posters through a read grant each (ShelfArtwork). -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="video/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" android:mimeType="video/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" android:mimeType="video/*" />
+        </intent>
+        <!-- The text-selection menu's Process Text apps. -->
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
+        </intent>
+    </queries>
+
+    <!-- Icons are generated by tools/brand/generate.sh; the TV banner (drawable-*dpi/banner.png) is committed as is. -->
     <application
-        android:label="Plezy"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:banner="@drawable/tv_banner"
+        android:name=".PlezyApplication"
+        android:banner="@drawable/banner"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:appCategory="video"
+        android:icon="@mipmap/ic_launcher"
+        android:label="${appLabel}"
         android:largeHeap="true"
+        android:localeConfig="@xml/locales_config"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:usesCleartextTraffic="true">
-        <!-- Driver-distraction state on Android Automotive OS. Optional: the platform library is
-             absent on every other form factor, and CarRestrictionsMonitor falls back silently. -->
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Plezy">
         <uses-library android:name="android.car" android:required="false" />
-        <!-- The activity itself has no launcher entry: the launcher components are the aliases
-             below, so the app icon can be switched by enabling one alias and disabling the rest.
-             Deep links stay here so they resolve whichever alias is enabled.
-             turnScreenOn lets a plezy:// link sent during the screensaver (e.g. by a home
-             automation) wake the device; set at runtime it comes too late, as the activity
-             is already launched behind the screensaver. -->
+        <!-- One activity holds the whole app: configuration changes (rotation, folding, resizing, dark mode, entering and
+             leaving picture-in-picture) don't recreate it, and a launch while it runs brings it back as it was.
+             turnScreenOn lets a link that arrives during the screensaver wake the device; set at runtime it comes too
+             late, as the activity is already launched behind the screensaver. singleTop: a link while the app is on top
+             reaches the running activity (onNewIntent); no task affinity, so it never joins another app's task. The
+             activity has no launcher entry of its own: the launcher's are the aliases below, one enabled at a time, so
+             the app icon can change. Links stay here, so they open whichever alias is enabled. -->
         <activity
             android:name=".PlezyActivity"
             android:turnScreenOn="true"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
-            android:theme="@style/LaunchTheme"
+            android:resizeableActivity="true"
             android:supportsPictureInPicture="true"
             android:configChanges="orientation|keyboardHidden|keyboard|navigation|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
-            <!-- Every plezy:// link, whatever its host. DeepLinkPlugin forwards the URL unchanged;
-                 the grammar lives in lib/services/deep_links/deep_link.dart. -->
+            <!-- Every plezy:// link, whatever its host (PlezyActivity hands it to the app). The test builds drop this
+                 filter (src/debug/AndroidManifest.xml). -->
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="plezy"/>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="plezy" />
             </intent-filter>
         </activity>
-        <!-- The default icon. Keep this component name forever: it was the launcher activity before
-             app icons became switchable, so every existing home-screen shortcut, TV favourite and
-             recent task points at it. The meta-data repeats the activity's because FlutterActivity
-             reads it from the component that launched it. -->
+        <!-- The default icon's launcher entry. Its component name must never change: it has been the launcher's since the
+             first release, so home-screen shortcuts, TV favourites and recent tasks point at it, and a device keeps each
+             alias's enabled state across updates. -->
         <activity-alias
             android:name=".MainActivity"
             android:exported="true"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        <!-- Alternate icons (AppIconChannel): disabled until chosen. Ids are permanent. -->
-        <!-- BEGIN generated app icon aliases (scripts/codegen/generate_app_icons.py); do not edit -->
+        <!-- The alternate app icons, disabled until chosen, which enables one and disables .MainActivity. Their names are
+             permanent: a device that chose one before an update keeps it enabled and .MainActivity disabled. Each has
+             its launcher icon (mipmap-anydpi-v26/ic_launcher_<id>.xml, mipmap-xxxhdpi before Android 8) and TV banner
+             (drawable-xhdpi/tv_banner_<id>.webp). -->
         <activity-alias
             android:name=".appicon.midnight"
             android:enabled="false"
@@ -105,16 +145,10 @@
             android:icon="@mipmap/ic_launcher_midnight"
             android:banner="@drawable/tv_banner_midnight"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -124,16 +158,10 @@
             android:icon="@mipmap/ic_launcher_ember"
             android:banner="@drawable/tv_banner_ember"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -143,16 +171,10 @@
             android:icon="@mipmap/ic_launcher_paper"
             android:banner="@drawable/tv_banner_paper"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -162,16 +184,10 @@
             android:icon="@mipmap/ic_launcher_oled"
             android:banner="@drawable/tv_banner_oled"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -181,16 +197,10 @@
             android:icon="@mipmap/ic_launcher_line"
             android:banner="@drawable/tv_banner_line"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -200,16 +210,10 @@
             android:icon="@mipmap/ic_launcher_ocean"
             android:banner="@drawable/tv_banner_ocean"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -219,16 +223,10 @@
             android:icon="@mipmap/ic_launcher_ultraviolet"
             android:banner="@drawable/tv_banner_ultraviolet"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -238,16 +236,10 @@
             android:icon="@mipmap/ic_launcher_matcha"
             android:banner="@drawable/tv_banner_matcha"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -257,16 +249,10 @@
             android:icon="@mipmap/ic_launcher_sunset"
             android:banner="@drawable/tv_banner_sunset"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -276,16 +262,10 @@
             android:icon="@mipmap/ic_launcher_gold"
             android:banner="@drawable/tv_banner_gold"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -295,16 +275,10 @@
             android:icon="@mipmap/ic_launcher_titanium"
             android:banner="@drawable/tv_banner_titanium"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -314,16 +288,10 @@
             android:icon="@mipmap/ic_launcher_glass"
             android:banner="@drawable/tv_banner_glass"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -333,16 +301,10 @@
             android:icon="@mipmap/ic_launcher_crt"
             android:banner="@drawable/tv_banner_crt"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -352,16 +314,10 @@
             android:icon="@mipmap/ic_launcher_vhs"
             android:banner="@drawable/tv_banner_vhs"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -371,16 +327,10 @@
             android:icon="@mipmap/ic_launcher_synthwave"
             android:banner="@drawable/tv_banner_synthwave"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -390,16 +340,10 @@
             android:icon="@mipmap/ic_launcher_pixel"
             android:banner="@drawable/tv_banner_pixel"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -409,16 +353,10 @@
             android:icon="@mipmap/ic_launcher_neon"
             android:banner="@drawable/tv_banner_neon"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -428,16 +366,10 @@
             android:icon="@mipmap/ic_launcher_sticker"
             android:banner="@drawable/tv_banner_sticker"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -447,16 +379,10 @@
             android:icon="@mipmap/ic_launcher_ticket"
             android:banner="@drawable/tv_banner_ticket"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -466,16 +392,10 @@
             android:icon="@mipmap/ic_launcher_pop"
             android:banner="@drawable/tv_banner_pop"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -485,16 +405,10 @@
             android:icon="@mipmap/ic_launcher_strata"
             android:banner="@drawable/tv_banner_strata"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -504,16 +418,10 @@
             android:icon="@mipmap/ic_launcher_facet"
             android:banner="@drawable/tv_banner_facet"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
         <activity-alias
@@ -523,84 +431,77 @@
             android:icon="@mipmap/ic_launcher_tilde"
             android:banner="@drawable/tv_banner_tilde"
             android:targetActivity=".PlezyActivity">
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-            <meta-data
-                android:name="flutter_deeplinking_enabled"
-                android:value="false" />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity-alias>
-        <!-- END generated app icon aliases -->
+        <!-- Shows the playback's media notification, in the foreground while it plays. Media
+             controllers reach the session through the system, not this service. -->
+        <service
+            android:name=".media.PlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+        <!-- The media notification's actions and its dismissal (PlaybackNotification). -->
+        <receiver
+            android:name=".media.MediaActionReceiver"
+            android:exported="false" />
+        <!-- WorkManager's foreground service, which the download worker runs in: a data transfer (DownloadWorker). -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+        <!-- The download notification's Pause and Cancel actions (DownloadNotifications). -->
+        <receiver
+            android:name=".downloads.android.DownloadActionReceiver"
+            android:exported="false" />
+        <!-- A download's file and its saved subtitles, read-only for the player app they are handed to
+             (AndroidPlayerApps). The release build's authority is com.edde746.plezy.fileprovider, as the earlier
+             releases'; the test builds (com.edde746.plezy.dev) get their own, so both install side by side. -->
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="com.edde746.plezy.fileprovider"
+            android:name=".players.PlayerFiles"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_provider_paths" />
         </provider>
-        <!-- Launcher shelf artwork. Not exported: readers reach it only through the
-             per-URI read grants issued to CATEGORY_HOME packages by WatchNextProvider. -->
-        <provider
-            android:name=".watchnext.SystemShelfArtworkProvider"
-            android:authorities="com.edde746.plezy.systemshelf.artwork"
-            android:exported="false"
-            android:grantUriPermissions="true" />
+        <!-- The home screen's word that the user removed one of this app's Watch Next rows (WatchNext). Sent by the
+             system, so exported. -->
         <receiver
-            android:name=".watchnext.SystemShelfUpdateReceiver"
-            android:exported="false">
+            android:name=".watchnext.WatchNextRemovedReceiver"
+            android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.media.tv.action.WATCH_NEXT_PROGRAM_BROWSABLE_DISABLED" />
             </intent-filter>
         </receiver>
-        <!-- Setting this stops FlutterLoader from appending its half-of-RAM default after
-             PlezyActivity's shell args, where it would override the low-RAM cap. PlezyActivity
-             always passes the per-device value; this one applies only if another engine
-             initializes Flutter first. -->
-        <meta-data
-            android:name="io.flutter.embedding.android.OldGenHeapSize"
-            android:value="256" />
-        <!-- Don't delete the meta-data below.
-             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2" />
+        <!-- The Watch Next posters the app downloaded (ShelfArtwork): not exported, read by the launchers only through
+             a grant per poster. -->
+        <provider
+            android:name=".watchnext.ShelfArtworkProvider"
+            android:authorities="${applicationId}.systemshelf.artwork"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+        <!-- Grants the launchers the Watch Next posters again after a reboot or an update (WatchNext.grantAgain). -->
+        <receiver
+            android:name=".watchnext.WatchNextGrantReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <!-- Sentry starts only while crash reports are on (AndroidCrashReports), never by itself at launch: its two
+             start-up providers go. -->
+        <provider
+            android:name="io.sentry.android.core.SentryInitProvider"
+            android:authorities="${applicationId}.SentryInitProvider"
+            tools:node="remove" />
+        <provider
+            android:name="io.sentry.android.core.SentryPerformanceProvider"
+            android:authorities="${applicationId}.SentryPerformanceProvider"
+            tools:node="remove" />
     </application>
-    <!-- Required to query activities that can process text, see:
-         https://developer.android.com/training/package-visibility and
-         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
-
-         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
-        </intent>
-        <!-- Required for url_launcher to open HTTPS URLs -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="https" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="http" />
-        </intent>
-        <!-- Required to resolve external video player apps on Android 11+ -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:mimeType="video/*" />
-        </intent>
-        <!-- Required to identify HOME launchers as shelf artwork consumers. -->
-        <intent>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.HOME" />
-        </intent>
-    </queries>
 </manifest>
