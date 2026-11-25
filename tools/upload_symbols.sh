@@ -7,9 +7,10 @@
 #
 # dsym uploads the dSYMs found in the paths. android, linux and windows upload, for each native library the release
 # ships, its debug file:
-# - the libraries mpv-build built (Android: mpv-android's libmpv, FFmpeg and JNI glue; desktop: libmpv, in the app
-#   image's resources/mpv/) ship stripped; their unstripped copies (Windows: their PDBs, with the DLL itself, whose
-#   unwind tables the PDB lacks) come from the symbols zips pinned in mpv-build.lock.json (schema:
+# - the libraries mpv-build built (Android: mpv-android's libmpv, FFmpeg and JNI glue; desktop: libmpv, below the app
+#   image's resources/mpv/: libmpv-2.dll at its root, lib/<multiarch>/libmpv.so.2 on Linux) ship stripped; their
+#   unstripped copies (Windows: their PDBs, with the DLL itself, whose unwind tables the PDB lacks) come from the
+#   symbols zips pinned in mpv-build.lock.json (schema:
 #   tools/set_native_revision.sh), downloaded and checked against their sha256, and are matched to the shipped
 #   library by debug ID (an ELF's build ID, a PE's CodeView ID). A library of mpv-build's without a debug file of the
 #   same ID, or a variant without pinned symbols, fails the upload: the pin and the build disagree.
@@ -106,7 +107,8 @@ if group == "android":
                     shipped.append((m[1], f"{os.path.basename(package)}:{entry}", path))
 else:
     for root, _, names in os.walk(inputs[0]):
-        if os.path.basename(root) == "mpv" and os.path.basename(os.path.dirname(root)) == "resources":
+        parts = os.path.relpath(root, inputs[0]).split(os.sep)
+        if any(a == "resources" and b == "mpv" for a, b in zip(parts, parts[1:])):
             for name in names:
                 if re.search(r"\.(so(\.\d+)*|dll)$", name):
                     shipped.append((None, os.path.relpath(os.path.join(root, name), inputs[0]), os.path.join(root, name)))
@@ -164,7 +166,8 @@ for variant, name, path in shipped:
         fail(f"{name} ({debug_id}) has no debug file in mpv-build's {variant} symbols: {', '.join(sorted(built))}")
     print(f"{debug_id} {arch} {name} <- {', '.join(os.path.relpath(f, tmp) if f.startswith(tmp) else name for f in files)}")
     uploads += [f for f in files if f not in uploads]
-with open(os.path.join(tmp, "files.txt"), "w") as f:
+# "\n" alone: bash's read keeps a "\r", which Windows' text mode would add, in the path.
+with open(os.path.join(tmp, "files.txt"), "w", newline="\n") as f:
     f.write("\n".join(uploads) + "\n")
 EOF
   cat "$tmp/plan.txt"
