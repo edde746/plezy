@@ -1,0 +1,183 @@
+-- A profile's auto-download rules: keep N unwatched episodes of a show or season, or mirror a collection or playlist.
+CREATE TABLE sync_rules (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    -- Empty on rows from before profiles.
+    profile_id TEXT NOT NULL DEFAULT '',
+    server_id TEXT NOT NULL,
+    rating_key TEXT NOT NULL,
+    -- `<profileId>|<serverId>:<ratingKey>` (the public `<serverId>:<ratingKey>` on rows from before profiles).
+    global_key TEXT NOT NULL UNIQUE,
+    -- `show`, `season`, `collection` or `playlist`.
+    target_type TEXT NOT NULL,
+    episode_count INTEGER NOT NULL,
+    enabled INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1,
+    -- Epoch milliseconds.
+    created_at INTEGER NOT NULL,
+    last_executed_at INTEGER,
+    media_index INTEGER NOT NULL DEFAULT 0,
+    -- `unwatched` or `all`.
+    download_filter TEXT NOT NULL DEFAULT 'unwatched',
+    include_specials INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1,
+    download_links_initialized INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0,
+    -- The transcode quality preset's name the rule's downloads take; null for the original files.
+    transcode_quality TEXT
+);
+
+CREATE INDEX idx_sync_rules_profile ON sync_rules(profile_id);
+
+-- The downloads a rule covered, so removing it removes only what no other rule covers.
+CREATE TABLE sync_rule_downloads (
+    sync_rule_id INTEGER NOT NULL REFERENCES sync_rules(id) ON DELETE CASCADE,
+    profile_id TEXT NOT NULL,
+    download_global_key TEXT NOT NULL,
+    PRIMARY KEY (sync_rule_id, download_global_key)
+);
+
+CREATE INDEX idx_sync_rule_downloads_profile_key ON sync_rule_downloads(profile_id, download_global_key);
+
+-- A rule's links go with it.
+CREATE TRIGGER sync_rules_delete_downloads AFTER DELETE ON sync_rules BEGIN
+    DELETE FROM sync_rule_downloads WHERE sync_rule_id = old.id;
+END;
+
+-- The collections holding a profile's downloaded titles, so Downloads groups them offline. `member_ids` is a JSON array
+-- of the titles' ids in the collection's order.
+CREATE TABLE download_collections (
+    profile_id TEXT NOT NULL,
+    server_id TEXT NOT NULL,
+    collection_id TEXT NOT NULL,
+    member_ids TEXT NOT NULL,
+    PRIMARY KEY (profile_id, server_id, collection_id)
+);
+
+-- The last refresh of download_collections per profile and server; `checked_ids` is a JSON array of the titles it
+-- looked up.
+CREATE TABLE download_collection_syncs (
+    profile_id TEXT NOT NULL,
+    server_id TEXT NOT NULL,
+    -- Epoch milliseconds.
+    synced_at INTEGER NOT NULL,
+    checked_ids TEXT NOT NULL,
+    PRIMARY KEY (profile_id, server_id)
+);
+
+insertRow:
+INSERT INTO sync_rules VALUES ?;
+
+insertDownloadRow:
+INSERT INTO sync_rule_downloads VALUES ?;
+
+insertCollectionRow:
+INSERT INTO download_collections VALUES ?;
+
+insertCollectionSyncRow:
+INSERT INTO download_collection_syncs VALUES ?;
+
+selectAll:
+SELECT * FROM sync_rules ORDER BY id;
+
+selectForProfile:
+SELECT * FROM sync_rules WHERE profile_id = ? ORDER BY id;
+
+selectByKey:
+SELECT * FROM sync_rules WHERE global_key = ?;
+
+-- Unlinked rules, and every show or season rule (their links come from the downloads' parents, refreshed each run).
+selectNeedingLinks:
+SELECT * FROM sync_rules
+WHERE profile_id = ? AND server_id = ? AND (download_links_initialized = 0 OR target_type IN ('show', 'season'))
+ORDER BY id;
+
+insertRule:
+INSERT INTO sync_rules(
+    profile_id, server_id, rating_key, global_key, target_type, episode_count, created_at, media_index, download_filter,
+    include_specials, transcode_quality
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Re-creating a rule for the same key keeps whether it is enabled, when it last ran and its download links.
+updateRuleTarget:
+UPDATE sync_rules
+SET profile_id = ?, server_id = ?, rating_key = ?, target_type = ?, episode_count = ?, media_index = ?,
+    download_filter = ?, include_specials = ?, transcode_quality = ?
+WHERE global_key = ?;
+
+updateOptions:
+UPDATE sync_rules SET episode_count = ?, download_filter = ?, enabled = ?, include_specials = ?, media_index = ? WHERE id = ?;
+
+setEnabled:
+UPDATE sync_rules SET enabled = ? WHERE global_key = ?;
+
+completeExecution:
+UPDATE sync_rules SET last_executed_at = ?, download_links_initialized = 1 WHERE global_key = ?;
+
+markLinksInitialized:
+UPDATE sync_rules SET download_links_initialized = 1 WHERE global_key = ?;
+
+adoptRule:
+UPDATE sync_rules SET profile_id = ?, global_key = ? WHERE id = ?;
+
+adoptRuleDownloads:
+UPDATE sync_rule_downloads SET profile_id = ? WHERE sync_rule_id = ?;
+
+deleteById:
+DELETE FROM sync_rules WHERE id = ?;
+
+deleteByKey:
+DELETE FROM sync_rules WHERE global_key = ?;
+
+deleteForProfile:
+DELETE FROM sync_rules WHERE profile_id = ?;
+
+deleteAll:
+DELETE FROM sync_rules;
+
+linkDownload:
+INSERT OR REPLACE INTO sync_rule_downloads(sync_rule_id, profile_id, download_global_key) VALUES (?, ?, ?);
+
+selectLinkedKeys:
+SELECT download_global_key FROM sync_rule_downloads WHERE sync_rule_id = ? ORDER BY download_global_key;
+
+-- One row per rule linking each key: a key listed once is linked to one rule only.
+selectLinksForKeys:
+SELECT download_global_key FROM sync_rule_downloads WHERE profile_id = ? AND download_global_key IN ?;
+
+-- The profile's queued, downloading, paused or completed downloads on the server whose parent is the item.
+selectOwnedKeysUnderParent:
+SELECT downloaded_media.global_key FROM downloaded_media
+JOIN download_owners ON download_owners.global_key = downloaded_media.global_key
+WHERE download_owners.profile_id = ? AND downloaded_media.server_id = ? AND downloaded_media.status IN (0, 1, 2, 3)
+    AND downloaded_media.parent_rating_key = ?
+ORDER BY downloaded_media.global_key;
+
+-- As selectOwnedKeysUnderParent, the item being the parent or the grandparent (a show's episodes).
+selectOwnedKeysUnderAncestor:
+SELECT downloaded_media.global_key FROM downloaded_media
+JOIN download_owners ON download_owners.global_key = downloaded_media.global_key
+WHERE download_owners.profile_id = :profileId AND downloaded_media.server_id = :serverId
+    AND downloaded_media.status IN (0, 1, 2, 3)
+    AND (downloaded_media.grandparent_rating_key = :ratingKey OR downloaded_media.parent_rating_key = :ratingKey)
+ORDER BY downloaded_media.global_key;
+
+selectCollections:
+SELECT * FROM download_collections WHERE profile_id = ? ORDER BY server_id, collection_id;
+
+selectCollectionSync:
+SELECT * FROM download_collection_syncs WHERE profile_id = ? AND server_id = ?;
+
+deleteCollectionsForServer:
+DELETE FROM download_collections WHERE profile_id = ? AND server_id = ?;
+
+upsertCollectionSync:
+INSERT OR REPLACE INTO download_collection_syncs VALUES ?;
+
+deleteCollectionsForProfile:
+DELETE FROM download_collections WHERE profile_id = ?;
+
+deleteCollectionSyncsForProfile:
+DELETE FROM download_collection_syncs WHERE profile_id = ?;
+
+deleteAllCollections:
+DELETE FROM download_collections;
+
+deleteAllCollectionSyncs:
+DELETE FROM download_collection_syncs;

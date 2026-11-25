@@ -1,0 +1,90 @@
+-- Settings of this device, one value for every profile: Plezy's settings (data/settings, settings/AppSettings.kt) and
+-- the identity the app keeps (client identifier, active profile, profile recency, Plex Home users per account). Keys are
+-- the names Plezy's earlier releases stored, so an upgrade imports them as they are. The value is JSON; a missing row
+-- means the default.
+CREATE TABLE device_setting (
+    setting_key TEXT NOT NULL PRIMARY KEY,
+    value_json TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM device_setting;
+
+selectByKey:
+SELECT value_json FROM device_setting WHERE setting_key = ?;
+
+selectByKeys:
+SELECT * FROM device_setting WHERE setting_key IN ?;
+
+-- The settings whose keys start with the prefix (`profile_last_used_`, `plex_home_users_`).
+selectByPrefix:
+SELECT * FROM device_setting WHERE instr(setting_key, :prefix) = 1;
+
+upsert:
+INSERT OR REPLACE INTO device_setting VALUES ?;
+
+delete:
+DELETE FROM device_setting WHERE setting_key = ?;
+
+deleteByPrefix:
+DELETE FROM device_setting WHERE instr(setting_key, :prefix) = 1;
+
+deleteAllDeviceSettings:
+DELETE FROM device_setting;
+
+-- A profile's own settings: library choices (order, hidden, filters, sort, grouping, tab, selected library), the
+-- catalog source, watch-together rooms, recent metadata tags. `profile_scope` is the profile's settings scope: a Plex
+-- Home profile's home-user uuid, any other profile's id (profiles/ProfileScope).
+CREATE TABLE profile_setting (
+    profile_scope TEXT NOT NULL,
+    setting_key TEXT NOT NULL,
+    value_json TEXT NOT NULL,
+    PRIMARY KEY (profile_scope, setting_key)
+);
+
+selectProfileSetting:
+SELECT value_json FROM profile_setting WHERE profile_scope = ? AND setting_key = ?;
+
+selectProfileSettings:
+SELECT * FROM profile_setting WHERE profile_scope = ?;
+
+selectAllProfileSettings:
+SELECT * FROM profile_setting;
+
+upsertProfileSetting:
+INSERT OR REPLACE INTO profile_setting VALUES ?;
+
+deleteProfileSetting:
+DELETE FROM profile_setting WHERE profile_scope = ? AND setting_key = ?;
+
+deleteProfileScope:
+DELETE FROM profile_setting WHERE profile_scope = ?;
+
+deleteAllProfileSettings:
+DELETE FROM profile_setting;
+
+-- A server's own settings: its watched threshold, preferred endpoint, DVR recording targets.
+CREATE TABLE server_setting (
+    server_id TEXT NOT NULL,
+    setting_key TEXT NOT NULL,
+    value_json TEXT NOT NULL,
+    PRIMARY KEY (server_id, setting_key)
+);
+
+selectServerSetting:
+SELECT value_json FROM server_setting WHERE server_id = ? AND setting_key = ?;
+
+selectAllServerSettings:
+SELECT * FROM server_setting;
+
+upsertServerSetting:
+INSERT OR REPLACE INTO server_setting VALUES ?;
+
+deleteServerSetting:
+DELETE FROM server_setting WHERE server_id = ? AND setting_key = ?;
+
+deleteServerSettingsByKey:
+DELETE FROM server_setting WHERE setting_key = ?;
+
+deleteAllServerSettings:
+DELETE FROM server_setting;

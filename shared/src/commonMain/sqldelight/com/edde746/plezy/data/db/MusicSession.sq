@@ -1,0 +1,43 @@
+-- Each profile's last music session, restored paused on the next launch.
+CREATE TABLE music_sessions (
+    profile_id TEXT NOT NULL PRIMARY KEY,
+    -- A JSON array of the queue's items.
+    queue_json TEXT NOT NULL,
+    -- A JSON array of ints: the play order (a permutation of the queue while shuffled).
+    order_json TEXT NOT NULL,
+    cursor INTEGER NOT NULL,
+    shuffled INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0,
+    -- `off`, `all` or `one`.
+    repeat_mode TEXT NOT NULL DEFAULT 'off',
+    context_title TEXT,
+    context_kind TEXT,
+    position_ms INTEGER NOT NULL DEFAULT 0,
+    -- Epoch milliseconds.
+    updated_at INTEGER NOT NULL
+);
+
+insertRow:
+INSERT INTO music_sessions VALUES ?;
+
+upsert:
+INSERT OR REPLACE INTO music_sessions VALUES ?;
+
+-- The playhead and cursor only, leaving the (possibly large) queue alone.
+updateProgress:
+UPDATE music_sessions SET cursor = ?, position_ms = ?, updated_at = ? WHERE profile_id = ?;
+
+selectByProfile:
+SELECT * FROM music_sessions WHERE profile_id = ?;
+
+deleteForProfile:
+DELETE FROM music_sessions WHERE profile_id = ?;
+
+deleteAll:
+DELETE FROM music_sessions;
+
+selectQueues:
+SELECT profile_id, queue_json FROM music_sessions;
+
+-- The queue alone, keeping the cursor, playhead and modes.
+updateQueue:
+UPDATE music_sessions SET queue_json = ? WHERE profile_id = ?;

@@ -1,0 +1,82 @@
+-- The background downloader's tasks and their records (TaskDownloader): one row per task, kept after it ended until
+-- the download manager deletes the record. Device-local. The URL and the headers never carry a server's credentials:
+-- the downloader stores tasks without them and adds them to each request (TaskCredentials).
+CREATE TABLE download_task (
+    task_id TEXT NOT NULL PRIMARY KEY,
+    url TEXT NOT NULL,
+    -- The request headers, a JSON object (name → value).
+    headers_json TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    directory TEXT NOT NULL,
+    -- BaseDirectory by name.
+    base_directory TEXT NOT NULL,
+    -- A storage-access-framework tree URI: the task writes into its document `filename`.
+    directory_uri TEXT,
+    meta_data TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    requires_wifi INTEGER AS kotlin.Boolean NOT NULL,
+    retries INTEGER NOT NULL,
+    allow_pause INTEGER AS kotlin.Boolean NOT NULL,
+    -- Epoch milliseconds.
+    creation_time INTEGER NOT NULL,
+    -- TaskStatus by name.
+    status TEXT NOT NULL,
+    -- Fraction of the file, 0–1.
+    progress REAL NOT NULL,
+    -- The file's size in bytes, -1 while unknown.
+    expected_file_size INTEGER NOT NULL,
+    -- A failed task's TaskException: its kind by name, description and HTTP status.
+    exception_type TEXT,
+    exception_description TEXT,
+    exception_http_status INTEGER,
+    -- Retries left before a failure is final.
+    retries_remaining INTEGER NOT NULL,
+    -- The ETag, else Last-Modified, the kept bytes came with: `If-Range` on a resume.
+    validator TEXT,
+    -- A document task's document, once found or created.
+    document_uri TEXT,
+    -- The queue's order: enqueued earlier runs earlier.
+    sequence INTEGER NOT NULL
+);
+
+CREATE INDEX download_task_by_status ON download_task(status, sequence);
+
+-- The downloader's settings that outlive the process (the Wi-Fi policy), name → value.
+CREATE TABLE download_task_config (
+    name TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM download_task ORDER BY sequence;
+
+select:
+SELECT * FROM download_task WHERE task_id = ?;
+
+nextSequence:
+SELECT coalesce(max(sequence), 0) + 1 FROM download_task;
+
+upsert:
+INSERT OR REPLACE INTO download_task(
+    task_id, url, headers_json, filename, directory, base_directory, directory_uri, meta_data, display_name,
+    requires_wifi, retries, allow_pause, creation_time, status, progress, expected_file_size, exception_type,
+    exception_description, exception_http_status, retries_remaining, validator, document_uri, sequence
+) VALUES ?;
+
+setState:
+UPDATE download_task SET status = :status, progress = :progress, expected_file_size = :expectedFileSize,
+    exception_type = :exceptionType, exception_description = :exceptionDescription,
+    exception_http_status = :exceptionHttpStatus
+WHERE task_id = :taskId;
+
+delete:
+DELETE FROM download_task WHERE task_id = ?;
+
+deleteAll:
+DELETE FROM download_task;
+
+config:
+SELECT value FROM download_task_config WHERE name = ?;
+
+setConfig:
+INSERT OR REPLACE INTO download_task_config(name, value) VALUES (?, ?);

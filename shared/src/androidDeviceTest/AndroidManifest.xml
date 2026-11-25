@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The watch-together device test reaches a relay on the local network over plain HTTP, as the app does. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application android:usesCleartextTraffic="true">
+        <!-- The storage access framework device test's documents provider: a folder of the test app's own. -->
+        <provider
+            android:name="com.edde746.plezy.downloads.FolderDocumentsProvider"
+            android:authorities="com.edde746.plezy.test.folderdocuments"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+    </application>
+</manifest>

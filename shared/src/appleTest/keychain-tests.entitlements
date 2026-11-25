@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Simulated entitlements linked into the iOS/tvOS simulator test binaries (shared/build.gradle.kts, secrets block):
+     the application identifier gives the Keychain tests their own access group. -->
+<plist version="1.0">
+<dict>
+	<key>application-identifier</key>
+	<string>com.edde746.plezy.tests</string>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>com.edde746.plezy.tests</string>
+	</array>
+</dict>
+</plist>

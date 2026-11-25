@@ -1,0 +1,88 @@
+-- Watch progress and watched/unwatched marks made offline, per profile, server and client scope, waiting to reach their
+-- server. Replayed oldest first (created_at).
+CREATE TABLE offline_watch_progress (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    -- Null for rows from before profiles: the first active profile adopts them.
+    profile_id TEXT,
+    server_id TEXT NOT NULL,
+    -- A Jellyfin/Emby user scope `<machineId>/<userId>`, a Plex profile scope `<serverId>/~plex-profile/<profileId>`.
+    client_scope_id TEXT,
+    rating_key TEXT NOT NULL,
+    -- `<serverId>:<ratingKey>`.
+    global_key TEXT NOT NULL,
+    -- `progress`, `watched` or `unwatched`.
+    action_type TEXT NOT NULL,
+    -- Milliseconds.
+    view_offset INTEGER,
+    duration INTEGER,
+    should_mark_watched INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0,
+    -- Epoch milliseconds.
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    sync_attempts INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT
+);
+
+CREATE INDEX idx_offline_watch_progress_server ON offline_watch_progress(server_id);
+CREATE INDEX idx_offline_watch_progress_profile ON offline_watch_progress(profile_id);
+CREATE INDEX idx_offline_watch_progress_key ON offline_watch_progress(global_key, profile_id);
+
+insertRow:
+INSERT INTO offline_watch_progress VALUES ?;
+
+insertAction:
+INSERT INTO offline_watch_progress(
+    profile_id, server_id, client_scope_id, rating_key, global_key, action_type, view_offset, duration,
+    should_mark_watched, created_at, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+lastInsertId:
+SELECT last_insert_rowid();
+
+selectById:
+SELECT * FROM offline_watch_progress WHERE id = ?;
+
+-- Replay order: oldest first.
+selectPending:
+SELECT * FROM offline_watch_progress ORDER BY created_at, id;
+
+selectPendingForProfile:
+SELECT * FROM offline_watch_progress WHERE profile_id = ? ORDER BY created_at, id;
+
+-- The actions tried fewer than :maxSyncAttempts times.
+countPending:
+SELECT COUNT(*) FROM offline_watch_progress WHERE sync_attempts < :maxSyncAttempts;
+
+countPendingForProfile:
+SELECT COUNT(*) FROM offline_watch_progress WHERE profile_id = :profileId AND sync_attempts < :maxSyncAttempts;
+
+-- Newest first: the latest revision, the latest row among equal revisions.
+selectForKeys:
+SELECT * FROM offline_watch_progress WHERE global_key IN ? ORDER BY updated_at DESC, id DESC;
+
+-- An item's actions in one profile and client scope (nulls matching nulls), oldest row first.
+selectForItem:
+SELECT * FROM offline_watch_progress
+WHERE global_key = :globalKey AND profile_id IS :profileId AND client_scope_id IS :clientScopeId
+ORDER BY id;
+
+-- A merge is a new revision: its retry history went with the revision that failed.
+updateProgress:
+UPDATE offline_watch_progress
+SET view_offset = ?, duration = ?, should_mark_watched = ?, updated_at = ?, sync_attempts = 0, last_error = NULL
+WHERE id = ?;
+
+recordSyncAttempt:
+UPDATE offline_watch_progress SET sync_attempts = sync_attempts + 1, last_error = ? WHERE id = ?;
+
+deleteByIds:
+DELETE FROM offline_watch_progress WHERE id IN ?;
+
+adoptLegacy:
+UPDATE offline_watch_progress SET profile_id = ? WHERE profile_id IS NULL;
+
+deleteForProfile:
+DELETE FROM offline_watch_progress WHERE profile_id = ?;
+
+deleteAll:
+DELETE FROM offline_watch_progress;

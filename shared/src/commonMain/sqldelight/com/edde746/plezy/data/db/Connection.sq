@@ -1,0 +1,44 @@
+-- The media-server connections the user added: one row per Plex account (with the servers plex.tv lists for it) or per
+-- Jellyfin/Emby server and user. Tables carried over from Plezy's earlier releases keep their names and columns, so
+-- an upgrade imports them row for row.
+--
+-- `config_json` is the connection's configuration in Plezy's connection format: a Plex account's `clientIdentifier`,
+-- `accountLabel`, `activeProfile` and `servers` (each `name`, `clientIdentifier`, `connections`, `owned`, `product`,
+-- `platform`, `lastSeenAt`); a Jellyfin or Emby connection's `baseUrl`, `baseUrls`, `serverName`, `serverMachineId`,
+-- `userId`, `userName`, `deviceId`, `isAdministrator`, `primaryImageTag`. Tokens never live here: the account token,
+-- each server's access token and a Jellyfin/Emby access token are in the SecretStore under keys of the row's
+-- `secret_version` (data/connections/IdentitySecrets).
+CREATE TABLE connections (
+    -- `plex.<accountUuid>` (or `plex.<clientIdentifier>`) for a Plex account, `<serverMachineId>/<userId>` otherwise.
+    id TEXT NOT NULL PRIMARY KEY,
+    -- `plex`, `jellyfin` or `emby` (BackendKind.id): decides how config_json reads.
+    kind TEXT NOT NULL,
+    config_json TEXT NOT NULL,
+    -- Epoch milliseconds. created_at survives a sign-in again: the connections list and a profile's avatar go by it.
+    created_at INTEGER NOT NULL,
+    last_authenticated_at INTEGER,
+    -- The version of the SecretStore keys holding this row's tokens; null for the unversioned keys an earlier release's
+    -- import wrote.
+    secret_version TEXT
+);
+
+CREATE INDEX idx_connections_kind ON connections(kind);
+
+insertRow:
+INSERT INTO connections VALUES ?;
+
+selectAll:
+SELECT * FROM connections ORDER BY created_at ASC;
+
+selectById:
+SELECT * FROM connections WHERE id = ?;
+
+-- Rewrites a connection in place (never a delete + insert, which would drop its bindings); created_at stays.
+update:
+UPDATE connections SET kind = ?, config_json = ?, last_authenticated_at = ?, secret_version = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM connections WHERE id = ?;
+
+deleteAll:
+DELETE FROM connections;

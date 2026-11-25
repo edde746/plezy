@@ -1,0 +1,31 @@
+-- A Jellyfin/Emby connection's favourite Live TV channels, in the user's order.
+CREATE TABLE live_tv_favorite (
+    -- The connection (`<machineId>/<userId>`).
+    connection_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    -- The channel's source and id on the server.
+    source TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    title TEXT,
+    thumb TEXT,
+    -- The virtual channel number.
+    vcn TEXT,
+    PRIMARY KEY (connection_id, source, channel_id)
+);
+
+-- A connection's favourites go with it.
+CREATE TRIGGER connections_delete_favorites AFTER DELETE ON connections BEGIN
+    DELETE FROM live_tv_favorite WHERE connection_id = old.id;
+END;
+
+insertRow:
+INSERT INTO live_tv_favorite VALUES ?;
+
+selectForConnection:
+SELECT * FROM live_tv_favorite WHERE connection_id = ? ORDER BY position;
+
+deleteForConnection:
+DELETE FROM live_tv_favorite WHERE connection_id = ?;
+
+deleteAll:
+DELETE FROM live_tv_favorite;

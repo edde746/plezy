@@ -1,0 +1,54 @@
+-- Media-server API responses kept for offline use, raw JSON. `cache_key` is `<serverId or client scope>:<endpoint>`:
+-- `abc:/library/metadata/123` (Plex), `abc:/Users/<user>/Items/<id>` (Jellyfin), `<serverId>/~plex-profile/<profileId>:…`
+-- for a Plex profile's own metadata, `<serverId>/~plex-transfer:…` for downloads kept after a sign-out. Pinned rows back
+-- downloaded items and are the only metadata they have offline.
+CREATE TABLE api_cache (
+    cache_key TEXT NOT NULL PRIMARY KEY,
+    data TEXT NOT NULL,
+    -- When the row was last written, epoch milliseconds.
+    cached_at INTEGER NOT NULL,
+    pinned INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_api_cache_cached_at ON api_cache(cached_at);
+
+insertRow:
+INSERT INTO api_cache VALUES ?;
+
+selectByKey:
+SELECT * FROM api_cache WHERE cache_key = ?;
+
+-- A new row starts unpinned; rewriting one keeps its pin (insertIfAbsent, then rewrite).
+insertIfAbsent:
+INSERT OR IGNORE INTO api_cache(cache_key, data, cached_at) VALUES (?, ?, ?);
+
+rewrite:
+UPDATE api_cache SET data = ?, cached_at = ? WHERE cache_key = ?;
+
+pin:
+UPDATE api_cache SET pinned = 1 WHERE cache_key = ?;
+
+selectPinned:
+SELECT * FROM api_cache WHERE pinned = 1 ORDER BY cache_key;
+
+selectPinnedByPrefix:
+SELECT * FROM api_cache WHERE pinned = 1 AND instr(cache_key, :prefix) = 1 ORDER BY cache_key;
+
+selectByPrefix:
+SELECT * FROM api_cache WHERE instr(cache_key, :prefix) = 1 ORDER BY cache_key;
+
+delete:
+DELETE FROM api_cache WHERE cache_key = ?;
+
+deleteByPrefix:
+DELETE FROM api_cache WHERE instr(cache_key, :prefix) = 1;
+
+deleteUnpinned:
+DELETE FROM api_cache WHERE pinned = 0;
+
+-- Unpinned rows last written before :before (epoch milliseconds).
+deleteUnpinnedBefore:
+DELETE FROM api_cache WHERE pinned = 0 AND cached_at < :before;
+
+deleteAll:
+DELETE FROM api_cache;

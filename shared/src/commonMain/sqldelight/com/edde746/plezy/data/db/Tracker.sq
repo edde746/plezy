@@ -1,0 +1,100 @@
+-- One row per connected tracker service and profile on this device. Tokens never live here: the session is in the
+-- SecretStore (trackers/TrackerTokenStore.kt).
+CREATE TABLE tracker_account (
+    profile_id TEXT NOT NULL,
+    -- trakt, simkl, mdblist, mal or anilist.
+    service TEXT NOT NULL,
+    username TEXT,
+    -- When this device signed the account in, epoch milliseconds: names the binding.
+    connected_at INTEGER NOT NULL,
+    PRIMARY KEY (profile_id, service)
+);
+
+selectAccounts:
+SELECT * FROM tracker_account WHERE profile_id = ? ORDER BY connected_at, service;
+
+selectAccount:
+SELECT * FROM tracker_account WHERE profile_id = ? AND service = ?;
+
+-- Every profile's connections on this device, to find sessions nothing uses any more.
+selectConnections:
+SELECT profile_id, service FROM tracker_account;
+
+-- Every connection, to move those earlier builds kept under a full Plex Home profile id to its scope.
+selectAllAccounts:
+SELECT * FROM tracker_account;
+
+upsertAccount:
+INSERT OR REPLACE INTO tracker_account VALUES ?;
+
+deleteAccount:
+DELETE FROM tracker_account WHERE profile_id = ? AND service = ?;
+
+-- Failed tracker watched/unwatched writes waiting for a retry. One row per remote row a write changes
+-- (`coalesce_key`): a newer intent replaces the queued one and moves to the back, so rows replay in the order their
+-- surviving intents were expressed. A row is dropped after 5 failed attempts. Device-local.
+CREATE TABLE tracker_write_queue (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    profile_id TEXT NOT NULL,
+    service TEXT NOT NULL,
+    coalesce_key TEXT NOT NULL,
+    -- 1 for a watched write, 0 for its removal.
+    watched INTEGER AS kotlin.Boolean NOT NULL,
+    -- The TrackerContext the write was built from, as JSON.
+    context_json TEXT NOT NULL,
+    -- Series-progress services: the progress this write claims. Claims only move forward. NULL otherwise.
+    progress_claim INTEGER,
+    -- When the watch happened, epoch milliseconds, so a late replay is filed under the right date.
+    watched_at INTEGER NOT NULL,
+    -- Failed attempts so far; transient errors don't count.
+    attempts INTEGER NOT NULL,
+    UNIQUE (profile_id, service, coalesce_key)
+);
+
+selectQueued:
+SELECT * FROM tracker_write_queue WHERE profile_id = ? ORDER BY id;
+
+selectQueuedByKey:
+SELECT * FROM tracker_write_queue WHERE profile_id = ? AND service = ? AND coalesce_key = ?;
+
+selectQueuedId:
+SELECT id FROM tracker_write_queue WHERE id = ?;
+
+insertQueued:
+INSERT INTO tracker_write_queue(profile_id, service, coalesce_key, watched, context_json, progress_claim, watched_at, attempts)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteQueued:
+DELETE FROM tracker_write_queue WHERE id = ?;
+
+deleteQueuedByKey:
+DELETE FROM tracker_write_queue WHERE profile_id = ? AND service = ? AND coalesce_key = ?;
+
+deleteQueuedForService:
+DELETE FROM tracker_write_queue WHERE profile_id = ? AND service = ?;
+
+moveQueuedForService:
+UPDATE tracker_write_queue SET profile_id = ? WHERE profile_id = ? AND service = ?;
+
+-- Every profile scope with a queued write, to drop those earlier builds left under a full Plex Home profile id.
+selectQueuedProfileIds:
+SELECT DISTINCT profile_id FROM tracker_write_queue;
+
+incrementAttempts:
+UPDATE tracker_write_queue SET attempts = attempts + 1 WHERE id = ?;
+
+-- Every profile with a connection or a queued write, to forget a removed profile scope's.
+selectProfileIds:
+SELECT profile_id FROM tracker_account UNION SELECT profile_id FROM tracker_write_queue;
+
+deleteAccountsForProfile:
+DELETE FROM tracker_account WHERE profile_id = ?;
+
+deleteQueuedForProfile:
+DELETE FROM tracker_write_queue WHERE profile_id = ?;
+
+deleteAllAccounts:
+DELETE FROM tracker_account;
+
+deleteAllQueued:
+DELETE FROM tracker_write_queue;

@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <string name="flutter.view_mode">grid</string>
+    <boolean name="flutter.enable_debug_logging" value="true" />
+    <long name="flutter.seek_time_small" value="20" />
+    <int name="flutter.sleep_timer_duration" value="45" />
+    <string name="flutter.volume">VGhpcyBpcyB0aGUgcHJlZml4IGZvciBEb3VibGUu80.0</string>
+    <float name="flutter.legacy_ratio" value="0.5" />
+    <string name="flutter.library_order">VGhpcyBpcyB0aGUgcHJlZml4IGZvciBhIGxpc3Qu![&quot;b&quot;,&quot;a&quot;]</string>
+    <string name="flutter.hidden_genres">VGhpcyBpcyB0aGUgcHJlZml4IGZvciBhIGxpc3QurO0ABXNyABNqYXZhLnV0aWwuQXJyYXlMaXN0eIHSHZnHYZ0DAAFJAARzaXpleHAAAAACdwQAAAAC
+dAAGSG9ycm9ydAAES2lkc3g=
+</string>
+    <set name="flutter.old_set">
+        <string>x</string>
+        <string>y</string>
+    </set>
+    <string name="flutter.big_counter">VGhpcyBpcyB0aGUgcHJlZml4IGZvciBCaWdJbnRlZ2Vyzz</string>
+    <string name="flutter.server_name">Tom &amp; Jerry &lt;&quot;Den&quot;&gt;</string>
+    <string name="flutter.emoji">&#233;t&#233;</string>
+    <null name="flutter.cleared" />
+    <string name="not_flutter_key">ignored</string>
+    <string name="flutter.credential_vault_key_v1">LwryCC7zyn0faXRkD4U2pWXWHXA+VL5fpLyKHpV9eQw=</string>
+</map>

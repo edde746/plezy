@@ -1,0 +1,299 @@
+-- Downloaded media as Plezy's earlier releases stored it, imported on upgrade: one physical row per public
+-- `<serverId>:<ratingKey>` (global_key), shared by the profiles that own it (download_owners).
+CREATE TABLE downloaded_media (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    server_id TEXT NOT NULL,
+    -- The scoped client that produced the row's metadata (not ownership).
+    client_scope_id TEXT,
+    rating_key TEXT NOT NULL,
+    global_key TEXT NOT NULL UNIQUE,
+    type TEXT NOT NULL,
+    parent_rating_key TEXT,
+    grandparent_rating_key TEXT,
+    -- 0 queued, 1 downloading, 2 paused, 3 completed, 4 failed, 5 cancelled, 6 partial.
+    status INTEGER NOT NULL,
+    -- 0..100.
+    progress INTEGER NOT NULL DEFAULT 0,
+    total_bytes INTEGER,
+    downloaded_bytes INTEGER NOT NULL DEFAULT 0,
+    -- Relative to the platform's base directory when inside it, else absolute, or a SAF `content://` URI.
+    video_file_path TEXT,
+    -- A JSON array of the stored paths of a stacked version's later files, in playback order (null entries while not
+    -- stored); null for a single file.
+    additional_part_paths TEXT,
+    saf_root_uri TEXT,
+    -- The server-side artwork path (not a local file).
+    thumb_path TEXT,
+    -- Epoch milliseconds.
+    downloaded_at INTEGER,
+    error_message TEXT,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    bg_task_id TEXT,
+    media_index INTEGER NOT NULL DEFAULT 0,
+    media_source_id TEXT,
+    library_id TEXT,
+    library_title TEXT,
+    -- The transcode quality preset's name (`P720_2MBPS`) of a download transcoded by the server; null for the original file.
+    transcode_quality TEXT
+);
+
+CREATE INDEX idx_downloaded_media_status ON downloaded_media(status);
+CREATE INDEX idx_downloaded_media_server ON downloaded_media(server_id);
+CREATE INDEX idx_downloaded_media_parent ON downloaded_media(parent_rating_key);
+CREATE INDEX idx_downloaded_media_grandparent ON downloaded_media(grandparent_rating_key);
+
+-- Which profiles see a shared download.
+CREATE TABLE download_owners (
+    profile_id TEXT NOT NULL,
+    global_key TEXT NOT NULL,
+    -- `plex`, `jellyfin`, `emby`.
+    backend TEXT,
+    client_scope_id TEXT,
+    -- Epoch milliseconds.
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (profile_id, global_key)
+);
+
+CREATE INDEX idx_download_owners_profile ON download_owners(profile_id);
+CREATE INDEX idx_download_owners_global_key ON download_owners(global_key);
+
+-- Downloads waiting their turn: highest priority, then oldest first.
+CREATE TABLE download_queue (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    media_global_key TEXT NOT NULL UNIQUE,
+    priority INTEGER NOT NULL DEFAULT 0,
+    -- Epoch milliseconds.
+    added_at INTEGER NOT NULL,
+    download_subtitles INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1,
+    download_artwork INTEGER AS kotlin.Boolean NOT NULL DEFAULT 1
+);
+
+insertRow:
+INSERT INTO downloaded_media VALUES ?;
+
+insertOwnerRow:
+INSERT INTO download_owners VALUES ?;
+
+insertQueueRow:
+INSERT INTO download_queue VALUES ?;
+
+-- Media
+
+selectMedia:
+SELECT * FROM downloaded_media WHERE global_key = ?;
+
+selectAllMedia:
+SELECT * FROM downloaded_media ORDER BY id;
+
+selectMediaWithStatus:
+SELECT * FROM downloaded_media WHERE status IN ? ORDER BY id;
+
+selectMediaByParent:
+SELECT * FROM downloaded_media WHERE parent_rating_key = ? ORDER BY id;
+
+selectMediaByGrandparent:
+SELECT * FROM downloaded_media WHERE grandparent_rating_key = ? ORDER BY id;
+
+selectMediaByServer:
+SELECT * FROM downloaded_media WHERE server_id = ? ORDER BY id;
+
+-- The rows that might record a path as one of their files: as their video, or among their later files.
+selectMediaRecordingPath:
+SELECT * FROM downloaded_media
+WHERE (video_file_path = :path OR additional_part_paths IS NOT NULL) AND global_key != :excludingGlobalKey;
+
+insertQueuedMedia:
+INSERT INTO downloaded_media(server_id, client_scope_id, rating_key, global_key, type, parent_rating_key,
+    grandparent_rating_key, library_id, library_title, status, media_index, media_source_id, transcode_quality)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?);
+
+-- A failed, cancelled or partial row queued again: its request and attempt state start over; its id and its files stay.
+-- A requeue that couldn't resolve the library keeps the one stamped before.
+requeueMedia:
+UPDATE downloaded_media SET
+    server_id = :serverId,
+    client_scope_id = :clientScopeId,
+    rating_key = :ratingKey,
+    type = :type,
+    parent_rating_key = :parentRatingKey,
+    grandparent_rating_key = :grandparentRatingKey,
+    library_id = coalesce(:libraryId, library_id),
+    library_title = coalesce(:libraryTitle, library_title),
+    status = 0,
+    progress = 0,
+    total_bytes = NULL,
+    downloaded_bytes = 0,
+    error_message = NULL,
+    retry_count = 0,
+    bg_task_id = NULL,
+    media_index = :mediaIndex,
+    media_source_id = :mediaSourceId,
+    transcode_quality = :transcodeQuality
+WHERE global_key = :globalKey AND status IN (4, 5, 6);
+
+changes:
+SELECT changes();
+
+setStatus:
+UPDATE downloaded_media SET status = ? WHERE global_key = ?;
+
+failActive:
+UPDATE downloaded_media SET status = 4, bg_task_id = NULL, error_message = ? WHERE global_key IN ?;
+
+setMediaSource:
+UPDATE downloaded_media SET media_source_id = ? WHERE global_key = ?;
+
+setProgress:
+UPDATE downloaded_media SET progress = ?, downloaded_bytes = ?, total_bytes = ? WHERE global_key = ?;
+
+setVideoFilePath:
+UPDATE downloaded_media SET video_file_path = ? WHERE global_key = ?;
+
+setVideoFilePathDownloaded:
+UPDATE downloaded_media SET video_file_path = ?, downloaded_at = ? WHERE global_key = ?;
+
+resetParts:
+UPDATE downloaded_media SET video_file_path = NULL, additional_part_paths = ? WHERE global_key = ?;
+
+setAdditionalPartPaths:
+UPDATE downloaded_media SET additional_part_paths = ? WHERE global_key = ?;
+
+setAdditionalPartPathsDownloaded:
+UPDATE downloaded_media SET additional_part_paths = ?, downloaded_at = ? WHERE global_key = ?;
+
+setSafRoot:
+UPDATE downloaded_media SET saf_root_uri = ? WHERE global_key = ?;
+
+countSafRootReferences:
+SELECT count(*) FROM downloaded_media WHERE saf_root_uri = ?;
+
+setThumbPath:
+UPDATE downloaded_media SET thumb_path = ? WHERE global_key = ?;
+
+recordError:
+UPDATE downloaded_media SET error_message = ? WHERE global_key = ?;
+
+countRetry:
+UPDATE downloaded_media SET retry_count = retry_count + 1 WHERE global_key = ?;
+
+clearError:
+UPDATE downloaded_media SET error_message = NULL, retry_count = 0 WHERE global_key = ?;
+
+setBgTaskId:
+UPDATE downloaded_media SET bg_task_id = ? WHERE global_key = ?;
+
+setClientScope:
+UPDATE downloaded_media SET client_scope_id = ? WHERE global_key = ?;
+
+deleteMedia:
+DELETE FROM downloaded_media WHERE global_key = ?;
+
+-- Queue
+
+upsertQueue:
+INSERT OR REPLACE INTO download_queue(media_global_key, priority, added_at, download_subtitles, download_artwork)
+VALUES (?, ?, ?, ?, ?);
+
+setQueueIntent:
+UPDATE download_queue SET download_subtitles = ?, download_artwork = ? WHERE media_global_key = ?;
+
+selectAllQueue:
+SELECT * FROM download_queue ORDER BY id;
+
+selectQueueKeys:
+SELECT media_global_key FROM download_queue;
+
+-- The next queued download: highest priority, then oldest.
+selectNextQueued:
+SELECT download_queue.* FROM download_queue
+JOIN downloaded_media ON downloaded_media.global_key = download_queue.media_global_key
+WHERE downloaded_media.status = 0 AND download_queue.media_global_key NOT IN ?
+ORDER BY download_queue.priority DESC, download_queue.added_at ASC
+LIMIT 1;
+
+-- Completed videos whose queue row still holds subtitles or artwork to fetch.
+selectPendingSupplementary:
+SELECT download_queue.* FROM download_queue
+JOIN downloaded_media ON downloaded_media.global_key = download_queue.media_global_key
+WHERE downloaded_media.status = 3 AND downloaded_media.video_file_path IS NOT NULL
+ORDER BY download_queue.added_at ASC;
+
+deleteQueue:
+DELETE FROM download_queue WHERE media_global_key = ?;
+
+deleteQueueKeys:
+DELETE FROM download_queue WHERE media_global_key IN ?;
+
+-- Owners
+
+selectOwner:
+SELECT * FROM download_owners WHERE profile_id = ? AND global_key = ?;
+
+selectOwnersForKey:
+SELECT * FROM download_owners WHERE global_key = ?;
+
+selectOwnersForProfile:
+SELECT * FROM download_owners WHERE profile_id = ?;
+
+selectAllOwners:
+SELECT * FROM download_owners;
+
+insertOwner:
+INSERT INTO download_owners(profile_id, global_key, backend, client_scope_id, created_at) VALUES (?, ?, ?, ?, ?);
+
+-- A repeated claim fills in the metadata it brings and keeps the rest.
+fillOwner:
+UPDATE download_owners SET backend = coalesce(:backend, backend), client_scope_id = coalesce(:clientScopeId, client_scope_id)
+WHERE profile_id = :profileId AND global_key = :globalKey;
+
+setOwnerScope:
+UPDATE download_owners SET backend = ?, client_scope_id = ? WHERE profile_id = ? AND global_key = ?;
+
+deleteOwner:
+DELETE FROM download_owners WHERE profile_id = ? AND global_key = ?;
+
+deleteOwnersForKey:
+DELETE FROM download_owners WHERE global_key = ?;
+
+deleteAllOwners:
+DELETE FROM download_owners;
+
+-- What owners and sync rules link to downloads
+
+deleteSyncRuleLink:
+DELETE FROM sync_rule_downloads WHERE profile_id = ? AND download_global_key = ?;
+
+deleteSyncRuleLinksForKey:
+DELETE FROM sync_rule_downloads WHERE download_global_key = ?;
+
+deleteAllSyncRuleLinks:
+DELETE FROM sync_rule_downloads;
+
+resetSyncRuleLinksInitialized:
+UPDATE sync_rules SET download_links_initialized = 0;
+
+-- Who can own a download
+
+selectLocalProfileIds:
+SELECT id FROM profiles;
+
+selectConnectionIdentities:
+SELECT id, kind, config_json FROM connections;
+
+selectBindings:
+SELECT profile_id, connection_id, user_identifier FROM profile_connections;
+
+-- The pinned Plex metadata a download keeps offline, moved between client scopes on logout and adoption
+-- (`<scope>:/library/metadata/<ratingKey>`).
+
+selectCacheData:
+SELECT data FROM api_cache WHERE cache_key = ?;
+
+putPinnedCache:
+INSERT OR REPLACE INTO api_cache(cache_key, data, cached_at, pinned) VALUES (?, ?, ?, 1);
+
+selectPinnedMetadataCacheKeys:
+SELECT cache_key FROM api_cache WHERE pinned = 1 AND instr(cache_key, ':/library/metadata/') > 0;
+
+deleteCacheKeys:
+DELETE FROM api_cache WHERE cache_key IN ?;

@@ -1,0 +1,120 @@
+-- The app's local profiles. Plex Home users are profiles too, but virtual: built from the Plex Home users cached per
+-- Plex account, never stored here (their ids are `plex-home-<accountConnectionId>-<homeUserUuid>`).
+CREATE TABLE profiles (
+    -- `local-<uuid v4>`.
+    id TEXT NOT NULL PRIMARY KEY,
+    -- `local`; rows of the retired `plex_home` kind are dropped when they're read in.
+    kind TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    avatar_thumb_url TEXT,
+    -- A local profile's `{"pinHash": <lowercase hex SHA-256 of "plezy-app-profile-pin-v1:" + PIN> | null}`.
+    config_json TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    -- Epoch milliseconds.
+    created_at INTEGER NOT NULL,
+    last_used_at INTEGER
+);
+
+CREATE INDEX idx_profiles_kind ON profiles(kind);
+
+-- Which connections a profile uses, and as which user. No foreign key on profile_id: a Plex Home profile has no row in
+-- profiles. The user's token for the binding (a Plex Home user's switched token, a Jellyfin/Emby access token) is in
+-- the SecretStore under a key of the row's `secret_version` (data/connections/IdentitySecrets); a binding without one
+-- mints it on its next use.
+CREATE TABLE profile_connections (
+    profile_id TEXT NOT NULL,
+    -- Deleting the connection deletes its bindings.
+    connection_id TEXT NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
+    -- A Plex Home user's uuid, or a Jellyfin/Emby user id.
+    user_identifier TEXT NOT NULL,
+    -- Exactly one binding of a profile is its default.
+    is_default INTEGER AS kotlin.Boolean NOT NULL DEFAULT 0,
+    -- Epoch milliseconds.
+    token_acquired_at INTEGER,
+    last_used_at INTEGER,
+    -- The version of the SecretStore key holding the binding's token; null for the unversioned key an earlier
+    -- release's import wrote.
+    secret_version TEXT,
+    PRIMARY KEY (profile_id, connection_id)
+);
+
+CREATE INDEX idx_profile_connections_connection_id ON profile_connections(connection_id);
+CREATE INDEX idx_profile_connections_profile_id ON profile_connections(profile_id);
+
+insertRow:
+INSERT INTO profiles VALUES ?;
+
+-- The local profiles, in the picker's fallback order.
+selectLocal:
+SELECT * FROM profiles WHERE kind = 'local' ORDER BY sort_order ASC, created_at ASC;
+
+upsertProfile:
+INSERT OR REPLACE INTO profiles VALUES ?;
+
+renameLocal:
+UPDATE profiles SET display_name = ? WHERE id = ? AND kind = 'local';
+
+selectLocalConfig:
+SELECT config_json FROM profiles WHERE id = ? AND kind = 'local';
+
+setLocalConfig:
+UPDATE profiles SET config_json = ? WHERE id = ? AND kind = 'local';
+
+markProfileUsed:
+UPDATE profiles SET last_used_at = ? WHERE id = ?;
+
+deleteProfile:
+DELETE FROM profiles WHERE id = ?;
+
+deleteAllProfiles:
+DELETE FROM profiles;
+
+-- Rows the last INSERT, UPDATE or DELETE of this transaction touched.
+changes:
+SELECT changes();
+
+insertBinding:
+INSERT INTO profile_connections VALUES ?;
+
+selectBinding:
+SELECT * FROM profile_connections WHERE profile_id = ? AND connection_id = ?;
+
+-- A profile's bindings, its default first.
+selectBindingsForProfile:
+SELECT * FROM profile_connections WHERE profile_id = ? ORDER BY is_default DESC, connection_id ASC;
+
+selectBindingsForConnection:
+SELECT * FROM profile_connections WHERE connection_id = ?;
+
+selectAllBindings:
+SELECT * FROM profile_connections;
+
+updateBinding:
+UPDATE profile_connections SET user_identifier = ?, is_default = ?, token_acquired_at = ?, last_used_at = ?, secret_version = ?
+WHERE profile_id = ? AND connection_id = ?;
+
+clearDefaults:
+UPDATE profile_connections SET is_default = 0 WHERE profile_id = ?;
+
+setDefaultFlag:
+UPDATE profile_connections SET is_default = 1 WHERE profile_id = ? AND connection_id = ?;
+
+-- The profiles with bindings but no default one.
+selectProfilesMissingDefault:
+SELECT profile_id FROM profile_connections GROUP BY profile_id HAVING MAX(is_default) = 0;
+
+-- The binding's token is now the one under [secret_version], acquired at [token_acquired_at] (null: it has none).
+setToken:
+UPDATE profile_connections SET token_acquired_at = ?, secret_version = ? WHERE profile_id = ? AND connection_id = ?;
+
+markBindingUsed:
+UPDATE profile_connections SET last_used_at = ? WHERE profile_id = ? AND connection_id = ?;
+
+deleteBinding:
+DELETE FROM profile_connections WHERE profile_id = ? AND connection_id = ?;
+
+deleteBindingsForConnection:
+DELETE FROM profile_connections WHERE connection_id = ?;
+
+deleteAllBindings:
+DELETE FROM profile_connections;
